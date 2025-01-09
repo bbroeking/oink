@@ -11,13 +11,17 @@
 		"ios": {
 			"supportsTablet": true,
 			"bundleIdentifier": "com.broeking.ttp",
-			"usesAppleSignIn": true
+			"usesAppleSignIn": true,
+			"config": {
+				"usesNonExemptEncryption": false
+			}
 		},
 		"android": {
 			"adaptiveIcon": {
 				"foregroundImage": "./assets/images/adaptive-icon.png",
 				"backgroundColor": "#ffffff"
-			}
+			},
+			"package": "com.broeking.ttp"
 		},
 		"web": {
 			"bundler": "metro",

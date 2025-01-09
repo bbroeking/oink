@@ -10,37 +10,37 @@ export function Account({ session }: { session: Session }) {
 	const [website, setWebsite] = useState("");
 	const [avatarUrl, setAvatarUrl] = useState("");
 
-	useEffect(() => {
-		if (session) getProfile();
-	}, [session]);
+	// useEffect(() => {
+	// 	if (session) getProfile();
+	// }, [session]);
 
-	async function getProfile() {
-		try {
-			setLoading(true);
-			if (!session?.user) throw new Error("No user on the session!");
+	// async function getProfile() {
+	// 	try {
+	// 		setLoading(true);
+	// 		if (!session?.user) throw new Error("No user on the session!");
 
-			const { data, error, status } = await supabase
-				.from("profiles")
-				.select(`username, website, avatar_url`)
-				.eq("id", session?.user.id)
-				.single();
-			if (error && status !== 406) {
-				throw error;
-			}
+	// 		const { data, error, status } = await supabase
+	// 			.from("profiles")
+	// 			.select(`username, website, avatar_url`)
+	// 			.eq("id", session?.user.id)
+	// 			.single();
+	// 		if (error && status !== 406) {
+	// 			throw error;
+	// 		}
 
-			if (data) {
-				setUsername(data.username);
-				setWebsite(data.website);
-				setAvatarUrl(data.avatar_url);
-			}
-		} catch (error) {
-			if (error instanceof Error) {
-				Alert.alert(error.message);
-			}
-		} finally {
-			setLoading(false);
-		}
-	}
+	// 		if (data) {
+	// 			setUsername(data.username);
+	// 			setWebsite(data.website);
+	// 			setAvatarUrl(data.avatar_url);
+	// 		}
+	// 	} catch (error) {
+	// 		if (error instanceof Error) {
+	// 			Alert.alert(error.message);
+	// 		}
+	// 	} finally {
+	// 		setLoading(false);
+	// 	}
+	// }
 
 	async function updateProfile({
 		username,
@@ -79,7 +79,7 @@ export function Account({ session }: { session: Session }) {
 
 	return (
 		<View style={styles.container}>
-			<View style={[styles.verticallySpaced, styles.mt20]}>
+			{/* <View style={[styles.verticallySpaced, styles.mt20]}>
 				<Input label="Email" value={session?.user?.email} disabled />
 			</View>
 			<View style={styles.verticallySpaced}>
@@ -109,7 +109,7 @@ export function Account({ session }: { session: Session }) {
 					}
 					disabled={loading}
 				/>
-			</View>
+			</View> */}
 
 			<View style={styles.verticallySpaced}>
 				<Button

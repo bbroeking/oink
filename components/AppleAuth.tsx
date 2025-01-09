@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { supabase } from "../utils/supabase";
 
-export function Auth() {
+export function AppleAuth() {
 	if (Platform.OS === "ios")
 		return (
 			<AppleAuthentication.AppleAuthenticationButton
