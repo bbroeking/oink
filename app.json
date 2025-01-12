@@ -12,6 +12,9 @@
 			"supportsTablet": true,
 			"bundleIdentifier": "com.broeking.ttp",
 			"usesAppleSignIn": true,
+			"entitlements": {
+				"com.apple.developer.applesignin": ["Default"]
+			},
 			"config": {
 				"usesNonExemptEncryption": false
 			}
@@ -34,9 +37,8 @@
 			[
 				"expo-splash-screen",
 				{
-					"image": "./assets/images/splash-icon.png",
-					"imageWidth": 200,
-					"resizeMode": "contain",
+					"image": "./assets/images/splash-art.png",
+					"resizeMode": "cover",
 					"backgroundColor": "#ffffff"
 				}
 			]

@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, View, ImageBackground } from "react-native";
 import { AppleAuth } from "./AppleAuth";
+import EmailAuth from "./EmailAuth";
 
 export const PRIMARY_COLOR = "#E8A7B9"; // Soft pink
 
@@ -12,6 +13,7 @@ export default function SupaAuth() {
 			resizeMode="cover"
 		>
 			<View style={styles.contentContainer}>
+				<EmailAuth />
 				<AppleAuth />
 			</View>
 		</ImageBackground>

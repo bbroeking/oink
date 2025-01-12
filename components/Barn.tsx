@@ -12,7 +12,6 @@ import { ThemedText } from "./ThemedText";
 import SwipeElement from "./SwipeElement";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const TAB_BAR_HEIGHT = Platform.OS === "ios" ? 88 : 68;
 
 interface Stats {
 	counter: number;
@@ -48,6 +47,9 @@ export default function Barn() {
 
 			if (profileResult.error) throw profileResult.error;
 
+			console.log(profileResult.data);
+			console.log(itemsResult.data);
+
 			setStats({
 				counter: profileResult.data?.counter || 0,
 				itemCount: itemsResult.data?.item_count || 0,
@@ -58,15 +60,22 @@ export default function Barn() {
 	};
 
 	const handleIncrement = async () => {
+		if (stats.itemCount <= 0) {
+			return;
+		}
+
 		try {
 			const {
 				data: { user },
 			} = await supabase.auth.getUser();
 			if (!user) throw new Error("User not logged in");
 
-			const { error } = await supabase.rpc("increment_counter", {
-				user_id: user.id,
-			});
+			const { error } = await supabase.rpc(
+				"update_profile_and_item_count",
+				{
+					uid: user.id,
+				}
+			);
 
 			if (error) throw error;
 			fetchStats();

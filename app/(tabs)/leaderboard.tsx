@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
 	View,
 	StyleSheet,
@@ -6,6 +6,7 @@ import {
 	Platform,
 	SafeAreaView,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../../utils/supabase";
 import { ThemedText } from "../../components/ThemedText";
 import { ThemedView } from "../../components/ThemedView";
