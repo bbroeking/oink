@@ -38,9 +38,6 @@ yarn-error.*
 
 app-example
 
-# Auto-generated overlay coordinates (regen via scripts/compute_overlays.py)
-constants/hat_overlays.generated.ts
-
 # Test artifacts and MJ output staging
 tests/
 
