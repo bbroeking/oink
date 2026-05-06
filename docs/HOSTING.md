@@ -1,14 +1,14 @@
-# Host docs/site/ via GitHub Pages
+# Host docs/ via GitHub Pages
 
-The landing page (`docs/site/index.html`) and privacy policy (`docs/site/privacy.html`)
+The landing page (`docs/index.html`) and privacy policy (`docs/privacy.html`)
 are designed to be served as a static site for free via GitHub Pages.
 
 ## One-time setup
 
-1. Push `docs/site/` to `main` (already done if you committed this).
+1. Push `docs/` to `main` (already done if you committed this).
 2. GitHub repo → **Settings → Pages**
 3. Under **Source**: select `Deploy from a branch`
-4. Under **Branch**: pick `main` and `/docs/site` folder. Click **Save**.
+4. Under **Branch**: pick `main` and `/docs` folder. Click **Save**.
 5. Wait ~1 min. Your site will be at:
    ```
    https://bbroeking.github.io/oink/
@@ -38,7 +38,7 @@ When you own `ticklethepig.app`:
 
 1. Settings → Pages → **Custom domain**: enter `ticklethepig.app`
 2. Add a `CNAME` DNS record pointing to `bbroeking.github.io`
-3. Add a `docs/site/CNAME` file containing `ticklethepig.app`
+3. Add a `docs/CNAME` file containing `ticklethepig.app`
 4. Enable "Enforce HTTPS" once DNS propagates
 
 ## Newsletter signup
