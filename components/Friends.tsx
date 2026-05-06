@@ -51,14 +51,15 @@ export default function Friends({ userId }: { userId: string }) {
 		// The fkey-style join syntax may or may not work depending on schema relationship setup.
 		// Fall back: fetch requester profiles separately.
 		if (pendingRows && pendingRows.length > 0) {
-			const requesterIds = pendingRows.map((r: any) => r.requester_id);
+			const rows = pendingRows as { requester_id: string }[];
+			const requesterIds = rows.map((r) => r.requester_id);
 			const { data: profs } = await supabase
 				.from("profiles")
 				.select("id, username, counter")
 				.in("id", requesterIds);
 			const profById = new Map(((profs as Profile[]) ?? []).map((p) => [p.id, p]));
 			setPending(
-				pendingRows.map((r: any) => ({
+				rows.map((r) => ({
 					requester_id: r.requester_id,
 					requester: profById.get(r.requester_id) ?? null,
 				}))

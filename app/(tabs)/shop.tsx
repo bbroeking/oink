@@ -233,7 +233,7 @@ function ItemCard({
 				},
 			]}
 		>
-			<RarityFx rarity={rarity as any} style={styles.cardThumbWrap}>
+			<RarityFx rarity={rarity} style={styles.cardThumbWrap}>
 				<LinearGradient
 					colors={RARITY_GRADIENT[rarity]}
 					style={styles.cardThumb}
@@ -445,7 +445,11 @@ export default function ShopScreen() {
 			);
 		setDaily(filterPlaceable((dailyRes.data as HatRow[]) ?? []));
 		setAllItems(filterPlaceable((allRes.data as HatRow[]) ?? []));
-		setOwned(new Set((ownedRes.data ?? []).map((r: any) => r.hat_id as string)));
+		setOwned(
+			new Set(
+				((ownedRes.data ?? []) as { hat_id: string }[]).map((r) => r.hat_id)
+			)
+		);
 		setCounter(profRes.data?.counter ?? 0);
 		setActiveId(profRes.data?.active_hat_id ?? null);
 		setResetsIn((resetsRes.data as number) ?? 0);
@@ -471,7 +475,12 @@ export default function ShopScreen() {
 		});
 		setBusyId(null);
 		if (error) return Alert.alert("Couldn't buy", "Try again.");
-		const r = data as any;
+		const r = data as {
+			ok: boolean;
+			reason?: string;
+			need?: number;
+			have?: number;
+		};
 		if (!r.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
 				() => {}
@@ -982,9 +991,7 @@ const styles = StyleSheet.create({
 		overflow: "hidden",
 		...STICKER_SHADOW,
 	},
-	cardThumbWrap: {
-		// container for the rarity-fx wrapper around the thumb
-	},
+	cardThumbWrap: {},
 	cardThumb: {
 		height: 120,
 		alignItems: "center",

@@ -91,3 +91,30 @@ export const SHADOWS = {
 		elevation: 4,
 	},
 };
+
+// Shared paper-sticker tilt sequence — used by leaderboard rows and season tier
+// rows so each list item gets a slightly different scrapbook angle.
+export const ROW_TILTS = [-1.2, 0.8, -0.6, 0.5, -0.4, 1, -0.7, 0.6];
+
+// Shared modal-backdrop tint (warm ink shadow) so all sticker modals share the
+// same dim treatment.
+export const MODAL_BACKDROP_BG = "rgba(40,30,20,0.55)";
+
+// Tiny accent text that sits above a section title — e.g. "★ welcome",
+// "★ snout season 1". Identical across Account, Onboarding, season,
+// BattlePassSaleModal. Compose with marginBottom override per screen.
+export const KICKER_TEXT = {
+	fontFamily: FONTS.hand,
+	fontSize: 13,
+	color: WHIMSY.accent,
+	letterSpacing: 0.4,
+};
+
+// Short ink underline drawn under a section title. Identical on Account,
+// leaderboard, season — only width and surrounding margin vary per screen.
+export const TITLE_RULE = {
+	height: 2,
+	backgroundColor: WHIMSY.ink,
+	opacity: 0.3,
+	borderRadius: 1,
+};

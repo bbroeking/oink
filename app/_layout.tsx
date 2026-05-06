@@ -28,7 +28,6 @@ if (SENTRY_DSN && !__DEV__) {
 		dsn: SENTRY_DSN,
 		// Send errors but don't trace every interaction — costs add up
 		tracesSampleRate: 0.1,
-		// Don't crash the app when Sentry itself fails
 		enableNative: true,
 	});
 }

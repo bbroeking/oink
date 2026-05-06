@@ -1,4 +1,5 @@
 import React from "react";
+import { StyleProp, ViewStyle } from "react-native";
 import Svg, {
 	G,
 	Path,
@@ -43,7 +44,7 @@ interface Props {
 	color?: string;
 	filled?: boolean;
 	strokeWidth?: number;
-	style?: any;
+	style?: StyleProp<ViewStyle>;
 }
 
 function Render({

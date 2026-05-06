@@ -1,10 +1,17 @@
 import React, { useEffect, useRef } from "react";
-import { View, Animated, StyleSheet, ViewStyle, StyleProp } from "react-native";
+import {
+	View,
+	Animated,
+	StyleSheet,
+	ViewStyle,
+	StyleProp,
+	DimensionValue,
+} from "react-native";
 import { WHIMSY } from "@/constants/theme";
 
 interface Props {
-	width?: number | string;
-	height?: number | string;
+	width?: DimensionValue;
+	height?: DimensionValue;
 	radius?: number;
 	style?: StyleProp<ViewStyle>;
 }
@@ -27,14 +34,13 @@ export function Skeleton({ width = "100%", height = 20, radius = 8, style }: Pro
 	return (
 		<Animated.View
 			style={[
-				{ width: width as any, height: height as any, borderRadius: radius, backgroundColor: bg },
+				{ width, height, borderRadius: radius, backgroundColor: bg },
 				style,
 			]}
 		/>
 	);
 }
 
-// Predefined card-shaped skeleton matching the shop ItemCard
 export function ShopCardSkeleton() {
 	return (
 		<View style={styles.cardSkeleton}>
@@ -48,7 +54,6 @@ export function ShopCardSkeleton() {
 	);
 }
 
-// Leaderboard row skeleton
 export function ListRowSkeleton() {
 	return (
 		<View style={styles.listRow}>

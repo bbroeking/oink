@@ -47,8 +47,10 @@ export function AppleAuth() {
 							console.log("no identityToken");
 							throw new Error("No identityToken.");
 						}
-					} catch (e: any) {
-						if (e.code === "ERR_REQUEST_CANCELED") {
+					} catch (e) {
+						// Apple sign-in errors carry a string `code` per expo-apple-authentication docs.
+						const err = e as { code?: string };
+						if (err.code === "ERR_REQUEST_CANCELED") {
 							console.log("canceled");
 							// handle that the user canceled the sign-in flow
 						} else {

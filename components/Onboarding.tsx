@@ -13,7 +13,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SpritePig, PigAnimation } from "./ui/SpritePig";
 import { Sticker } from "./ui/Sticker";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -24,19 +24,19 @@ const STEPS: {
 	body: string;
 }[] = [
 	{
-		animation: "wave",
+		animation: "arms_up", // 4-frame waving celebration loop
 		kicker: "★ welcome",
 		title: "Hi, I'm Rosie!",
 		body: "Tap me on the home screen to give me a tickle. The more tickles you give, the more we both grow.",
 	},
 	{
-		animation: "idle",
+		animation: "idle", // calm 4-frame breathing
 		kicker: "★ how it works",
 		title: "Earn & dress me up",
 		body: "Each tickle earns a heart. Spend hearts in the shop on hats, glasses, capes, and more — then come back and dress me however you like.",
 	},
 	{
-		animation: "surprise",
+		animation: "bounce", // 4-frame jump cycle on loop
 		kicker: "★ lucky tickles",
 		title: "Watch for lucky days!",
 		body: "Every day, three lucky tickle numbers are drawn. If your tickle lands on one, you win bonus hearts. First to hit each number wins.",
@@ -148,10 +148,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 	kicker: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		letterSpacing: 0.4,
+		...KICKER_TEXT,
 		marginBottom: 6,
 	},
 	title: {

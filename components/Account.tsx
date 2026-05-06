@@ -21,7 +21,7 @@ import { Icon } from "./ui/Icon";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker, Tape } from "./ui/Sticker";
-import { COLORS, FONTS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import {
 	initIAP,
 	isPro,
@@ -218,14 +218,13 @@ export function Account({ session }: { session: Session }) {
 						<Text style={styles.restoreLinkText}>Restore purchases</Text>
 					</Pressable>
 
-					{/* Friends */}
 					<View style={{ marginTop: 8 }}>
 						<Friends userId={session.user.id} />
 					</View>
 
 					{__DEV__ && (
 						<Pressable
-							onPress={() => router.push("/align" as any)}
+							onPress={() => router.push("/align")}
 							style={({ pressed }) => [
 								styles.devLink,
 								{ opacity: pressed ? 0.6 : 1 },
@@ -235,7 +234,6 @@ export function Account({ session }: { session: Session }) {
 						</Pressable>
 					)}
 
-					{/* Sign Out */}
 					<Pressable
 						onPress={() => supabase.auth.signOut()}
 						style={({ pressed }) => [
@@ -256,10 +254,7 @@ const styles = StyleSheet.create({
 	safe: { flex: 1 },
 	content: { padding: 18, paddingBottom: 120 },
 	kicker: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		letterSpacing: 0.4,
+		...KICKER_TEXT,
 		marginBottom: 4,
 	},
 	title: {
@@ -269,11 +264,8 @@ const styles = StyleSheet.create({
 		marginBottom: 4,
 	},
 	titleRule: {
-		height: 2,
+		...TITLE_RULE,
 		width: 80,
-		backgroundColor: WHIMSY.ink,
-		opacity: 0.3,
-		borderRadius: 1,
 		marginBottom: 18,
 	},
 	codeWrap: {

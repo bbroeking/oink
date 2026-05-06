@@ -28,6 +28,7 @@ export type PigAnimation =
 	| "idle"
 	| "walk"
 	| "jump"
+	| "bounce"
 	| "happy"
 	| "sad"
 	| "surprise"
@@ -44,6 +45,8 @@ const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
 	idle: { frames: ["idle_1", "idle_2", "idle_3", "idle_4"], fps: 5, loop: true },
 	walk: { frames: ["walk_1", "walk_2", "walk_3", "walk_4"], fps: 9, loop: true },
 	jump: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 12, loop: false },
+	// Looping version of the jump frames, slower — for ambient bouncy idle.
+	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 6, loop: true },
 	happy: { frames: ["happy"], fps: 1, loop: true },
 	sad: { frames: ["sad"], fps: 1, loop: true },
 	surprise: { frames: ["surprise"], fps: 1, loop: true },

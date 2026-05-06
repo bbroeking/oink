@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Sticker, Tape } from "./ui/Sticker";
 import { Icon } from "./ui/Icon";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, MODAL_BACKDROP_BG, WHIMSY } from "@/constants/theme";
 import { restorePurchases } from "../utils/iap";
 
 interface Props {
@@ -188,7 +188,7 @@ export function BattlePassSaleModal({
 const styles = StyleSheet.create({
 	backdrop: {
 		flex: 1,
-		backgroundColor: "rgba(40,30,20,0.55)",
+		backgroundColor: MODAL_BACKDROP_BG,
 		justifyContent: "center",
 		paddingHorizontal: 16,
 	},
@@ -225,10 +225,7 @@ const styles = StyleSheet.create({
 		paddingTop: 22,
 	},
 	kicker: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		letterSpacing: 0.4,
+		...KICKER_TEXT,
 		marginBottom: 4,
 	},
 	title: {

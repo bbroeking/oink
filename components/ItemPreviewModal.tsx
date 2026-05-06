@@ -21,7 +21,7 @@ import {
 	HatRow,
 	RARITY_COLORS,
 } from "@/constants/hats";
-import { FONTS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { FONTS, MODAL_BACKDROP_BG, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
 const RARITY_GRADIENT: Record<string, string> = {
 	common: WHIMSY.cream,
@@ -170,7 +170,7 @@ export function ItemPreviewModal({
 const styles = StyleSheet.create({
 	backdrop: {
 		flex: 1,
-		backgroundColor: "rgba(40,30,20,0.55)",
+		backgroundColor: MODAL_BACKDROP_BG,
 		justifyContent: "center",
 		paddingHorizontal: 18,
 	},

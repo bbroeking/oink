@@ -18,6 +18,7 @@ import {
 	Z_BEHIND_PIG,
 	PIG_FRAME_OFFSETS,
 	PigAnimationKey,
+	HatOverlay,
 } from "../constants/hats";
 import { SpritePig, PigAnimation } from "./ui/SpritePig";
 
@@ -27,13 +28,6 @@ interface EquippedItem {
 	emoji?: string | null;
 }
 
-interface OverlayBox {
-	bottom: number;
-	left: number;
-	width: number;
-	height: number;
-}
-
 // Renders a single equipped item — the same JSX is used both BEHIND and
 // IN FRONT of the pig, so it lives in one place.
 function ItemOverlay({
@@ -41,7 +35,7 @@ function ItemOverlay({
 	imageSrc,
 	emoji,
 }: {
-	overlay: OverlayBox;
+	overlay: HatOverlay;
 	imageSrc: number | null;
 	emoji: string | null;
 }) {

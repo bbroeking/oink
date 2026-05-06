@@ -49,7 +49,7 @@ export function StatPill({
 	style?: ViewStyle;
 	onPress?: () => void;
 }) {
-	const Wrap: any = onPress ? require("react-native").Pressable : View;
+	const Wrap: React.ElementType = onPress ? require("react-native").Pressable : View;
 	return (
 		<Wrap
 			onPress={onPress}

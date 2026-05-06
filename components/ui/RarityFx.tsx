@@ -1,8 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, Animated, StyleSheet, ViewStyle, StyleProp } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-
-type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+import type { Rarity } from "@/constants/hats";
 
 interface Props {
 	rarity?: Rarity;

@@ -10,11 +10,12 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../../utils/supabase";
+import { log } from "../../utils/log";
 import { Icon } from "../../components/ui/Icon";
 import { PigAvatar } from "../../components/ui/PigAvatar";
 import { Sticker } from "../../components/ui/Sticker";
 import { ListRowSkeleton } from "../../components/ui/Skeleton";
-import { COLORS, FONTS, WHIMSY } from "@/constants/theme";
+import { COLORS, FONTS, ROW_TILTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
 
 type Scope = "global" | "friends";
 
@@ -25,8 +26,6 @@ interface LeaderboardEntry {
 	tickles_earned: number;
 	active_hat_id: string | null;
 }
-
-const ROW_TILTS = [-1.2, 0.8, -0.6, 0.5, -0.4, 1, -0.7, 0.6];
 
 function ChampionPoster({ champ }: { champ: LeaderboardEntry }) {
 	return (
@@ -138,7 +137,7 @@ export default function LeaderboardScreen() {
 				setLeaderboard((data as LeaderboardEntry[]) || []);
 			}
 		} catch (error) {
-			console.error("Error fetching leaderboard:", error);
+			log.error("Error fetching leaderboard:", error);
 		} finally {
 			setLoading(false);
 		}
@@ -238,11 +237,8 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 	},
 	titleRule: {
-		height: 2,
+		...TITLE_RULE,
 		width: 110,
-		backgroundColor: WHIMSY.ink,
-		opacity: 0.3,
-		borderRadius: 1,
 		marginTop: 4,
 	},
 	toggleWrap: { marginTop: 14 },

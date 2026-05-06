@@ -16,6 +16,7 @@ import {
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../utils/supabase";
+import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
 import { Icon } from "./ui/Icon";
 import { Sticker, Tape } from "./ui/Sticker";
@@ -74,7 +75,7 @@ function PaperTicket({
 	subValue?: string;
 	onPress?: () => void;
 }) {
-	const Wrap: any = onPress ? Pressable : View;
+	const Wrap: React.ElementType = onPress ? Pressable : View;
 	return (
 		<Wrap onPress={onPress} style={styles.ticketWrap}>
 			<Tape
@@ -298,8 +299,15 @@ export default function Barn() {
 
 			if (profileResult.error) throw profileResult.error;
 
-			const info = infoResult.data as any;
-			const season = seasonResult.data as any;
+			const info = infoResult.data as {
+				balance?: number;
+				cap?: number;
+				next_regen_seconds?: number | null;
+			} | null;
+			const season = seasonResult.data as {
+				current_tier?: number;
+				season?: { total_tiers?: number };
+			} | null;
 			const activeId = profileResult.data?.active_hat_id ?? null;
 
 			let activeCategory: string | null = null;
@@ -330,7 +338,7 @@ export default function Barn() {
 				totalTiers: season?.season?.total_tiers ?? 30,
 			});
 		} catch (error) {
-			console.error("Error fetching stats:", error);
+			log.error("Error fetching stats:", error);
 		}
 	};
 
@@ -363,8 +371,8 @@ export default function Barn() {
 			);
 
 			if (error) throw error;
-			// New jsonb response shape: { balance, lucky_won, global_counter }
-			const luckyWon = (data as any)?.lucky_won as number | null | undefined;
+			// jsonb response shape: { balance, lucky_won, global_counter }
+			const luckyWon = (data as { lucky_won?: number | null } | null)?.lucky_won;
 			if (luckyWon) {
 				showToast(
 					"🍀 Lucky tickle!",
@@ -373,7 +381,7 @@ export default function Barn() {
 			}
 			fetchStats();
 		} catch (error) {
-			console.error("Error incrementing count:", error);
+			log.error("Error incrementing count:", error);
 		}
 	};
 
@@ -544,7 +552,6 @@ const styles = StyleSheet.create({
 		lineHeight: 17,
 	},
 	ticketLabel: {
-		// Bold sans label below the big number — high-contrast, easy to read
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 10,
 		color: WHIMSY.ink,

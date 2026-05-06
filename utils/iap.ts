@@ -18,12 +18,14 @@
 
 import Purchases, {
 	CustomerInfo,
+	PurchasesError,
 	PurchasesOffering,
 	PurchasesPackage,
 	LOG_LEVEL,
 } from "react-native-purchases";
 import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 import { Platform } from "react-native";
+import { log } from "./log";
 
 // Public iOS API key — find at: https://app.revenuecat.com/projects/<project>/apps/<app>
 //
@@ -57,7 +59,7 @@ export async function initIAP(userId: string) {
 		try {
 			await Purchases.logIn(userId);
 		} catch (e) {
-			console.error("[iap] logIn:", e);
+			log.error("[iap] logIn:", e);
 		}
 		return;
 	}
@@ -73,7 +75,7 @@ export async function initIAP(userId: string) {
 		});
 		initialized = true;
 	} catch (e) {
-		console.error("[iap] configure:", e);
+		log.error("[iap] configure:", e);
 	}
 }
 
@@ -95,7 +97,7 @@ export async function getCustomerInfo(): Promise<CustomerInfo | null> {
 	try {
 		return await Purchases.getCustomerInfo();
 	} catch (e) {
-		console.error("[iap] getCustomerInfo:", e);
+		log.error("[iap] getCustomerInfo:", e);
 		return null;
 	}
 }
@@ -116,7 +118,7 @@ export async function getCurrentOffering(): Promise<PurchasesOffering | null> {
 		const offerings = await Purchases.getOfferings();
 		return offerings.current;
 	} catch (e) {
-		console.error("[iap] getCurrentOffering:", e);
+		log.error("[iap] getCurrentOffering:", e);
 		return null;
 	}
 }
@@ -140,7 +142,7 @@ export async function presentPaywallIfNeeded(): Promise<PaywallOutcome> {
 		});
 		return mapPaywallResult(result);
 	} catch (e) {
-		console.error("[iap] presentPaywallIfNeeded:", e);
+		log.error("[iap] presentPaywallIfNeeded:", e);
 		return { ok: false, reason: "error" };
 	}
 }
@@ -152,7 +154,7 @@ export async function presentPaywall(): Promise<PaywallOutcome> {
 		const result = await RevenueCatUI.presentPaywall();
 		return mapPaywallResult(result);
 	} catch (e) {
-		console.error("[iap] presentPaywall:", e);
+		log.error("[iap] presentPaywall:", e);
 		return { ok: false, reason: "error" };
 	}
 }
@@ -183,7 +185,7 @@ export async function presentCustomerCenter(): Promise<void> {
 	try {
 		await RevenueCatUI.presentCustomerCenter();
 	} catch (e) {
-		console.error("[iap] presentCustomerCenter:", e);
+		log.error("[iap] presentCustomerCenter:", e);
 	}
 }
 
@@ -200,10 +202,11 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<{
 	try {
 		const { customerInfo } = await Purchases.purchasePackage(pkg);
 		return { ok: true, customerInfo };
-	} catch (e: any) {
-		if (e.userCancelled) return { ok: false, reason: "cancelled" };
-		console.error("[iap] purchase:", e);
-		return { ok: false, reason: e.message ?? "unknown" };
+	} catch (e) {
+		const err = e as PurchasesError;
+		if (err.userCancelled) return { ok: false, reason: "cancelled" };
+		log.error("[iap] purchase:", e);
+		return { ok: false, reason: err.message ?? "unknown" };
 	}
 }
 
@@ -227,29 +230,7 @@ export async function restorePurchases(): Promise<{
 		const info = await Purchases.restorePurchases();
 		return { ok: true, customerInfo: info };
 	} catch (e) {
-		console.error("[iap] restore:", e);
+		log.error("[iap] restore:", e);
 		return { ok: false };
 	}
 }
-
-// ──────────────────────────────────────────────────────────────────────────
-// Backwards-compat for existing call sites (`hasPremium`, `hasVIP`, etc.).
-// All collapse to the single "Pro" entitlement now.
-// ──────────────────────────────────────────────────────────────────────────
-
-export async function hasPremium(): Promise<boolean> {
-	return isPro();
-}
-export async function hasPremiumPlus(): Promise<boolean> {
-	return isPro();
-}
-export async function hasVIP(): Promise<boolean> {
-	return isPro();
-}
-
-export const ENTITLEMENTS = {
-	pro: ENTITLEMENT_PRO,
-	premium: ENTITLEMENT_PRO,
-	premiumPlus: ENTITLEMENT_PRO,
-	vip: ENTITLEMENT_PRO,
-} as const;

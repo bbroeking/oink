@@ -115,12 +115,11 @@ export const HAT_IMAGES: Record<string, number> = {
 
 // Per-hat overlay positioning on the 300x300 pig card.
 // Anchored from the bottom so each hat's bottom edge sits on the pig's head.
-export interface HatOverlay {
-	bottom: number;
-	left: number;
-	width: number;
-	height: number;
-}
+// `HatOverlay` lives in its own module to break the import cycle with the
+// auto-generated overlays file; re-export here so consumers can keep
+// importing it from "constants/hats".
+export type { HatOverlay } from "./hat_overlay_types";
+import type { HatOverlay } from "./hat_overlay_types";
 
 // Per-item overlay overrides. Auto-generated coordinates from
 // scripts/compute_overlays.py are spread first; manual tweaks below override.
@@ -224,6 +223,8 @@ export const CATEGORY_OVERLAYS: Record<string, HatOverlay> = {
 	background: { bottom: 0,   left: 0,   width: 300, height: 300 },
 };
 
+export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+
 export interface HatRow {
 	id: string;
 	name: string;
@@ -232,7 +233,7 @@ export interface HatRow {
 	emoji: string | null;
 	image_path: string | null;
 	category?: string;
-	rarity?: "common" | "uncommon" | "rare" | "epic" | "legendary";
+	rarity?: Rarity;
 	description?: string | null;
 }
 

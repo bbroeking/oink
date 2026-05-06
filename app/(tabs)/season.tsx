@@ -22,7 +22,7 @@ import { Icon } from "../../components/ui/Icon";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
 import { HAT_IMAGES } from "@/constants/hats";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, ROW_TILTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
 
 interface SeasonRow {
 	id: string;
@@ -35,11 +35,15 @@ interface SeasonRow {
 	premium_plus_price_cents: number;
 }
 
+// reward_value shape varies per reward_type (e.g. { hat_id } for "hat",
+// { count } for "tickles") — Supabase jsonb. Narrow at use sites below.
+type RewardValue = { hat_id?: string; count?: number } | null;
+
 interface TierRow {
 	tier: number;
 	track: "free" | "premium";
 	reward_type: string;
-	reward_value: any;
+	reward_value: RewardValue;
 	display_label: string;
 }
 
@@ -57,8 +61,6 @@ interface SeasonState {
 	premium_unlocked?: boolean;
 	claims?: ClaimRow[];
 }
-
-const ROW_TILTS = [-1.2, 0.8, -0.6, 0.5, -0.4, 1, -0.7, 0.6];
 
 function StoneThumb({ reward, locked }: { reward: TierRow; locked: boolean }) {
 	const { reward_type: type, reward_value: val } = reward;
@@ -110,7 +112,7 @@ function TierStone({
 
 	return (
 		<Sticker
-			color={color as any}
+			color={color}
 			rotate={0}
 			radius={14}
 			border={isLocked ? 1.5 : 2}
@@ -178,7 +180,7 @@ export default function SeasonScreen() {
 		const map: Record<number, { free?: TierRow; premium?: TierRow }> = {};
 		(state?.tiers ?? []).forEach((t) => {
 			if (!map[t.tier]) map[t.tier] = {};
-			(map[t.tier] as any)[t.track] = t;
+			map[t.tier][t.track] = t;
 		});
 		return map;
 	}, [state?.tiers]);
@@ -192,7 +194,11 @@ export default function SeasonScreen() {
 		});
 		setBusy(false);
 		if (error) return Alert.alert("Couldn't claim", "Try again.");
-		const r = data as any;
+		const r = data as {
+			ok: boolean;
+			reason?: string;
+			current_tier?: number;
+		};
 		if (!r.ok) {
 			const map: Record<string, string> = {
 				tier_locked: `Reach tier ${tier} first (you're at ${r.current_tier}).`,
@@ -201,7 +207,7 @@ export default function SeasonScreen() {
 				no_active_season: "No active season.",
 				no_reward: "Nothing here.",
 			};
-			Alert.alert("Locked", map[r.reason] ?? "Couldn't claim.");
+			Alert.alert("Locked", map[r.reason ?? ""] ?? "Couldn't claim.");
 			return;
 		}
 		load();
@@ -326,12 +332,12 @@ export default function SeasonScreen() {
 							const isFinale = t === season.total_tiers;
 							const reached = t <= tier;
 							const isCurrent = t === tier;
-							const freeState = claimedSet.has(`${t}:free`)
+							const freeState: "claim" | "claimed" | "locked" = claimedSet.has(`${t}:free`)
 								? "claimed"
 								: reached
 									? "claim"
 									: "locked";
-							const premState = claimedSet.has(`${t}:premium`)
+							const premState: "claim" | "claimed" | "locked" = claimedSet.has(`${t}:premium`)
 								? "claimed"
 								: reached && premium
 									? "claim"
@@ -362,13 +368,13 @@ export default function SeasonScreen() {
 									</View>
 									<TierStone
 										reward={free}
-										state={freeState as any}
+										state={freeState}
 										isFinale={isFinale}
 										onClaim={() => handleClaim(t, "free")}
 									/>
 									<TierStone
 										reward={prem}
-										state={premState as any}
+										state={premState}
 										premium
 										isFinale={isFinale}
 										onClaim={() => handleClaim(t, "premium")}
@@ -413,10 +419,7 @@ const styles = StyleSheet.create({
 		paddingBottom: 8,
 	},
 	kicker: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		letterSpacing: 0.4,
+		...KICKER_TEXT,
 		marginBottom: 4,
 	},
 	title: {
@@ -426,11 +429,8 @@ const styles = StyleSheet.create({
 		lineHeight: 32,
 	},
 	titleRule: {
-		height: 2,
+		...TITLE_RULE,
 		width: 90,
-		backgroundColor: WHIMSY.ink,
-		opacity: 0.3,
-		borderRadius: 1,
 		marginTop: 4,
 	},
 	progressWrap: { paddingHorizontal: 14, paddingVertical: 8 },
@@ -489,9 +489,7 @@ const styles = StyleSheet.create({
 		alignItems: "stretch",
 		gap: 8,
 	},
-	tierRowCurrent: {
-		// extra subtle ink ring
-	},
+	tierRowCurrent: {},
 	tierStoneNum: {
 		width: 36,
 		alignItems: "center",
