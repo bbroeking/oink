@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { router } from "expo-router";
 import {
 	View,
 	StyleSheet,
@@ -6,24 +8,213 @@ import {
 	Dimensions,
 	Platform,
 	SafeAreaView,
+	Pressable,
+	Alert,
+	Text,
+	Animated,
 } from "react-native";
+import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../utils/supabase";
-import { ThemedText } from "./ThemedText";
 import SwipeElement from "./SwipeElement";
+import { Icon } from "./ui/Icon";
+import { Sticker, Tape } from "./ui/Sticker";
+import { WHIMSY, FONTS } from "@/constants/theme";
+
+const tickleSound = require("../assets/sounds/tickle.m4a");
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface Stats {
 	counter: number;
 	itemCount: number;
+	cap: number;
+	nextRegenSeconds: number | null;
+	activeHatId: string | null;
+	activeCategory: string | null;
+	activeEmoji: string | null;
+	currentTier: number;
+	totalTiers: number;
+}
+
+function formatCountdown(totalSeconds: number): string {
+	const m = Math.floor(totalSeconds / 60);
+	const s = totalSeconds % 60;
+	if (m === 0) return `${s}s`;
+	return `${m}m ${s.toString().padStart(2, "0")}s`;
+}
+
+function PaperTicket({
+	label,
+	value,
+	tapeColor,
+	rotate,
+	chipColor = "roseDeep",
+	chipSymbol = "♥",
+	subValue,
+	onPress,
+}: {
+	label: string;
+	value: string;
+	tapeColor: "sun" | "rose" | "sky" | "sage" | "lilac" | "peach";
+	rotate: number;
+	chipColor?: "roseDeep" | "lilacDeep" | "peach";
+	chipSymbol?: string;
+	subValue?: string;
+	onPress?: () => void;
+}) {
+	const Wrap: any = onPress ? Pressable : View;
+	return (
+		<Wrap onPress={onPress} style={styles.ticketWrap}>
+			<Tape
+				color={tapeColor}
+				rotate={-6 + rotate}
+				width={56}
+				height={16}
+				style={styles.tape}
+			/>
+			<Sticker color="paper" rotate={rotate} radius={10} style={styles.ticket}>
+				<View style={styles.ticketInner}>
+					<View
+						style={[
+							styles.coin,
+							{ backgroundColor: WHIMSY[chipColor] },
+						]}
+					>
+						<Text style={styles.coinSymbol}>{chipSymbol}</Text>
+					</View>
+					<View style={{ flex: 1, minWidth: 0 }}>
+						<Text style={styles.ticketLabel}>{label}</Text>
+						<View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+							<Text style={styles.ticketValue}>{value}</Text>
+							{subValue && (
+								<Text style={styles.ticketSub}>{subValue}</Text>
+							)}
+						</View>
+					</View>
+				</View>
+			</Sticker>
+		</Wrap>
+	);
+}
+
+function WoodenSign({
+	tier,
+	totalTiers,
+	onPress,
+}: {
+	tier: number;
+	totalTiers: number;
+	onPress: () => void;
+}) {
+	return (
+		<Pressable onPress={onPress} style={styles.signWrap}>
+			{/* Post (drawn first, behind sign) */}
+			<View style={styles.signPost} />
+			<Sticker color="peach" rotate={-2.5} radius={12} style={styles.sign}>
+				<View style={styles.signInner}>
+					<View style={{ flex: 1 }}>
+						<Text style={styles.signLabel}>snout season 1 ★</Text>
+						<Text style={styles.signTier}>
+							Tier {tier} of {totalTiers}
+						</Text>
+					</View>
+					<Icon name="arrowRight" size={20} color={WHIMSY.ink} strokeWidth={2.5} />
+				</View>
+			</Sticker>
+		</Pressable>
+	);
 }
 
 export default function Barn() {
-	const [stats, setStats] = useState<Stats>({ counter: 0, itemCount: 0 });
+	const [stats, setStats] = useState<Stats>({
+		counter: 0,
+		itemCount: 0,
+		cap: 25,
+		nextRegenSeconds: null,
+		activeHatId: null,
+		activeCategory: null,
+		activeEmoji: null,
+		currentTier: 1,
+		totalTiers: 30,
+	});
+	const [sixSevenTick, setSixSevenTick] = useState(0);
+	const sixSevenPromptedRef = useRef(false);
+	const player = useAudioPlayer(tickleSound);
+	const [toast, setToast] = useState<{ title: string; body: string } | null>(null);
+	const toastOpacity = useRef(new Animated.Value(0)).current;
+	const toastY = useRef(new Animated.Value(-20)).current;
+
+	const showToast = useCallback(
+		(title: string, body: string) => {
+			setToast({ title, body });
+			toastOpacity.setValue(0);
+			toastY.setValue(-20);
+			Animated.sequence([
+				Animated.parallel([
+					Animated.timing(toastOpacity, {
+						toValue: 1,
+						duration: 220,
+						useNativeDriver: true,
+					}),
+					Animated.timing(toastY, {
+						toValue: 0,
+						duration: 220,
+						useNativeDriver: true,
+					}),
+				]),
+				Animated.delay(2400),
+				Animated.parallel([
+					Animated.timing(toastOpacity, {
+						toValue: 0,
+						duration: 300,
+						useNativeDriver: true,
+					}),
+					Animated.timing(toastY, {
+						toValue: -20,
+						duration: 300,
+						useNativeDriver: true,
+					}),
+				]),
+			]).start(() => setToast(null));
+		},
+		[toastOpacity, toastY]
+	);
 
 	useEffect(() => {
-		fetchStats();
-	}, []);
+		if (sixSevenPromptedRef.current) return;
+		if (stats.counter < 67) return;
+		sixSevenPromptedRef.current = true;
+		(async () => {
+			const seen = await AsyncStorage.getItem("seen_67");
+			if (seen === "1") return;
+			Alert.alert(
+				"6 7! 🐷",
+				"You've crossed 67 tickles. Wanna celebrate with a six-seven?",
+				[
+					{
+						text: "Skip",
+						style: "cancel",
+						onPress: () => AsyncStorage.setItem("seen_67", "1"),
+					},
+					{
+						text: "Six seven!",
+						onPress: () => {
+							AsyncStorage.setItem("seen_67", "1");
+							setSixSevenTick((t) => t + 1);
+						},
+					},
+				]
+			);
+		})();
+	}, [stats.counter]);
+
+	useFocusEffect(
+		useCallback(() => {
+			fetchStats();
+			setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+		}, [])
+	);
 
 	const fetchStats = async () => {
 		try {
@@ -32,27 +223,44 @@ export default function Barn() {
 			} = await supabase.auth.getUser();
 			if (!user) throw new Error("User not logged in");
 
-			const [profileResult, itemsResult] = await Promise.all([
+			const [profileResult, infoResult, seasonResult] = await Promise.all([
 				supabase
 					.from("profiles")
-					.select("counter")
+					.select("counter, active_hat_id")
 					.eq("id", user.id)
 					.single(),
-				supabase
-					.from("user_items")
-					.select("item_count")
-					.eq("user_id", user.id)
-					.single(),
+				supabase.rpc("tickle_info", { uid: user.id }),
+				supabase.rpc("season_state"),
 			]);
 
 			if (profileResult.error) throw profileResult.error;
 
-			console.log(profileResult.data);
-			console.log(itemsResult.data);
+			const info = infoResult.data as any;
+			const season = seasonResult.data as any;
+			const activeId = profileResult.data?.active_hat_id ?? null;
+
+			let activeCategory: string | null = null;
+			let activeEmoji: string | null = null;
+			if (activeId) {
+				const { data: hat } = await supabase
+					.from("hats")
+					.select("category, emoji")
+					.eq("id", activeId)
+					.single();
+				activeCategory = hat?.category ?? null;
+				activeEmoji = hat?.emoji ?? null;
+			}
 
 			setStats({
 				counter: profileResult.data?.counter || 0,
-				itemCount: itemsResult.data?.item_count || 0,
+				itemCount: info?.balance ?? 0,
+				cap: info?.cap ?? 25,
+				nextRegenSeconds: info?.next_regen_seconds ?? null,
+				activeHatId: activeId,
+				activeCategory,
+				activeEmoji,
+				currentTier: season?.current_tier ?? 1,
+				totalTiers: season?.season?.total_tiers ?? 30,
 			});
 		} catch (error) {
 			console.error("Error fetching stats:", error);
@@ -61,8 +269,20 @@ export default function Barn() {
 
 	const handleIncrement = async () => {
 		if (stats.itemCount <= 0) {
+			const next = stats.nextRegenSeconds;
+			showToast(
+				"Out of tickles!",
+				next != null
+					? `Next tickle in ${formatCountdown(next)} · max ${stats.cap}`
+					: `Wait for regen or buy more soon.`
+			);
 			return;
 		}
+
+		try {
+			player.seekTo(0);
+			player.play();
+		} catch {}
 
 		try {
 			const {
@@ -70,18 +290,30 @@ export default function Barn() {
 			} = await supabase.auth.getUser();
 			if (!user) throw new Error("User not logged in");
 
-			const { error } = await supabase.rpc(
-				"update_profile_and_item_count",
-				{
-					uid: user.id,
-				}
-			);
+			const { error } = await supabase.rpc("update_profile_and_item_count", {
+				uid: user.id,
+			});
 
 			if (error) throw error;
 			fetchStats();
 		} catch (error) {
 			console.error("Error incrementing count:", error);
 		}
+	};
+
+	const handleAvailableTap = () => {
+		if (stats.itemCount >= stats.cap) {
+			Alert.alert("Tickle bank full", `You're at the ${stats.cap} max.`);
+			return;
+		}
+		if (stats.nextRegenSeconds == null) {
+			Alert.alert("Tickle bank", `${stats.itemCount} / ${stats.cap}`);
+			return;
+		}
+		Alert.alert(
+			"Next tickle",
+			`In ${formatCountdown(stats.nextRegenSeconds)}.\nYou regenerate +1 every hour, up to ${stats.cap}.`
+		);
 	};
 
 	return (
@@ -91,29 +323,85 @@ export default function Barn() {
 			resizeMode="cover"
 		>
 			<SafeAreaView style={styles.contentContainer}>
-				<View style={styles.statsContainer}>
-					<View style={styles.statItem}>
-						<ThemedText style={styles.statLabel}>
-							TICKLES
-						</ThemedText>
-						<ThemedText style={styles.statValue}>
-							{stats.counter}
-						</ThemedText>
-					</View>
-					<View style={styles.statItem}>
-						<ThemedText style={styles.statLabel}>
-							AVAILABLE
-						</ThemedText>
-						<ThemedText style={styles.statValue}>
-							{stats.itemCount}
-						</ThemedText>
-					</View>
+				<View style={styles.statsRow}>
+					<PaperTicket
+						label="tickles"
+						value={stats.counter.toLocaleString()}
+						tapeColor="sun"
+						rotate={-3}
+						chipColor="roseDeep"
+						chipSymbol="♥"
+					/>
+					<PaperTicket
+						label="snouts ready"
+						value={`${stats.itemCount}`}
+						subValue={`/ ${stats.cap}`}
+						tapeColor="rose"
+						rotate={2.5}
+						chipColor="lilacDeep"
+						chipSymbol="✦"
+						onPress={handleAvailableTap}
+					/>
 				</View>
+
 				<View style={styles.mainSection}>
 					<View style={styles.swipeContainer}>
-						<SwipeElement onLuckySwipe={handleIncrement} />
+						<SwipeElement
+							onLuckySwipe={handleIncrement}
+							canTickle={stats.itemCount > 0}
+							playSixSeven={sixSevenTick}
+							equipped={
+								stats.activeHatId
+									? {
+											id: stats.activeHatId,
+											category: stats.activeCategory,
+											emoji: stats.activeEmoji,
+										}
+									: null
+							}
+						/>
 					</View>
 				</View>
+
+				<WoodenSign
+					tier={stats.currentTier}
+					totalTiers={stats.totalTiers}
+					onPress={() => router.push("/season")}
+				/>
+
+				{__DEV__ && (
+					<Pressable
+						onPress={() => setSixSevenTick((t) => t + 1)}
+						style={styles.dev67}
+					>
+						<Text style={styles.dev67Text}>67</Text>
+					</Pressable>
+				)}
+
+				{toast && (
+					<Animated.View
+						pointerEvents="none"
+						style={[
+							styles.toastWrap,
+							{
+								opacity: toastOpacity,
+								transform: [{ translateY: toastY }],
+							},
+						]}
+					>
+						<Sticker color="rose" rotate={-1.2} radius={14} style={styles.toast}>
+							<View style={styles.toastInner}>
+								<View style={styles.toastIcon}>
+									<Text style={styles.toastIconText}>♥</Text>
+								</View>
+								<View style={{ flex: 1, minWidth: 0 }}>
+									<Text style={styles.toastTitle}>{toast.title}</Text>
+									<Text style={styles.toastBody}>{toast.body}</Text>
+								</View>
+							</View>
+						</Sticker>
+					</Animated.View>
+				)}
 			</SafeAreaView>
 		</ImageBackground>
 	);
@@ -133,33 +421,68 @@ const styles = StyleSheet.create({
 		flex: 1,
 		height: SCREEN_HEIGHT,
 	},
-	statsContainer: {
+	statsRow: {
 		flexDirection: "row",
 		justifyContent: "space-between",
-		paddingHorizontal: 16,
-		paddingTop: Platform.OS === "ios" ? 8 : 20,
+		paddingHorizontal: 14,
+		paddingTop: Platform.OS === "ios" ? 12 : 24,
+		gap: 10,
 		zIndex: 1,
 	},
-	statItem: {
+	ticketWrap: {
+		position: "relative",
+		paddingTop: 12,
+		flex: 1,
+	},
+	tape: {
+		position: "absolute",
+		top: 0,
+		alignSelf: "center",
+		zIndex: 2,
+	},
+	ticket: {
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+		minWidth: 168,
+	},
+	ticketInner: {
+		flexDirection: "row",
 		alignItems: "center",
-		backgroundColor: "rgba(0, 0, 0, 0.6)",
-		paddingHorizontal: 16,
-		paddingVertical: 8,
-		borderRadius: 12,
-		minWidth: 100,
+		gap: 11,
 	},
-	statLabel: {
-		fontSize: 12,
-		fontWeight: "700",
-		letterSpacing: 2,
-		color: "#FFFFFF",
-		opacity: 0.9,
-		marginBottom: 4,
+	coin: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
 	},
-	statValue: {
-		fontSize: 22,
-		fontWeight: "700",
-		color: "#FFFFFF",
+	coinSymbol: {
+		color: WHIMSY.paper,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 16,
+		lineHeight: 17,
+	},
+	ticketLabel: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.mute,
+		lineHeight: 15,
+		marginBottom: 3,
+		letterSpacing: 0.3,
+	},
+	ticketValue: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 30,
+		color: WHIMSY.ink,
+		lineHeight: 30,
+	},
+	ticketSub: {
+		fontFamily: FONTS.hand,
+		fontSize: 17,
+		color: WHIMSY.mute,
 	},
 	mainSection: {
 		flex: 1,
@@ -168,6 +491,106 @@ const styles = StyleSheet.create({
 	swipeContainer: {
 		width: "100%",
 		alignItems: "center",
-		marginBottom: Platform.OS === "ios" ? 20 : 40,
+		// Push the pig past the bottom edge so its feet are clipped. ~11% of
+		// screen height keeps the framing consistent across iPhone SE → Pro Max.
+		marginBottom: -Math.round(SCREEN_HEIGHT * 0.11),
+	},
+	signWrap: {
+		alignItems: "center",
+		marginBottom: Platform.OS === "ios" ? 16 : 36,
+	},
+	signPost: {
+		width: 14,
+		height: 28,
+		backgroundColor: WHIMSY.peach,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		marginBottom: -10,
+		zIndex: 0,
+		transform: [{ rotate: "-1.5deg" }],
+	},
+	sign: {
+		paddingHorizontal: 18,
+		paddingVertical: 12,
+		minWidth: "78%",
+		zIndex: 1,
+	},
+	signInner: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+	},
+	signLabel: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		marginBottom: 2,
+	},
+	signTier: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 18,
+		color: WHIMSY.ink,
+	},
+	dev67: {
+		position: "absolute",
+		bottom: 100,
+		left: 14,
+		width: 48,
+		height: 48,
+		borderRadius: 24,
+		backgroundColor: "rgba(0,0,0,0.7)",
+		borderWidth: 2,
+		borderColor: WHIMSY.sun,
+		alignItems: "center",
+		justifyContent: "center",
+		zIndex: 20,
+	},
+	dev67Text: {
+		color: WHIMSY.sun,
+		fontFamily: FONTS.whimsy,
+		fontSize: 18,
+	},
+	toastWrap: {
+		position: "absolute",
+		top: Platform.OS === "ios" ? 100 : 80,
+		left: 16,
+		right: 16,
+		zIndex: 30,
+	},
+	toast: {
+		paddingHorizontal: 14,
+		paddingVertical: 10,
+	},
+	toastInner: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+	},
+	toastIcon: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		backgroundColor: WHIMSY.roseDeep,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	toastIconText: {
+		color: WHIMSY.paper,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 15,
+	},
+	toastTitle: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		color: WHIMSY.ink,
+		lineHeight: 18,
+	},
+	toastBody: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		marginTop: 1,
 	},
 });

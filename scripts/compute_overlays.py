@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+"""
+Auto-compute per-item overlay coordinates for the SwipeElement overlay system.
+
+Reads every PNG in assets/images/hats/, looks up its category from the
+shop_catalog migration, and computes a {bottom, left, width, height} overlay
+that places the item naturally on the pig's body — using the item's actual
+aspect ratio so its bottom edge anchors at the right anatomy point.
+
+Usage:
+    python3 scripts/compute_overlays.py
+
+Writes:
+    constants/hat_overlays.generated.ts  (drop-in TS dict)
+    tests/OVERLAY_REPORT.md              (flags items needing manual review)
+"""
+import os
+import re
+import sys
+from PIL import Image
+import numpy as np
+
+REPO = "/Users/bbroeking/projects/oink"
+ASSET_DIR = f"{REPO}/assets/images/hats"
+CATALOG_SQL = f"{REPO}/supabase/migrations/20260502030000_shop_catalog.sql"
+OUTPUT_TS = f"{REPO}/constants/hat_overlays.generated.ts"
+OUTPUT_REPORT = f"{REPO}/tests/OVERLAY_REPORT.md"
+
+# 300x300 card coordinates. `bottom` is distance from the card's bottom edge.
+# Pig anatomy reference (idle_1 sprite, scaled to 300x300):
+#   feet:   ~0
+#   chest:  ~100
+#   neck:   ~130
+#   snout:  ~170
+#   eyes:   ~200
+#   crown:  ~230
+#   ear top:~260
+#
+# Per category: anchor_y = where the item's BOTTOM edge sits;
+# target_width = base width to scale the item to;
+# left = horizontal offset (None = centered).
+CATEGORY = {
+    "hat":        {"anchor_y": 215, "width": 160, "left": None, "max_h": 200},
+    "glasses":    {"anchor_y": 130, "width": 140, "left": None, "max_h": 80},
+    "bow":        {"anchor_y": 220, "width": 80,  "left": None, "max_h": 80},
+    "scarf":      {"anchor_y": 60,  "width": 180, "left": None, "max_h": 130},
+    "mask":       {"anchor_y": 110, "width": 160, "left": None, "max_h": 120},
+    "necklace":   {"anchor_y": 70,  "width": 140, "left": None, "max_h": 100},
+    "cape":       {"anchor_y": 30,  "width": 240, "left": None, "max_h": 220},
+    "held":       {"anchor_y": 50,  "width": 80,  "left": 200,  "max_h": 180},
+    "aura":       {"anchor_y": 0,   "width": 300, "left": 0,    "max_h": 300},
+    "background": {"anchor_y": 0,   "width": 300, "left": 0,    "max_h": 300},
+}
+CARD_W = 300
+
+
+def parse_catalog():
+    """Build {item_id: category} from the shop_catalog migration."""
+    items = {}
+    with open(CATALOG_SQL) as f:
+        for line in f:
+            # Match rows like: ('beanie', 'Beanie', '🧢', 60, 11, 'hat', 'common', '...')
+            m = re.match(
+                r"^\('([^']+)',\s*'[^']+',\s*'[^']+',\s*\d+,\s*\d+,\s*'([^']+)',",
+                line,
+            )
+            if m:
+                items[m.group(1)] = m.group(2)
+    # Originals not in catalog migration:
+    for orig_id in ["wizard", "cowboy", "tophat", "party"]:
+        items.setdefault(orig_id, "hat")
+    items.setdefault("monocle", "glasses")
+    return items
+
+
+def get_aspect(png_path):
+    """Trimmed-bbox aspect ratio of opaque pixels, or None if empty."""
+    im = Image.open(png_path).convert("RGBA")
+    arr = np.array(im)
+    alpha = arr[:, :, 3]
+    mask = alpha > 50
+    if not mask.any():
+        return None, None
+    ys, xs = np.where(mask)
+    w = int(xs.max() - xs.min() + 1)
+    h = int(ys.max() - ys.min() + 1)
+    return w / h, (w, h)
+
+
+def compute_overlay(category, aspect):
+    cfg = CATEGORY.get(category, CATEGORY["hat"])
+    width = cfg["width"]
+    height = max(20, round(width / aspect)) if aspect and aspect > 0.05 else width
+    height = min(height, cfg.get("max_h", 300))  # cap so tall items don't cover face
+    bottom = cfg["anchor_y"]
+    left = cfg["left"] if cfg["left"] is not None else (CARD_W - width) // 2
+    return {"bottom": bottom, "left": left, "width": width, "height": height}
+
+
+def main():
+    catalog = parse_catalog()
+    overlays = {}
+    flags = []
+    skipped = []
+
+    for fname in sorted(os.listdir(ASSET_DIR)):
+        if not fname.endswith(".png"):
+            continue
+        item_id = fname[:-4]
+        category = catalog.get(item_id)
+        if not category:
+            skipped.append(f"{item_id}: not in catalog")
+            continue
+        path = os.path.join(ASSET_DIR, fname)
+        aspect, dims = get_aspect(path)
+        if aspect is None:
+            flags.append(f"{item_id}: no opaque pixels")
+            continue
+        overlays[item_id] = compute_overlay(category, aspect)
+
+        # Flags for unusual aspect ratios (probably need manual nudge)
+        if aspect < 0.45:
+            flags.append(
+                f"{item_id} ({category}): tall/narrow aspect {aspect:.2f} "
+                f"({dims[0]}×{dims[1]}) — likely needs vertical nudge"
+            )
+        elif aspect > 2.5:
+            flags.append(
+                f"{item_id} ({category}): wide/short aspect {aspect:.2f} "
+                f"({dims[0]}×{dims[1]}) — may overflow horizontally"
+            )
+
+    # Write generated TS
+    with open(OUTPUT_TS, "w") as f:
+        f.write(
+            "// AUTO-GENERATED by scripts/compute_overlays.py\n"
+            "// Re-run after adding new item PNGs.\n"
+            "// Spot-check via the dev Align screen and override anything that looks off.\n\n"
+            "import { HatOverlay } from \"./hats\";\n\n"
+            "export const HAT_OVERLAYS_GENERATED: Record<string, HatOverlay> = {\n"
+        )
+        for item_id in sorted(overlays.keys()):
+            o = overlays[item_id]
+            key = (
+                item_id
+                if re.match(r"^[a-zA-Z_$][a-zA-Z0-9_$]*$", item_id)
+                else f"'{item_id}'"
+            )
+            f.write(
+                f"\t{key}: {{ bottom: {o['bottom']}, left: {o['left']}, "
+                f"width: {o['width']}, height: {o['height']} }},\n"
+            )
+        f.write("};\n")
+
+    # Write report
+    with open(OUTPUT_REPORT, "w") as f:
+        f.write("# Overlay auto-placement report\n\n")
+        f.write(f"Generated {len(overlays)} overlays for items in {ASSET_DIR}.\n\n")
+        f.write(f"Output: `{OUTPUT_TS.replace(REPO + '/', '')}`\n\n")
+        if flags:
+            f.write(f"## {len(flags)} items flagged for manual review\n\n")
+            f.write(
+                "These have unusual aspect ratios — auto-placement got them in the right "
+                "ballpark but you'll likely want to nudge in the dev Align screen.\n\n"
+            )
+            for line in flags:
+                f.write(f"- {line}\n")
+        else:
+            f.write("## No flags — all items are well within expected aspect ratios.\n\n")
+        if skipped:
+            f.write(f"\n## {len(skipped)} items skipped (not in catalog)\n\n")
+            for line in skipped:
+                f.write(f"- {line}\n")
+        f.write("\n## Wire it in\n\n")
+        f.write(
+            "```ts\n"
+            "// constants/hats.ts\n"
+            'import { HAT_OVERLAYS_GENERATED } from "./hat_overlays.generated";\n'
+            "\n"
+            "export const HAT_OVERLAYS = {\n"
+            "  ...HAT_OVERLAYS_GENERATED,\n"
+            "  // override here for any item that needs manual tuning:\n"
+            "  // wizard: { bottom: 215, left: 70, width: 160, height: 160 },\n"
+            "};\n"
+            "```\n"
+        )
+
+    print(f"✓ Generated {len(overlays)} overlays → {OUTPUT_TS}")
+    if flags:
+        print(f"⚠ {len(flags)} items flagged — see {OUTPUT_REPORT}")
+    if skipped:
+        print(f"  skipped {len(skipped)} (not in catalog)")
+
+
+if __name__ == "__main__":
+    main()
