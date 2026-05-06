@@ -95,7 +95,11 @@ $function$;
 -- Replaces the prior version (most recently from 20260504010000_vip.sql).
 -- Adds: tickles_earned bump, global lucky counter increment, atomic claim.
 
-CREATE OR REPLACE FUNCTION public.update_profile_and_item_count(uid uuid)
+-- DROP first because the return type changes (was bigint, now jsonb).
+-- Postgres rejects CREATE OR REPLACE when the return shape differs.
+DROP FUNCTION IF EXISTS public.update_profile_and_item_count(uuid);
+
+CREATE FUNCTION public.update_profile_and_item_count(uid uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
