@@ -17,13 +17,27 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
+import * as Sentry from "@sentry/react-native";
 import { supabase } from "@/utils/supabase";
+
+// Initialize Sentry as early as possible. Gated on DSN env var so dev
+// without a project still works.
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
+if (SENTRY_DSN && !__DEV__) {
+	Sentry.init({
+		dsn: SENTRY_DSN,
+		// Send errors but don't trace every interaction — costs add up
+		tracesSampleRate: 0.1,
+		// Don't crash the app when Sentry itself fails
+		enableNative: true,
+	});
+}
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function RootLayoutInner() {
 	const colorScheme = useColorScheme();
 	const [loaded] = useFonts({
 		SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
@@ -65,3 +79,8 @@ export default function RootLayout() {
 		</ThemeProvider>
 	);
 }
+
+// Wrap the root in Sentry's error boundary when DSN is configured.
+// Otherwise just export RootLayoutInner directly.
+const RootLayout = SENTRY_DSN ? Sentry.wrap(RootLayoutInner) : RootLayoutInner;
+export default RootLayout;

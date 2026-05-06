@@ -9,6 +9,7 @@ import {
 	Easing,
 } from "react-native";
 import { useAudioPlayer } from "expo-audio";
+import * as Haptics from "expo-haptics";
 import {
 	HAT_IMAGES,
 	HAT_OVERLAYS,
@@ -115,6 +116,11 @@ export default function SwipeElement({
 	const handlePress = () => {
 		// Always give tactile press feedback — even if we're going to ignore
 		// the tap because of an in-progress reaction.
+		Haptics.impactAsync(
+			canTickle
+				? Haptics.ImpactFeedbackStyle.Light
+				: Haptics.ImpactFeedbackStyle.Soft
+		).catch(() => {});
 		Animated.sequence([
 			Animated.timing(scale, {
 				toValue: 0.94,
@@ -203,6 +209,9 @@ export default function SwipeElement({
 			sixSevenPlayer.seekTo(0);
 			sixSevenPlayer.play();
 		} catch {}
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+			() => {}
+		);
 
 		Animated.sequence([
 			// "6" — tilt left + 6 text

@@ -25,6 +25,9 @@ import {
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
 import { COLORS, FONTS, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { ItemPreviewModal } from "../../components/ItemPreviewModal";
+import { RarityFx } from "../../components/ui/RarityFx";
+import * as Haptics from "expo-haptics";
 
 const RARITY_GRADIENT: Record<string, [string, string]> = {
 	common: ["#FAF7F3", "#EFEAE3"],
@@ -198,6 +201,7 @@ function ItemCard({
 	onBuy,
 	onEquip,
 	onUnequip,
+	onPreview,
 }: {
 	item: HatRow;
 	owned: boolean;
@@ -208,13 +212,15 @@ function ItemCard({
 	onBuy: () => void;
 	onEquip: () => void;
 	onUnequip: () => void;
+	onPreview?: () => void;
 }) {
 	const rarity = item.rarity ?? "common";
 	const rarityColor = RARITY_COLORS[rarity];
 	const isPremium = rarity === "epic" || rarity === "legendary";
 
 	return (
-		<View
+		<Pressable
+			onPress={onPreview}
 			style={[
 				styles.card,
 				{
@@ -227,20 +233,22 @@ function ItemCard({
 				},
 			]}
 		>
-			<LinearGradient
-				colors={RARITY_GRADIENT[rarity]}
-				style={styles.cardThumb}
-			>
-				<HatThumb item={item} size={86} />
-				<View
-					style={[
-						styles.rarityBadge,
-						{ backgroundColor: rarityColor },
-					]}
+			<RarityFx rarity={rarity as any} style={styles.cardThumbWrap}>
+				<LinearGradient
+					colors={RARITY_GRADIENT[rarity]}
+					style={styles.cardThumb}
 				>
-					<Text style={styles.rarityText}>{rarity.toUpperCase()}</Text>
-				</View>
-			</LinearGradient>
+					<HatThumb item={item} size={86} />
+					<View
+						style={[
+							styles.rarityBadge,
+							{ backgroundColor: rarityColor },
+						]}
+					>
+						<Text style={styles.rarityText}>{rarity.toUpperCase()}</Text>
+					</View>
+				</LinearGradient>
+			</RarityFx>
 			<View style={styles.cardBody}>
 				<Text style={styles.cardName} numberOfLines={1}>
 					{item.name}
@@ -288,7 +296,7 @@ function ItemCard({
 					</Button>
 				)}
 			</View>
-		</View>
+		</Pressable>
 	);
 }
 
@@ -406,6 +414,7 @@ export default function ShopScreen() {
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [counter, setCounter] = useState<number>(0);
 	const [busyId, setBusyId] = useState<string | null>(null);
+	const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
 	const [resetsIn, setResetsIn] = useState<number>(0);
 	const [view, setView] = useState<"daily" | "browse" | "wardrobe">("daily");
 	const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -464,6 +473,9 @@ export default function ShopScreen() {
 		if (error) return Alert.alert("Couldn't buy", "Try again.");
 		const r = data as any;
 		if (!r.ok) {
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
+				() => {}
+			);
 			if (r.reason === "insufficient")
 				return Alert.alert(
 					"Not enough tickles",
@@ -472,6 +484,9 @@ export default function ShopScreen() {
 			if (r.reason === "already_owned") return Alert.alert("Owned", "Already yours.");
 			return Alert.alert("Couldn't buy", r.reason ?? "");
 		}
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+			() => {}
+		);
 		load();
 	};
 
@@ -480,6 +495,7 @@ export default function ShopScreen() {
 			data: { user },
 		} = await supabase.auth.getUser();
 		if (!user) return;
+		Haptics.selectionAsync().catch(() => {});
 		await supabase
 			.from("profiles")
 			.update({ active_hat_id: hatId })
@@ -539,6 +555,7 @@ export default function ShopScreen() {
 			onBuy={() => handleBuy(item)}
 			onEquip={() => handleEquip(item.id)}
 			onUnequip={() => handleEquip(null)}
+			onPreview={() => setPreviewItem(item)}
 		/>
 	);
 
@@ -575,6 +592,7 @@ export default function ShopScreen() {
 						onBuy={() => handleBuy(a)}
 						onEquip={() => handleEquip(a.id)}
 						onUnequip={() => handleEquip(null)}
+						onPreview={() => setPreviewItem(a)}
 					/>
 				</View>
 				<View style={styles.rowSlot}>
@@ -589,6 +607,7 @@ export default function ShopScreen() {
 							onBuy={() => handleBuy(b)}
 							onEquip={() => handleEquip(b.id)}
 							onUnequip={() => handleEquip(null)}
+							onPreview={() => setPreviewItem(b)}
 						/>
 					) : null}
 				</View>
@@ -779,6 +798,31 @@ export default function ShopScreen() {
 					/>
 				)}
 			</SafeAreaView>
+
+			<ItemPreviewModal
+				item={previewItem}
+				owned={previewItem ? owned.has(previewItem.id) : false}
+				active={previewItem ? activeId === previewItem.id : false}
+				canAfford={previewItem ? counter >= previewItem.cost : false}
+				balance={counter}
+				busy={previewItem ? busyId === previewItem.id : false}
+				onClose={() => setPreviewItem(null)}
+				onBuy={() => {
+					if (previewItem) {
+						handleBuy(previewItem);
+					}
+				}}
+				onEquip={() => {
+					if (previewItem) {
+						handleEquip(previewItem.id);
+						setPreviewItem(null);
+					}
+				}}
+				onUnequip={() => {
+					handleEquip(null);
+					setPreviewItem(null);
+				}}
+			/>
 		</View>
 	);
 }
@@ -937,6 +981,9 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		overflow: "hidden",
 		...STICKER_SHADOW,
+	},
+	cardThumbWrap: {
+		// container for the rarity-fx wrapper around the thumb
 	},
 	cardThumb: {
 		height: 120,

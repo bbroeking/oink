@@ -1,10 +1,12 @@
 import { Tabs } from "expo-router";
 import React, { useState, useEffect, useCallback } from "react";
 import { Platform, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabase";
 import SupaAuth from "@/components/SupaAuth";
 import UsernameSetup from "@/components/UsernameSetup";
+import { Onboarding } from "@/components/Onboarding";
 import { Icon, IconName } from "@/components/ui/Icon";
 import { COLORS, FONTS, WHIMSY } from "@/constants/theme";
 import { initIAP } from "@/utils/iap";
@@ -32,6 +34,7 @@ function TabIcon({ name, color, focused }: { name: string; color: string; focuse
 export default function TabLayout() {
 	const [session, setSession] = useState<Session | null>(null);
 	const [username, setUsername] = useState<string | null | undefined>(undefined);
+	const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
 
 	useEffect(() => {
 		supabase.auth.getSession().then(({ data: { session } }) => {
@@ -60,6 +63,12 @@ export default function TabLayout() {
 		refetchUsername();
 	}, [refetchUsername]);
 
+	useEffect(() => {
+		AsyncStorage.getItem("seen_onboarding").then((v) => {
+			setNeedsOnboarding(v !== "1");
+		});
+	}, []);
+
 	if (!session) {
 		return (
 			<View style={{ flex: 1 }}>
@@ -74,6 +83,10 @@ export default function TabLayout() {
 
 	if (!username) {
 		return <UsernameSetup userId={session.user.id} onSaved={refetchUsername} />;
+	}
+
+	if (needsOnboarding) {
+		return <Onboarding onDone={() => setNeedsOnboarding(false)} />;
 	}
 
 	return (

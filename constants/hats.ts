@@ -163,32 +163,35 @@ export type PigAnimationKey =
 	| "wave"
 	| "arms_up";
 
+// dy is added to overlay.bottom. Positive dy = item moves UP on screen
+// (matching the pig moving up). Magnitudes are kept small so items don't
+// clip past the card's top edge during big motions like the jump apex.
 export const PIG_FRAME_OFFSETS: Record<
 	PigAnimationKey,
 	{ dx: number; dy: number }[]
 > = {
 	idle: [
 		{ dx: 0, dy: 0 },
-		{ dx: 0, dy: -3 }, // inhale (squash)
+		{ dx: 0, dy: -2 }, // inhale: body squashes, head dips slightly
 		{ dx: 0, dy: 0 },
-		{ dx: 0, dy: 2 }, // exhale (stretch)
+		{ dx: 0, dy: 2 }, // exhale: body stretches, head lifts slightly
 	],
 	walk: [
-		{ dx: 0, dy: 0 },
-		{ dx: 0, dy: -4 }, // passing (lift)
-		{ dx: 0, dy: 0 },
-		{ dx: 0, dy: -4 },
+		{ dx: 0, dy: 0 }, // contact (left)
+		{ dx: 0, dy: 4 }, // passing: body lifts
+		{ dx: 0, dy: 0 }, // contact (right)
+		{ dx: 0, dy: 4 }, // passing: body lifts
 	],
 	jump: [
-		{ dx: 0, dy: 8 }, // anticipation — squat down (item drops with pig)
-		{ dx: 0, dy: -22 }, // takeoff — rise
-		{ dx: 0, dy: -60 }, // apex — high up
-		{ dx: 0, dy: 18 }, // landing — squat
+		{ dx: 0, dy: -8 }, // anticipation: squat down, items drop with pig
+		{ dx: 0, dy: 6 }, // takeoff: pig leaving the ground
+		{ dx: 0, dy: 18 }, // apex: pig is highest (kept ≤20 to avoid clip)
+		{ dx: 0, dy: -10 }, // landing: hard squat impact
 	],
 	happy: [{ dx: 0, dy: 0 }],
-	sad: [{ dx: 0, dy: -4 }], // ears down, slight slump
-	surprise: [{ dx: 0, dy: 2 }], // ears up
-	wave: [{ dx: 0, dy: 4 }], // body tilt, lifts a touch
+	sad: [{ dx: 0, dy: -3 }], // ears down, slight slump
+	surprise: [{ dx: 0, dy: 3 }], // ears up, slight rise
+	wave: [{ dx: 0, dy: 3 }], // body tilt + arm up
 	arms_up: [
 		{ dx: 0, dy: 4 },
 		{ dx: 0, dy: 4 },

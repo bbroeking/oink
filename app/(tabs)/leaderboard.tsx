@@ -13,6 +13,7 @@ import { supabase } from "../../utils/supabase";
 import { Icon } from "../../components/ui/Icon";
 import { PigAvatar } from "../../components/ui/PigAvatar";
 import { Sticker } from "../../components/ui/Sticker";
+import { ListRowSkeleton } from "../../components/ui/Skeleton";
 import { COLORS, FONTS, WHIMSY } from "@/constants/theme";
 
 type Scope = "global" | "friends";
@@ -21,6 +22,7 @@ interface LeaderboardEntry {
 	id: string;
 	username: string | null;
 	counter: number;
+	tickles_earned: number;
 	active_hat_id: string | null;
 }
 
@@ -40,7 +42,7 @@ function ChampionPoster({ champ }: { champ: LeaderboardEntry }) {
 							{champ.username ?? "Anonymous"}
 						</Text>
 						<Text style={styles.champScore}>
-							{(champ.counter || 0).toLocaleString()} lifetime tickles
+							{(champ.tickles_earned || champ.counter || 0).toLocaleString()} lifetime tickles
 						</Text>
 					</View>
 					<View style={styles.bigOne}>
@@ -84,7 +86,7 @@ function ClippingRow({
 					)}
 				</View>
 				<Text style={styles.rowScore}>
-					{(player.counter || 0).toLocaleString()} ♥
+					{(player.tickles_earned || player.counter || 0).toLocaleString()} ♥
 				</Text>
 			</Sticker>
 		</View>
@@ -117,20 +119,20 @@ export default function LeaderboardScreen() {
 				}
 				const { data, error } = await supabase
 					.from("profiles")
-					.select("id, username, counter, active_hat_id")
+					.select("id, username, counter, tickles_earned, active_hat_id")
 					.in("id", ids)
 					.not("username", "is", null)
 					.neq("username", "")
-					.order("counter", { ascending: false });
+					.order("tickles_earned", { ascending: false });
 				if (error) throw error;
 				setLeaderboard((data as LeaderboardEntry[]) || []);
 			} else {
 				const { data, error } = await supabase
 					.from("profiles")
-					.select("id, username, counter, active_hat_id")
+					.select("id, username, counter, tickles_earned, active_hat_id")
 					.not("username", "is", null)
 					.neq("username", "")
-					.order("counter", { ascending: false })
+					.order("tickles_earned", { ascending: false })
 					.limit(50);
 				if (error) throw error;
 				setLeaderboard((data as LeaderboardEntry[]) || []);
@@ -190,7 +192,11 @@ export default function LeaderboardScreen() {
 				</View>
 
 				{loading ? (
-					<Text style={styles.empty}>Loading...</Text>
+					<View style={styles.listContent}>
+						{Array.from({ length: 6 }).map((_, i) => (
+							<ListRowSkeleton key={i} />
+						))}
+					</View>
 				) : leaderboard.length === 0 ? (
 					<Text style={styles.empty}>
 						{scope === "friends"

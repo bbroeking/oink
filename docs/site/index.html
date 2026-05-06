@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tickle the Pig — a cozy mobile game</title>
+<meta name="description" content="A cute pig dress-up game for iOS. Tap to tickle, earn hearts, dress up your pig with 100+ cosmetic items." />
+<meta property="og:title" content="Tickle the Pig" />
+<meta property="og:description" content="A cute pig dress-up game for iOS. Coming soon." />
+<meta property="og:type" content="website" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Patrick+Hand&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ink: #2a1f15;
+    --paper: #fffaf0;
+    --cream: #fbeee2;
+    --rose: #ffd6dc;
+    --sage: #c9dec1;
+    --sun: #ffd87a;
+    --accent: #c25a3f;
+    --mute: rgba(40,30,20,0.6);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--cream);
+    background-image:
+      radial-gradient(circle at 20% 8%, rgba(255,200,180,0.4), transparent 40%),
+      radial-gradient(circle at 80% 30%, rgba(200,220,255,0.35), transparent 45%),
+      radial-gradient(circle at 50% 90%, rgba(220,240,200,0.4), transparent 50%);
+    color: var(--ink);
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 80px 28px 60px; }
+  .kicker {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-family: 'Caprasimo', Georgia, serif;
+    font-weight: 400;
+    font-size: 64px;
+    line-height: 1.05;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+  .tag {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 22px;
+    color: var(--mute);
+    margin-bottom: 36px;
+  }
+  .hero {
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 24px;
+    box-shadow: 4px 4px 0 0 var(--ink);
+    padding: 32px;
+    transform: rotate(-0.6deg);
+    margin-bottom: 40px;
+  }
+  .pigplaceholder {
+    aspect-ratio: 1;
+    max-width: 360px;
+    margin: 0 auto;
+    background: var(--rose);
+    border: 2px solid var(--ink);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Caprasimo', serif;
+    font-size: 96px;
+  }
+  .ctaRow { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 36px; }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 22px;
+    background: var(--sun);
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: 4px 4px 0 0 var(--ink);
+    font-family: 'Caprasimo', serif;
+    font-size: 17px;
+    color: var(--ink);
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .cta:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 0 var(--ink); }
+  .cta.secondary { background: var(--paper); }
+  .feats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 48px; }
+  .feat {
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 16px;
+    padding: 18px;
+    transform: rotate(0.4deg);
+  }
+  .feat:nth-child(2) { transform: rotate(-0.5deg); }
+  .feat:nth-child(3) { transform: rotate(0.6deg); }
+  .feat h3 {
+    font-family: 'Caprasimo', serif;
+    font-weight: 400;
+    font-size: 19px;
+    margin: 0 0 6px;
+  }
+  .feat p {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 16px;
+    color: var(--ink);
+    opacity: 0.8;
+    margin: 0;
+  }
+  form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 36px; }
+  input[type="email"] {
+    flex: 1;
+    min-width: 220px;
+    padding: 12px 16px;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  button[type="submit"] {
+    padding: 12px 22px;
+    background: var(--rose);
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    font-family: 'Caprasimo', serif;
+    font-size: 16px;
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 4px 4px 0 0 var(--ink);
+  }
+  footer {
+    border-top: 1px solid rgba(40,30,20,0.15);
+    padding-top: 24px;
+    font-family: 'Patrick Hand', cursive;
+    color: var(--mute);
+    font-size: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  footer a { color: var(--accent); }
+  @media (max-width: 600px) {
+    h1 { font-size: 44px; }
+    .wrap { padding: 48px 22px 40px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="kicker">★ coming soon to iOS</div>
+    <h1>Tickle the Pig</h1>
+    <div class="tag">A cozy mobile game where you tickle a pig, earn hearts, and dress her up.</div>
+
+    <div class="hero">
+      <div class="pigplaceholder">🐷</div>
+    </div>
+
+    <div class="ctaRow">
+      <a class="cta" href="#" id="testflight" aria-disabled="true">Join TestFlight (soon)</a>
+      <a class="cta secondary" href="#waitlist">Notify me on launch</a>
+    </div>
+
+    <div class="feats">
+      <div class="feat">
+        <h3>One tap, big feels</h3>
+        <p>Tap your pig to tickle her. She reacts. You earn hearts. Repeat forever.</p>
+      </div>
+      <div class="feat">
+        <h3>100+ cosmetics</h3>
+        <p>Hats, glasses, masks, capes, auras, scenery. Mix and match — your pig, your vibe.</p>
+      </div>
+      <div class="feat">
+        <h3>Lucky tickles</h3>
+        <p>Each day has 3 lucky numbers. Hit one with a tickle and win bonus hearts.</p>
+      </div>
+    </div>
+
+    <h2 style="font-family:'Caprasimo',serif;font-weight:400;font-size:28px;margin-bottom:6px" id="waitlist">Get the launch ping</h2>
+    <p style="font-family:'Patrick Hand',cursive;color:var(--mute);margin-top:0;margin-bottom:14px">No spam — one email when the app is live.</p>
+
+    <form action="https://buttondown.email/api/emails/embed-subscribe/ticklethepig" method="post" target="popupwindow">
+      <input type="email" name="email" placeholder="you@email.com" required />
+      <button type="submit">Notify me</button>
+    </form>
+
+    <footer>
+      <a href="./privacy.html">Privacy Policy</a>
+      <span>© Brian Broeking · 2026</span>
+    </footer>
+  </div>
+</body>
+</html>
