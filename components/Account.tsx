@@ -22,6 +22,7 @@ import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker, Tape } from "./ui/Sticker";
 import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import {
+	IAP_ENABLED,
 	initIAP,
 	isPro,
 	presentPaywall,
@@ -177,45 +178,49 @@ export function Account({ session }: { session: Session }) {
 					)}
 
 					{/* Pro card — torn ticket stub */}
-					<Sticker
-						color={isVip ? "lilac" : "sun"}
-						rotate={1.2}
-						radius={16}
-						style={styles.vipWrap}
-					>
-						<View style={styles.vipBadgeRow}>
-							<Icon name="star" size={14} filled color={WHIMSY.ink} strokeWidth={0} />
-							<Text style={styles.vipBadge}>TICKLE THE PIG PRO</Text>
-						</View>
-						<Text style={styles.vipTitle}>
-							{isVip ? "You're Pro" : "Become Pro"}
-						</Text>
-						<Text style={styles.vipDesc}>
-							{isVip
-								? "+25 cap · 2× regen · all premium passes · exclusive cosmetics"
-								: "+25 cap · 2× regen · all premium passes · exclusive cosmetics"}
-						</Text>
-						{isVip ? (
-							<Pressable
-								onPress={handleManage}
-								style={[styles.vipBtn, { backgroundColor: WHIMSY.paper }]}
-							>
-								<Text style={styles.vipBtnText}>Manage subscription</Text>
-							</Pressable>
-						) : (
-							<Pressable
-								onPress={handleUnlockPro}
-								disabled={busy}
-								style={[styles.vipBtn, { backgroundColor: WHIMSY.lilac }]}
-							>
-								<Text style={styles.vipBtnText}>Unlock Pro</Text>
-							</Pressable>
-						)}
-					</Sticker>
+					{IAP_ENABLED && (
+						<Sticker
+							color={isVip ? "lilac" : "sun"}
+							rotate={1.2}
+							radius={16}
+							style={styles.vipWrap}
+						>
+							<View style={styles.vipBadgeRow}>
+								<Icon name="star" size={14} filled color={WHIMSY.ink} strokeWidth={0} />
+								<Text style={styles.vipBadge}>TICKLE THE PIG PRO</Text>
+							</View>
+							<Text style={styles.vipTitle}>
+								{isVip ? "You're Pro" : "Become Pro"}
+							</Text>
+							<Text style={styles.vipDesc}>
+								{isVip
+									? "+25 cap · 2× regen · all premium passes · exclusive cosmetics"
+									: "+25 cap · 2× regen · all premium passes · exclusive cosmetics"}
+							</Text>
+							{isVip ? (
+								<Pressable
+									onPress={handleManage}
+									style={[styles.vipBtn, { backgroundColor: WHIMSY.paper }]}
+								>
+									<Text style={styles.vipBtnText}>Manage subscription</Text>
+								</Pressable>
+							) : (
+								<Pressable
+									onPress={handleUnlockPro}
+									disabled={busy}
+									style={[styles.vipBtn, { backgroundColor: WHIMSY.lilac }]}
+								>
+									<Text style={styles.vipBtnText}>Unlock Pro</Text>
+								</Pressable>
+							)}
+						</Sticker>
+					)}
 
-					<Pressable onPress={handleRestore} style={styles.restoreLink}>
-						<Text style={styles.restoreLinkText}>Restore purchases</Text>
-					</Pressable>
+					{IAP_ENABLED && (
+						<Pressable onPress={handleRestore} style={styles.restoreLink}>
+							<Text style={styles.restoreLinkText}>Restore purchases</Text>
+						</Pressable>
+					)}
 
 					<View style={{ marginTop: 8 }}>
 						<Friends userId={session.user.id} />

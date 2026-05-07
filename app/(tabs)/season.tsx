@@ -14,6 +14,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../../utils/supabase";
 import {
 	initIAP,
+	IAP_ENABLED,
 	isPro,
 	presentPaywall,
 } from "../../utils/iap";
@@ -303,7 +304,7 @@ export default function SeasonScreen() {
 								]}
 							/>
 						</View>
-						{!premium && (
+						{IAP_ENABLED && !premium && (
 							<Pressable
 								onPress={() => setSaleOpen(true)}
 								style={[

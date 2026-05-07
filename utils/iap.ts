@@ -27,6 +27,11 @@ import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 import { Platform } from "react-native";
 import { log } from "./log";
 
+// Master kill switch — when false, every IAP entry point becomes a no-op,
+// nothing is initialized, no network calls are made, and UI gates on it to
+// hide paywall surfaces. Flip to `true` to bring monetization back online.
+export const IAP_ENABLED = false;
+
 // Public iOS API key — find at: https://app.revenuecat.com/projects/<project>/apps/<app>
 //
 // Override at build time by setting EXPO_PUBLIC_REVENUECAT_IOS_KEY in your env
@@ -55,6 +60,7 @@ let initialized = false;
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function initIAP(userId: string) {
+	if (!IAP_ENABLED) return;
 	if (initialized) {
 		try {
 			await Purchases.logIn(userId);
@@ -85,6 +91,7 @@ export async function initIAP(userId: string) {
 
 // Single source of truth for "does the user have Tickle the Pig Pro?"
 export async function isPro(): Promise<boolean> {
+	if (!IAP_ENABLED) return false;
 	try {
 		const info = await Purchases.getCustomerInfo();
 		return !!info.entitlements.active[ENTITLEMENT_PRO];
@@ -94,6 +101,7 @@ export async function isPro(): Promise<boolean> {
 }
 
 export async function getCustomerInfo(): Promise<CustomerInfo | null> {
+	if (!IAP_ENABLED) return null;
 	try {
 		return await Purchases.getCustomerInfo();
 	} catch (e) {
@@ -105,6 +113,7 @@ export async function getCustomerInfo(): Promise<CustomerInfo | null> {
 // Subscribe to entitlement changes — e.g., when an Apple webhook fires after
 // purchase, or when restore returns. Use in a useEffect.
 export function onCustomerInfoUpdate(cb: (info: CustomerInfo) => void) {
+	if (!IAP_ENABLED) return () => {};
 	Purchases.addCustomerInfoUpdateListener(cb);
 	return () => Purchases.removeCustomerInfoUpdateListener(cb);
 }
@@ -114,6 +123,7 @@ export function onCustomerInfoUpdate(cb: (info: CustomerInfo) => void) {
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function getCurrentOffering(): Promise<PurchasesOffering | null> {
+	if (!IAP_ENABLED) return null;
 	try {
 		const offerings = await Purchases.getOfferings();
 		return offerings.current;
@@ -136,6 +146,7 @@ type PaywallOutcome = {
 // Present paywall ONLY if the user doesn't already have the entitlement.
 // Returns immediately as { ok:true, reason: "purchased" } if they do.
 export async function presentPaywallIfNeeded(): Promise<PaywallOutcome> {
+	if (!IAP_ENABLED) return { ok: false, reason: "cancelled" };
 	try {
 		const result = await RevenueCatUI.presentPaywallIfNeeded({
 			requiredEntitlementIdentifier: ENTITLEMENT_PRO,
@@ -150,6 +161,7 @@ export async function presentPaywallIfNeeded(): Promise<PaywallOutcome> {
 // Always present the paywall (even if user already has Pro — useful if you want
 // to let them upgrade from Monthly to Lifetime, etc.).
 export async function presentPaywall(): Promise<PaywallOutcome> {
+	if (!IAP_ENABLED) return { ok: false, reason: "cancelled" };
 	try {
 		const result = await RevenueCatUI.presentPaywall();
 		return mapPaywallResult(result);
@@ -182,6 +194,7 @@ function mapPaywallResult(result: PAYWALL_RESULT): PaywallOutcome {
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function presentCustomerCenter(): Promise<void> {
+	if (!IAP_ENABLED) return;
 	try {
 		await RevenueCatUI.presentCustomerCenter();
 	} catch (e) {
@@ -199,6 +212,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<{
 	customerInfo?: CustomerInfo;
 	reason?: string;
 }> {
+	if (!IAP_ENABLED) return { ok: false, reason: "cancelled" };
 	try {
 		const { customerInfo } = await Purchases.purchasePackage(pkg);
 		return { ok: true, customerInfo };
@@ -213,6 +227,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<{
 export async function purchaseProductId(
 	productId: string
 ): Promise<{ ok: boolean; reason?: string }> {
+	if (!IAP_ENABLED) return { ok: false, reason: "cancelled" };
 	const offerings = await Purchases.getOfferings();
 	const allPackages = offerings.current?.availablePackages ?? [];
 	const pkg = allPackages.find((p) => p.product.identifier === productId);
@@ -226,6 +241,7 @@ export async function restorePurchases(): Promise<{
 	ok: boolean;
 	customerInfo?: CustomerInfo;
 }> {
+	if (!IAP_ENABLED) return { ok: false };
 	try {
 		const info = await Purchases.restorePurchases();
 		return { ok: true, customerInfo: info };
