@@ -487,7 +487,7 @@ export default function ShopScreen() {
 			);
 			if (r.reason === "insufficient")
 				return Alert.alert(
-					"Not enough tickles",
+					"Not enough snouts",
 					`Need ${r.need}, you have ${r.have}.`
 				);
 			if (r.reason === "already_owned") return Alert.alert("Owned", "Already yours.");

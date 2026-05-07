@@ -12,6 +12,7 @@ import {
 	Alert,
 	Text,
 	Animated,
+	DevSettings,
 } from "react-native";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -37,16 +38,6 @@ interface Stats {
 	activeEmoji: string | null;
 	currentTier: number;
 	totalTiers: number;
-}
-
-interface LuckyClaim {
-	number: number;
-	username: string | null;
-}
-interface LuckyToday {
-	numbers: number[];
-	global_counter: number;
-	claims: LuckyClaim[];
 }
 
 function formatCountdown(totalSeconds: number): string {
@@ -110,53 +101,6 @@ function PaperTicket({
 	);
 }
 
-function LuckyStrip({ data }: { data: LuckyToday | null }) {
-	if (!data || !data.numbers?.length) return null;
-	const claimedMap = new Map<number, string | null>();
-	(data.claims ?? []).forEach((c) => claimedMap.set(c.number, c.username));
-	return (
-		<View style={styles.luckyWrap}>
-			<Sticker color="cream" rotate={-0.5} radius={14} style={styles.lucky}>
-				<Text style={styles.luckyHeader}>🍀 today's lucky tickles</Text>
-				<View style={styles.luckyRow}>
-					{data.numbers.map((n) => {
-						const claimedBy = claimedMap.get(n);
-						const isClaimed = claimedMap.has(n);
-						return (
-							<View
-								key={n}
-								style={[
-									styles.luckyPill,
-									isClaimed
-										? { backgroundColor: WHIMSY.muteSoft }
-										: { backgroundColor: WHIMSY.sun },
-								]}
-							>
-								<Text
-									style={[
-										styles.luckyNum,
-										isClaimed && { textDecorationLine: "line-through" },
-									]}
-								>
-									{n}
-								</Text>
-								{claimedBy && (
-									<Text style={styles.luckyClaimer} numberOfLines={1}>
-										@{claimedBy}
-									</Text>
-								)}
-							</View>
-						);
-					})}
-				</View>
-				<Text style={styles.luckyCounter}>
-					global counter: {data.global_counter}
-				</Text>
-			</Sticker>
-		</View>
-	);
-}
-
 function WoodenSign({
 	tier,
 	totalTiers,
@@ -198,7 +142,7 @@ export default function Barn() {
 		currentTier: 1,
 		totalTiers: 30,
 	});
-	const [luckyToday, setLuckyToday] = useState<LuckyToday | null>(null);
+	const [statsLoaded, setStatsLoaded] = useState(false);
 	const [sixSevenTick, setSixSevenTick] = useState(0);
 	const sixSevenPromptedRef = useRef(false);
 	const player = useAudioPlayer(tickleSound);
@@ -284,18 +228,15 @@ export default function Barn() {
 			} = await supabase.auth.getUser();
 			if (!user) throw new Error("User not logged in");
 
-			const [profileResult, infoResult, seasonResult, luckyResult] =
-				await Promise.all([
-					supabase
-						.from("profiles")
-						.select("counter, tickles_earned, active_hat_id")
-						.eq("id", user.id)
-						.single(),
-					supabase.rpc("tickle_info", { uid: user.id }),
-					supabase.rpc("season_state"),
-					supabase.rpc("lucky_today"),
-				]);
-			setLuckyToday((luckyResult.data as LuckyToday) ?? null);
+			const [profileResult, infoResult, seasonResult] = await Promise.all([
+				supabase
+					.from("profiles")
+					.select("counter, tickles_earned, active_hat_id")
+					.eq("id", user.id)
+					.single(),
+				supabase.rpc("tickle_info", { uid: user.id }),
+				supabase.rpc("season_state"),
+			]);
 
 			if (profileResult.error) throw profileResult.error;
 
@@ -324,10 +265,7 @@ export default function Barn() {
 
 			setStats({
 				counter: profileResult.data?.counter || 0,
-				ticklesEarned:
-					profileResult.data?.tickles_earned ??
-					profileResult.data?.counter ??
-					0,
+				ticklesEarned: profileResult.data?.tickles_earned ?? 0,
 				itemCount: info?.balance ?? 0,
 				cap: info?.cap ?? 25,
 				nextRegenSeconds: info?.next_regen_seconds ?? null,
@@ -337,6 +275,7 @@ export default function Barn() {
 				currentTier: season?.current_tier ?? 1,
 				totalTiers: season?.season?.total_tiers ?? 30,
 			});
+			setStatsLoaded(true);
 		} catch (error) {
 			log.error("Error fetching stats:", error);
 		}
@@ -365,20 +304,11 @@ export default function Barn() {
 			} = await supabase.auth.getUser();
 			if (!user) throw new Error("User not logged in");
 
-			const { data, error } = await supabase.rpc(
-				"update_profile_and_item_count",
-				{ uid: user.id }
-			);
+			const { error } = await supabase.rpc("update_profile_and_item_count", {
+				uid: user.id,
+			});
 
 			if (error) throw error;
-			// jsonb response shape: { balance, lucky_won, global_counter }
-			const luckyWon = (data as { lucky_won?: number | null } | null)?.lucky_won;
-			if (luckyWon) {
-				showToast(
-					"🍀 Lucky tickle!",
-					`You hit ${luckyWon} — +5 bonus tickles!`
-				);
-			}
 			fetchStats();
 		} catch (error) {
 			log.error("Error incrementing count:", error);
@@ -428,13 +358,11 @@ export default function Barn() {
 					/>
 				</View>
 
-				<LuckyStrip data={luckyToday} />
-
 				<View style={styles.mainSection}>
 					<View style={styles.swipeContainer}>
 						<SwipeElement
 							onLuckySwipe={handleIncrement}
-							canTickle={stats.itemCount > 0}
+							canTickle={!statsLoaded || stats.itemCount > 0}
 							playSixSeven={sixSevenTick}
 							equipped={
 								stats.activeHatId
@@ -454,15 +382,6 @@ export default function Barn() {
 					totalTiers={stats.totalTiers}
 					onPress={() => router.push("/season")}
 				/>
-
-				{__DEV__ && (
-					<Pressable
-						onPress={() => setSixSevenTick((t) => t + 1)}
-						style={styles.dev67}
-					>
-						<Text style={styles.dev67Text}>67</Text>
-					</Pressable>
-				)}
 
 				{toast && (
 					<Animated.View
@@ -631,63 +550,28 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		zIndex: 20,
 	},
+	devOnboarding: {
+		position: "absolute",
+		bottom: 100,
+		left: 70,
+		width: 48,
+		height: 48,
+		borderRadius: 24,
+		backgroundColor: "rgba(0,0,0,0.7)",
+		borderWidth: 2,
+		borderColor: WHIMSY.sun,
+		alignItems: "center",
+		justifyContent: "center",
+		zIndex: 20,
+	},
 	dev67Text: {
 		color: WHIMSY.sun,
 		fontFamily: FONTS.whimsy,
 		fontSize: 18,
 	},
-	luckyWrap: {
-		paddingHorizontal: 14,
-		paddingTop: 8,
-		zIndex: 1,
-	},
-	lucky: {
-		paddingHorizontal: 14,
-		paddingVertical: 10,
-	},
-	luckyHeader: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.accent,
-		letterSpacing: 0.5,
-		marginBottom: 6,
-	},
-	luckyRow: {
-		flexDirection: "row",
-		gap: 8,
-		alignItems: "center",
-	},
-	luckyPill: {
-		paddingVertical: 4,
-		paddingHorizontal: 10,
-		borderRadius: 12,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		minWidth: 50,
-		alignItems: "center",
-	},
-	luckyNum: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-		lineHeight: 18,
-	},
-	luckyClaimer: {
-		fontFamily: FONTS.hand,
-		fontSize: 9,
-		color: WHIMSY.ink,
-		opacity: 0.7,
-	},
-	luckyCounter: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 9,
-		color: WHIMSY.mute,
-		marginTop: 6,
-		letterSpacing: 0.8,
-	},
-	toastWrap: {
+toastWrap: {
 		position: "absolute",
-		top: Platform.OS === "ios" ? 100 : 80,
+		top: Platform.OS === "ios" ? 180 : 160,
 		left: 16,
 		right: 16,
 		zIndex: 30,

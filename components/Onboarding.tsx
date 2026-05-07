@@ -35,12 +35,6 @@ const STEPS: {
 		title: "Earn & dress me up",
 		body: "Each tickle earns a heart. Spend hearts in the shop on hats, glasses, capes, and more — then come back and dress me however you like.",
 	},
-	{
-		animation: "bounce", // 4-frame jump cycle on loop
-		kicker: "★ lucky tickles",
-		title: "Watch for lucky days!",
-		body: "Every day, three lucky tickle numbers are drawn. If your tickle lands on one, you win bonus hearts. First to hit each number wins.",
-	},
 ];
 
 interface Props {

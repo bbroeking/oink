@@ -18,7 +18,6 @@ import { supabase } from "../utils/supabase";
 import Friends from "./Friends";
 import { Card, Button } from "./ui";
 import { Icon } from "./ui/Icon";
-import { SnoutCoin } from "./ui/SnoutCoin";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker, Tape } from "./ui/Sticker";
 import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
@@ -33,7 +32,7 @@ import {
 
 export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
-	const [counter, setCounter] = useState<number>(0);
+	const [ticklesEarned, setTicklesEarned] = useState<number>(0);
 	const [activeHat, setActiveHat] = useState<string | null>(null);
 	const [isVip, setIsVip] = useState<boolean>(false);
 	const [busy, setBusy] = useState<boolean>(false);
@@ -42,12 +41,12 @@ export function Account({ session }: { session: Session }) {
 		useCallback(() => {
 			supabase
 				.from("profiles")
-				.select("username, counter, active_hat_id, is_vip")
+				.select("username, tickles_earned, active_hat_id, is_vip")
 				.eq("id", session.user.id)
 				.single()
 				.then(({ data }) => {
 					setUsername(data?.username ?? null);
-					setCounter(data?.counter ?? 0);
+					setTicklesEarned(data?.tickles_earned ?? 0);
 					setActiveHat(data?.active_hat_id ?? null);
 					setIsVip(data?.is_vip ?? false);
 				});
@@ -162,9 +161,9 @@ export function Account({ session }: { session: Session }) {
 										<Text style={styles.codeLabel}>your code</Text>
 										<Text style={styles.codeValue}>{username}</Text>
 										<View style={styles.codeStats}>
-											<SnoutCoin size={13} />
+											<Text style={styles.codeStatsHeart}>♥</Text>
 											<Text style={styles.codeStatsText}>
-												{counter.toLocaleString()} lifetime tickles
+												{ticklesEarned.toLocaleString()} lifetime tickles
 											</Text>
 										</View>
 									</View>
@@ -315,6 +314,10 @@ const styles = StyleSheet.create({
 		fontSize: 13,
 		fontFamily: FONTS.hand,
 		color: WHIMSY.mute,
+	},
+	codeStatsHeart: {
+		fontSize: 14,
+		color: WHIMSY.roseDeep,
 	},
 	shareBtn: {
 		flexDirection: "row",

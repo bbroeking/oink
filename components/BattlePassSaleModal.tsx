@@ -34,12 +34,12 @@ const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL || null;
 const PREMIUM_PERKS = [
 	"All 30 premium-track rewards",
 	"Exclusive premium-only hat",
-	"Boosts and tickle bundles",
+	"Boosts and snout bundles",
 ];
 
 const PLUS_PERKS = [
 	"Everything in Premium",
-	"+600 tickles immediately",
+	"+600 snouts immediately",
 	"Exclusive Premium Plus title",
 	"Skip first 5 tiers",
 ];

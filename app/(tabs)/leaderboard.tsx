@@ -22,7 +22,6 @@ type Scope = "global" | "friends";
 interface LeaderboardEntry {
 	id: string;
 	username: string | null;
-	counter: number;
 	tickles_earned: number;
 	active_hat_id: string | null;
 }
@@ -41,7 +40,7 @@ function ChampionPoster({ champ }: { champ: LeaderboardEntry }) {
 							{champ.username ?? "Anonymous"}
 						</Text>
 						<Text style={styles.champScore}>
-							{(champ.tickles_earned || champ.counter || 0).toLocaleString()} lifetime tickles
+							{champ.tickles_earned.toLocaleString()} lifetime tickles
 						</Text>
 					</View>
 					<View style={styles.bigOne}>
@@ -85,7 +84,7 @@ function ClippingRow({
 					)}
 				</View>
 				<Text style={styles.rowScore}>
-					{(player.tickles_earned || player.counter || 0).toLocaleString()} ♥
+					{player.tickles_earned.toLocaleString()} ♥
 				</Text>
 			</Sticker>
 		</View>
@@ -118,7 +117,7 @@ export default function LeaderboardScreen() {
 				}
 				const { data, error } = await supabase
 					.from("profiles")
-					.select("id, username, counter, tickles_earned, active_hat_id")
+					.select("id, username, tickles_earned, active_hat_id")
 					.in("id", ids)
 					.not("username", "is", null)
 					.neq("username", "")
@@ -128,7 +127,7 @@ export default function LeaderboardScreen() {
 			} else {
 				const { data, error } = await supabase
 					.from("profiles")
-					.select("id, username, counter, tickles_earned, active_hat_id")
+					.select("id, username, tickles_earned, active_hat_id")
 					.not("username", "is", null)
 					.neq("username", "")
 					.order("tickles_earned", { ascending: false })

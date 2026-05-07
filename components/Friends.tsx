@@ -2,20 +2,20 @@ import React, { useCallback, useState } from "react";
 import {
 	StyleSheet,
 	View,
+	Text,
 	TextInput,
-	TouchableOpacity,
-	FlatList,
+	Pressable,
 	Alert,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
-import { ThemedText } from "./ThemedText";
-import { PRIMARY_COLOR } from "./SupaAuth";
+import { Sticker } from "./ui/Sticker";
+import { FONTS, WHIMSY, ROW_TILTS } from "@/constants/theme";
 
 interface Profile {
 	id: string;
 	username: string | null;
-	counter: number;
+	tickles_earned: number;
 }
 
 interface PendingRequest {
@@ -36,7 +36,7 @@ export default function Friends({ userId }: { userId: string }) {
 		if (ids.length > 0) {
 			const { data } = await supabase
 				.from("profiles")
-				.select("id, username, counter")
+				.select("id, username, tickles_earned")
 				.in("id", ids);
 			setFriends((data as Profile[]) ?? []);
 		} else {
@@ -45,19 +45,23 @@ export default function Friends({ userId }: { userId: string }) {
 
 		const { data: pendingRows } = await supabase
 			.from("friendships")
-			.select("requester_id, profiles!friendships_requester_id_fkey(id, username, counter)")
+			.select(
+				"requester_id, profiles!friendships_requester_id_fkey(id, username, tickles_earned)"
+			)
 			.eq("receiver_id", userId)
 			.eq("status", "pending");
-		// The fkey-style join syntax may or may not work depending on schema relationship setup.
-		// Fall back: fetch requester profiles separately.
+		// fkey-style join may or may not work depending on schema relationships;
+		// fall back to fetching requester profiles separately.
 		if (pendingRows && pendingRows.length > 0) {
 			const rows = pendingRows as { requester_id: string }[];
 			const requesterIds = rows.map((r) => r.requester_id);
 			const { data: profs } = await supabase
 				.from("profiles")
-				.select("id, username, counter")
+				.select("id, username, tickles_earned")
 				.in("id", requesterIds);
-			const profById = new Map(((profs as Profile[]) ?? []).map((p) => [p.id, p]));
+			const profById = new Map(
+				((profs as Profile[]) ?? []).map((p) => [p.id, p])
+			);
 			setPending(
 				rows.map((r) => ({
 					requester_id: r.requester_id,
@@ -100,9 +104,7 @@ export default function Friends({ userId }: { userId: string }) {
 			return;
 		}
 		setSearchInput("");
-		setFeedback(
-			result.state === "accepted" ? "Friends! 🎉" : "Request sent."
-		);
+		setFeedback(result.state === "accepted" ? "Friends! 🎉" : "Request sent.");
 		load();
 	};
 
@@ -138,92 +140,111 @@ export default function Friends({ userId }: { userId: string }) {
 
 	return (
 		<View style={styles.container}>
-			<ThemedText style={styles.heading}>Friends</ThemedText>
+			<Text style={styles.heading}>★ friends</Text>
 
-			<View style={styles.addRow}>
-				<TextInput
-					style={styles.input}
-					placeholder="Add by name"
-					placeholderTextColor="#999"
-					value={searchInput}
-					onChangeText={(t) => {
-						setSearchInput(t);
-						if (feedback) setFeedback("");
-					}}
-					autoCapitalize="none"
-					autoCorrect={false}
-					maxLength={24}
-					editable={!sending}
-				/>
-				<TouchableOpacity
-					style={[styles.addButton, sending && styles.addButtonDisabled]}
-					onPress={handleSendRequest}
-					disabled={sending}
-				>
-					<ThemedText style={styles.addButtonText}>
-						{sending ? "..." : "Add"}
-					</ThemedText>
-				</TouchableOpacity>
-			</View>
-			{feedback ? (
-				<ThemedText style={styles.feedback}>{feedback}</ThemedText>
-			) : null}
+			<Sticker color="paper" rotate={-0.6} radius={14} style={styles.addCard}>
+				<View style={styles.addRow}>
+					<TextInput
+						style={styles.input}
+						placeholder="add by name"
+						placeholderTextColor={WHIMSY.muteSoft}
+						value={searchInput}
+						onChangeText={(t) => {
+							setSearchInput(t);
+							if (feedback) setFeedback("");
+						}}
+						autoCapitalize="none"
+						autoCorrect={false}
+						maxLength={24}
+						editable={!sending}
+					/>
+					<Pressable
+						onPress={handleSendRequest}
+						disabled={sending}
+						style={({ pressed }) => [
+							styles.addButton,
+							sending && styles.addButtonDisabled,
+							pressed && { opacity: 0.7 },
+						]}
+					>
+						<Text style={styles.addButtonText}>
+							{sending ? "..." : "Add"}
+						</Text>
+					</Pressable>
+				</View>
+				{feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
+			</Sticker>
 
 			{pending.length > 0 && (
 				<View style={styles.section}>
-					<ThemedText style={styles.subheading}>
-						Pending requests
-					</ThemedText>
-					{pending.map((p) => (
-						<View key={p.requester_id} style={styles.row}>
-							<ThemedText style={styles.rowName}>
-								{p.requester?.username ?? "Anonymous"}
-							</ThemedText>
-							<View style={styles.actions}>
-								<TouchableOpacity
-									style={[styles.smallButton, styles.acceptButton]}
-									onPress={() => handleAccept(p.requester_id)}
-								>
-									<ThemedText style={styles.smallButtonText}>
-										Accept
-									</ThemedText>
-								</TouchableOpacity>
-								<TouchableOpacity
-									style={[styles.smallButton, styles.declineButton]}
-									onPress={() => handleDecline(p.requester_id)}
-								>
-									<ThemedText style={styles.declineButtonText}>
-										Decline
-									</ThemedText>
-								</TouchableOpacity>
-							</View>
+					<Text style={styles.subheading}>★ pending requests</Text>
+					{pending.map((p, i) => (
+						<View
+							key={p.requester_id}
+							style={[styles.rowWrap, { marginVertical: 4 }]}
+						>
+							<Sticker
+								color="cream"
+								rotate={ROW_TILTS[i % ROW_TILTS.length]}
+								radius={10}
+								style={styles.row}
+							>
+								<Text style={styles.rowName} numberOfLines={1}>
+									{p.requester?.username ?? "Anonymous"}
+								</Text>
+								<View style={styles.actions}>
+									<Pressable
+										onPress={() => handleAccept(p.requester_id)}
+										style={({ pressed }) => [
+											styles.miniBtn,
+											styles.acceptBtn,
+											pressed && { opacity: 0.7 },
+										]}
+									>
+										<Text style={styles.miniBtnText}>accept</Text>
+									</Pressable>
+									<Pressable
+										onPress={() => handleDecline(p.requester_id)}
+										style={({ pressed }) => [
+											styles.miniBtn,
+											styles.declineBtn,
+											pressed && { opacity: 0.7 },
+										]}
+									>
+										<Text style={styles.miniBtnTextDecline}>decline</Text>
+									</Pressable>
+								</View>
+							</Sticker>
 						</View>
 					))}
 				</View>
 			)}
 
 			<View style={styles.section}>
-				<ThemedText style={styles.subheading}>
-					Your friends ({friends.length})
-				</ThemedText>
+				<Text style={styles.subheading}>
+					★ your friends ({friends.length})
+				</Text>
 				{friends.length === 0 ? (
-					<ThemedText style={styles.empty}>
-						No friends yet. Add one above.
-					</ThemedText>
+					<Text style={styles.empty}>No friends yet. Add one above.</Text>
 				) : (
-					friends.map((f) => (
-						<TouchableOpacity
-							key={f.id}
-							style={styles.row}
-							onLongPress={() => handleUnfriend(f)}
-						>
-							<ThemedText style={styles.rowName}>
-								{f.username ?? "Anonymous"}
-							</ThemedText>
-							<ThemedText style={styles.rowCounter}>
-								{f.counter} 🐷
-							</ThemedText>
-						</TouchableOpacity>
+					friends.map((f, i) => (
+						<View key={f.id} style={[styles.rowWrap, { marginVertical: 4 }]}>
+							<Pressable onLongPress={() => handleUnfriend(f)}>
+								<Sticker
+									color="paper"
+									rotate={ROW_TILTS[i % ROW_TILTS.length]}
+									radius={10}
+									style={styles.row}
+								>
+									<Text style={styles.rowName} numberOfLines={1}>
+										{f.username ?? "Anonymous"}
+									</Text>
+									<Text style={styles.rowCounter}>
+										{f.tickles_earned.toLocaleString()} ♥
+									</Text>
+								</Sticker>
+							</Pressable>
+						</View>
 					))
 				)}
 			</View>
@@ -233,45 +254,50 @@ export default function Friends({ userId }: { userId: string }) {
 
 const styles = StyleSheet.create({
 	container: {
-		paddingHorizontal: 16,
-		paddingTop: 8,
+		paddingHorizontal: 4,
+		paddingTop: 4,
 	},
 	heading: {
+		fontFamily: FONTS.whimsy,
 		fontSize: 22,
-		fontWeight: "700",
-		color: "#1A1A1A",
-		marginBottom: 16,
+		color: WHIMSY.ink,
+		marginBottom: 12,
 	},
 	subheading: {
-		fontSize: 12,
-		fontWeight: "800",
-		color: "#9A9A9A",
-		marginBottom: 8,
-		textTransform: "uppercase",
-		letterSpacing: 1.2,
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		letterSpacing: 0.4,
+		marginBottom: 10,
+	},
+	addCard: {
+		paddingHorizontal: 12,
+		paddingVertical: 10,
 	},
 	addRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 8,
-		marginBottom: 8,
 	},
 	input: {
 		flex: 1,
 		borderWidth: 1.5,
-		borderColor: "#EAE2D6",
+		borderColor: WHIMSY.ink,
 		borderRadius: 10,
 		paddingHorizontal: 12,
-		height: 42,
+		height: 40,
 		fontSize: 15,
-		color: "#1A1A1A",
-		backgroundColor: "#FFF",
+		fontFamily: FONTS.hand,
+		color: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream,
 	},
 	addButton: {
-		backgroundColor: PRIMARY_COLOR,
+		backgroundColor: WHIMSY.sun,
 		paddingHorizontal: 18,
-		height: 42,
+		height: 40,
 		borderRadius: 10,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
 		alignItems: "center",
 		justifyContent: "center",
 	},
@@ -279,65 +305,69 @@ const styles = StyleSheet.create({
 		opacity: 0.5,
 	},
 	addButtonText: {
-		color: "white",
-		fontWeight: "600",
+		fontFamily: FONTS.whimsy,
+		color: WHIMSY.ink,
 		fontSize: 14,
 	},
 	feedback: {
-		color: "#6B6B6B",
+		fontFamily: FONTS.hand,
+		color: WHIMSY.accent,
 		fontSize: 13,
-		marginBottom: 8,
+		marginTop: 8,
 	},
 	section: {
 		marginTop: 20,
 	},
+	rowWrap: {},
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
 		paddingVertical: 10,
-		paddingHorizontal: 8,
-		borderBottomWidth: 1,
-		borderBottomColor: "rgba(0,0,0,0.06)",
+		paddingHorizontal: 12,
+		gap: 8,
 	},
 	rowName: {
-		fontSize: 16,
-		color: "#1A1A1A",
 		flex: 1,
-		fontWeight: "700",
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
 	},
 	rowCounter: {
+		fontFamily: FONTS.whimsy,
 		fontSize: 14,
-		color: "#6B6B6B",
-		fontWeight: "700",
+		color: WHIMSY.ink,
 	},
 	actions: {
 		flexDirection: "row",
 		gap: 6,
 	},
-	smallButton: {
-		paddingHorizontal: 12,
-		paddingVertical: 6,
+	miniBtn: {
+		paddingHorizontal: 10,
+		paddingVertical: 5,
 		borderRadius: 8,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
 	},
-	acceptButton: {
-		backgroundColor: PRIMARY_COLOR,
+	acceptBtn: {
+		backgroundColor: WHIMSY.sun,
 	},
-	declineButton: {
-		backgroundColor: "#EAE2D6",
+	declineBtn: {
+		backgroundColor: WHIMSY.cream,
 	},
-	smallButtonText: {
-		color: "white",
-		fontSize: 13,
-		fontWeight: "600",
+	miniBtnText: {
+		fontFamily: FONTS.whimsy,
+		color: WHIMSY.ink,
+		fontSize: 12,
 	},
-	declineButtonText: {
-		color: "#3A3A3A",
-		fontSize: 13,
-		fontWeight: "600",
+	miniBtnTextDecline: {
+		fontFamily: FONTS.hand,
+		color: WHIMSY.mute,
+		fontSize: 12,
 	},
 	empty: {
-		color: "#9A9A9A",
+		fontFamily: FONTS.hand,
+		color: WHIMSY.mute,
 		fontSize: 14,
 		paddingVertical: 8,
 	},

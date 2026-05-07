@@ -41,6 +41,7 @@ const CATEGORY_ORDER = [
 ];
 
 export default function AlignScreen() {
+	if (!__DEV__) return null;
 	const [items, setItems] = useState<HatRow[]>([]);
 	const [overrides, setOverrides] = useState<Record<string, HatOverlay>>({});
 	const [currentId, setCurrentId] = useState<string | null>(null);

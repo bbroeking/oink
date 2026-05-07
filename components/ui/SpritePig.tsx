@@ -42,11 +42,11 @@ interface AnimationConfig {
 }
 
 const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
-	idle: { frames: ["idle_1", "idle_2", "idle_3", "idle_4"], fps: 5, loop: true },
-	walk: { frames: ["walk_1", "walk_2", "walk_3", "walk_4"], fps: 9, loop: true },
-	jump: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 12, loop: false },
+	idle: { frames: ["idle_1", "idle_2", "idle_3", "idle_4"], fps: 3.5, loop: true },
+	walk: { frames: ["walk_1", "walk_2", "walk_3", "walk_4"], fps: 6, loop: true },
+	jump: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 9, loop: false },
 	// Looping version of the jump frames, slower — for ambient bouncy idle.
-	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 6, loop: true },
+	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 4, loop: true },
 	happy: { frames: ["happy"], fps: 1, loop: true },
 	sad: { frames: ["sad"], fps: 1, loop: true },
 	surprise: { frames: ["surprise"], fps: 1, loop: true },
@@ -58,7 +58,7 @@ const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
 			"arms_up_surprise",
 			"arms_up_excited",
 		],
-		fps: 7,
+		fps: 5,
 		loop: true,
 	},
 };
@@ -86,7 +86,6 @@ export function SpritePig({
 
 	useEffect(() => {
 		setIdx(0);
-		frameRef.current?.(0);
 		const cfg = ANIMATIONS[animation];
 		if (cfg.frames.length <= 1) return;
 		const period = 1000 / cfg.fps;
@@ -94,20 +93,22 @@ export function SpritePig({
 			setIdx((prev) => {
 				const next = prev + 1;
 				if (next >= cfg.frames.length) {
-					if (cfg.loop) {
-						frameRef.current?.(0);
-						return 0;
-					}
+					if (cfg.loop) return 0;
 					clearInterval(handle);
 					setTimeout(() => completeRef.current?.(), 0);
 					return prev;
 				}
-				frameRef.current?.(next);
 				return next;
 			});
 		}, period);
 		return () => clearInterval(handle);
 	}, [animation]);
+
+	// Fire onFrame after commit — never inside the setIdx updater (React forbids
+	// side effects in state updaters as of React 18).
+	useEffect(() => {
+		frameRef.current?.(idx);
+	}, [idx]);
 
 	const cfg = ANIMATIONS[animation];
 	const key = cfg.frames[Math.min(idx, cfg.frames.length - 1)];
