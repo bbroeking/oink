@@ -12,8 +12,8 @@ export function AppleAuth() {
 				buttonStyle={
 					AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
 				}
-				cornerRadius={5}
-				style={{ width: 200, height: 64 }}
+				cornerRadius={12}
+				style={{ width: "100%", height: 52 }}
 				onPress={async () => {
 					console.log("pressed");
 					try {
