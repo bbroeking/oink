@@ -38,6 +38,7 @@ interface Props {
 	canAfford: boolean;
 	balance: number;
 	busy?: boolean;
+	buyable?: boolean;
 	onClose: () => void;
 	onBuy: () => void;
 	onEquip: () => void;
@@ -51,6 +52,7 @@ export function ItemPreviewModal({
 	canAfford,
 	balance,
 	busy,
+	buyable = true,
 	onClose,
 	onBuy,
 	onEquip,
@@ -144,6 +146,10 @@ export function ItemPreviewModal({
 						) : owned ? (
 							<Button size="md" variant="primary" full onPress={onEquip}>
 								Wear
+							</Button>
+						) : !buyable ? (
+							<Button size="md" variant="locked" full disabled>
+								Available in Today's Shop
 							</Button>
 						) : !canAfford ? (
 							<Button size="md" variant="locked" full disabled>

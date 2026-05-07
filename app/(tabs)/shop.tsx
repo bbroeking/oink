@@ -198,6 +198,7 @@ function ItemCard({
 	canAfford,
 	busy,
 	wardrobeMode,
+	buyable = true,
 	onBuy,
 	onEquip,
 	onUnequip,
@@ -209,6 +210,7 @@ function ItemCard({
 	canAfford: boolean;
 	busy: boolean;
 	wardrobeMode?: boolean;
+	buyable?: boolean;
 	onBuy: () => void;
 	onEquip: () => void;
 	onUnequip: () => void;
@@ -280,7 +282,11 @@ function ItemCard({
 					<Button size="sm" variant="primary" full onPress={onEquip}>
 						Wear
 					</Button>
-				) : wardrobeMode ? null : !canAfford ? (
+				) : wardrobeMode ? null : !buyable ? (
+					<Button size="sm" variant="locked" full disabled>
+						Today only
+					</Button>
+				) : !canAfford ? (
 					<Button size="sm" variant="locked" full disabled>
 						Not enough
 					</Button>
@@ -469,6 +475,10 @@ export default function ShopScreen() {
 
 	const handleBuy = async (hat: HatRow) => {
 		if (busyId) return;
+		if (!daily.some((d) => d.id === hat.id)) {
+			Alert.alert("Today only", "This item is only available in today's shop.");
+			return;
+		}
 		setBusyId(hat.id);
 		const { data, error } = await supabase.rpc("buy_hat", {
 			target_hat_id: hat.id,
@@ -526,6 +536,8 @@ export default function ShopScreen() {
 		() => (featured ? daily.filter((d) => d.id !== featured.id) : daily),
 		[daily, featured]
 	);
+
+	const dailyIds = useMemo(() => new Set(daily.map((d) => d.id)), [daily]);
 
 	const browseItems = useMemo(() => {
 		if (!categoryFilter) return allItems;
@@ -598,6 +610,7 @@ export default function ShopScreen() {
 						canAfford={counter >= a.cost}
 						busy={busyId === a.id}
 						wardrobeMode={wardrobeMode}
+						buyable={false}
 						onBuy={() => handleBuy(a)}
 						onEquip={() => handleEquip(a.id)}
 						onUnequip={() => handleEquip(null)}
@@ -613,6 +626,7 @@ export default function ShopScreen() {
 							canAfford={counter >= b.cost}
 							busy={busyId === b.id}
 							wardrobeMode={wardrobeMode}
+							buyable={false}
 							onBuy={() => handleBuy(b)}
 							onEquip={() => handleEquip(b.id)}
 							onUnequip={() => handleEquip(null)}
@@ -815,6 +829,7 @@ export default function ShopScreen() {
 				canAfford={previewItem ? counter >= previewItem.cost : false}
 				balance={counter}
 				busy={previewItem ? busyId === previewItem.id : false}
+				buyable={previewItem ? dailyIds.has(previewItem.id) : true}
 				onClose={() => setPreviewItem(null)}
 				onBuy={() => {
 					if (previewItem) {
