@@ -72,6 +72,10 @@ interface Props {
 	style?: StyleProp<ImageStyle>;
 	onComplete?: () => void;
 	onFrame?: (idx: number) => void;
+	// Optional per-animation override that swaps in a different frame set.
+	// Used by the pre-baked accessory path so equipping a legendary item
+	// can replace the default pig frames with bespoke "pig wearing X" art.
+	customFrames?: Partial<Record<PigAnimation, string[]>>;
 }
 
 export function SpritePig({
@@ -80,6 +84,7 @@ export function SpritePig({
 	style,
 	onComplete,
 	onFrame,
+	customFrames,
 }: Props) {
 	const [idx, setIdx] = useState(0);
 	const completeRef = useRef(onComplete);
@@ -87,9 +92,19 @@ export function SpritePig({
 	const frameRef = useRef(onFrame);
 	frameRef.current = onFrame;
 
+	// Resolve which frame set + fps to use. customFrames (from prebaked
+	// items) overrides the default ANIMATIONS entry per animation key.
+	const baseCfg = ANIMATIONS[animation];
+	const overrideFrames = customFrames?.[animation];
+	const activeFrames = overrideFrames ?? baseCfg.frames;
+	const activeCfg = {
+		...baseCfg,
+		frames: activeFrames,
+	};
+
 	useEffect(() => {
 		setIdx(0);
-		const cfg = ANIMATIONS[animation];
+		const cfg = activeCfg;
 		if (cfg.frames.length <= 1) return;
 		const period = 1000 / cfg.fps;
 		const handle = setInterval(() => {
@@ -113,8 +128,7 @@ export function SpritePig({
 		frameRef.current?.(idx);
 	}, [idx]);
 
-	const cfg = ANIMATIONS[animation];
-	const key = cfg.frames[Math.min(idx, cfg.frames.length - 1)];
+	const key = activeFrames[Math.min(idx, activeFrames.length - 1)];
 	return (
 		<Image
 			source={FRAMES[key]}

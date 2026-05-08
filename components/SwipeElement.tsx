@@ -20,6 +20,7 @@ import {
 	PigAnimationKey,
 	HatOverlay,
 } from "../constants/hats";
+import { ITEM_PREBAKED, isPrebaked } from "../constants/prebaked";
 import { SpritePig, PigAnimation } from "./ui/SpritePig";
 
 interface EquippedItem {
@@ -228,11 +229,16 @@ export default function SwipeElement({
 	const category = equipped?.category ?? (hatId ? "hat" : null);
 	const emoji = equipped?.emoji ?? null;
 
+	// Prebaked items render their bespoke "pig wearing X" frames inside
+	// SpritePig and skip the compositional overlay entirely.
+	const prebaked = isPrebaked(itemId) ? ITEM_PREBAKED[itemId!] : null;
+
 	const imageSrc = itemId ? HAT_IMAGES[itemId] : null;
-	const baseOverlay =
-		(itemId && HAT_OVERLAYS[itemId]) ||
-		(category && CATEGORY_OVERLAYS[category]) ||
-		(itemId ? DEFAULT_HAT_OVERLAY : null);
+	const baseOverlay = prebaked
+		? null
+		: (itemId && HAT_OVERLAYS[itemId]) ||
+			(category && CATEGORY_OVERLAYS[category]) ||
+			(itemId ? DEFAULT_HAT_OVERLAY : null);
 
 	// Per-frame anchor system: each item follows the body part its category
 	// is bound to (hat→head, glasses→eyes, held→hand, etc.). The delta is
@@ -289,6 +295,7 @@ export default function SwipeElement({
 							size={300}
 							onFrame={setPigFrameIdx}
 							onComplete={pigAnim === "jump" ? handleJumpComplete : undefined}
+							customFrames={prebaked ?? undefined}
 						/>
 					</View>
 					{/* In front of pig: hats, glasses, masks, bows, scarves, necklaces, held */}
