@@ -118,8 +118,8 @@ export const HAT_IMAGES: Record<string, number> = {
 // `HatOverlay` lives in its own module to break the import cycle with the
 // auto-generated overlays file; re-export here so consumers can keep
 // importing it from "constants/hats".
-export type { HatOverlay } from "./hat_overlay_types";
-import type { HatOverlay } from "./hat_overlay_types";
+export type { HatOverlay, AnchorName, Anchor } from "./hat_overlay_types";
+import type { HatOverlay, AnchorName, Anchor } from "./hat_overlay_types";
 
 // Per-item overlay overrides. Auto-generated coordinates from
 // scripts/compute_overlays.py are spread first; manual tweaks below override.
@@ -149,9 +149,6 @@ export const Z_BEHIND_PIG: Record<string, boolean> = {
 // still shown. Re-enable per-category once placement is solved.
 export const HIDDEN_CATEGORIES = new Set<string>(["scarf", "cape"]);
 
-// Per-animation per-frame offset (dx, dy) applied to ALL items so they track
-// the pig's motion. dy is added to overlay.bottom (positive = item moves up
-// with the pig as the pig rises). Tuned by hand against the sprite frames.
 export type PigAnimationKey =
 	| "idle"
 	| "walk"
@@ -162,42 +159,148 @@ export type PigAnimationKey =
 	| "wave"
 	| "arms_up";
 
-// dy is added to overlay.bottom. Positive dy = item moves UP on screen
-// (matching the pig moving up). Magnitudes are kept small so items don't
-// clip past the card's top edge during big motions like the jump apex.
-export const PIG_FRAME_OFFSETS: Record<
+// Anchors describe named points on the pig (head crown, eye line, hand, etc.)
+// at every frame of every animation. Items declare which anchor they attach
+// to (via category default or per-item override). At render time, the item
+// is shifted by the anchor's delta from its rest position — so hats track
+// the head, glasses track the eyes, held items track the hand, all from
+// the same per-frame data.
+//
+// Anchor coordinates are in 300×300 card space, y measured from the TOP.
+// Everything below references "rest" — the position of each anchor in
+// `idle` frame 0. Other frames define their anchors as absolute positions;
+// SwipeElement subtracts the rest anchor to get a delta and applies it to
+// the item's existing `bottom`/`left`.
+
+const REST_ANCHORS: Record<AnchorName, Anchor> = {
+	head: { x: 150, y: 35 }, // top of head between ears
+	eyes: { x: 150, y: 105 }, // eye line
+	snout: { x: 150, y: 150 }, // pink disk
+	mouth: { x: 150, y: 180 }, // mouth/smile
+	neck: { x: 150, y: 210 }, // base of neck where head meets body
+	body: { x: 150, y: 220 }, // body center
+	hand_l: { x: 100, y: 215 }, // left front limb
+	hand_r: { x: 200, y: 215 }, // right front limb
+	feet: { x: 150, y: 285 }, // bottom of pig
+};
+
+// Per-animation per-frame anchor positions. Only define what changes from
+// REST_ANCHORS — anchors not listed in a frame inherit from rest. Numbers
+// are tuned by inspection of the current Rosie sprite sheet.
+export const PIG_FRAME_ANCHORS: Record<
 	PigAnimationKey,
-	{ dx: number; dy: number }[]
+	Partial<Record<AnchorName, Anchor>>[]
 > = {
 	idle: [
-		{ dx: 0, dy: 0 },
-		{ dx: 0, dy: -2 }, // inhale: body squashes, head dips slightly
-		{ dx: 0, dy: 0 },
-		{ dx: 0, dy: 2 }, // exhale: body stretches, head lifts slightly
+		{}, // rest
+		{ head: { x: 150, y: 37 }, eyes: { x: 150, y: 107 } }, // inhale: head dips 2px
+		{},
+		{ head: { x: 150, y: 33 }, eyes: { x: 150, y: 103 } }, // exhale: head rises 2px
 	],
 	walk: [
-		{ dx: 0, dy: 0 }, // contact (left)
-		{ dx: 0, dy: 4 }, // passing: body lifts
-		{ dx: 0, dy: 0 }, // contact (right)
-		{ dx: 0, dy: 4 }, // passing: body lifts
+		{}, // contact left — feet planted
+		// passing: whole pig lifts ~4px (everything moves up by 4)
+		shiftAll(-4),
+		{}, // contact right
+		shiftAll(-4),
 	],
 	jump: [
-		{ dx: 0, dy: -5 }, // anticipation: small squat
-		{ dx: 0, dy: 4 }, // takeoff
-		{ dx: 0, dy: 10 }, // apex: gentle hop, items track up
-		{ dx: 0, dy: -6 }, // landing
+		// anticipation: squat — head dips 5px, feet stay planted
+		{ head: { x: 150, y: 40 }, eyes: { x: 150, y: 110 }, neck: { x: 150, y: 213 } },
+		// takeoff: pig leaves ground, ~4px lift
+		shiftAll(-4),
+		// apex: pig airborne, head 12px above rest, hands tucked higher
+		{
+			head: { x: 150, y: 23 },
+			eyes: { x: 150, y: 93 },
+			snout: { x: 150, y: 138 },
+			mouth: { x: 150, y: 168 },
+			neck: { x: 150, y: 198 },
+			body: { x: 150, y: 208 },
+			hand_l: { x: 105, y: 200 },
+			hand_r: { x: 195, y: 200 },
+			feet: { x: 150, y: 273 },
+		},
+		// landing: hard squat, head 6px below rest
+		{ head: { x: 150, y: 41 }, eyes: { x: 150, y: 111 }, neck: { x: 150, y: 214 } },
 	],
-	happy: [{ dx: 0, dy: 0 }],
-	sad: [{ dx: 0, dy: -3 }], // ears down, slight slump
-	surprise: [{ dx: 0, dy: 3 }], // ears up, slight rise
-	wave: [{ dx: 0, dy: 3 }], // body tilt + arm up
+	happy: [shiftAll(0)],
+	sad: [
+		// ears + head droop slightly
+		{ head: { x: 150, y: 38 }, eyes: { x: 150, y: 108 } },
+	],
+	surprise: [
+		// pig recoils up slightly, ears perk up
+		{ head: { x: 150, y: 32 }, eyes: { x: 150, y: 102 } },
+	],
+	wave: [
+		// arm up + slight body tilt — right hand lifts dramatically
+		{ hand_r: { x: 215, y: 130 }, head: { x: 150, y: 32 } },
+	],
 	arms_up: [
-		{ dx: 0, dy: 4 },
-		{ dx: 0, dy: 4 },
-		{ dx: 0, dy: 4 },
-		{ dx: 0, dy: 4 },
+		// 6-7 cheer: arms held up the whole loop, body lifted
+		shiftAll(-4),
+		shiftAll(-4),
+		shiftAll(-4),
+		shiftAll(-4),
 	],
 };
+
+// Helper: builds an anchor frame where every anchor shifts by dy (negative =
+// up on screen). Used for animations where the whole pig translates.
+function shiftAll(dy: number): Partial<Record<AnchorName, Anchor>> {
+	if (dy === 0) return {};
+	const out: Partial<Record<AnchorName, Anchor>> = {};
+	for (const k of Object.keys(REST_ANCHORS) as AnchorName[]) {
+		const r = REST_ANCHORS[k];
+		out[k] = { x: r.x, y: r.y + dy };
+	}
+	return out;
+}
+
+// Resolve an anchor's position at a given (animation, frame), falling back
+// to the rest position if the frame doesn't override it. Exported for the
+// renderer.
+export function resolveAnchor(
+	anim: PigAnimationKey,
+	frameIdx: number,
+	name: AnchorName,
+): Anchor {
+	const frames = PIG_FRAME_ANCHORS[anim];
+	const frame = frames?.[Math.min(frameIdx, (frames?.length ?? 1) - 1)] ?? {};
+	return frame[name] ?? REST_ANCHORS[name];
+}
+
+// Default anchor per category. Items can override via HatOverlay.anchor.
+export const CATEGORY_ANCHORS: Record<string, AnchorName> = {
+	hat: "head",
+	bow: "head",
+	glasses: "eyes",
+	mask: "eyes",
+	scarf: "neck",
+	necklace: "neck",
+	cape: "body",
+	held: "hand_r",
+	aura: "body",
+	background: "body",
+};
+
+// Compute the delta (in card pixels) between the current anchor and its rest
+// position, for the given category/item. Returns {dx, dy} in screen-axis
+// coordinates (positive y = down, negative y = up). Items not bound to any
+// anchor get {0, 0}.
+export function frameDelta(
+	anim: PigAnimationKey,
+	frameIdx: number,
+	category: string | null,
+	itemAnchor?: AnchorName,
+): { dx: number; dy: number } {
+	const name = itemAnchor ?? (category ? CATEGORY_ANCHORS[category] : undefined);
+	if (!name) return { dx: 0, dy: 0 };
+	const cur = resolveAnchor(anim, frameIdx, name);
+	const rest = REST_ANCHORS[name];
+	return { dx: cur.x - rest.x, dy: cur.y - rest.y };
+}
 
 export const DEFAULT_HAT_OVERLAY: HatOverlay = {
 	bottom: 245,

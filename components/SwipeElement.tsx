@@ -16,7 +16,7 @@ import {
 	CATEGORY_OVERLAYS,
 	DEFAULT_HAT_OVERLAY,
 	Z_BEHIND_PIG,
-	PIG_FRAME_OFFSETS,
+	frameDelta,
 	PigAnimationKey,
 	HatOverlay,
 } from "../constants/hats";
@@ -231,21 +231,29 @@ export default function SwipeElement({
 		(category && CATEGORY_OVERLAYS[category]) ||
 		(itemId ? DEFAULT_HAT_OVERLAY : null);
 
-	// Apply per-frame pig motion offset so item tracks the pig.
-	// Backgrounds + auras are full-canvas, don't apply motion offset.
-	const frameOffsets = PIG_FRAME_OFFSETS[pigAnim as PigAnimationKey];
-	const off = frameOffsets?.[Math.min(pigFrameIdx, frameOffsets.length - 1)] ?? {
-		dx: 0,
-		dy: 0,
-	};
+	// Per-frame anchor system: each item follows the body part its category
+	// is bound to (hat→head, glasses→eyes, held→hand, etc.). The delta is
+	// the displacement of that anchor from its rest position; we apply it
+	// to the item's existing left/bottom. Backgrounds + auras span the
+	// whole card so they don't track an anchor.
 	const isFullCanvas = category === "background" || category === "aura";
+	const delta = isFullCanvas
+		? { dx: 0, dy: 0 }
+		: frameDelta(
+				pigAnim as PigAnimationKey,
+				pigFrameIdx,
+				category ?? null,
+				baseOverlay?.anchor,
+			);
+	// dy is in screen-axis (positive = down); RN's `bottom` is anchored
+	// to the canvas bottom (positive = up), so we negate to convert.
 	const overlay = baseOverlay
 		? isFullCanvas
 			? baseOverlay
 			: {
 					...baseOverlay,
-					left: baseOverlay.left + off.dx,
-					bottom: baseOverlay.bottom + off.dy,
+					left: baseOverlay.left + delta.dx,
+					bottom: baseOverlay.bottom - delta.dy,
 				}
 		: null;
 
