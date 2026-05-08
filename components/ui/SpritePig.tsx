@@ -6,6 +6,10 @@ const FRAMES: Record<string, number> = {
 	idle_2: require("../../assets/images/sprites/rosie/idle_2.png"),
 	idle_3: require("../../assets/images/sprites/rosie/idle_3.png"),
 	idle_4: require("../../assets/images/sprites/rosie/idle_4.png"),
+	sad_1: require("../../assets/images/sprites/rosie/sad_1.png"),
+	sad_2: require("../../assets/images/sprites/rosie/sad_2.png"),
+	sad_3: require("../../assets/images/sprites/rosie/sad_3.png"),
+	sad_4: require("../../assets/images/sprites/rosie/sad_4.png"),
 	walk_1: require("../../assets/images/sprites/rosie/walk_1.png"),
 	walk_2: require("../../assets/images/sprites/rosie/walk_2.png"),
 	walk_3: require("../../assets/images/sprites/rosie/walk_3.png"),
@@ -15,7 +19,6 @@ const FRAMES: Record<string, number> = {
 	jump_3: require("../../assets/images/sprites/rosie/jump_3.png"),
 	jump_4: require("../../assets/images/sprites/rosie/jump_4.png"),
 	happy: require("../../assets/images/sprites/rosie/happy.png"),
-	sad: require("../../assets/images/sprites/rosie/sad.png"),
 	surprise: require("../../assets/images/sprites/rosie/surprise.png"),
 	wave: require("../../assets/images/sprites/rosie/wave.png"),
 	arms_up_happy: require("../../assets/images/sprites/rosie/arms_up_happy.png"),
@@ -48,7 +51,7 @@ const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
 	// Looping version of the jump frames, slower — for ambient bouncy idle.
 	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 3, loop: true },
 	happy: { frames: ["happy"], fps: 1, loop: true },
-	sad: { frames: ["sad"], fps: 1, loop: true },
+	sad: { frames: ["sad_1", "sad_2", "sad_3", "sad_4"], fps: 3, loop: true },
 	surprise: { frames: ["surprise"], fps: 1, loop: true },
 	wave: { frames: ["wave"], fps: 1, loop: true },
 	arms_up: {
