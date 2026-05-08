@@ -39,17 +39,37 @@ OUTPUT_REPORT = f"{REPO}/tests/OVERLAY_REPORT.md"
 # Per category: anchor_y = where the item's BOTTOM edge sits;
 # target_width = base width to scale the item to;
 # left = horizontal offset (None = centered).
+# Per-category placement. `anchor_y` is the y-from-bottom on the 300×300
+# card where the item's PIVOT POINT should land — i.e., the contact point
+# on the pig (head crown ≈ 265, eye line ≈ 195, neck ≈ 90, etc.). `pivot`
+# is the fraction of the item's bbox that contacts the anchor: (0.5, 1.0)
+# = bottom-center (default for hats); (0.5, 0.5) = center (glasses);
+# (0.5, 0.0) = top-center (scarves hanging down). Must mirror
+# CATEGORY_PIVOTS in constants/hats.ts.
 CATEGORY = {
-    "hat":        {"anchor_y": 215, "width": 160, "left": None, "max_h": 200},
-    "glasses":    {"anchor_y": 130, "width": 140, "left": None, "max_h": 80},
-    "bow":        {"anchor_y": 220, "width": 80,  "left": None, "max_h": 80},
-    "scarf":      {"anchor_y": 60,  "width": 180, "left": None, "max_h": 130},
-    "mask":       {"anchor_y": 110, "width": 160, "left": None, "max_h": 120},
-    "necklace":   {"anchor_y": 70,  "width": 140, "left": None, "max_h": 100},
-    "cape":       {"anchor_y": 30,  "width": 240, "left": None, "max_h": 220},
-    "held":       {"anchor_y": 50,  "width": 80,  "left": 200,  "max_h": 180},
-    "aura":       {"anchor_y": 0,   "width": 300, "left": 0,    "max_h": 300},
-    "background": {"anchor_y": 0,   "width": 300, "left": 0,    "max_h": 300},
+    # Hats sit on the head crown (y_from_top≈35 → y_from_bottom=265).
+    "hat":        {"anchor_y": 265, "width": 160, "left": None, "max_h": 200, "pivot": (0.5, 1.0)},
+    # Glasses straddle the eye line (y_from_top≈105 → y_from_bottom=195).
+    # max_h capped so tall novelty glasses don't cover the snout.
+    "glasses":    {"anchor_y": 195, "width": 140, "left": None, "max_h": 80,  "pivot": (0.5, 0.5)},
+    # Bows on top of the head, same as hats.
+    "bow":        {"anchor_y": 265, "width": 80,  "left": None, "max_h": 80,  "pivot": (0.5, 1.0)},
+    # Scarves wrap around the neck (y_from_top≈210 → y_from_bottom=90) and
+    # drape down. Top-pivot, but max_h capped so the drape doesn't escape
+    # the card. Empirically scarf art is ~80px tall once trimmed.
+    "scarf":      {"anchor_y": 190, "width": 180, "left": None, "max_h": 80,  "pivot": (0.5, 0.0)},
+    # Masks center on the eye/snout area.
+    "mask":       {"anchor_y": 195, "width": 160, "left": None, "max_h": 120, "pivot": (0.5, 0.5)},
+    # Necklaces hang from the neck.
+    "necklace":   {"anchor_y": 180, "width": 140, "left": None, "max_h": 90,  "pivot": (0.5, 0.0)},
+    # Capes start at the shoulder (y_from_top≈110 → y_from_bottom=190) and
+    # billow down behind the body.
+    "cape":       {"anchor_y": 220, "width": 240, "left": None, "max_h": 220, "pivot": (0.5, 0.0)},
+    # Held items center on the right hand (y_from_top≈215, x≈200 → y=85).
+    "held":       {"anchor_y": 85,  "width": 80,  "left": 200,  "max_h": 180, "pivot": (0.5, 0.5)},
+    # Auras + backgrounds fill the canvas.
+    "aura":       {"anchor_y": 0,   "width": 300, "left": 0,    "max_h": 300, "pivot": (0.5, 1.0)},
+    "background": {"anchor_y": 0,   "width": 300, "left": 0,    "max_h": 300, "pivot": (0.5, 1.0)},
 }
 CARD_W = 300
 
@@ -92,8 +112,17 @@ def compute_overlay(category, aspect):
     width = cfg["width"]
     height = max(20, round(width / aspect)) if aspect and aspect > 0.05 else width
     height = min(height, cfg.get("max_h", 300))  # cap so tall items don't cover face
-    bottom = cfg["anchor_y"]
-    left = cfg["left"] if cfg["left"] is not None else (CARD_W - width) // 2
+    pivot_x, pivot_y = cfg.get("pivot", (0.5, 1.0))
+    anchor_y = cfg["anchor_y"]
+    # bottom + (1-pivot_y) * height = anchor_y, so the pivot point on the
+    # bbox lands on the category anchor. Solve for bottom:
+    bottom = round(anchor_y - (1 - pivot_y) * height)
+    if cfg["left"] is not None:
+        left = cfg["left"]
+    else:
+        # Center the bbox around the card's horizontal center adjusted for pivot_x.
+        anchor_x = CARD_W // 2
+        left = round(anchor_x - pivot_x * width)
     return {"bottom": bottom, "left": left, "width": width, "height": height}
 
 

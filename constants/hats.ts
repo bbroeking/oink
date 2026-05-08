@@ -184,6 +184,20 @@ const REST_ANCHORS: Record<AnchorName, Anchor> = {
 	feet: { x: 150, y: 285 }, // bottom of pig
 };
 
+// Helper: builds an anchor frame where every anchor shifts by dy (negative =
+// up on screen). Used for animations where the whole pig translates.
+// Declared before PIG_FRAME_ANCHORS so the const initializer can reach it
+// without relying on function-declaration hoisting in the bundler.
+function shiftAll(dy: number): Partial<Record<AnchorName, Anchor>> {
+	if (dy === 0) return {};
+	const out: Partial<Record<AnchorName, Anchor>> = {};
+	for (const k of Object.keys(REST_ANCHORS) as AnchorName[]) {
+		const r = REST_ANCHORS[k];
+		out[k] = { x: r.x, y: r.y + dy };
+	}
+	return out;
+}
+
 // Per-animation per-frame anchor positions. Only define what changes from
 // REST_ANCHORS — anchors not listed in a frame inherit from rest. Numbers
 // are tuned by inspection of the current Rosie sprite sheet.
@@ -246,18 +260,6 @@ export const PIG_FRAME_ANCHORS: Record<
 	],
 };
 
-// Helper: builds an anchor frame where every anchor shifts by dy (negative =
-// up on screen). Used for animations where the whole pig translates.
-function shiftAll(dy: number): Partial<Record<AnchorName, Anchor>> {
-	if (dy === 0) return {};
-	const out: Partial<Record<AnchorName, Anchor>> = {};
-	for (const k of Object.keys(REST_ANCHORS) as AnchorName[]) {
-		const r = REST_ANCHORS[k];
-		out[k] = { x: r.x, y: r.y + dy };
-	}
-	return out;
-}
-
 // Resolve an anchor's position at a given (animation, frame), falling back
 // to the rest position if the frame doesn't override it. Exported for the
 // renderer.
@@ -283,6 +285,28 @@ export const CATEGORY_ANCHORS: Record<string, AnchorName> = {
 	held: "hand_r",
 	aura: "body",
 	background: "body",
+};
+
+// Pivot point per category — fraction (0..1) of the item's bounding box
+// that lines up with the anchor on the pig. (0.5, 1.0) = bottom-center;
+// (0.5, 0.5) = center; (0.5, 0.0) = top-center.
+//
+// Hats sit ON TOP OF the head, so their bottom-center contacts the head
+// anchor. Glasses straddle the eye line so their center contacts the eye
+// anchor. Scarves/necklaces hang down from the neck so their top-center
+// contacts the neck anchor. compute_overlays.py reads this to derive
+// each item's `bottom`/`left` from its bbox dimensions.
+export const CATEGORY_PIVOTS: Record<string, { x: number; y: number }> = {
+	hat: { x: 0.5, y: 1.0 },
+	bow: { x: 0.5, y: 1.0 },
+	glasses: { x: 0.5, y: 0.5 },
+	mask: { x: 0.5, y: 0.5 },
+	scarf: { x: 0.5, y: 0.0 },
+	necklace: { x: 0.5, y: 0.0 },
+	cape: { x: 0.5, y: 0.0 },
+	held: { x: 0.5, y: 0.5 },
+	aura: { x: 0.5, y: 0.5 },
+	background: { x: 0.5, y: 0.5 },
 };
 
 // Compute the delta (in card pixels) between the current anchor and its rest
