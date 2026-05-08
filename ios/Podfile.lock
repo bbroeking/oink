@@ -1873,6 +1873,10 @@ PODS:
   - RevenueCat (5.70.0)
   - RevenueCatUI (5.70.0):
     - RevenueCat (= 5.70.0)
+  - rive-react-native (9.8.3):
+    - React-Core
+    - RiveRuntime (= 6.18.2)
+  - RiveRuntime (6.18.2)
   - RNCAsyncStorage (1.23.1):
     - DoubleConversion
     - glog
@@ -2215,6 +2219,7 @@ DEPENDENCIES:
   - React-utils (from `../node_modules/react-native/ReactCommon/react/utils`)
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
+  - rive-react-native (from `../node_modules/rive-react-native`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNPaywalls (from `../node_modules/react-native-purchases-ui`)
@@ -2231,6 +2236,7 @@ SPEC REPOS:
     - PurchasesHybridCommonUI
     - RevenueCat
     - RevenueCatUI
+    - RiveRuntime
     - Sentry
     - SocketRocket
 
@@ -2414,6 +2420,8 @@ EXTERNAL SOURCES:
     :path: build/generated/ios
   ReactCommon:
     :path: "../node_modules/react-native/ReactCommon"
+  rive-react-native:
+    :path: "../node_modules/rive-react-native"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNGestureHandler:
@@ -2527,6 +2535,8 @@ SPEC CHECKSUMS:
   ReactCommon: 5809a8ee421b7219221a475b78180f8f34b5c5ec
   RevenueCat: f30d8ee4fd36ce56afa40923d314239761eb58a2
   RevenueCatUI: f7e36aa08d5d8de905c0c864c1523d4f39708be3
+  rive-react-native: 3692bf8b8b617c8c801e6af54d961a2574fdbf38
+  RiveRuntime: 55c7a7badd9a8389d20fc8a75b7c6accc851b69a
   RNCAsyncStorage: ff8f69859448bde50f1c25d3e7eb37555fed33ab
   RNGestureHandler: 16ef3dc2d7ecb09f240f25df5255953c4098819b
   RNPaywalls: 651d12fc88480154f47b91877e230e171d531bc2

@@ -182,10 +182,10 @@ export const PIG_FRAME_OFFSETS: Record<
 		{ dx: 0, dy: 4 }, // passing: body lifts
 	],
 	jump: [
-		{ dx: 0, dy: -8 }, // anticipation: squat down, items drop with pig
-		{ dx: 0, dy: 6 }, // takeoff: pig leaving the ground
-		{ dx: 0, dy: 18 }, // apex: pig is highest (kept ≤20 to avoid clip)
-		{ dx: 0, dy: -10 }, // landing: hard squat impact
+		{ dx: 0, dy: -5 }, // anticipation: small squat
+		{ dx: 0, dy: 4 }, // takeoff
+		{ dx: 0, dy: 10 }, // apex: gentle hop, items track up
+		{ dx: 0, dy: -6 }, // landing
 	],
 	happy: [{ dx: 0, dy: 0 }],
 	sad: [{ dx: 0, dy: -3 }], // ears down, slight slump
@@ -200,25 +200,26 @@ export const PIG_FRAME_OFFSETS: Record<
 };
 
 export const DEFAULT_HAT_OVERLAY: HatOverlay = {
-	bottom: 215,
-	left: 70,
-	width: 160,
-	height: 160,
+	bottom: 245,
+	left: 88,
+	width: 125,
+	height: 125,
 };
 
 // Position presets per category, on the 300x300 pig card.
-// Pig anatomy reference (approx, in card coords):
-//   head crown: y ≈ 80 from top    | eyes: y ≈ 165 | snout: y ≈ 200 | neck: y ≈ 230 | body: y > 240
-//   center x ≈ 150
+// Anchored to the current Rosie sprite — head crown sits around y≈35
+// from the top, eyes y≈110, snout y≈150, mouth y≈180, neck y≈210.
+// Center x ≈ 150. Items are sized to feel proportional (~⅓ of the
+// pig's width for accessories, full body width for cape/aura).
 export const CATEGORY_OVERLAYS: Record<string, HatOverlay> = {
-	hat:        { bottom: 215, left: 70,  width: 160, height: 160 },
-	glasses:    { bottom: 130, left: 80,  width: 140, height: 60  },
-	bow:        { bottom: 220, left: 110, width: 80,  height: 60  },
-	scarf:      { bottom: 60,  left: 60,  width: 180, height: 80  },
-	mask:       { bottom: 110, left: 70,  width: 160, height: 110 },
-	necklace:   { bottom: 70,  left: 80,  width: 140, height: 60  },
-	cape:       { bottom: 30,  left: 30,  width: 240, height: 200 },
-	held:       { bottom: 50,  left: 200, width: 80,  height: 80  },
+	hat:        { bottom: 245, left: 88,  width: 125, height: 125 },
+	glasses:    { bottom: 175, left: 95,  width: 110, height: 50  },
+	bow:        { bottom: 255, left: 120, width: 60,  height: 50  },
+	scarf:      { bottom: 70,  left: 70,  width: 160, height: 70  },
+	mask:       { bottom: 145, left: 85,  width: 130, height: 95  },
+	necklace:   { bottom: 80,  left: 95,  width: 110, height: 50  },
+	cape:       { bottom: 25,  left: 35,  width: 230, height: 195 },
+	held:       { bottom: 60,  left: 205, width: 75,  height: 75  },
 	aura:       { bottom: 0,   left: 0,   width: 300, height: 300 },
 	background: { bottom: 0,   left: 0,   width: 300, height: 300 },
 };

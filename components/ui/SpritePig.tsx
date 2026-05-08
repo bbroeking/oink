@@ -42,11 +42,11 @@ interface AnimationConfig {
 }
 
 const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
-	idle: { frames: ["idle_1", "idle_2", "idle_3", "idle_4"], fps: 3.5, loop: true },
-	walk: { frames: ["walk_1", "walk_2", "walk_3", "walk_4"], fps: 6, loop: true },
-	jump: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 9, loop: false },
+	idle: { frames: ["idle_1", "idle_2", "idle_3", "idle_4"], fps: 2.5, loop: true },
+	walk: { frames: ["walk_1", "walk_2", "walk_3", "walk_4"], fps: 4, loop: true },
+	jump: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 6, loop: false },
 	// Looping version of the jump frames, slower — for ambient bouncy idle.
-	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 4, loop: true },
+	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 3, loop: true },
 	happy: { frames: ["happy"], fps: 1, loop: true },
 	sad: { frames: ["sad"], fps: 1, loop: true },
 	surprise: { frames: ["surprise"], fps: 1, loop: true },
@@ -58,7 +58,7 @@ const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
 			"arms_up_surprise",
 			"arms_up_excited",
 		],
-		fps: 5,
+		fps: 3.5,
 		loop: true,
 	},
 };
