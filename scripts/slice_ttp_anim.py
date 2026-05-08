@@ -149,29 +149,67 @@ def trim_to_bbox(arr: np.ndarray, alpha_threshold: int = 16) -> np.ndarray:
     return arr[y0:y1, x0:x1]
 
 
+def find_content_columns(arr: np.ndarray, alpha_threshold: int = 16,
+                         min_run: int = 3) -> list[tuple[int, int]]:
+    """Find runs of columns that contain visible content.
+
+    Returns a list of (x0, x1) ranges where each range is a contiguous
+    band of columns that has at least one opaque pixel. `min_run` filters
+    out single-column noise. Used to locate per-item cells in a strip
+    when items aren't on an equal-spacing grid.
+    """
+    alpha = arr[:, :, 3]
+    col_has_content = (alpha > alpha_threshold).any(axis=0)
+    runs = []
+    in_run = False
+    start = 0
+    for i, has in enumerate(col_has_content):
+        if has and not in_run:
+            start = i
+            in_run = True
+        elif not has and in_run:
+            if i - start >= min_run:
+                runs.append((start, i))
+            in_run = False
+    if in_run and len(col_has_content) - start >= min_run:
+        runs.append((start, len(col_has_content)))
+    return runs
+
+
 def slice_strip(input_path: str, n_cells: int, mode: str,
                 out_paths: list[str]):
     im = Image.open(input_path).convert("RGBA")
     arr = np.array(im)
     h, w = arr.shape[:2]
-    cell_w = w // n_cells
 
-    for i, out_path in enumerate(out_paths):
+    # For backgrounds we always use equal-width slices because there are
+    # no transparent gaps — each cell IS a full landscape.
+    if mode == "background":
+        cell_w = w // n_cells
+        cells = [arr[:, i * cell_w:(i + 1) * cell_w].copy() for i in range(n_cells)]
+    else:
+        # Alpha-key first so the gap detector can find transparent columns.
+        keyed = (
+            near_dark_to_alpha(arr) if mode == "transparent_dark"
+            else near_white_to_alpha(arr)
+        )
+        runs = find_content_columns(keyed)
+        if len(runs) == n_cells:
+            cells = [keyed[:, x0:x1].copy() for x0, x1 in runs]
+        else:
+            # Fallback: detection produced wrong cell count (items merged or
+            # split). Fall back to equal-width and warn so it's visible.
+            print(f"  ⚠ detected {len(runs)} cells but expected {n_cells}; "
+                  f"falling back to equal-width slicing")
+            cell_w = w // n_cells
+            cells = [keyed[:, i * cell_w:(i + 1) * cell_w].copy() for i in range(n_cells)]
+
+    for i, (out_path, cell) in enumerate(zip(out_paths, cells)):
         if i >= n_cells:
             break
-        cell = arr[:, i * cell_w:(i + 1) * cell_w].copy()
 
-        if mode == "transparent":
-            cell = near_white_to_alpha(cell)
+        if mode == "transparent" or mode == "transparent_dark":
             cell = trim_to_bbox(cell)
-        elif mode == "transparent_dark":
-            cell = near_dark_to_alpha(cell)
-            cell = trim_to_bbox(cell)
-        elif mode == "background":
-            # Full cell, drop alpha, save as JPEG-quality PNG
-            pass
-        else:
-            raise ValueError(f"unknown mode {mode}")
 
         out_im = Image.fromarray(cell, mode="RGBA")
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
