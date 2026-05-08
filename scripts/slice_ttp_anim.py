@@ -46,6 +46,8 @@ JOBS = [
      [f"{SPRITE_DIR}/surprise_{i}.png" for i in range(1, 5)]),
     ("ChatGPT Image May 8, 2026, 07_31_29 PM.png", 4, "transparent",
      [f"{SPRITE_DIR}/sad_{i}.png" for i in range(1, 5)]),
+    ("ChatGPT Image May 8, 2026, 07_56_37 PM.png", 4, "transparent",
+     [f"{SPRITE_DIR}/happy_{i}.png" for i in range(1, 5)]),
 
     # ── Accessory strips (5 items each) ─────────────────────────
     # Hats batch 1: wizard, cowboy, tophat, party, beanie
