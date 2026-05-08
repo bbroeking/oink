@@ -132,10 +132,11 @@ export const HAT_OVERLAYS: Record<string, HatOverlay> = {
 	cowboy: { bottom: 230, left: 40, width: 220, height: 157 },
 	tophat: { bottom: 215, left: 80, width: 140, height: 153 },
 	party: { bottom: 215, left: 95, width: 110, height: 147 },
-	// Monocle is a single-eye accessory — center it on the right eye (not
-	// between both eyes like other glasses). Tuned by hand against the new
-	// Rosie sprite where the right eye sits at approximately (190, 105).
-	monocle: { bottom: 165, left: 162, width: 60, height: 60 },
+	// Monocle is a single-eye accessory — the lens sits ON the right eye.
+	// New Rosie's right pupil is at (232, 112) in card coords. The lens
+	// occupies the LEFT ~45% of the monocle PNG bbox (rest is chain), so
+	// the bbox is offset left of center so the lens lands on the pupil.
+	monocle: { bottom: 152, left: 200, width: 70, height: 70 },
 };
 
 // Per-category z-order: items rendered BEHIND the pig vs IN FRONT.

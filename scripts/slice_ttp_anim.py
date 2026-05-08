@@ -39,6 +39,13 @@ JOBS = [
      [f"{SPRITE_DIR}/jump_{i}.png" for i in range(1, 5)]),
     ("ChatGPT Image May 8, 2026, 04_27_44 PM.png", 4, "transparent_dark",
      [f"{SPRITE_DIR}/sad_{i}.png" for i in range(1, 5)]),
+    # New 7:31 PM batch — arms_up cheer, surprise, sad-v2 (better tears)
+    ("ChatGPT Image May 8, 2026, 07_31_17 PM.png", 4, "transparent",
+     [f"{SPRITE_DIR}/arms_up_{i}.png" for i in range(1, 5)]),
+    ("ChatGPT Image May 8, 2026, 07_31_22 PM.png", 4, "transparent",
+     [f"{SPRITE_DIR}/surprise_{i}.png" for i in range(1, 5)]),
+    ("ChatGPT Image May 8, 2026, 07_31_29 PM.png", 4, "transparent",
+     [f"{SPRITE_DIR}/sad_{i}.png" for i in range(1, 5)]),
 
     # ── Accessory strips (5 items each) ─────────────────────────
     # Hats batch 1: wizard, cowboy, tophat, party, beanie

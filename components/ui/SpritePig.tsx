@@ -18,13 +18,16 @@ const FRAMES: Record<string, number> = {
 	jump_2: require("../../assets/images/sprites/rosie/jump_2.png"),
 	jump_3: require("../../assets/images/sprites/rosie/jump_3.png"),
 	jump_4: require("../../assets/images/sprites/rosie/jump_4.png"),
+	surprise_1: require("../../assets/images/sprites/rosie/surprise_1.png"),
+	surprise_2: require("../../assets/images/sprites/rosie/surprise_2.png"),
+	surprise_3: require("../../assets/images/sprites/rosie/surprise_3.png"),
+	surprise_4: require("../../assets/images/sprites/rosie/surprise_4.png"),
+	arms_up_1: require("../../assets/images/sprites/rosie/arms_up_1.png"),
+	arms_up_2: require("../../assets/images/sprites/rosie/arms_up_2.png"),
+	arms_up_3: require("../../assets/images/sprites/rosie/arms_up_3.png"),
+	arms_up_4: require("../../assets/images/sprites/rosie/arms_up_4.png"),
 	happy: require("../../assets/images/sprites/rosie/happy.png"),
-	surprise: require("../../assets/images/sprites/rosie/surprise.png"),
 	wave: require("../../assets/images/sprites/rosie/wave.png"),
-	arms_up_happy: require("../../assets/images/sprites/rosie/arms_up_happy.png"),
-	arms_up_cheer: require("../../assets/images/sprites/rosie/arms_up_cheer.png"),
-	arms_up_surprise: require("../../assets/images/sprites/rosie/arms_up_surprise.png"),
-	arms_up_excited: require("../../assets/images/sprites/rosie/arms_up_excited.png"),
 };
 
 export type PigAnimation =
@@ -52,16 +55,15 @@ const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
 	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 3, loop: true },
 	happy: { frames: ["happy"], fps: 1, loop: true },
 	sad: { frames: ["sad_1", "sad_2", "sad_3", "sad_4"], fps: 3, loop: true },
-	surprise: { frames: ["surprise"], fps: 1, loop: true },
+	surprise: {
+		frames: ["surprise_1", "surprise_2", "surprise_3", "surprise_4"],
+		fps: 6,
+		loop: false,
+	},
 	wave: { frames: ["wave"], fps: 1, loop: true },
 	arms_up: {
-		frames: [
-			"arms_up_happy",
-			"arms_up_cheer",
-			"arms_up_surprise",
-			"arms_up_excited",
-		],
-		fps: 3.5,
+		frames: ["arms_up_1", "arms_up_2", "arms_up_3", "arms_up_4"],
+		fps: 4,
 		loop: true,
 	},
 };
