@@ -29,18 +29,21 @@ interface EquippedItem {
 }
 
 // Renders a single equipped item — the same JSX is used both BEHIND and
-// IN FRONT of the pig, so it lives in one place.
+// IN FRONT of the pig, so it lives in one place. The `zIndex` decides
+// stacking against the pig sprite when it's a sibling node.
 function ItemOverlay({
 	overlay,
 	imageSrc,
 	emoji,
+	zIndex = 5,
 }: {
 	overlay: HatOverlay;
 	imageSrc: number | null;
 	emoji: string | null;
+	zIndex?: number;
 }) {
 	return (
-		<View style={[styles.overlayBox, overlay]}>
+		<View style={[styles.overlayBox, overlay, { zIndex }]}>
 			{imageSrc ? (
 				<Image
 					source={imageSrc}
@@ -273,9 +276,14 @@ export default function SwipeElement({
 				>
 					{/* Behind pig: backgrounds, auras, capes */}
 					{overlay && category && Z_BEHIND_PIG[category] && (
-						<ItemOverlay overlay={overlay} imageSrc={imageSrc} emoji={null} />
+						<ItemOverlay
+							overlay={overlay}
+							imageSrc={imageSrc}
+							emoji={null}
+							zIndex={1}
+						/>
 					)}
-					<View style={styles.cardImage}>
+					<View style={[styles.cardImage, { zIndex: 2 }]}>
 						<SpritePig
 							animation={pigAnim}
 							size={300}
@@ -285,7 +293,12 @@ export default function SwipeElement({
 					</View>
 					{/* In front of pig: hats, glasses, masks, bows, scarves, necklaces, held */}
 					{overlay && (!category || !Z_BEHIND_PIG[category]) && (
-						<ItemOverlay overlay={overlay} imageSrc={imageSrc} emoji={emoji} />
+						<ItemOverlay
+							overlay={overlay}
+							imageSrc={imageSrc}
+							emoji={emoji}
+							zIndex={10}
+						/>
 					)}
 				</Animated.View>
 			</Pressable>
@@ -329,7 +342,10 @@ const styles = StyleSheet.create({
 		width: "100%",
 		height: "100%",
 		borderRadius: 15,
-		overflow: "hidden",
+		// Don't clip — overlay items (hats, glasses) anchor to body parts
+		// and may extend slightly past the 300×300 card edge during big
+		// motions like jump. Clipping here was lopping off ear-tips and
+		// the right side of monocle/wide hats.
 	},
 	cardImageStyle: {
 		borderRadius: 15,
