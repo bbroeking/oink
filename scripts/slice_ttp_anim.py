@@ -113,25 +113,56 @@ JOBS = [
 ]
 
 
+def _flood_from_edges(mask: np.ndarray) -> np.ndarray:
+    """Returns the subset of `mask` that's reachable from the image edges
+    via 4-neighbor flood fill. Used to keep internal "near-white" pixels
+    (eye highlights, shine) opaque while removing only the surrounding
+    background."""
+    h, w = mask.shape
+    visited = np.zeros_like(mask, dtype=bool)
+    # Seed with all edge pixels that match the mask
+    stack = []
+    for x in range(w):
+        if mask[0, x]: stack.append((0, x))
+        if mask[h - 1, x]: stack.append((h - 1, x))
+    for y in range(h):
+        if mask[y, 0]: stack.append((y, 0))
+        if mask[y, w - 1]: stack.append((y, w - 1))
+    while stack:
+        y, x = stack.pop()
+        if visited[y, x] or not mask[y, x]:
+            continue
+        visited[y, x] = True
+        if y > 0: stack.append((y - 1, x))
+        if y < h - 1: stack.append((y + 1, x))
+        if x > 0: stack.append((y, x - 1))
+        if x < w - 1: stack.append((y, x + 1))
+    return visited
+
+
 def near_white_to_alpha(arr: np.ndarray, threshold: int = 240) -> np.ndarray:
-    """Convert near-white pixels to alpha=0; everything else stays."""
+    """Replace ONLY edge-connected near-white pixels with alpha=0. Internal
+    near-white highlights (eye sparkles, snout shine) stay opaque."""
     rgba = arr.copy()
     if rgba.shape[2] == 3:
         rgba = np.dstack([rgba, np.full(rgba.shape[:2], 255, dtype=np.uint8)])
     r, g, b, a = rgba[:, :, 0], rgba[:, :, 1], rgba[:, :, 2], rgba[:, :, 3]
-    mask = (r >= threshold) & (g >= threshold) & (b >= threshold)
-    rgba[..., 3] = np.where(mask, 0, a)
+    near_white = (r >= threshold) & (g >= threshold) & (b >= threshold)
+    bg = _flood_from_edges(near_white)
+    rgba[..., 3] = np.where(bg, 0, a)
     return rgba
 
 
 def near_dark_to_alpha(arr: np.ndarray, threshold: int = 30) -> np.ndarray:
-    """Convert near-black pixels to alpha=0; for the SAD strip with dark BG."""
+    """Replace ONLY edge-connected near-black pixels with alpha=0. Used for
+    the SAD strip whose background is solid dark."""
     rgba = arr.copy()
     if rgba.shape[2] == 3:
         rgba = np.dstack([rgba, np.full(rgba.shape[:2], 255, dtype=np.uint8)])
     r, g, b, a = rgba[:, :, 0], rgba[:, :, 1], rgba[:, :, 2], rgba[:, :, 3]
-    mask = (r <= threshold) & (g <= threshold) & (b <= threshold)
-    rgba[..., 3] = np.where(mask, 0, a)
+    near_dark = (r <= threshold) & (g <= threshold) & (b <= threshold)
+    bg = _flood_from_edges(near_dark)
+    rgba[..., 3] = np.where(bg, 0, a)
     return rgba
 
 

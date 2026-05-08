@@ -132,7 +132,10 @@ export const HAT_OVERLAYS: Record<string, HatOverlay> = {
 	cowboy: { bottom: 230, left: 40, width: 220, height: 157 },
 	tophat: { bottom: 215, left: 80, width: 140, height: 153 },
 	party: { bottom: 215, left: 95, width: 110, height: 147 },
-	monocle: { bottom: 155, left: 170, width: 95, height: 85 },
+	// Monocle is a single-eye accessory — center it on the right eye (not
+	// between both eyes like other glasses). Tuned by hand against the new
+	// Rosie sprite where the right eye sits at approximately (190, 105).
+	monocle: { bottom: 165, left: 162, width: 60, height: 60 },
 };
 
 // Per-category z-order: items rendered BEHIND the pig vs IN FRONT.
