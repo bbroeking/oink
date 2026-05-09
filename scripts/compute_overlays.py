@@ -44,8 +44,13 @@ OUTPUT_REPORT = f"{REPO}/tests/OVERLAY_REPORT.md"
 # on the pig (head crown ≈ 265, eye line ≈ 195, neck ≈ 90, etc.). `pivot`
 # is the fraction of the item's bbox that contacts the anchor: (0.5, 1.0)
 # = bottom-center (default for hats); (0.5, 0.5) = center (glasses);
-# (0.5, 0.0) = top-center (scarves hanging down). Must mirror
-# CATEGORY_PIVOTS in constants/hats.ts.
+# (0.5, 0.0) = top-center (scarves hanging down).
+#
+# !!! SOURCE OF TRUTH: this table mirrors CATEGORY_PIVOTS + the
+# REST_ANCHORS positions in constants/hats.ts. Diverging here will
+# misposition every item the script regenerates. If you change pivots
+# or anchor positions in the TS code, update both halves in lockstep
+# (or add a JSON intermediary that both consume).
 CATEGORY = {
     # Hats sit on the head crown (y_from_top≈35 → y_from_bottom=265).
     "hat":        {"anchor_y": 265, "width": 160, "left": None, "max_h": 200, "pivot": (0.5, 1.0)},

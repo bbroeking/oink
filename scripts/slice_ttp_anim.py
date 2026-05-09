@@ -228,7 +228,12 @@ def slice_strip(input_path: str, n_cells: int, mode: str,
     # set so the renderer's resizeMode=contain places the pig's content at
     # the same screen position every frame. Without this the pig wiggles
     # between frames and the per-frame anchor system can't compensate.
-    is_sprite = any("/sprites/rosie/" in p for p in out_paths)
+    #
+    # Routing decision is based on canonical destination prefix — checking
+    # against SPRITE_DIR exactly avoids the false-positive risk of a
+    # substring search (e.g., a future "sprites/prebaked/<item>/" path
+    # would still get correctly classified by the explicit prefix).
+    is_sprite = all(p.startswith(SPRITE_DIR + "/") for p in out_paths)
 
     # For backgrounds we always use equal-width slices because there are
     # no transparent gaps — each cell IS a full landscape.

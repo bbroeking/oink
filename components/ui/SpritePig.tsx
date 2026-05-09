@@ -128,7 +128,7 @@ export function SpritePig({
 			});
 		}, period);
 		return () => clearInterval(handle);
-	}, [animation]);
+	}, [animation, customFrames]);
 
 	// Fire onFrame after commit — never inside the setIdx updater (React forbids
 	// side effects in state updaters as of React 18).

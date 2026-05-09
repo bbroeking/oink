@@ -176,16 +176,19 @@ export type PigAnimationKey =
 // SwipeElement subtracts the rest anchor to get a delta and applies it to
 // the item's existing `bottom`/`left`.
 
+// Measured against the new ChatGPT Rosie sprite (idle_1 → 351×257 source,
+// rendered at 300×220 inside the 300×300 card via resizeMode=contain).
+// Re-measure with scripts/measure_pig_anatomy.py if the sprite art changes.
 const REST_ANCHORS: Record<AnchorName, Anchor> = {
-	head: { x: 150, y: 35 }, // top of head between ears
-	eyes: { x: 150, y: 105 }, // eye line
-	snout: { x: 150, y: 150 }, // pink disk
-	mouth: { x: 150, y: 180 }, // mouth/smile
-	neck: { x: 150, y: 210 }, // base of neck where head meets body
-	body: { x: 150, y: 220 }, // body center
-	hand_l: { x: 100, y: 215 }, // left front limb
-	hand_r: { x: 200, y: 215 }, // right front limb
-	feet: { x: 150, y: 285 }, // bottom of pig
+	head: { x: 158, y: 40 }, // top of head between ears (top edge of rendered pig)
+	eyes: { x: 158, y: 120 }, // eye line (left pupil ≈ x=105, right ≈ x=212)
+	snout: { x: 158, y: 160 }, // pink disk center
+	mouth: { x: 158, y: 195 },
+	neck: { x: 158, y: 215 }, // chin / collar line
+	body: { x: 158, y: 230 }, // body center
+	hand_l: { x: 110, y: 220 },
+	hand_r: { x: 210, y: 220 },
+	feet: { x: 158, y: 258 }, // bottom of body in rendered card coords
 };
 
 // Helper: builds an anchor frame where every anchor shifts by dy (negative =
