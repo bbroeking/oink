@@ -383,6 +383,15 @@ export default function Barn() {
 					onPress={() => router.push("/season")}
 				/>
 
+				{__DEV__ && (
+					<Pressable
+						onPress={() => router.push("/align")}
+						style={styles.devAlign}
+					>
+						<Text style={styles.devAlignText}>⊕ align</Text>
+					</Pressable>
+				)}
+
 				{toast && (
 					<Animated.View
 						pointerEvents="none"
@@ -569,7 +578,25 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 18,
 	},
-toastWrap: {
+devAlign: {
+		position: "absolute",
+		top: Platform.OS === "ios" ? 60 : 24,
+		right: 12,
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+		borderRadius: 14,
+		backgroundColor: "rgba(0,0,0,0.7)",
+		borderWidth: 1.5,
+		borderColor: WHIMSY.sun,
+		zIndex: 50,
+	},
+	devAlignText: {
+		color: WHIMSY.sun,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		letterSpacing: 0.5,
+	},
+	toastWrap: {
 		position: "absolute",
 		top: Platform.OS === "ios" ? 180 : 160,
 		left: 16,
