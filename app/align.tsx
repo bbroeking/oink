@@ -23,9 +23,21 @@ import {
 	HatOverlay,
 } from "@/constants/hats";
 import { COLORS, FONTS, SHADOWS } from "@/constants/theme";
+import { SpritePig, PigAnimation } from "@/components/ui/SpritePig";
 
 const STORAGE_KEY = "align_overrides_v1";
+const FLAG_KEY = "align_flagged_v1";
 const PIG_SIZE = 300;
+const ANIMATIONS_TO_TEST: PigAnimation[] = [
+	"idle",
+	"walk",
+	"jump",
+	"happy",
+	"sad",
+	"surprise",
+	"wave",
+	"arms_up",
+];
 
 const CATEGORY_ORDER = [
 	"hat",
@@ -44,16 +56,22 @@ export default function AlignScreen() {
 	if (!__DEV__) return null;
 	const [items, setItems] = useState<HatRow[]>([]);
 	const [overrides, setOverrides] = useState<Record<string, HatOverlay>>({});
+	const [flagged, setFlagged] = useState<Record<string, true>>({});
 	const [currentId, setCurrentId] = useState<string | null>(null);
 	const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 	const [step, setStep] = useState<1 | 5 | 10>(5);
 	const [showExport, setShowExport] = useState(false);
 	const [showOutline, setShowOutline] = useState(true);
 	const [hydrated, setHydrated] = useState(false);
+	// Scan mode: live animated pig + auto-advance through items.
+	const [liveMode, setLiveMode] = useState(true);
+	const [animation, setAnimation] = useState<PigAnimation>("idle");
+	const [autoCycle, setAutoCycle] = useState(false);
+	const [cycleSpeed, setCycleSpeed] = useState<1500 | 3000>(1500);
 
 	useEffect(() => {
 		(async () => {
-			const [itemsRes, ovRaw] = await Promise.all([
+			const [itemsRes, ovRaw, flagRaw] = await Promise.all([
 				supabase
 					.from("hats")
 					.select(
@@ -61,6 +79,7 @@ export default function AlignScreen() {
 					)
 					.order("display_order"),
 				AsyncStorage.getItem(STORAGE_KEY),
+				AsyncStorage.getItem(FLAG_KEY),
 			]);
 			const rows = (itemsRes.data ?? []) as HatRow[];
 			setItems(rows);
@@ -68,6 +87,11 @@ export default function AlignScreen() {
 			if (ovRaw) {
 				try {
 					setOverrides(JSON.parse(ovRaw));
+				} catch {}
+			}
+			if (flagRaw) {
+				try {
+					setFlagged(JSON.parse(flagRaw));
 				} catch {}
 			}
 			setHydrated(true);
@@ -78,6 +102,11 @@ export default function AlignScreen() {
 		if (!hydrated) return;
 		AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)).catch(() => {});
 	}, [overrides, hydrated]);
+
+	useEffect(() => {
+		if (!hydrated) return;
+		AsyncStorage.setItem(FLAG_KEY, JSON.stringify(flagged)).catch(() => {});
+	}, [flagged, hydrated]);
 
 	const current = useMemo(
 		() => items.find((i) => i.id === currentId) ?? null,
@@ -136,12 +165,34 @@ export default function AlignScreen() {
 	const goByOffset = useCallback(
 		(delta: number) => {
 			if (!currentId || items.length === 0) return;
-			const idx = items.findIndex((i) => i.id === currentId);
-			const next = items[(idx + delta + items.length) % items.length];
+			const list = categoryFilter
+				? items.filter((i) => i.category === categoryFilter)
+				: items;
+			if (list.length === 0) return;
+			const idx = list.findIndex((i) => i.id === currentId);
+			const next = list[(idx + delta + list.length) % list.length];
 			setCurrentId(next.id);
 		},
-		[items, currentId]
+		[items, currentId, categoryFilter]
 	);
+
+	// Auto-cycle: advance through items every cycleSpeed ms when toggled on.
+	useEffect(() => {
+		if (!autoCycle) return;
+		const t = setInterval(() => goByOffset(1), cycleSpeed);
+		return () => clearInterval(t);
+	}, [autoCycle, cycleSpeed, goByOffset]);
+
+	const toggleFlag = useCallback(() => {
+		if (!currentId) return;
+		setFlagged((f) => {
+			if (f[currentId]) {
+				const { [currentId]: _, ...rest } = f;
+				return rest;
+			}
+			return { ...f, [currentId]: true };
+		});
+	}, [currentId]);
 
 	// Drag-to-reposition on the overlay box
 	const dragStart = useRef<{ left: number; bottom: number } | null>(null);
@@ -281,12 +332,18 @@ export default function AlignScreen() {
 
 				<View style={styles.stage}>
 					<View style={styles.card}>
-						<ImageBackground
-							source={require("../assets/images/pig.png")}
-							style={styles.cardImage}
-							imageStyle={styles.cardImageStyle}
-							resizeMode="cover"
-						/>
+						{liveMode ? (
+							<View style={styles.cardImage}>
+								<SpritePig animation={animation} size={PIG_SIZE} />
+							</View>
+						) : (
+							<ImageBackground
+								source={require("../assets/images/pig.png")}
+								style={styles.cardImage}
+								imageStyle={styles.cardImageStyle}
+								resizeMode="cover"
+							/>
+						)}
 						{/* Center crosshair for reference */}
 						<View pointerEvents="none" style={styles.crosshairV} />
 						<View pointerEvents="none" style={styles.crosshairH} />
@@ -319,6 +376,58 @@ export default function AlignScreen() {
 							</View>
 						)}
 					</View>
+				</View>
+
+				{/* Scan-mode controls: animation switcher + auto-cycle + flag */}
+				<View style={styles.scanRow}>
+					<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						contentContainerStyle={styles.scanChips}
+					>
+						{ANIMATIONS_TO_TEST.map((a) => (
+							<Pressable
+								key={a}
+								onPress={() => setAnimation(a)}
+								style={[styles.toggle, animation === a && styles.toggleOn]}
+							>
+								<Text
+									style={[
+										styles.toggleText,
+										animation === a && styles.toggleTextOn,
+									]}
+								>
+									{a}
+								</Text>
+							</Pressable>
+						))}
+					</ScrollView>
+					<Pressable
+						onPress={() => setAutoCycle((v) => !v)}
+						style={[styles.toggle, autoCycle && styles.toggleOn]}
+					>
+						<Text
+							style={[styles.toggleText, autoCycle && styles.toggleTextOn]}
+						>
+							{autoCycle ? `▶ cycle ${cycleSpeed / 1000}s` : "auto-cycle"}
+						</Text>
+					</Pressable>
+					<Pressable
+						onPress={toggleFlag}
+						style={[
+							styles.toggle,
+							currentId && flagged[currentId] && styles.toggleFlagged,
+						]}
+					>
+						<Text
+							style={[
+								styles.toggleText,
+								currentId && flagged[currentId] && styles.toggleTextOn,
+							]}
+						>
+							⚑ {Object.keys(flagged).length}
+						</Text>
+					</Pressable>
 				</View>
 
 				{/* Live values + nav */}
@@ -402,6 +511,19 @@ export default function AlignScreen() {
 								]}
 							>
 								{showOutline ? "outline on" : "outline off"}
+							</Text>
+						</Pressable>
+						<Pressable
+							onPress={() => setLiveMode((v) => !v)}
+							style={[styles.toggle, liveMode && styles.toggleOn]}
+						>
+							<Text
+								style={[
+									styles.toggleText,
+									liveMode && styles.toggleTextOn,
+								]}
+							>
+								{liveMode ? "live" : "static"}
 							</Text>
 						</Pressable>
 						<Pressable onPress={() => setShowExport(true)} style={styles.exportBtn}>
@@ -698,6 +820,21 @@ const styles = StyleSheet.create({
 	toggleOn: {
 		backgroundColor: COLORS.ink,
 		borderColor: COLORS.ink,
+	},
+	toggleFlagged: {
+		backgroundColor: "#E55454",
+		borderColor: "#E55454",
+	},
+	scanRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		paddingHorizontal: 12,
+		paddingTop: 10,
+	},
+	scanChips: {
+		gap: 4,
+		paddingRight: 6,
 	},
 	toggleText: {
 		fontFamily: FONTS.bodyExtra,
