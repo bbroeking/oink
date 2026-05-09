@@ -455,6 +455,16 @@ export default function AlignScreen() {
 						))}
 					</ScrollView>
 					<Pressable
+						onPress={() => setCurrentId(null)}
+						style={[styles.toggle, !currentId && styles.toggleOn]}
+					>
+						<Text
+							style={[styles.toggleText, !currentId && styles.toggleTextOn]}
+						>
+							clear
+						</Text>
+					</Pressable>
+					<Pressable
 						onPress={() => setAutoCycle((v) => !v)}
 						style={[styles.toggle, autoCycle && styles.toggleOn]}
 					>
