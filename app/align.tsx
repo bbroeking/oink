@@ -73,6 +73,10 @@ export default function AlignScreen() {
 	const [cycleSpeed, setCycleSpeed] = useState<1500 | 3000>(1500);
 	const [showAnchors, setShowAnchors] = useState(false);
 	const [pigFrameIdx, setPigFrameIdx] = useState(0);
+	// Local-only: flip the current item between front and behind the pig
+	// in the preview so we can scout if behind layering reads better. The
+	// app still uses Z_BEHIND_PIG for categorical defaults.
+	const [behindOverride, setBehindOverride] = useState(false);
 
 	useEffect(() => {
 		(async () => {
@@ -337,6 +341,35 @@ export default function AlignScreen() {
 
 				<View style={styles.stage}>
 					<View style={styles.card}>
+						{/* When behindOverride is on, item renders here (under the pig) */}
+						{behindOverride && overlay && current && (
+							<View
+								{...pan.panHandlers}
+								style={[styles.overlayBox, overlay]}
+							>
+								{imageSrc ? (
+									<Image
+										source={imageSrc}
+										style={styles.fillImage}
+										resizeMode="contain"
+									/>
+								) : emoji ? (
+									<Text
+										style={[
+											styles.emojiOverlay,
+											{
+												fontSize:
+													Math.min(overlay.width, overlay.height) *
+													0.7,
+											},
+										]}
+									>
+										{emoji}
+									</Text>
+								) : null}
+								{showOutline && <View pointerEvents="none" style={styles.outline} />}
+							</View>
+						)}
 						{liveMode ? (
 							<View style={styles.cardImage}>
 								<SpritePig
@@ -356,7 +389,7 @@ export default function AlignScreen() {
 						{/* Center crosshair for reference */}
 						<View pointerEvents="none" style={styles.crosshairV} />
 						<View pointerEvents="none" style={styles.crosshairH} />
-						{overlay && current && (
+						{!behindOverride && overlay && current && (
 							<View
 								{...pan.panHandlers}
 								style={[styles.overlayBox, overlay]}
@@ -594,6 +627,19 @@ export default function AlignScreen() {
 								]}
 							>
 								anchors
+							</Text>
+						</Pressable>
+						<Pressable
+							onPress={() => setBehindOverride((v) => !v)}
+							style={[styles.toggle, behindOverride && styles.toggleOn]}
+						>
+							<Text
+								style={[
+									styles.toggleText,
+									behindOverride && styles.toggleTextOn,
+								]}
+							>
+								behind
 							</Text>
 						</Pressable>
 						<Pressable onPress={() => setShowExport(true)} style={styles.exportBtn}>
