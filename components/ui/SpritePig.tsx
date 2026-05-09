@@ -30,7 +30,10 @@ const FRAMES: Record<string, number> = {
 	happy_2: require("../../assets/images/sprites/rosie/happy_2.png"),
 	happy_3: require("../../assets/images/sprites/rosie/happy_3.png"),
 	happy_4: require("../../assets/images/sprites/rosie/happy_4.png"),
-	wave: require("../../assets/images/sprites/rosie/wave.png"),
+	wave_1: require("../../assets/images/sprites/rosie/wave_1.png"),
+	wave_2: require("../../assets/images/sprites/rosie/wave_2.png"),
+	wave_3: require("../../assets/images/sprites/rosie/wave_3.png"),
+	wave_4: require("../../assets/images/sprites/rosie/wave_4.png"),
 };
 
 export type PigAnimation =
@@ -63,7 +66,7 @@ const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
 		fps: 6,
 		loop: false,
 	},
-	wave: { frames: ["wave"], fps: 1, loop: true },
+	wave: { frames: ["wave_1", "wave_2", "wave_3", "wave_4"], fps: 4, loop: true },
 	arms_up: {
 		frames: ["arms_up_1", "arms_up_2", "arms_up_3", "arms_up_4"],
 		fps: 4,
