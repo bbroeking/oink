@@ -21,6 +21,9 @@ import {
 	DEFAULT_HAT_OVERLAY,
 	HatRow,
 	HatOverlay,
+	resolveAnchor,
+	PigAnimationKey,
+	AnchorName,
 } from "@/constants/hats";
 import { COLORS, FONTS, SHADOWS } from "@/constants/theme";
 import { SpritePig, PigAnimation } from "@/components/ui/SpritePig";
@@ -68,6 +71,8 @@ export default function AlignScreen() {
 	const [animation, setAnimation] = useState<PigAnimation>("idle");
 	const [autoCycle, setAutoCycle] = useState(false);
 	const [cycleSpeed, setCycleSpeed] = useState<1500 | 3000>(1500);
+	const [showAnchors, setShowAnchors] = useState(false);
+	const [pigFrameIdx, setPigFrameIdx] = useState(0);
 
 	useEffect(() => {
 		(async () => {
@@ -334,7 +339,11 @@ export default function AlignScreen() {
 					<View style={styles.card}>
 						{liveMode ? (
 							<View style={styles.cardImage}>
-								<SpritePig animation={animation} size={PIG_SIZE} />
+								<SpritePig
+									animation={animation}
+									size={PIG_SIZE}
+									onFrame={setPigFrameIdx}
+								/>
 							</View>
 						) : (
 							<ImageBackground
@@ -347,6 +356,49 @@ export default function AlignScreen() {
 						{/* Center crosshair for reference */}
 						<View pointerEvents="none" style={styles.crosshairV} />
 						<View pointerEvents="none" style={styles.crosshairH} />
+						{/* Per-frame anchor dots — visualize where items will hook
+						   into body parts at the current frame of the current
+						   animation. If a dot isn't on the right anatomy, retune
+						   PIG_FRAME_ANCHORS in constants/hats.ts. */}
+						{showAnchors && (
+							<>
+								{(
+									[
+										["head", "#FF3B30"],
+										["eyes", "#FF9500"],
+										["snout", "#FFCC00"],
+										["mouth", "#34C759"],
+										["neck", "#5AC8FA"],
+										["body", "#007AFF"],
+										["hand_l", "#AF52DE"],
+										["hand_r", "#FF2D92"],
+										["feet", "#8E8E93"],
+									] as const
+								).map(([name, color]) => {
+									const a = resolveAnchor(
+										animation as PigAnimationKey,
+										pigFrameIdx,
+										name as AnchorName,
+									);
+									return (
+										<View
+											key={name}
+											pointerEvents="none"
+											style={[
+												styles.anchorDot,
+												{
+													left: a.x - 6,
+													top: a.y - 6,
+													backgroundColor: color,
+												},
+											]}
+										>
+											<Text style={styles.anchorLabel}>{name}</Text>
+										</View>
+									);
+								})}
+							</>
+						)}
 						{overlay && current && (
 							<View
 								{...pan.panHandlers}
@@ -524,6 +576,19 @@ export default function AlignScreen() {
 								]}
 							>
 								{liveMode ? "live" : "static"}
+							</Text>
+						</Pressable>
+						<Pressable
+							onPress={() => setShowAnchors((v) => !v)}
+							style={[styles.toggle, showAnchors && styles.toggleOn]}
+						>
+							<Text
+								style={[
+									styles.toggleText,
+									showAnchors && styles.toggleTextOn,
+								]}
+							>
+								anchors
 							</Text>
 						</Pressable>
 						<Pressable onPress={() => setShowExport(true)} style={styles.exportBtn}>
@@ -835,6 +900,30 @@ const styles = StyleSheet.create({
 	scanChips: {
 		gap: 4,
 		paddingRight: 6,
+	},
+	anchorDot: {
+		position: "absolute",
+		width: 12,
+		height: 12,
+		borderRadius: 6,
+		borderWidth: 1.5,
+		borderColor: "#fff",
+		alignItems: "center",
+		justifyContent: "center",
+		zIndex: 100,
+	},
+	anchorLabel: {
+		position: "absolute",
+		left: 14,
+		top: -4,
+		fontSize: 9,
+		fontWeight: "700",
+		color: "#fff",
+		backgroundColor: "rgba(0,0,0,0.7)",
+		paddingHorizontal: 3,
+		paddingVertical: 1,
+		borderRadius: 3,
+		overflow: "hidden",
 	},
 	toggleText: {
 		fontFamily: FONTS.bodyExtra,
