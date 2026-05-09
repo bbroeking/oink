@@ -224,11 +224,47 @@ def slice_strip(input_path: str, n_cells: int, mode: str,
     arr = np.array(im)
     h, w = arr.shape[:2]
 
+    # Animation sprite frames must share identical dimensions across the
+    # set so the renderer's resizeMode=contain places the pig's content at
+    # the same screen position every frame. Without this the pig wiggles
+    # between frames and the per-frame anchor system can't compensate.
+    is_sprite = any("/sprites/rosie/" in p for p in out_paths)
+
     # For backgrounds we always use equal-width slices because there are
     # no transparent gaps — each cell IS a full landscape.
     if mode == "background":
         cell_w = w // n_cells
         cells = [arr[:, i * cell_w:(i + 1) * cell_w].copy() for i in range(n_cells)]
+    elif is_sprite:
+        # Always equal-width for sprite frames. Then crop ALL frames to the
+        # SAME y-range so they share dimensions exactly — required for
+        # the per-frame anchor system to track body parts cleanly.
+        keyed = (
+            near_dark_to_alpha(arr) if mode == "transparent_dark"
+            else near_white_to_alpha(arr)
+        )
+        cell_w = w // n_cells
+        cells = [keyed[:, i * cell_w:(i + 1) * cell_w].copy() for i in range(n_cells)]
+        # Find the union bbox across all cells, then crop each cell
+        # vertically (and horizontally tighter) to that common region.
+        global_y0, global_y1, global_x0, global_x1 = h, 0, cell_w, 0
+        for cell in cells:
+            alpha = cell[:, :, 3]
+            mask = alpha > 16
+            if not mask.any():
+                continue
+            ys, xs = np.where(mask)
+            global_y0 = min(global_y0, int(ys.min()))
+            global_y1 = max(global_y1, int(ys.max()) + 1)
+            global_x0 = min(global_x0, int(xs.min()))
+            global_x1 = max(global_x1, int(xs.max()) + 1)
+        # Add a small symmetric horizontal pad so off-screen wiggles fit.
+        pad = 4
+        global_x0 = max(0, global_x0 - pad)
+        global_x1 = min(cell_w, global_x1 + pad)
+        cells = [
+            c[global_y0:global_y1, global_x0:global_x1].copy() for c in cells
+        ]
     else:
         # Alpha-key first so the gap detector can find transparent columns.
         keyed = (
@@ -250,7 +286,10 @@ def slice_strip(input_path: str, n_cells: int, mode: str,
         if i >= n_cells:
             break
 
-        if mode == "transparent" or mode == "transparent_dark":
+        # Trim accessories to bbox so positioning math uses real bounds;
+        # leave sprite frames at their full cell size so all frames in
+        # an animation share dimensions exactly.
+        if (mode == "transparent" or mode == "transparent_dark") and not is_sprite:
             cell = trim_to_bbox(cell)
 
         out_im = Image.fromarray(cell, mode="RGBA")
