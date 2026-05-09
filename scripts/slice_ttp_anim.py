@@ -241,35 +241,59 @@ def slice_strip(input_path: str, n_cells: int, mode: str,
         cell_w = w // n_cells
         cells = [arr[:, i * cell_w:(i + 1) * cell_w].copy() for i in range(n_cells)]
     elif is_sprite:
-        # Always equal-width for sprite frames. Then crop ALL frames to the
-        # SAME y-range so they share dimensions exactly — required for
-        # the per-frame anchor system to track body parts cleanly.
+        # Sprite frames need to share dimensions AND have the pig centered
+        # at the same position in each frame, otherwise the renderer's
+        # resizeMode=contain places the pig at different screen positions
+        # per frame and items appear to "slip" relative to head/eyes.
+        #
+        # ChatGPT-generated strips don't reliably center the pig in each
+        # cell, so we (a) find each cell's own bbox, (b) center the
+        # bbox content inside a uniform output canvas large enough to
+        # hold the largest frame's content with a safety pad.
         keyed = (
             near_dark_to_alpha(arr) if mode == "transparent_dark"
             else near_white_to_alpha(arr)
         )
         cell_w = w // n_cells
-        cells = [keyed[:, i * cell_w:(i + 1) * cell_w].copy() for i in range(n_cells)]
-        # Find the union bbox across all cells, then crop each cell
-        # vertically (and horizontally tighter) to that common region.
-        global_y0, global_y1, global_x0, global_x1 = h, 0, cell_w, 0
-        for cell in cells:
+        raw_cells = [keyed[:, i * cell_w:(i + 1) * cell_w].copy() for i in range(n_cells)]
+
+        bboxes: list[tuple[int, int, int, int] | None] = []
+        for cell in raw_cells:
             alpha = cell[:, :, 3]
             mask = alpha > 16
             if not mask.any():
+                bboxes.append(None)
                 continue
             ys, xs = np.where(mask)
-            global_y0 = min(global_y0, int(ys.min()))
-            global_y1 = max(global_y1, int(ys.max()) + 1)
-            global_x0 = min(global_x0, int(xs.min()))
-            global_x1 = max(global_x1, int(xs.max()) + 1)
-        # Add a small symmetric horizontal pad so off-screen wiggles fit.
-        pad = 4
-        global_x0 = max(0, global_x0 - pad)
-        global_x1 = min(cell_w, global_x1 + pad)
-        cells = [
-            c[global_y0:global_y1, global_x0:global_x1].copy() for c in cells
-        ]
+            bboxes.append((int(ys.min()), int(ys.max()) + 1,
+                           int(xs.min()), int(xs.max()) + 1))
+
+        valid = [b for b in bboxes if b]
+        if not valid:
+            cells = raw_cells
+        else:
+            max_h = max(y1 - y0 for y0, y1, _, _ in valid)
+            max_w = max(x1 - x0 for _, _, x0, x1 in valid)
+            pad = 6
+            canvas_h = max_h + 2 * pad
+            canvas_w = max_w + 2 * pad
+            cells = []
+            for cell, bb in zip(raw_cells, bboxes):
+                if not bb:
+                    cells.append(np.zeros((canvas_h, canvas_w, 4), dtype=np.uint8))
+                    continue
+                y0, y1, x0, x1 = bb
+                content = cell[y0:y1, x0:x1]
+                ch, cw = content.shape[:2]
+                canvas = np.zeros((canvas_h, canvas_w, 4), dtype=np.uint8)
+                # Center content in canvas. Anchor the FEET to the bottom
+                # rather than vertical center — pigs jump up, not centered
+                # vertically in the bbox, so anchoring feet keeps the
+                # standing/contact point stable across frames.
+                ox = (canvas_w - cw) // 2
+                oy = canvas_h - ch - pad
+                canvas[oy:oy + ch, ox:ox + cw] = content
+                cells.append(canvas)
     else:
         # Alpha-key first so the gap detector can find transparent columns.
         keyed = (
