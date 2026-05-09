@@ -30,7 +30,7 @@ import { SpritePig, PigAnimation } from "@/components/ui/SpritePig";
 
 const STORAGE_KEY = "align_overrides_v1";
 const FLAG_KEY = "align_flagged_v1";
-const PIG_SIZE = 300;
+const PIG_SIZE = 360;
 const ANIMATIONS_TO_TEST: PigAnimation[] = [
 	"idle",
 	"walk",
@@ -77,6 +77,7 @@ export default function AlignScreen() {
 	// in the preview so we can scout if behind layering reads better. The
 	// app still uses Z_BEHIND_PIG for categorical defaults.
 	const [behindOverride, setBehindOverride] = useState(false);
+	const [saveToast, setSaveToast] = useState<string | null>(null);
 
 	useEffect(() => {
 		(async () => {
@@ -534,6 +535,30 @@ export default function AlignScreen() {
 									{imageSrc ? " · PNG" : " · emoji"}
 								</Text>
 							</View>
+							<Pressable
+								onPress={() => {
+									if (!current || !overlay) return;
+									const safeKey =
+										/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(current.id)
+											? current.id
+											: `'${current.id}'`;
+									const snippet = `${safeKey}: { bottom: ${overlay.bottom}, left: ${overlay.left}, width: ${overlay.width}, height: ${overlay.height} },`;
+									// Print to metro terminal so the user can grab
+									// it from there with a single triple-click +
+									// cmd-c — no native clipboard module required.
+									// eslint-disable-next-line no-console
+									console.log("\n[align] paste into HAT_OVERLAYS:");
+									// eslint-disable-next-line no-console
+									console.log("\t" + snippet + "\n");
+									setSaveToast(current.id);
+									setTimeout(() => setSaveToast(null), 1500);
+								}}
+								style={styles.saveBtn}
+							>
+								<Text style={styles.saveBtnText}>
+									{saveToast === current.id ? "✓ saved" : "save"}
+								</Text>
+							</Pressable>
 							<Pressable onPress={() => goByOffset(1)} style={styles.navBtn}>
 								<Text style={styles.navText}>next ›</Text>
 							</Pressable>
@@ -951,6 +976,19 @@ const styles = StyleSheet.create({
 	scanChips: {
 		gap: 4,
 		paddingRight: 6,
+	},
+	saveBtn: {
+		paddingVertical: 6,
+		paddingHorizontal: 12,
+		borderRadius: 10,
+		backgroundColor: COLORS.purple,
+		marginHorizontal: 4,
+	},
+	saveBtnText: {
+		color: "#fff",
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		letterSpacing: 0.4,
 	},
 	anchorDot: {
 		position: "absolute",
