@@ -356,49 +356,6 @@ export default function AlignScreen() {
 						{/* Center crosshair for reference */}
 						<View pointerEvents="none" style={styles.crosshairV} />
 						<View pointerEvents="none" style={styles.crosshairH} />
-						{/* Per-frame anchor dots — visualize where items will hook
-						   into body parts at the current frame of the current
-						   animation. If a dot isn't on the right anatomy, retune
-						   PIG_FRAME_ANCHORS in constants/hats.ts. */}
-						{showAnchors && (
-							<>
-								{(
-									[
-										["head", "#FF3B30"],
-										["eyes", "#FF9500"],
-										["snout", "#FFCC00"],
-										["mouth", "#34C759"],
-										["neck", "#5AC8FA"],
-										["body", "#007AFF"],
-										["hand_l", "#AF52DE"],
-										["hand_r", "#FF2D92"],
-										["feet", "#8E8E93"],
-									] as const
-								).map(([name, color]) => {
-									const a = resolveAnchor(
-										animation as PigAnimationKey,
-										pigFrameIdx,
-										name as AnchorName,
-									);
-									return (
-										<View
-											key={name}
-											pointerEvents="none"
-											style={[
-												styles.anchorDot,
-												{
-													left: a.x - 6,
-													top: a.y - 6,
-													backgroundColor: color,
-												},
-											]}
-										>
-											<Text style={styles.anchorLabel}>{name}</Text>
-										</View>
-									);
-								})}
-							</>
-						)}
 						{overlay && current && (
 							<View
 								{...pan.panHandlers}
@@ -427,6 +384,44 @@ export default function AlignScreen() {
 								{showOutline && <View pointerEvents="none" style={styles.outline} />}
 							</View>
 						)}
+						{/* Anchor dots render LAST so they sit on top of the
+						   pig + any equipped item. Toggled by `showAnchors`. */}
+						{showAnchors &&
+							(
+								[
+									["head", "#FF3B30"],
+									["eyes", "#FF9500"],
+									["snout", "#FFCC00"],
+									["mouth", "#34C759"],
+									["neck", "#5AC8FA"],
+									["body", "#007AFF"],
+									["hand_l", "#AF52DE"],
+									["hand_r", "#FF2D92"],
+									["feet", "#8E8E93"],
+								] as const
+							).map(([name, color]) => {
+								const a = resolveAnchor(
+									animation as PigAnimationKey,
+									pigFrameIdx,
+									name as AnchorName,
+								);
+								return (
+									<View
+										key={name}
+										pointerEvents="none"
+										style={[
+											styles.anchorDot,
+											{
+												left: a.x - 6,
+												top: a.y - 6,
+												backgroundColor: color,
+											},
+										]}
+									>
+										<Text style={styles.anchorLabel}>{name}</Text>
+									</View>
+								);
+							})}
 					</View>
 				</View>
 
