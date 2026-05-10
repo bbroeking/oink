@@ -99,11 +99,34 @@ def parse_catalog():
 
 
 def get_aspect(png_path):
-    """Trimmed-bbox aspect ratio of opaque pixels, or None if empty."""
+    """Trimmed-bbox aspect ratio of opaque pixels, or None if empty.
+
+    Filters out small outlier components (decorative sparkles etc.) so
+    the bbox tracks the main item silhouette. Diverging items end up
+    a few px off otherwise — this is the auto-correct that means we
+    rarely have to tune individual items by hand.
+    """
     im = Image.open(png_path).convert("RGBA")
     arr = np.array(im)
     alpha = arr[:, :, 3]
     mask = alpha > 50
+    if not mask.any():
+        return None, None
+
+    try:
+        from scipy import ndimage
+        labeled, n_components = ndimage.label(mask)
+        if n_components > 1:
+            sizes = ndimage.sum(mask, labeled, range(1, n_components + 1))
+            largest = int(sizes.max())
+            keep = [
+                i + 1 for i, sz in enumerate(sizes)
+                if sz >= largest * 0.10
+            ]
+            mask = np.isin(labeled, keep)
+    except ImportError:
+        pass
+
     if not mask.any():
         return None, None
     ys, xs = np.where(mask)

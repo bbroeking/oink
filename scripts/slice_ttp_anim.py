@@ -178,11 +178,40 @@ def near_dark_to_alpha(arr: np.ndarray, threshold: int = 30) -> np.ndarray:
 
 
 def trim_to_bbox(arr: np.ndarray, alpha_threshold: int = 16) -> np.ndarray:
-    """Crop to the bounding box of opaque pixels."""
+    """Crop to the bounding box of opaque pixels, filtering out small
+    outlier components.
+
+    ChatGPT-generated items often include incidental decorative artifacts
+    (sparkles, dust motes, faint shadow bits) outside the main silhouette.
+    A naive bbox grabs all of them, throwing off downstream positioning
+    math by a few pixels per item. Filter to the LARGEST connected
+    component (plus anything ≥10% of its area) so the bbox tracks the
+    actual item silhouette, not the outliers.
+    """
     if arr.shape[2] < 4:
         return arr
     alpha = arr[:, :, 3]
     mask = alpha > alpha_threshold
+    if not mask.any():
+        return arr
+
+    # Connected-components: 4-neighbor labels.
+    try:
+        from scipy import ndimage
+        labeled, n_components = ndimage.label(mask)
+        if n_components > 1:
+            sizes = ndimage.sum(mask, labeled, range(1, n_components + 1))
+            largest_size = int(sizes.max())
+            # Keep components ≥10% of largest. Solo decorative elements
+            # (a single sparkle off to the side) get dropped.
+            keep_labels = [
+                i + 1 for i, sz in enumerate(sizes)
+                if sz >= largest_size * 0.10
+            ]
+            mask = np.isin(labeled, keep_labels)
+    except ImportError:
+        pass  # scipy missing — fall back to naive bbox.
+
     if not mask.any():
         return arr
     ys, xs = np.where(mask)
