@@ -84,6 +84,10 @@ interface Props {
 	// Used by the pre-baked accessory path so equipping a legendary item
 	// can replace the default pig frames with bespoke "pig wearing X" art.
 	customFrames?: Partial<Record<PigAnimation, string[]>>;
+	// When provided, locks the displayed frame to this index and skips the
+	// internal interval. Used by the alignment screen's frame stepper so
+	// we can pause an animation and inspect anchor placement frame-by-frame.
+	frameIdx?: number;
 }
 
 export function SpritePig({
@@ -93,8 +97,11 @@ export function SpritePig({
 	onComplete,
 	onFrame,
 	customFrames,
+	frameIdx,
 }: Props) {
-	const [idx, setIdx] = useState(0);
+	const [internalIdx, setInternalIdx] = useState(0);
+	const idx = frameIdx ?? internalIdx;
+	const setIdx = setInternalIdx;
 	const completeRef = useRef(onComplete);
 	completeRef.current = onComplete;
 	const frameRef = useRef(onFrame);
@@ -111,6 +118,9 @@ export function SpritePig({
 	};
 
 	useEffect(() => {
+		// External frameIdx control bypasses the auto-advance interval —
+		// useful for the align screen's manual stepper.
+		if (frameIdx !== undefined) return;
 		setIdx(0);
 		const cfg = activeCfg;
 		if (cfg.frames.length <= 1) return;
@@ -128,7 +138,7 @@ export function SpritePig({
 			});
 		}, period);
 		return () => clearInterval(handle);
-	}, [animation, customFrames]);
+	}, [animation, customFrames, frameIdx]);
 
 	// Fire onFrame after commit — never inside the setIdx updater (React forbids
 	// side effects in state updaters as of React 18).

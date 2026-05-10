@@ -73,6 +73,17 @@ export default function AlignScreen() {
 	const [cycleSpeed, setCycleSpeed] = useState<1500 | 3000>(1500);
 	const [showAnchors, setShowAnchors] = useState(false);
 	const [pigFrameIdx, setPigFrameIdx] = useState(0);
+	// Manual stepper: when paused, hold the SpritePig at this index instead
+	// of auto-advancing. Useful for spotting which specific frame an item
+	// drifts on (jump apex, etc).
+	const [paused, setPaused] = useState(false);
+	const [manualFrame, setManualFrame] = useState(0);
+
+	// Keep anchor dots + delta math in sync with the displayed frame when
+	// the user is manually stepping.
+	useEffect(() => {
+		if (paused) setPigFrameIdx(manualFrame);
+	}, [paused, manualFrame]);
 	// Local-only: flip the current item between front and behind the pig
 	// in the preview so we can scout if behind layering reads better. The
 	// app still uses Z_BEHIND_PIG for categorical defaults.
@@ -377,6 +388,7 @@ export default function AlignScreen() {
 									animation={animation}
 									size={PIG_SIZE}
 									onFrame={setPigFrameIdx}
+									frameIdx={paused ? manualFrame : undefined}
 								/>
 							</View>
 						) : (
@@ -418,44 +430,67 @@ export default function AlignScreen() {
 								{showOutline && <View pointerEvents="none" style={styles.outline} />}
 							</View>
 						)}
-						{/* Anchor dots render LAST so they sit on top of the
-						   pig + any equipped item. Toggled by `showAnchors`. */}
-						{showAnchors &&
-							(
-								[
-									["head", "#FF3B30"],
-									["eyes", "#FF9500"],
-									["snout", "#FFCC00"],
-									["mouth", "#34C759"],
-									["neck", "#5AC8FA"],
-									["body", "#007AFF"],
-									["hand_l", "#AF52DE"],
-									["hand_r", "#FF2D92"],
-									["feet", "#8E8E93"],
-								] as const
-							).map(([name, color]) => {
-								const a = resolveAnchor(
-									animation as PigAnimationKey,
-									pigFrameIdx,
-									name as AnchorName,
-								);
-								return (
-									<View
-										key={name}
-										pointerEvents="none"
-										style={[
-											styles.anchorDot,
-											{
-												left: a.x - 6,
-												top: a.y - 6,
-												backgroundColor: color,
-											},
-										]}
-									>
-										<Text style={styles.anchorLabel}>{name}</Text>
-									</View>
-								);
-							})}
+						{/* Anchor dots — colored is the CURRENT frame's anchor;
+						   ghost (light, no label) is the REST position from
+						   idle frame 0. Drift = distance between the two. */}
+						{showAnchors && (() => {
+							const palette = [
+								["head", "#FF3B30"],
+								["eyes", "#FF9500"],
+								["snout", "#FFCC00"],
+								["mouth", "#34C759"],
+								["neck", "#5AC8FA"],
+								["body", "#007AFF"],
+								["hand_l", "#AF52DE"],
+								["hand_r", "#FF2D92"],
+								["feet", "#8E8E93"],
+							] as const;
+							return (
+								<>
+									{palette.map(([name, color]) => {
+										const rest = resolveAnchor("idle" as PigAnimationKey, 0, name as AnchorName);
+										return (
+											<View
+												key={`ghost-${name}`}
+												pointerEvents="none"
+												style={[
+													styles.anchorDot,
+													styles.anchorDotGhost,
+													{
+														left: rest.x - 6,
+														top: rest.y - 6,
+														backgroundColor: color,
+													},
+												]}
+											/>
+										);
+									})}
+									{palette.map(([name, color]) => {
+										const a = resolveAnchor(
+											animation as PigAnimationKey,
+											pigFrameIdx,
+											name as AnchorName,
+										);
+										return (
+											<View
+												key={name}
+												pointerEvents="none"
+												style={[
+													styles.anchorDot,
+													{
+														left: a.x - 6,
+														top: a.y - 6,
+														backgroundColor: color,
+													},
+												]}
+											>
+												<Text style={styles.anchorLabel}>{name}</Text>
+											</View>
+										);
+									})}
+								</>
+							);
+						})()}
 					</View>
 				</View>
 
@@ -493,6 +528,32 @@ export default function AlignScreen() {
 							clear
 						</Text>
 					</Pressable>
+					<Pressable
+						onPress={() => setPaused((p) => !p)}
+						style={[styles.toggle, paused && styles.toggleOn]}
+					>
+						<Text
+							style={[styles.toggleText, paused && styles.toggleTextOn]}
+						>
+							{paused ? `f${manualFrame + 1}` : "pause"}
+						</Text>
+					</Pressable>
+					{paused && (
+						<>
+							<Pressable
+								onPress={() => setManualFrame((f) => Math.max(0, f - 1))}
+								style={styles.toggle}
+							>
+								<Text style={styles.toggleText}>◀</Text>
+							</Pressable>
+							<Pressable
+								onPress={() => setManualFrame((f) => (f + 1) % 4)}
+								style={styles.toggle}
+							>
+								<Text style={styles.toggleText}>▶</Text>
+							</Pressable>
+						</>
+					)}
 					<Pressable
 						onPress={() => setAutoCycle((v) => !v)}
 						style={[styles.toggle, autoCycle && styles.toggleOn]}
@@ -1000,6 +1061,12 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		zIndex: 100,
+	},
+	anchorDotGhost: {
+		opacity: 0.35,
+		borderColor: "rgba(255,255,255,0.5)",
+		borderStyle: "dashed",
+		zIndex: 99,
 	},
 	anchorLabel: {
 		position: "absolute",
