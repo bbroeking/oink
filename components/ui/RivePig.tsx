@@ -1,21 +1,36 @@
+// PARKED — this file is kept as a reference scaffold for swapping to a
+// Rive-rigged pig once you have a `pig.riv` exported from the Rive
+// editor. To activate:
+//
+//   1. Reinstall the runtime:           pnpm add rive-react-native
+//   2. Rebuild the iOS dev client:      npx expo run:ios
+//      (the package autolinks at boot — without a rebuild, just having
+//       it in node_modules crashes the app with a NativeEventEmitter
+//       null-arg error)
+//   3. Drop pig.riv into:               assets/rive/pig.riv
+//   4. Uncomment the imports + body below
+//   5. Replace SpritePig with RivePig in components/SwipeElement.tsx
+//
+// Why it's commented out: importing rive-react-native at module level
+// triggers autolinking and crashes the dev client until step 2 is done.
+// Leaving the import live blocks the entire app from booting.
+//
+// All the integration design (slot inputs, customFrames API, animation→
+// trigger map) is preserved in the comment block so you don't have to
+// re-derive it.
+
+/*
 import React, { useEffect, useImperativeHandle, useRef } from "react";
 import { StyleProp, ViewStyle, View, Text, StyleSheet } from "react-native";
 import Rive, { Fit, Alignment, RiveRef } from "rive-react-native";
 
 // Drop-in replacement for SpritePig. Same animation keys, same `size` prop.
 // Backs onto a Rive state machine called "pig" with the inputs documented
-// in docs/rive-pig-rigging.md.
-export type PigAnimation =
-	| "idle"
-	| "walk"
-	| "run"
-	| "jump"
-	| "fall"
-	| "happy"
-	| "sad"
-	| "surprise"
-	| "wave"
-	| "arms_up";
+// in docs/rive-pig-rigging.md. The PigAnimation type is reused from
+// SpritePig so SwipeElement can pass the same prop to either component
+// without a generic constraint or branch on the union.
+import type { PigAnimation } from "./SpritePig";
+export type { PigAnimation };
 
 interface Props {
 	animation: PigAnimation;
@@ -32,9 +47,8 @@ const STATE_MACHINE = "pig";
 const ANIM_TO_INPUT: Record<PigAnimation, { name: string; kind: "trigger" | "boolean" }> = {
 	idle: { name: "idle", kind: "trigger" }, // default rest state — firing returns to it
 	walk: { name: "walk", kind: "trigger" },
-	run: { name: "run", kind: "trigger" },
 	jump: { name: "jump", kind: "trigger" },
-	fall: { name: "fall", kind: "trigger" },
+	bounce: { name: "bounce", kind: "trigger" },
 	happy: { name: "happy", kind: "trigger" },
 	sad: { name: "sad", kind: "boolean" },
 	surprise: { name: "surprise", kind: "trigger" },
@@ -167,3 +181,4 @@ export const RivePig = React.forwardRef<RivePigHandle, Props>(function RivePig(
 		/>
 	);
 });
+*/

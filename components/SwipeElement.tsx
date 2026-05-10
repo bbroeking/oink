@@ -23,6 +23,17 @@ import {
 import { ITEM_PREBAKED, isPrebaked } from "../constants/prebaked";
 import { SpritePig, PigAnimation } from "./ui/SpritePig";
 
+// To swap to <RivePig> once you have a Rive build:
+//
+//   1. Drop the exported pig.riv into assets/rive/
+//   2. Rebuild the dev client so the rive-react-native native module
+//      gets linked into the binary: `npx expo run:ios` (~10 min)
+//   3. Import RivePig here and replace SpritePig in the render below
+//
+// Until step 2, importing RivePig at module level crashes because the
+// native event emitter has no Objective-C side. Don't add the import
+// until the dev-client rebuild is in.
+
 interface EquippedItem {
 	id: string;
 	category?: string | null;
