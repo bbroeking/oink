@@ -16,6 +16,12 @@ export interface HatOverlay {
 	// Optional per-item override. When unset, the item inherits from
 	// its category's default anchor (see CATEGORY_ANCHORS in hats.ts).
 	anchor?: AnchorName;
+	// Optional per-item z-order override. When set, takes precedence over
+	// the category default in Z_BEHIND_PIG. Use this for items whose
+	// category is "in-front" (like a held wand) but should specifically
+	// render BEHIND the pig (so the body partially occludes it for depth).
+	// undefined = fall back to category default.
+	behind?: boolean;
 }
 
 // Named pig anatomy points. Adding a new one is cheap — define it in

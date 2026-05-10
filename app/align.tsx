@@ -84,10 +84,6 @@ export default function AlignScreen() {
 	useEffect(() => {
 		if (paused) setPigFrameIdx(manualFrame);
 	}, [paused, manualFrame]);
-	// Local-only: flip the current item between front and behind the pig
-	// in the preview so we can scout if behind layering reads better. The
-	// app still uses Z_BEHIND_PIG for categorical defaults.
-	const [behindOverride, setBehindOverride] = useState(false);
 	const [saveToast, setSaveToast] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -149,6 +145,29 @@ export default function AlignScreen() {
 	const overlay = current ? baseOverlay(current.id, current.category) : null;
 	const imageSrc = current ? HAT_IMAGES[current.id] : null;
 	const emoji = current?.emoji ?? null;
+
+	// Toggling 'behind' writes a per-item HatOverlay.behind override into
+	// the local overrides map, which exports + (via the category override
+	// path in SwipeElement) ships to runtime.
+	const behindOverride = !!(current && overrides[current.id]?.behind);
+	const setBehindOverride = (next: boolean | ((prev: boolean) => boolean)) => {
+		if (!current) return;
+		setOverrides((o) => {
+			const cur =
+				o[current.id] ??
+				HAT_OVERLAYS[current.id] ??
+				(current.category
+					? CATEGORY_OVERLAYS[current.category]
+					: undefined) ??
+				DEFAULT_HAT_OVERLAY;
+			const value =
+				typeof next === "function" ? next(!!cur.behind) : next;
+			return {
+				...o,
+				[current.id]: { ...cur, behind: value },
+			};
+		});
+	};
 
 	const update = useCallback(
 		(delta: Partial<HatOverlay>) => {
@@ -290,7 +309,15 @@ export default function AlignScreen() {
 		if (!entries.length) return "// No overrides yet — nudge an item to start.";
 		const lines = entries.map(([id, o]) => {
 			const safeKey = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(id) ? id : `'${id}'`;
-			return `\t${safeKey}: { bottom: ${o.bottom}, left: ${o.left}, width: ${o.width}, height: ${o.height} },`;
+			const fields = [
+				`bottom: ${o.bottom}`,
+				`left: ${o.left}`,
+				`width: ${o.width}`,
+				`height: ${o.height}`,
+			];
+			if (o.behind) fields.push("behind: true");
+			if (o.anchor) fields.push(`anchor: "${o.anchor}"`);
+			return `\t${safeKey}: { ${fields.join(", ")} },`;
 		});
 		return `// Paste into HAT_OVERLAYS in constants/hats.ts:\n${lines.join("\n")}`;
 	}, [overrides]);
@@ -603,10 +630,16 @@ export default function AlignScreen() {
 										/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(current.id)
 											? current.id
 											: `'${current.id}'`;
-									const snippet = `${safeKey}: { bottom: ${overlay.bottom}, left: ${overlay.left}, width: ${overlay.width}, height: ${overlay.height} },`;
-									// Print to metro terminal so the user can grab
-									// it from there with a single triple-click +
-									// cmd-c — no native clipboard module required.
+									const fields = [
+										`bottom: ${overlay.bottom}`,
+										`left: ${overlay.left}`,
+										`width: ${overlay.width}`,
+										`height: ${overlay.height}`,
+									];
+									if (overlay.behind) fields.push("behind: true");
+									if (overlay.anchor)
+										fields.push(`anchor: "${overlay.anchor}"`);
+									const snippet = `${safeKey}: { ${fields.join(", ")} },`;
 									// eslint-disable-next-line no-console
 									console.log("\n[align] paste into HAT_OVERLAYS:");
 									// eslint-disable-next-line no-console

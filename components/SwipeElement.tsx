@@ -291,33 +291,45 @@ export default function SwipeElement({
 						{ transform: [{ scale }, { rotate: rotateDeg }] },
 					]}
 				>
-					{/* Behind pig: backgrounds, auras, capes */}
-					{overlay && category && Z_BEHIND_PIG[category] && (
-						<ItemOverlay
-							overlay={overlay}
-							imageSrc={imageSrc}
-							emoji={null}
-							zIndex={1}
-						/>
-					)}
-					<View style={[styles.cardImage, { zIndex: 2 }]}>
-						<SpritePig
-							animation={pigAnim}
-							size={300}
-							onFrame={setPigFrameIdx}
-							onComplete={pigAnim === "jump" ? handleJumpComplete : undefined}
-							customFrames={prebaked ?? undefined}
-						/>
-					</View>
-					{/* In front of pig: hats, glasses, masks, bows, scarves, necklaces, held */}
-					{overlay && (!category || !Z_BEHIND_PIG[category]) && (
-						<ItemOverlay
-							overlay={overlay}
-							imageSrc={imageSrc}
-							emoji={emoji}
-							zIndex={10}
-						/>
-					)}
+					{/* Per-item override (HatOverlay.behind) wins over the
+					    category default (Z_BEHIND_PIG). Backgrounds, auras,
+					    and capes default to behind via category. */}
+					{(() => {
+						const isBehind =
+							overlay?.behind ??
+							(category ? !!Z_BEHIND_PIG[category] : false);
+						return (
+							<>
+								{overlay && isBehind && (
+									<ItemOverlay
+										overlay={overlay}
+										imageSrc={imageSrc}
+										emoji={null}
+										zIndex={1}
+									/>
+								)}
+								<View style={[styles.cardImage, { zIndex: 2 }]}>
+									<SpritePig
+										animation={pigAnim}
+										size={300}
+										onFrame={setPigFrameIdx}
+										onComplete={
+											pigAnim === "jump" ? handleJumpComplete : undefined
+										}
+										customFrames={prebaked ?? undefined}
+									/>
+								</View>
+								{overlay && !isBehind && (
+									<ItemOverlay
+										overlay={overlay}
+										imageSrc={imageSrc}
+										emoji={emoji}
+										zIndex={10}
+									/>
+								)}
+							</>
+						);
+					})()}
 				</Animated.View>
 			</Pressable>
 
