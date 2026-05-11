@@ -19,11 +19,44 @@ import { COLORS, FONTS, ROW_TILTS, TITLE_RULE, WHIMSY } from "@/constants/theme"
 
 type Scope = "global" | "friends";
 
+interface ActiveTitle {
+	id: string;
+	name: string;
+	placement: "pre" | "post";
+}
+
 interface LeaderboardEntry {
 	id: string;
 	username: string | null;
 	tickles_earned: number;
 	active_hat_id: string | null;
+	active_title: ActiveTitle | null;
+}
+
+// "<title> username" or "username <title>" depending on placement.
+function formatDisplayName(
+	username: string | null,
+	title: ActiveTitle | null
+): string {
+	const name = username ?? "Anonymous";
+	if (!title) return name;
+	return title.placement === "post"
+		? `${name} ${title.name}`
+		: `${title.name} ${name}`;
+}
+
+// PostgREST returns embedded foreign-row records as arrays even when the
+// relationship is 1:1. Normalize.
+type RawRow = Omit<LeaderboardEntry, "active_title"> & {
+	active_title: ActiveTitle[] | ActiveTitle | null;
+};
+function normalize(rows: RawRow[] | null): LeaderboardEntry[] {
+	return (rows ?? []).map((r) => ({
+		...r,
+		active_title: Array.isArray(r.active_title)
+			? (r.active_title[0] ?? null)
+			: r.active_title,
+	}));
 }
 
 function ChampionPoster({ champ }: { champ: LeaderboardEntry }) {
@@ -37,7 +70,7 @@ function ChampionPoster({ champ }: { champ: LeaderboardEntry }) {
 					</View>
 					<View style={{ flex: 1, minWidth: 0 }}>
 						<Text style={styles.champName} numberOfLines={1}>
-							{champ.username ?? "Anonymous"}
+							{formatDisplayName(champ.username, champ.active_title)}
 						</Text>
 						<Text style={styles.champScore}>
 							{champ.tickles_earned.toLocaleString()} lifetime tickles
@@ -76,7 +109,7 @@ function ClippingRow({
 				<PigAvatar size={32} hatId={player.active_hat_id} />
 				<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
 					<Text style={styles.rowName} numberOfLines={1}>
-						{player.username ?? "Anonymous"}
+						{formatDisplayName(player.username, player.active_title)}
 						{isYou && <Text style={styles.rowYouTag}> · you</Text>}
 					</Text>
 					{player.active_hat_id && (
@@ -117,23 +150,23 @@ export default function LeaderboardScreen() {
 				}
 				const { data, error } = await supabase
 					.from("profiles")
-					.select("id, username, tickles_earned, active_hat_id")
+					.select("id, username, tickles_earned, active_hat_id, active_title:titles!profiles_active_title_id_fkey(id, name, placement)")
 					.in("id", ids)
 					.not("username", "is", null)
 					.neq("username", "")
 					.order("tickles_earned", { ascending: false });
 				if (error) throw error;
-				setLeaderboard((data as LeaderboardEntry[]) || []);
+				setLeaderboard(normalize(data as unknown as RawRow[] | null));
 			} else {
 				const { data, error } = await supabase
 					.from("profiles")
-					.select("id, username, tickles_earned, active_hat_id")
+					.select("id, username, tickles_earned, active_hat_id, active_title:titles!profiles_active_title_id_fkey(id, name, placement)")
 					.not("username", "is", null)
 					.neq("username", "")
 					.order("tickles_earned", { ascending: false })
 					.limit(50);
 				if (error) throw error;
-				setLeaderboard((data as LeaderboardEntry[]) || []);
+				setLeaderboard(normalize(data as unknown as RawRow[] | null));
 			}
 		} catch (error) {
 			log.error("Error fetching leaderboard:", error);

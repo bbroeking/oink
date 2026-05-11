@@ -16,6 +16,7 @@ import { router } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import Friends from "./Friends";
+import { TitlesSection } from "./TitlesSection";
 import { Card, Button } from "./ui";
 import { Icon } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
@@ -37,12 +38,13 @@ export function Account({ session }: { session: Session }) {
 	const [activeHat, setActiveHat] = useState<string | null>(null);
 	const [isVip, setIsVip] = useState<boolean>(false);
 	const [busy, setBusy] = useState<boolean>(false);
+	const [activeTitleId, setActiveTitleId] = useState<string | null>(null);
 
 	useFocusEffect(
 		useCallback(() => {
 			supabase
 				.from("profiles")
-				.select("username, tickles_earned, active_hat_id, is_vip")
+				.select("username, tickles_earned, active_hat_id, is_vip, active_title_id")
 				.eq("id", session.user.id)
 				.single()
 				.then(({ data }) => {
@@ -50,6 +52,7 @@ export function Account({ session }: { session: Session }) {
 					setTicklesEarned(data?.tickles_earned ?? 0);
 					setActiveHat(data?.active_hat_id ?? null);
 					setIsVip(data?.is_vip ?? false);
+					setActiveTitleId(data?.active_title_id ?? null);
 				});
 		}, [session.user.id])
 	);
@@ -221,6 +224,12 @@ export function Account({ session }: { session: Session }) {
 							<Text style={styles.restoreLinkText}>Restore purchases</Text>
 						</Pressable>
 					)}
+
+					<TitlesSection
+						userId={session.user.id}
+						activeTitleId={activeTitleId}
+						onChange={setActiveTitleId}
+					/>
 
 					<View style={{ marginTop: 8 }}>
 						<Friends userId={session.user.id} />
