@@ -146,13 +146,20 @@ export default function Barn() {
 	const [sixSevenTick, setSixSevenTick] = useState(0);
 	const sixSevenPromptedRef = useRef(false);
 	const player = useAudioPlayer(tickleSound);
-	const [toast, setToast] = useState<{ title: string; body: string } | null>(null);
+	const [toast, setToast] = useState<{
+		title: string;
+		body: string;
+		onPress?: () => void;
+	} | null>(null);
 	const toastOpacity = useRef(new Animated.Value(0)).current;
 	const toastY = useRef(new Animated.Value(-20)).current;
+	// Track which pass-event IDs we've already surfaced this session so a
+	// focus-bounce (or a delayed seen-write) doesn't replay the same toast.
+	const shownPassEventIds = useRef<Set<number>>(new Set());
 
 	const showToast = useCallback(
-		(title: string, body: string) => {
-			setToast({ title, body });
+		(title: string, body: string, onPress?: () => void) => {
+			setToast({ title, body, onPress });
 			toastOpacity.setValue(0);
 			toastY.setValue(-20);
 			Animated.sequence([
@@ -186,6 +193,50 @@ export default function Barn() {
 		[toastOpacity, toastY]
 	);
 
+	// Friendly, slightly competitive pig-voice lines for pass events. Picked
+	// at random so it doesn't feel like the same robotic notification.
+	const PASS_LINES = [
+		(name: string) => `Oink! ${name} just trotted past you.`,
+		(name: string) => `${name} snouted ahead. Don't look back.`,
+		(name: string) => `${name} just hoofed past you on the board.`,
+		(name: string) => `Squeal — ${name} edged ahead of you.`,
+		(name: string) => `${name} muddied your lead.`,
+	];
+
+	const checkPassEvents = useCallback(async () => {
+		try {
+			const { data, error } = await supabase.rpc("unseen_pass_events");
+			if (error) return; // RPC may not exist yet pre-migration — fail quiet.
+			const rows = (data ?? []) as {
+				id: number;
+				passer_id: string;
+				passer_username: string | null;
+				passer_tickles: number;
+				passed_tickles: number;
+			}[];
+			// Most recent first from the RPC — show the freshest pass we
+			// haven't already surfaced this session.
+			const fresh = rows.find((r) => !shownPassEventIds.current.has(r.id));
+			if (!fresh) return;
+			shownPassEventIds.current.add(fresh.id);
+			const name = fresh.passer_username?.trim() || "Someone";
+			const line =
+				PASS_LINES[Math.floor(Math.random() * PASS_LINES.length)](name);
+			showToast(line, "Tap to see the leaderboard.", () => {
+				supabase
+					.rpc("mark_pass_event_seen", { event_id: fresh.id })
+					.then(() => {});
+				router.push("/leaderboard");
+			});
+			// Fire-and-forget: mark seen so the next poll doesn't return it.
+			supabase
+				.rpc("mark_pass_event_seen", { event_id: fresh.id })
+				.then(() => {});
+		} catch {
+			// Network blips silently — pass events are non-critical UX.
+		}
+	}, [showToast]);
+
 	useEffect(() => {
 		if (sixSevenPromptedRef.current) return;
 		if (stats.counter < 67) return;
@@ -217,8 +268,9 @@ export default function Barn() {
 	useFocusEffect(
 		useCallback(() => {
 			fetchStats();
+			checkPassEvents();
 			setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
-		}, [])
+		}, [checkPassEvents])
 	);
 
 	const fetchStats = async () => {
@@ -310,6 +362,10 @@ export default function Barn() {
 
 			if (error) throw error;
 			fetchStats();
+			// Also re-check pass events so a friend who just got passed
+			// hears about it on their next tap (and so any incoming pass
+			// against us surfaces quickly between focus events).
+			checkPassEvents();
 		} catch (error) {
 			log.error("Error incrementing count:", error);
 		}
@@ -394,7 +450,7 @@ export default function Barn() {
 
 				{toast && (
 					<Animated.View
-						pointerEvents="none"
+						pointerEvents={toast.onPress ? "box-none" : "none"}
 						style={[
 							styles.toastWrap,
 							{
@@ -403,17 +459,22 @@ export default function Barn() {
 							},
 						]}
 					>
-						<Sticker color="rose" rotate={-1.2} radius={14} style={styles.toast}>
-							<View style={styles.toastInner}>
-								<View style={styles.toastIcon}>
-									<Text style={styles.toastIconText}>♥</Text>
+						<Pressable
+							onPress={toast.onPress}
+							disabled={!toast.onPress}
+						>
+							<Sticker color="rose" rotate={-1.2} radius={14} style={styles.toast}>
+								<View style={styles.toastInner}>
+									<View style={styles.toastIcon}>
+										<Text style={styles.toastIconText}>♥</Text>
+									</View>
+									<View style={{ flex: 1, minWidth: 0 }}>
+										<Text style={styles.toastTitle}>{toast.title}</Text>
+										<Text style={styles.toastBody}>{toast.body}</Text>
+									</View>
 								</View>
-								<View style={{ flex: 1, minWidth: 0 }}>
-									<Text style={styles.toastTitle}>{toast.title}</Text>
-									<Text style={styles.toastBody}>{toast.body}</Text>
-								</View>
-							</View>
-						</Sticker>
+							</Sticker>
+						</Pressable>
 					</Animated.View>
 				)}
 			</SafeAreaView>

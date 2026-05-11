@@ -185,6 +185,11 @@ export default function LeaderboardScreen() {
 				if (result.error) throw result.error;
 			}
 			setLeaderboard(normalize(result.data as unknown as RawRow[] | null));
+
+			// Opening the leaderboard clears any pending "passed you" toasts
+			// — the user already saw where they stand. Fire-and-forget; if
+			// the RPC doesn't exist yet (pre-migration) the catch swallows it.
+			supabase.rpc("mark_all_pass_events_seen").then(() => {});
 		} catch (error) {
 			log.error("Error fetching leaderboard:", error);
 		} finally {
