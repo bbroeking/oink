@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
 	StyleSheet,
 	Animated,
@@ -8,6 +8,8 @@ import {
 	Text,
 	Easing,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import {
@@ -22,6 +24,14 @@ import {
 } from "../constants/hats";
 import { ITEM_PREBAKED, isPrebaked } from "../constants/prebaked";
 import { SpritePig, PigAnimation } from "./ui/SpritePig";
+
+// Dev tool: the /align screen writes per-item position + size + behind
+// overrides into AsyncStorage. We mirror that into the live render so
+// hand-tuning shows up in the actual app without a manual paste-to-source
+// cycle. Reads on focus so navigating align → home picks up the changes
+// immediately. Gated on __DEV__ — the override path is a no-op in
+// release builds.
+const ALIGN_OVERRIDES_KEY = "align_overrides_v1";
 
 // To swap to <RivePig> once you have a Rive build:
 //
@@ -105,6 +115,23 @@ export default function SwipeElement({
 	const sevenY = useRef(new Animated.Value(0)).current;
 	const [pigAnim, setPigAnim] = useState<PigAnimation>("idle");
 	const [pigFrameIdx, setPigFrameIdx] = useState(0);
+	// Mirror /align screen overrides into live render (dev-only).
+	const [alignOverrides, setAlignOverrides] = useState<
+		Record<string, HatOverlay>
+	>({});
+	useFocusEffect(
+		useCallback(() => {
+			if (!__DEV__) return;
+			AsyncStorage.getItem(ALIGN_OVERRIDES_KEY)
+				.then((raw) => {
+					if (!raw) return;
+					try {
+						setAlignOverrides(JSON.parse(raw));
+					} catch {}
+				})
+				.catch(() => {});
+		}, [])
+	);
 
 	useEffect(() => {
 		if (!canTickle) setPigAnim("sad");
@@ -245,9 +272,14 @@ export default function SwipeElement({
 	const prebaked = isPrebaked(itemId) ? ITEM_PREBAKED[itemId!] : null;
 
 	const imageSrc = itemId ? HAT_IMAGES[itemId] : null;
+	// Precedence: align-screen override (dev only, AsyncStorage) → manual
+	// HAT_OVERLAYS entry → category default → DEFAULT_HAT_OVERLAY. Mirrors
+	// the chain in app/align.tsx so what you see while tuning matches the
+	// live render.
 	const baseOverlay = prebaked
 		? null
-		: (itemId && HAT_OVERLAYS[itemId]) ||
+		: (itemId && alignOverrides[itemId]) ||
+			(itemId && HAT_OVERLAYS[itemId]) ||
 			(category && CATEGORY_OVERLAYS[category]) ||
 			(itemId ? DEFAULT_HAT_OVERLAY : null);
 
