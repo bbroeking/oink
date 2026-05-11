@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Image, ImageStyle, StyleProp } from "react-native";
 
 const FRAMES: Record<string, number> = {
@@ -109,27 +109,30 @@ export function SpritePig({
 
 	// Resolve which frame set + fps to use. customFrames (from prebaked
 	// items) overrides the default ANIMATIONS entry per animation key.
-	const baseCfg = ANIMATIONS[animation];
-	const overrideFrames = customFrames?.[animation];
-	const activeFrames = overrideFrames ?? baseCfg.frames;
-	const activeCfg = {
-		...baseCfg,
-		frames: activeFrames,
-	};
+	// Memoized so the interval-driven setIdx → re-render cycle doesn't
+	// allocate a new config + frames array every frame tick.
+	const { frames: activeFrames, fps: activeFps, loop: activeLoop } = useMemo(() => {
+		const baseCfg = ANIMATIONS[animation];
+		const overrideFrames = customFrames?.[animation];
+		return {
+			frames: overrideFrames ?? baseCfg.frames,
+			fps: baseCfg.fps,
+			loop: baseCfg.loop,
+		};
+	}, [animation, customFrames]);
 
 	useEffect(() => {
 		// External frameIdx control bypasses the auto-advance interval —
 		// useful for the align screen's manual stepper.
 		if (frameIdx !== undefined) return;
 		setIdx(0);
-		const cfg = activeCfg;
-		if (cfg.frames.length <= 1) return;
-		const period = 1000 / cfg.fps;
+		if (activeFrames.length <= 1) return;
+		const period = 1000 / activeFps;
 		const handle = setInterval(() => {
 			setIdx((prev) => {
 				const next = prev + 1;
-				if (next >= cfg.frames.length) {
-					if (cfg.loop) return 0;
+				if (next >= activeFrames.length) {
+					if (activeLoop) return 0;
 					clearInterval(handle);
 					setTimeout(() => completeRef.current?.(), 0);
 					return prev;
@@ -138,7 +141,7 @@ export function SpritePig({
 			});
 		}, period);
 		return () => clearInterval(handle);
-	}, [animation, customFrames, frameIdx]);
+	}, [activeFrames, activeFps, activeLoop, frameIdx]);
 
 	// Fire onFrame after commit — never inside the setIdx updater (React forbids
 	// side effects in state updaters as of React 18).

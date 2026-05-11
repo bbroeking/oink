@@ -25,6 +25,17 @@ import { WHIMSY, FONTS } from "@/constants/theme";
 
 const tickleSound = require("../assets/sounds/tickle.m4a");
 
+// Friendly, slightly competitive pig-voice lines for pass events. Picked
+// at random so it doesn't feel like the same robotic notification.
+// Module-scoped — was re-created every Barn render at zero benefit.
+const PASS_LINES: ((name: string) => string)[] = [
+	(name) => `Oink! ${name} just trotted past you.`,
+	(name) => `${name} snouted ahead. Don't look back.`,
+	(name) => `${name} just hoofed past you on the board.`,
+	(name) => `Squeal — ${name} edged ahead of you.`,
+	(name) => `${name} muddied your lead.`,
+];
+
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface Stats {
@@ -193,16 +204,6 @@ export default function Barn() {
 		[toastOpacity, toastY]
 	);
 
-	// Friendly, slightly competitive pig-voice lines for pass events. Picked
-	// at random so it doesn't feel like the same robotic notification.
-	const PASS_LINES = [
-		(name: string) => `Oink! ${name} just trotted past you.`,
-		(name: string) => `${name} snouted ahead. Don't look back.`,
-		(name: string) => `${name} just hoofed past you on the board.`,
-		(name: string) => `Squeal — ${name} edged ahead of you.`,
-		(name: string) => `${name} muddied your lead.`,
-	];
-
 	const checkPassEvents = useCallback(async () => {
 		try {
 			const { data, error } = await supabase.rpc("unseen_pass_events");
@@ -275,6 +276,40 @@ export default function Barn() {
 
 	const fetchStats = async () => {
 		try {
+			// Single round trip via home_stats() RPC — was 3-4 sequential
+			// queries (profiles + tickle_info + season_state + hats join).
+			// Falls back to the multi-query path if the RPC isn't deployed
+			// yet so dev sims work between code merge and `supabase db push`.
+			const { data: rpcRaw, error: rpcErr } = await supabase.rpc("home_stats");
+			if (!rpcErr && rpcRaw && (rpcRaw as { ok?: boolean }).ok) {
+				const r = rpcRaw as {
+					counter: number;
+					tickles_earned: number;
+					active_hat_id: string | null;
+					active_hat: { category?: string | null; emoji?: string | null } | null;
+					balance: number;
+					cap: number;
+					next_regen_seconds: number | null;
+					current_tier: number;
+					total_tiers: number;
+				};
+				setStats({
+					counter: r.counter,
+					ticklesEarned: r.tickles_earned,
+					itemCount: r.balance,
+					cap: r.cap,
+					nextRegenSeconds: r.next_regen_seconds,
+					activeHatId: r.active_hat_id,
+					activeCategory: r.active_hat?.category ?? null,
+					activeEmoji: r.active_hat?.emoji ?? null,
+					currentTier: r.current_tier,
+					totalTiers: r.total_tiers,
+				});
+				setStatsLoaded(true);
+				return;
+			}
+
+			// Fallback: original multi-query path.
 			const {
 				data: { user },
 			} = await supabase.auth.getUser();
