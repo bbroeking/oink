@@ -56,10 +56,10 @@ CATEGORY = {
     "hat":        {"anchor_y": 265, "width": 160, "left": None, "max_h": 200, "pivot": (0.5, 1.0)},
     # Glasses straddle the eye line (y_from_top≈105 → y_from_bottom=195).
     # max_h capped so tall novelty glasses don't cover the snout.
-    # Width=180 so the bbox stretches across both pupils (~106 and ~232
-    # in card coords, span ≈126). Monocle is hand-overridden separately
-    # since it's a single-eye accessory.
-    "glasses":    {"anchor_y": 195, "width": 180, "left": None, "max_h": 90,  "pivot": (0.5, 0.5)},
+    # Width=216 so the bbox stretches across both pupils (~106 and ~232
+    # in card coords) with comfortable margin. Monocle is hand-overridden
+    # separately since it's a single-eye accessory.
+    "glasses":    {"anchor_y": 195, "width": 216, "left": None, "max_h": 108, "pivot": (0.5, 0.5)},
     # Bows on top of the head, same as hats.
     "bow":        {"anchor_y": 265, "width": 80,  "left": None, "max_h": 80,  "pivot": (0.5, 1.0)},
     # Scarves wrap around the neck (y_from_top≈210 → y_from_bottom=90) and
