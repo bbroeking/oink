@@ -690,6 +690,36 @@ export default function AlignScreen() {
 						<NudgeBtn small label="H+" onPress={() => update({ height: step })} />
 					</View>
 
+					{/* Scale buttons grow/shrink the whole item while preserving
+					    the bbox aspect ratio — adjusts width + height in lockstep
+					    so single-tap resizing doesn't squish the icon. */}
+					<View style={styles.sizeRow}>
+						<NudgeBtn
+							small
+							label="− size"
+							onPress={() => {
+								if (!overlay) return;
+								const ratio = overlay.height / overlay.width;
+								update({
+									width: -step,
+									height: -Math.round(step * ratio),
+								});
+							}}
+						/>
+						<NudgeBtn
+							small
+							label="+ size"
+							onPress={() => {
+								if (!overlay) return;
+								const ratio = overlay.height / overlay.width;
+								update({
+									width: step,
+									height: Math.round(step * ratio),
+								});
+							}}
+						/>
+					</View>
+
 					<View style={styles.bottomRow}>
 						<View style={styles.stepGroup}>
 							{([1, 5, 10] as const).map((s) => (
