@@ -42,17 +42,36 @@ export function Account({ session }: { session: Session }) {
 
 	useFocusEffect(
 		useCallback(() => {
+			// active_title_id is added by the 20260511 migration; if that
+			// hasn't been pushed yet the column doesn't exist and the joined
+			// select errors. Fall back to the no-titles select on failure so
+			// Account still loads.
 			supabase
 				.from("profiles")
 				.select("username, tickles_earned, active_hat_id, is_vip, active_title_id")
 				.eq("id", session.user.id)
 				.single()
-				.then(({ data }) => {
-					setUsername(data?.username ?? null);
-					setTicklesEarned(data?.tickles_earned ?? 0);
-					setActiveHat(data?.active_hat_id ?? null);
-					setIsVip(data?.is_vip ?? false);
-					setActiveTitleId(data?.active_title_id ?? null);
+				.then(async ({ data, error }) => {
+					let row: {
+						username?: string | null;
+						tickles_earned?: number;
+						active_hat_id?: string | null;
+						is_vip?: boolean;
+						active_title_id?: string | null;
+					} | null = data;
+					if (error) {
+						const fallback = await supabase
+							.from("profiles")
+							.select("username, tickles_earned, active_hat_id, is_vip")
+							.eq("id", session.user.id)
+							.single();
+						row = fallback.data;
+					}
+					setUsername(row?.username ?? null);
+					setTicklesEarned(row?.tickles_earned ?? 0);
+					setActiveHat(row?.active_hat_id ?? null);
+					setIsVip(row?.is_vip ?? false);
+					setActiveTitleId(row?.active_title_id ?? null);
 				});
 		}, [session.user.id])
 	);

@@ -46,16 +46,17 @@ function formatDisplayName(
 }
 
 // PostgREST returns embedded foreign-row records as arrays even when the
-// relationship is 1:1. Normalize.
+// relationship is 1:1. Normalize, and coerce missing field (when the
+// basic-select fallback is used) to null.
 type RawRow = Omit<LeaderboardEntry, "active_title"> & {
-	active_title: ActiveTitle[] | ActiveTitle | null;
+	active_title?: ActiveTitle[] | ActiveTitle | null;
 };
 function normalize(rows: RawRow[] | null): LeaderboardEntry[] {
 	return (rows ?? []).map((r) => ({
 		...r,
 		active_title: Array.isArray(r.active_title)
 			? (r.active_title[0] ?? null)
-			: r.active_title,
+			: (r.active_title ?? null),
 	}));
 }
 
@@ -138,36 +139,52 @@ export default function LeaderboardScreen() {
 			} = await supabase.auth.getUser();
 			setMyId(user?.id ?? null);
 
-			if (scope === "friends") {
-				const { data: friendIds } = await supabase.rpc("friend_ids");
-				const ids = [
-					...((friendIds as string[] | null) ?? []),
-					...(user ? [user.id] : []),
-				];
-				if (ids.length === 0) {
-					setLeaderboard([]);
-					return;
-				}
-				const { data, error } = await supabase
+			// Two select shapes: with the titles FK join (preferred, lights up
+			// title display) and without (fallback when the titles migration
+			// hasn't been pushed yet — leaderboard still renders, just no
+			// titles next to usernames).
+			const SELECT_WITH_TITLES =
+				"id, username, tickles_earned, active_hat_id, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
+			const SELECT_BASIC =
+				"id, username, tickles_earned, active_hat_id";
+
+			const runQuery = async (
+				select: string,
+				friendIds?: string[]
+			) => {
+				let q = supabase
 					.from("profiles")
-					.select("id, username, tickles_earned, active_hat_id, active_title:titles!profiles_active_title_id_fkey(id, name, placement)")
-					.in("id", ids)
+					.select(select)
 					.not("username", "is", null)
 					.neq("username", "")
 					.order("tickles_earned", { ascending: false });
-				if (error) throw error;
-				setLeaderboard(normalize(data as unknown as RawRow[] | null));
-			} else {
-				const { data, error } = await supabase
-					.from("profiles")
-					.select("id, username, tickles_earned, active_hat_id, active_title:titles!profiles_active_title_id_fkey(id, name, placement)")
-					.not("username", "is", null)
-					.neq("username", "")
-					.order("tickles_earned", { ascending: false })
-					.limit(50);
-				if (error) throw error;
-				setLeaderboard(normalize(data as unknown as RawRow[] | null));
+				if (friendIds) q = q.in("id", friendIds);
+				else q = q.limit(50);
+				return q;
+			};
+
+			let friendIds: string[] | undefined;
+			if (scope === "friends") {
+				const { data: friends } = await supabase.rpc("friend_ids");
+				friendIds = [
+					...((friends as string[] | null) ?? []),
+					...(user ? [user.id] : []),
+				];
+				if (friendIds.length === 0) {
+					setLeaderboard([]);
+					return;
+				}
 			}
+
+			// Try with titles. If PostgREST rejects because the FK doesn't
+			// exist yet (migration not pushed), fall back to the basic select.
+			let result = await runQuery(SELECT_WITH_TITLES, friendIds);
+			if (result.error) {
+				log.error("Leaderboard titles join failed, retrying without:", result.error);
+				result = await runQuery(SELECT_BASIC, friendIds);
+				if (result.error) throw result.error;
+			}
+			setLeaderboard(normalize(result.data as unknown as RawRow[] | null));
 		} catch (error) {
 			log.error("Error fetching leaderboard:", error);
 		} finally {

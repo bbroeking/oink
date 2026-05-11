@@ -34,11 +34,16 @@ export function TitlesSection({ userId, activeTitleId, onChange }: Props) {
 	const [busy, setBusy] = useState(false);
 
 	const load = useCallback(async () => {
+		// user_titles is added by the 20260511 migration. If it hasn't been
+		// pushed yet, the query 404s — just leave the section empty.
 		const { data, error } = await supabase
 			.from("user_titles")
 			.select("title_id, titles(id, name, placement, description)")
 			.eq("user_id", userId);
-		if (error) return;
+		if (error) {
+			setTitles([]);
+			return;
+		}
 		const rows = (data ?? []) as unknown as RawRow[];
 		setTitles(
 			rows
