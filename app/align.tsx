@@ -326,6 +326,10 @@ export default function AlignScreen() {
 		<View style={styles.container}>
 			<Stack.Screen options={{ title: "Align Items" }} />
 			<SafeAreaView style={{ flex: 1 }}>
+			<ScrollView
+				contentContainerStyle={styles.pageScroll}
+				showsVerticalScrollIndicator={false}
+			>
 				{/* Category chips */}
 				<ScrollView
 					horizontal
@@ -823,6 +827,7 @@ export default function AlignScreen() {
 						</Text>
 					</View>
 				)}
+			</ScrollView>
 			</SafeAreaView>
 		</View>
 	);
@@ -876,6 +881,11 @@ function NudgeBtn({
 
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: COLORS.paper2 },
+	pageScroll: {
+		// Padding-bottom keeps the export button + size row clear of any
+		// safe-area inset / dev launcher overlay at the very bottom.
+		paddingBottom: 60,
+	},
 	chipsRow: {
 		paddingHorizontal: 12,
 		paddingTop: 8,
