@@ -25,6 +25,12 @@ import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
 import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, KICKER_TEXT, ROW_TILTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
 
+// Premium battle-pass track is not ready to go live (no fulfillment for
+// some reward types, no real IAP flow). Flip to true once both are
+// shipped. While false: only the free track is visible, the Unlock
+// Premium CTA is hidden, and the upsell modal can't be opened.
+const PAID_BATTLE_PASS_ENABLED = false;
+
 interface SeasonRow {
 	id: string;
 	name: string;
@@ -304,7 +310,7 @@ export default function SeasonScreen() {
 								]}
 							/>
 						</View>
-						{IAP_ENABLED && !premium && (
+						{PAID_BATTLE_PASS_ENABLED && IAP_ENABLED && !premium && (
 							<Pressable
 								onPress={() => setSaleOpen(true)}
 								style={[
@@ -373,13 +379,15 @@ export default function SeasonScreen() {
 										isFinale={isFinale}
 										onClaim={() => handleClaim(t, "free")}
 									/>
-									<TierStone
-										reward={prem}
-										state={premState}
-										premium
-										isFinale={isFinale}
-										onClaim={() => handleClaim(t, "premium")}
-									/>
+									{PAID_BATTLE_PASS_ENABLED && (
+										<TierStone
+											reward={prem}
+											state={premState}
+											premium
+											isFinale={isFinale}
+											onClaim={() => handleClaim(t, "premium")}
+										/>
+									)}
 								</View>
 							);
 						}
@@ -388,7 +396,7 @@ export default function SeasonScreen() {
 			</SafeAreaView>
 
 			<BattlePassSaleModal
-				visible={saleOpen}
+				visible={PAID_BATTLE_PASS_ENABLED && saleOpen}
 				onClose={() => setSaleOpen(false)}
 				onUnlock={async (plus) => {
 					setSaleOpen(false);
