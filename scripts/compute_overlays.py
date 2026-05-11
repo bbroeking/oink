@@ -78,6 +78,18 @@ CATEGORY = {
 }
 CARD_W = 300
 
+# Default nudge applied to every auto-generated item. The pig sprite art
+# trends slightly down-left from where bbox math expects, so every item
+# needed roughly the same offset to look right. Baking it in here saves
+# hand-tuning ~95 items in the align screen.
+#
+# Units are align-screen "arrow clicks" at step=5: +4 right (left+=20),
+# +6 up (bottom+=30). Items with a manual override in HAT_OVERLAYS
+# (constants/hats.ts) are unaffected since those entries spread AFTER
+# HAT_OVERLAYS_GENERATED.
+DEFAULT_LEFT_NUDGE_PX = 4 * 5
+DEFAULT_BOTTOM_NUDGE_PX = 6 * 5
+
 
 def parse_catalog():
     """Build {item_id: category} from the shop_catalog migration."""
@@ -151,6 +163,12 @@ def compute_overlay(category, aspect):
         # Center the bbox around the card's horizontal center adjusted for pivot_x.
         anchor_x = CARD_W // 2
         left = round(anchor_x - pivot_x * width)
+    # Apply the default nudge so items don't all need hand-tuning.
+    # Full-canvas items (auras + backgrounds) keep their zeroed origin —
+    # nudging them would push them off-card.
+    if category not in ("aura", "background"):
+        left += DEFAULT_LEFT_NUDGE_PX
+        bottom += DEFAULT_BOTTOM_NUDGE_PX
     return {"bottom": bottom, "left": left, "width": width, "height": height}
 
 
