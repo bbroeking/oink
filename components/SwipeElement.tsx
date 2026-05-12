@@ -31,7 +31,15 @@ import { SpritePig, PigAnimation } from "./ui/SpritePig";
 // cycle. Reads on focus so navigating align → home picks up the changes
 // immediately. Gated on __DEV__ — the override path is a no-op in
 // release builds.
-const ALIGN_OVERRIDES_KEY = "align_overrides_v1";
+// Versioned to track global re-spotting passes — see align.tsx for the
+// authoritative migration. Home may launch before /align is ever
+// opened, so we replicate the same fallback chain here:
+//   v3 = current      (post -6/-6 global shift)
+//   v2 = pre v3 shift (post 360 → 300 canvas-shrink)
+//   v1 = legacy       (360px canvas)
+const ALIGN_OVERRIDES_KEY = "align_overrides_v3";
+const ALIGN_OVERRIDES_KEY_V2 = "align_overrides_v2";
+const ALIGN_OVERRIDES_KEY_V1 = "align_overrides_v1";
 
 // To swap to <RivePig> once you have a Rive build:
 //
@@ -122,14 +130,25 @@ export default function SwipeElement({
 	useFocusEffect(
 		useCallback(() => {
 			if (!__DEV__) return;
-			AsyncStorage.getItem(ALIGN_OVERRIDES_KEY)
-				.then((raw) => {
-					if (!raw) return;
-					try {
-						setAlignOverrides(JSON.parse(raw));
-					} catch {}
-				})
-				.catch(() => {});
+			(async () => {
+				try {
+					const v3 = await AsyncStorage.getItem(ALIGN_OVERRIDES_KEY);
+					if (v3) {
+						setAlignOverrides(JSON.parse(v3));
+						return;
+					}
+					const v2 = await AsyncStorage.getItem(ALIGN_OVERRIDES_KEY_V2);
+					if (v2) {
+						setAlignOverrides(shiftDownLeft6(JSON.parse(v2)));
+						return;
+					}
+					const v1 = await AsyncStorage.getItem(ALIGN_OVERRIDES_KEY_V1);
+					if (!v1) return;
+					setAlignOverrides(
+						shiftDownLeft6(scaleByFiveSixths(JSON.parse(v1)))
+					);
+				} catch {}
+			})();
 		}, [])
 	);
 
@@ -435,3 +454,40 @@ const styles = StyleSheet.create({
 		textShadowRadius: 0,
 	},
 });
+
+// Read-path mirrors of the migration helpers in app/align.tsx. Used
+// when the user launches into home before opening /align — we don't
+// write back here (align.tsx owns the persisted migration), we just
+// render the equivalent values.
+function scaleByFiveSixths(
+	src: Record<string, HatOverlay>
+): Record<string, HatOverlay> {
+	const SCALE = 300 / 360;
+	return Object.fromEntries(
+		Object.entries(src).map(([id, ov]) => [
+			id,
+			{
+				...ov,
+				bottom: Math.round((ov.bottom ?? 0) * SCALE),
+				left: Math.round((ov.left ?? 0) * SCALE),
+				width: Math.round((ov.width ?? 0) * SCALE),
+				height: Math.round((ov.height ?? 0) * SCALE),
+			},
+		])
+	);
+}
+
+function shiftDownLeft6(
+	src: Record<string, HatOverlay>
+): Record<string, HatOverlay> {
+	return Object.fromEntries(
+		Object.entries(src).map(([id, ov]) => [
+			id,
+			{
+				...ov,
+				left: Math.max(0, (ov.left ?? 0) - 6),
+				bottom: Math.max(0, (ov.bottom ?? 0) - 6),
+			},
+		])
+	);
+}

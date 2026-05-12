@@ -61,7 +61,9 @@ CATEGORY = {
     # separately since it's a single-eye accessory.
     "glasses":    {"anchor_y": 195, "width": 216, "left": None, "max_h": 108, "pivot": (0.5, 0.5)},
     # Bows on top of the head, same as hats.
-    "bow":        {"anchor_y": 265, "width": 80,  "left": None, "max_h": 80,  "pivot": (0.5, 1.0)},
+    # Bows sit lower + slightly right of the head crown (post-spotting
+    # adjustment): +6 right, -16 down on top of the global nudge.
+    "bow":        {"anchor_y": 265, "width": 80,  "left": None, "max_h": 80,  "pivot": (0.5, 1.0), "dx_extra": 6, "dy_extra": -16},
     # Scarves wrap around the neck (y_from_top≈210 → y_from_bottom=90) and
     # drape down. Top-pivot, but max_h capped so the drape doesn't escape
     # the card. Empirically scarf art is ~80px tall once trimmed.
@@ -86,12 +88,13 @@ CARD_W = 300
 # needed roughly the same offset to look right. Baking it in here saves
 # hand-tuning ~95 items in the align screen.
 #
-# Units are align-screen "arrow clicks" at step=5: +4 right (left+=20),
-# +6 up (bottom+=30). Items with a manual override in HAT_OVERLAYS
-# (constants/hats.ts) are unaffected since those entries spread AFTER
-# HAT_OVERLAYS_GENERATED.
-DEFAULT_LEFT_NUDGE_PX = 4 * 5
-DEFAULT_BOTTOM_NUDGE_PX = 6 * 5
+# Units: pure pixels in 300×300 card space. Reduced from 20/30 to 14/24
+# (a uniform 6px shift left + down) after a global re-spotting pass
+# decided everything was sitting a touch too high and too far right.
+# Items with a manual override in HAT_OVERLAYS (constants/hats.ts) are
+# unaffected since those entries spread AFTER HAT_OVERLAYS_GENERATED.
+DEFAULT_LEFT_NUDGE_PX = 14
+DEFAULT_BOTTOM_NUDGE_PX = 24
 
 
 def parse_catalog():
@@ -170,8 +173,8 @@ def compute_overlay(category, aspect):
     # Full-canvas items (auras + backgrounds) keep their zeroed origin —
     # nudging them would push them off-card.
     if category not in ("aura", "background"):
-        left += DEFAULT_LEFT_NUDGE_PX
-        bottom += DEFAULT_BOTTOM_NUDGE_PX
+        left += DEFAULT_LEFT_NUDGE_PX + cfg.get("dx_extra", 0)
+        bottom += DEFAULT_BOTTOM_NUDGE_PX + cfg.get("dy_extra", 0)
     return {"bottom": bottom, "left": left, "width": width, "height": height}
 
 

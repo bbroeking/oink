@@ -128,15 +128,18 @@ import { HAT_OVERLAYS_GENERATED } from "./hat_overlays.generated";
 export const HAT_OVERLAYS: Record<string, HatOverlay> = {
 	...HAT_OVERLAYS_GENERATED,
 	// Manual tuning for the 5 originals (their bbox shape is pre-known)
-	wizard: { bottom: 215, left: 70, width: 160, height: 160 },
-	cowboy: { bottom: 230, left: 40, width: 220, height: 157 },
-	tophat: { bottom: 215, left: 80, width: 140, height: 153 },
-	party: { bottom: 215, left: 95, width: 110, height: 147 },
+	// Hand-tuned positions — values reflect the global -6/-6 shift applied
+	// during the spotting pass that also dropped DEFAULT_LEFT_NUDGE_PX 20→14
+	// and DEFAULT_BOTTOM_NUDGE_PX 30→24 in compute_overlays.py.
+	wizard: { bottom: 209, left: 64, width: 160, height: 160 },
+	cowboy: { bottom: 224, left: 34, width: 220, height: 157 },
+	tophat: { bottom: 209, left: 74, width: 140, height: 153 },
+	party: { bottom: 209, left: 89, width: 110, height: 147 },
 	// Monocle is a single-eye accessory — the lens sits ON the right eye.
 	// New Rosie's right pupil is at (232, 112) in card coords. The lens
 	// occupies the LEFT ~45% of the monocle PNG bbox (rest is chain), so
 	// the bbox is offset left of center so the lens lands on the pupil.
-	monocle: { bottom: 152, left: 200, width: 70, height: 70 },
+	monocle: { bottom: 146, left: 194, width: 70, height: 70 },
 };
 
 // Per-category z-order: items rendered BEHIND the pig vs IN FRONT.

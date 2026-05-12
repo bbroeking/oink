@@ -28,9 +28,20 @@ import {
 import { COLORS, FONTS, SHADOWS } from "@/constants/theme";
 import { SpritePig, PigAnimation } from "@/components/ui/SpritePig";
 
-const STORAGE_KEY = "align_overrides_v1";
+// Bump this version whenever a global re-spotting pass changes the
+// rendered position of every item, so prior hand-tuning gets mapped
+// into the new baseline instead of silently floating off.
+//   v1 → v2: canvas shrank 360 → 300       (scale 5/6 each numeric field)
+//   v2 → v3: global -6 left / -6 bottom    (uniform shift)
+const STORAGE_KEY = "align_overrides_v3";
+const STORAGE_KEY_V2 = "align_overrides_v2";
+const STORAGE_KEY_V1 = "align_overrides_v1";
 const FLAG_KEY = "align_flagged_v1";
-const PIG_SIZE = 360;
+// MUST match the pig + card size in components/SwipeElement.tsx — the
+// align screen stores raw pixel offsets (bottom/left/width/height) in
+// AsyncStorage, and those values are applied verbatim in the live
+// render. A canvas-size mismatch silently re-scales every override.
+const PIG_SIZE = 300;
 const ANIMATIONS_TO_TEST: PigAnimation[] = [
 	"idle",
 	"walk",
@@ -88,7 +99,7 @@ export default function AlignScreen() {
 
 	useEffect(() => {
 		(async () => {
-			const [itemsRes, ovRaw, flagRaw] = await Promise.all([
+			const [itemsRes, v3Raw, v2Raw, v1Raw, flagRaw] = await Promise.all([
 				supabase
 					.from("hats")
 					.select(
@@ -96,16 +107,51 @@ export default function AlignScreen() {
 					)
 					.order("display_order"),
 				AsyncStorage.getItem(STORAGE_KEY),
+				AsyncStorage.getItem(STORAGE_KEY_V2),
+				AsyncStorage.getItem(STORAGE_KEY_V1),
 				AsyncStorage.getItem(FLAG_KEY),
 			]);
 			const rows = (itemsRes.data ?? []) as HatRow[];
 			setItems(rows);
 			if (rows.length > 0) setCurrentId((c) => c ?? rows[0].id);
-			if (ovRaw) {
+
+			// Resolve overrides through the migration chain: prefer the
+			// newest version; fall back to older versions and apply the
+			// cumulative transforms in order. Write back as v3 and clear
+			// older keys so the migration runs exactly once.
+			let loadedOverrides: Record<string, HatOverlay> | null = null;
+			let needsWrite = false;
+			if (v3Raw) {
 				try {
-					setOverrides(JSON.parse(ovRaw));
+					loadedOverrides = JSON.parse(v3Raw);
+				} catch {}
+			} else if (v2Raw) {
+				try {
+					loadedOverrides = shiftV2toV3(JSON.parse(v2Raw));
+					needsWrite = true;
+				} catch {}
+			} else if (v1Raw) {
+				try {
+					loadedOverrides = shiftV2toV3(
+						scaleV1toV2(JSON.parse(v1Raw))
+					);
+					needsWrite = true;
 				} catch {}
 			}
+			if (loadedOverrides) {
+				setOverrides(loadedOverrides);
+				if (needsWrite) {
+					await AsyncStorage.setItem(
+						STORAGE_KEY,
+						JSON.stringify(loadedOverrides)
+					);
+					await AsyncStorage.multiRemove([
+						STORAGE_KEY_V1,
+						STORAGE_KEY_V2,
+					]);
+				}
+			}
+
 			if (flagRaw) {
 				try {
 					setFlagged(JSON.parse(flagRaw));
@@ -835,6 +881,42 @@ export default function AlignScreen() {
 
 function clamp(v: number, lo: number, hi: number) {
 	return Math.max(lo, Math.min(hi, v));
+}
+
+// Migration: 360px canvas → 300px canvas. Scale every numeric field by 5/6.
+function scaleV1toV2(
+	src: Record<string, HatOverlay>
+): Record<string, HatOverlay> {
+	const SCALE = 300 / 360;
+	return Object.fromEntries(
+		Object.entries(src).map(([id, ov]) => [
+			id,
+			{
+				...ov,
+				bottom: Math.round((ov.bottom ?? 0) * SCALE),
+				left: Math.round((ov.left ?? 0) * SCALE),
+				width: Math.round((ov.width ?? 0) * SCALE),
+				height: Math.round((ov.height ?? 0) * SCALE),
+			},
+		])
+	);
+}
+
+// Migration: global -6 left / -6 bottom shift applied during the
+// scene-wide re-spotting pass.
+function shiftV2toV3(
+	src: Record<string, HatOverlay>
+): Record<string, HatOverlay> {
+	return Object.fromEntries(
+		Object.entries(src).map(([id, ov]) => [
+			id,
+			{
+				...ov,
+				left: Math.max(0, (ov.left ?? 0) - 6),
+				bottom: Math.max(0, (ov.bottom ?? 0) - 6),
+			},
+		])
+	);
 }
 
 function Chip({
