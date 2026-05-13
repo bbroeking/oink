@@ -21,6 +21,7 @@ import {
 	HatRow,
 	RARITY_COLORS,
 } from "@/constants/hats";
+import { ITEM_PREBAKED, isPrebaked } from "@/constants/prebaked";
 import { FONTS, MODAL_BACKDROP_BG, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
 const RARITY_GRADIENT: Record<string, string> = {
@@ -62,55 +63,76 @@ export function ItemPreviewModal({
 	const rarity = item.rarity ?? "common";
 	const rarityColor = RARITY_COLORS[rarity];
 	const itemSrc = HAT_IMAGES[item.id] ?? null;
+	// Same precedence as SwipeElement → matches what you see in the
+	// real Barn render. Earlier this modal used a different/looser
+	// chain that produced wrong positions for items with no manual
+	// entry in HAT_OVERLAYS.
 	const overlay =
 		HAT_OVERLAYS[item.id] ??
 		(item.category && CATEGORY_OVERLAYS[item.category]) ??
 		DEFAULT_HAT_OVERLAY;
 	const isBehind = item.category && Z_BEHIND_PIG[item.category];
+	const prebaked = isPrebaked(item.id) ? ITEM_PREBAKED[item.id] : null;
 
 	return (
 		<Modal visible={!!item} animationType="fade" transparent onRequestClose={onClose}>
 			<View style={styles.backdrop}>
 				<Sticker color="paper" rotate={-0.5} radius={20} style={styles.sheet}>
-					<Pressable onPress={onClose} style={styles.closeBtn}>
+					<Pressable
+						onPress={onClose}
+						style={styles.closeBtn}
+						hitSlop={12}
+					>
 						<Text style={styles.closeText}>✕</Text>
 					</Pressable>
 
-					{/* Big preview: pig wearing the item */}
+					{/* Big preview: pig wearing the item. The inner stage is
+					    a FIXED 300×300 box (centered in the preview card)
+					    that matches the card-coord space used by
+					    HAT_OVERLAYS + SwipeElement — so the item lands on
+					    the right anatomy here exactly as it does on the
+					    home screen. Earlier the pig was 260 inside a
+					    flexible-size card, and overlay coords drifted. */}
 					<View
 						style={[
 							styles.previewCard,
 							{ backgroundColor: RARITY_GRADIENT[rarity] },
 						]}
 					>
-						{/* Behind pig */}
-						{isBehind && itemSrc && (
-							<View style={[styles.overlayBox, overlay]}>
-								<Image
-									source={itemSrc}
-									style={styles.fillImage}
-									resizeMode="contain"
+						<View style={styles.previewStage}>
+							{/* Behind pig: backgrounds, auras, capes */}
+							{isBehind && itemSrc && (
+								<View style={[styles.overlayBox, overlay, { zIndex: 1 }]}>
+									<Image
+										source={itemSrc}
+										style={styles.fillImage}
+										resizeMode="contain"
+									/>
+								</View>
+							)}
+							<View style={[styles.previewPig, { zIndex: 2 }]}>
+								<SpritePig
+									animation="idle"
+									size={300}
+									customFrames={prebaked ?? undefined}
 								/>
 							</View>
-						)}
-						<View style={styles.previewPig}>
-							<SpritePig animation="idle" size={260} />
+							{/* In front of pig */}
+							{!isBehind && itemSrc && !prebaked && (
+								<View style={[styles.overlayBox, overlay, { zIndex: 10 }]}>
+									<Image
+										source={itemSrc}
+										style={styles.fillImage}
+										resizeMode="contain"
+									/>
+								</View>
+							)}
+							{!itemSrc && item.emoji && (
+								<View style={[styles.overlayBox, overlay, { zIndex: 10 }]}>
+									<Text style={styles.emojiPlaceholder}>{item.emoji}</Text>
+								</View>
+							)}
 						</View>
-						{/* In front of pig */}
-						{!isBehind && itemSrc && (
-							<View style={[styles.overlayBox, overlay]}>
-								<Image
-									source={itemSrc}
-									style={styles.fillImage}
-									resizeMode="contain"
-								/>
-							</View>
-						)}
-						{!itemSrc && item.emoji && (
-							<View style={[styles.overlayBox, overlay]}>
-								<Text style={styles.emojiPlaceholder}>{item.emoji}</Text>
-							</View>
-						)}
 					</View>
 
 					{/* Rarity tag */}
@@ -187,13 +209,15 @@ const styles = StyleSheet.create({
 	},
 	closeBtn: {
 		position: "absolute",
-		top: 8,
-		right: 12,
-		width: 32,
-		height: 32,
+		// Push the X a bit further from the corner so it doesn't
+		// crowd the sticker border or rarity content beside it.
+		top: 12,
+		right: 16,
+		width: 36,
+		height: 36,
 		alignItems: "center",
 		justifyContent: "center",
-		zIndex: 3,
+		zIndex: 30,
 	},
 	closeText: {
 		fontSize: 24,
@@ -210,9 +234,21 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		marginBottom: 14,
 	},
+	// Fixed-size inner stage. Card-coord overlays land correctly only
+	// when the pig is at a known native size. Centered inside the
+	// (sometimes larger) preview card. Items position relative to
+	// THIS box, not the card.
+	previewStage: {
+		width: 300,
+		height: 300,
+		position: "relative",
+	},
 	previewPig: {
-		width: 260,
-		height: 260,
+		position: "absolute",
+		left: 0,
+		top: 0,
+		width: 300,
+		height: 300,
 	},
 	overlayBox: {
 		position: "absolute",

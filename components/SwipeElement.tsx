@@ -101,6 +101,12 @@ interface SwipeElementProps {
 	onLuckySwipe: () => void;
 	hatId?: string | null;
 	equipped?: EquippedItem | null;
+	// Multi-slot equipment. `equipped` is the "main" slot (hat / scarf /
+	// mask / etc.) and is rendered IN FRONT of the pig. Aura and
+	// background each have their own slot and render BEHIND the pig:
+	// background deepest, then aura, then pig, then equipped on top.
+	equippedAura?: EquippedItem | null;
+	equippedBackground?: EquippedItem | null;
 	canTickle?: boolean;
 	playSixSeven?: number; // increment to re-trigger
 }
@@ -111,6 +117,8 @@ export default function SwipeElement({
 	onLuckySwipe,
 	hatId,
 	equipped,
+	equippedAura,
+	equippedBackground,
 	canTickle = true,
 	playSixSeven,
 }: SwipeElementProps) {
@@ -218,13 +226,13 @@ export default function SwipeElement({
 	// 6-7 bounce sequence triggered by playSixSeven counter changing.
 	//
 	// Race-safety with the random-reaction system:
-	// - When 6-7 fires, we set pigAnim to "arms_up". If a `jump` was mid-flight,
+	// - When 6-7 fires, we set pigAnim to "happy". If a `jump` was mid-flight,
 	//   SpritePig's effect cleanup clears the old interval, and the deferred
 	//   onComplete is gated on `pigAnim === "jump"` (via the prop swap below)
 	//   so handleJumpComplete becomes a no-op.
 	// - If 6-7 fires while a happy/surprise/wave is mid-700ms-hold, the
 	//   trailing setTimeout uses a functional setState that checks
-	//   `cur === pick` and no-ops when arms_up has overridden it.
+	//   `cur === pick` and no-ops when happy has overridden it.
 	// Don't refactor either of these without preserving those guards.
 	useEffect(() => {
 		if (!playSixSeven) return;
@@ -258,7 +266,7 @@ export default function SwipeElement({
 		sevenOpacity.setValue(0);
 		sixY.setValue(0);
 		sevenY.setValue(0);
-		setPigAnim("arms_up");
+		setPigAnim("happy");
 
 		try {
 			sixSevenPlayer.seekTo(0);
@@ -282,51 +290,64 @@ export default function SwipeElement({
 		});
 	}, [playSixSeven, canTickle]);
 
-	const itemId = equipped?.id ?? hatId ?? null;
-	const category = equipped?.category ?? (hatId ? "hat" : null);
-	const emoji = equipped?.emoji ?? null;
+	// Compute the per-frame, per-anchor overlay for a single equipped
+	// item. Used three times below: main slot (rendered in front),
+	// aura slot, background slot (both rendered behind the pig).
+	const resolveSlot = (slot: EquippedItem | null | undefined) => {
+		if (!slot) return null;
+		const itemId = slot.id;
+		const category = slot.category ?? null;
+		const emoji = slot.emoji ?? null;
+		const prebaked = isPrebaked(itemId) ? ITEM_PREBAKED[itemId] : null;
+		const imageSrc = HAT_IMAGES[itemId];
+		const baseOverlay = prebaked
+			? null
+			: alignOverrides[itemId] ||
+				HAT_OVERLAYS[itemId] ||
+				(category && CATEGORY_OVERLAYS[category]) ||
+				DEFAULT_HAT_OVERLAY;
+		const isFullCanvas = category === "background" || category === "aura";
+		const delta = isFullCanvas
+			? { dx: 0, dy: 0 }
+			: frameDelta(
+					pigAnim as PigAnimationKey,
+					pigFrameIdx,
+					category,
+					baseOverlay?.anchor,
+				);
+		const overlay = baseOverlay
+			? isFullCanvas
+				? baseOverlay
+				: {
+						...baseOverlay,
+						left: baseOverlay.left + delta.dx,
+						bottom: baseOverlay.bottom - delta.dy,
+					}
+			: null;
+		return { itemId, category, emoji, imageSrc, prebaked, overlay };
+	};
 
-	// Prebaked items render their bespoke "pig wearing X" frames inside
-	// SpritePig and skip the compositional overlay entirely.
-	const prebaked = isPrebaked(itemId) ? ITEM_PREBAKED[itemId!] : null;
+	// Back-compat: callers can still pass hatId for the main slot.
+	const mainEquipped: EquippedItem | null =
+		equipped ??
+		(hatId ? { id: hatId, category: "hat", emoji: null } : null);
 
-	const imageSrc = itemId ? HAT_IMAGES[itemId] : null;
-	// Precedence: align-screen override (dev only, AsyncStorage) → manual
-	// HAT_OVERLAYS entry → category default → DEFAULT_HAT_OVERLAY. Mirrors
-	// the chain in app/align.tsx so what you see while tuning matches the
-	// live render.
-	const baseOverlay = prebaked
-		? null
-		: (itemId && alignOverrides[itemId]) ||
-			(itemId && HAT_OVERLAYS[itemId]) ||
-			(category && CATEGORY_OVERLAYS[category]) ||
-			(itemId ? DEFAULT_HAT_OVERLAY : null);
+	const main = resolveSlot(mainEquipped);
+	const auraSlot = resolveSlot(equippedAura);
+	const bgSlot = resolveSlot(equippedBackground);
 
-	// Per-frame anchor system: each item follows the body part its category
-	// is bound to (hat→head, glasses→eyes, held→hand, etc.). The delta is
-	// the displacement of that anchor from its rest position; we apply it
-	// to the item's existing left/bottom. Backgrounds + auras span the
-	// whole card so they don't track an anchor.
-	const isFullCanvas = category === "background" || category === "aura";
-	const delta = isFullCanvas
-		? { dx: 0, dy: 0 }
-		: frameDelta(
-				pigAnim as PigAnimationKey,
-				pigFrameIdx,
-				category ?? null,
-				baseOverlay?.anchor,
-			);
-	// dy is in screen-axis (positive = down); RN's `bottom` is anchored
-	// to the canvas bottom (positive = up), so we negate to convert.
-	const overlay = baseOverlay
-		? isFullCanvas
-			? baseOverlay
-			: {
-					...baseOverlay,
-					left: baseOverlay.left + delta.dx,
-					bottom: baseOverlay.bottom - delta.dy,
-				}
-		: null;
+	// Accessory items are hand-placed against the idle pose. Reactions
+	// (jump/happy/wave/etc.) move the pig's anatomy enough that the
+	// static overlay drifts off-anchor — and for items meant to wrap
+	// around the body (scarves, necklaces, capes) the back half is
+	// missing, so a sudden pose change reveals the cut edge. Hide
+	// accessory overlays during reactions; backgrounds + auras don't
+	// anchor to anatomy so they keep rendering.
+	const SHOW_OVERLAY_DURING = pigAnim === "idle" || pigAnim === "sad";
+	const hideAccessory =
+		!SHOW_OVERLAY_DURING &&
+		main?.category !== "background" &&
+		main?.category !== "aura";
 
 	const rotateDeg = rotate.interpolate({
 		inputRange: [-1, 1],
@@ -342,24 +363,47 @@ export default function SwipeElement({
 						{ transform: [{ scale }, { rotate: rotateDeg }] },
 					]}
 				>
-					{/* Per-item override (HatOverlay.behind) wins over the
-					    category default (Z_BEHIND_PIG). Backgrounds, auras,
-					    and capes default to behind via category. */}
+					{/* Z-order (back to front):
+					    1 = background slot (deepest)
+					    2 = aura slot
+					    3 = pig sprite
+					    4 = cape (when main slot's HatOverlay.behind or
+					        category Z_BEHIND_PIG routes it behind the pig)
+					    10 = main slot (hat / scarf / glasses / etc.) */}
+					{bgSlot?.overlay && (
+						<ItemOverlay
+							overlay={bgSlot.overlay}
+							imageSrc={bgSlot.imageSrc}
+							emoji={null}
+							zIndex={1}
+						/>
+					)}
+					{auraSlot?.overlay && (
+						<ItemOverlay
+							overlay={auraSlot.overlay}
+							imageSrc={auraSlot.imageSrc}
+							emoji={null}
+							zIndex={2}
+						/>
+					)}
 					{(() => {
+						const overlay = main?.overlay ?? null;
+						const category = main?.category ?? null;
 						const isBehind =
 							overlay?.behind ??
 							(category ? !!Z_BEHIND_PIG[category] : false);
+						const showOverlay = overlay && !hideAccessory;
 						return (
 							<>
-								{overlay && isBehind && (
+								{showOverlay && isBehind && (
 									<ItemOverlay
 										overlay={overlay}
-										imageSrc={imageSrc}
+										imageSrc={main?.imageSrc ?? null}
 										emoji={null}
-										zIndex={1}
+										zIndex={3}
 									/>
 								)}
-								<View style={[styles.cardImage, { zIndex: 2 }]}>
+								<View style={[styles.cardImage, { zIndex: 5 }]}>
 									<SpritePig
 										animation={pigAnim}
 										size={300}
@@ -367,14 +411,14 @@ export default function SwipeElement({
 										onComplete={
 											pigAnim === "jump" ? handleJumpComplete : undefined
 										}
-										customFrames={prebaked ?? undefined}
+										customFrames={main?.prebaked ?? undefined}
 									/>
 								</View>
-								{overlay && !isBehind && (
+								{showOverlay && !isBehind && (
 									<ItemOverlay
 										overlay={overlay}
-										imageSrc={imageSrc}
-										emoji={emoji}
+										imageSrc={main?.imageSrc ?? null}
+										emoji={main?.emoji ?? null}
 										zIndex={10}
 									/>
 								)}

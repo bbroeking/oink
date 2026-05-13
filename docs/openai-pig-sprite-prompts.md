@@ -31,8 +31,13 @@ Character: a chubby pink cartoon pig.
 - Pink oval snout with two nostrils
 - Soft smile, blush cheeks
 - Two soft pink ears (slight forward droop)
-- Four short stubby legs with darker hooves
+- Two short FRONT LIMBS ending in small cartoon HANDS (3–4 stubby pink
+  fingers each, NOT hooves). The hands are used for gesturing —
+  waving, pointing, holding things.
+- Two short BACK LEGS ending in darker brown hooves
 - Small curly tail
+- The pig walks and stands on all four limbs; the front hands rest
+  on the ground in idle poses but can lift off the ground to gesture
 
 Style: flat children's storybook illustration, bold ~3px black outline,
 soft pink palette (body #F8B9C6, inner ear/cheeks #F4A5B6, snout #EF8FA4,
@@ -105,25 +110,29 @@ FALL in air, 4 frames horizontal, 1024×256 total. The pig is falling — legs f
 - Frame 4: legs preparing for landing, body bracing
 ```
 
-### HAPPY / CHEER — 4 frames, 1024×256
+### HAPPY — 4 frames, 1024×256
+
+HAPPY is a subtle mood shift only — the pig stays on all fours, hands
+stay on the ground, just a quiet contented face change.
 
 ```
-HAPPY cheering loop, 4 frames horizontal, 1024×256 total. The pig has its arms raised in celebration.
-- Frame 1: arms raised, body at baseline, eyes happy/closed
-- Frame 2: small bounce up, arms shaking a bit, big smile
-- Frame 3: same as frame 1
-- Frame 4: bounce up again with sparkle particles around the head
+HAPPY mood loop, 4 frames horizontal, 1024×256 total. A subtle happy loop — the pig stays on all four legs the entire time, no arms raised. Just a quiet contented mood: a slightly wider smile, eyes squinting into gentle upward curves, and a tiny breathing-style bounce.
+- Frame 1 (baseline): standard standing pose, normal smile, eyes open.
+- Frame 2 (warming up): smile widens slightly, eyes start to close into happy upward curves, body lifts 2px.
+- Frame 3 (peak happy): full happy smile, eyes fully closed into upward arcs, body lifted 4px, tiny blush a touch brighter.
+- Frame 4 (settling): smile relaxing slightly but still happy, eyes starting to reopen, body settling back to 2px lift.
+Body and legs stay grounded the whole loop. No arms move. Pose stays in the same horizontal position. Face is the only thing changing significantly.
 ```
 
 ### WAVE — 4 frames, 1024×256
 
 ```
-WAVE greeting, 4 frames horizontal, 1024×256 total. The pig is waving its right arm side to side.
-- Frame 1: right arm raised, hand at center
-- Frame 2: arm swung to the right
-- Frame 3: arm centered again
-- Frame 4: arm swung to the left
-Body, head and other limbs stay still — only the right arm moves.
+WAVE greeting, 4 frames horizontal, 1024×256 total. The pig stays on all fours the entire time — back legs and front-left hand stay planted on the ground. Only the front-RIGHT hand lifts off the ground to wave side to side at about head height.
+- Frame 1: front-right hand lifted to head height, hand centered above its starting position
+- Frame 2: hand swung to the right (toward the pig's right side)
+- Frame 3: hand back at center
+- Frame 4: hand swung to the left (toward the pig's left side)
+Body, head, the back legs, and the front-left hand all stay completely still — only the front-right hand moves. The pig does NOT stand up on its back legs.
 ```
 
 ### SAD / HURT — 2 frames, 512×256

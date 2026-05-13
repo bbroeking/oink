@@ -50,7 +50,6 @@ const ANIMATIONS_TO_TEST: PigAnimation[] = [
 	"sad",
 	"surprise",
 	"wave",
-	"arms_up",
 ];
 
 const CATEGORY_ORDER = [

@@ -22,10 +22,6 @@ const FRAMES: Record<string, number> = {
 	surprise_2: require("../../assets/images/sprites/rosie/surprise_2.png"),
 	surprise_3: require("../../assets/images/sprites/rosie/surprise_3.png"),
 	surprise_4: require("../../assets/images/sprites/rosie/surprise_4.png"),
-	arms_up_1: require("../../assets/images/sprites/rosie/arms_up_1.png"),
-	arms_up_2: require("../../assets/images/sprites/rosie/arms_up_2.png"),
-	arms_up_3: require("../../assets/images/sprites/rosie/arms_up_3.png"),
-	arms_up_4: require("../../assets/images/sprites/rosie/arms_up_4.png"),
 	happy_1: require("../../assets/images/sprites/rosie/happy_1.png"),
 	happy_2: require("../../assets/images/sprites/rosie/happy_2.png"),
 	happy_3: require("../../assets/images/sprites/rosie/happy_3.png"),
@@ -44,8 +40,7 @@ export type PigAnimation =
 	| "happy"
 	| "sad"
 	| "surprise"
-	| "wave"
-	| "arms_up";
+	| "wave";
 
 interface AnimationConfig {
 	frames: string[];
@@ -67,11 +62,6 @@ const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
 		loop: false,
 	},
 	wave: { frames: ["wave_1", "wave_2", "wave_3", "wave_4"], fps: 4, loop: true },
-	arms_up: {
-		frames: ["arms_up_1", "arms_up_2", "arms_up_3", "arms_up_4"],
-		fps: 4,
-		loop: true,
-	},
 };
 
 interface Props {

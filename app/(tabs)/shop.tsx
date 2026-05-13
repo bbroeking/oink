@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	View,
 	StyleSheet,
@@ -10,6 +10,7 @@ import {
 	Text,
 	Pressable,
 	ScrollView,
+	useWindowDimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
@@ -27,7 +28,15 @@ import {
 import { COLORS, FONTS, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { RarityFx } from "../../components/ui/RarityFx";
+import {
+	BuyCelebration,
+	type BuyCelebrationHandle,
+} from "../../components/ui/BuyCelebration";
 import * as Haptics from "expo-haptics";
+import { useAudioPlayer } from "expo-audio";
+
+const deniedSound = require("../../assets/sounds/denied.mp3");
+const equipSound = require("../../assets/sounds/equip.mp3");
 
 const RARITY_GRADIENT: Record<string, [string, string]> = {
 	common: ["#FAF7F3", "#EFEAE3"],
@@ -169,27 +178,30 @@ function formatCountdown(secs: number): string {
 
 function HatThumb({
 	item,
-	size = 100,
+	size,
+	fill,
 }: {
 	item: HatRow;
 	size?: number;
+	fill?: boolean;
 }) {
 	const hatSrc = HAT_IMAGES[item.id];
+	const baseStyle = fill
+		? ({ flex: 1, width: "100%" as const, height: "100%" as const })
+		: ({ width: size ?? 100, height: size ?? 100 });
 	if (hatSrc) {
 		return (
-			<Image
-				source={hatSrc}
-				style={{ width: size, height: size }}
-				resizeMode="contain"
-			/>
+			<Image source={hatSrc} style={baseStyle} resizeMode="contain" />
 		);
 	}
 	return (
-		<Text style={{ fontSize: size * 0.55 }}>
+		<Text style={{ fontSize: (size ?? 100) * 0.55 }}>
 			{item.emoji ?? CATEGORY_EMOJI[item.category ?? "hat"] ?? "?"}
 		</Text>
 	);
 }
+
+type CellShape = "square" | "tall" | "wide";
 
 function ItemCard({
 	item,
@@ -199,6 +211,7 @@ function ItemCard({
 	busy,
 	wardrobeMode,
 	buyable = true,
+	cellShape = "square",
 	onBuy,
 	onEquip,
 	onUnequip,
@@ -211,6 +224,10 @@ function ItemCard({
 	busy: boolean;
 	wardrobeMode?: boolean;
 	buyable?: boolean;
+	// "wide" = cell wider than tall (e.g. 4×1, 4×2) — flip to horizontal
+	// layout (image left, body right) so neither half is starved.
+	// "tall" or "square" = vertical stack (image top, body bottom).
+	cellShape?: CellShape;
 	onBuy: () => void;
 	onEquip: () => void;
 	onUnequip: () => void;
@@ -219,12 +236,96 @@ function ItemCard({
 	const rarity = item.rarity ?? "common";
 	const rarityColor = RARITY_COLORS[rarity];
 	const isPremium = rarity === "epic" || rarity === "legendary";
+	const horizontal = cellShape === "wide";
+
+	const thumb = (
+		<RarityFx
+			rarity={rarity}
+			style={[
+				styles.cardThumbWrap,
+				horizontal && styles.cardThumbWrapHoriz,
+			]}
+		>
+			<LinearGradient
+				colors={RARITY_GRADIENT[rarity]}
+				style={styles.cardThumb}
+			>
+				<HatThumb item={item} fill />
+				<View
+					style={[
+						styles.rarityBadge,
+						{ backgroundColor: rarityColor },
+					]}
+				>
+					<Text style={styles.rarityText}>{rarity.toUpperCase()}</Text>
+				</View>
+			</LinearGradient>
+		</RarityFx>
+	);
+
+	const body = (
+		<View style={[styles.cardBody, horizontal && styles.cardBodyHoriz]}>
+			<Text
+				style={[styles.cardName, horizontal && styles.cardNameHoriz]}
+				numberOfLines={horizontal ? 2 : 1}
+			>
+				{item.name}
+			</Text>
+			<View style={styles.priceRow}>
+				{owned ? (
+					<Text
+						style={[
+							styles.cardOwnedTag,
+							active && { color: COLORS.successText },
+						]}
+					>
+						{active ? "✓ WEARING" : "OWNED"}
+					</Text>
+				) : (
+					<>
+						<SnoutCoin size={14} />
+						<Text style={styles.cardPrice}>
+							{item.cost.toLocaleString()}
+						</Text>
+					</>
+				)}
+			</View>
+			{active ? (
+				<Button size="sm" variant="ghost" full onPress={onUnequip}>
+					Take off
+				</Button>
+			) : owned ? (
+				<Button size="sm" variant="primary" full onPress={onEquip}>
+					Wear
+				</Button>
+			) : wardrobeMode ? null : !buyable ? (
+				<Button size="sm" variant="locked" full disabled>
+					Today only
+				</Button>
+			) : !canAfford ? (
+				<Button size="sm" variant="locked" full disabled>
+					Not enough
+				</Button>
+			) : (
+				<Button
+					size="sm"
+					variant="primary"
+					full
+					onPress={onBuy}
+					disabled={busy}
+				>
+					Buy
+				</Button>
+			)}
+		</View>
+	);
 
 	return (
 		<Pressable
 			onPress={onPreview}
 			style={[
 				styles.card,
+				horizontal && styles.cardHoriz,
 				{
 					borderColor: rarityColor,
 					shadowColor: isPremium ? rarityColor : "#000",
@@ -235,73 +336,8 @@ function ItemCard({
 				},
 			]}
 		>
-			<RarityFx rarity={rarity} style={styles.cardThumbWrap}>
-				<LinearGradient
-					colors={RARITY_GRADIENT[rarity]}
-					style={styles.cardThumb}
-				>
-					<HatThumb item={item} size={86} />
-					<View
-						style={[
-							styles.rarityBadge,
-							{ backgroundColor: rarityColor },
-						]}
-					>
-						<Text style={styles.rarityText}>{rarity.toUpperCase()}</Text>
-					</View>
-				</LinearGradient>
-			</RarityFx>
-			<View style={styles.cardBody}>
-				<Text style={styles.cardName} numberOfLines={1}>
-					{item.name}
-				</Text>
-				<View style={styles.priceRow}>
-					{owned ? (
-						<Text
-							style={[
-								styles.cardOwnedTag,
-								active && { color: COLORS.successText },
-							]}
-						>
-							{active ? "✓ WEARING" : "OWNED"}
-						</Text>
-					) : (
-						<>
-							<SnoutCoin size={14} />
-							<Text style={styles.cardPrice}>
-								{item.cost.toLocaleString()}
-							</Text>
-						</>
-					)}
-				</View>
-				{active ? (
-					<Button size="sm" variant="ghost" full onPress={onUnequip}>
-						Take off
-					</Button>
-				) : owned ? (
-					<Button size="sm" variant="primary" full onPress={onEquip}>
-						Wear
-					</Button>
-				) : wardrobeMode ? null : !buyable ? (
-					<Button size="sm" variant="locked" full disabled>
-						Today only
-					</Button>
-				) : !canAfford ? (
-					<Button size="sm" variant="locked" full disabled>
-						Not enough
-					</Button>
-				) : (
-					<Button
-						size="sm"
-						variant="primary"
-						full
-						onPress={onBuy}
-						disabled={busy}
-					>
-						Buy
-					</Button>
-				)}
-			</View>
+			{thumb}
+			{body}
 		</Pressable>
 	);
 }
@@ -413,17 +449,351 @@ function FeaturedCard({
 	);
 }
 
+// ── Bento daily-shop layout ─────────────────────────────────────
+//
+// Three goals:
+//   1. ZERO EMPTY CELLS — adaptive templates per item count.
+//   2. ROTATION — for 8-item days, pick one of 4 templates by date
+//      so the shop feels different day-to-day.
+//   3. TILE TAP TARGETS — tap anywhere on a tile opens the preview;
+//      the price pill is the only buy-action target (long press also
+//      acceptable). Owned/equipped state replaces the pill.
+//
+// Template spec: each cell is {c, r, w, h} in 3-column grid units.
+// Renderer places cells with absolute positioning so spans work
+// without manual flex-fu.
+
+// Daily layout: 5 items in a 2 + 1 + 2 stack.
+//   row 0: two half-width squares side by side
+//   row 1: ONE full-width wide banner — PREMIUM of the day,
+//          horizontal ItemCard layout (icon left, buy right)
+//   row 2: two more half-width squares side by side
+// The premium slot is filled by the day's rarest item (ties broken
+// by daily_shop's deterministic hash). With < 5 items available,
+// trailing squares drop; the premium row stays as long as there's
+// at least one item.
+type SlotShape = "square" | "premium";
+
+// Compact card variant for small 1×1 tiles. Image dominates; the
+// bottom strip is either a price+buy pill or owned/equipped state.
+// Whole-tile tap → preview; pill tap → buy/equip/unequip.
+function CompactItemCard({
+	item,
+	owned,
+	active,
+	canAfford,
+	busy,
+	onBuy,
+	onEquip,
+	onUnequip,
+	onPreview,
+}: {
+	item: HatRow;
+	owned: boolean;
+	active: boolean;
+	canAfford: boolean;
+	busy: boolean;
+	onBuy: () => void;
+	onEquip: () => void;
+	onUnequip: () => void;
+	onPreview: () => void;
+}) {
+	const rarity = item.rarity ?? "common";
+	const rarityColor = RARITY_COLORS[rarity];
+
+	const pillAction = active
+		? onUnequip
+		: owned
+			? onEquip
+			: canAfford && !busy
+				? onBuy
+				: undefined;
+	const pillContent = active ? (
+		<Text style={compactStyles.pillTextOwned}>✓ Wearing</Text>
+	) : owned ? (
+		<Text style={compactStyles.pillTextOwned}>Wear</Text>
+	) : !canAfford ? (
+		<>
+			<SnoutCoin size={12} />
+			<Text style={compactStyles.pillTextDisabled}>
+				{item.cost.toLocaleString()}
+			</Text>
+		</>
+	) : (
+		<>
+			<SnoutCoin size={12} />
+			<Text style={compactStyles.pillText}>
+				{item.cost.toLocaleString()}
+			</Text>
+		</>
+	);
+
+	return (
+		<Pressable
+			onPress={onPreview}
+			style={[compactStyles.card, { borderColor: rarityColor }]}
+		>
+			<RarityFx rarity={rarity} style={compactStyles.thumbWrap}>
+				<LinearGradient
+					colors={RARITY_GRADIENT[rarity]}
+					style={compactStyles.thumb}
+				>
+					<HatThumb item={item} size={56} />
+					<View
+						style={[
+							compactStyles.rarityBadge,
+							{ backgroundColor: rarityColor },
+						]}
+					>
+						<Text style={compactStyles.rarityText}>
+							{rarity[0].toUpperCase()}
+						</Text>
+					</View>
+				</LinearGradient>
+			</RarityFx>
+			<Pressable
+				onPress={pillAction}
+				disabled={!pillAction}
+				style={[
+					compactStyles.pill,
+					active && compactStyles.pillActive,
+					owned && !active && compactStyles.pillOwned,
+					!owned && !canAfford && compactStyles.pillDisabled,
+				]}
+			>
+				{pillContent}
+			</Pressable>
+		</Pressable>
+	);
+}
+
+// Layout: 2 tiles / wide premium banner / 2 tiles, expanding to fill
+// the available vertical space (no scroll). The top + bottom rows
+// each take flex: 1 of the remaining height after the fixed-height
+// premium banner; each pair of tiles within a row splits the width
+// 50/50. Tiles end up roughly card-shaped (taller than wide) on most
+// phones — not strict squares, but well-proportioned for the new
+// art style.
+function BentoDailyGrid({
+	items,
+	featured,
+	owned,
+	isEquipped,
+	counter,
+	busyId,
+	onBuy,
+	onEquip,
+	onUnequip,
+	onPreview,
+	tileCenters,
+}: {
+	items: HatRow[];
+	featured: HatRow | null;
+	owned: Set<string>;
+	isEquipped: (id: string, cat: string | null | undefined) => boolean;
+	counter: number;
+	busyId: string | null;
+	onBuy: (h: HatRow) => void;
+	onEquip: (id: string, cat: string | null | undefined) => void;
+	onUnequip: (cat: string | null | undefined) => void;
+	onPreview: (h: HatRow) => void;
+	tileCenters?: React.MutableRefObject<Map<string, { x: number; y: number }>>;
+}) {
+	const { width: screenW } = useWindowDimensions();
+	const HORIZ_PADDING = 12;
+	const GAP = 12;
+	const innerW = screenW - HORIZ_PADDING * 2;
+	const PREMIUM_H = Math.round(innerW * 0.32); // ~3:1 horizontal banner
+
+	// Premium = day's rarest item. Ties broken by daily_shop's
+	// deterministic order (the upstream `featured` resolver already
+	// picked one).
+	const premium = featured ?? items[0] ?? null;
+	const squares = items.filter((i) => i.id !== premium?.id).slice(0, 4);
+	const topSquares = squares.slice(0, 2);
+	const bottomSquares = squares.slice(2, 4);
+
+	const captureCenter = (itemId: string) => (e: {
+		target: unknown;
+	}) => {
+		if (!tileCenters) return;
+		const targetRef = e.target as {
+			measureInWindow?: (
+				cb: (x: number, y: number, w: number, h: number) => void
+			) => void;
+		};
+		targetRef.measureInWindow?.((x, y, w, h) => {
+			tileCenters.current.set(itemId, {
+				x: x + w / 2,
+				y: y + h / 2,
+			});
+		});
+	};
+
+	const renderTile = (item: HatRow) => (
+		<View
+			key={item.id}
+			style={{ flex: 1 }}
+			onLayout={captureCenter(item.id)}
+		>
+			<ItemCard
+				item={item}
+				owned={owned.has(item.id)}
+				active={isEquipped(item.id, item.category)}
+				canAfford={counter >= item.cost}
+				busy={busyId === item.id}
+				cellShape="square"
+				onBuy={() => onBuy(item)}
+				onEquip={() => onEquip(item.id, item.category)}
+				onUnequip={() => onUnequip(item.category)}
+				onPreview={() => onPreview(item)}
+			/>
+		</View>
+	);
+
+	return (
+		<View style={{ flex: 1, gap: GAP }}>
+			{topSquares.length > 0 && (
+				<View
+					style={{ flex: 1, flexDirection: "row", gap: GAP }}
+				>
+					{topSquares.map(renderTile)}
+				</View>
+			)}
+			{premium && (
+				<View
+					style={{ width: innerW, height: PREMIUM_H }}
+					onLayout={captureCenter(premium.id)}
+				>
+					<ItemCard
+						item={premium}
+						owned={owned.has(premium.id)}
+						active={isEquipped(premium.id, premium.category)}
+						canAfford={counter >= premium.cost}
+						busy={busyId === premium.id}
+						cellShape="wide"
+						onBuy={() => onBuy(premium)}
+						onEquip={() => onEquip(premium.id, premium.category)}
+						onUnequip={() => onUnequip(premium.category)}
+						onPreview={() => onPreview(premium)}
+					/>
+				</View>
+			)}
+			{bottomSquares.length > 0 && (
+				<View
+					style={{ flex: 1, flexDirection: "row", gap: GAP }}
+				>
+					{bottomSquares.map(renderTile)}
+				</View>
+			)}
+		</View>
+	);
+}
+
+const compactStyles = StyleSheet.create({
+	card: {
+		flex: 1,
+		borderRadius: 14,
+		borderWidth: 2,
+		backgroundColor: COLORS.paper,
+		overflow: "hidden",
+	},
+	thumbWrap: {
+		flex: 1,
+	},
+	thumb: {
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	rarityBadge: {
+		position: "absolute",
+		top: 4,
+		left: 4,
+		width: 14,
+		height: 14,
+		borderRadius: 7,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	rarityText: {
+		color: "#fff",
+		fontFamily: FONTS.bodyBlack,
+		fontSize: 8,
+	},
+	pill: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		paddingVertical: 6,
+		paddingHorizontal: 8,
+		gap: 4,
+		backgroundColor: COLORS.ink,
+		borderTopWidth: 1,
+		borderTopColor: COLORS.border,
+	},
+	pillActive: {
+		backgroundColor: COLORS.success,
+	},
+	pillOwned: {
+		backgroundColor: COLORS.purple,
+	},
+	pillDisabled: {
+		backgroundColor: COLORS.paper2,
+	},
+	pillText: {
+		color: "#fff",
+		fontFamily: FONTS.bodyBlack,
+		fontSize: 13,
+	},
+	pillTextOwned: {
+		color: "#fff",
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		letterSpacing: 0.5,
+	},
+	pillTextDisabled: {
+		color: COLORS.ink3,
+		fontFamily: FONTS.bodyBlack,
+		fontSize: 13,
+	},
+});
+
 export default function ShopScreen() {
 	const [daily, setDaily] = useState<HatRow[]>([]);
 	const [allItems, setAllItems] = useState<HatRow[]>([]);
 	const [owned, setOwned] = useState<Set<string>>(new Set());
-	const [activeId, setActiveId] = useState<string | null>(null);
+	// Multi-slot equipment: hat, aura, and background each have their own
+	// column on profiles. Equipping an aura clears the aura slot only,
+	// leaving any hat/background equipped intact. See migration
+	// 20260514000000_aura_background_slots.sql for the schema.
+	const [activeIds, setActiveIds] = useState<{
+		hat: string | null;
+		aura: string | null;
+		background: string | null;
+	}>({ hat: null, aura: null, background: null });
+	const isEquipped = (id: string, category: string | null | undefined) => {
+		if (category === "aura") return activeIds.aura === id;
+		if (category === "background") return activeIds.background === id;
+		return activeIds.hat === id;
+	};
 	const [counter, setCounter] = useState<number>(0);
 	const [busyId, setBusyId] = useState<string | null>(null);
 	const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
 	const [resetsIn, setResetsIn] = useState<number>(0);
 	const [view, setView] = useState<"daily" | "browse" | "wardrobe">("daily");
 	const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+
+	// Imperative handle for the on-screen "ka-ching" particle burst.
+	// Fired from handleBuy on the tile that was just purchased.
+	const celebrationRef = useRef<BuyCelebrationHandle>(null);
+	const tileCenters = useRef<Map<string, { x: number; y: number }>>(
+		new Map()
+	);
+	// Pre-loaded SFX players. expo-audio caches the decoded buffer so
+	// .play() after seekTo(0) is effectively instant on subsequent fires.
+	const deniedPlayer = useAudioPlayer(deniedSound);
+	const equipPlayer = useAudioPlayer(equipSound);
 
 	const load = useCallback(async () => {
 		const {
@@ -440,7 +810,7 @@ export default function ShopScreen() {
 			supabase.from("user_hats").select("hat_id").eq("user_id", user.id),
 			supabase
 				.from("profiles")
-				.select("counter, active_hat_id")
+				.select("counter, active_hat_id, active_aura_id, active_background_id")
 				.eq("id", user.id)
 				.single(),
 			supabase.rpc("shop_resets_in_seconds"),
@@ -457,7 +827,11 @@ export default function ShopScreen() {
 			)
 		);
 		setCounter(profRes.data?.counter ?? 0);
-		setActiveId(profRes.data?.active_hat_id ?? null);
+		setActiveIds({
+			hat: profRes.data?.active_hat_id ?? null,
+			aura: profRes.data?.active_aura_id ?? null,
+			background: profRes.data?.active_background_id ?? null,
+		});
 		setResetsIn((resetsRes.data as number) ?? 0);
 	}, []);
 
@@ -495,6 +869,10 @@ export default function ShopScreen() {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
 				() => {}
 			);
+			try {
+				deniedPlayer.seekTo(0);
+				deniedPlayer.play();
+			} catch {}
 			if (r.reason === "insufficient")
 				return Alert.alert(
 					"Not enough snouts",
@@ -503,23 +881,59 @@ export default function ShopScreen() {
 			if (r.reason === "already_owned") return Alert.alert("Owned", "Already yours.");
 			return Alert.alert("Couldn't buy", r.reason ?? "");
 		}
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-			() => {}
-		);
+		// Fire the on-screen ka-ching celebration anchored at the tile
+		// the user tapped. Tile center is recorded in tileCenters by
+		// renderCell's onLayout; if missing (race / unmount), the burst
+		// shows at a sensible mid-screen fallback.
+		const center = tileCenters.current.get(hat.id);
+		celebrationRef.current?.fire({
+			x: center?.x ?? 200,
+			y: center?.y ?? 400,
+			tier:
+				hat.rarity === "epic" || hat.rarity === "legendary"
+					? "premium"
+					: "common",
+		});
+		// BuyCelebration already plays the success haptic + sound; skip
+		// the duplicate Haptics.notificationAsync below to avoid stacking
+		// two haptics on top of each other.
 		load();
 	};
 
-	const handleEquip = async (hatId: string | null) => {
+	// Equip routes by category: aura → active_aura_id, background →
+	// active_background_id, everything else → active_hat_id. Passing
+	// `null` for itemId unequips just the matching slot, leaving the
+	// other two columns intact.
+	const handleEquip = async (
+		itemId: string | null,
+		category: string | null | undefined
+	) => {
 		const {
 			data: { user },
 		} = await supabase.auth.getUser();
 		if (!user) return;
 		Haptics.selectionAsync().catch(() => {});
+		try {
+			equipPlayer.seekTo(0);
+			equipPlayer.play();
+		} catch {}
+		const column =
+			category === "aura"
+				? "active_aura_id"
+				: category === "background"
+					? "active_background_id"
+					: "active_hat_id";
 		await supabase
 			.from("profiles")
-			.update({ active_hat_id: hatId })
+			.update({ [column]: itemId })
 			.eq("id", user.id);
-		setActiveId(hatId);
+		setActiveIds((prev) => {
+			const next = { ...prev };
+			if (category === "aura") next.aura = itemId;
+			else if (category === "background") next.background = itemId;
+			else next.hat = itemId;
+			return next;
+		});
 	};
 
 	// Featured = highest-rarity item in today's shop
@@ -570,12 +984,12 @@ export default function ShopScreen() {
 		<ItemCard
 			item={item}
 			owned={owned.has(item.id)}
-			active={activeId === item.id}
+			active={isEquipped(item.id, item.category)}
 			canAfford={counter >= item.cost}
 			busy={busyId === item.id}
 			onBuy={() => handleBuy(item)}
-			onEquip={() => handleEquip(item.id)}
-			onUnequip={() => handleEquip(null)}
+			onEquip={() => handleEquip(item.id, item.category)}
+			onUnequip={() => handleEquip(null, item.category)}
 			onPreview={() => setPreviewItem(item)}
 		/>
 	);
@@ -606,14 +1020,14 @@ export default function ShopScreen() {
 					<ItemCard
 						item={a}
 						owned={owned.has(a.id)}
-						active={activeId === a.id}
+						active={isEquipped(a.id, a.category)}
 						canAfford={counter >= a.cost}
 						busy={busyId === a.id}
 						wardrobeMode={wardrobeMode}
 						buyable={false}
 						onBuy={() => handleBuy(a)}
-						onEquip={() => handleEquip(a.id)}
-						onUnequip={() => handleEquip(null)}
+						onEquip={() => handleEquip(a.id, a.category)}
+						onUnequip={() => handleEquip(null, a.category)}
 						onPreview={() => setPreviewItem(a)}
 					/>
 				</View>
@@ -622,14 +1036,14 @@ export default function ShopScreen() {
 						<ItemCard
 							item={b}
 							owned={owned.has(b.id)}
-							active={activeId === b.id}
+							active={isEquipped(b.id, b.category)}
 							canAfford={counter >= b.cost}
 							busy={busyId === b.id}
 							wardrobeMode={wardrobeMode}
 							buyable={false}
 							onBuy={() => handleBuy(b)}
-							onEquip={() => handleEquip(b.id)}
-							onUnequip={() => handleEquip(null)}
+							onEquip={() => handleEquip(b.id, b.category)}
+							onUnequip={() => handleEquip(null, b.category)}
 							onPreview={() => setPreviewItem(b)}
 						/>
 					) : null}
@@ -678,47 +1092,36 @@ export default function ShopScreen() {
 				</View>
 
 				{view === "daily" ? (
-					<FlatList
-						key="daily"
-						data={dailyRest}
-						renderItem={renderItem}
-						keyExtractor={(item) => item.id}
-						numColumns={2}
-						contentContainerStyle={styles.grid}
-						columnWrapperStyle={styles.columnWrap}
-						ListHeaderComponent={
-							<>
-								<View style={styles.countdownStrip}>
-									<Icon name="bell" size={14} color={COLORS.pinkDeep} strokeWidth={2} />
-									<Text style={styles.countdownText}>
-										New shop in {formatCountdown(resetsIn)}
-									</Text>
-								</View>
-								{featured && (
-									<FeaturedCard
-										item={featured}
-										owned={owned.has(featured.id)}
-										active={activeId === featured.id}
-										canAfford={counter >= featured.cost}
-										busy={busyId === featured.id}
-										onBuy={() => handleBuy(featured)}
-										onEquip={() => handleEquip(featured.id)}
-										onUnequip={() => handleEquip(null)}
-									/>
-								)}
-								{dailyRest.length > 0 && (
-									<Text style={styles.sectionLabel}>Also today</Text>
-								)}
-							</>
-						}
-						ListEmptyComponent={
-							!featured ? (
-								<Text style={styles.empty}>
-									Empty shop. Come back tomorrow.
-								</Text>
-							) : null
-						}
-					/>
+					// Daily view fills the available height — no scroll.
+					// The bento expands inside this flex container so the
+					// 2+1+2 stack fits exactly on screen.
+					<View key="daily" style={[styles.grid, styles.dailyView]}>
+						<View style={styles.countdownStrip}>
+							<Icon name="bell" size={14} color={COLORS.pinkDeep} strokeWidth={2} />
+							<Text style={styles.countdownText}>
+								New shop in {formatCountdown(resetsIn)}
+							</Text>
+						</View>
+						{daily.length === 0 ? (
+							<Text style={styles.empty}>
+								Empty shop. Come back tomorrow.
+							</Text>
+						) : (
+							<BentoDailyGrid
+								items={daily}
+								featured={featured}
+								owned={owned}
+								isEquipped={isEquipped}
+								counter={counter}
+								busyId={busyId}
+								onBuy={handleBuy}
+								onEquip={handleEquip}
+								onUnequip={(category) => handleEquip(null, category)}
+								onPreview={setPreviewItem}
+								tileCenters={tileCenters}
+							/>
+						)}
+					</View>
 				) : view === "browse" ? (
 					<FlatList
 						key="browse"
@@ -793,7 +1196,9 @@ export default function ShopScreen() {
 									</Text>
 									<Text style={styles.wardrobeIntroSub}>
 										Tap an item to dress your pig.
-										{activeId ? "" : " Nothing equipped right now."}
+										{(activeIds.hat || activeIds.aura || activeIds.background)
+											? ""
+											: " Nothing equipped right now."}
 									</Text>
 								</View>
 							) : null
@@ -825,7 +1230,7 @@ export default function ShopScreen() {
 			<ItemPreviewModal
 				item={previewItem}
 				owned={previewItem ? owned.has(previewItem.id) : false}
-				active={previewItem ? activeId === previewItem.id : false}
+				active={previewItem ? isEquipped(previewItem.id, previewItem.category) : false}
 				canAfford={previewItem ? counter >= previewItem.cost : false}
 				balance={counter}
 				busy={previewItem ? busyId === previewItem.id : false}
@@ -838,15 +1243,21 @@ export default function ShopScreen() {
 				}}
 				onEquip={() => {
 					if (previewItem) {
-						handleEquip(previewItem.id);
+						handleEquip(previewItem.id, previewItem.category);
 						setPreviewItem(null);
 					}
 				}}
 				onUnequip={() => {
-					handleEquip(null);
-					setPreviewItem(null);
+					if (previewItem) {
+						handleEquip(null, previewItem.category);
+						setPreviewItem(null);
+					}
 				}}
 			/>
+			{/* On-screen ka-ching sparkle burst overlay. Rendered at root
+			    so it sits above every other view (tabs, modals are below
+			    the absolute fill order). Fired imperatively from handleBuy. */}
+			<BuyCelebration ref={celebrationRef} />
 		</View>
 	);
 }
@@ -962,6 +1373,9 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 	},
 	grid: { paddingHorizontal: 12, paddingBottom: 100 },
+	// Daily tab fills the remaining height between the header and the
+	// tab bar — no scroll, the bento tiles flex to fit.
+	dailyView: { flex: 1, paddingBottom: 24, gap: 12 },
 	columnWrap: { gap: 10 },
 	rowWrap: {
 		flexDirection: "row",
@@ -1006,9 +1420,24 @@ const styles = StyleSheet.create({
 		overflow: "hidden",
 		...STICKER_SHADOW,
 	},
-	cardThumbWrap: {},
+	// Wide cells (e.g. 4×1 row strip): flip to row layout so the
+	// image gets a square area on the left and the body stacks on
+	// the right. Without this, a short-but-wide cell compresses both
+	// thumb and body so neither is readable.
+	cardHoriz: {
+		flexDirection: "row",
+	},
+	cardThumbWrap: {
+		flex: 1,
+	},
+	cardThumbWrapHoriz: {
+		// Match height in row mode so the image is a square (height
+		// is the constraint here, since width is given by flex).
+		aspectRatio: 1,
+		flex: 0,
+	},
 	cardThumb: {
-		height: 120,
+		flex: 1,
 		alignItems: "center",
 		justifyContent: "center",
 		position: "relative",
@@ -1016,12 +1445,19 @@ const styles = StyleSheet.create({
 	cardBody: {
 		padding: 10,
 	},
+	cardBodyHoriz: {
+		flex: 1,
+		justifyContent: "center",
+	},
 	cardName: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 15,
 		color: WHIMSY.ink,
 		textAlign: "center",
 		marginBottom: 4,
+	},
+	cardNameHoriz: {
+		textAlign: "left",
 	},
 	priceRow: {
 		flexDirection: "row",

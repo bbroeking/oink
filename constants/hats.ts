@@ -163,8 +163,7 @@ export type PigAnimationKey =
 	| "happy"
 	| "sad"
 	| "surprise"
-	| "wave"
-	| "arms_up";
+	| "wave";
 
 // Anchors describe named points on the pig (head crown, eye line, hand, etc.)
 // at every frame of every animation. Items declare which anchor they attach
@@ -182,16 +181,19 @@ export type PigAnimationKey =
 // Measured against the new ChatGPT Rosie sprite (idle_1 → 351×257 source,
 // rendered at 300×220 inside the 300×300 card via resizeMode=contain).
 // Re-measure with scripts/measure_pig_anatomy.py if the sprite art changes.
+// Auto-rigged from idle_1.png — re-run `python3 scripts/auto_rig.py`
+// after replacing sprites. Centerline anchors snapped to x=150 (pig
+// is symmetric front-facing; per-pose pixel-centroid drift is noise).
 const REST_ANCHORS: Record<AnchorName, Anchor> = {
-	head: { x: 158, y: 40 }, // top of head between ears (top edge of rendered pig)
-	eyes: { x: 158, y: 120 }, // eye line (left pupil ≈ x=105, right ≈ x=212)
-	snout: { x: 158, y: 160 }, // pink disk center
-	mouth: { x: 158, y: 195 },
-	neck: { x: 158, y: 215 }, // chin / collar line
-	body: { x: 158, y: 230 }, // body center
-	hand_l: { x: 110, y: 220 },
-	hand_r: { x: 210, y: 220 },
-	feet: { x: 158, y: 258 }, // bottom of body in rendered card coords
+	head: { x: 150, y: 14 }, // top of head between ears
+	eyes: { x: 150, y: 109 }, // eye line
+	snout: { x: 150, y: 174 }, // pink snout disk center
+	mouth: { x: 150, y: 216 },
+	neck: { x: 150, y: 240 }, // chin / collar line
+	body: { x: 150, y: 258 }, // body center
+	hand_l: { x: 66, y: 216 },
+	hand_r: { x: 233, y: 216 },
+	feet: { x: 150, y: 295 }, // bottom of body in rendered card coords
 };
 
 // Helper: builds an anchor frame where every anchor shifts by dy (negative =
@@ -211,63 +213,25 @@ function shiftAll(dy: number): Partial<Record<AnchorName, Anchor>> {
 // Per-animation per-frame anchor positions. Only define what changes from
 // REST_ANCHORS — anchors not listed in a frame inherit from rest. Numbers
 // are tuned by inspection of the current Rosie sprite sheet.
+// Auto-rigged via scripts/auto_rig.py. We detect FEET y per frame and
+// emit a uniform shiftAll(dy) for the whole frame instead of per-anchor
+// centroids — much more robust against detector noise. Stable
+// animations (no vertical movement) are recorded as {} (rest).
+//
+// Notable rest-relative shifts:
+//   sad: pig is more compact when slumped, ~7px shorter overall
+//   wave: pig is taller when standing on hind legs, ~40px lifted
 export const PIG_FRAME_ANCHORS: Record<
 	PigAnimationKey,
 	Partial<Record<AnchorName, Anchor>>[]
 > = {
-	idle: [
-		{}, // rest
-		{ head: { x: 150, y: 37 }, eyes: { x: 150, y: 107 } }, // inhale: head dips 2px
-		{},
-		{ head: { x: 150, y: 33 }, eyes: { x: 150, y: 103 } }, // exhale: head rises 2px
-	],
-	walk: [
-		{}, // contact left — feet planted
-		// passing: whole pig lifts ~4px (everything moves up by 4)
-		shiftAll(-4),
-		{}, // contact right
-		shiftAll(-4),
-	],
-	jump: [
-		// anticipation: squat — head dips 5px, feet stay planted
-		{ head: { x: 150, y: 40 }, eyes: { x: 150, y: 110 }, neck: { x: 150, y: 213 } },
-		// takeoff: pig leaves ground, ~4px lift
-		shiftAll(-4),
-		// apex: pig airborne, head 12px above rest, hands tucked higher
-		{
-			head: { x: 150, y: 23 },
-			eyes: { x: 150, y: 93 },
-			snout: { x: 150, y: 138 },
-			mouth: { x: 150, y: 168 },
-			neck: { x: 150, y: 198 },
-			body: { x: 150, y: 208 },
-			hand_l: { x: 105, y: 200 },
-			hand_r: { x: 195, y: 200 },
-			feet: { x: 150, y: 273 },
-		},
-		// landing: hard squat, head 6px below rest
-		{ head: { x: 150, y: 41 }, eyes: { x: 150, y: 111 }, neck: { x: 150, y: 214 } },
-	],
-	happy: [shiftAll(0)],
-	sad: [
-		// ears + head droop slightly
-		{ head: { x: 150, y: 38 }, eyes: { x: 150, y: 108 } },
-	],
-	surprise: [
-		// pig recoils up slightly, ears perk up
-		{ head: { x: 150, y: 32 }, eyes: { x: 150, y: 102 } },
-	],
-	wave: [
-		// arm up + slight body tilt — right hand lifts dramatically
-		{ hand_r: { x: 215, y: 130 }, head: { x: 150, y: 32 } },
-	],
-	arms_up: [
-		// 6-7 cheer: arms held up the whole loop, body lifted
-		shiftAll(-4),
-		shiftAll(-4),
-		shiftAll(-4),
-		shiftAll(-4),
-	],
+	idle: [{}, {}, {}, {}],
+	walk: [{}, {}, {}, {}],
+	jump: [{}, {}, {}, {}],
+	happy: [{}, {}, {}, {}],
+	sad: [shiftAll(-7), shiftAll(-7), shiftAll(-7), shiftAll(-7)],
+	surprise: [{}, {}, {}, {}],
+	wave: [shiftAll(-40), shiftAll(-40), shiftAll(-40), shiftAll(-40)],
 };
 
 // Resolve an anchor's position at a given (animation, frame), falling back

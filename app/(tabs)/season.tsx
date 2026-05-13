@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	View,
 	StyleSheet,
@@ -22,8 +22,16 @@ import { Sticker } from "../../components/ui/Sticker";
 import { Icon } from "../../components/ui/Icon";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
+import {
+	TierUpBanner,
+	type TierUpBannerHandle,
+} from "../../components/ui/TierUpBanner";
 import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, KICKER_TEXT, ROW_TILTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
+import { useAudioPlayer } from "expo-audio";
+import * as Haptics from "expo-haptics";
+
+const claimSound = require("../../assets/sounds/claim.mp3");
 
 // Premium battle-pass track is not ready to go live (no fulfillment for
 // some reward types, no real IAP flow). Flip to true once both are
@@ -42,9 +50,19 @@ interface SeasonRow {
 	premium_plus_price_cents: number;
 }
 
-// reward_value shape varies per reward_type (e.g. { hat_id } for "hat",
-// { count } for "tickles") — Supabase jsonb. Narrow at use sites below.
-type RewardValue = { hat_id?: string; count?: number } | null;
+// reward_value shape varies per reward_type — Supabase jsonb.
+// Legacy seeds used category-specific keys (bg_id, aura_id, cape_id);
+// the 20260514020000 migration normalized those to hat_id but the
+// type still accepts the legacy keys for un-migrated rows.
+type RewardValue = {
+	hat_id?: string;
+	bg_id?: string;
+	aura_id?: string;
+	cape_id?: string;
+	count?: number;
+	amount?: number;
+	title?: string;
+} | null;
 
 interface TierRow {
 	tier: number;
@@ -71,26 +89,44 @@ interface SeasonState {
 
 function StoneThumb({ reward, locked }: { reward: TierRow; locked: boolean }) {
 	const { reward_type: type, reward_value: val } = reward;
+
+	// Any hats-table item (hat/background/aura/cape/scarf/etc.) resolves
+	// to an actual image when hat_id is set. The 20260514020000 migration
+	// normalized legacy bg_id/aura_id/cape_id keys to hat_id, but fall
+	// back to those anyway for forward-compat with un-migrated rows.
+	const itemId =
+		val?.hat_id ?? val?.bg_id ?? val?.aura_id ?? val?.cape_id ?? null;
+	const hatItemTypes = new Set([
+		"hat", "background", "aura", "cape", "scarf",
+		"mask", "necklace", "glasses", "bow", "held",
+	]);
+
 	let inner: React.ReactNode = (
 		<Icon name="star" size={20} color={WHIMSY.muteSoft} />
 	);
-	if (type === "tickles") inner = <TickleIcon size={26} />;
-	else if (type === "hat" && val?.hat_id && HAT_IMAGES[val.hat_id]) {
+	if (type === "tickles") {
+		inner = <TickleIcon size={26} />;
+	} else if (hatItemTypes.has(type) && itemId && HAT_IMAGES[itemId]) {
 		inner = (
 			<Image
-				source={HAT_IMAGES[val.hat_id]}
+				source={HAT_IMAGES[itemId]}
 				style={{ width: 32, height: 32 }}
 				resizeMode="contain"
 			/>
 		);
-	} else if (type === "title")
+	} else if (type === "title") {
 		inner = <Text style={styles.titleGlyph}>"</Text>;
-	else if (type === "boost")
+	} else if (type === "boost") {
 		inner = <Icon name="flame" size={22} filled color="#F58F4A" strokeWidth={1.5} />;
-	else if (type === "background")
+	} else if (type === "background") {
 		inner = <Icon name="globe" size={22} color={WHIMSY.ink} strokeWidth={1.6} />;
-	else if (type === "mystery_box" || type === "cap_increase" || type === "pig_skin")
+	} else if (type === "aura") {
+		inner = <Icon name="premium" size={22} color="#C99B23" strokeWidth={1.6} />;
+	} else if (type === "cape") {
+		inner = <Icon name="star" size={22} color={WHIMSY.ink} strokeWidth={1.6} />;
+	} else if (type === "mystery_box" || type === "cap_increase" || type === "pig_skin") {
 		inner = <Icon name="star" size={22} filled color="#C99B23" strokeWidth={1.6} />;
+	}
 
 	return (
 		<View style={[styles.stone, locked && { opacity: 0.55 }]}>{inner}</View>
@@ -165,6 +201,14 @@ export default function SeasonScreen() {
 	const [busy, setBusy] = useState(false);
 	const [saleOpen, setSaleOpen] = useState(false);
 
+	// Tier-up celebration: fires the banner + fanfare whenever
+	// season_state's current_tier increases between loads. Initial
+	// mount records the starting tier without firing (don't celebrate
+	// just because the user opened the tab at tier 7).
+	const tierBannerRef = useRef<TierUpBannerHandle>(null);
+	const lastSeenTier = useRef<number | null>(null);
+	const claimPlayer = useAudioPlayer(claimSound);
+
 	const load = useCallback(async () => {
 		const { data, error } = await supabase.rpc("season_state");
 		if (error) return console.error(error);
@@ -176,6 +220,22 @@ export default function SeasonScreen() {
 			load();
 		}, [load])
 	);
+
+	// Detect tier-up between successive season_state loads. Record the
+	// first observed tier as a baseline (no celebration on initial open)
+	// then fire the banner the next time the tier crosses higher.
+	useEffect(() => {
+		const t = state?.current_tier;
+		if (typeof t !== "number") return;
+		if (lastSeenTier.current === null) {
+			lastSeenTier.current = t;
+			return;
+		}
+		if (t > lastSeenTier.current) {
+			tierBannerRef.current?.fire(t);
+		}
+		lastSeenTier.current = t;
+	}, [state?.current_tier]);
 
 	const claimedSet = useMemo(() => {
 		const s = new Set<string>();
@@ -217,6 +277,17 @@ export default function SeasonScreen() {
 			Alert.alert("Locked", map[r.reason ?? ""] ?? "Couldn't claim.");
 			return;
 		}
+		// Claim succeeded — magical chime + light haptic confirmation.
+		// Tier-up celebration (if the claim actually crossed a tier
+		// boundary) fires separately from the useEffect that watches
+		// current_tier after load().
+		try {
+			claimPlayer.seekTo(0);
+			claimPlayer.play();
+		} catch {}
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+			() => {}
+		);
 		load();
 	};
 
@@ -408,6 +479,9 @@ export default function SeasonScreen() {
 				totalTiers={season.total_tiers}
 				busy={busy}
 			/>
+			{/* Fires on every cross-tier increase. Mounted at root so the
+			    sliding banner overlays the season list. */}
+			<TierUpBanner ref={tierBannerRef} />
 		</View>
 	);
 }

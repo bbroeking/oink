@@ -41,25 +41,39 @@ Confirm you understand, then I'll send the first batch.
 ## Hats — Batch 1 of 2 (5 items, 1280×256, transparent)
 
 ```
-HATS BATCH 1: a 5-cell strip with these hats, in this order:
-1. Wizard hat — purple cone hat with stars and moons, slightly tilted
-2. Cowboy hat — brown leather, curled brim
-3. Top hat — black tall cylinder with band
+HATS BATCH 1: a 5-cell strip with these hats, in this order.
+RENDERING RULES (CRITICAL):
+- Flat 2D front view, as if pressed against the camera.
+- NO back-of-brim showing behind the head. NO wrap-around band
+  that loops behind the head. Treat the hat like a paper cutout
+  of only its visible front silhouette.
+- Brims are a front-facing arc only — never a full ellipse.
+- Headbands / hat bands are visible only on the front-facing side.
+- No head, no face, no body — just the hat.
+1. Wizard hat — purple cone with stars and moons, slightly tilted
+2. Cowboy hat — brown leather, curled brim, front view only (no back of brim)
+3. Top hat — black tall cylinder with band (front face only)
 4. Party hat — colorful conical with stripes and a pom on top
 5. Beanie — pink knit hat with a pom on top
-Each is just the hat, oriented as it would sit on a head. No head visible.
 Transparent background.
 ```
 
 ## Hats — Batch 2 of 2
 
 ```
-HATS BATCH 2: a 5-cell strip with these hats:
+HATS BATCH 2: a 5-cell strip with these hats. SAME rules as Batch 1:
+flat 2D front view, NO back-of-brim, NO wrap-around band, NO head.
+Paper-cutout silhouette only.
 1. Chef toque — tall white pleated chef's hat
 2. Crown — gold crown with red velvet inside and gem accents
-3. Halo — golden glowing ring (depicted as a flat bright ring)
-4. Viking helmet — silver metal helmet with two curved horns
-5. Pirate tricorn — black three-cornered hat with skull-and-crossbones
+   — render as a flat front view of the crown's front half only;
+   the band that would wrap behind the head is NOT shown
+3. Halo — golden glowing ring rendered as a flat front-facing ring
+   (front arc only — NOT the perspective ellipse with a back side)
+4. Viking helmet — silver metal helmet with two curved horns —
+   show only the front-facing dome and visible side, no back skull plate
+5. Pirate tricorn — black three-cornered hat with skull-and-crossbones,
+   front face of the brim only
 Transparent background.
 ```
 
@@ -91,61 +105,129 @@ Transparent background.
 ## Bows (head/neck bow ties) — Batch 1 of 2
 
 ```
-BOWS BATCH 1: a 5-cell strip of decorative bows, front-facing,
-ribbon-style:
-1. Black bow tie — small classic black bow tie
-2. Gift bow — red shiny ribbon bow with multiple loops
-3. Hair bow — blue checkered fabric bow
-4. Pink bow — soft pink ribbon bow
-5. Polka bow — white bow with red polka dots
+BOWS BATCH 1: a 5-cell strip of decorative bows. RENDERING RULES:
+- Flat 2D front view only — bow ribbon visible from the front face.
+- NO ribbon tails wrapping behind the bow knot.
+- NO hair, NO head, NO neck loop showing behind the bow.
+- Treat each bow as a paper-cutout shape pressed flat to the camera.
+1. Black bow tie — small classic black bow tie (front face only)
+2. Gift bow — red shiny ribbon bow with multiple loops, front view
+3. Hair bow — blue checkered fabric bow, flat front
+4. Pink bow — soft pink ribbon bow, flat front
+5. Polka bow — white bow with red polka dots, flat front
 Transparent background.
 ```
 
 ## Bows — Batch 2 of 2
 
 ```
-BOWS BATCH 2: a 5-cell strip of decorative bows:
+BOWS BATCH 2: a 5-cell strip of decorative bows. SAME rules as
+Batch 1: flat 2D front view, no wrap-around, no tails curling
+behind the knot, no hair or neck visible.
 1. Rainbow bow — multicolored ribbon bow
-2. Ribbon bow — long-tailed pink satin ribbon bow
+2. Ribbon bow — long-tailed pink satin ribbon bow (tails hang down in front)
 3. Silk bow — luxurious cream-colored silk bow with sheen
 4. Velvet bow — deep burgundy velvet bow
-Plus one more: simple yellow gingham bow.
+5. Gingham bow — simple yellow gingham bow
 Transparent background.
 ```
 
 ## Scarves — Batch 1 of 2
 
 ```
-SCARVES BATCH 1: a 5-cell strip of scarves drawn as if wrapped
-around a neck (so the cell shows the front draped portion):
-1. Ascot — silk red ascot tie tucked into shirt
-2. Bandana red — red paisley bandana folded as neckwear
-3. Cape scarf — long flowing scarf with cape-like edges
-4. Knit scarf — chunky cable-knit beige scarf
-5. Neck warmer — fuzzy dark gray tube scarf
-Transparent background.
+SCARVES BATCH 1: a 5-cell strip of fabric pieces laid FLAT on a
+white tabletop, viewed from directly above. Each piece is a
+single closed shape — like a paper-doll cutout you'd glue onto
+a board.
+
+REFRAME — read carefully:
+- These are NOT scarves on a person. They are pieces of fabric
+  on a table. Nothing wears them. No neck exists in the image.
+- Imagine someone took scissors and cut horizontally across the
+  COLLARBONE LINE of a worn scarf. EVERYTHING ABOVE THAT CUT —
+  the loop behind the neck, the back drape, the tie — has been
+  discarded and thrown away. Only the part BELOW the cut
+  remains. That is what you are drawing.
+- Each item is ONE single closed outline. The outline forms one
+  continuous closed curve — NOT two parallel arms going up to a
+  neck. NOT a U-shape with a gap at the top. The top edge is a
+  single straight or gently curved line.
+- The result looks like a triangle, a rectangle, or a drape —
+  never like a "C" or a loop.
+
+CHECKLIST — verify before drawing:
+[ ] One closed outline per item, not two arms.
+[ ] Top edge is one continuous line, not two ends meeting at
+    an invisible neck.
+[ ] No part of the shape extends above the top edge.
+
+Each item is described by an outline shape + a texture:
+1. Ascot — outline: small downward-pointing triangle (the knot
+   at top, two short tails at bottom). Texture: silk red.
+2. Bandana red — outline: wide downward-pointing triangle (the
+   front fold of a folded bandana). Texture: red paisley.
+3. Cape scarf — outline: tall rectangle with a wavy bottom edge.
+   Texture: solid color of your choice.
+4. Knit scarf — outline: long vertical rectangle with two short
+   fringes hanging from the bottom edge. Texture: chunky
+   cable-knit beige.
+5. Neck warmer — outline: a wider-than-tall rectangle (the front
+   face of a tube viewed head-on). Texture: fuzzy dark gray.
+
+Transparent background. No neck, no body, no head, no shoulders,
+no person, no tabletop visible — just the fabric shape on
+transparency.
 ```
 
 ## Scarves — Batch 2 of 2
 
 ```
-SCARVES BATCH 2: a 5-cell strip of scarves:
-1. Rainbow scarf — multicolored striped scarf
-2. Silk scarf — shimmery silver silk scarf with floral print
-3. Striped scarf — black and white striped knit scarf
-4. Summer kerchief — yellow polka-dot light kerchief
-5. Winter scarf — heavy wool plaid red and green scarf
-Transparent background.
+SCARVES BATCH 2: a 5-cell strip of fabric pieces laid FLAT on a
+tabletop, viewed top-down. Same rules as Batch 1.
+
+REFRAME REMINDER:
+- These are pieces of fabric on a table, NOT scarves on a person.
+- Each shape was "cut at the collarbone" — everything above that
+  cut (the neck wrap, the back loop) has been discarded.
+- ONE closed outline per item. The top edge is a single straight
+  or gently curved line. NO U-shape, NO C-shape, NO loop.
+
+CHECKLIST:
+[ ] One closed outline, not two arms.
+[ ] Top edge is one continuous line.
+[ ] No shape extends above the top edge.
+
+Each item = outline shape + texture:
+1. Rainbow scarf — outline: long vertical rectangle. Texture:
+   multicolored horizontal stripes.
+2. Silk scarf — outline: long vertical rectangle with a pointed
+   bottom. Texture: shimmery silver silk with floral print.
+3. Striped scarf — outline: long vertical rectangle with fringe
+   at the bottom edge. Texture: black and white knit stripes.
+4. Summer kerchief — outline: downward-pointing triangle (just
+   the dangling kerchief tail, no fold or knot above).
+   Texture: yellow polka-dot.
+5. Winter scarf — outline: long vertical rectangle with fringe
+   at the bottom edge. Texture: heavy wool plaid in red and green.
+
+Transparent background. No neck, no body, no head, no shoulders,
+no person, no tabletop visible.
 ```
 
 ## Masks — Batch 1 of 2
 
 ```
-MASKS BATCH 1: a 5-cell strip of face masks, front-facing as worn:
+MASKS BATCH 1: a 5-cell strip of face masks. RENDERING RULES:
+- Render ONLY the front face plate of the mask.
+- NO strap, NO elastic, NO ties wrapping around the head.
+- NO head, NO ears (unless they're part of the mask shape itself,
+  like cat ears that are sculpted into the mask front).
+- Flat 2D paper cutout of the front face only.
 1. Carnival mask — Venetian-style ornate gold mask with feathers
-2. Cat mask — black cat-shaped mask with pointed ears
+2. Cat mask — black cat-shaped mask with pointed ears (ears are
+   part of the mask shape, not real ears)
 3. Domino — small black eye mask (tiny, covers just eyes)
-4. Gas mask — military-style gas mask with twin filters
+4. Gas mask — military-style gas mask with twin filters, front plate only
 5. Hero mask — small superhero eye mask, blue
 Transparent background.
 ```
@@ -153,11 +235,13 @@ Transparent background.
 ## Masks — Batch 2 of 2
 
 ```
-MASKS BATCH 2: a 5-cell strip of face masks:
+MASKS BATCH 2: a 5-cell strip of face masks. SAME rules as Batch 1:
+front face plate only, NO strap around the head, NO head, NO ears.
 1. Masquerade — elegant white mask with gold filigree
 2. Robber mask — black bandit mask covering eyes and nose
 3. Skull mask — white skull-shaped half-mask
 4. Sleep mask — purple sleep eye mask with embroidered Z's
+   (the elastic strap is NOT visible — only the eye covering)
 5. Venice mask — long-nosed plague-doctor / Venetian mask
 Transparent background.
 ```
@@ -165,25 +249,35 @@ Transparent background.
 ## Necklaces — Batch 1 of 2
 
 ```
-NECKLACES BATCH 1: a 5-cell strip of neckwear, drawn as if worn
-(curved chain visible at top, pendant centered below):
-1. Bell collar — red collar with a gold bell
-2. Bone necklace — primitive bone-shaped pendant on cord
-3. Charm necklace — gold chain with small heart and star charms
-4. Choker — black velvet choker
-5. Diamond pendant — silver chain with sparkling diamond
+NECKLACES BATCH 1: a 5-cell strip of neckwear. RENDERING RULES (CRITICAL):
+- Render only the FRONT-FACING half of the chain/strand — a wide
+  U-shape or shallow arc, NOT a closed loop.
+- The top ends of the chain stop at imaginary shoulder points
+  (where it would meet the neck) — the back half that wraps behind
+  the neck is NOT drawn.
+- The pendant or focal piece hangs in the middle of the U.
+- NO neck, NO body, NO head, NO clasp visible behind a neck.
+- For chokers/collars: render as a flat front-facing crescent or band
+  — only the visible front portion, not a full ring.
+1. Bell collar — red collar with a gold bell — render as front-only crescent
+2. Bone necklace — primitive bone-shaped pendant on a U-shaped cord
+3. Charm necklace — gold chain U-shape with small heart and star charms
+4. Choker — black velvet choker rendered as a front-only crescent
+5. Diamond pendant — silver chain U with sparkling diamond hanging center
 Transparent background.
 ```
 
 ## Necklaces — Batch 2 of 2
 
 ```
-NECKLACES BATCH 2: a 5-cell strip of neckwear:
-1. Emerald pendant — gold chain with green emerald
-2. Gold chain — thick gold rope chain
-3. Locket — heart-shaped gold locket on fine chain
-4. Pearl necklace — strand of white pearls
-5. Ribbon choker — pink ribbon choker with cameo
+NECKLACES BATCH 2: a 5-cell strip of neckwear. SAME rules as Batch 1:
+front-facing U-shape only, NO closed loop, NO neck/body/head, the
+back half that would wrap behind the neck is NOT drawn.
+1. Emerald pendant — gold chain U with green emerald hanging center
+2. Gold chain — thick gold rope chain rendered as a front-facing U
+3. Locket — heart-shaped gold locket on a fine chain U
+4. Pearl necklace — strand of white pearls rendered as a front-facing U
+5. Ribbon choker — pink ribbon choker rendered as a front-only crescent with cameo
 Transparent background.
 ```
 

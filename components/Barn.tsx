@@ -15,6 +15,7 @@ import {
 	DevSettings,
 } from "react-native";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
+import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../utils/supabase";
 import { log } from "../utils/log";
@@ -23,7 +24,8 @@ import { Icon } from "./ui/Icon";
 import { Sticker, Tape } from "./ui/Sticker";
 import { WHIMSY, FONTS } from "@/constants/theme";
 
-const tickleSound = require("../assets/sounds/tickle.m4a");
+const tickleSound = require("../assets/sounds/tickle.mp3");
+const deniedSound = require("../assets/sounds/denied.mp3");
 
 // Friendly, slightly competitive pig-voice lines for pass events. Picked
 // at random so it doesn't feel like the same robotic notification.
@@ -38,15 +40,24 @@ const PASS_LINES: ((name: string) => string)[] = [
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
+interface EquipSlot {
+	id: string;
+	category: string | null;
+	emoji: string | null;
+}
+
 interface Stats {
 	counter: number;
 	ticklesEarned: number;
 	itemCount: number;
 	cap: number;
 	nextRegenSeconds: number | null;
-	activeHatId: string | null;
-	activeCategory: string | null;
-	activeEmoji: string | null;
+	// Three independently-equipped slots: main (hat/scarf/mask/etc.),
+	// aura, and background. Each is null when nothing is equipped in
+	// that slot. See migration 20260514000000.
+	activeHat: EquipSlot | null;
+	activeAura: EquipSlot | null;
+	activeBackground: EquipSlot | null;
 	currentTier: number;
 	totalTiers: number;
 }
@@ -147,9 +158,9 @@ export default function Barn() {
 		itemCount: 0,
 		cap: 25,
 		nextRegenSeconds: null,
-		activeHatId: null,
-		activeCategory: null,
-		activeEmoji: null,
+		activeHat: null,
+		activeAura: null,
+		activeBackground: null,
 		currentTier: 1,
 		totalTiers: 30,
 	});
@@ -157,6 +168,7 @@ export default function Barn() {
 	const [sixSevenTick, setSixSevenTick] = useState(0);
 	const sixSevenPromptedRef = useRef(false);
 	const player = useAudioPlayer(tickleSound);
+	const deniedPlayer = useAudioPlayer(deniedSound);
 	const [toast, setToast] = useState<{
 		title: string;
 		body: string;
@@ -282,26 +294,42 @@ export default function Barn() {
 			// yet so dev sims work between code merge and `supabase db push`.
 			const { data: rpcRaw, error: rpcErr } = await supabase.rpc("home_stats");
 			if (!rpcErr && rpcRaw && (rpcRaw as { ok?: boolean }).ok) {
+				type SlotBlob = {
+					category?: string | null;
+					emoji?: string | null;
+				} | null;
 				const r = rpcRaw as {
 					counter: number;
 					tickles_earned: number;
 					active_hat_id: string | null;
-					active_hat: { category?: string | null; emoji?: string | null } | null;
+					active_hat: SlotBlob;
+					active_aura_id: string | null;
+					active_aura: SlotBlob;
+					active_background_id: string | null;
+					active_background: SlotBlob;
 					balance: number;
 					cap: number;
 					next_regen_seconds: number | null;
 					current_tier: number;
 					total_tiers: number;
 				};
+				const toSlot = (id: string | null, meta: SlotBlob): EquipSlot | null =>
+					id
+						? {
+								id,
+								category: meta?.category ?? null,
+								emoji: meta?.emoji ?? null,
+							}
+						: null;
 				setStats({
 					counter: r.counter,
 					ticklesEarned: r.tickles_earned,
 					itemCount: r.balance,
 					cap: r.cap,
 					nextRegenSeconds: r.next_regen_seconds,
-					activeHatId: r.active_hat_id,
-					activeCategory: r.active_hat?.category ?? null,
-					activeEmoji: r.active_hat?.emoji ?? null,
+					activeHat: toSlot(r.active_hat_id, r.active_hat),
+					activeAura: toSlot(r.active_aura_id, r.active_aura),
+					activeBackground: toSlot(r.active_background_id, r.active_background),
 					currentTier: r.current_tier,
 					totalTiers: r.total_tiers,
 				});
@@ -318,7 +346,9 @@ export default function Barn() {
 			const [profileResult, infoResult, seasonResult] = await Promise.all([
 				supabase
 					.from("profiles")
-					.select("counter, tickles_earned, active_hat_id")
+					.select(
+						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id"
+					)
 					.eq("id", user.id)
 					.single(),
 				supabase.rpc("tickle_info", { uid: user.id }),
@@ -336,29 +366,51 @@ export default function Barn() {
 				current_tier?: number;
 				season?: { total_tiers?: number };
 			} | null;
-			const activeId = profileResult.data?.active_hat_id ?? null;
+			const prof = profileResult.data as {
+				counter?: number;
+				tickles_earned?: number;
+				active_hat_id?: string | null;
+				active_aura_id?: string | null;
+				active_background_id?: string | null;
+			} | null;
 
-			let activeCategory: string | null = null;
-			let activeEmoji: string | null = null;
-			if (activeId) {
-				const { data: hat } = await supabase
+			const slotIds: (string | null)[] = [
+				prof?.active_hat_id ?? null,
+				prof?.active_aura_id ?? null,
+				prof?.active_background_id ?? null,
+			];
+			const idsToLookUp = slotIds.filter((x): x is string => !!x);
+			const hatMetaById = new Map<
+				string,
+				{ category: string | null; emoji: string | null }
+			>();
+			if (idsToLookUp.length > 0) {
+				const { data: rows } = await supabase
 					.from("hats")
-					.select("category, emoji")
-					.eq("id", activeId)
-					.single();
-				activeCategory = hat?.category ?? null;
-				activeEmoji = hat?.emoji ?? null;
+					.select("id, category, emoji")
+					.in("id", idsToLookUp);
+				(rows ?? []).forEach((h) =>
+					hatMetaById.set(h.id, {
+						category: h.category ?? null,
+						emoji: h.emoji ?? null,
+					})
+				);
 			}
+			const toSlot = (id: string | null): EquipSlot | null => {
+				if (!id) return null;
+				const m = hatMetaById.get(id);
+				return { id, category: m?.category ?? null, emoji: m?.emoji ?? null };
+			};
 
 			setStats({
-				counter: profileResult.data?.counter || 0,
-				ticklesEarned: profileResult.data?.tickles_earned ?? 0,
+				counter: prof?.counter || 0,
+				ticklesEarned: prof?.tickles_earned ?? 0,
 				itemCount: info?.balance ?? 0,
 				cap: info?.cap ?? 25,
 				nextRegenSeconds: info?.next_regen_seconds ?? null,
-				activeHatId: activeId,
-				activeCategory,
-				activeEmoji,
+				activeHat: toSlot(prof?.active_hat_id ?? null),
+				activeAura: toSlot(prof?.active_aura_id ?? null),
+				activeBackground: toSlot(prof?.active_background_id ?? null),
 				currentTier: season?.current_tier ?? 1,
 				totalTiers: season?.season?.total_tiers ?? 30,
 			});
@@ -371,6 +423,16 @@ export default function Barn() {
 	const handleIncrement = async () => {
 		if (stats.itemCount <= 0) {
 			const next = stats.nextRegenSeconds;
+			// "Nuh-uh" SFX + error haptic so the empty-balance tap feels
+			// rejected, not silent. Matches the denied feedback in shop
+			// purchase-fail and gives the player consistent UI vocabulary.
+			try {
+				deniedPlayer.seekTo(0);
+				deniedPlayer.play();
+			} catch {}
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
+				() => {}
+			);
 			showToast(
 				"Out of tickles!",
 				next != null
@@ -455,15 +517,9 @@ export default function Barn() {
 							onLuckySwipe={handleIncrement}
 							canTickle={!statsLoaded || stats.itemCount > 0}
 							playSixSeven={sixSevenTick}
-							equipped={
-								stats.activeHatId
-									? {
-											id: stats.activeHatId,
-											category: stats.activeCategory,
-											emoji: stats.activeEmoji,
-										}
-									: null
-							}
+							equipped={stats.activeHat}
+							equippedAura={stats.activeAura}
+							equippedBackground={stats.activeBackground}
 						/>
 					</View>
 				</View>

@@ -10,6 +10,10 @@ interface Props {
 	style?: ViewStyle;
 }
 
+// When the player has any equipped item, show its art as the full
+// avatar icon — this makes leaderboard rows feel individualized
+// instead of "tiny pig + barely visible hat speck" for everyone.
+// Fallback to the pig only when nothing is equipped.
 export function PigAvatar({ size = 40, hatId, border, style }: Props) {
 	const hatSrc = hatId ? HAT_IMAGES[hatId] : null;
 	return (
@@ -28,25 +32,21 @@ export function PigAvatar({ size = 40, hatId, border, style }: Props) {
 		>
 			<LinearGradient
 				colors={["#FFD0DC", "#E8A7B9"]}
-				style={{ flex: 1, alignItems: "center", justifyContent: "flex-end" }}
+				style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
 			>
-				<Image
-					source={require("../../assets/images/pig.png")}
-					style={{
-						width: size * 0.95,
-						height: size * 0.95,
-						marginBottom: -size * 0.05,
-					}}
-					resizeMode="contain"
-				/>
-				{hatSrc && (
+				{hatSrc ? (
 					<Image
 						source={hatSrc}
+						style={{ width: size * 0.85, height: size * 0.85 }}
+						resizeMode="contain"
+					/>
+				) : (
+					<Image
+						source={require("../../assets/images/pig.png")}
 						style={{
-							position: "absolute",
-							top: -size * 0.05,
-							width: size * 0.7,
-							height: size * 0.45,
+							width: size * 0.95,
+							height: size * 0.95,
+							marginBottom: -size * 0.05,
 						}}
 						resizeMode="contain"
 					/>
