@@ -25,7 +25,11 @@ import numpy as np
 DOWNLOADS = "/Users/bbroeking/Downloads/ttp_anim"
 SPRITE_DIR = "/Users/bbroeking/projects/oink/assets/images/sprites/rosie"
 HAT_DIR = "/Users/bbroeking/projects/oink/assets/images/hats"
-BG_DIR = "/Users/bbroeking/projects/oink/assets/images"
+# Backgrounds split out of the hats folder — they're a different
+# kind of asset (fullscreen page art, not pig accessories) so they
+# get their own directory. Future regen JOBS for the background
+# category should target BG_DIR.
+BG_DIR = "/Users/bbroeking/projects/oink/assets/images/backgrounds"
 
 # Source filename → (cells, mode, [out paths])
 # mode: "transparent" trims + alpha-keys near-white, "background" keeps full cell
@@ -211,12 +215,13 @@ JOBS = [
       f"{HAT_DIR}/hero_mask.png"]),
 
     # ── Backgrounds (5 cells, full-cell, no transparency) ───────
+    # Backgrounds write to BG_DIR (separate from accessories).
     ("1fc1fa9c-7c61-4c1d-9632-7141a1c0fba3.png", 5, "background",
-     [f"{HAT_DIR}/{n}.png" for n in
+     [f"{BG_DIR}/{n}.png" for n in
       ["sunset_farm", "snowy_farm", "beach_island", "space_station",
        "candyland"]]),
     ("2f1f3af3-1b91-4d97-ad7c-7ea5f17e77d6.png", 5, "background",
-     [f"{HAT_DIR}/{n}.png" for n in
+     [f"{BG_DIR}/{n}.png" for n in
       ["forest_grove", "jungle", "underwater", "desert_dunes",
        "mountain_top"]]),
 ]

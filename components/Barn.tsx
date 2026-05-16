@@ -4,7 +4,6 @@ import { router } from "expo-router";
 import {
 	View,
 	StyleSheet,
-	ImageBackground,
 	Dimensions,
 	Platform,
 	SafeAreaView,
@@ -23,6 +22,8 @@ import SwipeElement from "./SwipeElement";
 import { Icon } from "./ui/Icon";
 import { Sticker, Tape } from "./ui/Sticker";
 import { WHIMSY, FONTS } from "@/constants/theme";
+import { HAT_IMAGES } from "@/constants/hats";
+import { PageBackground } from "./ui/PageBackground";
 
 const tickleSound = require("../assets/sounds/tickle.mp3");
 const deniedSound = require("../assets/sounds/denied.mp3");
@@ -484,11 +485,7 @@ export default function Barn() {
 	};
 
 	return (
-		<ImageBackground
-			source={require("../assets/images/homepage-bg.jpg")}
-			style={styles.backgroundImage}
-			resizeMode="cover"
-		>
+		<PageBackground bgId={stats.activeBackground?.id ?? null}>
 			<SafeAreaView style={styles.contentContainer}>
 				<View style={styles.statsRow}>
 					<PaperTicket
@@ -524,11 +521,11 @@ export default function Barn() {
 					</View>
 				</View>
 
-				<WoodenSign
-					tier={stats.currentTier}
-					totalTiers={stats.totalTiers}
-					onPress={() => router.push("/season")}
-				/>
+				{/* Hidden — the "Tier X of 30" wooden sign isn't meaningful
+				    on the home screen now that the season pass surfaces
+				    progress in its own tab. Keeping the WoodenSign
+				    component around so it can be re-enabled later or
+				    re-purposed for a different stat. */}
 
 				{__DEV__ && (
 					<Pressable
@@ -569,20 +566,13 @@ export default function Barn() {
 					</Animated.View>
 				)}
 			</SafeAreaView>
-		</ImageBackground>
+		</PageBackground>
 	);
 }
 
 const styles = StyleSheet.create({
-	backgroundImage: {
-		position: "absolute",
-		left: 0,
-		top: 0,
-		right: 0,
-		bottom: 0,
-		width: "100%",
-		height: SCREEN_HEIGHT,
-	},
+	// Fullscreen page backdrop. Edges bleed all the way to the device
+	// frame (behind the status bar and the tab bar) — the SafeAreaView
 	contentContainer: {
 		flex: 1,
 		height: SCREEN_HEIGHT,

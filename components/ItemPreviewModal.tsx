@@ -73,6 +73,11 @@ export function ItemPreviewModal({
 		DEFAULT_HAT_OVERLAY;
 	const isBehind = item.category && Z_BEHIND_PIG[item.category];
 	const prebaked = isPrebaked(item.id) ? ITEM_PREBAKED[item.id] : null;
+	// Backgrounds preview as the FULL image (no pig in the card). They
+	// fill the screen at runtime, so showing a scaled pig over them
+	// in the preview misrepresents what the player will see when
+	// equipped.
+	const isBackgroundItem = item.category === "background";
 
 	return (
 		<Modal visible={!!item} animationType="fade" transparent onRequestClose={onClose}>
@@ -86,53 +91,62 @@ export function ItemPreviewModal({
 						<Text style={styles.closeText}>✕</Text>
 					</Pressable>
 
-					{/* Big preview: pig wearing the item. The inner stage is
-					    a FIXED 300×300 box (centered in the preview card)
-					    that matches the card-coord space used by
-					    HAT_OVERLAYS + SwipeElement — so the item lands on
-					    the right anatomy here exactly as it does on the
-					    home screen. Earlier the pig was 260 inside a
-					    flexible-size card, and overlay coords drifted. */}
+					{/* Big preview. Two modes:
+					    • Backgrounds → render the image filling the
+					      preview card (no pig). The user will see it
+					      fullscreen at runtime, so we want the preview
+					      to match that "wallpaper" feel.
+					    • Everything else → the 300×300 pig stage with
+					      the item overlaid on the right anatomy point. */}
 					<View
 						style={[
 							styles.previewCard,
 							{ backgroundColor: RARITY_GRADIENT[rarity] },
 						]}
 					>
-						<View style={styles.previewStage}>
-							{/* Behind pig: backgrounds, auras, capes */}
-							{isBehind && itemSrc && (
-								<View style={[styles.overlayBox, overlay, { zIndex: 1 }]}>
-									<Image
-										source={itemSrc}
-										style={styles.fillImage}
-										resizeMode="contain"
+						{isBackgroundItem && itemSrc ? (
+							<Image
+								source={itemSrc}
+								style={styles.fillImage}
+								resizeMode="cover"
+							/>
+						) : (
+							<View style={styles.previewStage}>
+								{/* Behind pig: auras, capes (NOT backgrounds — those
+								    use the no-pig branch above). */}
+								{isBehind && itemSrc && (
+									<View style={[styles.overlayBox, overlay, { zIndex: 1 }]}>
+										<Image
+											source={itemSrc}
+											style={styles.fillImage}
+											resizeMode="contain"
+										/>
+									</View>
+								)}
+								<View style={[styles.previewPig, { zIndex: 2 }]}>
+									<SpritePig
+										animation="idle"
+										size={300}
+										customFrames={prebaked ?? undefined}
 									/>
 								</View>
-							)}
-							<View style={[styles.previewPig, { zIndex: 2 }]}>
-								<SpritePig
-									animation="idle"
-									size={300}
-									customFrames={prebaked ?? undefined}
-								/>
+								{/* In front of pig */}
+								{!isBehind && itemSrc && !prebaked && (
+									<View style={[styles.overlayBox, overlay, { zIndex: 10 }]}>
+										<Image
+											source={itemSrc}
+											style={styles.fillImage}
+											resizeMode="contain"
+										/>
+									</View>
+								)}
+								{!itemSrc && item.emoji && (
+									<View style={[styles.overlayBox, overlay, { zIndex: 10 }]}>
+										<Text style={styles.emojiPlaceholder}>{item.emoji}</Text>
+									</View>
+								)}
 							</View>
-							{/* In front of pig */}
-							{!isBehind && itemSrc && !prebaked && (
-								<View style={[styles.overlayBox, overlay, { zIndex: 10 }]}>
-									<Image
-										source={itemSrc}
-										style={styles.fillImage}
-										resizeMode="contain"
-									/>
-								</View>
-							)}
-							{!itemSrc && item.emoji && (
-								<View style={[styles.overlayBox, overlay, { zIndex: 10 }]}>
-									<Text style={styles.emojiPlaceholder}>{item.emoji}</Text>
-								</View>
-							)}
-						</View>
+						)}
 					</View>
 
 					{/* Rarity tag */}

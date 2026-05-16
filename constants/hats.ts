@@ -98,16 +98,21 @@ export const HAT_IMAGES: Record<string, number> = {
 	sparkle_aura: require("../assets/images/hats/sparkle_aura.png"),
 	petal_aura: require("../assets/images/hats/petal_aura.png"),
 	// Batch 9 — backgrounds (full canvas, opaque)
-	sunset_farm: require("../assets/images/hats/sunset_farm.png"),
-	snowy_farm: require("../assets/images/hats/snowy_farm.png"),
-	beach_island: require("../assets/images/hats/beach_island.png"),
-	space_station: require("../assets/images/hats/space_station.png"),
-	candyland: require("../assets/images/hats/candyland.png"),
-	forest_grove: require("../assets/images/hats/forest_grove.png"),
-	jungle: require("../assets/images/hats/jungle.png"),
-	underwater: require("../assets/images/hats/underwater.png"),
-	desert_dunes: require("../assets/images/hats/desert_dunes.png"),
-	mountain_top: require("../assets/images/hats/mountain_top.png"),
+	// Backgrounds live in their own folder so it's clear they're a
+	// distinct category — fullscreen pages, not pig accessories.
+	// HAT_IMAGES still keys them by item id like everything else;
+	// just the require() path differs.
+	homestead_barn: require("../assets/images/backgrounds/homestead_barn.jpg"),
+	sunset_farm: require("../assets/images/backgrounds/sunset_farm.png"),
+	snowy_farm: require("../assets/images/backgrounds/snowy_farm.png"),
+	beach_island: require("../assets/images/backgrounds/beach_island.png"),
+	space_station: require("../assets/images/backgrounds/space_station.png"),
+	candyland: require("../assets/images/backgrounds/candyland.png"),
+	forest_grove: require("../assets/images/backgrounds/forest_grove.png"),
+	jungle: require("../assets/images/backgrounds/jungle.png"),
+	underwater: require("../assets/images/backgrounds/underwater.png"),
+	desert_dunes: require("../assets/images/backgrounds/desert_dunes.png"),
+	mountain_top: require("../assets/images/backgrounds/mountain_top.png"),
 	// Stragglers
 	crown: require("../assets/images/hats/crown.png"),
 	safety_goggles: require("../assets/images/hats/safety_goggles.png"),
@@ -156,14 +161,11 @@ export const Z_BEHIND_PIG: Record<string, boolean> = {
 // still shown. Re-enable per-category once placement is solved.
 export const HIDDEN_CATEGORIES = new Set<string>(["scarf", "cape"]);
 
-export type PigAnimationKey =
-	| "idle"
-	| "walk"
-	| "jump"
-	| "happy"
-	| "sad"
-	| "surprise"
-	| "wave";
+// PigAnimationKey moved to hat_overlay_types.ts so HatOverlay.perAnim
+// can reference it without forming a circular import. Re-export so
+// existing callers don't break.
+export type { PigAnimationKey } from "./hat_overlay_types";
+import type { PigAnimationKey } from "./hat_overlay_types";
 
 // Anchors describe named points on the pig (head crown, eye line, hand, etc.)
 // at every frame of every animation. Items declare which anchor they attach

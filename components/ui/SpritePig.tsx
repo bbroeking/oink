@@ -101,8 +101,13 @@ export function SpritePig({
 	// items) overrides the default ANIMATIONS entry per animation key.
 	// Memoized so the interval-driven setIdx → re-render cycle doesn't
 	// allocate a new config + frames array every frame tick.
+	//
+	// Defensive: if `animation` is a string we don't recognize (e.g.,
+	// a stale ref to a removed animation like the old "arms_up"), fall
+	// back to "idle" instead of crashing. This protects against future
+	// drift between SpritePig's ANIMATIONS table and external callers.
 	const { frames: activeFrames, fps: activeFps, loop: activeLoop } = useMemo(() => {
-		const baseCfg = ANIMATIONS[animation];
+		const baseCfg = ANIMATIONS[animation] ?? ANIMATIONS.idle;
 		const overrideFrames = customFrames?.[animation];
 		return {
 			frames: overrideFrames ?? baseCfg.frames,

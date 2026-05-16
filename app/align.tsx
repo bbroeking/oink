@@ -59,7 +59,6 @@ const CATEGORY_ORDER = [
 	"scarf",
 	"mask",
 	"necklace",
-	"cape",
 	"held",
 	"aura",
 	"background",
@@ -187,7 +186,15 @@ export default function AlignScreen() {
 		[overrides]
 	);
 
-	const overlay = current ? baseOverlay(current.id, current.category) : null;
+	// Effective overlay for the currently-selected item AT the currently-
+	// selected animation. Per-anim entries shallow-merge over the base
+	// so the test pig + overlay box reflects exactly what'd ship.
+	const overlay = useMemo(() => {
+		if (!current) return null;
+		const base = baseOverlay(current.id, current.category);
+		const perAnim = base.perAnim?.[animation as PigAnimationKey];
+		return perAnim ? { ...base, ...perAnim } : base;
+	}, [current, baseOverlay, animation]);
 	const imageSrc = current ? HAT_IMAGES[current.id] : null;
 	const emoji = current?.emoji ?? null;
 
@@ -225,27 +232,68 @@ export default function AlignScreen() {
 						? CATEGORY_OVERLAYS[current.category]
 						: undefined) ??
 					DEFAULT_HAT_OVERLAY;
+				// Resolve the EFFECTIVE current position for the active
+				// animation: per-anim entry shallow-merged over the base.
+				// We nudge against that effective value so the next click
+				// adjusts what's actually on screen, not the unrelated
+				// idle baseline.
+				const perAnimEntry = cur.perAnim?.[animation as PigAnimationKey];
+				const eff = { ...cur, ...(perAnimEntry ?? {}) };
+				const nextOverlay: HatOverlay = {
+					bottom: clamp((eff.bottom ?? 0) + (delta.bottom ?? 0), 0, PIG_SIZE),
+					left: clamp((eff.left ?? 0) + (delta.left ?? 0), 0, PIG_SIZE),
+					width: clamp((eff.width ?? 0) + (delta.width ?? 0), 10, 400),
+					height: clamp((eff.height ?? 0) + (delta.height ?? 0), 10, 400),
+				};
+				if (animation === "idle") {
+					// Idle = the base position. Save flat for back-compat.
+					return {
+						...o,
+						[current.id]: {
+							...cur,
+							...nextOverlay,
+						},
+					};
+				}
+				// Non-idle: persist as a per-animation override on top
+				// of the base. Base position stays unchanged.
 				return {
 					...o,
 					[current.id]: {
-						bottom: clamp((cur.bottom ?? 0) + (delta.bottom ?? 0), 0, PIG_SIZE),
-						left: clamp((cur.left ?? 0) + (delta.left ?? 0), 0, PIG_SIZE),
-						width: clamp((cur.width ?? 0) + (delta.width ?? 0), 10, 400),
-						height: clamp((cur.height ?? 0) + (delta.height ?? 0), 10, 400),
+						...cur,
+						perAnim: {
+							...(cur.perAnim ?? {}),
+							[animation]: nextOverlay,
+						},
 					},
 				};
 			});
 		},
-		[current]
+		[current, animation]
 	);
 
 	const reset = useCallback(() => {
 		if (!current) return;
 		setOverrides((o) => {
-			const { [current.id]: _, ...rest } = o;
-			return rest;
+			const entry = o[current.id];
+			// Idle reset clears the WHOLE item (base + every per-anim).
+			// Non-idle reset clears only that one animation's override
+			// so you can re-tune just the failing pose without losing
+			// the rest of the tuning.
+			if (animation === "idle" || !entry?.perAnim?.[animation as PigAnimationKey]) {
+				const { [current.id]: _, ...restItems } = o;
+				return restItems;
+			}
+			const { [animation as PigAnimationKey]: _, ...restPerAnim } = entry.perAnim;
+			return {
+				...o,
+				[current.id]: {
+					...entry,
+					perAnim: restPerAnim,
+				},
+			};
 		});
-	}, [current]);
+	}, [current, animation]);
 
 	const goByOffset = useCallback(
 		(delta: number) => {
@@ -352,17 +400,41 @@ export default function AlignScreen() {
 	const exportSnippet = useMemo(() => {
 		const entries = Object.entries(overrides);
 		if (!entries.length) return "// No overrides yet — nudge an item to start.";
-		const lines = entries.map(([id, o]) => {
-			const safeKey = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(id) ? id : `'${id}'`;
-			const fields = [
-				`bottom: ${o.bottom}`,
-				`left: ${o.left}`,
-				`width: ${o.width}`,
-				`height: ${o.height}`,
-			];
+
+		// Emit the base position fields + an optional perAnim block
+		// when the item has per-animation overrides. Field-level emit
+		// inside perAnim so the snippet only ships the keys you tuned.
+		const emitOverlayFields = (o: Partial<HatOverlay>) => {
+			const fields: string[] = [];
+			if (o.bottom !== undefined) fields.push(`bottom: ${o.bottom}`);
+			if (o.left !== undefined) fields.push(`left: ${o.left}`);
+			if (o.width !== undefined) fields.push(`width: ${o.width}`);
+			if (o.height !== undefined) fields.push(`height: ${o.height}`);
 			if (o.behind) fields.push("behind: true");
 			if (o.anchor) fields.push(`anchor: "${o.anchor}"`);
-			return `\t${safeKey}: { ${fields.join(", ")} },`;
+			return fields;
+		};
+
+		const lines = entries.map(([id, o]) => {
+			const safeKey = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(id) ? id : `'${id}'`;
+			const baseFields = emitOverlayFields(o);
+			const perAnimEntries = Object.entries(o.perAnim ?? {});
+			if (perAnimEntries.length === 0) {
+				return `\t${safeKey}: { ${baseFields.join(", ")} },`;
+			}
+			const perAnimLines = perAnimEntries.map(([anim, ov]) => {
+				if (!ov) return null;
+				const f = emitOverlayFields(ov);
+				return `\t\t${anim}: { ${f.join(", ")} },`;
+			}).filter(Boolean) as string[];
+			return [
+				`\t${safeKey}: {`,
+				`\t\t${baseFields.join(", ")},`,
+				`\t\tperAnim: {`,
+				...perAnimLines,
+				`\t\t},`,
+				`\t},`,
+			].join("\n");
 		});
 		return `// Paste into HAT_OVERLAYS in constants/hats.ts:\n${lines.join("\n")}`;
 	}, [overrides]);

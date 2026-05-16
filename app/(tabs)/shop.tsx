@@ -80,7 +80,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 	necklace: "Necklaces",
 	aura: "Auras",
 	held: "Held",
-	background: "BGs",
+	background: "Backgrounds",
 };
 
 const CATEGORY_DISPLAY_ORDER = [

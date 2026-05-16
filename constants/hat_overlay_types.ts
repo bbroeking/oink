@@ -22,7 +22,30 @@ export interface HatOverlay {
 	// render BEHIND the pig (so the body partially occludes it for depth).
 	// undefined = fall back to category default.
 	behind?: boolean;
+	// Per-animation overrides: when the pig is playing a specific
+	// animation, fields in perAnim[anim] override the base. Use this
+	// when the per-frame anchor system can't follow the pig's body
+	// well enough (e.g. SAD has the pig sitting compactly — its head
+	// is in a totally different spot, so a hat needs its own position
+	// for that pose rather than just a delta from idle).
+	//
+	// Fields are merged shallowly: any field NOT in the per-anim entry
+	// inherits from the base. To unset behind specifically for one
+	// animation, set `behind: false` in that animation's override.
+	perAnim?: Partial<Record<PigAnimationKey, Partial<HatOverlay>>>;
 }
+
+// Re-export so this module is the single source of truth for both
+// PigAnimationKey and HatOverlay. Imported here by hats.ts to keep
+// the union narrow.
+export type PigAnimationKey =
+	| "idle"
+	| "walk"
+	| "jump"
+	| "happy"
+	| "sad"
+	| "surprise"
+	| "wave";
 
 // Named pig anatomy points. Adding a new one is cheap — define it in
 // PIG_FRAME_ANCHORS for each frame, then any item can attach to it.

@@ -300,12 +300,30 @@ export default function SwipeElement({
 		const emoji = slot.emoji ?? null;
 		const prebaked = isPrebaked(itemId) ? ITEM_PREBAKED[itemId] : null;
 		const imageSrc = HAT_IMAGES[itemId];
-		const baseOverlay = prebaked
+
+		// Resolve the base overlay (rest position). Precedence:
+		// align-screen override (dev) → HAT_OVERLAYS → category default
+		// → DEFAULT_HAT_OVERLAY.
+		const rawBase = prebaked
 			? null
 			: alignOverrides[itemId] ||
 				HAT_OVERLAYS[itemId] ||
 				(category && CATEGORY_OVERLAYS[category]) ||
 				DEFAULT_HAT_OVERLAY;
+
+		// Per-anim layer: if the resolved base has a perAnim entry for
+		// the current animation, shallow-merge it over the base. This
+		// is for items whose position drifts noticeably during specific
+		// poses (sad has the pig sit compactly, surprise jolts up, etc.).
+		// Field-level merge so a per-anim entry can override only the
+		// position without re-stating width/height/anchor.
+		const baseOverlay = rawBase
+			? {
+					...rawBase,
+					...(rawBase.perAnim?.[pigAnim as PigAnimationKey] ?? {}),
+				}
+			: null;
+
 		const isFullCanvas = category === "background" || category === "aura";
 		const delta = isFullCanvas
 			? { dx: 0, dy: 0 }
@@ -370,14 +388,13 @@ export default function SwipeElement({
 					    4 = cape (when main slot's HatOverlay.behind or
 					        category Z_BEHIND_PIG routes it behind the pig)
 					    10 = main slot (hat / scarf / glasses / etc.) */}
-					{bgSlot?.overlay && (
-						<ItemOverlay
-							overlay={bgSlot.overlay}
-							imageSrc={bgSlot.imageSrc}
-							emoji={null}
-							zIndex={1}
-						/>
-					)}
+					{/* Backgrounds are intentionally NOT rendered inside the
+					    pig card. They only show as the fullscreen page
+					    backdrop in Barn (see ImageBackground at the top
+					    of Barn.tsx). Rendering them in-card was creating
+					    a small "ghost" tile behind the pig — backgrounds
+					    are conceptually "the whole page", not "a layer
+					    behind the pig only". */}
 					{auraSlot?.overlay && (
 						<ItemOverlay
 							overlay={auraSlot.overlay}

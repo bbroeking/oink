@@ -22,6 +22,11 @@ import numpy as np
 
 REPO = "/Users/bbroeking/projects/oink"
 ASSET_DIR = f"{REPO}/assets/images/hats"
+# Backgrounds were moved to their own folder. The script scans both
+# so background items still appear in HAT_OVERLAYS_GENERATED (even
+# though their overlay is the trivial full-canvas one and doesn't
+# need bbox math).
+BG_ASSET_DIR = f"{REPO}/assets/images/backgrounds"
 CATALOG_SQL = f"{REPO}/supabase/migrations/20260502030000_shop_catalog.sql"
 OUTPUT_TS = f"{REPO}/constants/hat_overlays.generated.ts"
 OUTPUT_REPORT = f"{REPO}/tests/OVERLAY_REPORT.md"
@@ -184,15 +189,26 @@ def main():
     flags = []
     skipped = []
 
-    for fname in sorted(os.listdir(ASSET_DIR)):
-        if not fname.endswith(".png"):
-            continue
-        item_id = fname[:-4]
+    # Walk hats first, then backgrounds. Background files can be .png
+    # or .jpg (homestead_barn is the jpg from the original homepage-bg).
+    def files_in(d, exts):
+        if not os.path.isdir(d):
+            return []
+        return [
+            (d, f) for f in sorted(os.listdir(d))
+            if any(f.endswith(e) for e in exts)
+        ]
+
+    for asset_dir, fname in (
+        files_in(ASSET_DIR, [".png"])
+        + files_in(BG_ASSET_DIR, [".png", ".jpg", ".jpeg"])
+    ):
+        item_id = os.path.splitext(fname)[0]
         category = catalog.get(item_id)
         if not category:
             skipped.append(f"{item_id}: not in catalog")
             continue
-        path = os.path.join(ASSET_DIR, fname)
+        path = os.path.join(asset_dir, fname)
         aspect, dims = get_aspect(path)
         if aspect is None:
             flags.append(f"{item_id}: no opaque pixels")

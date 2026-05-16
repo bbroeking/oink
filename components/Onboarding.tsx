@@ -24,7 +24,7 @@ const STEPS: {
 	body: string;
 }[] = [
 	{
-		animation: "arms_up", // 4-frame waving celebration loop
+		animation: "wave", // celebratory wave — arms_up was removed when
 		kicker: "★ welcome",
 		title: "Hi, I'm Rosie!",
 		body: "Tap me on the home screen to give me a tickle. The more tickles you give, the more we both grow.",
