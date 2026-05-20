@@ -9,8 +9,10 @@ import {
 	Text,
 	Image,
 	Pressable,
+	Modal,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { router } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import {
 	initIAP,
@@ -26,8 +28,9 @@ import {
 	TierUpBanner,
 	type TierUpBannerHandle,
 } from "../../components/ui/TierUpBanner";
-import { HAT_IMAGES } from "@/constants/hats";
-import { FONTS, KICKER_TEXT, ROW_TILTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
+import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
+import { FONTS, KICKER_TEXT, ROW_TILTS, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW } from "@/constants/theme";
+import { Button } from "../../components/ui";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 
@@ -200,6 +203,10 @@ export default function SeasonScreen() {
 	const [state, setState] = useState<SeasonState | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [saleOpen, setSaleOpen] = useState(false);
+	// Reward dialog: set after a successful claim_tier_reward RPC so the
+	// user gets a beat to read what they got and (for wearables) jump
+	// straight to the wardrobe to equip it.
+	const [claimedReward, setClaimedReward] = useState<TierRow | null>(null);
 
 	// Tier-up celebration: fires the banner + fanfare whenever
 	// season_state's current_tier increases between loads. Initial
@@ -288,6 +295,10 @@ export default function SeasonScreen() {
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
 			() => {}
 		);
+		// Surface a reward dialog so the user sees what they got + can
+		// jump to the wardrobe to equip wearables.
+		const claimedRow = tiersByNumber[tier]?.[track];
+		if (claimedRow) setClaimedReward(claimedRow);
 		load();
 	};
 
@@ -482,9 +493,158 @@ export default function SeasonScreen() {
 			{/* Fires on every cross-tier increase. Mounted at root so the
 			    sliding banner overlays the season list. */}
 			<TierUpBanner ref={tierBannerRef} />
+
+			<ClaimRewardDialog
+				reward={claimedReward}
+				onClose={() => setClaimedReward(null)}
+				onShow={() => {
+					setClaimedReward(null);
+					router.push({
+						pathname: "/(tabs)/shop",
+						params: { view: "wardrobe" },
+					});
+				}}
+			/>
 		</View>
 	);
 }
+
+// ───────────────────────────────────────────────────────────────
+// Reward dialog shown after a successful claim_tier_reward RPC.
+// Shows the item the user just won and (for wearables) offers a
+// "Show in wardrobe" button that deep-links to shop?view=wardrobe.
+// ───────────────────────────────────────────────────────────────
+function ClaimRewardDialog({
+	reward,
+	onClose,
+	onShow,
+}: {
+	reward: TierRow | null;
+	onClose: () => void;
+	onShow: () => void;
+}) {
+	if (!reward) return null;
+	const { reward_type: type, reward_value: val, display_label } = reward;
+	const itemId =
+		val?.hat_id ?? val?.bg_id ?? val?.aura_id ?? val?.cape_id ?? null;
+	// Wearables route to the wardrobe; tickle/title/boost/etc. show a
+	// close-only dialog since there's nothing to equip.
+	const wearableTypes = new Set([
+		"hat", "background", "aura", "cape", "scarf",
+		"mask", "necklace", "glasses", "bow", "held",
+	]);
+	const isWearable =
+		wearableTypes.has(type) && !!itemId && !HIDDEN_CATEGORIES.has(type);
+
+	const preview =
+		itemId && HAT_IMAGES[itemId] ? (
+			<Image
+				source={HAT_IMAGES[itemId]}
+				style={rewardStyles.heroImage}
+				resizeMode="contain"
+			/>
+		) : type === "tickles" ? (
+			<View style={rewardStyles.heroFallback}>
+				<TickleIcon size={64} />
+			</View>
+		) : (
+			<View style={rewardStyles.heroFallback}>
+				<Icon name="star" size={56} filled color="#C99B23" />
+			</View>
+		);
+
+	return (
+		<Modal
+			visible
+			transparent
+			animationType="fade"
+			onRequestClose={onClose}
+		>
+			<View style={rewardStyles.backdrop}>
+				<Sticker color="paper" rotate={-1.2} radius={20} style={rewardStyles.card}>
+					<Text style={rewardStyles.kicker}>★ unlocked</Text>
+					<View style={rewardStyles.hero}>{preview}</View>
+					<Text style={rewardStyles.title}>{display_label}</Text>
+					<View style={rewardStyles.actions}>
+						{isWearable && (
+							<Button size="md" variant="primary" onPress={onShow}>
+								Show in wardrobe
+							</Button>
+						)}
+						<Pressable onPress={onClose} style={rewardStyles.dismissLink}>
+							<Text style={rewardStyles.dismissText}>
+								{isWearable ? "Not now" : "OK"}
+							</Text>
+						</Pressable>
+					</View>
+				</Sticker>
+			</View>
+		</Modal>
+	);
+}
+
+const rewardStyles = StyleSheet.create({
+	backdrop: {
+		flex: 1,
+		backgroundColor: MODAL_BACKDROP_BG,
+		alignItems: "center",
+		justifyContent: "center",
+		padding: 24,
+	},
+	card: {
+		width: "100%",
+		maxWidth: 360,
+		paddingHorizontal: 24,
+		paddingVertical: 24,
+		alignItems: "center",
+		...STICKER_SHADOW,
+	},
+	kicker: {
+		...KICKER_TEXT,
+		marginBottom: 8,
+	},
+	hero: {
+		width: 160,
+		height: 160,
+		alignItems: "center",
+		justifyContent: "center",
+		marginVertical: 4,
+	},
+	heroImage: {
+		width: 140,
+		height: 140,
+	},
+	heroFallback: {
+		width: 140,
+		height: 140,
+		alignItems: "center",
+		justifyContent: "center",
+		borderRadius: 999,
+		backgroundColor: WHIMSY.paper,
+	},
+	title: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 26,
+		color: WHIMSY.ink,
+		textAlign: "center",
+		marginBottom: 16,
+	},
+	actions: {
+		alignItems: "center",
+		gap: 8,
+		width: "100%",
+	},
+	dismissLink: {
+		paddingVertical: 6,
+		paddingHorizontal: 12,
+	},
+	dismissText: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
+	},
+});
 
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: WHIMSY.cream },

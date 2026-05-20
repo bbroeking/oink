@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pig anchor editor</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+	<!-- Top: focus editor for the selected frame. -->
+	<header class="topbar">
+		<div class="title">
+			<span id="focusLabel">SAD · frame 1</span>
+			<button id="playBtn" class="playBtn" title="Play the focused animation">▶ Play</button>
+		</div>
+		<div class="modeToggle">
+			<button id="modeAnchors" class="modeBtn active">Anchors</button>
+			<button id="modeItems" class="modeBtn">Items</button>
+		</div>
+		<div class="toolbar">
+			<!-- Anchor-mode buttons -->
+			<button id="copyPrev" class="modeAnchorsOnly">Copy from prev frame</button>
+			<button id="mirror" class="modeAnchorsOnly">Mirror L↔R</button>
+			<button id="resetFrame" class="modeAnchorsOnly">Reset frame</button>
+			<!-- Items-mode buttons -->
+			<div class="modeItemsOnly itemPicker" style="display:none">
+				<button id="browseBtn" class="primary">Browse all…</button>
+				<label>
+					or type:
+					<input id="itemIdInput" type="text" list="itemIdList"
+						placeholder="wizard / monocle / ..." />
+				</label>
+				<datalist id="itemIdList"></datalist>
+			</div>
+			<button id="saveBtn" class="primary" title="Write to constants/hats.ts (requires server)">Save to app</button>
+			<button id="exportBtn">Export TS</button>
+			<button id="importBtn">Import TS</button>
+		</div>
+	</header>
+
+	<main class="focusRow">
+		<!-- Items-mode left sidebar: scrollable list of every known
+		     accessory PNG. Click to load on the canvas. -->
+		<aside class="itemPickerSidebar modeItemsOnly" style="display:none">
+			<h2>Accessories</h2>
+			<input id="itemSearch" type="text" placeholder="filter…" />
+			<div id="itemPickerGrid" class="itemPickerGrid"></div>
+		</aside>
+
+		<!-- Big editable canvas. Sprite at 2× zoom, draggable anchor
+		     dots. 300×300 card-coord space scaled to 600×600 display. -->
+		<div class="canvasWrap">
+			<canvas id="focusCanvas" width="600" height="600"></canvas>
+		</div>
+
+		<!-- Anchor list on the right. Drag-handle, numeric inputs,
+		     and selection state. Editing here moves the dot in the
+		     canvas (and vice versa). -->
+		<aside class="anchorPanel modeAnchorsOnly">
+			<h2>Anchors</h2>
+			<label class="previewToggle">
+				<input type="checkbox" id="previewToggle"/>
+				<span>Preview all accessories</span>
+			</label>
+			<ul id="anchorList"></ul>
+			<div class="legend">
+				<p>
+					Coords are in 300×300 card-coord space (y measured
+					from the TOP). Drag a dot or edit numbers directly.
+				</p>
+				<p>
+					Press <kbd>1</kbd>–<kbd>9</kbd> to select an anchor,
+					arrow keys nudge by 1px.
+				</p>
+			</div>
+		</aside>
+
+		<!-- Item-mode panel: position + size controls for the currently
+		     selected item. Tracks the per-animation overlay being edited. -->
+		<aside class="anchorPanel modeItemsOnly" style="display:none">
+			<h2 id="itemPanelTitle">No item loaded</h2>
+			<div id="itemPanelBody" class="itemPanelBody">
+				<p class="emptyHint">
+					Type an item id in the top bar (e.g. <code>wizard</code>) to
+					load it. The item PNG renders on every frame at its current
+					position; drag it on the focus canvas or any thumbnail to
+					reposition.
+				</p>
+			</div>
+			<div class="itemControls" id="itemControls" style="display:none">
+				<div class="itemEditingScope">
+					Editing: <strong id="itemEditingLabel">base</strong>
+					<span class="hint" id="itemEditingHint"></span>
+				</div>
+				<div class="itemGrid">
+					<label>bottom <input id="itemBottom" type="number" step="1"/></label>
+					<label>left <input id="itemLeft" type="number" step="1"/></label>
+					<label>width <input id="itemWidth" type="number" min="1" step="1"/></label>
+					<label>height <input id="itemHeight" type="number" min="1" step="1"/></label>
+				</div>
+				<div class="itemButtons">
+					<button id="itemUseBase">Use base for this anim</button>
+					<button id="itemApplyToAll">Copy this anim → all</button>
+					<button id="itemResetAll">Reset item</button>
+				</div>
+				<div class="legend">
+					<p>
+						<strong>bottom</strong>/<strong>left</strong> are in
+						300×300 card-coord space (y measured from the BOTTOM —
+						matches HatOverlay).
+					</p>
+					<p>
+						Drag the item box on the focus canvas to reposition.
+						Hold <kbd>Shift</kbd> while dragging to resize from the
+						bottom-right corner. Arrow keys nudge.
+					</p>
+				</div>
+			</div>
+		</aside>
+	</main>
+
+	<!-- Bottom: thumbnail grid of every animation × every frame. -->
+	<section class="thumbsArea">
+		<h2>All frames</h2>
+		<div id="thumbsGrid" class="thumbsGrid"></div>
+	</section>
+
+</div>
+
+<!-- Fullscreen accessory browser modal. Big thumbnails, grouped by
+     category, with a search field. Click any item to load + dismiss. -->
+<dialog id="browserModal">
+	<div class="browserHeader">
+		<h3>Browse accessories</h3>
+		<input id="browserSearch" type="text" placeholder="search…" autocomplete="off"/>
+		<button id="browserClose">Close</button>
+	</div>
+	<div id="browserGrid" class="browserGrid"></div>
+</dialog>
+
+<!-- Import / export modal. -->
+<dialog id="ioModal">
+	<form method="dialog" class="ioForm">
+		<h3 id="ioTitle">Export</h3>
+		<p id="ioHint"></p>
+		<textarea id="ioText" rows="20" spellcheck="false"></textarea>
+		<menu>
+			<button value="cancel">Close</button>
+			<button id="ioCopy" type="button">Copy to clipboard</button>
+			<button id="ioApply" type="button" class="primary" style="display:none">
+				Apply
+			</button>
+		</menu>
+	</form>
+</dialog>
+
+<script src="items_data.js" defer></script>
+<script src="editor.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,610 @@
+/* Pig anchor editor — minimal styling, focused on readability. */
+
+* { box-sizing: border-box; }
+
+:root {
+	--ink: #1a1a1a;
+	--paper: #faf7f3;
+	--mute: #6b6b6b;
+	--accent: #7b5fff;
+	--accent-soft: #ece6ff;
+	--danger: #d04848;
+	--bg: #f4f0ea;
+	--border: #d8d0c4;
+}
+
+body {
+	margin: 0;
+	font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+	background: var(--bg);
+	color: var(--ink);
+}
+
+#app {
+	display: grid;
+	grid-template-rows: auto minmax(620px, auto) auto;
+	min-height: 100vh;
+}
+
+/* ─── top bar ──────────────────────────────────────────── */
+.topbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 18px;
+	border-bottom: 1px solid var(--border);
+	background: var(--paper);
+}
+
+.title {
+	font-weight: 700;
+	font-size: 16px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.playBtn {
+	font: inherit;
+	font-size: 12px;
+	padding: 4px 12px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: white;
+	cursor: pointer;
+	color: var(--ink);
+}
+.playBtn:hover { background: #f6f2eb; }
+.playBtn.playing {
+	background: var(--accent);
+	color: white;
+	border-color: var(--accent);
+}
+
+.toolbar {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+/* ─── mode toggle ──────────────────────────────────────── */
+.modeToggle {
+	display: flex;
+	gap: 2px;
+	background: var(--bg);
+	padding: 3px;
+	border-radius: 8px;
+	border: 1px solid var(--border);
+}
+.modeBtn {
+	font: inherit;
+	padding: 4px 14px;
+	border: none;
+	border-radius: 6px;
+	background: transparent;
+	cursor: pointer;
+	color: var(--mute);
+}
+.modeBtn.active {
+	background: var(--accent);
+	color: white;
+}
+.modeBtn:hover:not(.active) { background: rgba(0,0,0,0.04); }
+
+.itemPicker {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 13px;
+}
+.itemPicker input {
+	font: inherit;
+	padding: 5px 10px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	width: 180px;
+	font-family: monospace;
+}
+.itemPicker label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--mute);
+}
+
+button {
+	font: inherit;
+	padding: 6px 12px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: white;
+	cursor: pointer;
+}
+button:hover { background: #f6f2eb; }
+button.primary {
+	background: var(--accent);
+	color: white;
+	border-color: var(--accent);
+}
+button.primary:hover { background: #6a4ff5; }
+
+/* ─── focus row ────────────────────────────────────────── */
+.focusRow {
+	display: grid;
+	grid-template-columns: 1fr 340px;
+	gap: 16px;
+	padding: 16px 18px;
+}
+.focusRow.itemsMode {
+	grid-template-columns: 320px 1fr 340px;
+}
+
+/* ─── accessory picker sidebar ─────────────────────────── */
+.itemPickerSidebar {
+	background: white;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 12px 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	max-height: 720px;
+}
+.itemPickerSidebar h2 {
+	font-size: 12px;
+	margin: 0;
+	letter-spacing: 0.5px;
+	color: var(--mute);
+	text-transform: uppercase;
+}
+#itemSearch {
+	font: inherit;
+	font-size: 13px;
+	padding: 6px 10px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	font-family: monospace;
+}
+.itemPickerGrid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 8px;
+	overflow-y: auto;
+	padding-right: 4px;
+	flex: 1;
+}
+.itemPickerCell {
+	position: relative;
+	aspect-ratio: 1;
+	background: repeating-conic-gradient(#f5f0e8 0% 25%, #ece5d8 0% 50%) 50% / 10px 10px;
+	border: 2px solid transparent;
+	border-radius: 10px;
+	overflow: hidden;
+	cursor: pointer;
+	transition: border 80ms, transform 80ms;
+}
+.itemPickerCell:hover {
+	border-color: var(--accent-soft);
+	transform: scale(1.03);
+}
+.itemPickerCell.active {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.itemPickerCell img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+}
+.itemPickerCell .label {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ink);
+	background: rgba(255,255,255,0.92);
+	padding: 3px 4px;
+	text-align: center;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.itemPickerCategoryHeader {
+	grid-column: 1 / -1;
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	color: var(--mute);
+	margin: 8px 0 -2px;
+	padding-bottom: 4px;
+	border-bottom: 1px dashed var(--border);
+}
+.itemPickerCategoryHeader:first-child { margin-top: 0; }
+
+.canvasWrap {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: white;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 8px;
+	/* Responsive: take the column's full width but never exceed a
+	   sensible upper bound so it fits on smaller laptops + scales up
+	   on big monitors. aspect-ratio keeps it square (the 300×300 card). */
+	width: 100%;
+	aspect-ratio: 1;
+	max-height: min(80vh, 720px);
+	min-height: 0;
+}
+
+#focusCanvas {
+	background: repeating-conic-gradient(#eee 0% 25%, #ddd 0% 50%) 50% / 24px 24px;
+	cursor: crosshair;
+	border-radius: 4px;
+	/* Display size follows the wrapper; internal resolution stays at
+	   600×600 (set via canvas.width/height in JS) so the drawing is
+	   crisp on hi-DPI screens. */
+	width: 100%;
+	height: 100%;
+	max-width: 600px;
+	max-height: 600px;
+}
+
+.anchorPanel {
+	background: white;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 12px;
+	overflow-y: auto;
+}
+.previewToggle {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: var(--ink);
+	margin-bottom: 8px;
+	padding: 6px 8px;
+	background: var(--accent-soft);
+	border-radius: 6px;
+	cursor: pointer;
+}
+.previewToggle input {
+	margin: 0;
+}
+
+.anchorPanel h2 {
+	font-size: 14px;
+	margin: 0 0 8px;
+	letter-spacing: 0.5px;
+	color: var(--mute);
+}
+
+#anchorList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.anchorRow {
+	display: grid;
+	grid-template-columns: 16px 80px 1fr 1fr;
+	gap: 6px;
+	align-items: center;
+	padding: 4px 4px;
+	border-radius: 6px;
+	font-size: 12px;
+}
+.anchorRow:hover { background: #faf7f3; }
+.anchorRow.selected {
+	background: var(--accent-soft);
+	border: 1px solid var(--accent);
+}
+.anchorRow .dot {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	border: 1.5px solid white;
+}
+.anchorRow .name {
+	font-weight: 600;
+}
+.anchorRow input {
+	width: 100%;
+	padding: 2px 6px;
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	font-size: 12px;
+	font-family: monospace;
+	background: white;
+}
+
+.legend {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px dashed var(--border);
+	font-size: 11px;
+	color: var(--mute);
+	line-height: 1.5;
+}
+.legend kbd {
+	font-family: monospace;
+	background: var(--paper);
+	padding: 1px 5px;
+	border: 1px solid var(--border);
+	border-radius: 4px;
+}
+
+/* ─── item-mode panel ──────────────────────────────────── */
+.itemPanelBody p.emptyHint {
+	font-size: 13px;
+	color: var(--mute);
+	line-height: 1.5;
+	margin: 0;
+}
+.itemPanelBody code {
+	background: var(--paper);
+	padding: 1px 5px;
+	border-radius: 4px;
+	font-size: 12px;
+}
+.itemEditingScope {
+	font-size: 12px;
+	color: var(--mute);
+	margin-bottom: 8px;
+	padding: 6px 8px;
+	background: var(--accent-soft);
+	border-radius: 6px;
+}
+.itemEditingScope strong {
+	color: var(--accent);
+	font-family: monospace;
+}
+.itemEditingScope .hint {
+	display: block;
+	margin-top: 2px;
+	color: var(--mute);
+	font-size: 11px;
+}
+.itemGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+	margin-bottom: 10px;
+}
+.itemGrid label {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 11px;
+	color: var(--mute);
+	font-weight: 600;
+	letter-spacing: 0.3px;
+	text-transform: uppercase;
+}
+.itemGrid input {
+	font-family: monospace;
+	font-size: 13px;
+	padding: 4px 8px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+}
+.itemButtons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 10px;
+}
+.itemButtons button {
+	font-size: 11px;
+	padding: 4px 8px;
+}
+
+/* ─── thumbnails grid ──────────────────────────────────── */
+.thumbsArea {
+	padding: 16px 18px 24px;
+	background: var(--paper);
+	border-top: 1px solid var(--border);
+}
+.thumbsArea h2 {
+	font-size: 14px;
+	margin: 0 0 12px;
+	letter-spacing: 0.5px;
+	color: var(--mute);
+}
+.thumbsGrid {
+	display: grid;
+	gap: 10px;
+}
+.animRow {
+	display: grid;
+	grid-template-columns: 90px repeat(4, 1fr);
+	gap: 8px;
+	align-items: center;
+}
+.animLabel {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.4px;
+	color: var(--ink);
+	text-transform: uppercase;
+}
+.thumb {
+	position: relative;
+	aspect-ratio: 1;
+	background: white;
+	border: 1.5px solid var(--border);
+	border-radius: 8px;
+	overflow: hidden;
+	cursor: pointer;
+	transition: border 80ms;
+}
+.thumb.active {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.thumb canvas {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+.thumb .label {
+	position: absolute;
+	top: 4px;
+	left: 6px;
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--mute);
+	background: rgba(255,255,255,0.85);
+	padding: 1px 5px;
+	border-radius: 4px;
+}
+
+/* ─── accessory browser modal ──────────────────────────── */
+#browserModal {
+	max-width: 1080px;
+	width: 92vw;
+	max-height: 86vh;
+	height: 86vh;
+	padding: 0;
+	border-radius: 16px;
+	background: var(--paper);
+	display: none;
+	flex-direction: column;
+	overflow: hidden;
+}
+#browserModal[open] {
+	display: flex;
+}
+#browserModal::backdrop {
+	background: rgba(0,0,0,0.45);
+	backdrop-filter: blur(4px);
+}
+.browserHeader {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 18px;
+	border-bottom: 1px solid var(--border);
+	background: white;
+	flex-shrink: 0;
+}
+.browserHeader h3 {
+	margin: 0;
+	font-size: 17px;
+	flex-shrink: 0;
+}
+.browserHeader input {
+	flex: 1;
+	font: inherit;
+	font-size: 14px;
+	padding: 8px 14px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	font-family: monospace;
+}
+.browserHeader button {
+	font-size: 13px;
+}
+.browserGrid {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px 18px 24px;
+}
+.browserCategory {
+	margin-bottom: 22px;
+}
+.browserCategoryHeader {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 1.2px;
+	color: var(--mute);
+	margin: 0 0 10px;
+	padding-bottom: 6px;
+	border-bottom: 1px dashed var(--border);
+	position: sticky;
+	top: 0;
+	background: var(--paper);
+	padding-top: 4px;
+	z-index: 1;
+}
+.browserCategoryGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+	gap: 10px;
+}
+.browserCell {
+	position: relative;
+	aspect-ratio: 1;
+	background: repeating-conic-gradient(#f5f0e8 0% 25%, #ece5d8 0% 50%) 50% / 10px 10px;
+	border: 2px solid transparent;
+	border-radius: 10px;
+	overflow: hidden;
+	cursor: pointer;
+	transition: border 80ms, transform 80ms;
+}
+.browserCell:hover {
+	border-color: var(--accent-soft);
+	transform: scale(1.02);
+}
+.browserCell.active {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.browserCell img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+}
+.browserCell .label {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ink);
+	background: rgba(255,255,255,0.92);
+	padding: 3px 4px;
+	text-align: center;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+/* ─── io modal ─────────────────────────────────────────── */
+dialog {
+	border: none;
+	border-radius: 12px;
+	padding: 0;
+	max-width: 720px;
+	width: 90%;
+	box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+}
+.ioForm {
+	display: flex;
+	flex-direction: column;
+	padding: 18px;
+	gap: 10px;
+}
+.ioForm h3 { margin: 0; }
+.ioForm p { margin: 0; color: var(--mute); font-size: 13px; line-height: 1.5; }
+.ioForm textarea {
+	font: 12px/1.5 monospace;
+	padding: 10px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	resize: vertical;
+}
+.ioForm menu {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	padding: 0;
+	margin: 0;
+}

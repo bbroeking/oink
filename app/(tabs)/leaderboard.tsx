@@ -70,7 +70,12 @@ function ChampionPoster({ champ }: { champ: LeaderboardEntry }) {
 						<PigAvatar size={64} hatId={champ.active_hat_id} />
 					</View>
 					<View style={{ flex: 1, minWidth: 0 }}>
-						<Text style={styles.champName} numberOfLines={1}>
+						<Text
+							style={styles.champName}
+							numberOfLines={1}
+							adjustsFontSizeToFit
+							minimumFontScale={0.55}
+						>
 							{formatDisplayName(champ.username, champ.active_title)}
 						</Text>
 						<Text style={styles.champScore}>
@@ -109,7 +114,12 @@ function ClippingRow({
 				<Text style={styles.rowRank}>#{rank}</Text>
 				<PigAvatar size={32} hatId={player.active_hat_id} />
 				<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
-					<Text style={styles.rowName} numberOfLines={1}>
+					<Text
+						style={styles.rowName}
+						numberOfLines={1}
+						adjustsFontSizeToFit
+						minimumFontScale={0.6}
+					>
 						{formatDisplayName(player.username, player.active_title)}
 						{isYou && <Text style={styles.rowYouTag}> · you</Text>}
 					</Text>
@@ -344,7 +354,7 @@ const styles = StyleSheet.create({
 	},
 	champName: {
 		fontFamily: FONTS.whimsy,
-		fontSize: 26,
+		fontSize: 22,
 		color: WHIMSY.ink,
 	},
 	champScore: {
@@ -395,7 +405,7 @@ const styles = StyleSheet.create({
 	},
 	rowName: {
 		fontFamily: FONTS.whimsy,
-		fontSize: 15,
+		fontSize: 14,
 		color: WHIMSY.ink,
 	},
 	rowYouTag: {
