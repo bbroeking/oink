@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Tickle the Pig — Season 1: Goblins vs Angels</title>
+<style>
+	@page { size: letter; margin: 0.6in; }
+	:root {
+		--cream:#FFF4E0; --paper:#FFFDF5; --ink:#3B2A1E; --mute:#7A6553;
+		--sun:#F9D14C; --rose:#FDC1C5; --lilac:#C6B6FF;
+		--accent:#E07A47; --gold:#D9A441; --moss:#7BA266;
+		--angel-bg:#FFFAEF; --angel-ink:#9F7A1C;
+		--goblin-bg:#EFF6E8; --goblin-ink:#3F6234;
+	}
+	* { box-sizing:border-box; }
+	body {
+		font-family:"Helvetica Neue","Segoe UI",Arial,sans-serif;
+		color:var(--ink); background:var(--cream);
+		margin:0; padding:36px; line-height:1.45;
+	}
+	h1, h2, h3 { font-family:"Georgia","Times New Roman",serif; color:var(--ink); margin-top:0; }
+	h1 { font-size:42px; line-height:1.05; margin-bottom:8px; }
+	h2 { font-size:26px; margin:32px 0 8px; padding-bottom:6px; border-bottom:2px solid var(--ink); }
+	h3 { font-size:18px; margin:18px 0 6px; }
+	p, li, td, th { font-size:13px; }
+	em { color:var(--mute); font-style:italic; }
+	a { color:var(--accent); }
+
+	.cover {
+		background:var(--paper); border:3px solid var(--ink);
+		border-radius:20px; padding:36px;
+		box-shadow:6px 6px 0 var(--ink);
+		margin-bottom:36px;
+	}
+	.kicker {
+		font-size:11px; letter-spacing:0.18em; text-transform:uppercase;
+		color:var(--accent); margin-bottom:8px; font-weight:700;
+	}
+	.tagline { font-size:18px; color:var(--mute); margin:4px 0 0; }
+	.meta {
+		display:flex; gap:20px; flex-wrap:wrap; margin-top:18px;
+		font-size:12px; color:var(--mute);
+	}
+	.meta b { color:var(--ink); }
+
+	.section { background:var(--paper); border:2px solid var(--ink); border-radius:14px; padding:20px; margin:18px 0; }
+
+	.continuum {
+		background:linear-gradient(to right, var(--goblin-bg) 0%, var(--cream) 50%, var(--angel-bg) 100%);
+		border:2px solid var(--ink); border-radius:10px; padding:24px; position:relative;
+		margin:18px 0;
+	}
+	.continuum .scale {
+		display:flex; justify-content:space-between; align-items:flex-end;
+		font-size:11px; color:var(--mute); margin-bottom:6px;
+	}
+	.continuum .bar {
+		height:18px; background:var(--paper); border:1.5px solid var(--ink); border-radius:9px;
+		position:relative; overflow:hidden;
+	}
+	.continuum .bar::before, .continuum .bar::after {
+		content:""; position:absolute; top:0; bottom:0; width:33%; opacity:0.45;
+	}
+	.continuum .bar::before { left:0; background:var(--goblin-bg); }
+	.continuum .bar::after  { right:0; background:var(--angel-bg); }
+	.continuum .labels {
+		display:flex; justify-content:space-between; margin-top:8px; font-size:12px; font-weight:700;
+	}
+	.continuum .labels span { padding:2px 8px; border-radius:999px; border:1px solid var(--ink); }
+	.continuum .labels .g { background:var(--goblin-bg); color:var(--goblin-ink); }
+	.continuum .labels .n { background:var(--cream); color:var(--ink); }
+	.continuum .labels .a { background:var(--angel-bg); color:var(--angel-ink); }
+
+	table { width:100%; border-collapse:collapse; margin:10px 0 6px; font-size:12.5px; }
+	th, td { border:1px solid var(--ink); padding:7px 9px; text-align:left; vertical-align:top; }
+	th { background:var(--cream); font-weight:700; }
+	td.pos { background:var(--angel-bg); color:var(--angel-ink); font-weight:700; }
+	td.neg { background:var(--goblin-bg); color:var(--goblin-ink); font-weight:700; }
+	td.zero { background:var(--paper); color:var(--mute); font-weight:700; }
+
+	.cols { display:flex; gap:14px; margin:12px 0; }
+	.col { flex:1; border:2px solid var(--ink); border-radius:12px; padding:14px; }
+	.col.angel { background:var(--angel-bg); }
+	.col.goblin { background:var(--goblin-bg); }
+	.col h3 { margin-top:0; }
+	.col ul { margin:6px 0; padding-left:18px; }
+
+	.timeline {
+		display:grid; grid-template-columns:60px 1fr; gap:8px 14px; margin:14px 0;
+	}
+	.timeline .wk {
+		font-family:"Georgia",serif; font-size:18px; font-weight:700;
+		background:var(--sun); border:2px solid var(--ink); border-radius:8px;
+		text-align:center; padding:6px 4px;
+	}
+	.timeline .what { padding-top:8px; }
+	.timeline .what b { display:block; font-size:14px; }
+	.timeline .what span { display:block; font-size:12px; color:var(--mute); margin-top:2px; }
+
+	.cards { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin:10px 0; }
+	.card { border:2px solid var(--ink); border-radius:10px; padding:10px; background:var(--paper); }
+	.card.angel { background:var(--angel-bg); }
+	.card.goblin { background:var(--goblin-bg); }
+	.card .name { font-weight:700; font-size:13px; margin-bottom:2px; }
+	.card .tier { font-size:11px; color:var(--mute); margin-bottom:6px; }
+	.card .desc { font-size:11.5px; }
+
+	.note { background:var(--cream); border-left:3px solid var(--accent); padding:10px 14px; border-radius:0 8px 8px 0; margin:10px 0; font-size:12.5px; }
+	.note b { color:var(--accent); }
+
+	.tldr {
+		background:var(--ink); color:var(--paper); border-radius:12px; padding:18px 22px; margin:18px 0;
+	}
+	.tldr h3 { color:var(--sun); margin-top:0; font-size:15px; letter-spacing:0.08em; text-transform:uppercase; }
+	.tldr p { font-size:13px; line-height:1.5; }
+
+	footer {
+		text-align:center; color:var(--mute); font-size:11px; margin-top:36px;
+		border-top:1px dashed var(--ink); padding-top:14px;
+	}
+
+	@media print {
+		body { background:white; padding:0; }
+		.section, .cover { box-shadow:none; }
+		.cover { page-break-after:always; }
+		h2 { page-break-after:avoid; }
+		.timeline, .cards, table { page-break-inside:avoid; }
+	}
+</style>
+</head>
+<body>
+
+<div class="cover">
+	<div class="kicker">Tickle the Pig · Product Plan</div>
+	<h1>Season 1: <span style="color:var(--goblin-ink)">Goblins</span> vs <span style="color:var(--angel-ink)">Angels</span></h1>
+	<p class="tagline">One alignment continuum, derived from action. No teams. Your behavior names you.</p>
+	<div class="meta">
+		<span><b>Length:</b> 8 weeks</span>
+		<span><b>Hook:</b> Tickle Trade behavior</span>
+		<span><b>New systems:</b> 3</span>
+		<span><b>Cosmetic rewards:</b> 8 (4 per side)</span>
+		<span><b>Finale exclusive:</b> Top 3 each side</span>
+	</div>
+</div>
+
+<div class="tldr">
+	<h3>The big idea in one paragraph</h3>
+	<p>Every player has an <b>alignment score</b> (-100 to +100), derived purely from how they trade. Giving + repaying + blessing pulls you toward <b>Angel</b>; receiving + hoarding debts + cursing pulls you toward <b>Goblin</b>. Where you sit is publicly visible everywhere identity shows. You don't pick a side &mdash; your side picks you, live, every week. Cosmetics unlock at alignment milestones and you can only <em>equip</em> the ones matching your current state. After 8 weeks, the top 3 angels and top 3 goblins get exclusive finale titles and the slate wipes for Season 2.</p>
+</div>
+
+<h2>The one continuum</h2>
+<div class="continuum">
+	<div class="scale"><span>-100</span><span>-34</span><span>0</span><span>+34</span><span>+100</span></div>
+	<div class="bar"></div>
+	<div class="labels">
+		<span class="g">Goblin King</span>
+		<span class="g">Hoarder</span>
+		<span class="n">Pilgrim</span>
+		<span class="a">Saint</span>
+		<span class="a">Halo Bearer</span>
+	</div>
+</div>
+<p>Three derived states, descriptive (not teams):</p>
+<ul>
+	<li><b style="color:var(--angel-ink)">Generous</b> (&gt;+34) &mdash; you give more than you take, you close your loops &rarr; angel-coded cosmetics unlock</li>
+	<li><b style="color:var(--mute)">Neutral / Pilgrim</b> (-33 to +33) &mdash; balanced or new player</li>
+	<li><b style="color:var(--goblin-ink)">Greedy</b> (&lt;-34) &mdash; you take more than you give, you hoard debts &rarr; goblin-coded cosmetics unlock</li>
+</ul>
+
+<div class="note">
+	<b>Live with your reputation.</b> Alignment drifts in real time. You keep every cosmetic you've unlocked forever, but you can only <em>equip</em> ones matching your current state. A former-saint-now-goblin has a closet of halos they can't wear until they redeem themselves &mdash; you can't fake it.
+</div>
+
+<h2>How alignment shifts</h2>
+<table>
+	<tr><th>Action</th><th>Shift</th><th>Why</th></tr>
+	<tr><td>Fulfill a friend's trade request (giving)</td><td class="pos">+2</td><td>Selfless act</td></tr>
+	<tr><td>Have your request fulfilled (receiving)</td><td class="zero">0</td><td>You're the recipient of someone's choice &mdash; neutral</td></tr>
+	<tr><td>Repay the 2&times; thanks beat</td><td class="pos">+5</td><td>The most virtuous act: closing the loop</td></tr>
+	<tr><td>Let a fulfilled trade go unrepaid for 7 days</td><td class="neg">&minus;3</td><td>Hoarding a debt &mdash; pure goblin energy</td></tr>
+	<tr><td>Send a daily blessing</td><td class="pos">+1</td><td>Active kindness</td></tr>
+	<tr><td>Send a daily curse</td><td class="neg">&minus;1</td><td>Active mischief</td></tr>
+	<tr><td>Decline an incoming request</td><td class="neg">&minus;1</td><td>Cold but allowed</td></tr>
+</table>
+
+<h2>Daily rituals: Blessings & Curses</h2>
+<div class="cols">
+	<div class="col angel">
+		<h3>☀️ Blessings (Angel-coded)</h3>
+		<p>One per day, cast on up to 3 friends. Rotates daily.</p>
+		<ul>
+			<li><b>Warm Tea (Mon):</b> 2&times; tickle regen for 1h</li>
+			<li><b>Sun Beam (Tue):</b> next Lucky Pig doubles</li>
+			<li><b>Halo Kiss (Wed):</b> faint halo glow visible for 6h</li>
+			<li><b>Bountiful Snouts (Thu):</b> +5 snouts instantly</li>
+			<li><b>Fri&ndash;Sun:</b> rotation continues</li>
+		</ul>
+		<p><em>"alice blessed you with Warm Tea ☕"</em> &mdash; creates lore.</p>
+	</div>
+	<div class="col goblin">
+		<h3>🟢 Curses (Goblin-coded)</h3>
+		<p>One per day, cast on up to 3 friends. Rotates daily.</p>
+		<ul>
+			<li><b>Sluggish Snout (Mon):</b> 0.5&times; regen for 1h</li>
+			<li><b>Phantom Itch (Tue):</b> next 3 taps register as half-tickles</li>
+			<li><b>Goblin Whisper (Wed):</b> green miasma cloud over pig for 4h</li>
+			<li><b>Coin Pinch (Thu):</b> &minus;3 snouts</li>
+		</ul>
+		<p><em>Anti-grief: max &minus;10 snouts & 2h regen debuff per day across all incoming curses. Cleanse for 5 snouts. Blessing while cursed cancels both.</em></p>
+	</div>
+</div>
+
+<h2>Cosmetic ladder (8 unlocks, 4 per side)</h2>
+<div class="cards">
+	<div class="card angel"><div class="name">daisy_crown</div><div class="tier">+25 alignment</div><div class="desc">Sweet white-yellow flower crown</div></div>
+	<div class="card angel"><div class="name">angel_halo</div><div class="tier">+50 alignment</div><div class="desc">Golden ring floating overhead</div></div>
+	<div class="card angel"><div class="name">angel_wings</div><div class="tier">+75 alignment</div><div class="desc">Small feathered wings on back</div></div>
+	<div class="card angel"><div class="name">holy_radiance</div><div class="tier">+90, hold 3 days</div><div class="desc">Glowing aura behind the pig</div></div>
+	<div class="card goblin"><div class="name">gold_tooth</div><div class="tier">&minus;25 alignment</div><div class="desc">Single gold tooth glint</div></div>
+	<div class="card goblin"><div class="name">coin_monocle</div><div class="tier">&minus;50 alignment</div><div class="desc">Gold coin worn as monocle</div></div>
+	<div class="card goblin"><div class="name">goblin_ears</div><div class="tier">&minus;75 alignment</div><div class="desc">Long pointed green-tinted ears</div></div>
+	<div class="card goblin"><div class="name">goblin_crown</div><div class="tier">&minus;90, hold 3 days</div><div class="desc">Twisted gold crown with jagged teeth</div></div>
+</div>
+
+<h2>8-week roadmap</h2>
+<div class="timeline">
+	<div class="wk">W1</div><div class="what"><b>The schism</b><span>Alignment system live. Reveal moment when you first cross &plusmn;25.</span></div>
+	<div class="wk">W2</div><div class="what"><b>Visibility everywhere</b><span>Alignment badge on leaderboard, friends list, trade modal. Discover who's who.</span></div>
+	<div class="wk">W3</div><div class="what"><b>Blessings unlock</b><span>Daily blessing ritual + push notif at local 9am.</span></div>
+	<div class="wk">W4</div><div class="what"><b>Curses unlock</b><span>Daily curse mechanic + cleanse system + anti-grief cap.</span></div>
+	<div class="wk">W5</div><div class="what"><b>Sanctuary / Lair theming</b><span>Visual barn overlay based on current alignment. Polish week.</span></div>
+	<div class="wk">W6</div><div class="what"><b>Weekly bounty board</b><span>"Fulfill 3 trades" / "Repay 2 debts" / "Bless a goblin." Snout rewards.</span></div>
+	<div class="wk">W7</div><div class="what"><b>Mid-season ranking visible</b><span>Alignment leaderboard with top 20 each side highlighted.</span></div>
+	<div class="wk">W8</div><div class="what"><b>Judgement Day finale</b><span>Verdict screens, top-3 exclusives issued, participation titles granted, slate wipes for S2.</span></div>
+</div>
+
+<h2>Finale rewards (top 3 per side)</h2>
+<table>
+	<tr><th>Tier</th><th>Generous side</th><th>Greedy side</th></tr>
+	<tr>
+		<td><b>Top 3</b></td>
+		<td class="pos">"Halo Bearer 2026" title + seraph_wings exclusive + 500 snouts</td>
+		<td class="neg">"Goblin King 2026" title + cursed_crown exclusive + 500 snouts</td>
+	</tr>
+	<tr>
+		<td><b>Top 10</b><br><em>(places 4-10)</em></td>
+		<td class="pos">Silver finale title + 250 snouts</td>
+		<td class="neg">Silver finale title + 250 snouts</td>
+	</tr>
+	<tr>
+		<td><b>All others</b><br><em>not Neutral</em></td>
+		<td colspan="2" style="background:var(--cream); text-align:center">"Schism Survivor" title + 100 snouts</td>
+	</tr>
+	<tr>
+		<td><b>Stayed Neutral</b><br><em>all season</em></td>
+		<td colspan="2" style="background:var(--cream); text-align:center">"Calm in the Storm" title + 100 snouts (Pilgrim recognition)</td>
+	</tr>
+</table>
+
+<h2>Engagement loops</h2>
+<ul>
+	<li><b>Daily (~3 min):</b> check in &rarr; cast 1 blessing + 1 curse &rarr; do 1-2 trades &rarr; glance leaderboard.</li>
+	<li><b>Weekly (~15 min):</b> complete bounty board &rarr; check your alignment trend (sparkline of last 7 days).</li>
+	<li><b>Seasonal (8 weeks):</b> drift toward a side &rarr; unlock cosmetics &rarr; battle for top 3 spot &rarr; finale verdict.</li>
+</ul>
+
+<h2>Open questions</h2>
+<ol>
+	<li><b>Blessing/curse rate limit:</b> once per friend per day, capped at 3 total casts per day? (Recommend yes.)</li>
+	<li><b>New-user starting alignment:</b> 0 or +5 nudge so first received-trade doesn't immediately register as goblin? (Recommend +5.)</li>
+	<li><b>Inactivity decay:</b> after 7 days inactive, alignment drifts &minus;1/day toward 0 to stop "lock and leave"? (Recommend yes.)</li>
+</ol>
+
+<footer>
+	Tickle the Pig &middot; Season 1 product plan &middot; print to PDF via Cmd+P
+</footer>
+
+</body>
+</html>
