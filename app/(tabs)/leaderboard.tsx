@@ -15,6 +15,7 @@ import { Icon } from "../../components/ui/Icon";
 import { PigAvatar } from "../../components/ui/PigAvatar";
 import { Sticker } from "../../components/ui/Sticker";
 import { ListRowSkeleton } from "../../components/ui/Skeleton";
+import { UserSheet } from "../../components/UserSheet";
 import { COLORS, FONTS, ROW_TILTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
 
 type Scope = "global" | "friends";
@@ -60,9 +61,15 @@ function normalize(rows: RawRow[] | null): LeaderboardEntry[] {
 	}));
 }
 
-function ChampionPoster({ champ }: { champ: LeaderboardEntry }) {
+function ChampionPoster({
+	champ,
+	onPress,
+}: {
+	champ: LeaderboardEntry;
+	onPress: (userId: string) => void;
+}) {
 	return (
-		<View style={styles.champWrap}>
+		<Pressable style={styles.champWrap} onPress={() => onPress(champ.id)}>
 			<Sticker color="rose" rotate={-1.5} radius={18} border={2.5} style={styles.champ}>
 				<Text style={styles.champOver}>★ all-time leader ★</Text>
 				<View style={styles.champBody}>
@@ -88,7 +95,7 @@ function ChampionPoster({ champ }: { champ: LeaderboardEntry }) {
 				</View>
 				<Text style={styles.starsRow}>✦ ✦ ✦</Text>
 			</Sticker>
-		</View>
+		</Pressable>
 	);
 }
 
@@ -97,14 +104,16 @@ function ClippingRow({
 	rank,
 	isYou,
 	tilt,
+	onPress,
 }: {
 	player: LeaderboardEntry;
 	rank: number;
 	isYou: boolean;
 	tilt: number;
+	onPress: (userId: string) => void;
 }) {
 	return (
-		<View style={styles.rowWrap}>
+		<Pressable style={styles.rowWrap} onPress={() => onPress(player.id)}>
 			<Sticker
 				color={isYou ? "rose" : "paper"}
 				rotate={tilt}
@@ -131,7 +140,7 @@ function ClippingRow({
 					{player.tickles_earned.toLocaleString()} ♥
 				</Text>
 			</Sticker>
-		</View>
+		</Pressable>
 	);
 }
 
@@ -140,6 +149,8 @@ export default function LeaderboardScreen() {
 	const [loading, setLoading] = useState(true);
 	const [scope, setScope] = useState<Scope>("global");
 	const [myId, setMyId] = useState<string | null>(null);
+	// Tap-on-row opens UserSheet with this user's id. Null = sheet closed.
+	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
 	const fetchLeaderboard = useCallback(async () => {
 		setLoading(true);
@@ -269,13 +280,18 @@ export default function LeaderboardScreen() {
 				) : (
 					<FlatList
 						data={rest}
-						ListHeaderComponent={champ ? <ChampionPoster champ={champ} /> : null}
+						ListHeaderComponent={
+							champ ? (
+								<ChampionPoster champ={champ} onPress={setSelectedUserId} />
+							) : null
+						}
 						renderItem={({ item, index }) => (
 							<ClippingRow
 								player={item}
 								rank={index + 2}
 								isYou={item.id === myId}
 								tilt={ROW_TILTS[index % ROW_TILTS.length]}
+								onPress={setSelectedUserId}
 							/>
 						)}
 						keyExtractor={(item) => item.id}
@@ -284,6 +300,12 @@ export default function LeaderboardScreen() {
 					/>
 				)}
 			</SafeAreaView>
+
+			<UserSheet
+				targetUserId={selectedUserId}
+				onDismiss={() => setSelectedUserId(null)}
+				onFriendshipChanged={fetchLeaderboard}
+			/>
 		</View>
 	);
 }
