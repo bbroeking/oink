@@ -12,12 +12,13 @@ import {
 } from "@expo-google-fonts/nunito";
 import { Caprasimo_400Regular } from "@expo-google-fonts/caprasimo";
 import { PatrickHand_400Regular } from "@expo-google-fonts/patrick-hand";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
 import * as Sentry from "@sentry/react-native";
+import * as Notifications from "expo-notifications";
 import { supabase } from "@/utils/supabase";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
@@ -55,6 +56,24 @@ function RootLayoutInner() {
 	// transition straight into either auth or the home screen — no blank flash.
 	useEffect(() => {
 		supabase.auth.getSession().finally(() => setAuthChecked(true));
+	}, []);
+
+	// Push tap → deep route. Payloads carry `data.screen='trade'` so
+	// tapping a trade notification opens the Tickle Trade modal on
+	// Barn. Only one listener; expo-notifications coalesces foreground
+	// + background taps into the same callback.
+	useEffect(() => {
+		const sub = Notifications.addNotificationResponseReceivedListener((res) => {
+			const data = (res.notification.request.content.data ?? {}) as {
+				screen?: string;
+			};
+			if (data.screen === "trade") {
+				// Land on Barn — TickleTradeModal will auto-refresh trades
+				// on focus + the user can see the new state.
+				router.replace("/");
+			}
+		});
+		return () => sub.remove();
 	}, []);
 
 	useEffect(() => {
