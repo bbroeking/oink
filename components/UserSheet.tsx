@@ -21,6 +21,12 @@ import { supabase } from "../utils/supabase";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker } from "./ui/Sticker";
 import {
+	alignmentDisplay,
+	alignmentEmblem,
+	alignmentLabel,
+	type AlignmentLabel,
+} from "@/utils/alignment";
+import {
 	FONTS,
 	KICKER_TEXT,
 	MODAL_BACKDROP_BG,
@@ -48,6 +54,11 @@ interface UserStats {
 	generous_tier_name: string | null;
 	greedy_tier_name: string | null;
 	friendship_status: FriendshipStatus;
+	alignment_score: number;
+	// Server returns this via alignment_label(score). We could derive
+	// it client-side but using the server value avoids any drift if
+	// thresholds ever change in only one place.
+	alignment_label: AlignmentLabel;
 }
 
 interface Props {
@@ -205,6 +216,11 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 										</View>
 									</View>
 
+									<AlignmentChip
+										score={stats.alignment_score}
+										label={stats.alignment_label}
+									/>
+
 									<View style={styles.statsRow}>
 										<StatCol
 											label="GIVEN"
@@ -238,6 +254,30 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 				</Pressable>
 			</Modal>
 		</>
+	);
+}
+
+// Compact alignment chip — emblem + label + numeric score. Sits
+// above the stats row in the sheet. Background tinted by alignment
+// (warm for angel, mossy for goblin, neutral for pilgrim).
+function AlignmentChip({
+	score,
+	label,
+}: {
+	score: number;
+	label: AlignmentLabel;
+}) {
+	const bg =
+		label === "angel" ? WHIMSY.sun :
+		label === "goblin" ? "#D5E4C9" :
+		WHIMSY.paper;
+	const formatted = score > 0 ? `+${score}` : `${score}`;
+	return (
+		<View style={[styles.alignChip, { backgroundColor: bg }]}>
+			<Text style={styles.alignEmblem}>{alignmentEmblem(label)}</Text>
+			<Text style={styles.alignLabel}>{alignmentDisplay(label)}</Text>
+			<Text style={styles.alignScore}>({formatted})</Text>
+		</View>
 	);
 }
 
@@ -346,6 +386,21 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},
+	alignChip: {
+		flexDirection: "row",
+		alignItems: "center",
+		alignSelf: "flex-start",
+		gap: 6,
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 999,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		marginBottom: 12,
+	},
+	alignEmblem: { fontSize: 16 },
+	alignLabel: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
+	alignScore: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
 	statsRow: {
 		flexDirection: "row",
 		alignItems: "stretch",

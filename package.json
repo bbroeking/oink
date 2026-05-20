@@ -15,7 +15,10 @@
 		"ship": "./scripts/ship-ios.sh"
 	},
 	"jest": {
-		"preset": "jest-expo"
+		"preset": "jest-expo",
+		"transformIgnorePatterns": [
+			"node_modules/(?!(?:\\.pnpm/)?((jest-)?react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry|sentry-expo|@supabase|@rneui|@rn-primitives))"
+		]
 	},
 	"dependencies": {
 		"@babel/runtime": "^7.26.0",
