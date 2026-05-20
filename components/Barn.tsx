@@ -24,8 +24,48 @@ import { Sticker, Tape } from "./ui/Sticker";
 import { WHIMSY, FONTS } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
+import { LuckyPigModal } from "./LuckyPigModal";
+import { LuckyTitleUnlockModal } from "./LuckyTitleUnlockModal";
+import { TickleTradeModal, useTickleTrades } from "./TickleTradeModal";
+import { ensurePushPermission } from "../utils/pushNotifications";
+import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 
-const tickleSound = require("../assets/sounds/tickle.mp3");
+// Lucky Pig tunables — client-rolled (D in the design grill). Trade-off
+// is documented in migrations/20260519020000_lucky_pig.sql.
+const LUCKY_TRIGGER_CHANCE      = 0.05;  // 5% steady-state on any non-lucky tickle
+const LUCKY_TRIGGER_CHANCE_BOOST = 0.12; // ~2.4× boost during the launch window
+const LUCKY_WINDOW_SIZE         = 10;    // tickles affected after a trigger
+const LUCKY_DOUBLE_CHANCE       = 0.30;  // 30% of window tickles double
+const LUCKY_TITLE_UNLOCK_CHANCE = 0.20;  // 20% of lucky triggers also drop a title
+const LUCKY_STORAGE_KEY         = "lucky_pig_state_v1";
+const LUCKY_EVER_KEY            = "lucky_pig_ever_v1";  // "1" once the user has ever triggered
+const LUCKY_PRE_FIRST_KEY       = "lucky_pig_pre_first_v1"; // tickle count BEFORE first lucky
+
+// Time-bounded launch boost: while now() < this ISO, every tickle uses
+// the boosted 12% chance instead of 5%. Set ~3 days out from this code
+// landing so users see the feature multiple times in the first week,
+// then it normalizes. Update if you ship another lucky-pig promotion.
+const LUCKY_BOOST_UNTIL_ISO     = "2026-05-22T00:00:00Z";
+
+// Per-user first-time guarantee: any user who has NEVER triggered a
+// lucky pig will be force-fired on their Nth tickle. Caps the worst
+// case of "I never see this feature." Constant should be small enough
+// that a new user hits it in one session.
+const LUCKY_GUARANTEED_BY_TICKLE_N = 8;
+
+type GrantedLuckyTitle = {
+	id: string;
+	name: string;
+	placement: "pre" | "post";
+	description: string | null;
+};
+
+// Four pig-voice oink variants; one is picked at random on each tickle
+// so the sound feels alive instead of looping the same clip.
+const oinkSound1 = require("../assets/sounds/oink_1.mp3");
+const oinkSound2 = require("../assets/sounds/oink_2.mp3");
+const oinkSound3 = require("../assets/sounds/oink_3.mp3");
+const oinkSound4 = require("../assets/sounds/oink_4.mp3");
 const deniedSound = require("../assets/sounds/denied.mp3");
 
 // Friendly, slightly competitive pig-voice lines for pass events. Picked
@@ -53,12 +93,13 @@ interface Stats {
 	itemCount: number;
 	cap: number;
 	nextRegenSeconds: number | null;
-	// Three independently-equipped slots: main (hat/scarf/mask/etc.),
-	// aura, and background. Each is null when nothing is equipped in
-	// that slot. See migration 20260514000000.
+	// Four independently-equipped slots: main (hat/scarf/mask/etc.),
+	// aura, background, and held. See migrations 20260514000000 +
+	// 20260519000000 (held).
 	activeHat: EquipSlot | null;
 	activeAura: EquipSlot | null;
 	activeBackground: EquipSlot | null;
+	activeHeld: EquipSlot | null;
 	currentTier: number;
 	totalTiers: number;
 }
@@ -162,13 +203,88 @@ export default function Barn() {
 		activeHat: null,
 		activeAura: null,
 		activeBackground: null,
+		activeHeld: null,
 		currentTier: 1,
 		totalTiers: 30,
 	});
 	const [statsLoaded, setStatsLoaded] = useState(false);
 	const [sixSevenTick, setSixSevenTick] = useState(0);
 	const sixSevenPromptedRef = useRef(false);
-	const player = useAudioPlayer(tickleSound);
+
+	// Lucky Pig state — number of tickles remaining in the active
+	// lucky window (0 means not lucky). Hydrated from AsyncStorage on
+	// mount so the window survives app reload + cold start.
+	const [luckyTicklesLeft, setLuckyTicklesLeft] = useState(0);
+	const [luckyModalOpen, setLuckyModalOpen] = useState(false);
+	// Title-unlock modal: shown after the burst dismisses if the
+	// 20% title sub-roll succeeded. Persists across the burst modal
+	// closing so the user gets two beats instead of one cluttered modal.
+	const [unlockedTitle, setUnlockedTitle] =
+		useState<GrantedLuckyTitle | null>(null);
+	// Whether the current lucky trigger ALSO rolled a title — captured
+	// at trigger time, consumed when the burst dismisses.
+	const pendingTitleRoll = useRef(false);
+
+	// Tickle Trade state — own user id, full trades list, modal open flag.
+	const [myUserId, setMyUserId] = useState<string | null>(null);
+	useEffect(() => {
+		supabase.auth.getUser().then(({ data }) => {
+			setMyUserId(data.user?.id ?? null);
+		});
+	}, []);
+	const { trades, actionableCount, reload: reloadTrades } = useTickleTrades(myUserId);
+	const [tradeModalOpen, setTradeModalOpen] = useState(false);
+
+	// Release-notes auto-show: fires once on Barn mount per app launch
+	// when the user hasn't seen the latest version yet.
+	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+	useEffect(() => {
+		shouldShowReleaseNotes().then((show) => {
+			if (show) setReleaseNotesOpen(true);
+		});
+	}, []);
+
+	// Lifetime onboarding state — has the user ever triggered a lucky
+	// pig? If not, count their tickles so we can force-fire on the Nth
+	// to guarantee they see the feature. Refs so reads inside
+	// handleIncrement see the latest value without rerender churn.
+	const everTriggeredRef = useRef(false);
+	const preFirstTicklesRef = useRef(0);
+	useEffect(() => {
+		AsyncStorage.getItem(LUCKY_STORAGE_KEY).then((raw) => {
+			const n = raw ? parseInt(raw, 10) : 0;
+			if (!Number.isNaN(n) && n > 0) setLuckyTicklesLeft(n);
+		});
+		AsyncStorage.getItem(LUCKY_EVER_KEY).then((raw) => {
+			everTriggeredRef.current = raw === "1";
+		});
+		AsyncStorage.getItem(LUCKY_PRE_FIRST_KEY).then((raw) => {
+			const n = raw ? parseInt(raw, 10) : 0;
+			if (!Number.isNaN(n) && n > 0) preFirstTicklesRef.current = n;
+		});
+	}, []);
+	const persistLucky = (n: number) => {
+		setLuckyTicklesLeft(n);
+		AsyncStorage.setItem(LUCKY_STORAGE_KEY, String(n)).catch(() => {});
+	};
+	const markFirstLucky = () => {
+		everTriggeredRef.current = true;
+		AsyncStorage.setItem(LUCKY_EVER_KEY, "1").catch(() => {});
+	};
+	const bumpPreFirstTickles = () => {
+		preFirstTicklesRef.current += 1;
+		AsyncStorage.setItem(
+			LUCKY_PRE_FIRST_KEY,
+			String(preFirstTicklesRef.current),
+		).catch(() => {});
+	};
+	// useAudioPlayer is a hook, so each variant gets its own top-level
+	// call. Bundled into an array below for random-pick playback.
+	const oinkPlayer1 = useAudioPlayer(oinkSound1);
+	const oinkPlayer2 = useAudioPlayer(oinkSound2);
+	const oinkPlayer3 = useAudioPlayer(oinkSound3);
+	const oinkPlayer4 = useAudioPlayer(oinkSound4);
+	const oinkPlayers = [oinkPlayer1, oinkPlayer2, oinkPlayer3, oinkPlayer4];
 	const deniedPlayer = useAudioPlayer(deniedSound);
 	const [toast, setToast] = useState<{
 		title: string;
@@ -308,6 +424,8 @@ export default function Barn() {
 					active_aura: SlotBlob;
 					active_background_id: string | null;
 					active_background: SlotBlob;
+					active_held_id?: string | null;
+					active_held?: SlotBlob;
 					balance: number;
 					cap: number;
 					next_regen_seconds: number | null;
@@ -331,6 +449,7 @@ export default function Barn() {
 					activeHat: toSlot(r.active_hat_id, r.active_hat),
 					activeAura: toSlot(r.active_aura_id, r.active_aura),
 					activeBackground: toSlot(r.active_background_id, r.active_background),
+					activeHeld: toSlot(r.active_held_id ?? null, r.active_held ?? null),
 					currentTier: r.current_tier,
 					totalTiers: r.total_tiers,
 				});
@@ -348,7 +467,7 @@ export default function Barn() {
 				supabase
 					.from("profiles")
 					.select(
-						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id"
+						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id"
 					)
 					.eq("id", user.id)
 					.single(),
@@ -373,12 +492,14 @@ export default function Barn() {
 				active_hat_id?: string | null;
 				active_aura_id?: string | null;
 				active_background_id?: string | null;
+				active_held_id?: string | null;
 			} | null;
 
 			const slotIds: (string | null)[] = [
 				prof?.active_hat_id ?? null,
 				prof?.active_aura_id ?? null,
 				prof?.active_background_id ?? null,
+				prof?.active_held_id ?? null,
 			];
 			const idsToLookUp = slotIds.filter((x): x is string => !!x);
 			const hatMetaById = new Map<
@@ -412,6 +533,7 @@ export default function Barn() {
 				activeHat: toSlot(prof?.active_hat_id ?? null),
 				activeAura: toSlot(prof?.active_aura_id ?? null),
 				activeBackground: toSlot(prof?.active_background_id ?? null),
+				activeHeld: toSlot(prof?.active_held_id ?? null),
 				currentTier: season?.current_tier ?? 1,
 				totalTiers: season?.season?.total_tiers ?? 30,
 			});
@@ -444,9 +566,53 @@ export default function Barn() {
 		}
 
 		try {
-			player.seekTo(0);
-			player.play();
+			const oink = oinkPlayers[Math.floor(Math.random() * oinkPlayers.length)];
+			oink.seekTo(0);
+			oink.play();
 		} catch {}
+
+		// ── Lucky Pig roll ────────────────────────────────────────
+		// Trigger probability:
+		//   - First-time user (no lucky ever): GUARANTEE on the Nth tickle
+		//     so they see the feature regardless of luck. Until then,
+		//     normal probability.
+		//   - Within launch boost window: 12% chance
+		//   - After boost ends: 5% steady-state
+		// Already in a lucky window: roll the double die instead.
+		let bonusEarned = false;
+		if (luckyTicklesLeft <= 0) {
+			const isFirstTimeUser = !everTriggeredRef.current;
+			const withinBoost =
+				Date.now() < new Date(LUCKY_BOOST_UNTIL_ISO).getTime();
+			let triggerNow = false;
+			if (isFirstTimeUser) {
+				bumpPreFirstTickles();
+				if (preFirstTicklesRef.current >= LUCKY_GUARANTEED_BY_TICKLE_N) {
+					triggerNow = true;
+				}
+			}
+			if (!triggerNow) {
+				const chance = withinBoost
+					? LUCKY_TRIGGER_CHANCE_BOOST
+					: LUCKY_TRIGGER_CHANCE;
+				if (Math.random() < chance) triggerNow = true;
+			}
+			if (triggerNow) {
+				if (isFirstTimeUser) markFirstLucky();
+				persistLucky(LUCKY_WINDOW_SIZE);
+				setLuckyModalOpen(true);
+				// Roll the title sub-die NOW so the result is deterministic
+				// for this trigger; we just defer the RPC + modal display
+				// until the burst dismisses to keep the beats separated.
+				pendingTitleRoll.current =
+					Math.random() < LUCKY_TITLE_UNLOCK_CHANCE;
+			}
+		} else {
+			if (Math.random() < LUCKY_DOUBLE_CHANCE) {
+				bonusEarned = true;
+			}
+			persistLucky(Math.max(0, luckyTicklesLeft - 1));
+		}
 
 		try {
 			const {
@@ -459,6 +625,14 @@ export default function Barn() {
 			});
 
 			if (error) throw error;
+
+			// If this tickle landed inside the lucky window AND rolled
+			// a double, grant the +1 bonus via the dedicated RPC so we
+			// don't burn a second tickle from the bank.
+			if (bonusEarned) {
+				await supabase.rpc("lucky_bonus_tickle");
+				showToast("Lucky double! +2", "Bonus from your lucky pig.");
+			}
 			fetchStats();
 			// Also re-check pass events so a friend who just got passed
 			// hears about it on their next tap (and so any incoming pass
@@ -471,16 +645,16 @@ export default function Barn() {
 
 	const handleAvailableTap = () => {
 		if (stats.itemCount >= stats.cap) {
-			Alert.alert("Tickle bank full", `You're at the ${stats.cap} max.`);
+			showToast("Tickle bank full", `You're at the ${stats.cap} max.`);
 			return;
 		}
 		if (stats.nextRegenSeconds == null) {
-			Alert.alert("Tickle bank", `${stats.itemCount} / ${stats.cap}`);
+			showToast("Tickle bank", `${stats.itemCount} / ${stats.cap}`);
 			return;
 		}
-		Alert.alert(
+		showToast(
 			"Next tickle",
-			`In ${formatCountdown(stats.nextRegenSeconds)}.\nYou regenerate +1 every hour, up to ${stats.cap}.`
+			`In ${formatCountdown(stats.nextRegenSeconds)} · +1 every hour, max ${stats.cap}`
 		);
 	};
 
@@ -508,6 +682,19 @@ export default function Barn() {
 					/>
 				</View>
 
+				{/* Active lucky-pig window indicator. Sits below the
+				    stat cards + above the pig — never collides with the
+				    dev buttons (top-right absolute) or the cards. */}
+				{luckyTicklesLeft > 0 && (
+					<View style={styles.luckyBadgeRow}>
+						<View style={styles.luckyBadge}>
+							<Text style={styles.luckyBadgeText}>
+								✦ Lucky pig · {luckyTicklesLeft} left
+							</Text>
+						</View>
+					</View>
+				)}
+
 				<View style={styles.mainSection}>
 					<View style={styles.swipeContainer}>
 						<SwipeElement
@@ -517,6 +704,7 @@ export default function Barn() {
 							equipped={stats.activeHat}
 							equippedAura={stats.activeAura}
 							equippedBackground={stats.activeBackground}
+							equippedHeld={stats.activeHeld}
 						/>
 					</View>
 				</View>
@@ -533,6 +721,24 @@ export default function Barn() {
 						style={styles.devAlign}
 					>
 						<Text style={styles.devAlignText}>⊕ align</Text>
+					</Pressable>
+				)}
+
+				{/* Dev-only force-trigger for the Lucky Pig moment.
+				    Forces the title sub-roll so the LuckyTitleUnlockModal
+				    fires after the burst dismisses — useful for testing
+				    animations, sounds, and the title-grant flow without
+				    needing to tickle 20× hoping for a 5% hit. */}
+				{__DEV__ && (
+					<Pressable
+						onPress={() => {
+							persistLucky(LUCKY_WINDOW_SIZE);
+							pendingTitleRoll.current = true;
+							setLuckyModalOpen(true);
+						}}
+						style={styles.devLucky}
+					>
+						<Text style={styles.devLuckyText}>⊕ lucky</Text>
 					</Pressable>
 				)}
 
@@ -565,7 +771,110 @@ export default function Barn() {
 						</Pressable>
 					</Animated.View>
 				)}
+
 			</SafeAreaView>
+
+			<LuckyPigModal
+				visible={luckyModalOpen}
+				windowSize={LUCKY_WINDOW_SIZE}
+				doublePercent={Math.round(LUCKY_DOUBLE_CHANCE * 100)}
+				onDismiss={async () => {
+					setLuckyModalOpen(false);
+					// Burst dismissed — if this trigger also rolled a
+					// title unlock, hit the RPC and surface the second
+					// modal once the burst is fully torn down.
+					if (!pendingTitleRoll.current) return;
+					pendingTitleRoll.current = false;
+					try {
+						const { data, error } = await supabase.rpc(
+							"unlock_random_lucky_title"
+						);
+						const r = data as {
+							ok?: boolean;
+							granted?: GrantedLuckyTitle | null;
+						} | null;
+						if (error) {
+							showToast(
+								"Couldn't unlock",
+								"Title grant failed — try again next time.",
+							);
+							return;
+						}
+						if (!r?.granted) {
+							// All 10 lucky titles already owned.
+							showToast(
+								"Lucky title sweep!",
+								"You already own every lucky-drop title.",
+							);
+							return;
+						}
+						// Brief beat so the burst dismiss animation finishes
+						// before the title modal pops in.
+						setTimeout(() => setUnlockedTitle(r.granted!), 280);
+					} catch {
+						showToast(
+							"Couldn't unlock",
+							"Title grant failed — try again next time.",
+						);
+					}
+				}}
+			/>
+
+			<LuckyTitleUnlockModal
+				title={unlockedTitle}
+				onDismiss={() => setUnlockedTitle(null)}
+				onEquip={async (id) => {
+					try {
+						await supabase.rpc("equip_title", { target_title_id: id });
+						showToast("Title equipped", "Visible on your account + leaderboard.");
+					} catch {}
+					setUnlockedTitle(null);
+				}}
+			/>
+
+			{/* Bottom-right Tickle Trade pill. Always rendered; pulses
+			    + shows a count badge when there's actionable trade
+			    activity (incoming requests to fulfill or repayments
+			    you owe). Tapping opens the trade modal. */}
+			{myUserId && (
+				<Pressable
+					onPress={() => {
+						reloadTrades();
+						setTradeModalOpen(true);
+						// User explicitly touched the trade surface —
+						// prompt for push if we don't have it yet.
+						ensurePushPermission();
+					}}
+					style={styles.tradePill}
+				>
+					<Text style={styles.tradePillEmoji}>🤝</Text>
+					{actionableCount > 0 && (
+						<View style={styles.tradePillBadge}>
+							<Text style={styles.tradePillBadgeText}>
+								{actionableCount}
+							</Text>
+						</View>
+					)}
+				</Pressable>
+			)}
+
+			{myUserId && (
+				<TickleTradeModal
+					visible={tradeModalOpen}
+					onClose={() => setTradeModalOpen(false)}
+					userId={myUserId}
+					trades={trades}
+					onChanged={() => {
+						reloadTrades();
+						fetchStats();
+					}}
+				/>
+			)}
+
+			<ReleaseNotesModal
+				visible={releaseNotesOpen}
+				onClose={() => setReleaseNotesOpen(false)}
+			/>
 		</PageBackground>
 	);
 }
@@ -647,9 +956,11 @@ const styles = StyleSheet.create({
 	swipeContainer: {
 		width: "100%",
 		alignItems: "center",
-		// Push the pig past the bottom edge so its feet are clipped. ~11% of
-		// screen height keeps the framing consistent across iPhone SE → Pro Max.
-		marginBottom: -Math.round(SCREEN_HEIGHT * 0.11),
+		// Slight downward push so the feet just kiss the bottom — keeps
+		// the framing consistent across iPhone SE → Pro Max, with the
+		// pig sitting noticeably higher than the original 11%/7% clip
+		// values so all 4 corners + the tickle CTAs above breathe.
+		marginBottom: -Math.round(SCREEN_HEIGHT * 0.03),
 	},
 	signWrap: {
 		alignItems: "center",
@@ -732,6 +1043,24 @@ devAlign: {
 		borderColor: WHIMSY.sun,
 		zIndex: 50,
 	},
+	devLucky: {
+		position: "absolute",
+		top: Platform.OS === "ios" ? 60 : 24,
+		right: 78,
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+		borderRadius: 14,
+		backgroundColor: "rgba(0,0,0,0.7)",
+		borderWidth: 1.5,
+		borderColor: "#FFB000",
+		zIndex: 50,
+	},
+	devLuckyText: {
+		color: "#FFB000",
+		fontFamily: FONTS.whimsy,
+		fontSize: 12,
+		letterSpacing: 0.5,
+	},
 	devAlignText: {
 		color: WHIMSY.sun,
 		fontFamily: FONTS.bodyExtra,
@@ -780,5 +1109,63 @@ devAlign: {
 		fontSize: 13,
 		color: WHIMSY.mute,
 		marginTop: 1,
+	},
+	luckyBadgeRow: {
+		alignItems: "center",
+		marginTop: 8,
+		marginBottom: 4,
+	},
+	luckyBadge: {
+		backgroundColor: WHIMSY.sun,
+		borderRadius: 999,
+		paddingHorizontal: 14,
+		paddingVertical: 6,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+	},
+	luckyBadgeText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 13,
+		color: WHIMSY.ink,
+		letterSpacing: 0.4,
+	},
+	tradePill: {
+		position: "absolute",
+		right: 16,
+		bottom: Platform.OS === "ios" ? 96 : 80,
+		width: 56,
+		height: 56,
+		borderRadius: 28,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		zIndex: 60,
+		shadowColor: "#000",
+		shadowOffset: { width: 0, height: 3 },
+		shadowOpacity: 0.18,
+		shadowRadius: 6,
+		elevation: 5,
+	},
+	tradePillEmoji: { fontSize: 26 },
+	tradePillBadge: {
+		position: "absolute",
+		top: -4,
+		right: -4,
+		minWidth: 22,
+		height: 22,
+		paddingHorizontal: 5,
+		borderRadius: 11,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: WHIMSY.lilacDeep ?? WHIMSY.lilac,
+		borderWidth: 2,
+		borderColor: WHIMSY.paper,
+	},
+	tradePillBadgeText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 12,
+		color: WHIMSY.ink,
 	},
 });
