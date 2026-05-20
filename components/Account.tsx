@@ -16,7 +16,7 @@ import { router } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import Friends from "./Friends";
-import { TitlesSection } from "./TitlesSection";
+import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { Card, Button } from "./ui";
 import { Icon } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
@@ -34,53 +34,100 @@ import {
 
 export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
+	const [discriminator, setDiscriminator] = useState<string | null>(null);
+	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+	const [sounder, setSounder] = useState<{
+		engaged_count: number;
+		signup_count: number;
+		rank: number | null;
+		next_threshold: number | null;
+		next_title: string | null;
+	} | null>(null);
+	useFocusEffect(
+		useCallback(() => {
+			supabase.rpc("my_sounder").then(({ data }) => {
+				const r = data as any;
+				if (r?.ok) setSounder(r);
+			});
+		}, [])
+	);
 	const [ticklesEarned, setTicklesEarned] = useState<number>(0);
 	const [activeHat, setActiveHat] = useState<string | null>(null);
 	const [isVip, setIsVip] = useState<boolean>(false);
 	const [busy, setBusy] = useState<boolean>(false);
-	const [activeTitleId, setActiveTitleId] = useState<string | null>(null);
-
+	// Show the user's currently equipped title alongside their code so
+	// they can confirm at-a-glance that their title is wired up. Manage
+	// (equip/unequip) lives in the Wardrobe's TitlesSection.
+	const [activeTitle, setActiveTitle] = useState<{
+		name: string;
+		placement: "pre" | "post";
+	} | null>(null);
 	useFocusEffect(
 		useCallback(() => {
-			// active_title_id is added by the 20260511 migration; if that
-			// hasn't been pushed yet the column doesn't exist and the joined
-			// select errors. Fall back to the no-titles select on failure so
-			// Account still loads.
+			// active_title joins through the FK on profiles.active_title_id.
+			// If the titles migration isn't deployed yet the join 400s; fall
+			// back to the no-title select so Account still loads.
 			supabase
 				.from("profiles")
-				.select("username, tickles_earned, active_hat_id, is_vip, active_title_id")
+				.select(
+					"username, discriminator, tickles_earned, active_hat_id, is_vip, active_title:titles!profiles_active_title_id_fkey(name, placement)"
+				)
 				.eq("id", session.user.id)
 				.single()
 				.then(async ({ data, error }) => {
 					let row: {
 						username?: string | null;
+						discriminator?: string | null;
 						tickles_earned?: number;
 						active_hat_id?: string | null;
 						is_vip?: boolean;
-						active_title_id?: string | null;
-					} | null = data;
+						active_title?:
+							| { name: string; placement: "pre" | "post" }
+							| { name: string; placement: "pre" | "post" }[]
+							| null;
+					} | null = data as any;
 					if (error) {
 						const fallback = await supabase
 							.from("profiles")
-							.select("username, tickles_earned, active_hat_id, is_vip")
+							.select("username, discriminator, tickles_earned, active_hat_id, is_vip")
 							.eq("id", session.user.id)
 							.single();
 						row = fallback.data;
 					}
 					setUsername(row?.username ?? null);
+					setDiscriminator(row?.discriminator ?? null);
 					setTicklesEarned(row?.tickles_earned ?? 0);
 					setActiveHat(row?.active_hat_id ?? null);
 					setIsVip(row?.is_vip ?? false);
-					setActiveTitleId(row?.active_title_id ?? null);
+					const t = Array.isArray(row?.active_title)
+						? row?.active_title[0]
+						: row?.active_title;
+					setActiveTitle(t ?? null);
 				});
 		}, [session.user.id])
 	);
 
+	const handle = username
+		? discriminator
+			? `${username}#${discriminator}`
+			: username
+		: null;
+
 	const handleShare = async () => {
-		if (!username) return;
+		if (!handle || !username) return;
+		// Smart link: github.io page tries to open the app via custom
+		// scheme, falls back to TestFlight when the app isn't installed.
+		// Discriminator-aware URLs use `-` instead of `#` (which is the
+		// URL fragment delimiter and can't ride in a query value).
+		const code = discriminator ? `${username}-${discriminator}` : username;
+		// `h` = friend-add target (you), `ref` = referrer for The Sounder
+		// (also you on a self-share link, so the new user attributes
+		// the install + the friend-add to the same person).
+		const url = `https://bbroeking.github.io/oink/invite.html?h=${encodeURIComponent(code)}&ref=${encodeURIComponent(code)}`;
 		try {
 			await Share.share({
-				message: `Add me on Tickle the Pig — my code is ${username}`,
+				message: `Add me on Tickle the Pig — I'm ${handle}\n\n${url}`,
+				url,
 			});
 		} catch {}
 	};
@@ -182,7 +229,16 @@ export function Account({ session }: { session: Session }) {
 									</View>
 									<View style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
 										<Text style={styles.codeLabel}>your code</Text>
-										<Text style={styles.codeValue}>{username}</Text>
+										<Text style={styles.codeValue}>
+											{activeTitle
+												? activeTitle.placement === "pre"
+													? `${activeTitle.name} ${username}`
+													: `${username} ${activeTitle.name}`
+												: username}
+										</Text>
+										{!!handle && discriminator && (
+											<Text style={styles.codeHandle}>{handle}</Text>
+										)}
 										<View style={styles.codeStats}>
 											<Text style={styles.codeStatsHeart}>♥</Text>
 											<Text style={styles.codeStatsText}>
@@ -198,6 +254,69 @@ export function Account({ session }: { session: Session }) {
 							</Sticker>
 						</View>
 					)}
+
+					{/* Achievements entry — single-line tappable row that
+					    routes to the full grid. Sits above Sounder so it's
+					    discoverable as the primary "see your progress" surface. */}
+					<Pressable
+						onPress={() => router.push("/achievements" as any)}
+						style={achievementStyles.row}
+					>
+						<View style={achievementStyles.iconBubble}>
+							<Text style={achievementStyles.iconText}>🏆</Text>
+						</View>
+						<View style={{ flex: 1 }}>
+							<Text style={achievementStyles.label}>Achievements</Text>
+							<Text style={achievementStyles.sub}>
+								Track your generous + greedy ladders.
+							</Text>
+						</View>
+						<Text style={achievementStyles.chev}>›</Text>
+					</Pressable>
+
+					{/* Social section — sounder + friends. Placed high in
+					    the scroll so they're discoverable without paging
+					    past Pro / Restore. */}
+					{sounder && (
+						<Sticker color="paper" rotate={-0.6} radius={14} style={sounderStyles.card}>
+							<View style={sounderStyles.headerRow}>
+								<Text style={sounderStyles.kicker}>★ your sounder</Text>
+								<Pressable onPress={() => router.push("/sounder")}>
+									<Text style={sounderStyles.link}>leaderboard →</Text>
+								</Pressable>
+							</View>
+							<View style={sounderStyles.countRow}>
+								<Text style={sounderStyles.bigCount}>
+									{sounder.engaged_count}
+								</Text>
+								<View style={{ flex: 1, marginLeft: 12 }}>
+									<Text style={sounderStyles.countLabel}>
+										{sounder.engaged_count === 1 ? "pig in your sounder" : "pigs in your sounder"}
+									</Text>
+									{!!sounder.rank && (
+										<Text style={sounderStyles.rankLine}>
+											rank #{sounder.rank}
+										</Text>
+									)}
+								</View>
+							</View>
+							{sounder.next_title && (
+								<Text style={sounderStyles.progressLine}>
+									{sounder.next_threshold! - sounder.engaged_count} more to unlock{" "}
+									<Text style={sounderStyles.nextTitle}>{sounder.next_title}</Text>
+								</Text>
+							)}
+							{!sounder.next_title && (
+								<Text style={sounderStyles.progressLine}>
+									You've unlocked every sounder title. Maintain the herd!
+								</Text>
+							)}
+						</Sticker>
+					)}
+
+					<View style={{ marginTop: 8 }}>
+						<Friends userId={session.user.id} />
+					</View>
 
 					{/* Pro card — torn ticket stub */}
 					{IAP_ENABLED && (
@@ -244,15 +363,12 @@ export function Account({ session }: { session: Session }) {
 						</Pressable>
 					)}
 
-					<TitlesSection
-						userId={session.user.id}
-						activeTitleId={activeTitleId}
-						onChange={setActiveTitleId}
-					/>
-
-					<View style={{ marginTop: 8 }}>
-						<Friends userId={session.user.id} />
-					</View>
+					<Pressable
+						onPress={() => setReleaseNotesOpen(true)}
+						style={styles.restoreLink}
+					>
+						<Text style={styles.restoreLinkText}>What's new</Text>
+					</Pressable>
 
 					{__DEV__ && (
 						<Pressable
@@ -277,6 +393,11 @@ export function Account({ session }: { session: Session }) {
 					</Pressable>
 				</ScrollView>
 			</SafeAreaView>
+
+			<ReleaseNotesModal
+				visible={releaseNotesOpen}
+				onClose={() => setReleaseNotesOpen(false)}
+			/>
 		</View>
 	);
 }
@@ -335,6 +456,13 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		color: WHIMSY.ink,
 		lineHeight: 26,
+		marginTop: 2,
+	},
+	codeHandle: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		letterSpacing: 0.4,
 		marginTop: 2,
 	},
 	codeStats: {
@@ -454,5 +582,103 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.hand,
 		color: WHIMSY.mute,
 		letterSpacing: 0.4,
+	},
+});
+
+const sounderStyles = StyleSheet.create({
+	card: {
+		paddingHorizontal: 16,
+		paddingVertical: 14,
+		marginTop: 16,
+	},
+	headerRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		marginBottom: 8,
+	},
+	kicker: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		letterSpacing: 1.4,
+		textTransform: "uppercase",
+	},
+	link: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		textDecorationLine: "underline",
+	},
+	countRow: {
+		flexDirection: "row",
+		alignItems: "center",
+	},
+	bigCount: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 44,
+		color: WHIMSY.ink,
+		minWidth: 60,
+		textAlign: "center",
+	},
+	countLabel: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.ink,
+	},
+	rankLine: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		marginTop: 2,
+	},
+	progressLine: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.ink,
+		marginTop: 10,
+	},
+	nextTitle: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 13,
+		color: WHIMSY.accent,
+	},
+});
+
+const achievementStyles = StyleSheet.create({
+	row: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+		marginTop: 16,
+		paddingHorizontal: 14,
+		paddingVertical: 14,
+		backgroundColor: WHIMSY.paper,
+		borderRadius: 14,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+	},
+	iconBubble: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+	},
+	iconText: { fontSize: 22 },
+	label: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
+	sub: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		marginTop: 1,
+	},
+	chev: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 28,
+		color: WHIMSY.mute,
 	},
 });
