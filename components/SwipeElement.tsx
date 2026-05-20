@@ -16,6 +16,7 @@ import {
 	HAT_IMAGES,
 	HAT_OVERLAYS,
 	CATEGORY_OVERLAYS,
+	CATEGORY_PERANIM_SHIFTS,
 	DEFAULT_HAT_OVERLAY,
 	Z_BEHIND_PIG,
 	frameDelta,
@@ -105,8 +106,11 @@ interface SwipeElementProps {
 	// mask / etc.) and is rendered IN FRONT of the pig. Aura and
 	// background each have their own slot and render BEHIND the pig:
 	// background deepest, then aura, then pig, then equipped on top.
+	// equippedHeld is a separate slot anchored to the right hand so a
+	// held item can co-exist with a hat / glasses / etc.
 	equippedAura?: EquippedItem | null;
 	equippedBackground?: EquippedItem | null;
+	equippedHeld?: EquippedItem | null;
 	canTickle?: boolean;
 	playSixSeven?: number; // increment to re-trigger
 }
@@ -119,6 +123,7 @@ export default function SwipeElement({
 	equipped,
 	equippedAura,
 	equippedBackground,
+	equippedHeld,
 	canTickle = true,
 	playSixSeven,
 }: SwipeElementProps) {
@@ -333,13 +338,25 @@ export default function SwipeElement({
 					category,
 					baseOverlay?.anchor,
 				);
+		// Category-level per-animation shift (e.g. all glasses droop
+		// 12px during sad). Applied AFTER the anchor delta so it stacks
+		// — useful for blanket nudges that don't fit the anchor model.
+		const catShift =
+			(category &&
+				CATEGORY_PERANIM_SHIFTS[category]?.[
+					pigAnim as PigAnimationKey
+				]) ||
+			null;
 		const overlay = baseOverlay
 			? isFullCanvas
 				? baseOverlay
 				: {
 						...baseOverlay,
-						left: baseOverlay.left + delta.dx,
-						bottom: baseOverlay.bottom - delta.dy,
+						left: baseOverlay.left + delta.dx + (catShift?.dx ?? 0),
+						bottom:
+							baseOverlay.bottom -
+							delta.dy -
+							(catShift?.dy ?? 0),
 					}
 			: null;
 		return { itemId, category, emoji, imageSrc, prebaked, overlay };
@@ -353,19 +370,13 @@ export default function SwipeElement({
 	const main = resolveSlot(mainEquipped);
 	const auraSlot = resolveSlot(equippedAura);
 	const bgSlot = resolveSlot(equippedBackground);
+	const heldSlot = resolveSlot(equippedHeld);
 
-	// Accessory items are hand-placed against the idle pose. Reactions
-	// (jump/happy/wave/etc.) move the pig's anatomy enough that the
-	// static overlay drifts off-anchor — and for items meant to wrap
-	// around the body (scarves, necklaces, capes) the back half is
-	// missing, so a sudden pose change reveals the cut edge. Hide
-	// accessory overlays during reactions; backgrounds + auras don't
-	// anchor to anatomy so they keep rendering.
-	const SHOW_OVERLAY_DURING = pigAnim === "idle" || pigAnim === "sad";
-	const hideAccessory =
-		!SHOW_OVERLAY_DURING &&
-		main?.category !== "background" &&
-		main?.category !== "aura";
+	// Accessories now follow the pig across every animation via the
+	// per-frame anchor data in PIG_FRAME_ANCHORS. Backgrounds + auras
+	// are full-canvas and don't need anchoring; everything else lets
+	// frameDelta do the work.
+	const hideAccessory = false;
 
 	const rotateDeg = rotate.interpolate({
 		inputRange: [-1, 1],
@@ -378,7 +389,22 @@ export default function SwipeElement({
 				<Animated.View
 					style={[
 						styles.card,
-						{ transform: [{ scale }, { rotate: rotateDeg }] },
+						{
+							transform: [
+								// surprise + wave read better when the pig is a touch
+								// larger — surprise is a face-camera "!" reaction and
+								// wave puts the pig on its hind legs, both benefit
+								// from a small upscale. Multiplied into the
+								// press-scale animation so the tap squish still plays.
+								{
+									scale: Animated.multiply(
+										scale,
+										pigAnim === "surprise" || pigAnim === "wave" ? 1.18 : 1
+									),
+								},
+								{ rotate: rotateDeg },
+							],
+						},
 					]}
 				>
 					{/* Z-order (back to front):
@@ -437,6 +463,17 @@ export default function SwipeElement({
 										imageSrc={main?.imageSrc ?? null}
 										emoji={main?.emoji ?? null}
 										zIndex={10}
+									/>
+								)}
+								{/* Held slot — independent of main, anchored to
+								    the right hand. Lets the user hold a sword
+								    and wear a cowboy hat at the same time. */}
+								{heldSlot?.overlay && !hideAccessory && (
+									<ItemOverlay
+										overlay={heldSlot.overlay}
+										imageSrc={heldSlot.imageSrc}
+										emoji={heldSlot.emoji}
+										zIndex={11}
 									/>
 								)}
 							</>

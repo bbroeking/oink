@@ -49,8 +49,17 @@ export type PigAnimationKey =
 
 // Named pig anatomy points. Adding a new one is cheap — define it in
 // PIG_FRAME_ANCHORS for each frame, then any item can attach to it.
+//
+// `eyes` and `feet` are VIRTUAL anchors: they're not stored per-frame,
+// they're computed at lookup time as the midpoint of the corresponding
+// L/R pair. Items that target `eyes` (default glasses anchor) get the
+// midpoint automatically; items needing single-side precision (monocle,
+// single-leg cuffs) target `eye_r` / `leg_l` etc. directly via
+// HatOverlay.anchor.
 export type AnchorName =
 	| "head"
+	| "eye_l"
+	| "eye_r"
 	| "eyes"
 	| "snout"
 	| "mouth"
@@ -58,6 +67,8 @@ export type AnchorName =
 	| "body"
 	| "hand_l"
 	| "hand_r"
+	| "leg_l"
+	| "leg_r"
 	| "feet";
 
 export interface Anchor {

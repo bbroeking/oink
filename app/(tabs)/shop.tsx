@@ -14,10 +14,12 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
+import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { Button } from "../../components/ui";
 import { Icon } from "../../components/ui/Icon";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
+import { TitlesSection } from "../../components/TitlesSection";
 import {
 	HAT_IMAGES,
 	HatRow,
@@ -759,6 +761,139 @@ const compactStyles = StyleSheet.create({
 	},
 });
 
+// Single-row title card for the Titles shop tab. Text-based (no
+// image) since titles attach to the user's display name. Rarity
+// drives the border color, owned / not-affordable adjust the CTA.
+function ShopTitleRow({
+	title,
+	canAfford,
+	busy,
+	onBuy,
+}: {
+	title: {
+		id: string;
+		name: string;
+		placement: "pre" | "post";
+		description: string | null;
+		cost: number;
+		rarity: string;
+		owned: boolean;
+	};
+	canAfford: boolean;
+	busy: boolean;
+	onBuy: () => void;
+}) {
+	const rarityColor = RARITY_COLORS[title.rarity] ?? WHIMSY.ink;
+	return (
+		<View
+			style={[
+				shopTitleStyles.row,
+				{ borderLeftColor: rarityColor },
+			]}
+		>
+			<View style={shopTitleStyles.left}>
+				<Text style={shopTitleStyles.kicker}>
+					{title.placement === "post" ? "after your name" : "before your name"}
+				</Text>
+				<Text style={shopTitleStyles.name}>{title.name}</Text>
+				{title.description && (
+					<Text style={shopTitleStyles.desc}>{title.description}</Text>
+				)}
+			</View>
+			<View style={shopTitleStyles.right}>
+				{title.owned ? (
+					<View style={shopTitleStyles.ownedTag}>
+						<Text style={shopTitleStyles.ownedTagText}>Owned</Text>
+					</View>
+				) : (
+					<Pressable
+						onPress={onBuy}
+						disabled={busy || !canAfford}
+						style={({ pressed }) => [
+							shopTitleStyles.buyBtn,
+							!canAfford && shopTitleStyles.buyBtnDisabled,
+							pressed && { opacity: 0.7 },
+						]}
+					>
+						<SnoutCoin size={16} />
+						<Text style={shopTitleStyles.buyBtnText}>
+							{busy ? "…" : title.cost.toLocaleString()}
+						</Text>
+					</Pressable>
+				)}
+			</View>
+		</View>
+	);
+}
+
+const shopTitleStyles = StyleSheet.create({
+	row: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+		paddingVertical: 14,
+		paddingHorizontal: 14,
+		backgroundColor: "white",
+		borderRadius: 12,
+		borderLeftWidth: 5,
+		marginBottom: 10,
+		...SHADOWS.card,
+	},
+	left: { flex: 1, minWidth: 0 },
+	right: { marginLeft: 8 },
+	kicker: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		color: WHIMSY.mute,
+		letterSpacing: 1.4,
+		textTransform: "uppercase",
+		marginBottom: 4,
+	},
+	name: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.ink,
+		lineHeight: 24,
+	},
+	desc: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		marginTop: 4,
+	},
+	buyBtn: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		borderRadius: 10,
+		backgroundColor: WHIMSY.lilac,
+	},
+	buyBtnDisabled: {
+		opacity: 0.45,
+	},
+	buyBtnText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		color: WHIMSY.ink,
+	},
+	ownedTag: {
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 10,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1,
+		borderColor: COLORS.border,
+	},
+	ownedTagText: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		letterSpacing: 0.8,
+	},
+});
+
 export default function ShopScreen() {
 	const [daily, setDaily] = useState<HatRow[]>([]);
 	const [allItems, setAllItems] = useState<HatRow[]>([]);
@@ -771,18 +906,54 @@ export default function ShopScreen() {
 		hat: string | null;
 		aura: string | null;
 		background: string | null;
-	}>({ hat: null, aura: null, background: null });
+		held: string | null;
+	}>({ hat: null, aura: null, background: null, held: null });
 	const isEquipped = (id: string, category: string | null | undefined) => {
 		if (category === "aura") return activeIds.aura === id;
 		if (category === "background") return activeIds.background === id;
+		if (category === "held") return activeIds.held === id;
 		return activeIds.hat === id;
 	};
 	const [counter, setCounter] = useState<number>(0);
 	const [busyId, setBusyId] = useState<string | null>(null);
 	const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
 	const [resetsIn, setResetsIn] = useState<number>(0);
-	const [view, setView] = useState<"daily" | "browse" | "wardrobe">("daily");
+	const [view, setView] = useState<"daily" | "browse" | "titles" | "wardrobe">("daily");
+	// Title catalog for the new Titles tab. Refreshed alongside the
+	// shop fetch + after any buy_title RPC so the owned/cost rows stay
+	// in sync with the user's balance.
+	type ShopTitle = {
+		id: string;
+		name: string;
+		placement: "pre" | "post";
+		description: string | null;
+		cost: number;
+		rarity: string;
+		owned: boolean;
+	};
+	const [titles, setTitles] = useState<ShopTitle[]>([]);
+	const [titleBusyId, setTitleBusyId] = useState<string | null>(null);
 	const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+
+	// Deep-link target: navigation from elsewhere (e.g. the battle-pass
+	// reward dialog) can pass `?view=wardrobe` to jump straight there.
+	// We consume the param once on focus, then clear it from the URL so
+	// switching tabs/back doesn't keep re-snapping the view.
+	const params = useLocalSearchParams<{ view?: string }>();
+	useEffect(() => {
+		if (
+			params.view === "wardrobe" || params.view === "browse" ||
+			params.view === "daily" || params.view === "titles"
+		) {
+			setView(params.view);
+			router.setParams({ view: undefined });
+		}
+	}, [params.view]);
+	// Titles UI lives in the wardrobe view. activeTitleId is sourced from
+	// profiles.active_title_id (added in the 20260511 migration). userId
+	// is captured separately so TitlesSection can load owned titles.
+	const [userId, setUserId] = useState<string | null>(null);
+	const [activeTitleId, setActiveTitleId] = useState<string | null>(null);
 
 	// Imperative handle for the on-screen "ka-ching" particle burst.
 	// Fired from handleBuy on the tile that was just purchased.
@@ -801,19 +972,36 @@ export default function ShopScreen() {
 		} = await supabase.auth.getUser();
 		if (!user) return;
 
-		const [dailyRes, allRes, ownedRes, profRes, resetsRes] = await Promise.all([
+		const [dailyRes, allRes, ownedRes, profRes, resetsRes, titlesRes] = await Promise.all([
 			supabase.rpc("daily_shop"),
 			supabase
 				.from("hats")
 				.select("id, name, cost, display_order, emoji, image_path, category, rarity, description")
 				.order("display_order"),
 			supabase.from("user_hats").select("hat_id").eq("user_id", user.id),
+			// active_title_id depends on the 20260511 migration. If the
+			// column isn't deployed yet the select errors — retry without
+			// it so the shop still loads.
 			supabase
 				.from("profiles")
-				.select("counter, active_hat_id, active_aura_id, active_background_id")
+				.select("counter, active_hat_id, active_aura_id, active_background_id, active_held_id, active_title_id")
 				.eq("id", user.id)
-				.single(),
+				.single()
+				.then(async (res) => {
+					if (res.error) {
+						return supabase
+							.from("profiles")
+							.select("counter, active_hat_id, active_aura_id, active_background_id, active_held_id")
+							.eq("id", user.id)
+							.single();
+					}
+					return res;
+				}),
 			supabase.rpc("shop_resets_in_seconds"),
+			// shop_titles depends on the 20260519010000 migration; 404s
+			// when the migration hasn't been pushed yet, in which case
+			// we just leave the titles list empty.
+			supabase.rpc("shop_titles"),
 		]);
 		const filterPlaceable = (rows: HatRow[]) =>
 			rows.filter(
@@ -831,9 +1019,64 @@ export default function ShopScreen() {
 			hat: profRes.data?.active_hat_id ?? null,
 			aura: profRes.data?.active_aura_id ?? null,
 			background: profRes.data?.active_background_id ?? null,
+			held:
+				(profRes.data as { active_held_id?: string | null } | null)
+					?.active_held_id ?? null,
 		});
+		setActiveTitleId(
+			(profRes.data as { active_title_id?: string | null } | null)
+				?.active_title_id ?? null
+		);
+		setUserId(user.id);
 		setResetsIn((resetsRes.data as number) ?? 0);
+		setTitles(((titlesRes?.data as ShopTitle[] | null) ?? []));
 	}, []);
+
+	// Spend snouts to grant a title. On success, optimistically flip
+	// `owned` + decrement balance so the UI doesn't wait for re-fetch.
+	const handleBuyTitle = useCallback(async (t: ShopTitle) => {
+		if (titleBusyId) return;
+		if (t.owned) return;
+		if (counter < t.cost) {
+			try {
+				deniedPlayer.seekTo(0);
+				deniedPlayer.play();
+			} catch {}
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
+				() => {}
+			);
+			Alert.alert("Not enough snouts", `Needs ${t.cost}, you have ${counter}.`);
+			return;
+		}
+		setTitleBusyId(t.id);
+		const { data, error } = await supabase.rpc("buy_title", {
+			target_title_id: t.id,
+		});
+		setTitleBusyId(null);
+		const r = data as { ok?: boolean; reason?: string; new_balance?: number } | null;
+		if (error || !r?.ok) {
+			Alert.alert(
+				"Couldn't buy",
+				r?.reason === "insufficient_funds"
+					? "Not enough snouts."
+					: r?.reason === "already_owned"
+						? "You already own this title."
+						: "Try again."
+			);
+			return;
+		}
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+			() => {}
+		);
+		try {
+			equipPlayer.seekTo(0);
+			equipPlayer.play();
+		} catch {}
+		setCounter(r.new_balance ?? counter - t.cost);
+		setTitles((prev) =>
+			prev.map((x) => (x.id === t.id ? { ...x, owned: true } : x))
+		);
+	}, [counter, deniedPlayer, equipPlayer, titleBusyId]);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -901,9 +1144,9 @@ export default function ShopScreen() {
 	};
 
 	// Equip routes by category: aura → active_aura_id, background →
-	// active_background_id, everything else → active_hat_id. Passing
-	// `null` for itemId unequips just the matching slot, leaving the
-	// other two columns intact.
+	// active_background_id, held → active_held_id, everything else →
+	// active_hat_id. Passing `null` for itemId unequips just the
+	// matching slot, leaving the other columns intact.
 	const handleEquip = async (
 		itemId: string | null,
 		category: string | null | undefined
@@ -922,7 +1165,9 @@ export default function ShopScreen() {
 				? "active_aura_id"
 				: category === "background"
 					? "active_background_id"
-					: "active_hat_id";
+					: category === "held"
+						? "active_held_id"
+						: "active_hat_id";
 		await supabase
 			.from("profiles")
 			.update({ [column]: itemId })
@@ -931,6 +1176,7 @@ export default function ShopScreen() {
 			const next = { ...prev };
 			if (category === "aura") next.aura = itemId;
 			else if (category === "background") next.background = itemId;
+			else if (category === "held") next.held = itemId;
 			else next.hat = itemId;
 			return next;
 		});
@@ -1064,10 +1310,13 @@ export default function ShopScreen() {
 				</View>
 
 				<View style={styles.viewToggle}>
-					{(["daily", "browse", "wardrobe"] as const).map((v) => {
+					{(["daily", "browse", "titles", "wardrobe"] as const).map((v) => {
 						const active = v === view;
 						const label =
-							v === "daily" ? "Today" : v === "browse" ? "Browse" : "Wardrobe";
+							v === "daily" ? "Today"
+								: v === "browse" ? "Browse"
+								: v === "titles" ? "Titles"
+								: "Wardrobe";
 						return (
 							<Pressable
 								key={v}
@@ -1181,6 +1430,32 @@ export default function ShopScreen() {
 							<Text style={styles.empty}>Nothing here.</Text>
 						}
 					/>
+				) : view === "titles" ? (
+					<FlatList
+						key="titles"
+						data={titles}
+						keyExtractor={(t) => t.id}
+						contentContainerStyle={styles.grid}
+						ListHeaderComponent={
+							<View style={styles.wardrobeIntro}>
+								<Text style={styles.wardrobeIntroTitle}>Titles</Text>
+								<Text style={styles.wardrobeIntroSub}>
+									Buy a title to attach to your name. Equip in Wardrobe.
+								</Text>
+							</View>
+						}
+						ListEmptyComponent={
+							<Text style={styles.empty}>No titles available.</Text>
+						}
+						renderItem={({ item: t }) => (
+							<ShopTitleRow
+								title={t}
+								canAfford={counter >= t.cost}
+								busy={titleBusyId === t.id}
+								onBuy={() => handleBuyTitle(t)}
+							/>
+						)}
+					/>
 				) : (
 					<FlatList
 						key="wardrobe"
@@ -1189,19 +1464,30 @@ export default function ShopScreen() {
 						keyExtractor={(r) => r.key}
 						contentContainerStyle={styles.grid}
 						ListHeaderComponent={
-							ownedItems.length > 0 ? (
-								<View style={styles.wardrobeIntro}>
-									<Text style={styles.wardrobeIntroTitle}>
-										Your closet
-									</Text>
-									<Text style={styles.wardrobeIntroSub}>
-										Tap an item to dress your pig.
-										{(activeIds.hat || activeIds.aura || activeIds.background)
-											? ""
-											: " Nothing equipped right now."}
-									</Text>
-								</View>
-							) : null
+							<View>
+								{ownedItems.length > 0 ? (
+									<View style={styles.wardrobeIntro}>
+										<Text style={styles.wardrobeIntroTitle}>
+											Your closet
+										</Text>
+										<Text style={styles.wardrobeIntroSub}>
+											Tap an item to dress your pig.
+											{(activeIds.hat || activeIds.aura || activeIds.background || activeIds.held)
+												? ""
+												: " Nothing equipped right now."}
+										</Text>
+									</View>
+								) : null}
+								{userId && (
+									<View style={styles.wardrobeTitles}>
+										<TitlesSection
+											userId={userId}
+											activeTitleId={activeTitleId}
+											onChange={setActiveTitleId}
+										/>
+									</View>
+								)}
+							</View>
 						}
 						ListEmptyComponent={
 							<View style={styles.wardrobeEmpty}>
@@ -1570,6 +1856,10 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 6,
 		paddingTop: 6,
 		paddingBottom: 4,
+	},
+	wardrobeTitles: {
+		paddingHorizontal: 6,
+		marginBottom: 8,
 	},
 	wardrobeIntroTitle: {
 		fontFamily: FONTS.whimsy,
