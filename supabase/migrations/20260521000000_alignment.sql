@@ -9,7 +9,8 @@
 --   1. profiles.alignment_score + profiles.alignment_updated_at
 --   2. alignment_label(score) → 'goblin' | 'neutral' | 'angel'
 --   3. shift_alignment(target_user_id, delta) SECURITY DEFINER RPC
---   4. trigger on tickle_trades to shift alignment on fulfill / repay
+--   4. trigger on tickle_trades to shift alignment when a trade is
+--      fulfilled (there is no repay step — see tickle_trades.sql)
 --
 -- Phase 0 does NOT include: blessings/curses (separate migration),
 -- 7-day debt-decay (needs a cron job, deferred), inactivity decay
