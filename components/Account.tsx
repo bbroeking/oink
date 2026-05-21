@@ -5,11 +5,11 @@ import {
 	View,
 	SafeAreaView,
 	Pressable,
-	Share,
 	Text,
 	Alert,
 	Linking,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
@@ -36,6 +36,7 @@ export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
 	const [discriminator, setDiscriminator] = useState<string | null>(null);
 	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+	const [copied, setCopied] = useState(false);
 	const [sounder, setSounder] = useState<{
 		engaged_count: number;
 		signup_count: number;
@@ -113,23 +114,15 @@ export function Account({ session }: { session: Session }) {
 			: username
 		: null;
 
-	const handleShare = async () => {
-		if (!handle || !username) return;
-		// Smart link: github.io page tries to open the app via custom
-		// scheme, falls back to TestFlight when the app isn't installed.
-		// Discriminator-aware URLs use `-` instead of `#` (which is the
-		// URL fragment delimiter and can't ride in a query value).
-		const code = discriminator ? `${username}-${discriminator}` : username;
-		// `h` = friend-add target (you), `ref` = referrer for The Sounder
-		// (also you on a self-share link, so the new user attributes
-		// the install + the friend-add to the same person).
-		const url = `https://bbroeking.github.io/oink/invite.html?h=${encodeURIComponent(code)}&ref=${encodeURIComponent(code)}`;
-		try {
-			await Share.share({
-				message: `Add me on Tickle the Pig — I'm ${handle}\n\n${url}`,
-				url,
-			});
-		} catch {}
+	// Copies the player's handle (username#discriminator) to the
+	// clipboard. The referral-link flow was cut — a handle a friend
+	// types into Friends → Add is robust where a GitHub-Pages deep
+	// link was not.
+	const handleCopyCode = async () => {
+		if (!handle) return;
+		await Clipboard.setStringAsync(handle);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 1800);
 	};
 
 	// Listen for entitlement changes from RC (e.g., webhook flips after sandbox renewal)
@@ -247,9 +240,16 @@ export function Account({ session }: { session: Session }) {
 										</View>
 									</View>
 								</View>
-								<Pressable onPress={handleShare} style={styles.shareBtn}>
-									<Icon name="share" size={16} color={WHIMSY.ink} strokeWidth={2.2} />
-									<Text style={styles.shareBtnText}>Share my code</Text>
+								<Pressable onPress={handleCopyCode} style={styles.shareBtn}>
+									<Icon
+										name={copied ? "check" : "copy"}
+										size={16}
+										color={WHIMSY.ink}
+										strokeWidth={2.2}
+									/>
+									<Text style={styles.shareBtnText}>
+										{copied ? "Copied!" : "Copy my code"}
+									</Text>
 								</Pressable>
 							</Sticker>
 						</View>

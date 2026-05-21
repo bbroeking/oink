@@ -39,6 +39,7 @@
 		"expo-asset": "~11.0.1",
 		"expo-audio": "~0.3.5",
 		"expo-blur": "~14.0.1",
+		"expo-clipboard": "~7.0.1",
 		"expo-constants": "~17.0.3",
 		"expo-dev-client": "~5.0.8",
 		"expo-font": "~13.0.2",

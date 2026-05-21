@@ -36,7 +36,8 @@ export type IconName =
 	| "hat"
 	| "trending"
 	| "clock"
-	| "edit";
+	| "edit"
+	| "copy";
 
 interface Props {
 	name: IconName;
@@ -429,6 +430,29 @@ function Render({
 					<Path d="M10 4 H5 a1 1 0 0 0 -1 1 V19 a1 1 0 0 0 1 1 H10" />
 					<Path d="M14 8 L18 12 L14 16" />
 					<Path d="M9 12 H18" />
+				</G>
+			);
+		case "copy":
+			return (
+				<G>
+					<Rect
+						x="8.5"
+						y="8.5"
+						width="11.5"
+						height="12.5"
+						rx="2.4"
+						fill={filled ? "#FBE6EC" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+					/>
+					<Path
+						d="M15.5 8.5 V5.5 A1.5 1.5 0 0 0 14 4 H5.5 A1.5 1.5 0 0 0 4 5.5 V15 A1.5 1.5 0 0 0 5.5 16.5 H8.5"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+						strokeLinecap="round"
+					/>
 				</G>
 			);
 		default:
