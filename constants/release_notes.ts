@@ -12,107 +12,59 @@ export interface ReleaseNote {
 	items: { title: string; body: string; emoji?: string }[];
 }
 
+// Build 62 is the first ship of all of this, so it's ONE consolidated
+// entry — every player sees the whole update on first launch. Future
+// builds append a new, smaller entry per release.
 export const RELEASE_NOTES: ReleaseNote[] = [
-	{
-		version: "1.1.0",
-		date: "2026-05-20",
-		headline: "Lucky Pig, friends + trading",
-		items: [
-			{
-				emoji: "✦",
-				title: "Lucky Pig",
-				body: "Tickling now has a chance to trigger a Lucky Pig moment. Your next 10 tickles each have a 30% chance to be doubled — plus a small chance to unlock a rare folklore title.",
-			},
-			{
-				emoji: "🤝",
-				title: "Tickle Trade",
-				body: "Ask a friend for 1-5 tickles. If they answer, you pocket DOUBLE — they give it from their own bank for nothing but goodwill. Tap the handshake button on the home screen to manage trades.",
-			},
-			{
-				emoji: "#",
-				title: "Friend codes",
-				body: "Every account now has a private 4-digit code (your full handle is on your Account page). Share it to make sure friends find the right you.",
-			},
-			{
-				emoji: "👑",
-				title: "Shop titles",
-				body: "10 new buyable titles in the Shop's new Titles tab — from Mud Connoisseur to Sty Sovereign.",
-			},
-		],
-	},
-	{
-		version: "1.2.0",
-		date: "2026-05-20",
-		headline: "The Sounder",
-		items: [
-			{
-				emoji: "🐷",
-				title: "Build your sounder",
-				body: "Share your invite link from Account. Every friend who joins + plays earns BOTH of you 500 snouts each — and brings you closer to exclusive titles like Ambassador, Drove Captain, and Crown Hog.",
-			},
-			{
-				emoji: "🏆",
-				title: "Sounder leaderboard",
-				body: "Top recruiters ranked by their sounder size. Open it from your Account page to see where you stand and how far you are from the next title.",
-			},
-			{
-				emoji: "👥",
-				title: "Better Friends",
-				body: "Friends got a full redesign: three tabs for your sounder, your pending requests, and adding new ones. Search by username with live autocomplete — `#1234` codes let two Brians coexist peacefully.",
-			},
-			{
-				emoji: "🤝",
-				title: "Trade tickles with friends",
-				body: "Ask 1-5 tickles from any friend. If they answer, you pocket double — giving costs them, asking pays you. Tap the handshake on the home screen.",
-			},
-		],
-	},
-	{
-		version: "1.3.0",
-		date: "2026-05-20",
-		headline: "Notifications + trade cooldown",
-		items: [
-			{
-				emoji: "🔔",
-				title: "Push notifications",
-				body: "You'll get a push when a friend asks for tickles, fulfills your request, or thanks you. The first time you open Friends or the 🤝 pill, iOS will ask for permission — say yes to keep the social loop fast.",
-			},
-			{
-				emoji: "⏳",
-				title: "24-hour trade cooldown",
-				body: "After any trade with a friend, neither of you can open a new one for 24 hours. Keeps trades feeling deliberate instead of farm-y.",
-			},
-		],
-	},
 	{
 		version: "1.4.0",
 		date: "2026-05-20",
 		headline: "Season 1: Goblins vs Angels",
 		items: [
 			{
-				emoji: "⚖️",
-				title: "Pick a side — without picking",
-				body: "Every player now has an alignment that shifts with how you trade. Give, repay, and bless to drift Generous; receive, hoard, and curse to drift Greedy. Cross ±25 and you'll see your schism.",
+				emoji: "🤝",
+				title: "Tickle Trade",
+				body: "Ask a friend for 1-5 tickles. If they answer, you pocket DOUBLE — they give it from their own bank for nothing but goodwill. Manage trades from the handshake on the home screen.",
 			},
 			{
-				emoji: "☀️",
-				title: "Daily blessings",
-				body: "Once a day, send a blessing to up to 3 friends — warm tea, sun beams, a halo glow. The kind rotates daily.",
+				emoji: "👥",
+				title: "Friends & the Sounder",
+				body: "Add friends by username (everyone has a private #1234 code so two Brians can coexist). Share your invite link from Account — every friend who joins earns BOTH of you 500 snouts and climbs you toward titles like Drove Captain and Crown Hog.",
 			},
 			{
-				emoji: "🟢",
-				title: "Daily curses",
-				body: "Or send a little mischief instead. Curses are capped and cleansable — annoying, never ruinous.",
+				emoji: "👀",
+				title: "Tap anyone",
+				body: "Tap a player on the leaderboard to see their stats, how generous or greedy they've been, and add them, trade with them, bless them — or curse them.",
 			},
 			{
-				emoji: "📋",
-				title: "Weekly bounties",
-				body: "Three bounties rotate onto the season tab each week. Fulfill trades, repay debts, send blessings — claim snouts.",
+				emoji: "✦",
+				title: "Lucky Pig",
+				body: "Tickling can now trigger a Lucky Pig moment — a window where your tickles have a chance to double, with a rare shot at unlocking a one-of-a-kind folklore title.",
 			},
 			{
 				emoji: "🏆",
-				title: "Alignment leaderboard + Judgement Day",
-				body: "A new leaderboard ranks the most generous and most greedy. At season's end, the top 3 of each side earn exclusive titles.",
+				title: "Achievements",
+				body: "A new Achievements screen with tiered rewards — titles, items, and snouts. The top tiers keep going forever, Candy-Crush style.",
+			},
+			{
+				emoji: "🔔",
+				title: "Notifications",
+				body: "Get a push when a friend asks you for tickles or answers one of your requests. Say yes when iOS asks — it keeps the social loop fast.",
+			},
+			{
+				emoji: "⚖️",
+				title: "Season 1: Goblins vs Angels",
+				body: "Every player now has an alignment that shifts with how they trade. Give freely and you drift Generous; ask and pocket double and you drift Greedy. Cross far enough and you'll see your schism. It's shown everywhere — your reputation is everything you've done.",
+			},
+			{
+				emoji: "☀️",
+				title: "Daily blessings & curses",
+				body: "Once a day, send a blessing to up to 3 friends — warm tea, sun beams, a halo glow. Or send a little mischief instead. Curses are capped and cleansable: annoying, never ruinous.",
+			},
+			{
+				emoji: "📋",
+				title: "Weekly bounties + Judgement Day",
+				body: "Three bounties rotate onto the season tab each week for snout rewards. And a new leaderboard ranks the most generous and most greedy — at season's end, the top 3 of each side earn exclusive titles.",
 			},
 		],
 	},
