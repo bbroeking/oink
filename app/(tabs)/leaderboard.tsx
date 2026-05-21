@@ -16,6 +16,7 @@ import { PigAvatar } from "../../components/ui/PigAvatar";
 import { Sticker } from "../../components/ui/Sticker";
 import { ListRowSkeleton } from "../../components/ui/Skeleton";
 import { UserSheet } from "../../components/UserSheet";
+import { AlignmentBadge } from "../../components/ui/AlignmentBadge";
 import { COLORS, FONTS, ROW_TILTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
 
 type Scope = "global" | "friends";
@@ -32,6 +33,9 @@ interface LeaderboardEntry {
 	tickles_earned: number;
 	active_hat_id: string | null;
 	active_title: ActiveTitle | null;
+	// Optional because pre-alignment-migration profiles don't have it;
+	// the SELECT falls back gracefully and we default to 0 client-side.
+	alignment_score?: number | null;
 }
 
 // "<title> username" or "username <title>" depending on placement.
@@ -88,6 +92,9 @@ function ChampionPoster({
 						<Text style={styles.champScore}>
 							{champ.tickles_earned.toLocaleString()} lifetime tickles
 						</Text>
+						<View style={{ marginTop: 6 }}>
+							<AlignmentBadge score={champ.alignment_score ?? 0} size="sm" />
+						</View>
 					</View>
 					<View style={styles.bigOne}>
 						<Text style={styles.bigOneText}>1</Text>
@@ -122,7 +129,10 @@ function ClippingRow({
 			>
 				<Text style={styles.rowRank}>#{rank}</Text>
 				<PigAvatar size={32} hatId={player.active_hat_id} />
-				<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
+				<View style={{ marginLeft: 4 }}>
+					<AlignmentBadge score={player.alignment_score ?? 0} size="sm" compact />
+				</View>
+				<View style={{ flex: 1, minWidth: 0, marginLeft: 6 }}>
 					<Text
 						style={styles.rowName}
 						numberOfLines={1}
@@ -165,9 +175,9 @@ export default function LeaderboardScreen() {
 			// hasn't been pushed yet — leaderboard still renders, just no
 			// titles next to usernames).
 			const SELECT_WITH_TITLES =
-				"id, username, tickles_earned, active_hat_id, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
+				"id, username, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
 			const SELECT_BASIC =
-				"id, username, tickles_earned, active_hat_id";
+				"id, username, tickles_earned, active_hat_id, alignment_score";
 
 			const runQuery = async (
 				select: string,

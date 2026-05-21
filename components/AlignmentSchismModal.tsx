@@ -1,0 +1,199 @@
+// One-time fullscreen reveal that fires when a user's alignment_score
+// first crosses ±25. Tells them their behavior is starting to take
+// shape — they're showing a Generous (angel) or Greedy (goblin)
+// nature. Setup for everything that follows in Season 1.
+//
+// Driven by check_schism_status RPC → app/_layout polls on focus →
+// if 'angel' or 'goblin' returned, mounts this modal. Dismiss calls
+// mark_schism_seen so the user never sees the same crossing twice.
+import React, { useEffect, useRef } from "react";
+import {
+	Modal,
+	View,
+	Text,
+	StyleSheet,
+	Pressable,
+	Animated,
+	Easing,
+} from "react-native";
+import * as Haptics from "expo-haptics";
+import { supabase } from "../utils/supabase";
+import { Sticker } from "./ui/Sticker";
+import {
+	FONTS,
+	KICKER_TEXT,
+	MODAL_BACKDROP_BG,
+	STICKER_SHADOW,
+	WHIMSY,
+} from "@/constants/theme";
+
+export type SchismSide = "angel" | "goblin";
+
+interface Props {
+	side: SchismSide;
+	score: number;
+	onDismiss: () => void;
+}
+
+const COPY = {
+	angel: {
+		kicker: "★ the schism stirs ★",
+		emblem: "😇",
+		headline: "You're becoming Generous",
+		body: "Your tickle trades have a pattern. You give. You repay. You bless. Lean in and the path to Halo Bearer is yours.",
+		buttonBg: WHIMSY.sun,
+	},
+	goblin: {
+		kicker: "🟢 a goblin nature stirs 🟢",
+		emblem: "👹",
+		headline: "You're becoming Greedy",
+		body: "You take more than you give. You hoard your debts. Embrace it and the throne of Goblin King awaits.",
+		buttonBg: "#D5E4C9",
+	},
+};
+
+export function AlignmentSchismModal({ side, score, onDismiss }: Props) {
+	const scale = useRef(new Animated.Value(0)).current;
+	const opacity = useRef(new Animated.Value(0)).current;
+
+	useEffect(() => {
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+			() => {}
+		);
+		Animated.parallel([
+			Animated.spring(scale, {
+				toValue: 1,
+				tension: 60,
+				friction: 7,
+				useNativeDriver: true,
+			}),
+			Animated.timing(opacity, {
+				toValue: 1,
+				duration: 250,
+				easing: Easing.out(Easing.quad),
+				useNativeDriver: true,
+			}),
+		]).start();
+	}, [scale, opacity]);
+
+	const handleDismiss = async () => {
+		try {
+			await supabase.rpc("mark_schism_seen", { side });
+		} catch {
+			// best-effort; if it fails the user might see the modal
+			// again on next focus, which is annoying but not broken
+		}
+		onDismiss();
+	};
+
+	const copy = COPY[side];
+
+	return (
+		<Modal visible transparent animationType="fade" onRequestClose={handleDismiss}>
+			<View style={styles.backdrop}>
+				<Animated.View
+					style={[
+						styles.cardWrap,
+						{ opacity, transform: [{ scale }] },
+					]}
+				>
+					<Sticker
+						color={side === "angel" ? "sun" : "paper"}
+						rotate={-1.2}
+						radius={20}
+						border={3}
+						style={[styles.card, STICKER_SHADOW]}
+					>
+						<Text style={styles.kicker}>{copy.kicker}</Text>
+						<Text style={styles.emblem}>{copy.emblem}</Text>
+						<Text style={styles.headline}>{copy.headline}</Text>
+						<Text style={styles.body}>{copy.body}</Text>
+						<View style={styles.scoreRow}>
+							<Text style={styles.scoreLabel}>alignment</Text>
+							<Text style={styles.scoreValue}>
+								{score > 0 ? `+${score}` : score}
+							</Text>
+						</View>
+						<Pressable
+							testID="schism-dismiss"
+							onPress={handleDismiss}
+							style={({ pressed }) => [
+								styles.btn,
+								{ backgroundColor: copy.buttonBg },
+								pressed && { opacity: 0.75 },
+							]}
+						>
+							<Text style={styles.btnText}>I see my path</Text>
+						</Pressable>
+					</Sticker>
+				</Animated.View>
+			</View>
+		</Modal>
+	);
+}
+
+const styles = StyleSheet.create({
+	backdrop: {
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: MODAL_BACKDROP_BG,
+		padding: 28,
+	},
+	cardWrap: { width: "100%", maxWidth: 380 },
+	card: {
+		paddingHorizontal: 24,
+		paddingVertical: 28,
+		alignItems: "center",
+	},
+	kicker: { ...KICKER_TEXT, marginBottom: 14, textAlign: "center" },
+	emblem: { fontSize: 72, marginBottom: 8 },
+	headline: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 26,
+		color: WHIMSY.ink,
+		textAlign: "center",
+		marginBottom: 12,
+	},
+	body: {
+		fontFamily: FONTS.hand,
+		fontSize: 15,
+		lineHeight: 22,
+		color: WHIMSY.ink,
+		textAlign: "center",
+		marginBottom: 18,
+	},
+	scoreRow: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		gap: 6,
+		marginBottom: 22,
+		paddingHorizontal: 14,
+		paddingVertical: 6,
+		borderRadius: 999,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream,
+	},
+	scoreLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		color: WHIMSY.mute,
+		letterSpacing: 1.5,
+		textTransform: "uppercase",
+	},
+	scoreValue: { fontFamily: FONTS.whimsy, fontSize: 20, color: WHIMSY.ink },
+	btn: {
+		paddingHorizontal: 28,
+		paddingVertical: 12,
+		borderRadius: 14,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+	},
+	btnText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 17,
+		color: WHIMSY.ink,
+		letterSpacing: 0.4,
+	},
+});
