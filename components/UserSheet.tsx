@@ -20,6 +20,8 @@ import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker } from "./ui/Sticker";
+import { RitualPicker } from "./RitualPicker";
+import type { RitualMode } from "../utils/rituals";
 import {
 	alignmentDisplay,
 	alignmentEmblem,
@@ -83,6 +85,9 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [feedback, setFeedback] = useState<string | null>(null);
+	// When friends, the sheet shows a daily-ritual panel. This toggles
+	// which ritual (bless / curse) the panel is currently showing.
+	const [ritualMode, setRitualMode] = useState<RitualMode>("bless");
 
 	useEffect(() => {
 		if (!targetUserId) {
@@ -247,6 +252,37 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 									/>
 
 									{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
+
+									{stats.friendship_status === "friends" && (
+										<View style={{ marginTop: 6 }}>
+											<View style={styles.ritualToggle}>
+												{(["bless", "curse"] as RitualMode[]).map((m) => (
+													<Pressable
+														key={m}
+														onPress={() => setRitualMode(m)}
+														style={[
+															styles.ritualToggleBtn,
+															ritualMode === m && styles.ritualToggleActive,
+														]}
+													>
+														<Text
+															style={[
+																styles.ritualToggleText,
+																ritualMode === m && styles.ritualToggleTextActive,
+															]}
+														>
+															{m === "bless" ? "☀ Bless" : "🟢 Curse"}
+														</Text>
+													</Pressable>
+												))}
+											</View>
+											<RitualPicker
+												mode={ritualMode}
+												targetUserId={stats.user_id}
+												targetName={stats.username ?? "friend"}
+											/>
+										</View>
+									)}
 								</>
 							)}
 						</Sticker>
@@ -453,4 +489,21 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginTop: 10,
 	},
+	ritualToggle: {
+		flexDirection: "row",
+		gap: 6,
+		marginTop: 12,
+	},
+	ritualToggleBtn: {
+		flex: 1,
+		paddingVertical: 7,
+		borderRadius: 10,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		alignItems: "center",
+	},
+	ritualToggleActive: { backgroundColor: WHIMSY.cream },
+	ritualToggleText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.mute },
+	ritualToggleTextActive: { color: WHIMSY.ink },
 });
