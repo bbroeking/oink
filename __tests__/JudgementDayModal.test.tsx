@@ -54,7 +54,7 @@ describe("JudgementDayModal", () => {
 			<JudgementDayModal result={base} onDismiss={() => {}} />
 		);
 		expect(textOf(r.root)).toContain("A Halo Bearer!");
-		expect(r.root.findAllByProps({ name: "halo" }).length).toBeGreaterThan(0);
+		expect(r.root.findAllByProps({ kind: "halo" }).length).toBeGreaterThan(0);
 		act(() => r.unmount());
 	});
 
@@ -72,7 +72,7 @@ describe("JudgementDayModal", () => {
 		const text = textOf(r.root);
 		expect(text).toContain("A Goblin King!");
 		expect(text).toContain("-91");
-		expect(r.root.findAllByProps({ name: "horns" }).length).toBeGreaterThan(0);
+		expect(r.root.findAllByProps({ kind: "horns" }).length).toBeGreaterThan(0);
 		act(() => r.unmount());
 	});
 
@@ -92,7 +92,7 @@ describe("JudgementDayModal", () => {
 		);
 		const text = textOf(r.root);
 		expect(text).toContain("Calm in the Storm");
-		expect(r.root.findAllByProps({ name: "scales" }).length).toBeGreaterThan(0);
+		expect(r.root.findAllByProps({ kind: "scales" }).length).toBeGreaterThan(0);
 		expect(text).not.toContain("most generous");
 		act(() => r.unmount());
 	});

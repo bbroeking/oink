@@ -22,11 +22,11 @@ function textOf(tree: TestRenderer.ReactTestInstance): string {
 	return out.join("");
 }
 
-// The alignment emblem is now an <Icon name="halo|scales|horns" />.
+// The alignment emblem is an <AlignmentEmblem kind="halo|scales|horns" />.
 // Find it by that prop rather than looking for emoji text.
 function iconName(r: TestRenderer.ReactTestRenderer): string | undefined {
 	for (const n of ["halo", "scales", "horns"]) {
-		if (r.root.findAllByProps({ name: n }).length > 0) return n;
+		if (r.root.findAllByProps({ kind: n }).length > 0) return n;
 	}
 	return undefined;
 }

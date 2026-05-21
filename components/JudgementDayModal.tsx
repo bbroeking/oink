@@ -15,7 +15,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
-import { Icon } from "./ui/Icon";
+import { AlignmentEmblem } from "./ui/AlignmentEmblem";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import {
 	FONTS,
@@ -105,14 +105,11 @@ export function JudgementDayModal({ result, onDismiss }: Props) {
 						style={[styles.card, STICKER_SHADOW]}
 					>
 						<Text style={styles.kicker}>⚖ judgement day ⚖</Text>
-						<View style={styles.emblem}>
-							<Icon
-								name={sideIcon(result.side)}
-								size={64}
-								color={WHIMSY.ink}
-								strokeWidth={1.6}
-							/>
-						</View>
+						<AlignmentEmblem
+							kind={sideIcon(result.side)}
+							size={76}
+							style={styles.emblem}
+						/>
 						<Text style={styles.headline}>{headline(result)}</Text>
 
 						{result.side !== "neutral" && result.side_rank != null && (

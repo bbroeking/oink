@@ -19,7 +19,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
-import { Icon } from "./ui/Icon";
+import { AlignmentEmblem } from "./ui/AlignmentEmblem";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -106,14 +106,11 @@ export function AlignmentSchismModal({ side, score, onDismiss }: Props) {
 						style={[styles.card, STICKER_SHADOW]}
 					>
 						<Text style={styles.kicker}>{copy.kicker}</Text>
-						<View style={styles.emblem}>
-							<Icon
-								name={copy.icon}
-								size={72}
-								color={WHIMSY.ink}
-								strokeWidth={1.5}
-							/>
-						</View>
+						<AlignmentEmblem
+							kind={copy.icon}
+							size={84}
+							style={styles.emblem}
+						/>
 						<Text style={styles.headline}>{copy.headline}</Text>
 						<Text style={styles.body}>{copy.body}</Text>
 						<View style={styles.scoreRow}>

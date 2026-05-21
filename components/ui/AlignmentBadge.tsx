@@ -12,7 +12,7 @@ import {
 	alignmentLabel,
 	type AlignmentLabel,
 } from "@/utils/alignment";
-import { Icon } from "./Icon";
+import { AlignmentEmblem } from "./AlignmentEmblem";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 type Size = "sm" | "md" | "lg";
@@ -53,7 +53,7 @@ export function AlignmentBadge({
 				},
 			]}
 		>
-			<Icon name={alignmentIcon(label)} size={dims.emblem} color={WHIMSY.ink} strokeWidth={2} />
+			<AlignmentEmblem kind={alignmentIcon(label)} size={dims.emblem} />
 			{!compact && (
 				<Text style={[styles.label, { fontSize: dims.label }]}>
 					{alignmentDisplay(label)}

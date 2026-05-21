@@ -36,10 +36,7 @@ export type IconName =
 	| "hat"
 	| "trending"
 	| "clock"
-	| "edit"
-	| "halo"
-	| "scales"
-	| "horns";
+	| "edit";
 
 interface Props {
 	name: IconName;
@@ -432,73 +429,6 @@ function Render({
 					<Path d="M10 4 H5 a1 1 0 0 0 -1 1 V19 a1 1 0 0 0 1 1 H10" />
 					<Path d="M14 8 L18 12 L14 16" />
 					<Path d="M9 12 H18" />
-				</G>
-			);
-		// ── Season 1 alignment emblems (Greedy ◄──► Giver) ──────────
-		case "halo":
-			return (
-				<G>
-					<Ellipse
-						cx="12"
-						cy="12"
-						rx="8"
-						ry="3.6"
-						fill={filled ? "#F2C94C" : "none"}
-						stroke={c}
-						strokeWidth={sw}
-					/>
-					{/* sparkle */}
-					<Path
-						d="M18.4 3 L19.1 4.7 L20.8 5.4 L19.1 6.1 L18.4 7.8 L17.7 6.1 L16 5.4 L17.7 4.7 Z"
-						fill={c}
-					/>
-				</G>
-			);
-		case "scales":
-			return (
-				<G>
-					<Path d="M12 4.5 V9" stroke={c} strokeWidth={sw} strokeLinecap="round" />
-					<Path d="M4.5 9 H19.5" stroke={c} strokeWidth={sw} strokeLinecap="round" />
-					<Path
-						d="M12 9 L8 18.5 H16 Z"
-						fill={filled ? "#EFE9DF" : "none"}
-						stroke={c}
-						strokeWidth={sw}
-						strokeLinejoin="round"
-					/>
-					<Circle
-						cx="4.5"
-						cy="9"
-						r="1.6"
-						fill={filled ? "#EFE9DF" : "none"}
-						stroke={c}
-						strokeWidth={sw}
-					/>
-					<Circle
-						cx="19.5"
-						cy="9"
-						r="1.6"
-						fill={filled ? "#EFE9DF" : "none"}
-						stroke={c}
-						strokeWidth={sw}
-					/>
-				</G>
-			);
-		case "horns":
-			return (
-				<G strokeLinejoin="round" strokeLinecap="round">
-					<Path
-						d="M11 19 C 7.5 17 4.5 13 5.5 5 C 8 9 10 12 11 14.5 Z"
-						fill={filled ? "#7BA266" : "none"}
-						stroke={c}
-						strokeWidth={sw}
-					/>
-					<Path
-						d="M13 19 C 16.5 17 19.5 13 18.5 5 C 16 9 14 12 13 14.5 Z"
-						fill={filled ? "#7BA266" : "none"}
-						stroke={c}
-						strokeWidth={sw}
-					/>
 				</G>
 			);
 		default:
