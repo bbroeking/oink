@@ -1,12 +1,14 @@
-// Tickle Trade — bottom-right pill on Barn + modal listing your
-// actionable trades: incoming requests to fulfill/decline, and your
-// own outgoing requests still waiting. There is NO repay step — when
-// you fulfill, the asker pockets 2N and you get only a social
-// promise. See migrations/20260520010000_tickle_trades.sql.
+// The Tickle Stockyard — a 1920s livestock-yard reskin of the trade
+// modal. Trade MECHANICS are unchanged (fulfill / cancel RPCs, the
+// pending-trade filtering); this is presentation only.
 //
-// Each trade row carries the partner's username so the UI doesn't need
-// a second profiles fetch.
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+//   "At the Gate"    — incoming requests: a friend asked YOU. Give / pass.
+//   "Out to Market"  — your outgoing requests, awaiting an answer. Withdraw.
+//
+// There is no repay step — fulfilling means the asker pockets 2N and
+// you get only a social promise. See trade-interface-design.md and
+// migrations/20260520010000_tickle_trades.sql.
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Modal,
 	View,
@@ -14,18 +16,26 @@ import {
 	StyleSheet,
 	Pressable,
 	ScrollView,
+	Animated,
+	Easing,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
-import { Sticker } from "./ui/Sticker";
-import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
-	STICKER_SHADOW,
-	WHIMSY,
-} from "@/constants/theme";
+import { FONTS, MODAL_BACKDROP_BG, STICKER_SHADOW, WHIMSY } from "@/constants/theme";
+
+// ── Stockyard palette — warm aged wood, cream paper, chalk. Local to
+// this surface; the season alignment tints still ride on the cards.
+const YARD = {
+	board:     "#8A5E34", // the plank board behind everything
+	plankLine: "#6E4A28", // groove between planks
+	sign:      "#C68A4E", // the hanging sign face
+	signEdge:  "#6E4A28",
+	rail:      "#7A5230", // fence rail
+	brass:     "#C99B23", // the GIVE button
+	chalk:     "#33402F", // chalkboard footer
+	chalkInk:  "#EDE6D6", // chalk lettering
+};
 
 export interface TickleTrade {
 	id: string;
@@ -88,6 +98,34 @@ export function TickleTradeModal({
 		(t) => t.status === "pending" && t.requester_id === userId
 	);
 
+	// Gentle sway on the hanging sign.
+	const sway = useRef(new Animated.Value(0)).current;
+	useEffect(() => {
+		if (!visible) return;
+		const loop = Animated.loop(
+			Animated.sequence([
+				Animated.timing(sway, {
+					toValue: 1,
+					duration: 2600,
+					easing: Easing.inOut(Easing.sin),
+					useNativeDriver: true,
+				}),
+				Animated.timing(sway, {
+					toValue: -1,
+					duration: 2600,
+					easing: Easing.inOut(Easing.sin),
+					useNativeDriver: true,
+				}),
+			])
+		);
+		loop.start();
+		return () => loop.stop();
+	}, [visible, sway]);
+	const swayDeg = sway.interpolate({
+		inputRange: [-1, 1],
+		outputRange: ["-2.2deg", "2.2deg"],
+	});
+
 	useEffect(() => {
 		if (visible) setFeedback("");
 	}, [visible]);
@@ -99,8 +137,7 @@ export function TickleTradeModal({
 		setBusy(null);
 		const r = data as { ok?: boolean; reason?: string } | null;
 		if (error || !r?.ok) {
-			const reason = r?.reason ?? "error";
-			setFeedback(reasonMessage(reason));
+			setFeedback(reasonMessage(r?.reason ?? "error"));
 			return;
 		}
 		setFeedback(ok);
@@ -115,10 +152,10 @@ export function TickleTradeModal({
 			"fulfill_tickle_trade",
 			{ trade_id: t.id },
 			t.id,
-			`Gave ${t.amount} to ${t.partner_username}.`
+			`Gate opened — ${t.partner_username} takes ${t.amount * 2}.`
 		);
 	const cancel = (t: TickleTrade) =>
-		doRpc("cancel_tickle_trade", { trade_id: t.id }, t.id, "Trade cancelled.");
+		doRpc("cancel_tickle_trade", { trade_id: t.id }, t.id, "Lot withdrawn.");
 
 	return (
 		<Modal
@@ -129,38 +166,53 @@ export function TickleTradeModal({
 		>
 			<View style={styles.backdrop}>
 				<View style={styles.card}>
-					<Sticker color="paper" rotate={-0.6} radius={18} style={styles.sticker}>
-						<View style={styles.headerRow}>
-							<Text style={styles.kicker}>★ tickle trade</Text>
-							<Pressable onPress={onClose} hitSlop={10}>
+					{/* the plank board */}
+					<View style={styles.board}>
+						{/* hanging sign */}
+						<View style={styles.signWrap}>
+							<View style={styles.chain} />
+							<View style={styles.chain} />
+							<Animated.View
+								style={[styles.sign, { transform: [{ rotate: swayDeg }] }]}
+							>
+								<Text style={styles.signText}>THE TICKLE STOCKYARD</Text>
+								<Text style={styles.signSub}>est. 1924</Text>
+							</Animated.View>
+							<Pressable
+								onPress={onClose}
+								hitSlop={12}
+								style={styles.closeBtn}
+							>
 								<Text style={styles.closeX}>✕</Text>
 							</Pressable>
 						</View>
+
 						{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
 
-						<ScrollView style={{ maxHeight: 480 }} showsVerticalScrollIndicator={false}>
+						<ScrollView
+							style={{ maxHeight: 460 }}
+							showsVerticalScrollIndicator={false}
+						>
 							{trades.length === 0 && (
 								<Text style={styles.emptyText}>
-									No active trades. Open a friend's profile to request tickles —
-									or wait for one of yours to send a request your way.
+									The yard's quiet — no lots at the gate today.{"\n"}
+									Visit a friend's profile to put a request to market.
 								</Text>
 							)}
 
 							{incomingPending.length > 0 && (
 								<>
-									<Text style={styles.subKicker}>their requests ↘</Text>
+									<Text style={styles.sectionLabel}>At the Gate</Text>
 									{incomingPending.map((t) => (
-										<TradeRow
+										<PenCard
 											key={t.id}
 											t={t}
-											actionLabel={`Give ${t.amount}`}
-											actionVariant="primary"
-											secondaryLabel="Decline"
-											secondaryVariant="danger"
+											lotLine={`wants ${t.amount} · costs you ${t.amount}`}
+											primaryLabel={`GIVE ${t.amount}`}
+											onPrimary={() => fulfill(t)}
+											passLabel="pass"
+											onPass={() => cancel(t)}
 											busy={busy === t.id}
-											onAction={() => fulfill(t)}
-											onSecondary={() => cancel(t)}
-											description={`Costs you ${t.amount} · they pocket ${t.amount * 2}`}
 										/>
 									))}
 								</>
@@ -168,22 +220,30 @@ export function TickleTradeModal({
 
 							{outgoingPending.length > 0 && (
 								<>
-									<Text style={styles.subKicker}>you asked ↗</Text>
+									<Text style={styles.sectionLabel}>Out to Market</Text>
 									{outgoingPending.map((t) => (
-										<TradeRow
+										<PenCard
 											key={t.id}
 											t={t}
-											actionLabel="Cancel"
-											actionVariant="danger"
+											lotLine={`consigned · you'd pocket ${t.amount * 2}`}
+											primaryLabel="withdraw"
+											primaryQuiet
+											onPrimary={() => cancel(t)}
 											busy={busy === t.id}
-											onAction={() => cancel(t)}
-											description={`If answered you pocket ${t.amount * 2}`}
 										/>
 									))}
 								</>
 							)}
 						</ScrollView>
-					</Sticker>
+
+						{/* chalkboard tally */}
+						<View style={styles.chalkboard}>
+							<Text style={styles.chalkText}>
+								{incomingPending.length} at the gate ·{" "}
+								{outgoingPending.length} out to market
+							</Text>
+						</View>
+					</View>
 				</View>
 			</View>
 		</Modal>
@@ -193,84 +253,91 @@ export function TickleTradeModal({
 function reasonMessage(reason: string): string {
 	switch (reason) {
 		case "insufficient_bank":
-			return "Not enough tickles in your bank.";
+			return "Not enough tickles in your bank to open the gate.";
 		case "already_active":
-			return "You already have a trade going with that friend.";
+			return "You've already a lot going with that friend.";
 		case "cooldown":
-			return "Wait 24h between trades with the same friend.";
+			return "The yard rests — wait 24h to trade them again.";
 		case "not_friends":
-			return "Only friends can trade.";
+			return "Only friends trade at this yard.";
 		case "bad_amount":
-			return "Pick 1-5 tickles.";
+			return "Lots run 1-5 tickles.";
 		case "bad_status":
-			return "This trade already moved on.";
+			return "That lot's already moved on.";
 		case "self":
-			return "Can't trade with yourself.";
+			return "Can't consign a lot to yourself.";
 		case "not_target":
 		case "not_requester":
 		case "not_involved":
-			return "You're not part of this trade.";
+			return "That's not your lot.";
 		case "not_found":
-			return "Trade not found.";
+			return "Lot not found.";
 		default:
-			return "Try again.";
+			return "The auctioneer fumbled — try again.";
 	}
 }
 
-function TradeRow({
+// A pen at the yard — a friend penned behind a fence rail, a chalk
+// lot tag, and the action(s). Used for both incoming + outgoing.
+function PenCard({
 	t,
-	actionLabel,
-	actionVariant = "primary",
-	secondaryLabel,
-	secondaryVariant,
+	lotLine,
+	primaryLabel,
+	primaryQuiet,
+	onPrimary,
+	passLabel,
+	onPass,
 	busy,
-	onAction,
-	onSecondary,
-	description,
 }: {
 	t: TickleTrade;
-	actionLabel: string;
-	actionVariant?: "primary" | "danger";
-	secondaryLabel?: string;
-	secondaryVariant?: "primary" | "danger";
+	lotLine: string;
+	primaryLabel: string;
+	primaryQuiet?: boolean;
+	onPrimary: () => void;
+	passLabel?: string;
+	onPass?: () => void;
 	busy: boolean;
-	onAction: () => void;
-	onSecondary?: () => void;
-	description: string;
 }) {
 	return (
-		<View style={styles.row}>
-			<View style={{ flex: 1, minWidth: 0 }}>
-				<Text style={styles.rowName}>{t.partner_username ?? "—"}</Text>
-				<Text style={styles.rowDesc}>{description}</Text>
+		<View style={styles.penWrap}>
+			{/* fence rail across the top of the pen */}
+			<View style={styles.rail}>
+				<View style={styles.railBar} />
+				<View style={styles.railBar} />
 			</View>
-			<View style={styles.rowActions}>
-				{!!secondaryLabel && (
+			<View style={styles.penBody}>
+				<View style={styles.stall}>
+					<Text style={styles.stallPig}>🐷</Text>
+				</View>
+				<View style={{ flex: 1, minWidth: 0 }}>
+					<Text style={styles.penName} numberOfLines={1}>
+						{t.partner_username ?? "—"}
+					</Text>
+					<Text style={styles.lotTag} numberOfLines={1}>
+						lot · {lotLine}
+					</Text>
+				</View>
+				<View style={styles.penActions}>
 					<Pressable
-						onPress={onSecondary}
+						onPress={onPrimary}
 						disabled={busy}
 						style={({ pressed }) => [
-							styles.actionBtn,
-							secondaryVariant === "danger" ? styles.danger : styles.primary,
-							pressed && { opacity: 0.7 },
+							primaryQuiet ? styles.quietBtn : styles.brassBtn,
+							(pressed || busy) && { opacity: 0.7 },
 						]}
 					>
-						<Text style={styles.actionText}>{secondaryLabel}</Text>
+						<Text
+							style={primaryQuiet ? styles.quietBtnText : styles.brassBtnText}
+						>
+							{busy ? "…" : primaryLabel}
+						</Text>
 					</Pressable>
-				)}
-				{actionLabel ? (
-					<Pressable
-						onPress={onAction}
-						disabled={busy}
-						style={({ pressed }) => [
-							styles.actionBtn,
-							actionVariant === "danger" ? styles.danger : styles.primary,
-							pressed && { opacity: 0.7 },
-						]}
-					>
-						<Text style={styles.actionText}>{busy ? "…" : actionLabel}</Text>
-					</Pressable>
-				) : null}
+					{!!passLabel && onPass && (
+						<Pressable onPress={onPass} disabled={busy} hitSlop={8}>
+							<Text style={styles.passText}>· {passLabel} ·</Text>
+						</Pressable>
+					)}
+				</View>
 			</View>
 		</View>
 	);
@@ -285,89 +352,162 @@ const styles = StyleSheet.create({
 		padding: 18,
 	},
 	card: { width: "100%", maxWidth: 420 },
-	sticker: {
-		paddingHorizontal: 16,
-		paddingVertical: 16,
+	board: {
+		backgroundColor: YARD.board,
+		borderRadius: 16,
+		borderWidth: 3,
+		borderColor: YARD.plankLine,
+		paddingHorizontal: 14,
+		paddingTop: 18,
+		paddingBottom: 12,
 		...STICKER_SHADOW,
 	},
-	headerRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		marginBottom: 8,
+
+	// hanging sign
+	signWrap: { alignItems: "center", marginBottom: 12 },
+	chain: {
+		position: "absolute",
+		top: -10,
+		width: 2,
+		height: 12,
+		backgroundColor: YARD.signEdge,
 	},
-	kicker: KICKER_TEXT,
-	closeX: {
+	sign: {
+		backgroundColor: YARD.sign,
+		borderWidth: 2.5,
+		borderColor: YARD.signEdge,
+		borderRadius: 10,
+		paddingHorizontal: 18,
+		paddingVertical: 8,
+		alignItems: "center",
+	},
+	signText: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 18,
-		color: WHIMSY.mute,
-		paddingHorizontal: 6,
+		color: WHIMSY.ink,
+		letterSpacing: 0.5,
+		textAlign: "center",
 	},
+	signSub: {
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		color: YARD.signEdge,
+		marginTop: -1,
+	},
+	closeBtn: { position: "absolute", top: -4, right: 0, padding: 6 },
+	closeX: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.cream },
+
 	feedback: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
-		color: WHIMSY.accent,
+		color: WHIMSY.cream,
+		textAlign: "center",
 		marginBottom: 8,
 	},
 	emptyText: {
 		fontFamily: FONTS.hand,
 		fontSize: 14,
-		color: WHIMSY.mute,
+		color: WHIMSY.cream,
 		textAlign: "center",
 		lineHeight: 21,
-		paddingVertical: 14,
+		paddingVertical: 18,
 	},
-	subKicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
-		color: WHIMSY.mute,
-		letterSpacing: 1.4,
-		textTransform: "uppercase",
+	sectionLabel: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 14,
+		color: WHIMSY.cream,
+		letterSpacing: 0.6,
 		marginTop: 10,
 		marginBottom: 6,
 	},
-	row: {
+
+	// pen card
+	penWrap: { marginBottom: 8 },
+	rail: {
+		gap: 3,
+		paddingHorizontal: 10,
+		paddingTop: 5,
+		paddingBottom: 4,
+		backgroundColor: YARD.rail,
+		borderTopLeftRadius: 10,
+		borderTopRightRadius: 10,
+	},
+	railBar: {
+		height: 3,
+		borderRadius: 2,
+		backgroundColor: "rgba(255,255,255,0.22)",
+	},
+	penBody: {
 		flexDirection: "row",
 		alignItems: "center",
-		paddingHorizontal: 12,
-		paddingVertical: 10,
 		gap: 10,
 		backgroundColor: WHIMSY.paper,
-		borderRadius: 12,
-		marginBottom: 6,
+		borderWidth: 2,
+		borderColor: YARD.plankLine,
+		borderTopWidth: 0,
+		borderBottomLeftRadius: 12,
+		borderBottomRightRadius: 12,
+		paddingHorizontal: 10,
+		paddingVertical: 9,
 	},
-	rowName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
+	stall: {
+		width: 38,
+		height: 38,
+		borderRadius: 9,
+		backgroundColor: WHIMSY.cream,
+		borderWidth: 1.5,
+		borderColor: YARD.plankLine,
+		alignItems: "center",
+		justifyContent: "center",
 	},
-	rowDesc: {
+	stallPig: { fontSize: 20 },
+	penName: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	lotTag: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
 		color: WHIMSY.mute,
 		marginTop: 1,
 	},
-	rowActions: {
-		flexDirection: "row",
-		gap: 6,
+	penActions: { alignItems: "flex-end", gap: 3 },
+	brassBtn: {
+		backgroundColor: YARD.brass,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 10,
+		paddingHorizontal: 14,
+		paddingVertical: 8,
 	},
-	actionBtn: {
+	brassBtnText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 14,
+		color: WHIMSY.ink,
+		letterSpacing: 0.4,
+	},
+	quietBtn: {
+		backgroundColor: "transparent",
+		borderWidth: 1.5,
+		borderColor: WHIMSY.mute,
+		borderRadius: 10,
 		paddingHorizontal: 12,
 		paddingVertical: 7,
-		borderRadius: 10,
-		borderWidth: 1.5,
 	},
-	primary: {
-		backgroundColor: WHIMSY.lilac,
-		borderColor: WHIMSY.ink,
+	quietBtnText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.mute },
+	passText: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
+
+	// chalkboard footer
+	chalkboard: {
+		marginTop: 10,
+		backgroundColor: YARD.chalk,
+		borderRadius: 8,
+		borderWidth: 2,
+		borderColor: YARD.plankLine,
+		paddingVertical: 7,
+		alignItems: "center",
 	},
-	danger: {
-		backgroundColor: "transparent",
-		borderColor: WHIMSY.mute,
-	},
-	actionText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
-		color: WHIMSY.ink,
+	chalkText: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: YARD.chalkInk,
+		letterSpacing: 0.3,
 	},
 });
