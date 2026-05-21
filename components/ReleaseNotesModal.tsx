@@ -20,7 +20,7 @@ import {
 	WHIMSY,
 } from "@/constants/theme";
 import {
-	LATEST_RELEASE,
+	currentRelease,
 	RELEASE_SEEN_KEY,
 	type ReleaseNote,
 } from "@/constants/release_notes";
@@ -33,7 +33,7 @@ interface Props {
 
 export function ReleaseNotesModal({
 	visible,
-	release = LATEST_RELEASE,
+	release = currentRelease(),
 	onClose,
 }: Props) {
 	const handleClose = async () => {
@@ -79,11 +79,13 @@ export function ReleaseNotesModal({
 	);
 }
 
-// Helper: returns true if the user hasn't seen the current latest yet.
+// Helper: true if the user hasn't seen the current (latest *available*)
+// release. Future season entries are invisible until their date, so a
+// player isn't shown a "what's new" for something not yet rolled out.
 export async function shouldShowReleaseNotes(): Promise<boolean> {
 	try {
 		const seen = await AsyncStorage.getItem(RELEASE_SEEN_KEY);
-		return seen !== LATEST_RELEASE.version;
+		return seen !== currentRelease().version;
 	} catch {
 		return false;
 	}
