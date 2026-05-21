@@ -62,6 +62,7 @@ DECLARE
 	caller_id     uuid := auth.uid();
 	kind_today    text := public.daily_curse_kind();
 	casts_today   int;
+	cast_cap      int;
 	taken_today   int;
 	this_take     int := 0;
 	new_id        uuid;
@@ -77,11 +78,17 @@ BEGIN
 		RETURN jsonb_build_object('ok', false, 'reason', 'not_friends');
 	END IF;
 
+	-- Cap: 3 casts/day — raised to 5 for VIP ("Tickle the Pig Pro").
+	cast_cap := CASE
+		WHEN COALESCE(
+			(SELECT is_vip FROM public.profiles WHERE id = caller_id), false
+		) THEN 5 ELSE 3
+	END;
 	SELECT COUNT(*) INTO casts_today
 		FROM public.curses
 		WHERE sender_id = caller_id
 		  AND sent_on = (now() AT TIME ZONE 'UTC')::date;
-	IF casts_today >= 3 THEN
+	IF casts_today >= cast_cap THEN
 		RETURN jsonb_build_object('ok', false, 'reason', 'daily_cap');
 	END IF;
 
