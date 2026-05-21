@@ -63,7 +63,7 @@ describe("AlignmentSchismModal", () => {
 		const text = textOf(renderer.root);
 		expect(text).toContain("becoming Generous");
 		expect(text).toContain("+28");
-		expect(text).toContain("😇");
+		expect(renderer.root.findAllByProps({ name: "halo" }).length).toBeGreaterThan(0);
 	});
 
 	test("goblin side shows Greedy headline + negative score (no leading +)", async () => {
@@ -73,7 +73,7 @@ describe("AlignmentSchismModal", () => {
 		const text = textOf(renderer.root);
 		expect(text).toContain("becoming Greedy");
 		expect(text).toContain("-28");
-		expect(text).toContain("👹");
+		expect(renderer.root.findAllByProps({ name: "horns" }).length).toBeGreaterThan(0);
 	});
 
 	test("dismiss button calls mark_schism_seen with the side + onDismiss", async () => {

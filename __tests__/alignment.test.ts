@@ -11,7 +11,7 @@
 import {
 	alignmentLabel,
 	alignmentDisplay,
-	alignmentEmblem,
+	alignmentIcon,
 	alignmentColorKey,
 	ALIGNMENT_ANGEL_THRESHOLD,
 	ALIGNMENT_GOBLIN_THRESHOLD,
@@ -65,11 +65,11 @@ describe("alignmentDisplay", () => {
 	});
 });
 
-describe("alignmentEmblem", () => {
-	test("each label maps to a single-glyph emoji", () => {
-		expect(alignmentEmblem("angel")).toBe("😇");
-		expect(alignmentEmblem("goblin")).toBe("👹");
-		expect(alignmentEmblem("neutral")).toBe("⚖️");
+describe("alignmentIcon", () => {
+	test("each label maps to its Icon name", () => {
+		expect(alignmentIcon("angel")).toBe("halo");
+		expect(alignmentIcon("goblin")).toBe("horns");
+		expect(alignmentIcon("neutral")).toBe("scales");
 	});
 });
 
@@ -81,18 +81,18 @@ describe("alignmentColorKey", () => {
 	});
 });
 
-describe("integration: label drives display + emblem consistently", () => {
+describe("integration: label drives display + icon consistently", () => {
 	const cases = [
-		{ score: 50, display: "Generous", emblem: "😇" },
-		{ score: 0, display: "Pilgrim", emblem: "⚖️" },
-		{ score: -50, display: "Greedy", emblem: "👹" },
+		{ score: 50, display: "Generous", icon: "halo" },
+		{ score: 0, display: "Pilgrim", icon: "scales" },
+		{ score: -50, display: "Greedy", icon: "horns" },
 	];
 	test.each(cases)(
-		"score $score → $display ($emblem)",
-		({ score, display, emblem }) => {
+		"score $score → $display ($icon)",
+		({ score, display, icon }) => {
 			const label = alignmentLabel(score);
 			expect(alignmentDisplay(label)).toBe(display);
-			expect(alignmentEmblem(label)).toBe(emblem);
+			expect(alignmentIcon(label)).toBe(icon);
 		}
 	);
 });

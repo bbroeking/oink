@@ -19,6 +19,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
+import { Icon } from "./ui/Icon";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -38,14 +39,14 @@ interface Props {
 const COPY = {
 	angel: {
 		kicker: "★ the schism stirs ★",
-		emblem: "😇",
+		icon: "halo" as const,
 		headline: "You're becoming Generous",
 		body: "Your tickle trades have a pattern. You give freely. You bless. You ask for little. Lean in and the path to Halo Bearer is yours.",
 		buttonBg: WHIMSY.sun,
 	},
 	goblin: {
 		kicker: "🟢 a goblin nature stirs 🟢",
-		emblem: "👹",
+		icon: "horns" as const,
 		headline: "You're becoming Greedy",
 		body: "You take more than you give. You hoard your debts. Embrace it and the throne of Goblin King awaits.",
 		buttonBg: "#D5E4C9",
@@ -105,7 +106,14 @@ export function AlignmentSchismModal({ side, score, onDismiss }: Props) {
 						style={[styles.card, STICKER_SHADOW]}
 					>
 						<Text style={styles.kicker}>{copy.kicker}</Text>
-						<Text style={styles.emblem}>{copy.emblem}</Text>
+						<View style={styles.emblem}>
+							<Icon
+								name={copy.icon}
+								size={72}
+								color={WHIMSY.ink}
+								strokeWidth={1.5}
+							/>
+						</View>
 						<Text style={styles.headline}>{copy.headline}</Text>
 						<Text style={styles.body}>{copy.body}</Text>
 						<View style={styles.scoreRow}>
@@ -147,7 +155,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 	kicker: { ...KICKER_TEXT, marginBottom: 14, textAlign: "center" },
-	emblem: { fontSize: 72, marginBottom: 8 },
+	emblem: { marginBottom: 8 },
 	headline: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 26,

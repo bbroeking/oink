@@ -26,12 +26,16 @@ export function alignmentDisplay(label: AlignmentLabel): string {
 	}
 }
 
-// Single-glyph badge for tight rows (leaderboard).
-export function alignmentEmblem(label: AlignmentLabel): string {
+// Icon name (see components/ui/Icon) for the alignment emblem.
+// Replaces the old emoji glyphs (😇 ⚖️ 👹) — emoji render
+// inconsistently per-OS and clash with the app's drawn look.
+export function alignmentIcon(
+	label: AlignmentLabel
+): "halo" | "scales" | "horns" {
 	switch (label) {
-		case "angel":   return "😇";
-		case "goblin":  return "👹";
-		case "neutral": return "⚖️";
+		case "angel":   return "halo";
+		case "goblin":  return "horns";
+		case "neutral": return "scales";
 	}
 }
 

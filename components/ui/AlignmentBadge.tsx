@@ -8,10 +8,11 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
 	alignmentDisplay,
-	alignmentEmblem,
+	alignmentIcon,
 	alignmentLabel,
 	type AlignmentLabel,
 } from "@/utils/alignment";
+import { Icon } from "./Icon";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 type Size = "sm" | "md" | "lg";
@@ -52,9 +53,7 @@ export function AlignmentBadge({
 				},
 			]}
 		>
-			<Text style={[styles.emblem, { fontSize: dims.emblem }]}>
-				{alignmentEmblem(label)}
-			</Text>
+			<Icon name={alignmentIcon(label)} size={dims.emblem} color={WHIMSY.ink} strokeWidth={2} />
 			{!compact && (
 				<Text style={[styles.label, { fontSize: dims.label }]}>
 					{alignmentDisplay(label)}
@@ -75,10 +74,12 @@ function backgroundColor(label: AlignmentLabel): string {
 }
 
 function sizeProfile(size: Size, compact: boolean) {
+	// emblem = the SVG Icon size; a touch larger than the old emoji
+	// font sizes so the halo/scales/horns read at small dimensions.
 	const base = {
-		sm: { padX: 8,  padY: 3, radius: 999, emblem: 12, label: 11 },
-		md: { padX: 10, padY: 5, radius: 999, emblem: 14, label: 13 },
-		lg: { padX: 14, padY: 7, radius: 999, emblem: 18, label: 15 },
+		sm: { padX: 8,  padY: 3, radius: 999, emblem: 15, label: 11 },
+		md: { padX: 10, padY: 5, radius: 999, emblem: 18, label: 13 },
+		lg: { padX: 14, padY: 7, radius: 999, emblem: 22, label: 15 },
 	}[size];
 	if (compact) {
 		// Square aspect for emblem-only mode.
@@ -95,7 +96,6 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: WHIMSY.ink,
 	},
-	emblem: { color: WHIMSY.ink },
 	label: {
 		fontFamily: FONTS.whimsy,
 		color: WHIMSY.ink,

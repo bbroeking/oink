@@ -49,17 +49,16 @@ describe("JudgementDayModal", () => {
 		mockRpc.mockResolvedValue({ data: { ok: true }, error: null });
 	});
 
-	test("top3 generous → Halo Bearer headline + 😇", async () => {
+	test("top3 generous → Halo Bearer headline + halo icon", async () => {
 		const r = await renderAct(
 			<JudgementDayModal result={base} onDismiss={() => {}} />
 		);
-		const text = textOf(r.root);
-		expect(text).toContain("A Halo Bearer!");
-		expect(text).toContain("😇");
+		expect(textOf(r.root)).toContain("A Halo Bearer!");
+		expect(r.root.findAllByProps({ name: "halo" }).length).toBeGreaterThan(0);
 		act(() => r.unmount());
 	});
 
-	test("top3 greedy → Goblin King headline + 👹", async () => {
+	test("top3 greedy → Goblin King headline + horns icon", async () => {
 		const greedy: FinaleResult = {
 			...base,
 			side: "greedy",
@@ -72,8 +71,8 @@ describe("JudgementDayModal", () => {
 		);
 		const text = textOf(r.root);
 		expect(text).toContain("A Goblin King!");
-		expect(text).toContain("👹");
 		expect(text).toContain("-91");
+		expect(r.root.findAllByProps({ name: "horns" }).length).toBeGreaterThan(0);
 		act(() => r.unmount());
 	});
 
@@ -93,7 +92,7 @@ describe("JudgementDayModal", () => {
 		);
 		const text = textOf(r.root);
 		expect(text).toContain("Calm in the Storm");
-		expect(text).toContain("⚖️");
+		expect(r.root.findAllByProps({ name: "scales" }).length).toBeGreaterThan(0);
 		expect(text).not.toContain("most generous");
 		act(() => r.unmount());
 	});

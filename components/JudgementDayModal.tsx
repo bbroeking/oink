@@ -15,6 +15,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
+import { Icon } from "./ui/Icon";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import {
 	FONTS,
@@ -49,8 +50,8 @@ function headline(r: FinaleResult): string {
 	return r.side === "generous" ? "A Generous Soul" : "A Greedy Hog";
 }
 
-function sideEmblem(side: FinaleResult["side"]): string {
-	return side === "generous" ? "😇" : side === "greedy" ? "👹" : "⚖️";
+function sideIcon(side: FinaleResult["side"]): "halo" | "horns" | "scales" {
+	return side === "generous" ? "halo" : side === "greedy" ? "horns" : "scales";
 }
 
 export function JudgementDayModal({ result, onDismiss }: Props) {
@@ -104,7 +105,14 @@ export function JudgementDayModal({ result, onDismiss }: Props) {
 						style={[styles.card, STICKER_SHADOW]}
 					>
 						<Text style={styles.kicker}>⚖ judgement day ⚖</Text>
-						<Text style={styles.emblem}>{sideEmblem(result.side)}</Text>
+						<View style={styles.emblem}>
+							<Icon
+								name={sideIcon(result.side)}
+								size={64}
+								color={WHIMSY.ink}
+								strokeWidth={1.6}
+							/>
+						</View>
 						<Text style={styles.headline}>{headline(result)}</Text>
 
 						{result.side !== "neutral" && result.side_rank != null && (
@@ -168,7 +176,7 @@ const styles = StyleSheet.create({
 	cardWrap: { width: "100%", maxWidth: 380 },
 	card: { paddingHorizontal: 24, paddingVertical: 26, alignItems: "center" },
 	kicker: { ...KICKER_TEXT, marginBottom: 12 },
-	emblem: { fontSize: 64, marginBottom: 6 },
+	emblem: { marginBottom: 6 },
 	headline: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 26,
