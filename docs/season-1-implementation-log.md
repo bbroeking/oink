@@ -76,9 +76,32 @@ richer art is wanted, swap for generated PNGs later. CleanseModal
 still not auto-surfaced from Barn (would need a my_active_effects
 poll on Barn focus — small follow-up).
 
-## Phase 4 — Alignment leaderboard + Judgement Day
+## Phase 4 — Alignment leaderboard + Judgement Day ✅
 
-_(pending)_
+- `alignment_leaderboard.sql` — `alignment_leaderboard(per_side)`
+  RPC returning the two ranked extremes (generous DESC + greedy
+  ASC) with within-side ranks. Neutral users omitted.
+- `finale.sql` — extends titles source CHECK with 'season', seeds
+  5 finale titles, `season_finales` table, `finalize_season()`
+  (ranks everyone, grants top3/top10/participant/neutral rewards,
+  resets all alignment to 0 — idempotent per season_key, NOT
+  granted to authenticated so only an admin/cron can fire it),
+  `my_finale_result()` + `mark_finale_seen()` for the modal.
+- `JudgementDayModal` — verdict reveal: side emblem, bracket
+  headline, rank line, earned title + snouts, reset note.
+- leaderboard.tsx gains an "alignment" scope (3rd toggle): pulls
+  alignment_leaderboard, renders a flat ranked list (no champion
+  poster), trailing number shows signed alignment instead of ♥.
+- `_layout.tsx` polls my_finale_result on auth + foreground,
+  mounts JudgementDayModal at root.
+- +7 tests. 65 total.
+
+**Stubbed / deferred:** finalize_season is callable from the SQL
+console only — no cron wired (intentional; the user triggers the
+finale manually at season end). seraph_wings + cursed_crown
+exclusive ITEMS are not seeded (need icon-gen art) — finale grants
+titles + snouts only for now; add the items in a follow-up once
+the art exists.
 
 ## Phase 5 — Build 62 + ship
 

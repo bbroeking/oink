@@ -19,7 +19,7 @@ import { UserSheet } from "../../components/UserSheet";
 import { AlignmentBadge } from "../../components/ui/AlignmentBadge";
 import { COLORS, FONTS, ROW_TILTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
 
-type Scope = "global" | "friends";
+type Scope = "global" | "friends" | "alignment";
 
 interface ActiveTitle {
 	id: string;
@@ -112,13 +112,18 @@ function ClippingRow({
 	isYou,
 	tilt,
 	onPress,
+	// In alignment scope the trailing number is the alignment score
+	// (signed) rather than lifetime tickles.
+	showAlignment = false,
 }: {
 	player: LeaderboardEntry;
 	rank: number;
 	isYou: boolean;
 	tilt: number;
 	onPress: (userId: string) => void;
+	showAlignment?: boolean;
 }) {
+	const score = player.alignment_score ?? 0;
 	return (
 		<Pressable style={styles.rowWrap} onPress={() => onPress(player.id)}>
 			<Sticker
@@ -147,7 +152,11 @@ function ClippingRow({
 					)}
 				</View>
 				<Text style={styles.rowScore}>
-					{player.tickles_earned.toLocaleString()} ♥
+					{showAlignment
+						? score > 0
+							? `+${score}`
+							: `${score}`
+						: `${player.tickles_earned.toLocaleString()} ♥`}
 				</Text>
 			</Sticker>
 		</Pressable>
@@ -193,6 +202,34 @@ export default function LeaderboardScreen() {
 				else q = q.limit(50);
 				return q;
 			};
+
+			// Alignment scope uses a dedicated RPC that returns the two
+			// extremes (most generous + most greedy) ranked. Map its rows
+			// into LeaderboardEntry so the existing row renderer works.
+			if (scope === "alignment") {
+				const { data: rows } = await supabase.rpc("alignment_leaderboard", {
+					per_side: 25,
+				});
+				const mapped: LeaderboardEntry[] = (
+					(rows as
+						| {
+								user_id: string;
+								username: string | null;
+								active_hat_id: string | null;
+								alignment_score: number;
+						  }[]
+						| null) ?? []
+				).map((r) => ({
+					id: r.user_id,
+					username: r.username,
+					tickles_earned: 0,
+					active_hat_id: r.active_hat_id,
+					active_title: null,
+					alignment_score: r.alignment_score,
+				}));
+				setLeaderboard(mapped);
+				return;
+			}
 
 			let friendIds: string[] | undefined;
 			if (scope === "friends") {
@@ -245,7 +282,7 @@ export default function LeaderboardScreen() {
 					<View style={styles.titleRule} />
 					<View style={styles.toggleWrap}>
 						<Sticker color="paper" rotate={0} radius={22} style={styles.toggle}>
-							{(["global", "friends"] as Scope[]).map((s) => {
+							{(["global", "friends", "alignment"] as Scope[]).map((s) => {
 								const active = s === scope;
 								return (
 									<Pressable
@@ -254,7 +291,13 @@ export default function LeaderboardScreen() {
 										style={[styles.toggleBtn, active && styles.toggleBtnActive]}
 									>
 										<Icon
-											name={s === "global" ? "globe" : "friends"}
+											name={
+												s === "global"
+													? "globe"
+													: s === "friends"
+														? "friends"
+														: "star"
+											}
 											size={14}
 											filled={active}
 											color={WHIMSY.ink}
@@ -266,7 +309,11 @@ export default function LeaderboardScreen() {
 												active && styles.toggleTextActive,
 											]}
 										>
-											{s === "global" ? "Global" : "Friends"}
+											{s === "global"
+												? "Global"
+												: s === "friends"
+													? "Friends"
+													: "Alignment"}
 										</Text>
 									</Pressable>
 								);
@@ -285,8 +332,29 @@ export default function LeaderboardScreen() {
 					<Text style={styles.empty}>
 						{scope === "friends"
 							? "No friends yet. Add some on the Account tab."
-							: "No tickles yet. Be the first!"}
+							: scope === "alignment"
+								? "No one has taken a side yet. Trade to tip the scales."
+								: "No tickles yet. Be the first!"}
 					</Text>
+				) : scope === "alignment" ? (
+					// Alignment scope: flat ranked list, no champion poster
+					// (the "all-time leader" framing is tickle-specific).
+					<FlatList
+						data={leaderboard}
+						renderItem={({ item, index }) => (
+							<ClippingRow
+								player={item}
+								rank={index + 1}
+								isYou={item.id === myId}
+								tilt={ROW_TILTS[index % ROW_TILTS.length]}
+								onPress={setSelectedUserId}
+								showAlignment
+							/>
+						)}
+						keyExtractor={(item) => item.id}
+						style={styles.list}
+						contentContainerStyle={styles.listContent}
+					/>
 				) : (
 					<FlatList
 						data={rest}

@@ -25,6 +25,10 @@ import {
 	AlignmentSchismModal,
 	type SchismSide,
 } from "@/components/AlignmentSchismModal";
+import {
+	JudgementDayModal,
+	type FinaleResult,
+} from "@/components/JudgementDayModal";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
 // without a project still works.
@@ -59,6 +63,8 @@ function RootLayoutInner() {
 	// Season 1: pending alignment-schism reveal. Set by the polling
 	// effect below when a user first crosses ±25 alignment.
 	const [schism, setSchism] = useState<{ side: SchismSide; score: number } | null>(null);
+	// Season 1 finale: pending Judgement Day verdict.
+	const [finale, setFinale] = useState<FinaleResult | null>(null);
 
 	// Resolve the initial auth state before letting the splash drop, so we
 	// transition straight into either auth or the home screen — no blank flash.
@@ -80,6 +86,30 @@ function RootLayoutInner() {
 			const r = data as { side?: string; score?: number } | null;
 			if (r?.side === "angel" || r?.side === "goblin") {
 				setSchism({ side: r.side, score: r.score ?? 0 });
+			}
+		};
+		check();
+		const sub = AppState.addEventListener("change", (state) => {
+			if (state === "active") check();
+		});
+		return () => {
+			cancelled = true;
+			sub.remove();
+		};
+	}, [authChecked]);
+
+	// Poll my_finale_result the same way — surfaces the Judgement Day
+	// modal once a season has been finalized. Independent of the
+	// schism poll so a finalized season shows even mid-schism.
+	useEffect(() => {
+		if (!authChecked) return;
+		let cancelled = false;
+		const check = async () => {
+			const { data } = await supabase.rpc("my_finale_result");
+			if (cancelled) return;
+			const r = data as ({ pending?: boolean } & Partial<FinaleResult>) | null;
+			if (r?.pending) {
+				setFinale(r as FinaleResult);
 			}
 		};
 		check();
@@ -135,6 +165,12 @@ function RootLayoutInner() {
 					side={schism.side}
 					score={schism.score}
 					onDismiss={() => setSchism(null)}
+				/>
+			)}
+			{finale && (
+				<JudgementDayModal
+					result={finale}
+					onDismiss={() => setFinale(null)}
 				/>
 			)}
 		</ThemeProvider>
