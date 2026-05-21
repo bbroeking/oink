@@ -1,8 +1,8 @@
 # Spec — Subscriptions ("Tickle the Pig Pro")
 
-Status: **draft**. The plumbing exists and is switched off; this spec
-defines the product, what it unlocks, how it gates content, and the
-decisions still open before it ships.
+Status: **decisions locked** (2026-05-20). The plumbing exists and is
+switched off; this spec defines the product, what it unlocks, how it
+gates content, and the build order.
 
 ---
 
@@ -27,23 +27,29 @@ So this spec is mostly **decisions + wiring**, not greenfield.
 
 ## 2. The product
 
-**"Tickle the Pig Pro"** — one entitlement, three ways to buy it:
+**"Tickle the Pig Pro"** — one entitlement, two ways to buy it:
 
-| Package | Type | Intent |
-|---|---|---|
-| `monthly` | auto-renewable sub | low-commitment entry |
-| `yearly` | auto-renewable sub | the headline value option |
-| `lifetime` | non-consumable | one-and-done for committed players |
+| Package | Type | Price | Intent |
+|---|---|---|---|
+| `monthly` | auto-renewable sub | **$3.99/mo** | low-commitment entry |
+| `yearly` | auto-renewable sub | **$19.99/yr** | the headline value option (≈58% off monthly) |
 
-All three grant the **same `tickle_the_pig_pro` entitlement**. The app
-never checks *which* package — only "does the caller have Pro." That
-keeps gating logic to a single boolean.
+**No `lifetime` product** — dropped (decision, 2026-05-20). Pro is a
+subscription only.
 
-**Model decision (recommended):** Pro is an *account-level ongoing*
-benefit, **not** a per-season battle-pass purchase. Subscribe once →
-the premium track of *every* season is yours while active. This is
-simpler than per-season passes and gives the subscription a reason to
-stay on between seasons.
+Both packages grant the **same `tickle_the_pig_pro` entitlement**. The
+app never checks *which* package — only "does the caller have Pro."
+Gating is a single boolean.
+
+**Model — LOCKED: ongoing.** Pro is an *account-level ongoing*
+benefit, NOT a per-season battle-pass purchase. Subscribe once → the
+premium track of *every* season is yours while active.
+
+This retires the old per-season purchase model: `premium_plus` (the
+schema's third tier — `premium_plus_price_cents`, `BattlePassSaleModal`'s
+"Unlock Plus") is **folded away**. There is one paid tier — Pro. The
+`premium_plus_*` columns stay in the schema (harmless) but are unused;
+`BattlePassSaleModal` is superseded by the RevenueCat paywall.
 
 ---
 
@@ -128,22 +134,17 @@ Mostly already documented in the `utils/iap.ts` header. In order:
 
 ---
 
-## 7. Open decisions (need answers before build)
+## 7. Decisions
 
-1. **Pricing.** Monthly / yearly / lifetime price points? (Recommend
-   anchoring yearly as the value pick, e.g. $3.99/mo, $19.99/yr,
-   $39.99 lifetime — but that's a call.)
-2. **Regen multiplier.** 1.5× is a guess — what feels "powerful"
-   without making the free game feel starved?
-3. **Per-season vs ongoing.** Spec recommends ongoing (subscribe →
-   every season's premium track). Confirm.
-4. **Free-trial?** A 7-day trial on the subscriptions converts well;
-   adds one ASC config step.
-5. **Which Season 1 items are premium-track?** Spec proposes the 4
-   mid-tier; confirm or re-split.
-6. **Existing battle-pass `premium_plus` track** — season.tsx
-   references `premium_plus_price_cents`. Is there a *third* tier
-   above premium? If so this spec needs a Pro vs Pro+ section.
+| # | Decision | Status |
+|---|---|---|
+| Pricing | $3.99/mo, $19.99/yr — no lifetime | ✅ locked |
+| Model | Ongoing (subscribe → every season's premium track) | ✅ locked |
+| Pro unlocks | §3 proposal accepted as-is | ✅ locked |
+| `premium_plus` | Folded away — Pro is the single paid tier | ✅ locked |
+| Regen multiplier | 1.5× (tune in playtest) | provisional |
+| Free trial | 7-day intro on both packages | recommend yes — confirm at ASC setup |
+| Premium-track items | The 4 mid-tier (angel_wings, holy_radiance, goblin_ears, goblin_crown) | ✅ locked (§3) |
 
 ---
 

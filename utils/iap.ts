@@ -3,14 +3,15 @@
 // SETUP (one-time, in this order):
 //   1. Sign Paid Apps Agreement in App Store Connect (Account > Agreements)
 //   2. Add banking + tax info in App Store Connect
-//   3. Create products in App Store Connect:
-//        - lifetime (Non-Consumable)
-//        - yearly (Auto-Renewable Subscription, Subscription Group "Tickle the Pig Pro")
-//        - monthly (Auto-Renewable Subscription, same group)
+//   3. Create products in App Store Connect (subscriptions only —
+//      no lifetime). yearly + monthly, both Auto-Renewable, both in
+//      one Subscription Group "Tickle the Pig Pro":
+//        - yearly  ($19.99/yr)
+//        - monthly ($3.99/mo)
 //   4. RevenueCat dashboard: https://app.revenuecat.com
 //      - Create iOS app, paste the App-Specific Shared Secret from ASC
-//      - Map the 3 products to entitlement `tickle_the_pig_pro`
-//      - Create an Offering (default) with all 3 packages
+//      - Map both products to entitlement `tickle_the_pig_pro`
+//      - Create an Offering (default) with both packages
 //      - Configure a Paywall on the offering (RevenueCat dashboard → Paywalls)
 //   5. Replace REVENUECAT_IOS_API_KEY below if needed
 //
@@ -46,9 +47,9 @@ const REVENUECAT_IOS_API_KEY =
 // is the snake-case slug below. Update if your dashboard uses a different ID.)
 export const ENTITLEMENT_PRO = "tickle_the_pig_pro";
 
-// Product identifiers — must match App Store Connect AND the RC offering
+// Product identifiers — must match App Store Connect AND the RC offering.
+// Subscriptions only; lifetime was dropped (see docs/subscriptions-spec.md).
 export const PRODUCT_IDS = {
-	lifetime: "lifetime",
 	yearly: "yearly",
 	monthly: "monthly",
 } as const;
