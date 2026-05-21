@@ -29,6 +29,8 @@ import { LuckyTitleUnlockModal } from "./LuckyTitleUnlockModal";
 import { TickleTradeModal, useTickleTrades } from "./TickleTradeModal";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
+import { BarnOverlay } from "./ui/BarnOverlay";
+import { alignmentLabel, type AlignmentLabel } from "@/utils/alignment";
 
 // Lucky Pig tunables — client-rolled (D in the design grill). Trade-off
 // is documented in migrations/20260519020000_lucky_pig.sql.
@@ -224,6 +226,9 @@ export default function Barn() {
 	// Whether the current lucky trigger ALSO rolled a title — captured
 	// at trigger time, consumed when the burst dismisses.
 	const pendingTitleRoll = useRef(false);
+
+	// Season 1: current alignment, drives BarnOverlay theming.
+	const [alignment, setAlignment] = useState<AlignmentLabel>("neutral");
 
 	// Tickle Trade state — own user id, full trades list, modal open flag.
 	const [myUserId, setMyUserId] = useState<string | null>(null);
@@ -467,7 +472,7 @@ export default function Barn() {
 				supabase
 					.from("profiles")
 					.select(
-						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id"
+						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id, alignment_score"
 					)
 					.eq("id", user.id)
 					.single(),
@@ -493,7 +498,12 @@ export default function Barn() {
 				active_aura_id?: string | null;
 				active_background_id?: string | null;
 				active_held_id?: string | null;
+				alignment_score?: number | null;
 			} | null;
+
+			// Season 1: drives the BarnOverlay theming. Tolerates a
+			// missing column (pre-alignment-migration) → defaults neutral.
+			setAlignment(alignmentLabel(prof?.alignment_score ?? 0));
 
 			const slotIds: (string | null)[] = [
 				prof?.active_hat_id ?? null,
@@ -660,6 +670,7 @@ export default function Barn() {
 
 	return (
 		<PageBackground bgId={stats.activeBackground?.id ?? null}>
+			<BarnOverlay alignment={alignment} />
 			<SafeAreaView style={styles.contentContainer}>
 				<View style={styles.statsRow}>
 					<PaperTicket

@@ -24,6 +24,7 @@ import { Sticker } from "../../components/ui/Sticker";
 import { Icon } from "../../components/ui/Icon";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
+import { BountyBoard } from "../../components/BountyBoard";
 import {
 	TierUpBanner,
 	type TierUpBannerHandle,
@@ -414,6 +415,7 @@ export default function SeasonScreen() {
 				</View>
 
 				<ScrollView contentContainerStyle={styles.tierList}>
+					<BountyBoard />
 					{Array.from({ length: season.total_tiers }, (_, i) => i + 1).map(
 						(t, i) => {
 							const free = tiersByNumber[t]?.free;

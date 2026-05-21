@@ -54,9 +54,27 @@ the Barn tickle loop — `my_active_effects()` exposes the data; a
 follow-up wires Barn to honor it. CleanseModal is built but not yet
 auto-surfaced from Barn (Phase 3 touches Barn, will mount it there).
 
-## Phase 3 — Barn overlay + Weekly bounties
+## Phase 3 — Barn overlay + Weekly bounties ✅
 
-_(pending)_
+- `bounties.sql` — `user_bounty_claims` table, `current_week_start()`
+  (Monday UTC anchor), `my_weekly_bounties()` returning 3 of a
+  6-bounty pool (rotating window by ISO-week % 6) with live progress
+  computed from tickle_trades/blessings/curses, and `claim_bounty()`
+  (re-derives progress server-side, grants snouts once per week).
+- `BarnOverlay` (ui/) — pure-RN themed decoration, no image assets.
+  Angel = white cloud puffs + warm tint; goblin = gold coin piles +
+  green tint; neutral = null. pointerEvents="none".
+- `BountyCard` — single bounty row, 3 states (in-progress / ready /
+  claimed), progress bar, claim CTA.
+- `BountyBoard` — fetches my_weekly_bounties on focus, maps cards.
+- Barn fetches alignment_score, mounts BarnOverlay.
+- season.tsx mounts BountyBoard at the top of the tier ScrollView.
+- +9 tests. 59 total.
+
+**Stubbed / deferred:** BarnOverlay uses View-based shapes — if
+richer art is wanted, swap for generated PNGs later. CleanseModal
+still not auto-surfaced from Barn (would need a my_active_effects
+poll on Barn focus — small follow-up).
 
 ## Phase 4 — Alignment leaderboard + Judgement Day
 
