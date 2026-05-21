@@ -844,9 +844,8 @@ export default function Barn() {
 			/>
 
 			{/* Bottom-right Tickle Trade pill. Always rendered; pulses
-			    + shows a count badge when there's actionable trade
-			    activity (incoming requests to fulfill or repayments
-			    you owe). Tapping opens the trade modal. */}
+			    + shows a count badge when there are incoming requests
+			    to fulfill. Tapping opens the trade modal. */}
 			{myUserId && (
 				<Pressable
 					onPress={() => {

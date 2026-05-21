@@ -8,7 +8,7 @@
 -- Architecture:
 --   tickle_trades INSERT / UPDATE
 --     → trigger picks the right event ("requested", "fulfilled",
---       "repaid", "cancelled")
+--       "cancelled")
 --     → calls send_push_to_user with the target's user_id + payload
 --     → pg_net posts to https://exp.host/--/api/v2/push/send
 --     → Expo forwards to APNs → device receives
@@ -93,30 +93,16 @@ BEGIN
 			'screen', 'trade'
 		);
 
-	-- UPDATE pending → fulfilled: B sent to A. Actor = target (B).
-	-- Target of the push = requester (A).
+	-- UPDATE pending → fulfilled: B answered A's request. Actor =
+	-- target (B). Target of the push = requester (A), who got 2N.
 	ELSIF TG_OP = 'UPDATE'
 	      AND OLD.status = 'pending' AND NEW.status = 'fulfilled' THEN
 		SELECT username INTO actor_name FROM public.profiles WHERE id = NEW.target_id;
 		target_user_id := NEW.requester_id;
-		push_title := COALESCE(actor_name, 'A friend') || ' sent you ' || NEW.amount || ' tickles';
-		push_body  := 'Tap to say thanks (you''ll owe ' || (NEW.amount * 2) || ' back).';
+		push_title := COALESCE(actor_name, 'A friend') || ' answered your trade';
+		push_body  := '+' || (NEW.amount * 2) || ' tickles landed in your barn.';
 		push_data  := jsonb_build_object(
 			'kind', 'trade_fulfilled',
-			'trade_id', NEW.id::text,
-			'screen', 'trade'
-		);
-
-	-- UPDATE fulfilled → repaid: A thanked B. Actor = requester (A).
-	-- Target of the push = target (B).
-	ELSIF TG_OP = 'UPDATE'
-	      AND OLD.status = 'fulfilled' AND NEW.status = 'repaid' THEN
-		SELECT username INTO actor_name FROM public.profiles WHERE id = NEW.requester_id;
-		target_user_id := NEW.target_id;
-		push_title := COALESCE(actor_name, 'A friend') || ' thanked you 🤝';
-		push_body  := '+' || (NEW.amount * 2) || ' tickles from the trade.';
-		push_data  := jsonb_build_object(
-			'kind', 'trade_repaid',
 			'trade_id', NEW.id::text,
 			'screen', 'trade'
 		);

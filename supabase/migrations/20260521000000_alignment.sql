@@ -69,12 +69,13 @@ $function$;
 
 GRANT EXECUTE ON FUNCTION public.shift_alignment(uuid, int) TO authenticated;
 
--- ── trigger: tickle_trades status change → alignment shift.
--- Fulfill (status pending → fulfilled): fulfiller (=target_id in the
--- trade row) gives, gets +2. Requester just received, no shift.
--- Repay (status fulfilled → repaid): requester just repaid the
--- doubled thanks, gets +5. Target received the repayment, no shift.
--- Cancelled doesn't shift either side.
+-- ── trigger: tickle_trades fulfill → alignment shift.
+-- On pending → fulfilled:
+--   giver (target_id)    gave N from their own bank for a bare
+--                        social promise → +2 (generous).
+--   asker (requester_id) pocketed 2N for free → -2 (greedy).
+-- There is no repay step — asking-and-never-giving-back is exactly
+-- how a player drifts Goblin. Cancelled shifts neither side.
 CREATE OR REPLACE FUNCTION public.tickle_trades_alignment_shift()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -83,9 +84,8 @@ SET search_path TO 'public'
 AS $function$
 BEGIN
 	IF NEW.status = 'fulfilled' AND OLD.status = 'pending' THEN
-		PERFORM public.shift_alignment(NEW.target_id, 2);
-	ELSIF NEW.status = 'repaid' AND OLD.status = 'fulfilled' THEN
-		PERFORM public.shift_alignment(NEW.requester_id, 5);
+		PERFORM public.shift_alignment(NEW.target_id, 2);      -- giver: generous
+		PERFORM public.shift_alignment(NEW.requester_id, -2);  -- asker: greedy
 	END IF;
 	RETURN NEW;
 END;

@@ -16,7 +16,7 @@ Files:
 - Adds `alignment_updated_at timestamptz` for inactivity-decay calculations
 - Creates `public.alignment_label(score int) → text` SQL function returning `'goblin' | 'neutral' | 'angel'` with the ±34 hysteresis thresholds
 - Creates `public.shift_alignment(target_user_id uuid, delta int) → void` SECURITY DEFINER RPC
-- Adds triggers on `tickle_trades` to shift alignment on `fulfilled` (+2 to fulfiller), on `repaid` (+5 to repayer), on `cancelled-after-7d-unrepaid` (-3 to non-repayer)
+- Adds a trigger on `tickle_trades` `fulfilled`: +2 to the giver (`target_id`, gave from their bank), −2 to the asker (`requester_id`, pocketed 2N for free). No repay step — asking-and-pocketing-double is the Goblin path.
 
 ### 0.2 Helper for client-side label derivation
 

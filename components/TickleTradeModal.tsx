@@ -1,8 +1,9 @@
-// Tickle Trade — bottom-right pill on Barn + modal listing every
-// actionable trade (fulfill incoming / repay your debts) plus passive
-// (waiting on someone else).
+// Tickle Trade — bottom-right pill on Barn + modal listing your
+// actionable trades: incoming requests to fulfill/decline, and your
+// own outgoing requests still waiting. There is NO repay step — when
+// you fulfill, the asker pockets 2N and you get only a social
+// promise. See migrations/20260520010000_tickle_trades.sql.
 //
-// Behavior is paired with migrations/20260520010000_tickle_trades.sql.
 // Each trade row carries the partner's username so the UI doesn't need
 // a second profiles fetch.
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -51,16 +52,13 @@ export function useTickleTrades(userId: string | null) {
 			load();
 		}, [load])
 	);
-	// Actionable = trades the user can act on right now:
-	//   - incoming pending (need to fulfill or cancel)
-	//   - outgoing fulfilled (need to thank/repay)
+	// Actionable = incoming pending requests (fulfill or decline).
+	// Fulfilled trades are terminal — there's no repay step to chase.
 	const actionableCount = useMemo(() => {
 		if (!userId) return 0;
-		return trades.filter((t) => {
-			if (t.status === "pending" && t.target_id === userId) return true;
-			if (t.status === "fulfilled" && t.requester_id === userId) return true;
-			return false;
-		}).length;
+		return trades.filter(
+			(t) => t.status === "pending" && t.target_id === userId
+		).length;
 	}, [trades, userId]);
 	return { trades, actionableCount, reload: load };
 }
@@ -86,14 +84,8 @@ export function TickleTradeModal({
 	const incomingPending = trades.filter(
 		(t) => t.status === "pending" && t.target_id === userId
 	);
-	const owedRepayments = trades.filter(
-		(t) => t.status === "fulfilled" && t.requester_id === userId
-	);
 	const outgoingPending = trades.filter(
 		(t) => t.status === "pending" && t.requester_id === userId
-	);
-	const awaitingThanks = trades.filter(
-		(t) => t.status === "fulfilled" && t.target_id === userId
 	);
 
 	useEffect(() => {
@@ -123,14 +115,7 @@ export function TickleTradeModal({
 			"fulfill_tickle_trade",
 			{ trade_id: t.id },
 			t.id,
-			`Sent ${t.amount} to ${t.partner_username}.`
-		);
-	const repay = (t: TickleTrade) =>
-		doRpc(
-			"repay_tickle_trade",
-			{ trade_id: t.id },
-			t.id,
-			`Repaid ${t.amount * 2} to ${t.partner_username}.`
+			`Gave ${t.amount} to ${t.partner_username}.`
 		);
 	const cancel = (t: TickleTrade) =>
 		doRpc("cancel_tickle_trade", { trade_id: t.id }, t.id, "Trade cancelled.");
@@ -161,23 +146,6 @@ export function TickleTradeModal({
 								</Text>
 							)}
 
-							{owedRepayments.length > 0 && (
-								<>
-									<Text style={styles.subKicker}>thank them ↩</Text>
-									{owedRepayments.map((t) => (
-										<TradeRow
-											key={t.id}
-											t={t}
-											actionLabel={`Send ${t.amount * 2}`}
-											actionVariant="primary"
-											busy={busy === t.id}
-											onAction={() => repay(t)}
-											description={`You owe ${t.amount * 2} (2× repay)`}
-										/>
-									))}
-								</>
-							)}
-
 							{incomingPending.length > 0 && (
 								<>
 									<Text style={styles.subKicker}>their requests ↘</Text>
@@ -185,14 +153,14 @@ export function TickleTradeModal({
 										<TradeRow
 											key={t.id}
 											t={t}
-											actionLabel={`Fulfill ${t.amount}`}
+											actionLabel={`Give ${t.amount}`}
 											actionVariant="primary"
 											secondaryLabel="Decline"
 											secondaryVariant="danger"
 											busy={busy === t.id}
 											onAction={() => fulfill(t)}
 											onSecondary={() => cancel(t)}
-											description={`Wants ${t.amount} tickles · pays back ${t.amount * 2}`}
+											description={`Costs you ${t.amount} · they pocket ${t.amount * 2}`}
 										/>
 									))}
 								</>
@@ -209,23 +177,7 @@ export function TickleTradeModal({
 											actionVariant="danger"
 											busy={busy === t.id}
 											onAction={() => cancel(t)}
-											description={`Waiting on them to send ${t.amount}`}
-										/>
-									))}
-								</>
-							)}
-
-							{awaitingThanks.length > 0 && (
-								<>
-									<Text style={styles.subKicker}>awaiting thanks ⌛</Text>
-									{awaitingThanks.map((t) => (
-										<TradeRow
-											key={t.id}
-											t={t}
-											actionLabel=""
-											busy={false}
-											onAction={() => {}}
-											description={`Owed ${t.amount * 2} back from them`}
+											description={`If answered you pocket ${t.amount * 2}`}
 										/>
 									))}
 								</>

@@ -1,18 +1,18 @@
--- Tickle Trade — request/fulfill/repay flow for friend-to-friend
--- tickle transfers with a 2× repayment doubling.
+-- Tickle Trade — request/fulfill flow for friend-to-friend tickle
+-- transfers. The ASKER gets DOUBLE what they request; the giver
+-- spends N from their own bank and gets nothing material back —
+-- only a social promise. Greed is the mechanically profitable move;
+-- alignment + reputation is the only counterweight.
+-- See docs/season-1-goblins-vs-angels.md.
 --
 -- Lifecycle:
 --   pending   A→B  — A asked B for N tickles. Either side can cancel.
---   fulfilled A→B  — B spent N from their bank; A got +N score.
---                    A owes B 2N in repayment.
---   repaid    A→B  — A spent 2N from their bank; B got +2N score.
---                    Terminal. Pair can start a new trade.
+--   fulfilled A→B  — B spent N from their bank; A got +2N score.
+--                    Terminal. No repayment — the promise is social.
 --   cancelled      — terminal, no transfer happened.
 --
 -- Constraints:
 --   - Max 1 PENDING from A→B at a time (you can't spam-request)
---   - Max 1 FULFILLED A→B at a time (you can't pile up unpaid debts to
---     the same person before settling)
 --   - Friends-only (requester + target must both be in an accepted
 --     friendship)
 --   - Amount 1-5 (UI-enforced + DB CHECK)
@@ -28,18 +28,17 @@ CREATE TABLE IF NOT EXISTS public.tickle_trades (
 	target_id    uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 	amount       int         NOT NULL CHECK (amount BETWEEN 1 AND 5),
 	status       text        NOT NULL DEFAULT 'pending'
-		CHECK (status IN ('pending', 'fulfilled', 'repaid', 'cancelled')),
+		CHECK (status IN ('pending', 'fulfilled', 'cancelled')),
 	created_at   timestamptz NOT NULL DEFAULT now(),
 	fulfilled_at timestamptz,
-	repaid_at    timestamptz,
 	cancelled_at timestamptz,
 	CHECK (requester_id <> target_id)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS tickle_trades_one_pending
 	ON public.tickle_trades (requester_id, target_id) WHERE status = 'pending';
-CREATE UNIQUE INDEX IF NOT EXISTS tickle_trades_one_fulfilled
-	ON public.tickle_trades (requester_id, target_id) WHERE status = 'fulfilled';
+-- No one-fulfilled uniqueness: fulfilled is terminal + historical now
+-- (no repay step), so a pair trades repeatedly across cooldown windows.
 CREATE INDEX IF NOT EXISTS tickle_trades_target_pending_idx
 	ON public.tickle_trades (target_id) WHERE status = 'pending';
 CREATE INDEX IF NOT EXISTS tickle_trades_requester_fulfilled_idx
@@ -115,8 +114,9 @@ $function$;
 
 GRANT EXECUTE ON FUNCTION public.request_tickles(uuid, int) TO authenticated;
 
--- ── fulfill_tickle_trade: B sends N to A ───────────────────────────
--- Resource flow: B's bank -= N, A's counter += N, A's tickles_earned += N.
+-- ── fulfill_tickle_trade: B answers A's request ────────────────────
+-- Resource flow: B's bank -= N; A's score (counter + tickles_earned)
+-- += 2N. The asker gets DOUBLE; the giver gets only a social promise.
 CREATE OR REPLACE FUNCTION public.fulfill_tickle_trade(trade_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -161,9 +161,11 @@ BEGIN
 		SET item_count = item_count - trade.amount
 		WHERE user_id = caller_id;
 
+	-- Asker gets DOUBLE what they asked for (see header). The giver
+	-- spent only `amount` above and gets nothing material — by design.
 	UPDATE public.profiles
-		SET counter        = counter        + trade.amount,
-		    tickles_earned = tickles_earned + trade.amount
+		SET counter        = counter        + trade.amount * 2,
+		    tickles_earned = tickles_earned + trade.amount * 2
 		WHERE id = trade.requester_id;
 
 	UPDATE public.tickle_trades
@@ -173,80 +175,13 @@ BEGIN
 	RETURN jsonb_build_object(
 		'ok', true,
 		'trade_id', trade.id,
-		'new_bank', b_bank - trade.amount
+		'new_bank', b_bank - trade.amount,
+		'asker_gained', trade.amount * 2
 	);
 END;
 $function$;
 
 GRANT EXECUTE ON FUNCTION public.fulfill_tickle_trade(uuid) TO authenticated;
-
--- ── repay_tickle_trade: A says thanks, sends 2×N to B ──────────────
--- Resource flow: A's bank -= 2N, B's counter += 2N, B's tickles_earned += 2N.
-CREATE OR REPLACE FUNCTION public.repay_tickle_trade(trade_id uuid)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $function$
-DECLARE
-	caller_id uuid := auth.uid();
-	trade     record;
-	a_bank    int;
-	owed      int;
-BEGIN
-	IF caller_id IS NULL THEN
-		RETURN jsonb_build_object('ok', false, 'reason', 'unauthenticated');
-	END IF;
-
-	SELECT * INTO trade FROM public.tickle_trades
-		WHERE id = trade_id FOR UPDATE;
-	IF NOT FOUND THEN
-		RETURN jsonb_build_object('ok', false, 'reason', 'not_found');
-	END IF;
-	IF trade.requester_id <> caller_id THEN
-		RETURN jsonb_build_object('ok', false, 'reason', 'not_requester');
-	END IF;
-	IF trade.status <> 'fulfilled' THEN
-		RETURN jsonb_build_object('ok', false, 'reason', 'bad_status');
-	END IF;
-
-	owed := trade.amount * 2;
-
-	SELECT item_count INTO a_bank
-		FROM public.user_items WHERE user_id = caller_id FOR UPDATE;
-	IF a_bank IS NULL THEN
-		RETURN jsonb_build_object('ok', false, 'reason', 'no_bank');
-	END IF;
-	IF a_bank < owed THEN
-		RETURN jsonb_build_object(
-			'ok', false, 'reason', 'insufficient_bank',
-			'balance', a_bank, 'needed', owed
-		);
-	END IF;
-
-	UPDATE public.user_items
-		SET item_count = item_count - owed
-		WHERE user_id = caller_id;
-
-	UPDATE public.profiles
-		SET counter        = counter        + owed,
-		    tickles_earned = tickles_earned + owed
-		WHERE id = trade.target_id;
-
-	UPDATE public.tickle_trades
-		SET status = 'repaid', repaid_at = now()
-		WHERE id = trade.id;
-
-	RETURN jsonb_build_object(
-		'ok', true,
-		'trade_id', trade.id,
-		'new_bank', a_bank - owed,
-		'paid', owed
-	);
-END;
-$function$;
-
-GRANT EXECUTE ON FUNCTION public.repay_tickle_trade(uuid) TO authenticated;
 
 -- ── cancel_tickle_trade: either side cancels a pending trade ───────
 CREATE OR REPLACE FUNCTION public.cancel_tickle_trade(trade_id uuid)

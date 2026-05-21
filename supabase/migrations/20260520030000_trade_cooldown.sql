@@ -7,7 +7,7 @@
 -- inside the same day.
 --
 -- History is already preserved on the existing tickle_trades table
--- (cancel + repay update status, never delete). This migration adds
+-- (cancel + fulfill update status, never delete). This migration adds
 -- `tickle_trade_history(other_user_id)` for backend / future-UI use.
 
 -- ── 1. Replace request_tickles with cooldown check ────────────────
@@ -39,11 +39,13 @@ BEGIN
 		RETURN jsonb_build_object('ok', false, 'reason', 'not_friends');
 	END IF;
 
-	-- Block if there's an active (pending OR fulfilled) trade either
-	-- direction — same constraint as before.
+	-- Block only if there's a PENDING trade either direction — one
+	-- request in flight at a time. 'fulfilled' is terminal now (no
+	-- repay step), so it must NOT block future trades; the 24h
+	-- cooldown below is what spaces repeat trades between a pair.
 	IF EXISTS (
 		SELECT 1 FROM public.tickle_trades
-		WHERE status IN ('pending', 'fulfilled')
+		WHERE status = 'pending'
 		  AND (
 		    (requester_id = caller_id AND target_id = target_user_id)
 		    OR (requester_id = target_user_id AND target_id = caller_id)
@@ -55,7 +57,7 @@ BEGIN
 	-- Pair-level cooldown: 24h since the most recent trade between
 	-- this pair started, regardless of direction or how it ended.
 	-- Reads the latest created_at because that's the "first contact"
-	-- timestamp regardless of fulfilled/repaid/cancelled state.
+	-- timestamp regardless of fulfilled/cancelled state.
 	SELECT MAX(created_at) INTO last_trade_at
 		FROM public.tickle_trades
 		WHERE (requester_id = caller_id AND target_id = target_user_id)
@@ -85,7 +87,7 @@ GRANT EXECUTE ON FUNCTION public.request_tickles(uuid, int) TO authenticated;
 
 -- ── 2. Backend history RPC ─────────────────────────────────────────
 -- Returns the full trade ledger between the caller and a friend,
--- including terminal (repaid / cancelled) trades. Ordered newest
+-- including terminal (fulfilled / cancelled) trades. Ordered newest
 -- first. No UI yet — intended for analytics / future "your history
 -- with X" screen / reputation surface.
 CREATE OR REPLACE FUNCTION public.tickle_trade_history(other_user_id uuid)
@@ -97,7 +99,6 @@ RETURNS TABLE (
 	status        text,
 	created_at    timestamptz,
 	fulfilled_at  timestamptz,
-	repaid_at     timestamptz,
 	cancelled_at  timestamptz,
 	direction     text   -- 'sent' (caller requested from other) or 'received' (other requested from caller)
 )
@@ -113,7 +114,6 @@ AS $function$
 		t.status,
 		t.created_at,
 		t.fulfilled_at,
-		t.repaid_at,
 		t.cancelled_at,
 		CASE
 			WHEN t.requester_id = auth.uid() THEN 'sent'

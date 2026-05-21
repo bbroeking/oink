@@ -26,7 +26,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "🤝",
 				title: "Tickle Trade",
-				body: "Ask a friend for 1-5 tickles. When they fulfill, you owe them 2× back when you say thanks. Tap the handshake button on the home screen to manage trades.",
+				body: "Ask a friend for 1-5 tickles. If they answer, you pocket DOUBLE — they give it from their own bank for nothing but goodwill. Tap the handshake button on the home screen to manage trades.",
 			},
 			{
 				emoji: "#",
@@ -63,7 +63,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "🤝",
 				title: "Trade tickles with friends",
-				body: "Ask 1-5 tickles from any friend. When they fulfill, you owe 2× back when you thank them. Tap the handshake on the home screen.",
+				body: "Ask 1-5 tickles from any friend. If they answer, you pocket double — giving costs them, asking pays you. Tap the handshake on the home screen.",
 			},
 		],
 	},

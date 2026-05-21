@@ -40,7 +40,7 @@ const COPY = {
 		kicker: "★ the schism stirs ★",
 		emblem: "😇",
 		headline: "You're becoming Generous",
-		body: "Your tickle trades have a pattern. You give. You repay. You bless. Lean in and the path to Halo Bearer is yours.",
+		body: "Your tickle trades have a pattern. You give freely. You bless. You ask for little. Lean in and the path to Halo Bearer is yours.",
 		buttonBg: WHIMSY.sun,
 	},
 	goblin: {

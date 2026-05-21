@@ -64,8 +64,8 @@ DECLARE
 	wk_ts      timestamptz := wk_start::timestamptz;
 	week_num   int := EXTRACT(WEEK FROM (now() AT TIME ZONE 'UTC'))::int;
 	-- live counters
-	n_fulfilled    int := 0;
-	n_repaid       int := 0;
+	n_fulfilled    int := 0;   -- trades the caller GAVE (fulfilled others)
+	n_received     int := 0;   -- caller's own requests that got fulfilled
 	n_blessings    int := 0;
 	n_curses       int := 0;
 	n_distinct     int := 0;
@@ -76,11 +76,11 @@ BEGIN
 	END IF;
 
 	SELECT COUNT(*) INTO n_fulfilled FROM public.tickle_trades
-		WHERE target_id = caller_id AND status IN ('fulfilled', 'repaid')
+		WHERE target_id = caller_id AND status = 'fulfilled'
 		  AND fulfilled_at >= wk_ts;
-	SELECT COUNT(*) INTO n_repaid FROM public.tickle_trades
-		WHERE requester_id = caller_id AND status = 'repaid'
-		  AND repaid_at >= wk_ts;
+	SELECT COUNT(*) INTO n_received FROM public.tickle_trades
+		WHERE requester_id = caller_id AND status = 'fulfilled'
+		  AND fulfilled_at >= wk_ts;
 	SELECT COUNT(*) INTO n_blessings FROM public.blessings
 		WHERE sender_id = caller_id AND sent_at >= wk_ts;
 	SELECT COUNT(*) INTO n_curses FROM public.curses
@@ -90,7 +90,7 @@ BEGIN
 		            ELSE requester_id END AS partner
 			FROM public.tickle_trades
 			WHERE (requester_id = caller_id OR target_id = caller_id)
-			  AND status IN ('fulfilled', 'repaid')
+			  AND status = 'fulfilled'
 			  AND created_at >= wk_ts
 	) p;
 
@@ -100,10 +100,10 @@ BEGIN
 	WITH pool(idx, code, name, description, goal, progress, reward_snouts) AS (
 		VALUES
 		(0, 'generous_hoof',   'Generous Hoof',   'Fulfill 3 trade requests this week.',          3, n_fulfilled, 150),
-		(1, 'debt_settler',    'Debt Settler',    'Repay 2 trades this week.',                    2, n_repaid,    200),
+		(1, 'well_asked',      'Asked & Answered','Have 3 of your requests fulfilled this week.', 3, n_received,  200),
 		(2, 'daily_light',     'Daily Light',     'Send 5 blessings this week.',                  5, n_blessings, 100),
 		(3, 'mischief_maker',  'Mischief Maker',  'Send 5 curses this week.',                     5, n_curses,    100),
-		(4, 'loop_closer',     'Loop Closer',     'Fulfill a trade AND repay one this week.',     2, LEAST(n_fulfilled,1) + LEAST(n_repaid,1), 150),
+		(4, 'even_hand',       'Even Hand',       'Give 2 trades and receive 2 this week.',       4, LEAST(n_fulfilled,2) + LEAST(n_received,2), 150),
 		(5, 'social_butterfly','Social Butterfly','Trade with 3 different friends this week.',    3, n_distinct,  200)
 	)
 	SELECT
@@ -153,9 +153,18 @@ BEGIN
 		RETURN jsonb_build_object('ok', false, 'reason', 'incomplete');
 	END IF;
 
+	-- Insert the claim FIRST, then check FOUND. Two concurrent calls
+	-- can both pass the b.claimed check above; only the one whose
+	-- INSERT actually lands may grant snouts. Without this guard the
+	-- losing call's INSERT no-ops on conflict but the UPDATE below
+	-- still runs → reward paid twice. (Same pattern as finalize_season.)
 	INSERT INTO public.user_bounty_claims (user_id, bounty_code, week_start)
 		VALUES (caller_id, bounty_code, wk_start)
 		ON CONFLICT DO NOTHING;
+	IF NOT FOUND THEN
+		RETURN jsonb_build_object('ok', false, 'reason', 'already_claimed');
+	END IF;
+
 	UPDATE public.profiles SET counter = counter + b.reward_snouts
 		WHERE id = caller_id;
 

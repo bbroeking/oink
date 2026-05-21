@@ -135,6 +135,36 @@ If CocoaPods barfs with the null-byte error:
 
 ---
 
+## Post-build design change — trade economy flipped
+
+After the phases shipped, the trade economy was inverted to make
+**greed the mechanically profitable path** (the whole point of the
+season's tension):
+
+- **fulfill**: giver spends N from their bank; the **asker pockets
+  2N**. Giver gets nothing material — only a social promise.
+- **No repay step.** The `repaid` status, `repay_tickle_trade` RPC,
+  `repaid_at` column, and the one-fulfilled unique index are all
+  removed. `fulfilled` is terminal.
+- **alignment**: fulfill → giver +2 (generous), asker −2 (greedy).
+  Asking-and-never-giving-back is now literally the Goblin path.
+- Rippled through 6 migrations (tickle_trades, trade_cooldown,
+  push_delivery, achievements views+trigger, alignment, bounties),
+  the TickleTradeModal (repay UI removed), Friends/Barn copy, and
+  release notes. Bounties `debt_settler`/`loop_closer` → `well_asked`/
+  `even_hand`.
+- Refactor bug caught + fixed: `request_tickles` blocked new trades
+  while a `fulfilled` row existed — but `fulfilled` is terminal now,
+  so a pair could never trade again. Now only `pending` blocks.
+
+Also from the /review pass:
+- **claim_bounty double-grant fixed** — `IF NOT FOUND` guard after
+  the conflict-insert (concurrent claims could double-pay).
+- **Tests added** — `supabase/tests/00_pure_functions.sql` (pgTAP,
+  alignment_label + ritual rotations + week math) and
+  `utils/bounties.ts` + `__tests__/bounties.test.ts` (rotation,
+  13 tests). 78 TS tests total.
+
 ## Cross-phase deferred work (one place)
 
 Tracked so it isn't lost between sessions:

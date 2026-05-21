@@ -103,7 +103,7 @@ export default function Friends({ userId }: { userId: string }) {
 		useCallback(() => {
 			load();
 			// First social surface touch — ask for push permission so
-			// we can notify incoming requests / fulfills / repays.
+			// we can notify incoming requests + fulfills.
 			// Idempotent + cheap on re-focus.
 			ensurePushPermission();
 		}, [load])
@@ -187,7 +187,7 @@ function FriendsList({ friends }: { friends: Profile[] }) {
 		// covers iOS + Android, no extra modal needed.
 		Alert.prompt(
 			`Request tickles`,
-			`How many to ask ${friend.username} for? (1-5)\n\nWhen they fulfill, you owe 2× back when you say thanks.`,
+			`How many to ask ${friend.username} for? (1-5)\n\nIf they answer, you pocket DOUBLE — they give it out of their own bank for nothing but goodwill.`,
 			[
 				{ text: "Cancel", style: "cancel" },
 				{

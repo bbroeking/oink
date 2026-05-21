@@ -107,33 +107,23 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ── 5. Volume views ───────────────────────────────────────────────
--- Lifetime tickles GIVEN by each user via trades (fulfilling +
--- thanking). Computed on demand; cheap at TestFlight scale.
+-- Lifetime tickles GIVEN / RECEIVED via trades. A fulfilled trade =
+-- the giver (target_id) gave N from their bank; the asker
+-- (requester_id) received 2N. There is no repay step. Computed on
+-- demand; cheap at TestFlight scale.
 CREATE OR REPLACE VIEW public.user_trade_given AS
-	-- Fulfills: caller is target_id (you fulfilled), amount is N
-	SELECT target_id    AS user_id, SUM(amount)   AS amount
+	-- You fulfilled someone's request → you gave `amount`.
+	SELECT target_id AS user_id, SUM(amount) AS amount
 		FROM public.tickle_trades
-		WHERE status IN ('fulfilled', 'repaid')
-		GROUP BY target_id
-	UNION ALL
-	-- Repays: caller is requester_id (you thanked), amount is 2*N
-	SELECT requester_id AS user_id, SUM(amount*2) AS amount
-		FROM public.tickle_trades
-		WHERE status = 'repaid'
-		GROUP BY requester_id;
+		WHERE status = 'fulfilled'
+		GROUP BY target_id;
 
 CREATE OR REPLACE VIEW public.user_trade_received AS
-	-- Requests fulfilled: caller is requester_id (someone sent you N)
-	SELECT requester_id AS user_id, SUM(amount)   AS amount
+	-- Your request was fulfilled → you pocketed 2 × `amount`.
+	SELECT requester_id AS user_id, SUM(amount * 2) AS amount
 		FROM public.tickle_trades
-		WHERE status IN ('fulfilled', 'repaid')
-		GROUP BY requester_id
-	UNION ALL
-	-- Thanks received: caller is target_id (someone thanked you 2N)
-	SELECT target_id    AS user_id, SUM(amount*2) AS amount
-		FROM public.tickle_trades
-		WHERE status = 'repaid'
-		GROUP BY target_id;
+		WHERE status = 'fulfilled'
+		GROUP BY requester_id;
 
 CREATE OR REPLACE FUNCTION public.trade_given_total(target_user_id uuid)
 RETURNS int LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $$
@@ -260,7 +250,11 @@ SECURITY DEFINER
 SET search_path TO 'public'
 AS $function$
 BEGIN
-	IF NEW.status IN ('fulfilled', 'repaid')
+	-- Only 'fulfilled' moves trade volume now (no repay step). Both
+	-- sides are re-evaluated for both ladders — try_claim is
+	-- idempotent and reads the volume views, so the irrelevant
+	-- (user, category) pairs are cheap no-ops.
+	IF NEW.status = 'fulfilled'
 	   AND (OLD.status IS DISTINCT FROM NEW.status) THEN
 		PERFORM public.try_claim_achievements(NEW.requester_id, 'trade_giver');
 		PERFORM public.try_claim_achievements(NEW.requester_id, 'trade_receiver');
