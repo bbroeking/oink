@@ -84,6 +84,38 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			},
 		],
 	},
+	{
+		version: "1.4.0",
+		date: "2026-05-20",
+		headline: "Season 1: Goblins vs Angels",
+		items: [
+			{
+				emoji: "⚖️",
+				title: "Pick a side — without picking",
+				body: "Every player now has an alignment that shifts with how you trade. Give, repay, and bless to drift Generous; receive, hoard, and curse to drift Greedy. Cross ±25 and you'll see your schism.",
+			},
+			{
+				emoji: "☀️",
+				title: "Daily blessings",
+				body: "Once a day, send a blessing to up to 3 friends — warm tea, sun beams, a halo glow. The kind rotates daily.",
+			},
+			{
+				emoji: "🟢",
+				title: "Daily curses",
+				body: "Or send a little mischief instead. Curses are capped and cleansable — annoying, never ruinous.",
+			},
+			{
+				emoji: "📋",
+				title: "Weekly bounties",
+				body: "Three bounties rotate onto the season tab each week. Fulfill trades, repay debts, send blessings — claim snouts.",
+			},
+			{
+				emoji: "🏆",
+				title: "Alignment leaderboard + Judgement Day",
+				body: "A new leaderboard ranks the most generous and most greedy. At season's end, the top 3 of each side earn exclusive titles.",
+			},
+		],
+	},
 ];
 
 export const LATEST_RELEASE = RELEASE_NOTES[RELEASE_NOTES.length - 1];

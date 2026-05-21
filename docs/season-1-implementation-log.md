@@ -103,6 +103,48 @@ exclusive ITEMS are not seeded (need icon-gen art) — finale grants
 titles + snouts only for now; add the items in a follow-up once
 the art exists.
 
-## Phase 5 — Build 62 + ship
+## Phase 5 — Build 62 + ship ✅ (prepared)
 
-_(pending)_
+- `docs/builds/2026-05-20-build-62.md` written — covers all 15
+  commits + 21 migrations since build 61, with the full Known
+  Issues list (stubbed gameplay effects, ungenerated icons, etc).
+- `constants/release_notes.ts` — v1.4.0 "Season 1: Goblins vs
+  Angels" entry added; ReleaseNotesModal will fire it on first
+  launch post-update.
+- Pre-build gate: `tsc --noEmit` clean, `jest` 65/65 green.
+
+**Handed to the user:** the actual `eas build --local` + TestFlight
+upload is a user-side step — it needs Xcode signing, ~20+ min, the
+16GB Metro heap, and is CocoaPods-flake-prone (all per project
+memory). Everything is staged so it's a single command:
+
+```
+COCOAPODS_DISABLE_STATS=true \
+NODE_OPTIONS="--max-old-space-size=16384" \
+  eas build --local --platform ios --profile production
+```
+
+If CocoaPods barfs with the null-byte error:
+`pod cache clean --all && rm -rf ios/Pods ios/build` then retry.
+
+**Post-build TODO (update this section after the build ships):**
+- [ ] record the EAS build number
+- [ ] confirm migrations pushed (`npm run db:push`) before the
+      build hits TestFlight testers
+- [ ] App Store Connect Name field manual edit
+
+---
+
+## Cross-phase deferred work (one place)
+
+Tracked so it isn't lost between sessions:
+
+1. Wire the Barn tickle loop to honor `my_active_effects()`
+   (regen multiplier, half-taps, miasma overlay).
+2. Auto-surface CleanseModal from Barn on a my_active_effects poll.
+3. Achievement banner in Barn (unviewed-unlock surfacing).
+4. Generate saintly/goblin cosmetic icons (8 ladder + 2 finale),
+   seed them as hats, wire as achievement/finale reward items.
+5. AlignmentBadge into Friends.tsx + TickleTradeModal rows.
+6. Cron for finalize_season (currently manual SQL call).
+7. 7-day debt-decay + inactivity alignment decay (need cron).
