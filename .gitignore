@@ -39,7 +39,7 @@ yarn-error.*
 app-example
 
 # Test artifacts and MJ output staging
-tests/
+/tests/
 
 # iOS build artifacts (xcarchive, IPA exports)
 .build/
