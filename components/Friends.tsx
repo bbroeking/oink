@@ -325,7 +325,6 @@ const styles = StyleSheet.create({
 		gap: 10,
 	},
 	rowName: {
-		flex: 1,
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
 		color: WHIMSY.ink,
