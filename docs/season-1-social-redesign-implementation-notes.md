@@ -61,6 +61,16 @@ items. Newest entries at the bottom of each section.
   it checked `reason === "already_pending"` (the RPC returns
   `already_active`). Both corrected.
 
+- **2026-05-21 (Phase D ch.2) — Overlay = general blessed/cursed
+  state, not per-kind.** The spec's effect table maps `halo_kiss`
+  specifically → glow and `goblin_whisper` → miasma. The BarnOverlay
+  glow/miasma instead fires for **any** active blessing / **any**
+  active curse. Reason: the other kinds' gameplay effects (regen,
+  half-taps, lucky) aren't wired yet, so a per-kind overlay would
+  leave most rituals invisible. "Blessed → you glow" is honest and
+  makes every ritual land visibly. Can be refined to per-kind when
+  the rest of the effects wire up.
+
 ## Changes from spec
 
 - **2026-05-21 (Phase B) — Inbox passive feed scoped down.** The spec

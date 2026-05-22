@@ -228,6 +228,10 @@ export default function Barn() {
 
 	// Season 1: current alignment, drives BarnOverlay theming.
 	const [alignment, setAlignment] = useState<AlignmentLabel>("neutral");
+	// Active daily-ritual effects → BarnOverlay glow / miasma wash.
+	const [effects, setEffects] = useState<{ blessed: boolean; cursed: boolean }>(
+		{ blessed: false, cursed: false }
+	);
 
 	// Release-notes auto-show: fires once on Barn mount per app launch
 	// when the user hasn't seen the latest version yet.
@@ -494,6 +498,15 @@ export default function Barn() {
 			// missing column (pre-alignment-migration) → defaults neutral.
 			setAlignment(alignmentLabel(prof?.alignment_score ?? 0));
 
+			// Active blessing/curse effects → BarnOverlay glow / miasma.
+			supabase.rpc("my_active_effects").then(({ data }) => {
+				const rows = (data as { source: string }[] | null) ?? [];
+				setEffects({
+					blessed: rows.some((r) => r.source === "blessing"),
+					cursed: rows.some((r) => r.source === "curse"),
+				});
+			});
+
 			const slotIds: (string | null)[] = [
 				prof?.active_hat_id ?? null,
 				prof?.active_aura_id ?? null,
@@ -659,7 +672,11 @@ export default function Barn() {
 
 	return (
 		<PageBackground bgId={stats.activeBackground?.id ?? null}>
-			<BarnOverlay alignment={alignment} />
+			<BarnOverlay
+				alignment={alignment}
+				blessed={effects.blessed}
+				cursed={effects.cursed}
+			/>
 			<SafeAreaView style={styles.contentContainer}>
 				<View style={styles.statsRow}>
 					<PaperTicket
