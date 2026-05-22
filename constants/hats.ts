@@ -139,9 +139,11 @@ export const PIG_CANVAS = 300;
 
 // Per-item anchor-RELATIVE placement specs (see RelSpec). An item with
 // an entry here is positioned the relative way; items without keep the
-// absolute HAT_OVERLAYS path. Populate via the /item-anchor dev tool,
-// then paste the values here. Empty = nothing migrated yet.
-export const HAT_REL: Record<string, RelSpec> = {};
+// absolute HAT_OVERLAYS path. The data is auto-written by the
+// tools/item-anchor web tool — drag an attach point and it persists
+// into hat_rel.generated.ts, which Metro hot-reloads.
+import { HAT_REL_DATA } from "./hat_rel.generated";
+export const HAT_REL: Record<string, RelSpec> = HAT_REL_DATA;
 
 // Per-item overlay overrides. Auto-generated coordinates from
 // scripts/compute_overlays.py are spread first; manual tweaks below override.

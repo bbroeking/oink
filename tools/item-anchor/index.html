@@ -113,10 +113,12 @@
     </div>
     <textarea id="output" readonly></textarea>
     <button id="copy">Copy HAT_REL block</button>
+    <span id="status" style="margin-left:14px;color:#9fe;font-size:12px"></span>
     <div class="hint">
-      Auto-saved to this browser. Paste the block above over
-      <code>HAT_REL</code> in <code>constants/hats.ts</code> to commit.
-      Anchors are the canonical idle-frame-0 pig anatomy (300-space).
+      Every change auto-saves to <code>constants/hat_rel.generated.ts</code>
+      (the running app hot-reloads it). The block above + Copy button are
+      a manual fallback. Anchors are the canonical idle-frame-0 pig
+      anatomy (300-space).
     </div>
   </main>
 </div>
@@ -156,7 +158,24 @@ function spec(id){
   if (!state[id]) { const g = guess(id); state[id] = {pivot:g.pivot, widthFrac:0.4, anchor:g.anchor}; }
   return state[id];
 }
-function save(){ localStorage.setItem('itemAnchorRel', JSON.stringify(state)); renderOutput(); }
+let postTimer;
+function save(){
+  localStorage.setItem('itemAnchorRel', JSON.stringify(state));
+  renderOutput();
+  // Debounced — a drag fires save() per mousemove; only POST once it
+  // settles, so we don't hammer the server / Metro hot-reload.
+  clearTimeout(postTimer);
+  postTimer = setTimeout(persist, 400);
+}
+function persist(){
+  setStatus('saving…');
+  fetch('/save', { method: 'POST', body: JSON.stringify(state) })
+    .then(r => setStatus(r.ok
+      ? '✓ auto-saved to hat_rel.generated.ts'
+      : '⚠ save failed (' + r.status + ')'))
+    .catch(() => setStatus('⚠ server offline — localStorage only'));
+}
+function setStatus(t){ document.getElementById('status').textContent = t; }
 
 // --- build the item list ---
 const list = document.getElementById('list');
