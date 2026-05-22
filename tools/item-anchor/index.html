@@ -226,12 +226,13 @@ function setFromEvent(e){
   s.pivot.y = clamp(py / r.height);
   save(); render();
 }
+function endDrag(){ if (dragging) { dragging = false; persist(); } }
 itemCanvas.addEventListener('mousedown', e => { dragging = true; setFromEvent(e); });
 window.addEventListener('mousemove', e => { if (dragging) setFromEvent(e); });
-window.addEventListener('mouseup', () => { dragging = false; });
+window.addEventListener('mouseup', endDrag);
 itemCanvas.addEventListener('touchstart', e => { dragging = true; setFromEvent(e); e.preventDefault(); });
 itemCanvas.addEventListener('touchmove', e => { if (dragging) { setFromEvent(e); e.preventDefault(); } });
-itemCanvas.addEventListener('touchend', () => { dragging = false; });
+itemCanvas.addEventListener('touchend', endDrag);
 
 document.getElementById('copy').onclick = () => {
   navigator.clipboard.writeText(document.getElementById('output').value);
