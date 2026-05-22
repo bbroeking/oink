@@ -1,11 +1,17 @@
-// Phase 2 — the daily ritual picker. One component, two modes:
+// The daily ritual picker. One component, two modes:
 //   mode="bless" → casts today's blessing via send_blessing
 //   mode="curse" → casts today's curse via send_curse
 //
 // The kind is NOT chosen by the user — it's whatever today's rotation
-// surfaces. The picker just shows what today's ritual is and lets the
-// user fire it at the target. Mounted from UserSheet (and later the
-// Friends rows) as a small inline panel.
+// surfaces. Mounted from UserSheet as a small inline panel.
+//
+// It renders one of five phases so every outcome is a clear state,
+// not a one-line error:
+//   ready  — today's ritual + a Cast button
+//   sent   — "✦ sent ✦" confirmation
+//   done   — you already cast this ritual on this friend today
+//   capped — you've used all today's blessings & curses
+//   error  — an unexpected failure; the Cast button stays for a retry
 import React, { useState } from "react";
 import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -21,11 +27,12 @@ interface Props {
 	onCast?: () => void;
 }
 
+type Phase = "ready" | "sent" | "done" | "capped" | "error";
+
 export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) {
 	const [busy, setBusy] = useState(false);
+	const [phase, setPhase] = useState<Phase>("ready");
 	const [result, setResult] = useState<string | null>(null);
-	// null = not cast yet, true = cast landed, false = cast rejected.
-	const [castOk, setCastOk] = useState<boolean | null>(null);
 
 	const ritual = dailyRitual(mode);
 	const isBless = mode === "bless";
@@ -38,22 +45,31 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 		const { data } = await supabase.rpc(rpc, { target_user_id: targetUserId });
 		const r = data as { ok?: boolean; reason?: string } | null;
 		setBusy(false);
+
 		if (r?.ok) {
 			Haptics.notificationAsync(
 				isBless
 					? Haptics.NotificationFeedbackType.Success
 					: Haptics.NotificationFeedbackType.Warning
 			).catch(() => {});
-			setCastOk(true);
 			setResult(
 				isBless
 					? `${ritual.name} sent to ${targetName}`
 					: `${targetName} has been cursed`
 			);
+			setPhase("sent");
 			onCast?.();
+			return;
+		}
+
+		const reason = r?.reason;
+		if (reason === "already_blessed_today" || reason === "already_cursed_today") {
+			setPhase("done");
+		} else if (reason === "daily_cap") {
+			setPhase("capped");
 		} else {
-			setCastOk(false);
-			setResult(reasonText(r?.reason, isBless));
+			setResult(reasonText(reason, isBless));
+			setPhase("error");
 		}
 	};
 
@@ -68,17 +84,47 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 				{isBless ? "☀ today's blessing" : "🟢 today's curse"}
 			</Text>
 
-			{castOk === true ? (
-				// The cast landed — a prominent confirmation beat, not a
-				// quiet one-liner. The button is gone; the deed is done.
-				<View style={styles.castDone}>
-					<Image source={ritual.icon} style={styles.castDoneImg} />
-					<Text style={styles.castDoneTitle}>
+			{/* sent — the cast landed */}
+			{phase === "sent" && (
+				<View style={styles.beat}>
+					<Image source={ritual.icon} style={styles.beatImg} />
+					<Text style={styles.beatTitle}>
 						{isBless ? "✦ blessing sent ✦" : "✦ curse cast ✦"}
 					</Text>
-					<Text style={styles.castDoneSub}>{result}</Text>
+					<Text style={styles.beatSub}>{result}</Text>
 				</View>
-			) : (
+			)}
+
+			{/* done — already cast this ritual on this friend today */}
+			{phase === "done" && (
+				<View style={styles.beat}>
+					<Image
+						source={ritual.icon}
+						style={[styles.beatImg, { opacity: 0.45 }]}
+					/>
+					<Text style={styles.beatTitle}>
+						{isBless ? "already blessed today" : "already cursed today"}
+					</Text>
+					<Text style={styles.beatSub}>
+						You can {isBless ? "bless" : "curse"} {targetName} again
+						tomorrow — one per friend a day.
+					</Text>
+				</View>
+			)}
+
+			{/* capped — all of today's rituals are spent */}
+			{phase === "capped" && (
+				<View style={styles.beat}>
+					<Text style={styles.beatTitle}>rituals spent</Text>
+					<Text style={styles.beatSub}>
+						You've used all of today's blessings &amp; curses — they
+						recharge tomorrow.
+					</Text>
+				</View>
+			)}
+
+			{/* ready / error — the picker + Cast button */}
+			{(phase === "ready" || phase === "error") && (
 				<>
 					<View style={styles.ritualRow}>
 						<Image source={ritual.icon} style={styles.emojiImg} />
@@ -104,7 +150,7 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 									: `Curse ${targetName}`}
 						</Text>
 					</Pressable>
-					{castOk === false && !!result && (
+					{phase === "error" && !!result && (
 						<Text style={styles.result}>{result}</Text>
 					)}
 				</>
@@ -113,20 +159,18 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 	);
 }
 
+// Only the unexpected cases reach here now — daily_cap and the
+// already-cast-today reasons are their own phases above.
 function reasonText(reason: string | undefined, isBless: boolean): string {
 	switch (reason) {
-		case "daily_cap":
-			return "You've used all your casts for today.";
-		case "already_blessed_today":
-			return "Already blessed them today.";
-		case "already_cursed_today":
-			return "Already cursed them today.";
 		case "not_friends":
 			return "Only friends can be reached.";
 		case "self":
 			return "That's you.";
 		default:
-			return isBless ? "Couldn't bless. Try again." : "Couldn't curse. Try again.";
+			return isBless
+				? "Couldn't bless. Try again."
+				: "Couldn't curse. Try again.";
 	}
 }
 
@@ -139,10 +183,20 @@ const styles = StyleSheet.create({
 		marginTop: 10,
 	},
 	kicker: { ...KICKER_TEXT, fontSize: 10, marginBottom: 8 },
-	ritualRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+	ritualRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 10,
+		marginBottom: 10,
+	},
 	emojiImg: { width: 38, height: 38, resizeMode: "contain" },
 	name: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
-	blurb: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.ink, marginTop: 1 },
+	blurb: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.ink,
+		marginTop: 1,
+	},
 	btn: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
@@ -159,23 +213,26 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginTop: 8,
 	},
-	castDone: { alignItems: "center", paddingVertical: 6 },
-	castDoneImg: {
+	// Shared terminal-state layout (sent / done / capped).
+	beat: { alignItems: "center", paddingVertical: 6 },
+	beatImg: {
 		width: 56,
 		height: 56,
 		resizeMode: "contain",
 		marginBottom: 4,
 	},
-	castDoneTitle: {
+	beatTitle: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
 		color: WHIMSY.ink,
 		letterSpacing: 0.4,
+		textAlign: "center",
 	},
-	castDoneSub: {
+	beatSub: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
 		color: WHIMSY.ink,
 		marginTop: 2,
+		textAlign: "center",
 	},
 });
