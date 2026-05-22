@@ -17,8 +17,8 @@ import { supabase } from "../../utils/supabase";
 import {
 	initIAP,
 	IAP_ENABLED,
-	isPro,
-	presentPaywall,
+	purchaseProductId,
+	PRODUCT_IDS,
 } from "../../utils/iap";
 import { Sticker } from "../../components/ui/Sticker";
 import { Icon } from "../../components/ui/Icon";
@@ -303,7 +303,7 @@ export default function SeasonScreen() {
 		load();
 	};
 
-	const handleUnlockPremium = async () => {
+	const handleBuySeasonPass = async () => {
 		const {
 			data: { user },
 		} = await supabase.auth.getUser();
@@ -313,24 +313,23 @@ export default function SeasonScreen() {
 			await initIAP(user.id);
 		} catch {}
 
-		const result = await presentPaywall();
+		// The Season Pass is a one-time product — buy it directly (the
+		// BattlePassSaleModal is the merchandising), NOT via the
+		// subscription paywall. On success, grant_season_pass flips
+		// premium_unlocked for the active season.
+		const result = await purchaseProductId(PRODUCT_IDS.seasonPass);
 		if (result.ok) {
-			const pro = await isPro();
-			if (pro) {
-				// Season Pass is a one-time per-season entitlement —
-				// grant_season_pass flips premium_unlocked for the
-				// active season (separate from the Slop Club sub).
-				await supabase.rpc("grant_season_pass");
-				load();
-				Alert.alert(
-					"Season Pass unlocked",
-					"The premium reward track is yours for this season."
-				);
-			}
+			await supabase.rpc("grant_season_pass");
+			load();
+			Alert.alert(
+				"Season Pass unlocked",
+				"The premium reward track is yours for this season."
+			);
 			return;
 		}
 		if (result.reason === "cancelled") return;
-		if (result.reason === "no_offering") {
+		if (result.reason === "product_not_found") {
+			// The product isn't in a RevenueCat offering yet.
 			Alert.alert(
 				"Season Pass",
 				"Storefront not configured yet. Unlock for free in dev?",
@@ -347,7 +346,7 @@ export default function SeasonScreen() {
 			);
 			return;
 		}
-		Alert.alert("Couldn't open the Season Pass", "Please try again.");
+		Alert.alert("Couldn't buy the Season Pass", "Please try again.");
 	};
 
 	if (!state) {
@@ -490,7 +489,7 @@ export default function SeasonScreen() {
 				onClose={() => setSaleOpen(false)}
 				onUnlock={async () => {
 					setSaleOpen(false);
-					await handleUnlockPremium();
+					await handleBuySeasonPass();
 				}}
 				priceCents={season.premium_price_cents}
 				currentTier={tier}

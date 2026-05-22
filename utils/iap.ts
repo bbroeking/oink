@@ -8,7 +8,9 @@
 //         subscriptions in one Subscription Group:
 //           - yearly  ($29.99/yr)
 //           - monthly ($3.99/mo)
-//      b) The Season Pass — a Non-Consumable (one-time), $4.99.
+//      b) The Season Pass — a Consumable, $4.99. (Consumable, NOT
+//         non-consumable: it's re-bought every season. The per-season
+//         scoping is handled server-side by grant_season_pass.)
 //   4. RevenueCat dashboard: https://app.revenuecat.com
 //      - Create iOS app, paste the App-Specific Shared Secret from ASC
 //      - Map both products to entitlement `tickle_the_pig_pro`
@@ -229,13 +231,18 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<{
 	}
 }
 
+// Buy a single product by its identifier — used for the one-time
+// Season Pass (the subscription goes through the paywall instead).
+// Searches every offering, not just `current`, so the pass and the
+// subscription can live in separate offerings.
 export async function purchaseProductId(
 	productId: string
 ): Promise<{ ok: boolean; reason?: string }> {
 	if (!IAP_ENABLED) return { ok: false, reason: "cancelled" };
 	const offerings = await Purchases.getOfferings();
-	const allPackages = offerings.current?.availablePackages ?? [];
-	const pkg = allPackages.find((p) => p.product.identifier === productId);
+	const pkg = Object.values(offerings.all)
+		.flatMap((o) => o.availablePackages)
+		.find((p) => p.product.identifier === productId);
 	if (!pkg) return { ok: false, reason: "product_not_found" };
 	return purchasePackage(pkg);
 }
