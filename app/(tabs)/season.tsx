@@ -329,22 +329,25 @@ export default function SeasonScreen() {
 		}
 		if (result.reason === "cancelled") return;
 		if (result.reason === "product_not_found") {
-			// The product isn't in a RevenueCat offering yet.
-			Alert.alert(
-				"Season Pass",
-				"Storefront not configured yet. Unlock for free in dev?",
-				[
-					{ text: "Cancel", style: "cancel" },
-					{
-						text: "Unlock (dev)",
-						onPress: async () => {
-							await supabase.rpc("grant_season_pass");
-							load();
+			// Dev convenience only — never offer a free unlock in prod.
+			// (The product isn't in a RevenueCat offering yet.)
+			if (__DEV__) {
+				Alert.alert(
+					"Season Pass",
+					"Storefront not configured yet. Unlock for free in dev?",
+					[
+						{ text: "Cancel", style: "cancel" },
+						{
+							text: "Unlock (dev)",
+							onPress: async () => {
+								await supabase.rpc("grant_season_pass");
+								load();
+							},
 						},
-					},
-				]
-			);
-			return;
+					]
+				);
+				return;
+			}
 		}
 		Alert.alert("Couldn't buy the Season Pass", "Please try again.");
 	};

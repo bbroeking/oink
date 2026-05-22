@@ -143,7 +143,11 @@ export function Account({ session }: { session: Session }) {
 				const pro = !!info.entitlements.active["tickle_the_pig_pro"];
 				if (pro && !isVip) {
 					setIsVip(true);
-					await supabase.rpc("dev_set_vip", { target: true });
+					// Dev only — in production the RevenueCat webhook is the
+					// authoritative is_vip grant. dev_set_vip must not ship.
+					if (__DEV__) {
+						await supabase.rpc("dev_set_vip", { target: true });
+					}
 				}
 			});
 			return unsub;
@@ -161,7 +165,10 @@ export function Account({ session }: { session: Session }) {
 		if (result.ok) {
 			const pro = await isPro();
 			if (pro) {
-				await supabase.rpc("dev_set_vip", { target: true });
+				// Dev only — production grants come from the RC webhook.
+				if (__DEV__) {
+					await supabase.rpc("dev_set_vip", { target: true });
+				}
 				setIsVip(true);
 				Alert.alert(
 					"Welcome to the Slop Club",
@@ -172,21 +179,24 @@ export function Account({ session }: { session: Session }) {
 		}
 		if (result.reason === "cancelled") return;
 		if (result.reason === "no_offering") {
-			Alert.alert(
-				"Slop Club",
-				"Storefront not configured yet (need ASC products + RC offering). Unlock for free in dev?",
-				[
-					{ text: "Cancel", style: "cancel" },
-					{
-						text: "Unlock (dev)",
-						onPress: async () => {
-							await supabase.rpc("dev_set_vip", { target: true });
-							setIsVip(true);
+			// Dev convenience only — never offer a free unlock in prod.
+			if (__DEV__) {
+				Alert.alert(
+					"Slop Club",
+					"Storefront not configured yet. Unlock for free in dev?",
+					[
+						{ text: "Cancel", style: "cancel" },
+						{
+							text: "Unlock (dev)",
+							onPress: async () => {
+								await supabase.rpc("dev_set_vip", { target: true });
+								setIsVip(true);
+							},
 						},
-					},
-				]
-			);
-			return;
+					]
+				);
+				return;
+			}
 		}
 		Alert.alert("Couldn't open paywall", "Please try again.");
 	};
@@ -200,7 +210,10 @@ export function Account({ session }: { session: Session }) {
 		if (result.ok) {
 			const pro = await isPro();
 			if (pro) {
-				await supabase.rpc("dev_set_vip", { target: true });
+				// Dev only — production grants come from the RC webhook.
+				if (__DEV__) {
+					await supabase.rpc("dev_set_vip", { target: true });
+				}
 				setIsVip(true);
 				Alert.alert("Restored", "Your Slop Club membership is active.");
 			} else {
