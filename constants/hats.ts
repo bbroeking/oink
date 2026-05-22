@@ -31,7 +31,7 @@ export const HAT_IMAGES: Record<string, number> = {
 	knit_scarf: require("../assets/images/hats/knit_scarf.png"),
 	silk_scarf: require("../assets/images/hats/silk_scarf.png"),
 	bandana_red: require("../assets/images/hats/bandana_red.png"),
-	// Batch 3b — scarves + capes
+	// Batch 3b — scarves
 	cape_scarf: require("../assets/images/hats/cape_scarf.png"),
 	striped_scarf: require("../assets/images/hats/striped_scarf.png"),
 	winter_scarf: require("../assets/images/hats/winter_scarf.png"),
@@ -39,17 +39,15 @@ export const HAT_IMAGES: Record<string, number> = {
 	ascot: require("../assets/images/hats/ascot.png"),
 	neckwarmer: require("../assets/images/hats/neckwarmer.png"),
 	rainbow_scarf: require("../assets/images/hats/rainbow_scarf.png"),
-	royal_cape: require("../assets/images/hats/royal_cape.png"),
-	vampire_cape: require("../assets/images/hats/vampire_cape.png"),
-	hero_cape: require("../assets/images/hats/hero_cape.png"),
-	// Batch 4 — capes + held items
-	magician_cape: require("../assets/images/hats/magician_cape.png"),
-	fur_cape: require("../assets/images/hats/fur_cape.png"),
-	silk_cape: require("../assets/images/hats/silk_cape.png"),
-	leather_cape: require("../assets/images/hats/leather_cape.png"),
-	short_cape: require("../assets/images/hats/short_cape.png"),
-	ermine_cape: require("../assets/images/hats/ermine_cape.png"),
-	star_cape: require("../assets/images/hats/star_cape.png"),
+	// Capes — REMOVED 2026-05-22. Like necklaces, the cape art never
+	// sat right on the pig (capes wrap the body — front-only art looks
+	// broken when the pig leans). TODO: regenerate the cape set with
+	// art tuned to the pig, then re-add the 10 items here, to
+	// HAT_OVERLAYS / the generated overlays, the assets/images/hats/
+	// PNGs, and the `hats` shop-catalog rows. The `cape` category
+	// scaffold (CATEGORY_ANCHORS / PIVOTS / OVERLAYS / EMOJI /
+	// Z_BEHIND_PIG) is kept below.
+	// Batch 4 — held items
 	magic_wand: require("../assets/images/hats/magic_wand.png"),
 	toy_sword: require("../assets/images/hats/toy_sword.png"),
 	controller: require("../assets/images/hats/controller.png"),
