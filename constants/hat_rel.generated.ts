@@ -2,4 +2,25 @@
 // The web tool writes this live as you drag attach points.
 import type { RelSpec } from "./hat_overlay_types";
 
-export const HAT_REL_DATA: Record<string, RelSpec> = {};
+export const HAT_REL_DATA: Record<string, RelSpec> = {
+	archery_bow: { pivot: { x: 0.2429, y: 0.4783 }, widthFrac: 0.4, anchor: "hand_r" },
+	ascot: { pivot: { x: 0.4929, y: 0.2607 }, widthFrac: 0.4, anchor: "neck" },
+	aviator_sunglasses: { pivot: { x: 0.475, y: 0.5 }, widthFrac: 0.63, anchor: "eyes" },
+	balloon: { pivot: { x: 0.5036, y: 0.8768 }, widthFrac: 0.445, anchor: "hand_r" },
+	bandana_red: { pivot: { x: 0.4857, y: 0.165 }, widthFrac: 0.4, anchor: "neck" },
+	beanie: { pivot: { x: 0.4929, y: 0.881 }, widthFrac: 0.4, anchor: "head" },
+	bell_collar: { pivot: { x: 0.4893, y: 0.3716 }, widthFrac: 0.4, anchor: "neck" },
+	black_bow_tie: { pivot: { x: 0.5071, y: 0.5359 }, widthFrac: 0.4, anchor: "neck" },
+	bone_necklace: { pivot: { x: 0.5071, y: 0.6276 }, widthFrac: 0.4, anchor: "neck" },
+	cape_scarf: { pivot: { x: 0.4929, y: 0.185 }, widthFrac: 0.4, anchor: "neck" },
+	carnival_mask: { pivot: { x: 0.4929, y: 0.7668 }, widthFrac: 0.59, anchor: "eyes" },
+	cat_mask: { pivot: { x: 0.4964, y: 0.6639 }, widthFrac: 0.59, anchor: "eyes" },
+	charm_necklace: { pivot: { x: 0.5, y: 0.5333 }, widthFrac: 0.4, anchor: "neck" },
+	chef_toque: { pivot: { x: 0.5036, y: 0.8829 }, widthFrac: 0.4, anchor: "head" },
+	choker: { pivot: { x: 0.4821, y: 0.8295 }, widthFrac: 0.4, anchor: "neck" },
+	coffee_mug: { pivot: { x: 0.6964, y: 0.6339 }, widthFrac: 0.4, anchor: "hand_r" },
+	controller: { pivot: { x: 0.4, y: 0.6839 }, widthFrac: 0.4, anchor: "hand_r" },
+	cowboy: { pivot: { x: 0.4929, y: 0.7853 }, widthFrac: 0.4, anchor: "head" },
+	crown: { pivot: { x: 0.5036, y: 0.8918 }, widthFrac: 0.4, anchor: "head" },
+	diamond_pendant: { pivot: { x: 0.5071, y: 0.6926 }, widthFrac: 0.4, anchor: "neck" },
+};

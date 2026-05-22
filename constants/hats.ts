@@ -53,17 +53,13 @@ export const HAT_IMAGES: Record<string, number> = {
 	magic_wand: require("../assets/images/hats/magic_wand.png"),
 	toy_sword: require("../assets/images/hats/toy_sword.png"),
 	controller: require("../assets/images/hats/controller.png"),
-	// Batch 5 — necklaces
-	pearl_necklace: require("../assets/images/hats/pearl_necklace.png"),
-	gold_chain: require("../assets/images/hats/gold_chain.png"),
-	locket: require("../assets/images/hats/locket.png"),
-	bone_necklace: require("../assets/images/hats/bone_necklace.png"),
-	charm_necklace: require("../assets/images/hats/charm_necklace.png"),
-	diamond_pendant: require("../assets/images/hats/diamond_pendant.png"),
-	emerald_pendant: require("../assets/images/hats/emerald_pendant.png"),
-	choker: require("../assets/images/hats/choker.png"),
-	bell_collar: require("../assets/images/hats/bell_collar.png"),
-	ribbon_choker: require("../assets/images/hats/ribbon_choker.png"),
+	// Batch 5 — necklaces: REMOVED 2026-05-22. The necklace art never
+	// sat right on the pig (it didn't read as "around the neck").
+	// TODO: regenerate the necklace set with art tuned to the pig's
+	// neck anatomy, then re-add the 10 items here, to HAT_OVERLAYS /
+	// the generated overlays, the assets/images/hats/ PNGs, and the
+	// `hats` shop-catalog rows. The `necklace` category scaffold
+	// (CATEGORY_ANCHORS / PIVOTS / OVERLAYS / EMOJI) is kept below.
 	// Batch 6 — held + bows
 	pencil: require("../assets/images/hats/pencil.png"),
 	magnifier: require("../assets/images/hats/magnifier.png"),

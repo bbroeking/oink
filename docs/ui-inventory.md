@@ -118,7 +118,8 @@ Cosmetics store.
 - **Featured row** — large hero cards for spotlight items (thumb,
   rarity tag, name, description, price, Equip/Buy).
 - **Category sections** — Hats, Glasses, Bows, Scarves, Masks, Capes,
-  Necklaces, Held, Auras, Backgrounds — each a grid of item cards.
+  Held, Auras, Backgrounds — each a grid of item cards. *(Necklaces
+  were removed 2026-05-22 — art never fit the pig; to be regenerated.)*
 - **Item card** — the item art on a rarity-tinted card
   (common→legendary), a `RARITY` tag, name, a price row (`SnoutCoin`
   + number), and a state button: Buy / Equip / Unequip / Locked.

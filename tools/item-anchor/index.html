@@ -32,7 +32,10 @@
   .row { display: flex; gap: 22px; flex-wrap: wrap; }
   .canvasWrap { background: #3a3430; border-radius: 8px; position: relative; }
   #itemCanvas { width: 280px; touch-action: none; cursor: crosshair; }
-  #itemImg { width: 280px; display: block; }
+  #itemImg {
+    width: 280px; display: block;
+    pointer-events: none; -webkit-user-drag: none; user-select: none;
+  }
   #pivotDot {
     position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px;
     border-radius: 50%; background: #ff3dda; border: 2px solid #fff;
@@ -132,7 +135,7 @@ const ANCHORS = {
   hand_r:{x:235,y:266}, leg_l:{x:27,y:266}, leg_r:{x:75,y:235},
   feet:{x:51,y:250},
 };
-const ITEMS = ['archery_bow','ascot','aviator_sunglasses','balloon','bandana_red','beanie','bell_collar','black_bow_tie','bone_necklace','cape_scarf','carnival_mask','cat_mask','charm_necklace','chef_toque','choker','coffee_mug','controller','cowboy','crown','diamond_pendant','domino','electric_aura','emerald_pendant','ermine_cape','fire_aura','flowers','fur_cape','gas_mask','gift_bow','gold_aura','gold_chain','hair_bow','halo','heart_sunglasses','hero_cape','hero_mask','holy_aura','ice_aura','ice_cream','knit_scarf','leather_cape','locket','magic_wand','magician_cape','magnifier','masquerade','monocle','neckwarmer','nerd_glasses','party','pearl_necklace','pencil','petal_aura','pink_bow','pink_glow','pirate_tricorn','pixel_glasses','pizza_slice','polka_bow','rainbow_aura','rainbow_bow','rainbow_scarf','ribbon_bow','ribbon_choker','robber_mask','round_glasses','royal_cape','safety_goggles','shadow_aura','short_cape','silk_bow','silk_cape','silk_scarf','skull_mask','sleep_mask','sparkle_aura','star_cape','striped_scarf','summer_kerchief','swim_goggles','three_d_glasses','tophat','toy_sword','vampire_cape','velvet_bow','venice_mask','viking_helmet','vr_headset','winter_scarf','wizard'];
+const ITEMS = ['archery_bow','ascot','aviator_sunglasses','balloon','bandana_red','beanie','black_bow_tie','cape_scarf','carnival_mask','cat_mask','chef_toque','coffee_mug','controller','cowboy','crown','domino','electric_aura','ermine_cape','fire_aura','flowers','fur_cape','gas_mask','gift_bow','gold_aura','hair_bow','halo','heart_sunglasses','hero_cape','hero_mask','holy_aura','ice_aura','ice_cream','knit_scarf','leather_cape','magic_wand','magician_cape','magnifier','masquerade','monocle','neckwarmer','nerd_glasses','party','pencil','petal_aura','pink_bow','pink_glow','pirate_tricorn','pixel_glasses','pizza_slice','polka_bow','rainbow_aura','rainbow_bow','rainbow_scarf','ribbon_bow','robber_mask','round_glasses','royal_cape','safety_goggles','shadow_aura','short_cape','silk_bow','silk_cape','silk_scarf','skull_mask','sleep_mask','sparkle_aura','star_cape','striped_scarf','summer_kerchief','swim_goggles','three_d_glasses','tophat','toy_sword','vampire_cape','velvet_bow','venice_mask','viking_helmet','vr_headset','winter_scarf','wizard'];
 
 // Guess a sensible starting anchor + pivot from the item name.
 function guess(id){
@@ -227,7 +230,7 @@ function setFromEvent(e){
   save(); render();
 }
 function endDrag(){ if (dragging) { dragging = false; persist(); } }
-itemCanvas.addEventListener('mousedown', e => { dragging = true; setFromEvent(e); });
+itemCanvas.addEventListener('mousedown', e => { e.preventDefault(); dragging = true; setFromEvent(e); });
 window.addEventListener('mousemove', e => { if (dragging) setFromEvent(e); });
 window.addEventListener('mouseup', endDrag);
 itemCanvas.addEventListener('touchstart', e => { dragging = true; setFromEvent(e); e.preventDefault(); });
