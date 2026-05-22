@@ -3,24 +3,11 @@ import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
 import { FONTS, WHIMSY } from "@/constants/theme";
-
-type Placement = "pre" | "post";
-
-interface OwnedTitle {
-	id: string;
-	name: string;
-	placement: Placement;
-	description: string | null;
-}
+import type { TitleRow } from "@/constants/title_types";
 
 interface RawRow {
 	title_id: string;
-	titles: {
-		id: string;
-		name: string;
-		placement: Placement;
-		description: string | null;
-	};
+	titles: TitleRow;
 }
 
 interface Props {
@@ -30,7 +17,7 @@ interface Props {
 }
 
 export function TitlesSection({ userId, activeTitleId, onChange }: Props) {
-	const [titles, setTitles] = useState<OwnedTitle[]>([]);
+	const [titles, setTitles] = useState<TitleRow[]>([]);
 	const [busy, setBusy] = useState(false);
 
 	const load = useCallback(async () => {
@@ -48,7 +35,7 @@ export function TitlesSection({ userId, activeTitleId, onChange }: Props) {
 		setTitles(
 			rows
 				.map((r) => r.titles)
-				.filter((t): t is OwnedTitle => !!t)
+				.filter((t): t is TitleRow => !!t)
 				.sort((a, b) => a.name.localeCompare(b.name))
 		);
 	}, [userId]);

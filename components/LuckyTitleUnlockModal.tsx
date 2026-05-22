@@ -21,16 +21,10 @@ import {
 	STICKER_SHADOW,
 	WHIMSY,
 } from "@/constants/theme";
-
-interface GrantedTitle {
-	id: string;
-	name: string;
-	placement: "pre" | "post";
-	description: string | null;
-}
+import type { TitleRow } from "@/constants/title_types";
 
 interface Props {
-	title: GrantedTitle | null;
+	title: TitleRow | null;
 	onDismiss: () => void;
 	onEquip?: (id: string) => void;
 }

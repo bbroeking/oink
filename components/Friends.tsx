@@ -281,16 +281,6 @@ const styles = StyleSheet.create({
 		marginBottom: 8,
 		textTransform: "uppercase",
 	},
-	subKicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
-		color: WHIMSY.mute,
-		letterSpacing: 1.4,
-		textTransform: "uppercase",
-		marginTop: 8,
-		marginBottom: 4,
-		marginLeft: 4,
-	},
 	tabsRow: {
 		flexDirection: "row",
 		backgroundColor: WHIMSY.paper,

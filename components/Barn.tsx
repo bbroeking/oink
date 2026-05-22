@@ -26,6 +26,7 @@ import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
 import { LuckyPigModal } from "./LuckyPigModal";
 import { LuckyTitleUnlockModal } from "./LuckyTitleUnlockModal";
+import type { TitleRow } from "@/constants/title_types";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 import { BarnOverlay } from "./ui/BarnOverlay";
@@ -58,13 +59,6 @@ const LUCKY_GUARANTEED_BY_TICKLE_N = 8;
 // lucky-trigger boost; phantom_itch curse → a tap sometimes slips.
 const LUCKY_TRIGGER_CHANCE_SUNBEAM = 0.4;
 const PHANTOM_ITCH_MISS_CHANCE = 0.33;
-
-type GrantedLuckyTitle = {
-	id: string;
-	name: string;
-	placement: "pre" | "post";
-	description: string | null;
-};
 
 // Four pig-voice oink variants; one is picked at random on each tickle
 // so the sound feels alive instead of looping the same clip.
@@ -226,7 +220,7 @@ export default function Barn() {
 	// 20% title sub-roll succeeded. Persists across the burst modal
 	// closing so the user gets two beats instead of one cluttered modal.
 	const [unlockedTitle, setUnlockedTitle] =
-		useState<GrantedLuckyTitle | null>(null);
+		useState<TitleRow | null>(null);
 	// Whether the current lucky trigger ALSO rolled a title — captured
 	// at trigger time, consumed when the burst dismisses.
 	const pendingTitleRoll = useRef(false);
@@ -841,7 +835,7 @@ export default function Barn() {
 						);
 						const r = data as {
 							ok?: boolean;
-							granted?: GrantedLuckyTitle | null;
+							granted?: TitleRow | null;
 						} | null;
 						if (error) {
 							showToast(
@@ -1154,44 +1148,5 @@ devAlign: {
 		fontSize: 13,
 		color: WHIMSY.ink,
 		letterSpacing: 0.4,
-	},
-	tradePill: {
-		position: "absolute",
-		right: 16,
-		bottom: Platform.OS === "ios" ? 96 : 80,
-		width: 56,
-		height: 56,
-		borderRadius: 28,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		zIndex: 60,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 3 },
-		shadowOpacity: 0.18,
-		shadowRadius: 6,
-		elevation: 5,
-	},
-	tradePillEmoji: { fontSize: 26 },
-	tradePillBadge: {
-		position: "absolute",
-		top: -4,
-		right: -4,
-		minWidth: 22,
-		height: 22,
-		paddingHorizontal: 5,
-		borderRadius: 11,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: WHIMSY.lilacDeep ?? WHIMSY.lilac,
-		borderWidth: 2,
-		borderColor: WHIMSY.paper,
-	},
-	tradePillBadgeText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 12,
-		color: WHIMSY.ink,
 	},
 });

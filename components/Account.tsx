@@ -46,8 +46,16 @@ export function Account({ session }: { session: Session }) {
 	useFocusEffect(
 		useCallback(() => {
 			supabase.rpc("my_sounder").then(({ data }) => {
-				const r = data as any;
-				if (r?.ok) setSounder(r);
+				// my_sounder RPC returns jsonb: { ok: false, reason } when
+				// unauthenticated, otherwise { ok: true, ...sounder fields }.
+				const r = data as
+					| { ok: false; reason?: string }
+					| ({ ok: true } & NonNullable<typeof sounder>)
+					| null;
+				if (r?.ok) {
+					const { ok: _ok, ...stats } = r;
+					setSounder(stats);
+				}
 			});
 		}, [])
 	);
@@ -75,7 +83,7 @@ export function Account({ session }: { session: Session }) {
 				.eq("id", session.user.id)
 				.single()
 				.then(async ({ data, error }) => {
-					let row: {
+					type ProfileRow = {
 						username?: string | null;
 						discriminator?: string | null;
 						tickles_earned?: number;
@@ -85,7 +93,11 @@ export function Account({ session }: { session: Session }) {
 							| { name: string; placement: "pre" | "post" }
 							| { name: string; placement: "pre" | "post" }[]
 							| null;
-					} | null = data as any;
+					};
+					// The supabase client is created without a Database
+					// generic, so `data` is untyped at the source; cast it to
+					// the row shape this select projects.
+					let row: ProfileRow | null = data as ProfileRow | null;
 					if (error) {
 						const fallback = await supabase
 							.from("profiles")

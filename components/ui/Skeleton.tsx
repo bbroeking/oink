@@ -41,19 +41,6 @@ export function Skeleton({ width = "100%", height = 20, radius = 8, style }: Pro
 	);
 }
 
-export function ShopCardSkeleton() {
-	return (
-		<View style={styles.cardSkeleton}>
-			<Skeleton height={120} radius={0} />
-			<View style={{ padding: 10, gap: 6 }}>
-				<Skeleton height={16} width="80%" />
-				<Skeleton height={12} width="40%" />
-				<Skeleton height={28} radius={14} />
-			</View>
-		</View>
-	);
-}
-
 export function ListRowSkeleton() {
 	return (
 		<View style={styles.listRow}>
@@ -68,14 +55,6 @@ export function ListRowSkeleton() {
 }
 
 const styles = StyleSheet.create({
-	cardSkeleton: {
-		flex: 1,
-		backgroundColor: WHIMSY.paper,
-		borderRadius: 18,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		overflow: "hidden",
-	},
 	listRow: {
 		flexDirection: "row",
 		alignItems: "center",

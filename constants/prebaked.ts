@@ -32,7 +32,6 @@ export interface PrebakedFrames {
 	sad?: string[];
 	surprise?: string[];
 	wave?: string[];
-	arms_up?: string[];
 }
 
 export const ITEM_PREBAKED: Record<string, PrebakedFrames> = {

@@ -70,8 +70,8 @@ async function doEnsure(): Promise<string | null> {
 
 	// Project ID from expo config — needed for cross-project tokens.
 	const projectId =
-		(Constants?.expoConfig as any)?.extra?.eas?.projectId ??
-		(Constants as any)?.easConfig?.projectId;
+		Constants?.expoConfig?.extra?.eas?.projectId ??
+		Constants?.easConfig?.projectId;
 
 	let tokenString: string | null = null;
 	try {
