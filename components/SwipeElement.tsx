@@ -25,6 +25,7 @@ import {
 } from "../constants/hats";
 import { ITEM_PREBAKED, isPrebaked } from "../constants/prebaked";
 import { SpritePig, PigAnimation } from "./ui/SpritePig";
+import { AnchorDebugOverlay, type DebugItem } from "./dev/AnchorDebugOverlay";
 
 // Dev tool: the /align screen writes per-item position + size + behind
 // overrides into AsyncStorage. We mirror that into the live render so
@@ -372,6 +373,17 @@ export default function SwipeElement({
 	const bgSlot = resolveSlot(equippedBackground);
 	const heldSlot = resolveSlot(equippedHeld);
 
+	// Dev-only: feed the in-card anchor/placement overlay (see below).
+	const debugItems: DebugItem[] = __DEV__
+		? [main, auraSlot, heldSlot]
+				.filter((s) => s && s.overlay)
+				.map((s) => ({
+					label: s!.itemId,
+					category: s!.category,
+					overlay: s!.overlay as HatOverlay,
+				}))
+		: [];
+
 	// Accessories now follow the pig across every animation via the
 	// per-frame anchor data in PIG_FRAME_ANCHORS. Backgrounds + auras
 	// are full-canvas and don't need anchoring; everything else lets
@@ -479,6 +491,13 @@ export default function SwipeElement({
 							</>
 						);
 					})()}
+					{__DEV__ && (
+						<AnchorDebugOverlay
+							anim={pigAnim as PigAnimationKey}
+							frameIdx={pigFrameIdx}
+							items={debugItems}
+						/>
+					)}
 				</Animated.View>
 			</Pressable>
 

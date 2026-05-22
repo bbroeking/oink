@@ -227,6 +227,8 @@ PODS:
     - ExpoModulesCore
   - ExpoBlur (14.0.1):
     - ExpoModulesCore
+  - ExpoClipboard (7.0.1):
+    - ExpoModulesCore
   - ExpoFileSystem (18.0.6):
     - ExpoModulesCore
   - ExpoFont (13.0.2):
@@ -2148,6 +2150,7 @@ DEPENDENCIES:
   - "ExpoAsset (from `../node_modules/.pnpm/expo-asset@11.0.1_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@_7a97ded6b617df803fb6df6c21cb60df/node_modules/expo-asset/ios`)"
   - "ExpoAudio (from `../node_modules/.pnpm/expo-audio@0.3.5_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@7_00a91a599d25ad2f9e15326037038c20/node_modules/expo-audio/ios`)"
   - "ExpoBlur (from `../node_modules/.pnpm/expo-blur@14.0.1_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@7_c0a31eb2ee88700e89bb27ce7cb76e1c/node_modules/expo-blur/ios`)"
+  - "ExpoClipboard (from `../node_modules/.pnpm/expo-clipboard@7.0.1_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+co_e73a024adf81b47f2fc00a2c1b7989b4/node_modules/expo-clipboard/ios`)"
   - "ExpoFileSystem (from `../node_modules/.pnpm/expo-file-system@18.0.6_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel_7a6d18c596ef38bab67089fdd9af112a/node_modules/expo-file-system/ios`)"
   - "ExpoFont (from `../node_modules/.pnpm/expo-font@13.0.2_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@7_8b1ee6ff022f2f768ecc1ee4ad4e5454/node_modules/expo-font/ios`)"
   - "ExpoHaptics (from `../node_modules/.pnpm/expo-haptics@14.0.0_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+cor_bfd79bb4d070869bbf42061fa2c5b733/node_modules/expo-haptics/ios`)"
@@ -2279,6 +2282,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/.pnpm/expo-audio@0.3.5_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@7_00a91a599d25ad2f9e15326037038c20/node_modules/expo-audio/ios"
   ExpoBlur:
     :path: "../node_modules/.pnpm/expo-blur@14.0.1_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@7_c0a31eb2ee88700e89bb27ce7cb76e1c/node_modules/expo-blur/ios"
+  ExpoClipboard:
+    :path: "../node_modules/.pnpm/expo-clipboard@7.0.1_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+co_e73a024adf81b47f2fc00a2c1b7989b4/node_modules/expo-clipboard/ios"
   ExpoFileSystem:
     :path: "../node_modules/.pnpm/expo-file-system@18.0.6_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel_7a6d18c596ef38bab67089fdd9af112a/node_modules/expo-file-system/ios"
   ExpoFont:
@@ -2468,6 +2473,7 @@ SPEC CHECKSUMS:
   ExpoAsset: 6f7a8887cbb9fb39fdb0808e7f6f74ba0e1ae9b6
   ExpoAudio: 5fe5fc98236b820c4affd09e0631de1c7a7c299b
   ExpoBlur: 2b92367da8158eeaee9bfa940d82512a09c8e0c6
+  ExpoClipboard: 44fd1c8959ee8f6175d059dc011b154c9709a969
   ExpoFileSystem: a38e1bb58d77f41717293a7b73ebd4014d8cb8dd
   ExpoFont: b089994dac1fe603deda1cec151e32c81f46c2f1
   ExpoHaptics: f8eacde90398b8be3648ed823b6e9e6bf87ece3f
