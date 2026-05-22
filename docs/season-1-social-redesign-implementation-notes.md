@@ -80,6 +80,20 @@ items. Newest entries at the bottom of each section.
   bounty-ready + leaderboard-pass** rows. They need extra data
   sources; deferred to keep the phase bounded. Not dropped.
 
+- **2026-05-21 (Phase D ch.2c) — Cooldown is surfaced reactively,
+  not proactively.** The spec wanted "2 of 3 casts left" shown ahead
+  of time. RitualPicker doesn't know the caster's own VIP status
+  (the cap is 3, or 5 for VIP) without an extra query, so a precise
+  "X of N" would be wrong for VIPs. Shipped: the cap message fires
+  reactively on a `daily_cap` rejection, de-hardcoded to "all your
+  casts" (correct for both 3 and 5). A proactive counter is deferred.
+- **2026-05-21 (Phase D ch.2c) — Casting feedback is a state, not an
+  animation.** The spec said "obvious cast animation." Shipped a
+  prominent confirmation *state* instead (big emoji + "✦ blessing
+  sent ✦" replacing the button) — no `Animated`, which keeps it
+  test-safe and avoids the act()/teardown issues animations caused
+  elsewhere. Reads clearly; an animated flourish can layer on later.
+
 ## Tradeoffs
 
 - **2026-05-21 (Phase B) — Segment badge, not a tab-bar badge.** The

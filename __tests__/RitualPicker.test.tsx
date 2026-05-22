@@ -89,7 +89,7 @@ describe("RitualPicker", () => {
 		act(() => r.unmount());
 	});
 
-	test("daily_cap reason surfaces the 3-casts message", async () => {
+	test("daily_cap reason surfaces the cap message", async () => {
 		mockRpc.mockResolvedValue({ data: { ok: false, reason: "daily_cap" }, error: null });
 		const r = await renderAct(
 			<RitualPicker mode="bless" targetUserId="u1" targetName="alice" />
@@ -99,7 +99,7 @@ describe("RitualPicker", () => {
 			btn.props.onPress();
 			await Promise.resolve();
 		});
-		expect(textOf(r.root)).toContain("all 3 casts");
+		expect(textOf(r.root)).toContain("all your casts");
 		act(() => r.unmount());
 	});
 

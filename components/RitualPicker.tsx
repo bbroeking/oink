@@ -24,6 +24,8 @@ interface Props {
 export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) {
 	const [busy, setBusy] = useState(false);
 	const [result, setResult] = useState<string | null>(null);
+	// null = not cast yet, true = cast landed, false = cast rejected.
+	const [castOk, setCastOk] = useState<boolean | null>(null);
 
 	const ritual = dailyRitual(mode);
 	const isBless = mode === "bless";
@@ -42,13 +44,15 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 					? Haptics.NotificationFeedbackType.Success
 					: Haptics.NotificationFeedbackType.Warning
 			).catch(() => {});
+			setCastOk(true);
 			setResult(
 				isBless
-					? `${ritual.name} sent to ${targetName} ${ritual.emoji}`
-					: `${targetName} has been cursed ${ritual.emoji}`
+					? `${ritual.name} sent to ${targetName}`
+					: `${targetName} has been cursed`
 			);
 			onCast?.();
 		} else {
+			setCastOk(false);
 			setResult(reasonText(r?.reason, isBless));
 		}
 	};
@@ -63,31 +67,48 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 			<Text style={styles.kicker}>
 				{isBless ? "☀ today's blessing" : "🟢 today's curse"}
 			</Text>
-			<View style={styles.ritualRow}>
-				<Text style={styles.emoji}>{ritual.emoji}</Text>
-				<View style={{ flex: 1, minWidth: 0 }}>
-					<Text style={styles.name}>{ritual.name}</Text>
-					<Text style={styles.blurb}>{ritual.blurb}</Text>
+
+			{castOk === true ? (
+				// The cast landed — a prominent confirmation beat, not a
+				// quiet one-liner. The button is gone; the deed is done.
+				<View style={styles.castDone}>
+					<Text style={styles.castDoneEmoji}>{ritual.emoji}</Text>
+					<Text style={styles.castDoneTitle}>
+						{isBless ? "✦ blessing sent ✦" : "✦ curse cast ✦"}
+					</Text>
+					<Text style={styles.castDoneSub}>{result}</Text>
 				</View>
-			</View>
-			<Pressable
-				testID="ritual-cast"
-				onPress={cast}
-				disabled={busy}
-				style={({ pressed }) => [
-					styles.btn,
-					(pressed || busy) && { opacity: 0.7 },
-				]}
-			>
-				<Text style={styles.btnText}>
-					{busy
-						? "…"
-						: isBless
-							? `Bless ${targetName}`
-							: `Curse ${targetName}`}
-				</Text>
-			</Pressable>
-			{!!result && <Text style={styles.result}>{result}</Text>}
+			) : (
+				<>
+					<View style={styles.ritualRow}>
+						<Text style={styles.emoji}>{ritual.emoji}</Text>
+						<View style={{ flex: 1, minWidth: 0 }}>
+							<Text style={styles.name}>{ritual.name}</Text>
+							<Text style={styles.blurb}>{ritual.blurb}</Text>
+						</View>
+					</View>
+					<Pressable
+						testID="ritual-cast"
+						onPress={cast}
+						disabled={busy}
+						style={({ pressed }) => [
+							styles.btn,
+							(pressed || busy) && { opacity: 0.7 },
+						]}
+					>
+						<Text style={styles.btnText}>
+							{busy
+								? "…"
+								: isBless
+									? `Bless ${targetName}`
+									: `Curse ${targetName}`}
+						</Text>
+					</Pressable>
+					{castOk === false && !!result && (
+						<Text style={styles.result}>{result}</Text>
+					)}
+				</>
+			)}
 		</View>
 	);
 }
@@ -95,7 +116,7 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 function reasonText(reason: string | undefined, isBless: boolean): string {
 	switch (reason) {
 		case "daily_cap":
-			return "You've used all 3 casts today.";
+			return "You've used all your casts for today.";
 		case "already_blessed_today":
 			return "Already blessed them today.";
 		case "already_cursed_today":
@@ -137,5 +158,19 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		textAlign: "center",
 		marginTop: 8,
+	},
+	castDone: { alignItems: "center", paddingVertical: 6 },
+	castDoneEmoji: { fontSize: 44, marginBottom: 4 },
+	castDoneTitle: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		color: WHIMSY.ink,
+		letterSpacing: 0.4,
+	},
+	castDoneSub: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.ink,
+		marginTop: 2,
 	},
 });
