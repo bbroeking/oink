@@ -26,13 +26,15 @@ def write_generated(data: dict) -> None:
         s = data[item_id]
         p = s["pivot"]
         lines.append(
-            "\t%s: { pivot: { x: %s, y: %s }, widthFrac: %s, anchor: \"%s\" },"
+            "\t%s: { pivot: { x: %s, y: %s }, widthFrac: %s, "
+            "anchor: \"%s\", behind: %s },"
             % (
                 item_id,
                 round(float(p["x"]), 4),
                 round(float(p["y"]), 4),
                 round(float(s["widthFrac"]), 4),
                 s["anchor"],
+                "true" if s.get("behind") else "false",
             )
         )
     body = (

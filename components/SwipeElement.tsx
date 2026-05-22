@@ -348,6 +348,7 @@ export default function SwipeElement({
 				width: w,
 				height: h,
 				anchor: anchorName,
+				behind: relSpec.behind,
 			};
 			return { itemId, category, emoji, imageSrc, prebaked: null, overlay };
 		}

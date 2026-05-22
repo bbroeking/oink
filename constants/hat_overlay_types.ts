@@ -53,6 +53,9 @@ export interface RelSpec {
 	pivot: { x: number; y: number };
 	widthFrac: number;
 	anchor?: AnchorName;
+	// Render behind the pig (true) or in front (false/undefined).
+	// Set per-item in the /item-anchor tool.
+	behind?: boolean;
 }
 
 // Re-export so this module is the single source of truth for both
