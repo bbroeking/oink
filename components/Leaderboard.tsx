@@ -1,23 +1,21 @@
+// Leaderboard — the "Board" segment of the Friends hub.
+//
+// Extracted from the old app/(tabs)/leaderboard.tsx screen during the
+// Season-1 social redesign (Phase A). The hub now owns the outer
+// chrome (SafeAreaView + tab title), so this component is just the
+// scope toggle + the ranked list + UserSheet.
 import { useState, useCallback } from "react";
-import {
-	View,
-	StyleSheet,
-	FlatList,
-	Platform,
-	SafeAreaView,
-	Pressable,
-	Text,
-} from "react-native";
+import { View, StyleSheet, FlatList, Pressable, Text } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { supabase } from "../../utils/supabase";
-import { log } from "../../utils/log";
-import { Icon } from "../../components/ui/Icon";
-import { PigAvatar } from "../../components/ui/PigAvatar";
-import { Sticker } from "../../components/ui/Sticker";
-import { ListRowSkeleton } from "../../components/ui/Skeleton";
-import { UserSheet } from "../../components/UserSheet";
-import { AlignmentBadge } from "../../components/ui/AlignmentBadge";
-import { COLORS, FONTS, ROW_TILTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
+import { supabase } from "../utils/supabase";
+import { log } from "../utils/log";
+import { Icon } from "./ui/Icon";
+import { PigAvatar } from "./ui/PigAvatar";
+import { Sticker } from "./ui/Sticker";
+import { ListRowSkeleton } from "./ui/Skeleton";
+import { UserSheet } from "./UserSheet";
+import { AlignmentBadge } from "./ui/AlignmentBadge";
+import { FONTS, ROW_TILTS, WHIMSY } from "@/constants/theme";
 
 type Scope = "global" | "friends" | "alignment";
 
@@ -33,12 +31,9 @@ interface LeaderboardEntry {
 	tickles_earned: number;
 	active_hat_id: string | null;
 	active_title: ActiveTitle | null;
-	// Optional because pre-alignment-migration profiles don't have it;
-	// the SELECT falls back gracefully and we default to 0 client-side.
 	alignment_score?: number | null;
 }
 
-// "<title> username" or "username <title>" depending on placement.
 function formatDisplayName(
 	username: string | null,
 	title: ActiveTitle | null
@@ -50,9 +45,6 @@ function formatDisplayName(
 		: `${title.name} ${name}`;
 }
 
-// PostgREST returns embedded foreign-row records as arrays even when the
-// relationship is 1:1. Normalize, and coerce missing field (when the
-// basic-select fallback is used) to null.
 type RawRow = Omit<LeaderboardEntry, "active_title"> & {
 	active_title?: ActiveTitle[] | ActiveTitle | null;
 };
@@ -112,8 +104,6 @@ function ClippingRow({
 	isYou,
 	tilt,
 	onPress,
-	// In alignment scope the trailing number is the alignment score
-	// (signed) rather than lifetime tickles.
 	showAlignment = false,
 }: {
 	player: LeaderboardEntry;
@@ -163,12 +153,11 @@ function ClippingRow({
 	);
 }
 
-export default function LeaderboardScreen() {
+export function Leaderboard() {
 	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [scope, setScope] = useState<Scope>("global");
 	const [myId, setMyId] = useState<string | null>(null);
-	// Tap-on-row opens UserSheet with this user's id. Null = sheet closed.
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
 	const fetchLeaderboard = useCallback(async () => {
@@ -179,19 +168,12 @@ export default function LeaderboardScreen() {
 			} = await supabase.auth.getUser();
 			setMyId(user?.id ?? null);
 
-			// Two select shapes: with the titles FK join (preferred, lights up
-			// title display) and without (fallback when the titles migration
-			// hasn't been pushed yet — leaderboard still renders, just no
-			// titles next to usernames).
 			const SELECT_WITH_TITLES =
 				"id, username, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
 			const SELECT_BASIC =
 				"id, username, tickles_earned, active_hat_id, alignment_score";
 
-			const runQuery = async (
-				select: string,
-				friendIds?: string[]
-			) => {
+			const runQuery = async (select: string, friendIds?: string[]) => {
 				let q = supabase
 					.from("profiles")
 					.select(select)
@@ -203,9 +185,6 @@ export default function LeaderboardScreen() {
 				return q;
 			};
 
-			// Alignment scope uses a dedicated RPC that returns the two
-			// extremes (most generous + most greedy) ranked. Map its rows
-			// into LeaderboardEntry so the existing row renderer works.
 			if (scope === "alignment") {
 				const { data: rows } = await supabase.rpc("alignment_leaderboard", {
 					per_side: 25,
@@ -244,8 +223,6 @@ export default function LeaderboardScreen() {
 				}
 			}
 
-			// Try with titles. If PostgREST rejects because the FK doesn't
-			// exist yet (migration not pushed), fall back to the basic select.
 			let result = await runQuery(SELECT_WITH_TITLES, friendIds);
 			if (result.error) {
 				log.error("Leaderboard titles join failed, retrying without:", result.error);
@@ -254,9 +231,6 @@ export default function LeaderboardScreen() {
 			}
 			setLeaderboard(normalize(result.data as unknown as RawRow[] | null));
 
-			// Opening the leaderboard clears any pending "passed you" toasts
-			// — the user already saw where they stand. Fire-and-forget; if
-			// the RPC doesn't exist yet (pre-migration) the catch swallows it.
 			supabase.rpc("mark_all_pass_events_seen").then(() => {});
 		} catch (error) {
 			log.error("Error fetching leaderboard:", error);
@@ -276,108 +250,97 @@ export default function LeaderboardScreen() {
 
 	return (
 		<View style={styles.container}>
-			<SafeAreaView style={styles.safeArea}>
-				<View style={styles.header}>
-					<Text style={styles.title}>Leaderboard</Text>
-					<View style={styles.titleRule} />
-					<View style={styles.toggleWrap}>
-						<Sticker color="paper" rotate={0} radius={22} style={styles.toggle}>
-							{(["global", "friends", "alignment"] as Scope[]).map((s) => {
-								const active = s === scope;
-								return (
-									<Pressable
-										key={s}
-										onPress={() => setScope(s)}
-										style={[styles.toggleBtn, active && styles.toggleBtnActive]}
-									>
-										<Icon
-											name={
-												s === "global"
-													? "globe"
-													: s === "friends"
-														? "friends"
-														: "star"
-											}
-											size={14}
-											filled={active}
-											color={WHIMSY.ink}
-											strokeWidth={1.8}
-										/>
-										<Text
-											style={[
-												styles.toggleText,
-												active && styles.toggleTextActive,
-											]}
-										>
-											{s === "global"
-												? "Global"
-												: s === "friends"
-													? "Friends"
-													: "Alignment"}
-										</Text>
-									</Pressable>
-								);
-							})}
-						</Sticker>
-					</View>
-				</View>
+			<View style={styles.toggleWrap}>
+				<Sticker color="paper" rotate={0} radius={22} style={styles.toggle}>
+					{(["global", "friends", "alignment"] as Scope[]).map((s) => {
+						const active = s === scope;
+						return (
+							<Pressable
+								key={s}
+								onPress={() => setScope(s)}
+								style={[styles.toggleBtn, active && styles.toggleBtnActive]}
+							>
+								<Icon
+									name={
+										s === "global"
+											? "globe"
+											: s === "friends"
+												? "friends"
+												: "star"
+									}
+									size={14}
+									filled={active}
+									color={WHIMSY.ink}
+									strokeWidth={1.8}
+								/>
+								<Text
+									style={[styles.toggleText, active && styles.toggleTextActive]}
+								>
+									{s === "global"
+										? "Global"
+										: s === "friends"
+											? "Friends"
+											: "Alignment"}
+								</Text>
+							</Pressable>
+						);
+					})}
+				</Sticker>
+			</View>
 
-				{loading ? (
-					<View style={styles.listContent}>
-						{Array.from({ length: 6 }).map((_, i) => (
-							<ListRowSkeleton key={i} />
-						))}
-					</View>
-				) : leaderboard.length === 0 ? (
-					<Text style={styles.empty}>
-						{scope === "friends"
-							? "No friends yet. Add some on the Account tab."
-							: scope === "alignment"
-								? "No one has taken a side yet. Trade to tip the scales."
-								: "No tickles yet. Be the first!"}
-					</Text>
-				) : scope === "alignment" ? (
-					// Alignment scope: flat ranked list, no champion poster
-					// (the "all-time leader" framing is tickle-specific).
-					<FlatList
-						data={leaderboard}
-						renderItem={({ item, index }) => (
-							<ClippingRow
-								player={item}
-								rank={index + 1}
-								isYou={item.id === myId}
-								tilt={ROW_TILTS[index % ROW_TILTS.length]}
-								onPress={setSelectedUserId}
-								showAlignment
-							/>
-						)}
-						keyExtractor={(item) => item.id}
-						style={styles.list}
-						contentContainerStyle={styles.listContent}
-					/>
-				) : (
-					<FlatList
-						data={rest}
-						ListHeaderComponent={
-							champ ? (
-								<ChampionPoster champ={champ} onPress={setSelectedUserId} />
-							) : null
-						}
-						renderItem={({ item, index }) => (
-							<ClippingRow
-								player={item}
-								rank={index + 2}
-								isYou={item.id === myId}
-								tilt={ROW_TILTS[index % ROW_TILTS.length]}
-								onPress={setSelectedUserId}
-							/>
-						)}
-						keyExtractor={(item) => item.id}
-						style={styles.list}
-						contentContainerStyle={styles.listContent}
-					/>
-				)}
-			</SafeAreaView>
+			{loading ? (
+				<View style={styles.listContent}>
+					{Array.from({ length: 6 }).map((_, i) => (
+						<ListRowSkeleton key={i} />
+					))}
+				</View>
+			) : leaderboard.length === 0 ? (
+				<Text style={styles.empty}>
+					{scope === "friends"
+						? "No friends yet. Add some on the Friends segment."
+						: scope === "alignment"
+							? "No one has taken a side yet. Trade to tip the scales."
+							: "No tickles yet. Be the first!"}
+				</Text>
+			) : scope === "alignment" ? (
+				<FlatList
+					data={leaderboard}
+					renderItem={({ item, index }) => (
+						<ClippingRow
+							player={item}
+							rank={index + 1}
+							isYou={item.id === myId}
+							tilt={ROW_TILTS[index % ROW_TILTS.length]}
+							onPress={setSelectedUserId}
+							showAlignment
+						/>
+					)}
+					keyExtractor={(item) => item.id}
+					style={styles.list}
+					contentContainerStyle={styles.listContent}
+				/>
+			) : (
+				<FlatList
+					data={rest}
+					ListHeaderComponent={
+						champ ? (
+							<ChampionPoster champ={champ} onPress={setSelectedUserId} />
+						) : null
+					}
+					renderItem={({ item, index }) => (
+						<ClippingRow
+							player={item}
+							rank={index + 2}
+							isYou={item.id === myId}
+							tilt={ROW_TILTS[index % ROW_TILTS.length]}
+							onPress={setSelectedUserId}
+						/>
+					)}
+					keyExtractor={(item) => item.id}
+					style={styles.list}
+					contentContainerStyle={styles.listContent}
+				/>
+			)}
 
 			<UserSheet
 				targetUserId={selectedUserId}
@@ -389,28 +352,9 @@ export default function LeaderboardScreen() {
 }
 
 const styles = StyleSheet.create({
-	container: { flex: 1, backgroundColor: WHIMSY.cream },
-	safeArea: { flex: 1 },
-	header: {
-		paddingHorizontal: 18,
-		paddingTop: Platform.OS === "ios" ? 8 : 20,
-	},
-	title: {
-		fontSize: 32,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-	},
-	titleRule: {
-		...TITLE_RULE,
-		width: 110,
-		marginTop: 4,
-	},
-	toggleWrap: { marginTop: 14 },
-	toggle: {
-		flexDirection: "row",
-		padding: 4,
-		gap: 4,
-	},
+	container: { flex: 1 },
+	toggleWrap: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 2 },
+	toggle: { flexDirection: "row", padding: 4, gap: 4 },
 	toggleBtn: {
 		flex: 1,
 		paddingVertical: 8,
@@ -425,13 +369,9 @@ const styles = StyleSheet.create({
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 	},
-	toggleText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-	},
+	toggleText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
 	toggleTextActive: { fontFamily: FONTS.whimsy, color: WHIMSY.ink },
-	champWrap: { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 8 },
+	champWrap: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 },
 	champ: { padding: 16 },
 	champOver: {
 		fontFamily: FONTS.hand,
@@ -440,11 +380,7 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.5,
 		marginBottom: 8,
 	},
-	champBody: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 14,
-	},
+	champBody: { flexDirection: "row", alignItems: "center", gap: 14 },
 	champAvatarWrap: {
 		borderRadius: 32,
 		borderWidth: 2,
@@ -452,11 +388,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		padding: 2,
 	},
-	champName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-	},
+	champName: { fontFamily: FONTS.whimsy, fontSize: 22, color: WHIMSY.ink },
 	champScore: {
 		fontFamily: FONTS.hand,
 		fontSize: 14,
@@ -503,26 +435,15 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		textAlign: "center",
 	},
-	rowName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 14,
-		color: WHIMSY.ink,
-	},
-	rowYouTag: {
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-	},
+	rowName: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
+	rowYouTag: { fontFamily: FONTS.hand, color: WHIMSY.accent },
 	rowHat: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
 		color: WHIMSY.mute,
 		marginTop: 1,
 	},
-	rowScore: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
+	rowScore: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	empty: {
 		textAlign: "center",
 		padding: 36,

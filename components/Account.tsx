@@ -15,7 +15,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
-import Friends from "./Friends";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { Card, Button } from "./ui";
 import { Icon } from "./ui/Icon";
@@ -274,9 +273,9 @@ export function Account({ session }: { session: Session }) {
 						<Text style={achievementStyles.chev}>›</Text>
 					</Pressable>
 
-					{/* Social section — sounder + friends. Placed high in
-					    the scroll so they're discoverable without paging
-					    past Pro / Restore. */}
+					{/* Your Sounder (referral). Friends moved to the
+					    dedicated Friends tab in the Season-1 social
+					    redesign. */}
 					{sounder && (
 						<Sticker color="paper" rotate={-0.6} radius={14} style={sounderStyles.card}>
 							<View style={sounderStyles.headerRow}>
@@ -313,10 +312,6 @@ export function Account({ session }: { session: Session }) {
 							)}
 						</Sticker>
 					)}
-
-					<View style={{ marginTop: 8 }}>
-						<Friends userId={session.user.id} />
-					</View>
 
 					{/* Pro card — torn ticket stub */}
 					{IAP_ENABLED && (

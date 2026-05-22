@@ -361,7 +361,7 @@ export default function Barn() {
 				supabase
 					.rpc("mark_pass_event_seen", { event_id: fresh.id })
 					.then(() => {});
-				router.push("/leaderboard");
+				router.push("/friends" as any);
 			});
 			// Fire-and-forget: mark seen so the next poll doesn't return it.
 			supabase

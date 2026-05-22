@@ -13,7 +13,7 @@ import { initIAP } from "@/utils/iap";
 
 const TAB_ICON: Record<string, IconName> = {
 	index: "home",
-	leaderboard: "ranks",
+	friends: "friends",
 	season: "season",
 	shop: "shop",
 	account: "user",
@@ -126,11 +126,11 @@ export default function TabLayout() {
 				}}
 			/>
 			<Tabs.Screen
-				name="leaderboard"
+				name="friends"
 				options={{
-					title: "Ranks",
+					title: "Friends",
 					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name="leaderboard" color={color} focused={focused} />
+						<TabIcon name="friends" color={color} focused={focused} />
 					),
 					headerShown: false,
 				}}
