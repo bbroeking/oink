@@ -67,6 +67,48 @@ interface Props {
 	onFriendshipChanged?: () => void;
 }
 
+// The Ask row's state — a pending trade or a 24h pair cooldown blocks
+// a new request. Derived from my_tickle_trades.
+type AskState =
+	| { kind: "ready" }
+	| { kind: "pending" }
+	| { kind: "cooldown"; hours: number };
+
+interface TradeRow {
+	requester_id: string;
+	target_id: string;
+	status: string;
+	created_at: string;
+}
+
+// Mirror the server's pair-cooldown rule (trade_cooldown.sql): a
+// request is blocked while a trade is pending, and for 24h after the
+// most recent trade's created_at. my_tickle_trades omits 'cancelled'
+// rows — a cancel-then-retry cooldown still falls back to the
+// reactive check in sendTickle, which is an acceptable edge case.
+function deriveAskState(
+	targetId: string,
+	trades: TradeRow[] | null
+): AskState {
+	const mine = (trades ?? []).filter(
+		(t) => t.requester_id === targetId || t.target_id === targetId
+	);
+	if (mine.some((t) => t.status === "pending")) return { kind: "pending" };
+	let newest = 0;
+	for (const t of mine) {
+		const ts = new Date(t.created_at).getTime();
+		if (ts > newest) newest = ts;
+	}
+	const elapsedH = newest ? (Date.now() - newest) / 3_600_000 : Infinity;
+	if (elapsedH < 24) {
+		return {
+			kind: "cooldown",
+			hours: Math.max(1, Math.ceil(24 - elapsedH)),
+		};
+	}
+	return { kind: "ready" };
+}
+
 function formatHandle(s: UserStats): string {
 	const name = s.username ?? "Anonymous";
 	const disc = s.discriminator ? `#${s.discriminator}` : "";
@@ -86,6 +128,9 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const [ritualMode, setRitualMode] = useState<RitualMode>("bless");
 	// Amount for the friends-only Ask row (1-5).
 	const [askAmount, setAskAmount] = useState(1);
+	// The Ask row is state-aware: a pending trade or a 24h pair
+	// cooldown blocks a new request. Derived from my_tickle_trades.
+	const [askState, setAskState] = useState<AskState>({ kind: "ready" });
 
 	useEffect(() => {
 		if (!targetUserId) {
@@ -95,6 +140,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		}
 		setLoading(true);
 		setFeedback(null);
+		setAskState({ kind: "ready" });
 		supabase
 			.rpc("public_user_stats", { target_user_id: targetUserId })
 			.then(({ data, error }) => {
@@ -107,6 +153,10 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 				}
 				setLoading(false);
 			});
+		// Trade state with this user — drives the Ask row.
+		supabase.rpc("my_tickle_trades").then(({ data }) => {
+			setAskState(deriveAskState(targetUserId, data as TradeRow[] | null));
+		});
 	}, [targetUserId]);
 
 	const refreshStats = async () => {
@@ -174,10 +224,15 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		if (r?.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 			setFeedback(`Asked for ${askAmount} ♥ — they'll see it.`);
+			// The request is now a pending trade — flip the Ask state.
+			setAskState({ kind: "pending" });
 		} else if (r?.reason === "cooldown") {
-			setFeedback(`Cooldown — wait ${r.hours_remaining ?? 24}h.`);
+			const h = Math.max(1, Math.ceil(r.hours_remaining ?? 24));
+			setFeedback(`Cooldown — wait ${h}h.`);
+			setAskState({ kind: "cooldown", hours: h });
 		} else if (r?.reason === "already_active") {
 			setFeedback("You already have a trade going with them.");
+			setAskState({ kind: "pending" });
 		} else {
 			setFeedback("Couldn't request. Try again.");
 		}
@@ -252,6 +307,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 											onPick={setAskAmount}
 											onAsk={sendTickle}
 											busy={busy}
+											state={askState}
 										/>
 									) : (
 										<ActionButton
@@ -378,18 +434,44 @@ function ActionButton({
 	);
 }
 
-// Friends-only: pick 1-5, then ask. The single door for asking tickles.
+// Friends-only: pick 1-5, then ask. The single door for asking
+// tickles — and state-aware: a pending trade or a 24h pair cooldown
+// replaces the picker with a clear "why you can't ask yet" panel.
 function AskRow({
 	amount,
 	onPick,
 	onAsk,
 	busy,
+	state,
 }: {
 	amount: number;
 	onPick: (n: number) => void;
 	onAsk: () => void;
 	busy: boolean;
+	state: AskState;
 }) {
+	if (state.kind === "pending") {
+		return (
+			<View style={styles.askBlocked}>
+				<Text style={styles.askBlockedTitle}>Trade in progress</Text>
+				<Text style={styles.askBlockedSub}>
+					You've already got a trade going with them — answer or
+					withdraw it first.
+				</Text>
+			</View>
+		);
+	}
+	if (state.kind === "cooldown") {
+		return (
+			<View style={styles.askBlocked}>
+				<Text style={styles.askBlockedTitle}>Cooling off</Text>
+				<Text style={styles.askBlockedSub}>
+					You traded recently — you can ask again in about{" "}
+					{state.hours}h.
+				</Text>
+			</View>
+		);
+	}
 	return (
 		<View style={styles.askWrap}>
 			<View style={styles.askPills}>
@@ -516,6 +598,27 @@ const styles = StyleSheet.create({
 	askPillActive: { backgroundColor: WHIMSY.sun },
 	askPillText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.mute },
 	askPillTextActive: { color: WHIMSY.ink },
+	askBlocked: {
+		backgroundColor: WHIMSY.cream,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 12,
+		paddingVertical: 12,
+		paddingHorizontal: 14,
+		alignItems: "center",
+	},
+	askBlockedTitle: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+	},
+	askBlockedSub: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 2,
+	},
 	feedback: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
