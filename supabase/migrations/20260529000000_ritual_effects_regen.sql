@@ -111,8 +111,11 @@ AS $function$
 $function$;
 
 -- ── update_profile_and_item_count — regen source swapped ───────────
+-- Body is the LIVE remote definition (the jsonb-returning daily-lucky
+-- version — verified via pg_get_functiondef, NOT the older vip.sql
+-- integer version). The ONLY change vs live is the regen_secs source.
 CREATE OR REPLACE FUNCTION public.update_profile_and_item_count(uid uuid)
-RETURNS integer
+RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path TO 'public'
@@ -125,6 +128,9 @@ DECLARE
 	current_balance int;
 	new_balance int;
 	active_season_id text;
+	bumped_counter bigint;
+	lucky_numbers integer[];
+	lucky_won int := NULL;
 BEGIN
 	SELECT COALESCE(profiles.is_vip, false) INTO is_vip
 	FROM public.profiles WHERE id = uid;
@@ -151,7 +157,7 @@ BEGIN
 		SET item_count = current_balance,
 		    last_increment = last_increment + (intervals_elapsed * (regen_secs * INTERVAL '1 second'))
 		WHERE user_id = uid;
-		RETURN current_balance;
+		RETURN jsonb_build_object('balance', current_balance, 'lucky_won', null);
 	END IF;
 
 	new_balance := current_balance - 1;
@@ -161,7 +167,11 @@ BEGIN
 	    last_increment = last_increment + (intervals_elapsed * (regen_secs * INTERVAL '1 second'))
 	WHERE user_id = uid;
 
-	UPDATE public.profiles SET counter = counter + 1 WHERE id = uid;
+	-- Personal: balance counter + lifetime tickles
+	UPDATE public.profiles
+	SET counter = counter + 1,
+	    tickles_earned = tickles_earned + 1
+	WHERE id = uid;
 
 	-- Battle pass XP
 	SELECT id INTO active_season_id
@@ -176,6 +186,38 @@ BEGIN
 			SET xp = public.user_season_progress.xp + 1;
 	END IF;
 
-	RETURN new_balance;
+	-- Global daily lucky counter — atomic insert-or-bump.
+	INSERT INTO public.daily_lucky_state (d, global_counter, numbers)
+	     VALUES (CURRENT_DATE, 1, public.roll_lucky_numbers())
+	ON CONFLICT (d) DO UPDATE
+	     SET global_counter = daily_lucky_state.global_counter + 1
+	  RETURNING global_counter, numbers
+	     INTO bumped_counter, lucky_numbers;
+
+	-- Did this tickle land on a lucky number?
+	IF bumped_counter = ANY(lucky_numbers) THEN
+		INSERT INTO public.daily_lucky_claims (d, number, user_id)
+		VALUES (CURRENT_DATE, bumped_counter::int, uid)
+		ON CONFLICT (d, number) DO NOTHING;
+
+		IF EXISTS (
+			SELECT 1 FROM public.daily_lucky_claims
+				WHERE d = CURRENT_DATE
+				  AND number = bumped_counter::int
+				  AND user_id = uid
+		) THEN
+			lucky_won := bumped_counter::int;
+			UPDATE public.profiles
+			SET counter = counter + 5,
+			    tickles_earned = tickles_earned + 5
+			WHERE id = uid;
+		END IF;
+	END IF;
+
+	RETURN jsonb_build_object(
+		'balance', new_balance,
+		'lucky_won', lucky_won,
+		'global_counter', bumped_counter
+	);
 END;
 $function$;
