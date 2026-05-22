@@ -54,6 +54,11 @@ const LUCKY_BOOST_UNTIL_ISO     = "2026-05-22T00:00:00Z";
 // that a new user hits it in one session.
 const LUCKY_GUARANTEED_BY_TICKLE_N = 8;
 
+// Season-1 ritual effects (Phase D). sun_beam blessing → a strong
+// lucky-trigger boost; phantom_itch curse → a tap sometimes slips.
+const LUCKY_TRIGGER_CHANCE_SUNBEAM = 0.4;
+const PHANTOM_ITCH_MISS_CHANCE = 0.33;
+
 type GrantedLuckyTitle = {
 	id: string;
 	name: string;
@@ -228,10 +233,13 @@ export default function Barn() {
 
 	// Season 1: current alignment, drives BarnOverlay theming.
 	const [alignment, setAlignment] = useState<AlignmentLabel>("neutral");
-	// Active daily-ritual effects → BarnOverlay glow / miasma wash.
-	const [effects, setEffects] = useState<{ blessed: boolean; cursed: boolean }>(
-		{ blessed: false, cursed: false }
-	);
+	// Active daily-ritual effects — drive the overlay + the tap loop.
+	const [effects, setEffects] = useState<{
+		blessed: boolean;
+		cursed: boolean;
+		sunBeam: boolean;
+		phantomItch: boolean;
+	}>({ blessed: false, cursed: false, sunBeam: false, phantomItch: false });
 
 	// Release-notes auto-show: fires once on Barn mount per app launch
 	// when the user hasn't seen the latest version yet.
@@ -498,12 +506,15 @@ export default function Barn() {
 			// missing column (pre-alignment-migration) → defaults neutral.
 			setAlignment(alignmentLabel(prof?.alignment_score ?? 0));
 
-			// Active blessing/curse effects → BarnOverlay glow / miasma.
+			// Active blessing/curse effects → overlay + tap-loop wiring.
 			supabase.rpc("my_active_effects").then(({ data }) => {
-				const rows = (data as { source: string }[] | null) ?? [];
+				const rows =
+					(data as { source: string; kind: string }[] | null) ?? [];
 				setEffects({
 					blessed: rows.some((r) => r.source === "blessing"),
 					cursed: rows.some((r) => r.source === "curse"),
+					sunBeam: rows.some((r) => r.kind === "sun_beam"),
+					phantomItch: rows.some((r) => r.kind === "phantom_itch"),
 				});
 			});
 
@@ -577,6 +588,16 @@ export default function Barn() {
 			return;
 		}
 
+		// Phantom itch — a curse: while active, a tap sometimes slips
+		// right off. No bank spent, no score; just a missed beat.
+		if (effects.phantomItch && Math.random() < PHANTOM_ITCH_MISS_CHANCE) {
+			Haptics.notificationAsync(
+				Haptics.NotificationFeedbackType.Warning
+			).catch(() => {});
+			showToast("👻 Phantom itch", "Your tap slipped right off.");
+			return;
+		}
+
 		try {
 			const oink = oinkPlayers[Math.floor(Math.random() * oinkPlayers.length)];
 			oink.seekTo(0);
@@ -604,9 +625,12 @@ export default function Barn() {
 				}
 			}
 			if (!triggerNow) {
-				const chance = withinBoost
-					? LUCKY_TRIGGER_CHANCE_BOOST
-					: LUCKY_TRIGGER_CHANCE;
+				// sun_beam blessing → a strong boost to the trigger roll.
+				const chance = effects.sunBeam
+					? LUCKY_TRIGGER_CHANCE_SUNBEAM
+					: withinBoost
+						? LUCKY_TRIGGER_CHANCE_BOOST
+						: LUCKY_TRIGGER_CHANCE;
 				if (Math.random() < chance) triggerNow = true;
 			}
 			if (triggerNow) {

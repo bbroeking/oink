@@ -71,8 +71,28 @@ items. Newest entries at the bottom of each section.
   makes every ritual land visibly. Can be refined to per-kind when
   the rest of the effects wire up.
 
+- **2026-05-22 (Phase D ch.2b) — `phantom_itch` is a tap-miss
+  chance.** The spec table said "half-taps"; the curse migration
+  comment said "next 3 taps." Both are vague and "next 3 taps" needs
+  persistent server state. Conservative call: while phantom_itch is
+  active, each tap has a **33% chance to slip** (no bank spent, no
+  score, a "👻 phantom itch" toast). Client-only, thematically right,
+  anti-grief-safe — and no migration.
+- **2026-05-22 (Phase D ch.2b) — `sun_beam` boosts, doesn't get
+  consumed.** "Your next Lucky Pig" would need consumption on the
+  first lucky trigger (a server write to clear the blessing). Instead
+  the lucky-trigger chance is boosted to 0.40 for the whole 24h
+  `sun_beam` window — simpler, client-only. "Next lucky" in spirit.
+
 ## Changes from spec
 
+- **2026-05-22 (Phase D ch.2b) — No 2h/day regen-debuff cap.** The
+  curses design floated capping cumulative `sluggish_snout` debuff at
+  2h/day. Not implemented — `sluggish_snout` is binary (active →
+  regen ×2, else ×1), not stacking/accumulating. The existing
+  anti-grief (one curse per pair per day, cleanse for 5 snouts, a
+  blessing clears curses) already bounds abuse; a time-accumulation
+  cap is real complexity for little gain.
 - **2026-05-21 (Phase B) — Inbox passive feed scoped down.** The spec
   lists five passive row types (blessed/cursed you, trade answered,
   bounty ready, leaderboard pass). Phase B ships three —
