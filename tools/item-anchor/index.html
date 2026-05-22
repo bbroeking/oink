@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TTP · Item Anchor Tool</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, system-ui, sans-serif;
+    background: #1a1614; color: #eee;
+  }
+  #app { display: flex; height: 100vh; }
+  aside {
+    width: 200px; flex: none; overflow-y: auto;
+    border-right: 1px solid #332e2a; padding: 8px;
+  }
+  aside button {
+    display: block; width: 100%; text-align: left; margin: 2px 0;
+    padding: 6px 8px; border: 0; border-radius: 6px;
+    background: #2e2824; color: #bbb; font-size: 12px; cursor: pointer;
+  }
+  aside button.on { background: #ff3dda; color: #fff; }
+  aside button .dot { color: #9fe; }
+  main { flex: 1; overflow-y: auto; padding: 18px; }
+  h1 { font-size: 15px; margin: 0 0 14px; color: #ff3dda; }
+  h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+    color: #888; margin: 0 0 6px;
+  }
+  .row { display: flex; gap: 22px; flex-wrap: wrap; }
+  .canvasWrap { background: #3a3430; border-radius: 8px; position: relative; }
+  #itemCanvas { width: 280px; touch-action: none; cursor: crosshair; }
+  #itemImg { width: 280px; display: block; }
+  #pivotDot {
+    position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px;
+    border-radius: 50%; background: #ff3dda; border: 2px solid #fff;
+    pointer-events: none;
+  }
+  .xh { position: absolute; background: #00e5ff; pointer-events: none; }
+  #preview { width: 300px; height: 300px; }
+  #pigImg { width: 300px; height: 300px; display: block; }
+  #previewItem { position: absolute; }
+  #anchorDot {
+    position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px;
+    border-radius: 50%; background: #00e5ff; border: 1.5px solid #002b33;
+    pointer-events: none;
+  }
+  #controls { margin: 18px 0; display: flex; gap: 26px; flex-wrap: wrap; align-items: center; }
+  label { font-size: 12px; color: #aaa; }
+  select, input[type=range] { vertical-align: middle; }
+  .nudge button, .stepper button {
+    width: 34px; height: 30px; border: 0; border-radius: 6px;
+    background: #2e2824; color: #fff; font-size: 15px; cursor: pointer; margin: 2px;
+  }
+  .val { font-weight: 700; min-width: 56px; display: inline-block; text-align: center; }
+  textarea {
+    width: 100%; height: 220px; margin-top: 10px; background: #0e0c0b;
+    color: #9fe; border: 1px solid #332e2a; border-radius: 8px;
+    padding: 10px; font: 12px/1.5 ui-monospace, Menlo, monospace;
+  }
+  #copy {
+    margin-top: 8px; padding: 9px 16px; border: 0; border-radius: 8px;
+    background: #ff3dda; color: #fff; font-weight: 700; cursor: pointer;
+  }
+  .hint { color: #777; font-size: 11px; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="list"></aside>
+  <main>
+    <h1>Item Anchor Tool — drag each item's attach point onto its anchor</h1>
+    <div class="row">
+      <div>
+        <h3>drag the attach point</h3>
+        <div class="canvasWrap" id="itemCanvas">
+          <img id="itemImg" alt="" />
+          <div class="xh" id="xhV"></div>
+          <div class="xh" id="xhH"></div>
+          <div id="pivotDot"></div>
+        </div>
+        <div class="nudge" style="margin-top:6px">
+          <button data-nx="-0.005">←</button>
+          <button data-ny="-0.005">↑</button>
+          <button data-ny="0.005">↓</button>
+          <button data-nx="0.005">→</button>
+        </div>
+      </div>
+      <div>
+        <h3>preview on pig</h3>
+        <div class="canvasWrap" id="preview">
+          <img id="pigImg" src="../../assets/images/sprites/rosie/idle_1.png" alt="" />
+          <img id="previewItem" alt="" />
+          <div id="anchorDot"></div>
+        </div>
+      </div>
+    </div>
+    <div id="controls">
+      <div>
+        <label>width <span class="val" id="widthVal"></span></label><br/>
+        <input type="range" id="width" min="0.05" max="1.2" step="0.005" />
+      </div>
+      <div>
+        <label>anchor</label><br/>
+        <select id="anchor"></select>
+      </div>
+      <div>
+        <label>pivot</label>
+        <span class="val" id="pivotVal"></span>
+      </div>
+    </div>
+    <textarea id="output" readonly></textarea>
+    <button id="copy">Copy HAT_REL block</button>
+    <div class="hint">
+      Auto-saved to this browser. Paste the block above over
+      <code>HAT_REL</code> in <code>constants/hats.ts</code> to commit.
+      Anchors are the canonical idle-frame-0 pig anatomy (300-space).
+    </div>
+  </main>
+</div>
+<script>
+// --- pig anchors, 300×300 canonical space (REST_ANCHORS from hats.ts) ---
+const PIG = 300;
+const ANCHORS = {
+  head:{x:162,y:34}, eye_l:{x:131,y:108}, eye_r:{x:222,y:108},
+  eyes:{x:176,y:108}, snout:{x:185,y:136}, mouth:{x:181,y:170},
+  neck:{x:170,y:220}, body:{x:157,y:235}, hand_l:{x:133,y:280},
+  hand_r:{x:235,y:266}, leg_l:{x:27,y:266}, leg_r:{x:75,y:235},
+  feet:{x:51,y:250},
+};
+const ITEMS = ['archery_bow','ascot','aviator_sunglasses','balloon','bandana_red','beanie','bell_collar','black_bow_tie','bone_necklace','cape_scarf','carnival_mask','cat_mask','charm_necklace','chef_toque','choker','coffee_mug','controller','cowboy','crown','diamond_pendant','domino','electric_aura','emerald_pendant','ermine_cape','fire_aura','flowers','fur_cape','gas_mask','gift_bow','gold_aura','gold_chain','hair_bow','halo','heart_sunglasses','hero_cape','hero_mask','holy_aura','ice_aura','ice_cream','knit_scarf','leather_cape','locket','magic_wand','magician_cape','magnifier','masquerade','monocle','neckwarmer','nerd_glasses','party','pearl_necklace','pencil','petal_aura','pink_bow','pink_glow','pirate_tricorn','pixel_glasses','pizza_slice','polka_bow','rainbow_aura','rainbow_bow','rainbow_scarf','ribbon_bow','ribbon_choker','robber_mask','round_glasses','royal_cape','safety_goggles','shadow_aura','short_cape','silk_bow','silk_cape','silk_scarf','skull_mask','sleep_mask','sparkle_aura','star_cape','striped_scarf','summer_kerchief','swim_goggles','three_d_glasses','tophat','toy_sword','vampire_cape','velvet_bow','venice_mask','viking_helmet','vr_headset','winter_scarf','wizard'];
+
+// Guess a sensible starting anchor + pivot from the item name.
+function guess(id){
+  const has = s => id.includes(s);
+  if (has('glass')||has('goggle')||has('monocle')||has('domino')||has('mask')||has('vr_'))
+    return {anchor:'eyes', pivot:{x:.5,y:.5}};
+  if (has('scarf')||has('necklace')||has('collar')||has('choker')||has('chain')||
+      has('pendant')||has('locket')||has('ascot')||has('neckwarmer')||has('kerchief'))
+    return {anchor:'neck', pivot:{x:.5,y:0}};
+  if (has('cape')) return {anchor:'body', pivot:{x:.5,y:.15}};
+  if (has('aura')||has('glow')) return {anchor:'body', pivot:{x:.5,y:.5}};
+  if (has('sword')||has('wand')||has('mug')||has('pencil')||has('magnifier')||
+      has('balloon')||has('controller')||has('archery')||has('pizza')||has('ice_cream'))
+    return {anchor:'hand_r', pivot:{x:.5,y:.5}};
+  return {anchor:'head', pivot:{x:.5,y:1}}; // hats, bows, crowns, flowers...
+}
+
+const state = JSON.parse(localStorage.getItem('itemAnchorRel') || '{}');
+let cur = ITEMS[0];
+let aspect = 1; // current item's height/width
+
+function spec(id){
+  if (!state[id]) { const g = guess(id); state[id] = {pivot:g.pivot, widthFrac:0.4, anchor:g.anchor}; }
+  return state[id];
+}
+function save(){ localStorage.setItem('itemAnchorRel', JSON.stringify(state)); renderOutput(); }
+
+// --- build the item list ---
+const list = document.getElementById('list');
+ITEMS.forEach(id => {
+  const b = document.createElement('button');
+  b.dataset.id = id;
+  b.onclick = () => { cur = id; selectItem(); };
+  list.appendChild(b);
+});
+function refreshList(){
+  [...list.children].forEach(b => {
+    const id = b.dataset.id;
+    b.className = id === cur ? 'on' : '';
+    b.innerHTML = (state[id] ? '<span class="dot">●</span> ' : '') + id;
+  });
+}
+
+// --- anchor dropdown ---
+const anchorSel = document.getElementById('anchor');
+Object.keys(ANCHORS).forEach(n => {
+  const o = document.createElement('option'); o.value = o.textContent = n;
+  anchorSel.appendChild(o);
+});
+anchorSel.onchange = () => { spec(cur).anchor = anchorSel.value; save(); render(); };
+
+const widthEl = document.getElementById('width');
+widthEl.oninput = () => { spec(cur).widthFrac = +widthEl.value; save(); render(); };
+
+document.querySelectorAll('.nudge button').forEach(btn => {
+  btn.onclick = () => {
+    const s = spec(cur);
+    s.pivot.x = clamp(s.pivot.x + (+btn.dataset.nx || 0));
+    s.pivot.y = clamp(s.pivot.y + (+btn.dataset.ny || 0));
+    save(); render();
+  };
+});
+const clamp = v => Math.max(0, Math.min(1, +v.toFixed(4)));
+
+// --- drag the attach point ---
+const itemCanvas = document.getElementById('itemCanvas');
+let dragging = false;
+function setFromEvent(e){
+  const r = itemCanvas.getBoundingClientRect();
+  const px = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  const py = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+  const s = spec(cur);
+  s.pivot.x = clamp(px / r.width);
+  s.pivot.y = clamp(py / r.height);
+  save(); render();
+}
+itemCanvas.addEventListener('mousedown', e => { dragging = true; setFromEvent(e); });
+window.addEventListener('mousemove', e => { if (dragging) setFromEvent(e); });
+window.addEventListener('mouseup', () => { dragging = false; });
+itemCanvas.addEventListener('touchstart', e => { dragging = true; setFromEvent(e); e.preventDefault(); });
+itemCanvas.addEventListener('touchmove', e => { if (dragging) { setFromEvent(e); e.preventDefault(); } });
+itemCanvas.addEventListener('touchend', () => { dragging = false; });
+
+document.getElementById('copy').onclick = () => {
+  navigator.clipboard.writeText(document.getElementById('output').value);
+  document.getElementById('copy').textContent = '✓ Copied';
+  setTimeout(() => document.getElementById('copy').textContent = 'Copy HAT_REL block', 1200);
+};
+
+// --- selecting / rendering ---
+const itemImg = document.getElementById('itemImg');
+function selectItem(){
+  spec(cur); // ensure defaults
+  itemImg.onload = () => {
+    aspect = itemImg.naturalHeight / itemImg.naturalWidth || 1;
+    render();
+  };
+  itemImg.src = '../../assets/images/hats/' + cur + '.png';
+  document.getElementById('previewItem').src = itemImg.src;
+  render();
+}
+function render(){
+  const s = spec(cur);
+  refreshList();
+  // item canvas
+  itemCanvas.style.height = (280 * aspect) + 'px';
+  const px = s.pivot.x * 280, py = s.pivot.y * 280 * aspect;
+  document.getElementById('pivotDot').style.cssText =
+    `left:${px}px;top:${py}px`;
+  document.getElementById('xhV').style.cssText =
+    `left:${px-1}px;top:0;width:2px;height:${280*aspect}px`;
+  document.getElementById('xhH').style.cssText =
+    `top:${py-1}px;left:0;height:2px;width:280px`;
+  // preview — item placed so its pivot lands on the anchor
+  const a = ANCHORS[s.anchor];
+  const w = s.widthFrac * PIG, h = w * aspect;
+  const pi = document.getElementById('previewItem');
+  pi.style.cssText =
+    `width:${w}px;height:${h}px;left:${a.x - s.pivot.x*w}px;top:${a.y - s.pivot.y*h}px`;
+  document.getElementById('anchorDot').style.cssText = `left:${a.x}px;top:${a.y}px`;
+  // controls
+  widthEl.value = s.widthFrac;
+  anchorSel.value = s.anchor;
+  document.getElementById('widthVal').textContent = s.widthFrac.toFixed(3);
+  document.getElementById('pivotVal').textContent =
+    s.pivot.x.toFixed(3) + ', ' + s.pivot.y.toFixed(3);
+}
+function renderOutput(){
+  const lines = ITEMS.filter(id => state[id]).map(id => {
+    const s = state[id];
+    return `\t${id}: { pivot: { x: ${s.pivot.x.toFixed(3)}, y: ${s.pivot.y.toFixed(3)} }` +
+      `, widthFrac: ${s.widthFrac.toFixed(3)}, anchor: "${s.anchor}" },`;
+  });
+  document.getElementById('output').value =
+    'export const HAT_REL: Record<string, RelSpec> = {\n' +
+    lines.join('\n') + '\n};';
+}
+
+selectItem();
+renderOutput();
+</script>
+</body>
+</html>
