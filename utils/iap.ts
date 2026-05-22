@@ -34,7 +34,7 @@ import { log } from "./log";
 // Master kill switch — when false, every IAP entry point becomes a no-op,
 // nothing is initialized, no network calls are made, and UI gates on it to
 // hide paywall surfaces. Flip to `true` to bring monetization back online.
-export const IAP_ENABLED = false;
+export const IAP_ENABLED = true;
 
 // Public iOS API key — find at: https://app.revenuecat.com/projects/<project>/apps/<app>
 //
