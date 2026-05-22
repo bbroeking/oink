@@ -126,6 +126,21 @@ items. Newest entries at the bottom of each section.
 
 ## Heads-up
 
+- **2026-05-22 (Phase D ch.2b) — ⚠️ The migration files have drifted
+  from the live database.** The regen migration's first push failed
+  (`cannot change return type`): the live `update_profile_and_item_count`
+  returns `jsonb` and contains a whole **daily-lucky-numbers system**
+  (`daily_lucky_state`, `daily_lucky_claims`, `roll_lucky_numbers()`)
+  — none of which is in `vip.sql`, the latest migration file that
+  defines that function. A later change to it never made it into a
+  tracked migration (dashboard edit, or a migration my grep missed).
+  Had the push not been transactional, my stale (vip.sql-based)
+  version would have **wiped the daily-lucky system**. I rebuilt the
+  function from `pg_get_functiondef` of the live remote definition.
+  **Action for the team:** run `supabase db diff` against the remote
+  to find the *full* extent of the drift — other functions may also
+  have live definitions that don't match the repo.
+
 - **2026-05-21 — Build 67's TestFlight state is unverified.** It was
   built + handed off for Transporter upload; no confirmation it landed
   or that the migrated app runs clean on a device. This redesign is
