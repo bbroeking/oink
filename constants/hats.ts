@@ -123,8 +123,25 @@ export const HAT_IMAGES: Record<string, number> = {
 // `HatOverlay` lives in its own module to break the import cycle with the
 // auto-generated overlays file; re-export here so consumers can keep
 // importing it from "constants/hats".
-export type { HatOverlay, AnchorName, Anchor } from "./hat_overlay_types";
-import type { HatOverlay, AnchorName, Anchor } from "./hat_overlay_types";
+export type { HatOverlay, AnchorName, Anchor, RelSpec } from "./hat_overlay_types";
+import type {
+	HatOverlay,
+	AnchorName,
+	Anchor,
+	RelSpec,
+} from "./hat_overlay_types";
+
+// The anchor coordinate space — all REST_ANCHORS / PIG_FRAME_ANCHORS
+// values are in this 300×300 box. Anchor-relative placement divides by
+// it to get fractions; the live render multiplies by the actual pig
+// size. Keep in sync with SpritePig's `size` in SwipeElement.
+export const PIG_CANVAS = 300;
+
+// Per-item anchor-RELATIVE placement specs (see RelSpec). An item with
+// an entry here is positioned the relative way; items without keep the
+// absolute HAT_OVERLAYS path. Populate via the /item-anchor dev tool,
+// then paste the values here. Empty = nothing migrated yet.
+export const HAT_REL: Record<string, RelSpec> = {};
 
 // Per-item overlay overrides. Auto-generated coordinates from
 // scripts/compute_overlays.py are spread first; manual tweaks below override.

@@ -35,6 +35,26 @@ export interface HatOverlay {
 	perAnim?: Partial<Record<PigAnimationKey, Partial<HatOverlay>>>;
 }
 
+// Anchor-RELATIVE placement spec. The future of item positioning —
+// everything is a fraction, so the item scales correctly when the pig
+// renders at different sizes on different screens (the absolute
+// `bottom`/`left` model above breaks across screen sizes).
+//
+//   pivot     — the attach point ON THE ITEM, as a 0..1 fraction of
+//               the item's own box. (0.5,1.0) = bottom-centre.
+//   widthFrac — the item's width as a fraction of the pig's size.
+//               Height is derived from the PNG's intrinsic aspect.
+//   anchor    — which pig anchor the pivot snaps onto (defaults to the
+//               item category's anchor).
+//
+// At render the item is sized + positioned so its pivot point lands
+// exactly on the resolved pig anchor — see SwipeElement.
+export interface RelSpec {
+	pivot: { x: number; y: number };
+	widthFrac: number;
+	anchor?: AnchorName;
+}
+
 // Re-export so this module is the single source of truth for both
 // PigAnimationKey and HatOverlay. Imported here by hats.ts to keep
 // the union narrow.

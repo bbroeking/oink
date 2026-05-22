@@ -15,13 +15,19 @@ import * as Haptics from "expo-haptics";
 import {
 	HAT_IMAGES,
 	HAT_OVERLAYS,
+	HAT_REL,
 	CATEGORY_OVERLAYS,
+	CATEGORY_ANCHORS,
 	CATEGORY_PERANIM_SHIFTS,
 	DEFAULT_HAT_OVERLAY,
 	Z_BEHIND_PIG,
+	PIG_CANVAS,
 	frameDelta,
+	resolveAnchor,
 	PigAnimationKey,
 	HatOverlay,
+	AnchorName,
+	RelSpec,
 } from "../constants/hats";
 import { ITEM_PREBAKED, isPrebaked } from "../constants/prebaked";
 import { SpritePig, PigAnimation } from "./ui/SpritePig";
@@ -141,10 +147,18 @@ export default function SwipeElement({
 	const [alignOverrides, setAlignOverrides] = useState<
 		Record<string, HatOverlay>
 	>({});
+	// Mirror /item-anchor screen rel-placement overrides (dev-only).
+	const [relOverrides, setRelOverrides] = useState<
+		Record<string, RelSpec>
+	>({});
 	useFocusEffect(
 		useCallback(() => {
 			if (!__DEV__) return;
 			(async () => {
+				try {
+					const rel = await AsyncStorage.getItem("item_anchor_rel_v1");
+					if (rel) setRelOverrides(JSON.parse(rel));
+				} catch {}
 				try {
 					const v3 = await AsyncStorage.getItem(ALIGN_OVERRIDES_KEY);
 					if (v3) {
@@ -306,6 +320,37 @@ export default function SwipeElement({
 		const emoji = slot.emoji ?? null;
 		const prebaked = isPrebaked(itemId) ? ITEM_PREBAKED[itemId] : null;
 		const imageSrc = HAT_IMAGES[itemId];
+
+		// Anchor-RELATIVE placement (the new model). If the item has a
+		// rel spec, size + position it so its pivot point lands on the
+		// resolved pig anchor for the current frame. All fractions, so
+		// it stays correct as the pig scales across screens.
+		const relSpec = relOverrides[itemId] || HAT_REL[itemId];
+		const isFullCanvasCat =
+			category === "background" || category === "aura";
+		if (relSpec && imageSrc && !isFullCanvasCat) {
+			const anchorName: AnchorName =
+				relSpec.anchor ??
+				(category ? CATEGORY_ANCHORS[category] : undefined) ??
+				"head";
+			const a = resolveAnchor(
+				pigAnim as PigAnimationKey,
+				pigFrameIdx,
+				anchorName,
+			);
+			const src = Image.resolveAssetSource(imageSrc);
+			const aspect = src && src.width ? src.height / src.width : 1;
+			const w = relSpec.widthFrac * PIG_CANVAS;
+			const h = w * aspect;
+			const overlay: HatOverlay = {
+				left: a.x - relSpec.pivot.x * w,
+				bottom: PIG_CANVAS - (a.y - relSpec.pivot.y * h) - h,
+				width: w,
+				height: h,
+				anchor: anchorName,
+			};
+			return { itemId, category, emoji, imageSrc, prebaked: null, overlay };
+		}
 
 		// Resolve the base overlay (rest position). Precedence:
 		// align-screen override (dev) → HAT_OVERLAYS → category default

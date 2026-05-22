@@ -765,6 +765,15 @@ export default function Barn() {
 					</Pressable>
 				)}
 
+				{__DEV__ && (
+					<Pressable
+						onPress={() => router.push("/item-anchor" as any)}
+						style={styles.devAnchor}
+					>
+						<Text style={styles.devAlignText}>⊹ anchors</Text>
+					</Pressable>
+				)}
+
 				{/* Dev-only force-trigger for the Lucky Pig moment.
 				    Forces the title sub-roll so the LuckyTitleUnlockModal
 				    fires after the burst dismisses — useful for testing
@@ -1046,6 +1055,18 @@ devAlign: {
 		backgroundColor: "rgba(0,0,0,0.7)",
 		borderWidth: 1.5,
 		borderColor: WHIMSY.sun,
+		zIndex: 50,
+	},
+	devAnchor: {
+		position: "absolute",
+		top: Platform.OS === "ios" ? 94 : 58,
+		right: 12,
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+		borderRadius: 14,
+		backgroundColor: "rgba(0,0,0,0.7)",
+		borderWidth: 1.5,
+		borderColor: "#00E5FF",
 		zIndex: 50,
 	},
 	devLucky: {
