@@ -6,12 +6,14 @@ import {
 	Modal,
 	View,
 	Text,
+	Image,
 	StyleSheet,
 	Pressable,
 	ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Sticker } from "./ui/Sticker";
+import { releaseIcon } from "../constants/emojiArt";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -54,7 +56,14 @@ export function ReleaseNotesModal({
 							{release.items.map((it, i) => (
 								<View key={i} style={styles.item}>
 									<View style={styles.emojiWrap}>
-										<Text style={styles.emoji}>{it.emoji ?? "★"}</Text>
+										{releaseIcon(it.emoji) ? (
+											<Image
+												source={releaseIcon(it.emoji)!}
+												style={styles.emojiImg}
+											/>
+										) : (
+											<Text style={styles.emoji}>{it.emoji ?? "★"}</Text>
+										)}
 									</View>
 									<View style={{ flex: 1, minWidth: 0 }}>
 										<Text style={styles.itemTitle}>{it.title}</Text>
@@ -128,6 +137,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	emoji: { fontSize: 18 },
+	emojiImg: { width: 26, height: 26, resizeMode: "contain" },
 	itemTitle: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,

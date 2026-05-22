@@ -20,3 +20,21 @@ export const ACHIEVEMENT_ICON: Record<string, number> = {
 export function achievementIcon(id: string | null | undefined): number {
 	return (id && ACHIEVEMENT_ICON[id]) || TROPHY;
 }
+
+// Release-notes item emoji → art. Only the emoji with dedicated art
+// are listed; releaseIcon() returns null for the rest (✦, ⚖️, 👑),
+// which the modal then renders as the plain emoji glyph.
+const RELEASE_ICON: Record<string, number> = {
+	"🤝": require("../assets/images/emoji/trade.png"),
+	"👥": require("../assets/images/emoji/friends.png"),
+	"👀": require("../assets/images/emoji/peek.png"),
+	"🏆": TROPHY,
+	"🔔": require("../assets/images/emoji/bell.png"),
+	"☀️": require("../assets/images/emoji/sun-beam.png"),
+	"🟢": require("../assets/images/emoji/goblin-whisper.png"),
+	"📋": require("../assets/images/emoji/clipboard.png"),
+};
+
+export function releaseIcon(emoji: string | undefined): number | null {
+	return (emoji && RELEASE_ICON[emoji]) || null;
+}
