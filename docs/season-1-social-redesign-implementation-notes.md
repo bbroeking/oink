@@ -37,13 +37,37 @@ items. Newest entries at the bottom of each section.
   relocating its data fetch too, and it pairs naturally with the
   Phase E referral revival. Deferred, not dropped.
 
+- **2026-05-21 (Phase B) — Inbox data layer = client-side merge.**
+  The spec calls for a unified feed but doesn't say how to source it.
+  Chose to merge existing data client-side (`my_tickle_trades` RPC +
+  a `friendships` query + the `blessings`/`curses` tables) rather than
+  add a `my_inbox()` aggregating RPC. This means **Phase B needs no
+  new migration and no `db push`** — it runs against the live DB as-is.
+  A server-side RPC is a fine later optimization if the feed grows.
+- **2026-05-21 (Phase B) — Trade push routes to `/friends`, not a
+  segment.** A tapped trade notification lands on the Friends tab;
+  it can't deep-link straight to the Inbox *segment* (segment is
+  internal hub state). The Inbox badge draws the eye. Segment-level
+  deep linking is a follow-up.
+
 ## Changes from spec
 
-_(none yet)_
+- **2026-05-21 (Phase B) — Inbox passive feed scoped down.** The spec
+  lists five passive row types (blessed/cursed you, trade answered,
+  bounty ready, leaderboard pass). Phase B ships three —
+  trade-answered, blessing-received, curse-received — and **defers
+  bounty-ready + leaderboard-pass** rows. They need extra data
+  sources; deferred to keep the phase bounded. Not dropped.
 
 ## Tradeoffs
 
-_(none yet)_
+- **2026-05-21 (Phase B) — Segment badge, not a tab-bar badge.** The
+  unread count badges the **Inbox segment** inside the hub, not the
+  Friends tab icon in the bottom bar. A true tab-bar badge needs the
+  count lifted to `app/(tabs)/_layout.tsx` (cross-tree state). The
+  segment badge is the clean, contained version; the tab-bar badge is
+  a deferred follow-up. Cost: the count isn't visible from *other*
+  tabs, only once you're in the Friends hub.
 
 ## Heads-up
 
@@ -62,3 +86,11 @@ _(none yet)_
   the hub's body, where before it lived inside Account's `ScrollView`.
   Its internal scroll behavior should be checked on-device — if the
   friends list is long it may need its own scroll container now.
+- **2026-05-21 (Phase B) — `Friends.tsx` "pending" tab not yet
+  removed.** Friend requests now show in the Inbox, but `Friends.tsx`
+  still has its own "Pending" sub-tab — so requests appear in **two
+  places** right now. Removing that redundant tab is the remaining
+  Phase B work (call it B2). Not broken, just duplicated.
+- **2026-05-21 (Phase B) — Dead `tradePill*` styles** left in
+  `Barn.tsx`'s StyleSheet after the pill was removed. Harmless
+  (unused keys), minor cleanup deferred.

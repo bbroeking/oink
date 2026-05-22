@@ -26,7 +26,6 @@ import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
 import { LuckyPigModal } from "./LuckyPigModal";
 import { LuckyTitleUnlockModal } from "./LuckyTitleUnlockModal";
-import { TickleTradeModal, useTickleTrades } from "./TickleTradeModal";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 import { BarnOverlay } from "./ui/BarnOverlay";
@@ -229,16 +228,6 @@ export default function Barn() {
 
 	// Season 1: current alignment, drives BarnOverlay theming.
 	const [alignment, setAlignment] = useState<AlignmentLabel>("neutral");
-
-	// Tickle Trade state — own user id, full trades list, modal open flag.
-	const [myUserId, setMyUserId] = useState<string | null>(null);
-	useEffect(() => {
-		supabase.auth.getUser().then(({ data }) => {
-			setMyUserId(data.user?.id ?? null);
-		});
-	}, []);
-	const { trades, actionableCount, reload: reloadTrades } = useTickleTrades(myUserId);
-	const [tradeModalOpen, setTradeModalOpen] = useState(false);
 
 	// Release-notes auto-show: fires once on Barn mount per app launch
 	// when the user hasn't seen the latest version yet.
@@ -843,43 +832,8 @@ export default function Barn() {
 				}}
 			/>
 
-			{/* Bottom-right Tickle Trade pill. Always rendered; pulses
-			    + shows a count badge when there are incoming requests
-			    to fulfill. Tapping opens the trade modal. */}
-			{myUserId && (
-				<Pressable
-					onPress={() => {
-						reloadTrades();
-						setTradeModalOpen(true);
-						// User explicitly touched the trade surface —
-						// prompt for push if we don't have it yet.
-						ensurePushPermission();
-					}}
-					style={styles.tradePill}
-				>
-					<Text style={styles.tradePillEmoji}>🤝</Text>
-					{actionableCount > 0 && (
-						<View style={styles.tradePillBadge}>
-							<Text style={styles.tradePillBadgeText}>
-								{actionableCount}
-							</Text>
-						</View>
-					)}
-				</Pressable>
-			)}
-
-			{myUserId && (
-				<TickleTradeModal
-					visible={tradeModalOpen}
-					onClose={() => setTradeModalOpen(false)}
-					userId={myUserId}
-					trades={trades}
-					onChanged={() => {
-						reloadTrades();
-						fetchStats();
-					}}
-				/>
-			)}
+			{/* Tickle trades moved to the Friends-tab Inbox in the
+			    Season-1 social redesign — no Barn pill or modal. */}
 
 			<ReleaseNotesModal
 				visible={releaseNotesOpen}

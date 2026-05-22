@@ -1,10 +1,11 @@
 // The Friends hub — the social tab (formerly "Ranks").
 //
-// Season-1 social redesign, Phase A: one tab consolidates the three
-// social surfaces behind a segmented control:
+// Season-1 social redesign. One tab consolidates the three social
+// surfaces behind a segmented control:
 //   Friends — your friends list + add (Friends.tsx)
-//   Inbox   — the activity feed (Inbox.tsx — stub until Phase B)
+//   Inbox   — the activity feed (Inbox.tsx)
 //   Board   — the leaderboard (Leaderboard.tsx)
+// The Inbox segment carries an unread-actionable count badge.
 // See docs/season-1-social-redesign.md.
 import { useState, useCallback } from "react";
 import {
@@ -35,13 +36,33 @@ const SEGMENTS: { key: Segment; label: string; icon: IconName }[] = [
 export default function FriendsHubScreen() {
 	const [segment, setSegment] = useState<Segment>("friends");
 	const [userId, setUserId] = useState<string | null>(null);
+	const [inboxCount, setInboxCount] = useState(0);
+
+	// Lightweight badge count — incoming friend requests + incoming
+	// pending trades. Fetched on focus so the badge is fresh even
+	// before the Inbox segment is opened; the Inbox itself reports
+	// updates via onActionableCount while it's on screen.
+	const refreshCount = useCallback(async (uid: string) => {
+		const { count: frCount } = await supabase
+			.from("friendships")
+			.select("requester_id", { count: "exact", head: true })
+			.eq("receiver_id", uid)
+			.eq("status", "pending");
+		const { data: trades } = await supabase.rpc("my_tickle_trades");
+		const trCount = (
+			(trades as { status: string; target_id: string }[] | null) ?? []
+		).filter((t) => t.status === "pending" && t.target_id === uid).length;
+		setInboxCount((frCount ?? 0) + trCount);
+	}, []);
 
 	useFocusEffect(
 		useCallback(() => {
-			supabase.auth
-				.getUser()
-				.then(({ data }) => setUserId(data.user?.id ?? null));
-		}, [])
+			supabase.auth.getUser().then(({ data }) => {
+				const uid = data.user?.id ?? null;
+				setUserId(uid);
+				if (uid) refreshCount(uid);
+			});
+		}, [refreshCount])
 	);
 
 	return (
@@ -54,6 +75,7 @@ export default function FriendsHubScreen() {
 						<Sticker color="paper" rotate={0} radius={22} style={styles.seg}>
 							{SEGMENTS.map((s) => {
 								const active = s.key === segment;
+								const badge = s.key === "inbox" && inboxCount > 0;
 								return (
 									<Pressable
 										key={s.key}
@@ -72,6 +94,13 @@ export default function FriendsHubScreen() {
 										>
 											{s.label}
 										</Text>
+										{badge && (
+											<View style={styles.badge}>
+												<Text style={styles.badgeText}>
+													{inboxCount > 9 ? "9+" : inboxCount}
+												</Text>
+											</View>
+										)}
 									</Pressable>
 								);
 							})}
@@ -82,7 +111,10 @@ export default function FriendsHubScreen() {
 				<View style={styles.body}>
 					{segment === "friends" &&
 						(userId ? <Friends userId={userId} /> : null)}
-					{segment === "inbox" && <Inbox />}
+					{segment === "inbox" &&
+						(userId ? (
+							<Inbox userId={userId} onActionableCount={setInboxCount} />
+						) : null)}
 					{segment === "board" && <Leaderboard />}
 				</View>
 			</SafeAreaView>
@@ -117,5 +149,21 @@ const styles = StyleSheet.create({
 	},
 	segText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
 	segTextActive: { fontFamily: FONTS.whimsy, color: WHIMSY.ink },
+	badge: {
+		minWidth: 18,
+		height: 18,
+		borderRadius: 9,
+		backgroundColor: WHIMSY.accent,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+		paddingHorizontal: 4,
+	},
+	badgeText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 10,
+		color: WHIMSY.paper,
+	},
 	body: { flex: 1, marginTop: 10 },
 });

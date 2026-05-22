@@ -123,18 +123,16 @@ function RootLayoutInner() {
 	}, [authChecked]);
 
 	// Push tap → deep route. Payloads carry `data.screen='trade'` so
-	// tapping a trade notification opens the Tickle Trade modal on
-	// Barn. Only one listener; expo-notifications coalesces foreground
-	// + background taps into the same callback.
+	// tapping a trade notification opens the Friends tab — the Inbox
+	// segment carries the request. Only one listener; expo-notifications
+	// coalesces foreground + background taps into the same callback.
 	useEffect(() => {
 		const sub = Notifications.addNotificationResponseReceivedListener((res) => {
 			const data = (res.notification.request.content.data ?? {}) as {
 				screen?: string;
 			};
 			if (data.screen === "trade") {
-				// Land on Barn — TickleTradeModal will auto-refresh trades
-				// on focus + the user can see the new state.
-				router.replace("/");
+				router.replace("/friends" as any);
 			}
 		});
 		return () => sub.remove();
