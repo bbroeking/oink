@@ -27,6 +27,7 @@ import {
 	CATEGORY_EMOJI,
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
+import { categoryIcon, PIG } from "@/constants/emojiArt";
 import { COLORS, FONTS, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { RarityFx } from "../../components/ui/RarityFx";
@@ -195,6 +196,12 @@ function HatThumb({
 		return (
 			<Image source={hatSrc} style={baseStyle} resizeMode="contain" />
 		);
+	}
+	// No item art + no per-item emoji → fall back to the category
+	// icon (real art), then to the category emoji glyph.
+	const catIcon = item.emoji ? null : categoryIcon(item.category);
+	if (catIcon) {
+		return <Image source={catIcon} style={baseStyle} resizeMode="contain" />;
 	}
 	return (
 		<Text style={{ fontSize: (size ?? 100) * 0.55 }}>
@@ -1491,7 +1498,7 @@ export default function ShopScreen() {
 						}
 						ListEmptyComponent={
 							<View style={styles.wardrobeEmpty}>
-								<Text style={styles.wardrobeEmptyEmoji}>🐷</Text>
+								<Image source={PIG} style={styles.wardrobeEmptyImg} />
 								<Text style={styles.wardrobeEmptyTitle}>
 									Your closet is bare
 								</Text>
@@ -1877,8 +1884,10 @@ const styles = StyleSheet.create({
 		paddingVertical: 60,
 		paddingHorizontal: 24,
 	},
-	wardrobeEmptyEmoji: {
-		fontSize: 56,
+	wardrobeEmptyImg: {
+		width: 68,
+		height: 68,
+		resizeMode: "contain",
 		marginBottom: 14,
 	},
 	wardrobeEmptyTitle: {

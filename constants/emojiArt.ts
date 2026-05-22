@@ -3,6 +3,27 @@
 // them. See docs/openai-emoji-replacement-art.md.
 
 export const TROPHY = require("../assets/images/emoji/trophy.png");
+export const PIG = require("../assets/images/emoji/pig.png");
+
+// Cosmetic-category → art. `aura` and `necklace` have no dedicated
+// icon yet; categoryIcon() returns null for them (caller keeps the
+// CATEGORY_EMOJI glyph).
+const CATEGORY_ICON: Record<string, number> = {
+	hat: require("../assets/images/emoji/cat/hat.png"),
+	glasses: require("../assets/images/emoji/cat/glasses.png"),
+	bow: require("../assets/images/emoji/cat/bow.png"),
+	scarf: require("../assets/images/emoji/cat/scarf.png"),
+	mask: require("../assets/images/emoji/cat/mask.png"),
+	cape: require("../assets/images/emoji/cat/cape.png"),
+	held: require("../assets/images/emoji/cat/wand.png"),
+	background: require("../assets/images/emoji/cat/picture.png"),
+};
+
+export function categoryIcon(
+	category: string | null | undefined
+): number | null {
+	return (category && CATEGORY_ICON[category]) || null;
+}
 
 // Achievement id → medallion. achievementIcon() falls back to the
 // generic trophy for any id without dedicated art (e.g. future tiers).
