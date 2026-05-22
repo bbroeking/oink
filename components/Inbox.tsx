@@ -22,6 +22,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
+import { ActiveEffects } from "./ActiveEffects";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 // Stockyard palette — kept in sync with the trade theme.
@@ -268,6 +269,9 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			showsVerticalScrollIndicator={false}
 		>
 			{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
+
+			{/* Receiver bless/curse status — what's active on you now. */}
+			<ActiveEffects />
 
 			{empty && (
 				<Text style={styles.emptyText}>
