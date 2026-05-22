@@ -86,11 +86,12 @@ items. Newest entries at the bottom of each section.
   the hub's body, where before it lived inside Account's `ScrollView`.
   Its internal scroll behavior should be checked on-device — if the
   friends list is long it may need its own scroll container now.
-- **2026-05-21 (Phase B) — `Friends.tsx` "pending" tab not yet
-  removed.** Friend requests now show in the Inbox, but `Friends.tsx`
-  still has its own "Pending" sub-tab — so requests appear in **two
-  places** right now. Removing that redundant tab is the remaining
-  Phase B work (call it B2). Not broken, just duplicated.
-- **2026-05-21 (Phase B) — Dead `tradePill*` styles** left in
-  `Barn.tsx`'s StyleSheet after the pill was removed. Harmless
-  (unused keys), minor cleanup deferred.
+- **2026-05-21 (Phase B2) — `Friends.tsx` "pending" tab removed.**
+  Friend requests live only in the Inbox now; `Friends.tsx` is down
+  to two tabs (Friends / Add). The duplication flagged in the Phase B
+  commit is resolved.
+- **2026-05-21 (Phase B) — Dead StyleSheet keys** left behind: the
+  `tradePill*` keys in `Barn.tsx` and the `PendingList` keys
+  (`subKicker`, `actionAccept*`, etc.) in `Friends.tsx`. Harmless
+  (unused keys cost nothing, no tsc error); a `/deslop`-style sweep
+  can clear them later.

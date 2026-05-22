@@ -21,24 +21,13 @@ interface Profile {
 	discriminator?: string | null;
 }
 
-interface PendingIncoming {
-	requester_id: string;
-	requester: Profile | null;
-}
-
-interface PendingOutgoing {
-	receiver_id: string;
-	receiver: Profile | null;
-}
-
-type Tab = "friends" | "pending" | "add";
+// Friend requests live in the Friends-hub Inbox now — this panel is
+// just your friend list + add. (Season-1 social redesign, Phase B.)
+type Tab = "friends" | "add";
 
 export default function Friends({ userId }: { userId: string }) {
 	const [tab, setTab] = useState<Tab>("friends");
 	const [friends, setFriends] = useState<Profile[]>([]);
-	const [incoming, setIncoming] = useState<PendingIncoming[]>([]);
-	const [outgoing, setOutgoing] = useState<PendingOutgoing[]>([]);
-	const [busy, setBusy] = useState<string | null>(null); // user id being acted on
 
 	const load = useCallback(async () => {
 		// Friends — via friend_ids RPC (returns the accepted set)
@@ -53,50 +42,6 @@ export default function Friends({ userId }: { userId: string }) {
 		} else {
 			setFriends([]);
 		}
-
-		// Incoming pending — others sent requests TO me
-		const { data: incRows } = await supabase
-			.from("friendships")
-			.select("requester_id")
-			.eq("receiver_id", userId)
-			.eq("status", "pending");
-		const incIds = ((incRows ?? []) as { requester_id: string }[]).map(
-			(r) => r.requester_id
-		);
-		if (incIds.length > 0) {
-			const { data: profs } = await supabase
-				.from("profiles")
-				.select("id, username, discriminator")
-				.in("id", incIds);
-			const byId = new Map(
-				((profs ?? []) as Profile[]).map((p) => [p.id, p])
-			);
-			setIncoming(incIds.map((id) => ({ requester_id: id, requester: byId.get(id) ?? null })));
-		} else {
-			setIncoming([]);
-		}
-
-		// Outgoing pending — I sent requests TO others
-		const { data: outRows } = await supabase
-			.from("friendships")
-			.select("receiver_id")
-			.eq("requester_id", userId)
-			.eq("status", "pending");
-		const outIds = ((outRows ?? []) as { receiver_id: string }[]).map(
-			(r) => r.receiver_id
-		);
-		if (outIds.length > 0) {
-			const { data: profs } = await supabase
-				.from("profiles")
-				.select("id, username, discriminator")
-				.in("id", outIds);
-			const byId = new Map(
-				((profs ?? []) as Profile[]).map((p) => [p.id, p])
-			);
-			setOutgoing(outIds.map((id) => ({ receiver_id: id, receiver: byId.get(id) ?? null })));
-		} else {
-			setOutgoing([]);
-		}
 	}, [userId]);
 
 	useFocusEffect(
@@ -109,47 +54,15 @@ export default function Friends({ userId }: { userId: string }) {
 		}, [load])
 	);
 
-	const accept = async (otherId: string) => {
-		if (busy) return;
-		setBusy(otherId);
-		await supabase.rpc("accept_friend_request", { other_user_id: otherId });
-		setBusy(null);
-		load();
-	};
-	const cancel = async (otherId: string) => {
-		if (busy) return;
-		setBusy(otherId);
-		await supabase.rpc("cancel_friend_request", { target_user_id: otherId });
-		setBusy(null);
-		load();
-	};
-
-	const pendingCount = incoming.length + outgoing.length;
-
 	return (
 		<View style={styles.wrap}>
 			<Text style={styles.kicker}>★ friends</Text>
 			<View style={styles.tabsRow}>
 				<TabBtn label={`Friends · ${friends.length}`} active={tab === "friends"} onPress={() => setTab("friends")} />
-				<TabBtn
-					label={`Pending${pendingCount > 0 ? ` · ${pendingCount}` : ""}`}
-					active={tab === "pending"}
-					onPress={() => setTab("pending")}
-				/>
 				<TabBtn label="Add" active={tab === "add"} onPress={() => setTab("add")} />
 			</View>
 
 			{tab === "friends" && <FriendsList friends={friends} />}
-
-			{tab === "pending" && (
-				<PendingList
-					incoming={incoming}
-					outgoing={outgoing}
-					busy={busy}
-					onAccept={accept}
-					onCancel={cancel}
-				/>
-			)}
 
 			{tab === "add" && <AddFriend userId={userId} onSent={load} />}
 		</View>
@@ -271,97 +184,6 @@ function FriendsList({ friends }: { friends: Profile[] }) {
 					</Pressable>
 				</Sticker>
 			))}
-		</View>
-	);
-}
-
-// ── Pending list (incoming + outgoing) ─────────────────────────────
-function PendingList({
-	incoming,
-	outgoing,
-	busy,
-	onAccept,
-	onCancel,
-}: {
-	incoming: PendingIncoming[];
-	outgoing: PendingOutgoing[];
-	busy: string | null;
-	onAccept: (id: string) => void;
-	onCancel: (id: string) => void;
-}) {
-	if (incoming.length === 0 && outgoing.length === 0) {
-		return (
-			<Sticker color="paper" rotate={-0.5} radius={12} style={styles.empty}>
-				<Text style={styles.emptyText}>
-					No pending requests. Send one from the “Add” tab.
-				</Text>
-			</Sticker>
-		);
-	}
-	return (
-		<View style={styles.list}>
-			{incoming.length > 0 && (
-				<>
-					<Text style={styles.subKicker}>incoming</Text>
-					{incoming.map((p, i) => (
-						<Sticker
-							key={p.requester_id}
-							color="rose"
-							rotate={ROW_TILTS[i % ROW_TILTS.length]}
-							radius={10}
-							style={styles.row}
-						>
-							<Text style={styles.rowName}>
-								{p.requester?.username ?? "—"}
-							</Text>
-							<Pressable
-								onPress={() => onAccept(p.requester_id)}
-								disabled={busy === p.requester_id}
-								style={({ pressed }) => [
-									styles.actionBtn,
-									styles.actionAccept,
-									pressed && { opacity: 0.7 },
-								]}
-							>
-								<Text style={styles.actionAcceptText}>
-									{busy === p.requester_id ? "…" : "Accept"}
-								</Text>
-							</Pressable>
-						</Sticker>
-					))}
-				</>
-			)}
-			{outgoing.length > 0 && (
-				<>
-					<Text style={styles.subKicker}>outgoing</Text>
-					{outgoing.map((p, i) => (
-						<Sticker
-							key={p.receiver_id}
-							color="paper"
-							rotate={ROW_TILTS[i % ROW_TILTS.length]}
-							radius={10}
-							style={styles.row}
-						>
-							<Text style={styles.rowName}>
-								{p.receiver?.username ?? "—"}
-							</Text>
-							<Pressable
-								onPress={() => onCancel(p.receiver_id)}
-								disabled={busy === p.receiver_id}
-								style={({ pressed }) => [
-									styles.actionBtn,
-									styles.actionCancel,
-									pressed && { opacity: 0.7 },
-								]}
-							>
-								<Text style={styles.actionCancelText}>
-									{busy === p.receiver_id ? "…" : "Cancel"}
-								</Text>
-							</Pressable>
-						</Sticker>
-					))}
-				</>
-			)}
 		</View>
 	);
 }
