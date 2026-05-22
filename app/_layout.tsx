@@ -34,6 +34,10 @@ import {
 	WhileAwayModal,
 	type RitualEvent,
 } from "@/components/WhileAwayModal";
+import {
+	AchievementUnlockModal,
+	type UnlockedAchievement,
+} from "@/components/AchievementUnlockModal";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
 // without a project still works.
@@ -72,6 +76,8 @@ function RootLayoutInner() {
 	const [finale, setFinale] = useState<FinaleResult | null>(null);
 	// "While you were away" — bless/curse received since last launch.
 	const [rituals, setRituals] = useState<RitualEvent[] | null>(null);
+	// Earned-but-unseen achievements, shown one reveal at a time.
+	const [achievements, setAchievements] = useState<UnlockedAchievement[]>([]);
 
 	// Resolve the initial auth state before letting the splash drop, so we
 	// transition straight into either auth or the home screen — no blank flash.
@@ -200,6 +206,50 @@ function RootLayoutInner() {
 		};
 	}, [authChecked]);
 
+	// Achievement reveals — surface achievements earned but not yet
+	// seen (claimed = true, viewed_at = null). Shown one at a time;
+	// AchievementUnlockModal marks each viewed on dismiss. Polls on
+	// launch + foreground, but never clobbers an in-progress queue.
+	useEffect(() => {
+		if (!authChecked) return;
+		let cancelled = false;
+		const check = async () => {
+			const { data } = await supabase.rpc("my_achievements");
+			if (cancelled) return;
+			const rows =
+				(data as
+					| (UnlockedAchievement & {
+							claimed: boolean;
+							viewed_at: string | null;
+							display_order: number;
+					  })[]
+					| null) ?? [];
+			const unseen = rows
+				.filter((r) => r.claimed && !r.viewed_at)
+				.sort((a, b) => a.display_order - b.display_order)
+				.map((r) => ({
+					id: r.id,
+					name: r.name,
+					description: r.description,
+					icon: r.icon,
+					reward_title_id: r.reward_title_id,
+					reward_item_id: r.reward_item_id,
+					reward_snouts: r.reward_snouts,
+					level: r.level,
+					is_top_tier: r.is_top_tier,
+				}));
+			setAchievements((cur) => (cur.length > 0 ? cur : unseen));
+		};
+		check();
+		const sub = AppState.addEventListener("change", (state) => {
+			if (state === "active") check();
+		});
+		return () => {
+			cancelled = true;
+			sub.remove();
+		};
+	}, [authChecked]);
+
 	// Push tap → deep route. Trade + bless/curse payloads carry
 	// `data.screen` ('trade' or 'friends'); both open the Friends tab,
 	// where the Inbox carries the request / event. One listener;
@@ -253,6 +303,12 @@ function RootLayoutInner() {
 				<WhileAwayModal
 					events={rituals}
 					onDismiss={() => setRituals(null)}
+				/>
+			)}
+			{achievements.length > 0 && !schism && !finale && !rituals && (
+				<AchievementUnlockModal
+					achievement={achievements[0]}
+					onDismiss={() => setAchievements((q) => q.slice(1))}
 				/>
 			)}
 		</ThemeProvider>
