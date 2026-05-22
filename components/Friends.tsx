@@ -6,12 +6,12 @@ import {
 	TextInput,
 	Pressable,
 	ActivityIndicator,
-	Alert,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { Sticker } from "./ui/Sticker";
+import { UserSheet } from "./UserSheet";
 import { FONTS, WHIMSY, ROW_TILTS } from "@/constants/theme";
 
 interface Profile {
@@ -28,6 +28,9 @@ type Tab = "friends" | "add";
 export default function Friends({ userId }: { userId: string }) {
 	const [tab, setTab] = useState<Tab>("friends");
 	const [friends, setFriends] = useState<Profile[]>([]);
+	// Tapping a friend opens UserSheet — the one door for ask / bless
+	// / curse (Season-1 social redesign, Phase C).
+	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
 		// Friends — via friend_ids RPC (returns the accepted set)
@@ -62,9 +65,17 @@ export default function Friends({ userId }: { userId: string }) {
 				<TabBtn label="Add" active={tab === "add"} onPress={() => setTab("add")} />
 			</View>
 
-			{tab === "friends" && <FriendsList friends={friends} />}
+			{tab === "friends" && (
+				<FriendsList friends={friends} onPick={setSelectedUserId} />
+			)}
 
 			{tab === "add" && <AddFriend userId={userId} onSent={load} />}
+
+			<UserSheet
+				targetUserId={selectedUserId}
+				onDismiss={() => setSelectedUserId(null)}
+				onFriendshipChanged={load}
+			/>
 		</View>
 	);
 }
@@ -92,56 +103,15 @@ function TabBtn({
 }
 
 // ── Friends list ──────────────────────────────────────────────────
-function FriendsList({ friends }: { friends: Profile[] }) {
-	const [requestingId, setRequestingId] = useState<string | null>(null);
-
-	const requestTickles = (friend: Profile) => {
-		// Inline numeric prompt — keep it stupid simple. Native Alert
-		// covers iOS + Android, no extra modal needed.
-		Alert.prompt(
-			`Request tickles`,
-			`How many to ask ${friend.username} for? (1-5)\n\nIf they answer, you pocket DOUBLE — they give it out of their own bank for nothing but goodwill.`,
-			[
-				{ text: "Cancel", style: "cancel" },
-				{
-					text: "Ask",
-					onPress: async (raw) => {
-						const n = parseInt(raw ?? "", 10);
-						if (Number.isNaN(n) || n < 1 || n > 5) {
-							Alert.alert("Pick 1-5.");
-							return;
-						}
-						setRequestingId(friend.id);
-						const { data, error } = await supabase.rpc("request_tickles", {
-							target_user_id: friend.id,
-							amount: n,
-						});
-						setRequestingId(null);
-						const r = data as { ok?: boolean; reason?: string } | null;
-						if (error || !r?.ok) {
-							const hrs = (r as { hours_remaining?: number } | null)?.hours_remaining;
-							Alert.alert(
-								"Couldn't request",
-								r?.reason === "already_active"
-									? "You already have a trade going with them."
-									: r?.reason === "not_friends"
-										? "Only friends can trade."
-										: r?.reason === "cooldown"
-											? `Wait ${hrs ?? 24}h to trade with them again.`
-											: "Try again."
-							);
-							return;
-						}
-						Alert.alert("Sent!", `Asked ${friend.username} for ${n}.`);
-					},
-				},
-			],
-			"plain-text",
-			"",
-			"number-pad"
-		);
-	};
-
+// Each row taps through to UserSheet — the one door for asking
+// tickles / blessing / cursing. No inline action button.
+function FriendsList({
+	friends,
+	onPick,
+}: {
+	friends: Profile[];
+	onPick: (id: string) => void;
+}) {
 	if (friends.length === 0) {
 		return (
 			<Sticker color="paper" rotate={-0.5} radius={12} style={styles.empty}>
@@ -154,35 +124,24 @@ function FriendsList({ friends }: { friends: Profile[] }) {
 	return (
 		<View style={styles.list}>
 			{friends.map((f, i) => (
-				<Sticker
-					key={f.id}
-					color="paper"
-					rotate={ROW_TILTS[i % ROW_TILTS.length]}
-					radius={10}
-					style={styles.row}
-				>
-					<View style={{ flex: 1, minWidth: 0 }}>
-						<Text style={styles.rowName}>{f.username ?? "—"}</Text>
-						{typeof f.tickles_earned === "number" && (
-							<Text style={styles.rowMeta}>
-								{f.tickles_earned.toLocaleString()} ♥
-							</Text>
-						)}
-					</View>
-					<Pressable
-						onPress={() => requestTickles(f)}
-						disabled={requestingId === f.id}
-						style={({ pressed }) => [
-							styles.actionBtn,
-							styles.actionAccept,
-							pressed && { opacity: 0.7 },
-						]}
+				<Pressable key={f.id} onPress={() => onPick(f.id)}>
+					<Sticker
+						color="paper"
+						rotate={ROW_TILTS[i % ROW_TILTS.length]}
+						radius={10}
+						style={styles.row}
 					>
-						<Text style={styles.actionAcceptText}>
-							{requestingId === f.id ? "…" : "Ask"}
-						</Text>
-					</Pressable>
-				</Sticker>
+						<View style={{ flex: 1, minWidth: 0 }}>
+							<Text style={styles.rowName}>{f.username ?? "—"}</Text>
+							{typeof f.tickles_earned === "number" && (
+								<Text style={styles.rowMeta}>
+									{f.tickles_earned.toLocaleString()} ♥
+								</Text>
+							)}
+						</View>
+						<Text style={styles.rowChevron}>›</Text>
+					</Sticker>
+				</Pressable>
 			))}
 		</View>
 	);
@@ -375,6 +334,12 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.mute,
+	},
+	rowChevron: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.mute,
+		paddingLeft: 8,
 	},
 	discrim: {
 		fontFamily: FONTS.hand,

@@ -50,6 +50,17 @@ items. Newest entries at the bottom of each section.
   internal hub state). The Inbox badge draws the eye. Segment-level
   deep linking is a follow-up.
 
+- **2026-05-21 (Phase C) — Friend rows tap straight to UserSheet.**
+  The spec says UserSheet is the one door but didn't specify how a
+  Friends-list row reaches it. Made the whole row a `Pressable` →
+  opens UserSheet (a `›` chevron signals it). The old inline "Ask"
+  `Alert.prompt` is gone.
+- **2026-05-21 (Phase C) — Fixed two latent bugs while in
+  `sendTickle`.** UserSheet read `r.hours` (the RPC returns
+  `hours_remaining`) so the cooldown message always said "24h"; and
+  it checked `reason === "already_pending"` (the RPC returns
+  `already_active`). Both corrected.
+
 ## Changes from spec
 
 - **2026-05-21 (Phase B) — Inbox passive feed scoped down.** The spec

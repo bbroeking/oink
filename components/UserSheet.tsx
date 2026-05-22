@@ -5,8 +5,8 @@
 //   none       → Add friend
 //   pending_outgoing → Cancel request
 //   pending_incoming → Accept friend request
-//   friends    → Request 1 tickle (inline request_tickles call; the
-//                Friends screen remains the surface for custom amounts)
+//   friends    → an Ask row — pick 1-5, then request_tickles. This
+//                is the single door for asking a friend for tickles.
 import React, { useEffect, useState } from "react";
 import {
 	Modal,
@@ -84,6 +84,8 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// When friends, the sheet shows a daily-ritual panel. This toggles
 	// which ritual (bless / curse) the panel is currently showing.
 	const [ritualMode, setRitualMode] = useState<RitualMode>("bless");
+	// Amount for the friends-only Ask row (1-5).
+	const [askAmount, setAskAmount] = useState(1);
 
 	useEffect(() => {
 		if (!targetUserId) {
@@ -161,16 +163,20 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		setBusy(true);
 		const { data } = await supabase.rpc("request_tickles", {
 			target_user_id: stats.user_id,
-			amount: 1,
+			amount: askAmount,
 		});
-		const r = data as { ok?: boolean; reason?: string; hours?: number } | null;
+		const r = data as {
+			ok?: boolean;
+			reason?: string;
+			hours_remaining?: number;
+		} | null;
 		setBusy(false);
 		if (r?.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-			setFeedback("Requested 1 ♥ — they'll see your ask.");
+			setFeedback(`Asked for ${askAmount} ♥ — they'll see it.`);
 		} else if (r?.reason === "cooldown") {
-			setFeedback(`Cooldown — wait ${r.hours ?? 24}h.`);
-		} else if (r?.reason === "already_pending") {
+			setFeedback(`Cooldown — wait ${r.hours_remaining ?? 24}h.`);
+		} else if (r?.reason === "already_active") {
 			setFeedback("You already have a trade going with them.");
 		} else {
 			setFeedback("Couldn't request. Try again.");
@@ -240,14 +246,22 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 										/>
 									</View>
 
-									<ActionButton
-										status={stats.friendship_status}
-										busy={busy}
-										onAdd={addFriend}
-										onCancel={cancelOutgoing}
-										onAccept={acceptIncoming}
-										onTickle={sendTickle}
-									/>
+									{stats.friendship_status === "friends" ? (
+										<AskRow
+											amount={askAmount}
+											onPick={setAskAmount}
+											onAsk={sendTickle}
+											busy={busy}
+										/>
+									) : (
+										<ActionButton
+											status={stats.friendship_status}
+											busy={busy}
+											onAdd={addFriend}
+											onCancel={cancelOutgoing}
+											onAccept={acceptIncoming}
+										/>
+									)}
 
 									{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
 
@@ -319,31 +333,28 @@ function StatCol({
 	);
 }
 
+// Add / cancel / accept. The "friends" state uses AskRow instead.
 function ActionButton({
 	status,
 	busy,
 	onAdd,
 	onCancel,
 	onAccept,
-	onTickle,
 }: {
 	status: FriendshipStatus;
 	busy: boolean;
 	onAdd: () => void;
 	onCancel: () => void;
 	onAccept: () => void;
-	onTickle: () => void;
 }) {
-	if (status === "self") return null;
+	if (status === "self" || status === "friends") return null;
 
 	const config: { label: string; onPress: () => void; primary?: boolean } =
-		status === "friends"
-			? { label: "Request 1 tickle ♥", onPress: onTickle, primary: true }
-			: status === "pending_outgoing"
-				? { label: "Cancel request", onPress: onCancel }
-				: status === "pending_incoming"
-					? { label: "Accept friend request", onPress: onAccept, primary: true }
-					: { label: "Add friend", onPress: onAdd, primary: true };
+		status === "pending_outgoing"
+			? { label: "Cancel request", onPress: onCancel }
+			: status === "pending_incoming"
+				? { label: "Accept friend request", onPress: onAccept, primary: true }
+				: { label: "Add friend", onPress: onAdd, primary: true };
 
 	return (
 		<Pressable
@@ -364,6 +375,55 @@ function ActionButton({
 				{busy ? "…" : config.label}
 			</Text>
 		</Pressable>
+	);
+}
+
+// Friends-only: pick 1-5, then ask. The single door for asking tickles.
+function AskRow({
+	amount,
+	onPick,
+	onAsk,
+	busy,
+}: {
+	amount: number;
+	onPick: (n: number) => void;
+	onAsk: () => void;
+	busy: boolean;
+}) {
+	return (
+		<View style={styles.askWrap}>
+			<View style={styles.askPills}>
+				{[1, 2, 3, 4, 5].map((n) => (
+					<Pressable
+						key={n}
+						onPress={() => onPick(n)}
+						style={[styles.askPill, amount === n && styles.askPillActive]}
+					>
+						<Text
+							style={[
+								styles.askPillText,
+								amount === n && styles.askPillTextActive,
+							]}
+						>
+							{n}
+						</Text>
+					</Pressable>
+				))}
+			</View>
+			<Pressable
+				onPress={onAsk}
+				disabled={busy}
+				style={({ pressed }) => [
+					styles.actionBtn,
+					styles.actionPrimary,
+					(pressed || busy) && { opacity: 0.7 },
+				]}
+			>
+				<Text style={[styles.actionText, styles.actionTextPrimary]}>
+					{busy ? "…" : `Ask for ${amount} ♥`}
+				</Text>
+			</Pressable>
+		</View>
 	);
 }
 
@@ -442,6 +502,20 @@ const styles = StyleSheet.create({
 	actionText: { fontFamily: FONTS.whimsy, fontSize: 16 },
 	actionTextPrimary: { color: WHIMSY.ink },
 	actionTextSecondary: { color: WHIMSY.mute },
+	askWrap: { gap: 8 },
+	askPills: { flexDirection: "row", gap: 6 },
+	askPill: {
+		flex: 1,
+		paddingVertical: 9,
+		borderRadius: 10,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		alignItems: "center",
+	},
+	askPillActive: { backgroundColor: WHIMSY.sun },
+	askPillText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.mute },
+	askPillTextActive: { color: WHIMSY.ink },
 	feedback: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
