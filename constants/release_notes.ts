@@ -37,7 +37,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				emoji: "👥",
 				title: "Friends & the Sounder",
-				body: "Add friends by username (everyone has a private #1234 code). Share your invite link from Account — every friend who joins earns BOTH of you 500 snouts and climbs you toward titles like Drove Captain and Crown Hog.",
+				body: "Add friends by username (everyone has a private #1234 code). Share your code — every friend who joins with it earns BOTH of you 100 snouts and climbs you toward titles like Drove Captain and Crown Hog.",
 			},
 			{
 				emoji: "👀",
