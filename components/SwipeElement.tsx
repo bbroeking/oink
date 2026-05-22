@@ -352,15 +352,27 @@ export default function SwipeElement({
 			return { itemId, category, emoji, imageSrc, prebaked: null, overlay };
 		}
 
-		// Resolve the base overlay (rest position). Precedence:
-		// align-screen override (dev) → HAT_OVERLAYS → category default
-		// → DEFAULT_HAT_OVERLAY.
+		// Resolve the base overlay (rest position).
+		//
+		// Full-canvas categories (aura, background) MUST use the
+		// category overlay — a full 300×300 box that sits as a
+		// backdrop behind the pig. compute_overlays.py also emits
+		// per-item entries for them (content-bbox sized, ~250-284
+		// tall, bottom-anchored); honoring those would render the
+		// aura short and bottom-stuck instead of a clean backdrop.
+		// So for these categories, skip HAT_OVERLAYS / alignOverrides.
+		//
+		// Everything else: align-screen override (dev) → HAT_OVERLAYS
+		// → category default → DEFAULT_HAT_OVERLAY.
 		const rawBase = prebaked
 			? null
-			: alignOverrides[itemId] ||
-				HAT_OVERLAYS[itemId] ||
-				(category && CATEGORY_OVERLAYS[category]) ||
-				DEFAULT_HAT_OVERLAY;
+			: isFullCanvasCat
+				? (category && CATEGORY_OVERLAYS[category]) ||
+					DEFAULT_HAT_OVERLAY
+				: alignOverrides[itemId] ||
+					HAT_OVERLAYS[itemId] ||
+					(category && CATEGORY_OVERLAYS[category]) ||
+					DEFAULT_HAT_OVERLAY;
 
 		// Per-anim layer: if the resolved base has a perAnim entry for
 		// the current animation, shallow-merge it over the base. This
