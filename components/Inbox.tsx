@@ -13,6 +13,7 @@ import React, { useCallback, useState } from "react";
 import {
 	View,
 	Text,
+	Image,
 	StyleSheet,
 	Pressable,
 	ScrollView,
@@ -235,17 +236,17 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		...answered.map((t) => ({
 			id: `ans-${t.id}`,
 			text: `your trade was answered — +${t.amount * 2} tickles`,
-			emoji: "🤝",
+			icon: require("../assets/images/emoji/trade.png"),
 		})),
 		...blessings.map((b) => ({
 			id: `bl-${b.id}`,
 			text: `${b.from_username ?? "A friend"} blessed you — ${BLESSING_LABEL[b.kind] ?? b.kind}`,
-			emoji: "🌿",
+			icon: require("../assets/images/emoji/blessed.png"),
 		})),
 		...curses.map((c) => ({
 			id: `cu-${c.id}`,
 			text: `${c.from_username ?? "Someone"} cursed you — ${CURSE_LABEL[c.kind] ?? c.kind}`,
-			emoji: "👹",
+			icon: require("../assets/images/emoji/cursed.png"),
 		})),
 	];
 
@@ -304,7 +305,10 @@ export function Inbox({ userId, onActionableCount }: Props) {
 					<Text style={styles.band}>Needs you</Text>
 					{friendReqs.map((r) => (
 						<View key={`fr-${r.requester_id}`} style={styles.card}>
-							<Text style={styles.cardEmoji}>👋</Text>
+							<Image
+								source={require("../assets/images/emoji/friend-request.png")}
+								style={styles.cardIcon}
+							/>
 							<View style={{ flex: 1, minWidth: 0 }}>
 								<Text style={styles.cardTitle} numberOfLines={1}>
 									{r.username ?? "Someone"}
@@ -336,7 +340,10 @@ export function Inbox({ userId, onActionableCount }: Props) {
 								<View style={styles.railBar} />
 							</View>
 							<View style={styles.penBody}>
-								<Text style={styles.cardEmoji}>🐷</Text>
+								<Image
+									source={require("../assets/images/emoji/pig.png")}
+									style={styles.cardIcon}
+								/>
 								<View style={{ flex: 1, minWidth: 0 }}>
 									<Text style={styles.cardTitle} numberOfLines={1}>
 										{t.partner_username ?? "A friend"}
@@ -375,7 +382,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 					<Text style={styles.band}>Recent</Text>
 					{passive.map((p) => (
 						<View key={p.id} style={styles.passiveRow}>
-							<Text style={styles.passiveEmoji}>{p.emoji}</Text>
+							<Image source={p.icon} style={styles.passiveIcon} />
 							<Text style={styles.passiveText}>{p.text}</Text>
 						</View>
 					))}
@@ -441,7 +448,7 @@ const styles = StyleSheet.create({
 		paddingVertical: 10,
 		marginBottom: 6,
 	},
-	cardEmoji: { fontSize: 22 },
+	cardIcon: { width: 30, height: 30, resizeMode: "contain" },
 	cardTitle: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
 	cardSub: {
 		fontFamily: FONTS.hand,
@@ -510,7 +517,7 @@ const styles = StyleSheet.create({
 		paddingVertical: 7,
 		paddingHorizontal: 4,
 	},
-	passiveEmoji: { fontSize: 16 },
+	passiveIcon: { width: 24, height: 24, resizeMode: "contain" },
 	passiveText: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
