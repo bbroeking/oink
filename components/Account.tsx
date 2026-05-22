@@ -163,14 +163,17 @@ export function Account({ session }: { session: Session }) {
 			if (pro) {
 				await supabase.rpc("dev_set_vip", { target: true });
 				setIsVip(true);
-				Alert.alert("Welcome to Pro!", "Your perks are live.");
+				Alert.alert(
+					"Welcome to the Slop Club",
+					"Your membership perks are live."
+				);
 			}
 			return;
 		}
 		if (result.reason === "cancelled") return;
 		if (result.reason === "no_offering") {
 			Alert.alert(
-				"Tickle the Pig Pro",
+				"Slop Club",
 				"Storefront not configured yet (need ASC products + RC offering). Unlock for free in dev?",
 				[
 					{ text: "Cancel", style: "cancel" },
@@ -199,9 +202,9 @@ export function Account({ session }: { session: Session }) {
 			if (pro) {
 				await supabase.rpc("dev_set_vip", { target: true });
 				setIsVip(true);
-				Alert.alert("Restored", "Your Pro access is active.");
+				Alert.alert("Restored", "Your Slop Club membership is active.");
 			} else {
-				Alert.alert("Nothing to restore", "No active Pro subscription on this Apple ID.");
+				Alert.alert("Nothing to restore", "No active Slop Club subscription on this Apple ID.");
 			}
 		} else {
 			Alert.alert("Restore failed", "Please try again.");
@@ -335,15 +338,13 @@ export function Account({ session }: { session: Session }) {
 						>
 							<View style={styles.vipBadgeRow}>
 								<Icon name="star" size={14} filled color={WHIMSY.ink} strokeWidth={0} />
-								<Text style={styles.vipBadge}>TICKLE THE PIG PRO</Text>
+								<Text style={styles.vipBadge}>SLOP CLUB</Text>
 							</View>
 							<Text style={styles.vipTitle}>
-								{isVip ? "You're Pro" : "Become Pro"}
+								{isVip ? "You're in the Slop Club" : "Join the Slop Club"}
 							</Text>
 							<Text style={styles.vipDesc}>
-								{isVip
-									? "+25 cap · 2× regen · all premium passes · exclusive cosmetics"
-									: "+25 cap · 2× regen · all premium passes · exclusive cosmetics"}
+								2× tickle regen · 50 tickle bank · 250 snouts a month
 							</Text>
 							{isVip ? (
 								<Pressable
@@ -358,7 +359,7 @@ export function Account({ session }: { session: Session }) {
 									disabled={busy}
 									style={[styles.vipBtn, { backgroundColor: WHIMSY.lilac }]}
 								>
-									<Text style={styles.vipBtnText}>Unlock Pro</Text>
+									<Text style={styles.vipBtnText}>Join Slop Club</Text>
 								</Pressable>
 							)}
 						</Sticker>

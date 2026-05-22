@@ -399,9 +399,22 @@ export default function Barn() {
 		useCallback(() => {
 			fetchStats();
 			checkPassEvents();
+			claimStipend();
 			setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
 		}, [checkPassEvents])
 	);
+
+	// Slop Club: claim the monthly snout stipend. The RPC is idempotent
+	// per UTC month + a no-op for non-members, so it's safe to call on
+	// every focus; it only pays out once a month for subscribers.
+	const claimStipend = async () => {
+		const { data } = await supabase.rpc("claim_slop_stipend");
+		const r = data as { ok?: boolean; granted?: number } | null;
+		if (r?.ok && r.granted) {
+			showToast("Slop Club", `+${r.granted} snouts — your monthly stipend`);
+			fetchStats();
+		}
+	};
 
 	const fetchStats = async () => {
 		try {
