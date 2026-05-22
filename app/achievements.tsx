@@ -21,6 +21,7 @@ import { supabase } from "../utils/supabase";
 import { Sticker } from "../components/ui/Sticker";
 import { SnoutCoin } from "../components/ui/SnoutCoin";
 import { HAT_IMAGES } from "@/constants/hats";
+import { achievementIcon } from "@/constants/emojiArt";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -147,7 +148,10 @@ function AchievementCard({ row, tilt }: { row: AchievementRow; tilt: number }) {
 		>
 			<View style={styles.cardHeader}>
 				<View style={styles.iconBubble}>
-					<Text style={styles.iconText}>{row.icon ?? "★"}</Text>
+					<Image
+						source={achievementIcon(row.id)}
+						style={styles.iconImg}
+					/>
 				</View>
 				<View style={{ flex: 1, minWidth: 0 }}>
 					<View style={styles.nameRow}>
@@ -258,7 +262,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	iconText: { fontSize: 22 },
+	iconImg: { width: 34, height: 34, resizeMode: "contain" },
 	nameRow: { flexDirection: "row", alignItems: "baseline" },
 	cardName: {
 		fontFamily: FONTS.whimsy,

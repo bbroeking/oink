@@ -23,6 +23,7 @@ import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
+import { achievementIcon } from "../constants/emojiArt";
 import { HAT_IMAGES } from "@/constants/hats";
 import {
 	FONTS,
@@ -146,7 +147,10 @@ export function AchievementUnlockModal({ achievement, onDismiss }: Props) {
 						<Text style={styles.kicker}>★ achievement unlocked ★</Text>
 
 						<View style={styles.iconBubble}>
-							<Text style={styles.iconText}>{achievement.icon ?? "🏆"}</Text>
+							<Image
+								source={achievementIcon(achievement.id)}
+								style={styles.iconImg}
+							/>
 						</View>
 
 						<Text style={styles.name}>
@@ -248,7 +252,7 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		marginBottom: 12,
 	},
-	iconText: { fontSize: 40 },
+	iconImg: { width: 52, height: 52, resizeMode: "contain" },
 	name: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 26,
