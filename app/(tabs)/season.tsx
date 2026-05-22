@@ -317,23 +317,29 @@ export default function SeasonScreen() {
 		if (result.ok) {
 			const pro = await isPro();
 			if (pro) {
-				await supabase.rpc("dev_unlock_premium", { plus: true });
+				// Season Pass is a one-time per-season entitlement —
+				// grant_season_pass flips premium_unlocked for the
+				// active season (separate from the Slop Club sub).
+				await supabase.rpc("grant_season_pass");
 				load();
-				Alert.alert("Welcome to Pro!", "All premium pass rewards unlocked.");
+				Alert.alert(
+					"Season Pass unlocked",
+					"The premium reward track is yours for this season."
+				);
 			}
 			return;
 		}
 		if (result.reason === "cancelled") return;
 		if (result.reason === "no_offering") {
 			Alert.alert(
-				"Tickle the Pig Pro",
+				"Season Pass",
 				"Storefront not configured yet. Unlock for free in dev?",
 				[
 					{ text: "Cancel", style: "cancel" },
 					{
 						text: "Unlock (dev)",
 						onPress: async () => {
-							await supabase.rpc("dev_unlock_premium", { plus: true });
+							await supabase.rpc("grant_season_pass");
 							load();
 						},
 					},
@@ -341,7 +347,7 @@ export default function SeasonScreen() {
 			);
 			return;
 		}
-		Alert.alert("Couldn't open paywall", "Please try again.");
+		Alert.alert("Couldn't open the Season Pass", "Please try again.");
 	};
 
 	if (!state) {
