@@ -99,7 +99,7 @@ describe("RitualPicker", () => {
 			btn.props.onPress();
 			await Promise.resolve();
 		});
-		expect(textOf(r.root)).toContain("rituals spent");
+		expect(textOf(r.root)).toContain("blessing spent");
 		act(() => r.unmount());
 	});
 

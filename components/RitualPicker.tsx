@@ -112,13 +112,15 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 				</View>
 			)}
 
-			{/* capped — all of today's rituals are spent */}
+			{/* capped — today's blessing (or curse) is already spent */}
 			{phase === "capped" && (
 				<View style={styles.beat}>
-					<Text style={styles.beatTitle}>rituals spent</Text>
+					<Text style={styles.beatTitle}>
+						{isBless ? "blessing spent" : "curse spent"}
+					</Text>
 					<Text style={styles.beatSub}>
-						You've used all of today's blessings &amp; curses — they
-						recharge tomorrow.
+						One {isBless ? "blessing" : "curse"} a day — your next
+						is tomorrow.
 					</Text>
 				</View>
 			)}
