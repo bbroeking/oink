@@ -101,6 +101,20 @@ items. Newest entries at the bottom of each section.
   Friend requests live only in the Inbox now; `Friends.tsx` is down
   to two tabs (Friends / Add). The duplication flagged in the Phase B
   commit is resolved.
+- **2026-05-21 (Phase D) — Phase D is being done in chunks.** It's
+  the largest phase. **Chunk 1** (this commit): the receiver-
+  notification push — a `ritual_push_notify` trigger on the
+  `blessings`/`curses` tables + the deep-link route handler. The
+  migration `20260528000000_ritual_push.sql` is committed to git but
+  **NOT applied** — it needs a `db push` (gated). Remaining Phase D:
+  the effect wiring (glow/miasma overlays, regen multiplier,
+  half-taps, lucky boost), the casting animation, and the cooldown UI.
+- **2026-05-21 (Phase D) — The regen-multiplier effect is the risky
+  bit.** `warm_tea` / `sluggish_snout` change the *server-side* regen
+  rate, which means editing `update_profile_and_item_count` +
+  `tickle_info` — core RPCs that are already VIP-aware and layered
+  across many migrations. Flagging now: that sub-chunk needs care
+  and ideally a local `db reset` validation (blocked — no Docker).
 - **2026-05-21 (Phase B) — Dead StyleSheet keys** left behind: the
   `tradePill*` keys in `Barn.tsx` and the `PendingList` keys
   (`subKicker`, `actionAccept*`, etc.) in `Friends.tsx`. Harmless

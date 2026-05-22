@@ -122,16 +122,16 @@ function RootLayoutInner() {
 		};
 	}, [authChecked]);
 
-	// Push tap → deep route. Payloads carry `data.screen='trade'` so
-	// tapping a trade notification opens the Friends tab — the Inbox
-	// segment carries the request. Only one listener; expo-notifications
-	// coalesces foreground + background taps into the same callback.
+	// Push tap → deep route. Trade + bless/curse payloads carry
+	// `data.screen` ('trade' or 'friends'); both open the Friends tab,
+	// where the Inbox carries the request / event. One listener;
+	// expo-notifications coalesces foreground + background taps.
 	useEffect(() => {
 		const sub = Notifications.addNotificationResponseReceivedListener((res) => {
 			const data = (res.notification.request.content.data ?? {}) as {
 				screen?: string;
 			};
-			if (data.screen === "trade") {
+			if (data.screen === "trade" || data.screen === "friends") {
 				router.replace("/friends" as any);
 			}
 		});
