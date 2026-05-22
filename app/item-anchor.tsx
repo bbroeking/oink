@@ -7,7 +7,7 @@
 // The preview shows the item placed the relative way; Save writes to
 // AsyncStorage (item_anchor_rel_v1), which SwipeElement reads live.
 // When happy, paste the printed RelSpec into HAT_REL in hats.ts.
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
 	View,
 	Text,
@@ -15,6 +15,7 @@ import {
 	Pressable,
 	ScrollView,
 	StyleSheet,
+	PanResponder,
 	GestureResponderEvent,
 } from "react-native";
 import { Stack } from "expo-router";
@@ -66,13 +67,36 @@ export default function ItemAnchorTool() {
 	const aspect = src && src.width ? src.height / src.width : 1;
 	const itemH = ITEM_BOX * aspect;
 
-	// Place the pivot by tapping the item image.
-	const onItemTap = (e: GestureResponderEvent) => {
+	// itemH varies per item; the pan responder is created once, so it
+	// reads the live height through a ref.
+	const itemHRef = useRef(itemH);
+	itemHRef.current = itemH;
+
+	// Drag (or tap) anywhere on the item canvas to move the attach
+	// point; it follows the finger continuously.
+	function applyTouch(e: GestureResponderEvent) {
 		const { locationX, locationY } = e.nativeEvent;
 		setPivot({
 			x: Math.max(0, Math.min(1, locationX / ITEM_BOX)),
-			y: Math.max(0, Math.min(1, locationY / itemH)),
+			y: Math.max(0, Math.min(1, locationY / itemHRef.current)),
 		});
+		setSaved(false);
+	}
+	const pan = useRef(
+		PanResponder.create({
+			onStartShouldSetPanResponder: () => true,
+			onMoveShouldSetPanResponder: () => true,
+			onPanResponderGrant: applyTouch,
+			onPanResponderMove: applyTouch,
+		})
+	).current;
+
+	// Fine nudge — move the pivot by a hair (0.005 of the item box).
+	const nudge = (dx: number, dy: number) => {
+		setPivot((p) => ({
+			x: Math.max(0, Math.min(1, +(p.x + dx).toFixed(4))),
+			y: Math.max(0, Math.min(1, +(p.y + dy).toFixed(4))),
+		}));
 		setSaved(false);
 	};
 
@@ -129,8 +153,8 @@ export default function ItemAnchorTool() {
 				<View style={styles.canvases}>
 					{/* Item canvas — tap to set the pivot */}
 					<View>
-						<Text style={styles.label}>tap the attach point</Text>
-						<Pressable onPress={onItemTap}>
+						<Text style={styles.label}>drag the attach point</Text>
+						<View {...pan.panHandlers}>
 							<View style={[styles.itemCanvas, { height: itemH }]}>
 								<Image
 									source={HAT_IMAGES[itemId]}
@@ -168,7 +192,36 @@ export default function ItemAnchorTool() {
 									]}
 								/>
 							</View>
-						</Pressable>
+						</View>
+						{/* Fine nudge — for sub-pixel pivot tuning */}
+						<View style={styles.nudgeWrap}>
+							<Pressable
+								onPress={() => nudge(-0.005, 0)}
+								style={styles.nudgeBtn}
+							>
+								<Text style={styles.nudgeText}>←</Text>
+							</Pressable>
+							<View style={styles.nudgeCol}>
+								<Pressable
+									onPress={() => nudge(0, -0.005)}
+									style={styles.nudgeBtn}
+								>
+									<Text style={styles.nudgeText}>↑</Text>
+								</Pressable>
+								<Pressable
+									onPress={() => nudge(0, 0.005)}
+									style={styles.nudgeBtn}
+								>
+									<Text style={styles.nudgeText}>↓</Text>
+								</Pressable>
+							</View>
+							<Pressable
+								onPress={() => nudge(0.005, 0)}
+								style={styles.nudgeBtn}
+							>
+								<Text style={styles.nudgeText}>→</Text>
+							</Pressable>
+						</View>
 					</View>
 
 					{/* Preview — item placed the relative way on the pig */}
@@ -367,4 +420,21 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 	},
 	hint: { color: "#777", fontSize: 11, lineHeight: 16 },
+	nudgeWrap: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 6,
+		marginTop: 8,
+	},
+	nudgeCol: { gap: 6 },
+	nudgeBtn: {
+		width: 40,
+		height: 32,
+		borderRadius: 7,
+		backgroundColor: "#2E2824",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	nudgeText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });
