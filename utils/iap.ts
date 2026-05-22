@@ -3,11 +3,12 @@
 // SETUP (one-time, in this order):
 //   1. Sign Paid Apps Agreement in App Store Connect (Account > Agreements)
 //   2. Add banking + tax info in App Store Connect
-//   3. Create products in App Store Connect (subscriptions only —
-//      no lifetime). yearly + monthly, both Auto-Renewable, both in
-//      one Subscription Group "Tickle the Pig Pro":
-//        - yearly  ($19.99/yr)
-//        - monthly ($3.99/mo)
+//   3. Create products in App Store Connect:
+//      a) The "Slop Club" membership — yearly + monthly Auto-Renewable
+//         subscriptions in one Subscription Group:
+//           - yearly  ($29.99/yr)
+//           - monthly ($3.99/mo)
+//      b) The Season Pass — a Non-Consumable (one-time), $4.99.
 //   4. RevenueCat dashboard: https://app.revenuecat.com
 //      - Create iOS app, paste the App-Specific Shared Secret from ASC
 //      - Map both products to entitlement `tickle_the_pig_pro`
@@ -42,16 +43,19 @@ const REVENUECAT_IOS_API_KEY =
 	process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ??
 	"test_HbqMbZIVgDwzJBpsgudluPEOSNb";
 
-// Entitlement identifier — MUST match the exact ID in RevenueCat dashboard.
-// (The user-facing display name is "Tickle the Pig Pro", but the identifier
-// is the snake-case slug below. Update if your dashboard uses a different ID.)
+// Entitlement identifier for the membership — MUST match the exact ID
+// in the RevenueCat dashboard. The user-facing name is "Slop Club";
+// the identifier slug below is internal and stays as-is (renaming it
+// means re-configuring App Store Connect + RevenueCat).
 export const ENTITLEMENT_PRO = "tickle_the_pig_pro";
 
-// Product identifiers — must match App Store Connect AND the RC offering.
-// Subscriptions only; lifetime was dropped (see docs/subscriptions-spec.md).
+// Product identifiers — must match App Store Connect AND the RC
+// offering. `monthly` / `yearly` are the Slop Club subscription;
+// `seasonPass` is the one-time per-season Season Pass.
 export const PRODUCT_IDS = {
 	yearly: "yearly",
 	monthly: "monthly",
+	seasonPass: "season_pass",
 } as const;
 
 let initialized = false;

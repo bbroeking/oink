@@ -9,16 +9,14 @@ import {
 	Linking,
 } from "react-native";
 import { Sticker, Tape } from "./ui/Sticker";
-import { Icon } from "./ui/Icon";
 import { FONTS, KICKER_TEXT, MODAL_BACKDROP_BG, WHIMSY } from "@/constants/theme";
 import { restorePurchases } from "../utils/iap";
 
 interface Props {
 	visible: boolean;
 	onClose: () => void;
-	onUnlock: (plus: boolean) => void;
-	premiumPriceCents: number;
-	premiumPlusPriceCents: number;
+	onUnlock: () => void;
+	priceCents: number;
 	currentTier: number;
 	totalTiers: number;
 	busy?: boolean;
@@ -31,30 +29,25 @@ const TC_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula
 // TestFlight submission. Until then the link is hidden.
 const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL || null;
 
-const PREMIUM_PERKS = [
+const PASS_PERKS = [
 	"All 30 premium-track rewards",
 	"Exclusive premium-only hat",
 	"Boosts and snout bundles",
 ];
 
-const PLUS_PERKS = [
-	"Everything in Premium",
-	"+600 snouts immediately",
-	"Exclusive Premium Plus title",
-	"Skip first 5 tiers",
-];
-
+// The Season Pass — a one-time, per-season unlock of the premium
+// reward track. Separate from the Slop Club membership (see
+// docs/pass-and-slop-club-spec.md).
 export function BattlePassSaleModal({
 	visible,
 	onClose,
 	onUnlock,
-	premiumPriceCents,
-	premiumPlusPriceCents,
+	priceCents,
 	currentTier,
 	totalTiers,
 	busy,
 }: Props) {
-	const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+	const price = `$${(priceCents / 100).toFixed(2)}`;
 	return (
 		<Modal
 			visible={visible}
@@ -84,26 +77,25 @@ export function BattlePassSaleModal({
 							showsVerticalScrollIndicator={false}
 							contentContainerStyle={styles.body}
 						>
-							<Text style={styles.kicker}>★ snout season 1</Text>
-							<Text style={styles.title}>Unlock the full path</Text>
+							<Text style={styles.kicker}>★ season pass</Text>
+							<Text style={styles.title}>Unlock the premium track</Text>
 							<Text style={styles.subtitle}>
-								You're at tier {currentTier} of {totalTiers}. Premium opens 30
-								extra rewards along the way.
+								You're at tier {currentTier} of {totalTiers}. The Season
+								Pass opens 30 extra rewards along the way.
 							</Text>
 
-							{/* Premium card */}
 							<Sticker color="rose" rotate={-1.2} radius={16} style={styles.tierCard}>
 								<View style={styles.tierTop}>
 									<View style={{ flex: 1 }}>
-										<Text style={styles.tierName}>Premium</Text>
+										<Text style={styles.tierName}>Season Pass</Text>
 										<Text style={styles.tierTagline}>
-											The full season pass.
+											The premium reward track, all season.
 										</Text>
 									</View>
-									<Text style={styles.tierPrice}>{fmt(premiumPriceCents)}</Text>
+									<Text style={styles.tierPrice}>{price}</Text>
 								</View>
 								<View style={styles.perks}>
-									{PREMIUM_PERKS.map((p) => (
+									{PASS_PERKS.map((p) => (
 										<View key={p} style={styles.perk}>
 											<Text style={styles.perkBullet}>✦</Text>
 											<Text style={styles.perkText}>{p}</Text>
@@ -112,46 +104,11 @@ export function BattlePassSaleModal({
 								</View>
 								<Pressable
 									disabled={busy}
-									onPress={() => onUnlock(false)}
-									style={styles.buyBtn}
+									onPress={onUnlock}
+									style={[styles.buyBtn, busy && { opacity: 0.6 }]}
 								>
 									<Text style={styles.buyBtnText}>
-										Unlock Premium · {fmt(premiumPriceCents)}
-									</Text>
-								</Pressable>
-							</Sticker>
-
-							{/* Plus card */}
-							<Sticker color="lilac" rotate={1} radius={16} style={styles.tierCard}>
-								<View style={styles.tierTop}>
-									<View style={{ flex: 1 }}>
-										<View style={styles.bestRow}>
-											<Text style={styles.bestTag}>★ BEST VALUE</Text>
-										</View>
-										<Text style={styles.tierName}>Premium Plus</Text>
-										<Text style={styles.tierTagline}>
-											Premium + a fast-track boost.
-										</Text>
-									</View>
-									<Text style={styles.tierPrice}>
-										{fmt(premiumPlusPriceCents)}
-									</Text>
-								</View>
-								<View style={styles.perks}>
-									{PLUS_PERKS.map((p) => (
-										<View key={p} style={styles.perk}>
-											<Text style={styles.perkBullet}>✦</Text>
-											<Text style={styles.perkText}>{p}</Text>
-										</View>
-									))}
-								</View>
-								<Pressable
-									disabled={busy}
-									onPress={() => onUnlock(true)}
-									style={[styles.buyBtn, { backgroundColor: WHIMSY.lilacDeep }]}
-								>
-									<Text style={[styles.buyBtnText, { color: WHIMSY.paper }]}>
-										Unlock Plus · {fmt(premiumPlusPriceCents)}
+										Unlock the Season Pass · {price}
 									</Text>
 								</Pressable>
 							</Sticker>
@@ -161,7 +118,7 @@ export function BattlePassSaleModal({
 									<Text style={styles.restoreLink}>Restore purchases</Text>
 								</Pressable>
 								<Text style={styles.legalLine}>
-									One-time purchase. Premium lasts the season.
+									One-time purchase. The Season Pass lasts this season.
 								</Text>
 								<View style={styles.legalRow}>
 									<Pressable onPress={() => Linking.openURL(TC_URL)}>
@@ -192,20 +149,9 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		paddingHorizontal: 16,
 	},
-	sheetWrap: {
-		position: "relative",
-		paddingTop: 12,
-	},
-	tapeTop: {
-		position: "absolute",
-		top: 0,
-		alignSelf: "center",
-		zIndex: 2,
-	},
-	sheet: {
-		maxHeight: "92%",
-		overflow: "hidden",
-	},
+	sheetWrap: { position: "relative", paddingTop: 12 },
+	tapeTop: { position: "absolute", top: 0, alignSelf: "center", zIndex: 2 },
+	sheet: { maxHeight: "92%", overflow: "hidden" },
 	closeBtn: {
 		position: "absolute",
 		top: 8,
@@ -216,18 +162,9 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		zIndex: 3,
 	},
-	closeText: {
-		fontSize: 22,
-		color: WHIMSY.ink,
-	},
-	body: {
-		padding: 18,
-		paddingTop: 22,
-	},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 4,
-	},
+	closeText: { fontSize: 22, color: WHIMSY.ink },
+	body: { padding: 18, paddingTop: 22 },
+	kicker: { ...KICKER_TEXT, marginBottom: 4 },
 	title: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 26,
@@ -242,21 +179,8 @@ const styles = StyleSheet.create({
 		lineHeight: 18,
 		marginBottom: 16,
 	},
-	tierCard: {
-		padding: 14,
-		marginBottom: 14,
-	},
-	tierTop: {
-		flexDirection: "row",
-		alignItems: "flex-start",
-	},
-	bestRow: { marginBottom: 4 },
-	bestTag: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.accent,
-		letterSpacing: 0.6,
-	},
+	tierCard: { padding: 14, marginBottom: 14 },
+	tierTop: { flexDirection: "row", alignItems: "flex-start" },
 	tierName: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 22,
@@ -269,20 +193,9 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},
-	tierPrice: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-	},
-	perks: {
-		marginTop: 10,
-		gap: 4,
-	},
-	perk: {
-		flexDirection: "row",
-		alignItems: "flex-start",
-		gap: 8,
-	},
+	tierPrice: { fontFamily: FONTS.whimsy, fontSize: 22, color: WHIMSY.ink },
+	perks: { marginTop: 10, gap: 4 },
+	perk: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
 	perkBullet: {
 		fontFamily: FONTS.hand,
 		fontSize: 14,
@@ -305,16 +218,8 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		alignItems: "center",
 	},
-	buyBtnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
-	footer: {
-		alignItems: "center",
-		marginTop: 8,
-		gap: 6,
-	},
+	buyBtnText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+	footer: { alignItems: "center", marginTop: 8, gap: 6 },
 	restoreLink: {
 		fontFamily: FONTS.hand,
 		fontSize: 14,
@@ -340,9 +245,5 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textDecorationLine: "underline",
 	},
-	legalDot: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.muteSoft,
-	},
+	legalDot: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.muteSoft },
 });

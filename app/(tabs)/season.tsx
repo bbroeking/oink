@@ -303,7 +303,7 @@ export default function SeasonScreen() {
 		load();
 	};
 
-	const handleUnlockPremium = async (_plus: boolean) => {
+	const handleUnlockPremium = async () => {
 		const {
 			data: { user },
 		} = await supabase.auth.getUser();
@@ -488,12 +488,11 @@ export default function SeasonScreen() {
 			<BattlePassSaleModal
 				visible={PAID_BATTLE_PASS_ENABLED && saleOpen}
 				onClose={() => setSaleOpen(false)}
-				onUnlock={async (plus) => {
+				onUnlock={async () => {
 					setSaleOpen(false);
-					await handleUnlockPremium(plus);
+					await handleUnlockPremium();
 				}}
-				premiumPriceCents={season.premium_price_cents}
-				premiumPlusPriceCents={season.premium_plus_price_cents}
+				priceCents={season.premium_price_cents}
 				currentTier={tier}
 				totalTiers={season.total_tiers}
 				busy={busy}
