@@ -35,6 +35,8 @@ export const CURSE_ROTATION: CurseKind[] = [
 interface RitualMeta {
 	name: string;
 	emoji: string;
+	// require()'d art asset — the real icon, replaces the emoji.
+	icon: number;
 	blurb: string;
 }
 
@@ -42,21 +44,25 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 	warm_tea: {
 		name: "Warm Tea",
 		emoji: "☕",
+		icon: require("../assets/images/emoji/warm-tea.png"),
 		blurb: "2× tickle regen for an hour.",
 	},
 	sun_beam: {
 		name: "Sun Beam",
 		emoji: "🌞",
+		icon: require("../assets/images/emoji/sun-beam.png"),
 		blurb: "Their next Lucky Pig doubles.",
 	},
 	halo_kiss: {
 		name: "Halo Kiss",
 		emoji: "😇",
+		icon: require("../assets/images/emoji/halo-kiss.png"),
 		blurb: "A faint halo glow for six hours.",
 	},
 	bountiful_snouts: {
 		name: "Bountiful Snouts",
 		emoji: "🪙",
+		icon: require("../assets/images/emoji/bountiful-snouts.png"),
 		blurb: "+5 snouts, right now.",
 	},
 };
@@ -65,21 +71,25 @@ export const CURSE_META: Record<CurseKind, RitualMeta> = {
 	sluggish_snout: {
 		name: "Sluggish Snout",
 		emoji: "🐌",
+		icon: require("../assets/images/emoji/sluggish-snout.png"),
 		blurb: "Half tickle regen for an hour.",
 	},
 	phantom_itch: {
 		name: "Phantom Itch",
 		emoji: "✨",
+		icon: require("../assets/images/emoji/phantom-itch.png"),
 		blurb: "Their next 3 taps count half.",
 	},
 	goblin_whisper: {
 		name: "Goblin Whisper",
 		emoji: "🟢",
+		icon: require("../assets/images/emoji/goblin-whisper.png"),
 		blurb: "A green miasma cloud for four hours.",
 	},
 	coin_pinch: {
 		name: "Coin Pinch",
 		emoji: "🤏",
+		icon: require("../assets/images/emoji/coin-pinch.png"),
 		blurb: "Snips up to 3 snouts (capped per day).",
 	},
 };

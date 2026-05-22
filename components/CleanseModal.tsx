@@ -6,6 +6,7 @@ import {
 	Modal,
 	View,
 	Text,
+	Image,
 	StyleSheet,
 	Pressable,
 } from "react-native";
@@ -73,7 +74,7 @@ export function CleanseModal({ curses, onDismiss, onCleansed }: Props) {
 								const meta = CURSE_META[c.kind];
 								return (
 									<View key={i} style={styles.curseRow}>
-										<Text style={styles.curseEmoji}>{meta?.emoji ?? "🟢"}</Text>
+										<Image source={meta?.icon} style={styles.curseIcon} />
 										<View style={{ flex: 1, minWidth: 0 }}>
 											<Text style={styles.curseName}>{meta?.name ?? c.kind}</Text>
 											<Text style={styles.curseBlurb}>{meta?.blurb ?? ""}</Text>
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		padding: 8,
 	},
-	curseEmoji: { fontSize: 22 },
+	curseIcon: { width: 32, height: 32, resizeMode: "contain" },
 	curseName: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
 	curseBlurb: { fontFamily: FONTS.hand, fontSize: 11, color: WHIMSY.ink, marginTop: 1 },
 	cleanseBtn: {

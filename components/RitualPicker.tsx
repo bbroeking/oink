@@ -7,7 +7,7 @@
 // user fire it at the target. Mounted from UserSheet (and later the
 // Friends rows) as a small inline panel.
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { dailyRitual, type RitualMode } from "../utils/rituals";
@@ -72,7 +72,7 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 				// The cast landed — a prominent confirmation beat, not a
 				// quiet one-liner. The button is gone; the deed is done.
 				<View style={styles.castDone}>
-					<Text style={styles.castDoneEmoji}>{ritual.emoji}</Text>
+					<Image source={ritual.icon} style={styles.castDoneImg} />
 					<Text style={styles.castDoneTitle}>
 						{isBless ? "✦ blessing sent ✦" : "✦ curse cast ✦"}
 					</Text>
@@ -81,7 +81,7 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 			) : (
 				<>
 					<View style={styles.ritualRow}>
-						<Text style={styles.emoji}>{ritual.emoji}</Text>
+						<Image source={ritual.icon} style={styles.emojiImg} />
 						<View style={{ flex: 1, minWidth: 0 }}>
 							<Text style={styles.name}>{ritual.name}</Text>
 							<Text style={styles.blurb}>{ritual.blurb}</Text>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
 	},
 	kicker: { ...KICKER_TEXT, fontSize: 10, marginBottom: 8 },
 	ritualRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
-	emoji: { fontSize: 30 },
+	emojiImg: { width: 38, height: 38, resizeMode: "contain" },
 	name: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
 	blurb: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.ink, marginTop: 1 },
 	btn: {
@@ -160,7 +160,12 @@ const styles = StyleSheet.create({
 		marginTop: 8,
 	},
 	castDone: { alignItems: "center", paddingVertical: 6 },
-	castDoneEmoji: { fontSize: 44, marginBottom: 4 },
+	castDoneImg: {
+		width: 56,
+		height: 56,
+		resizeMode: "contain",
+		marginBottom: 4,
+	},
 	castDoneTitle: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
