@@ -17,7 +17,7 @@ import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { Card, Button } from "./ui";
-import { Icon } from "./ui/Icon";
+import { Icon, type IconName } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker, Tape } from "./ui/Sticker";
 import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
@@ -66,6 +66,9 @@ export function Account({ session }: { session: Session }) {
 	const [ticklesEarned, setTicklesEarned] = useState<number>(0);
 	const [activeHat, setActiveHat] = useState<string | null>(null);
 	const [isVip, setIsVip] = useState<boolean>(false);
+	// Slop Club plan toggle on the membership card — yearly default
+	// (matches the design's "BEST VALUE" ribbon on yearly).
+	const [slopPlan, setSlopPlan] = useState<"monthly" | "yearly">("yearly");
 	const [busy, setBusy] = useState<boolean>(false);
 	// Show the user's currently equipped title alongside their code so
 	// they can confirm at-a-glance that their title is wired up. Manage
@@ -333,39 +336,115 @@ export function Account({ session }: { session: Session }) {
 						</Sticker>
 					)}
 
-					{/* Pro card — torn ticket stub */}
+					{/* Slop Club membership card — gold sticker, BEST VALUE
+					    ribbon on the yearly toggle, 4 perks, monthly/yearly
+					    toggle, Join CTA, fine-print. From the redesign. */}
 					{IAP_ENABLED && (
 						<Sticker
 							color={isVip ? "lilac" : "sun"}
-							rotate={1.2}
+							rotate={-1}
 							radius={16}
-							style={styles.vipWrap}
+							style={[styles.slopWrap, { overflow: "hidden" }]}
 						>
-							<View style={styles.vipBadgeRow}>
-								<Icon name="star" size={14} filled color={WHIMSY.ink} strokeWidth={0} />
-								<Text style={styles.vipBadge}>SLOP CLUB</Text>
-							</View>
-							<Text style={styles.vipTitle}>
-								{isVip ? "You're in the Slop Club" : "Join the Slop Club"}
+							{/* Best-value ribbon — top-right corner overlay */}
+							{!isVip && (
+								<View style={styles.slopRibbon}>
+									<Text style={styles.slopRibbonText}>BEST VALUE</Text>
+								</View>
+							)}
+
+							<Text style={styles.slopKicker}>★ membership ★</Text>
+							<Text style={styles.slopTitle}>Slop Club</Text>
+							<Text style={styles.slopTagline}>
+								{isVip
+									? "You're in. Perks active."
+									: "The good life for swine of standing."}
 							</Text>
-							<Text style={styles.vipDesc}>
-								2× tickle regen · 50 tickle bank · 250 snouts a month
-							</Text>
+
+							{!isVip && (
+								<>
+									{/* Perks */}
+									<View style={styles.slopPerks}>
+										<SlopPerk
+											icon="trending"
+											label="Bigger bank"
+											detail="Tickle cap to 50 (from 25)"
+										/>
+										<SlopPerk
+											icon="clock"
+											label="Faster regen"
+											detail="Refills every 30m, not 60m"
+										/>
+										<SlopPerk
+											icon="premium"
+											label="Monthly stipend"
+											detail="+250 snouts on the 1st"
+										/>
+										<SlopPerk
+											icon="star"
+											label="Members-only items"
+											detail="Drops you won't see in the shop"
+										/>
+									</View>
+
+									{/* Plan toggle */}
+									<View style={styles.slopPlanRow}>
+										<Pressable
+											onPress={() => setSlopPlan("monthly")}
+											style={[
+												styles.slopPlan,
+												slopPlan === "monthly" && styles.slopPlanActive,
+											]}
+										>
+											<Text style={styles.slopPlanLabel}>Monthly</Text>
+											<Text style={styles.slopPlanPrice}>
+												$3.99<Text style={styles.slopPlanPeriod}>/mo</Text>
+											</Text>
+										</Pressable>
+										<Pressable
+											onPress={() => setSlopPlan("yearly")}
+											style={[
+												styles.slopPlan,
+												slopPlan === "yearly" && styles.slopPlanActive,
+											]}
+										>
+											<Text style={styles.slopPlanLabel}>Yearly</Text>
+											<Text style={styles.slopPlanPrice}>
+												$29.99<Text style={styles.slopPlanPeriod}>/yr</Text>
+											</Text>
+											<Text style={styles.slopPlanSave}>Save 37%</Text>
+										</Pressable>
+									</View>
+								</>
+							)}
+
 							{isVip ? (
 								<Pressable
 									onPress={handleManage}
-									style={[styles.vipBtn, { backgroundColor: WHIMSY.paper }]}
+									style={[styles.slopBtn, { backgroundColor: WHIMSY.paper }]}
 								>
-									<Text style={styles.vipBtnText}>Manage subscription</Text>
+									<Text style={styles.slopBtnText}>Manage subscription</Text>
 								</Pressable>
 							) : (
 								<Pressable
 									onPress={handleUnlockPro}
 									disabled={busy}
-									style={[styles.vipBtn, { backgroundColor: WHIMSY.lilac }]}
+									style={({ pressed }) => [
+										styles.slopBtn,
+										{ backgroundColor: WHIMSY.lilac },
+										(pressed || busy) && { opacity: 0.7 },
+									]}
 								>
-									<Text style={styles.vipBtnText}>Join Slop Club</Text>
+									<Text style={styles.slopBtnText}>
+										{busy ? "…" : "Join the Slop Club"}
+									</Text>
 								</Pressable>
+							)}
+
+							{!isVip && (
+								<Text style={styles.slopFinePrint}>
+									Auto-renews. Cancel anytime in Settings.
+								</Text>
 							)}
 						</Sticker>
 					)}
@@ -400,6 +479,29 @@ export function Account({ session }: { session: Session }) {
 				visible={releaseNotesOpen}
 				onClose={() => setReleaseNotesOpen(false)}
 			/>
+		</View>
+	);
+}
+
+// One line of the Slop Club perks list — small ink icon + label + detail.
+function SlopPerk({
+	icon,
+	label,
+	detail,
+}: {
+	icon: IconName;
+	label: string;
+	detail: string;
+}) {
+	return (
+		<View style={styles.slopPerk}>
+			<View style={styles.slopPerkIcon}>
+				<Icon name={icon} size={14} color={WHIMSY.ink} strokeWidth={2.2} />
+			</View>
+			<View style={{ flex: 1, minWidth: 0 }}>
+				<Text style={styles.slopPerkLabel}>{label}</Text>
+				<Text style={styles.slopPerkDetail}>{detail}</Text>
+			</View>
 		</View>
 	);
 }
@@ -546,6 +648,129 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 13,
 		color: WHIMSY.ink,
+	},
+	// ── Slop Club membership card (redesign Phase 3) ────────────────
+	slopWrap: { marginBottom: 16, padding: 18 },
+	slopRibbon: {
+		position: "absolute",
+		top: 14,
+		right: -32,
+		paddingHorizontal: 32,
+		paddingVertical: 3,
+		backgroundColor: WHIMSY.accent,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		transform: [{ rotate: "35deg" }],
+		zIndex: 2,
+	},
+	slopRibbonText: {
+		color: WHIMSY.paper,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 9,
+		letterSpacing: 1,
+	},
+	slopKicker: {
+		...KICKER_TEXT,
+		fontSize: 11,
+		marginBottom: 4,
+	},
+	slopTitle: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 24,
+		color: WHIMSY.ink,
+		lineHeight: 26,
+	},
+	slopTagline: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.ink,
+		opacity: 0.72,
+		marginTop: 4,
+		maxWidth: 260,
+	},
+	slopPerks: { marginTop: 14, gap: 10 },
+	slopPerk: { flexDirection: "row", alignItems: "center", gap: 10 },
+	slopPerkIcon: {
+		width: 26,
+		height: 26,
+		borderRadius: 13,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	slopPerkLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.ink,
+	},
+	slopPerkDetail: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.ink,
+		opacity: 0.7,
+		marginTop: 1,
+	},
+	slopPlanRow: { flexDirection: "row", gap: 10, marginTop: 16 },
+	slopPlan: {
+		flex: 1,
+		paddingVertical: 10,
+		paddingHorizontal: 10,
+		borderRadius: 12,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		alignItems: "center",
+	},
+	slopPlanActive: {
+		backgroundColor: WHIMSY.cream2,
+		borderWidth: 2.5,
+	},
+	slopPlanLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.ink,
+		letterSpacing: 0.4,
+	},
+	slopPlanPrice: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 18,
+		color: WHIMSY.ink,
+		marginTop: 2,
+	},
+	slopPlanPeriod: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.ink,
+		opacity: 0.7,
+	},
+	slopPlanSave: {
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		color: WHIMSY.accent,
+		marginTop: 2,
+	},
+	slopBtn: {
+		paddingVertical: 12,
+		borderRadius: 14,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		marginTop: 14,
+	},
+	slopBtnText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+	},
+	slopFinePrint: {
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		color: WHIMSY.ink,
+		opacity: 0.55,
+		textAlign: "center",
+		marginTop: 10,
 	},
 	restoreLink: {
 		alignItems: "center",
