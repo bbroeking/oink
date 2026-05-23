@@ -30,7 +30,11 @@ import type { TitleRow } from "@/constants/title_types";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 import { BarnOverlay } from "./ui/BarnOverlay";
-import { alignmentLabel, type AlignmentLabel } from "@/utils/alignment";
+import {
+	alignmentLabel,
+	alignmentDisplay,
+	type AlignmentLabel,
+} from "@/utils/alignment";
 
 // Lucky Pig tunables — client-rolled (D in the design grill). Trade-off
 // is documented in migrations/20260519020000_lucky_pig.sql.
@@ -210,6 +214,11 @@ export default function Barn() {
 	const [statsLoaded, setStatsLoaded] = useState(false);
 	const [sixSevenTick, setSixSevenTick] = useState(0);
 	const sixSevenPromptedRef = useRef(false);
+	// Tracks the previous-seen alignment_score for the in-app toast on
+	// every shift. The server-side `shift_alignment` push covers the
+	// milestone moments (±10/±25/±50/±100); this is the every-shift
+	// in-app companion.
+	const prevAlignmentRef = useRef<number | null>(null);
 
 	// Lucky Pig state — number of tickles remaining in the active
 	// lucky window (0 means not lucky). Hydrated from AsyncStorage on
@@ -400,6 +409,7 @@ export default function Barn() {
 			fetchStats();
 			checkPassEvents();
 			claimStipend();
+			checkAlignment();
 			setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
 		}, [checkPassEvents])
 	);
@@ -414,6 +424,33 @@ export default function Barn() {
 			showToast("Slop Club", `+${r.granted} snouts — your monthly stipend`);
 			fetchStats();
 		}
+	};
+
+	// Toast every alignment shift while the app is open. Server-side
+	// `shift_alignment` already fires push notifications at milestone
+	// crossings (±10/±25/±50/±100) — those land when the app is
+	// closed. This handles the in-session "+2 toward Generous" beats.
+	const checkAlignment = async () => {
+		const { data: ures } = await supabase.auth.getUser();
+		const uid = ures?.user?.id;
+		if (!uid) return;
+		const { data } = await supabase
+			.from("profiles")
+			.select("alignment_score")
+			.eq("id", uid)
+			.single();
+		const score =
+			(data as { alignment_score?: number } | null)?.alignment_score ?? 0;
+		const prev = prevAlignmentRef.current;
+		prevAlignmentRef.current = score;
+		// First focus after launch — establish the baseline, no toast.
+		if (prev === null || prev === score) return;
+		const delta = score - prev;
+		const dir = delta > 0 ? "Generous" : "Greedy";
+		const sign = delta > 0 ? "+" : "";
+		const label = alignmentDisplay(alignmentLabel(score));
+		const scoreText = (score >= 0 ? "+" : "") + score;
+		showToast(`${sign}${delta} toward ${dir}`, `Now ${scoreText} — ${label}`);
 	};
 
 	const fetchStats = async () => {
@@ -762,15 +799,6 @@ export default function Barn() {
 				    progress in its own tab. Keeping the WoodenSign
 				    component around so it can be re-enabled later or
 				    re-purposed for a different stat. */}
-
-				{__DEV__ && (
-					<Pressable
-						onPress={() => router.push("/align")}
-						style={styles.devAlign}
-					>
-						<Text style={styles.devAlignText}>⊕ align</Text>
-					</Pressable>
-				)}
 
 				{__DEV__ && (
 					<Pressable
