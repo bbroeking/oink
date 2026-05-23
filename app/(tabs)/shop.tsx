@@ -17,8 +17,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
-import { Button } from "../../components/ui";
+import { Button, SectionHeader } from "../../components/ui";
 import { Icon } from "../../components/ui/Icon";
+import { Sticker } from "../../components/ui/Sticker";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
 import { TitlesSection } from "../../components/TitlesSection";
 import {
@@ -698,6 +699,180 @@ function BentoDailyGrid({
 					{bottomSquares.map(renderTile)}
 				</View>
 			)}
+		</View>
+	);
+}
+
+// ── 4×4 mosaic layout ─────────────────────────────────────────
+//
+// Three templates, each a list of {c, r, w, h} placements summing to
+// 16 cells. The day-of-year picks one so the Shop feels different
+// across the week without authoring more layouts. Largest cells get
+// the rarest items. From the design's SHOP_TEMPLATES.
+type MosaicCell = { c: number; r: number; w: number; h: number };
+const SHOP_TEMPLATES: MosaicCell[][] = [
+	// A — hero TL, banner mid, small all around
+	[
+		{ c: 0, r: 0, w: 2, h: 2 },
+		{ c: 2, r: 0, w: 1, h: 1 },
+		{ c: 3, r: 0, w: 1, h: 1 },
+		{ c: 2, r: 1, w: 2, h: 1 },
+		{ c: 0, r: 2, w: 4, h: 1 },
+		{ c: 0, r: 3, w: 1, h: 1 },
+		{ c: 1, r: 3, w: 1, h: 1 },
+		{ c: 2, r: 3, w: 1, h: 1 },
+		{ c: 3, r: 3, w: 1, h: 1 },
+	],
+	// B — hero TR, two heroes
+	[
+		{ c: 0, r: 0, w: 1, h: 1 },
+		{ c: 1, r: 0, w: 1, h: 1 },
+		{ c: 2, r: 0, w: 2, h: 2 },
+		{ c: 0, r: 1, w: 2, h: 1 },
+		{ c: 0, r: 2, w: 2, h: 2 },
+		{ c: 2, r: 2, w: 1, h: 1 },
+		{ c: 3, r: 2, w: 1, h: 1 },
+		{ c: 2, r: 3, w: 1, h: 1 },
+		{ c: 3, r: 3, w: 1, h: 1 },
+	],
+	// C — center hero, wraparound
+	[
+		{ c: 0, r: 0, w: 1, h: 2 },
+		{ c: 1, r: 0, w: 2, h: 2 },
+		{ c: 3, r: 0, w: 1, h: 1 },
+		{ c: 3, r: 1, w: 1, h: 1 },
+		{ c: 0, r: 2, w: 1, h: 1 },
+		{ c: 1, r: 2, w: 1, h: 1 },
+		{ c: 2, r: 2, w: 1, h: 2 },
+		{ c: 3, r: 2, w: 1, h: 2 },
+		{ c: 0, r: 3, w: 2, h: 1 },
+	],
+];
+
+function MosaicDailyGrid({
+	items,
+	featured,
+	owned,
+	isEquipped,
+	counter,
+	busyId,
+	onBuy,
+	onEquip,
+	onUnequip,
+	onPreview,
+	tileCenters,
+}: {
+	items: HatRow[];
+	featured: HatRow | null;
+	owned: Set<string>;
+	isEquipped: (id: string, cat: string | null | undefined) => boolean;
+	counter: number;
+	busyId: string | null;
+	onBuy: (h: HatRow) => void;
+	onEquip: (id: string, cat: string | null | undefined) => void;
+	onUnequip: (cat: string | null | undefined) => void;
+	onPreview: (h: HatRow) => void;
+	tileCenters?: React.MutableRefObject<Map<string, { x: number; y: number }>>;
+}) {
+	const { width: screenW } = useWindowDimensions();
+	const HORIZ_PADDING = 12;
+	const GAP = 8;
+	const COLS = 4;
+	const ROWS = 4;
+	const innerW = screenW - HORIZ_PADDING * 2;
+	const COL_W = (innerW - GAP * (COLS - 1)) / COLS;
+	// Slightly taller than a square so legendary heroes don't feel
+	// cramped — picks 0.92 × COL_W to bias card-shaped tiles.
+	const ROW_H = Math.round(COL_W * 0.92);
+	const totalH = ROW_H * ROWS + GAP * (ROWS - 1);
+
+	// Day-of-year rotation: same shape all day, changes overnight.
+	const dayIdx = Math.floor(Date.now() / 86_400_000);
+	const tpl = SHOP_TEMPLATES[dayIdx % SHOP_TEMPLATES.length];
+
+	// Pair items to cells: rarest item into the biggest cell. Hoist
+	// `featured` to first if present so the curator's pick wins on ties.
+	const pool: HatRow[] = featured
+		? [featured, ...items.filter((i) => i.id !== featured.id)]
+		: items;
+	// RARITY_ORDER puts "legendary" first → lower indexOf == rarer.
+	// Ascending sort by index = rarest first.
+	const byRarity = [...pool].sort(
+		(a, b) =>
+			RARITY_ORDER.indexOf(a.rarity ?? "common") -
+			RARITY_ORDER.indexOf(b.rarity ?? "common")
+	);
+	const cellsByArea = tpl
+		.map((p, idx) => ({ ...p, idx }))
+		.sort((a, b) => b.w * b.h - a.w * a.h);
+	const placements = cellsByArea
+		.map((cell, i) => ({ cell, item: byRarity[i] }))
+		.filter((p) => !!p.item);
+
+	const captureCenter = (itemId: string) => (e: LayoutChangeEvent) => {
+		if (!tileCenters) return;
+		const targetRef = e.target as unknown as {
+			measureInWindow?: (
+				cb: (x: number, y: number, w: number, h: number) => void
+			) => void;
+		};
+		targetRef.measureInWindow?.((x, y, w, h) => {
+			tileCenters.current.set(itemId, { x: x + w / 2, y: y + h / 2 });
+		});
+	};
+
+	return (
+		<View style={{ width: innerW, height: totalH, position: "relative" }}>
+			{placements.map(({ cell, item }) => {
+				const left = cell.c * (COL_W + GAP);
+				const top = cell.r * (ROW_H + GAP);
+				const width = cell.w * COL_W + (cell.w - 1) * GAP;
+				const height = cell.h * ROW_H + (cell.h - 1) * GAP;
+				const isHero = cell.w >= 2 && cell.h >= 2;
+				const isWide = cell.w >= 2 && cell.h === 1;
+				const isTall = cell.h >= 2 && cell.w === 1;
+				const shape: CellShape = isWide ? "wide" : isTall ? "tall" : "square";
+				return (
+					<View
+						key={item.id}
+						style={{ position: "absolute", left, top, width, height }}
+						onLayout={captureCenter(item.id)}
+					>
+						<ItemCard
+							item={item}
+							owned={owned.has(item.id)}
+							active={isEquipped(item.id, item.category)}
+							canAfford={counter >= item.cost}
+							busy={busyId === item.id}
+							cellShape={shape}
+							onBuy={() => onBuy(item)}
+							onEquip={() => onEquip(item.id, item.category)}
+							onUnequip={() => onUnequip(item.category)}
+							onPreview={() => onPreview(item)}
+						/>
+						{/* Sparkle accent for premium hero cells — gives
+						    legendary/epic items an extra moment of glitter
+						    in the corner. Wrapped in a pointerEvents-none
+						    View because Text doesn't accept the prop. */}
+						{isHero && (item.rarity === "legendary" || item.rarity === "epic") && (
+							<View
+								pointerEvents="none"
+								style={{ position: "absolute", top: 6, right: 10 }}
+							>
+								<Text
+									style={{
+										fontFamily: FONTS.whimsy,
+										fontSize: 16,
+										color: WHIMSY.sun,
+									}}
+								>
+									✦
+								</Text>
+							</View>
+						)}
+					</View>
+				);
+			})}
 		</View>
 	);
 }
@@ -1382,34 +1557,67 @@ export default function ShopScreen() {
 				{view === "daily" ? (
 					// Daily view fills the available height — no scroll.
 					// The bento expands inside this flex container so the
-					// 2+1+2 stack fits exactly on screen.
-					<View key="daily" style={[styles.grid, styles.dailyView]}>
-						<View style={styles.countdownStrip}>
-							<Icon name="bell" size={14} color={COLORS.pinkDeep} strokeWidth={2} />
-							<Text style={styles.countdownText}>
-								New shop in {formatCountdown(resetsIn)}
-							</Text>
-						</View>
+					// 4×4 day-rotated mosaic. Scrolls vertically — the mosaic
+					// is taller than the available space on smaller phones.
+					<ScrollView
+						key="daily"
+						style={styles.dailyScroll}
+						contentContainerStyle={styles.dailyScrollContent}
+						showsVerticalScrollIndicator={false}
+					>
+						<SectionHeader
+							kicker="today's drop"
+							title="Featured"
+							right={`resets in ${formatCountdown(resetsIn)}`}
+							ruleWidth={72}
+						/>
 						{daily.length === 0 ? (
 							<Text style={styles.empty}>
 								Empty shop. Come back tomorrow.
 							</Text>
 						) : (
-							<BentoDailyGrid
-								items={daily}
-								featured={featured}
-								owned={owned}
-								isEquipped={isEquipped}
-								counter={counter}
-								busyId={busyId}
-								onBuy={handleBuy}
-								onEquip={handleEquip}
-								onUnequip={(category) => handleEquip(null, category)}
-								onPreview={setPreviewItem}
-								tileCenters={tileCenters}
-							/>
+							<>
+								<MosaicDailyGrid
+									items={daily}
+									featured={featured}
+									owned={owned}
+									isEquipped={isEquipped}
+									counter={counter}
+									busyId={busyId}
+									onBuy={handleBuy}
+									onEquip={handleEquip}
+									onUnequip={(category) => handleEquip(null, category)}
+									onPreview={setPreviewItem}
+									tileCenters={tileCenters}
+								/>
+								{/* Bundle promo row — sits below the mosaic, sells
+								    a small bundle for snouts. Static for now; can
+								    be wired to a bundle SKU later. */}
+								<Sticker
+									color="cream"
+									rotate={-0.3}
+									radius={14}
+									style={styles.bundleSticker}
+								>
+									<View style={styles.bundleRow}>
+										<Text style={styles.bundleGlyph}>🎁</Text>
+										<View style={{ flex: 1, minWidth: 0 }}>
+											<Text style={styles.bundleTitle}>
+												Bundle: starter pack
+											</Text>
+											<Text style={styles.bundleSub}>
+												Chef + Party + Flowers · save 30 snouts
+											</Text>
+										</View>
+										<View style={styles.bundlePrice}>
+											<SnoutCoin size={14} />
+											<Text style={styles.bundlePriceText}>120</Text>
+										</View>
+									</View>
+								</Sticker>
+							</>
 						)}
-					</View>
+					</ScrollView>
 				) : view === "browse" ? (
 					<FlatList
 						key="browse"
@@ -1705,6 +1913,49 @@ const styles = StyleSheet.create({
 	// Daily tab fills the remaining height between the header and the
 	// tab bar — no scroll, the bento tiles flex to fit.
 	dailyView: { flex: 1, paddingBottom: 24, gap: 12 },
+	// Today tab — scrolling container holding the 4×4 mosaic + bundle row.
+	// The mosaic itself is fixed-height; the surrounding scroll lets the
+	// content breathe on smaller devices.
+	dailyScroll: { flex: 1 },
+	dailyScrollContent: {
+		paddingHorizontal: 12,
+		paddingTop: 4,
+		paddingBottom: 100,
+	},
+	bundleSticker: { padding: 12, marginTop: 16 },
+	bundleRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+	},
+	bundleGlyph: { fontSize: 22 },
+	bundleTitle: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+	},
+	bundleSub: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		marginTop: 2,
+	},
+	bundlePrice: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 4,
+		paddingHorizontal: 12,
+		paddingVertical: 7,
+		borderRadius: 999,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.lilacDeep,
+	},
+	bundlePriceText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.paper,
+	},
 	columnWrap: { gap: 10 },
 	rowWrap: {
 		flexDirection: "row",
