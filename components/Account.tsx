@@ -30,6 +30,7 @@ import {
 	restorePurchases,
 	onCustomerInfoUpdate,
 } from "../utils/iap";
+import { SOUNDER_VISIBLE } from "@/constants/featureFlags";
 
 export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
@@ -45,6 +46,9 @@ export function Account({ session }: { session: Session }) {
 	} | null>(null);
 	useFocusEffect(
 		useCallback(() => {
+			// Sounder UI is hidden behind a feature flag — skip the
+			// fetch entirely while it's off; nothing renders anyway.
+			if (!SOUNDER_VISIBLE) return;
 			supabase.rpc("my_sounder").then(({ data }) => {
 				// my_sounder RPC returns jsonb: { ok: false, reason } when
 				// unauthenticated, otherwise { ok: true, ...sounder fields }.
@@ -288,10 +292,11 @@ export function Account({ session }: { session: Session }) {
 						<Text style={achievementStyles.chev}>›</Text>
 					</Pressable>
 
-					{/* Your Sounder (referral). Friends moved to the
+					{/* Your Sounder (referral). Hidden behind SOUNDER_VISIBLE.
+				    Friends moved to the
 					    dedicated Friends tab in the Season-1 social
 					    redesign. */}
-					{sounder && (
+					{SOUNDER_VISIBLE && sounder && (
 						<Sticker color="paper" rotate={-0.6} radius={14} style={sounderStyles.card}>
 							<View style={sounderStyles.headerRow}>
 								<Text style={sounderStyles.kicker}>★ your sounder</Text>
