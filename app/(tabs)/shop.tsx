@@ -1339,8 +1339,8 @@ export default function ShopScreen() {
 					    sits on the right with the snout coin so the player
 					    always sees what they can spend. */}
 					<View style={{ flex: 1 }}>
-						<Text style={styles.kicker}>★ the shop</Text>
-						<Text style={styles.title}>Wardrobe</Text>
+						<Text style={styles.kicker}>★ your closet</Text>
+						<Text style={styles.title}>Shop</Text>
 					</View>
 					<View style={styles.balance}>
 						<SnoutCoin size={20} />
@@ -1600,18 +1600,21 @@ const styles = StyleSheet.create({
 	},
 	kicker: { ...KICKER_PILL, marginBottom: 2 },
 	title: { fontSize: 32, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
+	// Snouts pocket — tilted sun sticker (matches the redesign's
+	// "snouts pocket" pattern: makes the balance feel like a chip
+	// you keep, not a system bar).
 	balance: {
-		backgroundColor: WHIMSY.paper,
+		backgroundColor: WHIMSY.sun,
 		paddingHorizontal: 12,
 		paddingVertical: 6,
-		borderRadius: 16,
+		borderRadius: 12,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 6,
 		...STICKER_SHADOW,
-		transform: [{ rotate: "1.5deg" }],
+		transform: [{ rotate: "2deg" }],
 	},
 	balanceText: {
 		fontSize: 17,
