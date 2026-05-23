@@ -375,8 +375,9 @@ export default function SeasonScreen() {
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
 				<View style={styles.header}>
-					<Text style={styles.kicker}>★ season pass</Text>
-					<Text style={styles.title}>{season.name}</Text>
+					{/* "Goblins vs Angels" — the redesigned framing for Season 1. */}
+					<Text style={styles.kicker}>★ {season.name.toLowerCase()}</Text>
+					<Text style={styles.title}>Goblins vs Angels</Text>
 					<View style={styles.titleRule} />
 				</View>
 
