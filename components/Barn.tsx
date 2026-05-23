@@ -30,6 +30,7 @@ import type { TitleRow } from "@/constants/title_types";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 import { BarnOverlay } from "./ui/BarnOverlay";
+import { BarnActiveEffectsStrip } from "./BarnActiveEffectsStrip";
 import { AlignmentEmblem } from "./ui/AlignmentEmblem";
 import {
 	alignmentLabel,
@@ -770,6 +771,11 @@ export default function Barn() {
 						onPress={handleAvailableTap}
 					/>
 				</View>
+
+				{/* Active-effect chips — horizontal strip showing hoofprints
+				    on you. Compact preview; the full panel lives in Friends
+				    → Inbox. Tapping a chip routes to the hub. */}
+				<BarnActiveEffectsStrip />
 
 				{/* Hanging Pilgrim/Generous/Greedy placard — top-right, just
 				    below the stat tickets, with a tiny "string" above so it
