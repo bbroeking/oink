@@ -829,33 +829,6 @@ export default function Barn() {
 				    component around so it can be re-enabled later or
 				    re-purposed for a different stat. */}
 
-				{__DEV__ && (
-					<Pressable
-						onPress={() => router.push("/item-anchor" as any)}
-						style={styles.devAnchor}
-					>
-						<Text style={styles.devAlignText}>⊹ anchors</Text>
-					</Pressable>
-				)}
-
-				{/* Dev-only force-trigger for the Lucky Pig moment.
-				    Forces the title sub-roll so the LuckyTitleUnlockModal
-				    fires after the burst dismisses — useful for testing
-				    animations, sounds, and the title-grant flow without
-				    needing to tickle 20× hoping for a 5% hit. */}
-				{__DEV__ && (
-					<Pressable
-						onPress={() => {
-							persistLucky(LUCKY_WINDOW_SIZE);
-							pendingTitleRoll.current = true;
-							setLuckyModalOpen(true);
-						}}
-						style={styles.devLucky}
-					>
-						<Text style={styles.devLuckyText}>⊕ lucky</Text>
-					</Pressable>
-				)}
-
 				{toast && (
 					<Animated.View
 						pointerEvents={toast.onPress ? "box-none" : "none"}

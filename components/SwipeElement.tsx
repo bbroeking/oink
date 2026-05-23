@@ -511,13 +511,6 @@ export default function SwipeElement({
 							</>
 						);
 					})()}
-					{__DEV__ && (
-						<AnchorDebugOverlay
-							anim={pigAnim as PigAnimationKey}
-							frameIdx={pigFrameIdx}
-							items={debugItems}
-						/>
-					)}
 				</Animated.View>
 			</Pressable>
 
