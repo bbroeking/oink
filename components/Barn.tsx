@@ -88,6 +88,76 @@ const PASS_LINES: ((name: string) => string)[] = [
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
+// ── HeartFloats ────────────────────────────────────────────────
+// Tap-feedback particles that drift up + fade out above the pig.
+// Imperative API: <HeartFloats ref={r} /> + r.current.spawn().
+// ~90% hearts, ~10% sparkle stars. From the redesign — gives a tap
+// visible payoff without requiring a server roundtrip.
+interface HeartFloatsHandle {
+	spawn: () => void;
+}
+const HeartFloats = React.forwardRef<HeartFloatsHandle, {}>((_props, ref) => {
+	type Float = { id: number; dx: number; char: string; anim: Animated.Value };
+	const [floats, setFloats] = useState<Float[]>([]);
+	const nextId = useRef(0);
+
+	React.useImperativeHandle(ref, () => ({
+		spawn: () => {
+			const id = nextId.current++;
+			const dx = Math.random() * 80 - 40;
+			const char = Math.random() < 0.1 ? "✦" : "♥";
+			const anim = new Animated.Value(0);
+			setFloats((f) => [...f, { id, dx, char, anim }]);
+			Animated.timing(anim, {
+				toValue: 1,
+				duration: 1100,
+				useNativeDriver: true,
+			}).start(() => {
+				setFloats((f) => f.filter((x) => x.id !== id));
+			});
+		},
+	}));
+
+	return (
+		<View pointerEvents="none" style={StyleSheet.absoluteFill}>
+			{floats.map((f) => {
+				const translateY = f.anim.interpolate({
+					inputRange: [0, 0.15, 1],
+					outputRange: [0, -12, -110],
+				});
+				const opacity = f.anim.interpolate({
+					inputRange: [0, 0.15, 0.85, 1],
+					outputRange: [0, 1, 1, 0],
+				});
+				const scale = f.anim.interpolate({
+					inputRange: [0, 0.15, 1],
+					outputRange: [0.6, 1.1, 0.95],
+				});
+				return (
+					<Animated.Text
+						key={f.id}
+						style={[
+							styles.floatChar,
+							{
+								color: f.char === "✦" ? WHIMSY.sun : WHIMSY.roseDeep,
+								transform: [
+									{ translateX: f.dx },
+									{ translateY },
+									{ scale },
+								],
+								opacity,
+							},
+						]}
+					>
+						{f.char}
+					</Animated.Text>
+				);
+			})}
+		</View>
+	);
+});
+HeartFloats.displayName = "HeartFloats";
+
 interface EquipSlot {
 	id: string;
 	category: string | null;
@@ -305,6 +375,8 @@ export default function Barn() {
 	} | null>(null);
 	const toastOpacity = useRef(new Animated.Value(0)).current;
 	const toastY = useRef(new Animated.Value(-20)).current;
+	// Heart-particle ref — imperative spawn on successful tickle.
+	const heartFloatsRef = useRef<HeartFloatsHandle>(null);
 	// Track which pass-event IDs we've already surfaced this session so a
 	// focus-bounce (or a delayed seen-write) doesn't replay the same toast.
 	const shownPassEventIds = useRef<Set<number>>(new Set());
@@ -653,6 +725,10 @@ export default function Barn() {
 			oink.play();
 		} catch {}
 
+		// Spawn a floating ♥ (occasionally ✦) above the pig — visible
+		// reward for the tap, before we even round-trip the RPC.
+		heartFloatsRef.current?.spawn();
+
 		// ── Lucky Pig roll ────────────────────────────────────────
 		// Trigger probability:
 		//   - First-time user (no lucky ever): GUARANTEE on the Nth tickle
@@ -826,6 +902,13 @@ export default function Barn() {
 							equippedBackground={stats.activeBackground}
 							equippedHeld={stats.activeHeld}
 						/>
+						{/* Floating ♥/✦ particles drift up from above the pig on
+						    every successful tickle. Absolute-fills the swipe
+						    container so the hearts sit *over* the pig sprite. */}
+						<HeartFloats ref={heartFloatsRef} />
+						{/* Soft elliptical shadow under the pig — gives the
+						    sprite a little grounding without a hard drop. */}
+						<View pointerEvents="none" style={styles.pigShadow} />
 					</View>
 					{/* Hint kicker — explicit instruction so first-timers see
 					    the affordance. From the redesign. */}
@@ -1051,11 +1134,34 @@ const styles = StyleSheet.create({
 	swipeContainer: {
 		width: "100%",
 		alignItems: "center",
+		position: "relative",
 		// Slight downward push so the feet just kiss the bottom — keeps
 		// the framing consistent across iPhone SE → Pro Max, with the
 		// pig sitting noticeably higher than the original 11%/7% clip
 		// values so all 4 corners + the tickle CTAs above breathe.
 		marginBottom: -Math.round(SCREEN_HEIGHT * 0.03),
+	},
+	floatChar: {
+		position: "absolute",
+		left: "50%",
+		bottom: "55%",
+		fontFamily: FONTS.whimsy,
+		fontSize: 26,
+		// Ink halo via four 1px offset text-shadows isn't possible in
+		// RN <Text>; the ink color stands out enough on its own against
+		// the painted barn backdrop.
+		marginLeft: -13, // visually center the glyph on left:50%
+	},
+	pigShadow: {
+		position: "absolute",
+		bottom: 4,
+		alignSelf: "center",
+		width: 180,
+		height: 14,
+		borderRadius: 90,
+		backgroundColor: "rgba(42,31,21,0.22)",
+		// Use opacity gradient via stacked transparent layers? RN doesn't
+		// do radial — flat ellipse with low alpha gets us close enough.
 	},
 	signWrap: {
 		alignItems: "center",
