@@ -66,6 +66,10 @@ export function Account({ session }: { session: Session }) {
 		}, [])
 	);
 	const [ticklesEarned, setTicklesEarned] = useState<number>(0);
+	// Snouts balance + current season tier — feed the 3-column stats
+	// row inside the identity card (LIFETIME TICKLES · SNOUTS · SEASON).
+	const [snouts, setSnouts] = useState<number>(0);
+	const [currentTier, setCurrentTier] = useState<number | null>(null);
 	const [activeHat, setActiveHat] = useState<string | null>(null);
 	const [isVip, setIsVip] = useState<boolean>(false);
 	const [alignmentScore, setAlignmentScore] = useState<number>(0);
@@ -88,7 +92,7 @@ export function Account({ session }: { session: Session }) {
 			supabase
 				.from("profiles")
 				.select(
-					"username, discriminator, tickles_earned, active_hat_id, is_vip, alignment_score, active_title:titles!profiles_active_title_id_fkey(name, placement)"
+					"username, discriminator, tickles_earned, counter, active_hat_id, is_vip, alignment_score, active_title:titles!profiles_active_title_id_fkey(name, placement)"
 				)
 				.eq("id", session.user.id)
 				.single()
@@ -97,6 +101,7 @@ export function Account({ session }: { session: Session }) {
 						username?: string | null;
 						discriminator?: string | null;
 						tickles_earned?: number;
+						counter?: number;
 						active_hat_id?: string | null;
 						is_vip?: boolean;
 						alignment_score?: number;
@@ -112,7 +117,7 @@ export function Account({ session }: { session: Session }) {
 					if (error) {
 						const fallback = await supabase
 							.from("profiles")
-							.select("username, discriminator, tickles_earned, active_hat_id, is_vip, alignment_score")
+							.select("username, discriminator, tickles_earned, counter, active_hat_id, is_vip, alignment_score")
 							.eq("id", session.user.id)
 							.single();
 						row = fallback.data;
@@ -120,6 +125,7 @@ export function Account({ session }: { session: Session }) {
 					setUsername(row?.username ?? null);
 					setDiscriminator(row?.discriminator ?? null);
 					setTicklesEarned(row?.tickles_earned ?? 0);
+					setSnouts(row?.counter ?? 0);
 					setActiveHat(row?.active_hat_id ?? null);
 					setIsVip(row?.is_vip ?? false);
 					setAlignmentScore(row?.alignment_score ?? 0);
@@ -128,6 +134,13 @@ export function Account({ session }: { session: Session }) {
 						: row?.active_title;
 					setActiveTitle(t ?? null);
 				});
+			// Pull current_tier alongside so the SEASON column reads
+			// "T8" rather than collapsing to "—". Best-effort: a failure
+			// just leaves the column blank.
+			supabase.rpc("season_state").then(({ data }) => {
+				const s = data as { current_tier?: number } | null;
+				if (typeof s?.current_tier === "number") setCurrentTier(s.current_tier);
+			});
 		}, [session.user.id])
 	);
 
@@ -262,13 +275,25 @@ export function Account({ session }: { session: Session }) {
 										{!!handle && discriminator && (
 											<Text style={styles.codeHandle}>{handle}</Text>
 										)}
-										<View style={styles.codeStats}>
-											<Text style={styles.codeStatsHeart}>♥</Text>
-											<Text style={styles.codeStatsText}>
-												{ticklesEarned.toLocaleString()} lifetime tickles
-											</Text>
-										</View>
 									</View>
+								</View>
+
+								{/* Lifetime stats — 3-col band inside the identity
+								    card. Divided by 1px ink-mute verticals + a
+								    dashed top border. Matches the design's StatPiece
+								    cluster (LIFETIME TICKLES · SNOUTS · SEASON). */}
+								<View style={styles.lifetimeStatsRow}>
+									<LifetimeStat
+										label="LIFETIME TICKLES"
+										value={ticklesEarned.toLocaleString()}
+									/>
+									<View style={styles.lifetimeStatDivider} />
+									<LifetimeStat label="SNOUTS" value={snouts.toLocaleString()} />
+									<View style={styles.lifetimeStatDivider} />
+									<LifetimeStat
+										label="SEASON"
+										value={currentTier == null ? "—" : `T${currentTier}`}
+									/>
 								</View>
 								<Pressable onPress={handleCopyCode} style={styles.shareBtn}>
 									<Icon
@@ -537,6 +562,16 @@ function SlopPerk({
 	);
 }
 
+// Single LifetimeStat column for the identity card's 3-col band.
+function LifetimeStat({ label, value }: { label: string; value: string }) {
+	return (
+		<View style={styles.lifetimeStatCol}>
+			<Text style={styles.lifetimeStatValue}>{value}</Text>
+			<Text style={styles.lifetimeStatLabel}>{label}</Text>
+		</View>
+	);
+}
+
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: WHIMSY.cream },
 	safe: { flex: 1 },
@@ -600,20 +635,42 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.4,
 		marginTop: 2,
 	},
-	codeStats: {
+	// 3-col lifetime-stats band inside the identity card. Dashed top
+	// border separates it from the avatar/handle. Inner 1px ink-mute
+	// verticals divide the three columns.
+	lifetimeStatsRow: {
 		flexDirection: "row",
+		alignItems: "stretch",
+		marginTop: 14,
+		paddingTop: 12,
+		borderTopWidth: 1.5,
+		borderTopColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	lifetimeStatCol: {
+		flex: 1,
 		alignItems: "center",
-		gap: 6,
-		marginTop: 4,
+		justifyContent: "center",
 	},
-	codeStatsText: {
-		fontSize: 13,
-		fontFamily: FONTS.hand,
+	lifetimeStatDivider: {
+		width: 1,
+		backgroundColor: WHIMSY.muteSoft,
+		marginVertical: 4,
+	},
+	lifetimeStatValue: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 18,
+		color: WHIMSY.ink,
+		lineHeight: 22,
+	},
+	lifetimeStatLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
 		color: WHIMSY.mute,
-	},
-	codeStatsHeart: {
-		fontSize: 14,
-		color: WHIMSY.roseDeep,
+		marginTop: 4,
+		letterSpacing: 1.4,
+		textTransform: "uppercase",
+		textAlign: "center",
 	},
 	shareBtn: {
 		flexDirection: "row",
