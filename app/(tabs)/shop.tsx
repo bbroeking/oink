@@ -475,234 +475,6 @@ function FeaturedCard({
 // Renderer places cells with absolute positioning so spans work
 // without manual flex-fu.
 
-// Daily layout: 5 items in a 2 + 1 + 2 stack.
-//   row 0: two half-width squares side by side
-//   row 1: ONE full-width wide banner — PREMIUM of the day,
-//          horizontal ItemCard layout (icon left, buy right)
-//   row 2: two more half-width squares side by side
-// The premium slot is filled by the day's rarest item (ties broken
-// by daily_shop's deterministic hash). With < 5 items available,
-// trailing squares drop; the premium row stays as long as there's
-// at least one item.
-type SlotShape = "square" | "premium";
-
-// Compact card variant for small 1×1 tiles. Image dominates; the
-// bottom strip is either a price+buy pill or owned/equipped state.
-// Whole-tile tap → preview; pill tap → buy/equip/unequip.
-function CompactItemCard({
-	item,
-	owned,
-	active,
-	canAfford,
-	busy,
-	onBuy,
-	onEquip,
-	onUnequip,
-	onPreview,
-}: {
-	item: HatRow;
-	owned: boolean;
-	active: boolean;
-	canAfford: boolean;
-	busy: boolean;
-	onBuy: () => void;
-	onEquip: () => void;
-	onUnequip: () => void;
-	onPreview: () => void;
-}) {
-	const rarity = item.rarity ?? "common";
-	const rarityColor = RARITY_COLORS[rarity];
-
-	const pillAction = active
-		? onUnequip
-		: owned
-			? onEquip
-			: canAfford && !busy
-				? onBuy
-				: undefined;
-	const pillContent = active ? (
-		<Text style={compactStyles.pillTextOwned}>✓ Wearing</Text>
-	) : owned ? (
-		<Text style={compactStyles.pillTextOwned}>Wear</Text>
-	) : !canAfford ? (
-		<>
-			<SnoutCoin size={12} />
-			<Text style={compactStyles.pillTextDisabled}>
-				{item.cost.toLocaleString()}
-			</Text>
-		</>
-	) : (
-		<>
-			<SnoutCoin size={12} />
-			<Text style={compactStyles.pillText}>
-				{item.cost.toLocaleString()}
-			</Text>
-		</>
-	);
-
-	return (
-		<Pressable
-			onPress={onPreview}
-			style={[compactStyles.card, { borderColor: rarityColor }]}
-		>
-			<RarityFx rarity={rarity} style={compactStyles.thumbWrap}>
-				<LinearGradient
-					colors={RARITY_GRADIENT[rarity]}
-					style={compactStyles.thumb}
-				>
-					<HatThumb item={item} size={56} />
-					<View
-						style={[
-							compactStyles.rarityBadge,
-							{ backgroundColor: rarityColor },
-						]}
-					>
-						<Text style={compactStyles.rarityText}>
-							{rarity[0].toUpperCase()}
-						</Text>
-					</View>
-				</LinearGradient>
-			</RarityFx>
-			<Pressable
-				onPress={pillAction}
-				disabled={!pillAction}
-				style={[
-					compactStyles.pill,
-					active && compactStyles.pillActive,
-					owned && !active && compactStyles.pillOwned,
-					!owned && !canAfford && compactStyles.pillDisabled,
-				]}
-			>
-				{pillContent}
-			</Pressable>
-		</Pressable>
-	);
-}
-
-// Layout: 2 tiles / wide premium banner / 2 tiles, expanding to fill
-// the available vertical space (no scroll). The top + bottom rows
-// each take flex: 1 of the remaining height after the fixed-height
-// premium banner; each pair of tiles within a row splits the width
-// 50/50. Tiles end up roughly card-shaped (taller than wide) on most
-// phones — not strict squares, but well-proportioned for the new
-// art style.
-function BentoDailyGrid({
-	items,
-	featured,
-	owned,
-	isEquipped,
-	counter,
-	busyId,
-	onBuy,
-	onEquip,
-	onUnequip,
-	onPreview,
-	tileCenters,
-}: {
-	items: HatRow[];
-	featured: HatRow | null;
-	owned: Set<string>;
-	isEquipped: (id: string, cat: string | null | undefined) => boolean;
-	counter: number;
-	busyId: string | null;
-	onBuy: (h: HatRow) => void;
-	onEquip: (id: string, cat: string | null | undefined) => void;
-	onUnequip: (cat: string | null | undefined) => void;
-	onPreview: (h: HatRow) => void;
-	tileCenters?: React.MutableRefObject<Map<string, { x: number; y: number }>>;
-}) {
-	const { width: screenW } = useWindowDimensions();
-	const HORIZ_PADDING = 12;
-	const GAP = 12;
-	const innerW = screenW - HORIZ_PADDING * 2;
-	const PREMIUM_H = Math.round(innerW * 0.32); // ~3:1 horizontal banner
-
-	// Premium = day's rarest item. Ties broken by daily_shop's
-	// deterministic order (the upstream `featured` resolver already
-	// picked one).
-	const premium = featured ?? items[0] ?? null;
-	const squares = items.filter((i) => i.id !== premium?.id).slice(0, 4);
-	const topSquares = squares.slice(0, 2);
-	const bottomSquares = squares.slice(2, 4);
-
-	const captureCenter = (itemId: string) => (e: LayoutChangeEvent) => {
-		if (!tileCenters) return;
-		// onLayout's `target` is the host-component ref, which provides
-		// the imperative measureInWindow method. RN's exported event
-		// type is too loose to expose it directly, hence a narrow cast.
-		const targetRef = e.target as unknown as {
-			measureInWindow?: (
-				cb: (x: number, y: number, w: number, h: number) => void
-			) => void;
-		};
-		targetRef.measureInWindow?.((x, y, w, h) => {
-			tileCenters.current.set(itemId, {
-				x: x + w / 2,
-				y: y + h / 2,
-			});
-		});
-	};
-
-	const renderTile = (item: HatRow) => (
-		<View
-			key={item.id}
-			style={{ flex: 1 }}
-			onLayout={captureCenter(item.id)}
-		>
-			<ItemCard
-				item={item}
-				owned={owned.has(item.id)}
-				active={isEquipped(item.id, item.category)}
-				canAfford={counter >= item.cost}
-				busy={busyId === item.id}
-				cellShape="square"
-				onBuy={() => onBuy(item)}
-				onEquip={() => onEquip(item.id, item.category)}
-				onUnequip={() => onUnequip(item.category)}
-				onPreview={() => onPreview(item)}
-			/>
-		</View>
-	);
-
-	return (
-		<View style={{ flex: 1, gap: GAP }}>
-			{topSquares.length > 0 && (
-				<View
-					style={{ flex: 1, flexDirection: "row", gap: GAP }}
-				>
-					{topSquares.map(renderTile)}
-				</View>
-			)}
-			{premium && (
-				<View
-					style={{ width: innerW, height: PREMIUM_H }}
-					onLayout={captureCenter(premium.id)}
-				>
-					<ItemCard
-						item={premium}
-						owned={owned.has(premium.id)}
-						active={isEquipped(premium.id, premium.category)}
-						canAfford={counter >= premium.cost}
-						busy={busyId === premium.id}
-						cellShape="wide"
-						onBuy={() => onBuy(premium)}
-						onEquip={() => onEquip(premium.id, premium.category)}
-						onUnequip={() => onUnequip(premium.category)}
-						onPreview={() => onPreview(premium)}
-					/>
-				</View>
-			)}
-			{bottomSquares.length > 0 && (
-				<View
-					style={{ flex: 1, flexDirection: "row", gap: GAP }}
-				>
-					{bottomSquares.map(renderTile)}
-				</View>
-			)}
-		</View>
-	);
-}
-
 // ── 4×4 mosaic layout ─────────────────────────────────────────
 //
 // Three templates, each a list of {c, r, w, h} placements summing to
@@ -877,75 +649,6 @@ function MosaicDailyGrid({
 	);
 }
 
-const compactStyles = StyleSheet.create({
-	card: {
-		flex: 1,
-		borderRadius: 14,
-		borderWidth: 2,
-		backgroundColor: COLORS.paper,
-		overflow: "hidden",
-	},
-	thumbWrap: {
-		flex: 1,
-	},
-	thumb: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	rarityBadge: {
-		position: "absolute",
-		top: 4,
-		left: 4,
-		width: 14,
-		height: 14,
-		borderRadius: 7,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	rarityText: {
-		color: "#fff",
-		fontFamily: FONTS.bodyBlack,
-		fontSize: 8,
-	},
-	pill: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		paddingVertical: 6,
-		paddingHorizontal: 8,
-		gap: 4,
-		backgroundColor: COLORS.ink,
-		borderTopWidth: 1,
-		borderTopColor: COLORS.border,
-	},
-	pillActive: {
-		backgroundColor: COLORS.success,
-	},
-	pillOwned: {
-		backgroundColor: COLORS.purple,
-	},
-	pillDisabled: {
-		backgroundColor: COLORS.paper2,
-	},
-	pillText: {
-		color: "#fff",
-		fontFamily: FONTS.bodyBlack,
-		fontSize: 13,
-	},
-	pillTextOwned: {
-		color: "#fff",
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 0.5,
-	},
-	pillTextDisabled: {
-		color: COLORS.ink3,
-		fontFamily: FONTS.bodyBlack,
-		fontSize: 13,
-	},
-});
-
 // Single-row title card for the Titles shop tab. Text-based (no
 // image) since titles attach to the user's display name. Rarity
 // drives the border color, owned / not-affordable adjust the CTA.
@@ -954,6 +657,7 @@ function ShopTitleRow({
 	canAfford,
 	busy,
 	onBuy,
+	sampleHandle,
 }: {
 	title: {
 		id: string;
@@ -967,6 +671,9 @@ function ShopTitleRow({
 	canAfford: boolean;
 	busy: boolean;
 	onBuy: () => void;
+	// User's handle, baked into the preview so they see exactly how
+	// the title will read attached to their name.
+	sampleHandle: string;
 }) {
 	const rarityColor = RARITY_COLORS[title.rarity] ?? WHIMSY.ink;
 	return (
@@ -980,7 +687,27 @@ function ShopTitleRow({
 				<Text style={shopTitleStyles.kicker}>
 					{title.placement === "post" ? "after your name" : "before your name"}
 				</Text>
-				<Text style={shopTitleStyles.name}>{title.name}</Text>
+				{/* Live preview — the title rendered next to the sample
+				    handle in the exact pre/post order it'll appear on
+				    rosters + leaderboards. Bigger display font for the
+				    title, muted body weight for the handle. */}
+				<View style={shopTitleStyles.previewLine}>
+					{title.placement === "pre" ? (
+						<>
+							<Text style={shopTitleStyles.name}>{title.name}</Text>
+							<Text style={shopTitleStyles.previewHandle}>
+								{sampleHandle}
+							</Text>
+						</>
+					) : (
+						<>
+							<Text style={shopTitleStyles.previewHandle}>
+								{sampleHandle}
+							</Text>
+							<Text style={shopTitleStyles.name}>{title.name}</Text>
+						</>
+					)}
+				</View>
 				{title.description && (
 					<Text style={shopTitleStyles.desc}>{title.description}</Text>
 				)}
@@ -1037,6 +764,20 @@ const shopTitleStyles = StyleSheet.create({
 		fontSize: 22,
 		color: WHIMSY.ink,
 		lineHeight: 24,
+	},
+	// Live preview — title + handle baseline-aligned on a single line.
+	previewLine: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		gap: 6,
+		flexWrap: "wrap",
+	},
+	// The sample handle inside the preview — body-bold, muted ink so
+	// the eye lands on the title (display font) first.
+	previewHandle: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		color: WHIMSY.mute,
 	},
 	desc: {
 		fontFamily: FONTS.hand,
@@ -1098,6 +839,10 @@ export default function ShopScreen() {
 		return activeIds.hat === id;
 	};
 	const [counter, setCounter] = useState<number>(0);
+	// The current user's display name, used as the sample handle in
+	// the TitleRow live-preview ("Halo Bearer <you>" / "<you> Drove
+	// Captain"). Falls back to "you" if the fetch hasn't returned.
+	const [myUsername, setMyUsername] = useState<string>("you");
 	const [busyId, setBusyId] = useState<string | null>(null);
 	const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
 	const [resetsIn, setResetsIn] = useState<number>(0);
@@ -1167,14 +912,14 @@ export default function ShopScreen() {
 			// it so the shop still loads.
 			supabase
 				.from("profiles")
-				.select("counter, active_hat_id, active_aura_id, active_background_id, active_held_id, active_title_id")
+				.select("username, counter, active_hat_id, active_aura_id, active_background_id, active_held_id, active_title_id")
 				.eq("id", user.id)
 				.single()
 				.then(async (res) => {
 					if (res.error) {
 						return supabase
 							.from("profiles")
-							.select("counter, active_hat_id, active_aura_id, active_background_id, active_held_id")
+							.select("username, counter, active_hat_id, active_aura_id, active_background_id, active_held_id")
 							.eq("id", user.id)
 							.single();
 					}
@@ -1198,6 +943,9 @@ export default function ShopScreen() {
 			)
 		);
 		setCounter(profRes.data?.counter ?? 0);
+		setMyUsername(
+			(profRes.data as { username?: string | null } | null)?.username ?? "you"
+		);
 		setActiveIds({
 			hat: profRes.data?.active_hat_id ?? null,
 			aura: profRes.data?.active_aura_id ?? null,
@@ -1700,6 +1448,7 @@ export default function ShopScreen() {
 								canAfford={counter >= t.cost}
 								busy={titleBusyId === t.id}
 								onBuy={() => handleBuyTitle(t)}
+								sampleHandle={myUsername}
 							/>
 						)}
 					/>
@@ -1861,19 +1610,6 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		color: WHIMSY.ink,
 	},
-	countdownStrip: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		paddingHorizontal: 18,
-		paddingBottom: 10,
-	},
-	countdownText: {
-		fontSize: 13,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		letterSpacing: 0.4,
-	},
 	sectionLabel: {
 		fontSize: 14,
 		fontFamily: FONTS.hand,
@@ -1910,9 +1646,6 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 	},
 	grid: { paddingHorizontal: 12, paddingBottom: 100 },
-	// Daily tab fills the remaining height between the header and the
-	// tab bar — no scroll, the bento tiles flex to fit.
-	dailyView: { flex: 1, paddingBottom: 24, gap: 12 },
 	// Today tab — scrolling container holding the 4×4 mosaic + bundle row.
 	// The mosaic itself is fixed-height; the surrounding scroll lets the
 	// content breathe on smaller devices.
