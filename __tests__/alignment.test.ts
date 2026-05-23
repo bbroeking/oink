@@ -22,22 +22,22 @@ describe("alignmentLabel", () => {
 		expect(alignmentLabel(0)).toBe("neutral");
 	});
 
-	test("exact angel threshold (+34) is angel", () => {
+	test("exact angel threshold (+25) is angel", () => {
 		expect(alignmentLabel(ALIGNMENT_ANGEL_THRESHOLD)).toBe("angel");
-		expect(alignmentLabel(34)).toBe("angel");
+		expect(alignmentLabel(25)).toBe("angel");
 	});
 
-	test("one below angel threshold (+33) is neutral", () => {
-		expect(alignmentLabel(33)).toBe("neutral");
+	test("one below angel threshold (+24) is neutral", () => {
+		expect(alignmentLabel(24)).toBe("neutral");
 	});
 
-	test("exact goblin threshold (-34) is goblin", () => {
+	test("exact goblin threshold (-25) is goblin", () => {
 		expect(alignmentLabel(ALIGNMENT_GOBLIN_THRESHOLD)).toBe("goblin");
-		expect(alignmentLabel(-34)).toBe("goblin");
+		expect(alignmentLabel(-25)).toBe("goblin");
 	});
 
-	test("one above goblin threshold (-33) is neutral", () => {
-		expect(alignmentLabel(-33)).toBe("neutral");
+	test("one above goblin threshold (-24) is neutral", () => {
+		expect(alignmentLabel(-24)).toBe("neutral");
 	});
 
 	test("max positive (+100) is angel", () => {

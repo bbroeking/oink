@@ -1,13 +1,19 @@
 // Client-side mirror of the SQL `alignment_label` function. Keep
 // thresholds in sync with supabase/migrations/20260521000000_alignment.sql
-// or the UI will disagree with the backend on edge cases.
+// (later unified with the schism reveal at ±25 in
+// supabase/migrations/20260536000000_alignment_notifications.sql) or
+// the UI will disagree with the backend on edge cases.
 //
 // See docs/season-1-goblins-vs-angels.md for the design.
 
 export type AlignmentLabel = "goblin" | "neutral" | "angel";
 
-export const ALIGNMENT_ANGEL_THRESHOLD = 34;
-export const ALIGNMENT_GOBLIN_THRESHOLD = -34;
+// Schism modal and the Generous/Greedy label both fire here — the
+// audit found three staggered "picked a side" moments (leaderboard >0,
+// schism ±25, label ±34); unifying schism + label at ±25 makes
+// "crossing into Generous/Greedy" a single beat.
+export const ALIGNMENT_ANGEL_THRESHOLD = 25;
+export const ALIGNMENT_GOBLIN_THRESHOLD = -25;
 
 export function alignmentLabel(score: number): AlignmentLabel {
 	if (score >= ALIGNMENT_ANGEL_THRESHOLD) return "angel";
