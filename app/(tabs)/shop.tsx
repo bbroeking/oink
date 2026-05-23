@@ -11,6 +11,7 @@ import {
 	Pressable,
 	ScrollView,
 	useWindowDimensions,
+	type LayoutChangeEvent,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
@@ -28,7 +29,7 @@ import {
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
 import { categoryIcon, PIG } from "@/constants/emojiArt";
-import { COLORS, FONTS, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_PILL, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
 import { RarityFx } from "../../components/ui/RarityFx";
@@ -623,11 +624,12 @@ function BentoDailyGrid({
 	const topSquares = squares.slice(0, 2);
 	const bottomSquares = squares.slice(2, 4);
 
-	const captureCenter = (itemId: string) => (e: {
-		target: unknown;
-	}) => {
+	const captureCenter = (itemId: string) => (e: LayoutChangeEvent) => {
 		if (!tileCenters) return;
-		const targetRef = e.target as {
+		// onLayout's `target` is the host-component ref, which provides
+		// the imperative measureInWindow method. RN's exported event
+		// type is too loose to expose it directly, hence a narrow cast.
+		const targetRef = e.target as unknown as {
 			measureInWindow?: (
 				cb: (x: number, y: number, w: number, h: number) => void
 			) => void;
@@ -850,11 +852,9 @@ const shopTitleStyles = StyleSheet.create({
 	left: { flex: 1, minWidth: 0 },
 	right: { marginLeft: 8 },
 	kicker: {
-		fontFamily: FONTS.bodyExtra,
+		...KICKER_PILL,
 		fontSize: 10,
-		color: WHIMSY.mute,
 		letterSpacing: 1.4,
-		textTransform: "uppercase",
 		marginBottom: 4,
 	},
 	name: {
@@ -1335,9 +1335,9 @@ export default function ShopScreen() {
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
 				<View style={styles.header}>
-					{/* Redesign Phase 6 — kicker pulls the eye to a category
-					    band; balance chip sits on the right with the snout
-					    coin so the player always sees what they can spend. */}
+					{/* Kicker pulls the eye to a category band; balance chip
+					    sits on the right with the snout coin so the player
+					    always sees what they can spend. */}
 					<View style={{ flex: 1 }}>
 						<Text style={styles.kicker}>★ the shop</Text>
 						<Text style={styles.title}>Wardrobe</Text>
@@ -1598,14 +1598,7 @@ const styles = StyleSheet.create({
 		justifyContent: "space-between",
 		alignItems: "center",
 	},
-	kicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.6,
-		textTransform: "uppercase",
-		marginBottom: 2,
-	},
+	kicker: { ...KICKER_PILL, marginBottom: 2 },
 	title: { fontSize: 32, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
 	balance: {
 		backgroundColor: WHIMSY.paper,

@@ -114,6 +114,19 @@ export const KICKER_TEXT = {
 	letterSpacing: 0.4,
 };
 
+// Pill-style kicker — tracked uppercase muted-ink band that sits above a
+// header or section title (e.g. "★ FRIENDS", "★ TITLES", "★ THE SHOP").
+// Companion to KICKER_TEXT for screens that want a heavier header
+// treatment. fontSize varies 10–11 and letterSpacing 1.4–1.6 between
+// screens; compose with overrides + marginBottom per use site.
+export const KICKER_PILL = {
+	fontFamily: FONTS.bodyExtra,
+	fontSize: 11,
+	color: WHIMSY.mute,
+	letterSpacing: 1.6,
+	textTransform: "uppercase" as const,
+};
+
 // Short ink underline drawn under a section title. Identical on Account,
 // leaderboard, season — only width and surrounding margin vary per screen.
 export const TITLE_RULE = {

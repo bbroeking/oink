@@ -1,7 +1,6 @@
-// Phase 3 — a single weekly-bounty row for the season-tab bounty
-// board. Shows name, description, a progress bar, and a state-aware
-// CTA: Claim (ready), Claimed (done), or the bare progress count
-// (in progress).
+// A single weekly-bounty row for the season-tab bounty board. Shows
+// name, description, a progress bar, and a state-aware CTA: Claim
+// (ready), Claimed (done), or the bare progress count (in progress).
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";

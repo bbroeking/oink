@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
 import type { TitleRow } from "@/constants/title_types";
 
 interface RawRow {
@@ -117,14 +117,7 @@ export function TitlesSection({ userId, activeTitleId, onChange }: Props) {
 
 const styles = StyleSheet.create({
 	wrap: { marginTop: 16 },
-	kicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.6,
-		marginBottom: 8,
-		textTransform: "uppercase",
-	},
+	kicker: { ...KICKER_PILL, marginBottom: 8 },
 	empty: {
 		paddingHorizontal: 14,
 		paddingVertical: 14,

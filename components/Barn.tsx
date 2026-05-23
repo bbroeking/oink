@@ -61,8 +61,8 @@ const LUCKY_BOOST_UNTIL_ISO     = "2026-05-22T00:00:00Z";
 // that a new user hits it in one session.
 const LUCKY_GUARANTEED_BY_TICKLE_N = 8;
 
-// Season-1 ritual effects (Phase D). sun_beam blessing → a strong
-// lucky-trigger boost; phantom_itch curse → a tap sometimes slips.
+// Ritual effects. sun_beam blessing → a strong lucky-trigger boost;
+// phantom_itch curse → a tap sometimes slips.
 const LUCKY_TRIGGER_CHANCE_SUNBEAM = 0.4;
 const PHANTOM_ITCH_MISS_CHANCE = 0.33;
 
@@ -555,7 +555,9 @@ export default function Barn() {
 			// Active blessing/curse effects → overlay + tap-loop wiring.
 			supabase.rpc("my_active_effects").then(({ data }) => {
 				const rows =
-					(data as { source: string; kind: string }[] | null) ?? [];
+					(data as
+						| { source: "blessing" | "curse"; kind: string }[]
+						| null) ?? [];
 				setEffects({
 					blessed: rows.some((r) => r.source === "blessing"),
 					cursed: rows.some((r) => r.source === "curse"),

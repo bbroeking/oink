@@ -1,9 +1,6 @@
-// Leaderboard — the "Board" segment of the Friends hub.
-//
-// Extracted from the old app/(tabs)/leaderboard.tsx screen during the
-// Season-1 social redesign (Phase A). The hub now owns the outer
-// chrome (SafeAreaView + tab title), so this component is just the
-// scope toggle + the ranked list + UserSheet.
+// Leaderboard — the "Board" segment of the Friends hub. The hub owns
+// the outer chrome (SafeAreaView + tab title), so this component is
+// just the scope toggle + the ranked list + UserSheet.
 import { useState, useCallback } from "react";
 import { View, StyleSheet, FlatList, Pressable, Text } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";

@@ -1,6 +1,5 @@
-// Inbox — the activity-feed segment of the Friends hub.
-//
-// Season-1 social redesign, Phase B. One feed, three bands:
+// Inbox — the activity-feed segment of the Friends hub. One feed,
+// three bands:
 //   • "Out to market" — your own pending outgoing trade requests
 //   • Actionable      — incoming friend + trade requests, inline
 //                        buttons, sorted to the top
@@ -23,7 +22,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { ActiveEffects } from "./ActiveEffects";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
+import type { TradeRow } from "@/constants/trade_types";
 
 // Stockyard palette — kept in sync with the trade theme.
 const YARD = {
@@ -31,17 +31,6 @@ const YARD = {
 	plankLine: "#6E4A28",
 	brass: "#C99B23",
 };
-
-interface TradeRow {
-	id: string;
-	requester_id: string;
-	target_id: string;
-	amount: number;
-	status: "pending" | "fulfilled";
-	created_at: string;
-	fulfilled_at: string | null;
-	partner_username: string | null;
-}
 
 interface FriendReq {
 	requester_id: string;
@@ -416,11 +405,9 @@ const styles = StyleSheet.create({
 		paddingVertical: 28,
 	},
 	band: {
-		fontFamily: FONTS.bodyExtra,
+		...KICKER_PILL,
 		fontSize: 10,
 		letterSpacing: 1.4,
-		textTransform: "uppercase",
-		color: WHIMSY.mute,
 		marginTop: 14,
 		marginBottom: 6,
 	},

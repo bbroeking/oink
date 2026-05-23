@@ -522,19 +522,17 @@ export default function SwipeElement({
 			</Pressable>
 
 			<Animated.Text
-				pointerEvents="none"
 				style={[
 					styles.bigDigit,
-					{ left: 40, opacity: sixOpacity, transform: [{ translateY: sixY }] },
+					{ left: 40, opacity: sixOpacity, transform: [{ translateY: sixY }], pointerEvents: "none" },
 				]}
 			>
 				6
 			</Animated.Text>
 			<Animated.Text
-				pointerEvents="none"
 				style={[
 					styles.bigDigit,
-					{ right: 40, opacity: sevenOpacity, transform: [{ translateY: sevenY }] },
+					{ right: 40, opacity: sevenOpacity, transform: [{ translateY: sevenY }], pointerEvents: "none" },
 				]}
 			>
 				7

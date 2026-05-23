@@ -24,8 +24,10 @@ import { RitualPicker } from "./RitualPicker";
 import { AlignmentBar } from "./ui/AlignmentBar";
 import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
+import type { TradeRow } from "@/constants/trade_types";
 import {
 	FONTS,
+	KICKER_PILL,
 	KICKER_TEXT,
 	MODAL_BACKDROP_BG,
 	STICKER_SHADOW,
@@ -73,13 +75,6 @@ type AskState =
 	| { kind: "ready" }
 	| { kind: "pending" }
 	| { kind: "cooldown"; hours: number };
-
-interface TradeRow {
-	requester_id: string;
-	target_id: string;
-	status: string;
-	created_at: string;
-}
 
 // Mirror the server's pair-cooldown rule (trade_cooldown.sql): a
 // request is blocked while a trade is pending, and for 24h after the
@@ -262,9 +257,9 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 								</View>
 							) : (
 								<>
-									{/* Redesign Phase 8 — kicker label above the handle so
-									    the sheet's purpose ("profile") reads at a glance,
-									    matching the kicker treatment on the other screens. */}
+									{/* Kicker label above the handle so the sheet's purpose
+									    ("profile") reads at a glance, matching the kicker
+									    treatment on the other screens. */}
 									<Text style={styles.sheetKicker}>★ profile</Text>
 									<View style={styles.header}>
 										<View style={styles.avatarBubble}>
@@ -522,14 +517,7 @@ const styles = StyleSheet.create({
 	sheetWrap: { padding: 16, paddingBottom: 32 },
 	sheet: { padding: 18 },
 	loadingWrap: { paddingVertical: 40, alignItems: "center" },
-	sheetKicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.6,
-		textTransform: "uppercase",
-		marginBottom: 8,
-	},
+	sheetKicker: { ...KICKER_PILL, marginBottom: 8 },
 	header: {
 		flexDirection: "row",
 		alignItems: "center",

@@ -1,7 +1,5 @@
-// The Friends hub — the social tab (formerly "Ranks").
-//
-// Season-1 social redesign. One tab consolidates the three social
-// surfaces behind a segmented control:
+// The Friends hub — the social tab. One tab consolidates the three
+// social surfaces behind a segmented control:
 //   Friends — your friends list + add (Friends.tsx)
 //   Inbox   — the activity feed (Inbox.tsx)
 //   Board   — the leaderboard (Leaderboard.tsx)

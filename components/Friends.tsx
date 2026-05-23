@@ -12,7 +12,7 @@ import { supabase } from "../utils/supabase";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
-import { FONTS, WHIMSY, ROW_TILTS } from "@/constants/theme";
+import { FONTS, KICKER_PILL, WHIMSY, ROW_TILTS } from "@/constants/theme";
 
 interface Profile {
 	id: string;
@@ -22,14 +22,14 @@ interface Profile {
 }
 
 // Friend requests live in the Friends-hub Inbox now — this panel is
-// just your friend list + add. (Season-1 social redesign, Phase B.)
+// just your friend list + add.
 type Tab = "friends" | "add";
 
 export default function Friends({ userId }: { userId: string }) {
 	const [tab, setTab] = useState<Tab>("friends");
 	const [friends, setFriends] = useState<Profile[]>([]);
 	// Tapping a friend opens UserSheet — the one door for ask / bless
-	// / curse (Season-1 social redesign, Phase C).
+	// / curse.
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
@@ -273,14 +273,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 // ── Styles ────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	wrap: { marginTop: 16 },
-	kicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.6,
-		marginBottom: 8,
-		textTransform: "uppercase",
-	},
+	kicker: { ...KICKER_PILL, marginBottom: 8 },
 	tabsRow: {
 		flexDirection: "row",
 		backgroundColor: WHIMSY.paper,

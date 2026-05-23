@@ -20,7 +20,7 @@ import { Card, Button } from "./ui";
 import { Icon, type IconName } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker, Tape } from "./ui/Sticker";
-import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_PILL, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import {
 	IAP_ENABLED,
 	initIAP,
@@ -606,55 +606,7 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		color: WHIMSY.ink,
 	},
-	vipWrap: {
-		marginBottom: 16,
-		padding: 16,
-	},
-	vipBadgeRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 5,
-		marginBottom: 4,
-	},
-	vipBadge: {
-		fontSize: 11,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-		letterSpacing: 1,
-	},
-	vipTitle: {
-		fontSize: 22,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-		lineHeight: 24,
-	},
-	vipDesc: {
-		fontSize: 13,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.ink,
-		opacity: 0.7,
-		marginTop: 2,
-		lineHeight: 17,
-	},
-	vipCtas: {
-		flexDirection: "row",
-		gap: 8,
-		marginTop: 12,
-	},
-	vipBtn: {
-		paddingVertical: 9,
-		borderRadius: 12,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		marginTop: 12,
-	},
-	vipBtnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
-		color: WHIMSY.ink,
-	},
-	// ── Slop Club membership card (redesign Phase 3) ────────────────
+	// ── Slop Club membership card ──────────────────────────────────
 	slopWrap: { marginBottom: 16, padding: 18 },
 	slopRibbon: {
 		position: "absolute",
@@ -829,13 +781,7 @@ const sounderStyles = StyleSheet.create({
 		justifyContent: "space-between",
 		marginBottom: 8,
 	},
-	kicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.4,
-		textTransform: "uppercase",
-	},
+	kicker: { ...KICKER_PILL, letterSpacing: 1.4 },
 	link: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,

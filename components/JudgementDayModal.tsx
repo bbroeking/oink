@@ -1,7 +1,7 @@
-// Phase 4 — the season finale reveal. Mounted at root by _layout
-// when my_finale_result returns a pending verdict. Shows the user
-// their final side, rank, bracket, and the title + snouts they
-// earned. Dismiss calls mark_finale_seen.
+// The season finale reveal. Mounted at root by _layout when
+// my_finale_result returns a pending verdict. Shows the user their
+// final side, rank, bracket, and the title + snouts they earned.
+// Dismiss calls mark_finale_seen.
 import React, { useEffect, useRef } from "react";
 import {
 	Modal,

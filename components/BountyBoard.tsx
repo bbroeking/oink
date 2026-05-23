@@ -1,6 +1,6 @@
-// Phase 3 — the weekly bounty board section, mounted at the top of
-// the season tab. Fetches my_weekly_bounties on focus and renders a
-// BountyCard per active bounty.
+// The weekly bounty board section, mounted at the top of the season
+// tab. Fetches my_weekly_bounties on focus and renders a BountyCard
+// per active bounty.
 import React, { useCallback, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";

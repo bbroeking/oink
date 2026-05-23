@@ -1,5 +1,5 @@
-// Phase 2 — Cleanse. Shows the caller's active curses and lets them
-// spend 5 snouts to wipe all of them. Surfaced from Barn when
+// Cleanse. Shows the caller's active curses and lets them spend 5
+// snouts to wipe all of them. Surfaced from Barn when
 // my_active_effects returns any curse rows.
 import React, { useState } from "react";
 import {
