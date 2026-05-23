@@ -31,6 +31,8 @@ interface Effect {
 	source: "blessing" | "curse";
 	kind: string;
 	expires_at: string;
+	sender_id: string | null;
+	sender_username: string | null;
 }
 
 // Static "time left" — recomputed on every focus (no per-second timer).
@@ -79,12 +81,16 @@ export function ActiveEffects() {
 
 	return (
 		<View>
-			<Text style={styles.band}>On you now</Text>
+			<Text style={styles.band}>Hoofprints on you</Text>
+			<Text style={styles.sub}>left by the sounder</Text>
 			{effects.map((e, i) => {
 				const blessed = e.source === "blessing";
 				const meta = blessed
 					? BLESSING_META[e.kind as BlessingKind]
 					: CURSE_META[e.kind as CurseKind];
+				const senderName =
+					e.sender_username ?? (blessed ? "a friend" : "someone");
+				const initial = (e.sender_username ?? "?").slice(0, 1).toUpperCase();
 				return (
 					<Sticker
 						key={`${e.source}-${e.kind}-${i}`}
@@ -106,6 +112,23 @@ export function ActiveEffects() {
 							<Text style={styles.blurb} numberOfLines={2}>
 								{meta?.blurb ?? ""}
 							</Text>
+							{/* Sender attribution — small avatar initial + name */}
+							<View style={styles.senderRow}>
+								<View
+									style={[
+										styles.senderAvatar,
+										blessed
+											? styles.senderAvatarBless
+											: styles.senderAvatarCurse,
+									]}
+								>
+									<Text style={styles.senderInitial}>{initial}</Text>
+								</View>
+								<Text style={styles.senderName} numberOfLines={1}>
+									<Text style={styles.senderNameBold}>{senderName}</Text>
+									{blessed ? " blessed you" : " cursed you"}
+								</Text>
+							</View>
 						</View>
 						<Text
 							style={[
@@ -180,4 +203,42 @@ const styles = StyleSheet.create({
 		marginBottom: 4,
 	},
 	cleanseText: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
+	sub: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		marginTop: -4,
+		marginBottom: 8,
+	},
+	senderRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		marginTop: 6,
+	},
+	senderAvatar: {
+		width: 18,
+		height: 18,
+		borderRadius: 9,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	senderAvatarBless: { backgroundColor: WHIMSY.sun },
+	senderAvatarCurse: { backgroundColor: WHIMSY.sage },
+	senderInitial: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		color: WHIMSY.ink,
+	},
+	senderName: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.ink,
+		opacity: 0.85,
+		flex: 1,
+		minWidth: 0,
+	},
+	senderNameBold: { fontFamily: FONTS.bodyExtra, opacity: 1 },
 });
