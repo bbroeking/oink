@@ -11,7 +11,6 @@ import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker } from "./ui/Sticker";
 import { ListRowSkeleton } from "./ui/Skeleton";
 import { UserSheet } from "./UserSheet";
-import { AlignmentBadge } from "./ui/AlignmentBadge";
 import { FONTS, ROW_TILTS, WHIMSY } from "@/constants/theme";
 
 type Scope = "global" | "friends" | "alignment";
@@ -25,6 +24,7 @@ interface ActiveTitle {
 interface LeaderboardEntry {
 	id: string;
 	username: string | null;
+	discriminator?: string | null;
 	tickles_earned: number;
 	active_hat_id: string | null;
 	active_title: ActiveTitle | null;
@@ -63,8 +63,12 @@ function ChampionPoster({
 }) {
 	return (
 		<Pressable style={styles.champWrap} onPress={() => onPress(champ.id)}>
-			<Sticker color="rose" rotate={-1.5} radius={18} border={2.5} style={styles.champ}>
-				<Text style={styles.champOver}>★ all-time leader ★</Text>
+			<Sticker color="sun" rotate={-1.5} radius={18} border={2.5} style={styles.champ}>
+				{/* Rose tape pinning the poster — small decorative pin in
+				    the top-left so the champion poster reads as "tacked up"
+				    on the leaderboard wall. */}
+				<View style={styles.champTape} />
+				<Text style={styles.champOver}>★ today's champion ★</Text>
 				<View style={styles.champBody}>
 					<View style={styles.champAvatarWrap}>
 						<PigAvatar size={64} hatId={champ.active_hat_id} />
@@ -79,17 +83,14 @@ function ChampionPoster({
 							{formatDisplayName(champ.username, champ.active_title)}
 						</Text>
 						<Text style={styles.champScore}>
-							{champ.tickles_earned.toLocaleString()} lifetime tickles
+							{champ.active_title?.name ? `${champ.active_title.name} · ` : ""}
+							♥ {champ.tickles_earned.toLocaleString()}
 						</Text>
-						<View style={{ marginTop: 6 }}>
-							<AlignmentBadge score={champ.alignment_score ?? 0} size="sm" />
-						</View>
 					</View>
-					<View style={styles.bigOne}>
-						<Text style={styles.bigOneText}>1</Text>
-					</View>
+					{/* Crown — the de-facto leader glyph. Replaces the old
+					    rotated "1" badge so the role reads instantly. */}
+					<Text style={styles.crownGlyph}>👑</Text>
 				</View>
-				<Text style={styles.starsRow}>✦ ✦ ✦</Text>
 			</Sticker>
 		</Pressable>
 	);
@@ -114,37 +115,46 @@ function ClippingRow({
 	return (
 		<Pressable style={styles.rowWrap} onPress={() => onPress(player.id)}>
 			<Sticker
-				color={isYou ? "rose" : "paper"}
+				color={isYou ? "cream" : "paper"}
 				rotate={tilt}
 				radius={10}
 				style={styles.row}
 			>
 				<Text style={styles.rowRank}>#{rank}</Text>
 				<PigAvatar size={32} hatId={player.active_hat_id} />
-				<View style={{ marginLeft: 4 }}>
-					<AlignmentBadge score={player.alignment_score ?? 0} size="sm" compact />
-				</View>
-				<View style={{ flex: 1, minWidth: 0, marginLeft: 6 }}>
-					<Text
-						style={styles.rowName}
-						numberOfLines={1}
-						adjustsFontSizeToFit
-						minimumFontScale={0.6}
-					>
-						{formatDisplayName(player.username, player.active_title)}
-						{isYou && <Text style={styles.rowYouTag}> · you</Text>}
-					</Text>
-					{player.active_hat_id && (
-						<Text style={styles.rowHat}>wears {player.active_hat_id}</Text>
+				<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
+					<View style={styles.rowNameLine}>
+						<Text
+							style={styles.rowName}
+							numberOfLines={1}
+							adjustsFontSizeToFit
+							minimumFontScale={0.6}
+						>
+							{formatDisplayName(player.username, player.active_title)}
+							{isYou && <Text style={styles.rowYouTag}> (you)</Text>}
+						</Text>
+						{player.discriminator && (
+							<Text style={styles.rowDisc}>#{player.discriminator}</Text>
+						)}
+					</View>
+					{player.active_title?.name && (
+						<Text style={styles.rowTitle} numberOfLines={1}>
+							{player.active_title.name}
+						</Text>
 					)}
 				</View>
-				<Text style={styles.rowScore}>
-					{showAlignment
-						? score > 0
-							? `+${score}`
-							: `${score}`
-						: `${player.tickles_earned.toLocaleString()} ♥`}
-				</Text>
+				<View style={styles.rowScoreCol}>
+					<Text style={styles.rowScore}>
+						{showAlignment
+							? score > 0
+								? `+${score}`
+								: `${score}`
+							: player.tickles_earned.toLocaleString()}
+					</Text>
+					<Text style={styles.rowScoreUnit}>
+						{showAlignment ? "align" : "♥"}
+					</Text>
+				</View>
 			</Sticker>
 		</Pressable>
 	);
@@ -166,9 +176,9 @@ export function Leaderboard() {
 			setMyId(user?.id ?? null);
 
 			const SELECT_WITH_TITLES =
-				"id, username, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
+				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
 			const SELECT_BASIC =
-				"id, username, tickles_earned, active_hat_id, alignment_score";
+				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score";
 
 			const runQuery = async (select: string, friendIds?: string[]) => {
 				let q = supabase
@@ -370,6 +380,20 @@ const styles = StyleSheet.create({
 	toggleTextActive: { fontFamily: FONTS.whimsy, color: WHIMSY.ink },
 	champWrap: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 },
 	champ: { padding: 16 },
+	// Tape decoration tucked into the corner of the champion poster —
+	// rotated rose strip matching the design's `Tape color="rose"`.
+	champTape: {
+		position: "absolute",
+		top: -6,
+		left: 14,
+		width: 48,
+		height: 12,
+		backgroundColor: WHIMSY.roseDeep,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		transform: [{ rotate: "-12deg" }],
+		opacity: 0.92,
+	},
 	champOver: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
@@ -392,28 +416,10 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},
-	bigOne: {
-		width: 44,
-		height: 44,
-		borderRadius: 22,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center",
-		transform: [{ rotate: "8deg" }],
-	},
-	bigOneText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-		lineHeight: 24,
-	},
-	starsRow: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.muteSoft,
-		marginTop: 8,
+	// Crown glyph at the right of the champion poster — replaces the
+	// old rotated "1" badge so the role reads instantly.
+	crownGlyph: {
+		fontSize: 36,
 	},
 	list: { flex: 1 },
 	listContent: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 110 },
@@ -432,15 +438,37 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		textAlign: "center",
 	},
-	rowName: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
-	rowYouTag: { fontFamily: FONTS.hand, color: WHIMSY.accent },
-	rowHat: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
+	// Name + discriminator on a baseline-aligned line.
+	rowNameLine: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		gap: 6,
+	},
+	rowName: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink, flexShrink: 1 },
+	rowDisc: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
 		color: WHIMSY.mute,
-		marginTop: 1,
+	},
+	rowYouTag: { fontFamily: FONTS.hand, color: WHIMSY.accent },
+	rowTitle: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		marginTop: 2,
+	},
+	// Score column — number above tiny ♥ suffix, right-aligned.
+	rowScoreCol: {
+		alignItems: "flex-end",
+		minWidth: 60,
 	},
 	rowScore: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+	rowScoreUnit: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		color: WHIMSY.mute,
+		marginTop: 2,
+	},
 	empty: {
 		textAlign: "center",
 		padding: 36,
