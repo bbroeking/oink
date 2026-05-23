@@ -802,15 +802,6 @@ export default function Barn() {
 
 				{__DEV__ && (
 					<Pressable
-						onPress={() => router.push("/align")}
-						style={styles.devAlign}
-					>
-						<Text style={styles.devAlignText}>⊕ align</Text>
-					</Pressable>
-				)}
-
-				{__DEV__ && (
-					<Pressable
 						onPress={() => router.push("/item-anchor" as any)}
 						style={styles.devAnchor}
 					>

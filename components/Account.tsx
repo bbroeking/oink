@@ -383,17 +383,6 @@ export function Account({ session }: { session: Session }) {
 						<Text style={styles.restoreLinkText}>What's new</Text>
 					</Pressable>
 
-					{__DEV__ && (
-						<Pressable
-							onPress={() => router.push("/align")}
-							style={({ pressed }) => [
-								styles.devLink,
-								{ opacity: pressed ? 0.6 : 1 },
-							]}
-						>
-							<Text style={styles.devLinkText}>🛠 DEV · Align items</Text>
-						</Pressable>
-					)}
 
 					<Pressable
 						onPress={() => supabase.auth.signOut()}
