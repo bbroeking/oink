@@ -20,6 +20,7 @@ import { Card, Button } from "./ui";
 import { Icon, type IconName } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker, Tape } from "./ui/Sticker";
+import { AlignmentBar } from "./ui/AlignmentBar";
 import { COLORS, FONTS, KICKER_PILL, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import {
 	IAP_ENABLED,
@@ -67,6 +68,7 @@ export function Account({ session }: { session: Session }) {
 	const [ticklesEarned, setTicklesEarned] = useState<number>(0);
 	const [activeHat, setActiveHat] = useState<string | null>(null);
 	const [isVip, setIsVip] = useState<boolean>(false);
+	const [alignmentScore, setAlignmentScore] = useState<number>(0);
 	// Slop Club plan toggle on the membership card — yearly default
 	// (matches the design's "BEST VALUE" ribbon on yearly).
 	const [slopPlan, setSlopPlan] = useState<"monthly" | "yearly">("yearly");
@@ -86,7 +88,7 @@ export function Account({ session }: { session: Session }) {
 			supabase
 				.from("profiles")
 				.select(
-					"username, discriminator, tickles_earned, active_hat_id, is_vip, active_title:titles!profiles_active_title_id_fkey(name, placement)"
+					"username, discriminator, tickles_earned, active_hat_id, is_vip, alignment_score, active_title:titles!profiles_active_title_id_fkey(name, placement)"
 				)
 				.eq("id", session.user.id)
 				.single()
@@ -97,6 +99,7 @@ export function Account({ session }: { session: Session }) {
 						tickles_earned?: number;
 						active_hat_id?: string | null;
 						is_vip?: boolean;
+						alignment_score?: number;
 						active_title?:
 							| { name: string; placement: "pre" | "post" }
 							| { name: string; placement: "pre" | "post" }[]
@@ -109,7 +112,7 @@ export function Account({ session }: { session: Session }) {
 					if (error) {
 						const fallback = await supabase
 							.from("profiles")
-							.select("username, discriminator, tickles_earned, active_hat_id, is_vip")
+							.select("username, discriminator, tickles_earned, active_hat_id, is_vip, alignment_score")
 							.eq("id", session.user.id)
 							.single();
 						row = fallback.data;
@@ -119,6 +122,7 @@ export function Account({ session }: { session: Session }) {
 					setTicklesEarned(row?.tickles_earned ?? 0);
 					setActiveHat(row?.active_hat_id ?? null);
 					setIsVip(row?.is_vip ?? false);
+					setAlignmentScore(row?.alignment_score ?? 0);
 					const t = Array.isArray(row?.active_title)
 						? row?.active_title[0]
 						: row?.active_title;
@@ -280,6 +284,28 @@ export function Account({ session }: { session: Session }) {
 							</Sticker>
 						</View>
 					)}
+
+					{/* Alignment story — the audit found alignment was
+					    invisible on the user's own profile. Block lives
+					    between the identity card and Achievements:
+					    Greedy ↔ score ↔ Generous + the bar + a hand-
+					    written one-liner about what moves it. */}
+					<View style={alignmentStoryStyles.wrap}>
+						<Text style={alignmentStoryStyles.kicker}>★ alignment</Text>
+						<View style={alignmentStoryStyles.labelRow}>
+							<Text style={alignmentStoryStyles.greedy}>Greedy</Text>
+							<Text style={alignmentStoryStyles.score}>
+								{alignmentScore >= 0 ? "+" : ""}
+								{alignmentScore}
+							</Text>
+							<Text style={alignmentStoryStyles.generous}>Generous</Text>
+						</View>
+						<AlignmentBar score={alignmentScore} />
+						<Text style={alignmentStoryStyles.hint}>
+							★ blessings push you up. asks for tickles pull you
+							down. ★
+						</Text>
+					</View>
 
 					{/* Achievements entry — single-line tappable row that
 					    routes to the full grid. Sits above Sounder so it's
@@ -820,6 +846,49 @@ const sounderStyles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 13,
 		color: WHIMSY.accent,
+	},
+});
+
+// Alignment story block on Account — the on-your-own-profile
+// surface that closes the audit's "alignment is invisible on the
+// user's own screens" finding.
+const alignmentStoryStyles = StyleSheet.create({
+	wrap: { marginTop: 22 },
+	kicker: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		letterSpacing: 1.6,
+		textTransform: "uppercase",
+		marginBottom: 6,
+	},
+	labelRow: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		justifyContent: "space-between",
+		marginBottom: 6,
+	},
+	greedy: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		letterSpacing: 1.2,
+		textTransform: "uppercase",
+		color: WHIMSY.goblin,
+	},
+	generous: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		letterSpacing: 1.2,
+		textTransform: "uppercase",
+		color: WHIMSY.angel,
+	},
+	score: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	hint: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 8,
 	},
 });
 
