@@ -30,9 +30,11 @@ import type { TitleRow } from "@/constants/title_types";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 import { BarnOverlay } from "./ui/BarnOverlay";
+import { AlignmentEmblem } from "./ui/AlignmentEmblem";
 import {
 	alignmentLabel,
 	alignmentDisplay,
+	alignmentIcon,
 	type AlignmentLabel,
 } from "@/utils/alignment";
 
@@ -767,6 +769,31 @@ export default function Barn() {
 					/>
 				</View>
 
+				{/* Hanging Pilgrim/Generous/Greedy placard — top-right, just
+				    below the stat tickets, with a tiny "string" above so it
+				    reads as a sign tacked to the barn wall. (From the
+				    redesign chat — pulled the alignment label out of the
+				    center of the screen so the path to the pig is clear.) */}
+				{statsLoaded && (
+					<View pointerEvents="none" style={styles.alignPlacardWrap}>
+						<View style={styles.alignPlacardString} />
+						<Sticker
+							color="paper"
+							rotate={-4}
+							radius={10}
+							style={styles.alignPlacard}
+						>
+							<AlignmentEmblem
+								kind={alignmentIcon(alignment)}
+								size={14}
+							/>
+							<Text style={styles.alignPlacardText}>
+								{alignmentDisplay(alignment)}
+							</Text>
+						</Sticker>
+					</View>
+				)}
+
 				{/* Active lucky-pig window indicator. Sits below the
 				    stat cards + above the pig — never collides with the
 				    dev buttons (top-right absolute) or the cards. */}
@@ -942,6 +969,32 @@ const styles = StyleSheet.create({
 		paddingTop: Platform.OS === "ios" ? 12 : 24,
 		gap: 10,
 		zIndex: 1,
+	},
+	// Pilgrim placard — hangs top-right, just below the stat tickets.
+	alignPlacardWrap: {
+		position: "absolute",
+		top: Platform.OS === "ios" ? 132 : 144,
+		right: 20,
+		alignItems: "center",
+		zIndex: 3,
+	},
+	alignPlacardString: {
+		width: 1.5,
+		height: 14,
+		backgroundColor: WHIMSY.ink,
+		opacity: 0.55,
+	},
+	alignPlacard: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+	},
+	alignPlacardText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 13,
+		color: WHIMSY.ink,
 	},
 	ticketWrap: {
 		position: "relative",
