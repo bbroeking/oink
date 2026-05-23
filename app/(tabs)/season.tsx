@@ -32,7 +32,7 @@ import {
 } from "../../components/ui/TierUpBanner";
 import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
 import { FONTS, KICKER_TEXT, ROW_TILTS, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW } from "@/constants/theme";
-import { Button } from "../../components/ui";
+import { Button, SectionHeader } from "../../components/ui";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 
@@ -340,11 +340,25 @@ function SnakeStone({
 				<Text
 					style={[
 						snakeStyles.stoneNum,
-						isFinale && { color: WHIMSY.paper },
+						isFinale && { color: WHIMSY.paper, fontSize: 28 },
 					]}
 				>
-					{isFinale ? "★" : tier}
+					{isFinale ? "👑" : tier}
 				</Text>
+
+				{/* Claimable: rose-deep ! pill at top-right corner so the
+				    stone reads as actionable at a glance. */}
+				{isClaimable && (
+					<View style={snakeStyles.badgeClaimable}>
+						<Text style={snakeStyles.badgeClaimableText}>!</Text>
+					</View>
+				)}
+				{/* Locked: paper 🔒 pill at bottom-right. */}
+				{isLocked && (
+					<View style={snakeStyles.badgeLocked}>
+						<Text style={snakeStyles.badgeLockedText}>🔒</Text>
+					</View>
+				)}
 			</View>
 
 			{/* Reward label + claim button — on the opposite side */}
@@ -363,7 +377,7 @@ function SnakeStone({
 					]}
 				>
 					Tier {tier}
-					{isFinale ? " · FINALE" : ""}
+					{isFinale ? "  FINALE" : ""}
 				</Text>
 				<Text
 					style={[
@@ -452,6 +466,45 @@ const snakeStyles = StyleSheet.create({
 		fontSize: 11,
 		color: "#5a8338",
 		marginTop: 2,
+	},
+	// "!" pill on claimable stones — top-right corner, rose-deep so it
+	// reads as actionable urgency.
+	badgeClaimable: {
+		position: "absolute",
+		top: -6,
+		right: -6,
+		width: 22,
+		height: 22,
+		borderRadius: 11,
+		backgroundColor: WHIMSY.roseDeep,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	badgeClaimableText: {
+		color: WHIMSY.paper,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		lineHeight: 14,
+	},
+	// "🔒" pill on locked stones — bottom-right corner, paper bg so it
+	// reads as inert.
+	badgeLocked: {
+		position: "absolute",
+		bottom: -2,
+		right: -2,
+		width: 20,
+		height: 20,
+		borderRadius: 10,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	badgeLockedText: {
+		fontSize: 10,
 	},
 });
 
@@ -678,6 +731,30 @@ export default function SeasonScreen() {
 				<ScrollView contentContainerStyle={styles.tierList}>
 					<BountyBoard />
 
+					{/* Section header for the pass — matches BountyBoard's
+					    header above so the two sections sit in the same
+					    visual rhythm. */}
+					<View style={{ marginTop: 8 }}>
+						<SectionHeader
+							kicker="season pass"
+							title={`Tier ${tier}/${season.total_tiers}`}
+							ruleWidth={110}
+							right={
+								PAID_BATTLE_PASS_ENABLED && IAP_ENABLED && !premium ? (
+									<>
+										<Text style={styles.vipKicker}>★ VIP</Text>
+										<Pressable
+											onPress={() => setSaleOpen(true)}
+											style={styles.unlockBtn}
+										>
+											<Text style={styles.unlockBtnText}>Unlock</Text>
+										</Pressable>
+									</>
+								) : undefined
+							}
+						/>
+					</View>
+
 					{/* Snaking pass track — stones alternate left ↔ right
 					    with a dashed SVG path zigzagging between them.
 					    From the redesign (Phase 9). */}
@@ -890,6 +967,31 @@ const styles = StyleSheet.create({
 		marginTop: 4,
 	},
 	progressWrap: { paddingHorizontal: 14, paddingVertical: 8 },
+	// Right-slot decorations for the season-pass SectionHeader.
+	vipKicker: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.lilacDeep,
+		marginRight: 6,
+	},
+	unlockBtn: {
+		backgroundColor: WHIMSY.lilacDeep,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingHorizontal: 10,
+		paddingVertical: 4,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
+	},
+	unlockBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.paper,
+	},
 	progressCard: { padding: 14 },
 	progressTop: {
 		flexDirection: "row",

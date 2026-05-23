@@ -2,11 +2,30 @@
 // tab. Fetches my_weekly_bounties on focus and renders a BountyCard
 // per active bounty.
 import React, { useCallback, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { BountyCard, type WeeklyBounty } from "./BountyCard";
-import { FONTS, KICKER_TEXT, ROW_TILTS, WHIMSY } from "@/constants/theme";
+import { ROW_TILTS } from "@/constants/theme";
+import { SectionHeader } from "./ui/SectionHeader";
+
+// Approximate the next Monday 00:00 local — most weekly bounties roll
+// over on Mondays. Worst case the label is off by a day; still better
+// than "resets weekly" which gives no urgency.
+function resetsIn(): string {
+	const now = new Date();
+	const dow = now.getDay(); // 0=Sun
+	const daysToMon = (8 - dow) % 7 || 7;
+	if (daysToMon === 1) {
+		// less than 24h — show hours
+		const next = new Date(now);
+		next.setDate(now.getDate() + 1);
+		next.setHours(0, 0, 0, 0);
+		const hours = Math.max(1, Math.round((next.getTime() - now.getTime()) / 3.6e6));
+		return `resets in ${hours}h`;
+	}
+	return `resets in ${daysToMon}d`;
+}
 
 export function BountyBoard() {
 	const [bounties, setBounties] = useState<WeeklyBounty[]>([]);
@@ -28,18 +47,14 @@ export function BountyBoard() {
 	// Pre-migration / empty: render nothing rather than an empty card.
 	if (loaded && bounties.length === 0) return null;
 
-	const claimedCount = bounties.filter((b) => b.claimed).length;
-
 	return (
 		<View style={styles.wrap}>
-			<View style={styles.headerRow}>
-				<Text style={styles.kicker}>★ weekly bounties</Text>
-				{bounties.length > 0 && (
-					<Text style={styles.progress}>
-						{claimedCount} / {bounties.length} claimed
-					</Text>
-				)}
-			</View>
+			<SectionHeader
+				kicker="weekly board"
+				title="Bounties"
+				right={resetsIn()}
+				ruleWidth={84}
+			/>
 			{bounties.map((b, i) => (
 				<BountyCard
 					key={b.code}
@@ -54,12 +69,4 @@ export function BountyBoard() {
 
 const styles = StyleSheet.create({
 	wrap: { marginBottom: 14 },
-	headerRow: {
-		flexDirection: "row",
-		alignItems: "baseline",
-		justifyContent: "space-between",
-		marginBottom: 4,
-	},
-	kicker: { ...KICKER_TEXT },
-	progress: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
 });

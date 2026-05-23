@@ -1,6 +1,9 @@
 // A single weekly-bounty row for the season-tab bounty board. Shows
-// name, description, a progress bar, and a state-aware CTA: Claim
-// (ready), Claimed (done), or the bare progress count (in progress).
+// a sun-tinted icon well + name + progress bar + reward, and a
+// state-aware CTA: Claim (ready), Claimed (done), or … (in progress).
+//
+// Layout matches the redesign: row of [icon well 52×52, body grow,
+// Claim button], with the progress bar above the count·reward line.
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -23,6 +26,20 @@ interface Props {
 	tilt: number;
 	// Fired after a successful claim so the board can refresh.
 	onClaimed?: () => void;
+}
+
+// Best-effort emoji per bounty type. The schema doesn't expose an
+// icon field; derive from the bounty code so each card has a visual
+// anchor in the icon well.
+function bountyEmoji(code: string): string {
+	const c = code.toLowerCase();
+	if (c.includes("trade") || c.includes("fulfill") || c.includes("ask")) return "🤝";
+	if (c.includes("bless") || c.includes("halo")) return "✦";
+	if (c.includes("curse") || c.includes("itch")) return "☁";
+	if (c.includes("tickle") || c.includes("tap")) return "♥";
+	if (c.includes("friend") || c.includes("sounder")) return "🐷";
+	if (c.includes("shop") || c.includes("buy") || c.includes("equip")) return "🎩";
+	return "🎯";
 }
 
 export function BountyCard({ bounty, tilt, onClaimed }: Props) {
@@ -58,52 +75,70 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 				bounty.claimed && styles.cardClaimed,
 			]}
 		>
-			<View style={styles.headerRow}>
-				<Text style={styles.name} numberOfLines={1}>
-					{bounty.name}
-				</Text>
-				<View style={styles.rewardChip}>
-					<SnoutCoin size={13} />
-					<Text style={styles.rewardText}>{bounty.reward_snouts}</Text>
+			<View style={styles.row}>
+				{/* Sun-tinted icon well — visual anchor at the left edge */}
+				<View style={styles.iconWell}>
+					<Text style={styles.iconGlyph}>{bountyEmoji(bounty.code)}</Text>
 				</View>
-			</View>
-			<Text style={styles.desc} numberOfLines={2}>
-				{bounty.description}
-			</Text>
 
-			<View style={styles.progressRow}>
-				<View style={styles.track}>
-					<View style={[styles.fill, { width: `${pct}%` }]} />
-				</View>
-				<Text style={styles.count}>
-					{Math.min(bounty.progress, bounty.goal)} / {bounty.goal}
-				</Text>
-			</View>
-
-			{bounty.claimed ? (
-				<View style={[styles.cta, styles.ctaClaimed]}>
-					<Text style={styles.ctaClaimedText}>Claimed ✓</Text>
-				</View>
-			) : ready ? (
-				<Pressable
-					testID={`bounty-claim-${bounty.code}`}
-					onPress={claim}
-					disabled={busy}
-					style={({ pressed }) => [
-						styles.cta,
-						styles.ctaReady,
-						(pressed || busy) && { opacity: 0.7 },
-					]}
-				>
-					<Text style={styles.ctaReadyText}>
-						{busy ? "…" : "Claim reward"}
+				<View style={styles.body}>
+					<Text style={styles.name} numberOfLines={2}>
+						{bounty.name}
 					</Text>
-				</Pressable>
-			) : (
-				<View style={[styles.cta, styles.ctaProgress]}>
-					<Text style={styles.ctaProgressText}>In progress</Text>
+
+					{/* Progress bar — ink-bordered pill, sage when claimable */}
+					<View style={styles.track}>
+						<View
+							style={[
+								styles.fill,
+								ready ? styles.fillReady : null,
+								{ width: `${pct}%` },
+							]}
+						/>
+					</View>
+
+					{/* Meta line — N/G · | · 🪙 +R snouts */}
+					<View style={styles.metaRow}>
+						<Text style={styles.count}>
+							{Math.min(bounty.progress, bounty.goal)}/{bounty.goal}
+						</Text>
+						<View style={styles.dot} />
+						<View style={styles.rewardChip}>
+							<SnoutCoin size={13} />
+							<Text style={styles.rewardText}>
+								+{bounty.reward_snouts} snouts
+							</Text>
+						</View>
+					</View>
 				</View>
-			)}
+
+				{/* State-aware CTA at the right */}
+				{bounty.claimed ? (
+					<View style={[styles.cta, styles.ctaClaimed]}>
+						<Text style={styles.ctaClaimedText}>✓</Text>
+					</View>
+				) : ready ? (
+					<Pressable
+						testID={`bounty-claim-${bounty.code}`}
+						onPress={claim}
+						disabled={busy}
+						style={({ pressed }) => [
+							styles.cta,
+							styles.ctaReady,
+							(pressed || busy) && { opacity: 0.7 },
+						]}
+					>
+						<Text style={styles.ctaReadyText}>
+							{busy ? "…" : "Claim"}
+						</Text>
+					</Pressable>
+				) : (
+					<View style={[styles.cta, styles.ctaProgress]}>
+						<Text style={styles.ctaProgressText}>…</Text>
+					</View>
+				)}
+			</View>
+
 			{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
 		</View>
 	);
@@ -115,67 +150,103 @@ const styles = StyleSheet.create({
 		borderRadius: 14,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		padding: 12,
-		marginVertical: 5,
+		padding: 14,
+		marginVertical: 6,
+		// Hard sticker drop shadow — matches Sticker primitive
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 3, height: 3 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 3,
 	},
-	cardClaimed: { opacity: 0.85 },
-	headerRow: {
+	cardClaimed: { opacity: 0.78 },
+	row: { flexDirection: "row", alignItems: "center", gap: 12 },
+	iconWell: {
+		width: 52,
+		height: 52,
+		borderRadius: 12,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.sun,
+		alignItems: "center",
+		justifyContent: "center",
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 1.5, height: 1.5 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
+	},
+	iconGlyph: { fontSize: 22 },
+	body: { flex: 1, minWidth: 0 },
+	name: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		lineHeight: 19,
+		color: WHIMSY.ink,
+	},
+	track: {
+		height: 14,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 999,
+		backgroundColor: WHIMSY.paper,
+		overflow: "hidden",
+		marginTop: 6,
+	},
+	fill: {
+		height: "100%",
+		backgroundColor: WHIMSY.lilacDeep,
+	},
+	fillReady: {
+		backgroundColor: WHIMSY.sage,
+	},
+	metaRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		justifyContent: "space-between",
-		gap: 8,
+		gap: 6,
+		marginTop: 6,
 	},
-	name: { fontFamily: FONTS.whimsy, fontSize: 17, color: WHIMSY.ink, flex: 1 },
+	count: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.mute,
+	},
+	dot: {
+		width: 1,
+		height: 10,
+		backgroundColor: WHIMSY.muteSoft,
+	},
 	rewardChip: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 4,
-		backgroundColor: WHIMSY.cream,
-		borderRadius: 999,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		paddingHorizontal: 8,
-		paddingVertical: 3,
 	},
-	rewardText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.ink },
-	desc: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginTop: 3,
-		marginBottom: 10,
-	},
-	progressRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
-	track: {
-		flex: 1,
-		height: 8,
-		backgroundColor: WHIMSY.cream,
-		borderRadius: 4,
-		borderWidth: 1,
-		borderColor: WHIMSY.ink,
-		overflow: "hidden",
-	},
-	fill: { height: "100%", backgroundColor: WHIMSY.lilac },
-	count: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		minWidth: 42,
-		textAlign: "right",
-	},
+	rewardText: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.ink },
 	cta: {
-		borderRadius: 12,
-		paddingVertical: 9,
+		minWidth: 56,
+		borderRadius: 999,
+		paddingVertical: 8,
+		paddingHorizontal: 12,
 		alignItems: "center",
-		borderWidth: 1.5,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
 	},
 	ctaReady: { backgroundColor: WHIMSY.sun },
-	ctaReadyText: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
-	ctaClaimed: { backgroundColor: WHIMSY.cream },
-	ctaClaimedText: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.mute },
-	ctaProgress: { backgroundColor: WHIMSY.paper },
-	ctaProgressText: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.mute },
+	ctaReadyText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
+	ctaClaimed: { backgroundColor: WHIMSY.sage, shadowOpacity: 0, elevation: 0 },
+	ctaClaimedText: { fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.ink },
+	ctaProgress: {
+		backgroundColor: "transparent",
+		borderColor: WHIMSY.muteSoft,
+		shadowOpacity: 0,
+		elevation: 0,
+	},
+	ctaProgressText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.mute },
 	feedback: {
 		fontFamily: FONTS.hand,
 		fontSize: 11,
