@@ -130,6 +130,11 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// The Ask row is state-aware: a pending trade or a 24h pair
 	// cooldown blocks a new request. Derived from my_tickle_trades.
 	const [askState, setAskState] = useState<AskState>({ kind: "ready" });
+	// Lifetime tickles for the TICKLES stat column. Not part of
+	// public_user_stats yet — fetched directly from profiles in
+	// parallel so the design's 3-column stats row has the value it
+	// needs without expanding the RPC's return shape.
+	const [targetTickles, setTargetTickles] = useState<number | null>(null);
 
 	useEffect(() => {
 		if (!targetUserId) {
@@ -140,6 +145,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		setLoading(true);
 		setFeedback(null);
 		setAskState({ kind: "ready" });
+		setTargetTickles(null);
 		supabase
 			.rpc("public_user_stats", { target_user_id: targetUserId })
 			.then(({ data, error }) => {
@@ -156,6 +162,18 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		supabase.rpc("my_tickle_trades").then(({ data }) => {
 			setAskState(deriveAskState(targetUserId, data as TradeRow[] | null));
 		});
+		// Lifetime tickle count for the TICKLES stat column. Profiles
+		// is readable for visible fields; a failure leaves the column
+		// blank rather than blocking the sheet.
+		supabase
+			.from("profiles")
+			.select("tickles_earned")
+			.eq("id", targetUserId)
+			.maybeSingle()
+			.then(({ data }) => {
+				const n = (data as { tickles_earned?: number } | null)?.tickles_earned;
+				setTargetTickles(typeof n === "number" ? n : null);
+			});
 	}, [targetUserId]);
 
 	const refreshStats = async () => {
@@ -261,6 +279,12 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 								</View>
 							) : (
 								<>
+									{/* Drag indicator — the iOS-style grabber pill at
+									    the top of bottom sheets, taken straight from
+									    the design's Sheet primitive. Purely a visual
+									    affordance; the sheet isn't actually draggable
+									    here. */}
+									<View style={styles.dragIndicator} />
 									{/* Kicker label above the handle so the sheet's purpose
 									    ("profile") reads at a glance, matching the kicker
 									    treatment on the other screens. */}
@@ -301,6 +325,12 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 											value={stats.received_total}
 											tier={stats.greedy_tier_name}
 											color={WHIMSY.sun}
+										/>
+										<View style={styles.statsDivider} />
+										<StatCol
+											label="TICKLES"
+											value={targetTickles}
+											color={WHIMSY.roseDeep}
 										/>
 									</View>
 
@@ -388,23 +418,24 @@ function StatCol({
 	color,
 }: {
 	label: string;
-	value: number;
-	tier: string | null;
+	// Null = data unavailable; renders as "—" so the column still
+	// occupies its slot. The TICKLES column uses this path until the
+	// public_user_stats RPC carries the field natively.
+	value: number | null;
+	tier?: string | null;
 	color: string;
 }) {
 	return (
 		<View style={styles.statCol}>
 			<Text style={styles.statLabel}>{label}</Text>
 			<Text style={[styles.statValue, { color: WHIMSY.ink }]}>
-				{value.toLocaleString()} ♥
+				{value == null ? "—" : `${value.toLocaleString()} ♥`}
 			</Text>
 			{tier ? (
 				<View style={[styles.tierChip, { backgroundColor: color }]}>
 					<Text style={styles.tierChipText}>{tier}</Text>
 				</View>
-			) : (
-				<Text style={styles.tierNone}>no tier yet</Text>
-			)}
+			) : null}
 		</View>
 	);
 }
@@ -492,6 +523,9 @@ function AskRow({
 			</View>
 		);
 	}
+	// Economic hint copy — explains the trade math to the asker BEFORE
+	// they tap submit. From the design's RitualPicker.
+	const greedyShade = amount > 2 ? "more greedy" : "a little greedy";
 	return (
 		<View style={styles.askWrap}>
 			<View style={styles.askPills}>
@@ -512,6 +546,10 @@ function AskRow({
 					</Pressable>
 				))}
 			</View>
+			<Text style={styles.askHint}>
+				★ they spend {amount} from their bank. you pocket {amount * 2}. you
+				become {greedyShade}. ★
+			</Text>
 			<Pressable
 				onPress={onAsk}
 				disabled={busy}
@@ -538,6 +576,16 @@ const styles = StyleSheet.create({
 	sheetWrap: { padding: 16, paddingBottom: 32 },
 	sheet: { padding: 18 },
 	loadingWrap: { paddingVertical: 40, alignItems: "center" },
+	// iOS-style grabber pill at the top of the sheet — purely a visual
+	// affordance per the design's Sheet primitive.
+	dragIndicator: {
+		alignSelf: "center",
+		width: 44,
+		height: 4,
+		borderRadius: 2,
+		backgroundColor: WHIMSY.muteSoft,
+		marginBottom: 12,
+	},
 	sheetKicker: { ...KICKER_PILL, marginBottom: 8 },
 	header: {
 		flexDirection: "row",
@@ -619,6 +667,17 @@ const styles = StyleSheet.create({
 	askPillActive: { backgroundColor: WHIMSY.sun },
 	askPillText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.mute },
 	askPillTextActive: { color: WHIMSY.ink },
+	// Hand-script tradeoff preview between the pills and the submit
+	// button — sets expectations before commit. From the design.
+	askHint: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		marginTop: 4,
+		marginBottom: 2,
+		textAlign: "center",
+		lineHeight: 17,
+	},
 	askBlocked: {
 		backgroundColor: WHIMSY.cream,
 		borderWidth: 1.5,
