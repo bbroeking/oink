@@ -3,6 +3,7 @@ import { View, ViewStyle } from "react-native";
 import { COLORS, SHADOWS } from "@/constants/theme";
 
 export { Button } from "./Button";
+export { SectionHeader } from "./SectionHeader";
 
 // ----- Card -----
 export function Card({
