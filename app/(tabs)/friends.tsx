@@ -1,9 +1,10 @@
-// The Friends hub — the social tab. One tab consolidates the three
-// social surfaces behind a segmented control:
-//   Friends — your friends list + add (Friends.tsx)
+// The Friends hub — "Your Sounder" in the redesign. One tab
+// consolidates three social surfaces behind a segmented control:
+//   Board   — the leaderboard (Leaderboard.tsx) — DEFAULT
 //   Inbox   — the activity feed (Inbox.tsx)
-//   Board   — the leaderboard (Leaderboard.tsx)
-// The Inbox segment carries an unread-actionable count badge.
+//   Friends — your friends list + add (Friends.tsx)
+// Defaults to Board so the first impression on opening the hub is
+// the sounder ranked, not your own friend list.
 // See docs/season-1-social-redesign.md.
 import { useState, useCallback } from "react";
 import {
@@ -26,13 +27,13 @@ import { FONTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
 type Segment = "friends" | "inbox" | "board";
 
 const SEGMENTS: { key: Segment; label: string; icon: IconName }[] = [
-	{ key: "friends", label: "Friends", icon: "friends" },
-	{ key: "inbox", label: "Inbox", icon: "bell" },
 	{ key: "board", label: "Board", icon: "ranks" },
+	{ key: "inbox", label: "Inbox", icon: "bell" },
+	{ key: "friends", label: "Friends", icon: "friends" },
 ];
 
 export default function FriendsHubScreen() {
-	const [segment, setSegment] = useState<Segment>("friends");
+	const [segment, setSegment] = useState<Segment>("board");
 	const [userId, setUserId] = useState<string | null>(null);
 	const [inboxCount, setInboxCount] = useState(0);
 
@@ -67,7 +68,8 @@ export default function FriendsHubScreen() {
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
 				<View style={styles.header}>
-					<Text style={styles.title}>Friends</Text>
+					<Text style={styles.kicker}>★ friends</Text>
+					<Text style={styles.title}>Your Sounder</Text>
 					<View style={styles.titleRule} />
 					<View style={styles.segWrap}>
 						<Sticker color="paper" rotate={0} radius={22} style={styles.seg}>
@@ -126,6 +128,14 @@ const styles = StyleSheet.create({
 	header: {
 		paddingHorizontal: 18,
 		paddingTop: Platform.OS === "ios" ? 8 : 20,
+	},
+	kicker: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		letterSpacing: 1.6,
+		textTransform: "uppercase",
+		marginBottom: 2,
 	},
 	title: { fontSize: 32, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
 	titleRule: { ...TITLE_RULE, width: 110, marginTop: 4 },
