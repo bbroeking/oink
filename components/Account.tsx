@@ -16,11 +16,12 @@ import { router } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
-import { Card, Button } from "./ui";
+import { Card, Button, SectionHeader } from "./ui";
 import { Icon, type IconName } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker, Tape } from "./ui/Sticker";
 import { AlignmentBar } from "./ui/AlignmentBar";
+import Constants from "expo-constants";
 import { COLORS, FONTS, KICKER_PILL, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import {
 	IAP_ENABLED,
@@ -351,6 +352,74 @@ export function Account({ session }: { session: Session }) {
 						<Text style={achievementStyles.chev}>›</Text>
 					</Pressable>
 
+					{/* Your title — surfaces the equipped title in context
+					    (as it'll actually render next to the user's handle)
+					    + a Swap button that jumps to Shop › Titles. Routes
+					    via the shop's ?view=titles param. From the redesign. */}
+					<View style={yourTitleStyles.wrap}>
+						<SectionHeader
+							kicker="titles"
+							title="Your title"
+							right={
+								<Pressable
+									onPress={() =>
+										router.push("/(tabs)/shop?view=titles" as any)
+									}
+								>
+									<Text style={yourTitleStyles.seeAll}>see all ›</Text>
+								</Pressable>
+							}
+							ruleWidth={64}
+						/>
+						<Sticker
+							color="paper"
+							rotate={-0.4}
+							radius={14}
+							style={yourTitleStyles.card}
+						>
+							<View style={yourTitleStyles.row}>
+								<View style={{ flex: 1, minWidth: 0 }}>
+									<View style={yourTitleStyles.previewLine}>
+										{activeTitle?.placement === "pre" ? (
+											<>
+												<Text style={yourTitleStyles.titleText}>
+													{activeTitle.name}
+												</Text>
+												<Text style={yourTitleStyles.nameSample}>
+													{username ?? "you"}
+												</Text>
+											</>
+										) : activeTitle?.placement === "post" ? (
+											<>
+												<Text style={yourTitleStyles.nameSample}>
+													{username ?? "you"}
+												</Text>
+												<Text style={yourTitleStyles.titleText}>
+													{activeTitle.name}
+												</Text>
+											</>
+										) : (
+											<Text style={yourTitleStyles.noneText}>
+												no title equipped
+											</Text>
+										)}
+									</View>
+									<Text style={yourTitleStyles.hint}>
+										★ tap Shop › Titles to swap or buy a new one
+									</Text>
+								</View>
+								<Pressable
+									onPress={() =>
+										router.push("/(tabs)/shop?view=titles" as any)
+									}
+									style={yourTitleStyles.swapBtn}
+								>
+									<Text style={yourTitleStyles.swapBtnText}>Swap</Text>
+								</Pressable>
+							</View>
+						</Sticker>
+					</View>
+
 					{/* Your Sounder (referral). Hidden behind SOUNDER_VISIBLE.
 				    Friends moved to the
 					    dedicated Friends tab in the Season-1 social
@@ -505,29 +574,43 @@ export function Account({ session }: { session: Session }) {
 						</Sticker>
 					)}
 
-					{IAP_ENABLED && (
-						<Pressable onPress={handleRestore} style={styles.restoreLink}>
-							<Text style={styles.restoreLinkText}>Restore purchases</Text>
-						</Pressable>
-					)}
-
-					<Pressable
-						onPress={() => setReleaseNotesOpen(true)}
-						style={styles.restoreLink}
-					>
-						<Text style={styles.restoreLinkText}>What's new</Text>
-					</Pressable>
-
-
-					<Pressable
-						onPress={() => supabase.auth.signOut()}
-						style={({ pressed }) => [
-							styles.signOut,
-							{ opacity: pressed ? 0.6 : 1 },
-						]}
-					>
-						<Text style={styles.signOutText}>Sign Out</Text>
-					</Pressable>
+					{/* Settings — paper sticker grouping the housekeeping
+					    actions (release notes, restore IAP, sign out) into
+					    dashed-divided rows. Replaces three scattered link
+					    Pressables that broke the screen's visual rhythm.
+					    From the redesign's Settings card. */}
+					<View style={settingsStyles.wrap}>
+						<Text style={settingsStyles.kicker}>★ settings</Text>
+						<Sticker
+							color="paper"
+							rotate={-0.3}
+							radius={14}
+							style={settingsStyles.card}
+						>
+							<SettingRow
+								icon="📜"
+								label="What's new"
+								onPress={() => setReleaseNotesOpen(true)}
+							/>
+							{IAP_ENABLED && (
+								<SettingRow
+									icon="↻"
+									label="Restore purchases"
+									onPress={handleRestore}
+								/>
+							)}
+							<SettingRow
+								icon="↪"
+								label="Sign out"
+								onPress={() => supabase.auth.signOut()}
+								destructive
+								last
+							/>
+						</Sticker>
+						<Text style={settingsStyles.footer}>
+							★ tickle the pig · v{Constants.expoConfig?.version ?? "1.0.0"} ★
+						</Text>
+					</View>
 				</ScrollView>
 			</SafeAreaView>
 
@@ -559,6 +642,44 @@ function SlopPerk({
 				<Text style={styles.slopPerkDetail}>{detail}</Text>
 			</View>
 		</View>
+	);
+}
+
+// A single row inside the Settings card. Icon + label + optional chev,
+// dashed bottom border unless it's the last row.
+function SettingRow({
+	icon,
+	label,
+	onPress,
+	destructive,
+	last,
+}: {
+	icon: string;
+	label: string;
+	onPress: () => void;
+	destructive?: boolean;
+	last?: boolean;
+}) {
+	return (
+		<Pressable
+			onPress={onPress}
+			style={({ pressed }) => [
+				settingsStyles.row,
+				!last && settingsStyles.rowDivider,
+				pressed && { opacity: 0.65 },
+			]}
+		>
+			<Text style={settingsStyles.rowIcon}>{icon}</Text>
+			<Text
+				style={[
+					settingsStyles.rowLabel,
+					destructive && { color: WHIMSY.accent },
+				]}
+			>
+				{label}
+			</Text>
+			<Text style={settingsStyles.rowChev}>›</Text>
+		</Pressable>
 	);
 }
 
@@ -984,5 +1105,109 @@ const achievementStyles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 28,
 		color: WHIMSY.mute,
+	},
+});
+
+// "Your title" block — shows the equipped title in context (as it'll
+// render next to the user's handle) + a Swap button that jumps to
+// Shop › Titles. Sits between Achievements and the Slop Club card.
+const yourTitleStyles = StyleSheet.create({
+	wrap: { marginTop: 22 },
+	card: { padding: 14 },
+	row: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+	},
+	seeAll: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.mute,
+	},
+	previewLine: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		gap: 6,
+		flexWrap: "wrap",
+	},
+	titleText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.ink,
+	},
+	nameSample: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		color: WHIMSY.mute,
+	},
+	noneText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 18,
+		color: WHIMSY.mute,
+	},
+	hint: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		marginTop: 6,
+	},
+	swapBtn: {
+		paddingHorizontal: 14,
+		paddingVertical: 8,
+		borderRadius: 999,
+		borderWidth: 2,
+		borderColor: WHIMSY.muteSoft,
+		backgroundColor: "transparent",
+	},
+	swapBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.ink,
+	},
+});
+
+// Settings card — paper sticker grouping the housekeeping actions
+// into dashed-divided rows, with a hand-script footer underneath.
+const settingsStyles = StyleSheet.create({
+	wrap: { marginTop: 22 },
+	kicker: {
+		...KICKER_TEXT,
+		marginBottom: 8,
+	},
+	card: { padding: 0 },
+	row: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingHorizontal: 14,
+		paddingVertical: 14,
+		gap: 12,
+	},
+	rowDivider: {
+		borderBottomWidth: 1.5,
+		borderBottomColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	rowIcon: {
+		fontSize: 18,
+		width: 26,
+		textAlign: "center",
+	},
+	rowLabel: {
+		flex: 1,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		color: WHIMSY.ink,
+	},
+	rowChev: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.mute,
+	},
+	footer: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 22,
 	},
 });
