@@ -827,6 +827,9 @@ export default function Barn() {
 							equippedHeld={stats.activeHeld}
 						/>
 					</View>
+					{/* Hint kicker — explicit instruction so first-timers see
+					    the affordance. From the redesign. */}
+					<Text style={styles.tickleHint}>tap rosie to tickle</Text>
 				</View>
 
 				{/* Hidden — the "Tier X of 30" wooden sign isn't meaningful
@@ -976,6 +979,15 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 13,
 		color: WHIMSY.ink,
+	},
+	tickleHint: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		letterSpacing: 1.4,
+		textTransform: "uppercase",
+		textAlign: "center",
+		marginTop: 12,
 	},
 	ticketWrap: {
 		position: "relative",
