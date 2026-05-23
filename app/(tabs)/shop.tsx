@@ -1309,7 +1309,13 @@ export default function ShopScreen() {
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
 				<View style={styles.header}>
-					<Text style={styles.title}>Shop</Text>
+					{/* Redesign Phase 6 — kicker pulls the eye to a category
+					    band; balance chip sits on the right with the snout
+					    coin so the player always sees what they can spend. */}
+					<View style={{ flex: 1 }}>
+						<Text style={styles.kicker}>★ the shop</Text>
+						<Text style={styles.title}>Wardrobe</Text>
+					</View>
 					<View style={styles.balance}>
 						<SnoutCoin size={20} />
 						<Text style={styles.balanceText}>{counter.toLocaleString()}</Text>
@@ -1565,6 +1571,14 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
+	},
+	kicker: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		letterSpacing: 1.6,
+		textTransform: "uppercase",
+		marginBottom: 2,
 	},
 	title: { fontSize: 32, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
 	balance: {
