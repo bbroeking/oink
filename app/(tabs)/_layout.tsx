@@ -12,22 +12,48 @@ import { COLORS, FONTS, WHIMSY } from "@/constants/theme";
 import { initIAP } from "@/utils/iap";
 
 const TAB_ICON: Record<string, IconName> = {
-	index: "home",
-	friends: "friends",
-	season: "season",
-	shop: "shop",
-	account: "user",
+	index: "tabBarn",
+	friends: "tabFriends",
+	season: "tabSeason",
+	shop: "tabShop",
+	account: "tabMe",
 };
 
-function TabIcon({ name, color, focused }: { name: string; color: string; focused: boolean }) {
+// Tape-strip active indicator — a small yellow tape rectangle just
+// below the icon when the tab is focused. Mirrors the .tape-strip
+// rule from the redesign's styles.css (26×4, sun w/ ink border).
+function TabIcon({
+	name,
+	focused,
+}: {
+	name: string;
+	color: string;
+	focused: boolean;
+}) {
 	return (
-		<Icon
-			name={TAB_ICON[name]}
-			size={26}
-			color={WHIMSY.ink}
-			filled={focused}
-			strokeWidth={focused ? 2.6 : 2}
-		/>
+		<View style={{ alignItems: "center", justifyContent: "center" }}>
+			<Icon
+				name={TAB_ICON[name]}
+				size={24}
+				color={WHIMSY.ink}
+				filled={focused}
+				strokeWidth={2}
+			/>
+			{focused && (
+				<View
+					style={{
+						position: "absolute",
+						bottom: -10,
+						width: 26,
+						height: 4,
+						backgroundColor: WHIMSY.sun,
+						borderRadius: 2,
+						borderWidth: 1,
+						borderColor: WHIMSY.ink,
+					}}
+				/>
+			)}
+		</View>
 	);
 }
 
@@ -118,7 +144,7 @@ export default function TabLayout() {
 			<Tabs.Screen
 				name="index"
 				options={{
-					title: "Home",
+					title: "Barn",
 					tabBarIcon: ({ color, focused }) => (
 						<TabIcon name="index" color={color} focused={focused} />
 					),
@@ -158,7 +184,7 @@ export default function TabLayout() {
 			<Tabs.Screen
 				name="account"
 				options={{
-					title: "Account",
+					title: "Me",
 					tabBarIcon: ({ color, focused }) => (
 						<TabIcon name="account" color={color} focused={focused} />
 					),

@@ -17,6 +17,14 @@ export type IconName =
 	| "season"
 	| "shop"
 	| "user"
+	// Bottom-tab icons from the redesign — ink-outline storybook style,
+	// distinct from the generic icons above so other surfaces are free
+	// to keep using their own shapes.
+	| "tabBarn"
+	| "tabFriends"
+	| "tabSeason"
+	| "tabShop"
+	| "tabMe"
 	| "tickle"
 	| "flame"
 	| "star"
@@ -455,6 +463,127 @@ function Render({
 					/>
 				</G>
 			);
+
+		// ── Bottom-tab icons (paper-storybook redesign) ────────────────
+		// All filled with sun-yellow when active to read as the "tape" on
+		// a sticker. SVG paths transcribed from tab-icons.jsx in the
+		// design bundle.
+		case "tabBarn":
+			// Pentagon house with a door.
+			return (
+				<G>
+					<Path
+						d="M3 12 L12 4 L21 12 L21 20 L3 20 Z"
+						fill={filled ? "#ffd87a" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					<Path
+						d="M10 20 V14 H14 V20"
+						fill={filled ? c : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					<Path
+						d="M3 12 L6 12 M21 12 L18 12"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinecap="round"
+					/>
+				</G>
+			);
+		case "tabFriends":
+			// Two friendly snout-circles, interlocking.
+			return (
+				<G>
+					<Circle
+						cx="8.5"
+						cy="12"
+						r="5.5"
+						fill={filled ? "#ffd87a" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+					/>
+					<Circle
+						cx="15.5"
+						cy="12"
+						r="5.5"
+						fill={filled ? "#ffd87a" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+					/>
+					<Circle cx="8.5" cy="12" r="1.4" fill={c} />
+					<Circle cx="15.5" cy="12" r="1.4" fill={c} />
+				</G>
+			);
+		case "tabSeason":
+			// Scales of judgement — Goblins vs Angels.
+			return (
+				<G>
+					<Path
+						d="M12 4 V20 M9 20 H15 M5 8 H19 M12 4 L12 8"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+					<Path
+						d="M2.5 12 Q5 14 7.5 12 L5 8 Z"
+						fill={filled ? "#ffd87a" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					<Path
+						d="M16.5 12 Q19 14 21.5 12 L19 8 Z"
+						fill={filled ? "#ffd87a" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+				</G>
+			);
+		case "tabShop":
+			// Classic shopping tote.
+			return (
+				<G>
+					<Path
+						d="M5 9 L19 9 L17.5 20 L6.5 20 Z"
+						fill={filled ? "#ffd87a" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					<Path
+						d="M9 9 V7 A3 3 0 0 1 15 7 V9"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+				</G>
+			);
+		case "tabMe":
+			// Pig snout — oval with two nostrils.
+			return (
+				<G>
+					<Ellipse
+						cx="12"
+						cy="12"
+						rx="6.5"
+						ry="5"
+						fill={filled ? "#ffd87a" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+					/>
+					<Ellipse cx="9.8" cy="12" rx="1.1" ry="1.5" fill={c} />
+					<Ellipse cx="14.2" cy="12" rx="1.1" ry="1.5" fill={c} />
+				</G>
+			);
+
 		default:
 			return null;
 	}

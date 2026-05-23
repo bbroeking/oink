@@ -5,6 +5,7 @@ export const WHIMSY = {
 	ink: "#2a1f15",
 	paper: "#fffaf0",
 	cream: "#fbeee2",
+	cream2: "#f6e6d4",
 	rose: "#ffd6dc",
 	roseDeep: "#f8a8b3",
 	sky: "#c8e3f0",
@@ -16,6 +17,9 @@ export const WHIMSY = {
 	accent: "#c25a3f",
 	mute: "rgba(40,30,20,0.6)",
 	muteSoft: "rgba(40,30,20,0.4)",
+	// Alignment tints — Goblins vs Angels.
+	angel: "#a89bff",
+	goblin: "#d4a437",
 };
 
 // Hard sticker drop shadow (offset 4,4 / radius 0 / opacity 1).
