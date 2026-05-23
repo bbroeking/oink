@@ -31,6 +31,7 @@ import {
 	onCustomerInfoUpdate,
 } from "../utils/iap";
 import { SOUNDER_VISIBLE } from "@/constants/featureFlags";
+import { showPurchaseToast } from "./PurchaseToast";
 
 export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
@@ -170,10 +171,14 @@ export function Account({ session }: { session: Session }) {
 			if (pro) {
 				await supabase.rpc("dev_set_vip", { target: true });
 				setIsVip(true);
-				Alert.alert(
-					"Welcome to the Slop Club",
-					"Your membership perks are live."
-				);
+				showPurchaseToast({
+					type: "success",
+					title: "Welcome to the Slop Club!",
+					text:
+						slopPlan === "yearly"
+							? "Auto-renews $29.99/yr"
+							: "Auto-renews $3.99/mo",
+				});
 			}
 			return;
 		}

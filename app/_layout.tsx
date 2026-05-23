@@ -38,6 +38,7 @@ import {
 	AchievementUnlockModal,
 	type UnlockedAchievement,
 } from "@/components/AchievementUnlockModal";
+import { PurchaseToastHost } from "@/components/PurchaseToast";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
 // without a project still works.
@@ -311,6 +312,10 @@ function RootLayoutInner() {
 					onDismiss={() => setAchievements((q) => q.slice(1))}
 				/>
 			)}
+			{/* Purchase toast — global, slides down from the top on
+			    shop buys + Slop Club join. Stays mounted; quiet until
+			    showPurchaseToast() is called from anywhere. */}
+			<PurchaseToastHost />
 		</ThemeProvider>
 	);
 }

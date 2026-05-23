@@ -30,6 +30,7 @@ import {
 import { categoryIcon, PIG } from "@/constants/emojiArt";
 import { COLORS, FONTS, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
+import { showPurchaseToast } from "../../components/PurchaseToast";
 import { RarityFx } from "../../components/ui/RarityFx";
 import {
 	BuyCelebration,
@@ -1108,7 +1109,10 @@ export default function ShopScreen() {
 			target_hat_id: hat.id,
 		});
 		setBusyId(null);
-		if (error) return Alert.alert("Couldn't buy", "Try again.");
+		if (error) {
+			showPurchaseToast({ type: "fail", title: "Couldn't buy", text: "Try again." });
+			return;
+		}
 		const r = data as {
 			ok: boolean;
 			reason?: string;
@@ -1123,14 +1127,36 @@ export default function ShopScreen() {
 				deniedPlayer.seekTo(0);
 				deniedPlayer.play();
 			} catch {}
-			if (r.reason === "insufficient")
-				return Alert.alert(
-					"Not enough snouts",
-					`Need ${r.need}, you have ${r.have}.`
-				);
-			if (r.reason === "already_owned") return Alert.alert("Owned", "Already yours.");
-			return Alert.alert("Couldn't buy", r.reason ?? "");
+			if (r.reason === "insufficient") {
+				showPurchaseToast({
+					type: "fail",
+					title: "Not enough snouts",
+					text: `You need ${(r.need ?? 0) - (r.have ?? 0)} more.`,
+				});
+				return;
+			}
+			if (r.reason === "already_owned") {
+				showPurchaseToast({
+					type: "fail",
+					title: "Already yours",
+					text: "You already own this one.",
+				});
+				return;
+			}
+			showPurchaseToast({
+				type: "fail",
+				title: "Couldn't buy",
+				text: r.reason ?? "Something went wrong.",
+			});
+			return;
 		}
+		// Buy succeeded — show the success toast with the cost chip.
+		showPurchaseToast({
+			type: "success",
+			title: `${hat.name} · Bought`,
+			text: "Added to your closet.",
+			cost: hat.cost,
+		});
 		// Fire the on-screen ka-ching celebration anchored at the tile
 		// the user tapped. Tile center is recorded in tileCenters by
 		// renderCell's onLayout; if missing (race / unmount), the burst
