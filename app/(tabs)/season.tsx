@@ -11,6 +11,7 @@ import {
 	Pressable,
 	Modal,
 } from "react-native";
+import Svg, { Path as SvgPath } from "react-native-svg";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { supabase } from "../../utils/supabase";
@@ -199,6 +200,260 @@ function TierStone({
 		</Sticker>
 	);
 }
+
+// ── Snaking pass track ────────────────────────────────────────────
+// Tiers alternate left/right; an absolute SVG path with a dashed
+// stroke connects the stones. From the redesign.
+
+const SNAKE_STEP_Y = 88;
+const SNAKE_X_L = 56;
+const SNAKE_X_R = 280;
+const SNAKE_WIDTH = 340;
+
+function buildSnakePath(n: number): string {
+	// Cubic spline zigzag: each segment curves from one column to the
+	// other; control points sit at the vertical midpoint of the segment.
+	let d = `M ${SNAKE_X_L} ${36}`;
+	for (let i = 1; i < n; i++) {
+		const xPrev = i % 2 === 1 ? SNAKE_X_L : SNAKE_X_R;
+		const xNext = i % 2 === 1 ? SNAKE_X_R : SNAKE_X_L;
+		const yPrev = (i - 1) * SNAKE_STEP_Y + 36;
+		const yNext = i * SNAKE_STEP_Y + 36;
+		const cy = (yPrev + yNext) / 2;
+		d += ` C ${xPrev} ${cy}, ${xNext} ${cy}, ${xNext} ${yNext}`;
+	}
+	return d;
+}
+
+function SnakingPassTrack({
+	totalTiers,
+	currentTier,
+	tiersByNumber,
+	claimedSet,
+	onClaim,
+}: {
+	totalTiers: number;
+	currentTier: number;
+	tiersByNumber: Record<number, { free?: TierRow; premium?: TierRow }>;
+	claimedSet: Set<string>;
+	onClaim: (tier: number, track: "free" | "premium") => void;
+}) {
+	const trackHeight = totalTiers * SNAKE_STEP_Y + 24;
+	return (
+		<View style={{ height: trackHeight, width: SNAKE_WIDTH, alignSelf: "center" }}>
+			{/* Dashed snake path behind the stones */}
+			<Svg
+				width={SNAKE_WIDTH}
+				height={trackHeight}
+				style={StyleSheet.absoluteFill}
+			>
+				<SvgPath
+					d={buildSnakePath(totalTiers)}
+					stroke={WHIMSY.ink}
+					strokeWidth={3}
+					strokeDasharray="4 6"
+					fill="none"
+					opacity={0.35}
+				/>
+			</Svg>
+
+			{Array.from({ length: totalTiers }, (_, i) => i + 1).map((t, i) => {
+				const free = tiersByNumber[t]?.free;
+				const isFinale = t === totalTiers;
+				const reached = t <= currentTier;
+				const freeState: "claim" | "claimed" | "locked" = claimedSet.has(
+					`${t}:free`
+				)
+					? "claimed"
+					: reached
+						? "claim"
+						: "locked";
+				const sideLeft = i % 2 === 0;
+				const y = i * SNAKE_STEP_Y + 36 - SNAKE_STEP_Y / 2 + 4;
+				return (
+					<SnakeStone
+						key={t}
+						tier={t}
+						reward={free}
+						state={freeState}
+						isFinale={isFinale}
+						sideLeft={sideLeft}
+						top={y}
+						onClaim={() => onClaim(t, "free")}
+					/>
+				);
+			})}
+		</View>
+	);
+}
+
+function SnakeStone({
+	tier,
+	reward,
+	state,
+	isFinale,
+	sideLeft,
+	top,
+	onClaim,
+}: {
+	tier: number;
+	reward: TierRow | undefined;
+	state: "claim" | "claimed" | "locked";
+	isFinale: boolean;
+	sideLeft: boolean;
+	top: number;
+	onClaim: () => void;
+}) {
+	const isClaimable = state === "claim";
+	const isClaimed = state === "claimed";
+	const isLocked = state === "locked";
+
+	const bg = isFinale
+		? WHIMSY.lilacDeep
+		: isClaimable
+			? WHIMSY.sun
+			: isClaimed
+				? WHIMSY.sage
+				: WHIMSY.paper;
+
+	const stoneSize = isFinale ? 72 : 60;
+	const stoneX = sideLeft
+		? SNAKE_X_L - stoneSize / 2
+		: SNAKE_X_R - stoneSize / 2;
+
+	return (
+		<View style={{ position: "absolute", top, left: 0, right: 0, height: SNAKE_STEP_Y }}>
+			{/* Stone — fixed position on the snake's column */}
+			<View
+				style={[
+					snakeStyles.stone,
+					{
+						left: stoneX,
+						top: SNAKE_STEP_Y / 2 - stoneSize / 2,
+						width: stoneSize,
+						height: stoneSize,
+						backgroundColor: bg,
+						opacity: isLocked ? 0.85 : 1,
+					},
+				]}
+			>
+				<Text
+					style={[
+						snakeStyles.stoneNum,
+						isFinale && { color: WHIMSY.paper },
+					]}
+				>
+					{isFinale ? "★" : tier}
+				</Text>
+			</View>
+
+			{/* Reward label + claim button — on the opposite side */}
+			<View
+				style={[
+					snakeStyles.label,
+					sideLeft
+						? { left: SNAKE_X_L + stoneSize / 2 + 12, right: 8 }
+						: { right: SNAKE_X_L + stoneSize / 2 + 12, left: 8 },
+				]}
+			>
+				<Text
+					style={[
+						snakeStyles.tierCap,
+						{ textAlign: sideLeft ? "left" : "right" },
+					]}
+				>
+					Tier {tier}
+					{isFinale ? " · FINALE" : ""}
+				</Text>
+				<Text
+					style={[
+						snakeStyles.rewardName,
+						{ textAlign: sideLeft ? "left" : "right" },
+						isLocked && { color: WHIMSY.mute },
+					]}
+					numberOfLines={2}
+				>
+					{reward?.display_label ?? "—"}
+				</Text>
+				{isClaimable && (
+					<View
+						style={{
+							alignItems: sideLeft ? "flex-start" : "flex-end",
+							marginTop: 4,
+						}}
+					>
+						<Pressable onPress={onClaim} style={snakeStyles.claimBtn}>
+							<Text style={snakeStyles.claimBtnText}>Claim ✦</Text>
+						</Pressable>
+					</View>
+				)}
+				{isClaimed && (
+					<Text
+						style={[
+							snakeStyles.claimed,
+							{ textAlign: sideLeft ? "left" : "right" },
+						]}
+					>
+						✓ claimed
+					</Text>
+				)}
+			</View>
+		</View>
+	);
+}
+
+const snakeStyles = StyleSheet.create({
+	stone: {
+		position: "absolute",
+		borderRadius: 999,
+		borderWidth: 2.5,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+	},
+	stoneNum: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 20,
+		color: WHIMSY.ink,
+	},
+	label: { position: "absolute", top: 16 },
+	tierCap: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		color: WHIMSY.mute,
+		letterSpacing: 0.8,
+		textTransform: "uppercase",
+	},
+	rewardName: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+		marginTop: 2,
+	},
+	claimBtn: {
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 10,
+		paddingHorizontal: 12,
+		paddingVertical: 5,
+	},
+	claimBtnText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 13,
+		color: WHIMSY.ink,
+	},
+	claimed: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: "#5a8338",
+		marginTop: 2,
+	},
+});
 
 export default function SeasonScreen() {
 	const [state, setState] = useState<SeasonState | null>(null);
@@ -422,66 +677,17 @@ export default function SeasonScreen() {
 
 				<ScrollView contentContainerStyle={styles.tierList}>
 					<BountyBoard />
-					{Array.from({ length: season.total_tiers }, (_, i) => i + 1).map(
-						(t, i) => {
-							const free = tiersByNumber[t]?.free;
-							const prem = tiersByNumber[t]?.premium;
-							const isFinale = t === season.total_tiers;
-							const reached = t <= tier;
-							const isCurrent = t === tier;
-							const freeState: "claim" | "claimed" | "locked" = claimedSet.has(`${t}:free`)
-								? "claimed"
-								: reached
-									? "claim"
-									: "locked";
-							const premState: "claim" | "claimed" | "locked" = claimedSet.has(`${t}:premium`)
-								? "claimed"
-								: reached && premium
-									? "claim"
-									: "locked";
 
-							return (
-								<View
-									key={t}
-									style={[
-										styles.tierRow,
-										{ transform: [{ rotate: `${ROW_TILTS[i % ROW_TILTS.length]}deg` }] },
-										isCurrent && styles.tierRowCurrent,
-									]}
-								>
-									<View style={styles.tierStoneNum}>
-										<View
-											style={[
-												styles.stoneCircle,
-												isFinale
-													? { backgroundColor: WHIMSY.sun }
-													: reached
-														? { backgroundColor: WHIMSY.rose }
-														: { backgroundColor: WHIMSY.paper },
-											]}
-										>
-											<Text style={styles.stoneCircleText}>{t}</Text>
-										</View>
-									</View>
-									<TierStone
-										reward={free}
-										state={freeState}
-										isFinale={isFinale}
-										onClaim={() => handleClaim(t, "free")}
-									/>
-									{PAID_BATTLE_PASS_ENABLED && (
-										<TierStone
-											reward={prem}
-											state={premState}
-											premium
-											isFinale={isFinale}
-											onClaim={() => handleClaim(t, "premium")}
-										/>
-									)}
-								</View>
-							);
-						}
-					)}
+					{/* Snaking pass track — stones alternate left ↔ right
+					    with a dashed SVG path zigzagging between them.
+					    From the redesign (Phase 9). */}
+					<SnakingPassTrack
+						totalTiers={season.total_tiers}
+						currentTier={tier}
+						tiersByNumber={tiersByNumber}
+						claimedSet={claimedSet}
+						onClaim={handleClaim}
+					/>
 				</ScrollView>
 			</SafeAreaView>
 
