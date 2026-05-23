@@ -146,12 +146,10 @@ export function Account({ session }: { session: Session }) {
 			const unsub = onCustomerInfoUpdate(async (info) => {
 				const pro = !!info.entitlements.active["tickle_the_pig_pro"];
 				if (pro && !isVip) {
+					// Optimistic local UI flip. The DB is_vip is set by
+					// the RevenueCat webhook (service-role); dev_set_vip
+					// is locked down to authenticated callers now.
 					setIsVip(true);
-					// Dev only — in production the RevenueCat webhook is the
-					// authoritative is_vip grant. dev_set_vip must not ship.
-					if (__DEV__) {
-						await supabase.rpc("dev_set_vip", { target: true });
-					}
 				}
 			});
 			return unsub;
@@ -169,10 +167,8 @@ export function Account({ session }: { session: Session }) {
 		if (result.ok) {
 			const pro = await isPro();
 			if (pro) {
-				// Dev only — production grants come from the RC webhook.
-				if (__DEV__) {
-					await supabase.rpc("dev_set_vip", { target: true });
-				}
+				// Optimistic flip; the RC webhook lands is_vip = true
+				// shortly after.
 				setIsVip(true);
 				Alert.alert(
 					"Welcome to the Slop Club",
@@ -182,26 +178,6 @@ export function Account({ session }: { session: Session }) {
 			return;
 		}
 		if (result.reason === "cancelled") return;
-		if (result.reason === "no_offering") {
-			// Dev convenience only — never offer a free unlock in prod.
-			if (__DEV__) {
-				Alert.alert(
-					"Slop Club",
-					"Storefront not configured yet. Unlock for free in dev?",
-					[
-						{ text: "Cancel", style: "cancel" },
-						{
-							text: "Unlock (dev)",
-							onPress: async () => {
-								await supabase.rpc("dev_set_vip", { target: true });
-								setIsVip(true);
-							},
-						},
-					]
-				);
-				return;
-			}
-		}
 		Alert.alert("Couldn't open paywall", "Please try again.");
 	};
 
@@ -214,10 +190,7 @@ export function Account({ session }: { session: Session }) {
 		if (result.ok) {
 			const pro = await isPro();
 			if (pro) {
-				// Dev only — production grants come from the RC webhook.
-				if (__DEV__) {
-					await supabase.rpc("dev_set_vip", { target: true });
-				}
+				// Optimistic flip; the RC webhook reconciles the DB.
 				setIsVip(true);
 				Alert.alert("Restored", "Your Slop Club membership is active.");
 			} else {

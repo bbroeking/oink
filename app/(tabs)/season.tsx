@@ -315,11 +315,14 @@ export default function SeasonScreen() {
 
 		// The Season Pass is a one-time product — buy it directly (the
 		// BattlePassSaleModal is the merchandising), NOT via the
-		// subscription paywall. On success, grant_season_pass flips
-		// premium_unlocked for the active season.
+		// subscription paywall. The RC webhook flips premium_unlocked
+		// for the active season once the purchase clears; this code
+		// can't call grant_season_pass any more (locked down to the
+		// service role in 20260537000000_lockdown_dev_grants.sql), so
+		// the premium track unlocks on the next load() after the
+		// webhook fires (usually a few seconds).
 		const result = await purchaseProductId(PRODUCT_IDS.seasonPass);
 		if (result.ok) {
-			await supabase.rpc("grant_season_pass");
 			load();
 			Alert.alert(
 				"Season Pass unlocked",
@@ -328,27 +331,6 @@ export default function SeasonScreen() {
 			return;
 		}
 		if (result.reason === "cancelled") return;
-		if (result.reason === "product_not_found") {
-			// Dev convenience only — never offer a free unlock in prod.
-			// (The product isn't in a RevenueCat offering yet.)
-			if (__DEV__) {
-				Alert.alert(
-					"Season Pass",
-					"Storefront not configured yet. Unlock for free in dev?",
-					[
-						{ text: "Cancel", style: "cancel" },
-						{
-							text: "Unlock (dev)",
-							onPress: async () => {
-								await supabase.rpc("grant_season_pass");
-								load();
-							},
-						},
-					]
-				);
-				return;
-			}
-		}
 		Alert.alert("Couldn't buy the Season Pass", "Please try again.");
 	};
 
