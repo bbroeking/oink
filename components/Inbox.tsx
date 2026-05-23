@@ -22,15 +22,9 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { ActiveEffects } from "./ActiveEffects";
-import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
+import { FONTS, WHIMSY } from "@/constants/theme";
 import type { TradeRow } from "@/constants/trade_types";
-
-// Stockyard palette — kept in sync with the trade theme.
-const YARD = {
-	rail: "#7A5230",
-	plankLine: "#6E4A28",
-	brass: "#C99B23",
-};
+import { SectionHeader } from "./ui/SectionHeader";
 
 interface FriendReq {
 	requester_id: string;
@@ -272,7 +266,13 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			{/* Out to market — your pending outgoing trade requests */}
 			{outgoingTrades.length > 0 && (
 				<>
-					<Text style={styles.band}>Out to market</Text>
+					<View style={styles.headerWrap}>
+						<SectionHeader
+							kicker="out to market"
+							title="Your trades"
+							ruleWidth={88}
+						/>
+					</View>
 					{outgoingTrades.map((t) => (
 						<View key={t.id} style={styles.marketRow}>
 							<Text style={styles.marketText} numberOfLines={1}>
@@ -295,7 +295,13 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			{/* Actionable — friend + trade requests */}
 			{actionableCount > 0 && (
 				<>
-					<Text style={styles.band}>Needs you</Text>
+					<View style={styles.headerWrap}>
+						<SectionHeader
+							kicker="needs you"
+							title="Pen cards"
+							ruleWidth={70}
+						/>
+					</View>
 					{friendReqs.map((r) => (
 						<View key={`fr-${r.requester_id}`} style={styles.card}>
 							<Image
@@ -321,18 +327,15 @@ export function Inbox({ userId, onActionableCount }: Props) {
 								onPress={() => declineFriend(r)}
 								disabled={busy === r.requester_id}
 								hitSlop={6}
+								style={styles.declineGhost}
 							>
-								<Text style={styles.declineText}>decline</Text>
+								<Text style={styles.declineGhostText}>✕</Text>
 							</Pressable>
 						</View>
 					))}
 					{incomingTrades.map((t) => (
-						<View key={`tr-${t.id}`} style={styles.penWrap}>
-							<View style={styles.rail}>
-								<View style={styles.railBar} />
-								<View style={styles.railBar} />
-							</View>
-							<View style={styles.penBody}>
+						<View key={`tr-${t.id}`} style={styles.pen}>
+							<View style={styles.penHeader}>
 								<Image
 									source={require("../assets/images/emoji/pig.png")}
 									style={styles.cardIcon}
@@ -342,27 +345,27 @@ export function Inbox({ userId, onActionableCount }: Props) {
 										{t.partner_username ?? "A friend"}
 									</Text>
 									<Text style={styles.cardSub}>
-										lot · wants {t.amount} · costs you {t.amount}
+										asks for {t.amount} tickles
 									</Text>
 								</View>
-								<View style={{ alignItems: "flex-end", gap: 3 }}>
-									<Pressable
-										onPress={() => giveTrade(t)}
-										disabled={busy === t.id}
-										style={styles.brassBtn}
-									>
-										<Text style={styles.brassBtnText}>
-											{busy === t.id ? "…" : `GIVE ${t.amount}`}
-										</Text>
-									</Pressable>
-									<Pressable
-										onPress={() => passTrade(t)}
-										disabled={busy === t.id}
-										hitSlop={6}
-									>
-										<Text style={styles.declineText}>· pass ·</Text>
-									</Pressable>
-								</View>
+							</View>
+							<View style={styles.penActions}>
+								<Pressable
+									onPress={() => giveTrade(t)}
+									disabled={busy === t.id}
+									style={[styles.penBtn, styles.penBtnPrimary]}
+								>
+									<Text style={styles.penBtnPrimaryText}>
+										{busy === t.id ? "…" : `Give ${t.amount}`}
+									</Text>
+								</Pressable>
+								<Pressable
+									onPress={() => passTrade(t)}
+									disabled={busy === t.id}
+									style={[styles.penBtn, styles.penBtnGhost]}
+								>
+									<Text style={styles.penBtnGhostText}>Pass</Text>
+								</Pressable>
 							</View>
 						</View>
 					))}
@@ -372,7 +375,13 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			{/* Recent — passive events */}
 			{passive.length > 0 && (
 				<>
-					<Text style={styles.band}>Recent</Text>
+					<View style={styles.headerWrap}>
+						<SectionHeader
+							kicker="recent"
+							title="What happened"
+							ruleWidth={96}
+						/>
+					</View>
 					{passive.map((p) => (
 						<View key={p.id} style={styles.passiveRow}>
 							<Image source={p.icon} style={styles.passiveIcon} />
@@ -404,12 +413,26 @@ const styles = StyleSheet.create({
 		lineHeight: 21,
 		paddingVertical: 28,
 	},
-	band: {
-		...KICKER_PILL,
-		fontSize: 10,
-		letterSpacing: 1.4,
+	// Wrap SectionHeaders so they get the same vertical breathing room
+	// the old band labels did.
+	headerWrap: {
 		marginTop: 14,
-		marginBottom: 6,
+		marginBottom: 4,
+	},
+	// Decline ghost — small ✕ button next to Accept on friend requests.
+	declineGhost: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.muteSoft,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	declineGhostText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		color: WHIMSY.mute,
 	},
 	// out-to-market strip
 	marketRow: {
@@ -457,48 +480,64 @@ const styles = StyleSheet.create({
 	},
 	primaryBtnText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.ink },
 	declineText: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
-	// trade pen card
-	penWrap: { marginBottom: 6 },
-	rail: {
-		gap: 3,
-		paddingHorizontal: 10,
-		paddingTop: 5,
-		paddingBottom: 4,
-		backgroundColor: YARD.rail,
-		borderTopLeftRadius: 10,
-		borderTopRightRadius: 10,
+	// Trade pen card — peach paper sticker with Avatar+ask body and
+	// stacked Give/Pass row beneath. Replaces the old Stockyard rail
+	// look so the trade card sits inside the rest of the redesign's
+	// paper-sticker DNA. Diagonal stripe overlay isn't worth the SVG
+	// cost — flat peach + ink border captures the look.
+	pen: {
+		backgroundColor: WHIMSY.peach,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 14,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+		marginBottom: 8,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 3, height: 3 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 3,
 	},
-	railBar: {
-		height: 3,
-		borderRadius: 2,
-		backgroundColor: "rgba(255,255,255,0.22)",
-	},
-	penBody: {
+	penHeader: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 10,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: YARD.plankLine,
-		borderTopWidth: 0,
-		borderBottomLeftRadius: 12,
-		borderBottomRightRadius: 12,
-		paddingHorizontal: 10,
-		paddingVertical: 9,
 	},
-	brassBtn: {
-		backgroundColor: YARD.brass,
+	penActions: {
+		flexDirection: "row",
+		gap: 8,
+		marginTop: 10,
+	},
+	penBtn: {
+		flex: 1,
+		paddingVertical: 9,
+		alignItems: "center",
+		borderRadius: 999,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 10,
-		paddingHorizontal: 14,
-		paddingVertical: 8,
 	},
-	brassBtnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 14,
+	penBtnPrimary: {
+		backgroundColor: WHIMSY.lilacDeep,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
+	},
+	penBtnPrimaryText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.paper,
+	},
+	penBtnGhost: {
+		backgroundColor: "transparent",
+		borderColor: WHIMSY.muteSoft,
+	},
+	penBtnGhostText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
 		color: WHIMSY.ink,
-		letterSpacing: 0.4,
 	},
 	// passive row
 	passiveRow: {

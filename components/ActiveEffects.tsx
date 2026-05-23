@@ -26,6 +26,7 @@ import {
 	type CurseKind,
 } from "../utils/rituals";
 import { FONTS, KICKER_TEXT, WHIMSY, ROW_TILTS } from "@/constants/theme";
+import { SectionHeader } from "./ui/SectionHeader";
 
 interface Effect {
 	source: "blessing" | "curse";
@@ -81,8 +82,11 @@ export function ActiveEffects() {
 
 	return (
 		<View>
-			<Text style={styles.band}>Hoofprints on you</Text>
-			<Text style={styles.sub}>left by the sounder</Text>
+			<SectionHeader
+				kicker="left by the sounder"
+				title="Hoofprints on you"
+				ruleWidth={132}
+			/>
 			{effects.map((e, i) => {
 				const blessed = e.source === "blessing";
 				const meta = blessed
@@ -102,6 +106,19 @@ export function ActiveEffects() {
 							blessed ? styles.rowBless : styles.rowCurse,
 						]}
 					>
+						{/* Corner pill — Blessing (lilac-deep) / Curse (ink).
+						    Anchored top-left so the card's nature reads
+						    instantly even before you parse the icon. */}
+						<View
+							style={[
+								styles.cornerPill,
+								blessed ? styles.cornerPillBless : styles.cornerPillCurse,
+							]}
+						>
+							<Text style={styles.cornerPillText}>
+								{blessed ? "Blessing" : "Curse"}
+							</Text>
+						</View>
 						{meta && (
 							<Image source={meta.icon} style={styles.icon} />
 						)}
@@ -174,11 +191,42 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: 10,
 		paddingHorizontal: 12,
-		paddingVertical: 10,
-		marginBottom: 8,
+		paddingTop: 16,
+		paddingBottom: 12,
+		marginBottom: 10,
+		// Slight overflow allowance for the corner pill so it can hang
+		// above the top border without being clipped.
+		overflow: "visible",
 	},
-	rowBless: { borderColor: WHIMSY.sun, borderWidth: 2 },
-	rowCurse: { borderColor: "#7BA266", borderWidth: 2 },
+	rowBless: { borderColor: WHIMSY.sun, borderWidth: 2, backgroundColor: WHIMSY.lilac },
+	rowCurse: { borderColor: "#7BA266", borderWidth: 2, backgroundColor: WHIMSY.cream },
+	// Floating tag — hangs off the top-left of each effect card so the
+	// card's nature (Blessing / Curse) reads before any other parsing.
+	cornerPill: {
+		position: "absolute",
+		top: -10,
+		left: 14,
+		paddingHorizontal: 10,
+		paddingVertical: 2,
+		borderRadius: 999,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 1.5, height: 1.5 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
+		zIndex: 2,
+	},
+	cornerPillBless: { backgroundColor: WHIMSY.lilacDeep },
+	cornerPillCurse: { backgroundColor: WHIMSY.ink },
+	cornerPillText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 9,
+		letterSpacing: 1,
+		textTransform: "uppercase",
+		color: WHIMSY.paper,
+	},
 	icon: { width: 34, height: 34, resizeMode: "contain" },
 	name: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	blurb: {
