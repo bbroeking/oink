@@ -121,6 +121,10 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// When friends, the sheet shows a daily-ritual panel. This toggles
 	// which ritual (bless / curse) the panel is currently showing.
 	const [ritualMode, setRitualMode] = useState<RitualMode>("bless");
+	// 3-tab control for the action area on a friend's sheet (Ask /
+	// Bless / Curse). Only one panel is visible at a time; matches
+	// the design's segmented control.
+	const [actionTab, setActionTab] = useState<"ask" | "bless" | "curse">("ask");
 	// Amount for the friends-only Ask row (1-5).
 	const [askAmount, setAskAmount] = useState(1);
 	// The Ask row is state-aware: a pending trade or a 24h pair
@@ -301,13 +305,61 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 									</View>
 
 									{stats.friendship_status === "friends" ? (
-										<AskRow
-											amount={askAmount}
-											onPick={setAskAmount}
-											onAsk={sendTickle}
-											busy={busy}
-											state={askState}
-										/>
+										<>
+											{/* 3-tab segmented control: Ask / Bless / Curse.
+											    Only one action panel is visible at a time —
+											    matches the design's tabbed sheet. */}
+											<View style={styles.actionTabs}>
+												{(["ask", "bless", "curse"] as const).map((tab) => {
+													const active = tab === actionTab;
+													return (
+														<Pressable
+															key={tab}
+															onPress={() => {
+																setActionTab(tab);
+																if (tab !== "ask") {
+																	setRitualMode(tab as RitualMode);
+																}
+															}}
+															style={[
+																styles.actionTab,
+																active && styles.actionTabActive,
+															]}
+														>
+															<Text
+																style={[
+																	styles.actionTabText,
+																	active && styles.actionTabTextActive,
+																]}
+															>
+																{tab === "ask"
+																	? "Ask"
+																	: tab === "bless"
+																		? "Bless"
+																		: "Curse"}
+															</Text>
+														</Pressable>
+													);
+												})}
+											</View>
+
+											{actionTab === "ask" && (
+												<AskRow
+													amount={askAmount}
+													onPick={setAskAmount}
+													onAsk={sendTickle}
+													busy={busy}
+													state={askState}
+												/>
+											)}
+											{(actionTab === "bless" || actionTab === "curse") && (
+												<RitualPicker
+													mode={actionTab as RitualMode}
+													targetUserId={stats.user_id}
+													targetName={stats.username ?? "friend"}
+												/>
+											)}
+										</>
 									) : (
 										<ActionButton
 											status={stats.friendship_status}
@@ -319,37 +371,6 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 									)}
 
 									{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
-
-									{stats.friendship_status === "friends" && (
-										<View style={{ marginTop: 6 }}>
-											<View style={styles.ritualToggle}>
-												{(["bless", "curse"] as RitualMode[]).map((m) => (
-													<Pressable
-														key={m}
-														onPress={() => setRitualMode(m)}
-														style={[
-															styles.ritualToggleBtn,
-															ritualMode === m && styles.ritualToggleActive,
-														]}
-													>
-														<Text
-															style={[
-																styles.ritualToggleText,
-																ritualMode === m && styles.ritualToggleTextActive,
-															]}
-														>
-															{m === "bless" ? "☀ Bless" : "🟢 Curse"}
-														</Text>
-													</Pressable>
-												))}
-											</View>
-											<RitualPicker
-												mode={ritualMode}
-												targetUserId={stats.user_id}
-												targetName={stats.username ?? "friend"}
-											/>
-										</View>
-									)}
 								</>
 							)}
 						</Sticker>
@@ -630,6 +651,39 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		gap: 6,
 		marginTop: 12,
+	},
+	// 3-tab control (Ask / Bless / Curse) — the redesign's
+	// segmented control inside the friend sheet.
+	actionTabs: {
+		flexDirection: "row",
+		gap: 6,
+		marginTop: 12,
+		marginBottom: 12,
+		backgroundColor: WHIMSY.paper,
+		borderRadius: 14,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		padding: 3,
+	},
+	actionTab: {
+		flex: 1,
+		paddingVertical: 8,
+		borderRadius: 10,
+		alignItems: "center",
+	},
+	actionTabActive: {
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+	},
+	actionTabText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+	},
+	actionTabTextActive: {
+		fontFamily: FONTS.whimsy,
+		color: WHIMSY.ink,
 	},
 	ritualToggleBtn: {
 		flex: 1,
