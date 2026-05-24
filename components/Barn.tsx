@@ -13,6 +13,7 @@ import {
 	Animated,
 	DevSettings,
 } from "react-native";
+import Svg, { Polygon, Rect, Line } from "react-native-svg";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -826,6 +827,37 @@ export default function Barn() {
 				blessed={effects.blessed}
 				cursed={effects.cursed}
 			/>
+
+			{/* Tiny red barn silhouette tucked into the bottom-left of
+			    the painted scene. Decorative — only visible when there's
+			    no cosmetic background equipped (since PageBackground
+			    paints over the area when it is). Behind everything else. */}
+			{!stats.activeBackground && (
+				<View pointerEvents="none" style={styles.barnSilhouette}>
+					<Svg viewBox="0 0 64 56" width={64} height={56}>
+						<Polygon
+							points="32,4 4,22 4,52 60,52 60,22"
+							fill="#c44848"
+							stroke={WHIMSY.ink}
+							strokeWidth={2}
+						/>
+						<Rect x={22} y={32} width={20} height={20} fill={WHIMSY.ink} />
+						<Line x1={22} y1={22} x2={22} y2={52} stroke={WHIMSY.ink} strokeWidth={1.5} />
+						<Line x1={42} y1={22} x2={42} y2={52} stroke={WHIMSY.ink} strokeWidth={1.5} />
+					</Svg>
+				</View>
+			)}
+
+			{/* Generous radial puffs — two soft white clouds that fade
+			    in at the top-left/right when alignment crosses into
+			    angel territory. "Angel-coded" overlay from the design. */}
+			{alignment === "angel" && (
+				<>
+					<View pointerEvents="none" style={[styles.generousPuff, styles.generousPuffL]} />
+					<View pointerEvents="none" style={[styles.generousPuff, styles.generousPuffR]} />
+				</>
+			)}
+
 			<SafeAreaView style={styles.contentContainer}>
 				<View style={styles.statsRow}>
 					<PaperTicket
@@ -1162,6 +1194,41 @@ const styles = StyleSheet.create({
 		backgroundColor: "rgba(42,31,21,0.22)",
 		// Use opacity gradient via stacked transparent layers? RN doesn't
 		// do radial — flat ellipse with low alpha gets us close enough.
+	},
+	// Tiny red barn silhouette painted into the bottom-left horizon.
+	// Sits behind the SafeAreaView content so the pig + stickers always
+	// read above it. Opacity-reduced so it never competes for attention.
+	barnSilhouette: {
+		position: "absolute",
+		bottom: 160,
+		left: 22,
+		width: 64,
+		height: 56,
+		opacity: 0.45,
+		zIndex: 0,
+	},
+	// Generous (angel-coded) radial puffs — soft white clouds that
+	// fade in at top-left + top-right when alignment >= angel
+	// threshold. The radial-gradient via View isn't possible in RN;
+	// a translucent white circle with low-opacity edges via a single
+	// background gets us close.
+	generousPuff: {
+		position: "absolute",
+		backgroundColor: "rgba(255,255,255,0.45)",
+		borderRadius: 999,
+		zIndex: 1,
+	},
+	generousPuffL: {
+		top: 130,
+		left: -10,
+		width: 90,
+		height: 50,
+	},
+	generousPuffR: {
+		top: 240,
+		right: -20,
+		width: 110,
+		height: 60,
 	},
 	signWrap: {
 		alignItems: "center",
