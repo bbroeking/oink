@@ -16,8 +16,18 @@ import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, LogBox } from "react-native";
 import "react-native-reanimated";
+
+// Silence the bridgeless-Fabric "Unsupported dashed / dotted border
+// style" warning. RN's new architecture refuses dashed borders on
+// iOS, and 13 call sites across the app print this on every render —
+// which the dev server buffers as JSON-RPC frames, OOM'ing Metro
+// after a few hours of an open dev session. Dashed borders degrade
+// gracefully to solid; the visual hit is small, the OOM-prevention
+// is large. Replace with a real SVG <DashedDivider /> when we have
+// the cycles.
+LogBox.ignoreLogs(["Unsupported dashed", "Unsupported dotted"]);
 import * as Sentry from "@sentry/react-native";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
