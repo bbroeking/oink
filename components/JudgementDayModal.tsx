@@ -2,6 +2,12 @@
 // my_finale_result returns a pending verdict. Shows the user their
 // final side, rank, bracket, and the title + snouts they earned.
 // Dismiss calls mark_finale_seen.
+//
+// Visually mirrors the design's JudgementDay full-screen moment:
+// dark gradient backdrop, light rays radiating from above, ⚖
+// glyph + "judgement day" kicker, display-font headline with a
+// drop shadow, a paper Sticker holding the verdict rewards, and
+// a gold "Claim verdict" CTA.
 import React, { useEffect, useRef } from "react";
 import {
 	Modal,
@@ -12,18 +18,13 @@ import {
 	Animated,
 	Easing,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Polygon } from "react-native-svg";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
-import { AlignmentEmblem } from "./ui/AlignmentEmblem";
 import { SnoutCoin } from "./ui/SnoutCoin";
-import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
-	STICKER_SHADOW,
-	WHIMSY,
-} from "@/constants/theme";
+import { FONTS, WHIMSY } from "@/constants/theme";
 
 export interface FinaleResult {
 	season_key: string;
@@ -43,40 +44,45 @@ interface Props {
 
 function headline(r: FinaleResult): string {
 	if (r.bracket === "top3") {
-		return r.side === "generous" ? "A Halo Bearer!" : "A Goblin King!";
+		return r.side === "generous" ? "Halo Bearer" : "Goblin King";
 	}
-	if (r.bracket === "top10") return "Gilded!";
+	if (r.bracket === "top10") return "Gilded";
 	if (r.bracket === "neutral") return "Calm in the Storm";
-	return r.side === "generous" ? "A Generous Soul" : "A Greedy Hog";
+	return r.side === "generous" ? "Generous Soul" : "Greedy Hog";
 }
 
-function sideIcon(side: FinaleResult["side"]): "halo" | "horns" | "scales" {
-	return side === "generous" ? "halo" : side === "greedy" ? "horns" : "scales";
+// Subtitle line summarizing how the user ended the season. Mirrors
+// the design's "you ended Season N at +X — top 3 of the Generous side"
+// pattern, gracefully degraded for neutral / participant cases.
+function subtitle(r: FinaleResult): string {
+	const signed = r.final_score > 0 ? `+${r.final_score}` : `${r.final_score}`;
+	const ended = `you ended at ${signed}`;
+	if (r.bracket === "top3" && r.side_rank != null) {
+		const sideLabel = r.side === "generous" ? "Generous" : "Greedy";
+		return `${ended}\ntop 3 of the ${sideLabel} side`;
+	}
+	if (r.bracket === "top10" && r.side_rank != null) {
+		const sideLabel = r.side === "generous" ? "Generous" : "Greedy";
+		return `${ended}\n#${r.side_rank} most ${sideLabel.toLowerCase()}`;
+	}
+	if (r.bracket === "neutral") return ended + "\nyou kept the balance";
+	return ended;
 }
 
 export function JudgementDayModal({ result, onDismiss }: Props) {
-	const scale = useRef(new Animated.Value(0)).current;
-	const opacity = useRef(new Animated.Value(0)).current;
+	const fade = useRef(new Animated.Value(0)).current;
 
 	useEffect(() => {
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
 			() => {}
 		);
-		Animated.parallel([
-			Animated.spring(scale, {
-				toValue: 1,
-				tension: 55,
-				friction: 7,
-				useNativeDriver: true,
-			}),
-			Animated.timing(opacity, {
-				toValue: 1,
-				duration: 280,
-				easing: Easing.out(Easing.quad),
-				useNativeDriver: true,
-			}),
-		]).start();
-	}, [scale, opacity]);
+		Animated.timing(fade, {
+			toValue: 1,
+			duration: 320,
+			easing: Easing.out(Easing.quad),
+			useNativeDriver: true,
+		}).start();
+	}, [fade]);
 
 	const handleDismiss = async () => {
 		try {
@@ -89,44 +95,58 @@ export function JudgementDayModal({ result, onDismiss }: Props) {
 		onDismiss();
 	};
 
-	const isAngel = result.side === "generous";
-
 	return (
 		<Modal visible transparent animationType="fade" onRequestClose={handleDismiss}>
-			<View style={styles.backdrop}>
-				<Animated.View
-					style={[styles.cardWrap, { opacity, transform: [{ scale }] }]}
+			<Animated.View style={[styles.root, { opacity: fade }]}>
+				{/* Warm-to-dark vertical gradient — the ember backdrop
+				    that sets the verdict moment apart from any other
+				    surface in the app. */}
+				<LinearGradient
+					colors={["#1a1411", "#2a1f15", "#4a2f1f"]}
+					locations={[0, 0.6, 1]}
+					style={StyleSheet.absoluteFill}
+				/>
+				{/* Light rays radiating from above — SVG-painted polys
+				    stand in for the design's conic-gradient beam
+				    effect (RN can't do conic). Three soft yellow
+				    triangles fan out from a focal point at 50% / 40%. */}
+				<Svg
+					style={StyleSheet.absoluteFill}
+					viewBox="0 0 100 100"
+					preserveAspectRatio="none"
 				>
+					<Polygon
+						points="50,40 -10,-20 10,-20"
+						fill="rgba(255,216,122,0.18)"
+					/>
+					<Polygon
+						points="50,40 40,-20 60,-20"
+						fill="rgba(255,216,122,0.22)"
+					/>
+					<Polygon
+						points="50,40 90,-20 110,-20"
+						fill="rgba(255,216,122,0.18)"
+					/>
+				</Svg>
+
+				<View style={styles.center}>
+					<Text style={styles.scales}>⚖</Text>
+					<Text style={styles.kicker}>★ judgement day</Text>
+					<Text style={styles.headline}>{headline(result)}</Text>
+					<Text style={styles.subtitle}>{subtitle(result)}</Text>
+
 					<Sticker
-						color={isAngel ? "sun" : "paper"}
-						rotate={-1.4}
-						radius={20}
-						border={3}
-						style={[styles.card, STICKER_SHADOW]}
+						color="paper"
+						rotate={-1}
+						radius={16}
+						border={2}
+						style={styles.verdict}
 					>
-						<Text style={styles.kicker}>⚖ judgement day ⚖</Text>
-						<AlignmentEmblem
-							kind={sideIcon(result.side)}
-							size={76}
-							style={styles.emblem}
-						/>
-						<Text style={styles.headline}>{headline(result)}</Text>
-
-						{result.side !== "neutral" && result.side_rank != null && (
-							<Text style={styles.rankLine}>
-								#{result.side_rank} most{" "}
-								{result.side === "generous" ? "generous" : "greedy"} ·
-								final alignment{" "}
-								{result.final_score > 0
-									? `+${result.final_score}`
-									: result.final_score}
-							</Text>
-						)}
-
-						<View style={styles.rewardBox}>
+						<Text style={styles.verdictKicker}>★ your verdict</Text>
+						<View style={styles.rewardList}>
 							{!!result.title_name && (
 								<View style={styles.rewardRow}>
-									<Text style={styles.rewardGlyph}>"</Text>
+									<Text style={styles.rewardGlyph}>👑</Text>
 									<Text style={styles.rewardText}>
 										Title: {result.title_name}
 									</Text>
@@ -134,90 +154,137 @@ export function JudgementDayModal({ result, onDismiss }: Props) {
 							)}
 							{result.snouts > 0 && (
 								<View style={styles.rewardRow}>
-									<SnoutCoin size={18} />
-									<Text style={styles.rewardText}>+{result.snouts} snouts</Text>
+									<SnoutCoin size={20} />
+									<Text style={styles.rewardText}>
+										+{result.snouts} snouts
+									</Text>
+								</View>
+							)}
+							{!result.title_name && result.snouts === 0 && (
+								<View style={styles.rewardRow}>
+									<Text style={styles.rewardGlyph}>✦</Text>
+									<Text style={styles.rewardText}>
+										Carry it into Season 2
+									</Text>
 								</View>
 							)}
 						</View>
-
 						<Text style={styles.resetNote}>
 							Season 2 begins — alignment reset to Neutral.
 						</Text>
-
-						<Pressable
-							testID="finale-dismiss"
-							onPress={handleDismiss}
-							style={({ pressed }) => [
-								styles.btn,
-								{ backgroundColor: isAngel ? WHIMSY.lilac : WHIMSY.sun },
-								pressed && { opacity: 0.75 },
-							]}
-						>
-							<Text style={styles.btnText}>Onward</Text>
-						</Pressable>
 					</Sticker>
-				</Animated.View>
-			</View>
+
+					<Pressable
+						testID="finale-dismiss"
+						onPress={handleDismiss}
+						style={({ pressed }) => [
+							styles.claimBtn,
+							pressed && { opacity: 0.85 },
+						]}
+					>
+						<Text style={styles.claimBtnText}>Claim verdict</Text>
+					</Pressable>
+				</View>
+			</Animated.View>
 		</Modal>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
+	root: { flex: 1 },
+	center: {
 		flex: 1,
 		alignItems: "center",
 		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 28,
+		paddingHorizontal: 28,
 	},
-	cardWrap: { width: "100%", maxWidth: 380 },
-	card: { paddingHorizontal: 24, paddingVertical: 26, alignItems: "center" },
-	kicker: { ...KICKER_TEXT, marginBottom: 12 },
-	emblem: { marginBottom: 6 },
+	scales: {
+		fontSize: 42,
+		color: WHIMSY.paper,
+		marginBottom: 6,
+	},
+	kicker: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.sun,
+		letterSpacing: 0.4,
+		marginBottom: 4,
+	},
 	headline: {
 		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		color: WHIMSY.ink,
+		fontSize: 36,
+		lineHeight: 38,
+		color: WHIMSY.paper,
 		textAlign: "center",
+		marginTop: 6,
+		// Drop shadow to mimic the design's textShadow on the headline.
+		textShadowColor: "rgba(0,0,0,0.35)",
+		textShadowOffset: { width: 0, height: 2 },
+		textShadowRadius: 0,
+	},
+	subtitle: {
+		fontFamily: FONTS.hand,
+		fontSize: 16,
+		lineHeight: 22,
+		color: "rgba(255,250,240,0.75)",
+		textAlign: "center",
+		marginTop: 12,
+	},
+	verdict: {
+		minWidth: 240,
+		maxWidth: 320,
+		paddingHorizontal: 18,
+		paddingVertical: 14,
+		marginTop: 24,
+	},
+	verdictKicker: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		letterSpacing: 0.4,
 		marginBottom: 8,
 	},
-	rankLine: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
+	rewardList: { gap: 8 },
+	rewardRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 10,
+	},
+	rewardGlyph: {
+		fontSize: 18,
+		width: 22,
 		textAlign: "center",
-		marginBottom: 14,
 	},
-	rewardBox: {
-		width: "100%",
-		gap: 8,
-		backgroundColor: WHIMSY.cream,
-		borderRadius: 12,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		padding: 12,
-		marginBottom: 12,
+	rewardText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		color: WHIMSY.ink,
+		flexShrink: 1,
 	},
-	rewardRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-	rewardGlyph: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
-	rewardText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	resetNote: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
 		color: WHIMSY.mute,
 		textAlign: "center",
-		marginBottom: 18,
+		marginTop: 12,
 	},
-	btn: {
-		paddingHorizontal: 32,
-		paddingVertical: 12,
-		borderRadius: 14,
+	claimBtn: {
+		marginTop: 28,
+		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingHorizontal: 28,
+		paddingVertical: 14,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 3, height: 3 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 3,
 	},
-	btnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 17,
+	claimBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 16,
 		color: WHIMSY.ink,
 		letterSpacing: 0.4,
 	},

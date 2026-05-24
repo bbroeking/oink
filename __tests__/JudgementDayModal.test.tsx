@@ -49,16 +49,19 @@ describe("JudgementDayModal", () => {
 		mockRpc.mockResolvedValue({ data: { ok: true }, error: null });
 	});
 
-	test("top3 generous → Halo Bearer headline + halo icon", async () => {
+	// Redesigned headlines drop the leading "A" and trailing "!" per
+	// the design's full-screen verdict treatment ("Halo Bearer" /
+	// "Goblin King"). The AlignmentEmblem icons were replaced with a
+	// single ⚖ glyph + light rays, so the kind: assertions are gone.
+	test("top3 generous → Halo Bearer headline", async () => {
 		const r = await renderAct(
 			<JudgementDayModal result={base} onDismiss={() => {}} />
 		);
-		expect(textOf(r.root)).toContain("A Halo Bearer!");
-		expect(r.root.findAllByProps({ kind: "halo" }).length).toBeGreaterThan(0);
+		expect(textOf(r.root)).toContain("Halo Bearer");
 		act(() => r.unmount());
 	});
 
-	test("top3 greedy → Goblin King headline + horns icon", async () => {
+	test("top3 greedy → Goblin King headline", async () => {
 		const greedy: FinaleResult = {
 			...base,
 			side: "greedy",
@@ -70,9 +73,8 @@ describe("JudgementDayModal", () => {
 			<JudgementDayModal result={greedy} onDismiss={() => {}} />
 		);
 		const text = textOf(r.root);
-		expect(text).toContain("A Goblin King!");
+		expect(text).toContain("Goblin King");
 		expect(text).toContain("-91");
-		expect(r.root.findAllByProps({ kind: "horns" }).length).toBeGreaterThan(0);
 		act(() => r.unmount());
 	});
 
@@ -92,7 +94,6 @@ describe("JudgementDayModal", () => {
 		);
 		const text = textOf(r.root);
 		expect(text).toContain("Calm in the Storm");
-		expect(r.root.findAllByProps({ kind: "scales" }).length).toBeGreaterThan(0);
 		expect(text).not.toContain("most generous");
 		act(() => r.unmount());
 	});
@@ -136,7 +137,7 @@ describe("JudgementDayModal", () => {
 		const r = await renderAct(
 			<JudgementDayModal result={participant} onDismiss={() => {}} />
 		);
-		expect(textOf(r.root)).toContain("A Generous Soul");
+		expect(textOf(r.root)).toContain("Generous Soul");
 		act(() => r.unmount());
 	});
 });
