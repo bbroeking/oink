@@ -131,9 +131,13 @@ export default function TabLayout() {
 				tabBarActiveTintColor: WHIMSY.ink,
 				tabBarInactiveTintColor: WHIMSY.mute,
 				tabBarLabelStyle: {
-					fontSize: 11,
-					fontFamily: FONTS.hand,
-					letterSpacing: 0.2,
+					// Per the redesign tokens: Nunito 800 (bodyExtra)
+					// at 10px with 0.3px letter-spacing. Was Patrick
+					// Hand at 11px — handwriting reads as decorative
+					// noise next to the SVG icons.
+					fontSize: 10,
+					fontFamily: FONTS.bodyExtra,
+					letterSpacing: 0.3,
 					paddingBottom: Platform.OS === "ios" ? 0 : 4,
 				},
 				tabBarIconStyle: {
