@@ -304,10 +304,12 @@ function RootLayoutInner() {
 		};
 	}, [authChecked]);
 
-	// Push tap → deep route. Trade + bless/curse payloads carry
-	// `data.screen` ('trade' or 'friends'); both open the Friends tab,
-	// where the Inbox carries the request / event. One listener;
-	// expo-notifications coalesces foreground + background taps.
+	// Push tap → deep route. Payload `data.screen` drives where the
+	// tap lands:
+	//   'trade' / 'friends' → Friends tab (Inbox carries the event)
+	//   'achievements'      → /achievements (claim the new unlock)
+	// One listener; expo-notifications coalesces foreground +
+	// background taps.
 	useEffect(() => {
 		const sub = Notifications.addNotificationResponseReceivedListener((res) => {
 			const data = (res.notification.request.content.data ?? {}) as {
@@ -315,6 +317,8 @@ function RootLayoutInner() {
 			};
 			if (data.screen === "trade" || data.screen === "friends") {
 				router.replace("/friends" as any);
+			} else if (data.screen === "achievements") {
+				router.replace("/achievements" as any);
 			}
 		});
 		return () => sub.remove();
