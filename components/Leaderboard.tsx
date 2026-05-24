@@ -91,7 +91,11 @@ function ChampionPoster({
 				    the top-left so the champion poster reads as "tacked up"
 				    on the leaderboard wall. */}
 				<View style={styles.champTape} />
-				<Text style={styles.champOver}>★ today's champion ★</Text>
+				{/* Lifetime tickles_earned drives the sort, so the #1 slot
+				    is the all-time leader — calling them 'today's
+				    champion' would imply a daily reset the schema
+				    doesn't have. Restored the accurate label. */}
+				<Text style={styles.champOver}>★ all-time leader ★</Text>
 				<View style={styles.champBody}>
 					<View style={styles.champAvatarWrap}>
 						<PigAvatar size={64} hatId={champ.active_hat_id} />
