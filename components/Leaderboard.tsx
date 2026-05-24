@@ -28,12 +28,20 @@ interface ActiveTitle {
 	placement: "pre" | "post";
 }
 
+interface ActiveHat {
+	name: string;
+}
+
 interface LeaderboardEntry {
 	id: string;
 	username: string | null;
 	discriminator?: string | null;
 	tickles_earned: number;
 	active_hat_id: string | null;
+	// Name of the equipped hat (joined through the active_hat_id FK).
+	// Drives the "wears X" second line on each ranked row. Null when
+	// no hat is equipped or when the hats join falls back.
+	active_hat: ActiveHat | null;
 	active_title: ActiveTitle | null;
 	alignment_score?: number | null;
 }
@@ -49,12 +57,20 @@ function formatDisplayName(
 		: `${title.name} ${name}`;
 }
 
-type RawRow = Omit<LeaderboardEntry, "active_title"> & {
+// PostgREST returns 1:1 joins either as a single object or as a
+// length-1 array depending on the relationship's cardinality
+// metadata; normalize so the UI can read .active_title?.name /
+// .active_hat?.name directly.
+type RawRow = Omit<LeaderboardEntry, "active_title" | "active_hat"> & {
 	active_title?: ActiveTitle[] | ActiveTitle | null;
+	active_hat?: ActiveHat[] | ActiveHat | null;
 };
 function normalize(rows: RawRow[] | null): LeaderboardEntry[] {
 	return (rows ?? []).map((r) => ({
 		...r,
+		active_hat: Array.isArray(r.active_hat)
+			? (r.active_hat[0] ?? null)
+			: (r.active_hat ?? null),
 		active_title: Array.isArray(r.active_title)
 			? (r.active_title[0] ?? null)
 			: (r.active_title ?? null),
@@ -147,11 +163,20 @@ function ClippingRow({
 							<Text style={styles.rowDisc}>#{player.discriminator}</Text>
 						)}
 					</View>
-					{player.active_title?.name && (
-						<Text style={styles.rowTitle} numberOfLines={1}>
+					{/* Second line — what the pig is wearing, falling
+					    back to the active title when nothing is
+					    equipped. PigAvatar already shows the hat as a
+					    sprite; the text labels the item so the row
+					    reads even at a glance. */}
+					{player.active_hat?.name ? (
+						<Text style={styles.rowSub} numberOfLines={1}>
+							wears {player.active_hat.name}
+						</Text>
+					) : player.active_title?.name ? (
+						<Text style={styles.rowSub} numberOfLines={1}>
 							{player.active_title.name}
 						</Text>
-					)}
+					) : null}
 				</View>
 				<View style={styles.rowScoreCol}>
 					<Text style={styles.rowScore}>
@@ -186,10 +211,14 @@ export function Leaderboard() {
 	// the active_title join 400s (pre-titles-migration installs).
 	const fetchGlobalPage = useCallback(
 		async (from: number, count: number): Promise<LeaderboardEntry[]> => {
+			// active_hat join lights up the "wears X" second-line on
+			// each ranked row. The titles join is independent; if the
+			// titles migration isn't deployed, retry without titles
+			// but keep the hat join (its migration is much older).
 			const SELECT_WITH_TITLES =
-				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
+				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
 			const SELECT_BASIC =
-				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score";
+				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
 			const run = async (select: string) =>
 				supabase
 					.from("profiles")
@@ -236,6 +265,11 @@ export function Leaderboard() {
 					username: r.username,
 					tickles_earned: 0,
 					active_hat_id: r.active_hat_id,
+					// alignment_leaderboard RPC doesn't carry the hat
+					// name; the "wears X" line falls back to nothing in
+					// this scope. Acceptable — the alignment view leads
+					// with the score, hats are secondary signal there.
+					active_hat: null,
 					active_title: null,
 					alignment_score: r.alignment_score,
 				}));
@@ -255,9 +289,9 @@ export function Leaderboard() {
 					return;
 				}
 				const SELECT_BASIC =
-					"id, username, discriminator, tickles_earned, active_hat_id, alignment_score";
+					"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
 				const SELECT_WITH_TITLES =
-					"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
+					"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
 				// The titles join 400s when the titles migration isn't
 				// deployed; retry without it. Untyped intermediate so
 				// both selects can land in the same variable.
@@ -589,7 +623,9 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 	},
 	rowYouTag: { fontFamily: FONTS.hand, color: WHIMSY.accent },
-	rowTitle: {
+	// Second-line under the name — "wears <hat>", falls back to
+	// the active title when no hat is equipped.
+	rowSub: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 11,
 		color: WHIMSY.mute,

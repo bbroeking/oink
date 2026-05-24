@@ -14,6 +14,7 @@ import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
 import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
 import { AlignmentBadge } from "./ui/AlignmentBadge";
+import { PigAvatar } from "./ui/PigAvatar";
 
 // Hard cap on the friends list — must match the server-side cap
 // enforced in send_friend_request + accept_friend_request (see
@@ -27,6 +28,17 @@ interface Profile {
 	tickles_earned?: number;
 	discriminator?: string | null;
 	alignment_score?: number | null;
+	active_hat_id?: string | null;
+	// Joined-through name of the equipped hat — drives both the
+	// PigAvatar overlay and the "wears X" second-line on each row.
+	active_hat?: { name: string } | { name: string }[] | null;
+}
+
+// PostgREST returns 1:1 joins either as an object or a length-1
+// array. Flatten so consumers can read .name directly.
+function hatName(p: Profile): string | null {
+	const h = Array.isArray(p.active_hat) ? p.active_hat[0] : p.active_hat;
+	return h?.name ?? null;
 }
 
 // Friend requests live in the Friends-hub Inbox now — this panel is
@@ -54,7 +66,9 @@ export default function Friends({ userId }: { userId: string }) {
 		if (capped.length > 0) {
 			const { data } = await supabase
 				.from("profiles")
-				.select("id, username, tickles_earned, discriminator, alignment_score")
+				.select(
+					"id, username, tickles_earned, discriminator, alignment_score, active_hat_id, active_hat:hats!profiles_active_hat_id_fkey(name)"
+				)
 				.in("id", capped);
 			setFriends((data as Profile[]) ?? []);
 		} else {
@@ -172,13 +186,20 @@ function FriendsList({
 		<Sticker color="paper" rotate={-0.4} radius={14} style={styles.listSticker}>
 			{sorted.map((f, i) => {
 				const last = i === sorted.length - 1;
+				const wears = hatName(f);
 				return (
 					<Pressable
 						key={f.id}
 						onPress={() => onPick(f.id)}
 						style={[styles.flatRow, !last && styles.flatRowDivider]}
 					>
-						<InitialAvatar name={f.username} />
+						{/* PigAvatar instead of the initial circle — the
+						    equipped hat shows up as an inline icon on
+						    the pig sprite, so the sounder reads what
+						    each friend is currently wearing at a glance. */}
+						<View style={styles.rowPigWrap}>
+							<PigAvatar size={36} hatId={f.active_hat_id ?? null} />
+						</View>
 						<View style={{ flex: 1, minWidth: 0 }}>
 							<View style={styles.rowNameLine}>
 								<Text style={styles.rowName} numberOfLines={1}>
@@ -188,6 +209,14 @@ function FriendsList({
 									<Text style={styles.rowDisc}>#{f.discriminator}</Text>
 								)}
 							</View>
+							{/* Second line — "wears X" when a hat is equipped.
+							    Falls back to the ♥ + alignment meta so naked
+							    pigs aren't blank rows. */}
+							{wears ? (
+								<Text style={styles.rowWearsText} numberOfLines={1}>
+									wears {wears}
+								</Text>
+							) : (
 							<View style={styles.rowMetaLine}>
 								<Text style={styles.rowHeart}>♥</Text>
 								<Text style={styles.rowMeta}>
@@ -204,6 +233,7 @@ function FriendsList({
 									</>
 								)}
 							</View>
+							)}
 						</View>
 						<Text style={styles.rowChevron}>›</Text>
 					</Pressable>
@@ -456,6 +486,26 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 11,
 		color: WHIMSY.mute,
+	},
+	// PigAvatar wrapper — a small ink-bordered tile so the sprite
+	// reads as an avatar slot inside the flat row rather than a
+	// floating pig. Matches the leaderboard ClippingRow's treatment.
+	rowPigWrap: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream,
+		alignItems: "center",
+		justifyContent: "center",
+		overflow: "hidden",
+	},
+	rowWearsText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		marginTop: 4,
 	},
 	rowMetaLine: {
 		flexDirection: "row",
