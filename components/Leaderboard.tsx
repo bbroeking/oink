@@ -2,7 +2,7 @@
 // the outer chrome (SafeAreaView + tab title), so this component is
 // just the scope toggle + the ranked list + UserSheet.
 import { useState, useCallback } from "react";
-import { View, StyleSheet, FlatList, Pressable, Text } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Text } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { log } from "../utils/log";
@@ -11,7 +11,7 @@ import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker } from "./ui/Sticker";
 import { ListRowSkeleton } from "./ui/Skeleton";
 import { UserSheet } from "./UserSheet";
-import { FONTS, ROW_TILTS, WHIMSY } from "@/constants/theme";
+import { FONTS, WHIMSY } from "@/constants/theme";
 
 type Scope = "global" | "friends" | "alignment";
 
@@ -100,26 +100,29 @@ function ClippingRow({
 	player,
 	rank,
 	isYou,
-	tilt,
+	last,
 	onPress,
 	showAlignment = false,
 }: {
 	player: LeaderboardEntry;
 	rank: number;
 	isYou: boolean;
-	tilt: number;
+	// Marks the last row in the flat sticker — suppresses its bottom
+	// dashed border so the divider only appears between rows.
+	last?: boolean;
 	onPress: (userId: string) => void;
 	showAlignment?: boolean;
 }) {
 	const score = player.alignment_score ?? 0;
 	return (
-		<Pressable style={styles.rowWrap} onPress={() => onPress(player.id)}>
-			<Sticker
-				color={isYou ? "cream" : "paper"}
-				rotate={tilt}
-				radius={10}
-				style={styles.row}
-			>
+		<Pressable
+			onPress={() => onPress(player.id)}
+			style={[
+				styles.row,
+				isYou && styles.rowYouHighlight,
+				!last && styles.rowDivider,
+			]}
+		>
 				<Text style={styles.rowRank}>#{rank}</Text>
 				<PigAvatar size={32} hatId={player.active_hat_id} />
 				<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
@@ -155,7 +158,6 @@ function ClippingRow({
 						{showAlignment ? "align" : "♥"}
 					</Text>
 				</View>
-			</Sticker>
 		</Pressable>
 	);
 }
@@ -310,43 +312,62 @@ export function Leaderboard() {
 							: "No tickles yet. Be the first!"}
 				</Text>
 			) : scope === "alignment" ? (
-				<FlatList
-					data={leaderboard}
-					renderItem={({ item, index }) => (
-						<ClippingRow
-							player={item}
-							rank={index + 1}
-							isYou={item.id === myId}
-							tilt={ROW_TILTS[index % ROW_TILTS.length]}
-							onPress={setSelectedUserId}
-							showAlignment
-						/>
-					)}
-					keyExtractor={(item) => item.id}
+				// Alignment leaderboard — no champion poster (rank 1 in
+				// alignment isn't a "today's champion" moment). Single
+				// flat sticker holds every row with dashed dividers.
+				<ScrollView
 					style={styles.list}
 					contentContainerStyle={styles.listContent}
-				/>
+				>
+					<Sticker
+						color="paper"
+						rotate={-0.3}
+						radius={14}
+						style={styles.listSticker}
+					>
+						{leaderboard.map((item, index) => (
+							<ClippingRow
+								key={item.id}
+								player={item}
+								rank={index + 1}
+								isYou={item.id === myId}
+								last={index === leaderboard.length - 1}
+								onPress={setSelectedUserId}
+								showAlignment
+							/>
+						))}
+					</Sticker>
+				</ScrollView>
 			) : (
-				<FlatList
-					data={rest}
-					ListHeaderComponent={
-						champ ? (
-							<ChampionPoster champ={champ} onPress={setSelectedUserId} />
-						) : null
-					}
-					renderItem={({ item, index }) => (
-						<ClippingRow
-							player={item}
-							rank={index + 2}
-							isYou={item.id === myId}
-							tilt={ROW_TILTS[index % ROW_TILTS.length]}
-							onPress={setSelectedUserId}
-						/>
-					)}
-					keyExtractor={(item) => item.id}
+				// Global / friends leaderboard — champion poster on top,
+				// then a single flat sticker with the ranked rows.
+				<ScrollView
 					style={styles.list}
 					contentContainerStyle={styles.listContent}
-				/>
+				>
+					{champ ? (
+						<ChampionPoster champ={champ} onPress={setSelectedUserId} />
+					) : null}
+					{rest.length > 0 && (
+						<Sticker
+							color="paper"
+							rotate={-0.3}
+							radius={14}
+							style={styles.listSticker}
+						>
+							{rest.map((item, index) => (
+								<ClippingRow
+									key={item.id}
+									player={item}
+									rank={index + 2}
+									isYou={item.id === myId}
+									last={index === rest.length - 1}
+									onPress={setSelectedUserId}
+								/>
+							))}
+						</Sticker>
+					)}
+				</ScrollView>
 			)}
 
 			<UserSheet
@@ -423,13 +444,27 @@ const styles = StyleSheet.create({
 	},
 	list: { flex: 1 },
 	listContent: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 110 },
-	rowWrap: { marginVertical: 4 },
+	// Single sticker wrapping every ranked row — replaces per-row
+	// tilted stickers so the leaderboard reads as one cohesive card.
+	listSticker: {
+		marginTop: 12,
+		paddingHorizontal: 0,
+		paddingVertical: 4,
+	},
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
-		paddingVertical: 10,
-		paddingHorizontal: 12,
+		paddingVertical: 12,
+		paddingHorizontal: 14,
 		gap: 8,
+	},
+	rowYouHighlight: {
+		backgroundColor: WHIMSY.cream,
+	},
+	rowDivider: {
+		borderBottomWidth: 1.5,
+		borderBottomColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
 	},
 	rowRank: {
 		width: 28,
