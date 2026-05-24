@@ -95,66 +95,104 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 interface HeartFloatsHandle {
 	spawn: () => void;
 }
-const HeartFloats = React.forwardRef<HeartFloatsHandle, {}>((_props, ref) => {
-	type Float = { id: number; dx: number; char: string; anim: Animated.Value };
-	const [floats, setFloats] = useState<Float[]>([]);
-	const nextId = useRef(0);
+interface HeartFloatsProps {
+	// When set, the float renders this image instead of the
+	// default ♥/✦ text glyph. Sourced from the player's equipped
+	// tickle particle (HAT_IMAGES[active_tickle_particle_id]).
+	particleImage?: number | null;
+}
+const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
+	({ particleImage }, ref) => {
+		type Float = {
+			id: number;
+			dx: number;
+			char: string;
+			anim: Animated.Value;
+		};
+		const [floats, setFloats] = useState<Float[]>([]);
+		const nextId = useRef(0);
 
-	React.useImperativeHandle(ref, () => ({
-		spawn: () => {
-			const id = nextId.current++;
-			const dx = Math.random() * 80 - 40;
-			const char = Math.random() < 0.1 ? "✦" : "♥";
-			const anim = new Animated.Value(0);
-			setFloats((f) => [...f, { id, dx, char, anim }]);
-			Animated.timing(anim, {
-				toValue: 1,
-				duration: 1100,
-				useNativeDriver: true,
-			}).start(() => {
-				setFloats((f) => f.filter((x) => x.id !== id));
-			});
-		},
-	}));
+		React.useImperativeHandle(ref, () => ({
+			spawn: () => {
+				const id = nextId.current++;
+				const dx = Math.random() * 80 - 40;
+				const char = Math.random() < 0.1 ? "✦" : "♥";
+				const anim = new Animated.Value(0);
+				setFloats((f) => [...f, { id, dx, char, anim }]);
+				Animated.timing(anim, {
+					toValue: 1,
+					duration: 1100,
+					useNativeDriver: true,
+				}).start(() => {
+					setFloats((f) => f.filter((x) => x.id !== id));
+				});
+			},
+		}));
 
-	return (
-		<View pointerEvents="none" style={StyleSheet.absoluteFill}>
-			{floats.map((f) => {
-				const translateY = f.anim.interpolate({
-					inputRange: [0, 0.15, 1],
-					outputRange: [0, -12, -110],
-				});
-				const opacity = f.anim.interpolate({
-					inputRange: [0, 0.15, 0.85, 1],
-					outputRange: [0, 1, 1, 0],
-				});
-				const scale = f.anim.interpolate({
-					inputRange: [0, 0.15, 1],
-					outputRange: [0.6, 1.1, 0.95],
-				});
-				return (
-					<Animated.Text
-						key={f.id}
-						style={[
-							styles.floatChar,
-							{
-								color: f.char === "✦" ? WHIMSY.sun : WHIMSY.roseDeep,
-								transform: [
-									{ translateX: f.dx },
-									{ translateY },
-									{ scale },
-								],
-								opacity,
-							},
-						]}
-					>
-						{f.char}
-					</Animated.Text>
-				);
-			})}
-		</View>
-	);
-});
+		return (
+			<View pointerEvents="none" style={StyleSheet.absoluteFill}>
+				{floats.map((f) => {
+					const translateY = f.anim.interpolate({
+						inputRange: [0, 0.15, 1],
+						outputRange: [0, -12, -110],
+					});
+					const opacity = f.anim.interpolate({
+						inputRange: [0, 0.15, 0.85, 1],
+						outputRange: [0, 1, 1, 0],
+					});
+					const scale = f.anim.interpolate({
+						inputRange: [0, 0.15, 1],
+						outputRange: [0.6, 1.1, 0.95],
+					});
+					// Equipped tickle-particle path: render the image
+					// instead of the typographic glyph. Fall back to
+					// the original ♥/✦ when no particle is equipped
+					// so the empty-slot experience still has motion.
+					if (particleImage) {
+						return (
+							<Animated.Image
+								key={f.id}
+								source={particleImage}
+								resizeMode="contain"
+								style={[
+									styles.floatImage,
+									{
+										transform: [
+											{ translateX: f.dx },
+											{ translateY },
+											{ scale },
+										],
+										opacity,
+									},
+								]}
+							/>
+						);
+					}
+					return (
+						<Animated.Text
+							key={f.id}
+							style={[
+								styles.floatChar,
+								{
+									color:
+										f.char === "✦" ? WHIMSY.sun : WHIMSY.roseDeep,
+									transform: [
+										{ translateX: f.dx },
+										{ translateY },
+										{ scale },
+									],
+									opacity,
+								},
+							]}
+						>
+							{f.char}
+						</Animated.Text>
+					);
+				})}
+			</View>
+		);
+	}
+);
 HeartFloats.displayName = "HeartFloats";
 
 interface EquipSlot {
@@ -176,6 +214,10 @@ interface Stats {
 	activeAura: EquipSlot | null;
 	activeBackground: EquipSlot | null;
 	activeHeld: EquipSlot | null;
+	// Tickle particle drives the float graphics on each tap. Null
+	// = default ♥/✦ text glyph behavior; when present the equipped
+	// PNG renders in place of the glyph (see HeartFloats above).
+	activeTickleParticle: EquipSlot | null;
 	currentTier: number;
 	totalTiers: number;
 }
@@ -280,6 +322,7 @@ export default function Barn() {
 		activeAura: null,
 		activeBackground: null,
 		activeHeld: null,
+		activeTickleParticle: null,
 		currentTier: 1,
 		totalTiers: 30,
 	});
@@ -550,6 +593,8 @@ export default function Barn() {
 					active_background: SlotBlob;
 					active_held_id?: string | null;
 					active_held?: SlotBlob;
+					active_tickle_particle_id?: string | null;
+					active_tickle_particle?: SlotBlob;
 					balance: number;
 					cap: number;
 					next_regen_seconds: number | null;
@@ -574,6 +619,10 @@ export default function Barn() {
 					activeAura: toSlot(r.active_aura_id, r.active_aura),
 					activeBackground: toSlot(r.active_background_id, r.active_background),
 					activeHeld: toSlot(r.active_held_id ?? null, r.active_held ?? null),
+					activeTickleParticle: toSlot(
+						r.active_tickle_particle_id ?? null,
+						r.active_tickle_particle ?? null
+					),
 					currentTier: r.current_tier,
 					totalTiers: r.total_tiers,
 				});
@@ -591,7 +640,7 @@ export default function Barn() {
 				supabase
 					.from("profiles")
 					.select(
-						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id, alignment_score"
+						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, alignment_score"
 					)
 					.eq("id", user.id)
 					.single(),
@@ -617,6 +666,7 @@ export default function Barn() {
 				active_aura_id?: string | null;
 				active_background_id?: string | null;
 				active_held_id?: string | null;
+				active_tickle_particle_id?: string | null;
 				alignment_score?: number | null;
 			} | null;
 
@@ -643,6 +693,7 @@ export default function Barn() {
 				prof?.active_aura_id ?? null,
 				prof?.active_background_id ?? null,
 				prof?.active_held_id ?? null,
+				prof?.active_tickle_particle_id ?? null,
 			];
 			const idsToLookUp = slotIds.filter((x): x is string => !!x);
 			const hatMetaById = new Map<
@@ -677,6 +728,9 @@ export default function Barn() {
 				activeAura: toSlot(prof?.active_aura_id ?? null),
 				activeBackground: toSlot(prof?.active_background_id ?? null),
 				activeHeld: toSlot(prof?.active_held_id ?? null),
+				activeTickleParticle: toSlot(
+					prof?.active_tickle_particle_id ?? null
+				),
 				currentTier: season?.current_tier ?? 1,
 				totalTiers: season?.season?.total_tiers ?? 30,
 			});
@@ -933,7 +987,14 @@ export default function Barn() {
 						{/* Floating ♥/✦ particles drift up from above the pig on
 						    every successful tickle. Absolute-fills the swipe
 						    container so the hearts sit *over* the pig sprite. */}
-						<HeartFloats ref={heartFloatsRef} />
+						<HeartFloats
+							ref={heartFloatsRef}
+							particleImage={
+								stats.activeTickleParticle?.id
+									? HAT_IMAGES[stats.activeTickleParticle.id] ?? null
+									: null
+							}
+						/>
 						{/* Soft elliptical shadow under the pig — gives the
 						    sprite a little grounding without a hard drop. */}
 						<View pointerEvents="none" style={styles.pigShadow} />
@@ -1133,6 +1194,17 @@ const styles = StyleSheet.create({
 		// pig sitting noticeably higher than the original 11%/7% clip
 		// values so all 4 corners + the tickle CTAs above breathe.
 		marginBottom: -Math.round(SCREEN_HEIGHT * 0.03),
+	},
+	// Equipped tickle particle — same screen-anchor as floatChar so
+	// the image drifts up from the same point. ~40px reads cleanly
+	// against the pig at any device size.
+	floatImage: {
+		position: "absolute",
+		left: "50%",
+		bottom: "55%",
+		width: 40,
+		height: 40,
+		marginLeft: -20,
 	},
 	floatChar: {
 		position: "absolute",

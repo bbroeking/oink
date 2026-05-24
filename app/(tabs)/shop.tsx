@@ -1124,7 +1124,9 @@ export default function ShopScreen() {
 					? "active_background_id"
 					: category === "held"
 						? "active_held_id"
-						: "active_hat_id";
+						: category === "tickle_particle"
+							? "active_tickle_particle_id"
+							: "active_hat_id";
 		await supabase
 			.from("profiles")
 			.update({ [column]: itemId })

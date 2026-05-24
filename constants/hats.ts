@@ -110,6 +110,18 @@ export const HAT_IMAGES: Record<string, number> = {
 	// Stragglers
 	crown: require("../assets/images/hats/crown.png"),
 	safety_goggles: require("../assets/images/hats/safety_goggles.png"),
+	// Tickle particles — equipable cosmetic that swaps the ♥/✦
+	// text glyphs floating above the pig on each tap. Catalog rows
+	// live in public.hats with category 'tickle_particle' (see
+	// migration 20260549000000_tickle_particles).
+	particle_heart:      require("../assets/images/tickle-particles/heart.png"),
+	particle_star:       require("../assets/images/tickle-particles/star.png"),
+	particle_sparkle:    require("../assets/images/tickle-particles/sparkle.png"),
+	particle_snout:      require("../assets/images/tickle-particles/snout.png"),
+	particle_clover:     require("../assets/images/tickle-particles/clover.png"),
+	particle_halo:       require("../assets/images/tickle-particles/halo.png"),
+	particle_rainbow:    require("../assets/images/tickle-particles/rainbow.png"),
+	particle_music_note: require("../assets/images/tickle-particles/music-note.png"),
 };
 
 // Per-hat overlay positioning on the 300x300 pig card.
