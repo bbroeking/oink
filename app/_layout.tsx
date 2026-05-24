@@ -216,15 +216,38 @@ function RootLayoutInner() {
 				}[];
 			})();
 
+			// System announcements — admin-issued messages that
+			// persist server-side. Independent of the `since` marker
+			// because the server tracks seen_at per row (so a fresh
+			// install still gets every unread announcement, not just
+			// ones newer than first-launch). Marked seen on modal
+			// dismiss via mark_announcement_seen.
+			const systemRows = await (async () => {
+				const { data } = await supabase.rpc("my_unseen_announcements");
+				return (data ?? []) as {
+					id: number;
+					kind: string;
+					title: string;
+					body: string;
+					data: unknown;
+					dispatched_at: string;
+				}[];
+			})();
+
 			// Normalize all events to a shared shape so we can sort + cap
 			// uniformly. `ts` is the comparable timestamp; `actor_id` is
-			// who to look up a display name for.
+			// who to look up a display name for. System rows skip the
+			// actor lookup (no sender) but carry their own title/body.
 			type Norm = {
-				source: "blessing" | "curse" | "trade_fulfilled";
+				source: "blessing" | "curse" | "trade_fulfilled" | "system";
 				ts: string;
-				actor_id: string;
+				actor_id?: string;
 				kind?: string;
 				amount?: number;
+				// system-only
+				announcement_id?: number;
+				title?: string;
+				body?: string;
 			};
 			const all: Norm[] = [
 				...(await ritualSide("blessings")).map<Norm>((r) => ({
@@ -245,6 +268,13 @@ function RootLayoutInner() {
 					actor_id: r.target_id,
 					amount: r.amount,
 				})),
+				...systemRows.map<Norm>((r) => ({
+					source: "system",
+					ts: r.dispatched_at,
+					announcement_id: r.id,
+					title: r.title,
+					body: r.body,
+				})),
 			];
 
 			if (cancelled) return;
@@ -253,22 +283,44 @@ function RootLayoutInner() {
 				AsyncStorage.setItem(SEEN, new Date().toISOString());
 				return;
 			}
-			const ids = [...new Set(all.map((r) => r.actor_id))];
-			const { data: profs } = await supabase
-				.from("profiles")
-				.select("id, username")
-				.in("id", ids);
-			if (cancelled) return;
-			const byId = new Map(
-				((profs ?? []) as { id: string; username: string | null }[]).map(
-					(p) => [p.id, p.username]
-				)
-			);
+			// Profile hydration only needed for rows with an actor_id
+			// (rituals + trades). System rows skip this.
+			const actorIds = [
+				...new Set(all.map((r) => r.actor_id).filter((x): x is string => !!x)),
+			];
+			let byId = new Map<string, string | null>();
+			if (actorIds.length > 0) {
+				const { data: profs } = await supabase
+					.from("profiles")
+					.select("id, username")
+					.in("id", actorIds);
+				if (cancelled) return;
+				byId = new Map(
+					((profs ?? []) as { id: string; username: string | null }[]).map(
+						(p) => [p.id, p.username]
+					)
+				);
+			}
 			all.sort((a, b) => (a.ts < b.ts ? 1 : -1));
-			AsyncStorage.setItem(SEEN, all[0].ts);
+			// Marker advances on the newest ritual/trade event only —
+			// system announcements have their own server-side seen
+			// tracking, so they don't push the marker forward (they're
+			// already filtered by my_unseen_announcements).
+			const nonSystemNewest = all.find((r) => r.source !== "system");
+			if (nonSystemNewest) {
+				AsyncStorage.setItem(SEEN, nonSystemNewest.ts);
+			}
 			setRituals(
 				all.map<RitualEvent>((r) => {
-					const from = byId.get(r.actor_id) ?? null;
+					if (r.source === "system") {
+						return {
+							source: "system",
+							announcementId: r.announcement_id ?? 0,
+							title: r.title ?? "",
+							body: r.body ?? "",
+						};
+					}
+					const from = r.actor_id ? byId.get(r.actor_id) ?? null : null;
 					if (r.source === "trade_fulfilled") {
 						return { source: "trade_fulfilled", amount: r.amount ?? 0, from };
 					}
@@ -382,7 +434,22 @@ function RootLayoutInner() {
 			{rituals && !schism && !finale && (
 				<WhileAwayModal
 					events={rituals}
-					onDismiss={() => setRituals(null)}
+					onDismiss={() => {
+						// Server-side mark-seen for any system announcements
+						// in the batch. Fire-and-forget; if the network is
+						// down the rows stay unseen and reappear next launch,
+						// which is the correct conservative behavior.
+						rituals.forEach((e) => {
+							if (e.source === "system") {
+								supabase
+									.rpc("mark_announcement_seen", {
+										announcement_id: e.announcementId,
+									})
+									.then(() => {});
+							}
+						});
+						setRituals(null);
+					}}
 				/>
 			)}
 			{achievements.length > 0 && !schism && !finale && !rituals && (
