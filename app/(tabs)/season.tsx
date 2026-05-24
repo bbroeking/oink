@@ -528,6 +528,467 @@ const snakeStyles = StyleSheet.create({
 	},
 });
 
+// ── Vertical-list pass track ─────────────────────────────────────
+// Straight column of (node + card) rows. Replaces the snaking
+// track. Each tier has three possible visual states:
+//
+//   claimed  →  sage circle + ✓ corner badge, sage card tint,
+//               strikethrough reward text, "CLAIMED" tag
+//   ready    →  sun circle + ! rose corner badge, full sun-yellow
+//               card highlight, inline "Claim reward ✦" button,
+//               "READY" tag
+//   locked   →  paper circle + dashed outline + 🔒 corner badge,
+//               card with dashed border + muted text, "LOCKED" tag
+//
+// A dashed vertical connector runs between consecutive nodes;
+// stops above the first row and below the last so the line reads
+// as the spine of the season.
+
+type TierState = "claimed" | "ready" | "locked";
+
+function tierStatsFor(
+	totalTiers: number,
+	currentTier: number,
+	claimedSet: Set<string>
+): { claimed: number; ready: number; locked: number } {
+	let claimed = 0,
+		ready = 0,
+		locked = 0;
+	for (let t = 1; t <= totalTiers; t++) {
+		if (claimedSet.has(`${t}:free`)) claimed++;
+		else if (t <= currentTier) ready++;
+		else locked++;
+	}
+	return { claimed, ready, locked };
+}
+
+function StatsPills({
+	stats,
+}: {
+	stats: { claimed: number; ready: number; locked: number };
+}) {
+	return (
+		<View style={vlStyles.statsRow}>
+			<View style={[vlStyles.statPill, vlStyles.statPillClaimed]}>
+				<Text style={vlStyles.statPillNum}>{stats.claimed}</Text>
+				<Text style={vlStyles.statPillLabel}>CLAIMED</Text>
+			</View>
+			<View style={[vlStyles.statPill, vlStyles.statPillReady]}>
+				<Text style={vlStyles.statPillNum}>{stats.ready}</Text>
+				<Text style={vlStyles.statPillLabel}>READY</Text>
+			</View>
+			<View style={[vlStyles.statPill, vlStyles.statPillLocked]}>
+				<Text style={vlStyles.statPillNum}>{stats.locked}</Text>
+				<Text style={vlStyles.statPillLabel}>LOCKED</Text>
+			</View>
+		</View>
+	);
+}
+
+// One node + card row. The node anchors the column visually and
+// carries the tier state via its background + corner badge; the
+// card on the right carries the reward content + action.
+function VLTierRow({
+	tier,
+	state,
+	reward,
+	premium,
+	isFirst,
+	isLast,
+	onClaim,
+}: {
+	tier: number;
+	state: TierState;
+	reward: TierRow | undefined;
+	premium?: boolean;
+	isFirst: boolean;
+	isLast: boolean;
+	onClaim: () => void;
+}) {
+	if (!reward) return null;
+	const isClaimed = state === "claimed";
+	const isReady = state === "ready";
+	const isLocked = state === "locked";
+
+	// Card background — sun when ready (the full-card highlight),
+	// sage when claimed, paper for locked. The locked card also gets
+	// a dashed border via vlStyles.cardLocked.
+	const cardBg = isReady
+		? WHIMSY.sun
+		: isClaimed
+			? "#cfe2c6" // soft sage tint distinct from the row's regular paper
+			: WHIMSY.paper;
+
+	const nodeBg = isReady ? WHIMSY.sun : isClaimed ? "#cfe2c6" : WHIMSY.paper;
+
+	return (
+		<View style={vlStyles.row}>
+			{/* Column 1 — node + connector segment. The connector is
+			    rendered as TWO halves so it can stop at the boundary
+			    instead of running through the node circle. */}
+			<View style={vlStyles.nodeCol}>
+				{!isFirst && <View style={vlStyles.connectorTop} />}
+				<View
+					style={[
+						vlStyles.node,
+						{ backgroundColor: nodeBg },
+						isLocked && vlStyles.nodeLocked,
+					]}
+				>
+					<StoneThumb reward={reward} locked={isLocked} />
+					{/* Corner state badge */}
+					{isClaimed && (
+						<View style={[vlStyles.cornerBadge, vlStyles.cornerBadgeClaimed]}>
+							<Icon name="check" size={11} color={WHIMSY.paper} strokeWidth={3} />
+						</View>
+					)}
+					{isReady && (
+						<View style={[vlStyles.cornerBadge, vlStyles.cornerBadgeReady]}>
+							<Text style={vlStyles.cornerBadgeText}>!</Text>
+						</View>
+					)}
+					{isLocked && (
+						<View style={[vlStyles.cornerBadge, vlStyles.cornerBadgeLocked]}>
+							<Icon name="lock" size={10} color={WHIMSY.ink} filled />
+						</View>
+					)}
+				</View>
+				{!isLast && <View style={vlStyles.connectorBottom} />}
+			</View>
+
+			{/* Column 2 — card. */}
+			<View
+				style={[
+					vlStyles.card,
+					{ backgroundColor: cardBg },
+					isLocked && vlStyles.cardLocked,
+					isReady && vlStyles.cardReady,
+				]}
+			>
+				<View style={vlStyles.cardHeader}>
+					<View style={vlStyles.cardHeaderLeft}>
+						<Text style={vlStyles.tierCap}>TIER {tier}</Text>
+						{premium && (
+							<View style={vlStyles.vipPill}>
+								<Text style={vlStyles.vipPillStar}>★</Text>
+								<Text style={vlStyles.vipPillText}>VIP</Text>
+							</View>
+						)}
+					</View>
+					<View
+						style={[
+							vlStyles.stateTag,
+							isClaimed && vlStyles.stateTagClaimed,
+							isReady && vlStyles.stateTagReady,
+							isLocked && vlStyles.stateTagLocked,
+						]}
+					>
+						{isClaimed && (
+							<Icon name="check" size={10} color={WHIMSY.ink} strokeWidth={3} />
+						)}
+						{isLocked && (
+							<Icon name="lock" size={9} color={WHIMSY.mute} filled />
+						)}
+						<Text
+							style={[
+								vlStyles.stateTagText,
+								isLocked && { color: WHIMSY.mute },
+							]}
+						>
+							{isClaimed ? "CLAIMED" : isReady ? "READY" : "LOCKED"}
+						</Text>
+					</View>
+				</View>
+				<Text
+					style={[
+						vlStyles.rewardLabel,
+						isClaimed && vlStyles.rewardLabelClaimed,
+						isLocked && { color: WHIMSY.mute },
+					]}
+					numberOfLines={2}
+				>
+					{reward.display_label}
+				</Text>
+				{isReady && (
+					<Pressable
+						onPress={onClaim}
+						style={({ pressed }) => [
+							vlStyles.claimBtn,
+							pressed && { opacity: 0.85 },
+						]}
+					>
+						<Text style={vlStyles.claimBtnText}>Claim reward ✦</Text>
+					</Pressable>
+				)}
+			</View>
+		</View>
+	);
+}
+
+function VerticalListPassTrack({
+	totalTiers,
+	currentTier,
+	tiersByNumber,
+	claimedSet,
+	onClaim,
+}: {
+	totalTiers: number;
+	currentTier: number;
+	tiersByNumber: Record<number, { free?: TierRow; premium?: TierRow }>;
+	claimedSet: Set<string>;
+	onClaim: (tier: number, track: "free" | "premium") => void;
+}) {
+	const stats = tierStatsFor(totalTiers, currentTier, claimedSet);
+	const tiers = Array.from({ length: totalTiers }, (_, i) => i + 1);
+	return (
+		<View>
+			<StatsPills stats={stats} />
+			<View style={{ marginTop: 8 }}>
+				{tiers.map((t, i) => {
+					const free = tiersByNumber[t]?.free;
+					const hasVipReward = !!tiersByNumber[t]?.premium;
+					const state: TierState = claimedSet.has(`${t}:free`)
+						? "claimed"
+						: t <= currentTier
+							? "ready"
+							: "locked";
+					return (
+						<VLTierRow
+							key={t}
+							tier={t}
+							state={state}
+							reward={free}
+							premium={hasVipReward}
+							isFirst={i === 0}
+							isLast={i === tiers.length - 1}
+							onClaim={() => onClaim(t, "free")}
+						/>
+					);
+				})}
+			</View>
+		</View>
+	);
+}
+
+const vlStyles = StyleSheet.create({
+	// Stats pill row above the list. Display-only counters per the
+	// resolved decision; no tap-to-filter behavior.
+	statsRow: {
+		flexDirection: "row",
+		gap: 8,
+		marginTop: 6,
+		marginBottom: 4,
+	},
+	statPill: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 999,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+	},
+	statPillClaimed: { backgroundColor: "#cfe2c6" },
+	statPillReady: { backgroundColor: WHIMSY.sun },
+	statPillLocked: { backgroundColor: WHIMSY.paper },
+	statPillNum: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 14,
+		color: WHIMSY.ink,
+	},
+	statPillLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		letterSpacing: 1,
+		color: WHIMSY.ink,
+	},
+
+	// Row layout — node column + card column side-by-side.
+	row: {
+		flexDirection: "row",
+		alignItems: "stretch",
+	},
+
+	// Node column — fixed width so the spine reads as a clean line
+	// down the screen. Connector halves fill above + below the node.
+	nodeCol: {
+		width: 64,
+		alignItems: "center",
+	},
+	connectorTop: {
+		width: 0,
+		height: 12,
+		borderLeftWidth: 1.5,
+		borderLeftColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	connectorBottom: {
+		flex: 1,
+		width: 0,
+		borderLeftWidth: 1.5,
+		borderLeftColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	node: {
+		width: 52,
+		height: 52,
+		borderRadius: 26,
+		borderWidth: 2.5,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
+	},
+	nodeLocked: {
+		borderStyle: "dashed",
+		borderColor: WHIMSY.muteSoft,
+		shadowOpacity: 0,
+		elevation: 0,
+	},
+	cornerBadge: {
+		position: "absolute",
+		top: -4,
+		right: -4,
+		width: 20,
+		height: 20,
+		borderRadius: 10,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	cornerBadgeClaimed: { backgroundColor: "#5a8338" },
+	cornerBadgeReady: { backgroundColor: WHIMSY.roseDeep },
+	cornerBadgeLocked: { backgroundColor: WHIMSY.paper },
+	cornerBadgeText: {
+		color: WHIMSY.paper,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		lineHeight: 13,
+	},
+
+	// Card column.
+	card: {
+		flex: 1,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 14,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+		marginVertical: 6,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
+	},
+	cardReady: {
+		shadowOffset: { width: 3, height: 3 },
+		shadowOpacity: 1,
+	},
+	cardLocked: {
+		borderStyle: "dashed",
+		borderColor: WHIMSY.muteSoft,
+		shadowOpacity: 0,
+		elevation: 0,
+	},
+	cardHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		marginBottom: 4,
+	},
+	cardHeaderLeft: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		flexShrink: 1,
+	},
+	tierCap: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		letterSpacing: 1.4,
+		color: WHIMSY.mute,
+	},
+	// Inline VIP pill — lilac with star, marks tiers that ALSO have
+	// a premium-track reward attached.
+	vipPill: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 3,
+		backgroundColor: WHIMSY.lilacDeep,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingHorizontal: 8,
+		paddingVertical: 1,
+	},
+	vipPillStar: {
+		color: WHIMSY.paper,
+		fontFamily: FONTS.whimsy,
+		fontSize: 10,
+	},
+	vipPillText: {
+		color: WHIMSY.paper,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 9,
+		letterSpacing: 0.8,
+	},
+	// Right-side state tag (CLAIMED / READY / LOCKED).
+	stateTag: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 4,
+		paddingHorizontal: 10,
+		paddingVertical: 3,
+		borderRadius: 999,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+	},
+	stateTagClaimed: { backgroundColor: "#cfe2c6" },
+	stateTagReady: { backgroundColor: WHIMSY.roseDeep },
+	stateTagLocked: {
+		backgroundColor: "transparent",
+		borderColor: WHIMSY.muteSoft,
+	},
+	stateTagText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		letterSpacing: 0.8,
+		color: WHIMSY.ink,
+	},
+	rewardLabel: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		color: WHIMSY.ink,
+		marginTop: 2,
+	},
+	rewardLabelClaimed: {
+		textDecorationLine: "line-through",
+		color: WHIMSY.mute,
+	},
+	// Ready-state inline Claim CTA — black pill with white text,
+	// matches the design's full-width button inside the highlight.
+	claimBtn: {
+		marginTop: 10,
+		backgroundColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingVertical: 10,
+		alignItems: "center",
+	},
+	claimBtnText: {
+		color: WHIMSY.paper,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		letterSpacing: 0.4,
+	},
+});
+
 export default function SeasonScreen() {
 	const [state, setState] = useState<SeasonState | null>(null);
 	const [busy, setBusy] = useState(false);
@@ -741,10 +1202,13 @@ export default function SeasonScreen() {
 						/>
 					</View>
 
-					{/* Snaking pass track — stones alternate left ↔ right
-					    with a dashed SVG path zigzagging between them.
-					    From the redesign (Phase 9). */}
-					<SnakingPassTrack
+					{/* Vertical-list pass track — straight column of node +
+					    card rows with per-state visual treatment (sage
+					    claimed / sun-yellow ready / dashed locked) and
+					    display-only stats pills above. Replaces the
+					    snake; matches the design's bottom-of-screen
+					    reference. */}
+					<VerticalListPassTrack
 						totalTiers={season.total_tiers}
 						currentTier={tier}
 						tiersByNumber={tiersByNumber}
