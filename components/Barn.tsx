@@ -938,9 +938,6 @@ export default function Barn() {
 						    sprite a little grounding without a hard drop. */}
 						<View pointerEvents="none" style={styles.pigShadow} />
 					</View>
-					{/* Hint kicker — explicit instruction so first-timers see
-					    the affordance. From the redesign. */}
-					<Text style={styles.tickleHint}>tap rosie to tickle</Text>
 				</View>
 
 				{/* Hidden — the "Tier X of 30" wooden sign isn't meaningful
@@ -1066,15 +1063,8 @@ const styles = StyleSheet.create({
 		zIndex: 1,
 	},
 	// Placard styles dropped with the JSX above.
-	tickleHint: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.4,
-		textTransform: "uppercase",
-		textAlign: "center",
-		marginTop: 12,
-	},
+	// tickleHint dropped — the "tap rosie to tickle" prompt was
+	// noise once the pig was the only thing on screen.
 	ticketWrap: {
 		position: "relative",
 		paddingTop: 12,
