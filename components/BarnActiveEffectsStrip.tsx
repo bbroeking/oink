@@ -11,8 +11,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { router } from "expo-router";
 import { supabase } from "../utils/supabase";
+import { HoofprintsSheet } from "./HoofprintsSheet";
 import {
 	BLESSING_META,
 	CURSE_META,
@@ -42,6 +42,11 @@ function shortLeft(iso: string): string {
 
 export function BarnActiveEffectsStrip() {
 	const [effects, setEffects] = useState<Effect[]>([]);
+	// Tap a chip → open the full Hoofprints recap sheet so the
+	// player can read the actual effect (e.g. "1-in-3 taps slip")
+	// instead of just the kind name. Sheet owns its own fresh
+	// fetch of my_active_effects on open.
+	const [sheetOpen, setSheetOpen] = useState(false);
 
 	const load = useCallback(() => {
 		supabase.rpc("my_active_effects").then(({ data }) => {
@@ -121,6 +126,7 @@ export function BarnActiveEffectsStrip() {
 	if (effects.length === 0) return null;
 
 	return (
+		<>
 		<View style={styles.strip}>
 			{effects.slice(0, 2).map((e, i) => {
 				const blessed = e.source === "blessing";
@@ -133,7 +139,7 @@ export function BarnActiveEffectsStrip() {
 				return (
 					<Pressable
 						key={`${e.source}-${e.kind}-${i}`}
-						onPress={() => router.push("/friends" as never)}
+						onPress={() => setSheetOpen(true)}
 						style={[
 							styles.chip,
 							blessed ? styles.chipBless : styles.chipCurse,
@@ -178,6 +184,8 @@ export function BarnActiveEffectsStrip() {
 				);
 			})}
 		</View>
+		<HoofprintsSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+		</>
 	);
 }
 
