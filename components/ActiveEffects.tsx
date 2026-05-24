@@ -64,8 +64,6 @@ export function ActiveEffects() {
 	// Nothing active → render nothing (the empty state is just absence).
 	if (!effects || effects.length === 0) return null;
 
-	const curseCount = effects.filter((e) => e.source === "curse").length;
-
 	const cleanse = async () => {
 		if (busy) return;
 		setBusy(true);
@@ -147,34 +145,42 @@ export function ActiveEffects() {
 								</Text>
 							</View>
 						</View>
-						<Text
-							style={[
-								styles.countdown,
-								blessed ? styles.cdBless : styles.cdCurse,
-							]}
-						>
-							{countdown(e.expires_at)}
-						</Text>
+						<View style={styles.rowRight}>
+							<Text
+								style={[
+									styles.countdown,
+									blessed ? styles.cdBless : styles.cdCurse,
+								]}
+							>
+								{countdown(e.expires_at)}
+							</Text>
+							{/* Per-curse Cleanse pill. The cleanse_curses RPC
+							    is one-shot (clears every active curse in
+							    a single 5-snout charge); per-row buttons
+							    all call the same RPC. When there are
+							    multiple curses, tapping any of them
+							    wipes all for the single 5-snout cost —
+							    cheaper than separate per-curse charges,
+							    matches the design's inline placement. */}
+							{!blessed && (
+								<Pressable
+									onPress={cleanse}
+									disabled={busy}
+									style={({ pressed }) => [
+										styles.inlineCleanseBtn,
+										(pressed || busy) && { opacity: 0.7 },
+									]}
+								>
+									<SnoutCoin size={12} />
+									<Text style={styles.inlineCleanseBtnText}>
+										{busy ? "…" : "Cleanse · 5"}
+									</Text>
+								</Pressable>
+							)}
+						</View>
 					</Sticker>
 				);
 			})}
-			{curseCount > 0 && (
-				<Pressable
-					onPress={cleanse}
-					disabled={busy}
-					style={({ pressed }) => [
-						styles.cleanseBtn,
-						(pressed || busy) && { opacity: 0.7 },
-					]}
-				>
-					<Text style={styles.cleanseText}>
-						{busy
-							? "Cleansing…"
-							: `Cleanse ${curseCount > 1 ? "all curses" : "the curse"} · 5`}
-					</Text>
-					{!busy && <SnoutCoin size={15} />}
-				</Pressable>
-			)}
 		</View>
 	);
 }
@@ -238,19 +244,31 @@ const styles = StyleSheet.create({
 	countdown: { fontFamily: FONTS.whimsy, fontSize: 12 },
 	cdBless: { color: "#C99B23" },
 	cdCurse: { color: "#5E7E49" },
-	cleanseBtn: {
+	// Right column for each effect card — stacks the countdown above
+	// the (curse-only) inline Cleanse pill.
+	rowRight: {
+		alignItems: "flex-end",
+		gap: 6,
+	},
+	// Per-curse inline Cleanse pill — gold sun pill with the snout
+	// coin + label. Calls cleanse_curses which wipes every active
+	// curse in a single 5-snout charge.
+	inlineCleanseBtn: {
 		flexDirection: "row",
 		alignItems: "center",
-		justifyContent: "center",
-		gap: 6,
-		backgroundColor: "#D5E4C9",
-		borderWidth: 2,
+		gap: 4,
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		paddingVertical: 10,
-		marginBottom: 4,
+		borderRadius: 999,
+		paddingVertical: 4,
+		paddingHorizontal: 10,
 	},
-	cleanseText: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
+	inlineCleanseBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.ink,
+	},
 	sub: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
