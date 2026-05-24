@@ -24,10 +24,10 @@ import {
 	Easing,
 	Dimensions,
 } from "react-native";
-import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
+import { CleanseModal, type ActiveCurse } from "./CleanseModal";
 import {
 	BLESSING_META,
 	CURSE_META,
@@ -69,7 +69,10 @@ function shortLeft(iso: string): string {
 
 export function HoofprintsSheet({ open, onClose }: Props) {
 	const [effects, setEffects] = useState<Effect[]>([]);
-	const [busy, setBusy] = useState(false);
+	// Tap-Cleanse no longer fires the RPC directly — opens the
+	// shared CleanseModal confirm step instead so a misfire doesn't
+	// instantly burn 5 snouts.
+	const [cleanseOpen, setCleanseOpen] = useState(false);
 
 	// Sheet animation. Same pattern as the UserSheet fix: one
 	// Animated.Value drives backdrop opacity AND sheet translateY
@@ -99,21 +102,11 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 		});
 	}, [open]);
 
-	const cleanse = async () => {
-		if (busy) return;
-		setBusy(true);
-		const { data } = await supabase.rpc("cleanse_curses");
-		setBusy(false);
-		const r = data as { ok?: boolean } | null;
-		if (r?.ok) {
-			Haptics.notificationAsync(
-				Haptics.NotificationFeedbackType.Success
-			).catch(() => {});
-			// Optimistic local update: drop curse rows immediately so
-			// the sheet reflects the cleanse before the realtime
-			// channel re-pushes my_active_effects.
-			setEffects((prev) => prev.filter((e) => e.source !== "curse"));
-		}
+	// Optimistic post-cleanse update: drop curse rows immediately so
+	// the sheet reflects the cleanse before the realtime channel
+	// re-pushes my_active_effects. The modal owns the RPC + haptics.
+	const onCleansed = () => {
+		setEffects((prev) => prev.filter((e) => e.source !== "curse"));
 	};
 
 	if (!open) return null;
@@ -177,16 +170,15 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 										CURSES · −{curses.length}
 									</Text>
 									<Pressable
-										onPress={cleanse}
-										disabled={busy}
+										onPress={() => setCleanseOpen(true)}
 										style={({ pressed }) => [
 											styles.cleansePill,
-											(pressed || busy) && { opacity: 0.7 },
+											pressed && { opacity: 0.7 },
 										]}
 									>
 										<SnoutCoin size={13} />
 										<Text style={styles.cleansePillText}>
-											{busy ? "…" : "Cleanse · 5"}
+											Cleanse · 5
 										</Text>
 									</Pressable>
 								</View>
@@ -204,6 +196,16 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 					</Sticker>
 				</Pressable>
 			</Animated.View>
+			{cleanseOpen && (
+				<CleanseModal
+					curses={curses.map<ActiveCurse>((c) => ({
+						kind: c.kind as CurseKind,
+						expires_at: c.expires_at,
+					}))}
+					onDismiss={() => setCleanseOpen(false)}
+					onCleansed={onCleansed}
+				/>
+			)}
 		</Modal>
 	);
 }
