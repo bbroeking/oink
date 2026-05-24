@@ -259,6 +259,7 @@ function SnakingPassTrack({
 
 			{Array.from({ length: totalTiers }, (_, i) => i + 1).map((t, i) => {
 				const free = tiersByNumber[t]?.free;
+				const hasVipReward = !!tiersByNumber[t]?.premium;
 				const isFinale = t === totalTiers;
 				const reached = t <= currentTier;
 				const freeState: "claim" | "claimed" | "locked" = claimedSet.has(
@@ -277,6 +278,7 @@ function SnakingPassTrack({
 						reward={free}
 						state={freeState}
 						isFinale={isFinale}
+						vip={hasVipReward}
 						sideLeft={sideLeft}
 						top={y}
 						onClaim={() => onClaim(t, "free")}
@@ -292,6 +294,7 @@ function SnakeStone({
 	reward,
 	state,
 	isFinale,
+	vip,
 	sideLeft,
 	top,
 	onClaim,
@@ -300,6 +303,11 @@ function SnakeStone({
 	reward: TierRow | undefined;
 	state: "claim" | "claimed" | "locked";
 	isFinale: boolean;
+	// True when this tier also has a premium-track reward attached
+	// (the SeasonState exposes both free and premium tier rewards
+	// per tier number). Adds a "★ VIP" lilac-deep accent next to the
+	// Tier label so members know there's extra to claim here.
+	vip?: boolean;
 	sideLeft: boolean;
 	top: number;
 	onClaim: () => void;
@@ -377,6 +385,9 @@ function SnakeStone({
 					]}
 				>
 					Tier {tier}
+					{vip && !isFinale && (
+						<Text style={snakeStyles.tierVipMarker}> ★ VIP</Text>
+					)}
 					{isFinale ? "  FINALE" : ""}
 				</Text>
 				<Text
@@ -441,6 +452,15 @@ const snakeStyles = StyleSheet.create({
 		color: WHIMSY.mute,
 		letterSpacing: 0.8,
 		textTransform: "uppercase",
+	},
+	// Inline "★ VIP" accent next to the tier number when a premium-
+	// track reward exists for the tier. Lilac-deep so it reads as
+	// member-only without overpowering the Tier label.
+	tierVipMarker: {
+		color: WHIMSY.lilacDeep,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		letterSpacing: 0.8,
 	},
 	rewardName: {
 		fontFamily: FONTS.whimsy,
@@ -673,10 +693,7 @@ export default function SeasonScreen() {
 	}
 
 	const season = state.season!;
-	const xp = state.xp ?? 0;
 	const tier = state.current_tier ?? 1;
-	const xpInTier = xp % season.xp_per_tier;
-	const xpProgress = xpInTier / season.xp_per_tier;
 	const premium = state.premium_unlocked ?? false;
 
 	return (
@@ -689,44 +706,13 @@ export default function SeasonScreen() {
 					<View style={styles.titleRule} />
 				</View>
 
-				<View style={styles.progressWrap}>
-					<Sticker color="paper" rotate={-0.6} radius={16} style={styles.progressCard}>
-						<View style={styles.progressTop}>
-							<Text style={styles.tierLabel}>
-								Tier {tier} <Text style={styles.tierLabelSub}>of {season.total_tiers}</Text>
-							</Text>
-							<Text style={styles.xpText}>
-								{xpInTier} / {season.xp_per_tier} XP
-							</Text>
-						</View>
-						<View style={styles.progressBar}>
-							<View
-								style={[
-									styles.progressFill,
-									{ width: `${Math.max(4, xpProgress * 100)}%` },
-								]}
-							/>
-						</View>
-						{PAID_BATTLE_PASS_ENABLED && IAP_ENABLED && !premium && (
-							<Pressable
-								onPress={() => setSaleOpen(true)}
-								style={[
-									styles.ctaBtn,
-									{
-										backgroundColor: WHIMSY.sun,
-										marginTop: 12,
-										flexDirection: "row",
-										justifyContent: "center",
-										gap: 8,
-									},
-								]}
-							>
-								<Icon name="star" size={16} filled color={WHIMSY.ink} strokeWidth={0} />
-								<Text style={styles.ctaText}>Unlock Premium</Text>
-							</Pressable>
-						)}
-					</Sticker>
-				</View>
+				{/* The standalone XP progress card was dropped per the
+				    redesign — tier + total now reads from the
+				    "season pass / Tier N/M" SectionHeader inline with
+				    the snake track, and the snake stones themselves
+				    show progress via their fill state. The Unlock
+				    Premium CTA moved into the SectionHeader's right
+				    slot below. */}
 
 				<ScrollView contentContainerStyle={styles.tierList}>
 					<BountyBoard />
@@ -966,7 +952,6 @@ const styles = StyleSheet.create({
 		width: 90,
 		marginTop: 4,
 	},
-	progressWrap: { paddingHorizontal: 14, paddingVertical: 8 },
 	// Right-slot decorations for the season-pass SectionHeader.
 	vipKicker: {
 		fontFamily: FONTS.hand,
@@ -992,51 +977,7 @@ const styles = StyleSheet.create({
 		fontSize: 11,
 		color: WHIMSY.paper,
 	},
-	progressCard: { padding: 14 },
-	progressTop: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "baseline",
-		marginBottom: 8,
-	},
-	tierLabel: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-	},
-	tierLabelSub: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
-	xpText: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-	},
-	progressBar: {
-		height: 10,
-		backgroundColor: WHIMSY.cream,
-		borderRadius: 6,
-		overflow: "hidden",
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-	},
-	progressFill: {
-		height: "100%",
-		backgroundColor: WHIMSY.roseDeep,
-		borderRadius: 4,
-	},
 	ctas: { flexDirection: "row", gap: 8, marginTop: 12 },
-	ctaBtn: {
-		flex: 1,
-		paddingVertical: 9,
-		borderRadius: 12,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-	},
-	ctaText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
-		color: WHIMSY.ink,
-	},
 	tierList: {
 		padding: 14,
 		paddingBottom: 110,
