@@ -13,6 +13,13 @@ import { ListRowSkeleton } from "./ui/Skeleton";
 import { UserSheet } from "./UserSheet";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
+// Page size + hard upper bound for the global leaderboard. 25 lands
+// just over a single phone screen so each "Load more" is a deliberate
+// reach; 100 is the highest rank that's still meaningful to the
+// average player (the long tail past rank 100 is competitive noise).
+const LEADERBOARD_PAGE_SIZE = 25;
+const LEADERBOARD_MAX_ROWS = 100;
+
 type Scope = "global" | "friends" | "alignment";
 
 interface ActiveTitle {
@@ -168,31 +175,48 @@ export function Leaderboard() {
 	const [scope, setScope] = useState<Scope>("global");
 	const [myId, setMyId] = useState<string | null>(null);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+	// Paginated load-more state for the global scope. Friends scope is
+	// already bounded by the 100-friend cap; alignment is RPC-served
+	// with a fixed per_side, so neither needs pagination.
+	const [loadingMore, setLoadingMore] = useState(false);
+	const [hasMore, setHasMore] = useState(false);
+
+	// Fetches `count` rows starting at `from` from profiles, ordered
+	// by tickles_earned desc. Falls back to the no-titles select if
+	// the active_title join 400s (pre-titles-migration installs).
+	const fetchGlobalPage = useCallback(
+		async (from: number, count: number): Promise<LeaderboardEntry[]> => {
+			const SELECT_WITH_TITLES =
+				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
+			const SELECT_BASIC =
+				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score";
+			const run = async (select: string) =>
+				supabase
+					.from("profiles")
+					.select(select)
+					.not("username", "is", null)
+					.neq("username", "")
+					.order("tickles_earned", { ascending: false })
+					.range(from, from + count - 1);
+			let result = await run(SELECT_WITH_TITLES);
+			if (result.error) {
+				log.error("Leaderboard titles join failed, retrying without:", result.error);
+				result = await run(SELECT_BASIC);
+				if (result.error) throw result.error;
+			}
+			return normalize(result.data as unknown as RawRow[] | null);
+		},
+		[]
+	);
 
 	const fetchLeaderboard = useCallback(async () => {
 		setLoading(true);
+		setHasMore(false);
 		try {
 			const {
 				data: { user },
 			} = await supabase.auth.getUser();
 			setMyId(user?.id ?? null);
-
-			const SELECT_WITH_TITLES =
-				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
-			const SELECT_BASIC =
-				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score";
-
-			const runQuery = async (select: string, friendIds?: string[]) => {
-				let q = supabase
-					.from("profiles")
-					.select(select)
-					.not("username", "is", null)
-					.neq("username", "")
-					.order("tickles_earned", { ascending: false });
-				if (friendIds) q = q.in("id", friendIds);
-				else q = q.limit(50);
-				return q;
-			};
 
 			if (scope === "alignment") {
 				const { data: rows } = await supabase.rpc("alignment_leaderboard", {
@@ -219,10 +243,10 @@ export function Leaderboard() {
 				return;
 			}
 
-			let friendIds: string[] | undefined;
 			if (scope === "friends") {
+				// Bounded by the 100-friend cap — fetch once, no pagination.
 				const { data: friends } = await supabase.rpc("friend_ids");
-				friendIds = [
+				const friendIds = [
 					...((friends as string[] | null) ?? []),
 					...(user ? [user.id] : []),
 				];
@@ -230,15 +254,45 @@ export function Leaderboard() {
 					setLeaderboard([]);
 					return;
 				}
+				const SELECT_BASIC =
+					"id, username, discriminator, tickles_earned, active_hat_id, alignment_score";
+				const SELECT_WITH_TITLES =
+					"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement)";
+				// The titles join 400s when the titles migration isn't
+				// deployed; retry without it. Untyped intermediate so
+				// both selects can land in the same variable.
+				const runFriends = async (sel: string) =>
+					supabase
+						.from("profiles")
+						.select(sel)
+						.in("id", friendIds)
+						.not("username", "is", null)
+						.neq("username", "")
+						.order("tickles_earned", { ascending: false });
+				let result = (await runFriends(SELECT_WITH_TITLES)) as {
+					data: unknown;
+					error: unknown;
+				};
+				if (result.error) {
+					result = (await runFriends(SELECT_BASIC)) as {
+						data: unknown;
+						error: unknown;
+					};
+					if (result.error) throw result.error;
+				}
+				setLeaderboard(normalize(result.data as RawRow[] | null));
+				return;
 			}
 
-			let result = await runQuery(SELECT_WITH_TITLES, friendIds);
-			if (result.error) {
-				log.error("Leaderboard titles join failed, retrying without:", result.error);
-				result = await runQuery(SELECT_BASIC, friendIds);
-				if (result.error) throw result.error;
-			}
-			setLeaderboard(normalize(result.data as unknown as RawRow[] | null));
+			// Global scope — paginated. Pull the first page (PAGE_SIZE +
+			// 1 so the champion poster doesn't eat a slot from the rest
+			// list) and seed hasMore on whether the page came back full.
+			const firstPage = await fetchGlobalPage(0, LEADERBOARD_PAGE_SIZE);
+			setLeaderboard(firstPage);
+			setHasMore(
+				firstPage.length === LEADERBOARD_PAGE_SIZE &&
+					firstPage.length < LEADERBOARD_MAX_ROWS
+			);
 
 			supabase.rpc("mark_all_pass_events_seen").then(() => {});
 		} catch (error) {
@@ -246,7 +300,32 @@ export function Leaderboard() {
 		} finally {
 			setLoading(false);
 		}
-	}, [scope]);
+	}, [scope, fetchGlobalPage]);
+
+	const loadMore = useCallback(async () => {
+		if (loadingMore || !hasMore) return;
+		setLoadingMore(true);
+		try {
+			const from = leaderboard.length;
+			const want = Math.min(
+				LEADERBOARD_PAGE_SIZE,
+				LEADERBOARD_MAX_ROWS - from
+			);
+			if (want <= 0) {
+				setHasMore(false);
+				return;
+			}
+			const next = await fetchGlobalPage(from, want);
+			setLeaderboard((prev) => [...prev, ...next]);
+			setHasMore(
+				next.length === want && from + next.length < LEADERBOARD_MAX_ROWS
+			);
+		} catch (error) {
+			log.error("Error loading more leaderboard rows:", error);
+		} finally {
+			setLoadingMore(false);
+		}
+	}, [loadingMore, hasMore, leaderboard.length, fetchGlobalPage]);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -340,7 +419,9 @@ export function Leaderboard() {
 				</ScrollView>
 			) : (
 				// Global / friends leaderboard — champion poster on top,
-				// then a single flat sticker with the ranked rows.
+				// then a single flat sticker with the ranked rows. The
+				// Load more pill paginates the global scope; friends
+				// scope is naturally bounded by the 100-friend cap.
 				<ScrollView
 					style={styles.list}
 					contentContainerStyle={styles.listContent}
@@ -367,6 +448,28 @@ export function Leaderboard() {
 							))}
 						</Sticker>
 					)}
+					{scope === "global" && hasMore && (
+						<Pressable
+							onPress={loadMore}
+							disabled={loadingMore}
+							style={({ pressed }) => [
+								styles.loadMoreBtn,
+								(pressed || loadingMore) && { opacity: 0.7 },
+							]}
+						>
+							<Text style={styles.loadMoreBtnText}>
+								{loadingMore ? "Loading…" : "Load more"}
+							</Text>
+						</Pressable>
+					)}
+					{scope === "global" &&
+						!hasMore &&
+						leaderboard.length >= LEADERBOARD_MAX_ROWS && (
+							<Text style={styles.capNote}>
+								★ top {LEADERBOARD_MAX_ROWS} pigs — that's the floor of the
+								leaderboard
+							</Text>
+						)}
 				</ScrollView>
 			)}
 
@@ -503,6 +606,36 @@ const styles = StyleSheet.create({
 		fontSize: 10,
 		color: WHIMSY.mute,
 		marginTop: 2,
+	},
+	// "Load more" pill at the bottom of the global leaderboard.
+	// Reads as a deliberate action button rather than infinite-scroll
+	// magic — each tap pulls one more page of 25.
+	loadMoreBtn: {
+		alignSelf: "center",
+		marginTop: 14,
+		paddingHorizontal: 20,
+		paddingVertical: 10,
+		borderRadius: 999,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
+	},
+	loadMoreBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.ink,
+	},
+	capNote: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 14,
 	},
 	empty: {
 		textAlign: "center",
