@@ -20,6 +20,7 @@ import { supabase } from "../../utils/supabase";
 import { Button, SectionHeader } from "../../components/ui";
 import { Icon } from "../../components/ui/Icon";
 import { Sticker } from "../../components/ui/Sticker";
+import { PigAvatar } from "../../components/ui/PigAvatar";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
 import { TitlesSection } from "../../components/TitlesSection";
 import {
@@ -29,7 +30,7 @@ import {
 	CATEGORY_EMOJI,
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
-import { categoryIcon, PIG } from "@/constants/emojiArt";
+import { categoryIcon } from "@/constants/emojiArt";
 import { COLORS, FONTS, KICKER_PILL, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
@@ -1486,13 +1487,21 @@ export default function ShopScreen() {
 							</View>
 						}
 						ListEmptyComponent={
-							<View style={styles.wardrobeEmpty}>
-								<Image source={PIG} style={styles.wardrobeEmptyImg} />
+							<Sticker
+								color="paper"
+								rotate={-0.4}
+								radius={14}
+								style={styles.wardrobeEmpty}
+							>
+								{/* Big PigAvatar instead of the small PIG emoji
+								    image — matches the design's full sprite
+								    treatment for the empty closet moment. */}
+								<PigAvatar size={120} />
 								<Text style={styles.wardrobeEmptyTitle}>
 									Your closet is bare
 								</Text>
 								<Text style={styles.wardrobeEmptySub}>
-									Buy items in Today or Browse to dress up your pig.
+									Tap the shop to dress Rosie up.
 								</Text>
 								<View style={{ marginTop: 14 }}>
 									<Button
@@ -1503,7 +1512,7 @@ export default function ShopScreen() {
 										Visit shop
 									</Button>
 								</View>
-							</View>
+							</Sticker>
 						}
 					/>
 				)}
@@ -1792,9 +1801,12 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.5,
 	},
 	rarityBadge: {
+		// Top-left to match the redesign — leaves the top-right
+		// quadrant free for the premium ✦ sparkle accent in hero
+		// mosaic cells.
 		position: "absolute",
 		top: 8,
-		right: 8,
+		left: 8,
 		paddingHorizontal: 6,
 		paddingVertical: 2,
 		borderRadius: 6,
@@ -1901,19 +1913,14 @@ const styles = StyleSheet.create({
 	},
 	wardrobeEmpty: {
 		alignItems: "center",
-		paddingVertical: 60,
+		paddingVertical: 36,
 		paddingHorizontal: 24,
-	},
-	wardrobeEmptyImg: {
-		width: 68,
-		height: 68,
-		resizeMode: "contain",
-		marginBottom: 14,
 	},
 	wardrobeEmptyTitle: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 22,
 		color: WHIMSY.ink,
+		marginTop: 12,
 		marginBottom: 6,
 	},
 	wardrobeEmptySub: {
