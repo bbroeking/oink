@@ -6,6 +6,7 @@ import {
 	TextInput,
 	Pressable,
 	ActivityIndicator,
+	ScrollView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
@@ -94,11 +95,22 @@ export default function Friends({ userId }: { userId: string }) {
 				<TabBtn label="Add" active={tab === "add"} onPress={() => setTab("add")} />
 			</View>
 
-			{tab === "friends" && (
-				<FriendsList friends={friends} onPick={setSelectedUserId} />
-			)}
+			{/* Scrollable list area — at 100-friend cap the sticker
+			    would otherwise overflow off the bottom of the screen
+			    with no way to reach the lower rows. paddingBottom on
+			    the contentContainer keeps the last row clear of the
+			    hanging-signs tab bar. */}
+			<ScrollView
+				style={styles.scroll}
+				contentContainerStyle={styles.scrollContent}
+				showsVerticalScrollIndicator={false}
+			>
+				{tab === "friends" && (
+					<FriendsList friends={friends} onPick={setSelectedUserId} />
+				)}
 
-			{tab === "add" && <AddFriend userId={userId} onSent={load} />}
+				{tab === "add" && <AddFriend userId={userId} onSent={load} />}
+			</ScrollView>
 
 			<UserSheet
 				targetUserId={selectedUserId}
@@ -411,7 +423,9 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 
 // ── Styles ────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-	wrap: { marginTop: 16 },
+	wrap: { flex: 1, marginTop: 16, paddingHorizontal: 14 },
+	scroll: { flex: 1 },
+	scrollContent: { paddingBottom: 110 },
 	kicker: { ...KICKER_PILL, marginBottom: 8 },
 	tabsRow: {
 		flexDirection: "row",
