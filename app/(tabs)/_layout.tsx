@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import React, { useState, useEffect, useCallback } from "react";
-import { View } from "react-native";
+import { View, AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabase";
@@ -49,6 +49,35 @@ export default function TabLayout() {
 		});
 	}, []);
 
+	// Bounty-ready badge on the Season tab. Polled on mount + every
+	// foreground transition. Cheap RPC (counts rows from my_weekly_bounties),
+	// no realtime sub. The bounty_ready_push trigger fires immediately
+	// on the writes that move progress; this badge is the "ambient"
+	// reminder when you missed (or muted) the push.
+	const [bountyReady, setBountyReady] = useState(0);
+	useEffect(() => {
+		if (!session) return;
+		let cancelled = false;
+		const fetchCount = async () => {
+			const { data } = await supabase.rpc("bounty_ready_count");
+			if (cancelled) return;
+			setBountyReady(typeof data === "number" ? data : 0);
+		};
+		fetchCount();
+		const sub = AppState.addEventListener("change", (state) => {
+			if (state === "active") fetchCount();
+		});
+		// 30s ambient poll — covers mid-session claim (badge clears
+		// when the count drops to 0 after a tap). Cheap RPC; no
+		// realtime sub needed.
+		const interval = setInterval(fetchCount, 30_000);
+		return () => {
+			cancelled = true;
+			sub.remove();
+			clearInterval(interval);
+		};
+	}, [session]);
+
 	if (!session) {
 		return (
 			<View style={{ flex: 1 }}>
@@ -76,7 +105,9 @@ export default function TabLayout() {
 			// the default flat label+icon strip; the bar owns its
 			// own height, the wood-rail gradient, the per-tab signs
 			// with their sway loops, and the swing-in tap animation.
-			tabBar={(props) => <HangingSignsTabBar {...props} />}
+			tabBar={(props) => (
+				<HangingSignsTabBar {...props} badges={{ season: bountyReady }} />
+			)}
 			screenOptions={{ headerShown: false }}
 		>
 			<Tabs.Screen name="index"   options={{ title: "Barn" }} />

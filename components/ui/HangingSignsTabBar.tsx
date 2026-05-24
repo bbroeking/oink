@@ -59,10 +59,18 @@ const SWAY_DURATION_MS = 2750; // half-cycle; full loop = 5500ms
 const BREATHE_DURATION_MS = 2100; // active tab's slower rhythm
 const STAGGER_DELAYS_MS = [-300, -1600, -2700, -3900, -4700]; // matches CSS nth-child
 
+interface TabBarExtras {
+	// Optional per-route badge counts, keyed by the route name (same
+	// keys as TAB_CONFIG). > 0 → red dot on the sign. Plumbed in from
+	// app/(tabs)/_layout.tsx which polls the bounty_ready_count RPC.
+	badges?: Record<string, number>;
+}
+
 export function HangingSignsTabBar({
 	state,
 	navigation,
-}: BottomTabBarProps) {
+	badges,
+}: BottomTabBarProps & TabBarExtras) {
 	const insets = useSafeAreaInsets();
 	return (
 		<View>
@@ -96,6 +104,7 @@ export function HangingSignsTabBar({
 							activeBg={cfg.activeBg}
 							focused={focused}
 							swayDelay={STAGGER_DELAYS_MS[i] ?? 0}
+							badge={badges?.[route.name] ?? 0}
 							onPress={() => {
 								const event = navigation.emit({
 									type: "tabPress",
@@ -123,6 +132,7 @@ function HangingSign({
 	activeBg,
 	focused,
 	swayDelay,
+	badge,
 	onPress,
 }: {
 	label: string;
@@ -130,6 +140,7 @@ function HangingSign({
 	activeBg: string;
 	focused: boolean;
 	swayDelay: number;
+	badge: number;
 	onPress: () => void;
 }) {
 	// Continuous sway value, 0..1, mapped to -1.4° → 1.4° (or
@@ -301,6 +312,19 @@ function HangingSign({
 						    dots so the sign reads as nailed up. */}
 						<View style={[styles.nail, { left: 4 }]} />
 						<View style={[styles.nail, { right: 4 }]} />
+						{/* Red badge dot — top-right. Number-bearing for
+						    counts > 1; bare dot when count = 1 (keeps the
+						    sign uncluttered at the common ready-only-one
+						    case). */}
+						{badge > 0 && (
+							<View style={styles.badge}>
+								{badge > 1 && (
+									<Text style={styles.badgeText}>
+										{badge > 9 ? "9+" : String(badge)}
+									</Text>
+								)}
+							</View>
+						)}
 						<Icon
 							name={iconName as React.ComponentProps<typeof Icon>["name"]}
 							size={22}
@@ -421,5 +445,29 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		marginTop: 3,
 		letterSpacing: 0.3,
+	},
+	// Red badge dot — hangs off the upper-right of the signInner.
+	// Constant minimum size so the bare-dot (count=1) and the
+	// number-bearing (count>1) variants both read at a glance.
+	badge: {
+		position: "absolute",
+		top: -4,
+		right: -4,
+		minWidth: 14,
+		height: 14,
+		paddingHorizontal: 3,
+		borderRadius: 7,
+		backgroundColor: WHIMSY.accent,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	badgeText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 8,
+		fontWeight: "900",
+		color: WHIMSY.paper,
+		letterSpacing: 0,
 	},
 });
