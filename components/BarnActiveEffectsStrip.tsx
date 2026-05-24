@@ -8,7 +8,7 @@
 //
 // Closes the design's "Active effects on Barn" gap; the full
 // `ActiveEffects` panel still lives at the top of Inbox.
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
@@ -51,6 +51,72 @@ export function BarnActiveEffectsStrip() {
 		});
 	}, []);
 	useFocusEffect(useCallback(() => load(), [load]));
+
+	// Realtime: subscribe to INSERTs on blessings + curses where
+	// the caller is the receiver. On any event, re-run load() so
+	// the chip appears within ~a second of being cast, no swipe
+	// required. The receiver filter is enforced server-side via
+	// the existing RLS SELECT policies that scope rows to the
+	// caller's auth.uid().
+	useEffect(() => {
+		let active = true;
+		let channelKey: string | null = null;
+		(async () => {
+			const { data: { user } } = await supabase.auth.getUser();
+			if (!active || !user) return;
+			channelKey = `realtime:effects:${user.id}`;
+			const ch = supabase
+				.channel(channelKey)
+				.on(
+					"postgres_changes",
+					{
+						event: "INSERT",
+						schema: "public",
+						table: "blessings",
+						filter: `receiver_id=eq.${user.id}`,
+					},
+					() => load()
+				)
+				.on(
+					"postgres_changes",
+					{
+						event: "INSERT",
+						schema: "public",
+						table: "curses",
+						filter: `receiver_id=eq.${user.id}`,
+					},
+					() => load()
+				)
+				// Cleanse fires an UPDATE that sets cleared_at — listen
+				// for it so chips disappear live too.
+				.on(
+					"postgres_changes",
+					{
+						event: "UPDATE",
+						schema: "public",
+						table: "curses",
+						filter: `receiver_id=eq.${user.id}`,
+					},
+					() => load()
+				)
+				.subscribe();
+			return () => {
+				supabase.removeChannel(ch);
+			};
+		})();
+		return () => {
+			active = false;
+			if (channelKey) {
+				// Best-effort: a channel created in the async branch
+				// above is cleaned by its own returned closure, but
+				// dropping any channel with this key catches the
+				// rare unmount-before-subscribe race.
+				supabase.getChannels()
+					.filter((c) => c.topic === channelKey)
+					.forEach((c) => supabase.removeChannel(c));
+			}
+		};
+	}, [load]);
 
 	if (effects.length === 0) return null;
 

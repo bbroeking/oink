@@ -163,6 +163,90 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		}, [load])
 	);
 
+	// Realtime: subscribe to the four social tables, scoped to
+	// rows the caller is party to. Any event re-runs load() so
+	// the inbox repopulates without needing a tab swipe.
+	//
+	// `tickle_trades` + `friendships` have two columns the caller
+	// could be in (requester/receiver), so we register two filters
+	// per table and let either fire load().
+	React.useEffect(() => {
+		if (!userId) return;
+		const ch = supabase
+			.channel(`realtime:inbox:${userId}`)
+			// Incoming blessings → "blessed you" passive row
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "blessings",
+					filter: `receiver_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			// Incoming curses → "cursed you" passive row + hoofprints panel
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "curses",
+					filter: `receiver_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			// New incoming trade request (someone asked you)
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "tickle_trades",
+					filter: `target_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			// Your outgoing trade was fulfilled / cancelled (target side wrote)
+			.on(
+				"postgres_changes",
+				{
+					event: "UPDATE",
+					schema: "public",
+					table: "tickle_trades",
+					filter: `requester_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			// New friend request landed (you're the receiver)
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "friendships",
+					filter: `receiver_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			// Your outgoing request was accepted (you're the requester,
+			// status flipped pending → accepted)
+			.on(
+				"postgres_changes",
+				{
+					event: "UPDATE",
+					schema: "public",
+					table: "friendships",
+					filter: `requester_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			.subscribe();
+		return () => {
+			supabase.removeChannel(ch);
+		};
+	}, [userId, load]);
+
 	// Report the actionable count (friend + trade requests) upward so
 	// the hub can badge the Inbox segment.
 	React.useEffect(() => {
