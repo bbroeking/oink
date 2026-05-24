@@ -15,6 +15,12 @@ import { UserSheet } from "./UserSheet";
 import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
 import { AlignmentBadge } from "./ui/AlignmentBadge";
 
+// Hard cap on the friends list — must match the server-side cap
+// enforced in send_friend_request + accept_friend_request (see
+// supabase/migrations/20260541000000_friend_cap.sql). Past ~100
+// the list slows and the bless/curse cooldowns lose signal.
+export const FRIEND_CAP_LIMIT = 100;
+
 interface Profile {
 	id: string;
 	username: string | null;
@@ -35,14 +41,21 @@ export default function Friends({ userId }: { userId: string }) {
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
-		// Friends — via friend_ids RPC (returns the accepted set)
+		// Friends — via friend_ids RPC (returns the accepted set).
+		// The server enforces a 100-friend cap (see the friend_cap
+		// migration), so this should never return more than 100. The
+		// client-side cap below is defense-in-depth in case the
+		// migration hasn't been pushed yet — slicing here means we
+		// never blow up the list view, and the FRIEND_CAP_LIMIT
+		// constant stays the single source of truth in the UI.
 		const { data: friendIds } = await supabase.rpc("friend_ids");
 		const ids = (friendIds as string[] | null) ?? [];
-		if (ids.length > 0) {
+		const capped = ids.slice(0, FRIEND_CAP_LIMIT);
+		if (capped.length > 0) {
 			const { data } = await supabase
 				.from("profiles")
 				.select("id, username, tickles_earned, discriminator, alignment_score")
-				.in("id", ids);
+				.in("id", capped);
 			setFriends((data as Profile[]) ?? []);
 		} else {
 			setFriends([]);
@@ -153,7 +166,9 @@ function FriendsList({
 	const sorted = [...friends].sort((a, b) =>
 		(a.username ?? "").localeCompare(b.username ?? "")
 	);
+	const atCap = sorted.length >= FRIEND_CAP_LIMIT;
 	return (
+	  <>
 		<Sticker color="paper" rotate={-0.4} radius={14} style={styles.listSticker}>
 			{sorted.map((f, i) => {
 				const last = i === sorted.length - 1;
@@ -195,6 +210,16 @@ function FriendsList({
 				);
 			})}
 		</Sticker>
+		{/* At-cap notice — surfaces the 100-friend ceiling once it's
+		    actually reached. Doesn't render in the (overwhelmingly
+		    common) under-cap case, so it never clutters the list. */}
+		{atCap && (
+			<Text style={styles.atCapFooter}>
+				★ you're at the {FRIEND_CAP_LIMIT}-friend cap · remove someone
+				to add new friends
+			</Text>
+		)}
+	  </>
 	);
 }
 
@@ -240,7 +265,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 			target_discriminator: target.discriminator ?? null,
 		});
 		setSending(null);
-		const r = data as { ok?: boolean; reason?: string } | null;
+		const r = data as { ok?: boolean; reason?: string; cap?: number } | null;
 		if (error || !r?.ok) {
 			const reason = r?.reason;
 			setFeedback(
@@ -248,7 +273,13 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 					? "That's you."
 					: reason === "not_found"
 						? "User not found."
-						: "Couldn't send. Try again."
+						: reason === "at_cap"
+							? `You're at the ${r?.cap ?? FRIEND_CAP_LIMIT}-friend cap. Remove someone to add new friends.`
+							: reason === "target_at_cap"
+								? `${target.username} is at the friend cap.`
+								: reason === "already_friends"
+									? `You and ${target.username} are already friends.`
+									: "Couldn't send. Try again."
 			);
 			return;
 		}
@@ -488,6 +519,13 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textAlign: "center",
 		marginTop: 16,
+	},
+	atCapFooter: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		textAlign: "center",
+		marginTop: 14,
 	},
 	referralFooterBold: {
 		fontFamily: FONTS.bodyBlack,

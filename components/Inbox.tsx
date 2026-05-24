@@ -25,6 +25,8 @@ import { ActiveEffects } from "./ActiveEffects";
 import { FONTS, WHIMSY } from "@/constants/theme";
 import type { TradeRow } from "@/constants/trade_types";
 import { SectionHeader } from "./ui/SectionHeader";
+import { Sticker } from "./ui/Sticker";
+import { FRIEND_CAP_LIMIT } from "./Friends";
 
 interface FriendReq {
 	requester_id: string;
@@ -177,9 +179,23 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		setBusy(id);
 		const { data, error } = await supabase.rpc(rpc, args);
 		setBusy(null);
-		const r = data as { ok?: boolean; reason?: string } | null;
+		const r = data as {
+			ok?: boolean;
+			reason?: string;
+			cap?: number;
+		} | null;
 		if (error || (r && r.ok === false)) {
-			setFeedback("That didn't take — try again.");
+			// Surface the cap reasons specifically — they tell the user
+			// what to do (remove someone) rather than a vague retry.
+			if (r?.reason === "at_cap") {
+				setFeedback(
+					`You're at the ${r.cap ?? FRIEND_CAP_LIMIT}-friend cap. Remove someone first.`
+				);
+			} else if (r?.reason === "target_at_cap") {
+				setFeedback("They're at the friend cap.");
+			} else {
+				setFeedback("That didn't take — try again.");
+			}
 			return;
 		}
 		setFeedback(ok);
@@ -273,29 +289,45 @@ export function Inbox({ userId, onActionableCount }: Props) {
 							ruleWidth={88}
 						/>
 					</View>
-					{outgoingTrades.map((t) => (
-						<View key={t.id} style={styles.marketRow}>
-							<Text style={styles.marketText} numberOfLines={1}>
-								{t.partner_username ?? "—"}
-								{t.partner_discriminator && (
-									<Text style={styles.marketDisc}>
-										{" "}
-										#{t.partner_discriminator}
+					{/* Flat paper sticker with dashed-divided rows so the
+					    list reads as one card rather than loose lines
+					    nudging against the screen edge. */}
+					<Sticker
+						color="paper"
+						rotate={-0.3}
+						radius={14}
+						style={styles.flatList}
+					>
+						{outgoingTrades.map((t, i) => {
+							const last = i === outgoingTrades.length - 1;
+							return (
+								<View
+									key={t.id}
+									style={[styles.marketRow, !last && styles.flatRowDivider]}
+								>
+									<Text style={styles.marketText} numberOfLines={1}>
+										{t.partner_username ?? "—"}
+										{t.partner_discriminator && (
+											<Text style={styles.marketDisc}>
+												{" "}
+												#{t.partner_discriminator}
+											</Text>
+										)}{" "}
+										· you'd pocket {t.amount * 2}
 									</Text>
-								)}{" "}
-								· you'd pocket {t.amount * 2}
-							</Text>
-							<Pressable
-								onPress={() => withdrawTrade(t)}
-								disabled={busy === t.id}
-								hitSlop={8}
-							>
-								<Text style={styles.withdraw}>
-									{busy === t.id ? "…" : "withdraw"}
-								</Text>
-							</Pressable>
-						</View>
-					))}
+									<Pressable
+										onPress={() => withdrawTrade(t)}
+										disabled={busy === t.id}
+										hitSlop={8}
+									>
+										<Text style={styles.withdraw}>
+											{busy === t.id ? "…" : "withdraw"}
+										</Text>
+									</Pressable>
+								</View>
+							);
+						})}
+					</Sticker>
 				</>
 			)}
 
@@ -395,32 +427,48 @@ export function Inbox({ userId, onActionableCount }: Props) {
 							ruleWidth={96}
 						/>
 					</View>
-					{passive.map((p) => {
-						// Per-kind avatar bubble: small ink-outlined circle
-						// with a glyph + tinted background. Replaces the
-						// PNG icon row to match the design's recent-feed
-						// treatment.
-						const bubbleStyle =
-							p.kind === "answered"
-								? styles.passiveBubbleAnswered
-								: p.kind === "blessed"
-									? styles.passiveBubbleBlessed
-									: styles.passiveBubbleCursed;
-						const glyph =
-							p.kind === "answered" ? "♥" : p.kind === "blessed" ? "✦" : "☁";
-						const glyphStyle =
-							p.kind === "cursed"
-								? styles.passiveBubbleGlyphInverted
-								: styles.passiveBubbleGlyph;
-						return (
-							<View key={p.id} style={styles.passiveRow}>
-								<View style={[styles.passiveBubble, bubbleStyle]}>
-									<Text style={glyphStyle}>{glyph}</Text>
+					{/* Flat paper sticker with dashed-divided rows — the
+					    What-happened list reads as one bordered card,
+					    matching Out-to-market above. */}
+					<Sticker
+						color="paper"
+						rotate={-0.3}
+						radius={14}
+						style={styles.flatList}
+					>
+						{passive.map((p, i) => {
+							const last = i === passive.length - 1;
+							// Per-kind avatar bubble: small ink-outlined
+							// circle with a glyph + tinted background.
+							const bubbleStyle =
+								p.kind === "answered"
+									? styles.passiveBubbleAnswered
+									: p.kind === "blessed"
+										? styles.passiveBubbleBlessed
+										: styles.passiveBubbleCursed;
+							const glyph =
+								p.kind === "answered" ? "♥" : p.kind === "blessed" ? "✦" : "☁";
+							const glyphStyle =
+								p.kind === "cursed"
+									? styles.passiveBubbleGlyphInverted
+									: styles.passiveBubbleGlyph;
+							return (
+								<View
+									key={p.id}
+									style={[
+										styles.passiveRow,
+										!last && styles.flatRowDivider,
+									]}
+								>
+									<View style={[styles.passiveBubble, bubbleStyle]}>
+										<Text style={glyphStyle}>{glyph}</Text>
+									</View>
+									<Text style={styles.passiveText}>{p.text}</Text>
 								</View>
-								<Text style={styles.passiveText}>{p.text}</Text>
-							</View>
-						);
-					})}
+							);
+						})}
+					</Sticker>
+
 				</>
 			)}
 		</ScrollView>
@@ -467,18 +515,29 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		color: WHIMSY.mute,
 	},
-	// out-to-market strip
+	// Wraps Out-to-market + Recent rows in a single flat sticker.
+	// Padding 0 inside (rows manage their own horizontal padding) so
+	// dividers run the full card width.
+	flatList: { paddingVertical: 4, paddingHorizontal: 0 },
+	// Dashed bottom divider used between rows in flatList. Suppressed
+	// on the last row so the bottom border doesn't double up against
+	// the sticker's own ink edge.
+	flatRowDivider: {
+		borderBottomWidth: 1.5,
+		borderBottomColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	// Out-to-market row — now a flat row inside the flatList Sticker
+	// wrapper, so it drops its old standalone bg + border + margin
+	// and just contributes horizontal padding to keep content off
+	// the sticker's ink edge.
 	marketRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
-		backgroundColor: WHIMSY.paper,
-		borderRadius: 9,
-		borderWidth: 1,
-		borderColor: WHIMSY.ink,
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		marginBottom: 5,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+		gap: 8,
 	},
 	marketText: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.ink, flex: 1 },
 	withdraw: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
@@ -572,13 +631,15 @@ const styles = StyleSheet.create({
 		fontSize: 13,
 		color: WHIMSY.ink,
 	},
-	// passive row
+	// Recent / passive row — lives inside the flatList Sticker so
+	// horizontal padding mirrors the marketRow above. Bumped from 4
+	// to 14 so the bubble doesn't kiss the sticker's ink border.
 	passiveRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 9,
-		paddingVertical: 7,
-		paddingHorizontal: 4,
+		gap: 12,
+		paddingVertical: 10,
+		paddingHorizontal: 14,
 	},
 	// Recent feed bubble — small ink-outlined circle with a glyph,
 	// per kind: rose ♥ for answered, lilac ✦ for blessed, ink ☁ for

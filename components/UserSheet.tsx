@@ -33,6 +33,37 @@ import {
 	STICKER_SHADOW,
 	WHIMSY,
 } from "@/constants/theme";
+import { FRIEND_CAP_LIMIT } from "./Friends";
+
+// Maps a send/accept RPC failure reason to a human-readable line for
+// the sheet's feedback strip. Centralizes the cap messages so the
+// "at the 100-friend cap" copy reads identically across the surfaces.
+function friendActionMessage(
+	reason: string | undefined,
+	cap: number | undefined,
+	otherName: string | null
+): string {
+	const otherLabel = otherName ?? "this player";
+	switch (reason) {
+		case "at_cap":
+			return `You're at the ${cap ?? FRIEND_CAP_LIMIT}-friend cap. Remove someone to add new friends.`;
+		case "target_at_cap":
+			return `${otherLabel} is at the friend cap.`;
+		case "already_friends":
+			return `You and ${otherLabel} are already friends.`;
+		case "pending":
+			return "A request is already pending.";
+		case "self":
+			return "That's you.";
+		case "no_pending_request":
+			return "No pending request to accept.";
+		case "no_such_user":
+		case "not_found":
+			return "User not found.";
+		default:
+			return reason ?? "Couldn't complete that.";
+	}
+}
 
 type FriendshipStatus =
 	| "self"
@@ -192,7 +223,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			target_username: stats.username,
 			target_discriminator: stats.discriminator ?? null,
 		});
-		const r = data as { ok?: boolean; reason?: string } | null;
+		const r = data as { ok?: boolean; reason?: string; cap?: number } | null;
 		setBusy(false);
 		if (r?.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -200,7 +231,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			await refreshStats();
 			onFriendshipChanged?.();
 		} else {
-			setFeedback(r?.reason ?? "Couldn't send.");
+			setFeedback(friendActionMessage(r?.reason, r?.cap, stats.username));
 		}
 	};
 
@@ -217,12 +248,23 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const acceptIncoming = async () => {
 		if (!stats) return;
 		setBusy(true);
-		await supabase.rpc("accept_friend_request", { other_user_id: stats.user_id });
+		const { data } = await supabase.rpc("accept_friend_request", {
+			other_user_id: stats.user_id,
+		});
+		const r = data as { ok?: boolean; reason?: string; cap?: number } | null;
 		setBusy(false);
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-		setFeedback("You're friends now.");
-		await refreshStats();
-		onFriendshipChanged?.();
+		if (r?.ok) {
+			Haptics.notificationAsync(
+				Haptics.NotificationFeedbackType.Success
+			).catch(() => {});
+			setFeedback("You're friends now.");
+			await refreshStats();
+			onFriendshipChanged?.();
+		} else {
+			setFeedback(
+				friendActionMessage(r?.reason, r?.cap, stats.username ?? null)
+			);
+		}
 	};
 
 	const sendTickle = async () => {
