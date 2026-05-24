@@ -7,7 +7,7 @@
 //   pending_incoming → Accept friend request
 //   friends    → an Ask row — pick 1-5, then request_tickles. This
 //                is the single door for asking a friend for tickles.
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
 	Modal,
 	View,
@@ -15,6 +15,9 @@ import {
 	StyleSheet,
 	Pressable,
 	ActivityIndicator,
+	Animated,
+	Easing,
+	Dimensions,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
@@ -167,6 +170,27 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// needs without expanding the RPC's return shape.
 	const [targetTickles, setTargetTickles] = useState<number | null>(null);
 
+	// Sheet animation — driven independently of the backdrop so the
+	// dim doesn't slide up with the card (the old animationType="slide"
+	// dragged the whole grey screen up, which looked broken). Backdrop
+	// gets a fade 0→1; the sheet gets a translateY from screen-height
+	// → 0. Both driven by the same 0..1 progress value so they finish
+	// in lockstep. screenH is captured once on mount — Dimensions reads
+	// don't fire on rotation but the sheet is portrait-only so that's
+	// fine.
+	const screenH = useRef(Dimensions.get("window").height).current;
+	const sheetAnim = useRef(new Animated.Value(0)).current;
+	useEffect(() => {
+		if (!targetUserId) return;
+		sheetAnim.setValue(0);
+		Animated.timing(sheetAnim, {
+			toValue: 1,
+			duration: 320,
+			easing: Easing.out(Easing.cubic),
+			useNativeDriver: true,
+		}).start();
+	}, [targetUserId, sheetAnim]);
+
 	useEffect(() => {
 		if (!targetUserId) {
 			setStats(null);
@@ -299,16 +323,43 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 
 	if (!targetUserId) return null;
 
+	// Backdrop fades; sheet translates up from below the screen.
+	// Driving both off `sheetAnim` (0..1) keeps them in lockstep
+	// without sliding the dim as one body.
+	const backdropOpacity = sheetAnim;
+	const sheetTranslateY = sheetAnim.interpolate({
+		inputRange: [0, 1],
+		outputRange: [screenH, 0],
+	});
+
 	return (
 		<>
 			<Modal
 				visible
 				transparent
-				animationType="slide"
+				animationType="none"
 				onRequestClose={onDismiss}
 			>
-				<Pressable style={styles.backdrop} onPress={onDismiss}>
-					<Pressable style={styles.sheetWrap} onPress={() => {}}>
+				{/* Backdrop — static-position Pressable that fades in.
+				    Tap outside the sheet to dismiss. */}
+				<Animated.View
+					style={[styles.backdrop, { opacity: backdropOpacity }]}
+					pointerEvents="auto"
+				>
+					<Pressable
+						style={StyleSheet.absoluteFill}
+						onPress={onDismiss}
+					/>
+				</Animated.View>
+				{/* Sheet — slides up over the static backdrop. */}
+				<Animated.View
+					pointerEvents="box-none"
+					style={[
+						styles.sheetWrap,
+						{ transform: [{ translateY: sheetTranslateY }] },
+					]}
+				>
+					<Pressable onPress={() => {}}>
 						<Sticker
 							color="paper"
 							rotate={-0.6}
@@ -447,7 +498,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 							)}
 						</Sticker>
 					</Pressable>
-				</Pressable>
+				</Animated.View>
 			</Modal>
 		</>
 	);
@@ -610,12 +661,25 @@ function AskRow({
 }
 
 const styles = StyleSheet.create({
+	// Backdrop is now its own Animated.View occupying the full
+	// screen — the dim fades in independently of the sheet's slide.
+	// flex:1 keeps it covering the screen; no justifyContent here
+	// (the sheet sibling positions itself with absolute).
 	backdrop: {
-		flex: 1,
-		justifyContent: "flex-end",
+		...StyleSheet.absoluteFillObject,
 		backgroundColor: MODAL_BACKDROP_BG,
 	},
-	sheetWrap: { padding: 16, paddingBottom: 32 },
+	// Sheet wrapper now absolutely-positioned at the bottom of the
+	// Modal root so the slide-up animation translates it from
+	// off-screen → resting at the bottom.
+	sheetWrap: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		bottom: 0,
+		padding: 16,
+		paddingBottom: 32,
+	},
 	sheet: { padding: 18 },
 	loadingWrap: { paddingVertical: 40, alignItems: "center" },
 	// iOS-style grabber pill at the top of the sheet — purely a visual
