@@ -86,7 +86,10 @@ describe("AlignmentSchismModal", () => {
 			btn.props.onPress();
 			await Promise.resolve();
 		});
-		expect(mockRpc).toHaveBeenCalledWith("mark_schism_seen", { side: "angel" });
+		expect(mockRpc).toHaveBeenCalledWith("mark_schism_seen", {
+			side: "angel",
+			milestone: 25,
+		});
 		expect(onDismiss).toHaveBeenCalled();
 	});
 

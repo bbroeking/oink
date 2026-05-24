@@ -72,7 +72,11 @@ function RootLayoutInner() {
 	const [authChecked, setAuthChecked] = useState(false);
 	// Season 1: pending alignment-schism reveal. Set by the polling
 	// effect below when a user first crosses ±25 alignment.
-	const [schism, setSchism] = useState<{ side: SchismSide; score: number } | null>(null);
+	const [schism, setSchism] = useState<{
+		side: SchismSide;
+		score: number;
+		milestone: 25 | 50 | 100;
+	} | null>(null);
 	// Season 1 finale: pending Judgement Day verdict.
 	const [finale, setFinale] = useState<FinaleResult | null>(null);
 	// "While you were away" — bless/curse received since last launch.
@@ -97,9 +101,16 @@ function RootLayoutInner() {
 		const check = async () => {
 			const { data } = await supabase.rpc("check_schism_status");
 			if (cancelled) return;
-			const r = data as { side?: string; score?: number } | null;
+			const r = data as {
+				side?: string;
+				score?: number;
+				milestone?: number;
+			} | null;
 			if (r?.side === "angel" || r?.side === "goblin") {
-				setSchism({ side: r.side, score: r.score ?? 0 });
+				// Milestone defaults to 25 to match the pre-milestone
+				// server's return shape (and pre-migration installs).
+				const ms = r.milestone === 50 || r.milestone === 100 ? r.milestone : 25;
+				setSchism({ side: r.side, score: r.score ?? 0, milestone: ms });
 			}
 		};
 		check();
@@ -348,6 +359,7 @@ function RootLayoutInner() {
 				<AlignmentSchismModal
 					side={schism.side}
 					score={schism.score}
+					milestone={schism.milestone}
 					onDismiss={() => setSchism(null)}
 				/>
 			)}
