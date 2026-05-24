@@ -136,11 +136,13 @@ function RootLayoutInner() {
 		};
 	}, [authChecked]);
 
-	// "While you were away" — surface blessings + curses received
-	// since the last launch. Tracked client-side via AsyncStorage
-	// (`rituals_seen_v1` = the newest sent_at already shown). The
-	// events also live in the Friends-tab Inbox; this is the
-	// can't-miss-it launch announcement. Runs once on auth.
+	// "While you were away" — surface blessings + curses RECEIVED
+	// and trades ANSWERED since the last launch. Tracked client-side
+	// via AsyncStorage (`away_seen_v1` = the newest event timestamp
+	// already shown; falls back to legacy `rituals_seen_v1` for
+	// upgraded installs). The events also live in the Friends-tab
+	// Inbox; this is the can't-miss-it launch announcement. Runs
+	// once on auth.
 	useEffect(() => {
 		if (!authChecked) return;
 		let cancelled = false;
@@ -148,10 +150,15 @@ function RootLayoutInner() {
 			const { data: ures } = await supabase.auth.getUser();
 			const me = ures?.user?.id;
 			if (!me || cancelled) return;
-			const SEEN = "rituals_seen_v1";
+			const SEEN = "away_seen_v1";
+			const LEGACY = "rituals_seen_v1";
 			const since =
-				(await AsyncStorage.getItem(SEEN)) ?? new Date().toISOString();
-			const side = async (table: "blessings" | "curses") => {
+				(await AsyncStorage.getItem(SEEN)) ??
+				(await AsyncStorage.getItem(LEGACY)) ??
+				new Date().toISOString();
+
+			// Rituals: blessings + curses where receiver = me.
+			const ritualSide = async (table: "blessings" | "curses") => {
 				const { data } = await supabase
 					.from(table)
 					.select("kind, sender_id, sent_at")
@@ -165,23 +172,67 @@ function RootLayoutInner() {
 					sent_at: string;
 				}[];
 			};
-			const rows = [
-				...(await side("blessings")).map((r) => ({
-					...r,
-					source: "blessing" as const,
+
+			// Trades you requested that got fulfilled while you were
+			// gone — celebratory because the +2N tickles already
+			// landed in your barn. Pending requests aren't surfaced
+			// here; those sit in the Inbox actionable band where they
+			// belong (they need a tap, not a "got it" dismiss).
+			const tradeRows = await (async () => {
+				const { data } = await supabase
+					.from("tickle_trades")
+					.select("id, amount, target_id, fulfilled_at")
+					.eq("requester_id", me)
+					.eq("status", "fulfilled")
+					.gt("fulfilled_at", since)
+					.order("fulfilled_at", { ascending: false })
+					.limit(20);
+				return (data ?? []) as {
+					id: string;
+					amount: number;
+					target_id: string;
+					fulfilled_at: string;
+				}[];
+			})();
+
+			// Normalize all events to a shared shape so we can sort + cap
+			// uniformly. `ts` is the comparable timestamp; `actor_id` is
+			// who to look up a display name for.
+			type Norm = {
+				source: "blessing" | "curse" | "trade_fulfilled";
+				ts: string;
+				actor_id: string;
+				kind?: string;
+				amount?: number;
+			};
+			const all: Norm[] = [
+				...(await ritualSide("blessings")).map<Norm>((r) => ({
+					source: "blessing",
+					ts: r.sent_at,
+					actor_id: r.sender_id,
+					kind: r.kind,
 				})),
-				...(await side("curses")).map((r) => ({
-					...r,
-					source: "curse" as const,
+				...(await ritualSide("curses")).map<Norm>((r) => ({
+					source: "curse",
+					ts: r.sent_at,
+					actor_id: r.sender_id,
+					kind: r.kind,
+				})),
+				...tradeRows.map<Norm>((r) => ({
+					source: "trade_fulfilled",
+					ts: r.fulfilled_at,
+					actor_id: r.target_id,
+					amount: r.amount,
 				})),
 			];
+
 			if (cancelled) return;
-			if (rows.length === 0) {
+			if (all.length === 0) {
 				// Advance the marker so a first launch never dredges history.
 				AsyncStorage.setItem(SEEN, new Date().toISOString());
 				return;
 			}
-			const ids = [...new Set(rows.map((r) => r.sender_id))];
+			const ids = [...new Set(all.map((r) => r.actor_id))];
 			const { data: profs } = await supabase
 				.from("profiles")
 				.select("id, username")
@@ -192,14 +243,16 @@ function RootLayoutInner() {
 					(p) => [p.id, p.username]
 				)
 			);
-			rows.sort((a, b) => (a.sent_at < b.sent_at ? 1 : -1));
-			AsyncStorage.setItem(SEEN, rows[0].sent_at);
+			all.sort((a, b) => (a.ts < b.ts ? 1 : -1));
+			AsyncStorage.setItem(SEEN, all[0].ts);
 			setRituals(
-				rows.map((r) => ({
-					source: r.source,
-					kind: r.kind,
-					from: byId.get(r.sender_id) ?? null,
-				}))
+				all.map<RitualEvent>((r) => {
+					const from = byId.get(r.actor_id) ?? null;
+					if (r.source === "trade_fulfilled") {
+						return { source: "trade_fulfilled", amount: r.amount ?? 0, from };
+					}
+					return { source: r.source, kind: r.kind ?? "", from };
+				})
 			);
 		})();
 		return () => {

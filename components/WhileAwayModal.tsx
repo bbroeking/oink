@@ -28,31 +28,43 @@ import {
 	WHIMSY,
 } from "@/constants/theme";
 
-export interface RitualEvent {
-	source: "blessing" | "curse";
-	kind: string;
-	from: string | null;
-}
+// Discriminated union — blessings + curses + trades all surface in
+// the same launch modal so the player gets ONE "what landed" moment
+// instead of three separate ones. Old name was RitualEvent; trades
+// aren't rituals, so the type was renamed. Kept the RitualEvent
+// alias below so existing imports keep working through the rename.
+export type WhileAwayEvent =
+	| { source: "blessing"; kind: string; from: string | null }
+	| { source: "curse"; kind: string; from: string | null }
+	| { source: "trade_fulfilled"; amount: number; from: string | null };
+
+export type RitualEvent = WhileAwayEvent; // legacy alias
 
 export function WhileAwayModal({
 	events,
 	onDismiss,
 }: {
-	events: RitualEvent[];
+	events: WhileAwayEvent[];
 	onDismiss: () => void;
 }) {
 	const blessings = events.filter((e) => e.source === "blessing").length;
-	const curses = events.length - blessings;
+	const curses = events.filter((e) => e.source === "curse").length;
+	const trades = events.filter((e) => e.source === "trade_fulfilled").length;
+	// Pick the headline from whichever event class dominates — the
+	// modal isn't going to summarize a mix perfectly, so lean on the
+	// most-numerous one.
 	const headline =
-		curses === 0
-			? blessings === 1
-				? "A friend blessed you"
-				: "Friends blessed you"
-			: blessings === 0
-				? curses === 1
+		trades >= blessings && trades >= curses && trades > 0
+			? trades === 1
+				? "A trade was answered"
+				: "Trades landed in your barn"
+			: curses === 0
+				? blessings === 1
+					? "A friend blessed you"
+					: "Friends blessed you"
+				: blessings === 0
 					? "You were cursed"
-					: "You were cursed"
-				: "Blessings & curses landed";
+					: "Blessings & curses landed";
 
 	return (
 		<Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
@@ -71,6 +83,23 @@ export function WhileAwayModal({
 						showsVerticalScrollIndicator={false}
 					>
 						{events.map((e, i) => {
+							if (e.source === "trade_fulfilled") {
+								return (
+									<View key={i} style={[styles.row, styles.rowTrade]}>
+										<View style={styles.tradeGlyphWell}>
+											<Text style={styles.tradeGlyph}>♥</Text>
+										</View>
+										<View style={{ flex: 1, minWidth: 0 }}>
+											<Text style={styles.rowName} numberOfLines={1}>
+												{e.from ?? "A friend"} answered your trade
+											</Text>
+											<Text style={styles.rowBlurb} numberOfLines={2}>
+												+{e.amount * 2} tickles landed in your barn.
+											</Text>
+										</View>
+									</View>
+								);
+							}
 							const blessed = e.source === "blessing";
 							const meta = blessed
 								? BLESSING_META[e.kind as BlessingKind]
@@ -146,6 +175,18 @@ const styles = StyleSheet.create({
 	},
 	rowBless: { backgroundColor: WHIMSY.sun, borderColor: WHIMSY.ink },
 	rowCurse: { backgroundColor: "#D5E4C9", borderColor: WHIMSY.ink },
+	rowTrade: { backgroundColor: WHIMSY.rose, borderColor: WHIMSY.ink },
+	tradeGlyphWell: {
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	tradeGlyph: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.roseDeep },
 	icon: { width: 36, height: 36, resizeMode: "contain" },
 	rowName: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	rowBlurb: {
