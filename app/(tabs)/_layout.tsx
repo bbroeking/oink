@@ -19,9 +19,15 @@ const TAB_ICON: Record<string, IconName> = {
 	account: "tabMe",
 };
 
-// Tape-strip active indicator — a small yellow tape rectangle just
-// below the icon when the tab is focused. Mirrors the .tape-strip
+// Tape-strip active indicator — a small yellow tape rectangle pinned
+// just above the icon when the tab is focused. Mirrors the .tape-strip
 // rule from the redesign's styles.css (26×4, sun w/ ink border).
+//
+// The strip used to sit BELOW the icon, but React Navigation lays the
+// label out directly under the icon — pinning the strip at bottom:-10
+// dropped it right through the label text ("Barn" with a yellow bar
+// running through the middle). Moving the indicator above the icon
+// reads cleanly without colliding with the label.
 function TabIcon({
 	name,
 	focused,
@@ -32,18 +38,11 @@ function TabIcon({
 }) {
 	return (
 		<View style={{ alignItems: "center", justifyContent: "center" }}>
-			<Icon
-				name={TAB_ICON[name]}
-				size={24}
-				color={WHIMSY.ink}
-				filled={focused}
-				strokeWidth={2}
-			/>
 			{focused && (
 				<View
 					style={{
 						position: "absolute",
-						bottom: -10,
+						top: -8,
 						width: 26,
 						height: 4,
 						backgroundColor: WHIMSY.sun,
@@ -53,6 +52,13 @@ function TabIcon({
 					}}
 				/>
 			)}
+			<Icon
+				name={TAB_ICON[name]}
+				size={24}
+				color={WHIMSY.ink}
+				filled={focused}
+				strokeWidth={2}
+			/>
 		</View>
 	);
 }
