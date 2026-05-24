@@ -21,4 +21,8 @@ export interface TradeRow {
 	created_at: string;
 	fulfilled_at: string | null;
 	partner_username: string | null;
+	// my_tickle_trades joins through to profiles and returns the
+	// partner's discriminator alongside the username so trade rows
+	// can render "millie #0042" without an extra fetch.
+	partner_discriminator: string | null;
 }

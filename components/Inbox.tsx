@@ -220,17 +220,17 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		...answered.map((t) => ({
 			id: `ans-${t.id}`,
 			text: `your trade was answered — +${t.amount * 2} tickles`,
-			icon: require("../assets/images/emoji/trade.png"),
+			kind: "answered" as const,
 		})),
 		...blessings.map((b) => ({
 			id: `bl-${b.id}`,
 			text: `${b.from_username ?? "A friend"} blessed you — ${BLESSING_LABEL[b.kind] ?? b.kind}`,
-			icon: require("../assets/images/emoji/blessed.png"),
+			kind: "blessed" as const,
 		})),
 		...curses.map((c) => ({
 			id: `cu-${c.id}`,
 			text: `${c.from_username ?? "Someone"} cursed you — ${CURSE_LABEL[c.kind] ?? c.kind}`,
-			icon: require("../assets/images/emoji/cursed.png"),
+			kind: "cursed" as const,
 		})),
 	];
 
@@ -276,7 +276,14 @@ export function Inbox({ userId, onActionableCount }: Props) {
 					{outgoingTrades.map((t) => (
 						<View key={t.id} style={styles.marketRow}>
 							<Text style={styles.marketText} numberOfLines={1}>
-								{t.partner_username ?? "—"} · you'd pocket {t.amount * 2}
+								{t.partner_username ?? "—"}
+								{t.partner_discriminator && (
+									<Text style={styles.marketDisc}>
+										{" "}
+										#{t.partner_discriminator}
+									</Text>
+								)}{" "}
+								· you'd pocket {t.amount * 2}
 							</Text>
 							<Pressable
 								onPress={() => withdrawTrade(t)}
@@ -343,6 +350,12 @@ export function Inbox({ userId, onActionableCount }: Props) {
 								<View style={{ flex: 1, minWidth: 0 }}>
 									<Text style={styles.cardTitle} numberOfLines={1}>
 										{t.partner_username ?? "A friend"}
+										{t.partner_discriminator && (
+											<Text style={styles.cardTitleDisc}>
+												{" "}
+												#{t.partner_discriminator}
+											</Text>
+										)}
 									</Text>
 									<Text style={styles.cardSub}>
 										asks for {t.amount} tickles
@@ -382,12 +395,32 @@ export function Inbox({ userId, onActionableCount }: Props) {
 							ruleWidth={96}
 						/>
 					</View>
-					{passive.map((p) => (
-						<View key={p.id} style={styles.passiveRow}>
-							<Image source={p.icon} style={styles.passiveIcon} />
-							<Text style={styles.passiveText}>{p.text}</Text>
-						</View>
-					))}
+					{passive.map((p) => {
+						// Per-kind avatar bubble: small ink-outlined circle
+						// with a glyph + tinted background. Replaces the
+						// PNG icon row to match the design's recent-feed
+						// treatment.
+						const bubbleStyle =
+							p.kind === "answered"
+								? styles.passiveBubbleAnswered
+								: p.kind === "blessed"
+									? styles.passiveBubbleBlessed
+									: styles.passiveBubbleCursed;
+						const glyph =
+							p.kind === "answered" ? "♥" : p.kind === "blessed" ? "✦" : "☁";
+						const glyphStyle =
+							p.kind === "cursed"
+								? styles.passiveBubbleGlyphInverted
+								: styles.passiveBubbleGlyph;
+						return (
+							<View key={p.id} style={styles.passiveRow}>
+								<View style={[styles.passiveBubble, bubbleStyle]}>
+									<Text style={glyphStyle}>{glyph}</Text>
+								</View>
+								<Text style={styles.passiveText}>{p.text}</Text>
+							</View>
+						);
+					})}
 				</>
 			)}
 		</ScrollView>
@@ -547,7 +580,42 @@ const styles = StyleSheet.create({
 		paddingVertical: 7,
 		paddingHorizontal: 4,
 	},
-	passiveIcon: { width: 24, height: 24, resizeMode: "contain" },
+	// Recent feed bubble — small ink-outlined circle with a glyph,
+	// per kind: rose ♥ for answered, lilac ✦ for blessed, ink ☁ for
+	// cursed. Replaces the PNG icon to match the design.
+	passiveBubble: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	passiveBubbleAnswered: { backgroundColor: WHIMSY.rose },
+	passiveBubbleBlessed: { backgroundColor: WHIMSY.lilac },
+	passiveBubbleCursed: { backgroundColor: WHIMSY.ink },
+	passiveBubbleGlyph: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		color: WHIMSY.ink,
+	},
+	passiveBubbleGlyphInverted: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		color: WHIMSY.paper,
+	},
+	// Discriminator suffix on trade rows + outgoing market rows.
+	marketDisc: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.mute,
+	},
+	cardTitleDisc: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+	},
 	passiveText: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
