@@ -44,6 +44,14 @@ interface LeaderboardEntry {
 	active_hat: ActiveHat | null;
 	active_title: ActiveTitle | null;
 	alignment_score?: number | null;
+	// Alignment-scope only: which half of the leaderboard this row
+	// belongs to (Generous top vs Greedy top) + the within-side rank.
+	// alignment_leaderboard RPC returns both; we used to throw them
+	// away and renumber every row 1..N, which made Greedy #1 read
+	// like "rank 11 overall" — confusing because it ranks across
+	// two independent boards.
+	align_side?: "generous" | "greedy" | null;
+	align_side_rank?: number | null;
 }
 
 function formatDisplayName(
@@ -278,6 +286,8 @@ export function Leaderboard() {
 								username: string | null;
 								active_hat_id: string | null;
 								alignment_score: number;
+								side: "generous" | "greedy";
+								side_rank: number;
 						  }[]
 						| null) ?? []
 				).map((r) => ({
@@ -292,6 +302,8 @@ export function Leaderboard() {
 					active_hat: null,
 					active_title: null,
 					alignment_score: r.alignment_score,
+					align_side: r.side,
+					align_side_rank: r.side_rank,
 				}));
 				setLeaderboard(mapped);
 				return;
@@ -445,31 +457,79 @@ export function Leaderboard() {
 							: "No tickles yet. Be the first!"}
 				</Text>
 			) : scope === "alignment" ? (
-				// Alignment leaderboard — no champion poster (rank 1 in
-				// alignment isn't a "today's champion" moment). Single
-				// flat sticker holds every row with dashed dividers.
+				// Alignment leaderboard — TWO independent boards
+				// (Generous top + Greedy top), each with its own
+				// 1..N rank from the alignment_leaderboard RPC. We
+				// used to render them as one flat 1..2N list which
+				// made the most-greedy player look like "rank N+1
+				// overall" — confusing because the two sides aren't
+				// comparable, they're competing extremes.
 				<ScrollView
 					style={styles.list}
 					contentContainerStyle={styles.listContent}
 				>
-					<Sticker
-						color="paper"
-						rotate={-0.3}
-						radius={14}
-						style={styles.listSticker}
-					>
-						{leaderboard.map((item, index) => (
-							<ClippingRow
-								key={item.id}
-								player={item}
-								rank={index + 1}
-								isYou={item.id === myId}
-								last={index === leaderboard.length - 1}
-								onPress={setSelectedUserId}
-								showAlignment
-							/>
-						))}
-					</Sticker>
+					{(() => {
+						const generous = leaderboard.filter((r) => r.align_side === "generous");
+						const greedy = leaderboard.filter((r) => r.align_side === "greedy");
+						return (
+							<>
+								{generous.length > 0 && (
+									<>
+										<View style={styles.alignSectionHeader}>
+											<Text style={[styles.alignSectionText, styles.alignSectionGenerous]}>
+												GENEROUS · top {generous.length}
+											</Text>
+										</View>
+										<Sticker
+											color="paper"
+											rotate={-0.3}
+											radius={14}
+											style={styles.listSticker}
+										>
+											{generous.map((item, i) => (
+												<ClippingRow
+													key={item.id}
+													player={item}
+													rank={item.align_side_rank ?? i + 1}
+													isYou={item.id === myId}
+													last={i === generous.length - 1}
+													onPress={setSelectedUserId}
+													showAlignment
+												/>
+											))}
+										</Sticker>
+									</>
+								)}
+								{greedy.length > 0 && (
+									<>
+										<View style={[styles.alignSectionHeader, { marginTop: 18 }]}>
+											<Text style={[styles.alignSectionText, styles.alignSectionGreedy]}>
+												GREEDY · top {greedy.length}
+											</Text>
+										</View>
+										<Sticker
+											color="paper"
+											rotate={0.4}
+											radius={14}
+											style={styles.listSticker}
+										>
+											{greedy.map((item, i) => (
+												<ClippingRow
+													key={item.id}
+													player={item}
+													rank={item.align_side_rank ?? i + 1}
+													isYou={item.id === myId}
+													last={i === greedy.length - 1}
+													onPress={setSelectedUserId}
+													showAlignment
+												/>
+											))}
+										</Sticker>
+									</>
+								)}
+							</>
+						);
+					})()}
 				</ScrollView>
 			) : (
 				// Global / friends leaderboard — champion poster on top,
@@ -606,6 +666,22 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 0,
 		paddingVertical: 4,
 	},
+	// Per-side section header for the alignment scope. Generous gets
+	// a gold-ish tint, Greedy gets the sage-green miasma — matches
+	// the bless/curse color identity used elsewhere.
+	alignSectionHeader: {
+		marginTop: 12,
+		marginBottom: 4,
+		paddingHorizontal: 4,
+	},
+	alignSectionText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		letterSpacing: 1.4,
+		textTransform: "uppercase",
+	},
+	alignSectionGenerous: { color: "#C99B23" }, // matches Barn blessing countdown
+	alignSectionGreedy:   { color: "#5E7E49" }, // matches Barn curse countdown
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
