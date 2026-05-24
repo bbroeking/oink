@@ -109,10 +109,20 @@ function ChampionPoster({
 						>
 							{formatDisplayName(champ.username, champ.active_title)}
 						</Text>
-						<Text style={styles.champScore}>
-							{champ.active_title?.name ? `${champ.active_title.name} · ` : ""}
-							♥ {champ.tickles_earned.toLocaleString()}
-						</Text>
+						{/* Second line — same "wears X" pattern the ranked
+						    rows use, so the champion's equipped item gets
+						    called out in plain text alongside the
+						    sprite in the avatar bubble. Falls back to
+						    the ♥ tickles count when no hat is equipped. */}
+						{champ.active_hat?.name ? (
+							<Text style={styles.champScore}>
+								wears {champ.active_hat.name}
+							</Text>
+						) : (
+							<Text style={styles.champScore}>
+								♥ {champ.tickles_earned.toLocaleString()}
+							</Text>
+						)}
 					</View>
 					{/* Crown — the de-facto leader glyph. Replaces the old
 					    rotated "1" badge so the role reads instantly. */}
