@@ -173,9 +173,14 @@ function TierStone({
 						{reward.display_label}
 					</Text>
 					{premium && !isFinale && (
-						<Text style={styles.stonePrem}>
-							{isLocked ? "🔒 premium" : "★ premium"}
-						</Text>
+						<View style={styles.stonePremRow}>
+							{isLocked ? (
+								<Icon name="lock" size={11} color={WHIMSY.mute} filled />
+							) : (
+								<Text style={styles.stonePremStar}>★</Text>
+							)}
+							<Text style={styles.stonePrem}>premium</Text>
+						</View>
 					)}
 					{isFinale && <Text style={styles.stoneFinale}>FINALE</Text>}
 				</View>
@@ -345,14 +350,11 @@ function SnakeStone({
 					},
 				]}
 			>
-				<Text
-					style={[
-						snakeStyles.stoneNum,
-						isFinale && { color: WHIMSY.paper, fontSize: 28 },
-					]}
-				>
-					{isFinale ? "👑" : tier}
-				</Text>
+				{isFinale ? (
+					<Icon name="crown" size={28} color={WHIMSY.paper} />
+				) : (
+					<Text style={snakeStyles.stoneNum}>{tier}</Text>
+				)}
 
 				{/* Claimable: rose-deep ! pill at top-right corner so the
 				    stone reads as actionable at a glance. */}
@@ -361,10 +363,11 @@ function SnakeStone({
 						<Text style={snakeStyles.badgeClaimableText}>!</Text>
 					</View>
 				)}
-				{/* Locked: paper 🔒 pill at bottom-right. */}
+				{/* Locked: paper lock pill at bottom-right (Icon replaces
+				    the prior 🔒 glyph as part of the no-emoji sweep). */}
 				{isLocked && (
 					<View style={snakeStyles.badgeLocked}>
-						<Text style={snakeStyles.badgeLockedText}>🔒</Text>
+						<Icon name="lock" size={11} color={WHIMSY.ink} filled />
 					</View>
 				)}
 			</View>
@@ -522,9 +525,6 @@ const snakeStyles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
 		justifyContent: "center",
-	},
-	badgeLockedText: {
-		fontSize: 10,
 	},
 });
 
@@ -1040,11 +1040,24 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		lineHeight: 16,
 	},
+	// Premium marker on the tier rows — lock icon (locked) or ★
+	// (unlocked) sitting inline with the "premium" word. Row layout
+	// keeps the icon + text on the same baseline.
+	stonePremRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 4,
+		marginTop: 3,
+	},
 	stonePrem: {
 		fontFamily: FONTS.hand,
 		fontSize: 11,
 		color: WHIMSY.lilacDeep,
-		marginTop: 3,
+	},
+	stonePremStar: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 11,
+		color: WHIMSY.lilacDeep,
 	},
 	stoneFinale: {
 		fontFamily: FONTS.whimsy,

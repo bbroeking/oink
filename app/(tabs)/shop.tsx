@@ -1349,7 +1349,7 @@ export default function ShopScreen() {
 									style={styles.bundleSticker}
 								>
 									<View style={styles.bundleRow}>
-										<Text style={styles.bundleGlyph}>🎁</Text>
+										<Icon name="gift" size={24} color={WHIMSY.ink} filled />
 										<View style={{ flex: 1, minWidth: 0 }}>
 											<Text style={styles.bundleTitle}>
 												Bundle: starter pack
@@ -1670,7 +1670,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: 12,
 	},
-	bundleGlyph: { fontSize: 22 },
+	// Bundle glyph moved off Text-emoji onto <Icon name="gift" />.
 	bundleTitle: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 15,

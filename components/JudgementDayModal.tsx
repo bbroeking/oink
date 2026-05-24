@@ -24,6 +24,7 @@ import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
+import { Icon } from "./ui/Icon";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 export interface FinaleResult {
@@ -130,7 +131,9 @@ export function JudgementDayModal({ result, onDismiss }: Props) {
 				</Svg>
 
 				<View style={styles.center}>
-					<Text style={styles.scales}>⚖</Text>
+					<View style={styles.scalesWrap}>
+						<Icon name="scales" size={48} color={WHIMSY.paper} filled />
+					</View>
 					<Text style={styles.kicker}>★ judgement day</Text>
 					<Text style={styles.headline}>{headline(result)}</Text>
 					<Text style={styles.subtitle}>{subtitle(result)}</Text>
@@ -146,7 +149,9 @@ export function JudgementDayModal({ result, onDismiss }: Props) {
 						<View style={styles.rewardList}>
 							{!!result.title_name && (
 								<View style={styles.rewardRow}>
-									<Text style={styles.rewardGlyph}>👑</Text>
+									<View style={styles.rewardGlyphWrap}>
+										<Icon name="crown" size={20} color={WHIMSY.ink} filled />
+									</View>
 									<Text style={styles.rewardText}>
 										Title: {result.title_name}
 									</Text>
@@ -198,9 +203,10 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		paddingHorizontal: 28,
 	},
-	scales: {
-		fontSize: 42,
-		color: WHIMSY.paper,
+	// Scales icon wrapper — sets the bottom rhythm under the glyph
+	// so the kicker doesn't crowd it. Icon takes size + color directly,
+	// so no font sizing here.
+	scalesWrap: {
 		marginBottom: 6,
 	},
 	kicker: {
@@ -249,6 +255,13 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 10,
+	},
+	// Fixed-width slot so the icon (or the ✦ fallback char) lines up
+	// against the reward text consistently across all three branches.
+	rewardGlyphWrap: {
+		width: 22,
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	rewardGlyph: {
 		fontSize: 18,

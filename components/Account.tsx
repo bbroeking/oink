@@ -341,7 +341,7 @@ export function Account({ session }: { session: Session }) {
 						style={achievementStyles.row}
 					>
 						<View style={achievementStyles.iconBubble}>
-							<Text style={achievementStyles.iconText}>🏆</Text>
+							<Icon name="trophy" size={22} color={WHIMSY.ink} filled />
 						</View>
 						<View style={{ flex: 1 }}>
 							<Text style={achievementStyles.label}>Achievements</Text>
@@ -588,19 +588,19 @@ export function Account({ session }: { session: Session }) {
 							style={settingsStyles.card}
 						>
 							<SettingRow
-								icon="📜"
+								icon="scroll"
 								label="What's new"
 								onPress={() => setReleaseNotesOpen(true)}
 							/>
 							{IAP_ENABLED && (
 								<SettingRow
-									icon="↻"
+									icon="refresh"
 									label="Restore purchases"
 									onPress={handleRestore}
 								/>
 							)}
 							<SettingRow
-								icon="↪"
+								icon="exit"
 								label="Sign out"
 								onPress={() => supabase.auth.signOut()}
 								destructive
@@ -646,7 +646,9 @@ function SlopPerk({
 }
 
 // A single row inside the Settings card. Icon + label + optional chev,
-// dashed bottom border unless it's the last row.
+// dashed bottom border unless it's the last row. Icon takes an Icon
+// name from the shared ui/Icon set (e.g. "scroll", "refresh", "exit")
+// — kept off Unicode emoji per the design-language no-emoji rule.
 function SettingRow({
 	icon,
 	label,
@@ -654,12 +656,13 @@ function SettingRow({
 	destructive,
 	last,
 }: {
-	icon: string;
+	icon: IconName;
 	label: string;
 	onPress: () => void;
 	destructive?: boolean;
 	last?: boolean;
 }) {
+	const iconColor = destructive ? WHIMSY.accent : WHIMSY.ink;
 	return (
 		<Pressable
 			onPress={onPress}
@@ -669,7 +672,9 @@ function SettingRow({
 				pressed && { opacity: 0.65 },
 			]}
 		>
-			<Text style={settingsStyles.rowIcon}>{icon}</Text>
+			<View style={settingsStyles.rowIconWrap}>
+				<Icon name={icon} size={20} color={iconColor} />
+			</View>
 			<Text
 				style={[
 					settingsStyles.rowLabel,
@@ -1187,10 +1192,12 @@ const settingsStyles = StyleSheet.create({
 		borderBottomColor: WHIMSY.muteSoft,
 		borderStyle: "dashed",
 	},
-	rowIcon: {
-		fontSize: 18,
+	// Fixed-width well so each settings row's label baseline aligns
+	// even when the icon glyph differs in optical width.
+	rowIconWrap: {
 		width: 26,
-		textAlign: "center",
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	rowLabel: {
 		flex: 1,

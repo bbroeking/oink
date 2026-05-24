@@ -9,6 +9,7 @@ import { View, Text, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { SnoutCoin } from "./ui/SnoutCoin";
+import { Icon, type IconName } from "./ui/Icon";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 export interface WeeklyBounty {
@@ -28,18 +29,30 @@ interface Props {
 	onClaimed?: () => void;
 }
 
-// Best-effort emoji per bounty type. The schema doesn't expose an
-// icon field; derive from the bounty code so each card has a visual
-// anchor in the icon well.
-function bountyEmoji(code: string): string {
+// Best-effort visual per bounty type. The schema doesn't expose an
+// icon field; derive from the bounty code so each card has an
+// anchor in the icon well. Returns either an Icon name (for the
+// glyphs that have SVG equivalents) or a typographic character
+// (★ ✦ ♥ ☁ — print characters, not Unicode emojis).
+type BountyVisual =
+	| { kind: "icon"; name: IconName }
+	| { kind: "char"; text: string };
+
+function bountyVisual(code: string): BountyVisual {
 	const c = code.toLowerCase();
-	if (c.includes("trade") || c.includes("fulfill") || c.includes("ask")) return "🤝";
-	if (c.includes("bless") || c.includes("halo")) return "✦";
-	if (c.includes("curse") || c.includes("itch")) return "☁";
-	if (c.includes("tickle") || c.includes("tap")) return "♥";
-	if (c.includes("friend") || c.includes("sounder")) return "🐷";
-	if (c.includes("shop") || c.includes("buy") || c.includes("equip")) return "🎩";
-	return "🎯";
+	if (c.includes("trade") || c.includes("fulfill") || c.includes("ask"))
+		return { kind: "icon", name: "handshake" };
+	if (c.includes("bless") || c.includes("halo"))
+		return { kind: "char", text: "✦" };
+	if (c.includes("curse") || c.includes("itch"))
+		return { kind: "char", text: "☁" };
+	if (c.includes("tickle") || c.includes("tap"))
+		return { kind: "char", text: "♥" };
+	if (c.includes("friend") || c.includes("sounder"))
+		return { kind: "icon", name: "pig" };
+	if (c.includes("shop") || c.includes("buy") || c.includes("equip"))
+		return { kind: "icon", name: "hat" };
+	return { kind: "icon", name: "target" };
 }
 
 export function BountyCard({ bounty, tilt, onClaimed }: Props) {
@@ -78,7 +91,14 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 			<View style={styles.row}>
 				{/* Sun-tinted icon well — visual anchor at the left edge */}
 				<View style={styles.iconWell}>
-					<Text style={styles.iconGlyph}>{bountyEmoji(bounty.code)}</Text>
+					{(() => {
+						const v = bountyVisual(bounty.code);
+						return v.kind === "icon" ? (
+							<Icon name={v.name} size={26} color={WHIMSY.ink} filled />
+						) : (
+							<Text style={styles.iconGlyph}>{v.text}</Text>
+						);
+					})()}
 				</View>
 
 				<View style={styles.body}>

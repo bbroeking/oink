@@ -460,7 +460,7 @@ export default function Barn() {
 			const seen = await AsyncStorage.getItem("seen_67");
 			if (seen === "1") return;
 			Alert.alert(
-				"6 7! 🐷",
+				"6 7!",
 				"You've crossed 67 tickles. Wanna celebrate with a six-seven?",
 				[
 					{
@@ -716,7 +716,7 @@ export default function Barn() {
 			Haptics.notificationAsync(
 				Haptics.NotificationFeedbackType.Warning
 			).catch(() => {});
-			showToast("👻 Phantom itch", "Your tap slipped right off.");
+			showToast("Phantom itch", "Your tap slipped right off.");
 			return;
 		}
 

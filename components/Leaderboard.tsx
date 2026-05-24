@@ -116,7 +116,7 @@ function ChampionPoster({
 					</View>
 					{/* Crown — the de-facto leader glyph. Replaces the old
 					    rotated "1" badge so the role reads instantly. */}
-					<Text style={styles.crownGlyph}>👑</Text>
+					<Icon name="crown" size={36} color={WHIMSY.ink} />
 				</View>
 			</Sticker>
 		</Pressable>
@@ -578,11 +578,9 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},
-	// Crown glyph at the right of the champion poster — replaces the
-	// old rotated "1" badge so the role reads instantly.
-	crownGlyph: {
-		fontSize: 36,
-	},
+	// Crown moved off Text-emoji onto <Icon name="crown" /> as part of
+	// the no-emoji sweep — no inline style needed; Icon takes size +
+	// color directly.
 	list: { flex: 1 },
 	listContent: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 110 },
 	// Single sticker wrapping every ranked row — replaces per-row
