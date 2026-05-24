@@ -655,18 +655,34 @@ const styles = StyleSheet.create({
 	actionTextSecondary: { color: WHIMSY.mute },
 	askWrap: { gap: 8 },
 	askPills: { flexDirection: "row", gap: 6 },
+	// Chunky 48×48 squares per the design's RitualPicker —
+	// commanding tap targets that look like ink-bordered tiles.
+	// Active = lilac-deep with paper text + hard ink shadow.
 	askPill: {
 		flex: 1,
-		paddingVertical: 9,
-		borderRadius: 10,
-		borderWidth: 1.5,
+		minHeight: 48,
+		paddingVertical: 0,
+		borderRadius: 14,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.paper,
 		alignItems: "center",
+		justifyContent: "center",
 	},
-	askPillActive: { backgroundColor: WHIMSY.sun },
-	askPillText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.mute },
-	askPillTextActive: { color: WHIMSY.ink },
+	askPillActive: {
+		backgroundColor: WHIMSY.lilacDeep,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
+	},
+	askPillText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.ink,
+	},
+	askPillTextActive: { color: WHIMSY.paper },
 	// Hand-script tradeoff preview between the pills and the submit
 	// button — sets expectations before commit. From the design.
 	askHint: {
@@ -711,38 +727,41 @@ const styles = StyleSheet.create({
 		gap: 6,
 		marginTop: 12,
 	},
-	// 3-tab control (Ask / Bless / Curse) — the redesign's
-	// segmented control inside the friend sheet.
+	// 3-tab control (Ask / Bless / Curse) — pill-seg with the
+	// ink-on-paper active state per the design's .pill-seg primitive
+	// (rounded container, ink-bordered, active button has ink bg +
+	// paper text).
 	actionTabs: {
 		flexDirection: "row",
-		gap: 6,
 		marginTop: 12,
 		marginBottom: 12,
 		backgroundColor: WHIMSY.paper,
-		borderRadius: 14,
-		borderWidth: 1.5,
+		borderRadius: 999,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		padding: 3,
+		padding: 4,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
 	},
 	actionTab: {
 		flex: 1,
 		paddingVertical: 8,
-		borderRadius: 10,
+		borderRadius: 999,
 		alignItems: "center",
 	},
 	actionTabActive: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.ink,
 	},
 	actionTabText: {
-		fontFamily: FONTS.hand,
+		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
 		color: WHIMSY.mute,
 	},
 	actionTabTextActive: {
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
+		color: WHIMSY.paper,
 	},
 	ritualToggleBtn: {
 		flex: 1,
