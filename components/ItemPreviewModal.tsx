@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
 	Modal,
 	View,
@@ -7,6 +7,7 @@ import {
 	StyleSheet,
 	Image,
 	ImageBackground,
+	Animated,
 } from "react-native";
 import { Sticker } from "./ui/Sticker";
 import { SpritePig } from "./ui/SpritePig";
@@ -31,6 +32,116 @@ const RARITY_GRADIENT: Record<string, string> = {
 	epic: WHIMSY.lilac,
 	legendary: WHIMSY.sun,
 };
+
+// Tickle-particle preview — loops the same burst the Barn would
+// fire on a tap (per-particle dx / rise / scale / tilt / duration
+// jitter) so the player sees the actual cosmetic, not a still
+// image. Bursts every ~900ms while the modal is mounted; clears
+// its interval + in-flight animations on unmount.
+function TickleParticlePreview({ source }: { source: number }) {
+	type Float = {
+		id: number;
+		dx: number;
+		rise: number;
+		rot: number;
+		scaleMax: number;
+		duration: number;
+		anim: Animated.Value;
+	};
+	const [floats, setFloats] = useState<Float[]>([]);
+	const nextId = useRef(0);
+
+	useEffect(() => {
+		let cancelled = false;
+		const burst = () => {
+			if (cancelled) return;
+			const n = 6 + Math.floor(Math.random() * 3); // 6–8 per cycle
+			for (let i = 0; i < n; i++) {
+				const stagger = i === 0 ? 0 : Math.floor(Math.random() * 140);
+				setTimeout(() => {
+					if (cancelled) return;
+					const id = nextId.current++;
+					const dx = Math.random() * 180 - 90;
+					const rise = -(150 + Math.random() * 70);
+					const rot = Math.random() * 50 - 25;
+					const scaleMax = 0.9 + Math.random() * 0.5;
+					const duration = 1200 + Math.floor(Math.random() * 400);
+					const anim = new Animated.Value(0);
+					setFloats((f) => [
+						...f,
+						{ id, dx, rise, rot, scaleMax, duration, anim },
+					]);
+					Animated.timing(anim, {
+						toValue: 1,
+						duration,
+						useNativeDriver: true,
+					}).start(() => {
+						setFloats((f) => f.filter((x) => x.id !== id));
+					});
+				}, stagger);
+			}
+		};
+		burst();
+		const t = setInterval(burst, 1100);
+		return () => {
+			cancelled = true;
+			clearInterval(t);
+		};
+	}, []);
+
+	return (
+		<View pointerEvents="none" style={StyleSheet.absoluteFill}>
+			{floats.map((f) => {
+				const translateY = f.anim.interpolate({
+					inputRange: [0, 0.12, 1],
+					outputRange: [0, -10, f.rise],
+				});
+				const translateX = f.anim.interpolate({
+					inputRange: [0, 1],
+					outputRange: [0, f.dx],
+				});
+				const opacity = f.anim.interpolate({
+					inputRange: [0, 0.15, 0.85, 1],
+					outputRange: [0, 1, 1, 0],
+				});
+				const scale = f.anim.interpolate({
+					inputRange: [0, 0.15, 1],
+					outputRange: [0.55, f.scaleMax, f.scaleMax * 0.9],
+				});
+				return (
+					<Animated.Image
+						key={f.id}
+						source={source}
+						resizeMode="contain"
+						style={[
+							particleStyles.particle,
+							{
+								opacity,
+								transform: [
+									{ translateX },
+									{ translateY },
+									{ rotate: `${f.rot}deg` },
+									{ scale },
+								],
+							},
+						]}
+					/>
+				);
+			})}
+		</View>
+	);
+}
+
+const particleStyles = StyleSheet.create({
+	particle: {
+		position: "absolute",
+		left: "50%",
+		bottom: 36,
+		width: 56,
+		height: 56,
+		marginLeft: -28,
+	},
+});
 
 interface Props {
 	item: HatRow | null;
@@ -78,6 +189,11 @@ export function ItemPreviewModal({
 	// in the preview misrepresents what the player will see when
 	// equipped.
 	const isBackgroundItem = item.category === "background";
+	// Tickle particles preview as JUST the looping burst animation —
+	// no pig, no static overlay. They're animation-only cosmetics
+	// (drift up + fade on tickle), so a still pig with a frozen
+	// particle on top misrepresents what you'd actually see.
+	const isTickleParticle = item.category === "tickle_particle";
 
 	return (
 		<Modal visible={!!item} animationType="fade" transparent onRequestClose={onClose}>
@@ -104,7 +220,9 @@ export function ItemPreviewModal({
 							{ backgroundColor: RARITY_GRADIENT[rarity] },
 						]}
 					>
-						{isBackgroundItem && itemSrc ? (
+						{isTickleParticle && itemSrc ? (
+							<TickleParticlePreview source={itemSrc} />
+						) : isBackgroundItem && itemSrc ? (
 							<Image
 								source={itemSrc}
 								style={styles.fillImage}
