@@ -40,6 +40,12 @@ interface RitualRow {
 	from_username: string | null;
 }
 
+interface AcceptedFriend {
+	receiver_id: string;
+	username: string | null;
+	updated_at: string;
+}
+
 const BLESSING_LABEL: Record<string, string> = {
 	warm_tea: "warm tea — faster tickles",
 	sun_beam: "a sun beam — luckier next pig",
@@ -69,6 +75,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	const [answered, setAnswered] = useState<TradeRow[]>([]);
 	const [blessings, setBlessings] = useState<RitualRow[]>([]);
 	const [curses, setCurses] = useState<RitualRow[]>([]);
+	const [acceptedFriends, setAcceptedFriends] = useState<AcceptedFriend[]>([]);
 
 	const load = useCallback(async () => {
 		// Trades — one RPC covers incoming / outgoing / answered.
@@ -153,6 +160,41 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		};
 		setBlessings(await hydrate("blessings"));
 		setCurses(await hydrate("curses"));
+
+		// Recently-accepted outgoing friend requests — surfaced in the
+		// passive band as "X accepted your request" cards. Bounded to
+		// the last 7 days so the band doesn't accumulate forever; once
+		// the friend is in your list, the card is just an echo.
+		const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+		const { data: accRows } = await supabase
+			.from("friendships")
+			.select("receiver_id, updated_at")
+			.eq("requester_id", userId)
+			.eq("status", "accepted")
+			.gt("updated_at", sevenDaysAgo)
+			.order("updated_at", { ascending: false })
+			.limit(10);
+		const accList = (accRows ?? []) as { receiver_id: string; updated_at: string }[];
+		if (accList.length === 0) {
+			setAcceptedFriends([]);
+		} else {
+			const { data: accProfs } = await supabase
+				.from("profiles")
+				.select("id, username")
+				.in("id", accList.map((r) => r.receiver_id));
+			const accById = new Map(
+				((accProfs ?? []) as { id: string; username: string | null }[]).map(
+					(p) => [p.id, p.username]
+				)
+			);
+			setAcceptedFriends(
+				accList.map((r) => ({
+					receiver_id: r.receiver_id,
+					username: accById.get(r.receiver_id) ?? null,
+					updated_at: r.updated_at,
+				}))
+			);
+		}
 
 		setLoading(false);
 	}, [userId]);
@@ -321,6 +363,11 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			id: `ans-${t.id}`,
 			text: `your trade was answered — +${t.amount * 2} tickles`,
 			kind: "answered" as const,
+		})),
+		...acceptedFriends.map((a) => ({
+			id: `frd-${a.receiver_id}`,
+			text: `${a.username ?? "A friend"} accepted your request`,
+			kind: "friended" as const,
 		})),
 		...blessings.map((b) => ({
 			id: `bl-${b.id}`,
@@ -527,11 +574,19 @@ export function Inbox({ userId, onActionableCount }: Props) {
 							const bubbleStyle =
 								p.kind === "answered"
 									? styles.passiveBubbleAnswered
-									: p.kind === "blessed"
-										? styles.passiveBubbleBlessed
-										: styles.passiveBubbleCursed;
+									: p.kind === "friended"
+										? styles.passiveBubbleFriended
+										: p.kind === "blessed"
+											? styles.passiveBubbleBlessed
+											: styles.passiveBubbleCursed;
 							const glyph =
-								p.kind === "answered" ? "♥" : p.kind === "blessed" ? "✦" : "☁";
+								p.kind === "answered"
+									? "♥"
+									: p.kind === "friended"
+										? "+"
+										: p.kind === "blessed"
+											? "✦"
+											: "☁";
 							const glyphStyle =
 								p.kind === "cursed"
 									? styles.passiveBubbleGlyphInverted
@@ -738,6 +793,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	passiveBubbleAnswered: { backgroundColor: WHIMSY.rose },
+	passiveBubbleFriended: { backgroundColor: WHIMSY.sage },
 	passiveBubbleBlessed: { backgroundColor: WHIMSY.lilac },
 	passiveBubbleCursed: { backgroundColor: WHIMSY.ink },
 	passiveBubbleGlyph: {
