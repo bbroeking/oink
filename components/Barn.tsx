@@ -105,27 +105,48 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 	({ particleImage }, ref) => {
 		type Float = {
 			id: number;
-			dx: number;
-			char: string;
+			dx: number;          // horizontal drift target (px)
+			rise: number;        // how high it climbs (px, negative)
+			rot: number;         // tilt for the image variant (deg)
+			scaleMax: number;    // peak scale, scattered per particle
+			duration: number;    // total animation duration (ms)
+			char: string;        // ♥ / ✦ when no image is equipped
 			anim: Animated.Value;
 		};
 		const [floats, setFloats] = useState<Float[]>([]);
 		const nextId = useRef(0);
 
+		// One tap spawns a HANDFUL — staggered emit so they trickle
+		// out rather than appearing as a solid block. Spread, rise,
+		// scale, tilt, and duration are all jittered per particle so
+		// the burst doesn't read as a clone army.
 		React.useImperativeHandle(ref, () => ({
 			spawn: () => {
-				const id = nextId.current++;
-				const dx = Math.random() * 80 - 40;
-				const char = Math.random() < 0.1 ? "✦" : "♥";
-				const anim = new Animated.Value(0);
-				setFloats((f) => [...f, { id, dx, char, anim }]);
-				Animated.timing(anim, {
-					toValue: 1,
-					duration: 1100,
-					useNativeDriver: true,
-				}).start(() => {
-					setFloats((f) => f.filter((x) => x.id !== id));
-				});
+				const burst = 7 + Math.floor(Math.random() * 3); // 7–9 per tap
+				for (let i = 0; i < burst; i++) {
+					const stagger = i === 0 ? 0 : Math.floor(Math.random() * 120);
+					setTimeout(() => {
+						const id = nextId.current++;
+						const dx = Math.random() * 160 - 80;            // wider spread
+						const rise = -(95 + Math.random() * 45);         // -95 → -140
+						const rot = Math.random() * 50 - 25;             // ±25°
+						const scaleMax = 0.85 + Math.random() * 0.45;    // 0.85 → 1.3
+						const duration = 950 + Math.floor(Math.random() * 350); // 950–1300ms
+						const char = Math.random() < 0.1 ? "✦" : "♥";
+						const anim = new Animated.Value(0);
+						setFloats((f) => [
+							...f,
+							{ id, dx, rise, rot, scaleMax, duration, char, anim },
+						]);
+						Animated.timing(anim, {
+							toValue: 1,
+							duration,
+							useNativeDriver: true,
+						}).start(() => {
+							setFloats((f) => f.filter((x) => x.id !== id));
+						});
+					}, stagger);
+				}
 			},
 		}));
 
@@ -134,7 +155,7 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 				{floats.map((f) => {
 					const translateY = f.anim.interpolate({
 						inputRange: [0, 0.15, 1],
-						outputRange: [0, -12, -110],
+						outputRange: [0, -12, f.rise],
 					});
 					const opacity = f.anim.interpolate({
 						inputRange: [0, 0.15, 0.85, 1],
@@ -142,7 +163,7 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 					});
 					const scale = f.anim.interpolate({
 						inputRange: [0, 0.15, 1],
-						outputRange: [0.6, 1.1, 0.95],
+						outputRange: [0.5, f.scaleMax, f.scaleMax * 0.9],
 					});
 					// Equipped tickle-particle path: render the image
 					// instead of the typographic glyph. Fall back to
@@ -160,6 +181,7 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 										transform: [
 											{ translateX: f.dx },
 											{ translateY },
+											{ rotate: `${f.rot}deg` },
 											{ scale },
 										],
 										opacity,
