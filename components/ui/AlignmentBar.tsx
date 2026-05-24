@@ -47,13 +47,18 @@ export function AlignmentBar({ score, label: labelProp, size = "md" }: Props) {
 				</Text>
 			</View>
 
-			<View style={[styles.track, big && styles.trackLg]}>
-				{/* Hard 50/50 split — goblin gold | angel lilac. No
-				    middle-tone smear; the design wants the schism to
-				    read at a glance. */}
-				<View style={[styles.fill, styles.fillGreedy]} />
-				<View style={[styles.fill, styles.fillGiver]} />
-				{/* the marker */}
+			<View style={styles.trackOuter}>
+				<View style={[styles.track, big && styles.trackLg]}>
+					{/* Hard 50/50 split — goblin gold | angel lilac. No
+					    middle-tone smear; the design wants the schism to
+					    read at a glance. */}
+					<View style={[styles.fill, styles.fillGreedy]} />
+					<View style={[styles.fill, styles.fillGiver]} />
+				</View>
+				{/* Marker sits OUTSIDE the track so it can poke above
+				    the rail (top: -3) and beyond the rounded ends at
+				    score ±100 without being clipped by track's
+				    overflow:hidden. */}
 				<View
 					style={[
 						styles.marker,
@@ -90,6 +95,11 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 	},
 	standingLg: { fontSize: 16 },
+	// Marker-bearing parent — relative + visible so the marker can
+	// poke above/below the rail and beyond the rounded ends.
+	trackOuter: {
+		position: "relative",
+	},
 	track: {
 		height: 14,
 		borderRadius: 7,
@@ -97,7 +107,6 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		overflow: "hidden",
 		flexDirection: "row",
-		position: "relative",
 	},
 	trackLg: { height: 20, borderRadius: 10 },
 	fill: { flex: 1, height: "100%" },
