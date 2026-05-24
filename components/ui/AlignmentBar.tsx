@@ -22,8 +22,11 @@ interface Props {
 	size?: "md" | "lg";
 }
 
-const GREEDY_COLOR = "#7BA266"; // moss
-const GIVER_COLOR = "#F2C94C";  // halo gold
+// Per the redesign tokens: goblin gold (greedy) on the left half,
+// angel lilac-deep (giver) on the right half, hard-split at center.
+// Replaces the old moss/cream/halo three-fill gradient.
+const GREEDY_COLOR = WHIMSY.goblin;
+const GIVER_COLOR = WHIMSY.angel;
 
 export function AlignmentBar({ score, label: labelProp, size = "md" }: Props) {
 	const clamped = Math.max(-100, Math.min(100, score));
@@ -45,13 +48,11 @@ export function AlignmentBar({ score, label: labelProp, size = "md" }: Props) {
 			</View>
 
 			<View style={[styles.track, big && styles.trackLg]}>
-				{/* gradient faked with three stops — moss → cream → gold */}
+				{/* Hard 50/50 split — goblin gold | angel lilac. No
+				    middle-tone smear; the design wants the schism to
+				    read at a glance. */}
 				<View style={[styles.fill, styles.fillGreedy]} />
-				<View style={[styles.fill, styles.fillMid]} />
 				<View style={[styles.fill, styles.fillGiver]} />
-				{/* neutral-zone hairlines at ±34 */}
-				<View style={[styles.notch, { left: `${(-34 + 100) / 2}%` }]} />
-				<View style={[styles.notch, { left: `${(34 + 100) / 2}%` }]} />
 				{/* the marker */}
 				<View
 					style={[
@@ -101,15 +102,7 @@ const styles = StyleSheet.create({
 	trackLg: { height: 20, borderRadius: 10 },
 	fill: { flex: 1, height: "100%" },
 	fillGreedy: { backgroundColor: GREEDY_COLOR },
-	fillMid: { backgroundColor: WHIMSY.cream },
 	fillGiver: { backgroundColor: GIVER_COLOR },
-	notch: {
-		position: "absolute",
-		top: 0,
-		bottom: 0,
-		width: 1.5,
-		backgroundColor: "rgba(59,42,30,0.35)",
-	},
 	marker: {
 		position: "absolute",
 		top: -3,
