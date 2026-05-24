@@ -768,6 +768,24 @@ export default function Barn() {
 				// until the burst dismisses to keep the beats separated.
 				pendingTitleRoll.current =
 					Math.random() < LUCKY_TITLE_UNLOCK_CHANCE;
+				// sun_beam is consume-on-first-lucky — clear it as soon
+				// as a lucky pig actually fires so subsequent rolls drop
+				// back to the base chance instead of keeping the boost
+				// for the rest of the timed window. Best-effort: a
+				// network failure leaves the buff in place but the
+				// blessing's own 4h expiry caps the worst case.
+				if (effects.sunBeam) {
+					void (async () => {
+						try {
+							await supabase.rpc("clear_blessing", {
+								target_kind: "sun_beam",
+							});
+							setEffects((e) => ({ ...e, sunBeam: false }));
+						} catch {
+							// best-effort; the 4h expiry caps worst case
+						}
+					})();
+				}
 			}
 		} else {
 			if (Math.random() < LUCKY_DOUBLE_CHANCE) {
