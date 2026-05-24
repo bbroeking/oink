@@ -233,12 +233,18 @@ export function Leaderboard() {
 				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
 			const SELECT_BASIC =
 				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
+			// is_test filter only fires on the global scope — friends
+			// list intentionally shows any account you've friended,
+			// test or not. The 'or' wrap handles legacy rows where
+			// the column is missing (pre-20260548 migration), which
+			// PostgREST treats as NULL ≠ true → row included.
 			const run = async (select: string) =>
 				supabase
 					.from("profiles")
 					.select(select)
 					.not("username", "is", null)
 					.neq("username", "")
+					.or("is_test.is.null,is_test.eq.false")
 					.order("tickles_earned", { ascending: false })
 					.range(from, from + count - 1);
 			let result = await run(SELECT_WITH_TITLES);
