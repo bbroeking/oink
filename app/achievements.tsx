@@ -150,10 +150,15 @@ export default function AchievementsScreen() {
 						)}
 					</Text>
 
-					{/* Filter chip row */}
+					{/* Filter chip row — flexGrow:0 on the ScrollView so it
+					    doesn't claim leftover vertical space (otherwise
+					    each chip stretches to the ScrollView's cross-
+					    axis size, ending up as a tall pill instead of
+					    a pill-shaped chip). */}
 					<ScrollView
 						horizontal
 						showsHorizontalScrollIndicator={false}
+						style={{ flexGrow: 0 }}
 						contentContainerStyle={styles.chipsRow}
 					>
 						{FILTERS.map((c) => {
@@ -370,6 +375,11 @@ const styles = StyleSheet.create({
 		paddingBottom: 8,
 		gap: 8,
 		flexDirection: "row",
+		// Center on the cross-axis so chips don't stretch vertically
+		// when the ScrollView container ends up taller than the chip
+		// content. Belt-and-suspenders with the flexGrow:0 on the
+		// ScrollView itself.
+		alignItems: "center",
 	},
 	chip: {
 		flexDirection: "row",
