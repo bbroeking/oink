@@ -271,6 +271,23 @@ export default function SwipeElement({
 			if (canTickle) setPigAnim("idle");
 			else setPigAnim("sad");
 		});
+
+		// Safety reset — if the .start() callback never fires (component
+		// unmount mid-animation, state interrupted by another setPigAnim
+		// upstream, native driver hiccup), pigAnim could stay at "happy"
+		// forever and `handlePress` would silently block every future tap
+		// (the `reacting` check above filters anything not idle/sad). A
+		// TestFlight report after build 70 had exactly this symptom — "ran
+		// fast then closed out, now I can't tickle." 3s is the full 6-7
+		// sequence (~2.1s) + a buffer; if pigAnim is STILL "happy" by then,
+		// force it back to idle/sad regardless of canTickle's current value.
+		const safetyTimer = setTimeout(() => {
+			setPigAnim((cur) => {
+				if (cur === "happy") return canTickle ? "idle" : "sad";
+				return cur;
+			});
+		}, 3000);
+		return () => clearTimeout(safetyTimer);
 	}, [playSixSeven, canTickle]);
 
 	// Compute the per-frame, per-anchor overlay for a single equipped

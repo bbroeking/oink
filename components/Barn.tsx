@@ -8,7 +8,6 @@ import {
 	Platform,
 	SafeAreaView,
 	Pressable,
-	Alert,
 	Text,
 	Animated,
 	DevSettings,
@@ -27,6 +26,7 @@ import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
 import { LuckyPigModal } from "./LuckyPigModal";
 import { LuckyTitleUnlockModal } from "./LuckyTitleUnlockModal";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 import type { TitleRow } from "@/constants/title_types";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
@@ -350,6 +350,13 @@ export default function Barn() {
 	const [statsLoaded, setStatsLoaded] = useState(false);
 	const [sixSevenTick, setSixSevenTick] = useState(0);
 	const sixSevenPromptedRef = useRef(false);
+	// Storybook dialog state for the 67-celebration prompt. Replaces the
+	// bare iOS Alert.alert that used to fire here — same modal-style
+	// switch we made for the bounty Swap dialog, applied here because
+	// the iOS native alert may have been contributing to a freeze
+	// reported on a TestFlight build (pigAnim stuck at "happy" after
+	// the celebration animation, blocking all subsequent taps).
+	const [sixSevenDialog, setSixSevenDialog] = useState(false);
 	// Tracks the previous-seen alignment_score for the in-app toast on
 	// every shift. The server-side `shift_alignment` push covers the
 	// milestone moments (±10/±25/±50/±100); this is the every-shift
@@ -519,24 +526,7 @@ export default function Barn() {
 		(async () => {
 			const seen = await AsyncStorage.getItem("seen_67");
 			if (seen === "1") return;
-			Alert.alert(
-				"6 7!",
-				"You've crossed 67 tickles. Wanna celebrate with a six-seven?",
-				[
-					{
-						text: "Skip",
-						style: "cancel",
-						onPress: () => AsyncStorage.setItem("seen_67", "1"),
-					},
-					{
-						text: "Six seven!",
-						onPress: () => {
-							AsyncStorage.setItem("seen_67", "1");
-							setSixSevenTick((t) => t + 1);
-						},
-					},
-				]
-			);
+			setSixSevenDialog(true);
 		})();
 	}, [stats.counter]);
 
@@ -1101,6 +1091,23 @@ export default function Barn() {
 							"Title grant failed — try again next time.",
 						);
 					}
+				}}
+			/>
+
+			<ConfirmDialog
+				open={sixSevenDialog}
+				title="6 7!"
+				body="You've crossed 67 tickles. Wanna celebrate with a six-seven?"
+				confirmLabel="Six seven!"
+				cancelLabel="Skip"
+				onCancel={() => {
+					setSixSevenDialog(false);
+					AsyncStorage.setItem("seen_67", "1");
+				}}
+				onConfirm={() => {
+					setSixSevenDialog(false);
+					AsyncStorage.setItem("seen_67", "1");
+					setSixSevenTick((t) => t + 1);
 				}}
 			/>
 
