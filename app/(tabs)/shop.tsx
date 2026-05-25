@@ -280,7 +280,14 @@ function ItemCard({
 		<View style={[styles.cardBody, horizontal && styles.cardBodyHoriz]}>
 			<Text
 				style={[styles.cardName, horizontal && styles.cardNameHoriz]}
-				numberOfLines={horizontal ? 2 : 1}
+				// 2-line clamp + adjustsFontSizeToFit so a long name
+				// ("Sparkle Aura", "Sunset Farm") wraps cleanly in
+				// narrow cells instead of getting truncated to
+				// "Sparkl..." on a single line. minimumFontScale 0.7
+				// is enough to fit most names without going illegible.
+				numberOfLines={2}
+				adjustsFontSizeToFit
+				minimumFontScale={0.7}
 			>
 				{item.name}
 			</Text>
@@ -1767,9 +1774,12 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	cardThumbWrapHoriz: {
-		// Match height in row mode so the image is a square (height
-		// is the constraint here, since width is given by flex).
-		aspectRatio: 1,
+		// In row mode, give the thumb a portrait-ish 0.75 aspect
+		// (narrower than tall) instead of a full square. That hands
+		// ~25% more width to the body so the Wear/Buy button isn't
+		// clipped to a single letter. Image still reads at this
+		// shape because it's contain-fitted within the cell.
+		aspectRatio: 0.75,
 		flex: 0,
 	},
 	cardThumb: {
@@ -1779,15 +1789,24 @@ const styles = StyleSheet.create({
 		position: "relative",
 	},
 	cardBody: {
-		padding: 10,
+		// Tighter padding so the small 1×1 + 2×1 cells get more
+		// content room without the visible card area growing.
+		padding: 8,
 	},
 	cardBodyHoriz: {
 		flex: 1,
 		justifyContent: "center",
+		paddingLeft: 6,
+		paddingRight: 8,
 	},
 	cardName: {
 		fontFamily: FONTS.whimsy,
-		fontSize: 15,
+		// Dropped from 15 → 13. Pairs with the 2-line wrap +
+		// adjustsFontSizeToFit at the call site so "Sparkle Aura"
+		// and "Homestead Barn" fit cleanly in 1×1 cells without
+		// truncation.
+		fontSize: 13,
+		lineHeight: 15,
 		color: WHIMSY.ink,
 		textAlign: "center",
 		marginBottom: 4,
@@ -1800,8 +1819,8 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		gap: 4,
-		marginBottom: 8,
-		minHeight: 18,
+		marginBottom: 6,
+		minHeight: 16,
 	},
 	cardPrice: {
 		fontFamily: FONTS.whimsy,
