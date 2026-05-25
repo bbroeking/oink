@@ -76,6 +76,10 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	const [blessings, setBlessings] = useState<RitualRow[]>([]);
 	const [curses, setCurses] = useState<RitualRow[]>([]);
 	const [acceptedFriends, setAcceptedFriends] = useState<AcceptedFriend[]>([]);
+	// Caller's tickle balance — drives "Give N" → "Need N more" on
+	// incoming trade cards when they can't afford to fulfill. Polled
+	// on every load(), so post-action refreshes catch the deduction.
+	const [balance, setBalance] = useState<number | null>(null);
 
 	const load = useCallback(async () => {
 		// Trades — one RPC covers incoming / outgoing / answered.
@@ -160,6 +164,16 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		};
 		setBlessings(await hydrate("blessings"));
 		setCurses(await hydrate("curses"));
+
+		// Tickle balance — for the Give-vs-Need affordance on
+		// incoming trade cards. tickle_info returns the
+		// regen-catchup balance, which is what the player can
+		// actually spend right now.
+		const { data: tickle } = await supabase.rpc("tickle_info", {
+			uid: userId,
+		});
+		const t = tickle as { balance?: number } | null;
+		setBalance(typeof t?.balance === "number" ? t.balance : null);
 
 		// Recently-accepted outgoing friend requests — surfaced in the
 		// passive band as "X accepted your request" cards. Bounded to
@@ -309,16 +323,28 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			ok?: boolean;
 			reason?: string;
 			cap?: number;
+			balance?: number;
+			needed?: number;
 		} | null;
 		if (error || (r && r.ok === false)) {
-			// Surface the cap reasons specifically — they tell the user
-			// what to do (remove someone) rather than a vague retry.
+			// Surface specific reasons — they tell the user what to do
+			// instead of a vague retry.
 			if (r?.reason === "at_cap") {
 				setFeedback(
 					`You're at the ${r.cap ?? FRIEND_CAP_LIMIT}-friend cap. Remove someone first.`
 				);
 			} else if (r?.reason === "target_at_cap") {
 				setFeedback("They're at the friend cap.");
+			} else if (r?.reason === "insufficient_bank") {
+				// Lost the race with regen / a different action. Refresh
+				// balance so the UI catches up to whatever the actual
+				// number is, and tell the user how short they were.
+				const have = r.balance ?? 0;
+				const need = r.needed ?? 0;
+				setFeedback(
+					`Not enough tickles — you have ${have}, they asked for ${need}.`
+				);
+				load();
 			} else {
 				setFeedback("That didn't take — try again.");
 			}
@@ -503,48 +529,84 @@ export function Inbox({ userId, onActionableCount }: Props) {
 							</Pressable>
 						</View>
 					))}
-					{incomingTrades.map((t) => (
-						<View key={`tr-${t.id}`} style={styles.pen}>
-							<View style={styles.penHeader}>
-								<Image
-									source={require("../assets/images/emoji/pig.png")}
-									style={styles.cardIcon}
-								/>
-								<View style={{ flex: 1, minWidth: 0 }}>
-									<Text style={styles.cardTitle} numberOfLines={1}>
-										{t.partner_username ?? "A friend"}
-										{t.partner_discriminator && (
-											<Text style={styles.cardTitleDisc}>
-												{" "}
-												#{t.partner_discriminator}
-											</Text>
-										)}
-									</Text>
-									<Text style={styles.cardSub}>
-										asks for {t.amount} tickles
-									</Text>
+					{incomingTrades.map((t) => {
+						// Affordance: can we actually pay this trade right
+						// now? Disable + relabel "Need N more" when the
+						// balance is short, so the player isn't tapping a
+						// button just to get a rejection toast back.
+						const canAfford = balance !== null && balance >= t.amount;
+						const shortBy =
+							balance !== null && balance < t.amount
+								? t.amount - balance
+								: 0;
+						return (
+							<View key={`tr-${t.id}`} style={styles.pen}>
+								<View style={styles.penHeader}>
+									<Image
+										source={require("../assets/images/emoji/pig.png")}
+										style={styles.cardIcon}
+									/>
+									<View style={{ flex: 1, minWidth: 0 }}>
+										<Text style={styles.cardTitle} numberOfLines={1}>
+											{t.partner_username ?? "A friend"}
+											{t.partner_discriminator && (
+												<Text style={styles.cardTitleDisc}>
+													{" "}
+													#{t.partner_discriminator}
+												</Text>
+											)}
+										</Text>
+										<Text style={styles.cardSub}>
+											asks for {t.amount} tickles
+											{balance !== null && (
+												<Text
+													style={
+														canAfford
+															? styles.balanceHint
+															: styles.balanceHintShort
+													}
+												>
+													{"  ·  you have "}
+													{balance}
+												</Text>
+											)}
+										</Text>
+									</View>
+								</View>
+								<View style={styles.penActions}>
+									<Pressable
+										onPress={() => canAfford && giveTrade(t)}
+										disabled={busy === t.id || !canAfford}
+										style={[
+											styles.penBtn,
+											canAfford ? styles.penBtnPrimary : styles.penBtnLocked,
+										]}
+									>
+										<Text
+											style={
+												canAfford
+													? styles.penBtnPrimaryText
+													: styles.penBtnLockedText
+											}
+										>
+											{busy === t.id
+												? "…"
+												: canAfford
+													? `Give ${t.amount}`
+													: `Need ${shortBy} more`}
+										</Text>
+									</Pressable>
+									<Pressable
+										onPress={() => passTrade(t)}
+										disabled={busy === t.id}
+										style={[styles.penBtn, styles.penBtnGhost]}
+									>
+										<Text style={styles.penBtnGhostText}>Pass</Text>
+									</Pressable>
 								</View>
 							</View>
-							<View style={styles.penActions}>
-								<Pressable
-									onPress={() => giveTrade(t)}
-									disabled={busy === t.id}
-									style={[styles.penBtn, styles.penBtnPrimary]}
-								>
-									<Text style={styles.penBtnPrimaryText}>
-										{busy === t.id ? "…" : `Give ${t.amount}`}
-									</Text>
-								</Pressable>
-								<Pressable
-									onPress={() => passTrade(t)}
-									disabled={busy === t.id}
-									style={[styles.penBtn, styles.penBtnGhost]}
-								>
-									<Text style={styles.penBtnGhostText}>Pass</Text>
-								</Pressable>
-							</View>
-						</View>
-					))}
+						);
+					})}
 				</>
 			)}
 
@@ -695,6 +757,19 @@ const styles = StyleSheet.create({
 	},
 	cardIcon: { width: 30, height: 30, resizeMode: "contain" },
 	cardTitle: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	// Inline "you have N" hint after "asks for N tickles". Mute when
+	// affordable, accent when short — pre-warns the player before
+	// they even reach the disabled button.
+	balanceHint: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+	},
+	balanceHintShort: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.accent,
+	},
 	cardSub: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
@@ -769,6 +844,19 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
 		color: WHIMSY.ink,
+	},
+	// "Need N more" — the trade is unaffordable. Muted fill + dashed
+	// ink border so the button reads as locked-but-still-meaningful,
+	// not greyed-out-and-broken. Companion to the balance hint on the
+	// row's "asks for N · you have M" line.
+	penBtnLocked: {
+		backgroundColor: WHIMSY.muteSoft,
+		borderColor: WHIMSY.muteSoft,
+	},
+	penBtnLockedText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.mute,
 	},
 	// Recent / passive row — lives inside the flatList Sticker so
 	// horizontal padding mirrors the marketRow above. Bumped from 4
