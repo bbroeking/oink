@@ -66,12 +66,11 @@ const LUCKY_GUARANTEED_BY_TICKLE_N = 8;
 const LUCKY_TRIGGER_CHANCE_SUNBEAM = 0.4;
 const PHANTOM_ITCH_MISS_CHANCE = 0.33;
 
-// Four pig-voice oink variants; one is picked at random on each tickle
-// so the sound feels alive instead of looping the same clip.
-const oinkSound1 = require("../assets/sounds/oink_1.mp3");
-const oinkSound2 = require("../assets/sounds/oink_2.mp3");
-const oinkSound3 = require("../assets/sounds/oink_3.mp3");
-const oinkSound4 = require("../assets/sounds/oink_4.mp3");
+// Two pig-laugh variants; one is picked at random on each tickle
+// so the sound feels alive instead of looping the same clip. Old
+// oink_1..4 set was replaced with cuter cartoon-pig laughs.
+const laughSound1 = require("../assets/sounds/laugh_1.mp3");
+const laughSound2 = require("../assets/sounds/laugh_2.mp3");
 const deniedSound = require("../assets/sounds/denied.mp3");
 
 // Friendly, slightly competitive pig-voice lines for pass events. Picked
@@ -426,11 +425,9 @@ export default function Barn() {
 	};
 	// useAudioPlayer is a hook, so each variant gets its own top-level
 	// call. Bundled into an array below for random-pick playback.
-	const oinkPlayer1 = useAudioPlayer(oinkSound1);
-	const oinkPlayer2 = useAudioPlayer(oinkSound2);
-	const oinkPlayer3 = useAudioPlayer(oinkSound3);
-	const oinkPlayer4 = useAudioPlayer(oinkSound4);
-	const oinkPlayers = [oinkPlayer1, oinkPlayer2, oinkPlayer3, oinkPlayer4];
+	const laughPlayer1 = useAudioPlayer(laughSound1);
+	const laughPlayer2 = useAudioPlayer(laughSound2);
+	const oinkPlayers = [laughPlayer1, laughPlayer2];
 	const deniedPlayer = useAudioPlayer(deniedSound);
 	const [toast, setToast] = useState<{
 		title: string;
