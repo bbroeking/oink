@@ -46,18 +46,28 @@ interface AcceptedFriend {
 	updated_at: string;
 }
 
-const BLESSING_LABEL: Record<string, string> = {
-	warm_tea: "warm tea — faster tickles",
-	sun_beam: "a sun beam — luckier next pig",
-	halo_kiss: "a halo kiss — a soft glow",
-	bountiful_snouts: "bountiful snouts — +5",
-};
-const CURSE_LABEL: Record<string, string> = {
-	sluggish_snout: "a sluggish snout — slower tickles",
-	phantom_itch: "a phantom itch",
-	goblin_whisper: "a goblin whisper",
-	coin_pinch: "a coin pinch — snouts nicked",
-};
+// Inbox copy mirrors what the SENDER saw when they cast the effect
+// (RitualPicker reads ritual.blurb from these same meta tables) +
+// what the RECEIVER sees on the ActiveEffects strip + Hoofprints
+// sheet + WhileAway modal. Previously the Inbox had its own
+// flavor-only label map that drifted — the recipient was getting
+// vague poetry while every other surface showed the actual rule
+// the effect was applying. Source of truth: utils/rituals.ts.
+import {
+	BLESSING_META,
+	CURSE_META,
+	type BlessingKind,
+	type CurseKind,
+} from "../utils/rituals";
+
+function blessingDescription(kind: string): string {
+	const m = BLESSING_META[kind as BlessingKind];
+	return m ? `${m.name} — ${m.blurb}` : kind;
+}
+function curseDescription(kind: string): string {
+	const m = CURSE_META[kind as CurseKind];
+	return m ? `${m.name} — ${m.blurb}` : kind;
+}
 
 interface Props {
 	userId: string;
@@ -397,12 +407,12 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		})),
 		...blessings.map((b) => ({
 			id: `bl-${b.id}`,
-			text: `${b.from_username ?? "A friend"} blessed you — ${BLESSING_LABEL[b.kind] ?? b.kind}`,
+			text: `${b.from_username ?? "A friend"} blessed you — ${blessingDescription(b.kind)}`,
 			kind: "blessed" as const,
 		})),
 		...curses.map((c) => ({
 			id: `cu-${c.id}`,
-			text: `${c.from_username ?? "Someone"} cursed you — ${CURSE_LABEL[c.kind] ?? c.kind}`,
+			text: `${c.from_username ?? "Someone"} cursed you — ${curseDescription(c.kind)}`,
 			kind: "cursed" as const,
 		})),
 	];
