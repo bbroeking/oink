@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import React, { useState, useEffect, useCallback } from "react";
-import { View, AppState } from "react-native";
+import { View, AppState, Image, Text, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabase";
@@ -8,7 +8,7 @@ import SupaAuth from "@/components/SupaAuth";
 import UsernameSetup from "@/components/UsernameSetup";
 import { Onboarding } from "@/components/Onboarding";
 import { HangingSignsTabBar } from "@/components/ui/HangingSignsTabBar";
-import { COLORS } from "@/constants/theme";
+import { WHIMSY, KICKER_TEXT } from "@/constants/theme";
 import { initIAP } from "@/utils/iap";
 
 export default function TabLayout() {
@@ -87,7 +87,28 @@ export default function TabLayout() {
 	}
 
 	if (username === undefined) {
-		return <View style={{ flex: 1, backgroundColor: COLORS.ink }} />;
+		// Profile lookup in flight — show Rosie on a cream backdrop
+		// so the loading beat reads as a continuation of the splash
+		// (was a bare black screen, which felt like a crash).
+		return (
+			<View
+				style={{
+					flex: 1,
+					backgroundColor: WHIMSY.cream,
+					alignItems: "center",
+					justifyContent: "center",
+					gap: 14,
+				}}
+			>
+				<Image
+					source={require("../../assets/images/pig.png")}
+					style={{ width: 220, height: 165 }}
+					resizeMode="contain"
+				/>
+				<Text style={KICKER_TEXT}>★ saddling up ★</Text>
+				<ActivityIndicator color={WHIMSY.ink} />
+			</View>
+		);
 	}
 
 	if (!username) {
