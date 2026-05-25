@@ -488,44 +488,43 @@ function FeaturedCard({
 // Three templates, each a list of {c, r, w, h} placements summing to
 // 16 cells. The day-of-year picks one so the Shop feels different
 // across the week without authoring more layouts. Largest cells get
-// the rarest items. From the design's SHOP_TEMPLATES.
+// the rarest items.
+//
+// MINIMUM CELL SIZE: every cell is at least 2 grid units (2×1, 1×2,
+// or 2×2). The original templates packed 1×1 cells around heroes,
+// which got squeezed beyond legibility on iPhone — name text got
+// "Sparkl..." truncated and Buy buttons clipped. Forcing ≥2 units
+// per cell guarantees enough surface for the full name + price +
+// action button, at the cost of one fewer item per day.
 type MosaicCell = { c: number; r: number; w: number; h: number };
 const SHOP_TEMPLATES: MosaicCell[][] = [
-	// A — hero TL, banner mid, small all around
+	// A — hero TL + tall pair right + 4 wide strips
 	[
-		{ c: 0, r: 0, w: 2, h: 2 },
-		{ c: 2, r: 0, w: 1, h: 1 },
-		{ c: 3, r: 0, w: 1, h: 1 },
-		{ c: 2, r: 1, w: 2, h: 1 },
-		{ c: 0, r: 2, w: 4, h: 1 },
-		{ c: 0, r: 3, w: 1, h: 1 },
-		{ c: 1, r: 3, w: 1, h: 1 },
-		{ c: 2, r: 3, w: 1, h: 1 },
-		{ c: 3, r: 3, w: 1, h: 1 },
+		{ c: 0, r: 0, w: 2, h: 2 },  // hero
+		{ c: 2, r: 0, w: 1, h: 2 },  // tall
+		{ c: 3, r: 0, w: 1, h: 2 },  // tall
+		{ c: 0, r: 2, w: 2, h: 1 },  // wide
+		{ c: 2, r: 2, w: 2, h: 1 },  // wide
+		{ c: 0, r: 3, w: 2, h: 1 },  // wide
+		{ c: 2, r: 3, w: 2, h: 1 },  // wide
 	],
-	// B — hero TR, two heroes
+	// B — two heroes stacked + 4 wide strips
 	[
-		{ c: 0, r: 0, w: 1, h: 1 },
-		{ c: 1, r: 0, w: 1, h: 1 },
-		{ c: 2, r: 0, w: 2, h: 2 },
-		{ c: 0, r: 1, w: 2, h: 1 },
-		{ c: 0, r: 2, w: 2, h: 2 },
-		{ c: 2, r: 2, w: 1, h: 1 },
-		{ c: 3, r: 2, w: 1, h: 1 },
-		{ c: 2, r: 3, w: 1, h: 1 },
-		{ c: 3, r: 3, w: 1, h: 1 },
+		{ c: 0, r: 0, w: 2, h: 2 },  // hero
+		{ c: 2, r: 0, w: 2, h: 2 },  // hero
+		{ c: 0, r: 2, w: 2, h: 1 },  // wide
+		{ c: 2, r: 2, w: 2, h: 1 },  // wide
+		{ c: 0, r: 3, w: 2, h: 1 },  // wide
+		{ c: 2, r: 3, w: 2, h: 1 },  // wide
 	],
-	// C — center hero, wraparound
+	// C — four tall columns + bottom wide pair
 	[
-		{ c: 0, r: 0, w: 1, h: 2 },
-		{ c: 1, r: 0, w: 2, h: 2 },
-		{ c: 3, r: 0, w: 1, h: 1 },
-		{ c: 3, r: 1, w: 1, h: 1 },
-		{ c: 0, r: 2, w: 1, h: 1 },
-		{ c: 1, r: 2, w: 1, h: 1 },
-		{ c: 2, r: 2, w: 1, h: 2 },
-		{ c: 3, r: 2, w: 1, h: 2 },
-		{ c: 0, r: 3, w: 2, h: 1 },
+		{ c: 0, r: 0, w: 1, h: 2 },  // tall
+		{ c: 1, r: 0, w: 2, h: 2 },  // hero center
+		{ c: 3, r: 0, w: 1, h: 2 },  // tall
+		{ c: 0, r: 2, w: 1, h: 2 },  // tall
+		{ c: 1, r: 2, w: 2, h: 2 },  // hero center
+		{ c: 3, r: 2, w: 1, h: 2 },  // tall
 	],
 ];
 
