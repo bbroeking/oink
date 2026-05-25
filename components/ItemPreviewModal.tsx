@@ -10,24 +10,10 @@ import {
 	Animated,
 } from "react-native";
 import { Sticker } from "./ui/Sticker";
-import { SpritePig } from "./ui/SpritePig";
+import { PigStage } from "./ui/PigStage";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Button } from "./ui";
-import {
-	HAT_IMAGES,
-	HAT_OVERLAYS,
-	CATEGORY_OVERLAYS,
-	CATEGORY_ANCHORS,
-	DEFAULT_HAT_OVERLAY,
-	Z_BEHIND_PIG,
-	HAT_REL,
-	PIG_CANVAS,
-	resolveAnchor,
-	HatRow,
-	RARITY_COLORS,
-} from "@/constants/hats";
-import type { AnchorName, HatOverlay } from "@/constants/hat_overlay_types";
-import { ITEM_PREBAKED, isPrebaked } from "@/constants/prebaked";
+import { HAT_IMAGES, HatRow, RARITY_COLORS } from "@/constants/hats";
 import { FONTS, MODAL_BACKDROP_BG, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
 const RARITY_GRADIENT: Record<string, string> = {
@@ -179,51 +165,6 @@ export function ItemPreviewModal({
 	const rarity = item.rarity ?? "common";
 	const rarityColor = RARITY_COLORS[rarity];
 	const itemSrc = HAT_IMAGES[item.id] ?? null;
-	const prebaked = isPrebaked(item.id) ? ITEM_PREBAKED[item.id] : null;
-	const isFullCanvasCat = item.category === "background" || item.category === "aura";
-
-	// Anchor-RELATIVE placement (the same path SwipeElement uses in
-	// the Barn). When the item has a HAT_REL entry, compute its
-	// position from the pivot + widthFrac + resolved anchor on the
-	// idle frame. Falls back to the legacy HAT_OVERLAYS absolute
-	// positions only for items not yet tuned via the /item-anchor
-	// web tool. Single source of truth = anchor work on the tool
-	// flows into both the Barn AND the preview without duplication.
-	const overlay: HatOverlay = (() => {
-		const relSpec = !prebaked && itemSrc && !isFullCanvasCat ? HAT_REL[item.id] : null;
-		if (relSpec) {
-			const anchorName: AnchorName =
-				relSpec.anchor ??
-				(item.category ? CATEGORY_ANCHORS[item.category] : undefined) ??
-				"head";
-			const a = resolveAnchor("idle", 0, anchorName);
-			const src = Image.resolveAssetSource(itemSrc);
-			const aspect = src && src.width ? src.height / src.width : 1;
-			const w = relSpec.widthFrac * PIG_CANVAS;
-			const h = w * aspect;
-			return {
-				left: a.x - relSpec.pivot.x * w,
-				bottom: PIG_CANVAS - (a.y - relSpec.pivot.y * h) - h,
-				width: w,
-				height: h,
-				anchor: anchorName,
-				behind: relSpec.behind,
-			};
-		}
-		return (
-			HAT_OVERLAYS[item.id] ??
-			(item.category && CATEGORY_OVERLAYS[item.category]) ??
-			DEFAULT_HAT_OVERLAY
-		);
-	})();
-
-	// Z-order: prefer the per-item rel-spec behind flag, then the
-	// category default (auras + capes are behind by default).
-	const relSpec = HAT_REL[item.id];
-	const isBehind =
-		(relSpec?.behind !== undefined
-			? relSpec.behind
-			: item.category && Z_BEHIND_PIG[item.category]) ?? false;
 	// Backgrounds preview as the FULL image (no pig in the card). They
 	// fill the screen at runtime, so showing a scaled pig over them
 	// in the preview misrepresents what the player will see when
@@ -234,6 +175,19 @@ export function ItemPreviewModal({
 	// (drift up + fade on tickle), so a still pig with a frozen
 	// particle on top misrepresents what you'd actually see.
 	const isTickleParticle = item.category === "tickle_particle";
+
+	// Route the previewed item into the appropriate equip slot for
+	// PigStage. Auras go behind the pig; held items anchor to the
+	// right hand; everything else (hats, glasses, masks, scarves)
+	// is the main slot. PigStage handles z-order + HAT_REL anchor
+	// math from there — same code path the Barn uses, so re-tuning
+	// via the /item-anchor tool flows here automatically.
+	const previewSlot = { id: item.id, category: item.category, emoji: item.emoji };
+	const stageEquipped = item.category === "aura" || item.category === "held"
+		? null
+		: previewSlot;
+	const stageEquippedAura = item.category === "aura" ? previewSlot : null;
+	const stageEquippedHeld = item.category === "held" ? previewSlot : null;
 
 	return (
 		<Modal visible={!!item} animationType="fade" transparent onRequestClose={onClose}>
@@ -270,39 +224,12 @@ export function ItemPreviewModal({
 							/>
 						) : (
 							<View style={styles.previewStage}>
-								{/* Behind pig: auras, capes (NOT backgrounds — those
-								    use the no-pig branch above). */}
-								{isBehind && itemSrc && (
-									<View style={[styles.overlayBox, overlay, { zIndex: 1 }]}>
-										<Image
-											source={itemSrc}
-											style={styles.fillImage}
-											resizeMode="contain"
-										/>
-									</View>
-								)}
-								<View style={[styles.previewPig, { zIndex: 2 }]}>
-									<SpritePig
-										animation="idle"
-										size={300}
-										customFrames={prebaked ?? undefined}
-									/>
-								</View>
-								{/* In front of pig */}
-								{!isBehind && itemSrc && !prebaked && (
-									<View style={[styles.overlayBox, overlay, { zIndex: 10 }]}>
-										<Image
-											source={itemSrc}
-											style={styles.fillImage}
-											resizeMode="contain"
-										/>
-									</View>
-								)}
-								{!itemSrc && item.emoji && (
-									<View style={[styles.overlayBox, overlay, { zIndex: 10 }]}>
-										<Text style={styles.emojiPlaceholder}>{item.emoji}</Text>
-									</View>
-								)}
+								<PigStage
+									pigAnimation="idle"
+									equipped={stageEquipped}
+									equippedAura={stageEquippedAura}
+									equippedHeld={stageEquippedHeld}
+								/>
 							</View>
 						)}
 					</View>
