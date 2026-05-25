@@ -6,11 +6,25 @@
 // Claim button], with the progress bar above the count·reward line.
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
+import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Icon, type IconName } from "./ui/Icon";
 import { FONTS, WHIMSY } from "@/constants/theme";
+
+// Per-bounty "how do I actually do this?" copy. The server-side
+// description tells you WHAT (Fulfill 3 trades); this tells you
+// HOW (Tap Give on incoming trades in your Inbox) + WHERE the tap
+// lives. cta is the button label shown beneath the description.
+const HOWTO: Record<string, { hint: string; cta: string }> = {
+	generous_hoof:    { hint: "Tap Give on incoming trades in your Inbox.",                cta: "Open Inbox" },
+	well_asked:       { hint: "Open a friend's profile and tap Ask.",                       cta: "Pick a friend" },
+	daily_light:      { hint: "One blessing per friend per day — open any friend's sheet.", cta: "Bless a friend" },
+	mischief_maker:   { hint: "One curse per friend per day — open any friend's sheet.",    cta: "Curse someone" },
+	even_hand:        { hint: "Mix Give (in Inbox) + Ask (friend sheet) to fill both halves.", cta: "Open Friends" },
+	social_butterfly: { hint: "Tap three different friends and Ask each.",                  cta: "Pick a friend" },
+};
 
 export interface WeeklyBounty {
 	code: string;
@@ -106,6 +120,16 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 						{bounty.name}
 					</Text>
 
+					{/* Server-side description — WHAT to do ("Fulfill 3
+					    trade requests this week."). Was previously
+					    in the data but never rendered, so players
+					    only saw the cryptic title. */}
+					{!!bounty.description && (
+						<Text style={styles.description} numberOfLines={2}>
+							{bounty.description}
+						</Text>
+					)}
+
 					{/* Progress bar — ink-bordered pill, sage when claimable */}
 					<View style={styles.track}>
 						<View
@@ -130,6 +154,28 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 							</Text>
 						</View>
 					</View>
+
+					{/* HOW + WHERE — only for in-progress bounties. Once
+					    claimed/ready, the actionable thing is the CTA,
+					    not the hint. */}
+					{!bounty.claimed && !ready && HOWTO[bounty.code] && (
+						<View style={styles.howtoRow}>
+							<Text style={styles.howtoHint} numberOfLines={2}>
+								★ {HOWTO[bounty.code].hint}
+							</Text>
+							<Pressable
+								onPress={() => router.push("/friends" as any)}
+								style={({ pressed }) => [
+									styles.howtoBtn,
+									pressed && { opacity: 0.7 },
+								]}
+							>
+								<Text style={styles.howtoBtnText}>
+									{HOWTO[bounty.code].cta} ›
+								</Text>
+							</Pressable>
+						</View>
+					)}
 				</View>
 
 				{/* State-aware CTA at the right */}
@@ -202,6 +248,51 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
 		lineHeight: 19,
+		color: WHIMSY.ink,
+	},
+	// Server-side description (what to do) — sits directly under
+	// the title in muted hand-script, so the title still leads but
+	// the player immediately sees the requirement.
+	description: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		lineHeight: 15,
+		color: WHIMSY.mute,
+		marginTop: 2,
+	},
+	// How-to row — hint text + a small "go there" pressable. Only
+	// visible while the bounty is in-progress (not ready, not claimed).
+	howtoRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: 8,
+		marginTop: 8,
+		paddingTop: 8,
+		borderTopWidth: 1.5,
+		borderTopColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	howtoHint: {
+		flex: 1,
+		minWidth: 0,
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		lineHeight: 14,
+		color: WHIMSY.ink,
+		opacity: 0.7,
+	},
+	howtoBtn: {
+		paddingHorizontal: 10,
+		paddingVertical: 5,
+		borderRadius: 999,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.lilac,
+	},
+	howtoBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
 		color: WHIMSY.ink,
 	},
 	track: {
