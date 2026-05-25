@@ -549,14 +549,18 @@ function MosaicDailyGrid({
 }) {
 	const { width: screenW } = useWindowDimensions();
 	const HORIZ_PADDING = 12;
-	const GAP = 8;
+	const GAP = 12;
 	const COLS = 4;
 	const ROWS = 4;
 	const innerW = screenW - HORIZ_PADDING * 2;
 	const COL_W = (innerW - GAP * (COLS - 1)) / COLS;
-	// Slightly taller than a square so legendary heroes don't feel
-	// cramped — picks 0.92 × COL_W to bias card-shaped tiles.
-	const ROW_H = Math.round(COL_W * 0.92);
+	// Cells need ~120pt of vertical content room (thumb + name +
+	// price + button) so the Buy pill doesn't get clipped at the
+	// bottom of small 1×1 tiles. ROW_H = 1.5 × COL_W lands us
+	// there on iPhone widths. Bumped from the original 0.92 ratio
+	// after a screenshot showed the Buy button cut in half on
+	// "Sparkle..." / "Beanie" sized tiles.
+	const ROW_H = Math.round(COL_W * 1.5);
 	const totalH = ROW_H * ROWS + GAP * (ROWS - 1);
 
 	// Day-of-year rotation: same shape all day, changes overnight.
@@ -1373,7 +1377,15 @@ export default function ShopScreen() {
 					<FlatList
 						key="browse"
 						data={browseRows}
-						renderItem={renderListRow(false)}
+						// wardrobeMode=true hides the Buy / "Today only"
+						// button on un-owned items in Browse. Browse is a
+						// catalog view, not a shopping surface — purchases
+						// happen on the Today's Drop screen + on the
+						// Preview modal (tap a card → Buy if in today's
+						// drop). The Wear / Take off buttons still show
+						// for items you OWN. Branch checks owned/active
+						// first, so this gating only affects un-owned.
+						renderItem={renderListRow(true)}
 						keyExtractor={(r) => r.key}
 						contentContainerStyle={styles.grid}
 						ListHeaderComponent={
