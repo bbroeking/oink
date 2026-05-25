@@ -5,26 +5,13 @@
 // Layout matches the redesign: row of [icon well 52×52, body grow,
 // Claim button], with the progress bar above the count·reward line.
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
-import { router } from "expo-router";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Icon, type IconName } from "./ui/Icon";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { FONTS, WHIMSY } from "@/constants/theme";
-
-// Per-bounty "how do I actually do this?" copy. The server-side
-// description tells you WHAT (Fulfill 3 trades); this tells you
-// HOW (Tap Give on incoming trades in your Inbox) + WHERE the tap
-// lives. cta is the button label shown beneath the description.
-const HOWTO: Record<string, { hint: string; cta: string }> = {
-	generous_hoof:    { hint: "Tap Give on incoming trades in your Inbox.",                cta: "Open Inbox" },
-	well_asked:       { hint: "Open a friend's profile and tap Ask.",                       cta: "Pick a friend" },
-	daily_light:      { hint: "One blessing per friend per day — open any friend's sheet.", cta: "Bless a friend" },
-	mischief_maker:   { hint: "One curse per friend per day — open any friend's sheet.",    cta: "Curse someone" },
-	even_hand:        { hint: "Mix Give (in Inbox) + Ask (friend sheet) to fill both halves.", cta: "Open Friends" },
-	social_butterfly: { hint: "Tap three different friends and Ask each.",                  cta: "Pick a friend" },
-};
 
 export interface WeeklyBounty {
 	code: string;
@@ -90,19 +77,10 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 	// haven't been rerolled yet this week. Ready / claimed / already-
 	// rerolled bounties hide the option entirely.
 	const canReroll = !bounty.claimed && !ready && !bounty.rerolled;
-
-	const confirmReroll = () => {
-		Alert.alert(
-			"Swap this bounty?",
-			`Replace "${bounty.name}" with a random one. Costs ${REROLL_COST} snouts and uses your one reroll for this slot.`,
-			[
-				{ text: "Cancel", style: "cancel" },
-				{ text: `Swap · ${REROLL_COST}`, onPress: doReroll, style: "default" },
-			]
-		);
-	};
+	const [confirmOpen, setConfirmOpen] = useState(false);
 
 	const doReroll = async () => {
+		setConfirmOpen(false);
 		if (busy) return;
 		setBusy(true);
 		const { data } = await supabase.rpc("reroll_bounty", {
@@ -203,35 +181,16 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 						</View>
 					</View>
 
-					{/* HOW + WHERE — only for in-progress bounties. Once
-					    claimed/ready, the actionable thing is the CTA,
-					    not the hint. */}
-					{!bounty.claimed && !ready && HOWTO[bounty.code] && (
-						<View style={styles.howtoRow}>
-							<Text style={styles.howtoHint} numberOfLines={2}>
-								★ {HOWTO[bounty.code].hint}
-							</Text>
-							<Pressable
-								onPress={() => router.push("/friends" as any)}
-								style={({ pressed }) => [
-									styles.howtoBtn,
-									pressed && { opacity: 0.7 },
-								]}
-							>
-								<Text style={styles.howtoBtnText}>
-									{HOWTO[bounty.code].cta} ›
-								</Text>
-							</Pressable>
-						</View>
-					)}
-
 					{/* Reroll pill — only on in-progress, not-yet-rerolled
-					    bounties. Once swapped, hides entirely (one
-					    reroll per slot per week, server-enforced). */}
+					    bounties. Description above already tells you
+					    WHAT to do; players can find their way to the
+					    right tab. Earlier draft also rendered a how-to
+					    hint + deep-link button, but that read too
+					    heavy-handed against the card's small frame. */}
 					{canReroll && (
 						<View style={styles.rerollRow}>
 							<Pressable
-								onPress={confirmReroll}
+								onPress={() => setConfirmOpen(true)}
 								disabled={busy}
 								style={({ pressed }) => [
 									styles.rerollBtn,
@@ -280,6 +239,16 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 			</View>
 
 			{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
+			<ConfirmDialog
+				open={confirmOpen}
+				title="Swap this bounty?"
+				body={`Replace "${bounty.name}" with a random one. Costs ${REROLL_COST} snouts; one swap per slot per week.`}
+				confirmLabel={`Swap · ${REROLL_COST}`}
+				confirmCoin
+				onConfirm={doReroll}
+				onCancel={() => setConfirmOpen(false)}
+				busy={busy}
+			/>
 		</View>
 	);
 }
@@ -334,45 +303,9 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},
-	// How-to row — hint text + a small "go there" pressable. Only
-	// visible while the bounty is in-progress (not ready, not claimed).
-	howtoRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		gap: 8,
-		marginTop: 8,
-		paddingTop: 8,
-		borderTopWidth: 1.5,
-		borderTopColor: WHIMSY.muteSoft,
-		borderStyle: "dashed",
-	},
-	howtoHint: {
-		flex: 1,
-		minWidth: 0,
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		lineHeight: 14,
-		color: WHIMSY.ink,
-		opacity: 0.7,
-	},
-	howtoBtn: {
-		paddingHorizontal: 10,
-		paddingVertical: 5,
-		borderRadius: 999,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.lilac,
-	},
-	howtoBtnText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.ink,
-	},
-	// Reroll pill — right-aligned under the howto row, small +
-	// muted so it doesn't compete with the primary "Open Inbox"
-	// CTA above it. Carries its own snout-coin badge so the cost
-	// reads at a glance.
+	// Reroll pill — right-aligned, small + muted so it doesn't
+	// compete with the description text above. Carries its own
+	// snout-coin badge so the cost reads at a glance.
 	rerollRow: {
 		flexDirection: "row",
 		justifyContent: "flex-end",
