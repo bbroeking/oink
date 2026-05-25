@@ -101,8 +101,8 @@ export default function TabLayout() {
 				}}
 			>
 				<Image
-					source={require("../../assets/images/pig.png")}
-					style={{ width: 220, height: 165 }}
+					source={require("../../assets/images/sprites/rosie/idle_1.png")}
+					style={{ width: 200, height: 207 }}
 					resizeMode="contain"
 				/>
 				<Text style={KICKER_TEXT}>★ saddling up ★</Text>

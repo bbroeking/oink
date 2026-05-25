@@ -29,7 +29,7 @@ export default function SupaAuth() {
 			<SafeAreaView style={styles.safe}>
 				<View style={styles.hero}>
 					<Image
-						source={require("../assets/images/pig.png")}
+						source={require("../assets/images/sprites/rosie/idle_1.png")}
 						style={styles.rosie}
 						resizeMode="contain"
 					/>
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	rosie: {
-		width: "82%",
-		aspectRatio: 577 / 433, // matches pig.png native ratio
+		width: "72%",
+		aspectRatio: 370 / 383, // matches idle_1.png native ratio (near-square)
 		marginBottom: 18,
 	},
 	kicker: {
