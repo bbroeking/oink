@@ -17,11 +17,16 @@ import {
 	HAT_IMAGES,
 	HAT_OVERLAYS,
 	CATEGORY_OVERLAYS,
+	CATEGORY_ANCHORS,
 	DEFAULT_HAT_OVERLAY,
 	Z_BEHIND_PIG,
+	HAT_REL,
+	PIG_CANVAS,
+	resolveAnchor,
 	HatRow,
 	RARITY_COLORS,
 } from "@/constants/hats";
+import type { AnchorName, HatOverlay } from "@/constants/hat_overlay_types";
 import { ITEM_PREBAKED, isPrebaked } from "@/constants/prebaked";
 import { FONTS, MODAL_BACKDROP_BG, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
@@ -174,16 +179,51 @@ export function ItemPreviewModal({
 	const rarity = item.rarity ?? "common";
 	const rarityColor = RARITY_COLORS[rarity];
 	const itemSrc = HAT_IMAGES[item.id] ?? null;
-	// Same precedence as SwipeElement → matches what you see in the
-	// real Barn render. Earlier this modal used a different/looser
-	// chain that produced wrong positions for items with no manual
-	// entry in HAT_OVERLAYS.
-	const overlay =
-		HAT_OVERLAYS[item.id] ??
-		(item.category && CATEGORY_OVERLAYS[item.category]) ??
-		DEFAULT_HAT_OVERLAY;
-	const isBehind = item.category && Z_BEHIND_PIG[item.category];
 	const prebaked = isPrebaked(item.id) ? ITEM_PREBAKED[item.id] : null;
+	const isFullCanvasCat = item.category === "background" || item.category === "aura";
+
+	// Anchor-RELATIVE placement (the same path SwipeElement uses in
+	// the Barn). When the item has a HAT_REL entry, compute its
+	// position from the pivot + widthFrac + resolved anchor on the
+	// idle frame. Falls back to the legacy HAT_OVERLAYS absolute
+	// positions only for items not yet tuned via the /item-anchor
+	// web tool. Single source of truth = anchor work on the tool
+	// flows into both the Barn AND the preview without duplication.
+	const overlay: HatOverlay = (() => {
+		const relSpec = !prebaked && itemSrc && !isFullCanvasCat ? HAT_REL[item.id] : null;
+		if (relSpec) {
+			const anchorName: AnchorName =
+				relSpec.anchor ??
+				(item.category ? CATEGORY_ANCHORS[item.category] : undefined) ??
+				"head";
+			const a = resolveAnchor("idle", 0, anchorName);
+			const src = Image.resolveAssetSource(itemSrc);
+			const aspect = src && src.width ? src.height / src.width : 1;
+			const w = relSpec.widthFrac * PIG_CANVAS;
+			const h = w * aspect;
+			return {
+				left: a.x - relSpec.pivot.x * w,
+				bottom: PIG_CANVAS - (a.y - relSpec.pivot.y * h) - h,
+				width: w,
+				height: h,
+				anchor: anchorName,
+				behind: relSpec.behind,
+			};
+		}
+		return (
+			HAT_OVERLAYS[item.id] ??
+			(item.category && CATEGORY_OVERLAYS[item.category]) ??
+			DEFAULT_HAT_OVERLAY
+		);
+	})();
+
+	// Z-order: prefer the per-item rel-spec behind flag, then the
+	// category default (auras + capes are behind by default).
+	const relSpec = HAT_REL[item.id];
+	const isBehind =
+		(relSpec?.behind !== undefined
+			? relSpec.behind
+			: item.category && Z_BEHIND_PIG[item.category]) ?? false;
 	// Backgrounds preview as the FULL image (no pig in the card). They
 	// fill the screen at runtime, so showing a scaled pig over them
 	// in the preview misrepresents what the player will see when
