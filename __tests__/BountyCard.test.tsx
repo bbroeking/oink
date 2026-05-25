@@ -33,6 +33,8 @@ async function renderAct(node: React.ReactElement) {
 
 const base: WeeklyBounty = {
 	code: "generous_hoof",
+	slot_code: "generous_hoof",
+	rerolled: false,
 	name: "Generous Hoof",
 	description: "Fulfill 3 trade requests this week.",
 	goal: 3,

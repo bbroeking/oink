@@ -5,7 +5,7 @@
 // Layout matches the redesign: row of [icon well 52×52, body grow,
 // Claim button], with the progress bar above the count·reward line.
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
@@ -28,6 +28,12 @@ const HOWTO: Record<string, { hint: string; cta: string }> = {
 
 export interface WeeklyBounty {
 	code: string;
+	// Original rotation slot identity — immutable per week. Differs
+	// from `code` when the user has rerolled this slot.
+	slot_code: string;
+	// True if the user has already used their one reroll on this
+	// slot this week (the visible `code` is the replacement).
+	rerolled: boolean;
 	name: string;
 	description: string;
 	goal: number;
@@ -35,6 +41,10 @@ export interface WeeklyBounty {
 	reward_snouts: number;
 	claimed: boolean;
 }
+
+// Cost in snouts to swap a bounty you don't want. Server enforces
+// this same value in reroll_bounty(); keep them in sync.
+const REROLL_COST = 25;
 
 interface Props {
 	bounty: WeeklyBounty;
@@ -75,6 +85,44 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 
 	const ready = bounty.progress >= bounty.goal && !bounty.claimed;
 	const pct = Math.min(100, Math.round((bounty.progress / bounty.goal) * 100));
+
+	// Reroll affordances: only shown for in-progress bounties that
+	// haven't been rerolled yet this week. Ready / claimed / already-
+	// rerolled bounties hide the option entirely.
+	const canReroll = !bounty.claimed && !ready && !bounty.rerolled;
+
+	const confirmReroll = () => {
+		Alert.alert(
+			"Swap this bounty?",
+			`Replace "${bounty.name}" with a random one. Costs ${REROLL_COST} snouts and uses your one reroll for this slot.`,
+			[
+				{ text: "Cancel", style: "cancel" },
+				{ text: `Swap · ${REROLL_COST}`, onPress: doReroll, style: "default" },
+			]
+		);
+	};
+
+	const doReroll = async () => {
+		if (busy) return;
+		setBusy(true);
+		const { data } = await supabase.rpc("reroll_bounty", {
+			bounty_code: bounty.code,
+		});
+		const r = data as { ok?: boolean; reason?: string } | null;
+		setBusy(false);
+		if (r?.ok) {
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+				() => {}
+			);
+			onClaimed?.();
+		} else if (r?.reason === "insufficient_snouts") {
+			setFeedback(`Not enough snouts — reroll costs ${REROLL_COST}.`);
+		} else if (r?.reason === "already_rerolled") {
+			setFeedback("This slot's already been rerolled this week.");
+		} else {
+			setFeedback("Couldn't swap. Try again.");
+		}
+	};
 
 	const claim = async () => {
 		if (busy || !ready) return;
@@ -175,6 +223,32 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 								</Text>
 							</Pressable>
 						</View>
+					)}
+
+					{/* Reroll pill — only on in-progress, not-yet-rerolled
+					    bounties. Once swapped, hides entirely (one
+					    reroll per slot per week, server-enforced). */}
+					{canReroll && (
+						<View style={styles.rerollRow}>
+							<Pressable
+								onPress={confirmReroll}
+								disabled={busy}
+								style={({ pressed }) => [
+									styles.rerollBtn,
+									(pressed || busy) && { opacity: 0.7 },
+								]}
+							>
+								<Text style={styles.rerollBtnText}>
+									{busy ? "…" : `Swap · ${REROLL_COST}`}
+								</Text>
+								<SnoutCoin size={11} />
+							</Pressable>
+						</View>
+					)}
+					{bounty.rerolled && !bounty.claimed && !ready && (
+						<Text style={styles.rerolledTag}>
+							★ swapped this week
+						</Text>
 					)}
 				</View>
 
@@ -294,6 +368,40 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 11,
 		color: WHIMSY.ink,
+	},
+	// Reroll pill — right-aligned under the howto row, small +
+	// muted so it doesn't compete with the primary "Open Inbox"
+	// CTA above it. Carries its own snout-coin badge so the cost
+	// reads at a glance.
+	rerollRow: {
+		flexDirection: "row",
+		justifyContent: "flex-end",
+		marginTop: 6,
+	},
+	rerollBtn: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 4,
+		paddingHorizontal: 9,
+		paddingVertical: 4,
+		borderRadius: 999,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.muteSoft,
+		backgroundColor: "transparent",
+	},
+	rerollBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		color: WHIMSY.mute,
+	},
+	// After-the-reroll receipt — replaces the pill once used.
+	rerolledTag: {
+		fontFamily: FONTS.hand,
+		fontSize: 10,
+		color: WHIMSY.mute,
+		textAlign: "right",
+		marginTop: 6,
+		opacity: 0.8,
 	},
 	track: {
 		height: 14,
