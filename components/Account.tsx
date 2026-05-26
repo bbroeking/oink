@@ -8,6 +8,7 @@ import {
 	Text,
 	Alert,
 	Linking,
+	Share,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
@@ -38,6 +39,11 @@ import {
 } from "../utils/iap";
 import { SOUNDER_VISIBLE } from "@/constants/featureFlags";
 import { showPurchaseToast } from "./PurchaseToast";
+import {
+	myReferralSummary,
+	shareMessageForCode,
+	type ReferralSummary,
+} from "@/utils/referrals";
 
 export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
@@ -57,6 +63,22 @@ export function Account({ session }: { session: Session }) {
 		next_threshold: number | null;
 		next_title: string | null;
 	} | null>(null);
+	// New code-based referral state (per docs/referrals.md). The
+	// "Refer friends" card hydrates from my_referral_summary on focus
+	// so the milestone progress bar advances live as friends cross
+	// the engagement gate.
+	const [referral, setReferral] = useState<ReferralSummary | null>(null);
+	const [referralCodeCopied, setReferralCodeCopied] = useState(false);
+	useFocusEffect(
+		useCallback(() => {
+			// New referral summary — drives the "Refer friends" card.
+			// Cheap RPC; refetch on focus so milestone progress bumps
+			// as soon as the user returns from sharing.
+			myReferralSummary().then((r) => {
+				if (r && "ok" in r && r.ok) setReferral(r);
+			});
+		}, [])
+	);
 	useFocusEffect(
 		useCallback(() => {
 			// Sounder UI is hidden behind a feature flag — skip the
@@ -231,6 +253,28 @@ export function Account({ session }: { session: Session }) {
 
 	const handleManage = async () => {
 		await presentCustomerCenter();
+	};
+
+	// Copy the player's referral code to the clipboard. Distinct from
+	// handleCopyCode (which copies their username#discriminator handle
+	// for in-app friend-add) — different purpose, different target.
+	const handleCopyReferralCode = async () => {
+		if (!referral?.code) return;
+		await Clipboard.setStringAsync(referral.code);
+		setReferralCodeCopied(true);
+		setTimeout(() => setReferralCodeCopied(false), 1800);
+	};
+
+	// Open the system share sheet with the pre-filled invite message
+	// from utils/referrals. Errors swallowed — share sheet rejections
+	// are user actions, not bugs.
+	const handleShareReferral = async () => {
+		if (!referral?.code) return;
+		try {
+			await Share.share({ message: shareMessageForCode(referral.code) });
+		} catch {
+			// User cancelled or share sheet errored — nothing to do.
+		}
 	};
 
 	const handleRestore = async () => {
@@ -525,6 +569,57 @@ export function Account({ session }: { session: Session }) {
 						</Sticker>
 					)}
 
+					{/* Refer friends — code-based invite card. Drops between
+					    Slop Club and Settings per docs/referrals.md. Shows
+					    the player's persistent code + Copy + Share + a
+					    milestone progress bar toward the Messenger Hat. */}
+					{referral?.code && (
+						<Sticker
+							color="rose"
+							rotate={-0.8}
+							radius={16}
+							style={referralStyles.card}
+						>
+							<Text style={referralStyles.kicker}>★ refer friends ★</Text>
+							<Text style={referralStyles.label}>Your code:</Text>
+							<View style={referralStyles.codePill}>
+								<Text style={referralStyles.codeValue}>{referral.code}</Text>
+								<Pressable
+									onPress={handleCopyReferralCode}
+									style={referralStyles.copyBtn}
+								>
+									<Icon
+										name={referralCodeCopied ? "check" : "copy"}
+										size={14}
+										color={WHIMSY.ink}
+										strokeWidth={2.2}
+									/>
+									<Text style={referralStyles.copyBtnText}>
+										{referralCodeCopied ? "Copied" : "Copy"}
+									</Text>
+								</Pressable>
+							</View>
+							<Pressable
+								onPress={handleShareReferral}
+								style={referralStyles.shareBtn}
+							>
+								<Text style={referralStyles.shareBtnText}>Share invite</Text>
+							</Pressable>
+							<ReferralMilestoneRow
+								completed={referral.referrals_completed}
+								goal={referral.next_milestone_at ?? 3}
+								capped={referral.next_milestone_at == null}
+							/>
+							<Text style={referralStyles.fine}>
+								Each completed referral: +100 ★
+							</Text>
+							<Text style={referralStyles.finePrint}>
+								Your friend has to play a bit before the credit lands —
+								keeps it fair.
+							</Text>
+						</Sticker>
+					)}
+
 					{/* Settings — paper sticker grouping the housekeeping
 					    actions (release notes, restore IAP, sign out) into
 					    dashed-divided rows. Replaces three scattered link
@@ -661,6 +756,47 @@ function SettingRow({
 			</Text>
 			<Text style={settingsStyles.rowChev}>›</Text>
 		</Pressable>
+	);
+}
+
+// Milestone progress row for the "Refer friends" card. Renders the
+// "Friends invited: N / 3" line + a fill bar + a "Hat earned" badge
+// once capped. Pure presentational — caller computes completed / goal
+// from my_referral_summary.
+function ReferralMilestoneRow({
+	completed,
+	goal,
+	capped,
+}: {
+	completed: number;
+	goal: number;
+	capped: boolean;
+}) {
+	const ratio = Math.max(0, Math.min(1, capped ? 1 : completed / goal));
+	return (
+		<View style={referralStyles.milestoneWrap}>
+			<View style={referralStyles.milestoneHeader}>
+				<Text style={referralStyles.milestoneLabel}>
+					Friends invited: {completed} / {capped ? completed : goal}
+				</Text>
+				{capped && (
+					<Text style={referralStyles.milestoneBadge}>✓ Hat earned</Text>
+				)}
+			</View>
+			<View style={referralStyles.barTrack}>
+				<View
+					style={[
+						referralStyles.barFill,
+						{ width: `${ratio * 100}%` },
+					]}
+				/>
+			</View>
+			{!capped && (
+				<Text style={referralStyles.milestoneFoot}>
+					{goal - completed} more for the Messenger Hat
+				</Text>
+			)}
+		</View>
 	);
 }
 
@@ -1143,5 +1279,120 @@ const settingsStyles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textAlign: "center",
 		marginTop: 22,
+	},
+});
+
+// "Refer friends" card — code + Copy + Share + milestone progress.
+// Sits between the Slop Club card and Settings on the Account screen.
+const referralStyles = StyleSheet.create({
+	card: { padding: 16, marginBottom: 16 },
+	kicker: {
+		...KICKER_TEXT,
+		marginBottom: 8,
+	},
+	label: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		marginBottom: 6,
+	},
+	codePill: {
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 12,
+		paddingLeft: 12,
+		paddingRight: 6,
+		paddingVertical: 6,
+		gap: 8,
+		marginBottom: 12,
+	},
+	codeValue: {
+		flex: 1,
+		fontFamily: FONTS.whimsy,
+		fontSize: 20,
+		letterSpacing: 1.2,
+		color: WHIMSY.ink,
+	},
+	copyBtn: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		paddingVertical: 8,
+		paddingHorizontal: 12,
+		borderRadius: 10,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.sun,
+	},
+	copyBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.ink,
+	},
+	shareBtn: {
+		paddingVertical: 12,
+		borderRadius: 14,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		backgroundColor: WHIMSY.lilac,
+		marginBottom: 14,
+	},
+	shareBtnText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+	},
+	milestoneWrap: {
+		marginBottom: 12,
+	},
+	milestoneHeader: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		marginBottom: 6,
+	},
+	milestoneLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.ink,
+	},
+	milestoneBadge: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.accent,
+	},
+	barTrack: {
+		height: 8,
+		borderRadius: 4,
+		backgroundColor: WHIMSY.muteSoft,
+		overflow: "hidden",
+		borderWidth: 1,
+		borderColor: WHIMSY.ink,
+	},
+	barFill: {
+		height: "100%",
+		backgroundColor: WHIMSY.sun,
+	},
+	milestoneFoot: {
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		marginTop: 4,
+	},
+	fine: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.ink,
+		marginTop: 4,
+	},
+	finePrint: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		marginTop: 2,
 	},
 });

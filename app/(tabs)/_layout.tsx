@@ -8,6 +8,10 @@ import { rpc } from "@/utils/rpc";
 import SupaAuth from "@/components/SupaAuth";
 import UsernameSetup from "@/components/UsernameSetup";
 import { Onboarding } from "@/components/Onboarding";
+import {
+	ReferralCodeEntry,
+	hasSeenReferralStep,
+} from "@/components/ReferralCodeEntry";
 import { HangingSignsTabBar } from "@/components/ui/HangingSignsTabBar";
 import { WHIMSY, KICKER_TEXT } from "@/constants/theme";
 import { initIAP } from "@/utils/iap";
@@ -16,6 +20,13 @@ export default function TabLayout() {
 	const [session, setSession] = useState<Session | null>(null);
 	const [username, setUsername] = useState<string | null | undefined>(undefined);
 	const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+	// Referral code-entry step. Sits between UsernameSetup (where
+	// the user picks a display name) and the storybook Onboarding,
+	// per the spec's "immediately after username + display-name are
+	// chosen, before the Barn is shown" placement.
+	const [needsReferralStep, setNeedsReferralStep] = useState<boolean | null>(
+		null
+	);
 
 	useEffect(() => {
 		supabase.auth.getSession().then(({ data: { session } }) => {
@@ -48,6 +59,7 @@ export default function TabLayout() {
 		AsyncStorage.getItem("seen_onboarding").then((v) => {
 			setNeedsOnboarding(v !== "1");
 		});
+		hasSeenReferralStep().then((seen) => setNeedsReferralStep(!seen));
 	}, []);
 
 	// Bounty-ready badge on the Season tab. Polled on mount + every
@@ -114,6 +126,12 @@ export default function TabLayout() {
 
 	if (!username) {
 		return <UsernameSetup userId={session.user.id} onSaved={refetchUsername} />;
+	}
+
+	if (needsReferralStep) {
+		return (
+			<ReferralCodeEntry onDone={() => setNeedsReferralStep(false)} />
+		);
 	}
 
 	if (needsOnboarding) {
