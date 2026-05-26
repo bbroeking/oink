@@ -429,6 +429,11 @@ export default function Barn() {
 			.single();
 		const score =
 			(data as { alignment_score?: number } | null)?.alignment_score ?? 0;
+		// Hydrate the alignment state — drives BarnOverlay theming. The
+		// home_stats RPC primary path doesn't surface alignment_score, so
+		// this fetch is the only place the label gets updated in prod;
+		// without it BarnOverlay would stay stuck at "neutral" forever.
+		setAlignment(alignmentLabel(score));
 		const prev = prevAlignmentRef.current;
 		prevAlignmentRef.current = score;
 		// First focus after launch — establish the baseline, no toast.
