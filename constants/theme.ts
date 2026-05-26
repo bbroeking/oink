@@ -135,3 +135,24 @@ export const TITLE_RULE = {
 	opacity: 0.3,
 	borderRadius: 1,
 };
+
+// Per-rarity color tokens. The gradient pair is used by the Shop's
+// LinearGradient card backgrounds (top-light → bottom-darker); the
+// single-color shorthand picks the light end for surfaces that need
+// a solid swatch (e.g. ItemPreviewModal). One source of truth so the
+// two surfaces can't drift apart again.
+export const RARITY_GRADIENT: Record<string, readonly [string, string]> = {
+	common:    ["#FAF7F3", "#EFEAE3"],
+	uncommon:  ["#E8F5E0", "#CFE8C0"],
+	rare:      ["#E0EBFF", "#B7CFFA"],
+	epic:      ["#EFE9FF", "#CFC4FF"],
+	legendary: ["#FFF3D0", "#FFD96B"],
+};
+
+export const RARITY_BG_SOLID: Record<string, string> = {
+	common:    RARITY_GRADIENT.common[0],
+	uncommon:  RARITY_GRADIENT.uncommon[0],
+	rare:      RARITY_GRADIENT.rare[0],
+	epic:      RARITY_GRADIENT.epic[0],
+	legendary: RARITY_GRADIENT.legendary[0],
+};

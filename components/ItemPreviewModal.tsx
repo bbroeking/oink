@@ -14,15 +14,7 @@ import { PigStage } from "./ui/PigStage";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Button } from "./ui";
 import { HAT_IMAGES, HatRow, RARITY_COLORS } from "@/constants/hats";
-import { FONTS, MODAL_BACKDROP_BG, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
-
-const RARITY_GRADIENT: Record<string, string> = {
-	common: WHIMSY.cream,
-	uncommon: WHIMSY.sage,
-	rare: WHIMSY.sky,
-	epic: WHIMSY.lilac,
-	legendary: WHIMSY.sun,
-};
+import { FONTS, MODAL_BACKDROP_BG, RARITY_BG_SOLID, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
 // Tickle-particle preview — loops the same burst the Barn would
 // fire on a tap (per-particle dx / rise / scale / tilt / duration
@@ -211,7 +203,7 @@ export function ItemPreviewModal({
 					<View
 						style={[
 							styles.previewCard,
-							{ backgroundColor: RARITY_GRADIENT[rarity] },
+							{ backgroundColor: RARITY_BG_SOLID[rarity] },
 						]}
 					>
 						{isTickleParticle && itemSrc ? (

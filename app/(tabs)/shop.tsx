@@ -32,7 +32,7 @@ import {
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
 import { categoryIcon } from "@/constants/emojiArt";
-import { COLORS, FONTS, KICKER_PILL, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_PILL, RARITY_GRADIENT, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
 import { RarityFx } from "../../components/ui/RarityFx";
@@ -45,14 +45,6 @@ import { useAudioPlayer } from "expo-audio";
 
 const deniedSound = require("../../assets/sounds/denied.mp3");
 const equipSound = require("../../assets/sounds/equip.mp3");
-
-const RARITY_GRADIENT: Record<string, [string, string]> = {
-	common: ["#FAF7F3", "#EFEAE3"],
-	uncommon: ["#E8F5E0", "#CFE8C0"],
-	rare: ["#E0EBFF", "#B7CFFA"],
-	epic: ["#EFE9FF", "#CFC4FF"],
-	legendary: ["#FFF3D0", "#FFD96B"],
-};
 
 const RARITY_RANK: Record<string, number> = {
 	common: 1,
