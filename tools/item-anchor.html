@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>TTP — Item Anchor Tool</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    background: #181410;
+    color: #f0e4d2;
+    margin: 0;
+    padding: 24px;
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+  }
+  h1 { font-size: 18px; margin: 0 0 12px; color: #ffd87a; }
+  h2 { font-size: 13px; margin: 16px 0 8px; color: #ffaa66; text-transform: uppercase; letter-spacing: 1.5px; }
+  .panel { background: #221a14; border: 1.5px solid #3a2c20; border-radius: 10px; padding: 18px; }
+  .pig-wrap { position: relative; width: 300px; height: 300px; background: #fffaf0; border: 2px solid #ffd87a; border-radius: 12px; overflow: hidden; }
+  .pig-wrap img.pig { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .anchor-dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #ffd87a; background: rgba(255,216,122,.4); transform: translate(-50%,-50%); cursor: pointer; transition: all .15s; }
+  .anchor-dot:hover { background: rgba(255,216,122,.8); }
+  .anchor-dot.active { background: #ff6b9b; border-color: #ff6b9b; width: 18px; height: 18px; }
+  .anchor-label { position: absolute; font-size: 9px; color: #2a1f15; background: rgba(255,216,122,.9); padding: 1px 4px; border-radius: 4px; transform: translate(-50%, calc(-100% - 4px)); pointer-events: none; white-space: nowrap; }
+  .item-overlay { position: absolute; pointer-events: none; }
+  .item-overlay img { width: 100%; height: 100%; object-fit: contain; }
+  .pivot-marker { position: absolute; width: 12px; height: 12px; border: 2px solid #ff3344; background: rgba(255,51,68,.5); border-radius: 50%; transform: translate(-50%,-50%); pointer-events: none; }
+  .item-canvas { position: relative; width: 230px; height: 230px; background: #fffaf0; border: 2px solid #ffaa66; border-radius: 12px; cursor: crosshair; overflow: hidden; }
+  .item-canvas img.item-img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .item-canvas .pivot-marker { cursor: crosshair; pointer-events: none; }
+  .controls { display: grid; gap: 10px; }
+  .row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .row label { min-width: 80px; color: #ffaa66; }
+  select, input[type=range], input[type=number] { background: #2a1f15; color: #f0e4d2; border: 1.5px solid #4a3a2a; border-radius: 6px; padding: 4px 8px; font-family: inherit; font-size: 13px; }
+  select { min-width: 120px; }
+  input[type=range] { flex: 1; }
+  .item-grid { display: grid; grid-template-columns: repeat(3, 60px); gap: 8px; margin-top: 8px; }
+  .item-pick { width: 60px; height: 60px; background: #2a1f15; border: 2px solid #4a3a2a; border-radius: 8px; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: border-color .15s; }
+  .item-pick img { max-width: 100%; max-height: 100%; }
+  .item-pick.selected { border-color: #ffd87a; background: #3a2c1c; }
+  .item-pick:hover { border-color: #ffaa66; }
+  pre { background: #0e0a06; color: #d4f3a4; padding: 12px; border-radius: 8px; font-size: 12px; margin: 8px 0; overflow-x: auto; }
+  button { background: #ffd87a; color: #2a1f15; border: none; padding: 8px 16px; font-family: inherit; font-weight: 700; font-size: 13px; border-radius: 6px; cursor: pointer; }
+  button:hover { background: #ffe09a; }
+  .hint { font-size: 11px; color: #ad9a82; margin-top: 4px; }
+  .small { font-size: 11px; color: #ad9a82; }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h1>🐷 Item Anchor Tool</h1>
+  <div class="small">Standalone — no Expo bundle. Set pivot (left canvas) + anchor (dot on pig) + width. Copy the RelSpec.</div>
+
+  <h2>1 · Pick item</h2>
+  <div class="item-grid" id="item-grid"></div>
+
+  <h2>2 · Set pivot</h2>
+  <div class="hint">Click on the item below to set the attach point.</div>
+  <div class="item-canvas" id="item-canvas">
+    <img class="item-img" id="item-img" alt="" />
+    <div class="pivot-marker" id="item-pivot-marker"></div>
+  </div>
+
+  <h2>3 · Width + anchor</h2>
+  <div class="controls">
+    <div class="row">
+      <label>widthFrac</label>
+      <input type="range" id="width-slider" min="0.05" max="1" step="0.01" value="0.4" />
+      <span id="width-value" style="min-width: 40px;">0.40</span>
+    </div>
+    <div class="row">
+      <label>anchor</label>
+      <select id="anchor-select"></select>
+    </div>
+  </div>
+
+  <h2>4 · RelSpec</h2>
+  <pre id="output">{}</pre>
+  <button id="copy-btn">Copy RelSpec line for HAT_REL</button>
+  <div class="small" id="copy-status" style="margin-top: 6px;"></div>
+</div>
+
+<div class="panel">
+  <h2>Preview on Rosie (300×300)</h2>
+  <div class="hint">Click an anchor dot on the pig to assign it (or use the dropdown).</div>
+  <div class="pig-wrap" id="pig-wrap">
+    <img class="pig" src="/assets/images/sprites/rosie/idle_1.png" alt="Rosie idle frame" />
+    <div class="item-overlay" id="item-overlay"><img id="overlay-img" alt="" /></div>
+    <!-- anchor dots injected by JS -->
+  </div>
+  <div class="small" style="margin-top: 12px;">
+    Red dot on the item = pivot. The pivot lands on whichever pig anchor you pick.
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────
+// Pig anchors (REST_ANCHORS from constants/hats.ts, 300×300 card space)
+// ─────────────────────────────────────────────────────────────────────
+const PIG_CANVAS = 300;
+const ANCHORS = {
+  head:   { x: 162, y: 34 },
+  eye_l:  { x: 131, y: 108 },
+  eye_r:  { x: 222, y: 108 },
+  eyes:   { x: 176, y: 108 },
+  snout:  { x: 185, y: 136 },
+  mouth:  { x: 181, y: 170 },
+  neck:   { x: 170, y: 220 },
+  body:   { x: 157, y: 235 },
+  hand_l: { x: 133, y: 280 },
+  hand_r: { x: 235, y: 266 },
+  leg_l:  { x: 27,  y: 266 },
+  leg_r:  { x: 75,  y: 235 },
+  feet:   { x: 51,  y: 250 },
+};
+
+// New items shipped this session — extend this list when more land.
+const ITEMS = [
+  { id: "astronaut",   src: "/assets/images/hats/astronaut.png" },
+  { id: "bunny_ears",  src: "/assets/images/hats/bunny_ears.png" },
+  { id: "cat_ears",    src: "/assets/images/hats/cat_ears.png" },
+  { id: "devil_horns", src: "/assets/images/hats/devil_horns.png" },
+  { id: "leaf_crown",  src: "/assets/images/hats/leaf_crown.png" },
+  { id: "messenger",   src: "/assets/images/hats/messenger.png" },
+];
+
+const STORAGE_KEY = "ttp_item_anchor_rel_v1";
+
+// ─────────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────────
+const state = {
+  itemId: ITEMS[0].id,
+  rel: JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"),
+  itemAspect: 1,
+};
+
+function spec() {
+  return state.rel[state.itemId] || { pivot: { x: 0.5, y: 1 }, widthFrac: 0.4, anchor: "head" };
+}
+
+function setSpec(patch) {
+  state.rel[state.itemId] = { ...spec(), ...patch };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.rel));
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Render
+// ─────────────────────────────────────────────────────────────────────
+function render() {
+  const s = spec();
+
+  // Item grid selection state
+  document.querySelectorAll(".item-pick").forEach((el) => {
+    el.classList.toggle("selected", el.dataset.id === state.itemId);
+  });
+
+  // Item canvas
+  const itemImg = document.getElementById("item-img");
+  const curItem = ITEMS.find((i) => i.id === state.itemId);
+  if (itemImg.src !== location.origin + curItem.src) {
+    itemImg.src = curItem.src;
+    itemImg.onload = () => {
+      state.itemAspect = itemImg.naturalHeight / Math.max(1, itemImg.naturalWidth);
+      render();
+    };
+  }
+
+  // Item pivot marker
+  const itemCanvas = document.getElementById("item-canvas");
+  const cw = itemCanvas.clientWidth;
+  const ch = itemCanvas.clientHeight;
+  const pivotMarker = document.getElementById("item-pivot-marker");
+  pivotMarker.style.left = (s.pivot.x * cw) + "px";
+  pivotMarker.style.top = (s.pivot.y * ch) + "px";
+
+  // Width slider
+  document.getElementById("width-slider").value = s.widthFrac;
+  document.getElementById("width-value").textContent = s.widthFrac.toFixed(2);
+
+  // Anchor dropdown
+  document.getElementById("anchor-select").value = s.anchor;
+
+  // Anchor dots
+  document.querySelectorAll(".anchor-dot").forEach((el) => {
+    el.classList.toggle("active", el.dataset.anchor === s.anchor);
+  });
+
+  // Item overlay on pig
+  const wrap = document.getElementById("pig-wrap");
+  const wrapW = wrap.clientWidth;
+  const wrapH = wrap.clientHeight;
+  const scale = wrapW / PIG_CANVAS;
+  const overlay = document.getElementById("item-overlay");
+  const oimg = document.getElementById("overlay-img");
+  oimg.src = curItem.src;
+  const itemWPx = s.widthFrac * PIG_CANVAS;
+  const itemHPx = itemWPx * state.itemAspect;
+  const anchor = ANCHORS[s.anchor];
+  // Position so the item's pivot lands on the anchor
+  const left = anchor.x - s.pivot.x * itemWPx;
+  const top = anchor.y - s.pivot.y * itemHPx;
+  overlay.style.left = (left * scale) + "px";
+  overlay.style.top = (top * scale) + "px";
+  overlay.style.width = (itemWPx * scale) + "px";
+  overlay.style.height = (itemHPx * scale) + "px";
+
+  // Output — match the existing HAT_REL_DATA entry format exactly so a
+  // paste lands cleanly between sibling lines in hat_rel.generated.ts.
+  const px = Math.round(s.pivot.x * 10000) / 10000;
+  const py = Math.round(s.pivot.y * 10000) / 10000;
+  const wf = Math.round(s.widthFrac * 1000) / 1000;
+  document.getElementById("output").textContent =
+    `\t${state.itemId}: { pivot: { x: ${px}, y: ${py} }, widthFrac: ${wf}, anchor: "${s.anchor}", behind: false },`;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Wire up
+// ─────────────────────────────────────────────────────────────────────
+function init() {
+  // Item grid
+  const grid = document.getElementById("item-grid");
+  ITEMS.forEach((item) => {
+    const el = document.createElement("div");
+    el.className = "item-pick";
+    el.dataset.id = item.id;
+    el.title = item.id;
+    el.innerHTML = `<img src="${item.src}" alt="${item.id}" />`;
+    el.onclick = () => {
+      state.itemId = item.id;
+      const itemImg = document.getElementById("item-img");
+      itemImg.src = "";  // force reload to retrigger onload
+      render();
+    };
+    grid.appendChild(el);
+  });
+
+  // Item canvas — click to set pivot
+  const itemCanvas = document.getElementById("item-canvas");
+  itemCanvas.onclick = (e) => {
+    const rect = itemCanvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setSpec({ pivot: { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) } });
+  };
+
+  // Width slider
+  document.getElementById("width-slider").oninput = (e) => {
+    setSpec({ widthFrac: parseFloat(e.target.value) });
+  };
+
+  // Anchor dropdown
+  const sel = document.getElementById("anchor-select");
+  Object.keys(ANCHORS).forEach((name) => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  sel.onchange = (e) => setSpec({ anchor: e.target.value });
+
+  // Anchor dots on the pig
+  const wrap = document.getElementById("pig-wrap");
+  Object.entries(ANCHORS).forEach(([name, pos]) => {
+    const dot = document.createElement("div");
+    dot.className = "anchor-dot";
+    dot.dataset.anchor = name;
+    dot.style.left = `${(pos.x / PIG_CANVAS) * 100}%`;
+    dot.style.top = `${(pos.y / PIG_CANVAS) * 100}%`;
+    dot.title = name;
+    dot.onclick = (ev) => { ev.stopPropagation(); setSpec({ anchor: name }); };
+    wrap.appendChild(dot);
+  });
+
+  // Copy button
+  document.getElementById("copy-btn").onclick = async () => {
+    const txt = document.getElementById("output").textContent;
+    try {
+      await navigator.clipboard.writeText(txt);
+      document.getElementById("copy-status").textContent = "✓ Copied. Paste into constants/hat_rel.generated.ts → HAT_REL_DATA.";
+      setTimeout(() => document.getElementById("copy-status").textContent = "", 4000);
+    } catch (e) {
+      document.getElementById("copy-status").textContent = "Copy failed; select the JSON above manually.";
+    }
+  };
+
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
