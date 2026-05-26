@@ -39,6 +39,7 @@ import {
 	type AlignmentLabel,
 } from "@/utils/alignment";
 import { useHomeStats } from "@/hooks/useHomeStats";
+import { useStipend } from "@/hooks/useStipend";
 
 // Lucky Pig tunables — client-rolled (D in the design grill). Trade-off
 // is documented in migrations/20260519020000_lucky_pig.sql.
@@ -360,6 +361,15 @@ export default function Barn() {
 		onEffectsLoaded: setEffects,
 	});
 
+	// Slop Club monthly stipend. The hook calls onClaimed only when
+	// the RPC actually paid out (members + once-per-month).
+	const stipend = useStipend({
+		onClaimed: (granted) => {
+			showToast("Slop Club", `+${granted} snouts — your monthly stipend`);
+			fetchStats();
+		},
+	});
+
 	// Release-notes auto-show: fires once on Barn mount per app launch
 	// when the user hasn't seen the latest version yet.
 	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
@@ -505,22 +515,11 @@ export default function Barn() {
 		useCallback(() => {
 			fetchStats();
 			checkPassEvents();
-			claimStipend();
+			stipend.claim();
 			checkAlignment();
 			setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
 		}, [checkPassEvents])
 	);
-
-	// Slop Club: claim the monthly snout stipend. The RPC is idempotent
-	// per UTC month + a no-op for non-members, so it's safe to call on
-	// every focus; it only pays out once a month for subscribers.
-	const claimStipend = async () => {
-		const r = await rpc<{ ok?: boolean; granted?: number }>("claim_slop_stipend");
-		if (r?.ok && r.granted) {
-			showToast("Slop Club", `+${r.granted} snouts — your monthly stipend`);
-			fetchStats();
-		}
-	};
 
 	// Toast every alignment shift while the app is open. Server-side
 	// `shift_alignment` already fires push notifications at milestone
