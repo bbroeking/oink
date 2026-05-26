@@ -7,7 +7,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
-import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Icon, type IconName } from "./ui/Icon";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
@@ -83,10 +83,9 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 		setConfirmOpen(false);
 		if (busy) return;
 		setBusy(true);
-		const { data } = await supabase.rpc("reroll_bounty", {
+		const r = await rpc<{ ok?: boolean; reason?: string }>("reroll_bounty", {
 			bounty_code: bounty.code,
 		});
-		const r = data as { ok?: boolean; reason?: string } | null;
 		setBusy(false);
 		if (r?.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
@@ -105,10 +104,9 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 	const claim = async () => {
 		if (busy || !ready) return;
 		setBusy(true);
-		const { data } = await supabase.rpc("claim_bounty", {
+		const r = await rpc<{ ok?: boolean; reason?: string }>("claim_bounty", {
 			bounty_code: bounty.code,
 		});
-		const r = data as { ok?: boolean; reason?: string } | null;
 		setBusy(false);
 		if (r?.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(

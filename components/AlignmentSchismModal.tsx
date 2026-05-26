@@ -17,7 +17,7 @@ import {
 	Easing,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { Sticker } from "./ui/Sticker";
 import { AlignmentEmblem } from "./ui/AlignmentEmblem";
 import {
@@ -130,7 +130,7 @@ export function AlignmentSchismModal({ side, score, milestone = 25, onDismiss }:
 
 	const handleDismiss = async () => {
 		try {
-			await supabase.rpc("mark_schism_seen", { side, milestone });
+			await rpc("mark_schism_seen", { side, milestone });
 		} catch {
 			// best-effort; if it fails the user might see the modal
 			// again on next focus, which is annoying but not broken

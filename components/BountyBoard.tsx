@@ -4,7 +4,7 @@
 import React, { useCallback, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { BountyCard, type WeeklyBounty } from "./BountyCard";
 import { ROW_TILTS } from "@/constants/theme";
 import { SectionHeader } from "./ui/SectionHeader";
@@ -32,8 +32,8 @@ export function BountyBoard() {
 	const [loaded, setLoaded] = useState(false);
 
 	const fetchBounties = useCallback(() => {
-		supabase.rpc("my_weekly_bounties").then(({ data }) => {
-			setBounties((data as WeeklyBounty[] | null) ?? []);
+		rpc<WeeklyBounty[]>("my_weekly_bounties").then((data) => {
+			setBounties(data ?? []);
 			setLoaded(true);
 		});
 	}, []);

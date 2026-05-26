@@ -32,6 +32,7 @@ import * as Sentry from "@sentry/react-native";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/utils/supabase";
+import { rpc } from "@/utils/rpc";
 import {
 	AlignmentSchismModal,
 	type SchismSide,
@@ -109,13 +110,12 @@ function RootLayoutInner() {
 		if (!authChecked) return;
 		let cancelled = false;
 		const check = async () => {
-			const { data } = await supabase.rpc("check_schism_status");
-			if (cancelled) return;
-			const r = data as {
+			const r = await rpc<{
 				side?: string;
 				score?: number;
 				milestone?: number;
-			} | null;
+			}>("check_schism_status");
+			if (cancelled) return;
 			if (r?.side === "angel" || r?.side === "goblin") {
 				// Milestone defaults to 25 to match the pre-milestone
 				// server's return shape (and pre-migration installs).
@@ -140,9 +140,10 @@ function RootLayoutInner() {
 		if (!authChecked) return;
 		let cancelled = false;
 		const check = async () => {
-			const { data } = await supabase.rpc("my_finale_result");
+			const r = await rpc<{ pending?: boolean } & Partial<FinaleResult>>(
+				"my_finale_result"
+			);
 			if (cancelled) return;
-			const r = data as ({ pending?: boolean } & Partial<FinaleResult>) | null;
 			if (r?.pending) {
 				setFinale(r as FinaleResult);
 			}
@@ -223,15 +224,17 @@ function RootLayoutInner() {
 			// ones newer than first-launch). Marked seen on modal
 			// dismiss via mark_announcement_seen.
 			const systemRows = await (async () => {
-				const { data } = await supabase.rpc("my_unseen_announcements");
-				return (data ?? []) as {
-					id: number;
-					kind: string;
-					title: string;
-					body: string;
-					data: unknown;
-					dispatched_at: string;
-				}[];
+				const data = await rpc<
+					{
+						id: number;
+						kind: string;
+						title: string;
+						body: string;
+						data: unknown;
+						dispatched_at: string;
+					}[]
+				>("my_unseen_announcements");
+				return data ?? [];
 			})();
 
 			// Normalize all events to a shared shape so we can sort + cap
@@ -341,16 +344,15 @@ function RootLayoutInner() {
 		if (!authChecked) return;
 		let cancelled = false;
 		const check = async () => {
-			const { data } = await supabase.rpc("my_achievements");
-			if (cancelled) return;
 			const rows =
-				(data as
-					| (UnlockedAchievement & {
-							claimed: boolean;
-							viewed_at: string | null;
-							display_order: number;
-					  })[]
-					| null) ?? [];
+				(await rpc<
+					(UnlockedAchievement & {
+						claimed: boolean;
+						viewed_at: string | null;
+						display_order: number;
+					})[]
+				>("my_achievements")) ?? [];
+			if (cancelled) return;
 			const unseen = rows
 				.filter((r) => r.claimed && !r.viewed_at)
 				.sort((a, b) => a.display_order - b.display_order)
@@ -441,11 +443,9 @@ function RootLayoutInner() {
 						// which is the correct conservative behavior.
 						rituals.forEach((e) => {
 							if (e.source === "system") {
-								supabase
-									.rpc("mark_announcement_seen", {
-										announcement_id: e.announcementId,
-									})
-									.then(() => {});
+								rpc("mark_announcement_seen", {
+									announcement_id: e.announcementId,
+								}).then(() => {});
 							}
 						});
 						setRituals(null);

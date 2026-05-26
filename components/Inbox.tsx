@@ -21,6 +21,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { ActiveEffects } from "./ActiveEffects";
 import { FONTS, WHIMSY } from "@/constants/theme";
 import type { TradeRow } from "@/constants/trade_types";
@@ -93,8 +94,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 
 	const load = useCallback(async () => {
 		// Trades — one RPC covers incoming / outgoing / answered.
-		const { data: tradeData } = await supabase.rpc("my_tickle_trades");
-		const trades = (tradeData as TradeRow[] | null) ?? [];
+		const trades = (await rpc<TradeRow[]>("my_tickle_trades")) ?? [];
 		setIncomingTrades(
 			trades.filter((t) => t.status === "pending" && t.target_id === userId)
 		);
@@ -179,10 +179,9 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		// incoming trade cards. tickle_info returns the
 		// regen-catchup balance, which is what the player can
 		// actually spend right now.
-		const { data: tickle } = await supabase.rpc("tickle_info", {
+		const t = await rpc<{ balance?: number }>("tickle_info", {
 			uid: userId,
 		});
-		const t = tickle as { balance?: number } | null;
 		setBalance(typeof t?.balance === "number" ? t.balance : null);
 
 		// Recently-accepted outgoing friend requests — surfaced in the
@@ -320,23 +319,22 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	}, [friendReqs.length, incomingTrades.length, onActionableCount]);
 
 	const doRpc = async (
-		rpc: string,
+		rpcName: string,
 		args: object,
 		id: string,
 		ok: string
 	) => {
 		if (busy) return;
 		setBusy(id);
-		const { data, error } = await supabase.rpc(rpc, args);
-		setBusy(null);
-		const r = data as {
+		const r = await rpc<{
 			ok?: boolean;
 			reason?: string;
 			cap?: number;
 			balance?: number;
 			needed?: number;
-		} | null;
-		if (error || (r && r.ok === false)) {
+		}>(rpcName, args as Record<string, unknown>);
+		setBusy(null);
+		if (!r || r.ok === false) {
 			// Surface specific reasons — they tell the user what to do
 			// instead of a vague retry.
 			if (r?.reason === "at_cap") {

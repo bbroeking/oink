@@ -27,7 +27,7 @@ import {
 import { Stack, router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
-import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { Sticker } from "../components/ui/Sticker";
 import { SnoutCoin } from "../components/ui/SnoutCoin";
 import { HAT_IMAGES } from "@/constants/hats";
@@ -83,8 +83,8 @@ export default function AchievementsScreen() {
 	const [loading, setLoading] = useState(true);
 
 	const load = useCallback(async () => {
-		const { data } = await supabase.rpc("my_achievements");
-		setRows((data as AchievementRow[] | null) ?? []);
+		const data = await rpc<AchievementRow[]>("my_achievements");
+		setRows(data ?? []);
 		setLoading(false);
 	}, []);
 
@@ -120,7 +120,7 @@ export default function AchievementsScreen() {
 				r.id === id ? { ...r, viewed_at: new Date().toISOString() } : r
 			)
 		);
-		await supabase.rpc("mark_achievement_viewed", { target_id: id });
+		await rpc("mark_achievement_viewed", { target_id: id });
 	};
 
 	return (

@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker } from "./ui/Sticker";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
@@ -209,21 +210,20 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		setFeedback(null);
 		setAskState({ kind: "ready" });
 		setTargetTickles(null);
-		supabase
-			.rpc("public_user_stats", { target_user_id: targetUserId })
-			.then(({ data, error }) => {
-				if (error) {
-					setFeedback("Couldn't load profile.");
-					setStats(null);
-				} else {
-					const rows = (data as UserStats[] | null) ?? [];
-					setStats(rows[0] ?? null);
-				}
-				setLoading(false);
-			});
+		rpc<UserStats[]>("public_user_stats", {
+			target_user_id: targetUserId,
+		}).then((data) => {
+			if (!data) {
+				setFeedback("Couldn't load profile.");
+				setStats(null);
+			} else {
+				setStats(data[0] ?? null);
+			}
+			setLoading(false);
+		});
 		// Trade state with this user — drives the Ask row.
-		supabase.rpc("my_tickle_trades").then(({ data }) => {
-			setAskState(deriveAskState(targetUserId, data as TradeRow[] | null));
+		rpc<TradeRow[]>("my_tickle_trades").then((data) => {
+			setAskState(deriveAskState(targetUserId, data));
 		});
 		// Lifetime tickle count for the TICKLES stat column. Profiles
 		// is readable for visible fields; a failure leaves the column
@@ -241,21 +241,22 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 
 	const refreshStats = async () => {
 		if (!targetUserId) return;
-		const { data } = await supabase.rpc("public_user_stats", {
+		const rows = (await rpc<UserStats[]>("public_user_stats", {
 			target_user_id: targetUserId,
-		});
-		const rows = (data as UserStats[] | null) ?? [];
+		})) ?? [];
 		setStats(rows[0] ?? null);
 	};
 
 	const addFriend = async () => {
 		if (!stats || !stats.username) return;
 		setBusy(true);
-		const { data } = await supabase.rpc("send_friend_request", {
-			target_username: stats.username,
-			target_discriminator: stats.discriminator ?? null,
-		});
-		const r = data as { ok?: boolean; reason?: string; cap?: number } | null;
+		const r = await rpc<{ ok?: boolean; reason?: string; cap?: number }>(
+			"send_friend_request",
+			{
+				target_username: stats.username,
+				target_discriminator: stats.discriminator ?? null,
+			}
+		);
 		setBusy(false);
 		if (r?.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -270,7 +271,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const cancelOutgoing = async () => {
 		if (!stats) return;
 		setBusy(true);
-		await supabase.rpc("cancel_friend_request", { target_user_id: stats.user_id });
+		await rpc("cancel_friend_request", { target_user_id: stats.user_id });
 		setBusy(false);
 		setFeedback("Request cancelled.");
 		await refreshStats();
@@ -280,10 +281,12 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const acceptIncoming = async () => {
 		if (!stats) return;
 		setBusy(true);
-		const { data } = await supabase.rpc("accept_friend_request", {
-			other_user_id: stats.user_id,
-		});
-		const r = data as { ok?: boolean; reason?: string; cap?: number } | null;
+		const r = await rpc<{ ok?: boolean; reason?: string; cap?: number }>(
+			"accept_friend_request",
+			{
+				other_user_id: stats.user_id,
+			}
+		);
 		setBusy(false);
 		if (r?.ok) {
 			Haptics.notificationAsync(
@@ -302,7 +305,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const doBlock = async () => {
 		if (!stats || blockBusy) return;
 		setBlockBusy(true);
-		await supabase.rpc("block_user", { target_user_id: stats.user_id });
+		await rpc("block_user", { target_user_id: stats.user_id });
 		setBlockBusy(false);
 		setBlockOpen(false);
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -315,7 +318,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const doReport = async () => {
 		if (!stats || blockBusy) return;
 		setBlockBusy(true);
-		await supabase.rpc("report_user", {
+		await rpc("report_user", {
 			target_user_id: stats.user_id,
 			reason: "user_report",
 		});
@@ -328,15 +331,14 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const sendTickle = async () => {
 		if (!stats) return;
 		setBusy(true);
-		const { data } = await supabase.rpc("request_tickles", {
-			target_user_id: stats.user_id,
-			amount: askAmount,
-		});
-		const r = data as {
+		const r = await rpc<{
 			ok?: boolean;
 			reason?: string;
 			hours_remaining?: number;
-		} | null;
+		}>("request_tickles", {
+			target_user_id: stats.user_id,
+			amount: askAmount,
+		});
 		setBusy(false);
 		if (r?.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});

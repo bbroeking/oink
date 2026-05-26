@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { Button, SectionHeader } from "../../components/ui";
 import { Icon } from "../../components/ui/Icon";
 import { Sticker } from "../../components/ui/Sticker";
@@ -911,7 +912,7 @@ export default function ShopScreen() {
 		if (!user) return;
 
 		const [dailyRes, allRes, ownedRes, profRes, resetsRes, titlesRes] = await Promise.all([
-			supabase.rpc("daily_shop"),
+			rpc<HatRow[]>("daily_shop"),
 			supabase
 				.from("hats")
 				.select("id, name, cost, display_order, emoji, image_path, category, rarity, description")
@@ -935,17 +936,17 @@ export default function ShopScreen() {
 					}
 					return res;
 				}),
-			supabase.rpc("shop_resets_in_seconds"),
+			rpc<number>("shop_resets_in_seconds"),
 			// shop_titles depends on the 20260519010000 migration; 404s
 			// when the migration hasn't been pushed yet, in which case
 			// we just leave the titles list empty.
-			supabase.rpc("shop_titles"),
+			rpc<ShopTitle[]>("shop_titles"),
 		]);
 		const filterPlaceable = (rows: HatRow[]) =>
 			rows.filter(
 				(r) => !r.category || !HIDDEN_CATEGORIES.has(r.category)
 			);
-		setDaily(filterPlaceable((dailyRes.data as HatRow[]) ?? []));
+		setDaily(filterPlaceable(dailyRes ?? []));
 		setAllItems(filterPlaceable((allRes.data as HatRow[]) ?? []));
 		setOwned(
 			new Set(
@@ -969,8 +970,8 @@ export default function ShopScreen() {
 				?.active_title_id ?? null
 		);
 		setUserId(user.id);
-		setResetsIn((resetsRes.data as number) ?? 0);
-		setTitles(((titlesRes?.data as ShopTitle[] | null) ?? []));
+		setResetsIn(resetsRes ?? 0);
+		setTitles(titlesRes ?? []);
 	}, []);
 
 	// Spend snouts to grant a title. On success, optimistically flip
@@ -990,12 +991,12 @@ export default function ShopScreen() {
 			return;
 		}
 		setTitleBusyId(t.id);
-		const { data, error } = await supabase.rpc("buy_title", {
-			target_title_id: t.id,
-		});
+		const r = await rpc<{ ok?: boolean; reason?: string; new_balance?: number }>(
+			"buy_title",
+			{ target_title_id: t.id }
+		);
 		setTitleBusyId(null);
-		const r = data as { ok?: boolean; reason?: string; new_balance?: number } | null;
-		if (error || !r?.ok) {
+		if (!r?.ok) {
 			Alert.alert(
 				"Couldn't buy",
 				r?.reason === "insufficient_funds"
@@ -1038,20 +1039,19 @@ export default function ShopScreen() {
 			return;
 		}
 		setBusyId(hat.id);
-		const { data, error } = await supabase.rpc("buy_hat", {
-			target_hat_id: hat.id,
-		});
-		setBusyId(null);
-		if (error) {
-			showPurchaseToast({ type: "fail", title: "Couldn't buy", text: "Try again." });
-			return;
-		}
-		const r = data as {
+		const r = await rpc<{
 			ok: boolean;
 			reason?: string;
 			need?: number;
 			have?: number;
-		};
+		}>("buy_hat", {
+			target_hat_id: hat.id,
+		});
+		setBusyId(null);
+		if (!r) {
+			showPurchaseToast({ type: "fail", title: "Couldn't buy", text: "Try again." });
+			return;
+		}
 		if (!r.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
 				() => {}

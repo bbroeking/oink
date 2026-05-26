@@ -15,6 +15,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Card, Button, SectionHeader } from "./ui";
@@ -61,13 +62,12 @@ export function Account({ session }: { session: Session }) {
 			// Sounder UI is hidden behind a feature flag — skip the
 			// fetch entirely while it's off; nothing renders anyway.
 			if (!SOUNDER_VISIBLE) return;
-			supabase.rpc("my_sounder").then(({ data }) => {
+			rpc<
+				| { ok: false; reason?: string }
+				| ({ ok: true } & NonNullable<typeof sounder>)
+			>("my_sounder").then((r) => {
 				// my_sounder RPC returns jsonb: { ok: false, reason } when
 				// unauthenticated, otherwise { ok: true, ...sounder fields }.
-				const r = data as
-					| { ok: false; reason?: string }
-					| ({ ok: true } & NonNullable<typeof sounder>)
-					| null;
 				if (r?.ok) {
 					const { ok: _ok, ...stats } = r;
 					setSounder(stats);
@@ -147,8 +147,7 @@ export function Account({ session }: { session: Session }) {
 			// Pull current_tier alongside so the SEASON column reads
 			// "T8" rather than collapsing to "—". Best-effort: a failure
 			// just leaves the column blank.
-			supabase.rpc("season_state").then(({ data }) => {
-				const s = data as { current_tier?: number } | null;
+			rpc<{ current_tier?: number }>("season_state").then((s) => {
 				if (typeof s?.current_tier === "number") setCurrentTier(s.current_tier);
 			});
 		}, [session.user.id])
@@ -178,7 +177,7 @@ export function Account({ session }: { session: Session }) {
 				const pro = !!info.entitlements.active["tickle_the_pig_pro"];
 				if (pro && !isVip) {
 					setIsVip(true);
-					await supabase.rpc("dev_set_vip", { target: true });
+					await rpc("dev_set_vip", { target: true });
 				}
 			});
 			return unsub;
@@ -196,7 +195,7 @@ export function Account({ session }: { session: Session }) {
 		if (result.ok) {
 			const pro = await isPro();
 			if (pro) {
-				await supabase.rpc("dev_set_vip", { target: true });
+				await rpc("dev_set_vip", { target: true });
 				setIsVip(true);
 				showPurchaseToast({
 					type: "success",
@@ -219,7 +218,7 @@ export function Account({ session }: { session: Session }) {
 					{
 						text: "Unlock (dev)",
 						onPress: async () => {
-							await supabase.rpc("dev_set_vip", { target: true });
+							await rpc("dev_set_vip", { target: true });
 							setIsVip(true);
 						},
 					},
@@ -239,7 +238,7 @@ export function Account({ session }: { session: Session }) {
 		if (result.ok) {
 			const pro = await isPro();
 			if (pro) {
-				await supabase.rpc("dev_set_vip", { target: true });
+				await rpc("dev_set_vip", { target: true });
 				setIsVip(true);
 				Alert.alert("Restored", "Your Slop Club membership is active.");
 			} else {
@@ -588,7 +587,7 @@ export function Account({ session }: { session: Session }) {
 					if (deleting) return;
 					setDeleting(true);
 					try {
-						await supabase.rpc("delete_my_account");
+						await rpc("delete_my_account");
 					} catch {}
 					await supabase.auth.signOut();
 					setDeleting(false);

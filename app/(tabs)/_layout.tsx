@@ -4,6 +4,7 @@ import { View, AppState, Image, Text, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import SupaAuth from "@/components/SupaAuth";
 import UsernameSetup from "@/components/UsernameSetup";
 import { Onboarding } from "@/components/Onboarding";
@@ -59,7 +60,7 @@ export default function TabLayout() {
 		if (!session) return;
 		let cancelled = false;
 		const fetchCount = async () => {
-			const { data } = await supabase.rpc("bounty_ready_count");
+			const data = await rpc<number>("bounty_ready_count");
 			if (cancelled) return;
 			setBountyReady(typeof data === "number" ? data : 0);
 		};

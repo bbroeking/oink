@@ -15,7 +15,7 @@
 import React, { useState } from "react";
 import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
-import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { dailyRitual, type RitualMode } from "../utils/rituals";
 import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
 
@@ -41,9 +41,10 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 		if (busy) return;
 		setBusy(true);
 		setResult(null);
-		const rpc = isBless ? "send_blessing" : "send_curse";
-		const { data } = await supabase.rpc(rpc, { target_user_id: targetUserId });
-		const r = data as { ok?: boolean; reason?: string } | null;
+		const rpcName = isBless ? "send_blessing" : "send_curse";
+		const r = await rpc<{ ok?: boolean; reason?: string }>(rpcName, {
+			target_user_id: targetUserId,
+		});
 		setBusy(false);
 
 		if (r?.ok) {

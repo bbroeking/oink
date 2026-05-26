@@ -5,6 +5,7 @@ import { useState, useCallback } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Text } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { log } from "../utils/log";
 import { Icon } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
@@ -274,21 +275,19 @@ export function Leaderboard() {
 			setMyId(user?.id ?? null);
 
 			if (scope === "alignment") {
-				const { data: rows } = await supabase.rpc("alignment_leaderboard", {
+				const rows = await rpc<
+					{
+						user_id: string;
+						username: string | null;
+						active_hat_id: string | null;
+						alignment_score: number;
+						side: "generous" | "greedy";
+						side_rank: number;
+					}[]
+				>("alignment_leaderboard", {
 					per_side: 25,
 				});
-				const mapped: LeaderboardEntry[] = (
-					(rows as
-						| {
-								user_id: string;
-								username: string | null;
-								active_hat_id: string | null;
-								alignment_score: number;
-								side: "generous" | "greedy";
-								side_rank: number;
-						  }[]
-						| null) ?? []
-				).map((r) => ({
+				const mapped: LeaderboardEntry[] = (rows ?? []).map((r) => ({
 					id: r.user_id,
 					username: r.username,
 					tickles_earned: 0,
@@ -309,9 +308,9 @@ export function Leaderboard() {
 
 			if (scope === "friends") {
 				// Bounded by the 100-friend cap — fetch once, no pagination.
-				const { data: friends } = await supabase.rpc("friend_ids");
+				const friends = await rpc<string[]>("friend_ids");
 				const friendIds = [
-					...((friends as string[] | null) ?? []),
+					...(friends ?? []),
 					...(user ? [user.id] : []),
 				];
 				if (friendIds.length === 0) {
@@ -358,7 +357,7 @@ export function Leaderboard() {
 					firstPage.length < LEADERBOARD_MAX_ROWS
 			);
 
-			supabase.rpc("mark_all_pass_events_seen").then(() => {});
+			rpc("mark_all_pass_events_seen").then(() => {});
 		} catch (error) {
 			log.error("Error fetching leaderboard:", error);
 		} finally {

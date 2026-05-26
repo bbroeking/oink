@@ -17,6 +17,7 @@ import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
 import { Icon } from "./ui/Icon";
@@ -487,15 +488,17 @@ export default function Barn() {
 
 	const checkPassEvents = useCallback(async () => {
 		try {
-			const { data, error } = await supabase.rpc("unseen_pass_events");
-			if (error) return; // RPC may not exist yet pre-migration — fail quiet.
-			const rows = (data ?? []) as {
-				id: number;
-				passer_id: string;
-				passer_username: string | null;
-				passer_tickles: number;
-				passed_tickles: number;
-			}[];
+			const data = await rpc<
+				{
+					id: number;
+					passer_id: string;
+					passer_username: string | null;
+					passer_tickles: number;
+					passed_tickles: number;
+				}[]
+			>("unseen_pass_events");
+			if (!data) return; // RPC may not exist yet pre-migration — fail quiet.
+			const rows = data;
 			// Most recent first from the RPC — show the freshest pass we
 			// haven't already surfaced this session.
 			const fresh = rows.find((r) => !shownPassEventIds.current.has(r.id));
@@ -505,15 +508,11 @@ export default function Barn() {
 			const line =
 				PASS_LINES[Math.floor(Math.random() * PASS_LINES.length)](name);
 			showToast(line, "Tap to see the leaderboard.", () => {
-				supabase
-					.rpc("mark_pass_event_seen", { event_id: fresh.id })
-					.then(() => {});
+				rpc("mark_pass_event_seen", { event_id: fresh.id }).then(() => {});
 				router.push("/friends" as any);
 			});
 			// Fire-and-forget: mark seen so the next poll doesn't return it.
-			supabase
-				.rpc("mark_pass_event_seen", { event_id: fresh.id })
-				.then(() => {});
+			rpc("mark_pass_event_seen", { event_id: fresh.id }).then(() => {});
 		} catch {
 			// Network blips silently — pass events are non-critical UX.
 		}
@@ -544,8 +543,7 @@ export default function Barn() {
 	// per UTC month + a no-op for non-members, so it's safe to call on
 	// every focus; it only pays out once a month for subscribers.
 	const claimStipend = async () => {
-		const { data } = await supabase.rpc("claim_slop_stipend");
-		const r = data as { ok?: boolean; granted?: number } | null;
+		const r = await rpc<{ ok?: boolean; granted?: number }>("claim_slop_stipend");
 		if (r?.ok && r.granted) {
 			showToast("Slop Club", `+${r.granted} snouts — your monthly stipend`);
 			fetchStats();
@@ -585,31 +583,31 @@ export default function Barn() {
 			// queries (profiles + tickle_info + season_state + hats join).
 			// Falls back to the multi-query path if the RPC isn't deployed
 			// yet so dev sims work between code merge and `supabase db push`.
-			const { data: rpcRaw, error: rpcErr } = await supabase.rpc("home_stats");
-			if (!rpcErr && rpcRaw && (rpcRaw as { ok?: boolean }).ok) {
-				type SlotBlob = {
-					category?: string | null;
-					emoji?: string | null;
-				} | null;
-				const r = rpcRaw as {
-					counter: number;
-					tickles_earned: number;
-					active_hat_id: string | null;
-					active_hat: SlotBlob;
-					active_aura_id: string | null;
-					active_aura: SlotBlob;
-					active_background_id: string | null;
-					active_background: SlotBlob;
-					active_held_id?: string | null;
-					active_held?: SlotBlob;
-					active_tickle_particle_id?: string | null;
-					active_tickle_particle?: SlotBlob;
-					balance: number;
-					cap: number;
-					next_regen_seconds: number | null;
-					current_tier: number;
-					total_tiers: number;
-				};
+			type SlotBlob = {
+				category?: string | null;
+				emoji?: string | null;
+			} | null;
+			const r = await rpc<{
+				ok?: boolean;
+				counter: number;
+				tickles_earned: number;
+				active_hat_id: string | null;
+				active_hat: SlotBlob;
+				active_aura_id: string | null;
+				active_aura: SlotBlob;
+				active_background_id: string | null;
+				active_background: SlotBlob;
+				active_held_id?: string | null;
+				active_held?: SlotBlob;
+				active_tickle_particle_id?: string | null;
+				active_tickle_particle?: SlotBlob;
+				balance: number;
+				cap: number;
+				next_regen_seconds: number | null;
+				current_tier: number;
+				total_tiers: number;
+			}>("home_stats");
+			if (r && r.ok) {
 				const toSlot = (id: string | null, meta: SlotBlob): EquipSlot | null =>
 					id
 						? {
@@ -645,7 +643,7 @@ export default function Barn() {
 			} = await supabase.auth.getUser();
 			if (!user) throw new Error("User not logged in");
 
-			const [profileResult, infoResult, seasonResult] = await Promise.all([
+			const [profileResult, info, season] = await Promise.all([
 				supabase
 					.from("profiles")
 					.select(
@@ -653,21 +651,19 @@ export default function Barn() {
 					)
 					.eq("id", user.id)
 					.single(),
-				supabase.rpc("tickle_info", { uid: user.id }),
-				supabase.rpc("season_state"),
+				rpc<{
+					balance?: number;
+					cap?: number;
+					next_regen_seconds?: number | null;
+				}>("tickle_info", { uid: user.id }),
+				rpc<{
+					current_tier?: number;
+					season?: { total_tiers?: number };
+				}>("season_state"),
 			]);
 
 			if (profileResult.error) throw profileResult.error;
 
-			const info = infoResult.data as {
-				balance?: number;
-				cap?: number;
-				next_regen_seconds?: number | null;
-			} | null;
-			const season = seasonResult.data as {
-				current_tier?: number;
-				season?: { total_tiers?: number };
-			} | null;
 			const prof = profileResult.data as {
 				counter?: number;
 				tickles_earned?: number;
@@ -684,11 +680,10 @@ export default function Barn() {
 			setAlignment(alignmentLabel(prof?.alignment_score ?? 0));
 
 			// Active blessing/curse effects → overlay + tap-loop wiring.
-			supabase.rpc("my_active_effects").then(({ data }) => {
-				const rows =
-					(data as
-						| { source: "blessing" | "curse"; kind: string }[]
-						| null) ?? [];
+			rpc<{ source: "blessing" | "curse"; kind: string }[]>(
+				"my_active_effects"
+			).then((data) => {
+				const rows = data ?? [];
 				setEffects({
 					blessed: rows.some((r) => r.source === "blessing"),
 					cursed: rows.some((r) => r.source === "curse"),
@@ -838,7 +833,7 @@ export default function Barn() {
 				if (effects.sunBeam) {
 					void (async () => {
 						try {
-							await supabase.rpc("clear_blessing", {
+							await rpc("clear_blessing", {
 								target_kind: "sun_beam",
 							});
 							setEffects((e) => ({ ...e, sunBeam: false }));
@@ -861,17 +856,15 @@ export default function Barn() {
 			} = await supabase.auth.getUser();
 			if (!user) throw new Error("User not logged in");
 
-			const { error } = await supabase.rpc("update_profile_and_item_count", {
+			await rpc("update_profile_and_item_count", {
 				uid: user.id,
 			});
-
-			if (error) throw error;
 
 			// If this tickle landed inside the lucky window AND rolled
 			// a double, grant the +1 bonus via the dedicated RPC so we
 			// don't burn a second tickle from the bank.
 			if (bonusEarned) {
-				await supabase.rpc("lucky_bonus_tickle");
+				await rpc("lucky_bonus_tickle");
 				showToast("Lucky double! +2", "Bonus from your lucky pig.");
 			}
 			fetchStats();
@@ -1060,21 +1053,18 @@ export default function Barn() {
 					if (!pendingTitleRoll.current) return;
 					pendingTitleRoll.current = false;
 					try {
-						const { data, error } = await supabase.rpc(
-							"unlock_random_lucky_title"
-						);
-						const r = data as {
+						const r = await rpc<{
 							ok?: boolean;
 							granted?: TitleRow | null;
-						} | null;
-						if (error) {
+						}>("unlock_random_lucky_title");
+						if (!r) {
 							showToast(
 								"Couldn't unlock",
 								"Title grant failed — try again next time.",
 							);
 							return;
 						}
-						if (!r?.granted) {
+						if (!r.granted) {
 							// All 10 lucky titles already owned.
 							showToast(
 								"Lucky title sweep!",
@@ -1116,7 +1106,7 @@ export default function Barn() {
 				onDismiss={() => setUnlockedTitle(null)}
 				onEquip={async (id) => {
 					try {
-						await supabase.rpc("equip_title", { target_title_id: id });
+						await rpc("equip_title", { target_title_id: id });
 						showToast("Title equipped", "Visible on your account + leaderboard.");
 					} catch {}
 					setUnlockedTitle(null);

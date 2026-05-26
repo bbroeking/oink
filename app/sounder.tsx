@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Stack, router, Redirect } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { Sticker } from "../components/ui/Sticker";
 import { FONTS, KICKER_TEXT, ROW_TILTS, WHIMSY } from "@/constants/theme";
 import { SOUNDER_VISIBLE } from "@/constants/featureFlags";
@@ -36,8 +36,8 @@ export default function SounderScreen() {
 			// Sounder UI is hidden — skip the fetch while the flag is
 			// off; the redirect below bounces the user out anyway.
 			if (!SOUNDER_VISIBLE) return;
-			supabase.rpc("sounder_leaderboard", { limit_n: 50 }).then(({ data }) => {
-				setRows((data as SounderRow[] | null) ?? []);
+			rpc<SounderRow[]>("sounder_leaderboard", { limit_n: 50 }).then((data) => {
+				setRows(data ?? []);
 				setLoading(false);
 			});
 		}, [])

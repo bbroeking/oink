@@ -20,7 +20,7 @@ import {
 	Image,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { achievementIcon } from "../constants/emojiArt";
@@ -106,7 +106,7 @@ export function AchievementUnlockModal({ achievement, onDismiss }: Props) {
 	const handleClose = async () => {
 		if (achievement) {
 			try {
-				await supabase.rpc("mark_achievement_viewed", {
+				await rpc("mark_achievement_viewed", {
 					target_id: achievement.id,
 				});
 			} catch {}

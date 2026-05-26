@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
 import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { Sticker } from "./ui/Sticker";
 import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
 import type { TitleRow } from "@/constants/title_types";
@@ -49,16 +50,16 @@ export function TitlesSection({ userId, activeTitleId, onChange }: Props) {
 		setBusy(true);
 		const previous = activeTitleId;
 		onChange(id); // optimistic
-		const { data, error } = await supabase.rpc("equip_title", {
+		const data = await rpc<{ ok?: boolean; reason?: string }>("equip_title", {
 			target_title_id: id,
 		});
 		setBusy(false);
-		const ok = (data as { ok?: boolean } | null)?.ok === true;
-		if (error || !ok) {
+		const ok = data?.ok === true;
+		if (!ok) {
 			onChange(previous); // revert on failure
 			Alert.alert(
 				"Couldn't equip title",
-				(data as { reason?: string } | null)?.reason === "not_owned"
+				data?.reason === "not_owned"
 					? "You don't own that title yet."
 					: "Try again in a moment."
 			);

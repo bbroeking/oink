@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
@@ -61,8 +62,7 @@ export default function Friends({ userId }: { userId: string }) {
 		// migration hasn't been pushed yet — slicing here means we
 		// never blow up the list view, and the FRIEND_CAP_LIMIT
 		// constant stays the single source of truth in the UI.
-		const { data: friendIds } = await supabase.rpc("friend_ids");
-		const ids = (friendIds as string[] | null) ?? [];
+		const ids = (await rpc<string[]>("friend_ids")) ?? [];
 		const capped = ids.slice(0, FRIEND_CAP_LIMIT);
 		if (capped.length > 0) {
 			const { data } = await supabase
@@ -279,8 +279,8 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 	// search box. Uses suggested_users RPC: non-friends, no pending
 	// requests, ordered random.
 	useEffect(() => {
-		supabase.rpc("suggested_users", { limit_n: 3 }).then(({ data }) => {
-			setSuggestions((data as Profile[] | null) ?? []);
+		rpc<Profile[]>("suggested_users", { limit_n: 3 }).then((data) => {
+			setSuggestions(data ?? []);
 		});
 	}, []);
 
@@ -296,11 +296,11 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 		}
 		setSearching(true);
 		debounceRef.current = setTimeout(async () => {
-			const { data } = await supabase.rpc("search_users", {
+			const data = await rpc<Profile[]>("search_users", {
 				prefix: q,
 				max_results: 10,
 			});
-			setResults((data as Profile[] | null) ?? []);
+			setResults(data ?? []);
 			setSearching(false);
 		}, 200);
 		return () => {
@@ -312,13 +312,15 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 		if (sending) return;
 		setSending(target.id);
 		setFeedback("");
-		const { data, error } = await supabase.rpc("send_friend_request", {
-			target_username: target.username,
-			target_discriminator: target.discriminator ?? null,
-		});
+		const r = await rpc<{ ok?: boolean; reason?: string; cap?: number }>(
+			"send_friend_request",
+			{
+				target_username: target.username,
+				target_discriminator: target.discriminator ?? null,
+			}
+		);
 		setSending(null);
-		const r = data as { ok?: boolean; reason?: string; cap?: number } | null;
-		if (error || !r?.ok) {
+		if (!r?.ok) {
 			const reason = r?.reason;
 			setFeedback(
 				reason === "self"

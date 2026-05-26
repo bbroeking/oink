@@ -21,7 +21,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Polygon } from "react-native-svg";
 import * as Haptics from "expo-haptics";
-import { supabase } from "../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Icon } from "./ui/Icon";
@@ -87,7 +87,7 @@ export function JudgementDayModal({ result, onDismiss }: Props) {
 
 	const handleDismiss = async () => {
 		try {
-			await supabase.rpc("mark_finale_seen", {
+			await rpc("mark_finale_seen", {
 				target_season_key: result.season_key,
 			});
 		} catch {

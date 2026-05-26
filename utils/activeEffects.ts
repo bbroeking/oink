@@ -6,7 +6,7 @@
 // Pure helpers live here so they're trivially unit-testable; the
 // stateful hook (useActiveEffects) composes them in `hooks/`.
 
-import { supabase } from "./supabase";
+import { rpc } from "./rpc";
 
 export interface Effect {
 	source: "blessing" | "curse";
@@ -21,8 +21,7 @@ export interface Effect {
 // "empty" as the rest state — there's no useful distinction between
 // "no effects" and "couldn't fetch effects" at the render layer.
 export async function fetchActiveEffects(): Promise<Effect[]> {
-	const { data } = await supabase.rpc("my_active_effects");
-	const rows = (data as Effect[] | null) ?? [];
+	const rows = (await rpc<Effect[]>("my_active_effects")) ?? [];
 	// blessings first, then curses — stable iteration order for the
 	// callers that render a unified list.
 	rows.sort((a, b) => (a.source < b.source ? -1 : 1));

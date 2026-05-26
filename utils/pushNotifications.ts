@@ -15,7 +15,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { supabase } from "./supabase";
+import { rpc } from "./rpc";
 
 const PUSH_TOKEN_CACHE_KEY = "ttp_push_token_v1";
 
@@ -62,9 +62,7 @@ async function doEnsure(): Promise<string | null> {
 	if (status !== "granted") {
 		// Persist the denial intent on the server so we can surface
 		// "enable notifications" hints in places that need it.
-		try {
-			await supabase.rpc("set_push_token", { token: null });
-		} catch {}
+		await rpc("set_push_token", { token: null });
 		return null;
 	}
 
@@ -89,11 +87,11 @@ async function doEnsure(): Promise<string | null> {
 
 	if (!tokenString) return null;
 
+	await rpc("set_push_token", { token: tokenString });
 	try {
-		await supabase.rpc("set_push_token", { token: tokenString });
 		await AsyncStorage.setItem(PUSH_TOKEN_CACHE_KEY, tokenString);
 	} catch (e) {
-		console.warn("Failed to persist push token:", e);
+		console.warn("Failed to cache push token:", e);
 		// Don't reject — token still works locally; we'll retry next time.
 	}
 
@@ -102,9 +100,7 @@ async function doEnsure(): Promise<string | null> {
 
 /** Clears the cached token. Call on sign-out. */
 export async function clearPushToken() {
-	try {
-		await supabase.rpc("set_push_token", { token: null });
-	} catch {}
+	await rpc("set_push_token", { token: null });
 	try {
 		await AsyncStorage.removeItem(PUSH_TOKEN_CACHE_KEY);
 	} catch {}

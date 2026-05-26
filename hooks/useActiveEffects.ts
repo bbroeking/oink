@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "@/utils/supabase";
+import { rpc } from "@/utils/rpc";
 import {
 	Effect,
 	fetchActiveEffects,
@@ -126,8 +127,7 @@ export function useActiveEffects(
 		// Optimistic: drop curse rows immediately so chips/cards
 		// disappear before the round trip settles.
 		setEffects((rows) => rows.filter((e) => e.source !== "curse"));
-		const { data } = await supabase.rpc("cleanse_curses");
-		const r = (data as CleanseResult | null) ?? { ok: false };
+		const r = (await rpc<CleanseResult>("cleanse_curses")) ?? { ok: false };
 		if (!r.ok) {
 			// The RPC said no — refresh to undo the optimistic removal.
 			await refresh();

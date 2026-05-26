@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { Sticker } from "../../components/ui/Sticker";
 import { Icon, IconName } from "../../components/ui/Icon";
 import Friends from "../../components/Friends";
@@ -47,10 +48,12 @@ export default function FriendsHubScreen() {
 			.select("requester_id", { count: "exact", head: true })
 			.eq("receiver_id", uid)
 			.eq("status", "pending");
-		const { data: trades } = await supabase.rpc("my_tickle_trades");
-		const trCount = (
-			(trades as { status: string; target_id: string }[] | null) ?? []
-		).filter((t) => t.status === "pending" && t.target_id === uid).length;
+		const trades = await rpc<{ status: string; target_id: string }[]>(
+			"my_tickle_trades"
+		);
+		const trCount = (trades ?? []).filter(
+			(t) => t.status === "pending" && t.target_id === uid
+		).length;
 		setInboxCount((frCount ?? 0) + trCount);
 	}, []);
 

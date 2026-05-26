@@ -135,6 +135,7 @@ describe("fetchActiveEffects", () => {
 	test("calls the right RPC name", async () => {
 		mockRpc.mockResolvedValue({ data: [], error: null });
 		await fetchActiveEffects();
-		expect(mockRpc).toHaveBeenCalledWith("my_active_effects");
+		// Second arg is undefined now that the call routes through rpc<T>().
+		expect(mockRpc).toHaveBeenCalledWith("my_active_effects", undefined);
 	});
 });

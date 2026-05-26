@@ -15,6 +15,7 @@ import Svg, { Path as SvgPath } from "react-native-svg";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { supabase } from "../../utils/supabase";
+import { rpc } from "@/utils/rpc";
 import {
 	initIAP,
 	IAP_ENABLED,
@@ -1007,9 +1008,9 @@ export default function SeasonScreen() {
 	const claimPlayer = useAudioPlayer(claimSound);
 
 	const load = useCallback(async () => {
-		const { data, error } = await supabase.rpc("season_state");
-		if (error) return console.error(error);
-		setState(data as SeasonState);
+		const data = await rpc<SeasonState>("season_state");
+		if (!data) return;
+		setState(data);
 	}, []);
 
 	useFocusEffect(
@@ -1052,17 +1053,16 @@ export default function SeasonScreen() {
 	const handleClaim = async (tier: number, track: "free" | "premium") => {
 		if (busy) return;
 		setBusy(true);
-		const { data, error } = await supabase.rpc("claim_tier_reward", {
+		const r = await rpc<{
+			ok: boolean;
+			reason?: string;
+			current_tier?: number;
+		}>("claim_tier_reward", {
 			target_tier: tier,
 			target_track: track,
 		});
 		setBusy(false);
-		if (error) return Alert.alert("Couldn't claim", "Try again.");
-		const r = data as {
-			ok: boolean;
-			reason?: string;
-			current_tier?: number;
-		};
+		if (!r) return Alert.alert("Couldn't claim", "Try again.");
 		if (!r.ok) {
 			const map: Record<string, string> = {
 				tier_locked: `Reach tier ${tier} first (you're at ${r.current_tier}).`,
@@ -1108,7 +1108,7 @@ export default function SeasonScreen() {
 		// premium_unlocked for the active season.
 		const result = await purchaseProductId(PRODUCT_IDS.seasonPass);
 		if (result.ok) {
-			await supabase.rpc("grant_season_pass");
+			await rpc("grant_season_pass");
 			load();
 			Alert.alert(
 				"Season Pass unlocked",
@@ -1127,7 +1127,7 @@ export default function SeasonScreen() {
 					{
 						text: "Unlock (dev)",
 						onPress: async () => {
-							await supabase.rpc("grant_season_pass");
+							await rpc("grant_season_pass");
 							load();
 						},
 					},
