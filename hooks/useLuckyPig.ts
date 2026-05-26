@@ -9,8 +9,11 @@
 // without React. The hook layers React state + side-effects on top.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as StoreReview from "expo-store-review";
 import { rpc } from "@/utils/rpc";
+import { log } from "@/utils/log";
 import type { TitleRow } from "@/constants/title_types";
 import {
 	LUCKY_DOUBLE_CHANCE,
@@ -21,6 +24,31 @@ import {
 	LUCKY_WINDOW_SIZE,
 	rollLucky,
 } from "@/utils/luckyPig";
+
+// Review prompt — fires the native iOS App Store review dialog ONCE
+// per user, at the end of the first Lucky Pig flow. Pre-store-review
+// the rating was organic; this is the explicit "ask at a value moment"
+// timing (the burst modal + optional title unlock is the highest-
+// emotion beat in the early experience). Apple silently rate-limits
+// to 3 prompts/year per user so our AsyncStorage flag below mainly
+// stops US from re-asking the same person.
+const REVIEW_PROMPTED_KEY = "review_prompted_v1";
+
+async function maybeAskForReview() {
+	if (Platform.OS !== "ios") return;
+	try {
+		const seen = await AsyncStorage.getItem(REVIEW_PROMPTED_KEY);
+		if (seen === "1") return;
+		if (!(await StoreReview.hasAction())) return;
+		// Mark BEFORE prompting — if the prompt or app crashes mid-
+		// flow we'd rather lose a prompt than badger the user.
+		await AsyncStorage.setItem(REVIEW_PROMPTED_KEY, "1");
+		log.info("[review] prompting after first lucky-pig flow");
+		await StoreReview.requestReview();
+	} catch (e) {
+		log.error("[review] requestReview:", e);
+	}
+}
 
 export interface LuckyTickleOutcome {
 	// True if THIS tap triggered a fresh lucky window. The burst
@@ -137,12 +165,25 @@ export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 		[luckyTicklesLeft, bumpPreFirstTickles, markFirstLucky, persistLucky]
 	);
 
+	// Fires the review prompt ~1.2s after the lucky-pig modal chain
+	// finishes — gives the burst/title animations time to settle so
+	// the native dialog doesn't interrupt a transition. Only the
+	// first lucky pig per user reaches this code path (the modal
+	// only opens when triggered=true).
+	const scheduleReviewPrompt = () => {
+		setTimeout(() => { void maybeAskForReview(); }, 1200);
+	};
+
 	const onBurstDismiss = useCallback(async () => {
 		setLuckyModalOpen(false);
 		// Burst dismissed — if this trigger also rolled a title unlock,
 		// hit the RPC and surface the second modal once the burst is
-		// fully torn down.
-		if (!pendingTitleRoll.current) return;
+		// fully torn down. Review prompt fires after the title-unlock
+		// modal dismisses (or now, if there's no title to surface).
+		if (!pendingTitleRoll.current) {
+			scheduleReviewPrompt();
+			return;
+		}
 		pendingTitleRoll.current = false;
 		const r = await rpc<{
 			ok?: boolean;
@@ -153,6 +194,7 @@ export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 				"Couldn't unlock",
 				"Title grant failed — try again next time."
 			);
+			scheduleReviewPrompt();
 			return;
 		}
 		if (!r.granted) {
@@ -161,15 +203,20 @@ export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 				"Lucky title sweep!",
 				"You already own every lucky-drop title."
 			);
+			scheduleReviewPrompt();
 			return;
 		}
 		// Brief beat so the burst dismiss animation finishes before
-		// the title modal pops in.
+		// the title modal pops in. Review prompt deferred until that
+		// modal dismisses (see dismissUnlockedTitle).
 		setTimeout(() => setUnlockedTitle(r.granted!), 280);
 	}, []);
 
 	const dismissUnlockedTitle = useCallback(() => {
 		setUnlockedTitle(null);
+		// User has now seen burst + title unlock = peak of the
+		// first-lucky-pig experience. Best moment to ask.
+		scheduleReviewPrompt();
 	}, []);
 
 	return {
