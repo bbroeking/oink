@@ -28,7 +28,6 @@ import { PageBackground } from "./ui/PageBackground";
 import { LuckyPigModal } from "./LuckyPigModal";
 import { LuckyTitleUnlockModal } from "./LuckyTitleUnlockModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
-import type { TitleRow } from "@/constants/title_types";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 import { BarnOverlay } from "./ui/BarnOverlay";
@@ -41,33 +40,11 @@ import {
 import { useHomeStats } from "@/hooks/useHomeStats";
 import { useStipend } from "@/hooks/useStipend";
 import { usePassEvents } from "@/hooks/usePassEvents";
+import { useLuckyPig } from "@/hooks/useLuckyPig";
 
-// Lucky Pig tunables — client-rolled (D in the design grill). Trade-off
-// is documented in migrations/20260519020000_lucky_pig.sql.
-const LUCKY_TRIGGER_CHANCE      = 0.05;  // 5% steady-state on any non-lucky tickle
-const LUCKY_TRIGGER_CHANCE_BOOST = 0.12; // ~2.4× boost during the launch window
-const LUCKY_WINDOW_SIZE         = 10;    // tickles affected after a trigger
-const LUCKY_DOUBLE_CHANCE       = 0.30;  // 30% of window tickles double
-const LUCKY_TITLE_UNLOCK_CHANCE = 0.20;  // 20% of lucky triggers also drop a title
-const LUCKY_STORAGE_KEY         = "lucky_pig_state_v1";
-const LUCKY_EVER_KEY            = "lucky_pig_ever_v1";  // "1" once the user has ever triggered
-const LUCKY_PRE_FIRST_KEY       = "lucky_pig_pre_first_v1"; // tickle count BEFORE first lucky
-
-// Time-bounded launch boost: while now() < this ISO, every tickle uses
-// the boosted 12% chance instead of 5%. Set ~3 days out from this code
-// landing so users see the feature multiple times in the first week,
-// then it normalizes. Update if you ship another lucky-pig promotion.
-const LUCKY_BOOST_UNTIL_ISO     = "2026-05-22T00:00:00Z";
-
-// Per-user first-time guarantee: any user who has NEVER triggered a
-// lucky pig will be force-fired on their Nth tickle. Caps the worst
-// case of "I never see this feature." Constant should be small enough
-// that a new user hits it in one session.
-const LUCKY_GUARANTEED_BY_TICKLE_N = 8;
-
-// Ritual effects. sun_beam blessing → a strong lucky-trigger boost;
-// phantom_itch curse → a tap sometimes slips.
-const LUCKY_TRIGGER_CHANCE_SUNBEAM = 0.4;
+// Lucky Pig tunables live in utils/luckyPig.ts (extracted to the
+// useLuckyPig hook). Phantom-itch is the only ritual-effect tunable
+// still in Barn — it gates the tickle handler's miss path.
 const PHANTOM_ITCH_MISS_CHANCE = 0.33;
 
 // Two pig-laugh variants; one is picked at random on each tickle
@@ -314,20 +291,6 @@ export default function Barn() {
 	// in-app companion.
 	const prevAlignmentRef = useRef<number | null>(null);
 
-	// Lucky Pig state — number of tickles remaining in the active
-	// lucky window (0 means not lucky). Hydrated from AsyncStorage on
-	// mount so the window survives app reload + cold start.
-	const [luckyTicklesLeft, setLuckyTicklesLeft] = useState(0);
-	const [luckyModalOpen, setLuckyModalOpen] = useState(false);
-	// Title-unlock modal: shown after the burst dismisses if the
-	// 20% title sub-roll succeeded. Persists across the burst modal
-	// closing so the user gets two beats instead of one cluttered modal.
-	const [unlockedTitle, setUnlockedTitle] =
-		useState<TitleRow | null>(null);
-	// Whether the current lucky trigger ALSO rolled a title — captured
-	// at trigger time, consumed when the burst dismisses.
-	const pendingTitleRoll = useRef(false);
-
 	// Season 1: current alignment, drives BarnOverlay theming.
 	const [alignment, setAlignment] = useState<AlignmentLabel>("neutral");
 	// Active daily-ritual effects — drive the overlay + the tap loop.
@@ -368,41 +331,6 @@ export default function Barn() {
 			if (show) setReleaseNotesOpen(true);
 		});
 	}, []);
-
-	// Lifetime onboarding state — has the user ever triggered a lucky
-	// pig? If not, count their tickles so we can force-fire on the Nth
-	// to guarantee they see the feature. Refs so reads inside
-	// handleIncrement see the latest value without rerender churn.
-	const everTriggeredRef = useRef(false);
-	const preFirstTicklesRef = useRef(0);
-	useEffect(() => {
-		AsyncStorage.getItem(LUCKY_STORAGE_KEY).then((raw) => {
-			const n = raw ? parseInt(raw, 10) : 0;
-			if (!Number.isNaN(n) && n > 0) setLuckyTicklesLeft(n);
-		});
-		AsyncStorage.getItem(LUCKY_EVER_KEY).then((raw) => {
-			everTriggeredRef.current = raw === "1";
-		});
-		AsyncStorage.getItem(LUCKY_PRE_FIRST_KEY).then((raw) => {
-			const n = raw ? parseInt(raw, 10) : 0;
-			if (!Number.isNaN(n) && n > 0) preFirstTicklesRef.current = n;
-		});
-	}, []);
-	const persistLucky = (n: number) => {
-		setLuckyTicklesLeft(n);
-		AsyncStorage.setItem(LUCKY_STORAGE_KEY, String(n)).catch(() => {});
-	};
-	const markFirstLucky = () => {
-		everTriggeredRef.current = true;
-		AsyncStorage.setItem(LUCKY_EVER_KEY, "1").catch(() => {});
-	};
-	const bumpPreFirstTickles = () => {
-		preFirstTicklesRef.current += 1;
-		AsyncStorage.setItem(
-			LUCKY_PRE_FIRST_KEY,
-			String(preFirstTicklesRef.current),
-		).catch(() => {});
-	};
 	// useAudioPlayer is a hook, so each variant gets its own top-level
 	// call. Bundled into an array below for random-pick playback.
 	const laughPlayer1 = useAudioPlayer(laughSound1);
@@ -459,6 +387,11 @@ export default function Barn() {
 	// player overtakes us on the leaderboard. Hook owns the dedup set
 	// + the RPC; we just pass our showToast for emission.
 	const passEvents = usePassEvents({ showToast });
+
+	// Lucky Pig — the surprise +X tickle window mechanic. Hook owns
+	// the trigger/double rolls, the AsyncStorage persistence, the
+	// burst-modal lifecycle, and the title-unlock RPC chain.
+	const luckyPig = useLuckyPig({ showToast });
 
 	useEffect(() => {
 		if (sixSevenPromptedRef.current) return;
@@ -553,68 +486,32 @@ export default function Barn() {
 		// reward for the tap, before we even round-trip the RPC.
 		heartFloatsRef.current?.spawn();
 
-		// ── Lucky Pig roll ────────────────────────────────────────
-		// Trigger probability:
-		//   - First-time user (no lucky ever): GUARANTEE on the Nth tickle
-		//     so they see the feature regardless of luck. Until then,
-		//     normal probability.
-		//   - Within launch boost window: 12% chance
-		//   - After boost ends: 5% steady-state
-		// Already in a lucky window: roll the double die instead.
-		let bonusEarned = false;
-		if (luckyTicklesLeft <= 0) {
-			const isFirstTimeUser = !everTriggeredRef.current;
-			const withinBoost =
-				Date.now() < new Date(LUCKY_BOOST_UNTIL_ISO).getTime();
-			let triggerNow = false;
-			if (isFirstTimeUser) {
-				bumpPreFirstTickles();
-				if (preFirstTicklesRef.current >= LUCKY_GUARANTEED_BY_TICKLE_N) {
-					triggerNow = true;
+		// Lucky Pig roll — hook owns the trigger / window / double
+		// math + the burst-modal lifecycle. Barn handles the side
+		// effects: sun_beam clear on a fresh trigger, and the +1
+		// bonus payout on doubles.
+		const { triggered, doubleEarned } = luckyPig.rollOnTickle(
+			effects.sunBeam,
+		);
+		const bonusEarned = doubleEarned;
+
+		if (triggered && effects.sunBeam) {
+			// sun_beam is consume-on-first-lucky — clear it as soon
+			// as a lucky pig actually fires so subsequent rolls drop
+			// back to the base chance instead of keeping the boost
+			// for the rest of the timed window. Best-effort: a
+			// network failure leaves the buff in place but the
+			// blessing's own 4h expiry caps the worst case.
+			void (async () => {
+				try {
+					await rpc("clear_blessing", {
+						target_kind: "sun_beam",
+					});
+					setEffects((e) => ({ ...e, sunBeam: false }));
+				} catch {
+					// best-effort; the 4h expiry caps worst case
 				}
-			}
-			if (!triggerNow) {
-				// sun_beam blessing → a strong boost to the trigger roll.
-				const chance = effects.sunBeam
-					? LUCKY_TRIGGER_CHANCE_SUNBEAM
-					: withinBoost
-						? LUCKY_TRIGGER_CHANCE_BOOST
-						: LUCKY_TRIGGER_CHANCE;
-				if (Math.random() < chance) triggerNow = true;
-			}
-			if (triggerNow) {
-				if (isFirstTimeUser) markFirstLucky();
-				persistLucky(LUCKY_WINDOW_SIZE);
-				setLuckyModalOpen(true);
-				// Roll the title sub-die NOW so the result is deterministic
-				// for this trigger; we just defer the RPC + modal display
-				// until the burst dismisses to keep the beats separated.
-				pendingTitleRoll.current =
-					Math.random() < LUCKY_TITLE_UNLOCK_CHANCE;
-				// sun_beam is consume-on-first-lucky — clear it as soon
-				// as a lucky pig actually fires so subsequent rolls drop
-				// back to the base chance instead of keeping the boost
-				// for the rest of the timed window. Best-effort: a
-				// network failure leaves the buff in place but the
-				// blessing's own 4h expiry caps the worst case.
-				if (effects.sunBeam) {
-					void (async () => {
-						try {
-							await rpc("clear_blessing", {
-								target_kind: "sun_beam",
-							});
-							setEffects((e) => ({ ...e, sunBeam: false }));
-						} catch {
-							// best-effort; the 4h expiry caps worst case
-						}
-					})();
-				}
-			}
-		} else {
-			if (Math.random() < LUCKY_DOUBLE_CHANCE) {
-				bonusEarned = true;
-			}
-			persistLucky(Math.max(0, luckyTicklesLeft - 1));
+			})();
 		}
 
 		try {
@@ -732,11 +629,11 @@ export default function Barn() {
 				{/* Active lucky-pig window indicator. Sits below the
 				    stat cards + above the pig — never collides with the
 				    dev buttons (top-right absolute) or the cards. */}
-				{luckyTicklesLeft > 0 && (
+				{luckyPig.luckyTicklesLeft > 0 && (
 					<View style={styles.luckyBadgeRow}>
 						<View style={styles.luckyBadge}>
 							<Text style={styles.luckyBadgeText}>
-								✦ Lucky pig · {luckyTicklesLeft} left
+								✦ Lucky pig · {luckyPig.luckyTicklesLeft} left
 							</Text>
 						</View>
 					</View>
@@ -809,46 +706,10 @@ export default function Barn() {
 			</SafeAreaView>
 
 			<LuckyPigModal
-				visible={luckyModalOpen}
-				windowSize={LUCKY_WINDOW_SIZE}
-				doublePercent={Math.round(LUCKY_DOUBLE_CHANCE * 100)}
-				onDismiss={async () => {
-					setLuckyModalOpen(false);
-					// Burst dismissed — if this trigger also rolled a
-					// title unlock, hit the RPC and surface the second
-					// modal once the burst is fully torn down.
-					if (!pendingTitleRoll.current) return;
-					pendingTitleRoll.current = false;
-					try {
-						const r = await rpc<{
-							ok?: boolean;
-							granted?: TitleRow | null;
-						}>("unlock_random_lucky_title");
-						if (!r) {
-							showToast(
-								"Couldn't unlock",
-								"Title grant failed — try again next time.",
-							);
-							return;
-						}
-						if (!r.granted) {
-							// All 10 lucky titles already owned.
-							showToast(
-								"Lucky title sweep!",
-								"You already own every lucky-drop title.",
-							);
-							return;
-						}
-						// Brief beat so the burst dismiss animation finishes
-						// before the title modal pops in.
-						setTimeout(() => setUnlockedTitle(r.granted!), 280);
-					} catch {
-						showToast(
-							"Couldn't unlock",
-							"Title grant failed — try again next time.",
-						);
-					}
-				}}
+				visible={luckyPig.luckyModalOpen}
+				windowSize={luckyPig.windowSize}
+				doublePercent={luckyPig.doublePercent}
+				onDismiss={luckyPig.onBurstDismiss}
 			/>
 
 			<ConfirmDialog
@@ -869,14 +730,14 @@ export default function Barn() {
 			/>
 
 			<LuckyTitleUnlockModal
-				title={unlockedTitle}
-				onDismiss={() => setUnlockedTitle(null)}
+				title={luckyPig.unlockedTitle}
+				onDismiss={luckyPig.dismissUnlockedTitle}
 				onEquip={async (id) => {
 					try {
 						await rpc("equip_title", { target_title_id: id });
 						showToast("Title equipped", "Visible on your account + leaderboard.");
 					} catch {}
-					setUnlockedTitle(null);
+					luckyPig.dismissUnlockedTitle();
 				}}
 			/>
 
