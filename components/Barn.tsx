@@ -40,6 +40,7 @@ import {
 } from "@/utils/alignment";
 import { useHomeStats } from "@/hooks/useHomeStats";
 import { useStipend } from "@/hooks/useStipend";
+import { usePassEvents } from "@/hooks/usePassEvents";
 
 // Lucky Pig tunables — client-rolled (D in the design grill). Trade-off
 // is documented in migrations/20260519020000_lucky_pig.sql.
@@ -75,17 +76,6 @@ const PHANTOM_ITCH_MISS_CHANCE = 0.33;
 const laughSound1 = require("../assets/sounds/laugh_1.mp3");
 const laughSound2 = require("../assets/sounds/laugh_2.mp3");
 const deniedSound = require("../assets/sounds/denied.mp3");
-
-// Friendly, slightly competitive pig-voice lines for pass events. Picked
-// at random so it doesn't feel like the same robotic notification.
-// Module-scoped — was re-created every Barn render at zero benefit.
-const PASS_LINES: ((name: string) => string)[] = [
-	(name) => `Oink! ${name} just trotted past you.`,
-	(name) => `${name} snouted ahead. Don't look back.`,
-	(name) => `${name} just hoofed past you on the board.`,
-	(name) => `Squeal — ${name} edged ahead of you.`,
-	(name) => `${name} muddied your lead.`,
-];
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -428,9 +418,6 @@ export default function Barn() {
 	const toastY = useRef(new Animated.Value(-20)).current;
 	// Heart-particle ref — imperative spawn on successful tickle.
 	const heartFloatsRef = useRef<HeartFloatsHandle>(null);
-	// Track which pass-event IDs we've already surfaced this session so a
-	// focus-bounce (or a delayed seen-write) doesn't replay the same toast.
-	const shownPassEventIds = useRef<Set<number>>(new Set());
 
 	const showToast = useCallback(
 		(title: string, body: string, onPress?: () => void) => {
@@ -468,37 +455,10 @@ export default function Barn() {
 		[toastOpacity, toastY]
 	);
 
-	const checkPassEvents = useCallback(async () => {
-		try {
-			const data = await rpc<
-				{
-					id: number;
-					passer_id: string;
-					passer_username: string | null;
-					passer_tickles: number;
-					passed_tickles: number;
-				}[]
-			>("unseen_pass_events");
-			if (!data) return; // RPC may not exist yet pre-migration — fail quiet.
-			const rows = data;
-			// Most recent first from the RPC — show the freshest pass we
-			// haven't already surfaced this session.
-			const fresh = rows.find((r) => !shownPassEventIds.current.has(r.id));
-			if (!fresh) return;
-			shownPassEventIds.current.add(fresh.id);
-			const name = fresh.passer_username?.trim() || "Someone";
-			const line =
-				PASS_LINES[Math.floor(Math.random() * PASS_LINES.length)](name);
-			showToast(line, "Tap to see the leaderboard.", () => {
-				rpc("mark_pass_event_seen", { event_id: fresh.id }).then(() => {});
-				router.push("/friends" as any);
-			});
-			// Fire-and-forget: mark seen so the next poll doesn't return it.
-			rpc("mark_pass_event_seen", { event_id: fresh.id }).then(() => {});
-		} catch {
-			// Network blips silently — pass events are non-critical UX.
-		}
-	}, [showToast]);
+	// Pass events — "X just trotted past you" toasts when another
+	// player overtakes us on the leaderboard. Hook owns the dedup set
+	// + the RPC; we just pass our showToast for emission.
+	const passEvents = usePassEvents({ showToast });
 
 	useEffect(() => {
 		if (sixSevenPromptedRef.current) return;
@@ -514,11 +474,11 @@ export default function Barn() {
 	useFocusEffect(
 		useCallback(() => {
 			fetchStats();
-			checkPassEvents();
+			passEvents.check();
 			stipend.claim();
 			checkAlignment();
 			setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
-		}, [checkPassEvents])
+		}, [])
 	);
 
 	// Toast every alignment shift while the app is open. Server-side
@@ -678,7 +638,7 @@ export default function Barn() {
 			// Also re-check pass events so a friend who just got passed
 			// hears about it on their next tap (and so any incoming pass
 			// against us surfaces quickly between focus events).
-			checkPassEvents();
+			passEvents.check();
 		} catch (error) {
 			log.error("Error incrementing count:", error);
 		}
