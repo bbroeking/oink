@@ -7,10 +7,13 @@
 // increment) so the Barn UI stays in sync with the latest server
 // state in one place.
 //
-// Alignment + active-effects state still live in Barn itself; this
-// hook calls the optional callbacks when the fallback path hydrates
-// them so the bit-for-bit behavior of the original fetchStats is
-// preserved.
+// Alignment state still lives in Barn itself; this hook calls the
+// optional callback when the fallback path reads alignment_score
+// off the profile (dev-sim parity pre-migration). In production the
+// primary home_stats RPC doesn't surface alignment_score, so Barn
+// also calls setAlignment from its own checkAlignment flow on focus.
+// Active-effects state is now owned by useActiveEffects in Barn,
+// not routed through this hook.
 
 import { useCallback, useRef, useState } from "react";
 import { supabase } from "@/utils/supabase";
@@ -41,13 +44,6 @@ export interface Stats {
 	totalTiers: number;
 }
 
-export interface BarnEffects {
-	blessed: boolean;
-	cursed: boolean;
-	sunBeam: boolean;
-	phantomItch: boolean;
-}
-
 const INITIAL_STATS: Stats = {
 	counter: 0,
 	ticklesEarned: 0,
@@ -69,8 +65,6 @@ export interface UseHomeStatsOptions {
 	// not currently surface alignment_score, so this only fires on
 	// dev sims pre-migration. Optional — Barn passes `setAlignment`.
 	onAlignmentLoaded?: (label: AlignmentLabel) => void;
-	// Same shape: fallback-only effects hydration via my_active_effects.
-	onEffectsLoaded?: (effects: BarnEffects) => void;
 }
 
 export interface UseHomeStats {
@@ -94,13 +88,12 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 	const [stats, setStats] = useState<Stats>(INITIAL_STATS);
 	const [statsLoaded, setStatsLoaded] = useState(false);
 
-	// Stash callbacks in refs so refresh's identity stays stable across
-	// renders; the consumer (Barn) re-passes setters each render but
-	// we don't want to retrigger any effects keyed on refresh.
+	// Stash the callback in a ref so refresh's identity stays stable
+	// across renders; the consumer (Barn) re-passes the setter each
+	// render but we don't want to retrigger any effects keyed on
+	// refresh.
 	const onAlignmentLoadedRef = useRef(opts.onAlignmentLoaded);
-	const onEffectsLoadedRef = useRef(opts.onEffectsLoaded);
 	onAlignmentLoadedRef.current = opts.onAlignmentLoaded;
-	onEffectsLoadedRef.current = opts.onEffectsLoaded;
 
 	const refresh = useCallback(async () => {
 		try {
@@ -189,20 +182,6 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 			} | null;
 
 			onAlignmentLoadedRef.current?.(alignmentLabel(prof?.alignment_score ?? 0));
-
-			const effectsCb = onEffectsLoadedRef.current;
-			if (effectsCb) {
-				const data = await rpc<{ source: "blessing" | "curse"; kind: string }[]>(
-					"my_active_effects"
-				);
-				const rows = data ?? [];
-				effectsCb({
-					blessed: rows.some((row) => row.source === "blessing"),
-					cursed: rows.some((row) => row.source === "curse"),
-					sunBeam: rows.some((row) => row.kind === "sun_beam"),
-					phantomItch: rows.some((row) => row.kind === "phantom_itch"),
-				});
-			}
 
 			const slotIds: (string | null)[] = [
 				prof?.active_hat_id ?? null,

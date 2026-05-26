@@ -41,6 +41,7 @@ import { useHomeStats } from "@/hooks/useHomeStats";
 import { useStipend } from "@/hooks/useStipend";
 import { usePassEvents } from "@/hooks/usePassEvents";
 import { useLuckyPig } from "@/hooks/useLuckyPig";
+import { useActiveEffects } from "@/hooks/useActiveEffects";
 
 // Lucky Pig tunables live in utils/luckyPig.ts (extracted to the
 // useLuckyPig hook). Phantom-itch is the only ritual-effect tunable
@@ -291,27 +292,36 @@ export default function Barn() {
 	// in-app companion.
 	const prevAlignmentRef = useRef<number | null>(null);
 
-	// Season 1: current alignment, drives BarnOverlay theming.
+	// Season 1: current alignment, drives BarnOverlay theming. Hydrated
+	// in checkAlignment() below (on every focus).
 	const [alignment, setAlignment] = useState<AlignmentLabel>("neutral");
+
 	// Active daily-ritual effects — drive the overlay + the tap loop.
-	const [effects, setEffects] = useState<{
-		blessed: boolean;
-		cursed: boolean;
-		sunBeam: boolean;
-		phantomItch: boolean;
-	}>({ blessed: false, cursed: false, sunBeam: false, phantomItch: false });
+	// useActiveEffects is the single source of truth (BarnActiveEffectsStrip
+	// also subscribes; two channels for the same data is wasteful but
+	// cheap). We derive {blessed, cursed, sunBeam, phantomItch} predicates
+	// from the typed effects list for the inline checks below.
+	const activeEffects = useActiveEffects();
+	const effects = React.useMemo(
+		() => ({
+			blessed:     activeEffects.blessings.length > 0,
+			cursed:      activeEffects.curses.length > 0,
+			sunBeam:     activeEffects.effects.some((e) => e.kind === "sun_beam"),
+			phantomItch: activeEffects.effects.some((e) => e.kind === "phantom_itch"),
+		}),
+		[activeEffects.blessings, activeEffects.curses, activeEffects.effects]
+	);
 
 	// Home stats (counter, balance, equipped cosmetics, season tier).
-	// Owned by useHomeStats; the hook also surfaces alignment + effects
-	// via the fallback path (dev-sim parity pre-migration), routed back
-	// into the local setters above.
+	// Owned by useHomeStats; the fallback alignment hydration still
+	// flows through onAlignmentLoaded for dev-sim parity. Effects are
+	// no longer routed through here — useActiveEffects above owns them.
 	const {
 		stats,
 		statsLoaded,
 		refresh: fetchStats,
 	} = useHomeStats({
 		onAlignmentLoaded: setAlignment,
-		onEffectsLoaded: setEffects,
 	});
 
 	// Slop Club monthly stipend. The hook calls onClaimed only when
@@ -506,13 +516,16 @@ export default function Barn() {
 			// back to the base chance instead of keeping the boost
 			// for the rest of the timed window. Best-effort: a
 			// network failure leaves the buff in place but the
-			// blessing's own 4h expiry caps the worst case.
+			// blessing's own 4h expiry caps the worst case. The
+			// hook's realtime channel doesn't watch UPDATE on
+			// blessings, so a manual refresh syncs the derived
+			// sunBeam predicate.
 			void (async () => {
 				try {
 					await rpc("clear_blessing", {
 						target_kind: "sun_beam",
 					});
-					setEffects((e) => ({ ...e, sunBeam: false }));
+					await activeEffects.refresh();
 				} catch {
 					// best-effort; the 4h expiry caps worst case
 				}
