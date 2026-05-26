@@ -122,6 +122,18 @@ export const HAT_IMAGES: Record<string, number> = {
 	particle_halo:       require("../assets/images/tickle-particles/halo.png"),
 	particle_rainbow:    require("../assets/images/tickle-particles/rainbow.png"),
 	particle_music_note: require("../assets/images/tickle-particles/music-note.png"),
+	// Batch 10 — missing-artwork drop, generated 2026-05-26 via ChatGPT
+	// with the openai-missing-artwork.md prompts. Five season-pass tier
+	// rewards (bunny_ears/leaf_crown/devil_horns/cat_ears/astronaut)
+	// plus the referral-milestone messenger hat. Necklaces + capes
+	// were intentionally dropped — they don't fit the 2D-front pig
+	// silhouette cleanly.
+	astronaut:    require("../assets/images/hats/astronaut.png"),
+	bunny_ears:   require("../assets/images/hats/bunny_ears.png"),
+	cat_ears:     require("../assets/images/hats/cat_ears.png"),
+	devil_horns:  require("../assets/images/hats/devil_horns.png"),
+	leaf_crown:   require("../assets/images/hats/leaf_crown.png"),
+	messenger:    require("../assets/images/hats/messenger.png"),
 };
 
 // Per-hat overlay positioning on the 300x300 pig card.

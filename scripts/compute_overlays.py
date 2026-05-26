@@ -118,6 +118,13 @@ def parse_catalog():
     for orig_id in ["wizard", "cowboy", "tophat", "party"]:
         items.setdefault(orig_id, "hat")
     items.setdefault("monocle", "glasses")
+    # Season-pass exclusive hats (added in 20260544_season_pass_missing_hats.sql)
+    # + referral milestone hat (added in 20260566_referrals.sql). All `hat`
+    # category — head accessories that sit above the head. Necklaces and
+    # capes from the original catalog are intentionally NOT given artwork
+    # (don't fit the 2D-front pig silhouette cleanly).
+    for late_hat in ["astronaut", "bunny_ears", "cat_ears", "devil_horns", "leaf_crown", "messenger"]:
+        items.setdefault(late_hat, "hat")
     return items
 
 
