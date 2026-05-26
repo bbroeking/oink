@@ -1,16 +1,24 @@
+// Name-pick screen. Same Rosie hero treatment as SupaAuth so the
+// transition from sign-in → name-pick feels like one continuous
+// storybook flow rather than two unrelated screens.
+//
+// Layout: cream backdrop, Rosie hero up top, paper-sticker card
+// with the input + Save button below. Keyboard avoidance preserved.
 import React, { useState } from "react";
 import {
 	StyleSheet,
 	View,
 	TextInput,
-	TouchableOpacity,
-	ImageBackground,
+	Pressable,
+	Image,
+	Text,
+	SafeAreaView,
 	KeyboardAvoidingView,
 	Platform,
 } from "react-native";
 import { supabase } from "../utils/supabase";
-import { ThemedText } from "./ThemedText";
-import { PRIMARY_COLOR } from "./SupaAuth";
+import { Sticker } from "./ui/Sticker";
+import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
 interface Props {
 	userId: string;
@@ -46,123 +54,135 @@ export default function UsernameSetup({ userId, onSaved }: Props) {
 	};
 
 	return (
-		<ImageBackground
-			source={require("../assets/images/splash-art.png")}
-			style={styles.bg}
-			resizeMode="cover"
-		>
+		<View style={styles.bg}>
 			<KeyboardAvoidingView
-				style={styles.contentContainer}
+				style={styles.flex}
 				behavior={Platform.OS === "ios" ? "padding" : undefined}
 			>
-				<View style={styles.card}>
-					<ThemedText style={styles.title}>
-						Pick a name
-					</ThemedText>
-					<ThemedText style={styles.subtitle}>
-						This is what other tickle-ers will see on the leaderboard.
-					</ThemedText>
-					<TextInput
-						style={[styles.input, error ? styles.inputError : null]}
-						placeholder="3–24 characters"
-						placeholderTextColor="#999"
-						value={username}
-						onChangeText={(t) => {
-							setUsername(t);
-							if (error) setError("");
-						}}
-						autoCapitalize="none"
-						autoCorrect={false}
-						maxLength={24}
-						editable={!saving}
-					/>
-					{error ? (
-						<ThemedText style={styles.errorText}>{error}</ThemedText>
-					) : null}
-					<TouchableOpacity
-						style={[
-							styles.button,
-							(!valid || saving) && styles.buttonDisabled,
-						]}
-						onPress={handleSave}
-						disabled={!valid || saving}
-					>
-						<ThemedText style={styles.buttonText}>
-							{saving ? "Saving..." : "Save"}
-						</ThemedText>
-					</TouchableOpacity>
-				</View>
+				<SafeAreaView style={styles.safe}>
+					<View style={styles.hero}>
+						<Image
+							source={require("../assets/images/sprites/rosie/idle_1.png")}
+							style={styles.rosie}
+							resizeMode="contain"
+						/>
+						<Text style={styles.kicker}>★ pick your handle ★</Text>
+						<Text style={styles.title}>What should Rosie call you?</Text>
+					</View>
+
+					<View style={styles.cardWrap}>
+						<Sticker
+							color="paper"
+							rotate={-0.6}
+							radius={20}
+							style={[styles.card, STICKER_SHADOW]}
+						>
+							<TextInput
+								style={[styles.input, !!error && styles.inputError]}
+								placeholder="3–24 characters"
+								placeholderTextColor={WHIMSY.mute}
+								value={username}
+								onChangeText={(t) => {
+									setUsername(t);
+									if (error) setError("");
+								}}
+								autoCapitalize="none"
+								autoCorrect={false}
+								maxLength={24}
+								editable={!saving}
+							/>
+							{error ? (
+								<Text style={styles.errorText}>{error}</Text>
+							) : (
+								<Text style={styles.helper}>
+									Shows up next to your name on the leaderboard.
+								</Text>
+							)}
+							<Pressable
+								onPress={handleSave}
+								disabled={!valid || saving}
+								style={({ pressed }) => [
+									styles.btn,
+									(!valid || saving) && styles.btnDisabled,
+									pressed && { opacity: 0.85 },
+								]}
+							>
+								<Text style={styles.btnText}>
+									{saving ? "Saving…" : "Save"}
+								</Text>
+							</Pressable>
+						</Sticker>
+					</View>
+				</SafeAreaView>
 			</KeyboardAvoidingView>
-		</ImageBackground>
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	bg: { flex: 1, width: "100%", height: "100%" },
-	contentContainer: {
+	bg: { flex: 1, backgroundColor: WHIMSY.cream },
+	flex: { flex: 1 },
+	safe: { flex: 1, justifyContent: "space-between", paddingHorizontal: 22 },
+	hero: {
+		alignItems: "center",
+		paddingTop: 24,
 		flex: 1,
 		justifyContent: "center",
-		alignItems: "center",
-		padding: 20,
 	},
-	card: {
-		backgroundColor: "white",
-		borderRadius: 20,
-		padding: 28,
-		width: "100%",
-		maxWidth: 400,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.25,
-		shadowRadius: 3.84,
-		elevation: 5,
+	rosie: {
+		width: "60%",
+		aspectRatio: 370 / 383, // matches idle_1.png native ratio (near-square)
+		marginBottom: 14,
 	},
+	kicker: { ...KICKER_TEXT, marginBottom: 6 },
 	title: {
-		fontSize: 24,
-		fontWeight: "700",
-		color: "#222",
+		fontFamily: FONTS.whimsy,
+		fontSize: 26,
+		color: WHIMSY.ink,
 		textAlign: "center",
-		marginBottom: 8,
+		paddingHorizontal: 16,
 	},
-	subtitle: {
-		fontSize: 14,
-		color: "#555",
-		textAlign: "center",
-		marginBottom: 20,
-		lineHeight: 20,
-	},
+	cardWrap: { paddingBottom: 24 },
+	card: { padding: 18 },
 	input: {
-		borderWidth: 1,
-		borderColor: "#E0E0E0",
-		borderRadius: 12,
-		paddingHorizontal: 15,
-		height: 50,
+		fontFamily: FONTS.bodyExtra,
 		fontSize: 16,
-		color: "#333",
-		backgroundColor: "#FFF",
+		color: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 12,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
 		marginBottom: 8,
 	},
-	inputError: {
-		borderColor: "#FF6B6B",
+	inputError: { borderColor: WHIMSY.accent },
+	helper: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		marginBottom: 10,
 	},
 	errorText: {
-		color: "#FF6B6B",
+		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
-		marginBottom: 8,
+		color: WHIMSY.accent,
+		marginBottom: 10,
 	},
-	button: {
-		backgroundColor: PRIMARY_COLOR,
-		padding: 15,
+	btn: {
+		backgroundColor: WHIMSY.lilac,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
 		borderRadius: 12,
+		paddingVertical: 13,
 		alignItems: "center",
-		marginTop: 12,
+		marginTop: 4,
 	},
-	buttonDisabled: {
-		opacity: 0.5,
-	},
-	buttonText: {
-		color: "white",
-		fontSize: 16,
-		fontWeight: "600",
+	btnDisabled: { opacity: 0.5 },
+	btnText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 17,
+		color: WHIMSY.ink,
+		letterSpacing: 0.3,
 	},
 });

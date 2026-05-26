@@ -17,8 +17,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
-import { Button } from "../../components/ui";
+import { Button, SectionHeader } from "../../components/ui";
 import { Icon } from "../../components/ui/Icon";
+import { Sticker } from "../../components/ui/Sticker";
+import { PigAvatar } from "../../components/ui/PigAvatar";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
 import { TitlesSection } from "../../components/TitlesSection";
 import {
@@ -28,7 +30,7 @@ import {
 	CATEGORY_EMOJI,
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
-import { categoryIcon, PIG } from "@/constants/emojiArt";
+import { categoryIcon } from "@/constants/emojiArt";
 import { COLORS, FONTS, KICKER_PILL, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
@@ -278,7 +280,14 @@ function ItemCard({
 		<View style={[styles.cardBody, horizontal && styles.cardBodyHoriz]}>
 			<Text
 				style={[styles.cardName, horizontal && styles.cardNameHoriz]}
-				numberOfLines={horizontal ? 2 : 1}
+				// 2-line clamp + adjustsFontSizeToFit so a long name
+				// ("Sparkle Aura", "Sunset Farm") wraps cleanly in
+				// narrow cells instead of getting truncated to
+				// "Sparkl..." on a single line. minimumFontScale 0.7
+				// is enough to fit most names without going illegible.
+				numberOfLines={2}
+				adjustsFontSizeToFit
+				minimumFontScale={0.7}
 			>
 				{item.name}
 			</Text>
@@ -474,118 +483,51 @@ function FeaturedCard({
 // Renderer places cells with absolute positioning so spans work
 // without manual flex-fu.
 
-// Daily layout: 5 items in a 2 + 1 + 2 stack.
-//   row 0: two half-width squares side by side
-//   row 1: ONE full-width wide banner — PREMIUM of the day,
-//          horizontal ItemCard layout (icon left, buy right)
-//   row 2: two more half-width squares side by side
-// The premium slot is filled by the day's rarest item (ties broken
-// by daily_shop's deterministic hash). With < 5 items available,
-// trailing squares drop; the premium row stays as long as there's
-// at least one item.
-type SlotShape = "square" | "premium";
+// ── 4×4 mosaic layout ─────────────────────────────────────────
+//
+// Three templates, each a list of {c, r, w, h} placements summing to
+// 16 cells. The day-of-year picks one so the Shop feels different
+// across the week without authoring more layouts. Largest cells get
+// the rarest items.
+//
+// ONLY hero (2×2) and wide (2×1) cells. Tall cells were dropped
+// because the horizontal layout of the wide cells makes them the
+// natural fit for non-hero items (image-left, name+button-right).
+// Tall cells used the same square thumb shape but with no horizontal
+// body room, which made action-button labels truncate.
+type MosaicCell = { c: number; r: number; w: number; h: number };
+const SHOP_TEMPLATES: MosaicCell[][] = [
+	// A — hero TL + 6 wides
+	[
+		{ c: 0, r: 0, w: 2, h: 2 },  // hero
+		{ c: 2, r: 0, w: 2, h: 1 },  // wide
+		{ c: 2, r: 1, w: 2, h: 1 },  // wide
+		{ c: 0, r: 2, w: 2, h: 1 },  // wide
+		{ c: 2, r: 2, w: 2, h: 1 },  // wide
+		{ c: 0, r: 3, w: 2, h: 1 },  // wide
+		{ c: 2, r: 3, w: 2, h: 1 },  // wide
+	],
+	// B — two heroes top + 4 wides bottom
+	[
+		{ c: 0, r: 0, w: 2, h: 2 },  // hero
+		{ c: 2, r: 0, w: 2, h: 2 },  // hero
+		{ c: 0, r: 2, w: 2, h: 1 },  // wide
+		{ c: 2, r: 2, w: 2, h: 1 },  // wide
+		{ c: 0, r: 3, w: 2, h: 1 },  // wide
+		{ c: 2, r: 3, w: 2, h: 1 },  // wide
+	],
+	// C — 4 wides top + 2 heroes bottom (mirrors B vertically)
+	[
+		{ c: 0, r: 0, w: 2, h: 1 },  // wide
+		{ c: 2, r: 0, w: 2, h: 1 },  // wide
+		{ c: 0, r: 1, w: 2, h: 1 },  // wide
+		{ c: 2, r: 1, w: 2, h: 1 },  // wide
+		{ c: 0, r: 2, w: 2, h: 2 },  // hero
+		{ c: 2, r: 2, w: 2, h: 2 },  // hero
+	],
+];
 
-// Compact card variant for small 1×1 tiles. Image dominates; the
-// bottom strip is either a price+buy pill or owned/equipped state.
-// Whole-tile tap → preview; pill tap → buy/equip/unequip.
-function CompactItemCard({
-	item,
-	owned,
-	active,
-	canAfford,
-	busy,
-	onBuy,
-	onEquip,
-	onUnequip,
-	onPreview,
-}: {
-	item: HatRow;
-	owned: boolean;
-	active: boolean;
-	canAfford: boolean;
-	busy: boolean;
-	onBuy: () => void;
-	onEquip: () => void;
-	onUnequip: () => void;
-	onPreview: () => void;
-}) {
-	const rarity = item.rarity ?? "common";
-	const rarityColor = RARITY_COLORS[rarity];
-
-	const pillAction = active
-		? onUnequip
-		: owned
-			? onEquip
-			: canAfford && !busy
-				? onBuy
-				: undefined;
-	const pillContent = active ? (
-		<Text style={compactStyles.pillTextOwned}>✓ Wearing</Text>
-	) : owned ? (
-		<Text style={compactStyles.pillTextOwned}>Wear</Text>
-	) : !canAfford ? (
-		<>
-			<SnoutCoin size={12} />
-			<Text style={compactStyles.pillTextDisabled}>
-				{item.cost.toLocaleString()}
-			</Text>
-		</>
-	) : (
-		<>
-			<SnoutCoin size={12} />
-			<Text style={compactStyles.pillText}>
-				{item.cost.toLocaleString()}
-			</Text>
-		</>
-	);
-
-	return (
-		<Pressable
-			onPress={onPreview}
-			style={[compactStyles.card, { borderColor: rarityColor }]}
-		>
-			<RarityFx rarity={rarity} style={compactStyles.thumbWrap}>
-				<LinearGradient
-					colors={RARITY_GRADIENT[rarity]}
-					style={compactStyles.thumb}
-				>
-					<HatThumb item={item} size={56} />
-					<View
-						style={[
-							compactStyles.rarityBadge,
-							{ backgroundColor: rarityColor },
-						]}
-					>
-						<Text style={compactStyles.rarityText}>
-							{rarity[0].toUpperCase()}
-						</Text>
-					</View>
-				</LinearGradient>
-			</RarityFx>
-			<Pressable
-				onPress={pillAction}
-				disabled={!pillAction}
-				style={[
-					compactStyles.pill,
-					active && compactStyles.pillActive,
-					owned && !active && compactStyles.pillOwned,
-					!owned && !canAfford && compactStyles.pillDisabled,
-				]}
-			>
-				{pillContent}
-			</Pressable>
-		</Pressable>
-	);
-}
-
-// Layout: 2 tiles / wide premium banner / 2 tiles, expanding to fill
-// the available vertical space (no scroll). The top + bottom rows
-// each take flex: 1 of the remaining height after the fixed-height
-// premium banner; each pair of tiles within a row splits the width
-// 50/50. Tiles end up roughly card-shaped (taller than wide) on most
-// phones — not strict squares, but well-proportioned for the new
-// art style.
-function BentoDailyGrid({
+function MosaicDailyGrid({
 	items,
 	featured,
 	owned,
@@ -613,163 +555,109 @@ function BentoDailyGrid({
 	const { width: screenW } = useWindowDimensions();
 	const HORIZ_PADDING = 12;
 	const GAP = 12;
+	const COLS = 4;
+	const ROWS = 4;
 	const innerW = screenW - HORIZ_PADDING * 2;
-	const PREMIUM_H = Math.round(innerW * 0.32); // ~3:1 horizontal banner
+	const COL_W = (innerW - GAP * (COLS - 1)) / COLS;
+	// Cells need ~120pt of vertical content room (thumb + name +
+	// price + button) so the Buy pill doesn't get clipped at the
+	// bottom of small 1×1 tiles. ROW_H = 1.5 × COL_W lands us
+	// there on iPhone widths. Bumped from the original 0.92 ratio
+	// after a screenshot showed the Buy button cut in half on
+	// "Sparkle..." / "Beanie" sized tiles.
+	const ROW_H = Math.round(COL_W * 1.5);
+	const totalH = ROW_H * ROWS + GAP * (ROWS - 1);
 
-	// Premium = day's rarest item. Ties broken by daily_shop's
-	// deterministic order (the upstream `featured` resolver already
-	// picked one).
-	const premium = featured ?? items[0] ?? null;
-	const squares = items.filter((i) => i.id !== premium?.id).slice(0, 4);
-	const topSquares = squares.slice(0, 2);
-	const bottomSquares = squares.slice(2, 4);
+	// Day-of-year rotation: same shape all day, changes overnight.
+	const dayIdx = Math.floor(Date.now() / 86_400_000);
+	const tpl = SHOP_TEMPLATES[dayIdx % SHOP_TEMPLATES.length];
+
+	// Pair items to cells: rarest item into the biggest cell. Hoist
+	// `featured` to first if present so the curator's pick wins on ties.
+	const pool: HatRow[] = featured
+		? [featured, ...items.filter((i) => i.id !== featured.id)]
+		: items;
+	// RARITY_ORDER puts "legendary" first → lower indexOf == rarer.
+	// Ascending sort by index = rarest first.
+	const byRarity = [...pool].sort(
+		(a, b) =>
+			RARITY_ORDER.indexOf(a.rarity ?? "common") -
+			RARITY_ORDER.indexOf(b.rarity ?? "common")
+	);
+	const cellsByArea = tpl
+		.map((p, idx) => ({ ...p, idx }))
+		.sort((a, b) => b.w * b.h - a.w * a.h);
+	const placements = cellsByArea
+		.map((cell, i) => ({ cell, item: byRarity[i] }))
+		.filter((p) => !!p.item);
 
 	const captureCenter = (itemId: string) => (e: LayoutChangeEvent) => {
 		if (!tileCenters) return;
-		// onLayout's `target` is the host-component ref, which provides
-		// the imperative measureInWindow method. RN's exported event
-		// type is too loose to expose it directly, hence a narrow cast.
 		const targetRef = e.target as unknown as {
 			measureInWindow?: (
 				cb: (x: number, y: number, w: number, h: number) => void
 			) => void;
 		};
 		targetRef.measureInWindow?.((x, y, w, h) => {
-			tileCenters.current.set(itemId, {
-				x: x + w / 2,
-				y: y + h / 2,
-			});
+			tileCenters.current.set(itemId, { x: x + w / 2, y: y + h / 2 });
 		});
 	};
 
-	const renderTile = (item: HatRow) => (
-		<View
-			key={item.id}
-			style={{ flex: 1 }}
-			onLayout={captureCenter(item.id)}
-		>
-			<ItemCard
-				item={item}
-				owned={owned.has(item.id)}
-				active={isEquipped(item.id, item.category)}
-				canAfford={counter >= item.cost}
-				busy={busyId === item.id}
-				cellShape="square"
-				onBuy={() => onBuy(item)}
-				onEquip={() => onEquip(item.id, item.category)}
-				onUnequip={() => onUnequip(item.category)}
-				onPreview={() => onPreview(item)}
-			/>
-		</View>
-	);
-
 	return (
-		<View style={{ flex: 1, gap: GAP }}>
-			{topSquares.length > 0 && (
-				<View
-					style={{ flex: 1, flexDirection: "row", gap: GAP }}
-				>
-					{topSquares.map(renderTile)}
-				</View>
-			)}
-			{premium && (
-				<View
-					style={{ width: innerW, height: PREMIUM_H }}
-					onLayout={captureCenter(premium.id)}
-				>
-					<ItemCard
-						item={premium}
-						owned={owned.has(premium.id)}
-						active={isEquipped(premium.id, premium.category)}
-						canAfford={counter >= premium.cost}
-						busy={busyId === premium.id}
-						cellShape="wide"
-						onBuy={() => onBuy(premium)}
-						onEquip={() => onEquip(premium.id, premium.category)}
-						onUnequip={() => onUnequip(premium.category)}
-						onPreview={() => onPreview(premium)}
-					/>
-				</View>
-			)}
-			{bottomSquares.length > 0 && (
-				<View
-					style={{ flex: 1, flexDirection: "row", gap: GAP }}
-				>
-					{bottomSquares.map(renderTile)}
-				</View>
-			)}
+		<View style={{ width: innerW, height: totalH, position: "relative" }}>
+			{placements.map(({ cell, item }) => {
+				const left = cell.c * (COL_W + GAP);
+				const top = cell.r * (ROW_H + GAP);
+				const width = cell.w * COL_W + (cell.w - 1) * GAP;
+				const height = cell.h * ROW_H + (cell.h - 1) * GAP;
+				const isHero = cell.w >= 2 && cell.h >= 2;
+				const isWide = cell.w >= 2 && cell.h === 1;
+				const isTall = cell.h >= 2 && cell.w === 1;
+				const shape: CellShape = isWide ? "wide" : isTall ? "tall" : "square";
+				return (
+					<View
+						key={item.id}
+						style={{ position: "absolute", left, top, width, height }}
+						onLayout={captureCenter(item.id)}
+					>
+						<ItemCard
+							item={item}
+							owned={owned.has(item.id)}
+							active={isEquipped(item.id, item.category)}
+							canAfford={counter >= item.cost}
+							busy={busyId === item.id}
+							cellShape={shape}
+							onBuy={() => onBuy(item)}
+							onEquip={() => onEquip(item.id, item.category)}
+							onUnequip={() => onUnequip(item.category)}
+							onPreview={() => onPreview(item)}
+						/>
+						{/* Sparkle accent for premium hero cells — gives
+						    legendary/epic items an extra moment of glitter
+						    in the corner. Wrapped in a pointerEvents-none
+						    View because Text doesn't accept the prop. */}
+						{isHero && (item.rarity === "legendary" || item.rarity === "epic") && (
+							<View
+								pointerEvents="none"
+								style={{ position: "absolute", top: 6, right: 10 }}
+							>
+								<Text
+									style={{
+										fontFamily: FONTS.whimsy,
+										fontSize: 16,
+										color: WHIMSY.sun,
+									}}
+								>
+									✦
+								</Text>
+							</View>
+						)}
+					</View>
+				);
+			})}
 		</View>
 	);
 }
-
-const compactStyles = StyleSheet.create({
-	card: {
-		flex: 1,
-		borderRadius: 14,
-		borderWidth: 2,
-		backgroundColor: COLORS.paper,
-		overflow: "hidden",
-	},
-	thumbWrap: {
-		flex: 1,
-	},
-	thumb: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	rarityBadge: {
-		position: "absolute",
-		top: 4,
-		left: 4,
-		width: 14,
-		height: 14,
-		borderRadius: 7,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	rarityText: {
-		color: "#fff",
-		fontFamily: FONTS.bodyBlack,
-		fontSize: 8,
-	},
-	pill: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		paddingVertical: 6,
-		paddingHorizontal: 8,
-		gap: 4,
-		backgroundColor: COLORS.ink,
-		borderTopWidth: 1,
-		borderTopColor: COLORS.border,
-	},
-	pillActive: {
-		backgroundColor: COLORS.success,
-	},
-	pillOwned: {
-		backgroundColor: COLORS.purple,
-	},
-	pillDisabled: {
-		backgroundColor: COLORS.paper2,
-	},
-	pillText: {
-		color: "#fff",
-		fontFamily: FONTS.bodyBlack,
-		fontSize: 13,
-	},
-	pillTextOwned: {
-		color: "#fff",
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 0.5,
-	},
-	pillTextDisabled: {
-		color: COLORS.ink3,
-		fontFamily: FONTS.bodyBlack,
-		fontSize: 13,
-	},
-});
 
 // Single-row title card for the Titles shop tab. Text-based (no
 // image) since titles attach to the user's display name. Rarity
@@ -779,6 +667,7 @@ function ShopTitleRow({
 	canAfford,
 	busy,
 	onBuy,
+	sampleHandle,
 }: {
 	title: {
 		id: string;
@@ -792,6 +681,9 @@ function ShopTitleRow({
 	canAfford: boolean;
 	busy: boolean;
 	onBuy: () => void;
+	// User's handle, baked into the preview so they see exactly how
+	// the title will read attached to their name.
+	sampleHandle: string;
 }) {
 	const rarityColor = RARITY_COLORS[title.rarity] ?? WHIMSY.ink;
 	return (
@@ -805,7 +697,27 @@ function ShopTitleRow({
 				<Text style={shopTitleStyles.kicker}>
 					{title.placement === "post" ? "after your name" : "before your name"}
 				</Text>
-				<Text style={shopTitleStyles.name}>{title.name}</Text>
+				{/* Live preview — the title rendered next to the sample
+				    handle in the exact pre/post order it'll appear on
+				    rosters + leaderboards. Bigger display font for the
+				    title, muted body weight for the handle. */}
+				<View style={shopTitleStyles.previewLine}>
+					{title.placement === "pre" ? (
+						<>
+							<Text style={shopTitleStyles.name}>{title.name}</Text>
+							<Text style={shopTitleStyles.previewHandle}>
+								{sampleHandle}
+							</Text>
+						</>
+					) : (
+						<>
+							<Text style={shopTitleStyles.previewHandle}>
+								{sampleHandle}
+							</Text>
+							<Text style={shopTitleStyles.name}>{title.name}</Text>
+						</>
+					)}
+				</View>
 				{title.description && (
 					<Text style={shopTitleStyles.desc}>{title.description}</Text>
 				)}
@@ -862,6 +774,20 @@ const shopTitleStyles = StyleSheet.create({
 		fontSize: 22,
 		color: WHIMSY.ink,
 		lineHeight: 24,
+	},
+	// Live preview — title + handle baseline-aligned on a single line.
+	previewLine: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		gap: 6,
+		flexWrap: "wrap",
+	},
+	// The sample handle inside the preview — body-bold, muted ink so
+	// the eye lands on the title (display font) first.
+	previewHandle: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		color: WHIMSY.mute,
 	},
 	desc: {
 		fontFamily: FONTS.hand,
@@ -923,6 +849,10 @@ export default function ShopScreen() {
 		return activeIds.hat === id;
 	};
 	const [counter, setCounter] = useState<number>(0);
+	// The current user's display name, used as the sample handle in
+	// the TitleRow live-preview ("Halo Bearer <you>" / "<you> Drove
+	// Captain"). Falls back to "you" if the fetch hasn't returned.
+	const [myUsername, setMyUsername] = useState<string>("you");
 	const [busyId, setBusyId] = useState<string | null>(null);
 	const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
 	const [resetsIn, setResetsIn] = useState<number>(0);
@@ -992,14 +922,14 @@ export default function ShopScreen() {
 			// it so the shop still loads.
 			supabase
 				.from("profiles")
-				.select("counter, active_hat_id, active_aura_id, active_background_id, active_held_id, active_title_id")
+				.select("username, counter, active_hat_id, active_aura_id, active_background_id, active_held_id, active_title_id")
 				.eq("id", user.id)
 				.single()
 				.then(async (res) => {
 					if (res.error) {
 						return supabase
 							.from("profiles")
-							.select("counter, active_hat_id, active_aura_id, active_background_id, active_held_id")
+							.select("username, counter, active_hat_id, active_aura_id, active_background_id, active_held_id")
 							.eq("id", user.id)
 							.single();
 					}
@@ -1023,6 +953,9 @@ export default function ShopScreen() {
 			)
 		);
 		setCounter(profRes.data?.counter ?? 0);
+		setMyUsername(
+			(profRes.data as { username?: string | null } | null)?.username ?? "you"
+		);
 		setActiveIds({
 			hat: profRes.data?.active_hat_id ?? null,
 			aura: profRes.data?.active_aura_id ?? null,
@@ -1200,7 +1133,9 @@ export default function ShopScreen() {
 					? "active_background_id"
 					: category === "held"
 						? "active_held_id"
-						: "active_hat_id";
+						: category === "tickle_particle"
+							? "active_tickle_particle_id"
+							: "active_hat_id";
 		await supabase
 			.from("profiles")
 			.update({ [column]: itemId })
@@ -1382,39 +1317,80 @@ export default function ShopScreen() {
 				{view === "daily" ? (
 					// Daily view fills the available height — no scroll.
 					// The bento expands inside this flex container so the
-					// 2+1+2 stack fits exactly on screen.
-					<View key="daily" style={[styles.grid, styles.dailyView]}>
-						<View style={styles.countdownStrip}>
-							<Icon name="bell" size={14} color={COLORS.pinkDeep} strokeWidth={2} />
-							<Text style={styles.countdownText}>
-								New shop in {formatCountdown(resetsIn)}
-							</Text>
-						</View>
+					// 4×4 day-rotated mosaic. Scrolls vertically — the mosaic
+					// is taller than the available space on smaller phones.
+					<ScrollView
+						key="daily"
+						style={styles.dailyScroll}
+						contentContainerStyle={styles.dailyScrollContent}
+						showsVerticalScrollIndicator={false}
+					>
+						<SectionHeader
+							kicker="today's drop"
+							title="Featured"
+							right={`resets in ${formatCountdown(resetsIn)}`}
+							ruleWidth={72}
+						/>
 						{daily.length === 0 ? (
 							<Text style={styles.empty}>
 								Empty shop. Come back tomorrow.
 							</Text>
 						) : (
-							<BentoDailyGrid
-								items={daily}
-								featured={featured}
-								owned={owned}
-								isEquipped={isEquipped}
-								counter={counter}
-								busyId={busyId}
-								onBuy={handleBuy}
-								onEquip={handleEquip}
-								onUnequip={(category) => handleEquip(null, category)}
-								onPreview={setPreviewItem}
-								tileCenters={tileCenters}
-							/>
+							<>
+								<MosaicDailyGrid
+									items={daily}
+									featured={featured}
+									owned={owned}
+									isEquipped={isEquipped}
+									counter={counter}
+									busyId={busyId}
+									onBuy={handleBuy}
+									onEquip={handleEquip}
+									onUnequip={(category) => handleEquip(null, category)}
+									onPreview={setPreviewItem}
+									tileCenters={tileCenters}
+								/>
+								{/* Bundle promo row — sits below the mosaic, sells
+								    a small bundle for snouts. Static for now; can
+								    be wired to a bundle SKU later. */}
+								<Sticker
+									color="cream"
+									rotate={-0.3}
+									radius={14}
+									style={styles.bundleSticker}
+								>
+									<View style={styles.bundleRow}>
+										<Icon name="gift" size={24} color={WHIMSY.ink} filled />
+										<View style={{ flex: 1, minWidth: 0 }}>
+											<Text style={styles.bundleTitle}>
+												Bundle: starter pack
+											</Text>
+											<Text style={styles.bundleSub}>
+												Chef + Party + Flowers · save 30 snouts
+											</Text>
+										</View>
+										<View style={styles.bundlePrice}>
+											<SnoutCoin size={14} />
+											<Text style={styles.bundlePriceText}>120</Text>
+										</View>
+									</View>
+								</Sticker>
+							</>
 						)}
-					</View>
+					</ScrollView>
 				) : view === "browse" ? (
 					<FlatList
 						key="browse"
 						data={browseRows}
-						renderItem={renderListRow(false)}
+						// wardrobeMode=true hides the Buy / "Today only"
+						// button on un-owned items in Browse. Browse is a
+						// catalog view, not a shopping surface — purchases
+						// happen on the Today's Drop screen + on the
+						// Preview modal (tap a card → Buy if in today's
+						// drop). The Wear / Take off buttons still show
+						// for items you OWN. Branch checks owned/active
+						// first, so this gating only affects un-owned.
+						renderItem={renderListRow(true)}
 						keyExtractor={(r) => r.key}
 						contentContainerStyle={styles.grid}
 						ListHeaderComponent={
@@ -1492,6 +1468,7 @@ export default function ShopScreen() {
 								canAfford={counter >= t.cost}
 								busy={titleBusyId === t.id}
 								onBuy={() => handleBuyTitle(t)}
+								sampleHandle={myUsername}
 							/>
 						)}
 					/>
@@ -1529,13 +1506,21 @@ export default function ShopScreen() {
 							</View>
 						}
 						ListEmptyComponent={
-							<View style={styles.wardrobeEmpty}>
-								<Image source={PIG} style={styles.wardrobeEmptyImg} />
+							<Sticker
+								color="paper"
+								rotate={-0.4}
+								radius={14}
+								style={styles.wardrobeEmpty}
+							>
+								{/* Big PigAvatar instead of the small PIG emoji
+								    image — matches the design's full sprite
+								    treatment for the empty closet moment. */}
+								<PigAvatar size={120} />
 								<Text style={styles.wardrobeEmptyTitle}>
 									Your closet is bare
 								</Text>
 								<Text style={styles.wardrobeEmptySub}>
-									Buy items in Today or Browse to dress up your pig.
+									Tap the shop to dress Rosie up.
 								</Text>
 								<View style={{ marginTop: 14 }}>
 									<Button
@@ -1546,7 +1531,7 @@ export default function ShopScreen() {
 										Visit shop
 									</Button>
 								</View>
-							</View>
+							</Sticker>
 						}
 					/>
 				)}
@@ -1653,19 +1638,6 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		color: WHIMSY.ink,
 	},
-	countdownStrip: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		paddingHorizontal: 18,
-		paddingBottom: 10,
-	},
-	countdownText: {
-		fontSize: 13,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		letterSpacing: 0.4,
-	},
 	sectionLabel: {
 		fontSize: 14,
 		fontFamily: FONTS.hand,
@@ -1702,9 +1674,49 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 	},
 	grid: { paddingHorizontal: 12, paddingBottom: 100 },
-	// Daily tab fills the remaining height between the header and the
-	// tab bar — no scroll, the bento tiles flex to fit.
-	dailyView: { flex: 1, paddingBottom: 24, gap: 12 },
+	// Today tab — scrolling container holding the 4×4 mosaic + bundle row.
+	// The mosaic itself is fixed-height; the surrounding scroll lets the
+	// content breathe on smaller devices.
+	dailyScroll: { flex: 1 },
+	dailyScrollContent: {
+		paddingHorizontal: 12,
+		paddingTop: 4,
+		paddingBottom: 100,
+	},
+	bundleSticker: { padding: 12, marginTop: 16 },
+	bundleRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+	},
+	// Bundle glyph moved off Text-emoji onto <Icon name="gift" />.
+	bundleTitle: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+	},
+	bundleSub: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		marginTop: 2,
+	},
+	bundlePrice: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 4,
+		paddingHorizontal: 12,
+		paddingVertical: 7,
+		borderRadius: 999,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.lilacDeep,
+	},
+	bundlePriceText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.paper,
+	},
 	columnWrap: { gap: 10 },
 	rowWrap: {
 		flexDirection: "row",
@@ -1760,9 +1772,12 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	cardThumbWrapHoriz: {
-		// Match height in row mode so the image is a square (height
-		// is the constraint here, since width is given by flex).
-		aspectRatio: 1,
+		// In row mode, give the thumb a portrait-ish 0.75 aspect
+		// (narrower than tall) instead of a full square. That hands
+		// ~25% more width to the body so the Wear/Buy button isn't
+		// clipped to a single letter. Image still reads at this
+		// shape because it's contain-fitted within the cell.
+		aspectRatio: 0.75,
 		flex: 0,
 	},
 	cardThumb: {
@@ -1772,15 +1787,24 @@ const styles = StyleSheet.create({
 		position: "relative",
 	},
 	cardBody: {
-		padding: 10,
+		// Tighter padding so the small 1×1 + 2×1 cells get more
+		// content room without the visible card area growing.
+		padding: 8,
 	},
 	cardBodyHoriz: {
 		flex: 1,
 		justifyContent: "center",
+		paddingLeft: 6,
+		paddingRight: 8,
 	},
 	cardName: {
 		fontFamily: FONTS.whimsy,
-		fontSize: 15,
+		// Dropped from 15 → 13. Pairs with the 2-line wrap +
+		// adjustsFontSizeToFit at the call site so "Sparkle Aura"
+		// and "Homestead Barn" fit cleanly in 1×1 cells without
+		// truncation.
+		fontSize: 13,
+		lineHeight: 15,
 		color: WHIMSY.ink,
 		textAlign: "center",
 		marginBottom: 4,
@@ -1793,8 +1817,8 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		gap: 4,
-		marginBottom: 8,
-		minHeight: 18,
+		marginBottom: 6,
+		minHeight: 16,
 	},
 	cardPrice: {
 		fontFamily: FONTS.whimsy,
@@ -1808,9 +1832,12 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.5,
 	},
 	rarityBadge: {
+		// Top-left to match the redesign — leaves the top-right
+		// quadrant free for the premium ✦ sparkle accent in hero
+		// mosaic cells.
 		position: "absolute",
 		top: 8,
-		right: 8,
+		left: 8,
 		paddingHorizontal: 6,
 		paddingVertical: 2,
 		borderRadius: 6,
@@ -1917,19 +1944,14 @@ const styles = StyleSheet.create({
 	},
 	wardrobeEmpty: {
 		alignItems: "center",
-		paddingVertical: 60,
+		paddingVertical: 36,
 		paddingHorizontal: 24,
-	},
-	wardrobeEmptyImg: {
-		width: 68,
-		height: 68,
-		resizeMode: "contain",
-		marginBottom: 14,
 	},
 	wardrobeEmptyTitle: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 22,
 		color: WHIMSY.ink,
+		marginTop: 12,
 		marginBottom: 6,
 	},
 	wardrobeEmptySub: {

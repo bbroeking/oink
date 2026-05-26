@@ -16,11 +16,12 @@ import { router } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
-import { Card, Button } from "./ui";
+import { Card, Button, SectionHeader } from "./ui";
 import { Icon, type IconName } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker, Tape } from "./ui/Sticker";
 import { AlignmentBar } from "./ui/AlignmentBar";
+import Constants from "expo-constants";
 import { COLORS, FONTS, KICKER_PILL, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import {
 	IAP_ENABLED,
@@ -66,6 +67,10 @@ export function Account({ session }: { session: Session }) {
 		}, [])
 	);
 	const [ticklesEarned, setTicklesEarned] = useState<number>(0);
+	// Snouts balance + current season tier — feed the 3-column stats
+	// row inside the identity card (LIFETIME TICKLES · SNOUTS · SEASON).
+	const [snouts, setSnouts] = useState<number>(0);
+	const [currentTier, setCurrentTier] = useState<number | null>(null);
 	const [activeHat, setActiveHat] = useState<string | null>(null);
 	const [isVip, setIsVip] = useState<boolean>(false);
 	const [alignmentScore, setAlignmentScore] = useState<number>(0);
@@ -88,7 +93,7 @@ export function Account({ session }: { session: Session }) {
 			supabase
 				.from("profiles")
 				.select(
-					"username, discriminator, tickles_earned, active_hat_id, is_vip, alignment_score, active_title:titles!profiles_active_title_id_fkey(name, placement)"
+					"username, discriminator, tickles_earned, counter, active_hat_id, is_vip, alignment_score, active_title:titles!profiles_active_title_id_fkey(name, placement)"
 				)
 				.eq("id", session.user.id)
 				.single()
@@ -97,6 +102,7 @@ export function Account({ session }: { session: Session }) {
 						username?: string | null;
 						discriminator?: string | null;
 						tickles_earned?: number;
+						counter?: number;
 						active_hat_id?: string | null;
 						is_vip?: boolean;
 						alignment_score?: number;
@@ -112,7 +118,7 @@ export function Account({ session }: { session: Session }) {
 					if (error) {
 						const fallback = await supabase
 							.from("profiles")
-							.select("username, discriminator, tickles_earned, active_hat_id, is_vip, alignment_score")
+							.select("username, discriminator, tickles_earned, counter, active_hat_id, is_vip, alignment_score")
 							.eq("id", session.user.id)
 							.single();
 						row = fallback.data;
@@ -120,6 +126,7 @@ export function Account({ session }: { session: Session }) {
 					setUsername(row?.username ?? null);
 					setDiscriminator(row?.discriminator ?? null);
 					setTicklesEarned(row?.tickles_earned ?? 0);
+					setSnouts(row?.counter ?? 0);
 					setActiveHat(row?.active_hat_id ?? null);
 					setIsVip(row?.is_vip ?? false);
 					setAlignmentScore(row?.alignment_score ?? 0);
@@ -128,6 +135,13 @@ export function Account({ session }: { session: Session }) {
 						: row?.active_title;
 					setActiveTitle(t ?? null);
 				});
+			// Pull current_tier alongside so the SEASON column reads
+			// "T8" rather than collapsing to "—". Best-effort: a failure
+			// just leaves the column blank.
+			supabase.rpc("season_state").then(({ data }) => {
+				const s = data as { current_tier?: number } | null;
+				if (typeof s?.current_tier === "number") setCurrentTier(s.current_tier);
+			});
 		}, [session.user.id])
 	);
 
@@ -262,13 +276,25 @@ export function Account({ session }: { session: Session }) {
 										{!!handle && discriminator && (
 											<Text style={styles.codeHandle}>{handle}</Text>
 										)}
-										<View style={styles.codeStats}>
-											<Text style={styles.codeStatsHeart}>♥</Text>
-											<Text style={styles.codeStatsText}>
-												{ticklesEarned.toLocaleString()} lifetime tickles
-											</Text>
-										</View>
 									</View>
+								</View>
+
+								{/* Lifetime stats — 3-col band inside the identity
+								    card. Divided by 1px ink-mute verticals + a
+								    dashed top border. Matches the design's StatPiece
+								    cluster (LIFETIME TICKLES · SNOUTS · SEASON). */}
+								<View style={styles.lifetimeStatsRow}>
+									<LifetimeStat
+										label="LIFETIME TICKLES"
+										value={ticklesEarned.toLocaleString()}
+									/>
+									<View style={styles.lifetimeStatDivider} />
+									<LifetimeStat label="SNOUTS" value={snouts.toLocaleString()} />
+									<View style={styles.lifetimeStatDivider} />
+									<LifetimeStat
+										label="SEASON"
+										value={currentTier == null ? "—" : `T${currentTier}`}
+									/>
 								</View>
 								<Pressable onPress={handleCopyCode} style={styles.shareBtn}>
 									<Icon
@@ -315,7 +341,7 @@ export function Account({ session }: { session: Session }) {
 						style={achievementStyles.row}
 					>
 						<View style={achievementStyles.iconBubble}>
-							<Text style={achievementStyles.iconText}>🏆</Text>
+							<Icon name="trophy" size={22} color={WHIMSY.ink} filled />
 						</View>
 						<View style={{ flex: 1 }}>
 							<Text style={achievementStyles.label}>Achievements</Text>
@@ -480,29 +506,43 @@ export function Account({ session }: { session: Session }) {
 						</Sticker>
 					)}
 
-					{IAP_ENABLED && (
-						<Pressable onPress={handleRestore} style={styles.restoreLink}>
-							<Text style={styles.restoreLinkText}>Restore purchases</Text>
-						</Pressable>
-					)}
-
-					<Pressable
-						onPress={() => setReleaseNotesOpen(true)}
-						style={styles.restoreLink}
-					>
-						<Text style={styles.restoreLinkText}>What's new</Text>
-					</Pressable>
-
-
-					<Pressable
-						onPress={() => supabase.auth.signOut()}
-						style={({ pressed }) => [
-							styles.signOut,
-							{ opacity: pressed ? 0.6 : 1 },
-						]}
-					>
-						<Text style={styles.signOutText}>Sign Out</Text>
-					</Pressable>
+					{/* Settings — paper sticker grouping the housekeeping
+					    actions (release notes, restore IAP, sign out) into
+					    dashed-divided rows. Replaces three scattered link
+					    Pressables that broke the screen's visual rhythm.
+					    From the redesign's Settings card. */}
+					<View style={settingsStyles.wrap}>
+						<Text style={settingsStyles.kicker}>★ settings</Text>
+						<Sticker
+							color="paper"
+							rotate={-0.3}
+							radius={14}
+							style={settingsStyles.card}
+						>
+							<SettingRow
+								icon="scroll"
+								label="What's new"
+								onPress={() => setReleaseNotesOpen(true)}
+							/>
+							{IAP_ENABLED && (
+								<SettingRow
+									icon="refresh"
+									label="Restore purchases"
+									onPress={handleRestore}
+								/>
+							)}
+							<SettingRow
+								icon="exit"
+								label="Sign out"
+								onPress={() => supabase.auth.signOut()}
+								destructive
+								last
+							/>
+						</Sticker>
+						<Text style={settingsStyles.footer}>
+							★ tickle the pig · v{Constants.expoConfig?.version ?? "1.0.0"} ★
+						</Text>
+					</View>
 				</ScrollView>
 			</SafeAreaView>
 
@@ -533,6 +573,59 @@ function SlopPerk({
 				<Text style={styles.slopPerkLabel}>{label}</Text>
 				<Text style={styles.slopPerkDetail}>{detail}</Text>
 			</View>
+		</View>
+	);
+}
+
+// A single row inside the Settings card. Icon + label + optional chev,
+// dashed bottom border unless it's the last row. Icon takes an Icon
+// name from the shared ui/Icon set (e.g. "scroll", "refresh", "exit")
+// — kept off Unicode emoji per the design-language no-emoji rule.
+function SettingRow({
+	icon,
+	label,
+	onPress,
+	destructive,
+	last,
+}: {
+	icon: IconName;
+	label: string;
+	onPress: () => void;
+	destructive?: boolean;
+	last?: boolean;
+}) {
+	const iconColor = destructive ? WHIMSY.accent : WHIMSY.ink;
+	return (
+		<Pressable
+			onPress={onPress}
+			style={({ pressed }) => [
+				settingsStyles.row,
+				!last && settingsStyles.rowDivider,
+				pressed && { opacity: 0.65 },
+			]}
+		>
+			<View style={settingsStyles.rowIconWrap}>
+				<Icon name={icon} size={20} color={iconColor} />
+			</View>
+			<Text
+				style={[
+					settingsStyles.rowLabel,
+					destructive && { color: WHIMSY.accent },
+				]}
+			>
+				{label}
+			</Text>
+			<Text style={settingsStyles.rowChev}>›</Text>
+		</Pressable>
+	);
+}
+
+// Single LifetimeStat column for the identity card's 3-col band.
+function LifetimeStat({ label, value }: { label: string; value: string }) {
+	return (
+		<View style={styles.lifetimeStatCol}>
+			<Text style={styles.lifetimeStatValue}>{value}</Text>
+			<Text style={styles.lifetimeStatLabel}>{label}</Text>
 		</View>
 	);
 }
@@ -600,20 +693,42 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.4,
 		marginTop: 2,
 	},
-	codeStats: {
+	// 3-col lifetime-stats band inside the identity card. Dashed top
+	// border separates it from the avatar/handle. Inner 1px ink-mute
+	// verticals divide the three columns.
+	lifetimeStatsRow: {
 		flexDirection: "row",
+		alignItems: "stretch",
+		marginTop: 14,
+		paddingTop: 12,
+		borderTopWidth: 1.5,
+		borderTopColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	lifetimeStatCol: {
+		flex: 1,
 		alignItems: "center",
-		gap: 6,
-		marginTop: 4,
+		justifyContent: "center",
 	},
-	codeStatsText: {
-		fontSize: 13,
-		fontFamily: FONTS.hand,
+	lifetimeStatDivider: {
+		width: 1,
+		backgroundColor: WHIMSY.muteSoft,
+		marginVertical: 4,
+	},
+	lifetimeStatValue: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 18,
+		color: WHIMSY.ink,
+		lineHeight: 22,
+	},
+	lifetimeStatLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
 		color: WHIMSY.mute,
-	},
-	codeStatsHeart: {
-		fontSize: 14,
-		color: WHIMSY.roseDeep,
+		marginTop: 4,
+		letterSpacing: 1.4,
+		textTransform: "uppercase",
+		textAlign: "center",
 	},
 	shareBtn: {
 		flexDirection: "row",
@@ -927,5 +1042,53 @@ const achievementStyles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 28,
 		color: WHIMSY.mute,
+	},
+});
+
+// Settings card — paper sticker grouping the housekeeping actions
+// into dashed-divided rows, with a hand-script footer underneath.
+const settingsStyles = StyleSheet.create({
+	wrap: { marginTop: 22 },
+	kicker: {
+		...KICKER_TEXT,
+		marginBottom: 8,
+	},
+	card: { padding: 0 },
+	row: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingHorizontal: 14,
+		paddingVertical: 14,
+		gap: 12,
+	},
+	rowDivider: {
+		borderBottomWidth: 1.5,
+		borderBottomColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	// Fixed-width well so each settings row's label baseline aligns
+	// even when the icon glyph differs in optical width.
+	rowIconWrap: {
+		width: 26,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	rowLabel: {
+		flex: 1,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		color: WHIMSY.ink,
+	},
+	rowChev: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.mute,
+	},
+	footer: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 22,
 	},
 });

@@ -22,8 +22,11 @@ interface Props {
 	size?: "md" | "lg";
 }
 
-const GREEDY_COLOR = "#7BA266"; // moss
-const GIVER_COLOR = "#F2C94C";  // halo gold
+// Per the redesign tokens: goblin gold (greedy) on the left half,
+// angel lilac-deep (giver) on the right half, hard-split at center.
+// Replaces the old moss/cream/halo three-fill gradient.
+const GREEDY_COLOR = WHIMSY.goblin;
+const GIVER_COLOR = WHIMSY.angel;
 
 export function AlignmentBar({ score, label: labelProp, size = "md" }: Props) {
 	const clamped = Math.max(-100, Math.min(100, score));
@@ -44,15 +47,18 @@ export function AlignmentBar({ score, label: labelProp, size = "md" }: Props) {
 				</Text>
 			</View>
 
-			<View style={[styles.track, big && styles.trackLg]}>
-				{/* gradient faked with three stops — moss → cream → gold */}
-				<View style={[styles.fill, styles.fillGreedy]} />
-				<View style={[styles.fill, styles.fillMid]} />
-				<View style={[styles.fill, styles.fillGiver]} />
-				{/* neutral-zone hairlines at ±34 */}
-				<View style={[styles.notch, { left: `${(-34 + 100) / 2}%` }]} />
-				<View style={[styles.notch, { left: `${(34 + 100) / 2}%` }]} />
-				{/* the marker */}
+			<View style={styles.trackOuter}>
+				<View style={[styles.track, big && styles.trackLg]}>
+					{/* Hard 50/50 split — goblin gold | angel lilac. No
+					    middle-tone smear; the design wants the schism to
+					    read at a glance. */}
+					<View style={[styles.fill, styles.fillGreedy]} />
+					<View style={[styles.fill, styles.fillGiver]} />
+				</View>
+				{/* Marker sits OUTSIDE the track so it can poke above
+				    the rail (top: -3) and beyond the rounded ends at
+				    score ±100 without being clipped by track's
+				    overflow:hidden. */}
 				<View
 					style={[
 						styles.marker,
@@ -89,6 +95,11 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 	},
 	standingLg: { fontSize: 16 },
+	// Marker-bearing parent — relative + visible so the marker can
+	// poke above/below the rail and beyond the rounded ends.
+	trackOuter: {
+		position: "relative",
+	},
 	track: {
 		height: 14,
 		borderRadius: 7,
@@ -96,20 +107,11 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		overflow: "hidden",
 		flexDirection: "row",
-		position: "relative",
 	},
 	trackLg: { height: 20, borderRadius: 10 },
 	fill: { flex: 1, height: "100%" },
 	fillGreedy: { backgroundColor: GREEDY_COLOR },
-	fillMid: { backgroundColor: WHIMSY.cream },
 	fillGiver: { backgroundColor: GIVER_COLOR },
-	notch: {
-		position: "absolute",
-		top: 0,
-		bottom: 0,
-		width: 1.5,
-		backgroundColor: "rgba(59,42,30,0.35)",
-	},
 	marker: {
 		position: "absolute",
 		top: -3,

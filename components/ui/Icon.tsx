@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleProp, ViewStyle } from "react-native";
+import { StyleProp, ViewStyle, View } from "react-native";
 import Svg, {
 	G,
 	Path,
@@ -10,6 +10,7 @@ import Svg, {
 	LinearGradient,
 	Stop,
 } from "react-native-svg";
+import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 
 export type IconName =
 	| "home"
@@ -45,7 +46,43 @@ export type IconName =
 	| "trending"
 	| "clock"
 	| "edit"
-	| "copy";
+	| "copy"
+	// ── Vector-icons-backed entries (delegated to MCI / Feather). ──
+	// Added during the no-emoji sweep so call sites stay
+	// <Icon name="crown" /> and we keep one consumer surface.
+	| "crown"
+	| "gift"
+	| "scales"
+	| "trophy"
+	| "ghost"
+	| "gear"
+	| "refresh"
+	| "exit"
+	| "handshake"
+	| "pig"
+	| "target"
+	| "scroll";
+
+// MCI / Feather names per delegated IconName. Filled-by-default
+// variants chosen to read against the ink-outline storybook DNA;
+// the *-outline variants exist if we want to swap later.
+const VECTOR_ICON_MAP: Partial<Record<IconName, {
+	family: "mci" | "feather";
+	name: string;
+}>> = {
+	crown:     { family: "mci",     name: "crown" },
+	gift:      { family: "mci",     name: "gift" },
+	scales:    { family: "mci",     name: "scale-balance" },
+	trophy:    { family: "mci",     name: "trophy" },
+	ghost:     { family: "mci",     name: "ghost" },
+	gear:      { family: "feather", name: "settings" },
+	refresh:   { family: "feather", name: "refresh-ccw" },
+	exit:      { family: "feather", name: "log-out" },
+	handshake: { family: "mci",     name: "handshake" },
+	pig:       { family: "mci",     name: "pig" },
+	target:    { family: "feather", name: "target" },
+	scroll:    { family: "mci",     name: "script-text-outline" },
+};
 
 interface Props {
 	name: IconName;
@@ -597,6 +634,29 @@ export function Icon({
 	strokeWidth = 1.8,
 	style,
 }: Props) {
+	// Vector-icons delegates — render via MCI / Feather. The wrapping
+	// View carries the style prop so callers can position the icon the
+	// same way they do for the hand-rolled Svg path entries.
+	const vec = VECTOR_ICON_MAP[name];
+	if (vec) {
+		return (
+			<View style={style}>
+				{vec.family === "mci" ? (
+					<MaterialCommunityIcons
+						name={vec.name as React.ComponentProps<typeof MaterialCommunityIcons>["name"]}
+						size={size}
+						color={color}
+					/>
+				) : (
+					<Feather
+						name={vec.name as React.ComponentProps<typeof Feather>["name"]}
+						size={size}
+						color={color}
+					/>
+				)}
+			</View>
+		);
+	}
 	return (
 		<Svg
 			width={size}

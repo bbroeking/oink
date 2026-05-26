@@ -7,7 +7,7 @@
 //   pending_incoming → Accept friend request
 //   friends    → an Ask row — pick 1-5, then request_tickles. This
 //                is the single door for asking a friend for tickles.
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
 	Modal,
 	View,
@@ -15,6 +15,9 @@ import {
 	StyleSheet,
 	Pressable,
 	ActivityIndicator,
+	Animated,
+	Easing,
+	Dimensions,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
@@ -33,6 +36,37 @@ import {
 	STICKER_SHADOW,
 	WHIMSY,
 } from "@/constants/theme";
+import { FRIEND_CAP_LIMIT } from "./Friends";
+
+// Maps a send/accept RPC failure reason to a human-readable line for
+// the sheet's feedback strip. Centralizes the cap messages so the
+// "at the 100-friend cap" copy reads identically across the surfaces.
+function friendActionMessage(
+	reason: string | undefined,
+	cap: number | undefined,
+	otherName: string | null
+): string {
+	const otherLabel = otherName ?? "this player";
+	switch (reason) {
+		case "at_cap":
+			return `You're at the ${cap ?? FRIEND_CAP_LIMIT}-friend cap. Remove someone to add new friends.`;
+		case "target_at_cap":
+			return `${otherLabel} is at the friend cap.`;
+		case "already_friends":
+			return `You and ${otherLabel} are already friends.`;
+		case "pending":
+			return "A request is already pending.";
+		case "self":
+			return "That's you.";
+		case "no_pending_request":
+			return "No pending request to accept.";
+		case "no_such_user":
+		case "not_found":
+			return "User not found.";
+		default:
+			return reason ?? "Couldn't complete that.";
+	}
+}
 
 type FriendshipStatus =
 	| "self"
@@ -130,6 +164,32 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// The Ask row is state-aware: a pending trade or a 24h pair
 	// cooldown blocks a new request. Derived from my_tickle_trades.
 	const [askState, setAskState] = useState<AskState>({ kind: "ready" });
+	// Lifetime tickles for the TICKLES stat column. Not part of
+	// public_user_stats yet — fetched directly from profiles in
+	// parallel so the design's 3-column stats row has the value it
+	// needs without expanding the RPC's return shape.
+	const [targetTickles, setTargetTickles] = useState<number | null>(null);
+
+	// Sheet animation — driven independently of the backdrop so the
+	// dim doesn't slide up with the card (the old animationType="slide"
+	// dragged the whole grey screen up, which looked broken). Backdrop
+	// gets a fade 0→1; the sheet gets a translateY from screen-height
+	// → 0. Both driven by the same 0..1 progress value so they finish
+	// in lockstep. screenH is captured once on mount — Dimensions reads
+	// don't fire on rotation but the sheet is portrait-only so that's
+	// fine.
+	const screenH = useRef(Dimensions.get("window").height).current;
+	const sheetAnim = useRef(new Animated.Value(0)).current;
+	useEffect(() => {
+		if (!targetUserId) return;
+		sheetAnim.setValue(0);
+		Animated.timing(sheetAnim, {
+			toValue: 1,
+			duration: 320,
+			easing: Easing.out(Easing.cubic),
+			useNativeDriver: true,
+		}).start();
+	}, [targetUserId, sheetAnim]);
 
 	useEffect(() => {
 		if (!targetUserId) {
@@ -140,6 +200,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		setLoading(true);
 		setFeedback(null);
 		setAskState({ kind: "ready" });
+		setTargetTickles(null);
 		supabase
 			.rpc("public_user_stats", { target_user_id: targetUserId })
 			.then(({ data, error }) => {
@@ -156,6 +217,18 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		supabase.rpc("my_tickle_trades").then(({ data }) => {
 			setAskState(deriveAskState(targetUserId, data as TradeRow[] | null));
 		});
+		// Lifetime tickle count for the TICKLES stat column. Profiles
+		// is readable for visible fields; a failure leaves the column
+		// blank rather than blocking the sheet.
+		supabase
+			.from("profiles")
+			.select("tickles_earned")
+			.eq("id", targetUserId)
+			.maybeSingle()
+			.then(({ data }) => {
+				const n = (data as { tickles_earned?: number } | null)?.tickles_earned;
+				setTargetTickles(typeof n === "number" ? n : null);
+			});
 	}, [targetUserId]);
 
 	const refreshStats = async () => {
@@ -174,7 +247,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			target_username: stats.username,
 			target_discriminator: stats.discriminator ?? null,
 		});
-		const r = data as { ok?: boolean; reason?: string } | null;
+		const r = data as { ok?: boolean; reason?: string; cap?: number } | null;
 		setBusy(false);
 		if (r?.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -182,7 +255,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			await refreshStats();
 			onFriendshipChanged?.();
 		} else {
-			setFeedback(r?.reason ?? "Couldn't send.");
+			setFeedback(friendActionMessage(r?.reason, r?.cap, stats.username));
 		}
 	};
 
@@ -199,12 +272,23 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const acceptIncoming = async () => {
 		if (!stats) return;
 		setBusy(true);
-		await supabase.rpc("accept_friend_request", { other_user_id: stats.user_id });
+		const { data } = await supabase.rpc("accept_friend_request", {
+			other_user_id: stats.user_id,
+		});
+		const r = data as { ok?: boolean; reason?: string; cap?: number } | null;
 		setBusy(false);
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-		setFeedback("You're friends now.");
-		await refreshStats();
-		onFriendshipChanged?.();
+		if (r?.ok) {
+			Haptics.notificationAsync(
+				Haptics.NotificationFeedbackType.Success
+			).catch(() => {});
+			setFeedback("You're friends now.");
+			await refreshStats();
+			onFriendshipChanged?.();
+		} else {
+			setFeedback(
+				friendActionMessage(r?.reason, r?.cap, stats.username ?? null)
+			);
+		}
 	};
 
 	const sendTickle = async () => {
@@ -239,16 +323,43 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 
 	if (!targetUserId) return null;
 
+	// Backdrop fades; sheet translates up from below the screen.
+	// Driving both off `sheetAnim` (0..1) keeps them in lockstep
+	// without sliding the dim as one body.
+	const backdropOpacity = sheetAnim;
+	const sheetTranslateY = sheetAnim.interpolate({
+		inputRange: [0, 1],
+		outputRange: [screenH, 0],
+	});
+
 	return (
 		<>
 			<Modal
 				visible
 				transparent
-				animationType="slide"
+				animationType="none"
 				onRequestClose={onDismiss}
 			>
-				<Pressable style={styles.backdrop} onPress={onDismiss}>
-					<Pressable style={styles.sheetWrap} onPress={() => {}}>
+				{/* Backdrop — static-position Pressable that fades in.
+				    Tap outside the sheet to dismiss. */}
+				<Animated.View
+					style={[styles.backdrop, { opacity: backdropOpacity }]}
+					pointerEvents="auto"
+				>
+					<Pressable
+						style={StyleSheet.absoluteFill}
+						onPress={onDismiss}
+					/>
+				</Animated.View>
+				{/* Sheet — slides up over the static backdrop. */}
+				<Animated.View
+					pointerEvents="box-none"
+					style={[
+						styles.sheetWrap,
+						{ transform: [{ translateY: sheetTranslateY }] },
+					]}
+				>
+					<Pressable onPress={() => {}}>
 						<Sticker
 							color="paper"
 							rotate={-0.6}
@@ -261,6 +372,12 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 								</View>
 							) : (
 								<>
+									{/* Drag indicator — the iOS-style grabber pill at
+									    the top of bottom sheets, taken straight from
+									    the design's Sheet primitive. Purely a visual
+									    affordance; the sheet isn't actually draggable
+									    here. */}
+									<View style={styles.dragIndicator} />
 									{/* Kicker label above the handle so the sheet's purpose
 									    ("profile") reads at a glance, matching the kicker
 									    treatment on the other screens. */}
@@ -301,6 +418,12 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 											value={stats.received_total}
 											tier={stats.greedy_tier_name}
 											color={WHIMSY.sun}
+										/>
+										<View style={styles.statsDivider} />
+										<StatCol
+											label="TICKLES"
+											value={targetTickles}
+											color={WHIMSY.roseDeep}
 										/>
 									</View>
 
@@ -375,7 +498,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 							)}
 						</Sticker>
 					</Pressable>
-				</Pressable>
+				</Animated.View>
 			</Modal>
 		</>
 	);
@@ -388,23 +511,24 @@ function StatCol({
 	color,
 }: {
 	label: string;
-	value: number;
-	tier: string | null;
+	// Null = data unavailable; renders as "—" so the column still
+	// occupies its slot. The TICKLES column uses this path until the
+	// public_user_stats RPC carries the field natively.
+	value: number | null;
+	tier?: string | null;
 	color: string;
 }) {
 	return (
 		<View style={styles.statCol}>
 			<Text style={styles.statLabel}>{label}</Text>
 			<Text style={[styles.statValue, { color: WHIMSY.ink }]}>
-				{value.toLocaleString()} ♥
+				{value == null ? "—" : `${value.toLocaleString()} ♥`}
 			</Text>
 			{tier ? (
 				<View style={[styles.tierChip, { backgroundColor: color }]}>
 					<Text style={styles.tierChipText}>{tier}</Text>
 				</View>
-			) : (
-				<Text style={styles.tierNone}>no tier yet</Text>
-			)}
+			) : null}
 		</View>
 	);
 }
@@ -492,6 +616,9 @@ function AskRow({
 			</View>
 		);
 	}
+	// Economic hint copy — explains the trade math to the asker BEFORE
+	// they tap submit. From the design's RitualPicker.
+	const greedyShade = amount > 2 ? "more greedy" : "a little greedy";
 	return (
 		<View style={styles.askWrap}>
 			<View style={styles.askPills}>
@@ -512,6 +639,10 @@ function AskRow({
 					</Pressable>
 				))}
 			</View>
+			<Text style={styles.askHint}>
+				★ they spend {amount} from their bank. you pocket {amount * 2}. you
+				become {greedyShade}. ★
+			</Text>
 			<Pressable
 				onPress={onAsk}
 				disabled={busy}
@@ -530,14 +661,37 @@ function AskRow({
 }
 
 const styles = StyleSheet.create({
+	// Backdrop is now its own Animated.View occupying the full
+	// screen — the dim fades in independently of the sheet's slide.
+	// flex:1 keeps it covering the screen; no justifyContent here
+	// (the sheet sibling positions itself with absolute).
 	backdrop: {
-		flex: 1,
-		justifyContent: "flex-end",
+		...StyleSheet.absoluteFillObject,
 		backgroundColor: MODAL_BACKDROP_BG,
 	},
-	sheetWrap: { padding: 16, paddingBottom: 32 },
+	// Sheet wrapper now absolutely-positioned at the bottom of the
+	// Modal root so the slide-up animation translates it from
+	// off-screen → resting at the bottom.
+	sheetWrap: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		bottom: 0,
+		padding: 16,
+		paddingBottom: 32,
+	},
 	sheet: { padding: 18 },
 	loadingWrap: { paddingVertical: 40, alignItems: "center" },
+	// iOS-style grabber pill at the top of the sheet — purely a visual
+	// affordance per the design's Sheet primitive.
+	dragIndicator: {
+		alignSelf: "center",
+		width: 44,
+		height: 4,
+		borderRadius: 2,
+		backgroundColor: WHIMSY.muteSoft,
+		marginBottom: 12,
+	},
 	sheetKicker: { ...KICKER_PILL, marginBottom: 8 },
 	header: {
 		flexDirection: "row",
@@ -607,18 +761,45 @@ const styles = StyleSheet.create({
 	actionTextSecondary: { color: WHIMSY.mute },
 	askWrap: { gap: 8 },
 	askPills: { flexDirection: "row", gap: 6 },
+	// Chunky 48×48 squares per the design's RitualPicker —
+	// commanding tap targets that look like ink-bordered tiles.
+	// Active = lilac-deep with paper text + hard ink shadow.
 	askPill: {
 		flex: 1,
-		paddingVertical: 9,
-		borderRadius: 10,
-		borderWidth: 1.5,
+		minHeight: 48,
+		paddingVertical: 0,
+		borderRadius: 14,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.paper,
 		alignItems: "center",
+		justifyContent: "center",
 	},
-	askPillActive: { backgroundColor: WHIMSY.sun },
-	askPillText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.mute },
-	askPillTextActive: { color: WHIMSY.ink },
+	askPillActive: {
+		backgroundColor: WHIMSY.lilacDeep,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
+	},
+	askPillText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.ink,
+	},
+	askPillTextActive: { color: WHIMSY.paper },
+	// Hand-script tradeoff preview between the pills and the submit
+	// button — sets expectations before commit. From the design.
+	askHint: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		marginTop: 4,
+		marginBottom: 2,
+		textAlign: "center",
+		lineHeight: 17,
+	},
 	askBlocked: {
 		backgroundColor: WHIMSY.cream,
 		borderWidth: 1.5,
@@ -652,38 +833,41 @@ const styles = StyleSheet.create({
 		gap: 6,
 		marginTop: 12,
 	},
-	// 3-tab control (Ask / Bless / Curse) — the redesign's
-	// segmented control inside the friend sheet.
+	// 3-tab control (Ask / Bless / Curse) — pill-seg with the
+	// ink-on-paper active state per the design's .pill-seg primitive
+	// (rounded container, ink-bordered, active button has ink bg +
+	// paper text).
 	actionTabs: {
 		flexDirection: "row",
-		gap: 6,
 		marginTop: 12,
 		marginBottom: 12,
 		backgroundColor: WHIMSY.paper,
-		borderRadius: 14,
-		borderWidth: 1.5,
+		borderRadius: 999,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		padding: 3,
+		padding: 4,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
 	},
 	actionTab: {
 		flex: 1,
 		paddingVertical: 8,
-		borderRadius: 10,
+		borderRadius: 999,
 		alignItems: "center",
 	},
 	actionTabActive: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.ink,
 	},
 	actionTabText: {
-		fontFamily: FONTS.hand,
+		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
 		color: WHIMSY.mute,
 	},
 	actionTabTextActive: {
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
+		color: WHIMSY.paper,
 	},
 	ritualToggleBtn: {
 		flex: 1,

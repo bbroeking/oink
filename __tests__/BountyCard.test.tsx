@@ -33,6 +33,8 @@ async function renderAct(node: React.ReactElement) {
 
 const base: WeeklyBounty = {
 	code: "generous_hoof",
+	slot_code: "generous_hoof",
+	rerolled: false,
 	name: "Generous Hoof",
 	description: "Fulfill 3 trade requests this week.",
 	goal: 3,
@@ -47,25 +49,27 @@ describe("BountyCard", () => {
 		mockRpc.mockResolvedValue({ data: { ok: true, reward_snouts: 150 }, error: null });
 	});
 
-	test("in-progress shows the progress count + 'In progress'", async () => {
+	// The redesigned card uses compact copy: "1/3" not "1 / 3", "Claim"
+	// not "Claim reward", and a ✓ check mark on its own when claimed.
+	test("in-progress shows the progress count + the … placeholder", async () => {
 		const r = await renderAct(<BountyCard bounty={base} tilt={0} />);
 		const text = textOf(r.root);
-		expect(text).toContain("1 / 3");
-		expect(text).toContain("In progress");
+		expect(text).toContain("1/3");
+		expect(text).toContain("…");
 		act(() => r.unmount());
 	});
 
-	test("ready (progress >= goal, unclaimed) shows Claim reward", async () => {
+	test("ready (progress >= goal, unclaimed) shows Claim", async () => {
 		const ready = { ...base, progress: 3 };
 		const r = await renderAct(<BountyCard bounty={ready} tilt={0} />);
-		expect(textOf(r.root)).toContain("Claim reward");
+		expect(textOf(r.root)).toContain("Claim");
 		act(() => r.unmount());
 	});
 
-	test("claimed shows the Claimed tag, no claim button", async () => {
+	test("claimed shows the ✓ tag, no claim button", async () => {
 		const claimed = { ...base, progress: 3, claimed: true };
 		const r = await renderAct(<BountyCard bounty={claimed} tilt={0} />);
-		expect(textOf(r.root)).toContain("Claimed ✓");
+		expect(textOf(r.root)).toContain("✓");
 		expect(
 			r.root.findAllByProps({ testID: "bounty-claim-generous_hoof" })
 		).toHaveLength(0);
@@ -75,7 +79,7 @@ describe("BountyCard", () => {
 	test("progress count clamps to goal even if progress overshoots", async () => {
 		const over = { ...base, progress: 9 };
 		const r = await renderAct(<BountyCard bounty={over} tilt={0} />);
-		expect(textOf(r.root)).toContain("3 / 3");
+		expect(textOf(r.root)).toContain("3/3");
 		act(() => r.unmount());
 	});
 

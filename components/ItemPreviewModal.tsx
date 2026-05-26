@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
 	Modal,
 	View,
@@ -7,21 +7,13 @@ import {
 	StyleSheet,
 	Image,
 	ImageBackground,
+	Animated,
 } from "react-native";
 import { Sticker } from "./ui/Sticker";
-import { SpritePig } from "./ui/SpritePig";
+import { PigStage } from "./ui/PigStage";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Button } from "./ui";
-import {
-	HAT_IMAGES,
-	HAT_OVERLAYS,
-	CATEGORY_OVERLAYS,
-	DEFAULT_HAT_OVERLAY,
-	Z_BEHIND_PIG,
-	HatRow,
-	RARITY_COLORS,
-} from "@/constants/hats";
-import { ITEM_PREBAKED, isPrebaked } from "@/constants/prebaked";
+import { HAT_IMAGES, HatRow, RARITY_COLORS } from "@/constants/hats";
 import { FONTS, MODAL_BACKDROP_BG, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
 const RARITY_GRADIENT: Record<string, string> = {
@@ -31,6 +23,116 @@ const RARITY_GRADIENT: Record<string, string> = {
 	epic: WHIMSY.lilac,
 	legendary: WHIMSY.sun,
 };
+
+// Tickle-particle preview — loops the same burst the Barn would
+// fire on a tap (per-particle dx / rise / scale / tilt / duration
+// jitter) so the player sees the actual cosmetic, not a still
+// image. Bursts every ~900ms while the modal is mounted; clears
+// its interval + in-flight animations on unmount.
+function TickleParticlePreview({ source }: { source: number }) {
+	type Float = {
+		id: number;
+		dx: number;
+		rise: number;
+		rot: number;
+		scaleMax: number;
+		duration: number;
+		anim: Animated.Value;
+	};
+	const [floats, setFloats] = useState<Float[]>([]);
+	const nextId = useRef(0);
+
+	useEffect(() => {
+		let cancelled = false;
+		const burst = () => {
+			if (cancelled) return;
+			const n = 6 + Math.floor(Math.random() * 3); // 6–8 per cycle
+			for (let i = 0; i < n; i++) {
+				const stagger = i === 0 ? 0 : Math.floor(Math.random() * 140);
+				setTimeout(() => {
+					if (cancelled) return;
+					const id = nextId.current++;
+					const dx = Math.random() * 180 - 90;
+					const rise = -(150 + Math.random() * 70);
+					const rot = Math.random() * 50 - 25;
+					const scaleMax = 0.9 + Math.random() * 0.5;
+					const duration = 1200 + Math.floor(Math.random() * 400);
+					const anim = new Animated.Value(0);
+					setFloats((f) => [
+						...f,
+						{ id, dx, rise, rot, scaleMax, duration, anim },
+					]);
+					Animated.timing(anim, {
+						toValue: 1,
+						duration,
+						useNativeDriver: true,
+					}).start(() => {
+						setFloats((f) => f.filter((x) => x.id !== id));
+					});
+				}, stagger);
+			}
+		};
+		burst();
+		const t = setInterval(burst, 1100);
+		return () => {
+			cancelled = true;
+			clearInterval(t);
+		};
+	}, []);
+
+	return (
+		<View pointerEvents="none" style={StyleSheet.absoluteFill}>
+			{floats.map((f) => {
+				const translateY = f.anim.interpolate({
+					inputRange: [0, 0.12, 1],
+					outputRange: [0, -10, f.rise],
+				});
+				const translateX = f.anim.interpolate({
+					inputRange: [0, 1],
+					outputRange: [0, f.dx],
+				});
+				const opacity = f.anim.interpolate({
+					inputRange: [0, 0.15, 0.85, 1],
+					outputRange: [0, 1, 1, 0],
+				});
+				const scale = f.anim.interpolate({
+					inputRange: [0, 0.15, 1],
+					outputRange: [0.55, f.scaleMax, f.scaleMax * 0.9],
+				});
+				return (
+					<Animated.Image
+						key={f.id}
+						source={source}
+						resizeMode="contain"
+						style={[
+							particleStyles.particle,
+							{
+								opacity,
+								transform: [
+									{ translateX },
+									{ translateY },
+									{ rotate: `${f.rot}deg` },
+									{ scale },
+								],
+							},
+						]}
+					/>
+				);
+			})}
+		</View>
+	);
+}
+
+const particleStyles = StyleSheet.create({
+	particle: {
+		position: "absolute",
+		left: "50%",
+		bottom: 36,
+		width: 56,
+		height: 56,
+		marginLeft: -28,
+	},
+});
 
 interface Props {
 	item: HatRow | null;
@@ -63,21 +165,29 @@ export function ItemPreviewModal({
 	const rarity = item.rarity ?? "common";
 	const rarityColor = RARITY_COLORS[rarity];
 	const itemSrc = HAT_IMAGES[item.id] ?? null;
-	// Same precedence as SwipeElement → matches what you see in the
-	// real Barn render. Earlier this modal used a different/looser
-	// chain that produced wrong positions for items with no manual
-	// entry in HAT_OVERLAYS.
-	const overlay =
-		HAT_OVERLAYS[item.id] ??
-		(item.category && CATEGORY_OVERLAYS[item.category]) ??
-		DEFAULT_HAT_OVERLAY;
-	const isBehind = item.category && Z_BEHIND_PIG[item.category];
-	const prebaked = isPrebaked(item.id) ? ITEM_PREBAKED[item.id] : null;
 	// Backgrounds preview as the FULL image (no pig in the card). They
 	// fill the screen at runtime, so showing a scaled pig over them
 	// in the preview misrepresents what the player will see when
 	// equipped.
 	const isBackgroundItem = item.category === "background";
+	// Tickle particles preview as JUST the looping burst animation —
+	// no pig, no static overlay. They're animation-only cosmetics
+	// (drift up + fade on tickle), so a still pig with a frozen
+	// particle on top misrepresents what you'd actually see.
+	const isTickleParticle = item.category === "tickle_particle";
+
+	// Route the previewed item into the appropriate equip slot for
+	// PigStage. Auras go behind the pig; held items anchor to the
+	// right hand; everything else (hats, glasses, masks, scarves)
+	// is the main slot. PigStage handles z-order + HAT_REL anchor
+	// math from there — same code path the Barn uses, so re-tuning
+	// via the /item-anchor tool flows here automatically.
+	const previewSlot = { id: item.id, category: item.category, emoji: item.emoji };
+	const stageEquipped = item.category === "aura" || item.category === "held"
+		? null
+		: previewSlot;
+	const stageEquippedAura = item.category === "aura" ? previewSlot : null;
+	const stageEquippedHeld = item.category === "held" ? previewSlot : null;
 
 	return (
 		<Modal visible={!!item} animationType="fade" transparent onRequestClose={onClose}>
@@ -104,7 +214,9 @@ export function ItemPreviewModal({
 							{ backgroundColor: RARITY_GRADIENT[rarity] },
 						]}
 					>
-						{isBackgroundItem && itemSrc ? (
+						{isTickleParticle && itemSrc ? (
+							<TickleParticlePreview source={itemSrc} />
+						) : isBackgroundItem && itemSrc ? (
 							<Image
 								source={itemSrc}
 								style={styles.fillImage}
@@ -112,39 +224,12 @@ export function ItemPreviewModal({
 							/>
 						) : (
 							<View style={styles.previewStage}>
-								{/* Behind pig: auras, capes (NOT backgrounds — those
-								    use the no-pig branch above). */}
-								{isBehind && itemSrc && (
-									<View style={[styles.overlayBox, overlay, { zIndex: 1 }]}>
-										<Image
-											source={itemSrc}
-											style={styles.fillImage}
-											resizeMode="contain"
-										/>
-									</View>
-								)}
-								<View style={[styles.previewPig, { zIndex: 2 }]}>
-									<SpritePig
-										animation="idle"
-										size={300}
-										customFrames={prebaked ?? undefined}
-									/>
-								</View>
-								{/* In front of pig */}
-								{!isBehind && itemSrc && !prebaked && (
-									<View style={[styles.overlayBox, overlay, { zIndex: 10 }]}>
-										<Image
-											source={itemSrc}
-											style={styles.fillImage}
-											resizeMode="contain"
-										/>
-									</View>
-								)}
-								{!itemSrc && item.emoji && (
-									<View style={[styles.overlayBox, overlay, { zIndex: 10 }]}>
-										<Text style={styles.emojiPlaceholder}>{item.emoji}</Text>
-									</View>
-								)}
+								<PigStage
+									pigAnimation="idle"
+									equipped={stageEquipped}
+									equippedAura={stageEquippedAura}
+									equippedHeld={stageEquippedHeld}
+								/>
 							</View>
 						)}
 					</View>

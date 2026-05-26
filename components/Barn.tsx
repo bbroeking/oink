@@ -8,11 +8,11 @@ import {
 	Platform,
 	SafeAreaView,
 	Pressable,
-	Alert,
 	Text,
 	Animated,
 	DevSettings,
 } from "react-native";
+import Svg, { Polygon, Rect, Line } from "react-native-svg";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -26,16 +26,15 @@ import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
 import { LuckyPigModal } from "./LuckyPigModal";
 import { LuckyTitleUnlockModal } from "./LuckyTitleUnlockModal";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 import type { TitleRow } from "@/constants/title_types";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 import { BarnOverlay } from "./ui/BarnOverlay";
 import { BarnActiveEffectsStrip } from "./BarnActiveEffectsStrip";
-import { AlignmentEmblem } from "./ui/AlignmentEmblem";
 import {
 	alignmentLabel,
 	alignmentDisplay,
-	alignmentIcon,
 	type AlignmentLabel,
 } from "@/utils/alignment";
 
@@ -67,12 +66,11 @@ const LUCKY_GUARANTEED_BY_TICKLE_N = 8;
 const LUCKY_TRIGGER_CHANCE_SUNBEAM = 0.4;
 const PHANTOM_ITCH_MISS_CHANCE = 0.33;
 
-// Four pig-voice oink variants; one is picked at random on each tickle
-// so the sound feels alive instead of looping the same clip.
-const oinkSound1 = require("../assets/sounds/oink_1.mp3");
-const oinkSound2 = require("../assets/sounds/oink_2.mp3");
-const oinkSound3 = require("../assets/sounds/oink_3.mp3");
-const oinkSound4 = require("../assets/sounds/oink_4.mp3");
+// Two pig-laugh variants; one is picked at random on each tickle
+// so the sound feels alive instead of looping the same clip. Old
+// oink_1..4 set was replaced with cuter cartoon-pig laughs.
+const laughSound1 = require("../assets/sounds/laugh_1.mp3");
+const laughSound2 = require("../assets/sounds/laugh_2.mp3");
 const deniedSound = require("../assets/sounds/denied.mp3");
 
 // Friendly, slightly competitive pig-voice lines for pass events. Picked
@@ -87,6 +85,136 @@ const PASS_LINES: ((name: string) => string)[] = [
 ];
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// ── HeartFloats ────────────────────────────────────────────────
+// Tap-feedback particles that drift up + fade out above the pig.
+// Imperative API: <HeartFloats ref={r} /> + r.current.spawn().
+// ~90% hearts, ~10% sparkle stars. From the redesign — gives a tap
+// visible payoff without requiring a server roundtrip.
+interface HeartFloatsHandle {
+	spawn: () => void;
+}
+interface HeartFloatsProps {
+	// When set, the float renders this image instead of the
+	// default ♥/✦ text glyph. Sourced from the player's equipped
+	// tickle particle (HAT_IMAGES[active_tickle_particle_id]).
+	particleImage?: number | null;
+}
+const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
+	({ particleImage }, ref) => {
+		type Float = {
+			id: number;
+			dx: number;          // horizontal drift target (px)
+			rise: number;        // how high it climbs (px, negative)
+			rot: number;         // tilt for the image variant (deg)
+			scaleMax: number;    // peak scale, scattered per particle
+			duration: number;    // total animation duration (ms)
+			char: string;        // ♥ / ✦ when no image is equipped
+			anim: Animated.Value;
+		};
+		const [floats, setFloats] = useState<Float[]>([]);
+		const nextId = useRef(0);
+
+		// One tap spawns a HANDFUL — staggered emit so they trickle
+		// out rather than appearing as a solid block. Spread, rise,
+		// scale, tilt, and duration are all jittered per particle so
+		// the burst doesn't read as a clone army.
+		React.useImperativeHandle(ref, () => ({
+			spawn: () => {
+				const burst = 7 + Math.floor(Math.random() * 3); // 7–9 per tap
+				for (let i = 0; i < burst; i++) {
+					const stagger = i === 0 ? 0 : Math.floor(Math.random() * 120);
+					setTimeout(() => {
+						const id = nextId.current++;
+						const dx = Math.random() * 160 - 80;            // wider spread
+						const rise = -(95 + Math.random() * 45);         // -95 → -140
+						const rot = Math.random() * 50 - 25;             // ±25°
+						const scaleMax = 0.85 + Math.random() * 0.45;    // 0.85 → 1.3
+						const duration = 950 + Math.floor(Math.random() * 350); // 950–1300ms
+						const char = Math.random() < 0.1 ? "✦" : "♥";
+						const anim = new Animated.Value(0);
+						setFloats((f) => [
+							...f,
+							{ id, dx, rise, rot, scaleMax, duration, char, anim },
+						]);
+						Animated.timing(anim, {
+							toValue: 1,
+							duration,
+							useNativeDriver: true,
+						}).start(() => {
+							setFloats((f) => f.filter((x) => x.id !== id));
+						});
+					}, stagger);
+				}
+			},
+		}));
+
+		return (
+			<View pointerEvents="none" style={StyleSheet.absoluteFill}>
+				{floats.map((f) => {
+					const translateY = f.anim.interpolate({
+						inputRange: [0, 0.15, 1],
+						outputRange: [0, -12, f.rise],
+					});
+					const opacity = f.anim.interpolate({
+						inputRange: [0, 0.15, 0.85, 1],
+						outputRange: [0, 1, 1, 0],
+					});
+					const scale = f.anim.interpolate({
+						inputRange: [0, 0.15, 1],
+						outputRange: [0.5, f.scaleMax, f.scaleMax * 0.9],
+					});
+					// Equipped tickle-particle path: render the image
+					// instead of the typographic glyph. Fall back to
+					// the original ♥/✦ when no particle is equipped
+					// so the empty-slot experience still has motion.
+					if (particleImage) {
+						return (
+							<Animated.Image
+								key={f.id}
+								source={particleImage}
+								resizeMode="contain"
+								style={[
+									styles.floatImage,
+									{
+										transform: [
+											{ translateX: f.dx },
+											{ translateY },
+											{ rotate: `${f.rot}deg` },
+											{ scale },
+										],
+										opacity,
+									},
+								]}
+							/>
+						);
+					}
+					return (
+						<Animated.Text
+							key={f.id}
+							style={[
+								styles.floatChar,
+								{
+									color:
+										f.char === "✦" ? WHIMSY.sun : WHIMSY.roseDeep,
+									transform: [
+										{ translateX: f.dx },
+										{ translateY },
+										{ scale },
+									],
+									opacity,
+								},
+							]}
+						>
+							{f.char}
+						</Animated.Text>
+					);
+				})}
+			</View>
+		);
+	}
+);
+HeartFloats.displayName = "HeartFloats";
 
 interface EquipSlot {
 	id: string;
@@ -107,6 +235,10 @@ interface Stats {
 	activeAura: EquipSlot | null;
 	activeBackground: EquipSlot | null;
 	activeHeld: EquipSlot | null;
+	// Tickle particle drives the float graphics on each tap. Null
+	// = default ♥/✦ text glyph behavior; when present the equipped
+	// PNG renders in place of the glyph (see HeartFloats above).
+	activeTickleParticle: EquipSlot | null;
 	currentTier: number;
 	totalTiers: number;
 }
@@ -211,12 +343,20 @@ export default function Barn() {
 		activeAura: null,
 		activeBackground: null,
 		activeHeld: null,
+		activeTickleParticle: null,
 		currentTier: 1,
 		totalTiers: 30,
 	});
 	const [statsLoaded, setStatsLoaded] = useState(false);
 	const [sixSevenTick, setSixSevenTick] = useState(0);
 	const sixSevenPromptedRef = useRef(false);
+	// Storybook dialog state for the 67-celebration prompt. Replaces the
+	// bare iOS Alert.alert that used to fire here — same modal-style
+	// switch we made for the bounty Swap dialog, applied here because
+	// the iOS native alert may have been contributing to a freeze
+	// reported on a TestFlight build (pigAnim stuck at "happy" after
+	// the celebration animation, blocking all subsequent taps).
+	const [sixSevenDialog, setSixSevenDialog] = useState(false);
 	// Tracks the previous-seen alignment_score for the in-app toast on
 	// every shift. The server-side `shift_alignment` push covers the
 	// milestone moments (±10/±25/±50/±100); this is the every-shift
@@ -292,11 +432,9 @@ export default function Barn() {
 	};
 	// useAudioPlayer is a hook, so each variant gets its own top-level
 	// call. Bundled into an array below for random-pick playback.
-	const oinkPlayer1 = useAudioPlayer(oinkSound1);
-	const oinkPlayer2 = useAudioPlayer(oinkSound2);
-	const oinkPlayer3 = useAudioPlayer(oinkSound3);
-	const oinkPlayer4 = useAudioPlayer(oinkSound4);
-	const oinkPlayers = [oinkPlayer1, oinkPlayer2, oinkPlayer3, oinkPlayer4];
+	const laughPlayer1 = useAudioPlayer(laughSound1);
+	const laughPlayer2 = useAudioPlayer(laughSound2);
+	const oinkPlayers = [laughPlayer1, laughPlayer2];
 	const deniedPlayer = useAudioPlayer(deniedSound);
 	const [toast, setToast] = useState<{
 		title: string;
@@ -305,6 +443,8 @@ export default function Barn() {
 	} | null>(null);
 	const toastOpacity = useRef(new Animated.Value(0)).current;
 	const toastY = useRef(new Animated.Value(-20)).current;
+	// Heart-particle ref — imperative spawn on successful tickle.
+	const heartFloatsRef = useRef<HeartFloatsHandle>(null);
 	// Track which pass-event IDs we've already surfaced this session so a
 	// focus-bounce (or a delayed seen-write) doesn't replay the same toast.
 	const shownPassEventIds = useRef<Set<number>>(new Set());
@@ -386,24 +526,7 @@ export default function Barn() {
 		(async () => {
 			const seen = await AsyncStorage.getItem("seen_67");
 			if (seen === "1") return;
-			Alert.alert(
-				"6 7! 🐷",
-				"You've crossed 67 tickles. Wanna celebrate with a six-seven?",
-				[
-					{
-						text: "Skip",
-						style: "cancel",
-						onPress: () => AsyncStorage.setItem("seen_67", "1"),
-					},
-					{
-						text: "Six seven!",
-						onPress: () => {
-							AsyncStorage.setItem("seen_67", "1");
-							setSixSevenTick((t) => t + 1);
-						},
-					},
-				]
-			);
+			setSixSevenDialog(true);
 		})();
 	}, [stats.counter]);
 
@@ -479,6 +602,8 @@ export default function Barn() {
 					active_background: SlotBlob;
 					active_held_id?: string | null;
 					active_held?: SlotBlob;
+					active_tickle_particle_id?: string | null;
+					active_tickle_particle?: SlotBlob;
 					balance: number;
 					cap: number;
 					next_regen_seconds: number | null;
@@ -503,6 +628,10 @@ export default function Barn() {
 					activeAura: toSlot(r.active_aura_id, r.active_aura),
 					activeBackground: toSlot(r.active_background_id, r.active_background),
 					activeHeld: toSlot(r.active_held_id ?? null, r.active_held ?? null),
+					activeTickleParticle: toSlot(
+						r.active_tickle_particle_id ?? null,
+						r.active_tickle_particle ?? null
+					),
 					currentTier: r.current_tier,
 					totalTiers: r.total_tiers,
 				});
@@ -520,7 +649,7 @@ export default function Barn() {
 				supabase
 					.from("profiles")
 					.select(
-						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id, alignment_score"
+						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, alignment_score"
 					)
 					.eq("id", user.id)
 					.single(),
@@ -546,6 +675,7 @@ export default function Barn() {
 				active_aura_id?: string | null;
 				active_background_id?: string | null;
 				active_held_id?: string | null;
+				active_tickle_particle_id?: string | null;
 				alignment_score?: number | null;
 			} | null;
 
@@ -572,6 +702,7 @@ export default function Barn() {
 				prof?.active_aura_id ?? null,
 				prof?.active_background_id ?? null,
 				prof?.active_held_id ?? null,
+				prof?.active_tickle_particle_id ?? null,
 			];
 			const idsToLookUp = slotIds.filter((x): x is string => !!x);
 			const hatMetaById = new Map<
@@ -606,6 +737,9 @@ export default function Barn() {
 				activeAura: toSlot(prof?.active_aura_id ?? null),
 				activeBackground: toSlot(prof?.active_background_id ?? null),
 				activeHeld: toSlot(prof?.active_held_id ?? null),
+				activeTickleParticle: toSlot(
+					prof?.active_tickle_particle_id ?? null
+				),
 				currentTier: season?.current_tier ?? 1,
 				totalTiers: season?.season?.total_tiers ?? 30,
 			});
@@ -643,7 +777,7 @@ export default function Barn() {
 			Haptics.notificationAsync(
 				Haptics.NotificationFeedbackType.Warning
 			).catch(() => {});
-			showToast("👻 Phantom itch", "Your tap slipped right off.");
+			showToast("Phantom itch", "Your tap slipped right off.");
 			return;
 		}
 
@@ -652,6 +786,10 @@ export default function Barn() {
 			oink.seekTo(0);
 			oink.play();
 		} catch {}
+
+		// Spawn a floating ♥ (occasionally ✦) above the pig — visible
+		// reward for the tap, before we even round-trip the RPC.
+		heartFloatsRef.current?.spawn();
 
 		// ── Lucky Pig roll ────────────────────────────────────────
 		// Trigger probability:
@@ -691,6 +829,24 @@ export default function Barn() {
 				// until the burst dismisses to keep the beats separated.
 				pendingTitleRoll.current =
 					Math.random() < LUCKY_TITLE_UNLOCK_CHANCE;
+				// sun_beam is consume-on-first-lucky — clear it as soon
+				// as a lucky pig actually fires so subsequent rolls drop
+				// back to the base chance instead of keeping the boost
+				// for the rest of the timed window. Best-effort: a
+				// network failure leaves the buff in place but the
+				// blessing's own 4h expiry caps the worst case.
+				if (effects.sunBeam) {
+					void (async () => {
+						try {
+							await supabase.rpc("clear_blessing", {
+								target_kind: "sun_beam",
+							});
+							setEffects((e) => ({ ...e, sunBeam: false }));
+						} catch {
+							// best-effort; the 4h expiry caps worst case
+						}
+					})();
+				}
 			}
 		} else {
 			if (Math.random() < LUCKY_DOUBLE_CHANCE) {
@@ -750,6 +906,37 @@ export default function Barn() {
 				blessed={effects.blessed}
 				cursed={effects.cursed}
 			/>
+
+			{/* Tiny red barn silhouette tucked into the bottom-left of
+			    the painted scene. Decorative — only visible when there's
+			    no cosmetic background equipped (since PageBackground
+			    paints over the area when it is). Behind everything else. */}
+			{!stats.activeBackground && (
+				<View pointerEvents="none" style={styles.barnSilhouette}>
+					<Svg viewBox="0 0 64 56" width={64} height={56}>
+						<Polygon
+							points="32,4 4,22 4,52 60,52 60,22"
+							fill="#c44848"
+							stroke={WHIMSY.ink}
+							strokeWidth={2}
+						/>
+						<Rect x={22} y={32} width={20} height={20} fill={WHIMSY.ink} />
+						<Line x1={22} y1={22} x2={22} y2={52} stroke={WHIMSY.ink} strokeWidth={1.5} />
+						<Line x1={42} y1={22} x2={42} y2={52} stroke={WHIMSY.ink} strokeWidth={1.5} />
+					</Svg>
+				</View>
+			)}
+
+			{/* Generous radial puffs — two soft white clouds that fade
+			    in at the top-left/right when alignment crosses into
+			    angel territory. "Angel-coded" overlay from the design. */}
+			{alignment === "angel" && (
+				<>
+					<View pointerEvents="none" style={[styles.generousPuff, styles.generousPuffL]} />
+					<View pointerEvents="none" style={[styles.generousPuff, styles.generousPuffR]} />
+				</>
+			)}
+
 			<SafeAreaView style={styles.contentContainer}>
 				<View style={styles.statsRow}>
 					<PaperTicket
@@ -777,30 +964,10 @@ export default function Barn() {
 				    → Inbox. Tapping a chip routes to the hub. */}
 				<BarnActiveEffectsStrip />
 
-				{/* Hanging Pilgrim/Generous/Greedy placard — top-right, just
-				    below the stat tickets, with a tiny "string" above so it
-				    reads as a sign tacked to the barn wall. (From the
-				    redesign chat — pulled the alignment label out of the
-				    center of the screen so the path to the pig is clear.) */}
-				{statsLoaded && (
-					<View pointerEvents="none" style={styles.alignPlacardWrap}>
-						<View style={styles.alignPlacardString} />
-						<Sticker
-							color="paper"
-							rotate={-4}
-							radius={10}
-							style={styles.alignPlacard}
-						>
-							<AlignmentEmblem
-								kind={alignmentIcon(alignment)}
-								size={14}
-							/>
-							<Text style={styles.alignPlacardText}>
-								{alignmentDisplay(alignment)}
-							</Text>
-						</Sticker>
-					</View>
-				)}
+				{/* Alignment placard removed — the hanging Pilgrim/
+				    Generous/Greedy sign that used to live up here
+				    was redundant with the Account alignment story
+				    block and crowded the painted scene. */}
 
 				{/* Active lucky-pig window indicator. Sits below the
 				    stat cards + above the pig — never collides with the
@@ -826,10 +993,21 @@ export default function Barn() {
 							equippedBackground={stats.activeBackground}
 							equippedHeld={stats.activeHeld}
 						/>
+						{/* Floating ♥/✦ particles drift up from above the pig on
+						    every successful tickle. Absolute-fills the swipe
+						    container so the hearts sit *over* the pig sprite. */}
+						<HeartFloats
+							ref={heartFloatsRef}
+							particleImage={
+								stats.activeTickleParticle?.id
+									? HAT_IMAGES[stats.activeTickleParticle.id] ?? null
+									: null
+							}
+						/>
+						{/* Soft elliptical shadow under the pig — gives the
+						    sprite a little grounding without a hard drop. */}
+						<View pointerEvents="none" style={styles.pigShadow} />
 					</View>
-					{/* Hint kicker — explicit instruction so first-timers see
-					    the affordance. From the redesign. */}
-					<Text style={styles.tickleHint}>tap rosie to tickle</Text>
 				</View>
 
 				{/* Hidden — the "Tier X of 30" wooden sign isn't meaningful
@@ -916,6 +1094,23 @@ export default function Barn() {
 				}}
 			/>
 
+			<ConfirmDialog
+				open={sixSevenDialog}
+				title="6 7!"
+				body="You've crossed 67 tickles. Wanna celebrate with a six-seven?"
+				confirmLabel="Six seven!"
+				cancelLabel="Skip"
+				onCancel={() => {
+					setSixSevenDialog(false);
+					AsyncStorage.setItem("seen_67", "1");
+				}}
+				onConfirm={() => {
+					setSixSevenDialog(false);
+					AsyncStorage.setItem("seen_67", "1");
+					setSixSevenTick((t) => t + 1);
+				}}
+			/>
+
 			<LuckyTitleUnlockModal
 				title={unlockedTitle}
 				onDismiss={() => setUnlockedTitle(null)}
@@ -954,41 +1149,9 @@ const styles = StyleSheet.create({
 		gap: 10,
 		zIndex: 1,
 	},
-	// Pilgrim placard — hangs top-right, just below the stat tickets.
-	alignPlacardWrap: {
-		position: "absolute",
-		top: Platform.OS === "ios" ? 132 : 144,
-		right: 20,
-		alignItems: "center",
-		zIndex: 3,
-	},
-	alignPlacardString: {
-		width: 1.5,
-		height: 14,
-		backgroundColor: WHIMSY.ink,
-		opacity: 0.55,
-	},
-	alignPlacard: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		paddingHorizontal: 10,
-		paddingVertical: 6,
-	},
-	alignPlacardText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
-		color: WHIMSY.ink,
-	},
-	tickleHint: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.4,
-		textTransform: "uppercase",
-		textAlign: "center",
-		marginTop: 12,
-	},
+	// Placard styles dropped with the JSX above.
+	// tickleHint dropped — the "tap rosie to tickle" prompt was
+	// noise once the pig was the only thing on screen.
 	ticketWrap: {
 		position: "relative",
 		paddingTop: 12,
@@ -1051,11 +1214,80 @@ const styles = StyleSheet.create({
 	swipeContainer: {
 		width: "100%",
 		alignItems: "center",
+		position: "relative",
 		// Slight downward push so the feet just kiss the bottom — keeps
 		// the framing consistent across iPhone SE → Pro Max, with the
 		// pig sitting noticeably higher than the original 11%/7% clip
 		// values so all 4 corners + the tickle CTAs above breathe.
 		marginBottom: -Math.round(SCREEN_HEIGHT * 0.03),
+	},
+	// Equipped tickle particle — same screen-anchor as floatChar so
+	// the image drifts up from the same point. ~40px reads cleanly
+	// against the pig at any device size.
+	floatImage: {
+		position: "absolute",
+		left: "50%",
+		bottom: "55%",
+		width: 40,
+		height: 40,
+		marginLeft: -20,
+	},
+	floatChar: {
+		position: "absolute",
+		left: "50%",
+		bottom: "55%",
+		fontFamily: FONTS.whimsy,
+		fontSize: 26,
+		// Ink halo via four 1px offset text-shadows isn't possible in
+		// RN <Text>; the ink color stands out enough on its own against
+		// the painted barn backdrop.
+		marginLeft: -13, // visually center the glyph on left:50%
+	},
+	pigShadow: {
+		position: "absolute",
+		bottom: 4,
+		alignSelf: "center",
+		width: 180,
+		height: 14,
+		borderRadius: 90,
+		backgroundColor: "rgba(42,31,21,0.22)",
+		// Use opacity gradient via stacked transparent layers? RN doesn't
+		// do radial — flat ellipse with low alpha gets us close enough.
+	},
+	// Tiny red barn silhouette painted into the bottom-left horizon.
+	// Sits behind the SafeAreaView content so the pig + stickers always
+	// read above it. Opacity-reduced so it never competes for attention.
+	barnSilhouette: {
+		position: "absolute",
+		bottom: 160,
+		left: 22,
+		width: 64,
+		height: 56,
+		opacity: 0.45,
+		zIndex: 0,
+	},
+	// Generous (angel-coded) radial puffs — soft white clouds that
+	// fade in at top-left + top-right when alignment >= angel
+	// threshold. The radial-gradient via View isn't possible in RN;
+	// a translucent white circle with low-opacity edges via a single
+	// background gets us close.
+	generousPuff: {
+		position: "absolute",
+		backgroundColor: "rgba(255,255,255,0.45)",
+		borderRadius: 999,
+		zIndex: 1,
+	},
+	generousPuffL: {
+		top: 130,
+		left: -10,
+		width: 90,
+		height: 50,
+	},
+	generousPuffR: {
+		top: 240,
+		right: -20,
+		width: 110,
+		height: 60,
 	},
 	signWrap: {
 		alignItems: "center",

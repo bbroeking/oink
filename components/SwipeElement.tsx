@@ -12,25 +12,10 @@ import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
-import {
-	HAT_IMAGES,
-	HAT_OVERLAYS,
-	HAT_REL,
-	CATEGORY_OVERLAYS,
-	CATEGORY_ANCHORS,
-	CATEGORY_PERANIM_SHIFTS,
-	DEFAULT_HAT_OVERLAY,
-	Z_BEHIND_PIG,
-	PIG_CANVAS,
-	frameDelta,
-	resolveAnchor,
-	PigAnimationKey,
-	HatOverlay,
-	AnchorName,
-	RelSpec,
-} from "../constants/hats";
-import { ITEM_PREBAKED, isPrebaked } from "../constants/prebaked";
-import { SpritePig, PigAnimation } from "./ui/SpritePig";
+import { HAT_IMAGES, HAT_REL } from "../constants/hats";
+import type { RelSpec } from "../constants/hat_overlay_types";
+import { PigAnimation } from "./ui/SpritePig";
+import { PigStage, resolveSlot } from "./ui/PigStage";
 import { AnchorDebugOverlay, type DebugItem } from "./dev/AnchorDebugOverlay";
 
 // To swap to <RivePig> once you have a Rive build:
@@ -48,45 +33,6 @@ interface EquippedItem {
 	id: string;
 	category?: string | null;
 	emoji?: string | null;
-}
-
-// Renders a single equipped item — the same JSX is used both BEHIND and
-// IN FRONT of the pig, so it lives in one place. The `zIndex` decides
-// stacking against the pig sprite when it's a sibling node.
-function ItemOverlay({
-	overlay,
-	imageSrc,
-	emoji,
-	zIndex = 5,
-}: {
-	overlay: HatOverlay;
-	imageSrc: number | null;
-	emoji: string | null;
-	zIndex?: number;
-}) {
-	return (
-		<View style={[styles.overlayBox, overlay, { zIndex }]}>
-			{imageSrc ? (
-				<Image
-					source={imageSrc}
-					style={styles.fillImage}
-					resizeMode="contain"
-				/>
-			) : emoji ? (
-				<Text
-					style={[
-						styles.emojiPlaceholder,
-						{
-							fontSize:
-								Math.min(overlay.width, overlay.height) * 0.7,
-						},
-					]}
-				>
-					{emoji}
-				</Text>
-			) : null}
-		</View>
-	);
 }
 
 interface SwipeElementProps {
@@ -271,144 +217,53 @@ export default function SwipeElement({
 			if (canTickle) setPigAnim("idle");
 			else setPigAnim("sad");
 		});
+
+		// Safety reset — if the .start() callback never fires (component
+		// unmount mid-animation, state interrupted by another setPigAnim
+		// upstream, native driver hiccup), pigAnim could stay at "happy"
+		// forever and `handlePress` would silently block every future tap
+		// (the `reacting` check above filters anything not idle/sad). A
+		// TestFlight report after build 70 had exactly this symptom — "ran
+		// fast then closed out, now I can't tickle." 3s is the full 6-7
+		// sequence (~2.1s) + a buffer; if pigAnim is STILL "happy" by then,
+		// force it back to idle/sad regardless of canTickle's current value.
+		const safetyTimer = setTimeout(() => {
+			setPigAnim((cur) => {
+				if (cur === "happy") return canTickle ? "idle" : "sad";
+				return cur;
+			});
+		}, 3000);
+		return () => clearTimeout(safetyTimer);
 	}, [playSixSeven, canTickle]);
-
-	// Compute the per-frame, per-anchor overlay for a single equipped
-	// item. Used three times below: main slot (rendered in front),
-	// aura slot, background slot (both rendered behind the pig).
-	const resolveSlot = (slot: EquippedItem | null | undefined) => {
-		if (!slot) return null;
-		const itemId = slot.id;
-		const category = slot.category ?? null;
-		const emoji = slot.emoji ?? null;
-		const prebaked = isPrebaked(itemId) ? ITEM_PREBAKED[itemId] : null;
-		const imageSrc = HAT_IMAGES[itemId];
-
-		// Anchor-RELATIVE placement (the new model). If the item has a
-		// rel spec, size + position it so its pivot point lands on the
-		// resolved pig anchor for the current frame. All fractions, so
-		// it stays correct as the pig scales across screens.
-		const relSpec = relOverrides[itemId] || HAT_REL[itemId];
-		const isFullCanvasCat =
-			category === "background" || category === "aura";
-		if (relSpec && imageSrc && !isFullCanvasCat) {
-			const anchorName: AnchorName =
-				relSpec.anchor ??
-				(category ? CATEGORY_ANCHORS[category] : undefined) ??
-				"head";
-			const a = resolveAnchor(
-				pigAnim as PigAnimationKey,
-				pigFrameIdx,
-				anchorName,
-			);
-			const src = Image.resolveAssetSource(imageSrc);
-			const aspect = src && src.width ? src.height / src.width : 1;
-			const w = relSpec.widthFrac * PIG_CANVAS;
-			const h = w * aspect;
-			const overlay: HatOverlay = {
-				left: a.x - relSpec.pivot.x * w,
-				bottom: PIG_CANVAS - (a.y - relSpec.pivot.y * h) - h,
-				width: w,
-				height: h,
-				anchor: anchorName,
-				behind: relSpec.behind,
-			};
-			return { itemId, category, emoji, imageSrc, prebaked: null, overlay };
-		}
-
-		// Resolve the base overlay (rest position).
-		//
-		// Full-canvas categories (aura, background) MUST use the
-		// category overlay — a full 300×300 box that sits as a
-		// backdrop behind the pig. compute_overlays.py also emits
-		// per-item entries for them (content-bbox sized, ~250-284
-		// tall, bottom-anchored); honoring those would render the
-		// aura short and bottom-stuck instead of a clean backdrop.
-		// So for these categories, skip HAT_OVERLAYS.
-		//
-		// Everything else: HAT_OVERLAYS → category default →
-		// DEFAULT_HAT_OVERLAY.
-		const rawBase = prebaked
-			? null
-			: isFullCanvasCat
-				? (category && CATEGORY_OVERLAYS[category]) ||
-					DEFAULT_HAT_OVERLAY
-				: HAT_OVERLAYS[itemId] ||
-					(category && CATEGORY_OVERLAYS[category]) ||
-					DEFAULT_HAT_OVERLAY;
-
-		// Per-anim layer: if the resolved base has a perAnim entry for
-		// the current animation, shallow-merge it over the base. This
-		// is for items whose position drifts noticeably during specific
-		// poses (sad has the pig sit compactly, surprise jolts up, etc.).
-		// Field-level merge so a per-anim entry can override only the
-		// position without re-stating width/height/anchor.
-		const baseOverlay = rawBase
-			? {
-					...rawBase,
-					...(rawBase.perAnim?.[pigAnim as PigAnimationKey] ?? {}),
-				}
-			: null;
-
-		const isFullCanvas = category === "background" || category === "aura";
-		const delta = isFullCanvas
-			? { dx: 0, dy: 0 }
-			: frameDelta(
-					pigAnim as PigAnimationKey,
-					pigFrameIdx,
-					category,
-					baseOverlay?.anchor,
-				);
-		// Category-level per-animation shift (e.g. all glasses droop
-		// 12px during sad). Applied AFTER the anchor delta so it stacks
-		// — useful for blanket nudges that don't fit the anchor model.
-		const catShift =
-			(category &&
-				CATEGORY_PERANIM_SHIFTS[category]?.[
-					pigAnim as PigAnimationKey
-				]) ||
-			null;
-		const overlay = baseOverlay
-			? isFullCanvas
-				? baseOverlay
-				: {
-						...baseOverlay,
-						left: baseOverlay.left + delta.dx + (catShift?.dx ?? 0),
-						bottom:
-							baseOverlay.bottom -
-							delta.dy -
-							(catShift?.dy ?? 0),
-					}
-			: null;
-		return { itemId, category, emoji, imageSrc, prebaked, overlay };
-	};
 
 	// Back-compat: callers can still pass hatId for the main slot.
 	const mainEquipped: EquippedItem | null =
 		equipped ??
 		(hatId ? { id: hatId, category: "hat", emoji: null } : null);
 
-	const main = resolveSlot(mainEquipped);
-	const auraSlot = resolveSlot(equippedAura);
-	const bgSlot = resolveSlot(equippedBackground);
-	const heldSlot = resolveSlot(equippedHeld);
+	// resolveSlot lives in PigStage now (single source of truth shared
+	// with the preview modal). SwipeElement still computes the main
+	// slot once here because the AnchorDebugOverlay below + the
+	// hideAccessory logic need the item id / image, and we want the
+	// computation to match what PigStage will render.
+	const main = resolveSlot(mainEquipped, pigAnim, pigFrameIdx, relOverrides);
 
 	// Dev-only: feed the in-card anchor/placement overlay (see below).
+	// Re-resolve aura + held here just for the debug overlay; PigStage
+	// will resolve them again internally for rendering. Cheap (pure
+	// function on cached refs) and keeps the debug visualization
+	// consistent with what PigStage paints.
+	const auraSlot = resolveSlot(equippedAura, pigAnim, pigFrameIdx, relOverrides);
+	const heldSlot = resolveSlot(equippedHeld, pigAnim, pigFrameIdx, relOverrides);
 	const debugItems: DebugItem[] = __DEV__
 		? [main, auraSlot, heldSlot]
 				.filter((s) => s && s.overlay)
 				.map((s) => ({
 					label: s!.itemId,
 					category: s!.category,
-					overlay: s!.overlay as HatOverlay,
+					overlay: s!.overlay!,
 				}))
 		: [];
-
-	// Accessories now follow the pig across every animation via the
-	// per-frame anchor data in PIG_FRAME_ANCHORS. Backgrounds + auras
-	// are full-canvas and don't need anchoring; everything else lets
-	// frameDelta do the work.
-	const hideAccessory = false;
 
 	const rotateDeg = rotate.interpolate({
 		inputRange: [-1, 1],
@@ -439,78 +294,18 @@ export default function SwipeElement({
 						},
 					]}
 				>
-					{/* Z-order (back to front):
-					    1 = background slot (deepest)
-					    2 = aura slot
-					    3 = pig sprite
-					    4 = cape (when main slot's HatOverlay.behind or
-					        category Z_BEHIND_PIG routes it behind the pig)
-					    10 = main slot (hat / scarf / glasses / etc.) */}
-					{/* Backgrounds are intentionally NOT rendered inside the
-					    pig card. They only show as the fullscreen page
-					    backdrop in Barn (see ImageBackground at the top
-					    of Barn.tsx). Rendering them in-card was creating
-					    a small "ghost" tile behind the pig — backgrounds
-					    are conceptually "the whole page", not "a layer
-					    behind the pig only". */}
-					{auraSlot?.overlay && (
-						<ItemOverlay
-							overlay={auraSlot.overlay}
-							imageSrc={auraSlot.imageSrc}
-							emoji={null}
-							zIndex={2}
-						/>
-					)}
-					{(() => {
-						const overlay = main?.overlay ?? null;
-						const category = main?.category ?? null;
-						const isBehind =
-							overlay?.behind ??
-							(category ? !!Z_BEHIND_PIG[category] : false);
-						const showOverlay = overlay && !hideAccessory;
-						return (
-							<>
-								{showOverlay && isBehind && (
-									<ItemOverlay
-										overlay={overlay}
-										imageSrc={main?.imageSrc ?? null}
-										emoji={null}
-										zIndex={3}
-									/>
-								)}
-								<View style={[styles.cardImage, { zIndex: 5 }]}>
-									<SpritePig
-										animation={pigAnim}
-										size={300}
-										onFrame={setPigFrameIdx}
-										onComplete={
-											pigAnim === "jump" ? handleJumpComplete : undefined
-										}
-										customFrames={main?.prebaked ?? undefined}
-									/>
-								</View>
-								{showOverlay && !isBehind && (
-									<ItemOverlay
-										overlay={overlay}
-										imageSrc={main?.imageSrc ?? null}
-										emoji={main?.emoji ?? null}
-										zIndex={10}
-									/>
-								)}
-								{/* Held slot — independent of main, anchored to
-								    the right hand. Lets the user hold a sword
-								    and wear a cowboy hat at the same time. */}
-								{heldSlot?.overlay && !hideAccessory && (
-									<ItemOverlay
-										overlay={heldSlot.overlay}
-										imageSrc={heldSlot.imageSrc}
-										emoji={heldSlot.emoji}
-										zIndex={11}
-									/>
-								)}
-							</>
-						);
-					})()}
+					<PigStage
+						pigAnimation={pigAnim}
+						pigFrameIdx={pigFrameIdx}
+						onPigFrame={setPigFrameIdx}
+						onPigComplete={
+							pigAnim === "jump" ? handleJumpComplete : undefined
+						}
+						equipped={mainEquipped}
+						equippedAura={equippedAura}
+						equippedHeld={equippedHeld}
+						relOverrides={relOverrides}
+					/>
 				</Animated.View>
 			</Pressable>
 

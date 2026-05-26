@@ -29,31 +29,82 @@ import {
 } from "@/constants/theme";
 
 export type SchismSide = "angel" | "goblin";
+export type SchismMilestone = 25 | 50 | 100;
 
 interface Props {
 	side: SchismSide;
 	score: number;
+	// Default 25 for backward compat with older callers that don't
+	// pass it through (this used to be the only milestone the modal
+	// fired at). Server's new check_schism_status returns it
+	// explicitly.
+	milestone?: SchismMilestone;
 	onDismiss: () => void;
 }
 
-const COPY = {
+// Per-side per-milestone copy. Tier 1 (25) = "you're becoming";
+// tier 2 (50) = "you've settled in"; tier 3 (100) = the title moment.
+// Push body copy (alignment_notifications.sql) carries the same
+// title cadence so device + modal read consistently.
+const COPY: Record<
+	SchismSide,
+	Record<SchismMilestone, {
+		kicker: string;
+		icon: "halo" | "horns";
+		headline: string;
+		body: string;
+		buttonBg: string;
+	}>
+> = {
 	angel: {
-		kicker: "★ the schism stirs ★",
-		icon: "halo" as const,
-		headline: "You're becoming Generous",
-		body: "Your tickle trades have a pattern. You give freely. You bless. You ask for little. Lean in and the path to Halo Bearer is yours.",
-		buttonBg: WHIMSY.sun,
+		25: {
+			kicker: "★ the schism stirs ★",
+			icon: "halo",
+			headline: "You're becoming Generous",
+			body: "Your tickle trades have a pattern. You give freely. You bless. You ask for little. Lean in and the path to Halo Bearer is yours.",
+			buttonBg: WHIMSY.sun,
+		},
+		50: {
+			kicker: "★ deeply generous ★",
+			icon: "halo",
+			headline: "The sounder remembers",
+			body: "Half a hundred points of giving. Friends notice when you walk in. Keep going and the title of Saint is in reach.",
+			buttonBg: WHIMSY.sun,
+		},
+		100: {
+			kicker: "★ saint of the sounder ★",
+			icon: "halo",
+			headline: "Pure light",
+			body: "A hundred points. Nowhere further to give — you ARE the giving. Every pig in the sounder knows your name.",
+			buttonBg: WHIMSY.sun,
+		},
 	},
 	goblin: {
-		kicker: "🟢 a goblin nature stirs 🟢",
-		icon: "horns" as const,
-		headline: "You're becoming Greedy",
-		body: "You take more than you give. You hoard your debts. Embrace it and the throne of Goblin King awaits.",
-		buttonBg: "#D5E4C9",
+		25: {
+			kicker: "★ a goblin nature stirs ★",
+			icon: "horns",
+			headline: "You're becoming Greedy",
+			body: "You take more than you give. You hoard your debts. Embrace it and the throne of Goblin King awaits.",
+			buttonBg: "#D5E4C9",
+		},
+		50: {
+			kicker: "★ deeply greedy ★",
+			icon: "horns",
+			headline: "Friends step lightly",
+			body: "Half a hundred points of pinching. The sounder remembers what you took. Keep going and Goblin King is within reach.",
+			buttonBg: "#D5E4C9",
+		},
+		100: {
+			kicker: "★ goblin king ★",
+			icon: "horns",
+			headline: "Pure greed",
+			body: "A hundred points. Nowhere further to fall — the throne is yours. Every pig in the sounder pulls their snout away.",
+			buttonBg: "#D5E4C9",
+		},
 	},
 };
 
-export function AlignmentSchismModal({ side, score, onDismiss }: Props) {
+export function AlignmentSchismModal({ side, score, milestone = 25, onDismiss }: Props) {
 	const scale = useRef(new Animated.Value(0)).current;
 	const opacity = useRef(new Animated.Value(0)).current;
 
@@ -79,7 +130,7 @@ export function AlignmentSchismModal({ side, score, onDismiss }: Props) {
 
 	const handleDismiss = async () => {
 		try {
-			await supabase.rpc("mark_schism_seen", { side });
+			await supabase.rpc("mark_schism_seen", { side, milestone });
 		} catch {
 			// best-effort; if it fails the user might see the modal
 			// again on next focus, which is annoying but not broken
@@ -87,7 +138,7 @@ export function AlignmentSchismModal({ side, score, onDismiss }: Props) {
 		onDismiss();
 	};
 
-	const copy = COPY[side];
+	const copy = COPY[side][milestone];
 
 	return (
 		<Modal visible transparent animationType="fade" onRequestClose={handleDismiss}>

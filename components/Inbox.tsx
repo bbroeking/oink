@@ -22,15 +22,11 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { ActiveEffects } from "./ActiveEffects";
-import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
+import { FONTS, WHIMSY } from "@/constants/theme";
 import type { TradeRow } from "@/constants/trade_types";
-
-// Stockyard palette — kept in sync with the trade theme.
-const YARD = {
-	rail: "#7A5230",
-	plankLine: "#6E4A28",
-	brass: "#C99B23",
-};
+import { SectionHeader } from "./ui/SectionHeader";
+import { Sticker } from "./ui/Sticker";
+import { FRIEND_CAP_LIMIT } from "./Friends";
 
 interface FriendReq {
 	requester_id: string;
@@ -44,18 +40,34 @@ interface RitualRow {
 	from_username: string | null;
 }
 
-const BLESSING_LABEL: Record<string, string> = {
-	warm_tea: "warm tea — faster tickles",
-	sun_beam: "a sun beam — luckier next pig",
-	halo_kiss: "a halo kiss — a soft glow",
-	bountiful_snouts: "bountiful snouts — +5",
-};
-const CURSE_LABEL: Record<string, string> = {
-	sluggish_snout: "a sluggish snout — slower tickles",
-	phantom_itch: "a phantom itch",
-	goblin_whisper: "a goblin whisper",
-	coin_pinch: "a coin pinch — snouts nicked",
-};
+interface AcceptedFriend {
+	receiver_id: string;
+	username: string | null;
+	updated_at: string;
+}
+
+// Inbox copy mirrors what the SENDER saw when they cast the effect
+// (RitualPicker reads ritual.blurb from these same meta tables) +
+// what the RECEIVER sees on the ActiveEffects strip + Hoofprints
+// sheet + WhileAway modal. Previously the Inbox had its own
+// flavor-only label map that drifted — the recipient was getting
+// vague poetry while every other surface showed the actual rule
+// the effect was applying. Source of truth: utils/rituals.ts.
+import {
+	BLESSING_META,
+	CURSE_META,
+	type BlessingKind,
+	type CurseKind,
+} from "../utils/rituals";
+
+function blessingDescription(kind: string): string {
+	const m = BLESSING_META[kind as BlessingKind];
+	return m ? `${m.name} — ${m.blurb}` : kind;
+}
+function curseDescription(kind: string): string {
+	const m = CURSE_META[kind as CurseKind];
+	return m ? `${m.name} — ${m.blurb}` : kind;
+}
 
 interface Props {
 	userId: string;
@@ -73,6 +85,11 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	const [answered, setAnswered] = useState<TradeRow[]>([]);
 	const [blessings, setBlessings] = useState<RitualRow[]>([]);
 	const [curses, setCurses] = useState<RitualRow[]>([]);
+	const [acceptedFriends, setAcceptedFriends] = useState<AcceptedFriend[]>([]);
+	// Caller's tickle balance — drives "Give N" → "Need N more" on
+	// incoming trade cards when they can't afford to fulfill. Polled
+	// on every load(), so post-action refreshes catch the deduction.
+	const [balance, setBalance] = useState<number | null>(null);
 
 	const load = useCallback(async () => {
 		// Trades — one RPC covers incoming / outgoing / answered.
@@ -158,6 +175,51 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		setBlessings(await hydrate("blessings"));
 		setCurses(await hydrate("curses"));
 
+		// Tickle balance — for the Give-vs-Need affordance on
+		// incoming trade cards. tickle_info returns the
+		// regen-catchup balance, which is what the player can
+		// actually spend right now.
+		const { data: tickle } = await supabase.rpc("tickle_info", {
+			uid: userId,
+		});
+		const t = tickle as { balance?: number } | null;
+		setBalance(typeof t?.balance === "number" ? t.balance : null);
+
+		// Recently-accepted outgoing friend requests — surfaced in the
+		// passive band as "X accepted your request" cards. Bounded to
+		// the last 7 days so the band doesn't accumulate forever; once
+		// the friend is in your list, the card is just an echo.
+		const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+		const { data: accRows } = await supabase
+			.from("friendships")
+			.select("receiver_id, updated_at")
+			.eq("requester_id", userId)
+			.eq("status", "accepted")
+			.gt("updated_at", sevenDaysAgo)
+			.order("updated_at", { ascending: false })
+			.limit(10);
+		const accList = (accRows ?? []) as { receiver_id: string; updated_at: string }[];
+		if (accList.length === 0) {
+			setAcceptedFriends([]);
+		} else {
+			const { data: accProfs } = await supabase
+				.from("profiles")
+				.select("id, username")
+				.in("id", accList.map((r) => r.receiver_id));
+			const accById = new Map(
+				((accProfs ?? []) as { id: string; username: string | null }[]).map(
+					(p) => [p.id, p.username]
+				)
+			);
+			setAcceptedFriends(
+				accList.map((r) => ({
+					receiver_id: r.receiver_id,
+					username: accById.get(r.receiver_id) ?? null,
+					updated_at: r.updated_at,
+				}))
+			);
+		}
+
 		setLoading(false);
 	}, [userId]);
 
@@ -166,6 +228,90 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			load();
 		}, [load])
 	);
+
+	// Realtime: subscribe to the four social tables, scoped to
+	// rows the caller is party to. Any event re-runs load() so
+	// the inbox repopulates without needing a tab swipe.
+	//
+	// `tickle_trades` + `friendships` have two columns the caller
+	// could be in (requester/receiver), so we register two filters
+	// per table and let either fire load().
+	React.useEffect(() => {
+		if (!userId) return;
+		const ch = supabase
+			.channel(`realtime:inbox:${userId}`)
+			// Incoming blessings → "blessed you" passive row
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "blessings",
+					filter: `receiver_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			// Incoming curses → "cursed you" passive row + hoofprints panel
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "curses",
+					filter: `receiver_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			// New incoming trade request (someone asked you)
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "tickle_trades",
+					filter: `target_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			// Your outgoing trade was fulfilled / cancelled (target side wrote)
+			.on(
+				"postgres_changes",
+				{
+					event: "UPDATE",
+					schema: "public",
+					table: "tickle_trades",
+					filter: `requester_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			// New friend request landed (you're the receiver)
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "friendships",
+					filter: `receiver_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			// Your outgoing request was accepted (you're the requester,
+			// status flipped pending → accepted)
+			.on(
+				"postgres_changes",
+				{
+					event: "UPDATE",
+					schema: "public",
+					table: "friendships",
+					filter: `requester_id=eq.${userId}`,
+				},
+				() => load()
+			)
+			.subscribe();
+		return () => {
+			supabase.removeChannel(ch);
+		};
+	}, [userId, load]);
 
 	// Report the actionable count (friend + trade requests) upward so
 	// the hub can badge the Inbox segment.
@@ -183,9 +329,35 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		setBusy(id);
 		const { data, error } = await supabase.rpc(rpc, args);
 		setBusy(null);
-		const r = data as { ok?: boolean; reason?: string } | null;
+		const r = data as {
+			ok?: boolean;
+			reason?: string;
+			cap?: number;
+			balance?: number;
+			needed?: number;
+		} | null;
 		if (error || (r && r.ok === false)) {
-			setFeedback("That didn't take — try again.");
+			// Surface specific reasons — they tell the user what to do
+			// instead of a vague retry.
+			if (r?.reason === "at_cap") {
+				setFeedback(
+					`You're at the ${r.cap ?? FRIEND_CAP_LIMIT}-friend cap. Remove someone first.`
+				);
+			} else if (r?.reason === "target_at_cap") {
+				setFeedback("They're at the friend cap.");
+			} else if (r?.reason === "insufficient_bank") {
+				// Lost the race with regen / a different action. Refresh
+				// balance so the UI catches up to whatever the actual
+				// number is, and tell the user how short they were.
+				const have = r.balance ?? 0;
+				const need = r.needed ?? 0;
+				setFeedback(
+					`Not enough tickles — you have ${have}, they asked for ${need}.`
+				);
+				load();
+			} else {
+				setFeedback("That didn't take — try again.");
+			}
 			return;
 		}
 		setFeedback(ok);
@@ -226,17 +398,22 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		...answered.map((t) => ({
 			id: `ans-${t.id}`,
 			text: `your trade was answered — +${t.amount * 2} tickles`,
-			icon: require("../assets/images/emoji/trade.png"),
+			kind: "answered" as const,
+		})),
+		...acceptedFriends.map((a) => ({
+			id: `frd-${a.receiver_id}`,
+			text: `${a.username ?? "A friend"} accepted your request`,
+			kind: "friended" as const,
 		})),
 		...blessings.map((b) => ({
 			id: `bl-${b.id}`,
-			text: `${b.from_username ?? "A friend"} blessed you — ${BLESSING_LABEL[b.kind] ?? b.kind}`,
-			icon: require("../assets/images/emoji/blessed.png"),
+			text: `${b.from_username ?? "A friend"} blessed you — ${blessingDescription(b.kind)}`,
+			kind: "blessed" as const,
 		})),
 		...curses.map((c) => ({
 			id: `cu-${c.id}`,
-			text: `${c.from_username ?? "Someone"} cursed you — ${CURSE_LABEL[c.kind] ?? c.kind}`,
-			icon: require("../assets/images/emoji/cursed.png"),
+			text: `${c.from_username ?? "Someone"} cursed you — ${curseDescription(c.kind)}`,
+			kind: "cursed" as const,
 		})),
 	];
 
@@ -272,30 +449,65 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			{/* Out to market — your pending outgoing trade requests */}
 			{outgoingTrades.length > 0 && (
 				<>
-					<Text style={styles.band}>Out to market</Text>
-					{outgoingTrades.map((t) => (
-						<View key={t.id} style={styles.marketRow}>
-							<Text style={styles.marketText} numberOfLines={1}>
-								{t.partner_username ?? "—"} · you'd pocket {t.amount * 2}
-							</Text>
-							<Pressable
-								onPress={() => withdrawTrade(t)}
-								disabled={busy === t.id}
-								hitSlop={8}
-							>
-								<Text style={styles.withdraw}>
-									{busy === t.id ? "…" : "withdraw"}
-								</Text>
-							</Pressable>
-						</View>
-					))}
+					<View style={styles.headerWrap}>
+						<SectionHeader
+							kicker="out to market"
+							title="Your trades"
+							ruleWidth={88}
+						/>
+					</View>
+					{/* Flat paper sticker with dashed-divided rows so the
+					    list reads as one card rather than loose lines
+					    nudging against the screen edge. */}
+					<Sticker
+						color="paper"
+						rotate={-0.3}
+						radius={14}
+						style={styles.flatList}
+					>
+						{outgoingTrades.map((t, i) => {
+							const last = i === outgoingTrades.length - 1;
+							return (
+								<View
+									key={t.id}
+									style={[styles.marketRow, !last && styles.flatRowDivider]}
+								>
+									<Text style={styles.marketText} numberOfLines={1}>
+										{t.partner_username ?? "—"}
+										{t.partner_discriminator && (
+											<Text style={styles.marketDisc}>
+												{" "}
+												#{t.partner_discriminator}
+											</Text>
+										)}{" "}
+										· you'd pocket {t.amount * 2}
+									</Text>
+									<Pressable
+										onPress={() => withdrawTrade(t)}
+										disabled={busy === t.id}
+										hitSlop={8}
+									>
+										<Text style={styles.withdraw}>
+											{busy === t.id ? "…" : "withdraw"}
+										</Text>
+									</Pressable>
+								</View>
+							);
+						})}
+					</Sticker>
 				</>
 			)}
 
 			{/* Actionable — friend + trade requests */}
 			{actionableCount > 0 && (
 				<>
-					<Text style={styles.band}>Needs you</Text>
+					<View style={styles.headerWrap}>
+						<SectionHeader
+							kicker="needs you"
+							title="Pen cards"
+							ruleWidth={70}
+						/>
+					</View>
 					{friendReqs.map((r) => (
 						<View key={`fr-${r.requester_id}`} style={styles.card}>
 							<Image
@@ -321,64 +533,153 @@ export function Inbox({ userId, onActionableCount }: Props) {
 								onPress={() => declineFriend(r)}
 								disabled={busy === r.requester_id}
 								hitSlop={6}
+								style={styles.declineGhost}
 							>
-								<Text style={styles.declineText}>decline</Text>
+								<Text style={styles.declineGhostText}>✕</Text>
 							</Pressable>
 						</View>
 					))}
-					{incomingTrades.map((t) => (
-						<View key={`tr-${t.id}`} style={styles.penWrap}>
-							<View style={styles.rail}>
-								<View style={styles.railBar} />
-								<View style={styles.railBar} />
-							</View>
-							<View style={styles.penBody}>
-								<Image
-									source={require("../assets/images/emoji/pig.png")}
-									style={styles.cardIcon}
-								/>
-								<View style={{ flex: 1, minWidth: 0 }}>
-									<Text style={styles.cardTitle} numberOfLines={1}>
-										{t.partner_username ?? "A friend"}
-									</Text>
-									<Text style={styles.cardSub}>
-										lot · wants {t.amount} · costs you {t.amount}
-									</Text>
+					{incomingTrades.map((t) => {
+						// Affordance: can we actually pay this trade right
+						// now? Disable + relabel "Need N more" when the
+						// balance is short, so the player isn't tapping a
+						// button just to get a rejection toast back.
+						const canAfford = balance !== null && balance >= t.amount;
+						const shortBy =
+							balance !== null && balance < t.amount
+								? t.amount - balance
+								: 0;
+						return (
+							<View key={`tr-${t.id}`} style={styles.pen}>
+								<View style={styles.penHeader}>
+									<Image
+										source={require("../assets/images/emoji/pig.png")}
+										style={styles.cardIcon}
+									/>
+									<View style={{ flex: 1, minWidth: 0 }}>
+										<Text style={styles.cardTitle} numberOfLines={1}>
+											{t.partner_username ?? "A friend"}
+											{t.partner_discriminator && (
+												<Text style={styles.cardTitleDisc}>
+													{" "}
+													#{t.partner_discriminator}
+												</Text>
+											)}
+										</Text>
+										<Text style={styles.cardSub}>
+											asks for {t.amount} tickles
+											{balance !== null && (
+												<Text
+													style={
+														canAfford
+															? styles.balanceHint
+															: styles.balanceHintShort
+													}
+												>
+													{"  ·  you have "}
+													{balance}
+												</Text>
+											)}
+										</Text>
+									</View>
 								</View>
-								<View style={{ alignItems: "flex-end", gap: 3 }}>
+								<View style={styles.penActions}>
 									<Pressable
-										onPress={() => giveTrade(t)}
-										disabled={busy === t.id}
-										style={styles.brassBtn}
+										onPress={() => canAfford && giveTrade(t)}
+										disabled={busy === t.id || !canAfford}
+										style={[
+											styles.penBtn,
+											canAfford ? styles.penBtnPrimary : styles.penBtnLocked,
+										]}
 									>
-										<Text style={styles.brassBtnText}>
-											{busy === t.id ? "…" : `GIVE ${t.amount}`}
+										<Text
+											style={
+												canAfford
+													? styles.penBtnPrimaryText
+													: styles.penBtnLockedText
+											}
+										>
+											{busy === t.id
+												? "…"
+												: canAfford
+													? `Give ${t.amount}`
+													: `Need ${shortBy} more`}
 										</Text>
 									</Pressable>
 									<Pressable
 										onPress={() => passTrade(t)}
 										disabled={busy === t.id}
-										hitSlop={6}
+										style={[styles.penBtn, styles.penBtnGhost]}
 									>
-										<Text style={styles.declineText}>· pass ·</Text>
+										<Text style={styles.penBtnGhostText}>Pass</Text>
 									</Pressable>
 								</View>
 							</View>
-						</View>
-					))}
+						);
+					})}
 				</>
 			)}
 
 			{/* Recent — passive events */}
 			{passive.length > 0 && (
 				<>
-					<Text style={styles.band}>Recent</Text>
-					{passive.map((p) => (
-						<View key={p.id} style={styles.passiveRow}>
-							<Image source={p.icon} style={styles.passiveIcon} />
-							<Text style={styles.passiveText}>{p.text}</Text>
-						</View>
-					))}
+					<View style={styles.headerWrap}>
+						<SectionHeader
+							kicker="recent"
+							title="What happened"
+							ruleWidth={96}
+						/>
+					</View>
+					{/* Flat paper sticker with dashed-divided rows — the
+					    What-happened list reads as one bordered card,
+					    matching Out-to-market above. */}
+					<Sticker
+						color="paper"
+						rotate={-0.3}
+						radius={14}
+						style={styles.flatList}
+					>
+						{passive.map((p, i) => {
+							const last = i === passive.length - 1;
+							// Per-kind avatar bubble: small ink-outlined
+							// circle with a glyph + tinted background.
+							const bubbleStyle =
+								p.kind === "answered"
+									? styles.passiveBubbleAnswered
+									: p.kind === "friended"
+										? styles.passiveBubbleFriended
+										: p.kind === "blessed"
+											? styles.passiveBubbleBlessed
+											: styles.passiveBubbleCursed;
+							const glyph =
+								p.kind === "answered"
+									? "♥"
+									: p.kind === "friended"
+										? "+"
+										: p.kind === "blessed"
+											? "✦"
+											: "☁";
+							const glyphStyle =
+								p.kind === "cursed"
+									? styles.passiveBubbleGlyphInverted
+									: styles.passiveBubbleGlyph;
+							return (
+								<View
+									key={p.id}
+									style={[
+										styles.passiveRow,
+										!last && styles.flatRowDivider,
+									]}
+								>
+									<View style={[styles.passiveBubble, bubbleStyle]}>
+										<Text style={glyphStyle}>{glyph}</Text>
+									</View>
+									<Text style={styles.passiveText}>{p.text}</Text>
+								</View>
+							);
+						})}
+					</Sticker>
+
 				</>
 			)}
 		</ScrollView>
@@ -404,25 +705,50 @@ const styles = StyleSheet.create({
 		lineHeight: 21,
 		paddingVertical: 28,
 	},
-	band: {
-		...KICKER_PILL,
-		fontSize: 10,
-		letterSpacing: 1.4,
+	// Wrap SectionHeaders so they get the same vertical breathing room
+	// the old band labels did.
+	headerWrap: {
 		marginTop: 14,
-		marginBottom: 6,
+		marginBottom: 4,
 	},
-	// out-to-market strip
+	// Decline ghost — small ✕ button next to Accept on friend requests.
+	declineGhost: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.muteSoft,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	declineGhostText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		color: WHIMSY.mute,
+	},
+	// Wraps Out-to-market + Recent rows in a single flat sticker.
+	// Padding 0 inside (rows manage their own horizontal padding) so
+	// dividers run the full card width.
+	flatList: { paddingVertical: 4, paddingHorizontal: 0 },
+	// Dashed bottom divider used between rows in flatList. Suppressed
+	// on the last row so the bottom border doesn't double up against
+	// the sticker's own ink edge.
+	flatRowDivider: {
+		borderBottomWidth: 1.5,
+		borderBottomColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	// Out-to-market row — now a flat row inside the flatList Sticker
+	// wrapper, so it drops its old standalone bg + border + margin
+	// and just contributes horizontal padding to keep content off
+	// the sticker's ink edge.
 	marketRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
-		backgroundColor: WHIMSY.paper,
-		borderRadius: 9,
-		borderWidth: 1,
-		borderColor: WHIMSY.ink,
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		marginBottom: 5,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+		gap: 8,
 	},
 	marketText: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.ink, flex: 1 },
 	withdraw: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
@@ -441,6 +767,19 @@ const styles = StyleSheet.create({
 	},
 	cardIcon: { width: 30, height: 30, resizeMode: "contain" },
 	cardTitle: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	// Inline "you have N" hint after "asks for N tickles". Mute when
+	// affordable, accent when short — pre-warns the player before
+	// they even reach the disabled button.
+	balanceHint: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+	},
+	balanceHintShort: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.accent,
+	},
 	cardSub: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
@@ -457,58 +796,125 @@ const styles = StyleSheet.create({
 	},
 	primaryBtnText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.ink },
 	declineText: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
-	// trade pen card
-	penWrap: { marginBottom: 6 },
-	rail: {
-		gap: 3,
-		paddingHorizontal: 10,
-		paddingTop: 5,
-		paddingBottom: 4,
-		backgroundColor: YARD.rail,
-		borderTopLeftRadius: 10,
-		borderTopRightRadius: 10,
+	// Trade pen card — peach paper sticker with Avatar+ask body and
+	// stacked Give/Pass row beneath. Replaces the old Stockyard rail
+	// look so the trade card sits inside the rest of the redesign's
+	// paper-sticker DNA. Diagonal stripe overlay isn't worth the SVG
+	// cost — flat peach + ink border captures the look.
+	pen: {
+		backgroundColor: WHIMSY.peach,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 14,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+		marginBottom: 8,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 3, height: 3 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 3,
 	},
-	railBar: {
-		height: 3,
-		borderRadius: 2,
-		backgroundColor: "rgba(255,255,255,0.22)",
-	},
-	penBody: {
+	penHeader: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 10,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: YARD.plankLine,
-		borderTopWidth: 0,
-		borderBottomLeftRadius: 12,
-		borderBottomRightRadius: 12,
-		paddingHorizontal: 10,
-		paddingVertical: 9,
 	},
-	brassBtn: {
-		backgroundColor: YARD.brass,
+	penActions: {
+		flexDirection: "row",
+		gap: 8,
+		marginTop: 10,
+	},
+	penBtn: {
+		flex: 1,
+		paddingVertical: 9,
+		alignItems: "center",
+		borderRadius: 999,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 10,
-		paddingHorizontal: 14,
-		paddingVertical: 8,
 	},
-	brassBtnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 14,
+	penBtnPrimary: {
+		backgroundColor: WHIMSY.lilacDeep,
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
+	},
+	penBtnPrimaryText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.paper,
+	},
+	penBtnGhost: {
+		backgroundColor: "transparent",
+		borderColor: WHIMSY.muteSoft,
+	},
+	penBtnGhostText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
 		color: WHIMSY.ink,
-		letterSpacing: 0.4,
 	},
-	// passive row
+	// "Need N more" — the trade is unaffordable. Muted fill + dashed
+	// ink border so the button reads as locked-but-still-meaningful,
+	// not greyed-out-and-broken. Companion to the balance hint on the
+	// row's "asks for N · you have M" line.
+	penBtnLocked: {
+		backgroundColor: WHIMSY.muteSoft,
+		borderColor: WHIMSY.muteSoft,
+	},
+	penBtnLockedText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.mute,
+	},
+	// Recent / passive row — lives inside the flatList Sticker so
+	// horizontal padding mirrors the marketRow above. Bumped from 4
+	// to 14 so the bubble doesn't kiss the sticker's ink border.
 	passiveRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 9,
-		paddingVertical: 7,
-		paddingHorizontal: 4,
+		gap: 12,
+		paddingVertical: 10,
+		paddingHorizontal: 14,
 	},
-	passiveIcon: { width: 24, height: 24, resizeMode: "contain" },
+	// Recent feed bubble — small ink-outlined circle with a glyph,
+	// per kind: rose ♥ for answered, lilac ✦ for blessed, ink ☁ for
+	// cursed. Replaces the PNG icon to match the design.
+	passiveBubble: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	passiveBubbleAnswered: { backgroundColor: WHIMSY.rose },
+	passiveBubbleFriended: { backgroundColor: WHIMSY.sage },
+	passiveBubbleBlessed: { backgroundColor: WHIMSY.lilac },
+	passiveBubbleCursed: { backgroundColor: WHIMSY.ink },
+	passiveBubbleGlyph: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		color: WHIMSY.ink,
+	},
+	passiveBubbleGlyphInverted: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		color: WHIMSY.paper,
+	},
+	// Discriminator suffix on trade rows + outgoing market rows.
+	marketDisc: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.mute,
+	},
+	cardTitleDisc: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+	},
 	passiveText: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,

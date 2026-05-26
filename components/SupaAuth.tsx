@@ -1,73 +1,96 @@
+// Sign-in screen. Rosie front-and-center as the storybook hero so
+// the first thing a player sees on the loading flow is the same
+// pig they're about to meet on the Barn screen — no disconnect
+// between the splash art and the gameplay character.
+//
+// Layout: cream backdrop (matches the rest of the app's
+// WHIMSY.cream surface), Rosie hero portrait scaled to ~70% width
+// upper-center, then a paper-sticker card with the title + Apple
+// sign-in button anchored to the bottom.
 import React from "react";
-import { StyleSheet, View, ImageBackground, Text } from "react-native";
+import {
+	StyleSheet,
+	View,
+	Image,
+	Text,
+	SafeAreaView,
+} from "react-native";
 import { AppleAuth } from "./AppleAuth";
+import { Sticker } from "./ui/Sticker";
+import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
-export const PRIMARY_COLOR = "#E8A7B9";
+// Kept for back-compat with downstream imports (UsernameSetup
+// references this constant for its button tint).
+export const PRIMARY_COLOR = WHIMSY.lilac;
 
 export default function SupaAuth() {
 	return (
-		<ImageBackground
-			source={require("../assets/images/splash-art.png")}
-			style={styles.backgroundImage}
-			resizeMode="cover"
-		>
-			<View style={styles.overlay} />
-			<View style={styles.contentContainer}>
-				<View style={styles.bottomCard}>
-					<Text style={styles.title}>Tickle the Pig</Text>
+		<View style={styles.bg}>
+			<SafeAreaView style={styles.safe}>
+				<View style={styles.hero}>
+					<Image
+						source={require("../assets/images/sprites/rosie/idle_1.png")}
+						style={styles.rosie}
+						resizeMode="contain"
+					/>
+					<Text style={styles.kicker}>★ tickle the pig ★</Text>
+					<Text style={styles.title}>Meet Rosie</Text>
 					<Text style={styles.subtitle}>
-						Sign in to start tickling.
+						She'd like a tickle. Sign in to start.
 					</Text>
-					<View style={{ marginTop: 16 }}>
-						<AppleAuth />
-					</View>
 				</View>
-			</View>
-		</ImageBackground>
+
+				<View style={styles.cardWrap}>
+					<Sticker
+						color="paper"
+						rotate={-0.8}
+						radius={20}
+						style={[styles.card, STICKER_SHADOW]}
+					>
+						<AppleAuth />
+					</Sticker>
+				</View>
+			</SafeAreaView>
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	backgroundImage: {
+	bg: { flex: 1, backgroundColor: WHIMSY.cream },
+	safe: { flex: 1, justifyContent: "space-between", paddingHorizontal: 22 },
+	hero: {
+		alignItems: "center",
+		paddingTop: 24,
 		flex: 1,
-		width: "100%",
-		height: "100%",
+		justifyContent: "center",
 	},
-	overlay: {
-		position: "absolute",
-		top: 0,
-		left: 0,
-		right: 0,
-		bottom: 0,
-		backgroundColor: "rgba(0,0,0,0.15)",
+	rosie: {
+		width: "72%",
+		aspectRatio: 370 / 383, // matches idle_1.png native ratio (near-square)
+		marginBottom: 18,
 	},
-	contentContainer: {
-		flex: 1,
-		justifyContent: "flex-end",
-		padding: 24,
-		paddingBottom: 40,
-	},
-	bottomCard: {
-		backgroundColor: "white",
-		borderRadius: 24,
-		padding: 24,
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 8 },
-		shadowOpacity: 0.15,
-		shadowRadius: 20,
-		elevation: 6,
+	kicker: {
+		...KICKER_TEXT,
+		marginBottom: 6,
 	},
 	title: {
-		fontFamily: "Fredoka_700Bold",
-		fontSize: 28,
-		color: "#1A1A1A",
+		fontFamily: FONTS.whimsy,
+		fontSize: 36,
+		color: WHIMSY.ink,
+		marginBottom: 6,
 		textAlign: "center",
 	},
 	subtitle: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 14,
-		color: "#6B6B6B",
+		fontFamily: FONTS.hand,
+		fontSize: 16,
+		color: WHIMSY.mute,
 		textAlign: "center",
-		marginTop: 4,
+		paddingHorizontal: 20,
+	},
+	cardWrap: {
+		paddingBottom: 24,
+	},
+	card: {
+		padding: 20,
 	},
 });

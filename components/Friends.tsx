@@ -6,19 +6,40 @@ import {
 	TextInput,
 	Pressable,
 	ActivityIndicator,
+	ScrollView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
-import { FONTS, KICKER_PILL, WHIMSY, ROW_TILTS } from "@/constants/theme";
+import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
+import { AlignmentBadge } from "./ui/AlignmentBadge";
+import { PigAvatar } from "./ui/PigAvatar";
+
+// Hard cap on the friends list — must match the server-side cap
+// enforced in send_friend_request + accept_friend_request (see
+// supabase/migrations/20260541000000_friend_cap.sql). Past ~100
+// the list slows and the bless/curse cooldowns lose signal.
+export const FRIEND_CAP_LIMIT = 100;
 
 interface Profile {
 	id: string;
 	username: string | null;
 	tickles_earned?: number;
 	discriminator?: string | null;
+	alignment_score?: number | null;
+	active_hat_id?: string | null;
+	// Joined-through name of the equipped hat — drives both the
+	// PigAvatar overlay and the "wears X" second-line on each row.
+	active_hat?: { name: string } | { name: string }[] | null;
+}
+
+// PostgREST returns 1:1 joins either as an object or a length-1
+// array. Flatten so consumers can read .name directly.
+function hatName(p: Profile): string | null {
+	const h = Array.isArray(p.active_hat) ? p.active_hat[0] : p.active_hat;
+	return h?.name ?? null;
 }
 
 // Friend requests live in the Friends-hub Inbox now — this panel is
@@ -33,14 +54,23 @@ export default function Friends({ userId }: { userId: string }) {
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
-		// Friends — via friend_ids RPC (returns the accepted set)
+		// Friends — via friend_ids RPC (returns the accepted set).
+		// The server enforces a 100-friend cap (see the friend_cap
+		// migration), so this should never return more than 100. The
+		// client-side cap below is defense-in-depth in case the
+		// migration hasn't been pushed yet — slicing here means we
+		// never blow up the list view, and the FRIEND_CAP_LIMIT
+		// constant stays the single source of truth in the UI.
 		const { data: friendIds } = await supabase.rpc("friend_ids");
 		const ids = (friendIds as string[] | null) ?? [];
-		if (ids.length > 0) {
+		const capped = ids.slice(0, FRIEND_CAP_LIMIT);
+		if (capped.length > 0) {
 			const { data } = await supabase
 				.from("profiles")
-				.select("id, username, tickles_earned, discriminator")
-				.in("id", ids);
+				.select(
+					"id, username, tickles_earned, discriminator, alignment_score, active_hat_id, active_hat:hats!profiles_active_hat_id_fkey(name)"
+				)
+				.in("id", capped);
 			setFriends((data as Profile[]) ?? []);
 		} else {
 			setFriends([]);
@@ -65,11 +95,22 @@ export default function Friends({ userId }: { userId: string }) {
 				<TabBtn label="Add" active={tab === "add"} onPress={() => setTab("add")} />
 			</View>
 
-			{tab === "friends" && (
-				<FriendsList friends={friends} onPick={setSelectedUserId} />
-			)}
+			{/* Scrollable list area — at 100-friend cap the sticker
+			    would otherwise overflow off the bottom of the screen
+			    with no way to reach the lower rows. paddingBottom on
+			    the contentContainer keeps the last row clear of the
+			    hanging-signs tab bar. */}
+			<ScrollView
+				style={styles.scroll}
+				contentContainerStyle={styles.scrollContent}
+				showsVerticalScrollIndicator={false}
+			>
+				{tab === "friends" && (
+					<FriendsList friends={friends} onPick={setSelectedUserId} />
+				)}
 
-			{tab === "add" && <AddFriend userId={userId} onSent={load} />}
+				{tab === "add" && <AddFriend userId={userId} onSent={load} />}
+			</ScrollView>
 
 			<UserSheet
 				targetUserId={selectedUserId}
@@ -105,6 +146,32 @@ function TabBtn({
 // ── Friends list ──────────────────────────────────────────────────
 // Each row taps through to UserSheet — the one door for asking
 // tickles / blessing / cursing. No inline action button.
+// Avatar circle palette — picks a deterministic tint per name so the
+// list reads as a colorful sounder rather than a wall of cream.
+const AVATAR_TINTS = [
+	WHIMSY.rose,
+	WHIMSY.sun,
+	WHIMSY.sky,
+	WHIMSY.sage,
+	WHIMSY.lilac,
+	WHIMSY.peach,
+] as const;
+function tintFor(name: string | null | undefined): string {
+	if (!name) return WHIMSY.cream;
+	let h = 0;
+	for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+	return AVATAR_TINTS[Math.abs(h) % AVATAR_TINTS.length];
+}
+
+function InitialAvatar({ name }: { name: string | null | undefined }) {
+	const initial = (name ?? "?")[0]?.toUpperCase() ?? "?";
+	return (
+		<View style={[styles.avatarCircle, { backgroundColor: tintFor(name) }]}>
+			<Text style={styles.avatarInitial}>{initial}</Text>
+		</View>
+	);
+}
+
 function FriendsList({
 	friends,
 	onPick,
@@ -121,29 +188,80 @@ function FriendsList({
 			</Sticker>
 		);
 	}
+	// Sort alphabetically so the list reads predictably.
+	const sorted = [...friends].sort((a, b) =>
+		(a.username ?? "").localeCompare(b.username ?? "")
+	);
+	const atCap = sorted.length >= FRIEND_CAP_LIMIT;
 	return (
-		<View style={styles.list}>
-			{friends.map((f, i) => (
-				<Pressable key={f.id} onPress={() => onPick(f.id)}>
-					<Sticker
-						color="paper"
-						rotate={ROW_TILTS[i % ROW_TILTS.length]}
-						radius={10}
-						style={styles.row}
+	  <>
+		<Sticker color="paper" rotate={-0.4} radius={14} style={styles.listSticker}>
+			{sorted.map((f, i) => {
+				const last = i === sorted.length - 1;
+				const wears = hatName(f);
+				return (
+					<Pressable
+						key={f.id}
+						onPress={() => onPick(f.id)}
+						style={[styles.flatRow, !last && styles.flatRowDivider]}
 					>
+						{/* PigAvatar instead of the initial circle — the
+						    equipped hat shows up as an inline icon on
+						    the pig sprite, so the sounder reads what
+						    each friend is currently wearing at a glance. */}
+						<View style={styles.rowPigWrap}>
+							<PigAvatar size={36} hatId={f.active_hat_id ?? null} />
+						</View>
 						<View style={{ flex: 1, minWidth: 0 }}>
-							<Text style={styles.rowName}>{f.username ?? "—"}</Text>
-							{typeof f.tickles_earned === "number" && (
-								<Text style={styles.rowMeta}>
-									{f.tickles_earned.toLocaleString()} ♥
+							<View style={styles.rowNameLine}>
+								<Text style={styles.rowName} numberOfLines={1}>
+									{f.username ?? "—"}
 								</Text>
+								{!!f.discriminator && (
+									<Text style={styles.rowDisc}>#{f.discriminator}</Text>
+								)}
+							</View>
+							{/* Second line — "wears X" when a hat is equipped.
+							    Falls back to the ♥ + alignment meta so naked
+							    pigs aren't blank rows. */}
+							{wears ? (
+								<Text style={styles.rowWearsText} numberOfLines={1}>
+									wears {wears}
+								</Text>
+							) : (
+							<View style={styles.rowMetaLine}>
+								<Text style={styles.rowHeart}>♥</Text>
+								<Text style={styles.rowMeta}>
+									{(f.tickles_earned ?? 0).toLocaleString()}
+								</Text>
+								{typeof f.alignment_score === "number" && (
+									<>
+										<View style={styles.rowMetaDot} />
+										<AlignmentBadge
+											score={f.alignment_score}
+											size="sm"
+											compact
+										/>
+									</>
+								)}
+							</View>
 							)}
 						</View>
 						<Text style={styles.rowChevron}>›</Text>
-					</Sticker>
-				</Pressable>
-			))}
-		</View>
+					</Pressable>
+				);
+			})}
+		</Sticker>
+		{/* At-cap notice — surfaces the 100-friend ceiling once it's
+		    actually reached. Doesn't render in the (overwhelmingly
+		    common) under-cap case, so it never clutters the list. */}
+		{atCap && (
+			<Text style={styles.atCapFooter}>
+				★ you're at the {FRIEND_CAP_LIMIT}-friend cap · remove someone
+				to add new friends
+			</Text>
+		)}
+	  </>
 	);
 }
 
@@ -189,7 +307,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 			target_discriminator: target.discriminator ?? null,
 		});
 		setSending(null);
-		const r = data as { ok?: boolean; reason?: string } | null;
+		const r = data as { ok?: boolean; reason?: string; cap?: number } | null;
 		if (error || !r?.ok) {
 			const reason = r?.reason;
 			setFeedback(
@@ -197,7 +315,13 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 					? "That's you."
 					: reason === "not_found"
 						? "User not found."
-						: "Couldn't send. Try again."
+						: reason === "at_cap"
+							? `You're at the ${r?.cap ?? FRIEND_CAP_LIMIT}-friend cap. Remove someone to add new friends.`
+							: reason === "target_at_cap"
+								? `${target.username} is at the friend cap.`
+								: reason === "already_friends"
+									? `You and ${target.username} are already friends.`
+									: "Couldn't send. Try again."
 			);
 			return;
 		}
@@ -209,15 +333,24 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 
 	return (
 		<View style={styles.addWrap}>
-			<TextInput
-				style={styles.input}
-				value={query}
-				onChangeText={setQuery}
-				placeholder="Search by username…"
-				placeholderTextColor={WHIMSY.mute}
-				autoCapitalize="none"
-				autoCorrect={false}
-			/>
+			{/* Search input with magnifier prefix in a cream container —
+			    matches the design's search-as-paper-form look. */}
+			<Sticker color="paper" rotate={0} radius={14} style={styles.searchCard}>
+				<Text style={styles.kickerSmall}>FIND A FRIEND</Text>
+				<View style={styles.searchInputRow}>
+					<Text style={styles.searchGlyph}>🔍</Text>
+					<TextInput
+						style={styles.inputFlat}
+						value={query}
+						onChangeText={setQuery}
+						placeholder="username#1234"
+						placeholderTextColor={WHIMSY.mute}
+						autoCapitalize="none"
+						autoCorrect={false}
+					/>
+				</View>
+			</Sticker>
+
 			{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
 			{searching && (
 				<View style={styles.searching}>
@@ -225,45 +358,63 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 					<Text style={styles.searchingText}>searching…</Text>
 				</View>
 			)}
+
+			{/* Real search results, when the user has typed. */}
 			{results.length > 0 && (
-				<View style={styles.list}>
-					{results.map((p, i) => (
-						<Sticker
-							key={p.id}
-							color="paper"
-							rotate={ROW_TILTS[i % ROW_TILTS.length]}
-							radius={10}
-							style={styles.row}
-						>
-							<View style={{ flex: 1, minWidth: 0 }}>
-								<Text style={styles.rowName}>{p.username}</Text>
-								{!!p.discriminator && (
-									<Text style={styles.discrim}>
-										#{p.discriminator}
-									</Text>
-								)}
-							</View>
-							<Pressable
-								onPress={() => send(p)}
-								disabled={sending === p.id}
-								style={({ pressed }) => [
-									styles.actionBtn,
-									styles.actionAccept,
-									pressed && { opacity: 0.7 },
-								]}
+				<Sticker color="paper" rotate={-0.3} radius={14} style={styles.listSticker}>
+					{results.map((p, i) => {
+						const last = i === results.length - 1;
+						return (
+							<View
+								key={p.id}
+								style={[styles.flatRow, !last && styles.flatRowDivider]}
 							>
-								<Text style={styles.actionAcceptText}>
-									{sending === p.id ? "…" : "Add"}
-								</Text>
-							</Pressable>
-						</Sticker>
-					))}
-				</View>
+								<InitialAvatar name={p.username} />
+								<View style={{ flex: 1, minWidth: 0 }}>
+									<Text style={styles.rowName} numberOfLines={1}>
+										{p.username}
+									</Text>
+									{!!p.discriminator && (
+										<Text style={styles.rowDisc}>
+											#{p.discriminator}
+										</Text>
+									)}
+								</View>
+								<Pressable
+									onPress={() => send(p)}
+									disabled={sending === p.id}
+									style={({ pressed }) => [
+										styles.actionBtn,
+										styles.actionAccept,
+										pressed && { opacity: 0.7 },
+									]}
+								>
+									<Text style={styles.actionAcceptText}>
+										{sending === p.id ? "…" : "Add"}
+									</Text>
+								</Pressable>
+							</View>
+						);
+					})}
+				</Sticker>
 			)}
+
 			{!searching && query.length >= 1 && results.length === 0 && (
 				<Text style={styles.emptyText}>
 					No users found. Discriminators (#1234) are auto-assigned;
 					ask your friend to share their code from their Account page.
+				</Text>
+			)}
+
+			{/* Referral footer — share-your-code call to action lives at
+			    the bottom of the Add panel per the design. The actual
+			    code lives on the Sounder/Account card; this is just a
+			    nudge. */}
+			{query.length === 0 && (
+				<Text style={styles.referralFooter}>
+					★ share your code from{" "}
+					<Text style={styles.referralFooterBold}>Account</Text>
+					{" "}for +100 snouts
 				</Text>
 			)}
 		</View>
@@ -272,7 +423,9 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 
 // ── Styles ────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-	wrap: { marginTop: 16 },
+	wrap: { flex: 1, marginTop: 16, paddingHorizontal: 14 },
+	scroll: { flex: 1 },
+	scrollContent: { paddingBottom: 110 },
 	kicker: { ...KICKER_PILL, marginBottom: 8 },
 	tabsRow: {
 		flexDirection: "row",
@@ -300,22 +453,95 @@ const styles = StyleSheet.create({
 	},
 	tabBtnTextActive: { color: WHIMSY.ink },
 	list: { gap: 8 },
-	row: {
+	// Friends list — single flat sticker holding rows separated by
+	// dashed bottom borders. From the redesign's single-card scrapbook
+	// pattern.
+	listSticker: { paddingHorizontal: 0, paddingVertical: 4 },
+	flatRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		paddingHorizontal: 14,
-		paddingVertical: 10,
-		gap: 10,
+		paddingVertical: 12,
+		gap: 12,
+	},
+	flatRowDivider: {
+		borderBottomWidth: 1.5,
+		borderBottomColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	// Initial-circle avatar — colored disc with the first letter, used
+	// in Friends + Add suggestions.
+	avatarCircle: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	avatarInitial: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 18,
+		color: WHIMSY.ink,
+	},
+	rowNameLine: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		gap: 6,
 	},
 	rowName: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
 		color: WHIMSY.ink,
+		flexShrink: 1,
+	},
+	rowDisc: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+	},
+	// PigAvatar wrapper — a small ink-bordered tile so the sprite
+	// reads as an avatar slot inside the flat row rather than a
+	// floating pig. Matches the leaderboard ClippingRow's treatment.
+	rowPigWrap: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream,
+		alignItems: "center",
+		justifyContent: "center",
+		overflow: "hidden",
+	},
+	rowWearsText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		marginTop: 4,
+	},
+	rowMetaLine: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		marginTop: 4,
+	},
+	rowHeart: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 12,
+		color: WHIMSY.roseDeep,
 	},
 	rowMeta: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.mute,
+	},
+	rowMetaDot: {
+		width: 3,
+		height: 3,
+		borderRadius: 2,
+		backgroundColor: WHIMSY.muteSoft,
 	},
 	rowChevron: {
 		fontFamily: FONTS.whimsy,
@@ -323,11 +549,51 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		paddingLeft: 8,
 	},
-	discrim: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
+	// Add panel — paper sticker with magnifier + input.
+	searchCard: { paddingVertical: 12, paddingHorizontal: 14 },
+	kickerSmall: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10,
+		letterSpacing: 1.4,
 		color: WHIMSY.mute,
-		marginTop: 1,
+		marginBottom: 8,
+	},
+	searchInputRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 12,
+		backgroundColor: WHIMSY.cream,
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+	},
+	searchGlyph: { fontSize: 16, color: WHIMSY.mute },
+	inputFlat: {
+		flex: 1,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		color: WHIMSY.ink,
+		paddingVertical: 0,
+	},
+	referralFooter: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 16,
+	},
+	atCapFooter: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		textAlign: "center",
+		marginTop: 14,
+	},
+	referralFooterBold: {
+		fontFamily: FONTS.bodyBlack,
+		color: WHIMSY.ink,
 	},
 	actionBtn: {
 		paddingHorizontal: 14,
@@ -365,17 +631,6 @@ const styles = StyleSheet.create({
 		lineHeight: 19,
 	},
 	addWrap: { gap: 10 },
-	input: {
-		fontFamily: FONTS.hand,
-		fontSize: 16,
-		paddingHorizontal: 14,
-		paddingVertical: 12,
-		borderRadius: 10,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		color: WHIMSY.ink,
-	},
 	feedback: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,

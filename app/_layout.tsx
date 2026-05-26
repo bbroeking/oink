@@ -16,8 +16,18 @@ import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, LogBox } from "react-native";
 import "react-native-reanimated";
+
+// Silence the bridgeless-Fabric "Unsupported dashed / dotted border
+// style" warning. RN's new architecture refuses dashed borders on
+// iOS, and 13 call sites across the app print this on every render —
+// which the dev server buffers as JSON-RPC frames, OOM'ing Metro
+// after a few hours of an open dev session. Dashed borders degrade
+// gracefully to solid; the visual hit is small, the OOM-prevention
+// is large. Replace with a real SVG <DashedDivider /> when we have
+// the cycles.
+LogBox.ignoreLogs(["Unsupported dashed", "Unsupported dotted"]);
 import * as Sentry from "@sentry/react-native";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -72,7 +82,11 @@ function RootLayoutInner() {
 	const [authChecked, setAuthChecked] = useState(false);
 	// Season 1: pending alignment-schism reveal. Set by the polling
 	// effect below when a user first crosses ±25 alignment.
-	const [schism, setSchism] = useState<{ side: SchismSide; score: number } | null>(null);
+	const [schism, setSchism] = useState<{
+		side: SchismSide;
+		score: number;
+		milestone: 25 | 50 | 100;
+	} | null>(null);
 	// Season 1 finale: pending Judgement Day verdict.
 	const [finale, setFinale] = useState<FinaleResult | null>(null);
 	// "While you were away" — bless/curse received since last launch.
@@ -97,9 +111,16 @@ function RootLayoutInner() {
 		const check = async () => {
 			const { data } = await supabase.rpc("check_schism_status");
 			if (cancelled) return;
-			const r = data as { side?: string; score?: number } | null;
+			const r = data as {
+				side?: string;
+				score?: number;
+				milestone?: number;
+			} | null;
 			if (r?.side === "angel" || r?.side === "goblin") {
-				setSchism({ side: r.side, score: r.score ?? 0 });
+				// Milestone defaults to 25 to match the pre-milestone
+				// server's return shape (and pre-migration installs).
+				const ms = r.milestone === 50 || r.milestone === 100 ? r.milestone : 25;
+				setSchism({ side: r.side, score: r.score ?? 0, milestone: ms });
 			}
 		};
 		check();
@@ -136,11 +157,13 @@ function RootLayoutInner() {
 		};
 	}, [authChecked]);
 
-	// "While you were away" — surface blessings + curses received
-	// since the last launch. Tracked client-side via AsyncStorage
-	// (`rituals_seen_v1` = the newest sent_at already shown). The
-	// events also live in the Friends-tab Inbox; this is the
-	// can't-miss-it launch announcement. Runs once on auth.
+	// "While you were away" — surface blessings + curses RECEIVED
+	// and trades ANSWERED since the last launch. Tracked client-side
+	// via AsyncStorage (`away_seen_v1` = the newest event timestamp
+	// already shown; falls back to legacy `rituals_seen_v1` for
+	// upgraded installs). The events also live in the Friends-tab
+	// Inbox; this is the can't-miss-it launch announcement. Runs
+	// once on auth.
 	useEffect(() => {
 		if (!authChecked) return;
 		let cancelled = false;
@@ -148,10 +171,15 @@ function RootLayoutInner() {
 			const { data: ures } = await supabase.auth.getUser();
 			const me = ures?.user?.id;
 			if (!me || cancelled) return;
-			const SEEN = "rituals_seen_v1";
+			const SEEN = "away_seen_v1";
+			const LEGACY = "rituals_seen_v1";
 			const since =
-				(await AsyncStorage.getItem(SEEN)) ?? new Date().toISOString();
-			const side = async (table: "blessings" | "curses") => {
+				(await AsyncStorage.getItem(SEEN)) ??
+				(await AsyncStorage.getItem(LEGACY)) ??
+				new Date().toISOString();
+
+			// Rituals: blessings + curses where receiver = me.
+			const ritualSide = async (table: "blessings" | "curses") => {
 				const { data } = await supabase
 					.from(table)
 					.select("kind, sender_id, sent_at")
@@ -165,41 +193,139 @@ function RootLayoutInner() {
 					sent_at: string;
 				}[];
 			};
-			const rows = [
-				...(await side("blessings")).map((r) => ({
-					...r,
-					source: "blessing" as const,
+
+			// Trades you requested that got fulfilled while you were
+			// gone — celebratory because the +2N tickles already
+			// landed in your barn. Pending requests aren't surfaced
+			// here; those sit in the Inbox actionable band where they
+			// belong (they need a tap, not a "got it" dismiss).
+			const tradeRows = await (async () => {
+				const { data } = await supabase
+					.from("tickle_trades")
+					.select("id, amount, target_id, fulfilled_at")
+					.eq("requester_id", me)
+					.eq("status", "fulfilled")
+					.gt("fulfilled_at", since)
+					.order("fulfilled_at", { ascending: false })
+					.limit(20);
+				return (data ?? []) as {
+					id: string;
+					amount: number;
+					target_id: string;
+					fulfilled_at: string;
+				}[];
+			})();
+
+			// System announcements — admin-issued messages that
+			// persist server-side. Independent of the `since` marker
+			// because the server tracks seen_at per row (so a fresh
+			// install still gets every unread announcement, not just
+			// ones newer than first-launch). Marked seen on modal
+			// dismiss via mark_announcement_seen.
+			const systemRows = await (async () => {
+				const { data } = await supabase.rpc("my_unseen_announcements");
+				return (data ?? []) as {
+					id: number;
+					kind: string;
+					title: string;
+					body: string;
+					data: unknown;
+					dispatched_at: string;
+				}[];
+			})();
+
+			// Normalize all events to a shared shape so we can sort + cap
+			// uniformly. `ts` is the comparable timestamp; `actor_id` is
+			// who to look up a display name for. System rows skip the
+			// actor lookup (no sender) but carry their own title/body.
+			type Norm = {
+				source: "blessing" | "curse" | "trade_fulfilled" | "system";
+				ts: string;
+				actor_id?: string;
+				kind?: string;
+				amount?: number;
+				// system-only
+				announcement_id?: number;
+				title?: string;
+				body?: string;
+			};
+			const all: Norm[] = [
+				...(await ritualSide("blessings")).map<Norm>((r) => ({
+					source: "blessing",
+					ts: r.sent_at,
+					actor_id: r.sender_id,
+					kind: r.kind,
 				})),
-				...(await side("curses")).map((r) => ({
-					...r,
-					source: "curse" as const,
+				...(await ritualSide("curses")).map<Norm>((r) => ({
+					source: "curse",
+					ts: r.sent_at,
+					actor_id: r.sender_id,
+					kind: r.kind,
+				})),
+				...tradeRows.map<Norm>((r) => ({
+					source: "trade_fulfilled",
+					ts: r.fulfilled_at,
+					actor_id: r.target_id,
+					amount: r.amount,
+				})),
+				...systemRows.map<Norm>((r) => ({
+					source: "system",
+					ts: r.dispatched_at,
+					announcement_id: r.id,
+					title: r.title,
+					body: r.body,
 				})),
 			];
+
 			if (cancelled) return;
-			if (rows.length === 0) {
+			if (all.length === 0) {
 				// Advance the marker so a first launch never dredges history.
 				AsyncStorage.setItem(SEEN, new Date().toISOString());
 				return;
 			}
-			const ids = [...new Set(rows.map((r) => r.sender_id))];
-			const { data: profs } = await supabase
-				.from("profiles")
-				.select("id, username")
-				.in("id", ids);
-			if (cancelled) return;
-			const byId = new Map(
-				((profs ?? []) as { id: string; username: string | null }[]).map(
-					(p) => [p.id, p.username]
-				)
-			);
-			rows.sort((a, b) => (a.sent_at < b.sent_at ? 1 : -1));
-			AsyncStorage.setItem(SEEN, rows[0].sent_at);
+			// Profile hydration only needed for rows with an actor_id
+			// (rituals + trades). System rows skip this.
+			const actorIds = [
+				...new Set(all.map((r) => r.actor_id).filter((x): x is string => !!x)),
+			];
+			let byId = new Map<string, string | null>();
+			if (actorIds.length > 0) {
+				const { data: profs } = await supabase
+					.from("profiles")
+					.select("id, username")
+					.in("id", actorIds);
+				if (cancelled) return;
+				byId = new Map(
+					((profs ?? []) as { id: string; username: string | null }[]).map(
+						(p) => [p.id, p.username]
+					)
+				);
+			}
+			all.sort((a, b) => (a.ts < b.ts ? 1 : -1));
+			// Marker advances on the newest ritual/trade event only —
+			// system announcements have their own server-side seen
+			// tracking, so they don't push the marker forward (they're
+			// already filtered by my_unseen_announcements).
+			const nonSystemNewest = all.find((r) => r.source !== "system");
+			if (nonSystemNewest) {
+				AsyncStorage.setItem(SEEN, nonSystemNewest.ts);
+			}
 			setRituals(
-				rows.map((r) => ({
-					source: r.source,
-					kind: r.kind,
-					from: byId.get(r.sender_id) ?? null,
-				}))
+				all.map<RitualEvent>((r) => {
+					if (r.source === "system") {
+						return {
+							source: "system",
+							announcementId: r.announcement_id ?? 0,
+							title: r.title ?? "",
+							body: r.body ?? "",
+						};
+					}
+					const from = r.actor_id ? byId.get(r.actor_id) ?? null : null;
+					if (r.source === "trade_fulfilled") {
+						return { source: "trade_fulfilled", amount: r.amount ?? 0, from };
+					}
+					return { source: r.source, kind: r.kind ?? "", from };
+				})
 			);
 		})();
 		return () => {
@@ -251,10 +377,12 @@ function RootLayoutInner() {
 		};
 	}, [authChecked]);
 
-	// Push tap → deep route. Trade + bless/curse payloads carry
-	// `data.screen` ('trade' or 'friends'); both open the Friends tab,
-	// where the Inbox carries the request / event. One listener;
-	// expo-notifications coalesces foreground + background taps.
+	// Push tap → deep route. Payload `data.screen` drives where the
+	// tap lands:
+	//   'trade' / 'friends' → Friends tab (Inbox carries the event)
+	//   'achievements'      → /achievements (claim the new unlock)
+	// One listener; expo-notifications coalesces foreground +
+	// background taps.
 	useEffect(() => {
 		const sub = Notifications.addNotificationResponseReceivedListener((res) => {
 			const data = (res.notification.request.content.data ?? {}) as {
@@ -262,6 +390,8 @@ function RootLayoutInner() {
 			};
 			if (data.screen === "trade" || data.screen === "friends") {
 				router.replace("/friends" as any);
+			} else if (data.screen === "achievements") {
+				router.replace("/achievements" as any);
 			}
 		});
 		return () => sub.remove();
@@ -291,6 +421,7 @@ function RootLayoutInner() {
 				<AlignmentSchismModal
 					side={schism.side}
 					score={schism.score}
+					milestone={schism.milestone}
 					onDismiss={() => setSchism(null)}
 				/>
 			)}
@@ -303,7 +434,22 @@ function RootLayoutInner() {
 			{rituals && !schism && !finale && (
 				<WhileAwayModal
 					events={rituals}
-					onDismiss={() => setRituals(null)}
+					onDismiss={() => {
+						// Server-side mark-seen for any system announcements
+						// in the batch. Fire-and-forget; if the network is
+						// down the rows stay unseen and reappear next launch,
+						// which is the correct conservative behavior.
+						rituals.forEach((e) => {
+							if (e.source === "system") {
+								supabase
+									.rpc("mark_announcement_seen", {
+										announcement_id: e.announcementId,
+									})
+									.then(() => {});
+							}
+						});
+						setRituals(null);
+					}}
 				/>
 			)}
 			{achievements.length > 0 && !schism && !finale && !rituals && (

@@ -1,61 +1,15 @@
 import { Tabs } from "expo-router";
 import React, { useState, useEffect, useCallback } from "react";
-import { Platform, View } from "react-native";
+import { View, AppState, Image, Text, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabase";
 import SupaAuth from "@/components/SupaAuth";
 import UsernameSetup from "@/components/UsernameSetup";
 import { Onboarding } from "@/components/Onboarding";
-import { Icon, IconName } from "@/components/ui/Icon";
-import { COLORS, FONTS, WHIMSY } from "@/constants/theme";
+import { HangingSignsTabBar } from "@/components/ui/HangingSignsTabBar";
+import { WHIMSY, KICKER_TEXT } from "@/constants/theme";
 import { initIAP } from "@/utils/iap";
-
-const TAB_ICON: Record<string, IconName> = {
-	index: "tabBarn",
-	friends: "tabFriends",
-	season: "tabSeason",
-	shop: "tabShop",
-	account: "tabMe",
-};
-
-// Tape-strip active indicator — a small yellow tape rectangle just
-// below the icon when the tab is focused. Mirrors the .tape-strip
-// rule from the redesign's styles.css (26×4, sun w/ ink border).
-function TabIcon({
-	name,
-	focused,
-}: {
-	name: string;
-	color: string;
-	focused: boolean;
-}) {
-	return (
-		<View style={{ alignItems: "center", justifyContent: "center" }}>
-			<Icon
-				name={TAB_ICON[name]}
-				size={24}
-				color={WHIMSY.ink}
-				filled={focused}
-				strokeWidth={2}
-			/>
-			{focused && (
-				<View
-					style={{
-						position: "absolute",
-						bottom: -10,
-						width: 26,
-						height: 4,
-						backgroundColor: WHIMSY.sun,
-						borderRadius: 2,
-						borderWidth: 1,
-						borderColor: WHIMSY.ink,
-					}}
-				/>
-			)}
-		</View>
-	);
-}
 
 export default function TabLayout() {
 	const [session, setSession] = useState<Session | null>(null);
@@ -95,6 +49,35 @@ export default function TabLayout() {
 		});
 	}, []);
 
+	// Bounty-ready badge on the Season tab. Polled on mount + every
+	// foreground transition. Cheap RPC (counts rows from my_weekly_bounties),
+	// no realtime sub. The bounty_ready_push trigger fires immediately
+	// on the writes that move progress; this badge is the "ambient"
+	// reminder when you missed (or muted) the push.
+	const [bountyReady, setBountyReady] = useState(0);
+	useEffect(() => {
+		if (!session) return;
+		let cancelled = false;
+		const fetchCount = async () => {
+			const { data } = await supabase.rpc("bounty_ready_count");
+			if (cancelled) return;
+			setBountyReady(typeof data === "number" ? data : 0);
+		};
+		fetchCount();
+		const sub = AppState.addEventListener("change", (state) => {
+			if (state === "active") fetchCount();
+		});
+		// 30s ambient poll — covers mid-session claim (badge clears
+		// when the count drops to 0 after a tap). Cheap RPC; no
+		// realtime sub needed.
+		const interval = setInterval(fetchCount, 30_000);
+		return () => {
+			cancelled = true;
+			sub.remove();
+			clearInterval(interval);
+		};
+	}, [session]);
+
 	if (!session) {
 		return (
 			<View style={{ flex: 1 }}>
@@ -104,7 +87,28 @@ export default function TabLayout() {
 	}
 
 	if (username === undefined) {
-		return <View style={{ flex: 1, backgroundColor: COLORS.ink }} />;
+		// Profile lookup in flight — show Rosie on a cream backdrop
+		// so the loading beat reads as a continuation of the splash
+		// (was a bare black screen, which felt like a crash).
+		return (
+			<View
+				style={{
+					flex: 1,
+					backgroundColor: WHIMSY.cream,
+					alignItems: "center",
+					justifyContent: "center",
+					gap: 14,
+				}}
+			>
+				<Image
+					source={require("../../assets/images/sprites/rosie/idle_1.png")}
+					style={{ width: 200, height: 207 }}
+					resizeMode="contain"
+				/>
+				<Text style={KICKER_TEXT}>★ saddling up ★</Text>
+				<ActivityIndicator color={WHIMSY.ink} />
+			</View>
+		);
 	}
 
 	if (!username) {
@@ -117,80 +121,21 @@ export default function TabLayout() {
 
 	return (
 		<Tabs
-			screenOptions={{
-				tabBarStyle: {
-					backgroundColor: WHIMSY.paper,
-					borderTopWidth: 2,
-					borderTopColor: WHIMSY.ink,
-					height: Platform.OS === "ios" ? 88 : 68,
-					paddingBottom: Platform.OS === "ios" ? 28 : 8,
-					paddingTop: 10,
-					elevation: 0,
-					shadowOpacity: 0,
-				},
-				tabBarActiveTintColor: WHIMSY.ink,
-				tabBarInactiveTintColor: WHIMSY.mute,
-				tabBarLabelStyle: {
-					fontSize: 11,
-					fontFamily: FONTS.hand,
-					letterSpacing: 0.2,
-					paddingBottom: Platform.OS === "ios" ? 0 : 4,
-				},
-				tabBarIconStyle: {
-					marginBottom: 0,
-				},
-			}}
+			// Custom tabBar — the swinging hanging-signs treatment
+			// from the design's bar-options.jsx (Option B). Replaces
+			// the default flat label+icon strip; the bar owns its
+			// own height, the wood-rail gradient, the per-tab signs
+			// with their sway loops, and the swing-in tap animation.
+			tabBar={(props) => (
+				<HangingSignsTabBar {...props} badges={{ season: bountyReady }} />
+			)}
+			screenOptions={{ headerShown: false }}
 		>
-			<Tabs.Screen
-				name="index"
-				options={{
-					title: "Barn",
-					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name="index" color={color} focused={focused} />
-					),
-					headerShown: false,
-				}}
-			/>
-			<Tabs.Screen
-				name="friends"
-				options={{
-					title: "Friends",
-					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name="friends" color={color} focused={focused} />
-					),
-					headerShown: false,
-				}}
-			/>
-			<Tabs.Screen
-				name="season"
-				options={{
-					title: "Season",
-					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name="season" color={color} focused={focused} />
-					),
-					headerShown: false,
-				}}
-			/>
-			<Tabs.Screen
-				name="shop"
-				options={{
-					title: "Shop",
-					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name="shop" color={color} focused={focused} />
-					),
-					headerShown: false,
-				}}
-			/>
-			<Tabs.Screen
-				name="account"
-				options={{
-					title: "Me",
-					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name="account" color={color} focused={focused} />
-					),
-					headerShown: false,
-				}}
-			/>
+			<Tabs.Screen name="index"   options={{ title: "Barn" }} />
+			<Tabs.Screen name="friends" options={{ title: "Friends" }} />
+			<Tabs.Screen name="season"  options={{ title: "Season" }} />
+			<Tabs.Screen name="shop"    options={{ title: "Shop" }} />
+			<Tabs.Screen name="account" options={{ title: "Me" }} />
 		</Tabs>
 	);
 }

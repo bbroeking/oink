@@ -13,6 +13,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
+import { SnoutCoin } from "./ui/SnoutCoin";
 import { CURSE_META, type CurseKind } from "../utils/rituals";
 import {
 	FONTS,
@@ -62,7 +63,7 @@ export function CleanseModal({ curses, onDismiss, onCleansed }: Props) {
 			<Pressable style={styles.backdrop} onPress={onDismiss}>
 				<Pressable style={styles.cardWrap} onPress={() => {}}>
 					<Sticker color="paper" rotate={-1} radius={18} style={[styles.card, STICKER_SHADOW]}>
-						<Text style={styles.kicker}>🟢 you've been cursed 🟢</Text>
+						<Text style={styles.kicker}>★ you've been cursed ★</Text>
 						<Text style={styles.headline}>
 							{curses.length === 1
 								? "A curse clings to you"
@@ -93,9 +94,12 @@ export function CleanseModal({ curses, onDismiss, onCleansed }: Props) {
 								(pressed || busy) && { opacity: 0.7 },
 							]}
 						>
-							<Text style={styles.cleanseBtnText}>
-								{busy ? "…" : "Cleanse for 5 🪙"}
-							</Text>
+							<View style={styles.cleanseBtnInner}>
+								<Text style={styles.cleanseBtnText}>
+									{busy ? "Cleansing…" : "Cleanse for 5"}
+								</Text>
+								{!busy && <SnoutCoin size={14} />}
+							</View>
 						</Pressable>
 						<Pressable onPress={onDismiss} hitSlop={10}>
 							<Text style={styles.waitText}>or wait it out</Text>
@@ -148,6 +152,11 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 26,
 		paddingVertical: 11,
 		marginBottom: 8,
+	},
+	cleanseBtnInner: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
 	},
 	cleanseBtnText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
 	waitText: {

@@ -1,0 +1,369 @@
+<!doctype html>
+<!--
+  Tickles admin dashboard — a standalone HTML page that lists every
+  user's tickle state. Reads from the admin_tickle_overview() RPC
+  which is gated to is_test=true accounts (you need to be Brian).
+
+  How to use:
+    1. Open this file in a browser: open dev-tools/admin-tickles.html
+    2. Sign in with the test-account email + password
+    3. Table renders. Click column headers to sort.
+
+  Why HTML+JS and not an in-app screen: lighter footprint, no rebuild
+  needed when the schema changes, easy to throw away. Anon key is
+  embedded (it's already public in utils/supabase.ts).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tickles · admin</title>
+<style>
+	:root {
+		--paper: #f6efe2;
+		--cream: #fbf6e9;
+		--ink: #2b2b2b;
+		--rose: #f7c3c4;
+		--sage: #cfe1bf;
+		--sun: #ffd87a;
+		--lilac: #d6cdef;
+		--peach: #f7d2ad;
+		--mute: #7c736b;
+	}
+	* { box-sizing: border-box; }
+	body {
+		margin: 0;
+		background: var(--cream);
+		color: var(--ink);
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+		padding: 24px;
+	}
+	h1 { font-size: 28px; margin: 0 0 4px 0; }
+	.sub { color: var(--mute); margin-bottom: 24px; }
+
+	#login {
+		max-width: 360px;
+		background: var(--paper);
+		border: 2px solid var(--ink);
+		border-radius: 14px;
+		padding: 20px;
+		box-shadow: 4px 4px 0 var(--ink);
+	}
+	#login label { display: block; margin-bottom: 12px; font-weight: 700; }
+	#login input {
+		display: block;
+		width: 100%;
+		padding: 10px 12px;
+		font-size: 14px;
+		border: 1.5px solid var(--ink);
+		border-radius: 8px;
+		background: white;
+		margin-top: 4px;
+	}
+	#login button {
+		margin-top: 8px;
+		padding: 10px 18px;
+		font-size: 14px;
+		font-weight: 700;
+		background: var(--lilac);
+		border: 2px solid var(--ink);
+		border-radius: 10px;
+		cursor: pointer;
+		box-shadow: 2px 2px 0 var(--ink);
+	}
+	#login button:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+	#login .err { color: #c84a4a; margin-top: 12px; font-size: 13px; }
+
+	#toolbar {
+		display: flex;
+		gap: 12px;
+		align-items: center;
+		margin-bottom: 16px;
+		flex-wrap: wrap;
+	}
+	#toolbar input[type=text] {
+		padding: 8px 10px;
+		font-size: 14px;
+		border: 1.5px solid var(--ink);
+		border-radius: 8px;
+		min-width: 220px;
+	}
+	#toolbar button {
+		padding: 8px 14px;
+		font-size: 13px;
+		font-weight: 700;
+		background: var(--sun);
+		border: 2px solid var(--ink);
+		border-radius: 8px;
+		cursor: pointer;
+		box-shadow: 2px 2px 0 var(--ink);
+	}
+	#toolbar .meta {
+		margin-left: auto;
+		color: var(--mute);
+		font-size: 13px;
+	}
+
+	table {
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 0;
+		background: var(--paper);
+		border: 2px solid var(--ink);
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow: 4px 4px 0 var(--ink);
+	}
+	th, td {
+		text-align: left;
+		padding: 8px 12px;
+		font-size: 13px;
+		border-bottom: 1px solid rgba(43,43,43,0.12);
+	}
+	th {
+		background: var(--sage);
+		font-weight: 800;
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		cursor: pointer;
+		user-select: none;
+		white-space: nowrap;
+	}
+	th.sort-asc::after  { content: " ▲"; color: var(--ink); }
+	th.sort-desc::after { content: " ▼"; color: var(--ink); }
+	tr:last-child td { border-bottom: none; }
+	tr:hover td { background: rgba(255, 216, 122, 0.18); }
+	td.num { text-align: right; font-variant-numeric: tabular-nums; }
+	td.test { background: rgba(214, 205, 239, 0.35); font-weight: 700; }
+	td.cap { color: #2e7d32; font-weight: 700; }
+	td.dim { color: var(--mute); }
+	.align-pos { color: #2e7d32; font-weight: 700; }
+	.align-neg { color: #c84a4a; font-weight: 700; }
+	.align-zero { color: var(--mute); }
+	#err { color: #c84a4a; margin: 16px 0; }
+	#empty { color: var(--mute); margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<h1>Tickles · admin</h1>
+<div class="sub">Per-user tickle state from <code>admin_tickle_overview()</code>. Gated to is_test accounts.</div>
+
+<div id="login">
+	<div style="font-weight:800;font-size:15px;margin-bottom:14px;">Sign in</div>
+	<label>Email
+		<input id="email" type="email" autocomplete="email" />
+	</label>
+	<label>Password
+		<input id="password" type="password" autocomplete="current-password" />
+	</label>
+	<button id="loginBtn">Sign in</button>
+	<div id="loginErr" class="err" hidden></div>
+</div>
+
+<div id="app" hidden>
+	<div id="toolbar">
+		<input id="filter" type="text" placeholder="filter by username…" />
+		<button id="refresh">Refresh</button>
+		<button id="logout" style="background: var(--peach);">Sign out</button>
+		<span class="meta" id="meta"></span>
+	</div>
+	<div id="err" hidden></div>
+	<div id="empty" hidden>No rows.</div>
+	<table id="grid" hidden>
+		<thead>
+			<tr id="head"></tr>
+		</thead>
+		<tbody id="body"></tbody>
+	</table>
+</div>
+
+<script type="module">
+	import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+	// Same anon key + URL as utils/supabase.ts — anon is safe to embed.
+	const SUPABASE_URL = "https://wbcnhvvakptoinwkulmn.supabase.co";
+	const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndiY25odnZha3B0b2lud2t1bG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU4NzQ4NDAsImV4cCI6MjA1MTQ1MDg0MH0.tFthqZOKZaBVd5NYhNbF5LHTGpm5hClfLl8F5QESv9o";
+
+	const supa = createClient(SUPABASE_URL, SUPABASE_ANON, {
+		auth: { persistSession: true, autoRefreshToken: true },
+	});
+
+	const $ = (id) => document.getElementById(id);
+	const loginPanel = $("login");
+	const appPanel = $("app");
+
+	const COLS = [
+		{ key: "username",         label: "User",          render: renderUser },
+		{ key: "tickles_earned",   label: "Earned",        cls: "num" },
+		{ key: "balance_now",      label: "Balance",       render: renderBalance, cls: "num" },
+		{ key: "cap",              label: "Cap",           cls: "num dim" },
+		{ key: "next_regen_secs",  label: "Next regen",    render: renderRegen,   cls: "num" },
+		{ key: "alignment_score",  label: "Align",         render: renderAlign,   cls: "num" },
+		{ key: "active_hat_name",  label: "Wearing",       render: renderHat },
+		{ key: "last_increment",   label: "Last activity", render: renderLastSeen, cls: "dim" },
+		{ key: "is_test",          label: "Test",          render: renderTest, cls: "test" },
+	];
+
+	let rows = [];
+	let sortKey = "tickles_earned";
+	let sortDir = "desc";
+	let filter = "";
+
+	function renderUser(r) {
+		const name = r.username ?? "—";
+		const disc = r.discriminator ? `<span style="color:var(--mute)">#${r.discriminator}</span>` : "";
+		return `<strong>${escapeHtml(name)}</strong> ${disc}`;
+	}
+	function renderBalance(r) {
+		const raw = r.balance_raw;
+		const now = r.balance_now;
+		if (raw === now) return `${now}`;
+		return `${now} <span style="color:var(--mute)">(raw ${raw})</span>`;
+	}
+	function renderRegen(r) {
+		if (r.next_regen_secs == null) return `<span class="cap">CAP</span>`;
+		const s = r.next_regen_secs;
+		if (s < 60) return `${s}s`;
+		const m = Math.floor(s / 60);
+		const ss = s % 60;
+		return `${m}m ${ss}s`;
+	}
+	function renderAlign(r) {
+		const v = r.alignment_score ?? 0;
+		const cls = v > 0 ? "align-pos" : v < 0 ? "align-neg" : "align-zero";
+		return `<span class="${cls}">${v > 0 ? "+" + v : v}</span>`;
+	}
+	function renderHat(r) {
+		return r.active_hat_name ? escapeHtml(r.active_hat_name) : `<span style="color:var(--mute)">—</span>`;
+	}
+	function renderLastSeen(r) {
+		if (!r.last_increment) return "—";
+		const t = new Date(r.last_increment);
+		const ms = Date.now() - t.getTime();
+		const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+		if (days > 30) return `${days}d ago`;
+		if (days > 0)  return `${days}d ago`;
+		const hours = Math.floor(ms / (60 * 60 * 1000));
+		if (hours > 0) return `${hours}h ago`;
+		const mins = Math.floor(ms / 60_000);
+		return `${mins}m ago`;
+	}
+	function renderTest(r) {
+		return r.is_test ? "TEST" : "";
+	}
+	function escapeHtml(s) {
+		return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+	}
+
+	function renderHead() {
+		$("head").innerHTML = COLS.map(c => {
+			const sortCls = c.key === sortKey ? (sortDir === "asc" ? "sort-asc" : "sort-desc") : "";
+			return `<th data-key="${c.key}" class="${sortCls}">${c.label}</th>`;
+		}).join("");
+		[...$("head").children].forEach(th => {
+			th.addEventListener("click", () => {
+				const k = th.dataset.key;
+				if (sortKey === k) {
+					sortDir = sortDir === "asc" ? "desc" : "asc";
+				} else {
+					sortKey = k;
+					sortDir = k === "username" ? "asc" : "desc";
+				}
+				renderTable();
+			});
+		});
+	}
+
+	function renderTable() {
+		renderHead();
+		const f = filter.trim().toLowerCase();
+		const filtered = rows.filter(r =>
+			!f || (r.username ?? "").toLowerCase().includes(f)
+		);
+		const sorted = [...filtered].sort((a, b) => {
+			const av = a[sortKey], bv = b[sortKey];
+			if (av == null && bv == null) return 0;
+			if (av == null) return 1;
+			if (bv == null) return -1;
+			if (typeof av === "number" && typeof bv === "number") {
+				return sortDir === "asc" ? av - bv : bv - av;
+			}
+			return sortDir === "asc"
+				? String(av).localeCompare(String(bv))
+				: String(bv).localeCompare(String(av));
+		});
+
+		$("grid").hidden = sorted.length === 0;
+		$("empty").hidden = sorted.length !== 0;
+		$("body").innerHTML = sorted.map(r => {
+			const tds = COLS.map(c => {
+				const v = c.render ? c.render(r) : (r[c.key] ?? "");
+				return `<td class="${c.cls ?? ""}">${v}</td>`;
+			}).join("");
+			return `<tr>${tds}</tr>`;
+		}).join("");
+		$("meta").textContent = `${sorted.length} of ${rows.length} users`;
+	}
+
+	async function loadOverview() {
+		$("err").hidden = true;
+		const { data, error } = await supa.rpc("admin_tickle_overview");
+		if (error) {
+			$("err").textContent = `RPC error: ${error.message}`;
+			$("err").hidden = false;
+			rows = [];
+			renderTable();
+			return;
+		}
+		rows = data ?? [];
+		renderTable();
+	}
+
+	async function showApp() {
+		loginPanel.hidden = true;
+		appPanel.hidden = false;
+		await loadOverview();
+	}
+	function showLogin() {
+		loginPanel.hidden = false;
+		appPanel.hidden = true;
+	}
+
+	$("loginBtn").addEventListener("click", async () => {
+		$("loginErr").hidden = true;
+		const email = $("email").value.trim();
+		const password = $("password").value;
+		if (!email || !password) {
+			$("loginErr").textContent = "Email + password required.";
+			$("loginErr").hidden = false;
+			return;
+		}
+		const { error } = await supa.auth.signInWithPassword({ email, password });
+		if (error) {
+			$("loginErr").textContent = error.message;
+			$("loginErr").hidden = false;
+			return;
+		}
+		await showApp();
+	});
+
+	$("filter").addEventListener("input", (e) => {
+		filter = e.target.value;
+		renderTable();
+	});
+	$("refresh").addEventListener("click", loadOverview);
+	$("logout").addEventListener("click", async () => {
+		await supa.auth.signOut();
+		showLogin();
+	});
+
+	// Boot — if we have a session, skip the login form.
+	const { data: sess } = await supa.auth.getSession();
+	if (sess?.session) await showApp();
+	else showLogin();
+</script>
+
+</body>
+</html>
