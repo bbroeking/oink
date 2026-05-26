@@ -1,6 +1,7 @@
-// Cleanse. Shows the caller's active curses and lets them spend 5
-// snouts to wipe all of them. Surfaced from Barn when
-// my_active_effects returns any curse rows.
+// Cleanse. Shows the caller's active curses and confirms spending
+// 5 snouts to wipe them all. Pure UI — the mutation lives in the
+// useActiveEffects hook; this modal awaits its onConfirm result and
+// renders the success/failure UX (haptics, dismiss, feedback line).
 import React, { useState } from "react";
 import {
 	Modal,
@@ -11,10 +12,11 @@ import {
 	Pressable,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { CURSE_META, type CurseKind } from "../utils/rituals";
+import { type Effect } from "../utils/activeEffects";
+import { type CleanseResult } from "../hooks/useActiveEffects";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -23,35 +25,29 @@ import {
 	WHIMSY,
 } from "@/constants/theme";
 
-export interface ActiveCurse {
-	kind: CurseKind;
-	expires_at: string | null;
-}
-
 interface Props {
-	curses: ActiveCurse[];
+	curses: Effect[];
 	onDismiss: () => void;
-	// Fired after a successful cleanse so the parent can refresh effects.
-	onCleansed?: () => void;
+	// Fires the mutation. Returns the RPC result so the modal can
+	// render success/failure UX without owning the Supabase call.
+	onConfirm: () => Promise<CleanseResult>;
 }
 
-export function CleanseModal({ curses, onDismiss, onCleansed }: Props) {
+export function CleanseModal({ curses, onDismiss, onConfirm }: Props) {
 	const [busy, setBusy] = useState(false);
 	const [feedback, setFeedback] = useState<string | null>(null);
 
-	const cleanse = async () => {
+	const onPress = async () => {
 		if (busy) return;
 		setBusy(true);
-		const { data } = await supabase.rpc("cleanse_curses");
-		const r = data as { ok?: boolean; reason?: string; cleared?: number } | null;
+		const r = await onConfirm();
 		setBusy(false);
-		if (r?.ok) {
+		if (r.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
 				() => {}
 			);
-			onCleansed?.();
 			onDismiss();
-		} else if (r?.reason === "insufficient_snouts") {
+		} else if (r.reason === "insufficient_snouts") {
 			setFeedback("Not enough snouts — you need 5.");
 		} else {
 			setFeedback("Couldn't cleanse. Try again.");
@@ -72,7 +68,7 @@ export function CleanseModal({ curses, onDismiss, onCleansed }: Props) {
 
 						<View style={styles.list}>
 							{curses.map((c, i) => {
-								const meta = CURSE_META[c.kind];
+								const meta = CURSE_META[c.kind as CurseKind];
 								return (
 									<View key={i} style={styles.curseRow}>
 										<Image source={meta?.icon} style={styles.curseIcon} />
@@ -87,7 +83,7 @@ export function CleanseModal({ curses, onDismiss, onCleansed }: Props) {
 
 						<Pressable
 							testID="cleanse-confirm"
-							onPress={cleanse}
+							onPress={onPress}
 							disabled={busy}
 							style={({ pressed }) => [
 								styles.cleanseBtn,

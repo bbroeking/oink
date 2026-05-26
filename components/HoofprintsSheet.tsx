@@ -10,7 +10,7 @@
 // Animation uses the same decoupled-backdrop+slide pattern as
 // UserSheet — backdrop fades 0→1 while the sheet translates from
 // off-screen → resting at the bottom, so the dim doesn't drag with
-// the card.
+// the card. Data + cleanse live in useActiveEffects.
 
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -24,10 +24,11 @@ import {
 	Easing,
 	Dimensions,
 } from "react-native";
-import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
-import { CleanseModal, type ActiveCurse } from "./CleanseModal";
+import { CleanseModal } from "./CleanseModal";
+import { useActiveEffects } from "../hooks/useActiveEffects";
+import { formatLeft, type Effect } from "../utils/activeEffects";
 import {
 	BLESSING_META,
 	CURSE_META,
@@ -42,41 +43,18 @@ import {
 	WHIMSY,
 } from "@/constants/theme";
 
-interface Effect {
-	source: "blessing" | "curse";
-	kind: string;
-	expires_at: string;
-	sender_id: string | null;
-	sender_username: string | null;
-}
-
 interface Props {
 	open: boolean;
 	onClose: () => void;
 }
 
-// "5m" / "2h 14m" / "expiring" — same shape the chip uses, scoped
-// here so the sheet stays self-contained.
-function shortLeft(iso: string): string {
-	const ms = new Date(iso).getTime() - Date.now();
-	if (ms <= 0) return "expiring";
-	const mins = Math.round(ms / 60000);
-	if (mins < 60) return `${mins}m`;
-	const h = Math.floor(mins / 60);
-	const m = mins % 60;
-	return m ? `${h}h ${m}m` : `${h}h`;
-}
-
 export function HoofprintsSheet({ open, onClose }: Props) {
-	const [effects, setEffects] = useState<Effect[]>([]);
-	// Tap-Cleanse no longer fires the RPC directly — opens the
-	// shared CleanseModal confirm step instead so a misfire doesn't
-	// instantly burn 5 snouts.
+	const { blessings, curses, cleanse } = useActiveEffects({ enabled: open });
 	const [cleanseOpen, setCleanseOpen] = useState(false);
 
-	// Sheet animation. Same pattern as the UserSheet fix: one
-	// Animated.Value drives backdrop opacity AND sheet translateY
-	// in lockstep, so the dim doesn't slide with the card.
+	// Sheet animation. One Animated.Value drives backdrop opacity AND
+	// sheet translateY in lockstep, so the dim doesn't slide with the
+	// card.
 	const screenH = useRef(Dimensions.get("window").height).current;
 	const sheetAnim = useRef(new Animated.Value(0)).current;
 	useEffect(() => {
@@ -90,29 +68,9 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 		}).start();
 	}, [open, sheetAnim]);
 
-	// Re-pull the effects list whenever the sheet opens so the
-	// recap is always current (not a stale snapshot from when the
-	// strip last loaded).
-	useEffect(() => {
-		if (!open) return;
-		supabase.rpc("my_active_effects").then(({ data }) => {
-			const rows = (data as Effect[] | null) ?? [];
-			rows.sort((a, b) => (a.source < b.source ? -1 : 1));
-			setEffects(rows);
-		});
-	}, [open]);
-
-	// Optimistic post-cleanse update: drop curse rows immediately so
-	// the sheet reflects the cleanse before the realtime channel
-	// re-pushes my_active_effects. The modal owns the RPC + haptics.
-	const onCleansed = () => {
-		setEffects((prev) => prev.filter((e) => e.source !== "curse"));
-	};
-
 	if (!open) return null;
 
-	const blessings = effects.filter((e) => e.source === "blessing");
-	const curses = effects.filter((e) => e.source === "curse");
+	const total = blessings.length + curses.length;
 	const backdropOpacity = sheetAnim;
 	const sheetTranslateY = sheetAnim.interpolate({
 		inputRange: [0, 1],
@@ -144,7 +102,7 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 						<Text style={styles.kicker}>★ left by the sounder</Text>
 						<Text style={styles.title}>Hoofprints on you</Text>
 
-						{effects.length === 0 && (
+						{total === 0 && (
 							<Text style={styles.emptyText}>
 								Nothing on your snout right now.
 							</Text>
@@ -198,12 +156,9 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 			</Animated.View>
 			{cleanseOpen && (
 				<CleanseModal
-					curses={curses.map<ActiveCurse>((c) => ({
-						kind: c.kind as CurseKind,
-						expires_at: c.expires_at,
-					}))}
+					curses={curses}
 					onDismiss={() => setCleanseOpen(false)}
-					onCleansed={onCleansed}
+					onConfirm={cleanse}
 				/>
 			)}
 		</Modal>
@@ -253,7 +208,7 @@ function EffectCard({ effect }: { effect: Effect }) {
 					)}
 					<Text style={styles.cardFrom} numberOfLines={1}>
 						from <Text style={styles.cardFromBold}>{senderName}</Text> ·{" "}
-						{shortLeft(effect.expires_at)} left
+						{formatLeft(effect.expires_at)} left
 					</Text>
 				</View>
 			</View>

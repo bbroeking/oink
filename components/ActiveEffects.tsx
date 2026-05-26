@@ -12,13 +12,12 @@
 //   • nothing active — renders null (no clutter)
 //
 // Lives at the top of the Inbox segment in the Friends hub.
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
-import { CleanseModal, type ActiveCurse } from "./CleanseModal";
+import { CleanseModal } from "./CleanseModal";
+import { useActiveEffects } from "../hooks/useActiveEffects";
 import {
 	BLESSING_META,
 	CURSE_META,
@@ -28,48 +27,15 @@ import {
 import { FONTS, KICKER_TEXT, WHIMSY, ROW_TILTS } from "@/constants/theme";
 import { SectionHeader } from "./ui/SectionHeader";
 
-interface Effect {
-	source: "blessing" | "curse";
-	kind: string;
-	expires_at: string;
-	sender_id: string | null;
-	sender_username: string | null;
-}
-
-// Static "time left" — recomputed on every focus (no per-second timer).
-function countdown(iso: string): string {
-	const ms = new Date(iso).getTime() - Date.now();
-	if (ms <= 0) return "expiring";
-	const mins = Math.round(ms / 60000);
-	if (mins < 60) return `${mins}m left`;
-	const h = Math.floor(mins / 60);
-	const m = mins % 60;
-	return m ? `${h}h ${m}m left` : `${h}h left`;
-}
-
 export function ActiveEffects() {
-	const [effects, setEffects] = useState<Effect[] | null>(null);
+	const { effects, curses, cleanse, formatLeft } = useActiveEffects();
 	// Inline Cleanse pill no longer fires the RPC directly — opens
 	// the shared CleanseModal so a stray tap doesn't instantly burn
-	// 5 snouts. The modal owns the RPC + haptics; we refresh on close.
+	// 5 snouts. The hook owns the optimistic update + the RPC.
 	const [cleanseOpen, setCleanseOpen] = useState(false);
 
-	const load = useCallback(() => {
-		supabase.rpc("my_active_effects").then(({ data }) => {
-			const rows = (data as Effect[] | null) ?? [];
-			// blessings first, then curses
-			rows.sort((a, b) => (a.source < b.source ? -1 : 1));
-			setEffects(rows);
-		});
-	}, []);
-	useFocusEffect(useCallback(() => load(), [load]));
-
 	// Nothing active → render nothing (the empty state is just absence).
-	if (!effects || effects.length === 0) return null;
-
-	const curses: ActiveCurse[] = effects
-		.filter((e) => e.source === "curse")
-		.map((e) => ({ kind: e.kind as CurseKind, expires_at: e.expires_at }));
+	if (effects.length === 0) return null;
 
 	return (
 		<View>
@@ -145,13 +111,12 @@ export function ActiveEffects() {
 									blessed ? styles.cdBless : styles.cdCurse,
 								]}
 							>
-								{countdown(e.expires_at)}
+								{formatLeft(e.expires_at, true)}
 							</Text>
-							{/* Per-curse Cleanse pill. Opens the shared
-							    CleanseModal as a confirm step — cleanse_curses
+							{/* Per-curse Cleanse pill — opens the shared
+							    CleanseModal as a confirm step. cleanse_curses
 							    is one-shot (wipes every active curse in a
-							    single 5-snout charge), so any per-curse tap
-							    routes to the same modal. */}
+							    single 5-snout charge). */}
 							{!blessed && (
 								<Pressable
 									onPress={() => setCleanseOpen(true)}
@@ -174,7 +139,7 @@ export function ActiveEffects() {
 				<CleanseModal
 					curses={curses}
 					onDismiss={() => setCleanseOpen(false)}
-					onCleansed={load}
+					onConfirm={cleanse}
 				/>
 			)}
 		</View>
@@ -247,8 +212,7 @@ const styles = StyleSheet.create({
 		gap: 6,
 	},
 	// Per-curse inline Cleanse pill — gold sun pill with the snout
-	// coin + label. Calls cleanse_curses which wipes every active
-	// curse in a single 5-snout charge.
+	// coin + label.
 	inlineCleanseBtn: {
 		flexDirection: "row",
 		alignItems: "center",
