@@ -272,7 +272,17 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 	const [searching, setSearching] = useState(false);
 	const [sending, setSending] = useState<string | null>(null);
 	const [feedback, setFeedback] = useState<string>("");
+	const [suggestions, setSuggestions] = useState<Profile[]>([]);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	// Load 3 suggested users on mount so the Add tab isn't a blank
+	// search box. Uses suggested_users RPC: non-friends, no pending
+	// requests, ordered random.
+	useEffect(() => {
+		supabase.rpc("suggested_users", { limit_n: 3 }).then(({ data }) => {
+			setSuggestions((data as Profile[] | null) ?? []);
+		});
+	}, []);
 
 	// Debounced search-as-you-type. 200ms is short enough to feel
 	// live but long enough to avoid hammering the RPC on every keystroke.
@@ -328,6 +338,9 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 		setFeedback(`Request sent to ${target.username}.`);
 		setQuery("");
 		setResults([]);
+		// Drop the suggestion you just added so the row visually
+		// confirms the action + doesn't re-show the same name.
+		setSuggestions((prev) => prev.filter((s) => s.id !== target.id));
 		onSent();
 	};
 
@@ -404,6 +417,49 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 					No users found. Discriminators (#1234) are auto-assigned;
 					ask your friend to share their code from their Account page.
 				</Text>
+			)}
+
+			{/* Suggestions — 3 fresh non-friends served only when the
+			    user isn't actively searching. Lets the Add tab feel
+			    populated even before a search. From the redesign. */}
+			{query.length === 0 && suggestions.length > 0 && (
+				<>
+					<Text style={styles.kickerSmall}>SUGGESTIONS</Text>
+					<Sticker color="paper" rotate={-0.3} radius={14} style={styles.listSticker}>
+						{suggestions.map((p, i) => {
+							const last = i === suggestions.length - 1;
+							return (
+								<View
+									key={p.id}
+									style={[styles.flatRow, !last && styles.flatRowDivider]}
+								>
+									<InitialAvatar name={p.username} />
+									<View style={{ flex: 1, minWidth: 0 }}>
+										<Text style={styles.rowName} numberOfLines={1}>
+											{p.username}
+										</Text>
+										<Text style={styles.rowDisc}>
+											{p.discriminator ? `#${p.discriminator} · ` : ""}suggested
+										</Text>
+									</View>
+									<Pressable
+										onPress={() => send(p)}
+										disabled={sending === p.id}
+										style={({ pressed }) => [
+											styles.actionBtn,
+											styles.actionAccept,
+											pressed && { opacity: 0.7 },
+										]}
+									>
+										<Text style={styles.actionAcceptText}>
+											{sending === p.id ? "…" : "Add"}
+										</Text>
+									</Pressable>
+								</View>
+							);
+						})}
+					</Sticker>
+				</>
 			)}
 
 			{/* Referral footer — share-your-code call to action lives at
