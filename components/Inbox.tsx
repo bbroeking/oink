@@ -84,6 +84,10 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	const [incomingTrades, setIncomingTrades] = useState<TradeRow[]>([]);
 	const [outgoingTrades, setOutgoingTrades] = useState<TradeRow[]>([]);
 	const [answered, setAnswered] = useState<TradeRow[]>([]);
+	// Trades I FULFILLED — surfaces "you gifted X N tickles" rows in
+	// the passive band so a gift leaves a visible trail on the giver's
+	// side. Mirrors `answered` (trades I requested that got filled).
+	const [gifted, setGifted] = useState<TradeRow[]>([]);
 	const [blessings, setBlessings] = useState<RitualRow[]>([]);
 	const [curses, setCurses] = useState<RitualRow[]>([]);
 	const [acceptedFriends, setAcceptedFriends] = useState<AcceptedFriend[]>([]);
@@ -104,6 +108,11 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		setAnswered(
 			trades.filter(
 				(t) => t.status === "fulfilled" && t.requester_id === userId
+			)
+		);
+		setGifted(
+			trades.filter(
+				(t) => t.status === "fulfilled" && t.target_id === userId
 			)
 		);
 
@@ -398,6 +407,11 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			text: `your trade was answered — +${t.amount * 2} tickles`,
 			kind: "answered" as const,
 		})),
+		...gifted.map((t) => ({
+			id: `gft-${t.id}`,
+			text: `you gifted ${t.partner_username ?? "a friend"} ${t.amount * 2} tickles`,
+			kind: "gifted" as const,
+		})),
 		...acceptedFriends.map((a) => ({
 			id: `frd-${a.receiver_id}`,
 			text: `${a.username ?? "A friend"} accepted your request`,
@@ -644,19 +658,23 @@ export function Inbox({ userId, onActionableCount }: Props) {
 							const bubbleStyle =
 								p.kind === "answered"
 									? styles.passiveBubbleAnswered
-									: p.kind === "friended"
-										? styles.passiveBubbleFriended
-										: p.kind === "blessed"
-											? styles.passiveBubbleBlessed
-											: styles.passiveBubbleCursed;
+									: p.kind === "gifted"
+										? styles.passiveBubbleGifted
+										: p.kind === "friended"
+											? styles.passiveBubbleFriended
+											: p.kind === "blessed"
+												? styles.passiveBubbleBlessed
+												: styles.passiveBubbleCursed;
 							const glyph =
 								p.kind === "answered"
 									? "♥"
-									: p.kind === "friended"
-										? "+"
-										: p.kind === "blessed"
-											? "✦"
-											: "☁";
+									: p.kind === "gifted"
+										? "★"
+										: p.kind === "friended"
+											? "+"
+											: p.kind === "blessed"
+												? "✦"
+												: "☁";
 							const glyphStyle =
 								p.kind === "cursed"
 									? styles.passiveBubbleGlyphInverted
@@ -889,9 +907,10 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	passiveBubbleAnswered: { backgroundColor: WHIMSY.rose },
+	passiveBubbleGifted:   { backgroundColor: WHIMSY.sun },
 	passiveBubbleFriended: { backgroundColor: WHIMSY.sage },
-	passiveBubbleBlessed: { backgroundColor: WHIMSY.lilac },
-	passiveBubbleCursed: { backgroundColor: WHIMSY.ink },
+	passiveBubbleBlessed:  { backgroundColor: WHIMSY.lilac },
+	passiveBubbleCursed:   { backgroundColor: WHIMSY.ink },
 	passiveBubbleGlyph: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
