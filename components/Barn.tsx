@@ -38,6 +38,7 @@ import {
 	alignmentDisplay,
 	type AlignmentLabel,
 } from "@/utils/alignment";
+import { useHomeStats } from "@/hooks/useHomeStats";
 
 // Lucky Pig tunables — client-rolled (D in the design grill). Trade-off
 // is documented in migrations/20260519020000_lucky_pig.sql.
@@ -217,33 +218,6 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 );
 HeartFloats.displayName = "HeartFloats";
 
-interface EquipSlot {
-	id: string;
-	category: string | null;
-	emoji: string | null;
-}
-
-interface Stats {
-	counter: number;
-	ticklesEarned: number;
-	itemCount: number;
-	cap: number;
-	nextRegenSeconds: number | null;
-	// Four independently-equipped slots: main (hat/scarf/mask/etc.),
-	// aura, background, and held. See migrations 20260514000000 +
-	// 20260519000000 (held).
-	activeHat: EquipSlot | null;
-	activeAura: EquipSlot | null;
-	activeBackground: EquipSlot | null;
-	activeHeld: EquipSlot | null;
-	// Tickle particle drives the float graphics on each tap. Null
-	// = default ♥/✦ text glyph behavior; when present the equipped
-	// PNG renders in place of the glyph (see HeartFloats above).
-	activeTickleParticle: EquipSlot | null;
-	currentTier: number;
-	totalTiers: number;
-}
-
 function formatCountdown(totalSeconds: number): string {
 	const m = Math.floor(totalSeconds / 60);
 	const s = totalSeconds % 60;
@@ -334,21 +308,6 @@ function WoodenSign({
 }
 
 export default function Barn() {
-	const [stats, setStats] = useState<Stats>({
-		counter: 0,
-		ticklesEarned: 0,
-		itemCount: 0,
-		cap: 25,
-		nextRegenSeconds: null,
-		activeHat: null,
-		activeAura: null,
-		activeBackground: null,
-		activeHeld: null,
-		activeTickleParticle: null,
-		currentTier: 1,
-		totalTiers: 30,
-	});
-	const [statsLoaded, setStatsLoaded] = useState(false);
 	const [sixSevenTick, setSixSevenTick] = useState(0);
 	const sixSevenPromptedRef = useRef(false);
 	// Storybook dialog state for the 67-celebration prompt. Replaces the
@@ -387,6 +346,19 @@ export default function Barn() {
 		sunBeam: boolean;
 		phantomItch: boolean;
 	}>({ blessed: false, cursed: false, sunBeam: false, phantomItch: false });
+
+	// Home stats (counter, balance, equipped cosmetics, season tier).
+	// Owned by useHomeStats; the hook also surfaces alignment + effects
+	// via the fallback path (dev-sim parity pre-migration), routed back
+	// into the local setters above.
+	const {
+		stats,
+		statsLoaded,
+		refresh: fetchStats,
+	} = useHomeStats({
+		onAlignmentLoaded: setAlignment,
+		onEffectsLoaded: setEffects,
+	});
 
 	// Release-notes auto-show: fires once on Barn mount per app launch
 	// when the user hasn't seen the latest version yet.
@@ -577,172 +549,8 @@ export default function Barn() {
 		showToast(`${sign}${delta} toward ${dir}`, `Now ${scoreText} — ${label}`);
 	};
 
-	const fetchStats = async () => {
-		try {
-			// Single round trip via home_stats() RPC — was 3-4 sequential
-			// queries (profiles + tickle_info + season_state + hats join).
-			// Falls back to the multi-query path if the RPC isn't deployed
-			// yet so dev sims work between code merge and `supabase db push`.
-			type SlotBlob = {
-				category?: string | null;
-				emoji?: string | null;
-			} | null;
-			const r = await rpc<{
-				ok?: boolean;
-				counter: number;
-				tickles_earned: number;
-				active_hat_id: string | null;
-				active_hat: SlotBlob;
-				active_aura_id: string | null;
-				active_aura: SlotBlob;
-				active_background_id: string | null;
-				active_background: SlotBlob;
-				active_held_id?: string | null;
-				active_held?: SlotBlob;
-				active_tickle_particle_id?: string | null;
-				active_tickle_particle?: SlotBlob;
-				balance: number;
-				cap: number;
-				next_regen_seconds: number | null;
-				current_tier: number;
-				total_tiers: number;
-			}>("home_stats");
-			if (r && r.ok) {
-				const toSlot = (id: string | null, meta: SlotBlob): EquipSlot | null =>
-					id
-						? {
-								id,
-								category: meta?.category ?? null,
-								emoji: meta?.emoji ?? null,
-							}
-						: null;
-				setStats({
-					counter: r.counter,
-					ticklesEarned: r.tickles_earned,
-					itemCount: r.balance,
-					cap: r.cap,
-					nextRegenSeconds: r.next_regen_seconds,
-					activeHat: toSlot(r.active_hat_id, r.active_hat),
-					activeAura: toSlot(r.active_aura_id, r.active_aura),
-					activeBackground: toSlot(r.active_background_id, r.active_background),
-					activeHeld: toSlot(r.active_held_id ?? null, r.active_held ?? null),
-					activeTickleParticle: toSlot(
-						r.active_tickle_particle_id ?? null,
-						r.active_tickle_particle ?? null
-					),
-					currentTier: r.current_tier,
-					totalTiers: r.total_tiers,
-				});
-				setStatsLoaded(true);
-				return;
-			}
-
-			// Fallback: original multi-query path.
-			const {
-				data: { user },
-			} = await supabase.auth.getUser();
-			if (!user) throw new Error("User not logged in");
-
-			const [profileResult, info, season] = await Promise.all([
-				supabase
-					.from("profiles")
-					.select(
-						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, alignment_score"
-					)
-					.eq("id", user.id)
-					.single(),
-				rpc<{
-					balance?: number;
-					cap?: number;
-					next_regen_seconds?: number | null;
-				}>("tickle_info", { uid: user.id }),
-				rpc<{
-					current_tier?: number;
-					season?: { total_tiers?: number };
-				}>("season_state"),
-			]);
-
-			if (profileResult.error) throw profileResult.error;
-
-			const prof = profileResult.data as {
-				counter?: number;
-				tickles_earned?: number;
-				active_hat_id?: string | null;
-				active_aura_id?: string | null;
-				active_background_id?: string | null;
-				active_held_id?: string | null;
-				active_tickle_particle_id?: string | null;
-				alignment_score?: number | null;
-			} | null;
-
-			// Season 1: drives the BarnOverlay theming. Tolerates a
-			// missing column (pre-alignment-migration) → defaults neutral.
-			setAlignment(alignmentLabel(prof?.alignment_score ?? 0));
-
-			// Active blessing/curse effects → overlay + tap-loop wiring.
-			rpc<{ source: "blessing" | "curse"; kind: string }[]>(
-				"my_active_effects"
-			).then((data) => {
-				const rows = data ?? [];
-				setEffects({
-					blessed: rows.some((r) => r.source === "blessing"),
-					cursed: rows.some((r) => r.source === "curse"),
-					sunBeam: rows.some((r) => r.kind === "sun_beam"),
-					phantomItch: rows.some((r) => r.kind === "phantom_itch"),
-				});
-			});
-
-			const slotIds: (string | null)[] = [
-				prof?.active_hat_id ?? null,
-				prof?.active_aura_id ?? null,
-				prof?.active_background_id ?? null,
-				prof?.active_held_id ?? null,
-				prof?.active_tickle_particle_id ?? null,
-			];
-			const idsToLookUp = slotIds.filter((x): x is string => !!x);
-			const hatMetaById = new Map<
-				string,
-				{ category: string | null; emoji: string | null }
-			>();
-			if (idsToLookUp.length > 0) {
-				const { data: rows } = await supabase
-					.from("hats")
-					.select("id, category, emoji")
-					.in("id", idsToLookUp);
-				(rows ?? []).forEach((h) =>
-					hatMetaById.set(h.id, {
-						category: h.category ?? null,
-						emoji: h.emoji ?? null,
-					})
-				);
-			}
-			const toSlot = (id: string | null): EquipSlot | null => {
-				if (!id) return null;
-				const m = hatMetaById.get(id);
-				return { id, category: m?.category ?? null, emoji: m?.emoji ?? null };
-			};
-
-			setStats({
-				counter: prof?.counter || 0,
-				ticklesEarned: prof?.tickles_earned ?? 0,
-				itemCount: info?.balance ?? 0,
-				cap: info?.cap ?? 25,
-				nextRegenSeconds: info?.next_regen_seconds ?? null,
-				activeHat: toSlot(prof?.active_hat_id ?? null),
-				activeAura: toSlot(prof?.active_aura_id ?? null),
-				activeBackground: toSlot(prof?.active_background_id ?? null),
-				activeHeld: toSlot(prof?.active_held_id ?? null),
-				activeTickleParticle: toSlot(
-					prof?.active_tickle_particle_id ?? null
-				),
-				currentTier: season?.current_tier ?? 1,
-				totalTiers: season?.season?.total_tiers ?? 30,
-			});
-			setStatsLoaded(true);
-		} catch (error) {
-			log.error("Error fetching stats:", error);
-		}
-	};
+	// fetchStats is now homeStats.refresh from useHomeStats; the
+	// inline RPC + fallback path moved into hooks/useHomeStats.ts.
 
 	const handleIncrement = async () => {
 		if (stats.itemCount <= 0) {
