@@ -32,30 +32,44 @@ export const PRIMARY_COLOR = WHIMSY.lilac;
 
 export default function SupaAuth() {
 	const [showEmail, setShowEmail] = useState(false);
+	const [mode, setMode] = useState<"signIn" | "signUp">("signIn");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const handleEmailSignIn = async () => {
+	const handleEmailSubmit = async () => {
 		if (busy) return;
 		const trimmedEmail = email.trim();
 		if (!trimmedEmail || !password) {
 			setError("Email and password required.");
 			return;
 		}
+		if (mode === "signUp" && password.length < 6) {
+			setError("Password must be at least 6 characters.");
+			return;
+		}
 		setBusy(true);
 		setError(null);
-		const { error: err } = await supabase.auth.signInWithPassword({
-			email: trimmedEmail,
-			password,
-		});
+		const fn = mode === "signUp"
+			? supabase.auth.signUp({ email: trimmedEmail, password })
+			: supabase.auth.signInWithPassword({ email: trimmedEmail, password });
+		const { error: err } = await fn;
 		setBusy(false);
 		if (err) {
-			setError(err.message || "Sign-in failed. Check your email + password.");
+			const m = (err.message || "").toLowerCase();
+			if (m.includes("already") || m.includes("registered")) {
+				setError("That email is already registered — sign in instead.");
+			} else if (m.includes("invalid login") || m.includes("invalid_grant")) {
+				setError("Wrong email or password.");
+			} else {
+				setError(err.message || "Couldn't sign in. Try again.");
+			}
+			return;
 		}
 		// On success the auth listener picks up the new session and
-		// routes onward — nothing else to do here.
+		// the parent layout routes to UsernameSetup (new signup) or
+		// directly into the Barn (existing account).
 	};
 
 	return (
@@ -122,7 +136,9 @@ export default function SupaAuth() {
 									/>
 									<TextInput
 										style={styles.input}
-										placeholder="password"
+										placeholder={
+											mode === "signUp" ? "password (6+ chars)" : "password"
+										}
 										placeholderTextColor={WHIMSY.mute}
 										value={password}
 										onChangeText={(t) => {
@@ -132,12 +148,14 @@ export default function SupaAuth() {
 										autoCapitalize="none"
 										autoCorrect={false}
 										secureTextEntry
-										textContentType="password"
+										textContentType={
+											mode === "signUp" ? "newPassword" : "password"
+										}
 										editable={!busy}
 									/>
 									{error && <Text style={styles.errorText}>{error}</Text>}
 									<Pressable
-										onPress={handleEmailSignIn}
+										onPress={handleEmailSubmit}
 										disabled={busy}
 										style={({ pressed }) => [
 											styles.signInBtn,
@@ -145,7 +163,27 @@ export default function SupaAuth() {
 										]}
 									>
 										<Text style={styles.signInBtnText}>
-											{busy ? "Signing in…" : "Sign in"}
+											{busy
+												? mode === "signUp"
+													? "Creating…"
+													: "Signing in…"
+												: mode === "signUp"
+													? "Create account"
+													: "Sign in"}
+										</Text>
+									</Pressable>
+									<Pressable
+										onPress={() => {
+											setMode((m) => (m === "signUp" ? "signIn" : "signUp"));
+											setError(null);
+										}}
+										style={styles.modeToggle}
+										hitSlop={6}
+									>
+										<Text style={styles.modeToggleText}>
+											{mode === "signUp"
+												? "Already have an account? Sign in"
+												: "No account yet? Create one"}
 										</Text>
 									</Pressable>
 								</View>
@@ -242,5 +280,16 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
 		color: WHIMSY.ink,
+	},
+	modeToggle: {
+		alignItems: "center",
+		marginTop: 10,
+		paddingVertical: 4,
+	},
+	modeToggleText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
 	},
 });
