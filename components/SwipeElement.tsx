@@ -144,12 +144,34 @@ export default function SwipeElement({
 					);
 				}, 700);
 			}
+			// Universal animation-watchdog: if `pick`'s natural exit never
+			// fires (jump's onComplete didn't trigger because the sprite
+			// unmounted, focus changed mid-anim, or the very-last-tickle
+			// race where canTickle flips false before completion), force
+			// the state back to idle/sad. Tuned for the longest reaction
+			// (~1.6s jump) plus headroom. Without this, the `reacting`
+			// gate in handlePress locks all future taps. Same shape as
+			// the 6-7 safety timer below.
+			const reactionPick = pick;
+			setTimeout(() => {
+				setPigAnim((cur) =>
+					cur === reactionPick ? (canTickle ? "idle" : "sad") : cur
+				);
+			}, 2500);
 		}
 		onLuckySwipe();
 	};
 
 	const handleJumpComplete = () => {
-		if (canTickle) setPigAnim("idle");
+		// Always exit "jump" when the animation completes, regardless of
+		// canTickle's current value. If we only transitioned when
+		// canTickle was true, a tap that consumed the last tickle would
+		// strand pigAnim at "jump" (canTickle flips to false during the
+		// RPC round-trip → handlePress's `reacting` gate then refuses
+		// every future tap). "sad" is the right exit when out of
+		// tickles — useEffect on `canTickle` will normalize back to
+		// "idle" when balance regens.
+		setPigAnim(canTickle ? "idle" : "sad");
 	};
 
 	// 6-7 bounce sequence triggered by playSixSeven counter changing.
