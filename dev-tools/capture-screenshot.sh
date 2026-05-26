@@ -33,11 +33,15 @@ mkdir -p "$OUT_DIR"
 OUT="$OUT_DIR/$1.png"
 xcrun simctl io booted screenshot "$OUT"
 
-# Verify dimensions — App Store wants 1290 x 2796 for 6.7"
+# App Store Connect accepts 1284×2778 (the 6.7" Plus / 14 Pro Max
+# era) — newer Pro Max sims output 1290×2796 (6.9") which App Store
+# Connect's upload form rejects with "Screenshots dimensions should
+# be: 1242 × 2688px, 2688 × 1242px, 1284 × 2778px or 2778 × 1284px".
+# Auto-resize to the closest accepted shape so the capture is
+# upload-ready.
 DIMS=$(sips -g pixelWidth -g pixelHeight "$OUT" 2>/dev/null | awk '/pixel/ {print $2}' | tr '\n' 'x' | sed 's/x$//')
-echo "Captured: $OUT  ($DIMS)"
-
-if [[ "$DIMS" != "1290x2796" ]]; then
-	echo "⚠️  Size is $DIMS — App Store wants 1290x2796 (iPhone 6.7\")."
-	echo "    Boot an iPhone 16 Pro Max sim and run from that one."
+if [[ "$DIMS" != "1284x2778" ]]; then
+	magick "$OUT" -resize 1284x2778! "$OUT"
+	DIMS=$(sips -g pixelWidth -g pixelHeight "$OUT" 2>/dev/null | awk '/pixel/ {print $2}' | tr '\n' 'x' | sed 's/x$//')
 fi
+echo "Captured: $OUT  ($DIMS)"

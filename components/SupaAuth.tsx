@@ -3,20 +3,27 @@
 // pig they're about to meet on the Barn screen — no disconnect
 // between the splash art and the gameplay character.
 //
-// Layout: cream backdrop (matches the rest of the app's
-// WHIMSY.cream surface), Rosie hero portrait scaled to ~70% width
+// Layout: cream backdrop, Rosie hero portrait scaled to ~72% width
 // upper-center, then a paper-sticker card with the title + Apple
-// sign-in button anchored to the bottom.
-import React from "react";
+// sign-in button + an "Use email instead" link that expands a
+// hidden email/password form. The email path is primarily for the
+// App Store reviewer demo account but is available to anyone who
+// taps the link.
+import React, { useState } from "react";
 import {
 	StyleSheet,
 	View,
 	Image,
 	Text,
 	SafeAreaView,
+	TextInput,
+	Pressable,
+	KeyboardAvoidingView,
+	Platform,
 } from "react-native";
 import { AppleAuth } from "./AppleAuth";
 import { Sticker } from "./ui/Sticker";
+import { supabase } from "../utils/supabase";
 import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
 // Kept for back-compat with downstream imports (UsernameSetup
@@ -24,33 +31,129 @@ import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 export const PRIMARY_COLOR = WHIMSY.lilac;
 
 export default function SupaAuth() {
+	const [showEmail, setShowEmail] = useState(false);
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [busy, setBusy] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const handleEmailSignIn = async () => {
+		if (busy) return;
+		const trimmedEmail = email.trim();
+		if (!trimmedEmail || !password) {
+			setError("Email and password required.");
+			return;
+		}
+		setBusy(true);
+		setError(null);
+		const { error: err } = await supabase.auth.signInWithPassword({
+			email: trimmedEmail,
+			password,
+		});
+		setBusy(false);
+		if (err) {
+			setError(err.message || "Sign-in failed. Check your email + password.");
+		}
+		// On success the auth listener picks up the new session and
+		// routes onward — nothing else to do here.
+	};
+
 	return (
 		<View style={styles.bg}>
-			<SafeAreaView style={styles.safe}>
-				<View style={styles.hero}>
-					<Image
-						source={require("../assets/images/sprites/rosie/idle_1.png")}
-						style={styles.rosie}
-						resizeMode="contain"
-					/>
-					<Text style={styles.kicker}>★ tickle the pig ★</Text>
-					<Text style={styles.title}>Meet Rosie</Text>
-					<Text style={styles.subtitle}>
-						She'd like a tickle. Sign in to start.
-					</Text>
-				</View>
+			<KeyboardAvoidingView
+				style={styles.flex}
+				behavior={Platform.OS === "ios" ? "padding" : undefined}
+			>
+				<SafeAreaView style={styles.safe}>
+					<View style={styles.hero}>
+						<Image
+							source={require("../assets/images/sprites/rosie/idle_1.png")}
+							style={styles.rosie}
+							resizeMode="contain"
+						/>
+						<Text style={styles.kicker}>★ tickle the pig ★</Text>
+						<Text style={styles.title}>Meet Rosie</Text>
+						<Text style={styles.subtitle}>
+							She'd like a tickle. Sign in to start.
+						</Text>
+					</View>
 
-				<View style={styles.cardWrap}>
-					<Sticker
-						color="paper"
-						rotate={-0.8}
-						radius={20}
-						style={[styles.card, STICKER_SHADOW]}
-					>
-						<AppleAuth />
-					</Sticker>
-				</View>
-			</SafeAreaView>
+					<View style={styles.cardWrap}>
+						<Sticker
+							color="paper"
+							rotate={-0.8}
+							radius={20}
+							style={[styles.card, STICKER_SHADOW]}
+						>
+							<AppleAuth />
+
+							{/* Email auth path — collapsed by default. Mainly here
+							    so the App Store reviewer demo account works
+							    (Apple Sign-In creates a fresh empty account per
+							    reviewer, which doesn't show off the social
+							    loop). Anyone can use this who'd rather not
+							    use Apple Sign-In. */}
+							<Pressable
+								onPress={() => setShowEmail((v) => !v)}
+								style={styles.emailToggle}
+								hitSlop={8}
+							>
+								<Text style={styles.emailToggleText}>
+									{showEmail ? "← use Apple Sign-In" : "or use email"}
+								</Text>
+							</Pressable>
+
+							{showEmail && (
+								<View style={styles.emailForm}>
+									<TextInput
+										style={styles.input}
+										placeholder="email"
+										placeholderTextColor={WHIMSY.mute}
+										value={email}
+										onChangeText={(t) => {
+											setEmail(t);
+											if (error) setError(null);
+										}}
+										autoCapitalize="none"
+										autoCorrect={false}
+										keyboardType="email-address"
+										textContentType="emailAddress"
+										editable={!busy}
+									/>
+									<TextInput
+										style={styles.input}
+										placeholder="password"
+										placeholderTextColor={WHIMSY.mute}
+										value={password}
+										onChangeText={(t) => {
+											setPassword(t);
+											if (error) setError(null);
+										}}
+										autoCapitalize="none"
+										autoCorrect={false}
+										secureTextEntry
+										textContentType="password"
+										editable={!busy}
+									/>
+									{error && <Text style={styles.errorText}>{error}</Text>}
+									<Pressable
+										onPress={handleEmailSignIn}
+										disabled={busy}
+										style={({ pressed }) => [
+											styles.signInBtn,
+											(pressed || busy) && { opacity: 0.7 },
+										]}
+									>
+										<Text style={styles.signInBtnText}>
+											{busy ? "Signing in…" : "Sign in"}
+										</Text>
+									</Pressable>
+								</View>
+							)}
+						</Sticker>
+					</View>
+				</SafeAreaView>
+			</KeyboardAvoidingView>
 		</View>
 	);
 }
@@ -92,5 +195,52 @@ const styles = StyleSheet.create({
 	},
 	card: {
 		padding: 20,
+	},
+	flex: { flex: 1 },
+	emailToggle: {
+		alignItems: "center",
+		marginTop: 14,
+		paddingVertical: 4,
+	},
+	emailToggleText: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
+	},
+	emailForm: {
+		marginTop: 12,
+	},
+	input: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 15,
+		color: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 10,
+		paddingHorizontal: 12,
+		paddingVertical: 11,
+		marginBottom: 8,
+	},
+	errorText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.accent,
+		marginBottom: 6,
+	},
+	signInBtn: {
+		backgroundColor: WHIMSY.lilac,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 12,
+		paddingVertical: 11,
+		alignItems: "center",
+		marginTop: 4,
+	},
+	signInBtnText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		color: WHIMSY.ink,
 	},
 });
