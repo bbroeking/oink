@@ -16,6 +16,7 @@ import { router } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Card, Button, SectionHeader } from "./ui";
 import { Icon, type IconName } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
@@ -39,6 +40,12 @@ export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
 	const [discriminator, setDiscriminator] = useState<string | null>(null);
 	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+	// Account-deletion confirm — required for App Store 5.1.1(v).
+	// On confirm: delete_my_account RPC cascades through every public
+	// table via ON DELETE CASCADE, then we sign out so the auth
+	// listener routes back to SupaAuth.
+	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [deleting, setDeleting] = useState(false);
 	const [copied, setCopied] = useState(false);
 	const [sounder, setSounder] = useState<{
 		engaged_count: number;
@@ -535,6 +542,11 @@ export function Account({ session }: { session: Session }) {
 								icon="exit"
 								label="Sign out"
 								onPress={() => supabase.auth.signOut()}
+							/>
+							<SettingRow
+								icon="x"
+								label="Delete account"
+								onPress={() => setDeleteOpen(true)}
 								destructive
 								last
 							/>
@@ -549,6 +561,26 @@ export function Account({ session }: { session: Session }) {
 			<ReleaseNotesModal
 				visible={releaseNotesOpen}
 				onClose={() => setReleaseNotesOpen(false)}
+			/>
+			<ConfirmDialog
+				open={deleteOpen}
+				title="Delete your account?"
+				body="This wipes your username, friends, trades, blessings/curses, owned items, season progress, and achievements. Permanent — no undo. The account is also signed out."
+				confirmLabel="Delete"
+				cancelLabel="Keep account"
+				destructive
+				busy={deleting}
+				onCancel={() => setDeleteOpen(false)}
+				onConfirm={async () => {
+					if (deleting) return;
+					setDeleting(true);
+					try {
+						await supabase.rpc("delete_my_account");
+					} catch {}
+					await supabase.auth.signOut();
+					setDeleting(false);
+					setDeleteOpen(false);
+				}}
 			/>
 		</View>
 	);

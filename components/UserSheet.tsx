@@ -23,6 +23,7 @@ import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker } from "./ui/Sticker";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { RitualPicker } from "./RitualPicker";
 import { AlignmentBar } from "./ui/AlignmentBar";
 import type { RitualMode } from "../utils/rituals";
@@ -152,6 +153,13 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [feedback, setFeedback] = useState<string | null>(null);
+	// Block + Report dialogs. Apple Guideline 1.2 requires both for
+	// any app with user-to-user interactions; they appear as small
+	// links at the bottom of the sheet so they're discoverable for
+	// review without being prominent enough to feel hostile.
+	const [blockOpen, setBlockOpen] = useState(false);
+	const [reportOpen, setReportOpen] = useState(false);
+	const [blockBusy, setBlockBusy] = useState(false);
 	// When friends, the sheet shows a daily-ritual panel. This toggles
 	// which ritual (bless / curse) the panel is currently showing.
 	const [ritualMode, setRitualMode] = useState<RitualMode>("bless");
@@ -289,6 +297,32 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 				friendActionMessage(r?.reason, r?.cap, stats.username ?? null)
 			);
 		}
+	};
+
+	const doBlock = async () => {
+		if (!stats || blockBusy) return;
+		setBlockBusy(true);
+		await supabase.rpc("block_user", { target_user_id: stats.user_id });
+		setBlockBusy(false);
+		setBlockOpen(false);
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+		setFeedback(`${stats.username ?? "User"} blocked. They can no longer interact with you.`);
+		onFriendshipChanged?.();
+		// Close the sheet after a brief beat so the toast reads.
+		setTimeout(onDismiss, 800);
+	};
+
+	const doReport = async () => {
+		if (!stats || blockBusy) return;
+		setBlockBusy(true);
+		await supabase.rpc("report_user", {
+			target_user_id: stats.user_id,
+			reason: "user_report",
+		});
+		setBlockBusy(false);
+		setReportOpen(false);
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+		setFeedback("Reported. Our team will review.");
 	};
 
 	const sendTickle = async () => {
@@ -494,11 +528,53 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 									)}
 
 									{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
+
+									{/* Block + Report — small footer links. Required by
+									    Apple Guideline 1.2 for any app with user-to-user
+									    social features. Low-prominence by design so the
+									    sheet doesn't feel hostile. */}
+									<View style={styles.moderationRow}>
+										<Pressable
+											onPress={() => setReportOpen(true)}
+											hitSlop={8}
+										>
+											<Text style={styles.moderationLink}>Report</Text>
+										</Pressable>
+										<Text style={styles.moderationDot}>·</Text>
+										<Pressable
+											onPress={() => setBlockOpen(true)}
+											hitSlop={8}
+										>
+											<Text style={styles.moderationLink}>Block</Text>
+										</Pressable>
+									</View>
 								</>
 							)}
 						</Sticker>
 					</Pressable>
 				</Animated.View>
+				<ConfirmDialog
+					open={blockOpen}
+					title="Block this user?"
+					body={`Blocking ${stats?.username ?? "this user"} removes them from your sounder, cancels any pending trades, and prevents future interaction either way. You can unblock from their profile later.`}
+					confirmLabel="Block"
+					cancelLabel="Cancel"
+					destructive
+					busy={blockBusy}
+					onCancel={() => setBlockOpen(false)}
+					onConfirm={doBlock}
+				/>
+				<ConfirmDialog
+					open={reportOpen}
+					title="Report this user?"
+					body={`Send a report about ${stats?.username ?? "this user"} for our review team. They won't be notified. Use Block to also stop interaction.`}
+					confirmLabel="Report"
+					cancelLabel="Cancel"
+					destructive
+					busy={blockBusy}
+					onCancel={() => setReportOpen(false)}
+					onConfirm={doReport}
+				/>
 			</Modal>
 		</>
 	);
@@ -827,6 +903,27 @@ const styles = StyleSheet.create({
 		color: WHIMSY.accent,
 		textAlign: "center",
 		marginTop: 10,
+	},
+	moderationRow: {
+		flexDirection: "row",
+		justifyContent: "center",
+		alignItems: "center",
+		gap: 8,
+		marginTop: 14,
+		paddingTop: 10,
+		borderTopWidth: 1,
+		borderTopColor: WHIMSY.muteSoft,
+	},
+	moderationLink: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
+	},
+	moderationDot: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
 	},
 	ritualToggle: {
 		flexDirection: "row",
