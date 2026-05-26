@@ -4,70 +4,166 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Tickle the Pig — Privacy Policy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Patrick+Hand&display=swap" rel="stylesheet" />
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-         max-width: 720px; margin: 40px auto; padding: 0 24px; color: #1A1A1A; line-height: 1.55; }
-  h1 { font-size: 32px; margin-bottom: 0; }
-  h2 { font-size: 20px; margin-top: 32px; }
-  .effective { color: #6B6B6B; margin-top: 4px; font-size: 14px; }
-  a { color: #D17C92; }
-  code { background: #FBE6EC; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; }
-  ul { padding-left: 20px; }
+  :root {
+    --cream: #fbf6e9;
+    --paper: #f6efe2;
+    --ink: #2b2b2b;
+    --mute: #7c736b;
+    --mute-soft: #d8cfc3;
+    --rose: #E8A7B9;
+    --rose-deep: #D17C92;
+    --sage: #cfe1bf;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.6;
+    margin: 0;
+    padding: 32px 20px 80px;
+  }
+  .wrap {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .hero {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .hero img {
+    width: 140px;
+    height: auto;
+    display: inline-block;
+  }
+  .kicker {
+    font-family: "Patrick Hand", cursive;
+    color: var(--rose-deep);
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    margin: 6px 0 0;
+  }
+  h1 {
+    font-family: "Caprasimo", serif;
+    font-size: 38px;
+    line-height: 1.1;
+    margin: 6px 0 0;
+    color: var(--ink);
+  }
+  .effective {
+    color: var(--mute);
+    font-size: 13px;
+    margin-top: 8px;
+    font-family: "Patrick Hand", cursive;
+  }
+  .card {
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 18px;
+    padding: 28px 28px 24px;
+    margin-top: 28px;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  h2 {
+    font-family: "Caprasimo", serif;
+    font-size: 22px;
+    margin: 24px 0 8px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  h2:first-child { margin-top: 0; }
+  p { margin: 0 0 12px; }
+  a { color: var(--rose-deep); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
+  a:hover { color: var(--ink); }
+  code {
+    background: var(--cream);
+    border: 1.5px solid var(--mute-soft);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.92em;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+  }
+  ul { padding-left: 22px; margin: 0 0 12px; }
   li { margin: 6px 0; }
+  strong { color: var(--ink); }
+  .foot {
+    text-align: center;
+    margin-top: 36px;
+    color: var(--mute);
+    font-family: "Patrick Hand", cursive;
+    font-size: 15px;
+  }
+  .foot a { color: var(--mute); }
 </style>
 </head>
 <body>
 
-<h1>Tickle the Pig — Privacy Policy</h1>
-<div class="effective">Effective date: 2026-05-25</div>
+<div class="wrap">
 
-<p>This is the privacy policy for <strong>Tickle the Pig</strong> (the "App"), operated by Brian Broeking ("we", "us"). We tried to keep this short and plain — no dark patterns, no tracking, no ads.</p>
+  <div class="hero">
+    <img src="rosie.png" alt="Rosie the pig" />
+    <p class="kicker">★ the fine print ★</p>
+    <h1>Privacy Policy</h1>
+    <div class="effective">Effective May 25, 2026</div>
+  </div>
 
-<h2>What we collect</h2>
-<ul>
-  <li><strong>Account info:</strong> the username you choose, and the Apple Sign-In identifier we get when you log in. If you used Apple's Hide My Email, we only see the relay address — never your real one.</li>
-  <li><strong>Gameplay data:</strong> tickle counts, friends list, trade history, blessings and curses sent or received, equipped cosmetics, season + bounty progress, alignment score, achievements.</li>
-  <li><strong>Push notification token:</strong> an anonymous device token from Apple Push Notification Service so we can deliver in-app event notifications. You can revoke this anytime in iOS Settings.</li>
-  <li><strong>Crash and performance logs:</strong> when the app crashes or hits a slow path, we log a stack trace + your user ID via Sentry so we can fix the bug. No personal device identifiers beyond what's needed to dedupe issues.</li>
-</ul>
-<p>We do <strong>not</strong> collect: location, contacts, photos, microphone audio, payment data, advertising identifiers (IDFA), browsing history outside the app, or any analytics beyond crash/performance logs.</p>
+  <div class="card">
+    <p>This is the privacy policy for <strong>Tickle the Pig</strong>, operated by Brian Broeking ("we"). We tried to keep this short and plain — no dark patterns, no tracking, no ads.</p>
 
-<h2>How we use it</h2>
-<ul>
-  <li>Run the game (show your stats, friends, leaderboards, bounties, season progress).</li>
-  <li>Deliver push notifications for in-app events you opted into.</li>
-  <li>Fix bugs and improve performance via crash logs.</li>
-</ul>
-<p>We do not sell your data, share it with advertisers, or use it for behavioral profiling.</p>
+    <h2>What we collect</h2>
+    <ul>
+      <li><strong>Account info:</strong> the username you choose, and the Apple Sign-In identifier we get when you log in. If you used Apple's Hide My Email, we only see the relay address — never your real one.</li>
+      <li><strong>Gameplay data:</strong> tickle counts, friends list, trade history, blessings and curses sent or received, equipped cosmetics, season + bounty progress, alignment score, achievements.</li>
+      <li><strong>Push notification token:</strong> an anonymous device token from Apple Push Notification Service so we can deliver in-app event notifications. You can revoke this anytime in iOS Settings.</li>
+      <li><strong>Crash and performance logs:</strong> when the app crashes or hits a slow path, we log a stack trace + your user ID via Sentry so we can fix the bug. No personal device identifiers beyond what's needed to dedupe issues.</li>
+    </ul>
+    <p>We do <strong>not</strong> collect: location, contacts, photos, microphone audio, payment data, advertising identifiers (IDFA), browsing history outside the app, or any analytics beyond crash/performance logs.</p>
 
-<h2>Who we share it with</h2>
-<p>We use a few third-party service providers. Their privacy policies apply alongside this one:</p>
-<ul>
-  <li><strong>Supabase</strong> — database + authentication hosting. <a href="https://supabase.com/privacy">supabase.com/privacy</a></li>
-  <li><strong>Apple App Store / TestFlight</strong> — app distribution + Sign in with Apple. <a href="https://www.apple.com/legal/privacy/">apple.com/legal/privacy</a></li>
-  <li><strong>Sentry</strong> — crash and performance reporting. <a href="https://sentry.io/privacy/">sentry.io/privacy</a></li>
-  <li><strong>Expo / EAS</strong> — push notification delivery + build infrastructure. <a href="https://expo.dev/privacy">expo.dev/privacy</a></li>
-</ul>
-<p>None of these are used to track you across other apps or websites. We do not sell your data, ever.</p>
+    <h2>How we use it</h2>
+    <ul>
+      <li>Run the game (show your stats, friends, leaderboards, bounties, season progress).</li>
+      <li>Deliver push notifications for in-app events you opted into.</li>
+      <li>Fix bugs and improve performance via crash logs.</li>
+    </ul>
+    <p>We do not sell your data, share it with advertisers, or use it for behavioral profiling.</p>
 
-<h2>Data retention</h2>
-<p>We keep your data for as long as your account is active. If you delete your account, we remove your row + all related rows (friendships, trades, blessings, curses, owned items, season progress, achievements) within 30 days. Crash logs retained by Sentry are auto-purged after 90 days.</p>
+    <h2>Who we share it with</h2>
+    <p>A few third-party service providers. Their privacy policies apply alongside this one:</p>
+    <ul>
+      <li><strong>Supabase</strong> — database + authentication hosting. <a href="https://supabase.com/privacy">supabase.com/privacy</a></li>
+      <li><strong>Apple App Store / TestFlight</strong> — distribution + Sign in with Apple. <a href="https://www.apple.com/legal/privacy/">apple.com/legal/privacy</a></li>
+      <li><strong>Sentry</strong> — crash and performance reporting. <a href="https://sentry.io/privacy/">sentry.io/privacy</a></li>
+      <li><strong>Expo / EAS</strong> — push notification delivery + build infrastructure. <a href="https://expo.dev/privacy">expo.dev/privacy</a></li>
+    </ul>
+    <p>None of these are used to track you across other apps or websites. We do not sell your data, ever.</p>
 
-<h2>Your rights</h2>
-<ul>
-  <li><strong>See your data:</strong> email us and we'll send you a JSON dump of everything we have.</li>
-  <li><strong>Delete your account:</strong> email us from the address on file. We delete within 30 days; the deletion is permanent.</li>
-  <li><strong>Push notifications:</strong> revoke anytime in iOS Settings → Notifications → Tickle the Pig.</li>
-</ul>
+    <h2>Data retention</h2>
+    <p>We keep your data for as long as your account is active. If you delete your account, we remove your row + all related rows (friendships, trades, blessings, curses, owned items, season progress, achievements) within 30 days. Crash logs retained by Sentry are auto-purged after 90 days.</p>
 
-<h2>Children</h2>
-<p>The App is rated 4+. We do not knowingly collect data from children under 13, and the App is not directed at children under 13. If a parent believes their child has provided information to us, they should email us and we'll delete it.</p>
+    <h2>Your rights</h2>
+    <ul>
+      <li><strong>See your data:</strong> email us and we'll send you a JSON dump of everything we have.</li>
+      <li><strong>Delete your account:</strong> email us from the address on file. We delete within 30 days; the deletion is permanent.</li>
+      <li><strong>Push notifications:</strong> revoke anytime in iOS Settings → Notifications → Tickle the Pig.</li>
+    </ul>
 
-<h2>Changes to this policy</h2>
-<p>We'll update this page if anything material changes. The effective date at the top will reflect the latest version. Material changes will also be announced in-app on next launch.</p>
+    <h2>Children</h2>
+    <p>The App is rated 4+. We do not knowingly collect data from children under 13, and the App is not directed at children under 13. If a parent believes their child has provided information to us, they should email us and we'll delete it.</p>
 
-<h2>Contact</h2>
-<p>Questions or requests: <code>brian@broeking.dev</code></p>
+    <h2>Changes to this policy</h2>
+    <p>We'll update this page if anything material changes. The effective date at the top will reflect the latest version. Material changes will also be announced in-app on next launch.</p>
+
+    <h2>Contact</h2>
+    <p>Questions or requests: <code>iamactuallyinthearena@gmail.com</code></p>
+  </div>
+
+  <p class="foot">★ <a href="support.html">support</a> · <a href="privacy.html">privacy</a> ★</p>
+
+</div>
 
 </body>
 </html>
