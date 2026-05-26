@@ -8,8 +8,14 @@
 -- field for exactly this case.
 --
 -- Credentials (paste these into App Store Connect):
---   Email:    iamactuallyinthearena+reviewer@gmail.com
+--   Email:    demo@ticklethepig.com
 --   Password: TicklePig2026!
+--
+-- The email is synthetic — the domain doesn't need to exist or
+-- deliver mail. The auto_confirm_email_signups trigger
+-- (20260564000000) pre-confirms email-provider signups so no
+-- verification email is sent. The address just needs valid
+-- format for Supabase's signin path.
 --
 -- This migration:
 --   1. Creates the auth.users + auth.identities rows so the account
@@ -23,7 +29,7 @@ set check_function_bodies = off;
 
 DO $$
 DECLARE
-	demo_email   text := 'iamactuallyinthearena+reviewer@gmail.com';
+	demo_email   text := 'demo@ticklethepig.com';
 	demo_pass    text := 'TicklePig2026!';
 	demo_id      uuid;
 	friend_ids   uuid[];

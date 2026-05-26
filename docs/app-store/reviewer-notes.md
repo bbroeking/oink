@@ -8,7 +8,7 @@ Paste the **Demo Account** + **Notes** sections below into App Store Connect →
 
 > Use email/password sign-in instead of Apple Sign-In to see a pre-populated account with friends, progress, and a working social loop. Apple Sign-In creates a fresh empty account per Apple ID, which doesn't show off the gameplay.
 
-**Email:** `iamactuallyinthearena+reviewer@gmail.com`
+**Email:** `demo@ticklethepig.com`
 **Password:** `TicklePig2026!`
 
 To use:
