@@ -32,18 +32,48 @@ import {
 // emotion beat in the early experience). Apple silently rate-limits
 // to 3 prompts/year per user so our AsyncStorage flag below mainly
 // stops US from re-asking the same person.
+//
+// TestFlight caveat: Apple intentionally suppresses requestReview()
+// on TestFlight + Ad Hoc + Xcode-installed builds; the prompt only
+// actually displays on App Store-distributed installs. We CAN'T
+// reliably distinguish TestFlight from App Store at runtime without
+// a native receipt-URL check (which we don't have). So on TestFlight:
+//   - The path executes, breadcrumbs log to Sentry (so timing is
+//     verifiable), AsyncStorage flag gets set, dialog silently no-ops.
+//   - Internal testers who later install from App Store will NOT see
+//     the prompt because their AsyncStorage carries the flag.
+//   - This is acceptable: testers aren't the rating audience.
+//
+// Sentry breadcrumbs at each branch let you confirm in TestFlight
+// that the trigger fires at the right moment — when you see
+// "[review] would fire (Apple may suppress on TestFlight)" in Sentry,
+// the timing is verified even if no dialog appeared on-device.
 const REVIEW_PROMPTED_KEY = "review_prompted_v1";
 
 async function maybeAskForReview() {
-	if (Platform.OS !== "ios") return;
+	if (Platform.OS !== "ios") {
+		log.info("[review] skipped — non-iOS");
+		return;
+	}
+	if (__DEV__) {
+		log.info("[review] skipped — __DEV__ build (Expo Go / dev client)");
+		return;
+	}
 	try {
 		const seen = await AsyncStorage.getItem(REVIEW_PROMPTED_KEY);
-		if (seen === "1") return;
-		if (!(await StoreReview.hasAction())) return;
-		// Mark BEFORE prompting — if the prompt or app crashes mid-
-		// flow we'd rather lose a prompt than badger the user.
+		if (seen === "1") {
+			log.info("[review] skipped — already prompted (review_prompted_v1=1)");
+			return;
+		}
+		const hasAction = await StoreReview.hasAction();
+		if (!hasAction) {
+			log.info("[review] skipped — StoreReview.hasAction() returned false");
+			return;
+		}
+		// Mark BEFORE prompting — if the prompt or app crashes mid-flow
+		// we'd rather lose a prompt than badger the user.
 		await AsyncStorage.setItem(REVIEW_PROMPTED_KEY, "1");
-		log.info("[review] prompting after first lucky-pig flow");
+		log.info("[review] would fire (Apple may suppress on TestFlight)");
 		await StoreReview.requestReview();
 	} catch (e) {
 		log.error("[review] requestReview:", e);
