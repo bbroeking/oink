@@ -1290,7 +1290,7 @@ export default function ShopScreen() {
 							v === "daily" ? "Today"
 								: v === "browse" ? "Browse"
 								: v === "titles" ? "Titles"
-								: "Wardrobe";
+								: "Closet";
 						return (
 							<Pressable
 								key={v}
