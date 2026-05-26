@@ -19,54 +19,55 @@
 <body>
 
 <h1>Tickle the Pig — Privacy Policy</h1>
-<div class="effective">Effective date: 2026-05-04</div>
+<div class="effective">Effective date: 2026-05-25</div>
 
-<p>This is the privacy policy for <strong>Tickle the Pig</strong> (the "App"), operated by Brian Broeking ("we", "us"). We tried to keep this short and plain — no dark patterns.</p>
+<p>This is the privacy policy for <strong>Tickle the Pig</strong> (the "App"), operated by Brian Broeking ("we", "us"). We tried to keep this short and plain — no dark patterns, no tracking, no ads.</p>
 
 <h2>What we collect</h2>
 <ul>
-  <li><strong>Account info:</strong> the username you choose, and the Apple Sign-In identifier we get when you log in. We do not see your real name or email if you used Apple's Hide My Email feature.</li>
-  <li><strong>Gameplay data:</strong> your tickle count, owned hats, equipped hat, friends list, season pass progress, daily challenge progress.</li>
-  <li><strong>Purchase data:</strong> if you buy something via Apple In-App Purchase, Apple tells us which product you bought and whether your subscription is active. We do not see your credit card or Apple ID password — Apple handles that.</li>
-  <li><strong>Device info:</strong> crash and performance logs from the Expo / React Native runtime. No advertising identifiers, no location, no contacts.</li>
+  <li><strong>Account info:</strong> the username you choose, and the Apple Sign-In identifier we get when you log in. If you used Apple's Hide My Email, we only see the relay address — never your real one.</li>
+  <li><strong>Gameplay data:</strong> tickle counts, friends list, trade history, blessings and curses sent or received, equipped cosmetics, season + bounty progress, alignment score, achievements.</li>
+  <li><strong>Push notification token:</strong> an anonymous device token from Apple Push Notification Service so we can deliver in-app event notifications. You can revoke this anytime in iOS Settings.</li>
+  <li><strong>Crash and performance logs:</strong> when the app crashes or hits a slow path, we log a stack trace + your user ID via Sentry so we can fix the bug. No personal device identifiers beyond what's needed to dedupe issues.</li>
 </ul>
-<p>We do <strong>not</strong> collect: location, contacts, photos, microphone audio, advertising IDs, or any analytics beyond crash logs.</p>
+<p>We do <strong>not</strong> collect: location, contacts, photos, microphone audio, payment data, advertising identifiers (IDFA), browsing history outside the app, or any analytics beyond crash/performance logs.</p>
 
 <h2>How we use it</h2>
 <ul>
-  <li>Run the game (show your stats, leaderboards, friends).</li>
-  <li>Validate purchases and entitlements (RevenueCat + Apple).</li>
-  <li>Make the app not crash (crash logs).</li>
+  <li>Run the game (show your stats, friends, leaderboards, bounties, season progress).</li>
+  <li>Deliver push notifications for in-app events you opted into.</li>
+  <li>Fix bugs and improve performance via crash logs.</li>
 </ul>
+<p>We do not sell your data, share it with advertisers, or use it for behavioral profiling.</p>
 
 <h2>Who we share it with</h2>
-<p>We use a few third parties whose privacy policies apply alongside this one:</p>
+<p>We use a few third-party service providers. Their privacy policies apply alongside this one:</p>
 <ul>
-  <li><strong>Supabase</strong> — database hosting. <a href="https://supabase.com/privacy">supabase.com/privacy</a></li>
-  <li><strong>Apple App Store / TestFlight</strong> — distribution + IAP. <a href="https://www.apple.com/legal/privacy/">apple.com/legal/privacy</a></li>
-  <li><strong>RevenueCat</strong> — subscription validation. <a href="https://www.revenuecat.com/privacy">revenuecat.com/privacy</a></li>
-  <li><strong>Expo / EAS</strong> — app build infrastructure (no user data). <a href="https://expo.dev/privacy">expo.dev/privacy</a></li>
+  <li><strong>Supabase</strong> — database + authentication hosting. <a href="https://supabase.com/privacy">supabase.com/privacy</a></li>
+  <li><strong>Apple App Store / TestFlight</strong> — app distribution + Sign in with Apple. <a href="https://www.apple.com/legal/privacy/">apple.com/legal/privacy</a></li>
+  <li><strong>Sentry</strong> — crash and performance reporting. <a href="https://sentry.io/privacy/">sentry.io/privacy</a></li>
+  <li><strong>Expo / EAS</strong> — push notification delivery + build infrastructure. <a href="https://expo.dev/privacy">expo.dev/privacy</a></li>
 </ul>
-<p>We do not sell your data, ever.</p>
+<p>None of these are used to track you across other apps or websites. We do not sell your data, ever.</p>
+
+<h2>Data retention</h2>
+<p>We keep your data for as long as your account is active. If you delete your account, we remove your row + all related rows (friendships, trades, blessings, curses, owned items, season progress, achievements) within 30 days. Crash logs retained by Sentry are auto-purged after 90 days.</p>
 
 <h2>Your rights</h2>
 <ul>
-  <li><strong>See your data:</strong> ask us, we'll send you a JSON dump of everything.</li>
-  <li><strong>Delete your account:</strong> ask us, we delete your row plus related rows (friendships, season progress, owned hats).</li>
-  <li><strong>Cancel a subscription:</strong> Settings → Apple ID → Subscriptions → Tickle the Pig → Cancel. We don't gate this.</li>
+  <li><strong>See your data:</strong> email us and we'll send you a JSON dump of everything we have.</li>
+  <li><strong>Delete your account:</strong> email us from the address on file. We delete within 30 days; the deletion is permanent.</li>
+  <li><strong>Push notifications:</strong> revoke anytime in iOS Settings → Notifications → Tickle the Pig.</li>
 </ul>
 
 <h2>Children</h2>
-<p>We do not knowingly collect data from children under 13. The App is rated 4+ for content (cartoon pig) but is not directed at children under 13.</p>
-
-<h2>Subscription auto-renewal</h2>
-<p>If you subscribe to Snout VIP, Apple will auto-renew at the end of each term unless you cancel at least 24 hours before. You can manage or cancel in iOS Settings → Apple ID → Subscriptions.</p>
+<p>The App is rated 4+. We do not knowingly collect data from children under 13, and the App is not directed at children under 13. If a parent believes their child has provided information to us, they should email us and we'll delete it.</p>
 
 <h2>Changes to this policy</h2>
-<p>We'll update this page if anything material changes. The effective date at the top will reflect the latest version.</p>
+<p>We'll update this page if anything material changes. The effective date at the top will reflect the latest version. Material changes will also be announced in-app on next launch.</p>
 
 <h2>Contact</h2>
-<p>Questions: <code>brian@broeking.dev</code> (or whichever address Apple has on file for the developer account)</p>
+<p>Questions or requests: <code>brian@broeking.dev</code></p>
 
 </body>
 </html>
