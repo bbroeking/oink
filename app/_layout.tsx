@@ -16,7 +16,7 @@ import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { AppState, LogBox } from "react-native";
+import { Alert, AppState, LogBox, Linking } from "react-native";
 import "react-native-reanimated";
 
 // Silence the bridgeless-Fabric "Unsupported dashed / dotted border
@@ -50,6 +50,12 @@ import {
 	type UnlockedAchievement,
 } from "@/components/AchievementUnlockModal";
 import { PurchaseToastHost } from "@/components/PurchaseToast";
+import {
+	PENDING_REFERRAL_CODE_KEY,
+	parseReferralCodeFromUrl,
+	redeemReferralCode,
+	referralErrorMessage,
+} from "@/utils/referrals";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
 // without a project still works.
@@ -379,6 +385,74 @@ function RootLayoutInner() {
 		};
 	}, [authChecked]);
 
+	// Referral deep-link handler. Universal Link
+	// `https://ticklethepig.com/r/<code>` → app:
+	//   - if signed in, prompt to apply (rare; existing user
+	//     opened the link by mistake; gate-cross is unlikely so
+	//     misuse doesn't matter)
+	//   - if not signed in, stash the code in AsyncStorage under
+	//     PENDING_REFERRAL_CODE_KEY; the onboarding code-entry
+	//     step reads + clears it on mount.
+	// Runs against the cold-launch URL (Linking.getInitialURL) AND
+	// any URL received while the app is foregrounded.
+	useEffect(() => {
+		let cancelled = false;
+
+		const handle = async (url: string | null) => {
+			const code = parseReferralCodeFromUrl(url);
+			if (!code) return;
+
+			// If we already have a session, prompt before applying —
+			// the canonical use case is "friend forwarded their link
+			// to an existing user"; almost never crosses the gate, so
+			// rare misapplication is acceptable. If unauthenticated,
+			// stash for onboarding to pick up.
+			const { data } = await supabase.auth.getSession();
+			if (cancelled) return;
+			if (!data.session) {
+				await AsyncStorage.setItem(PENDING_REFERRAL_CODE_KEY, code);
+				return;
+			}
+
+			Alert.alert(
+				"Apply your friend's code?",
+				`Add ${code} to your account?`,
+				[
+					{ text: "Cancel", style: "cancel" },
+					{
+						text: "Apply",
+						onPress: async () => {
+							const result = await redeemReferralCode(code);
+							if (result?.ok) {
+								Alert.alert(
+									"Code applied",
+									result.inviter_username
+										? `You're now in ${result.inviter_username}'s sounder. +50 snouts.`
+										: "+50 snouts landed."
+								);
+							} else {
+								Alert.alert(
+									"Couldn't apply",
+									referralErrorMessage(result?.reason)
+								);
+							}
+						},
+					},
+				]
+			);
+		};
+
+		// Cold launch.
+		Linking.getInitialURL().then(handle);
+		// Foreground URL events (Universal Link tap from outside the app).
+		const sub = Linking.addEventListener("url", (event) => handle(event.url));
+
+		return () => {
+			cancelled = true;
+			sub.remove();
+		};
+	}, []);
+
 	// Push tap → deep route. Payload `data.screen` drives where the
 	// tap lands:
 	//   'trade' / 'friends' → Friends tab (Inbox carries the event)
@@ -394,6 +468,8 @@ function RootLayoutInner() {
 				router.replace("/friends" as any);
 			} else if (data.screen === "achievements") {
 				router.replace("/achievements" as any);
+			} else if (data.screen === "account") {
+				router.replace("/account" as any);
 			}
 		});
 		return () => sub.remove();
