@@ -27,7 +27,7 @@ import { FONTS, WHIMSY } from "@/constants/theme";
 import type { TradeRow } from "@/constants/trade_types";
 import { SectionHeader } from "./ui/SectionHeader";
 import { Sticker } from "./ui/Sticker";
-import { FRIEND_CAP_LIMIT } from "./Friends";
+import { FRIEND_CAP_LIMIT } from "@/utils/friendships";
 
 interface FriendReq {
 	requester_id: string;

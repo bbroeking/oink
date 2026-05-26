@@ -6,6 +6,7 @@ import { View, StyleSheet, ScrollView, Pressable, Text } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
+import { getFriendIds } from "@/utils/friendships";
 import { log } from "../utils/log";
 import { Icon } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
@@ -308,7 +309,7 @@ export function Leaderboard() {
 
 			if (scope === "friends") {
 				// Bounded by the 100-friend cap — fetch once, no pagination.
-				const friends = await rpc<string[]>("friend_ids");
+				const friends = await getFriendIds();
 				const friendIds = [
 					...(friends ?? []),
 					...(user ? [user.id] : []),

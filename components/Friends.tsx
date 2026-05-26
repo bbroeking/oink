@@ -10,31 +10,20 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
-import { rpc } from "@/utils/rpc";
+import {
+	FRIEND_CAP_LIMIT,
+	getFriendIds,
+	getSuggestedUsers,
+	searchUsers,
+	sendFriendRequest,
+	type Profile,
+} from "@/utils/friendships";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
 import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
 import { AlignmentBadge } from "./ui/AlignmentBadge";
 import { PigAvatar } from "./ui/PigAvatar";
-
-// Hard cap on the friends list — must match the server-side cap
-// enforced in send_friend_request + accept_friend_request (see
-// supabase/migrations/20260541000000_friend_cap.sql). Past ~100
-// the list slows and the bless/curse cooldowns lose signal.
-export const FRIEND_CAP_LIMIT = 100;
-
-interface Profile {
-	id: string;
-	username: string | null;
-	tickles_earned?: number;
-	discriminator?: string | null;
-	alignment_score?: number | null;
-	active_hat_id?: string | null;
-	// Joined-through name of the equipped hat — drives both the
-	// PigAvatar overlay and the "wears X" second-line on each row.
-	active_hat?: { name: string } | { name: string }[] | null;
-}
 
 // PostgREST returns 1:1 joins either as an object or a length-1
 // array. Flatten so consumers can read .name directly.
@@ -62,7 +51,7 @@ export default function Friends({ userId }: { userId: string }) {
 		// migration hasn't been pushed yet — slicing here means we
 		// never blow up the list view, and the FRIEND_CAP_LIMIT
 		// constant stays the single source of truth in the UI.
-		const ids = (await rpc<string[]>("friend_ids")) ?? [];
+		const ids = (await getFriendIds()) ?? [];
 		const capped = ids.slice(0, FRIEND_CAP_LIMIT);
 		if (capped.length > 0) {
 			const { data } = await supabase
@@ -279,7 +268,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 	// search box. Uses suggested_users RPC: non-friends, no pending
 	// requests, ordered random.
 	useEffect(() => {
-		rpc<Profile[]>("suggested_users", { limit_n: 3 }).then((data) => {
+		getSuggestedUsers(3).then((data) => {
 			setSuggestions(data ?? []);
 		});
 	}, []);
@@ -296,10 +285,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 		}
 		setSearching(true);
 		debounceRef.current = setTimeout(async () => {
-			const data = await rpc<Profile[]>("search_users", {
-				prefix: q,
-				max_results: 10,
-			});
+			const data = await searchUsers(q, 10);
 			setResults(data ?? []);
 			setSearching(false);
 		}, 200);
@@ -312,12 +298,9 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 		if (sending) return;
 		setSending(target.id);
 		setFeedback("");
-		const r = await rpc<{ ok?: boolean; reason?: string; cap?: number }>(
-			"send_friend_request",
-			{
-				target_username: target.username,
-				target_discriminator: target.discriminator ?? null,
-			}
+		const r = await sendFriendRequest(
+			target.username,
+			target.discriminator ?? null
 		);
 		setSending(null);
 		if (!r?.ok) {
