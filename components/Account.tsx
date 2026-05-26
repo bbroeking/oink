@@ -19,7 +19,9 @@ import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Card, Button, SectionHeader } from "./ui";
 import { Icon, type IconName } from "./ui/Icon";
+import { Image } from "react-native";
 import { PigAvatar } from "./ui/PigAvatar";
+import { HAT_IMAGES } from "@/constants/hats";
 import { Sticker, Tape } from "./ui/Sticker";
 import { AlignmentBar } from "./ui/AlignmentBar";
 import Constants from "expo-constants";
@@ -270,6 +272,17 @@ export function Account({ session }: { session: Session }) {
 								<View style={styles.codeRow}>
 									<View style={styles.codeAvatar}>
 										<PigAvatar size={56} hatId={activeHat} />
+										{/* Scrapbook flowers overlay — small charm
+										    detail from the redesign. Only shows when
+										    the player isn't already wearing flowers
+										    in the main slot. */}
+										{activeHat !== "flowers" &&
+											HAT_IMAGES["flowers"] && (
+												<Image
+													source={HAT_IMAGES["flowers"]}
+													style={styles.avatarFlowers}
+												/>
+											)}
 									</View>
 									<View style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
 										<Text style={styles.codeLabel}>your code</Text>
@@ -698,6 +711,15 @@ const styles = StyleSheet.create({
 	codeRow: {
 		flexDirection: "row",
 		alignItems: "center",
+	},
+	avatarFlowers: {
+		position: "absolute",
+		top: -10,
+		left: 4,
+		width: 52,
+		height: 38,
+		resizeMode: "contain",
+		transform: [{ rotate: "-6deg" }],
 	},
 	codeAvatar: {
 		borderRadius: 32,
