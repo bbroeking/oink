@@ -51,7 +51,7 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 		name: "Sun Beam",
 		emoji: "🌞",
 		icon: require("../assets/images/emoji/sun-beam.png"),
-		blurb: "Their next Lucky Pig doubles.",
+		blurb: "Huge Lucky Pig boost — burns off when one fires.",
 	},
 	halo_kiss: {
 		name: "Halo Kiss",
@@ -78,7 +78,7 @@ export const CURSE_META: Record<CurseKind, RitualMeta> = {
 		name: "Phantom Itch",
 		emoji: "✨",
 		icon: require("../assets/images/emoji/phantom-itch.png"),
-		blurb: "Their next 3 taps count half.",
+		blurb: "1-in-3 taps slip — for 24h.",
 	},
 	goblin_whisper: {
 		name: "Goblin Whisper",
