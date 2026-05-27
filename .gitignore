@@ -47,3 +47,6 @@ app-example
 # Metro / dev-build .ipa output
 *.ipa
 build-*.ipa
+
+# Claude Code — agent worktrees are transient; skills + commands are tracked.
+.claude/worktrees/
