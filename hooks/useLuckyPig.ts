@@ -11,10 +11,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as StoreReview from "expo-store-review";
 import { rpc } from "@/utils/rpc";
 import { log } from "@/utils/log";
 import type { TitleRow } from "@/constants/title_types";
+
+// Lazy-required so the app boots on dev binaries that pre-date the
+// expo-store-review install (the native module ships with the iOS
+// binary, not the JS bundle — a stale .app on the simulator throws
+// "Cannot find native module 'ExpoStoreReview'" without this guard).
+// Production / TestFlight builds rebuild the native side, so this
+// require() succeeds and the prompt fires normally.
+let StoreReview: typeof import("expo-store-review") | null = null;
+try {
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
+	StoreReview = require("expo-store-review");
+} catch {
+	// native module not in this build; maybeAskForReview() bails below
+}
 import {
 	LUCKY_DOUBLE_CHANCE,
 	LUCKY_EVER_KEY,
@@ -57,6 +70,10 @@ async function maybeAskForReview() {
 	}
 	if (__DEV__) {
 		log.info("[review] skipped — __DEV__ build (Expo Go / dev client)");
+		return;
+	}
+	if (!StoreReview) {
+		log.info("[review] skipped — native module not available in this build");
 		return;
 	}
 	try {
