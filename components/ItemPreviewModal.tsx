@@ -243,13 +243,13 @@ export function ItemPreviewModal({
 
 					{/* Price + CTA row */}
 					<View style={styles.ctaRow}>
-						{!owned && (
+						{!owned && item.cost > 0 && (
 							<View style={styles.priceWrap}>
 								<SnoutCoin size={18} />
 								<Text style={styles.price}>
 									{item.cost.toLocaleString()}
 								</Text>
-								<Text style={styles.priceLabel}>tickles</Text>
+								<Text style={styles.priceLabel}>snouts</Text>
 							</View>
 						)}
 						{active ? (
@@ -259,6 +259,14 @@ export function ItemPreviewModal({
 						) : owned ? (
 							<Button size="md" variant="primary" full onPress={onEquip}>
 								Wear
+							</Button>
+						) : item.cost <= 0 ? (
+							// Season-pass exclusives + referral milestones carry
+							// cost=0 in the catalog. They're earned, not bought —
+							// surface that instead of showing "0 snouts" + a
+							// misleading "Available in Today's Shop" lock.
+							<Button size="md" variant="locked" full disabled>
+								Earned, not sold
 							</Button>
 						) : !buyable ? (
 							<Button size="md" variant="locked" full disabled>

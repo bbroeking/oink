@@ -294,6 +294,10 @@ function ItemCard({
 					>
 						{active ? "✓ WEARING" : "OWNED"}
 					</Text>
+				) : item.cost <= 0 ? (
+					// Earn-only items (season pass + referral milestones)
+					// — show a label instead of a misleading "0" coin price.
+					<Text style={styles.cardOwnedTag}>SEASON PASS</Text>
 				) : (
 					<>
 						<SnoutCoin size={14} />
@@ -989,13 +993,21 @@ export default function ShopScreen() {
 		);
 		setTitleBusyId(null);
 		if (!r?.ok) {
+			// `buy_title` actually returns one of: unauthenticated,
+			// not_for_sale, invalid_price, already_owned. The previous
+			// branch checked "insufficient_funds" which the RPC never
+			// returns — client pre-checks the balance at line ~982
+			// before calling, so we don't need to handle insufficient
+			// funds in the post-RPC error path.
 			Alert.alert(
 				"Couldn't buy",
-				r?.reason === "insufficient_funds"
-					? "Not enough snouts."
-					: r?.reason === "already_owned"
-						? "You already own this title."
-						: "Try again."
+				r?.reason === "already_owned"
+					? "You already own this title."
+					: r?.reason === "not_for_sale"
+						? "This title isn't for sale."
+						: r?.reason === "invalid_price"
+							? "Pricing issue — try again."
+							: "Try again."
 			);
 			return;
 		}
@@ -1065,6 +1077,18 @@ export default function ShopScreen() {
 					type: "fail",
 					title: "Already yours",
 					text: "You already own this one.",
+				});
+				return;
+			}
+			if (r.reason === "not_for_sale") {
+				// Season-pass + referral-milestone hats have cost=0 in
+				// the catalog; buy_hat rejects them. The shop card +
+				// preview modal both gate against this client-side
+				// now, so this path only fires on a stale UI state.
+				showPurchaseToast({
+					type: "fail",
+					title: "Earned, not sold",
+					text: "Unlock this from the Season Pass or a referral milestone.",
 				});
 				return;
 			}
