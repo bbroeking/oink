@@ -21,14 +21,38 @@ Companion to ADR-0001 (`docs/adr/0001-pig-happiness.md`), which captures the des
 
 ## Mood mapping
 
-| Happiness range | Mood label | UI |
-|---|---|---|
-| 80–100 | **Thriving** | Sparkle particle aura + bouncier idle animation |
-| 60–79 | **Happy** | Slight ambient particles + neutral idle |
-| 40–59 | **Content** | Default pig idle (no extra effects) |
-| 30–39 (at floor) | **Lonely** | Slumped ears + dimmed color overlay + slower idle |
+**Mood is Rosie's idle state, full stop.** The current "show the sad sprite when the tickle bank is empty" behavior (`SwipeElement.tsx:93-94`) is removed — empty-bank is communicated by the heart counter, not by Rosie's face. Wherever Rosie renders (Barn Exterior, Barn Interior, Visit screen, item previews, modals), her resting animation is selected by current happiness mood. Tickle-tap reward animations, Lucky Pig jumps, and surprise frames still play on top transiently; mood is the *base* that the animation returns to.
 
-Friends see your mood when they `Visit` you. That's the social hook — "Jen's pig looks Lonely → I should visit her."
+| Happiness range | Mood label | Idle sprite set | Ambient layer |
+|---|---|---|---|
+| 80–100 | **Thriving** | `thriving_1..4` *(new — to be generated, see "Sprite work needed" below)* | Sparkle particle aura around Rosie |
+| 60–79 | **Happy** | `happy_1..4` *(existing — currently only used as a tickle-reward animation)* | Slight ambient sparkles |
+| 40–59 | **Content** | `idle_1..4` *(existing — today's default)* | None |
+| 30–39 (at floor) | **Lonely** | `sad_1..4` *(existing — repurposed from the empty-bank trigger)* | Dimmed cool-gray color overlay |
+
+Friends see your mood when they `Visit` you — same selector logic, same sprite set. That's the social hook ("Jen's pig looks Lonely → I should visit her").
+
+### How a pig gets to happier states
+
+Happiness starts at 50 (Content) on signup and decays −10/day toward a floor of 30 (Lonely). All inputs are positive — there are no negative ones. To climb toward Happy / Thriving:
+
+| Source | Bump | Cap |
+|---|---|---|
+| Your daily login | +3 | Once per UTC day, free + automatic |
+| Friend visits you | +5 | Once per friend per UTC day (their `Visit` action) |
+| Friend tickles your pig | +1 each | Capped at 5/friend/day |
+| Friend sends you a blessing | +10 | No daily cap; gated by their once-per-day ritual rule |
+
+**Daily math by player profile:**
+
+| Profile | Net Δ/day | Steady-state mood |
+|---|---|---|
+| Solo, login only | +3 − 10 = **−7** | Lonely (floors at 30 in ~3 weeks) |
+| 1 active friend visiting + 1 tickle | +3 + 5 + 1 − 10 = **−1** | Drifts toward Lonely slowly |
+| 1 active friend visiting + maxing 5 tickles | +3 + 5 + 5 − 10 = **+3** | Climbs to Happy (80) in ~10 days, Thriving in ~3 weeks |
+| 3 active friends + occasional blessings | ~+30 daily | Thriving (100) within a week |
+
+The path the player needs to internalize: **mood is a friendship signal**. Solo gameplay floors at Lonely; a single engaged friend is the difference between drifting down and climbing up; a small sounder of 3+ active friends maxes happiness comfortably. The Visit screen + tickle interactions (Phase 3) are the high-leverage levers.
 
 ---
 
@@ -130,10 +154,12 @@ $$;
 
 ## UI surfaces
 
-### Barn
+### Barn (Exterior + Interior, both)
 
-- **Mood overlay on Rosie.** Lonely: slumped ears (could be done as a small sprite swap or a CSS-style transform). Thriving: sparkle particles in the ambient layer.
-- **Hidden number.** No "78" or "Happiness" label anywhere on Barn — the visual change *is* the readout.
+- **Mood drives Rosie's idle.** Every render path that shows Rosie reads current mood and selects the matching sprite set (see Mood mapping above). One selector, shared across `Barn.tsx`, `SwipeElement.tsx`, `PigStage.tsx` consumers (Visit screen, ItemPreviewModal, etc.).
+- **Empty-bank decoupled from Rosie's face.** The `if (!canTickle) setPigAnim("sad")` branch in `SwipeElement.tsx:93-94` is removed. When the tickle bank is empty, the heart counter / regen UI carries that signal; Rosie's idle stays tied to mood. Tap-on-empty can still bounce a *transient* "denied" cue (the existing `deniedSound` + brief shake), but the base sprite does not switch.
+- **Hidden number.** No "78" or "Happiness" label anywhere — the visual change *is* the readout.
+- **Ambient layer per mood.** Thriving renders sparkle particles around Rosie (separate ambient layer, similar implementation to existing `sunBeam`). Lonely renders a subtle cool-gray color overlay on the pig sprite. Content + Happy carry no ambient effect — the sprite swap alone reads the difference.
 
 ### Visit screen (feature #4)
 
@@ -199,6 +225,7 @@ Phase 1 + 2 can ship without #4 — they're just lightly active. Phase 3 unlocks
 ## Heads-up
 
 - **Magnitude is a tuning knob.** 0.7×–1.30× is the starting point. After 2–4 weeks of public-build data, audit whether the spread is too wide / too narrow and adjust `happiness_mod` linearly. Single function change; no migration.
-- **The mood overlay needs art.** "Slumped ears" and "sparkle particles" are concepts — turn into either Rive animation variants on the existing `RivePig` component, or static sprite overlays. Treat as part of Phase 3 art budget.
+- **Mood-as-idle requires a sprite generation pass before Phase 3 ships.** Existing sprite sets in `assets/images/sprites/rosie/` cover three of the four moods (`idle_1..4` for Content, `happy_1..4` for Happy, `sad_1..4` for Lonely — repurposed from the old empty-bank trigger). **The `thriving_1..4` sprite set does not exist yet and must be generated.** Sparkle ambient particles for Thriving + cool-gray overlay for Lonely are separate render layers (CSS-style transforms / particle code), not sprite work.
+  - **TODO — kick off subagent for Rosie sprite generation.** Tasks: (1) generate `thriving_1..4` matching the existing 4-frame idle cadence and the Rosie style (same canvas size, anchor points, hat/cosmetic attachment points so PigStage's anchor math doesn't drift); (2) audit `sad_1..4` to confirm it reads as "lonely / slumped" rather than "rejected by app", and tweak if needed; (3) confirm `happy_1..4` reads as a sustainable *idle* loop (today it only plays briefly on Lucky Pig + 6-7 easter egg — when used as a steady mood state, an over-bouncy variant may feel jittery). Per [[feedback_module_naming]], keep filenames technical (`thriving_*`) — player-facing labels stay in UI.
 - **Cron-free decay is eventually consistent.** A pig untouched for 3 weeks has stored happiness=80 with last_decay 3 weeks ago. The next call to any RPC catches it up to 30. There's no inconsistency at observation time, but `SELECT happiness FROM profiles` directly will show stale values. Always go through `apply_happiness_decay` first if you need the current value.
 - **No retroactive grant.** Players existing pre-launch start at default 50, same as new players. No "thank-you" boost for loyal users. (Could be added but feels random; skip unless launch metrics demand it.)
