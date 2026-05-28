@@ -26,6 +26,7 @@ import {
 	KeyboardAvoidingView,
 	Platform,
 	Image,
+	Dimensions,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
@@ -48,6 +49,14 @@ interface Props {
 // so a future onboarding redesign doesn't accidentally re-show the
 // referral prompt.
 const SEEN_KEY = "seen_referral_step";
+
+// Explicit pixel dims for the Rosie hero. A percentage width + aspectRatio
+// collapses to zero height in this layout (tall, mostly-empty hero because
+// the card below is short), so the image vanished. Concrete px sizing from
+// the screen width keeps Yoga from dropping it. 370x383 is the native ratio.
+const SCREEN_W = Dimensions.get("window").width;
+const ROSIE_W = Math.round(SCREEN_W * 0.55);
+const ROSIE_H = Math.round(ROSIE_W * (383 / 370));
 
 type Status =
 	| { kind: "idle" }
@@ -244,8 +253,8 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	rosie: {
-		width: "55%",
-		aspectRatio: 370 / 383,
+		width: ROSIE_W,
+		height: ROSIE_H,
 		marginBottom: 14,
 	},
 	kicker: { ...KICKER_TEXT, marginBottom: 6 },
