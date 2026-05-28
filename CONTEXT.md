@@ -9,6 +9,9 @@ Anchors for the codebase's architectural vocabulary. Started during the architec
 - **Active effect** — the *receiver-side* counterpart: a blessing or curse currently in force on the caller, surfaced by the `my_active_effects` RPC.
 - **Hoofprints** — the player-facing display name for active effects ("Hoofprints on you"). Internal code uses the technical name; the term *Hoofprints* belongs to UI surfaces (sheet titles, section headers).
 - **Sounder** — the player-facing name for the friends graph ("Your Sounder").
+- **Happiness** — a pig's medium-term care state. Decays over time toward a floor; raised only by friend-acts (visits, tickles received, blessings) and the player's own daily login. Multiplies tickle regen rate. Curses do *not* lower it — happiness is a positive-only ledger; ritual-effect debuffs are a separate axis with their own short-term durations.
+- **Mood** — the UI surface for happiness. Players see a qualitative label (Thriving / Happy / Content / Lonely), never the raw 0–100 number. The pig sprite's posture + ambient effects shift with mood. Friends see your mood when they visit, creating the "Jen's pig looks lonely — I should visit" social hook.
+- **Visit** — a social act distinct from blessing/cursing/trading: opening another player's pig view to see their full equipped look + their mood, with the option to tickle them while there. Once per friend per day. The first non-exchange social act in the game (pure presence, no obligation).
 
 ## Seams
 
