@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tickle the Pig — you've got a code</title>
+<meta name="description" content="Your friend invited you to Tickle the Pig. Grab your code and join in." />
+<!-- Open Graph so the link looks good when shared in iMessage / social -->
+<meta property="og:title" content="Come tickle a pig with me" />
+<meta property="og:description" content="Your friend's code is inside. Join the Tickle the Pig beta." />
+<meta property="og:type" content="website" />
+<style>
+  :root {
+    --ink: #2a1f15;
+    --paper: #fffaf0;
+    --cream: #f7efe1;
+    --rose: #ffd6dc;
+    --rose-deep: #f8a8b3;
+    --sage: #c9dec1;
+    --sun: #ffd87a;
+    --lilac: #d6c8f0;
+    --mute: #9a8c7a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    min-height: 100%;
+  }
+  .card {
+    background: #fff;
+    border: 2.5px solid var(--ink);
+    border-radius: 22px;
+    box-shadow: 6px 6px 0 var(--ink);
+    max-width: 380px;
+    width: 100%;
+    padding: 32px 26px 28px;
+    text-align: center;
+    transform: rotate(-0.5deg);
+  }
+  .kicker {
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--rose-deep);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 27px;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .sub {
+    font-size: 15px;
+    color: var(--mute);
+    margin-bottom: 22px;
+    line-height: 1.45;
+  }
+  .code-label {
+    font-size: 13px;
+    color: var(--mute);
+    margin-bottom: 6px;
+  }
+  .code-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--cream);
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 22px;
+  }
+  .code {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--ink);
+  }
+  .copy-btn {
+    border: 2px solid var(--ink);
+    background: var(--sun);
+    border-radius: 10px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.05s;
+  }
+  .copy-btn:active { transform: translateY(1px); }
+  .join-btn {
+    display: block;
+    width: 100%;
+    background: var(--lilac);
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 15px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: 3px 3px 0 var(--ink);
+    margin-bottom: 18px;
+    transition: transform 0.05s;
+  }
+  .join-btn:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--ink); }
+  .steps {
+    text-align: left;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--sage);
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    padding: 14px 16px 14px 14px;
+    line-height: 1.5;
+  }
+  .steps ol { margin-left: 20px; }
+  .steps li { margin-bottom: 4px; }
+  .no-code { color: var(--mute); font-size: 14px; }
+  .toast {
+    position: fixed;
+    bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="kicker">★ you've got a code ★</div>
+    <h1>Come tickle a pig 🐷</h1>
+    <p class="sub">A friend invited you to <strong>Tickle the Pig</strong>. Grab your code, join the beta, and you'll both get snouts.</p>
+
+    <div id="code-block">
+      <div class="code-label">Your friend's code</div>
+      <div class="code-pill">
+        <span class="code" id="code">—</span>
+        <button class="copy-btn" id="copy">Copy</button>
+      </div>
+    </div>
+
+    <!-- TODO: replace with the public TestFlight link during beta,
+         then with the App Store badge/link at launch. -->
+    <a class="join-btn" id="join" href="https://testflight.apple.com/join/REPLACE_WITH_TESTFLIGHT_CODE">
+      Join the beta →
+    </a>
+
+    <div class="steps">
+      <strong>How to redeem:</strong>
+      <ol>
+        <li>Tap <em>Copy</em> above.</li>
+        <li>Join the beta + install the app.</li>
+        <li>When the app asks for a code, paste it in.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Code copied ✓</div>
+
+<script>
+  // Pull the code out of the path: /r/ROSIE-K3T9  (also tolerate ?code=).
+  // Matches the format the app emits + validates (REFERRAL_CODE_PATTERN
+  // in utils/referrals.ts): 5 letters, dash, 4 alphanumerics.
+  var PATTERN = /^[A-Z]{5}-[A-Z0-9]{4}$/;
+  function extractCode() {
+    var m = window.location.pathname.match(/\/r\/([^\/?#]+)/i);
+    var raw = m ? m[1] : (new URLSearchParams(window.location.search).get('code') || '');
+    var c = decodeURIComponent(raw).toUpperCase().trim();
+    return PATTERN.test(c) ? c : null;
+  }
+
+  var code = extractCode();
+  var codeEl = document.getElementById('code');
+  var copyBtn = document.getElementById('copy');
+  var codeBlock = document.getElementById('code-block');
+  var toast = document.getElementById('toast');
+
+  if (code) {
+    codeEl.textContent = code;
+    // Pre-warm the clipboard so the in-app first-launch clipboard sniff
+    // (parseReferralCodeFromClipboard) can pick it up. Best-effort —
+    // browsers may block clipboard writes without a user gesture, so the
+    // Copy button is the reliable path.
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).catch(function () {});
+    }
+  } else {
+    codeBlock.innerHTML = '<p class="no-code">No code in this link — ask your friend to re-share their invite, or just install and skip the code step.</p>';
+  }
+
+  function showToast() {
+    toast.classList.add('show');
+    setTimeout(function () { toast.classList.remove('show'); }, 1600);
+  }
+
+  copyBtn.addEventListener('click', function () {
+    if (!code) return;
+    var done = function () { copyBtn.textContent = 'Copied'; showToast(); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(done).catch(function () {
+        legacyCopy(); done();
+      });
+    } else {
+      legacyCopy(); done();
+    }
+  });
+
+  function legacyCopy() {
+    var ta = document.createElement('textarea');
+    ta.value = code; document.body.appendChild(ta);
+    ta.select(); try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+</script>
+</body>
+</html>
