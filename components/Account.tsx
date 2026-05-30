@@ -44,6 +44,7 @@ import {
 	shareMessageForCode,
 	type ReferralSummary,
 } from "@/utils/referrals";
+import { ensurePushPermission } from "@/utils/pushNotifications";
 
 export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
@@ -268,8 +269,16 @@ export function Account({ session }: { session: Session }) {
 	// Open the system share sheet with the pre-filled invite message
 	// from utils/referrals. Errors swallowed — share sheet rejections
 	// are user actions, not bugs.
+	//
+	// Share is the second push-permission ask site after Friends. A user
+	// sharing their code is about to trigger inbound social activity
+	// (friend requests, the +100 referral-completed push); permission
+	// makes sense at this exact moment. Awaited so the prompt resolves
+	// before the share sheet covers it. Idempotent — no-op after grant
+	// or denial; the function in utils/pushNotifications coalesces.
 	const handleShareReferral = async () => {
 		if (!referral?.code) return;
+		await ensurePushPermission();
 		try {
 			await Share.share({ message: shareMessageForCode(referral.code) });
 		} catch {
