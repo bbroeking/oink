@@ -453,7 +453,7 @@
         Join the beta <span class="ja">→</span>
       </a>
 
-      <div class="steps">
+      <div class="steps" id="steps">
         <strong>How to redeem:</strong>
         <ol>
           <li>Tap <em>Copy</em> above.</li>
@@ -558,7 +558,16 @@
       navigator.clipboard.writeText(code).catch(function () {});
     }
   } else {
-    codeBlock.innerHTML = '<p class="no-code">Hmm — this link is missing its code. You\'ll need one to join the beta, so ask your friend to re-send their invite link.</p>';
+    // No code in the URL = organic visitor (no /r/<code> path) OR a
+    // malformed code that failed the regex. Either way, welcome them
+    // in instead of telling them they "need" something. Hide the
+    // "How to redeem" steps too, since they reference a Copy button
+    // that doesn't exist in this state. The Join button stays visible
+    // so they can install regardless — the in-app onboarding will
+    // present an optional code field with a Skip option.
+    codeBlock.innerHTML = '<p class="no-code">Came in without a friend\'s code? No worries — join the beta and start tickling. (Friend codes get the inviter +50 snouts; nothing\'s lost if you don\'t have one.)</p>';
+    var steps = document.getElementById('steps');
+    if (steps) steps.style.display = 'none';
   }
 
   function showToast() {
