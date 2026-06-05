@@ -33,6 +33,7 @@ import {
 } from "../../components/ui/TierUpBanner";
 import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
 import { FONTS, KICKER_TEXT, ROW_TILTS, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW } from "@/constants/theme";
+import { daysUntilJudgement } from "@/utils/season";
 import { Button, SectionHeader } from "../../components/ui";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
@@ -1165,6 +1166,14 @@ export default function SeasonScreen() {
 					<Text style={styles.kicker}>★ {season.name.toLowerCase()}</Text>
 					<Text style={styles.title}>Goblins vs Angels</Text>
 					<View style={styles.titleRule} />
+						{daysUntilJudgement() > 0 && (
+							<View style={styles.judgementBanner}>
+								<Text style={styles.judgementText}>
+									⚖ Judgement Day in {daysUntilJudgement()}{" "}
+									{daysUntilJudgement() === 1 ? "day" : "days"}
+								</Text>
+							</View>
+						)}
 				</View>
 
 				{/* The standalone XP progress card was dropped per the
@@ -1201,6 +1210,34 @@ export default function SeasonScreen() {
 							}
 						/>
 					</View>
+
+					{/* XP progress toward the next tier. The pass-track stones
+					    only show discrete claim state, so this restores the
+					    granular "how close to the next tier" readout. */}
+					{(() => {
+						const xpPer = season.xp_per_tier || 1;
+						const xp = state.xp ?? 0;
+						const atMax = tier >= season.total_tiers;
+						const into = xp % xpPer;
+						const pct = atMax ? 1 : Math.max(0, Math.min(1, into / xpPer));
+						return (
+							<View style={passProgressStyles.wrap}>
+								<View style={passProgressStyles.track}>
+									<View
+										style={[
+											passProgressStyles.fill,
+											{ width: `${Math.round(pct * 100)}%` },
+										]}
+									/>
+								</View>
+								<Text style={passProgressStyles.label}>
+									{atMax
+										? "Max tier reached ★"
+										: `${into} / ${xpPer} XP to Tier ${tier + 1}`}
+								</Text>
+							</View>
+						);
+					})()}
 
 					{/* Vertical-list pass track — straight column of node +
 					    card rows with per-state visual treatment (sage
@@ -1386,8 +1423,47 @@ const rewardStyles = StyleSheet.create({
 	},
 });
 
+const passProgressStyles = StyleSheet.create({
+	wrap: { marginTop: 10, marginBottom: 4, paddingHorizontal: 4 },
+	track: {
+		height: 12,
+		borderRadius: 999,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream2,
+		overflow: "hidden",
+	},
+	fill: {
+		height: "100%",
+		backgroundColor: WHIMSY.sun,
+	},
+	label: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 5,
+	},
+});
+
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: WHIMSY.cream },
+	judgementBanner: {
+		marginTop: 10,
+		alignSelf: "center",
+		backgroundColor: WHIMSY.lilac,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingHorizontal: 14,
+		paddingVertical: 5,
+	},
+	judgementText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 13,
+		color: WHIMSY.ink,
+		letterSpacing: 0.3,
+	},
 	safeArea: { flex: 1 },
 	center: { alignItems: "center", justifyContent: "center" },
 	empty: {

@@ -48,6 +48,7 @@ interface SwipeElementProps {
 	equippedAura?: EquippedItem | null;
 	equippedBackground?: EquippedItem | null;
 	equippedHeld?: EquippedItem | null;
+	equippedFlag?: EquippedItem | null;
 	canTickle?: boolean;
 	playSixSeven?: number; // increment to re-trigger
 }
@@ -61,6 +62,7 @@ export default function SwipeElement({
 	equippedAura,
 	equippedBackground,
 	equippedHeld,
+	equippedFlag,
 	canTickle = true,
 	playSixSeven,
 }: SwipeElementProps) {
@@ -326,6 +328,7 @@ export default function SwipeElement({
 						equipped={mainEquipped}
 						equippedAura={equippedAura}
 						equippedHeld={equippedHeld}
+						equippedFlag={equippedFlag}
 						relOverrides={relOverrides}
 					/>
 				</Animated.View>

@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+"""Generate the World Cup shop content seed from the 47 generated flags.
+
+Emits, from a single source of truth (the 47 WC teams + titles parsed from
+docs/world-cup-countries.md):
+  - supabase/migrations/20260569000000_world_cup_flags.sql  (47 flag items +
+    47 country titles)
+  - constants/worldCupFlags.ts  (RN require() map + per-country metadata)
+  - copies flags/flag_<slug>.png -> assets/images/hats/flags/<slug>.png
+
+Re-run any time the flag set or titles change. Does NOT push the migration.
+"""
+import os
+import re
+import shutil
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FLAGS_SRC = os.path.expanduser("~/Desktop/ttp-refs/world-cup-flags/flags")
+ASSETS = os.path.join(ROOT, "assets/images/hats/flags")
+DOC = os.path.join(ROOT, "docs/world-cup-countries.md")
+MIG = os.path.join(ROOT, "supabase/migrations/20260569000000_world_cup_flags.sql")
+TS = os.path.join(ROOT, "constants/worldCupFlags.ts")
+
+FLAG_COST = 300        # flat day-one price in snouts
+FLAG_RARITY = "rare"
+
+# (slug, display name, name as it appears in world-cup-countries.md)
+TEAMS = [
+    ("brazil", "Brazil", "Brazil"), ("argentina", "Argentina", "Argentina"),
+    ("france", "France", "France"), ("japan", "Japan", "Japan"),
+    ("mexico", "Mexico", "Mexico"), ("usa", "United States", "United States"),
+    ("spain", "Spain", "Spain"), ("england", "England", "England"),
+    ("portugal", "Portugal", "Portugal"), ("germany", "Germany", "Germany"),
+    ("netherlands", "Netherlands", "Netherlands"), ("belgium", "Belgium", "Belgium"),
+    ("croatia", "Croatia", "Croatia"), ("norway", "Norway", "Norway"),
+    ("switzerland", "Switzerland", "Switzerland"), ("austria", "Austria", "Austria"),
+    ("scotland", "Scotland", "Scotland"), ("sweden", "Sweden", "Sweden"),
+    ("turkiye", "Türkiye", "Turkey"), ("czechia", "Czechia", "Czechia"),
+    ("bosnia-and-herzegovina", "Bosnia and Herzegovina", "Bosnia and Herzegovina"),
+    ("colombia", "Colombia", "Colombia"), ("ecuador", "Ecuador", "Ecuador"),
+    ("uruguay", "Uruguay", "Uruguay"), ("paraguay", "Paraguay", "Paraguay"),
+    ("canada", "Canada", "Canada"), ("panama", "Panama", "Panama"),
+    ("haiti", "Haiti", "Haiti"), ("curacao", "Curaçao", "Curaçao"),
+    ("morocco", "Morocco", "Morocco"), ("senegal", "Senegal", "Senegal"),
+    ("egypt", "Egypt", "Egypt"), ("tunisia", "Tunisia", "Tunisia"),
+    ("algeria", "Algeria", "Algeria"), ("south-africa", "South Africa", "South Africa"),
+    ("cote-divoire", "Côte d'Ivoire", "Ivory Coast"), ("ghana", "Ghana", "Ghana"),
+    ("cape-verde", "Cape Verde", "Cape Verde"), ("dr-congo", "DR Congo", "DR Congo"),
+    ("south-korea", "South Korea", "South Korea"), ("australia", "Australia", "Australia"),
+    ("uzbekistan", "Uzbekistan", "Uzbekistan"), ("jordan", "Jordan", "Jordan"),
+    ("qatar", "Qatar", "Qatar"), ("saudi-arabia", "Saudi Arabia", "Saudi Arabia"),
+    ("iraq", "Iraq", "Iraq"), ("new-zealand", "New Zealand", "New Zealand"),
+]
+
+
+def parse_titles():
+    """name -> title, from the doc's '| Country | signature | title |' rows."""
+    out = {}
+    for line in open(DOC, encoding="utf-8"):
+        if not line.startswith("| "):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) == 3 and cells[0] not in ("Country",):
+            out[cells[0]] = cells[2]
+    return out
+
+
+def sql_str(s):
+    return "'" + s.replace("'", "''") + "'"
+
+
+def main():
+    titles = parse_titles()
+    missing_png = [s for s, _, _ in TEAMS
+                   if not os.path.exists(os.path.join(FLAGS_SRC, f"flag_{s}.png"))]
+    missing_title = [d for _, _, d in TEAMS if d not in titles]
+    if missing_png:
+        print("!! missing PNGs:", missing_png)
+    if missing_title:
+        print("!! missing titles:", missing_title)
+
+    # copy assets
+    os.makedirs(ASSETS, exist_ok=True)
+    for slug, _, _ in TEAMS:
+        src = os.path.join(FLAGS_SRC, f"flag_{slug}.png")
+        if os.path.exists(src):
+            shutil.copy(src, os.path.join(ASSETS, f"{slug}.png"))
+
+    # migration
+    hat_rows, title_rows = [], []
+    for i, (slug, name, doc) in enumerate(TEAMS):
+        title = titles.get(doc, f"{name} Supporter")
+        hat_rows.append(
+            f"  ('flag_{slug}', {sql_str(name)}, NULL, "
+            f"'hats/flags/{slug}.png', {FLAG_COST}, {5000 + i}, 'flag', "
+            f"'{FLAG_RARITY}', {sql_str('Fly the colors of ' + name + '.')})")
+        title_rows.append(
+            f"  ('wc_{slug}', {sql_str(title)}, 'pre', "
+            f"{sql_str('World Cup 2026 — represent ' + name + '.')}, "
+            f"'world_cup', false, {5000 + i})")
+
+    hat_block = ",\n".join(hat_rows)
+    title_block = ",\n".join(title_rows)
+    mig = f"""-- World Cup 2026 shop content seed: 47 qualified-team flag cosmetics
+-- (category 'flag') + a country title each. Iran is excluded (sanctions
+-- denylist, see docs/world-cup-countries.md). Generated by
+-- scripts/gen_world_cup_seed.py — edit there, not here.
+--
+-- Flags are a NEW 'flag' category; client placement + HAT_IMAGES wiring lives
+-- in constants/worldCupFlags.ts. daily_shop() should be updated to EXCLUDE
+-- category='flag' so these only appear in the special World Cup shop.
+
+-- Allow 'world_cup' as a titles source.
+ALTER TABLE public.titles DROP CONSTRAINT IF EXISTS titles_source_check;
+ALTER TABLE public.titles
+  ADD CONSTRAINT titles_source_check
+  CHECK (source IS NULL OR source IN
+    ('battle_pass', 'shop', 'lucky', 'sounder', 'achievement', 'season', 'world_cup'));
+
+INSERT INTO public.hats
+  (id, name, emoji, image_path, cost, display_order, category, rarity, description)
+VALUES
+{hat_block}
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.titles
+  (id, name, placement, description, source, for_sale, display_order)
+VALUES
+{title_block}
+ON CONFLICT (id) DO NOTHING;
+"""
+    open(MIG, "w", encoding="utf-8").write(mig)
+
+    # TS require map + metadata
+    req = ",\n".join(f'  "{s}": require("../assets/images/hats/flags/{s}.png")'
+                     for s, _, _ in TEAMS)
+    meta = ",\n".join(
+        f'  {{ slug: "{s}", name: {ts_str(n)}, title: {ts_str(titles.get(d, n + " Supporter"))} }}'
+        for s, n, d in TEAMS)
+    ts = f"""// World Cup 2026 flag cosmetics — generated by scripts/gen_world_cup_seed.py.
+// 47 qualified teams (Iran excluded, sanctions). itemId = `flag_<slug>`.
+export const WORLD_CUP_FLAG_IMAGES: Record<string, number> = {{
+{req}
+}};
+
+export interface WorldCupTeam {{ slug: string; name: string; title: string; }}
+export const WORLD_CUP_TEAMS: WorldCupTeam[] = [
+{meta}
+];
+
+// Code backstop for the sanctions denylist — never sell/equip these.
+export const WORLD_CUP_DENYLIST = ["iran", "russia", "north-korea", "syria",
+  "cuba", "belarus", "venezuela", "palestine"];
+"""
+    open(TS, "w", encoding="utf-8").write(ts)
+    print(f"wrote {os.path.relpath(MIG, ROOT)} ({len(TEAMS)} flags + titles)")
+    print(f"wrote {os.path.relpath(TS, ROOT)}")
+    print(f"copied {len(TEAMS)} flags -> assets/images/hats/flags/")
+
+
+def ts_str(s):
+    return '"' + s.replace('"', '\\"') + '"'
+
+
+if __name__ == "__main__":
+    main()

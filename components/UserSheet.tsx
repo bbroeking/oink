@@ -118,6 +118,15 @@ function formatHandle(s: UserStats): string {
 		: `${s.active_title_name} ${name}`;
 }
 
+// "2h 15m" / "15m" remaining until an ISO timestamp.
+function formatRemaining(iso: string): string {
+	const ms = new Date(iso).getTime() - Date.now();
+	if (ms <= 0) return "moments";
+	const h = Math.floor(ms / 3_600_000);
+	const m = Math.floor((ms % 3_600_000) / 60_000);
+	return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
 export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Props) {
 	const [stats, setStats] = useState<UserStats | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -147,6 +156,10 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// parallel so the design's 3-column stats row has the value it
 	// needs without expanding the RPC's return shape.
 	const [targetTickles, setTargetTickles] = useState<number | null>(null);
+	const [curseStatus, setCurseStatus] = useState<{
+		cursed: boolean;
+		expires_at: string | null;
+	} | null>(null);
 
 	// Sheet animation — driven independently of the backdrop so the
 	// dim doesn't slide up with the card (the old animationType="slide"
@@ -207,6 +220,20 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 				setTargetTickles(typeof n === "number" ? n : null);
 			});
 	}, [targetUserId]);
+
+	// Curse countdown — when the curse tab is open, surface how long any
+	// existing curse on the target still has. Privacy-safe RPC: returns only
+	// the soonest expiry, never who cast it.
+	useEffect(() => {
+		if (actionTab !== "curse" || !targetUserId) {
+			setCurseStatus(null);
+			return;
+		}
+		rpc<{ cursed: boolean; expires_at: string | null }>(
+			"target_curse_status",
+			{ target_id: targetUserId }
+		).then((d) => setCurseStatus(d ?? null));
+	}, [actionTab, targetUserId]);
 
 	const refreshStats = async () => {
 		if (!targetUserId) return;
@@ -472,6 +499,14 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 													state={askState}
 												/>
 											)}
+											{actionTab === "curse" &&
+												curseStatus?.cursed &&
+												curseStatus.expires_at && (
+													<Text style={styles.curseCountdown}>
+														Already cursed — wears off in{" "}
+														{formatRemaining(curseStatus.expires_at)}
+													</Text>
+												)}
 											{(actionTab === "bless" || actionTab === "curse") && (
 												<RitualPicker
 													mode={actionTab as RitualMode}
@@ -866,6 +901,13 @@ const styles = StyleSheet.create({
 		color: WHIMSY.accent,
 		textAlign: "center",
 		marginTop: 10,
+	},
+	curseCountdown: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginBottom: 8,
 	},
 	moderationRow: {
 		flexDirection: "row",

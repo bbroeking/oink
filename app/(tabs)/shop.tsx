@@ -24,6 +24,8 @@ import { Sticker } from "../../components/ui/Sticker";
 import { PigAvatar } from "../../components/ui/PigAvatar";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
 import { TitlesSection } from "../../components/TitlesSection";
+import { TroughSection } from "../../components/TroughSection";
+import { AllegianceCard } from "../../components/AllegianceCard";
 import {
 	HAT_IMAGES,
 	HatRow,
@@ -469,60 +471,76 @@ function FeaturedCard({
 // ── Bento daily-shop layout ─────────────────────────────────────
 //
 // Three goals:
-//   1. ZERO EMPTY CELLS — adaptive templates per item count.
-//   2. ROTATION — for 8-item days, pick one of 4 templates by date
-//      so the shop feels different day-to-day.
+//   1. ZERO EMPTY CELLS — the layout is a function of the actual
+//      (post-filter) item count, so it always tiles the grid with no
+//      holes and no dead height, for any N.
+//   2. ROTATION — a left/right mirror flips by date so the Shop feels
+//      different day-to-day without authoring more layouts.
 //   3. TILE TAP TARGETS — tap anywhere on a tile opens the preview;
-//      the price pill is the only buy-action target (long press also
-//      acceptable). Owned/equipped state replaces the pill.
+//      the price pill is the only buy-action target. Owned/equipped
+//      state replaces the pill.
 //
-// Template spec: each cell is {c, r, w, h} in 3-column grid units.
-// Renderer places cells with absolute positioning so spans work
-// without manual flex-fu.
-
-// ── 4×4 mosaic layout ─────────────────────────────────────────
-//
-// Three templates, each a list of {c, r, w, h} placements summing to
-// 16 cells. The day-of-year picks one so the Shop feels different
-// across the week without authoring more layouts. Largest cells get
-// the rarest items.
-//
-// ONLY hero (2×2) and wide (2×1) cells. Tall cells were dropped
-// because the horizontal layout of the wide cells makes them the
-// natural fit for non-hero items (image-left, name+button-right).
-// Tall cells used the same square thumb shape but with no horizontal
-// body room, which made action-button labels truncate.
+// Cells are {c, r, w, h} in 4-column grid units. The renderer places
+// them with absolute positioning so spans work without manual flex-fu.
+// ONLY hero (2×2), wide (2×1) and full-width (4×1) cells are used —
+// every cell is ≥2 columns so the horizontal image-left/body-right
+// ItemCard layout always has room for its action button. (Tall 1×2
+// cells were dropped: the square thumb left no horizontal body room
+// and truncated button labels.)
 type MosaicCell = { c: number; r: number; w: number; h: number };
-const SHOP_TEMPLATES: MosaicCell[][] = [
-	// A — hero TL + 6 wides
-	[
-		{ c: 0, r: 0, w: 2, h: 2 },  // hero
-		{ c: 2, r: 0, w: 2, h: 1 },  // wide
-		{ c: 2, r: 1, w: 2, h: 1 },  // wide
-		{ c: 0, r: 2, w: 2, h: 1 },  // wide
-		{ c: 2, r: 2, w: 2, h: 1 },  // wide
-		{ c: 0, r: 3, w: 2, h: 1 },  // wide
-		{ c: 2, r: 3, w: 2, h: 1 },  // wide
-	],
-	// B — two heroes top + 4 wides bottom
-	[
-		{ c: 0, r: 0, w: 2, h: 2 },  // hero
-		{ c: 2, r: 0, w: 2, h: 2 },  // hero
-		{ c: 0, r: 2, w: 2, h: 1 },  // wide
-		{ c: 2, r: 2, w: 2, h: 1 },  // wide
-		{ c: 0, r: 3, w: 2, h: 1 },  // wide
-		{ c: 2, r: 3, w: 2, h: 1 },  // wide
-	],
-	// C — 4 wides top + 2 heroes bottom (mirrors B vertically)
-	[
-		{ c: 0, r: 0, w: 2, h: 1 },  // wide
-		{ c: 2, r: 0, w: 2, h: 1 },  // wide
-		{ c: 0, r: 1, w: 2, h: 1 },  // wide
-		{ c: 2, r: 1, w: 2, h: 1 },  // wide
-		{ c: 0, r: 2, w: 2, h: 2 },  // hero
-		{ c: 2, r: 2, w: 2, h: 2 },  // hero
-	],
-];
+
+const MOSAIC_COLS = 4;
+
+// genBento(n) returns a perfect-tiling bento for exactly `n` items.
+// The featured (rarest) item always lands in the first/biggest cell.
+//
+//   n=1 → one full-width banner hero (4×2)
+//   n=2 → two heroes side by side (2×2 each)
+//   n≥3 → hero top-left (2×2) + wides filling the rest, two per row,
+//         with a lone trailing item promoted to a full-width banner so
+//         a row never ends half-empty.
+//
+// `mirror` flips every cell horizontally (hero on the right instead of
+// the left) — toggled by date for daily variety. The construction is
+// hole-free for all N, so there is no count the Shop can't render.
+function genBento(n: number, mirror: boolean): MosaicCell[] {
+	let cells: MosaicCell[];
+	if (n <= 0) {
+		return [];
+	} else if (n === 1) {
+		cells = [{ c: 0, r: 0, w: 4, h: 2 }];
+	} else if (n === 2) {
+		cells = [
+			{ c: 0, r: 0, w: 2, h: 2 },
+			{ c: 2, r: 0, w: 2, h: 2 },
+		];
+	} else {
+		cells = [{ c: 0, r: 0, w: 2, h: 2 }]; // hero
+		let rem = n - 1;
+		// Beside the hero: up to two wides stacked in the right column.
+		const rightRows = Math.min(rem, 2);
+		for (let i = 0; i < rightRows; i++) cells.push({ c: 2, r: i, w: 2, h: 1 });
+		rem -= rightRows;
+		// Below the hero: two wides per row, a lone leftover goes
+		// full-width so no row is left with a hole.
+		let r = 2;
+		while (rem > 0) {
+			if (rem === 1) {
+				cells.push({ c: 0, r, w: 4, h: 1 });
+				rem = 0;
+			} else {
+				cells.push({ c: 0, r, w: 2, h: 1 });
+				cells.push({ c: 2, r, w: 2, h: 1 });
+				rem -= 2;
+			}
+			r++;
+		}
+	}
+	if (mirror) {
+		cells = cells.map((cell) => ({ ...cell, c: MOSAIC_COLS - cell.c - cell.w }));
+	}
+	return cells;
+}
 
 function MosaicDailyGrid({
 	items,
@@ -552,10 +570,8 @@ function MosaicDailyGrid({
 	const { width: screenW } = useWindowDimensions();
 	const HORIZ_PADDING = 12;
 	const GAP = 12;
-	const COLS = 4;
-	const ROWS = 4;
 	const innerW = screenW - HORIZ_PADDING * 2;
-	const COL_W = (innerW - GAP * (COLS - 1)) / COLS;
+	const COL_W = (innerW - GAP * (MOSAIC_COLS - 1)) / MOSAIC_COLS;
 	// Cells need ~120pt of vertical content room (thumb + name +
 	// price + button) so the Buy pill doesn't get clipped at the
 	// bottom of small 1×1 tiles. ROW_H = 1.5 × COL_W lands us
@@ -563,11 +579,6 @@ function MosaicDailyGrid({
 	// after a screenshot showed the Buy button cut in half on
 	// "Sparkle..." / "Beanie" sized tiles.
 	const ROW_H = Math.round(COL_W * 1.5);
-	const totalH = ROW_H * ROWS + GAP * (ROWS - 1);
-
-	// Day-of-year rotation: same shape all day, changes overnight.
-	const dayIdx = Math.floor(Date.now() / 86_400_000);
-	const tpl = SHOP_TEMPLATES[dayIdx % SHOP_TEMPLATES.length];
 
 	// Pair items to cells: rarest item into the biggest cell. Hoist
 	// `featured` to first if present so the curator's pick wins on ties.
@@ -581,12 +592,21 @@ function MosaicDailyGrid({
 			RARITY_ORDER.indexOf(a.rarity ?? "common") -
 			RARITY_ORDER.indexOf(b.rarity ?? "common")
 	);
+	// Build a template sized to exactly this many items, so every cell
+	// gets an item and every item gets a cell — no holes, no drops.
+	// Date toggles a horizontal mirror for daily variety.
+	const dayIdx = Math.floor(Date.now() / 86_400_000);
+	const tpl = genBento(byRarity.length, dayIdx % 2 === 1);
 	const cellsByArea = tpl
 		.map((p, idx) => ({ ...p, idx }))
 		.sort((a, b) => b.w * b.h - a.w * a.h);
 	const placements = cellsByArea
 		.map((cell, i) => ({ cell, item: byRarity[i] }))
 		.filter((p) => !!p.item);
+	// Grid height fits exactly the rows the template uses — short days
+	// don't leave dead space below the last tile.
+	const usedRows = tpl.reduce((max, c) => Math.max(max, c.r + c.h), 0);
+	const totalH = usedRows * ROW_H + GAP * Math.max(0, usedRows - 1);
 
 	const captureCenter = (itemId: string) => (e: LayoutChangeEvent) => {
 		if (!tileCenters) return;
@@ -838,11 +858,13 @@ export default function ShopScreen() {
 		aura: string | null;
 		background: string | null;
 		held: string | null;
-	}>({ hat: null, aura: null, background: null, held: null });
+		flag: string | null;
+	}>({ hat: null, aura: null, background: null, held: null, flag: null });
 	const isEquipped = (id: string, category: string | null | undefined) => {
 		if (category === "aura") return activeIds.aura === id;
 		if (category === "background") return activeIds.background === id;
 		if (category === "held") return activeIds.held === id;
+		if (category === "flag") return activeIds.flag === id;
 		return activeIds.hat === id;
 	};
 	const [counter, setCounter] = useState<number>(0);
@@ -919,14 +941,14 @@ export default function ShopScreen() {
 			// it so the shop still loads.
 			supabase
 				.from("profiles")
-				.select("username, counter, active_hat_id, active_aura_id, active_background_id, active_held_id, active_title_id")
+				.select("username, counter, active_hat_id, active_aura_id, active_background_id, active_held_id, active_flag_id, active_title_id")
 				.eq("id", user.id)
 				.single()
 				.then(async (res) => {
 					if (res.error) {
 						return supabase
 							.from("profiles")
-							.select("username, counter, active_hat_id, active_aura_id, active_background_id, active_held_id")
+							.select("username, counter, active_hat_id, active_aura_id, active_background_id, active_held_id, active_flag_id")
 							.eq("id", user.id)
 							.single();
 					}
@@ -942,13 +964,19 @@ export default function ShopScreen() {
 			rows.filter(
 				(r) => !r.category || !HIDDEN_CATEGORIES.has(r.category)
 			);
+		const ownedSet = new Set(
+			((ownedRes.data ?? []) as { hat_id: string }[]).map((r) => r.hat_id)
+		);
 		setDaily(filterPlaceable(dailyRes ?? []));
-		setAllItems(filterPlaceable((allRes.data as HatRow[]) ?? []));
-		setOwned(
-			new Set(
-				((ownedRes.data ?? []) as { hat_id: string }[]).map((r) => r.hat_id)
+		// Cost-0 items are season-pass exclusives — not for sale. Only surface
+		// them if the player already OWNS them (claimed via the pass); otherwise
+		// they leak into the browseable shop (which players noticed).
+		setAllItems(
+			filterPlaceable((allRes.data as HatRow[]) ?? []).filter(
+				(r) => r.cost > 0 || ownedSet.has(r.id)
 			)
 		);
+		setOwned(ownedSet);
 		setCounter(profRes.data?.counter ?? 0);
 		setMyUsername(
 			(profRes.data as { username?: string | null } | null)?.username ?? "you"
@@ -960,6 +988,9 @@ export default function ShopScreen() {
 			held:
 				(profRes.data as { active_held_id?: string | null } | null)
 					?.active_held_id ?? null,
+			flag:
+				(profRes.data as { active_flag_id?: string | null } | null)
+					?.active_flag_id ?? null,
 		});
 		setActiveTitleId(
 			(profRes.data as { active_title_id?: string | null } | null)
@@ -1151,7 +1182,9 @@ export default function ShopScreen() {
 						? "active_held_id"
 						: category === "tickle_particle"
 							? "active_tickle_particle_id"
-							: "active_hat_id";
+							: category === "flag"
+								? "active_flag_id"
+								: "active_hat_id";
 		await supabase
 			.from("profiles")
 			.update({ [column]: itemId })
@@ -1161,6 +1194,7 @@ export default function ShopScreen() {
 			if (category === "aura") next.aura = itemId;
 			else if (category === "background") next.background = itemId;
 			else if (category === "held") next.held = itemId;
+			else if (category === "flag") next.flag = itemId;
 			else next.hat = itemId;
 			return next;
 		});
@@ -1366,6 +1400,8 @@ export default function ShopScreen() {
 									onPreview={setPreviewItem}
 									tileCenters={tileCenters}
 								/>
+								<AllegianceCard />
+								<TroughSection />
 								{/* Bundle promo row — sits below the mosaic, sells
 								    a small bundle for snouts. Static for now; can
 								    be wired to a bundle SKU later. */}

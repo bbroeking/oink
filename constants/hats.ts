@@ -1,4 +1,6 @@
 // Static mapping for require() — RN bundler needs literal paths.
+import { WORLD_CUP_FLAG_IMAGES } from "./worldCupFlags";
+
 export const HAT_IMAGES: Record<string, number> = {
 	wizard: require("../assets/images/hats/wizard.png"),
 	cowboy: require("../assets/images/hats/cowboy.png"),
@@ -107,6 +109,12 @@ export const HAT_IMAGES: Record<string, number> = {
 	underwater: require("../assets/images/backgrounds/underwater.png"),
 	desert_dunes: require("../assets/images/backgrounds/desert_dunes.png"),
 	mountain_top: require("../assets/images/backgrounds/mountain_top.png"),
+	// World Cup soccer backgrounds (granted via the allegiance pick +
+	// buyable). Art lives alongside the other backdrops.
+	soccer_field_day: require("../assets/images/backgrounds/soccer_field_day.png"),
+	soccer_street: require("../assets/images/backgrounds/soccer_street.png"),
+	soccer_podium: require("../assets/images/backgrounds/soccer_podium.png"),
+	soccer_field_night: require("../assets/images/backgrounds/soccer_field_night.png"),
 	// Stragglers
 	crown: require("../assets/images/hats/crown.png"),
 	safety_goggles: require("../assets/images/hats/safety_goggles.png"),
@@ -135,6 +143,13 @@ export const HAT_IMAGES: Record<string, number> = {
 	leaf_crown:   require("../assets/images/hats/leaf_crown.png"),
 	messenger:    require("../assets/images/hats/messenger.png"),
 };
+
+// World Cup flag cosmetics (ids `flag_<slug>`) — merged in from the generated
+// require() map so the shop, preview, and pig render resolve them by id like
+// any other item.
+for (const [slug, src] of Object.entries(WORLD_CUP_FLAG_IMAGES)) {
+	HAT_IMAGES[`flag_${slug}`] = src;
+}
 
 // Per-hat overlay positioning on the 300x300 pig card.
 // Anchored from the bottom so each hat's bottom edge sits on the pig's head.
@@ -455,6 +470,10 @@ export const CATEGORY_OVERLAYS: Record<string, HatOverlay> = {
 	held:       { bottom: 34,  left: 235, width: 80,  height: 76  },
 	aura:       { bottom: 0,   left: 0,   width: 300, height: 300 },
 	background: { bottom: 0,   left: 0,   width: 300, height: 300 },
+	// Country flag — a tilted sticker tucked into the bottom-right corner
+	// of the card (no CATEGORY_ANCHORS entry, so it stays fixed rather than
+	// tracking the pig). Iterate placement/angle here.
+	flag:       { bottom: 10,  left: 188, width: 104, height: 88, rotate: -12 },
 };
 
 export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";

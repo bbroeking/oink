@@ -40,6 +40,7 @@ export interface Stats {
 	activeBackground: EquipSlot | null;
 	activeHeld: EquipSlot | null;
 	activeTickleParticle: EquipSlot | null;
+	activeFlag: EquipSlot | null;
 	currentTier: number;
 	totalTiers: number;
 }
@@ -55,6 +56,7 @@ const INITIAL_STATS: Stats = {
 	activeBackground: null,
 	activeHeld: null,
 	activeTickleParticle: null,
+	activeFlag: null,
 	currentTier: 1,
 	totalTiers: 30,
 };
@@ -115,6 +117,8 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				active_held?: SlotBlob;
 				active_tickle_particle_id?: string | null;
 				active_tickle_particle?: SlotBlob;
+				active_flag_id?: string | null;
+				active_flag?: SlotBlob;
 				balance: number;
 				cap: number;
 				next_regen_seconds: number | null;
@@ -136,6 +140,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 						r.active_tickle_particle_id ?? null,
 						r.active_tickle_particle ?? null
 					),
+					activeFlag: toSlot(r.active_flag_id ?? null, r.active_flag ?? null),
 					currentTier: r.current_tier,
 					totalTiers: r.total_tiers,
 				});
@@ -153,7 +158,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				supabase
 					.from("profiles")
 					.select(
-						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, alignment_score"
+						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, alignment_score"
 					)
 					.eq("id", user.id)
 					.single(),
@@ -178,6 +183,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				active_background_id?: string | null;
 				active_held_id?: string | null;
 				active_tickle_particle_id?: string | null;
+				active_flag_id?: string | null;
 				alignment_score?: number | null;
 			} | null;
 
@@ -224,6 +230,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				activeBackground: slotFromId(prof?.active_background_id ?? null),
 				activeHeld: slotFromId(prof?.active_held_id ?? null),
 				activeTickleParticle: slotFromId(prof?.active_tickle_particle_id ?? null),
+				activeFlag: slotFromId(prof?.active_flag_id ?? null),
 				currentTier: season?.current_tier ?? 1,
 				totalTiers: season?.season?.total_tiers ?? 30,
 			});

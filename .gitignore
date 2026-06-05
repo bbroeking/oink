@@ -50,3 +50,5 @@ build-*.ipa
 
 # Claude Code — agent worktrees are transient; skills + commands are tracked.
 .claude/worktrees/
+.vercel
+.env*

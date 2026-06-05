@@ -13,6 +13,7 @@ import { Sticker } from "./ui/Sticker";
 import { PigStage } from "./ui/PigStage";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Button } from "./ui";
+import { rpc } from "@/utils/rpc";
 import { HAT_IMAGES, HatRow, RARITY_COLORS } from "@/constants/hats";
 import { FONTS, MODAL_BACKDROP_BG, RARITY_BG_SOLID, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
@@ -288,6 +289,22 @@ export function ItemPreviewModal({
 							</Button>
 						)}
 					</View>
+					{!owned && item.cost > 0 && (
+						<Pressable
+							onPress={async () => {
+								await rpc("open_item_drive", {
+									target_item_id: item.id,
+									seed_snouts: Math.ceil(item.cost * 0.1),
+								});
+								onClose();
+							}}
+							style={styles.troughLink}
+						>
+							<Text style={styles.troughLinkText}>
+								…or open a Trough — your friends chip in
+							</Text>
+						</Pressable>
+					)}
 				</Sticker>
 			</View>
 		</Modal>
@@ -295,6 +312,13 @@ export function ItemPreviewModal({
 }
 
 const styles = StyleSheet.create({
+	troughLink: { marginTop: 10, alignSelf: "center" },
+	troughLinkText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		textAlign: "center",
+	},
 	backdrop: {
 		flex: 1,
 		backgroundColor: MODAL_BACKDROP_BG,

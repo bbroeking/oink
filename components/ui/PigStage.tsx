@@ -55,6 +55,7 @@ export interface PigStageProps {
 	equipped?: EquippedItem | null;       // main (hat / glasses / mask / etc.)
 	equippedAura?: EquippedItem | null;
 	equippedHeld?: EquippedItem | null;
+	equippedFlag?: EquippedItem | null;   // country flag — corner sticker
 
 	// Dev-only: overrides written by the /item-anchor tool. Pass an
 	// empty map (or omit) in non-dev contexts.
@@ -173,8 +174,16 @@ function ItemOverlay({
 	emoji: string | null;
 	zIndex?: number;
 }) {
+	const { rotate, ...box } = overlay;
 	return (
-		<View style={[styles.overlayBox, overlay, { zIndex }]}>
+		<View
+			style={[
+				styles.overlayBox,
+				box,
+				{ zIndex },
+				rotate ? { transform: [{ rotate: `${rotate}deg` }] } : null,
+			]}
+		>
 			{imageSrc ? (
 				<Image
 					source={imageSrc}
@@ -217,12 +226,14 @@ export function PigStage({
 	equipped,
 	equippedAura,
 	equippedHeld,
+	equippedFlag,
 	relOverrides = {},
 	hideAccessory = false,
 }: PigStageProps) {
 	const main = resolveSlot(equipped, pigAnimation, pigFrameIdx, relOverrides);
 	const auraSlot = resolveSlot(equippedAura, pigAnimation, pigFrameIdx, relOverrides);
 	const heldSlot = resolveSlot(equippedHeld, pigAnimation, pigFrameIdx, relOverrides);
+	const flagSlot = resolveSlot(equippedFlag, pigAnimation, pigFrameIdx, relOverrides);
 
 	const mainOverlay = main?.overlay ?? null;
 	const mainCategory = main?.category ?? null;
@@ -272,6 +283,14 @@ export function PigStage({
 					imageSrc={heldSlot.imageSrc}
 					emoji={heldSlot.emoji}
 					zIndex={11}
+				/>
+			)}
+			{flagSlot?.overlay && !hideAccessory && (
+				<ItemOverlay
+					overlay={flagSlot.overlay}
+					imageSrc={flagSlot.imageSrc}
+					emoji={flagSlot.emoji}
+					zIndex={12}
 				/>
 			)}
 		</View>

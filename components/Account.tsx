@@ -18,6 +18,7 @@ import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
+import { AlignmentExplainerModal } from "./AlignmentExplainerModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Card, Button, SectionHeader } from "./ui";
 import { Icon, type IconName } from "./ui/Icon";
@@ -26,6 +27,7 @@ import { PigAvatar } from "./ui/PigAvatar";
 import { HAT_IMAGES } from "@/constants/hats";
 import { Sticker, Tape } from "./ui/Sticker";
 import { AlignmentBar } from "./ui/AlignmentBar";
+import { alignmentEffects } from "@/utils/alignment";
 import Constants from "expo-constants";
 import { COLORS, FONTS, KICKER_PILL, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import {
@@ -50,6 +52,7 @@ export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
 	const [discriminator, setDiscriminator] = useState<string | null>(null);
 	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+	const [alignmentExplainerOpen, setAlignmentExplainerOpen] = useState(false);
 	// Account-deletion confirm — required for App Store 5.1.1(v).
 	// On confirm: delete_my_account RPC cascades through every public
 	// table via ON DELETE CASCADE, then we sign out so the auth
@@ -399,10 +402,40 @@ export function Account({ session }: { session: Session }) {
 							<Text style={alignmentStoryStyles.generous}>Generous</Text>
 						</View>
 						<AlignmentBar score={alignmentScore} />
+						{(() => {
+							const fx = alignmentEffects(alignmentScore);
+							const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+							return (
+								<View style={alignmentStoryStyles.effectsRow}>
+									<Text style={alignmentStoryStyles.effect}>
+										Regen {sgn(fx.regenPct)}%
+									</Text>
+									<Text style={alignmentStoryStyles.effect}>
+										Blessings {sgn(fx.blessingPct)}%
+									</Text>
+									<Text style={alignmentStoryStyles.effect}>
+										Curses {sgn(fx.cursePct)}%
+									</Text>
+								</View>
+							);
+						})()}
+						<Text style={alignmentStoryStyles.effectHint}>
+							Give freely → your blessings grow stronger. Keep to
+							yourself → your curses bite harder.
+						</Text>
 						<Text style={alignmentStoryStyles.hint}>
 							★ blessings push you up. asks for tickles pull you
 							down. ★
 						</Text>
+						<Pressable
+							testID="alignment-how-it-works"
+							onPress={() => setAlignmentExplainerOpen(true)}
+							hitSlop={8}
+						>
+							<Text style={alignmentStoryStyles.howLink}>
+								how alignment works ›
+							</Text>
+						</Pressable>
 					</View>
 
 					{/* Achievements entry — single-line tappable row that
@@ -678,6 +711,11 @@ export function Account({ session }: { session: Session }) {
 				visible={releaseNotesOpen}
 				onClose={() => setReleaseNotesOpen(false)}
 			/>
+			{alignmentExplainerOpen && (
+				<AlignmentExplainerModal
+					onDismiss={() => setAlignmentExplainerOpen(false)}
+				/>
+			)}
 			<ConfirmDialog
 				open={deleteOpen}
 				title="Delete your account?"
@@ -1202,6 +1240,41 @@ const alignmentStoryStyles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textAlign: "center",
 		marginTop: 8,
+	},
+	effectsRow: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		justifyContent: "center",
+		gap: 8,
+		marginTop: 8,
+	},
+	effect: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream2,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		overflow: "hidden",
+	},
+	effectHint: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 7,
+		lineHeight: 17,
+	},
+	howLink: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.accent,
+		textAlign: "center",
+		letterSpacing: 0.3,
+		marginTop: 10,
 	},
 });
 

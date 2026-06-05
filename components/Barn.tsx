@@ -3,6 +3,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import {
 	View,
+	Image,
 	StyleSheet,
 	Dimensions,
 	Platform,
@@ -602,6 +603,19 @@ export default function Barn() {
 				</View>
 			)}
 
+			{/* Equipped country flag — pinned to the bottom-left of the
+			    whole Barn page (allegiance "for now" placement). Shows
+			    whenever a flag cosmetic is equipped. */}
+			{stats.activeFlag?.id && HAT_IMAGES[stats.activeFlag.id] && (
+				<View pointerEvents="none" style={styles.barnFlag}>
+					<Image
+						source={HAT_IMAGES[stats.activeFlag.id]}
+						style={styles.barnFlagImg}
+						resizeMode="contain"
+					/>
+				</View>
+			)}
+
 			{/* Generous radial puffs — two soft white clouds that fade
 			    in at the top-left/right when alignment crosses into
 			    angel territory. "Angel-coded" overlay from the design. */}
@@ -667,6 +681,7 @@ export default function Barn() {
 							equippedAura={stats.activeAura}
 							equippedBackground={stats.activeBackground}
 							equippedHeld={stats.activeHeld}
+							equippedFlag={stats.activeFlag}
 						/>
 						{/* Floating ♥/✦ particles drift up from above the pig on
 						    every successful tickle. Absolute-fills the swipe
@@ -902,6 +917,16 @@ const styles = StyleSheet.create({
 		opacity: 0.45,
 		zIndex: 0,
 	},
+	// Equipped country flag, bottom-left corner of the Barn page.
+	barnFlag: {
+		position: "absolute",
+		bottom: 40,
+		left: 18,
+		width: 72,
+		height: 60,
+		zIndex: 6,
+	},
+	barnFlagImg: { width: "100%", height: "100%" },
 	// Generous (angel-coded) radial puffs — soft white clouds that
 	// fade in at top-left + top-right when alignment >= angel
 	// threshold. The radial-gradient via View isn't possible in RN;

@@ -51,3 +51,9 @@ export function seasonActive(now: Date = new Date()): boolean {
 	const t = todayISO(now);
 	return t >= SEASON_1_START && t <= SEASON_1_END;
 }
+
+// Whole days remaining until Judgement Day (SEASON_1_END). 0 once reached.
+export function daysUntilJudgement(now: Date = new Date()): number {
+	const end = Date.parse(SEASON_1_END + "T23:59:59Z");
+	return Math.max(0, Math.ceil((end - now.getTime()) / 86_400_000));
+}

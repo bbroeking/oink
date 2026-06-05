@@ -16,6 +16,9 @@ export interface HatOverlay {
 	// Optional per-item override. When unset, the item inherits from
 	// its category's default anchor (see CATEGORY_ANCHORS in hats.ts).
 	anchor?: AnchorName;
+	// Optional clockwise rotation in degrees, applied as a transform.
+	// Used by corner-sticker categories like 'flag' for a tilted look.
+	rotate?: number;
 	// Optional per-item z-order override. When set, takes precedence over
 	// the category default in Z_BEHIND_PIG. Use this for items whose
 	// category is "in-front" (like a held wand) but should specifically

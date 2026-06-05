@@ -49,6 +49,7 @@ import {
 	AchievementUnlockModal,
 	type UnlockedAchievement,
 } from "@/components/AchievementUnlockModal";
+import { AllegianceModal } from "@/components/AllegianceModal";
 import { PurchaseToastHost } from "@/components/PurchaseToast";
 import {
 	PENDING_REFERRAL_CODE_KEY,
@@ -100,6 +101,9 @@ function RootLayoutInner() {
 	const [rituals, setRituals] = useState<RitualEvent[] | null>(null);
 	// Earned-but-unseen achievements, shown one reveal at a time.
 	const [achievements, setAchievements] = useState<UnlockedAchievement[]>([]);
+	// World Cup allegiance pick — shown once when the player hasn't chosen a
+	// country yet and hasn't locally dismissed the prompt.
+	const [showAllegiance, setShowAllegiance] = useState(false);
 
 	// Resolve the initial auth state before letting the splash drop, so we
 	// transition straight into either auth or the home screen — no blank flash.
@@ -162,6 +166,30 @@ function RootLayoutInner() {
 			cancelled = true;
 			sub.remove();
 		};
+	}, [authChecked]);
+
+	// World Cup allegiance — offer the "pick your country" modal. Shows on each
+	// launch while the player has NOT yet chosen (profiles.allegiance_country
+	// IS NULL), so the invite keeps surfacing for the rest of the tournament.
+	// "Maybe later" only hides it for the current session (in-memory) — no
+	// persistent dismiss — and it stops for good once they pick.
+	useEffect(() => {
+		if (!authChecked) return;
+		let cancelled = false;
+		const check = async () => {
+			const { data: ures } = await supabase.auth.getUser();
+			if (cancelled || !ures.user) return;
+			const { data } = await supabase
+				.from("profiles")
+				.select("allegiance_country")
+				.eq("id", ures.user.id)
+				.maybeSingle();
+			if (cancelled) return;
+			if (data && !(data as { allegiance_country?: string | null }).allegiance_country) {
+				setShowAllegiance(true);
+			}
+		};
+		check();
 	}, [authChecked]);
 
 	// "While you were away" — surface blessings + curses RECEIVED
@@ -532,6 +560,13 @@ function RootLayoutInner() {
 				<AchievementUnlockModal
 					achievement={achievements[0]}
 					onDismiss={() => setAchievements((q) => q.slice(1))}
+				/>
+			)}
+			{showAllegiance && !schism && !finale && !rituals && achievements.length === 0 && (
+				<AllegianceModal
+					visible
+					onSkip={() => setShowAllegiance(false)}
+					onChosen={() => setShowAllegiance(false)}
 				/>
 			)}
 			{/* Purchase toast — global, slides down from the top on

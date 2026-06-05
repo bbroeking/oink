@@ -21,6 +21,29 @@ export function alignmentLabel(score: number): AlignmentLabel {
 	return "neutral";
 }
 
+// The mechanical effects of alignment, mirrored from the SQL in
+// 20260577000000_alignment_teeth.sql so the UI can show the player exactly
+// what their nature is doing. Percentages are player-positive when > 0.
+//   regen   — generous regen faster (+10%), greedy slower (−10%), by label
+//   blessing — generous = better blesser (longer); scales with score
+//   curse    — greedy = better curser (longer); scales with score
+export function alignmentEffects(score: number): {
+	regenPct: number;
+	blessingPct: number;
+	cursePct: number;
+} {
+	return {
+		regenPct:
+			score >= ALIGNMENT_ANGEL_THRESHOLD
+				? 10
+				: score <= ALIGNMENT_GOBLIN_THRESHOLD
+					? -10
+					: 0,
+		blessingPct: Math.round(score * 0.5),
+		cursePct: Math.round(-score * 0.5),
+	};
+}
+
 // Short descriptive name used in UI ("you are Generous" / "they are
 // a Pilgrim" / etc.). Distinct from the raw label so we can tune
 // copy without breaking SQL queries that key on the label.

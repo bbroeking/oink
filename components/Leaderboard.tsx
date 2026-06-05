@@ -2,7 +2,8 @@
 // the outer chrome (SafeAreaView + tab title), so this component is
 // just the scope toggle + the ranked list + UserSheet.
 import { useState, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Text } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Text, Image } from "react-native";
+import { HAT_IMAGES } from "@/constants/hats";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
@@ -40,6 +41,8 @@ interface LeaderboardEntry {
 	discriminator?: string | null;
 	tickles_earned: number;
 	active_hat_id: string | null;
+	// Equipped country flag (World Cup) — rendered as a small chip by the name.
+	active_flag_id?: string | null;
 	// Name of the equipped hat (joined through the active_hat_id FK).
 	// Drives the "wears X" second line on each ranked row. Null when
 	// no hat is equipped or when the hats join falls back.
@@ -181,6 +184,13 @@ function ClippingRow({
 							{formatDisplayName(player.username, player.active_title)}
 							{isYou && <Text style={styles.rowYouTag}> (you)</Text>}
 						</Text>
+						{player.active_flag_id && HAT_IMAGES[player.active_flag_id] ? (
+							<Image
+								source={HAT_IMAGES[player.active_flag_id]}
+								style={styles.flagChip}
+								resizeMode="contain"
+							/>
+						) : null}
 						{player.discriminator && (
 							<Text style={styles.rowDisc}>#{player.discriminator}</Text>
 						)}
@@ -238,9 +248,9 @@ export function Leaderboard() {
 			// titles migration isn't deployed, retry without titles
 			// but keep the hat join (its migration is much older).
 			const SELECT_WITH_TITLES =
-				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
+				"id, username, discriminator, tickles_earned, active_hat_id, active_flag_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
 			const SELECT_BASIC =
-				"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
+				"id, username, discriminator, tickles_earned, active_hat_id, active_flag_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
 			// is_test filter only fires on the global scope — friends
 			// list intentionally shows any account you've friended,
 			// test or not. The 'or' wrap handles legacy rows where
@@ -281,6 +291,7 @@ export function Leaderboard() {
 						user_id: string;
 						username: string | null;
 						active_hat_id: string | null;
+						active_flag_id: string | null;
 						alignment_score: number;
 						side: "generous" | "greedy";
 						side_rank: number;
@@ -293,6 +304,7 @@ export function Leaderboard() {
 					username: r.username,
 					tickles_earned: 0,
 					active_hat_id: r.active_hat_id,
+					active_flag_id: r.active_flag_id ?? null,
 					// alignment_leaderboard RPC doesn't carry the hat
 					// name; the "wears X" line falls back to nothing in
 					// this scope. Acceptable — the alignment view leads
@@ -319,9 +331,9 @@ export function Leaderboard() {
 					return;
 				}
 				const SELECT_BASIC =
-					"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
+					"id, username, discriminator, tickles_earned, active_hat_id, active_flag_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
 				const SELECT_WITH_TITLES =
-					"id, username, discriminator, tickles_earned, active_hat_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
+					"id, username, discriminator, tickles_earned, active_hat_id, active_flag_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
 				// The titles join 400s when the titles migration isn't
 				// deployed; retry without it. Untyped intermediate so
 				// both selects can land in the same variable.
@@ -709,6 +721,7 @@ const styles = StyleSheet.create({
 		gap: 6,
 	},
 	rowName: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink, flexShrink: 1 },
+	flagChip: { width: 22, height: 16, alignSelf: "center" },
 	rowDisc: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 11,
