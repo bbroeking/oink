@@ -681,7 +681,9 @@ export default function Barn() {
 							equippedAura={stats.activeAura}
 							equippedBackground={stats.activeBackground}
 							equippedHeld={stats.activeHeld}
-							equippedFlag={stats.activeFlag}
+							// Flag is NOT drawn on the pig — it lives only in the
+							// bottom-left Barn overlay (styles.barnFlag) to avoid
+							// showing the same flag twice on the home screen.
 						/>
 						{/* Floating ♥/✦ particles drift up from above the pig on
 						    every successful tickle. Absolute-fills the swipe
