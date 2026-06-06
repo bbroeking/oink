@@ -447,8 +447,9 @@
         </div>
       </div>
 
-      <!-- Public TestFlight link during beta; swap to the App Store
-           badge/link at launch — single-button change, no rebuild. -->
+      <!-- Defaults to the public TestFlight beta. The script below auto-
+           upgrades this button to the App Store the moment the listing goes
+           live (Apple lookup id 6740339848) — no redeploy needed. -->
       <a class="join-btn" id="join" href="https://testflight.apple.com/join/5dDhSNN9">
         Join the beta <span class="ja">→</span>
       </a>
@@ -528,6 +529,37 @@
     stage.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tickle(); }
     });
+  })();
+
+  /* ---------- App Store cutover (auto) ----------
+     The Join button defaults to the TestFlight beta (in the HTML). The app's
+     App Store listing isn't public yet, so a hard link would 404. Instead we
+     ask Apple's lookup API (JSONP — CORS-safe) whether the app is live; the
+     moment it is, we upgrade the button to the App Store with no redeploy. */
+  (function () {
+    var APPSTORE_ID = '6740339848';
+    var APPSTORE_URL = 'https://apps.apple.com/app/id' + APPSTORE_ID;
+    var joinBtn = document.getElementById('join');
+    if (!joinBtn) return;
+    var cb = '__ttpStoreCheck';
+    var s;
+    window[cb] = function (data) {
+      try {
+        if (data && data.resultCount > 0) {
+          joinBtn.setAttribute('href', APPSTORE_URL);
+          joinBtn.innerHTML = 'Download on the App Store <span class="ja">→</span>';
+          var steps = document.getElementById('steps');
+          var li = steps && steps.querySelector('ol li:nth-child(2)');
+          if (li) li.innerHTML = 'Install the app from the App Store.';
+        }
+      } catch (e) {}
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+      try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+    };
+    s = document.createElement('script');
+    s.src = 'https://itunes.apple.com/lookup?id=' + APPSTORE_ID + '&callback=' + cb;
+    s.onerror = function () { if (s && s.parentNode) s.parentNode.removeChild(s); };
+    document.head.appendChild(s);
   })();
 
   /* ---------- referral code ---------- */
