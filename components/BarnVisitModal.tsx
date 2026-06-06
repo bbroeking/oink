@@ -40,8 +40,8 @@ interface Barn {
 	hat_emoji: string | null;
 }
 
-// MOCK: how many tickles a visit sends. Real impl will live server-side with a
-// cooldown so it can't be farmed.
+// Tickles a visit sends (matches the server reward in tickle_at_barn). Display
+// only — the real grant + budget + generosity all happen server-side.
 const VISIT_TICKLES = 3;
 
 export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
@@ -50,6 +50,8 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [tickled, setTickled] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [cooldown, setCooldown] = useState(false);
+	const [outOfVisits, setOutOfVisits] = useState(false);
+	const [visitsLeft, setVisitsLeft] = useState<number | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -93,20 +95,28 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const tickle = async () => {
 		if (tickled || busy) return;
 		setBusy(true);
-		const r = await rpc<{ ok?: boolean; error?: string }>("tickle_at_barn", {
-			p_target: targetUserId,
-		});
+		const r = await rpc<{
+			ok?: boolean;
+			error?: string;
+			visits_left?: number;
+		}>("tickle_at_barn", { p_target: targetUserId });
 		setBusy(false);
 		if (r?.ok) {
 			Haptics.notificationAsync(
 				Haptics.NotificationFeedbackType.Success
 			).catch(() => {});
+			setVisitsLeft(r.visits_left ?? null);
 			setTickled(true);
 		} else if (r?.error === "cooldown") {
 			Haptics.notificationAsync(
 				Haptics.NotificationFeedbackType.Warning
 			).catch(() => {});
 			setCooldown(true);
+		} else if (r?.error === "budget") {
+			Haptics.notificationAsync(
+				Haptics.NotificationFeedbackType.Warning
+			).catch(() => {});
+			setOutOfVisits(true);
 		}
 	};
 
@@ -140,9 +150,25 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 											You tickled {targetName}'s pig! +{VISIT_TICKLES} tickles
 											sent their way.
 										</Text>
+										<Text style={styles.generous}>
+											😇 +1 generous · a kind little visit
+											{visitsLeft != null
+												? ` · ${visitsLeft} visit${visitsLeft === 1 ? "" : "s"} left today`
+												: ""}
+										</Text>
 										<Button size="md" variant="ghost" full onPress={onClose}>
 											Done
 										</Button>
+									</View>
+								) : outOfVisits ? (
+									<View style={styles.actionWrap}>
+										<Button size="lg" variant="locked" full disabled>
+											Out of visits today
+										</Button>
+										<Text style={styles.hint}>
+											You've spread the love to 5 barns today — your visits
+											refill tomorrow.
+										</Text>
 									</View>
 								) : cooldown ? (
 									<View style={styles.actionWrap}>
@@ -225,6 +251,12 @@ const styles = StyleSheet.create({
 	},
 	doneWrap: { width: "100%", gap: 12, alignItems: "center", paddingHorizontal: 8 },
 	doneEmoji: { fontSize: 44 },
+	generous: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.angel,
+		textAlign: "center",
+	},
 	doneText: {
 		fontFamily: FONTS.hand,
 		fontSize: 16,
