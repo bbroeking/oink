@@ -24,6 +24,7 @@ import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker } from "./ui/Sticker";
+import { BarnVisitModal } from "./BarnVisitModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { RitualPicker } from "./RitualPicker";
 import { AlignmentBar } from "./ui/AlignmentBar";
@@ -131,6 +132,8 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const [stats, setStats] = useState<UserStats | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
+	// Barn visiting (social feature, mock) — opens the visit screen for this user.
+	const [showVisit, setShowVisit] = useState(false);
 	const [feedback, setFeedback] = useState<string | null>(null);
 	// Block + Report dialogs. Apple Guideline 1.2 requires both for
 	// any app with user-to-user interactions; they appear as small
@@ -451,6 +454,11 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 										/>
 									</View>
 
+									{/* Visit their Barn — see their pig + tickle it for them (social). */}
+									<Pressable onPress={() => setShowVisit(true)} style={({ pressed }) => [styles.visitBtn, pressed && { opacity: 0.8 }]}>
+										<Text style={styles.visitBtnText}>🏚 Visit {formatHandle(stats)}'s Barn</Text>
+									</Pressable>
+
 									{stats.friendship_status === "friends" ? (
 										<>
 											{/* 3-tab segmented control: Ask / Bless / Curse.
@@ -574,6 +582,13 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 					onConfirm={doReport}
 				/>
 			</Modal>
+			{showVisit && stats && (
+				<BarnVisitModal
+					targetUserId={targetUserId}
+					targetName={formatHandle(stats)}
+					onClose={() => setShowVisit(false)}
+				/>
+			)}
 		</>
 	);
 }
@@ -983,4 +998,15 @@ const styles = StyleSheet.create({
 	ritualToggleActive: { backgroundColor: WHIMSY.cream },
 	ritualToggleText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.mute },
 	ritualToggleTextActive: { color: WHIMSY.ink },
+	visitBtn: {
+		alignSelf: "stretch",
+		backgroundColor: WHIMSY.sky,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 14,
+		paddingVertical: 10,
+		alignItems: "center",
+		marginBottom: 12,
+	},
+	visitBtnText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
 });
