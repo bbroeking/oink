@@ -39,6 +39,7 @@ import {
 	type AlignmentLabel,
 } from "@/utils/alignment";
 import { useHomeStats } from "@/hooks/useHomeStats";
+import { BuryTruffleButton } from "./BuryTruffleButton";
 import { useStipend } from "@/hooks/useStipend";
 import { usePassEvents } from "@/hooks/usePassEvents";
 import { useLuckyPig } from "@/hooks/useLuckyPig";
@@ -652,6 +653,7 @@ export default function Barn() {
 				    on you. Compact preview; the full panel lives in Friends
 				    → Inbox. Tapping a chip routes to the hub. */}
 				<BarnActiveEffectsStrip />
+				<BuryTruffleButton />
 
 				{/* Alignment placard removed — the hanging Pilgrim/
 				    Generous/Greedy sign that used to live up here

@@ -47,6 +47,11 @@ isn't doomed.
 
 ## Idea 2 — Barn visiting (simple, foundational)
 
+> **Full mechanic design + depth: [`barn-visiting-design.md`](./barn-visiting-design.md).**
+> Spine: *visiting is giving, not earning* — which solves anti-farming and feeds
+> the alignment axis. Covers the gift loop, buried truffles, streaks, visit
+> limits, and staging (MVP → v2 warmth loop → v3 depth).
+
 I visit your Barn, you visit mine. See another player's pig with their equipped
 cosmetics, background, stats. Framed as **"a better form of trading tickles"** —
 instead of an abstract trade, you physically go to their Barn and *do
