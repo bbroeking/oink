@@ -6,7 +6,7 @@
 // the tickle calls tickle_at_barn(p_target) which grants the target +3 tickles
 // (over-cap), rate-limited to once per target per hour, and fires a "someone
 // visited your Barn" in-app notification. Branch: social-barn-visiting.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	View,
 	Text,
@@ -14,6 +14,7 @@ import {
 	Image,
 	ActivityIndicator,
 	StyleSheet,
+	Animated,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/utils/supabase";
@@ -61,6 +62,29 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		hat: { id: string; category: string | null; emoji: string | null } | null;
 		flag: { id: string; category: string; emoji: null } | null;
 	}>({ hat: null, flag: null });
+	// Tickle juice: hearts that fly from your pig to theirs + a happy bounce.
+	const [hearts, setHearts] = useState<{ id: number; anim: Animated.Value }[]>([]);
+	const nextHeart = useRef(0);
+	const bounce = useRef(new Animated.Value(0)).current;
+
+	const playJuice = () => {
+		Animated.sequence([
+			Animated.timing(bounce, { toValue: 1, duration: 110, useNativeDriver: true }),
+			Animated.spring(bounce, { toValue: 0, friction: 4, useNativeDriver: true }),
+		]).start();
+		for (let i = 0; i < 6; i++) {
+			setTimeout(() => {
+				const id = nextHeart.current++;
+				const anim = new Animated.Value(0);
+				setHearts((h) => [...h, { id, anim }]);
+				Animated.timing(anim, {
+					toValue: 1,
+					duration: 850 + i * 40,
+					useNativeDriver: true,
+				}).start(() => setHearts((h) => h.filter((x) => x.id !== id)));
+			}, i * 70);
+		}
+	};
 
 	useEffect(() => {
 		let cancelled = false;
@@ -146,6 +170,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			Haptics.notificationAsync(
 				Haptics.NotificationFeedbackType.Success
 			).catch(() => {});
+			playJuice();
 			setVisitsLeft(r.visits_left ?? null);
 			setTickled(true);
 		} else if (r?.error === "cooldown") {
@@ -207,13 +232,68 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									<Text style={styles.between}>🤚</Text>
 									<View style={styles.pigCol}>
 										<View style={styles.pigScaleWrap}>
-											<View style={styles.pigScale}>
+											<Animated.View
+												style={[
+													styles.pigScale,
+													{
+														transform: [
+															{ scale: 0.5 },
+															{
+																scale: bounce.interpolate({
+																	inputRange: [0, 1],
+																	outputRange: [1, 1.18],
+																}),
+															},
+														],
+													},
+												]}
+											>
 												<PigStage equipped={hatSlot} equippedFlag={flagSlot} />
-											</View>
+											</Animated.View>
 										</View>
 										<Text style={styles.pigLabel} numberOfLines={1}>
 											{targetName}
 										</Text>
+									</View>
+
+									{/* Hearts fly from you → them on a tickle. */}
+									<View pointerEvents="none" style={styles.heartsLayer}>
+										{hearts.map((h) => (
+											<Animated.Text
+												key={h.id}
+												style={[
+													styles.heart,
+													{
+														opacity: h.anim.interpolate({
+															inputRange: [0, 0.15, 0.8, 1],
+															outputRange: [0, 1, 1, 0],
+														}),
+														transform: [
+															{
+																translateX: h.anim.interpolate({
+																	inputRange: [0, 1],
+																	outputRange: [-40, 60],
+																}),
+															},
+															{
+																translateY: h.anim.interpolate({
+																	inputRange: [0, 0.5, 1],
+																	outputRange: [8, -26, -10],
+																}),
+															},
+															{
+																scale: h.anim.interpolate({
+																	inputRange: [0, 0.2, 1],
+																	outputRange: [0.4, 1.1, 0.85],
+																}),
+															},
+														],
+													},
+												]}
+											>
+												♥
+											</Animated.Text>
+										))}
 									</View>
 								</View>
 
@@ -336,7 +416,14 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		marginTop: 8,
+		position: "relative",
 	},
+	heartsLayer: {
+		...StyleSheet.absoluteFillObject,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	heart: { position: "absolute", fontSize: 24, color: WHIMSY.roseDeep },
 	pigCol: { alignItems: "center" },
 	// 300px PigStage scaled to 0.5 → a 150px box (overflow clipped).
 	pigScaleWrap: {
