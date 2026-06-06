@@ -8,7 +8,6 @@
 // visited your Barn" in-app notification. Branch: social-barn-visiting.
 import { useEffect, useState } from "react";
 import {
-	Modal,
 	View,
 	Text,
 	Pressable,
@@ -23,7 +22,7 @@ import { PigStage } from "./ui/PigStage";
 import { PageBackground } from "./ui/PageBackground";
 import { Button } from "./ui";
 import { HAT_IMAGES } from "@/constants/hats";
-import { FONTS, MODAL_BACKDROP_BG, WHIMSY } from "@/constants/theme";
+import { FONTS, WHIMSY } from "@/constants/theme";
 
 interface Props {
 	targetUserId: string;
@@ -112,9 +111,8 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	};
 
 	return (
-		<Modal visible animationType="slide" transparent onRequestClose={onClose}>
-			<View style={styles.root}>
-				<PageBackground bgId={barn?.active_background_id ?? null}>
+		<View style={styles.root}>
+			<PageBackground bgId={barn?.active_background_id ?? null}>
 					<View style={styles.overlay}>
 						<Pressable onPress={onClose} style={styles.closeBtn} hitSlop={12}>
 							<Text style={styles.closeText}>✕</Text>
@@ -176,13 +174,14 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 						)}
 					</View>
 				</PageBackground>
-			</View>
-		</Modal>
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	root: { flex: 1, backgroundColor: MODAL_BACKDROP_BG },
+	// Full-screen overlay (NOT a nested Modal — iOS won't reliably stack a
+	// Modal over the UserSheet Modal). Sits on top within the sheet's layer.
+	root: { ...StyleSheet.absoluteFillObject, zIndex: 100, backgroundColor: WHIMSY.cream },
 	overlay: { flex: 1, paddingHorizontal: 20, paddingTop: 64, alignItems: "center" },
 	closeBtn: {
 		position: "absolute",

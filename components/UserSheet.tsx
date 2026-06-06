@@ -581,14 +581,17 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 					onCancel={() => setReportOpen(false)}
 					onConfirm={doReport}
 				/>
+				{/* Barn visit overlay — rendered INSIDE this Modal (a nested
+				    Modal won't reliably present over it on iOS), full-screen
+				    on top of the sheet. */}
+				{showVisit && stats && (
+					<BarnVisitModal
+						targetUserId={targetUserId}
+						targetName={formatHandle(stats)}
+						onClose={() => setShowVisit(false)}
+					/>
+				)}
 			</Modal>
-			{showVisit && stats && (
-				<BarnVisitModal
-					targetUserId={targetUserId}
-					targetName={formatHandle(stats)}
-					onClose={() => setShowVisit(false)}
-				/>
-			)}
 		</>
 	);
 }
