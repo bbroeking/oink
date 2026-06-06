@@ -35,6 +35,7 @@ export interface Stats {
 	nextRegenSeconds: number | null;
 	// Five independently-equipped slots: hat, aura, background, held,
 	// tickle particle. See migrations 20260514000000 + 20260519000000.
+	happiness: number;
 	activeHat: EquipSlot | null;
 	activeGlasses: EquipSlot | null;
 	activeMask: EquipSlot | null;
@@ -54,6 +55,7 @@ const INITIAL_STATS: Stats = {
 	itemCount: 0,
 	cap: 25,
 	nextRegenSeconds: null,
+	happiness: 50,
 	activeHat: null,
 	activeGlasses: null,
 	activeMask: null,
@@ -114,6 +116,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				counter: number;
 				tickles_earned: number;
 				active_hat_id: string | null;
+				happiness?: number;
 				active_hat: SlotBlob;
 				active_glasses_id?: string | null;
 				active_glasses?: SlotBlob;
@@ -144,6 +147,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 					itemCount: r.balance,
 					cap: r.cap,
 					nextRegenSeconds: r.next_regen_seconds,
+					happiness: r.happiness ?? 50,
 					activeHat: toSlot(r.active_hat_id, r.active_hat),
 					activeGlasses: toSlot(r.active_glasses_id ?? null, r.active_glasses ?? null),
 					activeMask: toSlot(r.active_mask_id ?? null, r.active_mask ?? null),
@@ -173,7 +177,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				supabase
 					.from("profiles")
 					.select(
-						"counter, tickles_earned, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, alignment_score"
+						"counter, tickles_earned, happiness, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, alignment_score"
 					)
 					.eq("id", user.id)
 					.single(),
@@ -193,6 +197,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 			const prof = profileResult.data as {
 				counter?: number;
 				tickles_earned?: number;
+				happiness?: number;
 				active_hat_id?: string | null;
 				active_glasses_id?: string | null;
 				active_mask_id?: string | null;
@@ -243,6 +248,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				itemCount: info?.balance ?? 0,
 				cap: info?.cap ?? 25,
 				nextRegenSeconds: info?.next_regen_seconds ?? null,
+				happiness: prof?.happiness ?? 50,
 				activeHat: slotFromId(prof?.active_hat_id ?? null),
 				activeGlasses: slotFromId(prof?.active_glasses_id ?? null),
 				activeMask: slotFromId(prof?.active_mask_id ?? null),

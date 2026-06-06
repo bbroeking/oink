@@ -15,6 +15,9 @@ import * as Haptics from "expo-haptics";
 import { HAT_IMAGES, HAT_REL } from "../constants/hats";
 import type { RelSpec } from "../constants/hat_overlay_types";
 import { PigAnimation } from "./ui/SpritePig";
+
+// Resting poses driven by happiness/mood (vs transient reactions).
+const REST_POSES = new Set<PigAnimation>(["idle", "sad", "happy"]);
 import { PigStage, resolveSlot } from "./ui/PigStage";
 import { AnchorDebugOverlay, type DebugItem } from "./dev/AnchorDebugOverlay";
 
@@ -38,6 +41,7 @@ interface EquippedItem {
 interface SwipeElementProps {
 	onLuckySwipe: () => void;
 	hatId?: string | null;
+	restingAnim?: PigAnimation;
 	equipped?: EquippedItem | null;
 	equippedGlasses?: EquippedItem | null;
 	equippedMask?: EquippedItem | null;
@@ -61,6 +65,7 @@ const sixSevenSound = require("../assets/sounds/sixseven.m4a");
 export default function SwipeElement({
 	onLuckySwipe,
 	hatId,
+	restingAnim = "idle",
 	equipped,
 	equippedGlasses,
 	equippedMask,
@@ -97,10 +102,14 @@ export default function SwipeElement({
 		}, [])
 	);
 
+	// The three mood/resting poses (set by happiness), distinct from
+	// transient reactions (jump/wave/surprise).
+	const REST_STATES = REST_POSES;
 	useEffect(() => {
-		if (!canTickle) setPigAnim("sad");
-		else setPigAnim((a) => (a === "sad" ? "idle" : a));
-	}, [canTickle]);
+		// Resting pose follows mood (happiness), not tickle balance.
+		// Only swap when at rest — never interrupt a reaction.
+		setPigAnim((a) => (REST_STATES.has(a) ? restingAnim : a));
+	}, [restingAnim, REST_STATES]);
 
 	// Weighted reaction pool — jump is the default vibe, others are "spice".
 	// 3/6 = 50% jump, 1/6 each of happy/surprise/wave.
@@ -136,8 +145,7 @@ export default function SwipeElement({
 
 		// Block taps while a reaction or 6-7 sequence is mid-play. The count
 		// and the new animation hold until the pig is back in idle/sad.
-		const reacting =
-			pigAnim !== "idle" && pigAnim !== "sad";
+		const reacting = !REST_STATES.has(pigAnim);
 		if (reacting) return;
 
 		if (canTickle) {
@@ -148,7 +156,7 @@ export default function SwipeElement({
 			if (pick !== "jump") {
 				setTimeout(() => {
 					setPigAnim((cur) =>
-						cur === pick ? (canTickle ? "idle" : "sad") : cur
+						cur === pick ? restingAnim : cur
 					);
 				}, 700);
 			}
@@ -163,7 +171,7 @@ export default function SwipeElement({
 			const reactionPick = pick;
 			setTimeout(() => {
 				setPigAnim((cur) =>
-					cur === reactionPick ? (canTickle ? "idle" : "sad") : cur
+					cur === reactionPick ? restingAnim : cur
 				);
 			}, 2500);
 		}
@@ -179,7 +187,7 @@ export default function SwipeElement({
 		// every future tap). "sad" is the right exit when out of
 		// tickles — useEffect on `canTickle` will normalize back to
 		// "idle" when balance regens.
-		setPigAnim(canTickle ? "idle" : "sad");
+		setPigAnim(restingAnim);
 	};
 
 	// 6-7 bounce sequence triggered by playSixSeven counter changing.

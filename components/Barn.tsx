@@ -39,6 +39,7 @@ import {
 	type AlignmentLabel,
 } from "@/utils/alignment";
 import { useHomeStats } from "@/hooks/useHomeStats";
+import { moodAnimation } from "@/utils/happiness";
 import { BuryTruffleButton } from "./BuryTruffleButton";
 import { useStipend } from "@/hooks/useStipend";
 import { usePassEvents } from "@/hooks/usePassEvents";
@@ -679,6 +680,7 @@ export default function Barn() {
 							onLuckySwipe={handleIncrement}
 							canTickle={!statsLoaded || stats.itemCount > 0}
 							playSixSeven={sixSevenTick}
+							restingAnim={moodAnimation(stats.happiness)}
 							equipped={stats.activeHat}
 							equippedGlasses={stats.activeGlasses}
 							equippedMask={stats.activeMask}
