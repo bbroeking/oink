@@ -82,6 +82,48 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 		],
 	},
 
+	// ── Build 80 — happiness + visiting + the Closet + the Hog Cup. ──
+	// Placed BEFORE the future drip entries so it shows now without
+	// suppressing the curses/bounties/finale notes when their dates arrive.
+	{
+		version: "1.5.5",
+		date: "2026-06-06",
+		availableFrom: "2026-06-06",
+		headline: "A big care + social update!",
+		items: [
+			{
+				emoji: "🐷",
+				title: "Your pig has moods now",
+				body: "Tickle Rosie regularly and she'll perk up Happy — and her tickles even regenerate faster. Neglect her and she gets Sad and slows down. Her face is the tell: keep coming back to keep her smiling.",
+			},
+			{
+				emoji: "🏚️",
+				title: "Visit your friends' barns",
+				body: "Tap a friend, then Visit their Barn to see both your pigs together and tap-tickle theirs. You both get happier (and a little tickle) — until the pigs tucker out and call it a day.",
+			},
+			{
+				emoji: "🐽",
+				title: "Bury a truffle",
+				body: "Leave a truffle on your Barn for visitors. The first friend to drop by digs it up for snouts — a little gift for whoever comes to play.",
+			},
+			{
+				emoji: "👗",
+				title: "The Closet",
+				body: "The wardrobe is now a dress-up screen: see Rosie wearing everything, browse your items by type, and tap any one to try it on instantly.",
+			},
+			{
+				emoji: "✨",
+				title: "Mix and match your look",
+				body: "Hat, eyes, face, neck and more are separate slots now — so you can wear a hat AND glasses at once. Whatever you already had on moved to its right slot.",
+			},
+			{
+				emoji: "⚽",
+				title: "The Hog Cup is on",
+				body: "Pick a country to back for the tournament, fly its flag on your pig + the leaderboard, and grab soccer backgrounds and an always-available soccer ball.",
+			},
+		],
+	},
+
 	// ── Week 4 ───────────────────────────────────────────────────────
 	{
 		version: "1.6.0",
