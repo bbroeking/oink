@@ -26,6 +26,10 @@ const FRAMES: Record<string, number> = {
 	happy_2: require("../../assets/images/sprites/rosie/happy_2.png"),
 	happy_3: require("../../assets/images/sprites/rosie/happy_3.png"),
 	happy_4: require("../../assets/images/sprites/rosie/happy_4.png"),
+	tired_1: require("../../assets/images/sprites/rosie/tired_1.png"),
+	tired_2: require("../../assets/images/sprites/rosie/tired_2.png"),
+	tired_3: require("../../assets/images/sprites/rosie/tired_3.png"),
+	tired_4: require("../../assets/images/sprites/rosie/tired_4.png"),
 	wave_1: require("../../assets/images/sprites/rosie/wave_1.png"),
 	wave_2: require("../../assets/images/sprites/rosie/wave_2.png"),
 	wave_3: require("../../assets/images/sprites/rosie/wave_3.png"),
@@ -39,6 +43,7 @@ export type PigAnimation =
 	| "bounce"
 	| "happy"
 	| "sad"
+	| "tired"
 	| "surprise"
 	| "wave";
 
@@ -56,6 +61,8 @@ const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
 	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 3, loop: true },
 	happy: { frames: ["happy_1", "happy_2", "happy_3", "happy_4"], fps: 4, loop: true },
 	sad: { frames: ["sad_1", "sad_2", "sad_3", "sad_4"], fps: 3, loop: true },
+	// Drowsy/sleepy — the slowest loop, for the barn-visit tired-out.
+	tired: { frames: ["tired_1", "tired_2", "tired_3", "tired_4"], fps: 2, loop: true },
 	surprise: {
 		frames: ["surprise_1", "surprise_2", "surprise_3", "surprise_4"],
 		fps: 6,

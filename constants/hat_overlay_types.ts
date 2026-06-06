@@ -70,6 +70,7 @@ export type PigAnimationKey =
 	| "jump"
 	| "happy"
 	| "sad"
+	| "tired"
 	| "surprise"
 	| "wave";
 

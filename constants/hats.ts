@@ -335,6 +335,12 @@ export const PIG_FRAME_ANCHORS: Record<
 		{ head: { x: 153, y: 33 }, eye_l: { x: 130, y: 145 }, eye_r: { x: 212, y: 141 }, snout: { x: 178, y: 166 }, mouth: { x: 171, y: 190 }, neck: { x: 158, y: 221 }, body: { x: 150, y: 251 }, hand_l: { x: 101, y: 275 }, hand_r: { x: 182, y: 276 }, leg_l: { x: 63, y: 269 }, leg_r: { x: 145, y: 269 } },
 		{ head: { x: 161, y: 38 }, eye_l: { x: 127, y: 142 }, eye_r: { x: 215, y: 141 }, snout: { x: 178, y: 167 }, mouth: { x: 168, y: 192 }, neck: { x: 158, y: 221 }, body: { x: 139, y: 238 }, hand_l: { x: 97, y: 275 }, hand_r: { x: 179, y: 273 }, leg_l: { x: 57, y: 271 }, leg_r: { x: 143, y: 269 } },
 	],
+	tired: [
+		{ head: { x: 153, y: 42 }, eye_l: { x: 128, y: 141 }, eye_r: { x: 212, y: 139 }, snout: { x: 174, y: 163 }, mouth: { x: 168, y: 190 }, neck: { x: 163, y: 218 }, body: { x: 143, y: 232 }, hand_l: { x: 99, y: 276 }, hand_r: { x: 181, y: 272 }, leg_l: { x: 57, y: 270 }, leg_r: { x: 140, y: 268 } },
+		{ head: { x: 151, y: 35 }, eye_l: { x: 125, y: 142 }, eye_r: { x: 213, y: 143 }, snout: { x: 175, y: 166 }, mouth: { x: 169, y: 190 }, neck: { x: 154, y: 220 }, body: { x: 141, y: 233 }, hand_l: { x: 97, y: 276 }, hand_r: { x: 181, y: 273 }, leg_l: { x: 60, y: 271 }, leg_r: { x: 142, y: 268 } },
+		{ head: { x: 153, y: 33 }, eye_l: { x: 130, y: 145 }, eye_r: { x: 212, y: 141 }, snout: { x: 178, y: 166 }, mouth: { x: 171, y: 190 }, neck: { x: 158, y: 221 }, body: { x: 150, y: 251 }, hand_l: { x: 101, y: 275 }, hand_r: { x: 182, y: 276 }, leg_l: { x: 63, y: 269 }, leg_r: { x: 145, y: 269 } },
+		{ head: { x: 161, y: 38 }, eye_l: { x: 127, y: 142 }, eye_r: { x: 215, y: 141 }, snout: { x: 178, y: 167 }, mouth: { x: 168, y: 192 }, neck: { x: 158, y: 221 }, body: { x: 139, y: 238 }, hand_l: { x: 97, y: 275 }, hand_r: { x: 179, y: 273 }, leg_l: { x: 57, y: 271 }, leg_r: { x: 143, y: 269 } },
+	],
 	surprise: [
 		{ head: { x: 149, y: 90 }, eye_l: { x: 125, y: 156 }, eye_r: { x: 193, y: 154 }, snout: { x: 162, y: 172 }, mouth: { x: 162, y: 196 }, neck: { x: 158, y: 223 }, body: { x: 158, y: 237 }, hand_l: { x: 128, y: 281 }, hand_r: { x: 181, y: 280 }, leg_l: { x: 96, y: 273 }, leg_r: { x: 130, y: 267 } },
 		{ head: { x: 152, y: 92 }, eye_l: { x: 128, y: 147 }, eye_r: { x: 189, y: 147 }, snout: { x: 161, y: 169 }, mouth: { x: 161, y: 193 }, neck: { x: 152, y: 219 }, body: { x: 153, y: 241 }, hand_l: { x: 128, y: 279 }, hand_r: { x: 179, y: 278 }, leg_l: { x: 96, y: 270 }, leg_r: { x: 126, y: 264 } },
