@@ -111,6 +111,34 @@ function RootLayoutInner() {
 		supabase.auth.getSession().finally(() => setAuthChecked(true));
 	}, []);
 
+	// Tag the Sentry scope with the signed-in user so crashes/errors are
+	// attributable (id + username) instead of anonymous — makes "Freddy and
+	// Jen are having issues" something we can actually look up.
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			const { data } = await supabase.auth.getUser();
+			if (cancelled) return;
+			if (!data.user) {
+				Sentry.setUser(null);
+				return;
+			}
+			const { data: prof } = await supabase
+				.from("profiles")
+				.select("username")
+				.eq("id", data.user.id)
+				.maybeSingle();
+			Sentry.setUser({
+				id: data.user.id,
+				username:
+					(prof as { username?: string | null } | null)?.username ?? undefined,
+			});
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [authChecked]);
+
 	// Poll check_schism_status whenever we have an authenticated user
 	// AND on every transition back to foreground. The RPC is fast (PK
 	// lookup + two boolean checks). If it returns a side, the modal
