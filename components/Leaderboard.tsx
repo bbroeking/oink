@@ -263,6 +263,10 @@ export function Leaderboard() {
 					.not("username", "is", null)
 					.neq("username", "")
 					.or("is_test.is.null,is_test.eq.false")
+					// Hidden accounts (demo reviewer, junk usernames) never
+					// appear on the global board. Column is NOT NULL DEFAULT
+					// false, so eq(false) covers every row.
+					.eq("hide_from_leaderboard", false)
 					.order("tickles_earned", { ascending: false })
 					.range(from, from + count - 1);
 			let result = await run(SELECT_WITH_TITLES);
