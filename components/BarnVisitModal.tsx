@@ -52,6 +52,9 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [cooldown, setCooldown] = useState(false);
 	const [outOfVisits, setOutOfVisits] = useState(false);
 	const [visitsLeft, setVisitsLeft] = useState<number | null>(null);
+	const [truffleAvail, setTruffleAvail] = useState(false);
+	const [dug, setDug] = useState<number | null>(null);
+	const [digging, setDigging] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -78,6 +81,14 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				hat_category: hat?.category ?? null,
 				hat_emoji: hat?.emoji ?? null,
 			});
+			// Is there an un-dug truffle buried here to dig up?
+			const { data: tr } = await supabase
+				.from("truffles")
+				.select("id")
+				.eq("host_id", targetUserId)
+				.is("dug_at", null)
+				.maybeSingle();
+			if (!cancelled) setTruffleAvail(!!tr);
 			setLoading(false);
 		})();
 		return () => {
@@ -120,6 +131,24 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		}
 	};
 
+	const dig = async () => {
+		if (digging || dug != null) return;
+		setDigging(true);
+		const r = await rpc<{ ok?: boolean; reward?: number; error?: string }>(
+			"dig_truffle",
+			{ p_host: targetUserId }
+		);
+		setDigging(false);
+		setTruffleAvail(false);
+		if (r?.ok) {
+			Haptics.notificationAsync(
+				Haptics.NotificationFeedbackType.Success
+			).catch(() => {});
+			setDug(r.reward ?? 0);
+		}
+		// error 'none' (someone beat you to it) just clears the button.
+	};
+
 	return (
 		<View style={styles.root}>
 			<PageBackground bgId={barn?.active_background_id ?? null}>
@@ -142,6 +171,25 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 								<Text style={styles.stat}>
 									♥ {(barn?.tickles_earned ?? 0).toLocaleString()} tickles earned
 								</Text>
+
+								{dug != null ? (
+									<Text style={styles.truffleFound}>
+										🐽✨ You dug up a truffle — +{dug} snouts!
+									</Text>
+								) : truffleAvail ? (
+									<Pressable
+										onPress={dig}
+										disabled={digging}
+										style={({ pressed }) => [
+											styles.truffleBtn,
+											pressed && { opacity: 0.85 },
+										]}
+									>
+										<Text style={styles.truffleText}>
+											{digging ? "digging…" : "🐽 Dig for a truffle!"}
+										</Text>
+									</Pressable>
+								) : null}
 
 								{tickled ? (
 									<View style={styles.doneWrap}>
@@ -251,6 +299,23 @@ const styles = StyleSheet.create({
 	},
 	doneWrap: { width: "100%", gap: 12, alignItems: "center", paddingHorizontal: 8 },
 	doneEmoji: { fontSize: 44 },
+	truffleBtn: {
+		backgroundColor: WHIMSY.peach,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 14,
+		paddingVertical: 10,
+		paddingHorizontal: 18,
+		marginBottom: 14,
+	},
+	truffleText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	truffleFound: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 17,
+		color: WHIMSY.ink,
+		textAlign: "center",
+		marginBottom: 14,
+	},
 	generous: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
