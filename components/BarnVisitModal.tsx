@@ -49,11 +49,13 @@ const VISITOR_TICKLES = 1; // a little tickle back to you
 export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [barn, setBarn] = useState<Barn | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [tickled, setTickled] = useState(false);
 	const [busy, setBusy] = useState(false);
-	const [cooldown, setCooldown] = useState(false);
 	const [outOfVisits, setOutOfVisits] = useState(false);
-	const [visitsLeft, setVisitsLeft] = useState<number | null>(null);
+	// Tap-session: tap their pig until both pigs tire out (a random 3–7), then
+	// the visit ends back home.
+	const [tapCount, setTapCount] = useState(0);
+	const [tiredOut, setTiredOut] = useState(false);
+	const [tapCap] = useState(() => 3 + Math.floor(Math.random() * 5)); // 3–7
 	const [truffleAvail, setTruffleAvail] = useState(false);
 	const [dug, setDug] = useState<number | null>(null);
 	const [digging, setDigging] = useState(false);
@@ -157,27 +159,32 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		? { id: barn.active_flag_id, category: "flag", emoji: null }
 		: null;
 
+	// One tap of the visit tap-session. Both pigs get tickles + happiness; after
+	// a random 3–7 taps (or the server's tired ceiling), both pigs tire out and
+	// the visit closes back to the homepage.
+	const tireOut = () => {
+		setTiredOut(true);
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+			() => {}
+		);
+		setTimeout(onClose, 2600);
+	};
+
 	const tickle = async () => {
-		if (tickled || busy) return;
+		if (tiredOut || busy) return;
 		setBusy(true);
-		const r = await rpc<{
-			ok?: boolean;
-			error?: string;
-			visits_left?: number;
-		}>("tickle_at_barn", { p_target: targetUserId });
+		const r = await rpc<{ ok?: boolean; error?: string }>("tickle_at_barn", {
+			p_target: targetUserId,
+		});
 		setBusy(false);
 		if (r?.ok) {
-			Haptics.notificationAsync(
-				Haptics.NotificationFeedbackType.Success
-			).catch(() => {});
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 			playJuice();
-			setVisitsLeft(r.visits_left ?? null);
-			setTickled(true);
-		} else if (r?.error === "cooldown") {
-			Haptics.notificationAsync(
-				Haptics.NotificationFeedbackType.Warning
-			).catch(() => {});
-			setCooldown(true);
+			const next = tapCount + 1;
+			setTapCount(next);
+			if (next >= tapCap) tireOut();
+		} else if (r?.error === "tired") {
+			tireOut();
 		} else if (r?.error === "budget") {
 			Haptics.notificationAsync(
 				Haptics.NotificationFeedbackType.Warning
@@ -224,7 +231,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									<View style={styles.pigCol}>
 										<View style={styles.pigScaleWrap}>
 											<View style={styles.pigScale}>
-												<PigStage equipped={mine.hat} equippedFlag={mine.flag} />
+												<PigStage
+													equipped={mine.hat}
+													equippedFlag={mine.flag}
+													pigAnimation={tiredOut ? "tired" : "idle"}
+												/>
 											</View>
 										</View>
 										<Text style={styles.pigLabel}>you</Text>
@@ -248,7 +259,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 													},
 												]}
 											>
-												<PigStage equipped={hatSlot} equippedFlag={flagSlot} />
+												<PigStage
+													equipped={hatSlot}
+													equippedFlag={flagSlot}
+													pigAnimation={tiredOut ? "tired" : "idle"}
+												/>
 											</Animated.View>
 										</View>
 										<Text style={styles.pigLabel} numberOfLines={1}>
@@ -320,22 +335,12 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									</Pressable>
 								) : null}
 
-								{tickled ? (
+								{tiredOut ? (
 									<View style={styles.doneWrap}>
-										<Text style={styles.doneEmoji}>🤚✨</Text>
+										<Text style={styles.doneEmoji}>😴💤</Text>
 										<Text style={styles.doneText}>
-											You tickled {targetName}'s pig! +{VISIT_TICKLES} for them,
-											+{VISITOR_TICKLES} back for you. 🐷🤝🐷
+											The pigs are all tuckered out — come play another time!
 										</Text>
-										<Text style={styles.generous}>
-											😇 +1 generous · a kind little visit
-											{visitsLeft != null
-												? ` · ${visitsLeft} visit${visitsLeft === 1 ? "" : "s"} left today`
-												: ""}
-										</Text>
-										<Button size="md" variant="ghost" full onPress={onClose}>
-											Done
-										</Button>
 									</View>
 								) : outOfVisits ? (
 									<View style={styles.actionWrap}>
@@ -347,15 +352,6 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 											refill tomorrow.
 										</Text>
 									</View>
-								) : cooldown ? (
-									<View style={styles.actionWrap}>
-										<Button size="lg" variant="locked" full disabled>
-											Already tickled recently
-										</Button>
-										<Text style={styles.hint}>
-											You can tickle {targetName}'s pig again in a little while.
-										</Text>
-									</View>
 								) : (
 									<View style={styles.actionWrap}>
 										<Button
@@ -365,11 +361,16 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 											disabled={busy}
 											onPress={tickle}
 										>
-											{busy ? "…" : `Tickle ${targetName}'s pig 🤚`}
+											{busy
+												? "…"
+												: tapCount === 0
+													? `Tickle ${targetName}'s pig 🤚`
+													: "Again! 🤚"}
 										</Button>
 										<Text style={styles.hint}>
-											Send them {VISIT_TICKLES} tickles — the friendly way to
-											share the love.
+											{tapCount === 0
+												? "Tap their pig — you both get happier and a little tickle."
+												: "Keep going — until the pigs get sleepy."}
 										</Text>
 									</View>
 								)}
