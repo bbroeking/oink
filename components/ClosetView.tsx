@@ -1,8 +1,10 @@
-// The Closet — "dress up Rosie". A by-category wardrobe on top of the multi-slot
-// model (constants/slots.ts): a live pig preview wearing every equipped slot, a
-// row of tappable slot chips (filled show a × to remove; tapping scrolls to that
-// slot's items), and 3-up grids of OWNED items per category. Tap an item to wear
-// it — it shows on the pig right away. Design: claude.ai/design handoff.
+// The Closet — "dress up Rosie". The refined single-screen fitting room from the
+// claude.ai/design handoff (Closet.html → ClosetFinal): a centered header + coin,
+// a cream fitting-room card with a live pig preview and a row of equip-slot chips
+// that map 1:1 to the browse sections below (only slots you actually own items in
+// show — no mystery empty slots, no horizontal scroll), then left-aligned
+// by-category grids of owned items. Tap an item to wear it; tap a slot's ✕ to take
+// it off. Tiles carry a rarity stripe + tinted swatch and a clear lilac "ON" state.
 import { useCallback, useRef } from "react";
 import {
 	View,
@@ -16,7 +18,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { PigStage } from "./ui/PigStage";
 import { SnoutCoin } from "./ui/SnoutCoin";
-import { HAT_IMAGES, HatRow, PIG_CANVAS, RARITY_COLORS } from "@/constants/hats";
+import { HAT_IMAGES, HatRow, PIG_CANVAS } from "@/constants/hats";
 import {
 	SLOT_ORDER,
 	SLOT_LABEL,
@@ -45,6 +47,18 @@ const CAT_LABEL: Record<string, string> = {
 	scarf: "Scarves", necklace: "Necklaces", held: "Held", aura: "Auras",
 	background: "Backgrounds", flag: "Flags", tickle_particle: "Tickle Effects",
 };
+
+// Per-rarity swatch fill + stripe colors, carried over from the design (RBG/ROUT).
+const RARITY_FILL: Record<string, string> = {
+	common: "#f4ebe0", uncommon: "#d4e8d4", rare: "#c8dde9",
+	epic: "#d6c8f0", legendary: "#ffd87a",
+};
+const RARITY_STRIPE: Record<string, string> = {
+	common: WHIMSY.muteSoft, uncommon: "#7ba868", rare: "#5a8bc5",
+	epic: WHIMSY.lilacDeep, legendary: "#c99b23",
+};
+const fill = (r: string | undefined) => RARITY_FILL[r ?? "common"] ?? RARITY_FILL.common;
+const stripe = (r: string | undefined) => RARITY_STRIPE[r ?? "common"] ?? RARITY_STRIPE.common;
 
 export function ClosetView({
 	ownedItems,
@@ -88,6 +102,17 @@ export function ClosetView({
 		(groups[c] ??= []).push(i);
 	});
 
+	// Slot chips map 1:1 to the sections below: show a chip only for a slot you
+	// own items in (so there's a section to fill it) or are currently wearing (so
+	// you can always take it off). Kills the "mystery empty slots" + the sideways
+	// scroll — they wrap to fit instead.
+	const slotsWithContent = new Set<EquipSlotKey>();
+	ownedItems.forEach((i) => slotsWithContent.add(slotForCategory(i.category)));
+	SLOT_ORDER.forEach((s) => {
+		if (activeIds[SLOT_COLUMN[s]]) slotsWithContent.add(s);
+	});
+	const visibleSlots = SLOT_ORDER.filter((s) => slotsWithContent.has(s));
+
 	return (
 		<ScrollView
 			ref={scrollRef}
@@ -95,18 +120,17 @@ export function ClosetView({
 			contentContainerStyle={styles.content}
 			showsVerticalScrollIndicator={false}
 		>
+			{/* Centered header; coin chip floats top-right. */}
 			<View style={styles.header}>
-				<View>
-					<Text style={styles.kicker}>dress up rosie</Text>
-					<Text style={styles.title}>Closet</Text>
-				</View>
+				<Text style={styles.kicker}>dress up rosie</Text>
+				<Text style={styles.title}>Closet</Text>
 				<View style={styles.coinPill}>
-					<SnoutCoin size={16} />
+					<SnoutCoin size={15} />
 					<Text style={styles.coinText}>{counter.toLocaleString()}</Text>
 				</View>
 			</View>
 
-			{/* Live pig preview wearing every slot */}
+			{/* Live fitting-room preview + equip-slot chips. */}
 			<View style={styles.previewCard}>
 				<View style={styles.previewStageWrap}>
 					<View style={{ transform: [{ scale }] }}>
@@ -122,46 +146,48 @@ export function ClosetView({
 					</View>
 				</View>
 
-				{/* Slot chips — tap to jump to that slot's items; × to remove. */}
-				<ScrollView
-					horizontal
-					showsHorizontalScrollIndicator={false}
-					contentContainerStyle={styles.slotRow}
-				>
-					{SLOT_ORDER.map((s) => {
-						const column = SLOT_COLUMN[s];
-						const equippedId = activeIds[column];
-						const it = equippedId ? byId.current.get(equippedId) : null;
-						const src = equippedId ? HAT_IMAGES[equippedId] : null;
-						return (
-							<Pressable
-								key={s}
-								onPress={() => scrollToCategory(s)}
-								style={styles.slotChip}
-							>
-								{equippedId && it ? (
-									<Pressable
-										onPress={() => onEquip(null, it.category)}
-										style={styles.slotRemove}
-										hitSlop={6}
+				{visibleSlots.length > 0 && (
+					<View style={styles.slotRow}>
+						{visibleSlots.map((s) => {
+							const column = SLOT_COLUMN[s];
+							const equippedId = activeIds[column];
+							const it = equippedId ? byId.current.get(equippedId) : null;
+							const src = equippedId ? HAT_IMAGES[equippedId] : null;
+							return (
+								<Pressable
+									key={s}
+									onPress={() => scrollToCategory(s)}
+									style={styles.slotChip}
+								>
+									{equippedId && it ? (
+										<Pressable
+											onPress={() => onEquip(null, it.category)}
+											style={styles.slotRemove}
+											hitSlop={8}
+										>
+											<Text style={styles.slotRemoveText}>✕</Text>
+										</Pressable>
+									) : null}
+									<View
+										style={[
+											styles.slotThumb,
+											{ backgroundColor: it ? fill(it.rarity) : WHIMSY.paper },
+										]}
 									>
-										<Text style={styles.slotRemoveText}>×</Text>
-									</Pressable>
-								) : null}
-								<View style={styles.slotThumb}>
-									{src ? (
-										<Image source={src} style={styles.slotThumbImg} resizeMode="contain" />
-									) : it?.emoji ? (
-										<Text style={styles.slotEmoji}>{it.emoji}</Text>
-									) : (
-										<Text style={styles.slotPlus}>+</Text>
-									)}
-								</View>
-								<Text style={styles.slotLabel}>{SLOT_LABEL[s].toUpperCase()}</Text>
-							</Pressable>
-						);
-					})}
-				</ScrollView>
+										{src ? (
+											<Image source={src} style={styles.slotThumbImg} resizeMode="contain" />
+										) : it?.emoji ? (
+											<Text style={styles.slotEmoji}>{it.emoji}</Text>
+										) : (
+											<Text style={styles.slotPlus}>+</Text>
+										)}
+									</View>
+									<Text style={styles.slotLabel}>{SLOT_LABEL[s]}</Text>
+								</Pressable>
+							);
+						})}
+					</View>
+				)}
 			</View>
 
 			<View style={styles.hint}>
@@ -170,7 +196,7 @@ export function ClosetView({
 				</Text>
 			</View>
 
-			{/* By-category 3-up grids of owned items */}
+			{/* By-category 3-up grids of owned items. Headers left-aligned. */}
 			{CAT_ORDER.filter((c) => groups[c]?.length).map((cat) => {
 				const items = groups[cat];
 				return (
@@ -183,7 +209,7 @@ export function ClosetView({
 					>
 						<View style={styles.sectionHead}>
 							<Text style={styles.sectionTitle}>{CAT_LABEL[cat] ?? cat}</Text>
-							<Text style={styles.sectionCount}>{items.length} OWNED</Text>
+							<Text style={styles.sectionCount}>{items.length} owned</Text>
 						</View>
 						<View style={styles.grid}>
 							{items.map((item) => {
@@ -198,26 +224,24 @@ export function ClosetView({
 										}}
 										style={[styles.itemCard, active && styles.itemCardActive]}
 									>
-										{active && (
-											<View style={styles.check}>
-												<Text style={styles.checkText}>✓</Text>
-											</View>
-										)}
-										<View
-											style={[
-												styles.itemThumb,
-												{ backgroundColor: rarityTint(item.rarity) },
-											]}
-										>
+										<View style={[styles.itemStripe, { backgroundColor: stripe(item.rarity) }]} />
+										<View style={[styles.itemThumb, { backgroundColor: fill(item.rarity) }]}>
 											{src ? (
 												<Image source={src} style={styles.itemThumbImg} resizeMode="contain" />
 											) : (
 												<Text style={styles.itemEmoji}>{item.emoji ?? "?"}</Text>
 											)}
+											{active && (
+												<View style={styles.check}>
+													<Text style={styles.checkText}>✓</Text>
+												</View>
+											)}
 										</View>
-										<Text style={styles.itemName} numberOfLines={1}>
-											{item.name}
-										</Text>
+										<View style={[styles.itemFoot, active && styles.itemFootActive]}>
+											<Text style={styles.itemName} numberOfLines={1}>
+												{item.name}
+											</Text>
+										</View>
 									</Pressable>
 								);
 							})}
@@ -230,26 +254,15 @@ export function ClosetView({
 	);
 }
 
-// Soft pastel tint behind each item, by rarity.
-function rarityTint(rarity: string | undefined): string {
-	switch (rarity) {
-		case "legendary": return WHIMSY.sun;
-		case "epic": return WHIMSY.lilac;
-		case "rare": return WHIMSY.sky;
-		case "uncommon": return WHIMSY.sage;
-		default: return WHIMSY.cream2;
-	}
-}
-
 const COLS = 3;
 const styles = StyleSheet.create({
 	root: { flex: 1 },
-	content: { paddingHorizontal: 14, paddingTop: 6 },
+	content: { paddingHorizontal: 16, paddingTop: 6 },
 	header: {
-		flexDirection: "row",
+		position: "relative",
 		alignItems: "center",
-		justifyContent: "space-between",
-		marginBottom: 10,
+		paddingTop: 10,
+		paddingBottom: 12,
 	},
 	kicker: {
 		fontFamily: FONTS.bodyExtra,
@@ -258,26 +271,30 @@ const styles = StyleSheet.create({
 		color: WHIMSY.accent,
 		textTransform: "lowercase",
 	},
-	title: { fontFamily: FONTS.whimsy, fontSize: 32, color: WHIMSY.ink },
+	title: { fontFamily: FONTS.whimsy, fontSize: 30, color: WHIMSY.ink, marginTop: 2 },
 	coinPill: {
+		position: "absolute",
+		right: 0,
+		top: 12,
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 6,
+		gap: 5,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		borderRadius: 999,
-		paddingHorizontal: 12,
-		paddingVertical: 6,
+		paddingHorizontal: 11,
+		paddingVertical: 5,
 	},
-	coinText: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
+	coinText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	previewCard: {
-		backgroundColor: WHIMSY.peach,
+		backgroundColor: WHIMSY.cream,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 20,
+		borderRadius: 16,
 		paddingTop: 8,
 		paddingBottom: 12,
+		paddingHorizontal: 12,
 		alignItems: "center",
 	},
 	previewStageWrap: {
@@ -287,31 +304,43 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		overflow: "hidden",
 	},
-	slotRow: { gap: 10, paddingHorizontal: 12, paddingTop: 4 },
+	slotRow: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		justifyContent: "center",
+		gap: 8,
+		marginTop: 8,
+	},
 	slotChip: {
-		width: 74,
+		width: 72,
 		alignItems: "center",
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 14,
-		paddingVertical: 8,
+		borderRadius: 12,
+		paddingVertical: 7,
 		position: "relative",
 	},
 	slotThumb: {
-		width: 44,
-		height: 44,
+		width: 40,
+		height: 40,
+		borderRadius: 10,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
 		alignItems: "center",
 		justifyContent: "center",
+		overflow: "hidden",
 	},
-	slotThumbImg: { width: 44, height: 44 },
-	slotEmoji: { fontSize: 30 },
-	slotPlus: { fontSize: 30, color: WHIMSY.mute },
+	slotThumbImg: { width: "80%", height: "80%" },
+	slotEmoji: { fontSize: 26 },
+	slotPlus: { fontSize: 22, color: WHIMSY.mute },
 	slotLabel: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 10,
+		letterSpacing: 0.6,
 		color: WHIMSY.mute,
-		marginTop: 2,
+		textTransform: "uppercase",
+		marginTop: 4,
 	},
 	slotRemove: {
 		position: "absolute",
@@ -323,13 +352,14 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	slotRemoveText: { fontSize: 16, color: WHIMSY.ink },
+	slotRemoveText: { fontSize: 12, fontWeight: "900", color: WHIMSY.ink },
 	hint: {
 		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderColor: WHIMSY.mute,
 		borderStyle: "dashed",
-		borderRadius: 14,
-		paddingVertical: 10,
+		borderRadius: 12,
+		backgroundColor: WHIMSY.cream,
+		paddingVertical: 9,
 		paddingHorizontal: 14,
 		marginVertical: 12,
 	},
@@ -337,16 +367,17 @@ const styles = StyleSheet.create({
 	section: { marginBottom: 18 },
 	sectionHead: {
 		flexDirection: "row",
-		alignItems: "flex-end",
-		justifyContent: "space-between",
-		marginBottom: 8,
+		alignItems: "baseline",
+		gap: 8,
+		marginBottom: 10,
 	},
-	sectionTitle: { fontFamily: FONTS.whimsy, fontSize: 24, color: WHIMSY.ink },
+	sectionTitle: { fontFamily: FONTS.whimsy, fontSize: 20, color: WHIMSY.ink },
 	sectionCount: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
+		fontSize: 11,
 		color: WHIMSY.mute,
-		letterSpacing: 1,
+		letterSpacing: 0.6,
+		textTransform: "uppercase",
 	},
 	grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
 	itemCard: {
@@ -354,25 +385,37 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 16,
-		padding: 6,
-		position: "relative",
+		borderRadius: 14,
+		overflow: "hidden",
+		shadowColor: WHIMSY.ink,
+		shadowOffset: { width: 2, height: 2 },
+		shadowOpacity: 1,
+		shadowRadius: 0,
+		elevation: 2,
 	},
-	itemCardActive: { borderColor: WHIMSY.lilacDeep, borderWidth: 3 },
+	itemCardActive: { borderColor: WHIMSY.lilacDeep },
+	itemStripe: { height: 4, width: "100%" },
 	itemThumb: {
 		width: "100%",
 		aspectRatio: 1,
-		borderRadius: 10,
 		alignItems: "center",
 		justifyContent: "center",
-		marginBottom: 6,
 		overflow: "hidden",
+		position: "relative",
 	},
-	itemThumbImg: { width: "80%", height: "80%" },
+	itemThumbImg: { width: "76%", height: "76%" },
 	itemEmoji: { fontSize: 40 },
+	itemFoot: {
+		borderTopWidth: 2,
+		borderTopColor: WHIMSY.ink,
+		paddingVertical: 6,
+		paddingHorizontal: 8,
+		backgroundColor: WHIMSY.paper,
+	},
+	itemFootActive: { backgroundColor: WHIMSY.lilac },
 	itemName: {
 		fontFamily: FONTS.whimsy,
-		fontSize: 14,
+		fontSize: 13,
 		color: WHIMSY.ink,
 		textAlign: "center",
 	},
@@ -381,12 +424,14 @@ const styles = StyleSheet.create({
 		top: 6,
 		right: 6,
 		zIndex: 3,
-		width: 24,
-		height: 24,
-		borderRadius: 12,
+		width: 22,
+		height: 22,
+		borderRadius: 11,
 		backgroundColor: WHIMSY.lilacDeep,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	checkText: { color: WHIMSY.paper, fontSize: 14, fontWeight: "700" },
+	checkText: { color: WHIMSY.paper, fontSize: 11, fontWeight: "900" },
 });
