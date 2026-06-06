@@ -54,8 +54,12 @@ something* there.
 
 **Entry points:** Friends list + Leaderboard rows → "Visit Barn."
 
+**DECIDED (2026-06-05): MVP core action = tickle their pig → they get tickles.**
+The direct "better tickle trade" — you go to their Barn and tickle *for* them.
+Branch: `social-barn-visiting`.
+
 **What you can do on a visit (the key question):**
-- Tickle their pig → they receive tickles (the social version of the trade)
+- ✅ Tickle their pig → they receive tickles (the social version of the trade) — **MVP**
 - Leave a blessing / little gift
 - Sign a guestbook / leave a reaction
 - See what they've got equipped (drives cosmetic envy → Shop)
