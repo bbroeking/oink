@@ -16,6 +16,7 @@
         "applinks:ticklethepig.com"
       ],
       "entitlements": {
+        "aps-environment": "production",
         "com.apple.developer.applesignin": [
           "Default"
         ]
