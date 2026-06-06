@@ -24,6 +24,7 @@ import { Sticker } from "../../components/ui/Sticker";
 import { PigAvatar } from "../../components/ui/PigAvatar";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
 import { TitlesSection } from "../../components/TitlesSection";
+import { ClosetView } from "../../components/ClosetView";
 import { TroughSection } from "../../components/TroughSection";
 import { AllegianceCard } from "../../components/AllegianceCard";
 import {
@@ -1509,66 +1510,13 @@ export default function ShopScreen() {
 						)}
 					/>
 				) : (
-					<FlatList
-						key="wardrobe"
-						data={wardrobeRows}
-						renderItem={renderListRow(true)}
-						keyExtractor={(r) => r.key}
-						contentContainerStyle={styles.grid}
-						ListHeaderComponent={
-							<View>
-								{ownedItems.length > 0 ? (
-									<View style={styles.wardrobeIntro}>
-										<Text style={styles.wardrobeIntroTitle}>
-											Your closet
-										</Text>
-										<Text style={styles.wardrobeIntroSub}>
-											Tap an item to dress your pig.
-											{(activeIds.active_hat_id || activeIds.active_glasses_id || activeIds.active_mask_id || activeIds.active_neck_id || activeIds.active_aura_id || activeIds.active_background_id || activeIds.active_held_id)
-												? ""
-												: " Nothing equipped right now."}
-										</Text>
-									</View>
-								) : null}
-								{userId && (
-									<View style={styles.wardrobeTitles}>
-										<TitlesSection
-											userId={userId}
-											activeTitleId={activeTitleId}
-											onChange={setActiveTitleId}
-										/>
-									</View>
-								)}
-							</View>
-						}
-						ListEmptyComponent={
-							<Sticker
-								color="paper"
-								rotate={-0.4}
-								radius={14}
-								style={styles.wardrobeEmpty}
-							>
-								{/* Big PigAvatar instead of the small PIG emoji
-								    image — matches the design's full sprite
-								    treatment for the empty closet moment. */}
-								<PigAvatar size={120} />
-								<Text style={styles.wardrobeEmptyTitle}>
-									Your closet is bare
-								</Text>
-								<Text style={styles.wardrobeEmptySub}>
-									Tap the shop to dress Rosie up.
-								</Text>
-								<View style={{ marginTop: 14 }}>
-									<Button
-										size="sm"
-										variant="primary"
-										onPress={() => setView("daily")}
-									>
-										Visit shop
-									</Button>
-								</View>
-							</Sticker>
-						}
+					<ClosetView
+						ownedItems={ownedItems}
+						allItems={allItems}
+						activeIds={activeIds}
+						counter={counter}
+						onEquip={handleEquip}
+						isEquipped={isEquipped}
 					/>
 				)}
 			</SafeAreaView>
