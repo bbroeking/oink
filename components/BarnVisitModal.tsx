@@ -1,12 +1,11 @@
-// MOCK — Barn visiting (social feature, idea 2). Visit another player's Barn:
-// see their pig (their background + equipped hat + country flag) and tickle
-// their pig FOR them — the social, hands-on version of trading tickles.
+// Barn visiting (social feature, idea 2). Visit another player's Barn: see
+// their pig (their background + equipped hat + country flag) and tickle their
+// pig FOR them — the social, hands-on version of trading tickles.
 //
-// This is a working visual mock: the pig/background/flag are REAL (read from
-// the target's profile), but the tickle GRANT is stubbed locally (haptic +
-// confirmation, no backend yet). The real implementation will call a
-// `tickle_at_barn(target)` RPC that grants the target tickles with a cooldown
-// + a "someone visited" notification. Branch: social-barn-visiting.
+// Fully wired: the pig/background/flag are read from the target's profile, and
+// the tickle calls tickle_at_barn(p_target) which grants the target +3 tickles
+// (over-cap), rate-limited to once per target per hour, and fires a "someone
+// visited your Barn" in-app notification. Branch: social-barn-visiting.
 import { useEffect, useState } from "react";
 import {
 	Modal,
@@ -19,6 +18,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/utils/supabase";
+import { rpc } from "@/utils/rpc";
 import { PigStage } from "./ui/PigStage";
 import { PageBackground } from "./ui/PageBackground";
 import { Button } from "./ui";
@@ -49,6 +49,8 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [barn, setBarn] = useState<Barn | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [tickled, setTickled] = useState(false);
+	const [busy, setBusy] = useState(false);
+	const [cooldown, setCooldown] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -89,13 +91,24 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		? { id: barn.active_flag_id, category: "flag", emoji: null }
 		: null;
 
-	const tickle = () => {
-		if (tickled) return;
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-			() => {}
-		);
-		setTickled(true);
-		// MOCK: real impl → await rpc("tickle_at_barn", { target: targetUserId }).
+	const tickle = async () => {
+		if (tickled || busy) return;
+		setBusy(true);
+		const r = await rpc<{ ok?: boolean; error?: string }>("tickle_at_barn", {
+			p_target: targetUserId,
+		});
+		setBusy(false);
+		if (r?.ok) {
+			Haptics.notificationAsync(
+				Haptics.NotificationFeedbackType.Success
+			).catch(() => {});
+			setTickled(true);
+		} else if (r?.error === "cooldown") {
+			Haptics.notificationAsync(
+				Haptics.NotificationFeedbackType.Warning
+			).catch(() => {});
+			setCooldown(true);
+		}
 	};
 
 	return (
@@ -133,10 +146,25 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 											Done
 										</Button>
 									</View>
+								) : cooldown ? (
+									<View style={styles.actionWrap}>
+										<Button size="lg" variant="locked" full disabled>
+											Already tickled recently
+										</Button>
+										<Text style={styles.hint}>
+											You can tickle {targetName}'s pig again in a little while.
+										</Text>
+									</View>
 								) : (
 									<View style={styles.actionWrap}>
-										<Button size="lg" variant="primary" full onPress={tickle}>
-											Tickle {targetName}'s pig 🤚
+										<Button
+											size="lg"
+											variant="primary"
+											full
+											disabled={busy}
+											onPress={tickle}
+										>
+											{busy ? "…" : `Tickle ${targetName}'s pig 🤚`}
 										</Button>
 										<Text style={styles.hint}>
 											Send them {VISIT_TICKLES} tickles — the friendly way to
