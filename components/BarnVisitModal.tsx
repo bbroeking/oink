@@ -40,9 +40,10 @@ interface Barn {
 	hat_emoji: string | null;
 }
 
-// Tickles a visit sends (matches the server reward in tickle_at_barn). Display
+// Tickles a visit sends (matches the server rewards in tickle_at_barn). Display
 // only — the real grant + budget + generosity all happen server-side.
-const VISIT_TICKLES = 3;
+const VISIT_TICKLES = 3; // to the host
+const VISITOR_TICKLES = 1; // a little tickle back to you
 
 export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [barn, setBarn] = useState<Barn | null>(null);
@@ -55,6 +56,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [truffleAvail, setTruffleAvail] = useState(false);
 	const [dug, setDug] = useState<number | null>(null);
 	const [digging, setDigging] = useState(false);
+	// The visitor's own pig — so both pigs share the page (you, visiting them).
+	const [mine, setMine] = useState<{
+		hat: { id: string; category: string | null; emoji: string | null } | null;
+		flag: { id: string; category: string; emoji: null } | null;
+	}>({ hat: null, flag: null });
 
 	useEffect(() => {
 		let cancelled = false;
@@ -89,6 +95,30 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				.is("dug_at", null)
 				.maybeSingle();
 			if (!cancelled) setTruffleAvail(!!tr);
+
+			// The visitor's own pig (hat + flag) so both pigs show together.
+			const { data: ures } = await supabase.auth.getUser();
+			if (ures.user) {
+				const { data: me } = await supabase
+					.from("profiles")
+					.select(
+						"active_hat_id, active_flag_id, active_hat:hats!profiles_active_hat_id_fkey(category, emoji)"
+					)
+					.eq("id", ures.user.id)
+					.maybeSingle();
+				if (!cancelled && me) {
+					const m = me as Record<string, unknown>;
+					const mh = (m.active_hat ?? null) as { category?: string; emoji?: string } | null;
+					setMine({
+						hat: m.active_hat_id
+							? { id: m.active_hat_id as string, category: mh?.category ?? null, emoji: mh?.emoji ?? null }
+							: null,
+						flag: m.active_flag_id
+							? { id: m.active_flag_id as string, category: "flag", emoji: null }
+							: null,
+					});
+				}
+			}
 			setLoading(false);
 		})();
 		return () => {
@@ -164,8 +194,27 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 							<ActivityIndicator color={WHIMSY.ink} style={{ marginTop: 40 }} />
 						) : (
 							<>
-								<View style={styles.stage}>
-									<PigStage equipped={hatSlot} equippedFlag={flagSlot} />
+								{/* Both pigs together — you, paying them a visit. */}
+								<View style={styles.pigsRow}>
+									<View style={styles.pigCol}>
+										<View style={styles.pigScaleWrap}>
+											<View style={styles.pigScale}>
+												<PigStage equipped={mine.hat} equippedFlag={mine.flag} />
+											</View>
+										</View>
+										<Text style={styles.pigLabel}>you</Text>
+									</View>
+									<Text style={styles.between}>🤚</Text>
+									<View style={styles.pigCol}>
+										<View style={styles.pigScaleWrap}>
+											<View style={styles.pigScale}>
+												<PigStage equipped={hatSlot} equippedFlag={flagSlot} />
+											</View>
+										</View>
+										<Text style={styles.pigLabel} numberOfLines={1}>
+											{targetName}
+										</Text>
+									</View>
 								</View>
 
 								<Text style={styles.stat}>
@@ -195,8 +244,8 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									<View style={styles.doneWrap}>
 										<Text style={styles.doneEmoji}>🤚✨</Text>
 										<Text style={styles.doneText}>
-											You tickled {targetName}'s pig! +{VISIT_TICKLES} tickles
-											sent their way.
+											You tickled {targetName}'s pig! +{VISIT_TICKLES} for them,
+											+{VISITOR_TICKLES} back for you. 🐷🤝🐷
 										</Text>
 										<Text style={styles.generous}>
 											😇 +1 generous · a kind little visit
@@ -282,7 +331,30 @@ const styles = StyleSheet.create({
 		marginTop: 2,
 		textAlign: "center",
 	},
-	stage: { width: 300, height: 300, marginTop: 8 },
+	pigsRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		marginTop: 8,
+	},
+	pigCol: { alignItems: "center" },
+	// 300px PigStage scaled to 0.5 → a 150px box (overflow clipped).
+	pigScaleWrap: {
+		width: 150,
+		height: 150,
+		alignItems: "center",
+		justifyContent: "center",
+		overflow: "hidden",
+	},
+	pigScale: { transform: [{ scale: 0.5 }] },
+	pigLabel: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.ink,
+		maxWidth: 150,
+		textAlign: "center",
+	},
+	between: { fontSize: 26, marginHorizontal: 2 },
 	stat: {
 		fontFamily: FONTS.hand,
 		fontSize: 16,
