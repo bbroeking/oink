@@ -39,6 +39,9 @@ interface SwipeElementProps {
 	onLuckySwipe: () => void;
 	hatId?: string | null;
 	equipped?: EquippedItem | null;
+	equippedGlasses?: EquippedItem | null;
+	equippedMask?: EquippedItem | null;
+	equippedNeck?: EquippedItem | null;
 	// Multi-slot equipment. `equipped` is the "main" slot (hat / scarf /
 	// mask / etc.) and is rendered IN FRONT of the pig. Aura and
 	// background each have their own slot and render BEHIND the pig:
@@ -59,6 +62,9 @@ export default function SwipeElement({
 	onLuckySwipe,
 	hatId,
 	equipped,
+	equippedGlasses,
+	equippedMask,
+	equippedNeck,
 	equippedAura,
 	equippedBackground,
 	equippedHeld,
@@ -326,6 +332,9 @@ export default function SwipeElement({
 							pigAnim === "jump" ? handleJumpComplete : undefined
 						}
 						equipped={mainEquipped}
+						equippedGlasses={equippedGlasses}
+						equippedMask={equippedMask}
+						equippedNeck={equippedNeck}
 						equippedAura={equippedAura}
 						equippedHeld={equippedHeld}
 						equippedFlag={equippedFlag}

@@ -36,6 +36,9 @@ export interface Stats {
 	// Five independently-equipped slots: hat, aura, background, held,
 	// tickle particle. See migrations 20260514000000 + 20260519000000.
 	activeHat: EquipSlot | null;
+	activeGlasses: EquipSlot | null;
+	activeMask: EquipSlot | null;
+	activeNeck: EquipSlot | null;
 	activeAura: EquipSlot | null;
 	activeBackground: EquipSlot | null;
 	activeHeld: EquipSlot | null;
@@ -52,6 +55,9 @@ const INITIAL_STATS: Stats = {
 	cap: 25,
 	nextRegenSeconds: null,
 	activeHat: null,
+	activeGlasses: null,
+	activeMask: null,
+	activeNeck: null,
 	activeAura: null,
 	activeBackground: null,
 	activeHeld: null,
@@ -109,6 +115,12 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				tickles_earned: number;
 				active_hat_id: string | null;
 				active_hat: SlotBlob;
+				active_glasses_id?: string | null;
+				active_glasses?: SlotBlob;
+				active_mask_id?: string | null;
+				active_mask?: SlotBlob;
+				active_neck_id?: string | null;
+				active_neck?: SlotBlob;
 				active_aura_id: string | null;
 				active_aura: SlotBlob;
 				active_background_id: string | null;
@@ -133,6 +145,9 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 					cap: r.cap,
 					nextRegenSeconds: r.next_regen_seconds,
 					activeHat: toSlot(r.active_hat_id, r.active_hat),
+					activeGlasses: toSlot(r.active_glasses_id ?? null, r.active_glasses ?? null),
+					activeMask: toSlot(r.active_mask_id ?? null, r.active_mask ?? null),
+					activeNeck: toSlot(r.active_neck_id ?? null, r.active_neck ?? null),
 					activeAura: toSlot(r.active_aura_id, r.active_aura),
 					activeBackground: toSlot(r.active_background_id, r.active_background),
 					activeHeld: toSlot(r.active_held_id ?? null, r.active_held ?? null),
@@ -158,7 +173,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				supabase
 					.from("profiles")
 					.select(
-						"counter, tickles_earned, active_hat_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, alignment_score"
+						"counter, tickles_earned, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, alignment_score"
 					)
 					.eq("id", user.id)
 					.single(),
@@ -179,6 +194,9 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				counter?: number;
 				tickles_earned?: number;
 				active_hat_id?: string | null;
+				active_glasses_id?: string | null;
+				active_mask_id?: string | null;
+				active_neck_id?: string | null;
 				active_aura_id?: string | null;
 				active_background_id?: string | null;
 				active_held_id?: string | null;
@@ -226,6 +244,9 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				cap: info?.cap ?? 25,
 				nextRegenSeconds: info?.next_regen_seconds ?? null,
 				activeHat: slotFromId(prof?.active_hat_id ?? null),
+				activeGlasses: slotFromId(prof?.active_glasses_id ?? null),
+				activeMask: slotFromId(prof?.active_mask_id ?? null),
+				activeNeck: slotFromId(prof?.active_neck_id ?? null),
 				activeAura: slotFromId(prof?.active_aura_id ?? null),
 				activeBackground: slotFromId(prof?.active_background_id ?? null),
 				activeHeld: slotFromId(prof?.active_held_id ?? null),

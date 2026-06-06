@@ -680,6 +680,9 @@ export default function Barn() {
 							canTickle={!statsLoaded || stats.itemCount > 0}
 							playSixSeven={sixSevenTick}
 							equipped={stats.activeHat}
+							equippedGlasses={stats.activeGlasses}
+							equippedMask={stats.activeMask}
+							equippedNeck={stats.activeNeck}
 							equippedAura={stats.activeAura}
 							equippedBackground={stats.activeBackground}
 							equippedHeld={stats.activeHeld}

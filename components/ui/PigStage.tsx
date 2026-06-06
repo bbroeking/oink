@@ -51,8 +51,12 @@ export interface PigStageProps {
 	onPigFrame?: (idx: number) => void;
 	onPigComplete?: () => void;
 
-	// The four equipment slots.
-	equipped?: EquippedItem | null;       // main (hat / glasses / mask / etc.)
+	// Equipment slots. `equipped` is the Head slot (hat / bow); glasses, mask,
+	// and neck are now their own anchor-based slots and render together.
+	equipped?: EquippedItem | null;       // head (hat / bow)
+	equippedGlasses?: EquippedItem | null; // eyes
+	equippedMask?: EquippedItem | null;    // face
+	equippedNeck?: EquippedItem | null;    // neck (scarf / necklace)
 	equippedAura?: EquippedItem | null;
 	equippedHeld?: EquippedItem | null;
 	equippedFlag?: EquippedItem | null;   // country flag — corner sticker
@@ -224,6 +228,9 @@ export function PigStage({
 	onPigFrame,
 	onPigComplete,
 	equipped,
+	equippedGlasses,
+	equippedMask,
+	equippedNeck,
 	equippedAura,
 	equippedHeld,
 	equippedFlag,
@@ -231,6 +238,9 @@ export function PigStage({
 	hideAccessory = false,
 }: PigStageProps) {
 	const main = resolveSlot(equipped, pigAnimation, pigFrameIdx, relOverrides);
+	const glassesSlot = resolveSlot(equippedGlasses, pigAnimation, pigFrameIdx, relOverrides);
+	const maskSlot = resolveSlot(equippedMask, pigAnimation, pigFrameIdx, relOverrides);
+	const neckSlot = resolveSlot(equippedNeck, pigAnimation, pigFrameIdx, relOverrides);
 	const auraSlot = resolveSlot(equippedAura, pigAnimation, pigFrameIdx, relOverrides);
 	const heldSlot = resolveSlot(equippedHeld, pigAnimation, pigFrameIdx, relOverrides);
 	const flagSlot = resolveSlot(equippedFlag, pigAnimation, pigFrameIdx, relOverrides);
@@ -274,6 +284,30 @@ export function PigStage({
 					overlay={mainOverlay}
 					imageSrc={main?.imageSrc ?? null}
 					emoji={main?.emoji ?? null}
+					zIndex={10}
+				/>
+			)}
+			{neckSlot?.overlay && !hideAccessory && (
+				<ItemOverlay
+					overlay={neckSlot.overlay}
+					imageSrc={neckSlot.imageSrc}
+					emoji={neckSlot.emoji}
+					zIndex={8}
+				/>
+			)}
+			{maskSlot?.overlay && !hideAccessory && (
+				<ItemOverlay
+					overlay={maskSlot.overlay}
+					imageSrc={maskSlot.imageSrc}
+					emoji={maskSlot.emoji}
+					zIndex={9}
+				/>
+			)}
+			{glassesSlot?.overlay && !hideAccessory && (
+				<ItemOverlay
+					overlay={glassesSlot.overlay}
+					imageSrc={glassesSlot.imageSrc}
+					emoji={glassesSlot.emoji}
 					zIndex={10}
 				/>
 			)}

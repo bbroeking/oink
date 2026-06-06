@@ -33,6 +33,7 @@ import {
 	CATEGORY_EMOJI,
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
+import { SLOT_COLUMN, slotForCategory } from "@/constants/slots";
 import { categoryIcon } from "@/constants/emojiArt";
 import { COLORS, FONTS, KICKER_PILL, RARITY_GRADIENT, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
@@ -853,19 +854,14 @@ export default function ShopScreen() {
 	// column on profiles. Equipping an aura clears the aura slot only,
 	// leaving any hat/background equipped intact. See migration
 	// 20260514000000_aura_background_slots.sql for the schema.
-	const [activeIds, setActiveIds] = useState<{
-		hat: string | null;
-		aura: string | null;
-		background: string | null;
-		held: string | null;
-		flag: string | null;
-	}>({ hat: null, aura: null, background: null, held: null, flag: null });
+	// Keyed by profiles column (active_hat_id, active_glasses_id, …).
+	const [activeIds, setActiveIds] = useState<Record<string, string | null>>({});
 	const isEquipped = (id: string, category: string | null | undefined) => {
-		if (category === "aura") return activeIds.aura === id;
-		if (category === "background") return activeIds.background === id;
-		if (category === "held") return activeIds.held === id;
-		if (category === "flag") return activeIds.flag === id;
-		return activeIds.hat === id;
+		const column =
+			category === "tickle_particle"
+				? "active_tickle_particle_id"
+				: SLOT_COLUMN[slotForCategory(category)];
+		return activeIds[column] === id;
 	};
 	const [counter, setCounter] = useState<number>(0);
 	// The current user's display name, used as the sample handle in
@@ -941,14 +937,14 @@ export default function ShopScreen() {
 			// it so the shop still loads.
 			supabase
 				.from("profiles")
-				.select("username, counter, active_hat_id, active_aura_id, active_background_id, active_held_id, active_flag_id, active_title_id")
+				.select("username, counter, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_flag_id, active_title_id")
 				.eq("id", user.id)
 				.single()
 				.then(async (res) => {
 					if (res.error) {
 						return supabase
 							.from("profiles")
-							.select("username, counter, active_hat_id, active_aura_id, active_background_id, active_held_id, active_flag_id")
+							.select("username, counter, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_flag_id")
 							.eq("id", user.id)
 							.single();
 					}
@@ -981,17 +977,19 @@ export default function ShopScreen() {
 		setMyUsername(
 			(profRes.data as { username?: string | null } | null)?.username ?? "you"
 		);
-		setActiveIds({
-			hat: profRes.data?.active_hat_id ?? null,
-			aura: profRes.data?.active_aura_id ?? null,
-			background: profRes.data?.active_background_id ?? null,
-			held:
-				(profRes.data as { active_held_id?: string | null } | null)
-					?.active_held_id ?? null,
-			flag:
-				(profRes.data as { active_flag_id?: string | null } | null)
-					?.active_flag_id ?? null,
-		});
+		{
+			const pr = (profRes.data ?? {}) as Record<string, string | null>;
+			setActiveIds({
+				active_hat_id: pr.active_hat_id ?? null,
+				active_glasses_id: pr.active_glasses_id ?? null,
+				active_mask_id: pr.active_mask_id ?? null,
+				active_neck_id: pr.active_neck_id ?? null,
+				active_aura_id: pr.active_aura_id ?? null,
+				active_background_id: pr.active_background_id ?? null,
+				active_held_id: pr.active_held_id ?? null,
+				active_flag_id: pr.active_flag_id ?? null,
+			});
+		}
 		setActiveTitleId(
 			(profRes.data as { active_title_id?: string | null } | null)
 				?.active_title_id ?? null
@@ -1173,31 +1171,17 @@ export default function ShopScreen() {
 			equipPlayer.seekTo(0);
 			equipPlayer.play();
 		} catch {}
+		// tickle_particle isn't a worn slot; everything else maps to its
+		// anchor-based slot column (head/eyes/face/neck/aura/held/bg/flag).
 		const column =
-			category === "aura"
-				? "active_aura_id"
-				: category === "background"
-					? "active_background_id"
-					: category === "held"
-						? "active_held_id"
-						: category === "tickle_particle"
-							? "active_tickle_particle_id"
-							: category === "flag"
-								? "active_flag_id"
-								: "active_hat_id";
+			category === "tickle_particle"
+				? "active_tickle_particle_id"
+				: SLOT_COLUMN[slotForCategory(category)];
 		await supabase
 			.from("profiles")
 			.update({ [column]: itemId })
 			.eq("id", user.id);
-		setActiveIds((prev) => {
-			const next = { ...prev };
-			if (category === "aura") next.aura = itemId;
-			else if (category === "background") next.background = itemId;
-			else if (category === "held") next.held = itemId;
-			else if (category === "flag") next.flag = itemId;
-			else next.hat = itemId;
-			return next;
-		});
+		setActiveIds((prev) => ({ ...prev, [column]: itemId }));
 	};
 
 	// Featured = highest-rarity item in today's shop
@@ -1540,7 +1524,7 @@ export default function ShopScreen() {
 										</Text>
 										<Text style={styles.wardrobeIntroSub}>
 											Tap an item to dress your pig.
-											{(activeIds.hat || activeIds.aura || activeIds.background || activeIds.held)
+											{(activeIds.active_hat_id || activeIds.active_glasses_id || activeIds.active_mask_id || activeIds.active_neck_id || activeIds.active_aura_id || activeIds.active_background_id || activeIds.active_held_id)
 												? ""
 												: " Nothing equipped right now."}
 										</Text>
