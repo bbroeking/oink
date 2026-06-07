@@ -19,6 +19,7 @@ import {
 	View,
 	Text,
 	Pressable,
+	Image,
 	ActivityIndicator,
 	StyleSheet,
 	Animated,
@@ -28,7 +29,7 @@ import * as Haptics from "expo-haptics";
 import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { PigStage } from "./ui/PigStage";
-import { PageBackground } from "./ui/PageBackground";
+import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 interface Props {
@@ -83,7 +84,6 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	// Locked/rested-out on arrival (came back inside the 3h window, or the pigs
 	// already napped this hour) → open straight into the nap screen.
 	const [restingOnArrival, setRestingOnArrival] = useState(false);
-	const [showHelp, setShowHelp] = useState(false);
 
 	// Barn truffle (a reward the host buried for visitors).
 	const [truffleAvail, setTruffleAvail] = useState(false);
@@ -303,13 +303,14 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const ss = secsToNext != null ? String(secsToNext % 60).padStart(2, "0") : "00";
 	const atCap = avail != null && avail >= cap;
 
-	// Shared squish transform for both pigs.
-	const squishStyle = {
-		transform: [
-			{ scaleX: squish.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] }) },
-			{ scaleY: squish.interpolate({ inputRange: [0, 1], outputRange: [1, 0.93] }) },
-		],
-	};
+	// Shared squish transform entries for both pigs. Passed as an ARRAY so each
+	// pig can compose it WITH its own { scale } in one transform list — a second
+	// `transform` style object would clobber the scale and render the pig at full
+	// 300px (clipped to nothing in its box).
+	const squishTransform = [
+		{ scaleX: squish.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] }) },
+		{ scaleY: squish.interpolate({ inputRange: [0, 1], outputRange: [1, 0.93] }) },
+	];
 	const tickStyle = {
 		opacity: tick.interpolate({ inputRange: [0, 0.2, 0.9, 1], outputRange: [0, 1, 1, 0] }),
 		transform: [{ translateY: tick.interpolate({ inputRange: [0, 1], outputRange: [4, -16] }) }],
@@ -320,12 +321,21 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	// locked — so you can still visit other friends now; don't claim "3h".
 	const arrivedRested = restingOnArrival && !lockedUntil;
 
+	// Freddy's barn background, painted as an explicit absolute-fill Image (not
+	// PageBackground — its flex nesting doesn't paint inside UserSheet's modal
+	// overlay). Falls back to the default barn, then a bundled asset.
+	const bgSrc =
+		(barn?.active_background_id && HAT_IMAGES[barn.active_background_id]) ||
+		HAT_IMAGES.homestead_barn ||
+		require("../assets/images/homepage-bg.jpg");
+
 	return (
 		<View style={styles.root}>
-			<PageBackground bgId={barn?.active_background_id ?? null}>
-				{/* legibility veil behind the top chrome */}
-				<View pointerEvents="none" style={styles.topVeil} />
+			<Image source={bgSrc} style={StyleSheet.absoluteFill} resizeMode="cover" />
+			{/* legibility veil behind the top chrome */}
+			<View pointerEvents="none" style={styles.topVeil} />
 
+			<View style={styles.content}>
 				{loading ? (
 					<ActivityIndicator color={WHIMSY.paper} style={{ marginTop: 120 }} />
 				) : (
@@ -403,7 +413,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 							<View style={styles.pigsRow}>
 								<TapPig
 									me
-									squishStyle={squishStyle}
+									squishTransform={squishTransform}
 									onPress={tickle}
 									label="you"
 									hat={mine.hat}
@@ -412,7 +422,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									floats={floats}
 								/>
 								<TapPig
-									squishStyle={squishStyle}
+									squishTransform={squishTransform}
 									onPress={tickle}
 									label={barn?.username ?? targetName}
 									hat={hatSlot}
@@ -423,18 +433,6 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									energyColor={energyColor}
 									energyLabel={energyLabel}
 								/>
-							</View>
-
-							<View style={styles.stageFoot}>
-								{youHearts === 0 && !tired && (
-									<View style={styles.nudge}>
-										<Text style={styles.nudgeText}>✦ tap a pig to start tickling</Text>
-									</View>
-								)}
-								<Pressable onPress={() => setShowHelp(true)} style={styles.helpPill} hitSlop={6}>
-									<Text style={styles.helpDot}>ⓘ</Text>
-									<Text style={styles.helpText}>How visiting works</Text>
-								</Pressable>
 							</View>
 
 							{/* barn truffle (a reward the host buried) */}
@@ -461,35 +459,6 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									</Text>
 								</View>
 							</View>
-						)}
-
-						{/* "how visiting works" sheet */}
-						{showHelp && (
-							<Pressable style={styles.sheetScrim} onPress={() => setShowHelp(false)}>
-								<Pressable style={styles.sheet} onPress={() => {}}>
-									<View style={styles.sheetGrip} />
-									<Text style={styles.sheetTitle}>How visiting works</Text>
-									{[
-										["💞", "You tickle together", `Tap either pig and you AND ${targetName} both get a ♥ — every single tap.`],
-										["✦", "Tickles are limited", "Each tap spends one of your tickles. They slowly refill over time."],
-										["😴", "Pigs get sleepy", `${targetName}'s pig tires as you play — once it naps, come back later.`],
-										["🐽", "Barn rewards", "Some friends bury a truffle for the first visitor to dig up."],
-									].map(([ic, h, b]) => (
-										<View key={h} style={styles.sheetRow}>
-											<View style={styles.sheetIcon}>
-												<Text style={{ fontSize: 19 }}>{ic}</Text>
-											</View>
-											<View style={{ flex: 1 }}>
-												<Text style={styles.sheetRowTitle}>{h}</Text>
-												<Text style={styles.sheetRowBody}>{b}</Text>
-											</View>
-										</View>
-									))}
-									<Pressable onPress={() => setShowHelp(false)} style={styles.sheetBtn}>
-										<Text style={styles.sheetBtnText}>Got it!</Text>
-									</Pressable>
-								</Pressable>
-							</Pressable>
 						)}
 
 						{/* nap screen — tired out, or rested-out / locked on arrival */}
@@ -527,7 +496,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 						)}
 					</>
 				)}
-			</PageBackground>
+			</View>
 		</View>
 	);
 }
@@ -559,7 +528,7 @@ function HeartTally({
 // A tappable pig (you or the friend), with floating hearts + optional energy bar.
 function TapPig({
 	me = false,
-	squishStyle,
+	squishTransform,
 	onPress,
 	label,
 	hat,
@@ -571,8 +540,8 @@ function TapPig({
 	energyLabel,
 }: {
 	me?: boolean;
-	// Animated transform style shared by both pigs (squish on tap).
-	squishStyle: Record<string, unknown>;
+	// Shared squish transform entries — composed WITH this pig's own scale.
+	squishTransform: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
 	onPress: () => void;
 	label: string;
 	hat: { id: string; category: string | null; emoji: string | null } | null;
@@ -611,7 +580,7 @@ function TapPig({
 				))}
 			</View>
 			<View style={[styles.pigBox, { width: box, height: box }]}>
-				<Animated.View style={[{ transform: [{ scale }] }, squishStyle]}>
+				<Animated.View style={{ transform: [{ scale }, ...squishTransform] }}>
 					<PigStage equipped={hat} equippedFlag={flag} pigAnimation={tired ? "tired" : "idle"} />
 				</Animated.View>
 			</View>
@@ -637,6 +606,7 @@ const sticker = { shadowColor: INK, shadowOffset: { width: 2, height: 2 }, shado
 
 const styles = StyleSheet.create({
 	root: { ...StyleSheet.absoluteFillObject, zIndex: 100, backgroundColor: WHIMSY.cream },
+	content: { flex: 1 },
 	topVeil: { position: "absolute", top: 0, left: 0, right: 0, height: 250, backgroundColor: "rgba(36,24,14,0.42)" },
 
 	chrome: { paddingHorizontal: 16, paddingTop: 56 },
