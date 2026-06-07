@@ -58,8 +58,6 @@ function lockLabel(nextAtIso: string | null): string {
 	return h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 }
 
-const PIG_CANVAS = 300;
-
 export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [barn, setBarn] = useState<Barn | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -69,6 +67,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [avail, setAvail] = useState<number | null>(null);
 	const [cap, setCap] = useState(25);
 	const [secsToNext, setSecsToNext] = useState<number | null>(null);
+	const [regenSecs, setRegenSecs] = useState(75); // full regen period (server)
 
 	// Hearts shared this visit — both tick up together, one per tap.
 	const [youHearts, setYouHearts] = useState(0);
@@ -194,11 +193,13 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				balance?: number;
 				cap?: number;
 				next_regen_seconds?: number | null;
+				regen_seconds?: number;
 			}>("barn_visit_status", { p_target: targetUserId });
 			if (!cancelled && st?.ok) {
 				setAvail(st.balance ?? 0);
 				setCap(st.cap ?? 25);
 				setSecsToNext(st.next_regen_seconds ?? null);
+				if (st.regen_seconds) setRegenSecs(st.regen_seconds);
 				if (st.locked) {
 					setLockedUntil(st.next_at ?? null);
 					setRestingOnArrival(true);
@@ -221,14 +222,13 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				if (s == null) return s;
 				if (s <= 1) {
 					setAvail((a) => (a == null ? a : Math.min(cap, a + 1)));
-					const regen = 75; // display-only cadence; server is source of truth
-					return regen;
+					return regenSecs; // full regen period from the server
 				}
 				return s - 1;
 			});
 		}, 1000);
 		return () => clearInterval(id);
-	}, [secsToNext, avail, cap]);
+	}, [secsToNext, avail, cap, regenSecs]);
 
 	const hatSlot = barn?.active_hat_id
 		? { id: barn.active_hat_id, category: barn.hat_category, emoji: barn.hat_emoji }
@@ -316,6 +316,9 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	};
 
 	const napUntil = lockedUntil ? lockLabel(lockedUntil) : "3h";
+	// Arrived to find THIS barn at its hourly tap ceiling, but NOT cross-barn
+	// locked — so you can still visit other friends now; don't claim "3h".
+	const arrivedRested = restingOnArrival && !lockedUntil;
 
 	return (
 		<View style={styles.root}>
@@ -497,20 +500,24 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									<Text style={styles.napKicker}>nap time</Text>
 									<Text style={styles.napTitle}>All tickled out!</Text>
 									<Text style={styles.napBody}>
-										{restingOnArrival && youHearts === 0
-											? `These pigs are worn out from a recent visit — and you can only visit one friend every 3 hours. Come back soon!`
-											: `The pigs are worn out from all the play and need a nap. You can visit another friend's Barn in a little while.`}
+										{arrivedRested
+											? `${targetName}'s pig is worn out from a recent visit — give it a little while. You can still go tickle another friend's pig!`
+											: `The pigs are all tickled out! You can visit one friend every 3 hours, so come back to play another time.`}
 									</Text>
 									<View style={styles.napStats}>
 										<View style={styles.napStat}>
 											<Text style={styles.napStatNum}>+{youHearts} ♥</Text>
 											<Text style={styles.napStatLabel}>shared this visit</Text>
 										</View>
-										<View style={styles.napStatDivider} />
-										<View style={styles.napStat}>
-											<Text style={styles.napStatNum}>{napUntil}</Text>
-											<Text style={styles.napStatLabel}>until you can visit again</Text>
-										</View>
+										{!arrivedRested && (
+											<>
+												<View style={styles.napStatDivider} />
+												<View style={styles.napStat}>
+													<Text style={styles.napStatNum}>{napUntil}</Text>
+													<Text style={styles.napStatLabel}>until you can visit again</Text>
+												</View>
+											</>
+										)}
 									</View>
 									<Pressable onPress={onClose} style={styles.napBtn}>
 										<Text style={styles.napBtnText}>Head home →</Text>
