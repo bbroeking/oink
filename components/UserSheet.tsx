@@ -31,6 +31,7 @@ import { AlignmentBar } from "./ui/AlignmentBar";
 import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
 import type { TradeRow } from "@/constants/trade_types";
+import { formatHM } from "@/utils/time";
 import {
 	FONTS,
 	KICKER_PILL,
@@ -123,9 +124,7 @@ function formatHandle(s: UserStats): string {
 function formatRemaining(iso: string): string {
 	const ms = new Date(iso).getTime() - Date.now();
 	if (ms <= 0) return "moments";
-	const h = Math.floor(ms / 3_600_000);
-	const m = Math.floor((ms % 3_600_000) / 60_000);
-	return h > 0 ? `${h}h ${m}m` : `${m}m`;
+	return formatHM(ms);
 }
 
 export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Props) {

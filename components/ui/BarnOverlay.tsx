@@ -10,7 +10,7 @@
 // The two axes are independent — you can be a neutral pig who's
 // currently blessed. pointerEvents="none" so taps reach the pig.
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import type { AlignmentLabel } from "@/utils/alignment";
 
 interface Props {
@@ -67,7 +67,7 @@ export function BarnOverlay({ alignment, blessed, cursed }: Props) {
 	);
 }
 
-function Cloud({ style, scale = 1 }: { style: object; scale?: number }) {
+function Cloud({ style, scale = 1 }: { style: StyleProp<ViewStyle>; scale?: number }) {
 	const s = (n: number) => n * scale;
 	return (
 		<View style={[styles.cloudWrap, style, { transform: [{ scale }] }]}>
@@ -92,7 +92,7 @@ function CoinPile({
 	style,
 	mirrored = false,
 }: {
-	style: object;
+	style: StyleProp<ViewStyle>;
 	mirrored?: boolean;
 }) {
 	return (

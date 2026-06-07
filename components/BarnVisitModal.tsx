@@ -48,6 +48,26 @@ interface Barn {
 	hat_emoji: string | null;
 }
 
+// Shape of the joined `hats` row (to-one FK). Supabase may surface a to-one
+// embed as a single object or a single-element array depending on the relation
+// hint; we read it as an object here, matching how the column is consumed.
+type ActiveHat = { category?: string; emoji?: string } | null;
+
+interface BarnProfileRow {
+	username: string | null;
+	tickles_earned: number | null;
+	active_background_id: string | null;
+	active_hat_id: string | null;
+	active_flag_id: string | null;
+	active_hat: ActiveHat;
+}
+
+interface MyProfileRow {
+	active_hat_id: string | null;
+	active_flag_id: string | null;
+	active_hat: ActiveHat;
+}
+
 // "2h 15m" / "12m" until you can visit a different barn.
 function lockLabel(nextAtIso: string | null): string {
 	if (!nextAtIso) return "3h";
@@ -140,14 +160,14 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				setLoading(false);
 				return;
 			}
-			const d = data as Record<string, unknown>;
-			const hat = (d.active_hat ?? null) as { category?: string; emoji?: string } | null;
+			const d = data as unknown as BarnProfileRow;
+			const hat = d.active_hat ?? null;
 			setBarn({
-				username: (d.username as string) ?? null,
-				tickles_earned: (d.tickles_earned as number) ?? 0,
-				active_background_id: (d.active_background_id as string) ?? null,
-				active_hat_id: (d.active_hat_id as string) ?? null,
-				active_flag_id: (d.active_flag_id as string) ?? null,
+				username: d.username ?? null,
+				tickles_earned: d.tickles_earned ?? 0,
+				active_background_id: d.active_background_id ?? null,
+				active_hat_id: d.active_hat_id ?? null,
+				active_flag_id: d.active_flag_id ?? null,
 				hat_category: hat?.category ?? null,
 				hat_emoji: hat?.emoji ?? null,
 			});
@@ -170,14 +190,14 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 					.eq("id", ures.user.id)
 					.maybeSingle();
 				if (!cancelled && me) {
-					const m = me as Record<string, unknown>;
-					const mh = (m.active_hat ?? null) as { category?: string; emoji?: string } | null;
+					const m = me as unknown as MyProfileRow;
+					const mh = m.active_hat ?? null;
 					setMine({
 						hat: m.active_hat_id
-							? { id: m.active_hat_id as string, category: mh?.category ?? null, emoji: mh?.emoji ?? null }
+							? { id: m.active_hat_id, category: mh?.category ?? null, emoji: mh?.emoji ?? null }
 							: null,
 						flag: m.active_flag_id
-							? { id: m.active_flag_id as string, category: "flag", emoji: null }
+							? { id: m.active_flag_id, category: "flag", emoji: null }
 							: null,
 					});
 				}
@@ -538,7 +558,10 @@ function TapPig({
 }: {
 	me?: boolean;
 	// Shared squish transform entries — composed WITH this pig's own scale.
-	squishTransform: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+	squishTransform: (
+			| { scaleX: Animated.AnimatedInterpolation<number> }
+			| { scaleY: Animated.AnimatedInterpolation<number> }
+		)[]
 	onPress: () => void;
 	label: string;
 	hat: { id: string; category: string | null; emoji: string | null } | null;

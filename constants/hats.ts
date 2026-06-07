@@ -504,14 +504,6 @@ export const RARITY_COLORS: Record<string, string> = {
 	legendary: "#F5C44A",
 };
 
-export const RARITY_BG: Record<string, string> = {
-	common: "#F4EFE7",
-	uncommon: "#E8F5E0",
-	rare: "#E0EBFF",
-	epic: "#EFE9FF",
-	legendary: "#FFF3D0",
-};
-
 export const CATEGORY_EMOJI: Record<string, string> = {
 	hat: "🎩",
 	glasses: "👓",

@@ -521,11 +521,11 @@ function RootLayoutInner() {
 				screen?: string;
 			};
 			if (data.screen === "trade" || data.screen === "friends") {
-				router.replace("/friends" as any);
+				router.replace("/friends");
 			} else if (data.screen === "achievements") {
-				router.replace("/achievements" as any);
+				router.replace("/achievements");
 			} else if (data.screen === "account") {
-				router.replace("/account" as any);
+				router.replace("/account");
 			}
 		});
 		return () => sub.remove();

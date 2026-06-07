@@ -26,10 +26,6 @@ import { Sticker } from "./ui/Sticker";
 import { supabase } from "../utils/supabase";
 import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
-// Kept for back-compat with downstream imports (UsernameSetup
-// references this constant for its button tint).
-export const PRIMARY_COLOR = WHIMSY.lilac;
-
 export default function SupaAuth() {
 	const [showEmail, setShowEmail] = useState(false);
 	const [mode, setMode] = useState<"signIn" | "signUp">("signIn");

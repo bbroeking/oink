@@ -5,14 +5,10 @@
 // is the main slot; PigStage owns z-order + anchoring.
 import React from "react";
 import { View } from "react-native";
-import { PigStage } from "./PigStage";
+import { PigStage, type EquippedItem } from "./PigStage";
 import { PIG_CANVAS } from "@/constants/hats";
 
-interface PreviewItem {
-	id: string;
-	category?: string | null;
-	emoji?: string | null;
-}
+type PreviewItem = EquippedItem;
 
 export function ItemPigPreview({
 	item,

@@ -17,6 +17,7 @@ import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
 import { dailyRitual, type RitualMode } from "../utils/rituals";
+import { formatHM } from "../utils/time";
 import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
 
 // Rituals reset at UTC midnight (the daily cap keys on the UTC date). "7h 23m"
@@ -29,9 +30,7 @@ function untilDailyReset(): string {
 		now.getUTCDate() + 1
 	);
 	const ms = next - now.getTime();
-	const h = Math.floor(ms / 3_600_000);
-	const m = Math.floor((ms % 3_600_000) / 60_000);
-	return h > 0 ? `${h}h ${m}m` : `${m}m`;
+	return formatHM(ms);
 }
 
 interface Props {

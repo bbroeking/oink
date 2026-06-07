@@ -442,7 +442,7 @@ export function Account({ session }: { session: Session }) {
 					    routes to the full grid. Sits above Sounder so it's
 					    discoverable as the primary "see your progress" surface. */}
 					<Pressable
-						onPress={() => router.push("/achievements" as any)}
+						onPress={() => router.push("/achievements")}
 						style={achievementStyles.row}
 					>
 						<View style={achievementStyles.iconBubble}>

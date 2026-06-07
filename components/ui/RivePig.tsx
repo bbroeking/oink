@@ -106,9 +106,9 @@ export const RivePig = React.forwardRef<RivePigHandle, Props>(function RivePig(
 			}
 		},
 		setEquip: (equip: RivePigEquip) => {
-			for (const [slot, input] of Object.entries(SLOT_INPUTS)) {
-				const id = (equip as Record<string, number | undefined>)[slot] ?? 0;
-				riveRef.current?.setInputState(STATE_MACHINE, input, id);
+			for (const slot of Object.keys(SLOT_INPUTS) as (keyof RivePigEquip)[]) {
+				const id = equip[slot] ?? 0;
+				riveRef.current?.setInputState(STATE_MACHINE, SLOT_INPUTS[slot], id);
 			}
 		},
 	}));

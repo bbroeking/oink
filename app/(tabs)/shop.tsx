@@ -18,6 +18,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
+import { formatHM } from "@/utils/time";
 import { Button, SectionHeader } from "../../components/ui";
 import { Icon } from "../../components/ui/Icon";
 import { Sticker } from "../../components/ui/Sticker";
@@ -174,10 +175,7 @@ function buildRowsByCategory(items: HatRow[]): ListRow[] {
 }
 
 function formatCountdown(secs: number): string {
-	const h = Math.floor(secs / 3600);
-	const m = Math.floor((secs % 3600) / 60);
-	if (h > 0) return `${h}h ${m}m`;
-	return `${m}m`;
+	return formatHM(secs * 1000);
 }
 
 function HatThumb({
@@ -612,12 +610,7 @@ function MosaicDailyGrid({
 
 	const captureCenter = (itemId: string) => (e: LayoutChangeEvent) => {
 		if (!tileCenters) return;
-		const targetRef = e.target as unknown as {
-			measureInWindow?: (
-				cb: (x: number, y: number, w: number, h: number) => void
-			) => void;
-		};
-		targetRef.measureInWindow?.((x, y, w, h) => {
+		e.target.measureInWindow((x, y, w, h) => {
 			tileCenters.current.set(itemId, { x: x + w / 2, y: y + h / 2 });
 		});
 	};
@@ -926,6 +919,22 @@ export default function ShopScreen() {
 		} = await supabase.auth.getUser();
 		if (!user) return;
 
+		// Shape of the profiles row selected below. `active_title_id` is
+		// optional because the fallback query (run when that column isn't
+		// deployed yet) omits it.
+		type ProfileRow = {
+			username: string | null;
+			counter: number | null;
+			active_hat_id: string | null;
+			active_glasses_id: string | null;
+			active_mask_id: string | null;
+			active_neck_id: string | null;
+			active_aura_id: string | null;
+			active_background_id: string | null;
+			active_held_id: string | null;
+			active_flag_id: string | null;
+			active_title_id?: string | null;
+		};
 		const [dailyRes, allRes, ownedRes, profRes, resetsRes, titlesRes] = await Promise.all([
 			rpc<HatRow[]>("daily_shop"),
 			supabase
@@ -974,12 +983,11 @@ export default function ShopScreen() {
 			)
 		);
 		setOwned(ownedSet);
-		setCounter(profRes.data?.counter ?? 0);
-		setMyUsername(
-			(profRes.data as { username?: string | null } | null)?.username ?? "you"
-		);
+		const prof = (profRes.data as ProfileRow | null) ?? null;
+		setCounter(prof?.counter ?? 0);
+		setMyUsername(prof?.username ?? "you");
 		{
-			const pr = (profRes.data ?? {}) as Record<string, string | null>;
+			const pr = prof ?? ({} as Partial<ProfileRow>);
 			setActiveIds({
 				active_hat_id: pr.active_hat_id ?? null,
 				active_glasses_id: pr.active_glasses_id ?? null,
@@ -991,10 +999,7 @@ export default function ShopScreen() {
 				active_flag_id: pr.active_flag_id ?? null,
 			});
 		}
-		setActiveTitleId(
-			(profRes.data as { active_title_id?: string | null } | null)
-				?.active_title_id ?? null
-		);
+		setActiveTitleId(prof?.active_title_id ?? null);
 		setUserId(user.id);
 		setResetsIn(resetsRes ?? 0);
 		setTitles(titlesRes ?? []);

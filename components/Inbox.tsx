@@ -329,7 +329,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 
 	const doRpc = async (
 		rpcName: string,
-		args: object,
+		args: Record<string, unknown>,
 		id: string,
 		ok: string
 	) => {
@@ -341,7 +341,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			cap?: number;
 			balance?: number;
 			needed?: number;
-		}>(rpcName, args as Record<string, unknown>);
+		}>(rpcName, args);
 		setBusy(null);
 		if (!r || r.ok === false) {
 			// Surface specific reasons — they tell the user what to do

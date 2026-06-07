@@ -34,7 +34,6 @@ import { HAT_IMAGES } from "@/constants/hats";
 import { achievementIcon } from "@/constants/emojiArt";
 import {
 	FONTS,
-	KICKER_TEXT,
 	WHIMSY,
 } from "@/constants/theme";
 
@@ -580,7 +579,3 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 	},
 });
-
-// Silence "KICKER_TEXT imported but unused" — kept import for
-// downstream files that re-export. Remove if/when verified unused.
-void KICKER_TEXT;

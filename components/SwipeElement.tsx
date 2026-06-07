@@ -18,7 +18,7 @@ import { PigAnimation } from "./ui/SpritePig";
 
 // Resting poses driven by happiness/mood (vs transient reactions).
 const REST_POSES = new Set<PigAnimation>(["idle", "sad", "happy"]);
-import { PigStage, resolveSlot } from "./ui/PigStage";
+import { PigStage, resolveSlot, type EquippedItem } from "./ui/PigStage";
 import { AnchorDebugOverlay, type DebugItem } from "./dev/AnchorDebugOverlay";
 
 // To swap to <RivePig> once you have a Rive build:
@@ -31,12 +31,6 @@ import { AnchorDebugOverlay, type DebugItem } from "./dev/AnchorDebugOverlay";
 // Until step 2, importing RivePig at module level crashes because the
 // native event emitter has no Objective-C side. Don't add the import
 // until the dev-client rebuild is in.
-
-interface EquippedItem {
-	id: string;
-	category?: string | null;
-	emoji?: string | null;
-}
 
 interface SwipeElementProps {
 	onLuckySwipe: () => void;
@@ -96,7 +90,7 @@ export default function SwipeElement({
 			(async () => {
 				try {
 					const rel = await AsyncStorage.getItem("item_anchor_rel_v1");
-					if (rel) setRelOverrides(JSON.parse(rel));
+					if (rel) setRelOverrides(JSON.parse(rel) as Record<string, RelSpec>);
 				} catch {}
 			})();
 		}, [])
