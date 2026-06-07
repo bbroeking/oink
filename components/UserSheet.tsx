@@ -132,8 +132,18 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const [stats, setStats] = useState<UserStats | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
-	// Barn visiting (social feature, mock) — opens the visit screen for this user.
+	// Barn visiting (social feature) — opens the visit screen for this user.
 	const [showVisit, setShowVisit] = useState(false);
+	// Whether a visit would actually succeed right now (barn_visit_status). Used
+	// to pre-disable the Visit button instead of opening the modal to a dead-end
+	// pop-up: locked to a different barn (one friend / 3h), out of tickles, or the
+	// pig already at its hourly tap ceiling.
+	const [visitGate, setVisitGate] = useState<{
+		locked?: boolean;
+		resting?: boolean;
+		next_at?: string | null;
+		balance?: number;
+	} | null>(null);
 	const [feedback, setFeedback] = useState<string | null>(null);
 	// Block + Report dialogs. Apple Guideline 1.2 requires both for
 	// any app with user-to-user interactions; they appear as small
@@ -195,6 +205,17 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		setFeedback(null);
 		setAskState({ kind: "ready" });
 		setTargetTickles(null);
+		setVisitGate(null);
+		// Can a visit to this person succeed right now? (gates the Visit button)
+		rpc<{
+			ok?: boolean;
+			locked?: boolean;
+			resting?: boolean;
+			next_at?: string | null;
+			balance?: number;
+		}>("barn_visit_status", { p_target: targetUserId }).then((d) => {
+			if (d?.ok) setVisitGate(d);
+		});
 		rpc<UserStats[]>("public_user_stats", {
 			target_user_id: targetUserId,
 		}).then((data) => {
@@ -245,6 +266,19 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		})) ?? [];
 		setStats(rows[0] ?? null);
 	};
+
+	// Why the Visit button is blocked (null = a visit would work). Until the
+	// status RPC resolves, visitGate is null → button stays enabled and the
+	// modal's own guards remain the backstop.
+	const visitBlock: { label: string } | null = !visitGate
+		? null
+		: visitGate.locked
+			? { label: visitGate.next_at ? `Come back in ${formatRemaining(visitGate.next_at)}` : "Come back soon" }
+			: (visitGate.balance ?? 1) < 1
+				? { label: "Out of tickles to visit" }
+				: visitGate.resting
+					? { label: "Their pig is resting — come back soon" }
+					: null;
 
 	const addFriend = async () => {
 		if (!stats || !stats.username) return;
@@ -454,10 +488,21 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 										/>
 									</View>
 
-									{/* Visit their Barn — see their pig + tickle it for them (social). */}
-									<Pressable onPress={() => setShowVisit(true)} style={({ pressed }) => [styles.visitBtn, pressed && { opacity: 0.8 }]}>
-										<Text style={styles.visitBtnText}>🏚 Visit {formatHandle(stats)}'s Barn</Text>
-									</Pressable>
+									{/* Visit their Barn — see their pig + tickle it for them (social).
+									    Pre-disabled when a visit can't succeed (locked to another
+									    barn / out of tickles / pig resting) so we never open the
+									    modal just to show a dead-end pop-up. */}
+									{visitBlock ? (
+										<View style={[styles.visitBtn, styles.visitBtnDisabled]}>
+											<Text style={[styles.visitBtnText, styles.visitBtnTextDisabled]}>
+												🏚 {visitBlock.label}
+											</Text>
+										</View>
+									) : (
+										<Pressable onPress={() => setShowVisit(true)} style={({ pressed }) => [styles.visitBtn, pressed && { opacity: 0.8 }]}>
+											<Text style={styles.visitBtnText}>🏚 Visit {formatHandle(stats)}'s Barn</Text>
+										</Pressable>
+									)}
 
 									{stats.friendship_status === "friends" ? (
 										<>
@@ -1012,4 +1057,11 @@ const styles = StyleSheet.create({
 		marginBottom: 12,
 	},
 	visitBtnText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	// Disabled Visit button — muted fill + ink, reads as "can't right now".
+	visitBtnDisabled: {
+		backgroundColor: WHIMSY.cream2,
+		borderColor: WHIMSY.muteSoft,
+		opacity: 0.7,
+	},
+	visitBtnTextDisabled: { color: WHIMSY.mute },
 });
