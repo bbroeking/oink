@@ -46,7 +46,7 @@ import {
 	shareMessageForCode,
 	type ReferralSummary,
 } from "@/utils/referrals";
-import { ensurePushPermission } from "@/utils/pushNotifications";
+import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications";
 
 export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
@@ -690,7 +690,12 @@ export function Account({ session }: { session: Session }) {
 							<SettingRow
 								icon="exit"
 								label="Sign out"
-								onPress={() => supabase.auth.signOut()}
+								onPress={async () => {
+									// Drop the push token while still authenticated so this
+									// device stops receiving pushes for the signed-out account.
+									await clearPushToken();
+									await supabase.auth.signOut();
+								}}
 							/>
 							<SettingRow
 								icon="x"
@@ -731,6 +736,7 @@ export function Account({ session }: { session: Session }) {
 					try {
 						await rpc("delete_my_account");
 					} catch {}
+					await clearPushToken();
 					await supabase.auth.signOut();
 					setDeleting(false);
 					setDeleteOpen(false);
