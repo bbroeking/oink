@@ -1,38 +1,45 @@
-# Open items — to-do
+# Open items + launch checklist
 
-The remaining unstarted work, after the happiness + barn-visiting + Closet +
-World Cup arc shipped. Three things plus a build.
+Updated 2026-06-07. Most of the prior arc (happiness, barn visiting, Closet,
+World Cup, push notifications, referral cutover) has shipped — builds 80–87 are in
+TestFlight. What's left is launch-day flips + a couple of follow-ups.
 
-## 1. Refer-a-friend install link + App Store cutover (was task #13)
-The universal-link layer exists (build 78): `ticklethepig.com/r/<code>` → app if
-installed, else the landing page → TestFlight join (`testflight.apple.com/join/5dDhSNN9`).
-- **Verify** the uninstalled-user path end-to-end on a device (link → landing →
-  install → code pre-fills onboarding).
-- **App Store cutover:** we're approved for public launch — swap the landing
-  "join" button + any in-app copy from the TestFlight URL to the App Store
-  product URL when it goes live. Swap point: `landing/index.html:452` (commented).
+## 🚀 LAUNCH CHECKLIST — do these when the App Store listing goes live
 
-## 2. Notifications — APNs entitlement (was task #11)
-Root cause found: `ios/ttp/ttp.entitlements` has **no `aps-environment`** entitlement,
-so the app can't register with APNs → `getExpoPushTokenAsync` never returns a token.
-Fix sequence (touches Apple credentials, so do in order):
-1. Enable **Push Notifications** on the App ID (via `eas credentials` interactive
-   or the Apple Developer portal).
-2. EAS regenerates the provisioning profile with push.
-3. Add `aps-environment` to `ios/ttp/ttp.entitlements`.
-4. Rebuild + test on a **real device** (sim can't get push tokens). Confirm an
-   APNs key is uploaded to EAS.
-*Don't add the entitlement before step 1/2 or the next build's code-signing fails.*
+The listing isn't public yet (`itunes lookup id=6740339848` → resultCount 0). When
+it goes live:
 
-## 3. Teams push-pull + mini-games (was task #18)
-Big social meta-game; a clickable **mock exists** on branch `social-teams-pushpull`
-(Mud Hogs vs Sky Swine tug-of-war). Real build is gated on the design fork:
-**is "teams" a new axis or a reframing of the angel/goblin alignment schism?**
-See `docs/social-layer-ideas.md`. Build on top of barn visiting (now done).
+1. **Switch "Refer a Friend" to public.** Set **`SOUNDER_VISIBLE = true`** in
+   `constants/featureFlags.ts` (currently `false` — the Sounder / referral UI is
+   dark-launched: the "Your Sounder" card + `/sounder` route don't render, the
+   RPCs are already live). Flipping this surfaces the referral program publicly.
+   Then rebuild + ship.
+2. **App Store link cutover — AUTO, nothing to do.** `landing/index.html` +
+   `docs/index.html` already self-upgrade their Join/CTA buttons from TestFlight to
+   `apps.apple.com/app/id6740339848` via a JSONP check against Apple's lookup API
+   the moment the listing publishes. (A session cron, job `7a6c0910`, is also
+   watching it every 2h.)
+3. **Verify** the install-from-link path on a fresh device once live (link →
+   landing → App Store → install → code pre-fills onboarding).
 
-## 4. Ship a build
-A lot has landed since the last delivered TestFlight build (pre-85): happiness
-system + mood sprites, barn visiting (visit tap-session + truffle), Closet +
-multi-slot cosmetics, World Cup suite, security/lint fixes. Roll `eas build
---local`, changelog first (`docs/builds/YYYY-MM-DD-build-N.md`), upload via
-Transporter.
+## Notifications — final device verification (was task #11)
+Setup is DONE: `aps-environment=production` entitlement, APNs key uploaded to EAS,
+provisioning profile regenerated, shipped in build 82+. **Remaining:** install
+build 87 on a real device → open the Friends tab → accept the iOS prompt → confirm
+a token registers (`push_tokens`) and a test push (friend request / trade answer /
+barn visit) arrives. Sim can't get push tokens.
+
+## Blessings — `halo_kiss` is a no-op (under investigation 2026-06-07)
+The daily-rotation blessing `halo_kiss` ("a faint halo glow for 6h") has **no
+implemented effect** — it stores a 6h row + shows an effect card + fires a push,
+but nothing reads it (no regen mod, no lucky-pig boost, no pig visual). Every 4th
+day the blessing does nothing. Secondary: `bountiful_snouts` grants +5 snouts but
+shows no active-effect receipt (it's instant → filtered out of `my_active_effects`
+by the `expires_at IS NOT NULL` clause). Decide what `halo_kiss` should DO, then
+fix. See the blessing flow notes in this session.
+
+## Teams push-pull + mini-games (was task #18)
+Design-only so far — see `docs/teams-pushpull-design.md` (3 batches: core fork →
+scoring/cadence/rewards/mini-game → edge cases/build path). A clickable mock lives
+on branch `social-teams-pushpull`. Real build gated on the framing fork (new axis
+vs alignment-reframe vs re-skinnable Rivalry event — leaning the latter).
