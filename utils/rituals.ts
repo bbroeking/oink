@@ -57,7 +57,7 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 		name: "Halo Kiss",
 		emoji: "😇",
 		icon: require("../assets/images/emoji/halo-kiss.png"),
-		blurb: "A faint halo glow for six hours.",
+		blurb: "+5 tickles, right now.",
 	},
 	bountiful_snouts: {
 		name: "Bountiful Snouts",

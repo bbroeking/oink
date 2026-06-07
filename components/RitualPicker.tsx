@@ -15,9 +15,24 @@
 import React, { useState } from "react";
 import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
-import { rpc } from "@/utils/rpc";
+import { rpcAction } from "@/utils/rpc";
 import { dailyRitual, type RitualMode } from "../utils/rituals";
 import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
+
+// Rituals reset at UTC midnight (the daily cap keys on the UTC date). "7h 23m"
+// until you can bless/curse again — a snapshot taken when the panel renders.
+function untilDailyReset(): string {
+	const now = new Date();
+	const next = Date.UTC(
+		now.getUTCFullYear(),
+		now.getUTCMonth(),
+		now.getUTCDate() + 1
+	);
+	const ms = next - now.getTime();
+	const h = Math.floor(ms / 3_600_000);
+	const m = Math.floor((ms % 3_600_000) / 60_000);
+	return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
 
 interface Props {
 	mode: RitualMode;
@@ -42,12 +57,10 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 		setBusy(true);
 		setResult(null);
 		const rpcName = isBless ? "send_blessing" : "send_curse";
-		const r = await rpc<{ ok?: boolean; reason?: string }>(rpcName, {
-			target_user_id: targetUserId,
-		});
+		const r = await rpcAction(rpcName, { target_user_id: targetUserId });
 		setBusy(false);
 
-		if (r?.ok) {
+		if (r.ok) {
 			Haptics.notificationAsync(
 				isBless
 					? Haptics.NotificationFeedbackType.Success
@@ -63,13 +76,12 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 			return;
 		}
 
-		const reason = r?.reason;
-		if (reason === "already_blessed_today" || reason === "already_cursed_today") {
+		if (r.reason === "already_blessed_today" || r.reason === "already_cursed_today") {
 			setPhase("done");
-		} else if (reason === "daily_cap") {
+		} else if (r.reason === "daily_cap") {
 			setPhase("capped");
 		} else {
-			setResult(reasonText(reason, isBless));
+			setResult(reasonText(r.reason, isBless));
 			setPhase("error");
 		}
 	};
@@ -107,8 +119,8 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 						{isBless ? "already blessed today" : "already cursed today"}
 					</Text>
 					<Text style={styles.beatSub}>
-						You can {isBless ? "bless" : "curse"} {targetName} again
-						tomorrow — one per friend a day.
+						Next {isBless ? "blessing" : "curse"} in {untilDailyReset()} —
+						one per friend a day.
 					</Text>
 				</View>
 			)}
@@ -120,8 +132,8 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 						{isBless ? "blessing spent" : "curse spent"}
 					</Text>
 					<Text style={styles.beatSub}>
-						One {isBless ? "blessing" : "curse"} a day — your next
-						is tomorrow.
+						One {isBless ? "blessing" : "curse"} a day — your next is in{" "}
+						{untilDailyReset()}.
 					</Text>
 				</View>
 			)}
