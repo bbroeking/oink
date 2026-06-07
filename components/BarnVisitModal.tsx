@@ -27,7 +27,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/utils/supabase";
-import { rpc } from "@/utils/rpc";
+import { rpcAction } from "@/utils/rpc";
 import { PigStage } from "./ui/PigStage";
 import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, WHIMSY } from "@/constants/theme";
@@ -185,8 +185,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 
 			// Your tickle bank + cap + refill timer, plus whether you're locked to
 			// a different barn (one friend / 3h) or the pigs already napped.
-			const st = await rpc<{
-				ok?: boolean;
+			const st = await rpcAction<{
 				resting?: boolean;
 				locked?: boolean;
 				next_at?: string | null;
@@ -195,7 +194,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				next_regen_seconds?: number | null;
 				regen_seconds?: number;
 			}>("barn_visit_status", { p_target: targetUserId });
-			if (!cancelled && st?.ok) {
+			if (!cancelled && st.ok) {
 				setAvail(st.balance ?? 0);
 				setCap(st.cap ?? 25);
 				setSecsToNext(st.next_regen_seconds ?? null);
@@ -249,15 +248,13 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			return;
 		}
 		setBusy(true);
-		const r = await rpc<{
-			ok?: boolean;
-			error?: string;
+		const r = await rpcAction<{
 			taps_left?: number;
 			visitor_balance?: number;
 			next_at?: string | null;
 		}>("tickle_at_barn", { p_target: targetUserId });
 		setBusy(false);
-		if (r?.ok) {
+		if (r.ok) {
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 			playTap();
 			if (typeof r.visitor_balance === "number") setAvail(r.visitor_balance);
@@ -267,12 +264,12 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			setTapCount(next);
 			// Nap on the sleepy roll OR the shared hourly ceiling, whichever first.
 			if (next >= tapCap || (r.taps_left ?? 99) <= 0) setTimeout(tireOut, 520);
-		} else if (r?.error === "tired") {
+		} else if (r.reason === "tired") {
 			tireOut();
-		} else if (r?.error === "no_tickles") {
+		} else if (r.reason === "no_tickles") {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 			setNoTickles(true);
-		} else if (r?.error === "cooldown") {
+		} else if (r.reason === "cooldown") {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 			setLockedUntil(r.next_at ?? null);
 			setRestingOnArrival(true);
@@ -282,12 +279,12 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const dig = async () => {
 		if (digging || dug != null) return;
 		setDigging(true);
-		const r = await rpc<{ ok?: boolean; reward?: number; error?: string }>("dig_truffle", {
+		const r = await rpcAction<{ reward?: number }>("dig_truffle", {
 			p_host: targetUserId,
 		});
 		setDigging(false);
 		setTruffleAvail(false);
-		if (r?.ok) {
+		if (r.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 			setDug(r.reward ?? 0);
 		}

@@ -17,7 +17,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { Sticker } from "./ui/Sticker";
 import { Button } from "./ui";
-import { rpc } from "@/utils/rpc";
+import { rpcAction } from "@/utils/rpc";
 import { HAT_IMAGES } from "@/constants/hats";
 import { WORLD_CUP_TEAMS } from "@/constants/worldCupFlags";
 import { FONTS, MODAL_BACKDROP_BG, WHIMSY } from "@/constants/theme";
@@ -44,13 +44,13 @@ export function AllegianceModal({ visible, onSkip, onChosen }: Props) {
 			() => {}
 		);
 		const flagId = `flag_${selectedTeam.slug}`;
-		const r = await rpc<{ ok?: boolean; error?: string }>("choose_allegiance", {
+		const r = await rpcAction("choose_allegiance", {
 			p_flag_id: flagId,
 		});
 		setBusy(false);
-		if (r?.ok) {
+		if (r.ok) {
 			setDone({ name: selectedTeam.name });
-		} else if (r?.error === "already_chosen") {
+		} else if (r.reason === "already_chosen") {
 			// Someone double-tapped or already picked on another device — just
 			// close out gracefully.
 			onChosen(flagId);

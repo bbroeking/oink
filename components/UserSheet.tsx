@@ -21,7 +21,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
-import { rpc } from "@/utils/rpc";
+import { rpc, rpcAction } from "@/utils/rpc";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker } from "./ui/Sticker";
 import { BarnVisitModal } from "./BarnVisitModal";
@@ -207,14 +207,13 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		setTargetTickles(null);
 		setVisitGate(null);
 		// Can a visit to this person succeed right now? (gates the Visit button)
-		rpc<{
-			ok?: boolean;
+		rpcAction<{
 			locked?: boolean;
 			resting?: boolean;
 			next_at?: string | null;
 			balance?: number;
 		}>("barn_visit_status", { p_target: targetUserId }).then((d) => {
-			if (d?.ok) setVisitGate(d);
+			if (d.ok) setVisitGate(d);
 		});
 		rpc<UserStats[]>("public_user_stats", {
 			target_user_id: targetUserId,

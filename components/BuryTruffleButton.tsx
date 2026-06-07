@@ -7,7 +7,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/utils/supabase";
-import { rpc } from "@/utils/rpc";
+import { rpcAction } from "@/utils/rpc";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 const COST = 20;
@@ -40,16 +40,16 @@ export function BuryTruffleButton() {
 		if (busy || buried) return;
 		setBusy(true);
 		setNote(null);
-		const r = await rpc<{ ok?: boolean; error?: string }>("bury_truffle");
+		const r = await rpcAction("bury_truffle");
 		setBusy(false);
-		if (r?.ok) {
+		if (r.ok) {
 			Haptics.notificationAsync(
 				Haptics.NotificationFeedbackType.Success
 			).catch(() => {});
 			setBuried(true);
-		} else if (r?.error === "too_poor") {
+		} else if (r.reason === "too_poor") {
 			setNote(`Need ${COST} snouts to bury a truffle.`);
-		} else if (r?.error === "already_buried") {
+		} else if (r.reason === "already_buried") {
 			setBuried(true);
 		}
 	};

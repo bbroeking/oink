@@ -11,7 +11,7 @@ jest.mock("../utils/log", () => ({
 	log: { error: (...args: unknown[]) => mockError(...args) },
 }));
 
-import { rpc } from "../utils/rpc";
+import { rpc, rpcAction } from "../utils/rpc";
 
 describe("rpc", () => {
 	beforeEach(() => {
@@ -51,5 +51,52 @@ describe("rpc", () => {
 		mockRpc.mockResolvedValue({ data: null, error: null });
 		await rpc("my_active_effects");
 		expect(mockRpc).toHaveBeenCalledWith("my_active_effects", undefined);
+	});
+});
+
+describe("rpcAction — failure-shape normalization", () => {
+	beforeEach(() => {
+		mockRpc.mockReset();
+		mockError.mockReset();
+	});
+
+	test("ok:true passes the payload through", async () => {
+		mockRpc.mockResolvedValue({ data: { ok: true, taps_left: 3 }, error: null });
+		const r = await rpcAction<{ taps_left: number }>("tickle_at_barn");
+		expect(r.ok).toBe(true);
+		if (r.ok) expect(r.taps_left).toBe(3);
+	});
+
+	test("legacy { ok:false, error } normalizes to reason", async () => {
+		mockRpc.mockResolvedValue({ data: { ok: false, error: "cooldown" }, error: null });
+		const r = await rpcAction("tickle_at_barn");
+		expect(r).toMatchObject({ ok: false, reason: "cooldown" });
+	});
+
+	test("{ ok:false, reason } stays reason", async () => {
+		mockRpc.mockResolvedValue({ data: { ok: false, reason: "daily_cap" }, error: null });
+		const r = await rpcAction("send_blessing");
+		expect(r).toMatchObject({ ok: false, reason: "daily_cap" });
+	});
+
+	test("failure payload (e.g. next_at) is preserved alongside reason", async () => {
+		mockRpc.mockResolvedValue({
+			data: { ok: false, error: "cooldown", next_at: "2026-06-07T12:00:00Z" },
+			error: null,
+		});
+		const r = await rpcAction<{ next_at: string }>("tickle_at_barn");
+		expect(r).toMatchObject({ ok: false, reason: "cooldown", next_at: "2026-06-07T12:00:00Z" });
+	});
+
+	test("transport error → reason 'network' + logs", async () => {
+		mockRpc.mockResolvedValue({ data: null, error: { message: "boom" } });
+		const r = await rpcAction("send_blessing");
+		expect(r).toEqual({ ok: false, reason: "network" });
+		expect(mockError).toHaveBeenCalledWith("[rpc:send_blessing]", "boom");
+	});
+
+	test("null data → reason 'no_data'", async () => {
+		mockRpc.mockResolvedValue({ data: null, error: null });
+		expect(await rpcAction("send_blessing")).toEqual({ ok: false, reason: "no_data" });
 	});
 });
