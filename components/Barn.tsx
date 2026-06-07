@@ -22,6 +22,7 @@ import { rpc } from "@/utils/rpc";
 import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
 import { Icon } from "./ui/Icon";
+import { Glyph, glyphSource, type GlyphName } from "./ui/Glyph";
 import { Sticker, Tape } from "./ui/Sticker";
 import { WHIMSY, FONTS } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
@@ -41,6 +42,9 @@ import {
 import { useHomeStats } from "@/hooks/useHomeStats";
 import { moodAnimation } from "@/utils/happiness";
 import { BuryTruffleButton } from "./BuryTruffleButton";
+import { BuriedMound, type BuriedMoundHandle } from "./BuriedMound";
+import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
+import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
 import { useStipend } from "@/hooks/useStipend";
 import { usePassEvents } from "@/hooks/usePassEvents";
 import { useLuckyPig } from "@/hooks/useLuckyPig";
@@ -164,13 +168,13 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 						);
 					}
 					return (
-						<Animated.Text
+						<Animated.Image
 							key={f.id}
+							source={glyphSource(f.char === "✦" ? "sparkle" : "heart")}
+							resizeMode="contain"
 							style={[
-								styles.floatChar,
+								styles.floatImage,
 								{
-									color:
-										f.char === "✦" ? WHIMSY.sun : WHIMSY.roseDeep,
 									transform: [
 										{ translateX: f.dx },
 										{ translateY },
@@ -179,9 +183,7 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 									opacity,
 								},
 							]}
-						>
-							{f.char}
-						</Animated.Text>
+						/>
 					);
 				})}
 			</View>
@@ -202,8 +204,7 @@ function PaperTicket({
 	value,
 	tapeColor,
 	rotate,
-	chipColor = "roseDeep",
-	chipSymbol = "♥",
+	chipGlyph = "heart",
 	subValue,
 	onPress,
 }: {
@@ -211,8 +212,7 @@ function PaperTicket({
 	value: string;
 	tapeColor: "sun" | "rose" | "sky" | "sage" | "lilac" | "peach";
 	rotate: number;
-	chipColor?: "roseDeep" | "lilacDeep" | "peach";
-	chipSymbol?: string;
+	chipGlyph?: GlyphName;
 	subValue?: string;
 	onPress?: () => void;
 }) {
@@ -228,13 +228,8 @@ function PaperTicket({
 			/>
 			<Sticker color="paper" rotate={rotate} radius={10} style={styles.ticket}>
 				<View style={styles.ticketInner}>
-					<View
-						style={[
-							styles.coin,
-							{ backgroundColor: WHIMSY[chipColor] },
-						]}
-					>
-						<Text style={styles.coinSymbol}>{chipSymbol}</Text>
+					<View style={styles.coin}>
+						<Glyph name={chipGlyph} size={20} />
 					</View>
 					<View style={{ flex: 1, minWidth: 0 }}>
 						<View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
@@ -359,6 +354,10 @@ export default function Barn() {
 	const toastY = useRef(new Animated.Value(-20)).current;
 	// Heart-particle ref — imperative spawn on successful tickle.
 	const heartFloatsRef = useRef<HeartFloatsHandle>(null);
+	// Buried truffle: shared status + the mound's bury animation + check sheet.
+	const truffle = useBuriedTruffle();
+	const moundRef = useRef<BuriedMoundHandle>(null);
+	const [truffleSheetOpen, setTruffleSheetOpen] = useState(false);
 
 	const showToast = useCallback(
 		(title: string, body: string, onPress?: () => void) => {
@@ -635,8 +634,7 @@ export default function Barn() {
 						value={stats.ticklesEarned.toLocaleString()}
 						tapeColor="sun"
 						rotate={-3}
-						chipColor="roseDeep"
-						chipSymbol="♥"
+						chipGlyph="heart"
 					/>
 					<PaperTicket
 						label="READY TO TICKLE"
@@ -644,8 +642,7 @@ export default function Barn() {
 						subValue={`/ ${stats.cap}`}
 						tapeColor="rose"
 						rotate={2.5}
-						chipColor="lilacDeep"
-						chipSymbol="✦"
+						chipGlyph="sparkle"
 						onPress={handleAvailableTap}
 					/>
 				</View>
@@ -654,7 +651,14 @@ export default function Barn() {
 				    on you. Compact preview; the full panel lives in Friends
 				    → Inbox. Tapping a chip routes to the hub. */}
 				<BarnActiveEffectsStrip />
-				<BuryTruffleButton />
+				<BuryTruffleButton
+					buried={!!truffle.status?.buried}
+					onBury={() => {
+						moundRef.current?.playBury();
+						truffle.refresh();
+					}}
+					onCheck={() => setTruffleSheetOpen(true)}
+				/>
 
 				{/* Alignment placard removed — the hanging Pilgrim/
 				    Generous/Greedy sign that used to live up here
@@ -666,9 +670,10 @@ export default function Barn() {
 				    dev buttons (top-right absolute) or the cards. */}
 				{luckyPig.luckyTicklesLeft > 0 && (
 					<View style={styles.luckyBadgeRow}>
-						<View style={styles.luckyBadge}>
+						<View style={[styles.luckyBadge, styles.luckyBadgeInner]}>
+							<Glyph name="sparkle" size={13} />
 							<Text style={styles.luckyBadgeText}>
-								✦ Lucky pig · {luckyPig.luckyTicklesLeft} left
+								Lucky pig · {luckyPig.luckyTicklesLeft} left
 							</Text>
 						</View>
 					</View>
@@ -706,6 +711,14 @@ export default function Barn() {
 						{/* Soft elliptical shadow under the pig — gives the
 						    sprite a little grounding without a hard drop. */}
 						<View pointerEvents="none" style={styles.pigShadow} />
+						{/* Buried-truffle mound by the pig's feet — glows while a
+						    truffle is buried, taps to check on it, plays the bury
+						    animation when you set one. */}
+						<BuriedMound
+							ref={moundRef}
+							visible={!!truffle.status?.buried}
+							onPress={() => setTruffleSheetOpen(true)}
+						/>
 					</View>
 				</View>
 
@@ -733,7 +746,7 @@ export default function Barn() {
 							<Sticker color="rose" rotate={-1.2} radius={14} style={styles.toast}>
 								<View style={styles.toastInner}>
 									<View style={styles.toastIcon}>
-										<Text style={styles.toastIconText}>♥</Text>
+										<Glyph name="heart" size={18} />
 									</View>
 									<View style={{ flex: 1, minWidth: 0 }}>
 										<Text style={styles.toastTitle}>{toast.title}</Text>
@@ -790,6 +803,12 @@ export default function Barn() {
 				visible={releaseNotesOpen}
 				onClose={() => setReleaseNotesOpen(false)}
 			/>
+
+			<BuriedTruffleSheet
+				open={truffleSheetOpen}
+				onClose={() => setTruffleSheetOpen(false)}
+				status={truffle.status}
+			/>
 		</PageBackground>
 	);
 }
@@ -839,6 +858,7 @@ const styles = StyleSheet.create({
 		borderRadius: 16,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream,
 		alignItems: "center",
 		justifyContent: "center",
 	},
@@ -1132,6 +1152,7 @@ devAlign: {
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 	},
+	luckyBadgeInner: { flexDirection: "row", alignItems: "center", gap: 5 },
 	luckyBadgeText: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 13,

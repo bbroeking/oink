@@ -24,11 +24,17 @@ import {
 	StyleSheet,
 	Animated,
 	Easing,
+	type StyleProp,
+	type ViewStyle,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
 import { PigStage } from "./ui/PigStage";
+import { Shovel } from "./ui/Shovel";
+import { Glyph, IconText, glyphSource } from "./ui/Glyph";
+import { SnoutCoin } from "./ui/SnoutCoin";
 import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
@@ -42,30 +48,65 @@ interface Barn {
 	username: string | null;
 	tickles_earned: number | null;
 	active_background_id: string | null;
-	active_hat_id: string | null;
-	active_flag_id: string | null;
-	hat_category: string | null;
-	hat_emoji: string | null;
 }
 
-// Shape of the joined `hats` row (to-one FK). Supabase may surface a to-one
-// embed as a single object or a single-element array depending on the relation
-// hint; we read it as an object here, matching how the column is consumed.
-type ActiveHat = { category?: string; emoji?: string } | null;
+// One equipped cosmetic slot.
+type Slot = { id: string; category: string | null; emoji: string | null } | null;
+// A pig's full worn outfit (everything PigStage can render except background).
+interface EquipSet {
+	hat: Slot;
+	glasses: Slot;
+	mask: Slot;
+	neck: Slot;
+	aura: Slot;
+	held: Slot;
+}
+const EMPTY_EQUIP: EquipSet = { hat: null, glasses: null, mask: null, neck: null, aura: null, held: null };
 
-interface BarnProfileRow {
+// Shape of a joined `hats` row (to-one FK). Supabase may surface a to-one embed
+// as a single object or a single-element array depending on the relation hint.
+type HatRow = { id?: string; category?: string | null; emoji?: string | null } | null;
+const one = (v: HatRow | HatRow[]): HatRow => (Array.isArray(v) ? v[0] ?? null : v ?? null);
+const toSlot = (v: HatRow | HatRow[]): Slot => {
+	const row = one(v);
+	return row && row.id ? { id: row.id, category: row.category ?? null, emoji: row.emoji ?? null } : null;
+};
+
+// Every active_* slot joined to `hats` (id + category + emoji). The active_*_id
+// is redundant once we embed the row, so we read the slot straight off the join.
+const EQUIP_SELECT =
+	"active_hat:hats!profiles_active_hat_id_fkey(id,category,emoji)," +
+	"active_glasses:hats!profiles_active_glasses_id_fkey(id,category,emoji)," +
+	"active_mask:hats!profiles_active_mask_id_fkey(id,category,emoji)," +
+	"active_neck:hats!profiles_active_neck_id_fkey(id,category,emoji)," +
+	"active_aura:hats!profiles_active_aura_id_fkey(id,category,emoji)," +
+	"active_held:hats!profiles_active_held_id_fkey(id,category,emoji)";
+
+interface ProfileEquipRow {
+	active_hat: HatRow | HatRow[];
+	active_glasses: HatRow | HatRow[];
+	active_mask: HatRow | HatRow[];
+	active_neck: HatRow | HatRow[];
+	active_aura: HatRow | HatRow[];
+	active_held: HatRow | HatRow[];
+}
+const rowToEquip = (r: ProfileEquipRow): EquipSet => ({
+	hat: toSlot(r.active_hat),
+	glasses: toSlot(r.active_glasses),
+	mask: toSlot(r.active_mask),
+	neck: toSlot(r.active_neck),
+	aura: toSlot(r.active_aura),
+	held: toSlot(r.active_held),
+});
+
+interface BarnProfileRow extends ProfileEquipRow {
 	username: string | null;
 	tickles_earned: number | null;
 	active_background_id: string | null;
-	active_hat_id: string | null;
-	active_flag_id: string | null;
-	active_hat: ActiveHat;
 }
 
-interface MyProfileRow {
-	active_hat_id: string | null;
-	active_flag_id: string | null;
-	active_hat: ActiveHat;
+interface MyProfileRow extends ProfileEquipRow {
+	tickles_earned: number | null;
 }
 
 // "2h 15m" / "12m" until you can visit a different barn.
@@ -90,9 +131,12 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [secsToNext, setSecsToNext] = useState<number | null>(null);
 	const [regenSecs, setRegenSecs] = useState(75); // full regen period (server)
 
-	// Hearts shared this visit — both tick up together, one per tap.
+	// Live lifetime tickle totals (seeded from each profile's tickles_earned),
+	// then both tick up together by one on every tap.
 	const [youHearts, setYouHearts] = useState(0);
 	const [friendHearts, setFriendHearts] = useState(0);
+	// Hearts shared THIS visit only — for the nap summary.
+	const [gained, setGained] = useState(0);
 
 	// Tap-session: friend's pig tires over a random 3–7 taps (bounded by the
 	// server's 7/hr ceiling). Energy is the visible readout of that.
@@ -110,11 +154,10 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [dug, setDug] = useState<number | null>(null);
 	const [digging, setDigging] = useState(false);
 
-	// Your own pig (hat + flag) so both pigs share the scene.
-	const [mine, setMine] = useState<{
-		hat: { id: string; category: string | null; emoji: string | null } | null;
-		flag: { id: string; category: string; emoji: null } | null;
-	}>({ hat: null, flag: null });
+	// Both pigs' full worn outfits so the diorama shows what each is wearing.
+	// (Flags are intentionally not shown in the visit diorama for now.)
+	const [hostEquip, setHostEquip] = useState<EquipSet>(EMPTY_EQUIP);
+	const [myEquip, setMyEquip] = useState<EquipSet>(EMPTY_EQUIP);
 
 	// Flying hearts + the shared-heartbeat pulse + pig squish, all on each tap.
 	const [floats, setFloats] = useState<{ id: number; anim: Animated.Value; rx: number; star: boolean }[]>([]);
@@ -151,9 +194,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		(async () => {
 			const { data } = await supabase
 				.from("profiles")
-				.select(
-					"username, tickles_earned, active_background_id, active_hat_id, active_flag_id, active_hat:hats!profiles_active_hat_id_fkey(category, emoji)"
-				)
+				.select(`username, tickles_earned, active_background_id, ${EQUIP_SELECT}`)
 				.eq("id", targetUserId)
 				.maybeSingle();
 			if (cancelled || !data) {
@@ -161,47 +202,47 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				return;
 			}
 			const d = data as unknown as BarnProfileRow;
-			const hat = d.active_hat ?? null;
 			setBarn({
 				username: d.username ?? null,
 				tickles_earned: d.tickles_earned ?? 0,
 				active_background_id: d.active_background_id ?? null,
-				active_hat_id: d.active_hat_id ?? null,
-				active_flag_id: d.active_flag_id ?? null,
-				hat_category: hat?.category ?? null,
-				hat_emoji: hat?.emoji ?? null,
 			});
-
-			const { data: tr } = await supabase
-				.from("truffles")
-				.select("id")
-				.eq("host_id", targetUserId)
-				.is("dug_at", null)
-				.maybeSingle();
-			if (!cancelled) setTruffleAvail(!!tr);
+			setHostEquip(rowToEquip(d));
+			setFriendHearts(d.tickles_earned ?? 0); // live base for the HOST tally
 
 			const { data: ures } = await supabase.auth.getUser();
 			if (ures.user) {
 				const { data: me } = await supabase
 					.from("profiles")
-					.select(
-						"active_hat_id, active_flag_id, active_hat:hats!profiles_active_hat_id_fkey(category, emoji)"
-					)
+					.select(`tickles_earned, ${EQUIP_SELECT}`)
 					.eq("id", ures.user.id)
 					.maybeSingle();
 				if (!cancelled && me) {
 					const m = me as unknown as MyProfileRow;
-					const mh = m.active_hat ?? null;
-					setMine({
-						hat: m.active_hat_id
-							? { id: m.active_hat_id, category: mh?.category ?? null, emoji: mh?.emoji ?? null }
-							: null,
-						flag: m.active_flag_id
-							? { id: m.active_flag_id, category: "flag", emoji: null }
-							: null,
-					});
+					setMyEquip(rowToEquip(m));
+					setYouHearts(m.tickles_earned ?? 0); // live base for the YOU tally
 				}
 			}
+
+			// The host's truffle is a shared, depleting pot: show the shovel only
+			// if it still has snouts left AND you haven't already taken your share.
+			const { data: tr } = await supabase
+				.from("truffles")
+				.select("id, remaining")
+				.eq("host_id", targetUserId)
+				.is("dug_at", null)
+				.maybeSingle();
+			let canDig = !!tr && (tr.remaining ?? 0) > 0;
+			if (tr && ures.user) {
+				const { data: already } = await supabase
+					.from("truffle_digs")
+					.select("truffle_id")
+					.eq("truffle_id", tr.id)
+					.eq("digger_id", ures.user.id)
+					.maybeSingle();
+				if (already) canDig = false;
+			}
+			if (!cancelled) setTruffleAvail(canDig);
 
 			// Your tickle bank + cap + refill timer, plus whether you're locked to
 			// a different barn (one friend / 3h) or the pigs already napped.
@@ -249,13 +290,6 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		return () => clearInterval(id);
 	}, [secsToNext, avail, cap, regenSecs]);
 
-	const hatSlot = barn?.active_hat_id
-		? { id: barn.active_hat_id, category: barn.hat_category, emoji: barn.hat_emoji }
-		: null;
-	const flagSlot = barn?.active_flag_id
-		? { id: barn.active_flag_id, category: "flag", emoji: null }
-		: null;
-
 	const tireOut = () => {
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 		setTired(true);
@@ -280,6 +314,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			if (typeof r.visitor_balance === "number") setAvail(r.visitor_balance);
 			setYouHearts((n) => n + 1);
 			setFriendHearts((n) => n + 1);
+			setGained((g) => g + 1);
 			const next = tapCount + 1;
 			setTapCount(next);
 			// Nap on the sleepy roll OR the shared hourly ceiling, whichever first.
@@ -299,7 +334,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const dig = async () => {
 		if (digging || dug != null) return;
 		setDigging(true);
-		const r = await rpcAction<{ reward?: number }>("dig_truffle", {
+		const r = await rpcAction<{ reward?: number; remaining?: number }>("dig_truffle", {
 			p_host: targetUserId,
 		});
 		setDigging(false);
@@ -349,8 +384,14 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	return (
 		<View style={styles.root}>
 			<Image source={bgSrc} style={StyleSheet.absoluteFill} resizeMode="cover" />
-			{/* legibility veil behind the top chrome */}
-			<View pointerEvents="none" style={styles.topVeil} />
+			{/* soft top fade for title legibility — fades fully to the single
+			    background below (no hard seam / "half and half" split) */}
+			<LinearGradient
+				pointerEvents="none"
+				colors={["rgba(36,24,14,0.45)", "rgba(36,24,14,0.12)", "transparent"]}
+				locations={[0, 0.55, 1]}
+				style={styles.topFade}
+			/>
 
 			<View style={styles.content}>
 				{loading ? (
@@ -361,13 +402,17 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 						<View style={styles.chrome}>
 							<View style={styles.headerRow}>
 								<View style={{ flexShrink: 1 }}>
-									<Text style={styles.kicker}>★ VISITING</Text>
+									<IconText left={<Glyph name="star" size={12} />} gap={4}>
+										<Text style={styles.kicker}>VISITING</Text>
+									</IconText>
 									<Text style={styles.title} numberOfLines={1}>
 										{targetName}'s Barn
 									</Text>
 								</View>
 								<Pressable onPress={onClose} style={styles.leavePill} hitSlop={8}>
-									<Text style={styles.leaveText}>Leave ✕</Text>
+									<IconText right={<Glyph name="close" size={11} />} gap={5}>
+										<Text style={styles.leaveText}>Leave</Text>
+									</IconText>
 								</Pressable>
 							</View>
 
@@ -395,14 +440,16 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 										},
 									]}
 								>
-									<Text style={styles.beatHeart}>♥</Text>
+									<Glyph name="heart" size={15} />
 								</Animated.View>
 							</View>
 
 							{/* YOUR TICKLES — the resource you spend */}
 							<View style={styles.ticklesBar}>
 								<View style={styles.ticklesTop}>
-									<Text style={styles.ticklesLabel}>✦ YOUR TICKLES</Text>
+									<IconText left={<Glyph name="sparkle" size={12} />} gap={4}>
+									<Text style={styles.ticklesLabel}>YOUR TICKLES</Text>
+								</IconText>
 									<Text style={styles.ticklesCount}>
 										{avail ?? "–"}
 										<Text style={styles.ticklesCap}> / {cap}</Text>
@@ -417,72 +464,83 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									/>
 								</View>
 								<View style={styles.ticklesFoot}>
-									<Text style={styles.ticklesFootText}>−1 each tap</Text>
-									<Text style={styles.ticklesFootText}>
-										{atCap ? "full ✓" : secsToNext != null ? `+1 in ${mm}:${ss}` : "refills over time"}
-									</Text>
+									<Text style={styles.ticklesFootText}>-1 each tap</Text>
+									{atCap ? (
+										<IconText right={<Glyph name="check" size={11} />} gap={4}>
+											<Text style={styles.ticklesFootText}>full</Text>
+										</IconText>
+									) : (
+										<Text style={styles.ticklesFootText}>
+											{secsToNext != null ? `+1 in ${mm}:${ss}` : "refills over time"}
+										</Text>
+									)}
 								</View>
+
+								{/* out of tickles — pops right over your TICKLES bar */}
+								{noTickles && !tired && (
+									<View style={styles.ticklesPop} pointerEvents="none">
+										<Text style={styles.ticklesPopTitle}>Out of tickles!</Text>
+										<Text style={styles.ticklesPopSub}>
+											{atCap ? "come back soon" : secsToNext != null ? `next +1 in ${mm}:${ss}` : "refills over time"}
+										</Text>
+										<View style={styles.ticklesPopTail} />
+									</View>
+								)}
 							</View>
 						</View>
 
-						{/* ===== stage: the two pigs are the hero ===== */}
+						{/* ===== stage: two pigs stacked with depth — host up front
+						     (bigger, lower, shifted right), you set back (smaller, higher,
+						     shifted left). Staggered off-center for a little diorama depth,
+						     grounded over the host's barn background like the Build view. ===== */}
 						<View style={styles.stage}>
-							<View style={styles.pigsRow}>
+							<View style={styles.diorama}>
+								{/* soft spotlight to lift the pair off the warm background */}
+								<View pointerEvents="none" style={styles.spotlight} />
+								{/* you — set back: smaller, higher, shifted left */}
 								<TapPig
 									me
+									slotStyle={[styles.pigSlot, styles.pigSlotBack]}
 									squishTransform={squishTransform}
 									onPress={tickle}
 									label="you"
-									hat={mine.hat}
-									flag={mine.flag}
+									equip={myEquip}
 									tired={tired}
 									floats={floats}
 								/>
+								{/* host — up front: bigger, lower, shifted right (the pig you tickle) */}
 								<TapPig
+									slotStyle={[styles.pigSlot, styles.pigSlotFront]}
 									squishTransform={squishTransform}
 									onPress={tickle}
 									label={barn?.username ?? targetName}
-									hat={hatSlot}
-									flag={flagSlot}
+									equip={hostEquip}
 									tired={tired}
 									floats={floats}
 									energy={energy}
 									energyColor={energyColor}
 									energyLabel={energyLabel}
 								/>
-							</View>
 
-							{/* barn truffle (a reward the host buried) */}
-							{dug != null ? (
-								<Text style={styles.truffleFound}>🐽✨ You dug up a truffle — +{dug} snouts!</Text>
-							) : truffleAvail && !tired ? (
-								<Pressable
-									onPress={dig}
-									disabled={digging}
-									style={({ pressed }) => [styles.truffleBtn, pressed && { opacity: 0.85 }]}
-								>
-									<Text style={styles.truffleText}>{digging ? "digging…" : "🐽 Dig for a truffle!"}</Text>
-								</Pressable>
-							) : null}
+								{/* barn truffle — a cartoony shovel planted in the ground, tucked
+								    near the front pig's feet so it's an easy, quick tap. */}
+								{dug != null ? (
+									<View pointerEvents="none" style={[styles.truffleFoundWrap, styles.truffleFoundRow]}>
+										<SnoutCoin size={16} />
+										<Glyph name="sparkles" size={14} />
+										<Text style={styles.truffleFound}>+{dug} snouts!</Text>
+									</View>
+								) : truffleAvail && !tired ? (
+									<DigSpot digging={digging} onPress={dig} />
+								) : null}
+							</View>
 						</View>
-
-						{/* out of tickles toast */}
-						{noTickles && !tired && (
-							<View style={styles.toastWrap} pointerEvents="none">
-								<View style={styles.toast}>
-									<Text style={styles.toastTitle}>Out of tickles!</Text>
-									<Text style={styles.toastSub}>
-										{atCap ? "come back soon" : `next +1 in ${mm}:${ss} · let your bank fill back up`}
-									</Text>
-								</View>
-							</View>
-						)}
 
 						{/* nap screen — tired out, or rested-out / locked on arrival */}
 						{(tired || restingOnArrival) && (
 							<View style={styles.napScrim}>
 								<View style={styles.napCard}>
-									<Text style={styles.napEmoji}>😴💤</Text>
+									<Glyph name="zzz" size={50} style={styles.napGlyph} />
 									<Text style={styles.napKicker}>nap time</Text>
 									<Text style={styles.napTitle}>All tickled out!</Text>
 									<Text style={styles.napBody}>
@@ -492,7 +550,10 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									</Text>
 									<View style={styles.napStats}>
 										<View style={styles.napStat}>
-											<Text style={styles.napStatNum}>+{youHearts} ♥</Text>
+											<View style={styles.napStatNumRow}>
+												<Text style={styles.napStatNum}>+{gained}</Text>
+												<Glyph name="heart" size={15} />
+											</View>
 											<Text style={styles.napStatLabel}>shared this visit</Text>
 										</View>
 										{!arrivedRested && (
@@ -506,7 +567,9 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 										)}
 									</View>
 									<Pressable onPress={onClose} style={styles.napBtn}>
-										<Text style={styles.napBtnText}>Head home →</Text>
+										<IconText right={<Glyph name="arrowRight" size={14} />} gap={6}>
+										<Text style={styles.napBtnText}>Head home</Text>
+									</IconText>
 									</Pressable>
 								</View>
 							</View>
@@ -530,9 +593,12 @@ function HeartTally({
 }) {
 	return (
 		<View style={styles.tally}>
-			<Animated.Text style={[styles.tallyTick, tickStyle]}>+1 ♥</Animated.Text>
+			<Animated.View style={[styles.tallyTick, tickStyle]}>
+				<Text style={styles.tallyTickText}>+1</Text>
+				<Glyph name="heart" size={12} />
+			</Animated.View>
 			<View style={styles.tallyRow}>
-				<Text style={styles.tallyHeart}>♥</Text>
+				<Glyph name="heart" size={14} />
 				<Text style={styles.tallyNum}>{total.toLocaleString()}</Text>
 			</View>
 			<Text style={styles.tallyLabel} numberOfLines={1}>
@@ -542,14 +608,58 @@ function HeartTally({
 	);
 }
 
-// A tappable pig (you or the friend), with floating hearts + optional energy bar.
+// The dig affordance: a tappable shovel planted in a little dirt mound, set in
+// the scene near the pigs (not tucked at the far bottom) for a quick, easy tap.
+function DigSpot({ digging, onPress }: { digging: boolean; onPress: () => void }) {
+	const bob = useRef(new Animated.Value(0)).current;
+	const wig = useRef(new Animated.Value(0)).current;
+	useEffect(() => {
+		const loop = Animated.loop(
+			Animated.sequence([
+				Animated.timing(bob, { toValue: 1, duration: 1100, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+				Animated.timing(bob, { toValue: 0, duration: 1100, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+			])
+		);
+		loop.start();
+		return () => loop.stop();
+	}, [bob]);
+	const press = () => {
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+		wig.setValue(0);
+		Animated.sequence([
+			Animated.timing(wig, { toValue: 1, duration: 80, useNativeDriver: true }),
+			Animated.timing(wig, { toValue: -1, duration: 80, useNativeDriver: true }),
+			Animated.spring(wig, { toValue: 0, friction: 4, tension: 140, useNativeDriver: true }),
+		]).start();
+		onPress();
+	};
+	const translateY = bob.interpolate({ inputRange: [0, 1], outputRange: [0, -5] });
+	// Rests at a slight planted tilt; wiggles on press.
+	const rotate = wig.interpolate({ inputRange: [-1, 0, 1], outputRange: ["-26deg", "-12deg", "4deg"] });
+	return (
+		<Pressable onPress={press} disabled={digging} style={styles.digSpot} hitSlop={16}>
+			<Glyph name="sparkle" size={16} style={styles.digSparkle} />
+			<Animated.View style={{ transform: [{ translateY }, { rotate }] }}>
+				<Shovel size={58} />
+			</Animated.View>
+			<View style={styles.dirtMound} />
+			<View style={styles.digPill}>
+				<Text style={styles.digPillText}>{digging ? "digging…" : "Dig!"}</Text>
+			</View>
+		</Pressable>
+	);
+}
+
+// A tappable pig, placed by its parent `slotStyle`. The host (`!me`) sits up
+// front — bigger; "you" sits back — smaller, for a sense of depth. Floating
+// hearts + an optional energy bar (host only).
 function TapPig({
 	me = false,
+	slotStyle,
 	squishTransform,
 	onPress,
 	label,
-	hat,
-	flag,
+	equip,
 	tired,
 	floats,
 	energy,
@@ -557,6 +667,7 @@ function TapPig({
 	energyLabel,
 }: {
 	me?: boolean;
+	slotStyle?: StyleProp<ViewStyle>;
 	// Shared squish transform entries — composed WITH this pig's own scale.
 	squishTransform: (
 			| { scaleX: Animated.AnimatedInterpolation<number> }
@@ -564,52 +675,65 @@ function TapPig({
 		)[]
 	onPress: () => void;
 	label: string;
-	hat: { id: string; category: string | null; emoji: string | null } | null;
-	flag: { id: string; category: string; emoji: null } | null;
+	equip: EquipSet;
 	tired: boolean;
 	floats: { id: number; anim: Animated.Value; rx: number; star: boolean }[];
 	energy?: number;
 	energyColor?: string;
 	energyLabel?: string;
 }) {
-	const scale = me ? 0.38 : 0.52;
-	const box = me ? 132 : 168;
+	const front = !me; // the host pig you're visiting reads as nearer/larger
+	const scale = front ? 0.66 : 0.44;
+	const box = front ? 212 : 146;
+	const shadowW = box * 0.5;
 	return (
-		<Pressable onPress={onPress} style={styles.pigCol}>
+		<Pressable onPress={onPress} style={slotStyle}>
 			{/* flying hearts */}
 			<View pointerEvents="none" style={styles.floatLayer}>
-				{floats.map((f) => (
-					<Animated.Text
-						key={f.id}
-						style={[
-							styles.float,
-							{
-								color: f.star ? WHIMSY.sun : WHIMSY.roseDeep,
-								fontSize: me ? 20 : 26,
-								opacity: f.anim.interpolate({ inputRange: [0, 0.15, 0.8, 1], outputRange: [0, 1, 1, 0] }),
-								transform: [
-									{ translateX: f.rx * (me ? 0.6 : 1) },
-									{ translateY: f.anim.interpolate({ inputRange: [0, 1], outputRange: [10, -96] }) },
-									{ scale: f.anim.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0.5, 1.1, 0.9] }) },
-								],
-							},
-						]}
-					>
-						{f.star ? "✦" : "♥"}
-					</Animated.Text>
-				))}
+				{floats.map((f) => {
+					const fs = front ? 26 : 20;
+					return (
+						<Animated.Image
+							key={f.id}
+							source={glyphSource(f.star ? "sparkle" : "heart")}
+							resizeMode="contain"
+							style={[
+								styles.float,
+								{
+									width: fs,
+									height: fs,
+									opacity: f.anim.interpolate({ inputRange: [0, 0.15, 0.8, 1], outputRange: [0, 1, 1, 0] }),
+									transform: [
+										{ translateX: f.rx * (front ? 1 : 0.6) },
+										{ translateY: f.anim.interpolate({ inputRange: [0, 1], outputRange: [10, -96] }) },
+										{ scale: f.anim.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0.5, 1.1, 0.9] }) },
+									],
+								},
+							]}
+						/>
+					);
+				})}
 			</View>
 			<View style={[styles.pigBox, { width: box, height: box }]}>
+				<View pointerEvents="none" style={[styles.groundShadow, { width: shadowW, left: (box - shadowW) / 2 }]} />
 				<Animated.View style={{ transform: [{ scale }, ...squishTransform] }}>
-					<PigStage equipped={hat} equippedFlag={flag} pigAnimation={tired ? "tired" : "idle"} />
+					<PigStage
+						equipped={equip.hat}
+						equippedGlasses={equip.glasses}
+						equippedMask={equip.mask}
+						equippedNeck={equip.neck}
+						equippedAura={equip.aura}
+						equippedHeld={equip.held}
+						pigAnimation={tired ? "tired" : "idle"}
+					/>
 				</Animated.View>
 			</View>
 			<View style={[styles.nameTag, me ? styles.nameTagYou : styles.nameTagFriend]}>
-				<Text style={[styles.nameTagText, !me && { fontSize: 14 }]} numberOfLines={1}>
+				<Text style={[styles.nameTagText, front && { fontSize: 14 }]} numberOfLines={1}>
 					{label}
 				</Text>
 			</View>
-			{!me && energy != null && (
+			{front && energy != null && (
 				<View style={styles.energyWrap}>
 					<View style={styles.energyTrack}>
 						<View style={[styles.energyFill, { width: `${energy}%`, backgroundColor: energyColor }]} />
@@ -627,7 +751,7 @@ const sticker = { shadowColor: INK, shadowOffset: { width: 2, height: 2 }, shado
 const styles = StyleSheet.create({
 	root: { ...StyleSheet.absoluteFillObject, zIndex: 100, backgroundColor: WHIMSY.cream },
 	content: { flex: 1 },
-	topVeil: { position: "absolute", top: 0, left: 0, right: 0, height: 250, backgroundColor: "rgba(36,24,14,0.42)" },
+	topFade: { position: "absolute", top: 0, left: 0, right: 0, height: 190 },
 
 	chrome: { paddingHorizontal: 16, paddingTop: 56 },
 	headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
@@ -669,13 +793,13 @@ const styles = StyleSheet.create({
 	tallyTick: {
 		position: "absolute",
 		top: 2,
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
-		color: WHIMSY.roseDeep,
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 2,
 		zIndex: 3,
 	},
+	tallyTickText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.roseDeep },
 	tallyRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-	tallyHeart: { color: WHIMSY.roseDeep, fontSize: 14 },
 	tallyNum: { fontFamily: FONTS.whimsy, fontSize: 23, color: INK },
 	tallyLabel: { fontFamily: FONTS.bodyExtra, fontSize: 9.5, letterSpacing: 1, color: WHIMSY.mute, marginTop: 4 },
 	beatEmblem: {
@@ -725,12 +849,28 @@ const styles = StyleSheet.create({
 	ticklesFoot: { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
 	ticklesFootText: { fontFamily: FONTS.bodyExtra, fontSize: 9, letterSpacing: 0.4, color: WHIMSY.mute },
 
-	stage: { flex: 1, alignItems: "center", justifyContent: "center", paddingBottom: 18 },
-	pigsRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 4 },
-	pigCol: { alignItems: "center", position: "relative" },
+	stage: { flex: 1, paddingBottom: 18 },
+	// The depth diorama: two pigs absolutely placed, staggered for a sense of depth.
+	diorama: { flex: 1, position: "relative" },
+	spotlight: {
+		position: "absolute",
+		alignSelf: "center",
+		top: "26%",
+		width: 300,
+		height: 220,
+		borderRadius: 150,
+		backgroundColor: "rgba(255,249,228,0.35)",
+		opacity: 0.7,
+	},
+	// Each slot fills the diorama width and centers its pig; translateX staggers
+	// the pair off-center, top sets the near/far vertical placement.
+	pigSlot: { position: "absolute", left: 0, right: 0, alignItems: "center" },
+	pigSlotBack: { top: "4%", transform: [{ translateX: -68 }] },
+	pigSlotFront: { top: "38%", transform: [{ translateX: 60 }] },
 	floatLayer: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center", zIndex: 5 },
 	float: { position: "absolute", bottom: "60%", fontFamily: FONTS.whimsy },
-	pigBox: { alignItems: "center", justifyContent: "center", overflow: "hidden" },
+	pigBox: { alignItems: "center", justifyContent: "center" },
+	groundShadow: { position: "absolute", bottom: "11%", height: 13, borderRadius: 999, backgroundColor: "rgba(42,31,21,0.22)" },
 	nameTag: { marginTop: -8, borderWidth: 2, borderColor: INK, borderRadius: 999, ...sticker },
 	nameTagYou: { backgroundColor: WHIMSY.paper, paddingHorizontal: 11, paddingVertical: 2 },
 	nameTagFriend: { backgroundColor: WHIMSY.sun, paddingHorizontal: 13, paddingVertical: 3 },
@@ -756,49 +896,68 @@ const styles = StyleSheet.create({
 		textShadowRadius: 2,
 	},
 
-	stageFoot: { alignItems: "center", gap: 9, marginTop: 18 },
-	nudge: { paddingHorizontal: 15, paddingVertical: 6, borderRadius: 999, backgroundColor: "rgba(42,31,21,0.55)" },
-	nudgeText: { fontFamily: FONTS.hand, fontSize: 14, color: "#fff" },
-	helpPill: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 7,
-		paddingHorizontal: 14,
-		paddingVertical: 6,
-		borderRadius: 999,
-		borderWidth: 1.5,
-		borderColor: "rgba(255,255,255,0.55)",
-		backgroundColor: "rgba(42,31,21,0.32)",
-	},
-	helpDot: { color: "#fff", fontSize: 13, fontWeight: "900" },
-	helpText: { fontFamily: FONTS.body, fontSize: 12, color: "#fff" },
-
-	truffleBtn: {
-		marginTop: 14,
+	// Dig spot — a planted shovel near the pigs' feet (low-left, off the host).
+	digSpot: { position: "absolute", left: "9%", bottom: "10%", alignItems: "center", zIndex: 6 },
+	digSparkle: { position: "absolute", top: -10, left: "60%", zIndex: 2 },
+	dirtMound: { width: 52, height: 15, borderRadius: 999, backgroundColor: "#8a5a36", borderWidth: 2, borderColor: INK, marginTop: -11 },
+	digPill: {
+		marginTop: 5,
 		backgroundColor: WHIMSY.peach,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 14,
-		paddingVertical: 10,
-		paddingHorizontal: 18,
+		borderRadius: 999,
+		paddingHorizontal: 12,
+		paddingVertical: 3,
 		...sticker,
 	},
-	truffleText: { fontFamily: FONTS.whimsy, fontSize: 16, color: INK },
-	truffleFound: { marginTop: 14, fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.paper, textAlign: "center" },
+	digPillText: { fontFamily: FONTS.whimsy, fontSize: 13, color: INK },
+	truffleFoundWrap: {
+		position: "absolute",
+		left: "8%",
+		bottom: "11%",
+		zIndex: 6,
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 2,
+		borderColor: INK,
+		borderRadius: 999,
+		paddingHorizontal: 12,
+		paddingVertical: 5,
+		...sticker,
+	},
+	truffleFoundRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+	truffleFound: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
 
-	toastWrap: { position: "absolute", top: "34%", left: 0, right: 0, alignItems: "center", zIndex: 30 },
-	toast: {
+	// Out-of-tickles callout — anchored just above the YOUR TICKLES bar.
+	ticklesPop: {
+		position: "absolute",
+		bottom: "100%",
+		marginBottom: 8,
+		alignSelf: "center",
 		backgroundColor: WHIMSY.rose,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 14,
-		paddingHorizontal: 16,
-		paddingVertical: 10,
-		maxWidth: 280,
+		borderRadius: 12,
+		paddingHorizontal: 14,
+		paddingVertical: 7,
+		alignItems: "center",
+		zIndex: 30,
 		...sticker,
 	},
-	toastTitle: { fontFamily: FONTS.whimsy, fontSize: 15, color: INK },
-	toastSub: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, marginTop: 1 },
+	ticklesPopTitle: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
+	ticklesPopSub: { fontFamily: FONTS.hand, fontSize: 11.5, color: WHIMSY.mute, marginTop: 1 },
+	ticklesPopTail: {
+		position: "absolute",
+		bottom: -7,
+		alignSelf: "center",
+		width: 0,
+		height: 0,
+		borderLeftWidth: 7,
+		borderRightWidth: 7,
+		borderTopWidth: 8,
+		borderLeftColor: "transparent",
+		borderRightColor: "transparent",
+		borderTopColor: INK,
+	},
 
 	sheetScrim: { ...StyleSheet.absoluteFillObject, zIndex: 45, backgroundColor: "rgba(20,16,28,0.46)", justifyContent: "flex-end" },
 	sheet: { backgroundColor: WHIMSY.paper, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 30 },
@@ -842,7 +1001,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		...sticker,
 	},
-	napEmoji: { fontSize: 46 },
+	napGlyph: {},
 	napKicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 1, color: WHIMSY.accent, marginTop: 6 },
 	napTitle: { fontFamily: FONTS.whimsy, fontSize: 26, color: INK, marginTop: 2 },
 	napBody: { fontFamily: FONTS.hand, fontSize: 15, lineHeight: 22, color: WHIMSY.mute, textAlign: "center", marginTop: 8, marginBottom: 16 },
@@ -859,6 +1018,7 @@ const styles = StyleSheet.create({
 		marginBottom: 16,
 	},
 	napStat: { flex: 1, alignItems: "center", paddingHorizontal: 6 },
+	napStatNumRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3 },
 	napStatNum: { fontFamily: FONTS.whimsy, fontSize: 18, color: INK },
 	napStatLabel: { fontFamily: FONTS.bodyExtra, fontSize: 9, letterSpacing: 0.5, color: WHIMSY.mute, marginTop: 2, textAlign: "center" },
 	napStatDivider: { width: 2, alignSelf: "stretch", backgroundColor: INK, opacity: 0.5 },

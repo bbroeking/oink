@@ -1,104 +1,130 @@
-// Bury-a-truffle action for your OWN barn (barn visiting v3). You pay 20 snouts
-// to leave a treat; the first visitor to dig it up wins the snouts. Self-
-// contained: checks whether you already have one buried, buries on tap, and
-// reflects the state. See docs/barn-visiting-design.md §3b.
-import { useCallback, useState } from "react";
+// Bury-a-truffle control for your OWN barn. Choose a stake (10/20/50 snouts) —
+// the stake becomes a shared pot that visitors dig shares from. Once buried, it
+// becomes a "check on your truffle" pill (the mound by your pig is also tappable).
+// Buried state is owned by the parent (useBuriedTruffle); this is the control.
+import { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
-import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
+import { SnoutCoin } from "./ui/SnoutCoin";
+import { Glyph, IconText } from "./ui/Glyph";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
-const COST = 20;
+const STAKES = [10, 20, 50];
 
-export function BuryTruffleButton() {
-	// undefined = loading, true = already buried, false = none yet
-	const [buried, setBuried] = useState<boolean | undefined>(undefined);
+interface Props {
+	buried: boolean;
+	onBury: () => void; // fired after a successful bury (parent refreshes + animates)
+	onCheck: () => void; // open the "check on your truffle" sheet
+}
+
+export function BuryTruffleButton({ buried, onBury, onCheck }: Props) {
+	const [stake, setStake] = useState(20);
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
-
-	const load = useCallback(async () => {
-		const { data: ures } = await supabase.auth.getUser();
-		if (!ures.user) return;
-		const { data } = await supabase
-			.from("truffles")
-			.select("id")
-			.eq("host_id", ures.user.id)
-			.is("dug_at", null)
-			.maybeSingle();
-		setBuried(!!data);
-	}, []);
-
-	useFocusEffect(
-		useCallback(() => {
-			load();
-		}, [load])
-	);
 
 	const bury = async () => {
 		if (busy || buried) return;
 		setBusy(true);
 		setNote(null);
-		const r = await rpcAction("bury_truffle");
+		const r = await rpcAction("bury_truffle", { p_amount: stake });
 		setBusy(false);
 		if (r.ok) {
-			Haptics.notificationAsync(
-				Haptics.NotificationFeedbackType.Success
-			).catch(() => {});
-			setBuried(true);
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+			onBury();
 		} else if (r.reason === "too_poor") {
-			setNote(`Need ${COST} snouts to bury a truffle.`);
+			setNote(`Need ${stake} snouts to bury this truffle.`);
 		} else if (r.reason === "already_buried") {
-			setBuried(true);
+			onBury();
 		}
 	};
 
-	if (buried === undefined) return null;
-
 	if (buried) {
 		return (
-			<View style={[styles.btn, styles.buried]}>
-				<Text style={styles.text}>🐽 Truffle buried — waiting for a visitor</Text>
-			</View>
+			<Pressable onPress={onCheck} style={({ pressed }) => [styles.checkPill, pressed && { opacity: 0.85 }]}>
+				<IconText left={<Glyph name="pigface" size={16} />} gap={6}>
+					<Text style={styles.checkText}>Truffle buried — check on it</Text>
+				</IconText>
+			</Pressable>
 		);
 	}
 
 	return (
-		<View>
+		<View style={styles.wrap}>
+			<View style={styles.row}>
+				<IconText left={<Glyph name="pigface" size={16} />} gap={5}>
+					<Text style={styles.lead}>Bury a truffle</Text>
+				</IconText>
+				<View style={styles.stakes}>
+					{STAKES.map((s) => {
+						const on = s === stake;
+						return (
+							<Pressable
+								key={s}
+								onPress={() => setStake(s)}
+								style={[styles.chip, on && styles.chipOn]}
+							>
+								<SnoutCoin size={13} />
+								<Text style={[styles.chipText, on && styles.chipTextOn]}>{s}</Text>
+							</Pressable>
+						);
+					})}
+				</View>
+			</View>
 			<Pressable
 				onPress={bury}
 				disabled={busy}
-				style={({ pressed }) => [styles.btn, pressed && { opacity: 0.85 }]}
+				style={({ pressed }) => [styles.buryBtn, pressed && { opacity: 0.85 }]}
 			>
-				<Text style={styles.text}>
-					{busy ? "burying…" : `🐽 Bury a truffle for visitors (${COST} snouts)`}
-				</Text>
+				<Text style={styles.buryText}>{busy ? "burying…" : `Bury for visitors · ${stake} snouts`}</Text>
 			</Pressable>
 			{note && <Text style={styles.note}>{note}</Text>}
 		</View>
 	);
 }
 
+const INK = WHIMSY.ink;
+const sticker = { shadowColor: INK, shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 };
 const styles = StyleSheet.create({
-	btn: {
+	wrap: { alignSelf: "center", alignItems: "center", marginTop: 10, gap: 7 },
+	row: { flexDirection: "row", alignItems: "center", gap: 10 },
+	lead: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
+	stakes: { flexDirection: "row", gap: 5 },
+	chip: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 3,
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 999,
+		borderWidth: 2,
+		borderColor: INK,
+		backgroundColor: WHIMSY.cream,
+	},
+	chipOn: { backgroundColor: WHIMSY.sun },
+	chipText: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.mute },
+	chipTextOn: { color: INK },
+	buryBtn: {
 		backgroundColor: WHIMSY.peach,
 		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderColor: INK,
 		borderRadius: 14,
-		paddingVertical: 10,
-		paddingHorizontal: 16,
-		alignItems: "center",
+		paddingVertical: 9,
+		paddingHorizontal: 18,
+		...sticker,
+	},
+	buryText: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
+	checkPill: {
 		alignSelf: "center",
 		marginTop: 10,
+		backgroundColor: WHIMSY.cream2,
+		borderWidth: 2,
+		borderColor: INK,
+		borderRadius: 14,
+		paddingVertical: 9,
+		paddingHorizontal: 16,
+		...sticker,
 	},
-	buried: { backgroundColor: WHIMSY.cream2 },
-	text: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
-	note: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 4,
-	},
+	checkText: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
+	note: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, textAlign: "center" },
 });

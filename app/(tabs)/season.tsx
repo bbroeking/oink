@@ -24,6 +24,7 @@ import {
 } from "../../utils/iap";
 import { Sticker } from "../../components/ui/Sticker";
 import { Icon } from "../../components/ui/Icon";
+import { Glyph, type GlyphName } from "../../components/ui/Glyph";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
 import { BountyBoard } from "../../components/BountyBoard";
@@ -1239,6 +1240,9 @@ export default function SeasonScreen() {
 						);
 					})()}
 
+					{/* How to earn XP — make pass progress legible. */}
+					<XPHowTo xpPer={season.xp_per_tier || 100} />
+
 					{/* Vertical-list pass track — straight column of node +
 					    card rows with per-state visual treatment (sage
 					    claimed / sun-yellow ready / dashed locked) and
@@ -1652,4 +1656,52 @@ const styles = StyleSheet.create({
 		fontSize: 11,
 		color: WHIMSY.muteSoft,
 	},
+});
+
+// "How to earn XP" — a plain, always-visible card so pass progress is legible.
+// Values mirror the season-XP grants (home tickle +3, visit +5, etc.).
+function XPHowTo({ xpPer }: { xpPer: number }) {
+	const ROWS: { g: GlyphName; label: string; xp: string }[] = [
+		{ g: "pigface", label: "Tickle your pig", xp: "+3" },
+		{ g: "barn", label: "Visit a friend's barn", xp: "+5" },
+		{ g: "sparkles", label: "Send a blessing", xp: "+5 / day" },
+		{ g: "gem", label: "Dig a truffle", xp: "+3 / day" },
+		{ g: "gift", label: "Bury a truffle", xp: "+5 / day" },
+		{ g: "ogre", label: "Send a curse", xp: "+2 / day" },
+	];
+	return (
+		<Sticker color="paper" rotate={-0.6} radius={14} style={xpHowTo.card}>
+			<View style={xpHowTo.head}>
+				<Glyph name="star" size={14} />
+				<Text style={xpHowTo.title}>How to earn XP</Text>
+			</View>
+			{ROWS.map((r) => (
+				<View key={r.label} style={xpHowTo.row}>
+					<Glyph name={r.g} size={18} />
+					<Text style={xpHowTo.label}>{r.label}</Text>
+					<Text style={xpHowTo.xp}>{r.xp}</Text>
+				</View>
+			))}
+			<Text style={xpHowTo.foot}>{xpPer} XP = 1 tier</Text>
+		</Sticker>
+	);
+}
+
+const xpHowTo = StyleSheet.create({
+	card: { marginTop: 10, marginBottom: 4, padding: 14 },
+	head: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 8 },
+	title: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	row: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 10,
+		paddingVertical: 6,
+		paddingHorizontal: 8,
+		borderRadius: 9,
+		backgroundColor: WHIMSY.cream,
+		marginBottom: 5,
+	},
+	label: { flex: 1, fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
+	xp: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
+	foot: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, textAlign: "center", marginTop: 4 },
 });
