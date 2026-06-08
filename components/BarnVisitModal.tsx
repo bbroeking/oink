@@ -613,6 +613,7 @@ function HeartTally({
 function DigSpot({ digging, onPress }: { digging: boolean; onPress: () => void }) {
 	const bob = useRef(new Animated.Value(0)).current;
 	const wig = useRef(new Animated.Value(0)).current;
+	const pulse = useRef(new Animated.Value(0)).current;
 	useEffect(() => {
 		const loop = Animated.loop(
 			Animated.sequence([
@@ -621,8 +622,17 @@ function DigSpot({ digging, onPress }: { digging: boolean; onPress: () => void }
 			])
 		);
 		loop.start();
-		return () => loop.stop();
-	}, [bob]);
+		// Attract pulse — a ring that expands + fades to draw the eye to the
+		// (otherwise easy-to-miss) dig spot.
+		const pulseLoop = Animated.loop(
+			Animated.timing(pulse, { toValue: 1, duration: 1600, easing: Easing.out(Easing.quad), useNativeDriver: true })
+		);
+		pulseLoop.start();
+		return () => {
+			loop.stop();
+			pulseLoop.stop();
+		};
+	}, [bob, pulse]);
 	const press = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 		wig.setValue(0);
@@ -637,14 +647,24 @@ function DigSpot({ digging, onPress }: { digging: boolean; onPress: () => void }
 	// Rests at a slight planted tilt; wiggles on press.
 	const rotate = wig.interpolate({ inputRange: [-1, 0, 1], outputRange: ["-26deg", "-12deg", "4deg"] });
 	return (
-		<Pressable onPress={press} disabled={digging} style={styles.digSpot} hitSlop={16}>
-			<Glyph name="sparkle" size={16} style={styles.digSparkle} />
+		<Pressable onPress={press} disabled={digging} style={styles.digSpot} hitSlop={24}>
+			<Animated.View
+				pointerEvents="none"
+				style={[
+					styles.digPulse,
+					{
+						opacity: pulse.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.5, 0.15, 0] }),
+						transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.8] }) }],
+					},
+				]}
+			/>
+			<Glyph name="sparkle" size={18} style={styles.digSparkle} />
 			<Animated.View style={{ transform: [{ translateY }, { rotate }] }}>
-				<Shovel size={58} />
+				<Shovel size={64} />
 			</Animated.View>
 			<View style={styles.dirtMound} />
 			<View style={styles.digPill}>
-				<Text style={styles.digPillText}>{digging ? "digging…" : "Dig!"}</Text>
+				<Text style={styles.digPillText}>{digging ? "digging…" : "Dig for a truffle!"}</Text>
 			</View>
 		</Pressable>
 	);
@@ -897,20 +917,29 @@ const styles = StyleSheet.create({
 	},
 
 	// Dig spot — a planted shovel near the pigs' feet (low-left, off the host).
-	digSpot: { position: "absolute", left: "9%", bottom: "10%", alignItems: "center", zIndex: 6 },
+	digSpot: { position: "absolute", left: "8%", bottom: "9%", alignItems: "center", zIndex: 6 },
+	digPulse: {
+		position: "absolute",
+		top: 10,
+		width: 76,
+		height: 76,
+		borderRadius: 38,
+		borderWidth: 3,
+		borderColor: WHIMSY.sun,
+	},
 	digSparkle: { position: "absolute", top: -10, left: "60%", zIndex: 2 },
 	dirtMound: { width: 52, height: 15, borderRadius: 999, backgroundColor: "#8a5a36", borderWidth: 2, borderColor: INK, marginTop: -11 },
 	digPill: {
 		marginTop: 5,
-		backgroundColor: WHIMSY.peach,
+		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: INK,
 		borderRadius: 999,
-		paddingHorizontal: 12,
-		paddingVertical: 3,
+		paddingHorizontal: 14,
+		paddingVertical: 5,
 		...sticker,
 	},
-	digPillText: { fontFamily: FONTS.whimsy, fontSize: 13, color: INK },
+	digPillText: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
 	truffleFoundWrap: {
 		position: "absolute",
 		left: "8%",

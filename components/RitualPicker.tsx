@@ -12,7 +12,7 @@
 //   done   — you already cast this ritual on this friend today
 //   capped — you've used all today's blessings & curses
 //   error  — an unexpected failure; the Cast button stays for a retry
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
@@ -47,9 +47,34 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 	const [busy, setBusy] = useState(false);
 	const [phase, setPhase] = useState<Phase>("ready");
 	const [result, setResult] = useState<string | null>(null);
+	// How many of today's rituals are left (used / cap), for the visible counter.
+	const [usage, setUsage] = useState<{ used: number; cap: number } | null>(null);
 
 	const ritual = dailyRitual(mode);
 	const isBless = mode === "bless";
+
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			const r = await rpcAction<{
+				bless_used?: number;
+				bless_cap?: number;
+				curse_used?: number;
+				curse_cap?: number;
+			}>("ritual_status");
+			if (cancelled || !r.ok) return;
+			setUsage(
+				isBless
+					? { used: r.bless_used ?? 0, cap: r.bless_cap ?? 1 }
+					: { used: r.curse_used ?? 0, cap: r.curse_cap ?? 1 }
+			);
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [isBless]);
+
+	const remaining = usage ? Math.max(0, usage.cap - usage.used) : null;
 
 	const cast = async () => {
 		if (busy) return;
@@ -71,6 +96,7 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 					: `${targetName} has been cursed`
 			);
 			setPhase("sent");
+			setUsage((u) => (u ? { ...u, used: u.used + 1 } : u));
 			onCast?.();
 			return;
 		}
@@ -131,8 +157,10 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 						{isBless ? "blessing spent" : "curse spent"}
 					</Text>
 					<Text style={styles.beatSub}>
-						One {isBless ? "blessing" : "curse"} a day — your next is in{" "}
-						{untilDailyReset()}.
+						{usage
+							? `All ${usage.cap} ${isBless ? "blessings" : "curses"} used today`
+							: `${isBless ? "Blessings" : "Curses"} spent`}{" "}
+						— your next is in {untilDailyReset()}.
 					</Text>
 				</View>
 			)}
@@ -150,10 +178,10 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 					<Pressable
 						testID="ritual-cast"
 						onPress={cast}
-						disabled={busy}
+						disabled={busy || remaining === 0}
 						style={({ pressed }) => [
 							styles.btn,
-							(pressed || busy) && { opacity: 0.7 },
+							(pressed || busy || remaining === 0) && { opacity: 0.7 },
 						]}
 					>
 						<Text style={styles.btnText}>
@@ -164,6 +192,12 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 									: `Curse ${targetName}`}
 						</Text>
 					</Pressable>
+					{remaining !== null && usage && (
+						<Text style={styles.left}>
+							{remaining} of {usage.cap} {isBless ? "blessings" : "curses"} left
+							today · resets in {untilDailyReset()}
+						</Text>
+					)}
 					{phase === "error" && !!result && (
 						<Text style={styles.result}>{result}</Text>
 					)}
@@ -226,6 +260,14 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		textAlign: "center",
 		marginTop: 8,
+	},
+	left: {
+		fontFamily: FONTS.hand,
+		fontSize: 11.5,
+		color: WHIMSY.ink,
+		opacity: 0.7,
+		textAlign: "center",
+		marginTop: 7,
 	},
 	// Shared terminal-state layout (sent / done / capped).
 	beat: { alignItems: "center", paddingVertical: 6 },
