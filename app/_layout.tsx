@@ -51,6 +51,7 @@ import {
 } from "@/components/AchievementUnlockModal";
 import { AllegianceModal } from "@/components/AllegianceModal";
 import { PurchaseToastHost } from "@/components/PurchaseToast";
+import { PopupQueueProvider, usePopupSlot } from "@/components/ui/PopupQueue";
 import {
 	PENDING_REFERRAL_CODE_KEY,
 	parseReferralCodeFromUrl,
@@ -105,19 +106,14 @@ function RootLayoutInner() {
 	// country yet and hasn't locally dismissed the prompt.
 	const [showAllegiance, setShowAllegiance] = useState(false);
 
-	// Launch-modal queue gate. The launch popups (schism → finale → rituals →
-	// achievements → allegiance) are mutually exclusive, but clearing one and
-	// mounting the next in the SAME frame makes two RN <Modal>s overlap during
-	// the dismiss animation — on iOS that leaves the user stuck, unable to get
-	// past one. `modalGap` inserts a short beat after each dismiss so the
-	// outgoing modal fully unmounts before the next mounts. Always show ONE at
-	// a time, never two.
-	const [modalGap, setModalGap] = useState(false);
-	const closeModal = (clear: () => void) => {
-		clear();
-		setModalGap(true);
-		setTimeout(() => setModalGap(false), 380);
-	};
+	// Global popup queue slots — every launch popup goes through PopupQueue so
+	// only one shows at a time (across root AND the Barn tab). Lower priority
+	// number shows first when several are pending.
+	const schismSlot = usePopupSlot("schism", !!schism, 10);
+	const finaleSlot = usePopupSlot("finale", !!finale, 20);
+	const ritualsSlot = usePopupSlot("rituals", !!rituals, 30);
+	const achievementsSlot = usePopupSlot("achievements", achievements.length > 0, 40);
+	const allegianceSlot = usePopupSlot("allegiance", showAllegiance, 70);
 
 	// Resolve the initial auth state before letting the splash drop, so we
 	// transition straight into either auth or the home screen — no blank flash.
@@ -565,24 +561,30 @@ function RootLayoutInner() {
 				<Stack.Screen name="+not-found" />
 			</Stack>
 			<StatusBar style="auto" />
-			{/* Launch popups are shown strictly ONE at a time, in priority
-			    order, with a `modalGap` beat between each so two native
-			    modals never overlap during a dismiss (the iOS "stuck" bug). */}
-			{schism && !modalGap && (
+			{/* Launch popups all route through the global PopupQueue — only the
+			    one the queue marks `visible` ever mounts, so two native modals
+			    never overlap (the iOS "stuck/invisible" bug). */}
+			{schism && schismSlot.visible && (
 				<AlignmentSchismModal
 					side={schism.side}
 					score={schism.score}
 					milestone={schism.milestone}
-					onDismiss={() => closeModal(() => setSchism(null))}
+					onDismiss={() => {
+						setSchism(null);
+						schismSlot.release();
+					}}
 				/>
 			)}
-			{finale && !schism && !modalGap && (
+			{finale && finaleSlot.visible && (
 				<JudgementDayModal
 					result={finale}
-					onDismiss={() => closeModal(() => setFinale(null))}
+					onDismiss={() => {
+						setFinale(null);
+						finaleSlot.release();
+					}}
 				/>
 			)}
-			{rituals && !schism && !finale && !modalGap && (
+			{rituals && ritualsSlot.visible && (
 				<WhileAwayModal
 					events={rituals}
 					onDismiss={() => {
@@ -597,21 +599,31 @@ function RootLayoutInner() {
 								}).then(() => {});
 							}
 						});
-						closeModal(() => setRituals(null));
+						setRituals(null);
+						ritualsSlot.release();
 					}}
 				/>
 			)}
-			{achievements.length > 0 && !schism && !finale && !rituals && !modalGap && (
+			{achievements.length > 0 && achievementsSlot.visible && (
 				<AchievementUnlockModal
 					achievement={achievements[0]}
-					onDismiss={() => closeModal(() => setAchievements((q) => q.slice(1)))}
+					onDismiss={() => {
+						setAchievements((q) => q.slice(1));
+						achievementsSlot.release();
+					}}
 				/>
 			)}
-			{showAllegiance && !schism && !finale && !rituals && achievements.length === 0 && !modalGap && (
+			{showAllegiance && allegianceSlot.visible && (
 				<AllegianceModal
 					visible
-					onSkip={() => closeModal(() => setShowAllegiance(false))}
-					onChosen={() => closeModal(() => setShowAllegiance(false))}
+					onSkip={() => {
+						setShowAllegiance(false);
+						allegianceSlot.release();
+					}}
+					onChosen={() => {
+						setShowAllegiance(false);
+						allegianceSlot.release();
+					}}
 				/>
 			)}
 			{/* Purchase toast — global, slides down from the top on
@@ -622,7 +634,18 @@ function RootLayoutInner() {
 	);
 }
 
+// The PopupQueue provider must sit ABOVE everything that pops a modal — both the
+// root launch modals here AND the Barn-tab modals inside the Stack — so they all
+// share one arbiter and show strictly one at a time.
+function RootLayoutWithQueue() {
+	return (
+		<PopupQueueProvider>
+			<RootLayoutInner />
+		</PopupQueueProvider>
+	);
+}
+
 // Wrap the root in Sentry's error boundary when DSN is configured.
-// Otherwise just export RootLayoutInner directly.
-const RootLayout = SENTRY_DSN ? Sentry.wrap(RootLayoutInner) : RootLayoutInner;
+// Otherwise just export RootLayoutWithQueue directly.
+const RootLayout = SENTRY_DSN ? Sentry.wrap(RootLayoutWithQueue) : RootLayoutWithQueue;
 export default RootLayout;

@@ -23,6 +23,7 @@ import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
 import { Icon } from "./ui/Icon";
 import { Glyph, glyphSource, type GlyphName } from "./ui/Glyph";
+import { usePopupSlot } from "./ui/PopupQueue";
 import { Sticker, Tape } from "./ui/Sticker";
 import { WHIMSY, FONTS } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
@@ -405,6 +406,15 @@ export default function Barn() {
 	// burst-modal lifecycle, and the title-unlock RPC chain.
 	const luckyPig = useLuckyPig({ showToast });
 
+	// Home-screen popups route through the global PopupQueue so they show one at
+	// a time — in concert with the root launch modals, never overlapping. Lower
+	// priority shows first; truffle sheet is user-tapped so it jumps the line.
+	const truffleSlot = usePopupSlot("truffleSheet", truffleSheetOpen, 5);
+	const releaseNotesSlot = usePopupSlot("releaseNotes", releaseNotesOpen, 45);
+	const luckyTitleSlot = usePopupSlot("luckyTitle", !!luckyPig.unlockedTitle, 50);
+	const luckyPigSlot = usePopupSlot("luckyPig", luckyPig.luckyModalOpen, 55);
+	const sixSevenSlot = usePopupSlot("sixSeven", sixSevenDialog, 60);
+
 	useEffect(() => {
 		if (sixSevenPromptedRef.current) return;
 		if (stats.counter < 67) return;
@@ -761,14 +771,17 @@ export default function Barn() {
 			</SafeAreaView>
 
 			<LuckyPigModal
-				visible={luckyPig.luckyModalOpen}
+				visible={luckyPigSlot.visible}
 				windowSize={luckyPig.windowSize}
 				doublePercent={luckyPig.doublePercent}
-				onDismiss={luckyPig.onBurstDismiss}
+				onDismiss={() => {
+					luckyPig.onBurstDismiss();
+					luckyPigSlot.release();
+				}}
 			/>
 
 			<ConfirmDialog
-				open={sixSevenDialog}
+				open={sixSevenSlot.visible}
 				title="6 7!"
 				body="You've crossed 67 tickles. Wanna celebrate with a six-seven?"
 				confirmLabel="Six seven!"
@@ -776,23 +789,29 @@ export default function Barn() {
 				onCancel={() => {
 					setSixSevenDialog(false);
 					AsyncStorage.setItem("seen_67", "1");
+					sixSevenSlot.release();
 				}}
 				onConfirm={() => {
 					setSixSevenDialog(false);
 					AsyncStorage.setItem("seen_67", "1");
 					setSixSevenTick((t) => t + 1);
+					sixSevenSlot.release();
 				}}
 			/>
 
 			<LuckyTitleUnlockModal
-				title={luckyPig.unlockedTitle}
-				onDismiss={luckyPig.dismissUnlockedTitle}
+				title={luckyTitleSlot.visible ? luckyPig.unlockedTitle : null}
+				onDismiss={() => {
+					luckyPig.dismissUnlockedTitle();
+					luckyTitleSlot.release();
+				}}
 				onEquip={async (id) => {
 					try {
 						await rpc("equip_title", { target_title_id: id });
 						showToast("Title equipped", "Visible on your account + leaderboard.");
 					} catch {}
 					luckyPig.dismissUnlockedTitle();
+					luckyTitleSlot.release();
 				}}
 			/>
 
@@ -800,13 +819,19 @@ export default function Barn() {
 			    Season-1 social redesign — no Barn pill or modal. */}
 
 			<ReleaseNotesModal
-				visible={releaseNotesOpen}
-				onClose={() => setReleaseNotesOpen(false)}
+				visible={releaseNotesSlot.visible}
+				onClose={() => {
+					setReleaseNotesOpen(false);
+					releaseNotesSlot.release();
+				}}
 			/>
 
 			<BuriedTruffleSheet
-				open={truffleSheetOpen}
-				onClose={() => setTruffleSheetOpen(false)}
+				open={truffleSlot.visible}
+				onClose={() => {
+					setTruffleSheetOpen(false);
+					truffleSlot.release();
+				}}
 				status={truffle.status}
 			/>
 		</PageBackground>
