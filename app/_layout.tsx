@@ -105,6 +105,20 @@ function RootLayoutInner() {
 	// country yet and hasn't locally dismissed the prompt.
 	const [showAllegiance, setShowAllegiance] = useState(false);
 
+	// Launch-modal queue gate. The launch popups (schism → finale → rituals →
+	// achievements → allegiance) are mutually exclusive, but clearing one and
+	// mounting the next in the SAME frame makes two RN <Modal>s overlap during
+	// the dismiss animation — on iOS that leaves the user stuck, unable to get
+	// past one. `modalGap` inserts a short beat after each dismiss so the
+	// outgoing modal fully unmounts before the next mounts. Always show ONE at
+	// a time, never two.
+	const [modalGap, setModalGap] = useState(false);
+	const closeModal = (clear: () => void) => {
+		clear();
+		setModalGap(true);
+		setTimeout(() => setModalGap(false), 380);
+	};
+
 	// Resolve the initial auth state before letting the splash drop, so we
 	// transition straight into either auth or the home screen — no blank flash.
 	useEffect(() => {
@@ -551,21 +565,24 @@ function RootLayoutInner() {
 				<Stack.Screen name="+not-found" />
 			</Stack>
 			<StatusBar style="auto" />
-			{schism && (
+			{/* Launch popups are shown strictly ONE at a time, in priority
+			    order, with a `modalGap` beat between each so two native
+			    modals never overlap during a dismiss (the iOS "stuck" bug). */}
+			{schism && !modalGap && (
 				<AlignmentSchismModal
 					side={schism.side}
 					score={schism.score}
 					milestone={schism.milestone}
-					onDismiss={() => setSchism(null)}
+					onDismiss={() => closeModal(() => setSchism(null))}
 				/>
 			)}
-			{finale && (
+			{finale && !schism && !modalGap && (
 				<JudgementDayModal
 					result={finale}
-					onDismiss={() => setFinale(null)}
+					onDismiss={() => closeModal(() => setFinale(null))}
 				/>
 			)}
-			{rituals && !schism && !finale && (
+			{rituals && !schism && !finale && !modalGap && (
 				<WhileAwayModal
 					events={rituals}
 					onDismiss={() => {
@@ -580,21 +597,21 @@ function RootLayoutInner() {
 								}).then(() => {});
 							}
 						});
-						setRituals(null);
+						closeModal(() => setRituals(null));
 					}}
 				/>
 			)}
-			{achievements.length > 0 && !schism && !finale && !rituals && (
+			{achievements.length > 0 && !schism && !finale && !rituals && !modalGap && (
 				<AchievementUnlockModal
 					achievement={achievements[0]}
-					onDismiss={() => setAchievements((q) => q.slice(1))}
+					onDismiss={() => closeModal(() => setAchievements((q) => q.slice(1)))}
 				/>
 			)}
-			{showAllegiance && !schism && !finale && !rituals && achievements.length === 0 && (
+			{showAllegiance && !schism && !finale && !rituals && achievements.length === 0 && !modalGap && (
 				<AllegianceModal
 					visible
-					onSkip={() => setShowAllegiance(false)}
-					onChosen={() => setShowAllegiance(false)}
+					onSkip={() => closeModal(() => setShowAllegiance(false))}
+					onChosen={() => closeModal(() => setShowAllegiance(false))}
 				/>
 			)}
 			{/* Purchase toast — global, slides down from the top on

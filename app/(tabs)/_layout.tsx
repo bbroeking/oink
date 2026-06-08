@@ -8,10 +8,7 @@ import { rpc } from "@/utils/rpc";
 import SupaAuth from "@/components/SupaAuth";
 import UsernameSetup from "@/components/UsernameSetup";
 import { Onboarding } from "@/components/Onboarding";
-import {
-	ReferralCodeEntry,
-	hasSeenReferralStep,
-} from "@/components/ReferralCodeEntry";
+import { ReferralCodeEntry } from "@/components/ReferralCodeEntry";
 import { HangingSignsTabBar } from "@/components/ui/HangingSignsTabBar";
 import { WHIMSY, KICKER_TEXT } from "@/constants/theme";
 import { initIAP } from "@/utils/iap";
@@ -59,7 +56,11 @@ export default function TabLayout() {
 		AsyncStorage.getItem("seen_onboarding").then((v) => {
 			setNeedsOnboarding(v !== "1");
 		});
-		hasSeenReferralStep().then((seen) => setNeedsReferralStep(!seen));
+		// Referral code-entry is bypassed for now — never force the step, so
+		// every user skips straight past it. (Re-enable by restoring:
+		//   hasSeenReferralStep().then((seen) => setNeedsReferralStep(!seen));
+		// and re-importing hasSeenReferralStep.)
+		setNeedsReferralStep(false);
 	}, []);
 
 	// Bounty-ready badge on the Season tab. Polled on mount + every
