@@ -20,6 +20,9 @@
 
 *{box-sizing:border-box;}
 html,body{margin:0;min-height:100%;}
+/* rotated stickers + hard offset shadows can poke past the viewport edge on
+   phones — clip the x axis so they never trigger a horizontal scroll */
+html{overflow-x:clip;}
 body{
   background:var(--paper);
   background-image:radial-gradient(var(--cream2) 1.1px, transparent 1.2px);
@@ -95,7 +98,7 @@ h1.big{
 .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:18px;}
 .legend .lg{display:flex;align-items:center;gap:7px;font-family:"Nunito";font-weight:800;font-size:12.5px;}
 .legend .sw{width:15px;height:15px;border:2px solid var(--ink);border-radius:4px;box-shadow:1.5px 1.5px 0 var(--ink);}
-.plot-scroll{overflow-x:auto;padding-bottom:6px;}
+.plot-scroll{overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
 .plot{display:flex;align-items:flex-end;gap:10px;min-width:680px;}
 .group{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;}
 .bars{height:210px;display:flex;align-items:flex-end;gap:3px;}
@@ -122,8 +125,11 @@ h1.big{
 .lbrow:nth-child(odd){transform:rotate(-.7deg);}
 .lbrow:nth-child(even){transform:rotate(.7deg);}
 .lbrow .rank{font-family:"Fredoka";font-weight:700;font-size:18px;width:24px;flex:0 0 auto;color:var(--accent);}
-.lbrow .who{font-family:"Nunito";font-weight:900;font-size:16px;display:flex;align-items:center;gap:7px;}
-.lbrow .who .crown{width:22px;height:22px;color:var(--gold);}
+.lbrow .who{font-family:"Nunito";font-weight:900;font-size:16px;display:flex;align-items:center;gap:7px;min-width:0;flex:1 1 auto;}
+.lbrow .who .crown{width:22px;height:22px;color:var(--gold);flex:0 0 auto;}
+.lbrow .who svg{flex:0 0 auto;}
+.lbrow .who .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lbrow .pts{flex:0 0 auto;}
 .lbrow .pts{margin-left:auto;font-family:"Fredoka";font-weight:700;font-size:19px;letter-spacing:-.5px;text-align:right;}
 .lbrow .pts small{display:block;font-family:"Patrick Hand",cursive;font-weight:400;font-size:11.5px;letter-spacing:0;color:var(--accent);margin-top:-1px;}
 .lbrow.top{background:var(--sun);}
@@ -152,6 +158,32 @@ h1.big{
 @media(max-width:720px){
   .two{grid-template-columns:1fr;}
   .dashboard{padding:24px 14px 60px;}
+  /* keep stat + pig cards at least 2-up instead of collapsing to one column */
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+  .pgrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+
+@media(max-width:480px){
+  .dashboard{padding:20px 12px 52px;}
+  .sec{margin:32px 0 14px;}
+  .head{gap:12px;}
+  .head .title-wrap{gap:11px;}
+  .rosie{width:58px;height:58px;}
+  .grid{gap:11px;}
+  .stat{min-height:104px;padding:15px 13px 13px;}
+  .stat .num{font-size:30px;}
+  .stat .lbl{font-size:13px;}
+  .glyph{width:28px;height:28px;top:11px;right:11px;}
+  .panel{padding:18px 16px 18px;}
+  .panel .ptitle{font-size:18px;}
+  .pgrid{gap:11px;}
+  .pig .ph{font-size:26px;}
+  .mrow{gap:9px;}
+  .mrow .ml{width:58px;font-size:13px;}
+  .mval{width:60px;font-size:14px;}
+  .lbrow{padding:9px 12px;gap:10px;}
+  .lbrow .who{font-size:15px;}
+  .lbrow .pts{font-size:17px;}
 }
 
 /* ============ LOGIN ============ */

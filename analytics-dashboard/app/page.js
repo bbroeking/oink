@@ -106,7 +106,7 @@ function Leaderboard({ rows, unit }) {
                 <use href="#i-crown" />
               </svg>
             ) : null}
-            {r.username}
+            <span className="nm">{r.username}</span>
           </span>
           <AlignChip score={r.align ?? 0} band={r.band || "neutral"} />
           <span className="pts">
@@ -133,7 +133,7 @@ function ScoreBoard({ rows, side }) {
             <svg style={{ width: 20, height: 20, color: side === "angel" ? "var(--lilac-deep)" : "var(--gold)" }}>
               <use href={`#${glyph}`} />
             </svg>
-            {r.username}
+            <span className="nm">{r.username}</span>
           </span>
           <span className="pts">{signed(r.score)}</span>
         </div>
@@ -151,7 +151,7 @@ function WasteBoard({ rows }) {
       {rows.map((r, i) => (
         <div className="lbrow" key={r.username + i}>
           <span className="rank">{i + 1}</span>
-          <span className="who">{r.username}</span>
+          <span className="who"><span className="nm">{r.username}</span></span>
           <span className="pts">
             {fmt(r.wasted)}
             <small>{r.pct}% of haul</small>
