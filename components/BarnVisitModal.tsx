@@ -153,6 +153,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [truffleAvail, setTruffleAvail] = useState(false);
 	const [dug, setDug] = useState<number | null>(null);
 	const [digging, setDigging] = useState(false);
+	const [digNote, setDigNote] = useState<string | null>(null);
 
 	// Both pigs' full worn outfits so the diorama shows what each is wearing.
 	// (Flags are intentionally not shown in the visit diorama for now.)
@@ -225,7 +226,9 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			}
 
 			// The host's truffle is a shared, depleting pot: show the shovel only
-			// if it still has snouts left AND you haven't already taken your share.
+			// if it still has snouts left AND your latest bite is past the 3h
+			// re-dig cooldown (server 20260629; it stays authoritative — a stale
+			// shovel just gets the dig_cooldown / already_dug note from dig()).
 			const { data: tr } = await supabase
 				.from("truffles")
 				.select("id, remaining")
@@ -234,13 +237,20 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				.maybeSingle();
 			let canDig = !!tr && (tr.remaining ?? 0) > 0;
 			if (tr && ures.user) {
-				const { data: already } = await supabase
+				const { data: lastDig } = await supabase
 					.from("truffle_digs")
-					.select("truffle_id")
+					.select("dug_at")
 					.eq("truffle_id", tr.id)
 					.eq("digger_id", ures.user.id)
+					.order("dug_at", { ascending: false })
+					.limit(1)
 					.maybeSingle();
-				if (already) canDig = false;
+				if (
+					lastDig &&
+					Date.now() - new Date(lastDig.dug_at).getTime() < 3 * 60 * 60 * 1000
+				) {
+					canDig = false;
+				}
 			}
 			if (!cancelled) setTruffleAvail(canDig);
 
@@ -334,14 +344,34 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const dig = async () => {
 		if (digging || dug != null) return;
 		setDigging(true);
-		const r = await rpcAction<{ reward?: number; remaining?: number }>("dig_truffle", {
-			p_host: targetUserId,
-		});
+		const r = await rpcAction<{ reward?: number; remaining?: number; next_at?: string | null }>(
+			"dig_truffle",
+			{ p_host: targetUserId }
+		);
 		setDigging(false);
-		setTruffleAvail(false);
 		if (r.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+			setTruffleAvail(false);
 			setDug(r.reward ?? 0);
+		} else if (r.reason === "dig_cooldown") {
+			// Re-dig cooldown (server 20260629): the pot allows another bite per
+			// visitor every 3h, so this shovel isn't spent forever — retire it for
+			// now with the wait time so coming back later reads as worthwhile.
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+			setTruffleAvail(false);
+			setDigNote(`You've dug here recently — come back in ${lockLabel(r.next_at ?? null)}.`);
+		} else if (r.reason === "none" || r.reason === "already_dug") {
+			// Terminal: someone else emptied the shared pot first — or, on a server
+			// older than 20260629 (one dig EVER, no re-dig cooldown), we already
+			// took our share. The shovel is genuinely spent — retire it with a note
+			// instead of vanishing silently.
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+			setTruffleAvail(false);
+			setDigNote("Already dug up!");
+		} else {
+			// Transient (network / SQL) failure — keep the shovel tappable so the
+			// dig can be retried rather than disappearing with no reward.
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 		}
 	};
 
@@ -529,6 +559,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 										<SnoutCoin size={16} />
 										<Glyph name="sparkles" size={14} />
 										<Text style={styles.truffleFound}>+{dug} snouts!</Text>
+									</View>
+								) : digNote != null ? (
+									<View pointerEvents="none" style={[styles.truffleFoundWrap, styles.truffleFoundRow]}>
+										<Glyph name="pigface" size={14} />
+										<Text style={styles.truffleFound}>{digNote}</Text>
 									</View>
 								) : truffleAvail && !tired ? (
 									<DigSpot digging={digging} onPress={dig} />
@@ -945,6 +980,7 @@ const styles = StyleSheet.create({
 		left: "8%",
 		bottom: "11%",
 		zIndex: 6,
+		maxWidth: "84%", // cooldown note is a full sentence — wrap, don't overflow
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: INK,
@@ -954,7 +990,7 @@ const styles = StyleSheet.create({
 		...sticker,
 	},
 	truffleFoundRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-	truffleFound: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
+	truffleFound: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK, flexShrink: 1 },
 
 	// Out-of-tickles callout — anchored just above the YOUR TICKLES bar.
 	ticklesPop: {
