@@ -5,7 +5,9 @@
 // show — no mystery empty slots, no horizontal scroll), then left-aligned
 // by-category grids of owned items. Tap an item to wear it; tap a slot's ✕ to take
 // it off. Tiles carry a rarity stripe + tinted swatch and a clear lilac "ON" state.
-import { useCallback, useRef } from "react";
+// A title chip under the pig + a TitlesSection at the bottom make the Closet the
+// canonical place to equip titles (the Shop's Titles tab stays for buying).
+import { useCallback, useRef, useState } from "react";
 import {
 	View,
 	Text,
@@ -18,7 +20,9 @@ import {
 import * as Haptics from "expo-haptics";
 import { PigStage } from "./ui/PigStage";
 import { SnoutCoin } from "./ui/SnoutCoin";
+import { TitlesSection } from "./TitlesSection";
 import { HAT_IMAGES, HatRow, PIG_CANVAS } from "@/constants/hats";
+import type { TitleRow } from "@/constants/title_types";
 import {
 	SLOT_ORDER,
 	SLOT_LABEL,
@@ -35,6 +39,11 @@ interface Props {
 	counter: number;
 	onEquip: (id: string | null, category: string | null | undefined) => void;
 	isEquipped: (id: string, category: string | null | undefined) => boolean;
+	// Titles wiring — state lives in shop.tsx (same source the Titles tab
+	// reads); this view just renders TitlesSection + the preview chip.
+	userId: string | null;
+	activeTitleId: string | null;
+	onTitleChange: (next: string | null) => void;
 }
 
 // Category sections, in order, with player-facing headings.
@@ -67,10 +76,20 @@ export function ClosetView({
 	counter,
 	onEquip,
 	isEquipped,
+	userId,
+	activeTitleId,
+	onTitleChange,
 }: Props) {
 	const scrollRef = useRef<ScrollView>(null);
 	// Y position of each category section, for slot-chip → scroll-to.
+	// The titles section registers under "titles" (not a CAT_ORDER key).
 	const sectionY = useRef<Record<string, number>>({});
+	// Owned title rows, fed back by TitlesSection's load — the preview
+	// chip resolves the active title's display name from here.
+	const [ownedTitles, setOwnedTitles] = useState<TitleRow[]>([]);
+	const handleTitlesLoaded = useCallback((rows: TitleRow[]) => {
+		setOwnedTitles(rows);
+	}, []);
 
 	const byId = useRef<Map<string, HatRow>>(new Map());
 	byId.current = new Map(allItems.map((i) => [i.id, i]));
@@ -94,6 +113,18 @@ export function ClosetView({
 			scrollRef.current?.scrollTo({ y: sectionY.current[cat] - 8, animated: true });
 		}
 	}, []);
+
+	const scrollToTitles = useCallback(() => {
+		if (sectionY.current.titles != null) {
+			scrollRef.current?.scrollTo({ y: sectionY.current.titles - 8, animated: true });
+		}
+	}, []);
+
+	// Display name on the preview chip: resolved name, "…" while the owned
+	// rows are still loading, or the pick prompt when nothing is equipped.
+	const activeTitleName = activeTitleId
+		? ownedTitles.find((t) => t.id === activeTitleId)?.name ?? "…"
+		: null;
 
 	// Owned items grouped by category.
 	const groups: Record<string, HatRow[]> = {};
@@ -146,6 +177,23 @@ export function ClosetView({
 					</View>
 				</View>
 
+				{/* Title chip — the pig's nameplate. Tapping scrolls to the
+				    Titles section below, same pattern as the slot chips. */}
+				{userId != null && (
+					<Pressable onPress={scrollToTitles} style={styles.titleChip}>
+						<Text style={styles.titleChipKicker}>title</Text>
+						<Text
+							style={[
+								styles.titleChipName,
+								activeTitleName == null && styles.titleChipNameEmpty,
+							]}
+							numberOfLines={1}
+						>
+							{activeTitleName ?? "No title — tap to pick"}
+						</Text>
+					</Pressable>
+				)}
+
 				{visibleSlots.length > 0 && (
 					<View style={styles.slotRow}>
 						{visibleSlots.map((s) => {
@@ -160,10 +208,13 @@ export function ClosetView({
 									style={styles.slotChip}
 								>
 									{equippedId && it ? (
+										// Asymmetric hitSlop grows the 24pt ✕ to a 44pt
+										// square anchored on the chip's top-right corner
+										// (hitSlop can't extend past the parent chip).
 										<Pressable
 											onPress={() => onEquip(null, it.category)}
 											style={styles.slotRemove}
-											hitSlop={8}
+											hitSlop={{ top: 0, right: 0, bottom: 20, left: 20 }}
 										>
 											<Text style={styles.slotRemoveText}>✕</Text>
 										</Pressable>
@@ -249,6 +300,25 @@ export function ClosetView({
 					</View>
 				);
 			})}
+
+			{/* Titles — equip/unequip without leaving the Closet (the Shop's
+			    Titles tab stays for buying; this is the canonical equip spot).
+			    Inline in the scroll — no modal. */}
+			{userId != null && (
+				<View
+					onLayout={(e: LayoutChangeEvent) => {
+						sectionY.current.titles = e.nativeEvent.layout.y;
+					}}
+					style={styles.section}
+				>
+					<TitlesSection
+						userId={userId}
+						activeTitleId={activeTitleId}
+						onChange={onTitleChange}
+						onTitlesLoaded={handleTitlesLoaded}
+					/>
+				</View>
+			)}
 			<View style={{ height: 80 }} />
 		</ScrollView>
 	);
@@ -331,7 +401,8 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		overflow: "hidden",
 	},
-	slotThumbImg: { width: "80%", height: "80%" },
+	// Explicit pt size (not %) — see itemThumbImg for why.
+	slotThumbImg: { width: 30, height: 30 },
 	slotEmoji: { fontSize: 26 },
 	slotPlus: { fontSize: 22, color: WHIMSY.mute },
 	slotLabel: {
@@ -344,15 +415,44 @@ const styles = StyleSheet.create({
 	},
 	slotRemove: {
 		position: "absolute",
-		top: 2,
-		right: 4,
+		top: 0,
+		right: 0,
 		zIndex: 2,
-		width: 18,
-		height: 18,
+		width: 24,
+		height: 24,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	slotRemoveText: { fontSize: 12, fontWeight: "900", color: WHIMSY.ink },
+	// Nameplate pill under the pig. minHeight 44 keeps it a full-size
+	// tap target without hitSlop.
+	titleChip: {
+		marginTop: 6,
+		minHeight: 44,
+		maxWidth: 240,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 12,
+		paddingVertical: 5,
+		paddingHorizontal: 16,
+	},
+	titleChipKicker: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 9,
+		letterSpacing: 0.6,
+		color: WHIMSY.mute,
+		textTransform: "uppercase",
+	},
+	titleChipName: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 14,
+		color: WHIMSY.ink,
+		marginTop: 1,
+	},
+	titleChipNameEmpty: { color: WHIMSY.mute },
 	hint: {
 		borderWidth: 1.5,
 		borderColor: WHIMSY.mute,
@@ -403,7 +503,19 @@ const styles = StyleSheet.create({
 		overflow: "hidden",
 		position: "relative",
 	},
-	itemThumbImg: { width: "76%", height: "76%" },
+	// Absolute insets, NOT percentage width/height: the thumb's height
+	// comes from aspectRatio, which Yoga doesn't treat as definite when
+	// resolving a child's % height — the Image then falls back to its
+	// intrinsic pixel size (1024² legendary art, 752×1584 backgrounds)
+	// and blows out of the tile. Absolute insets resolve after the box
+	// is laid out, so the art always fits with `contain`.
+	itemThumbImg: {
+		position: "absolute",
+		top: "12%",
+		left: "12%",
+		right: "12%",
+		bottom: "12%",
+	},
 	itemEmoji: { fontSize: 40 },
 	itemFoot: {
 		borderTopWidth: 2,

@@ -24,7 +24,6 @@ import { Icon } from "../../components/ui/Icon";
 import { Sticker } from "../../components/ui/Sticker";
 import { PigAvatar } from "../../components/ui/PigAvatar";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
-import { TitlesSection } from "../../components/TitlesSection";
 import { ClosetView } from "../../components/ClosetView";
 import { TroughSection } from "../../components/TroughSection";
 import { AllegianceCard } from "../../components/AllegianceCard";
@@ -896,7 +895,8 @@ export default function ShopScreen() {
 			router.setParams({ view: undefined });
 		}
 	}, [params.view]);
-	// Titles UI lives in the wardrobe view. activeTitleId is sourced from
+	// Title equip UI renders inside ClosetView (the wardrobe view); buying
+	// stays in the titles tab. activeTitleId is sourced from
 	// profiles.active_title_id (added in the 20260511 migration). userId
 	// is captured separately so TitlesSection can load owned titles.
 	const [userId, setUserId] = useState<string | null>(null);
@@ -1522,6 +1522,9 @@ export default function ShopScreen() {
 						counter={counter}
 						onEquip={handleEquip}
 						isEquipped={isEquipped}
+						userId={userId}
+						activeTitleId={activeTitleId}
+						onTitleChange={setActiveTitleId}
 					/>
 				)}
 			</SafeAreaView>

@@ -115,7 +115,8 @@ export function Account({ session }: { session: Session }) {
 	const [busy, setBusy] = useState<boolean>(false);
 	// Show the user's currently equipped title alongside their code so
 	// they can confirm at-a-glance that their title is wired up. Manage
-	// (equip/unequip) lives in the Wardrobe's TitlesSection.
+	// (equip/unequip) lives in the Closet (Shop → Wardrobe view), which
+	// renders TitlesSection inline; buying stays in the Titles tab.
 	const [activeTitle, setActiveTitle] = useState<{
 		name: string;
 		placement: "pre" | "post";

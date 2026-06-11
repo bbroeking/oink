@@ -15,9 +15,12 @@ interface Props {
 	userId: string;
 	activeTitleId: string | null;
 	onChange: (next: string | null) => void;
+	// Lets a host (ClosetView's preview title chip) reuse the owned-title
+	// rows this section already loads, instead of re-querying user_titles.
+	onTitlesLoaded?: (titles: TitleRow[]) => void;
 }
 
-export function TitlesSection({ userId, activeTitleId, onChange }: Props) {
+export function TitlesSection({ userId, activeTitleId, onChange, onTitlesLoaded }: Props) {
 	const [titles, setTitles] = useState<TitleRow[]>([]);
 	const [busy, setBusy] = useState(false);
 
@@ -30,16 +33,17 @@ export function TitlesSection({ userId, activeTitleId, onChange }: Props) {
 			.eq("user_id", userId);
 		if (error) {
 			setTitles([]);
+			onTitlesLoaded?.([]);
 			return;
 		}
 		const rows = (data ?? []) as unknown as RawRow[];
-		setTitles(
-			rows
-				.map((r) => r.titles)
-				.filter((t): t is TitleRow => !!t)
-				.sort((a, b) => a.name.localeCompare(b.name))
-		);
-	}, [userId]);
+		const loaded = rows
+			.map((r) => r.titles)
+			.filter((t): t is TitleRow => !!t)
+			.sort((a, b) => a.name.localeCompare(b.name));
+		setTitles(loaded);
+		onTitlesLoaded?.(loaded);
+	}, [userId, onTitlesLoaded]);
 
 	useEffect(() => {
 		load();
@@ -108,7 +112,11 @@ export function TitlesSection({ userId, activeTitleId, onChange }: Props) {
 				})}
 			</View>
 			{activeTitleId && (
-				<Pressable onPress={() => setActive(null)} style={styles.unequipLink}>
+				<Pressable
+					onPress={() => setActive(null)}
+					style={styles.unequipLink}
+					hitSlop={14}
+				>
 					<Text style={styles.unequipText}>Unequip title</Text>
 				</Pressable>
 			)}
