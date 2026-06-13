@@ -28,6 +28,7 @@ import { Sticker, Tape } from "./ui/Sticker";
 import { WHIMSY, FONTS } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
+import { AllegianceModal } from "./AllegianceModal";
 import { LuckyPigModal } from "./LuckyPigModal";
 import { LuckyTitleUnlockModal } from "./LuckyTitleUnlockModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
@@ -277,7 +278,10 @@ function WoodenSign({
 
 export default function Barn() {
 	const [sixSevenTick, setSixSevenTick] = useState(0);
-	const sixSevenPromptedRef = useRef(false);
+	// Last counter value we prompted a six-seven for (in-session guard; the
+	// cross-launch guard is AsyncStorage seen_67_at). Number, not boolean,
+	// since the egg now fires at EVERY x67 milestone (67, 167, 267, …).
+	const sixSevenPromptedRef = useRef<number | null>(null);
 	// Storybook dialog state for the 67-celebration prompt. Replaces the
 	// bare iOS Alert.alert that used to fire here — same modal-style
 	// switch we made for the bounty Swap dialog, applied here because
@@ -322,6 +326,10 @@ export default function Barn() {
 	} = useHomeStats({
 		onAlignmentLoaded: setAlignment,
 	});
+
+	// Country-allegiance picker, opened from the bottom-left Barn flag
+	// (or the "pick a country" pennant when no allegiance yet).
+	const [allegianceOpen, setAllegianceOpen] = useState(false);
 
 	// Slop Club monthly stipend. The hook calls onClaimed only when
 	// the RPC actually paid out (members + once-per-month).
@@ -416,12 +424,17 @@ export default function Barn() {
 	const sixSevenSlot = usePopupSlot("sixSeven", sixSevenDialog, 60);
 
 	useEffect(() => {
-		if (sixSevenPromptedRef.current) return;
-		if (stats.counter < 67) return;
-		sixSevenPromptedRef.current = true;
+		const c = stats.counter;
+		// Six-seven fires at every count that ENDS in 67 (67, 167, 267, 1167…).
+		// "Ends in" is the rule: 6700/6701 contain 67 but the digits after it
+		// kill the joke. Once per milestone — seen_67_at remembers the last
+		// value celebrated so sitting at 167 across launches doesn't re-prompt.
+		if (c < 67 || c % 100 !== 67) return;
+		if (sixSevenPromptedRef.current === c) return;
+		sixSevenPromptedRef.current = c;
 		(async () => {
-			const seen = await AsyncStorage.getItem("seen_67");
-			if (seen === "1") return;
+			const seen = await AsyncStorage.getItem("seen_67_at");
+			if (seen != null && Number(seen) === c) return;
 			setSixSevenDialog(true);
 		})();
 	}, [stats.counter]);
@@ -550,9 +563,16 @@ export default function Barn() {
 			} = await supabase.auth.getUser();
 			if (!user) throw new Error("User not logged in");
 
-			await rpc("update_profile_and_item_count", {
+			const res = await rpc("update_profile_and_item_count", {
 				uid: user.id,
 			});
+			// rpc() returns null when the server errored (already logged to
+			// Sentry). Surface it instead of silently no-op'ing — a broken
+			// core loop must never feel like "nothing happens when I tickle."
+			if (res == null) {
+				showToast("That tickle didn't take", "Try again in a moment.");
+				return;
+			}
 
 			// If this tickle landed inside the lucky window AND rolled
 			// a double, grant the +1 bonus via the dedicated RPC so we
@@ -573,16 +593,40 @@ export default function Barn() {
 
 	const handleAvailableTap = () => {
 		if (stats.itemCount >= stats.cap) {
-			showToast("Tickle bank full", `You're at the ${stats.cap} max.`);
+			// Over-cap balances (trough/event grants) show e.g. 28/25 — saying
+			// "you're at the 25 max" while displaying 28 read as a bug.
+			showToast(
+				"Tickle bank full",
+				stats.itemCount > stats.cap
+					? `${stats.itemCount} banked — regen resumes under ${stats.cap}.`
+					: `You're at the ${stats.cap} max.`
+			);
 			return;
 		}
 		if (stats.nextRegenSeconds == null) {
 			showToast("Tickle bank", `${stats.itemCount} / ${stats.cap}`);
 			return;
 		}
+		// LIVE countdown: nextRegenSeconds is a snapshot from the last
+		// stats fetch — repeat taps were re-showing the same frozen time.
+		// Subtract the elapsed wall clock; if a tickle has landed since,
+		// roll into the next cycle and refresh the bank in the background.
+		const elapsed = Math.floor((Date.now() - stats.fetchedAtMs) / 1000);
+		let remaining = stats.nextRegenSeconds - elapsed;
+		const period = stats.regenSeconds ?? 3600;
+		if (remaining <= 0) {
+			remaining = ((remaining % period) + period) % period || period;
+			fetchStats(); // bank grew while we stared — resync quietly
+		}
+		// The TRUE rate, not "every hour": regen_secs_for folds in VIP,
+		// blessings (warm_tea), curses (sluggish_snout), alignment,
+		// happiness. Pre-20260643 servers omit it — fall back to the hour.
+		const rate = stats.regenSeconds
+			? `+1 every ${formatCountdown(stats.regenSeconds)}`
+			: "+1 every hour";
 		showToast(
 			"Next tickle",
-			`In ${formatCountdown(stats.nextRegenSeconds)} · +1 every hour, max ${stats.cap}`
+			`In ${formatCountdown(Math.max(1, remaining))} · ${rate}, max ${stats.cap}`
 		);
 	};
 
@@ -614,17 +658,53 @@ export default function Barn() {
 				</View>
 			)}
 
-			{/* Equipped country flag — pinned to the bottom-left of the
-			    whole Barn page (allegiance "for now" placement). Shows
-			    whenever a flag cosmetic is equipped. */}
-			{stats.activeFlag?.id && HAT_IMAGES[stats.activeFlag.id] && (
-				<View pointerEvents="none" style={styles.barnFlag}>
+			{/* Country flag — pinned to the bottom-left of the whole Barn
+			    page. THE allegiance surface (the shop card is gone):
+			    tapping it reopens the country picker, and switching is
+			    allowed any time (server 20260640). No allegiance yet →
+			    a little "pick a country" pennant in the same spot. */}
+			{stats.activeFlag?.id && HAT_IMAGES[stats.activeFlag.id] ? (
+				<Pressable
+					onPress={() => {
+						Haptics.selectionAsync().catch(() => {});
+						setAllegianceOpen(true);
+					}}
+					hitSlop={8}
+					style={styles.barnFlag}
+				>
 					<Image
 						source={HAT_IMAGES[stats.activeFlag.id]}
 						style={styles.barnFlagImg}
 						resizeMode="contain"
 					/>
-				</View>
+				</Pressable>
+			) : statsLoaded ? (
+				<Pressable
+					onPress={() => {
+						Haptics.selectionAsync().catch(() => {});
+						setAllegianceOpen(true);
+					}}
+					hitSlop={8}
+					style={[styles.barnFlag, styles.barnFlagEmpty]}
+				>
+					<Text style={styles.barnFlagEmptyGlyph}>🏳️</Text>
+					<Text style={styles.barnFlagEmptyText}>pick a country</Text>
+				</Pressable>
+			) : null}
+
+			{/* User-initiated allegiance picker (Barn flag tap) — outside
+			    the popup queue on purpose: the queue serializes LAUNCH
+			    popups; direct-tap modals own the screen immediately. */}
+			{allegianceOpen && (
+				<AllegianceModal
+					visible
+					currentFlagId={stats.activeFlag?.id ?? null}
+					onSkip={() => setAllegianceOpen(false)}
+					onChosen={() => {
+						setAllegianceOpen(false);
+						fetchStats();
+					}}
+				/>
 			)}
 
 			{/* Generous radial puffs — two soft white clouds that fade
@@ -788,12 +868,21 @@ export default function Barn() {
 				cancelLabel="Skip"
 				onCancel={() => {
 					setSixSevenDialog(false);
-					AsyncStorage.setItem("seen_67", "1");
+					// Remember WHICH milestone was celebrated (the trigger effect
+					// compares seen_67_at against the current counter) — the old
+					// seen_67="1" write never matched, re-arming this every boot.
+					AsyncStorage.setItem(
+						"seen_67_at",
+						String(sixSevenPromptedRef.current ?? stats.counter)
+					);
 					sixSevenSlot.release();
 				}}
 				onConfirm={() => {
 					setSixSevenDialog(false);
-					AsyncStorage.setItem("seen_67", "1");
+					AsyncStorage.setItem(
+						"seen_67_at",
+						String(sixSevenPromptedRef.current ?? stats.counter)
+					);
 					setSixSevenTick((t) => t + 1);
 					sixSevenSlot.release();
 				}}
@@ -981,6 +1070,25 @@ const styles = StyleSheet.create({
 		zIndex: 6,
 	},
 	barnFlagImg: { width: "100%", height: "100%" },
+	// "No allegiance yet" pennant — same slot as the flag, paper chip
+	// so it reads against any background.
+	barnFlagEmpty: {
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 12,
+		alignItems: "center",
+		justifyContent: "center",
+		width: 76,
+		height: 60,
+	},
+	barnFlagEmptyGlyph: { fontSize: 20 },
+	barnFlagEmptyText: {
+		fontFamily: FONTS.hand,
+		fontSize: 9,
+		color: WHIMSY.ink,
+		textAlign: "center",
+	},
 	// Generous (angel-coded) radial puffs — soft white clouds that
 	// fade in at top-left + top-right when alignment >= angel
 	// threshold. The radial-gradient via View isn't possible in RN;

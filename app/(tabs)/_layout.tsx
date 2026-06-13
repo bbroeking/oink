@@ -12,6 +12,7 @@ import { ReferralCodeEntry } from "@/components/ReferralCodeEntry";
 import { HangingSignsTabBar } from "@/components/ui/HangingSignsTabBar";
 import { WHIMSY, KICKER_TEXT } from "@/constants/theme";
 import { initIAP } from "@/utils/iap";
+import { usePopupHold } from "@/components/ui/PopupQueue";
 
 export default function TabLayout() {
 	const [session, setSession] = useState<Session | null>(null);
@@ -23,6 +24,22 @@ export default function TabLayout() {
 	// chosen, before the Barn is shown" placement.
 	const [needsReferralStep, setNeedsReferralStep] = useState<boolean | null>(
 		null
+	);
+
+	// Block ALL launch popups (root _layout mounts them above this whole
+	// Stack) while any pre-shell gate screen is up: signed out, the
+	// "saddling up" profile fetch, username setup, onboarding, or the
+	// referral step. Wants queue behind the hold and present once the
+	// player actually lands in the app shell. Without this a reinstall
+	// (AsyncStorage wipe re-arms onboarding while a seasoned account's
+	// schism/finale/achievements all want at boot) stacked native modals
+	// on top of the onboarding storybook — "stuck on Hi, I'm Rosie!".
+	usePopupHold(
+		!session ||
+			username === undefined ||
+			!username ||
+			needsOnboarding !== false ||
+			needsReferralStep !== false
 	);
 
 	useEffect(() => {

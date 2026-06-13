@@ -6,7 +6,8 @@
 //   • Two heart tallies (YOU | host) tick up together on every tap with a shared
 //     heartbeat pulse — the "you both get a heart" payoff. Hearts are the mutual
 //     love (happiness), distinct from the tickle you spend.
-//   • "YOUR TICKLES" bar = the resource you spend (−1/tap, refills over time).
+//   • "PIG ENERGY" bar = the shared visit budget (random 3–7 taps a visit);
+//     visiting no longer spends your own tickle bank (server 20260646).
 //   • The host's pig has an energy bar; it tires over the tap-session and, once
 //     spent (or the 7/hr ceiling), both pigs nap — and you can only visit one
 //     friend every 3 hours, so the nap screen shows when you're rested next.
@@ -19,6 +20,7 @@ import {
 	View,
 	Text,
 	Pressable,
+	Dimensions,
 	Image,
 	ActivityIndicator,
 	StyleSheet,
@@ -37,6 +39,8 @@ import { Glyph, IconText, glyphSource } from "./ui/Glyph";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, WHIMSY } from "@/constants/theme";
+
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
 interface Props {
 	targetUserId: string;
@@ -125,12 +129,6 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [loading, setLoading] = useState(true);
 	const [busy, setBusy] = useState(false);
 
-	// Your spendable tickles (the resource you spend visiting).
-	const [avail, setAvail] = useState<number | null>(null);
-	const [cap, setCap] = useState(25);
-	const [secsToNext, setSecsToNext] = useState<number | null>(null);
-	const [regenSecs, setRegenSecs] = useState(75); // full regen period (server)
-
 	// Live lifetime tickle totals (seeded from each profile's tickles_earned),
 	// then both tick up together by one on every tap.
 	const [youHearts, setYouHearts] = useState(0);
@@ -143,7 +141,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [tapCount, setTapCount] = useState(0);
 	const [tapCap] = useState(() => 3 + Math.floor(Math.random() * 5)); // 3–7
 	const [tired, setTired] = useState(false);
-	const [noTickles, setNoTickles] = useState(false);
+	// Nap summary visibility. Mid-visit tire-out no longer slams the scrim
+	// over the barn — a small "All tickled out!" bubble pops instead, and
+	// the summary dialog shows when the player taps Leave. Rested-on-arrival
+	// still scrims immediately (there's nothing to do in that barn).
+	const [napOpen, setNapOpen] = useState(false);
 	const [lockedUntil, setLockedUntil] = useState<string | null>(null);
 	// Locked/rested-out on arrival (came back inside the 3h window, or the pigs
 	// already napped this hour) → open straight into the nap screen.
@@ -254,28 +256,21 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			}
 			if (!cancelled) setTruffleAvail(canDig);
 
-			// Your tickle bank + cap + refill timer, plus whether you're locked to
-			// a different barn (one friend / 3h) or the pigs already napped.
+			// Whether you're locked to a different barn (one friend / 3h) or
+			// the pigs already napped. Visiting no longer spends YOUR tickle
+			// bank (server 20260646) — the bank fields in the response are
+			// ignored; the visit budget is the random 3–7 sleepy roll.
 			const st = await rpcAction<{
 				resting?: boolean;
 				locked?: boolean;
 				next_at?: string | null;
-				balance?: number;
-				cap?: number;
-				next_regen_seconds?: number | null;
-				regen_seconds?: number;
 			}>("barn_visit_status", { p_target: targetUserId });
 			if (!cancelled && st.ok) {
-				setAvail(st.balance ?? 0);
-				setCap(st.cap ?? 25);
-				setSecsToNext(st.next_regen_seconds ?? null);
-				if (st.regen_seconds) setRegenSecs(st.regen_seconds);
 				if (st.locked) {
 					setLockedUntil(st.next_at ?? null);
 					setRestingOnArrival(true);
 				}
 				if (st.resting) setRestingOnArrival(true);
-				if ((st.balance ?? 0) < 1) setNoTickles(true);
 			}
 			setLoading(false);
 		})();
@@ -284,44 +279,22 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		};
 	}, [targetUserId]);
 
-	// Live refill countdown for the YOUR TICKLES bar.
-	useEffect(() => {
-		if (secsToNext == null || avail == null || avail >= cap) return;
-		const id = setInterval(() => {
-			setSecsToNext((s) => {
-				if (s == null) return s;
-				if (s <= 1) {
-					setAvail((a) => (a == null ? a : Math.min(cap, a + 1)));
-					return regenSecs; // full regen period from the server
-				}
-				return s - 1;
-			});
-		}, 1000);
-		return () => clearInterval(id);
-	}, [secsToNext, avail, cap, regenSecs]);
-
 	const tireOut = () => {
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 		setTired(true);
 	};
 
 	const tickle = async () => {
-		if (tired || restingOnArrival || noTickles || lockedUntil || busy) return;
-		if (avail != null && avail <= 0) {
-			setNoTickles(true);
-			return;
-		}
+		if (tired || restingOnArrival || lockedUntil || busy) return;
 		setBusy(true);
 		const r = await rpcAction<{
 			taps_left?: number;
-			visitor_balance?: number;
 			next_at?: string | null;
 		}>("tickle_at_barn", { p_target: targetUserId });
 		setBusy(false);
 		if (r.ok) {
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 			playTap();
-			if (typeof r.visitor_balance === "number") setAvail(r.visitor_balance);
 			setYouHearts((n) => n + 1);
 			setFriendHearts((n) => n + 1);
 			setGained((g) => g + 1);
@@ -329,11 +302,10 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			setTapCount(next);
 			// Nap on the sleepy roll OR the shared hourly ceiling, whichever first.
 			if (next >= tapCap || (r.taps_left ?? 99) <= 0) setTimeout(tireOut, 520);
-		} else if (r.reason === "tired") {
+		} else if (r.reason === "tired" || r.reason === "no_tickles") {
+			// no_tickles only comes from a pre-20260646 server (visits used
+			// to spend your bank); treat it as the nap so there's a clean exit.
 			tireOut();
-		} else if (r.reason === "no_tickles") {
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-			setNoTickles(true);
 		} else if (r.reason === "cooldown") {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
 			setLockedUntil(r.next_at ?? null);
@@ -381,10 +353,6 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const energyLabel =
 		energy > 66 ? "wide awake" : energy > 33 ? "having fun" : energy > 0 ? "getting sleepy" : "sleepy";
 
-	const mm = secsToNext != null ? Math.floor(secsToNext / 60) : 0;
-	const ss = secsToNext != null ? String(secsToNext % 60).padStart(2, "0") : "00";
-	const atCap = avail != null && avail >= cap;
-
 	// Shared squish transform entries for both pigs. Passed as an ARRAY so each
 	// pig can compose it WITH its own { scale } in one transform list — a second
 	// `transform` style object would clobber the scale and render the pig at full
@@ -413,7 +381,15 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 
 	return (
 		<View style={styles.root}>
-			<Image source={bgSrc} style={StyleSheet.absoluteFill} resizeMode="cover" />
+			{/* Explicit numeric size, NOT absoluteFill insets — inset-sized
+			    Images hit the Yoga definite-size quirk (fifth sighting) and
+			    fall back to intrinsic px (864×1821), which rendered as a
+			    2×-zoomed top-left quadrant of the art ("broken background"). */}
+			<Image
+				source={bgSrc}
+				style={{ position: "absolute", top: 0, left: 0, width: SCREEN_W, height: SCREEN_H }}
+				resizeMode="cover"
+			/>
 			{/* soft top fade for title legibility — fades fully to the single
 			    background below (no hard seam / "half and half" split) */}
 			<LinearGradient
@@ -439,7 +415,20 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 										{targetName}'s Barn
 									</Text>
 								</View>
-								<Pressable onPress={onClose} style={styles.leavePill} hitSlop={8}>
+								<Pressable
+									onPress={() => {
+										// Tired out mid-visit: Leave surfaces the nap
+										// summary (hearts shared + next-visit timer)
+										// before actually heading home.
+										if (tired && !restingOnArrival && !napOpen) {
+											setNapOpen(true);
+											return;
+										}
+										onClose();
+									}}
+									style={styles.leavePill}
+									hitSlop={8}
+								>
 									<IconText right={<Glyph name="close" size={11} />} gap={5}>
 										<Text style={styles.leaveText}>Leave</Text>
 									</IconText>
@@ -474,44 +463,42 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 								</Animated.View>
 							</View>
 
-							{/* YOUR TICKLES — the resource you spend */}
+							{/* PIG ENERGY — the shared visit budget (replaces the old
+							    YOUR TICKLES bar: visits don't spend your bank anymore).
+							    Both pigs share it; it drains over the random 3–7 sleepy
+							    roll and everyone naps at zero. */}
 							<View style={styles.ticklesBar}>
 								<View style={styles.ticklesTop}>
 									<IconText left={<Glyph name="sparkle" size={12} />} gap={4}>
-									<Text style={styles.ticklesLabel}>YOUR TICKLES</Text>
+									<Text style={styles.ticklesLabel}>PIG ENERGY</Text>
 								</IconText>
-									<Text style={styles.ticklesCount}>
-										{avail ?? "–"}
-										<Text style={styles.ticklesCap}> / {cap}</Text>
+									<Text style={[styles.ticklesCount, { color: energyColor }]}>
+										{energyLabel}
 									</Text>
 								</View>
 								<View style={styles.ticklesTrack}>
 									<View
 										style={[
 											styles.ticklesFill,
-											{ width: `${Math.max(0, Math.min(1, (avail ?? 0) / cap)) * 100}%` },
+											{ width: `${energy}%`, backgroundColor: energyColor },
 										]}
 									/>
 								</View>
 								<View style={styles.ticklesFoot}>
-									<Text style={styles.ticklesFootText}>-1 each tap</Text>
-									{atCap ? (
-										<IconText right={<Glyph name="check" size={11} />} gap={4}>
-											<Text style={styles.ticklesFootText}>full</Text>
-										</IconText>
-									) : (
-										<Text style={styles.ticklesFootText}>
-											{secsToNext != null ? `+1 in ${mm}:${ss}` : "refills over time"}
-										</Text>
-									)}
+									<Text style={styles.ticklesFootText}>shared by both pigs</Text>
+									<Text style={styles.ticklesFootText}>
+										every tickle tires them a little
+									</Text>
 								</View>
 
-								{/* out of tickles — pops right over your TICKLES bar */}
-								{noTickles && !tired && (
+								{/* all tickled out — the pig hit its tap ceiling; nudge
+								    toward Leave (which opens the nap summary) instead of
+								    covering the barn immediately. */}
+								{tired && !restingOnArrival && !napOpen && (
 									<View style={styles.ticklesPop} pointerEvents="none">
-										<Text style={styles.ticklesPopTitle}>Out of tickles!</Text>
+										<Text style={styles.ticklesPopTitle}>All tickled out!</Text>
 										<Text style={styles.ticklesPopSub}>
-											{atCap ? "come back soon" : secsToNext != null ? `next +1 in ${mm}:${ss}` : "refills over time"}
+											tap Leave when you're ready
 										</Text>
 										<View style={styles.ticklesPopTail} />
 									</View>
@@ -547,9 +534,6 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									equip={hostEquip}
 									tired={tired}
 									floats={floats}
-									energy={energy}
-									energyColor={energyColor}
-									energyLabel={energyLabel}
 								/>
 
 								{/* barn truffle — a cartoony shovel planted in the ground, tucked
@@ -571,8 +555,9 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 							</View>
 						</View>
 
-						{/* nap screen — tired out, or rested-out / locked on arrival */}
-						{(tired || restingOnArrival) && (
+						{/* nap screen — Leave-triggered after tiring out, or
+						    rested-out / locked on arrival */}
+						{(napOpen || restingOnArrival) && (
 							<View style={styles.napScrim}>
 								<View style={styles.napCard}>
 									<Glyph name="zzz" size={50} style={styles.napGlyph} />
@@ -717,9 +702,6 @@ function TapPig({
 	equip,
 	tired,
 	floats,
-	energy,
-	energyColor,
-	energyLabel,
 }: {
 	me?: boolean;
 	slotStyle?: StyleProp<ViewStyle>;
@@ -733,9 +715,6 @@ function TapPig({
 	equip: EquipSet;
 	tired: boolean;
 	floats: { id: number; anim: Animated.Value; rx: number; star: boolean }[];
-	energy?: number;
-	energyColor?: string;
-	energyLabel?: string;
 }) {
 	const front = !me; // the host pig you're visiting reads as nearer/larger
 	const scale = front ? 0.66 : 0.44;
@@ -788,14 +767,6 @@ function TapPig({
 					{label}
 				</Text>
 			</View>
-			{front && energy != null && (
-				<View style={styles.energyWrap}>
-					<View style={styles.energyTrack}>
-						<View style={[styles.energyFill, { width: `${energy}%`, backgroundColor: energyColor }]} />
-					</View>
-					<Text style={styles.energyLabel}>{energyLabel} · energy</Text>
-				</View>
-			)}
 		</Pressable>
 	);
 }
@@ -910,7 +881,7 @@ const styles = StyleSheet.create({
 	spotlight: {
 		position: "absolute",
 		alignSelf: "center",
-		top: "26%",
+		bottom: "6%",
 		width: 300,
 		height: 220,
 		borderRadius: 150,
@@ -918,10 +889,12 @@ const styles = StyleSheet.create({
 		opacity: 0.7,
 	},
 	// Each slot fills the diorama width and centers its pig; translateX staggers
-	// the pair off-center, top sets the near/far vertical placement.
+	// the pair off-center. Both slots are BOTTOM-anchored so the pigs share
+	// one ground row (was a stacked top-4%/38% diorama); the host keeps a
+	// slight size + depth edge but they read side-by-side now.
 	pigSlot: { position: "absolute", left: 0, right: 0, alignItems: "center" },
-	pigSlotBack: { top: "4%", transform: [{ translateX: -68 }] },
-	pigSlotFront: { top: "38%", transform: [{ translateX: 60 }] },
+	pigSlotBack: { bottom: "14%", transform: [{ translateX: -78 }] },
+	pigSlotFront: { bottom: "9%", transform: [{ translateX: 72 }] },
 	floatLayer: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center", zIndex: 5 },
 	float: { position: "absolute", bottom: "60%", fontFamily: FONTS.whimsy },
 	pigBox: { alignItems: "center", justifyContent: "center" },

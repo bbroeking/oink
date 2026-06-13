@@ -17,7 +17,6 @@ import {
 	Modal,
 	View,
 	Text,
-	Image,
 	Pressable,
 	StyleSheet,
 	Animated,
@@ -26,6 +25,7 @@ import {
 } from "react-native";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
+import { RitualIconWell } from "./ui/RitualIconWell";
 import { CleanseModal } from "./CleanseModal";
 import { useActiveEffects } from "../hooks/useActiveEffects";
 import { formatLeft, type Effect } from "../utils/activeEffects";
@@ -129,6 +129,7 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 									</Text>
 									<Pressable
 										onPress={() => setCleanseOpen(true)}
+										hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
 										style={({ pressed }) => [
 											styles.cleansePill,
 											pressed && { opacity: 0.7 },
@@ -183,20 +184,7 @@ function EffectCard({ effect }: { effect: Effect }) {
 			style={styles.card}
 		>
 			<View style={styles.cardRow}>
-				<View
-					style={[
-						styles.iconWell,
-						blessed ? styles.iconWellBless : styles.iconWellCurse,
-					]}
-				>
-					{meta && (
-						<Image
-							source={meta.icon}
-							style={styles.icon}
-							resizeMode="contain"
-						/>
-					)}
-				</View>
+				<RitualIconWell icon={meta?.icon} blessed={blessed} size={48} />
 				<View style={{ flex: 1, minWidth: 0 }}>
 					<Text style={styles.cardName} numberOfLines={1}>
 						{meta?.name ?? effect.kind}
@@ -294,30 +282,6 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 12,
-	},
-	iconWell: {
-		width: 48,
-		height: 48,
-		borderRadius: 12,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center",
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 1.5, height: 1.5 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
-	},
-	iconWellBless: {
-		backgroundColor: WHIMSY.paper,
-	},
-	iconWellCurse: {
-		backgroundColor: WHIMSY.ink,
-	},
-	icon: {
-		width: 38,
-		height: 38,
 	},
 	cardName: {
 		fontFamily: FONTS.whimsy,

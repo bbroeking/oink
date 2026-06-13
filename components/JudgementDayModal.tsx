@@ -40,6 +40,11 @@ export interface FinaleResult {
 
 interface Props {
 	result: FinaleResult;
+	// Driven by the popup-queue slot in _layout: the native Modal animates
+	// out on visible=false BEFORE the parent unmounts it (the unmount-while-
+	// presented hazard, see PopupQueue.tsx). Defaults true so direct renders
+	// (tests) behave as before.
+	visible?: boolean;
 	onDismiss: () => void;
 }
 
@@ -70,10 +75,16 @@ function subtitle(r: FinaleResult): string {
 	return ended;
 }
 
-export function JudgementDayModal({ result, onDismiss }: Props) {
+export function JudgementDayModal({ result, visible = true, onDismiss }: Props) {
 	const fade = useRef(new Animated.Value(0)).current;
 
 	useEffect(() => {
+		// Keyed on visible so the entrance plays when the queue actually
+		// presents us (the component can now mount before its turn).
+		if (!visible) {
+			fade.setValue(0);
+			return;
+		}
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
 			() => {}
 		);
@@ -83,7 +94,7 @@ export function JudgementDayModal({ result, onDismiss }: Props) {
 			easing: Easing.out(Easing.quad),
 			useNativeDriver: true,
 		}).start();
-	}, [fade]);
+	}, [visible, fade]);
 
 	const handleDismiss = async () => {
 		try {
@@ -97,7 +108,12 @@ export function JudgementDayModal({ result, onDismiss }: Props) {
 	};
 
 	return (
-		<Modal visible transparent animationType="fade" onRequestClose={handleDismiss}>
+		<Modal
+			visible={visible}
+			transparent
+			animationType="fade"
+			onRequestClose={handleDismiss}
+		>
 			<Animated.View style={[styles.root, { opacity: fade }]}>
 				{/* Warm-to-dark vertical gradient — the ember backdrop
 				    that sets the verdict moment apart from any other

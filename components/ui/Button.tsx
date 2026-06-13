@@ -66,12 +66,18 @@ export function Button({
 		<>
 			{icon}
 			<Text
+				// One line, auto-shrunk to fit — narrow hosts (mosaic card
+				// bodies) were clipping labels mid-word ("Not enc").
+				numberOfLines={1}
+				adjustsFontSizeToFit
+				minimumFontScale={0.7}
 				style={{
 					color: TEXT_COLORS[variant],
 					fontFamily: FONTS.bodyExtra,
 					fontSize: sz.fs,
 					letterSpacing: 0.1,
 					marginLeft: icon ? 6 : 0,
+					flexShrink: 1,
 				}}
 			>
 				{children}

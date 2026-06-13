@@ -33,6 +33,12 @@ export interface Stats {
 	itemCount: number;
 	cap: number;
 	nextRegenSeconds: number | null;
+	// TRUE per-tickle regen period (server regen_secs_for: VIP, blessings,
+	// curses, alignment, happiness). Null until the 20260643 RPC is live.
+	regenSeconds: number | null;
+	// Date.now() when this stats object was fetched — lets consumers turn
+	// nextRegenSeconds into a LIVE countdown instead of a frozen snapshot.
+	fetchedAtMs: number;
 	// Five independently-equipped slots: hat, aura, background, held,
 	// tickle particle. See migrations 20260514000000 + 20260519000000.
 	happiness: number;
@@ -55,6 +61,8 @@ const INITIAL_STATS: Stats = {
 	itemCount: 0,
 	cap: 25,
 	nextRegenSeconds: null,
+	regenSeconds: null,
+	fetchedAtMs: 0,
 	happiness: 50,
 	activeHat: null,
 	activeGlasses: null,
@@ -137,6 +145,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				balance: number;
 				cap: number;
 				next_regen_seconds: number | null;
+				regen_seconds?: number;
 				current_tier: number;
 				total_tiers: number;
 			}>("home_stats");
@@ -147,6 +156,8 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 					itemCount: r.balance,
 					cap: r.cap,
 					nextRegenSeconds: r.next_regen_seconds,
+					regenSeconds: r.regen_seconds ?? null,
+					fetchedAtMs: Date.now(),
 					happiness: r.happiness ?? 50,
 					activeHat: toSlot(r.active_hat_id, r.active_hat),
 					activeGlasses: toSlot(r.active_glasses_id ?? null, r.active_glasses ?? null),
@@ -248,6 +259,8 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				itemCount: info?.balance ?? 0,
 				cap: info?.cap ?? 25,
 				nextRegenSeconds: info?.next_regen_seconds ?? null,
+				regenSeconds: null,
+				fetchedAtMs: Date.now(),
 				happiness: prof?.happiness ?? 50,
 				activeHat: slotFromId(prof?.active_hat_id ?? null),
 				activeGlasses: slotFromId(prof?.active_glasses_id ?? null),

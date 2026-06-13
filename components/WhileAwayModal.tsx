@@ -8,12 +8,12 @@ import {
 	Modal,
 	View,
 	Text,
-	Image,
 	Pressable,
 	ScrollView,
 	StyleSheet,
 } from "react-native";
 import { Sticker } from "./ui/Sticker";
+import { RitualIconWell } from "./ui/RitualIconWell";
 import {
 	BLESSING_META,
 	CURSE_META,
@@ -43,9 +43,15 @@ export type WhileAwayEvent =
 export type RitualEvent = WhileAwayEvent; // legacy alias
 
 export function WhileAwayModal({
+	visible,
 	events,
 	onDismiss,
 }: {
+	// Driven by the popup-queue slot in _layout. The native Modal must
+	// animate out on visible=false BEFORE the parent unmounts it, or the
+	// next queued popup can present into a mid-teardown window and come
+	// up invisible (see PopupQueue.tsx).
+	visible: boolean;
 	events: WhileAwayEvent[];
 	onDismiss: () => void;
 }) {
@@ -76,7 +82,12 @@ export function WhileAwayModal({
 						: "Blessings & curses landed";
 
 	return (
-		<Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
+		<Modal
+			visible={visible}
+			transparent
+			animationType="fade"
+			onRequestClose={onDismiss}
+		>
 			<View style={styles.backdrop}>
 				<Sticker
 					color="paper"
@@ -138,9 +149,11 @@ export function WhileAwayModal({
 										blessed ? styles.rowBless : styles.rowCurse,
 									]}
 								>
-									{meta && (
-										<Image source={meta.icon} style={styles.icon} />
-									)}
+									<RitualIconWell
+										icon={meta?.icon}
+										blessed={blessed}
+										size={40}
+									/>
 									<View style={{ flex: 1, minWidth: 0 }}>
 										<Text style={styles.rowName} numberOfLines={1}>
 											{e.from ?? (blessed ? "A friend" : "Someone")}{" "}
@@ -202,10 +215,12 @@ const styles = StyleSheet.create({
 	rowBless: { backgroundColor: WHIMSY.sun, borderColor: WHIMSY.ink },
 	rowCurse: { backgroundColor: "#D5E4C9", borderColor: WHIMSY.ink },
 	rowTrade: { backgroundColor: WHIMSY.rose, borderColor: WHIMSY.ink },
+	// 40pt to match the bless/curse RitualIconWell so all four row
+	// kinds share one left-column height.
 	tradeGlyphWell: {
-		width: 36,
-		height: 36,
-		borderRadius: 18,
+		width: 40,
+		height: 40,
+		borderRadius: 20,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.paper,
@@ -217,9 +232,9 @@ const styles = StyleSheet.create({
 	// "from the barn" rather than from any specific friend or kind.
 	rowSystem: { backgroundColor: WHIMSY.cream, borderColor: WHIMSY.ink },
 	systemGlyphWell: {
-		width: 36,
-		height: 36,
-		borderRadius: 18,
+		width: 40,
+		height: 40,
+		borderRadius: 20,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.sun,
@@ -227,7 +242,6 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	systemGlyph: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
-	icon: { width: 36, height: 36, resizeMode: "contain" },
 	rowName: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	rowBlurb: {
 		fontFamily: FONTS.hand,

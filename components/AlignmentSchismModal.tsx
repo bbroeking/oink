@@ -39,6 +39,11 @@ interface Props {
 	// fired at). Server's new check_schism_status returns it
 	// explicitly.
 	milestone?: SchismMilestone;
+	// Driven by the popup-queue slot in _layout: the native Modal animates
+	// out on visible=false BEFORE the parent unmounts it (the unmount-while-
+	// presented hazard, see PopupQueue.tsx). Defaults true so direct renders
+	// (tests) behave as before.
+	visible?: boolean;
 	onDismiss: () => void;
 }
 
@@ -104,11 +109,24 @@ const COPY: Record<
 	},
 };
 
-export function AlignmentSchismModal({ side, score, milestone = 25, onDismiss }: Props) {
+export function AlignmentSchismModal({
+	side,
+	score,
+	milestone = 25,
+	visible = true,
+	onDismiss,
+}: Props) {
 	const scale = useRef(new Animated.Value(0)).current;
 	const opacity = useRef(new Animated.Value(0)).current;
 
 	useEffect(() => {
+		// Keyed on visible so the entrance plays when the queue actually
+		// presents us (the component can now mount before its turn).
+		if (!visible) {
+			scale.setValue(0);
+			opacity.setValue(0);
+			return;
+		}
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
 			() => {}
 		);
@@ -126,7 +144,7 @@ export function AlignmentSchismModal({ side, score, milestone = 25, onDismiss }:
 				useNativeDriver: true,
 			}),
 		]).start();
-	}, [scale, opacity]);
+	}, [visible, scale, opacity]);
 
 	const handleDismiss = async () => {
 		try {
@@ -141,7 +159,12 @@ export function AlignmentSchismModal({ side, score, milestone = 25, onDismiss }:
 	const copy = COPY[side][milestone];
 
 	return (
-		<Modal visible transparent animationType="fade" onRequestClose={handleDismiss}>
+		<Modal
+			visible={visible}
+			transparent
+			animationType="fade"
+			onRequestClose={handleDismiss}
+		>
 			<View style={styles.backdrop}>
 				<Animated.View
 					style={[

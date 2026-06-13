@@ -13,7 +13,8 @@ import { Sticker } from "./ui/Sticker";
 import { PigStage } from "./ui/PigStage";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Button } from "./ui";
-import { rpc } from "@/utils/rpc";
+import { rpc, rpcAction } from "@/utils/rpc";
+import { showPurchaseToast } from "./PurchaseToast";
 import { HAT_IMAGES, HatRow, RARITY_COLORS } from "@/constants/hats";
 import { FONTS, MODAL_BACKDROP_BG, RARITY_BG_SOLID, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
@@ -139,6 +140,12 @@ interface Props {
 	onBuy: () => void;
 	onEquip: () => void;
 	onUnequip: () => void;
+	// Fired when the Trough CTA successfully spends the seed, BEFORE
+	// onClose — lets the shop snap its balance chip immediately instead
+	// of waiting for the next focus refetch ("delay when we spend
+	// snouts"). `newBalance` comes from the RPC when the server is on
+	// 20260639+; `spent` is the seed for the optimistic fallback.
+	onTroughOpened?: (spent: number, newBalance?: number) => void;
 }
 
 export function ItemPreviewModal({
@@ -153,8 +160,15 @@ export function ItemPreviewModal({
 	onBuy,
 	onEquip,
 	onUnequip,
+	onTroughOpened,
 }: Props) {
+	// Measured preview-card side: the PigStage is a fixed 300pt canvas
+	// (item anchors are tuned in that space), so on narrow screens we
+	// SCALE the whole stage down to fit instead of letting overflow:hidden
+	// clip the pig's ears/sides ("can't see the full pig").
+	const [cardSide, setCardSide] = useState(0);
 	if (!item) return null;
+	const stageScale = cardSide > 0 ? Math.min(1, (cardSide - 12) / 300) : 1;
 	const rarity = item.rarity ?? "common";
 	const rarityColor = RARITY_COLORS[rarity];
 	const itemSrc = HAT_IMAGES[item.id] ?? null;
@@ -271,7 +285,7 @@ export function ItemPreviewModal({
 							</Button>
 						) : !buyable ? (
 							<Button size="md" variant="locked" full disabled>
-								Available in Today's Shop
+								Rotates in soon — not today's pick
 							</Button>
 						) : !canAfford ? (
 							<Button size="md" variant="locked" full disabled>
@@ -289,21 +303,61 @@ export function ItemPreviewModal({
 							</Button>
 						)}
 					</View>
-					{!owned && item.cost > 0 && (
-						<Pressable
-							onPress={async () => {
-								await rpc("open_item_drive", {
-									target_item_id: item.id,
-									seed_snouts: Math.ceil(item.cost * 0.1),
-								});
-								onClose();
-							}}
-							style={styles.troughLink}
-						>
-							<Text style={styles.troughLinkText}>
-								…or open a Trough — your friends chip in
+					{/* Troughs only open for items currently IN the shop
+					    (today's rotation or an always-stocked flag) — gated
+					    here AND server-side (20260639's `not_in_shop`), so
+					    out-of-rotation items just show the locked Buy row. */}
+					{!owned && item.cost > 0 && buyable && (
+						<View style={styles.troughCtaWrap}>
+							<Button
+								size="md"
+								variant="ghost"
+								full
+								onPress={async () => {
+									// The RPC says WHY it refused (3-day opener cooldown,
+									// seed too low, can't afford). Discarding it made this
+									// CTA silently fail AND silently charge on success (#7).
+									const seed = Math.ceil(item.cost * 0.1);
+									const r = await rpcAction<{
+										drive_id?: string;
+										balance?: number;
+									}>("open_item_drive", {
+										target_item_id: item.id,
+										seed_snouts: seed,
+									});
+									if (r.ok) {
+										showPurchaseToast({
+											type: "success",
+											title: "Trough opened!",
+											text: "Your Sounder can chip in now — find it in the Shop.",
+											cost: seed,
+										});
+										onTroughOpened?.(seed, r.balance);
+										onClose();
+										return;
+									}
+									const msg =
+										r.reason === "opener_cooldown"
+											? "You opened a Trough recently — one per 3 days."
+											: r.reason === "insufficient"
+												? "Not enough snouts for the seed."
+												: r.reason === "seed_too_low"
+													? "Seed too small for this item."
+													: r.reason === "not_in_shop"
+														? "Troughs only open for items in today's shop."
+														: r.reason === "not_eligible"
+															? "This item can't be Trough-funded."
+															: "Couldn't open the Trough. Try again.";
+									showPurchaseToast({ type: "fail", title: "No Trough", text: msg });
+								}}
+							>
+								Or open a Trough — friends chip in
+							</Button>
+							<Text style={styles.troughHint}>
+								Start it for {Math.ceil(item.cost * 0.1).toLocaleString()} snouts
+								— your Sounder chips in the rest.
 							</Text>
-						</Pressable>
+						</View>
 					)}
 				</Sticker>
 			</View>
@@ -312,12 +366,13 @@ export function ItemPreviewModal({
 }
 
 const styles = StyleSheet.create({
-	troughLink: { marginTop: 10, alignSelf: "center" },
-	troughLinkText: {
+	troughCtaWrap: { marginTop: 12, alignSelf: "stretch" },
+	troughHint: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.accent,
 		textAlign: "center",
+		marginTop: 6,
 	},
 	backdrop: {
 		flex: 1,
@@ -327,7 +382,10 @@ const styles = StyleSheet.create({
 	},
 	sheet: {
 		paddingHorizontal: 22,
-		paddingTop: 22,
+		// Top padding clears the 36pt ✕ (top 12 + 36 = 48) so the
+		// preview card — and the pig's ears inside it — can never
+		// slide under the dismiss target.
+		paddingTop: 52,
 		paddingBottom: 24,
 	},
 	closeBtn: {
@@ -341,9 +399,16 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		zIndex: 30,
+		// Paper chip under the ✕ — stays legible even if future art
+		// bleeds near the corner.
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 18,
 	},
 	closeText: {
-		fontSize: 24,
+		fontSize: 20,
+		lineHeight: 22,
 		color: WHIMSY.ink,
 	},
 	previewCard: {

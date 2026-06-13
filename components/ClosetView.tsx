@@ -27,10 +27,21 @@ import {
 	SLOT_ORDER,
 	SLOT_LABEL,
 	SLOT_COLUMN,
+	columnsForSlot,
 	slotForCategory,
 	type EquipSlotKey,
 } from "@/constants/slots";
 import { FONTS, WHIMSY } from "@/constants/theme";
+import { Dimensions } from "react-native";
+
+// Explicit tile geometry. Yoga (this RN vintage) refuses to treat
+// aspectRatio-derived heights as definite when resolving children — both
+// %-sizes AND absolute insets fall back to the child's intrinsic px size,
+// so big art cropped through every workaround. Measured numbers end it:
+// COLS columns inside the content padding (16*2) with the grid's 10pt gaps.
+const SCREEN_W = Dimensions.get("window").width;
+const TILE_W = Math.floor((SCREEN_W - 32 - 2 * 10) / 3);
+const THUMB_ART = TILE_W - 24; // 12pt breathing room each side
 
 interface Props {
 	ownedItems: HatRow[];
@@ -140,7 +151,7 @@ export function ClosetView({
 	const slotsWithContent = new Set<EquipSlotKey>();
 	ownedItems.forEach((i) => slotsWithContent.add(slotForCategory(i.category)));
 	SLOT_ORDER.forEach((s) => {
-		if (activeIds[SLOT_COLUMN[s]]) slotsWithContent.add(s);
+		if (columnsForSlot(s).some((c) => activeIds[c])) slotsWithContent.add(s);
 	});
 	const visibleSlots = SLOT_ORDER.filter((s) => slotsWithContent.has(s));
 
@@ -197,8 +208,11 @@ export function ClosetView({
 				{visibleSlots.length > 0 && (
 					<View style={styles.slotRow}>
 						{visibleSlots.map((s) => {
-							const column = SLOT_COLUMN[s];
-							const equippedId = activeIds[column];
+							// Face reads mask ?? glasses (merged chip, two columns).
+							const equippedId =
+								columnsForSlot(s)
+									.map((c) => activeIds[c])
+									.find((v) => v) ?? null;
 							const it = equippedId ? byId.current.get(equippedId) : null;
 							const src = equippedId ? HAT_IMAGES[equippedId] : null;
 							return (
@@ -481,7 +495,7 @@ const styles = StyleSheet.create({
 	},
 	grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
 	itemCard: {
-		width: `${100 / COLS - 4}%`,
+		width: TILE_W,
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
@@ -496,25 +510,22 @@ const styles = StyleSheet.create({
 	itemCardActive: { borderColor: WHIMSY.lilacDeep },
 	itemStripe: { height: 4, width: "100%" },
 	itemThumb: {
-		width: "100%",
-		aspectRatio: 1,
+		width: TILE_W - 4, // inside the 2pt borders
+		height: TILE_W - 4,
 		alignItems: "center",
 		justifyContent: "center",
 		overflow: "hidden",
 		position: "relative",
 	},
-	// Absolute insets, NOT percentage width/height: the thumb's height
-	// comes from aspectRatio, which Yoga doesn't treat as definite when
-	// resolving a child's % height — the Image then falls back to its
-	// intrinsic pixel size (1024² legendary art, 752×1584 backgrounds)
-	// and blows out of the tile. Absolute insets resolve after the box
-	// is laid out, so the art always fits with `contain`.
+	// NUMERIC absolute insets only. %-insets hit the same Yoga quirk as
+	// %-sizes here (the aspectRatio-derived parent height isn't a definite
+	// basis at resolve time), so the Image reverted to intrinsic px size
+	// (1024² legendary art, 752×1584 backgrounds) and the overflow:hidden
+	// backstop CROPPED it — giant zoomed art in every tile. Fixed-point
+	// insets always resolve; resizeMode="contain" does the fitting.
 	itemThumbImg: {
-		position: "absolute",
-		top: "12%",
-		left: "12%",
-		right: "12%",
-		bottom: "12%",
+		width: THUMB_ART,
+		height: THUMB_ART,
 	},
 	itemEmoji: { fontSize: 40 },
 	itemFoot: {

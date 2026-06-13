@@ -96,3 +96,25 @@ describe("integration: label drives display + icon consistently", () => {
 		}
 	);
 });
+
+describe("alignmentEffects — linear regen (20260630)", () => {
+	const { alignmentEffects } = require("@/utils/alignment");
+
+	it("scales regen linearly at 0.4%/point through the old dead zone", () => {
+		expect(alignmentEffects(0).regenPct).toBe(0);
+		expect(alignmentEffects(-19).regenPct).toBe(-8); // round(-7.6)
+		expect(alignmentEffects(10).regenPct).toBe(4);
+	});
+
+	it("caps at ±10% from ±25 — Angels/Goblins keep their old bonus exactly", () => {
+		expect(alignmentEffects(25).regenPct).toBe(10);
+		expect(alignmentEffects(-25).regenPct).toBe(-10);
+		expect(alignmentEffects(100).regenPct).toBe(10);
+		expect(alignmentEffects(-80).regenPct).toBe(-10);
+	});
+
+	it("keeps blessing/curse scalers unchanged", () => {
+		expect(alignmentEffects(-19).blessingPct).toBe(-9);
+		expect(alignmentEffects(-19).cursePct).toBe(10);
+	});
+});

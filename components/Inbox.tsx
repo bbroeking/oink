@@ -41,6 +41,16 @@ interface RitualRow {
 	from_username: string | null;
 }
 
+// Compact relative age for feed rows: 5m / 3h / 2d / 3w.
+function relTime(at: number): string {
+	if (!at || Number.isNaN(at)) return "";
+	const s = Math.max(0, (Date.now() - at) / 1000);
+	if (s < 3600) return `${Math.max(1, Math.floor(s / 60))}m`;
+	if (s < 86400) return `${Math.floor(s / 3600)}h`;
+	if (s < 604800) return `${Math.floor(s / 86400)}d`;
+	return `${Math.floor(s / 604800)}w`;
+}
+
 interface AcceptedFriend {
 	receiver_id: string;
 	username: string | null;
@@ -95,6 +105,8 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	// incoming trade cards when they can't afford to fulfill. Polled
 	// on every load(), so post-action refreshes catch the deduction.
 	const [balance, setBalance] = useState<number | null>(null);
+	// What-happened pagination: newest 10, then "Load more" pages by 10.
+	const [shownCount, setShownCount] = useState(10);
 
 	const load = useCallback(async () => {
 		// Trades — one RPC covers incoming / outgoing / answered.
@@ -154,7 +166,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 				.select("id, kind, sent_at, sender_id")
 				.eq("receiver_id", userId)
 				.order("sent_at", { ascending: false })
-				.limit(8);
+				.limit(40);
 			const rows = (data ?? []) as {
 				id: string;
 				kind: string;
@@ -401,33 +413,41 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		doRpc("cancel_tickle_trade", { trade_id: t.id }, t.id, "Lot withdrawn.");
 
 	const actionableCount = friendReqs.length + incomingTrades.length;
+	// What-happened feed: every row names WHO it happened with, carries its
+	// timestamp, and renders newest-first. Pagination below (10 + Load more).
 	const passive = [
 		...answered.map((t) => ({
 			id: `ans-${t.id}`,
-			text: `your trade was answered — +${t.amount * 2} tickles`,
+			text: `${t.partner_username ?? "A friend"} answered your trade — +${t.amount * 2} tickles`,
 			kind: "answered" as const,
+			at: Date.parse(t.fulfilled_at ?? t.created_at),
 		})),
 		...gifted.map((t) => ({
 			id: `gft-${t.id}`,
 			text: `you gifted ${t.partner_username ?? "a friend"} ${t.amount * 2} tickles`,
 			kind: "gifted" as const,
+			at: Date.parse(t.fulfilled_at ?? t.created_at),
 		})),
 		...acceptedFriends.map((a) => ({
 			id: `frd-${a.receiver_id}`,
 			text: `${a.username ?? "A friend"} accepted your request`,
 			kind: "friended" as const,
+			at: Date.parse(a.updated_at),
 		})),
 		...blessings.map((b) => ({
 			id: `bl-${b.id}`,
 			text: `${b.from_username ?? "A friend"} blessed you — ${blessingDescription(b.kind)}`,
 			kind: "blessed" as const,
+			at: Date.parse(b.sent_at),
 		})),
 		...curses.map((c) => ({
 			id: `cu-${c.id}`,
 			text: `${c.from_username ?? "Someone"} cursed you — ${curseDescription(c.kind)}`,
 			kind: "cursed" as const,
+			at: Date.parse(c.sent_at),
 		})),
-	];
+	].sort((a, b) => (b.at || 0) - (a.at || 0));
+	const passiveShown = passive.slice(0, shownCount);
 
 	if (loading) {
 		return (
@@ -749,6 +769,23 @@ const styles = StyleSheet.create({
 	// Dashed bottom divider used between rows in flatList. Suppressed
 	// on the last row so the bottom border doesn't double up against
 	// the sticker's own ink edge.
+	// Right-aligned compact age on each What-happened row.
+	passiveTime: {
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		marginLeft: 8,
+	},
+	// "Load more" footer row inside the What-happened sticker.
+	loadMoreRow: {
+		paddingVertical: 11,
+		alignItems: "center",
+	},
+	loadMoreText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.accent,
+	},
 	flatRowDivider: {
 		borderBottomWidth: 1.5,
 		borderBottomColor: WHIMSY.muteSoft,

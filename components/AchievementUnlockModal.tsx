@@ -47,10 +47,14 @@ export interface UnlockedAchievement {
 
 interface Props {
 	achievement: UnlockedAchievement | null;
+	// Driven by the popup-queue slot in _layout. The native Modal must
+	// animate out on visible=false BEFORE the parent unmounts or advances
+	// the queue head (the unmount-while-presented hazard, see PopupQueue.tsx).
+	visible: boolean;
 	onDismiss: () => void;
 }
 
-export function AchievementUnlockModal({ achievement, onDismiss }: Props) {
+export function AchievementUnlockModal({ achievement, visible, onDismiss }: Props) {
 	const [revealed, setRevealed] = useState(false);
 	const cardScale = useRef(new Animated.Value(0)).current;
 	const cardOpacity = useRef(new Animated.Value(0)).current;
@@ -58,14 +62,16 @@ export function AchievementUnlockModal({ achievement, onDismiss }: Props) {
 	const rewardSlide = useRef(new Animated.Value(0)).current;
 
 	useEffect(() => {
-		if (!achievement) {
-			cardScale.setValue(0);
-			cardOpacity.setValue(0);
-			rewardOpacity.setValue(0);
-			rewardSlide.setValue(0);
-			setRevealed(false);
-			return;
-		}
+		// Reset on EVERY achievement / visibility change — the component now
+		// stays mounted while the multi-unlock advance flow swaps the queue
+		// head underneath it, so a remount no longer clears `revealed`.
+		cardScale.setValue(0);
+		cardOpacity.setValue(0);
+		rewardOpacity.setValue(0);
+		rewardSlide.setValue(0);
+		setRevealed(false);
+		// Entrance (haptic + spring) only when the queue actually presents us.
+		if (!achievement || !visible) return;
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
 			() => {}
 		);
@@ -82,7 +88,7 @@ export function AchievementUnlockModal({ achievement, onDismiss }: Props) {
 				useNativeDriver: true,
 			}),
 		]).start();
-	}, [achievement, cardScale, cardOpacity, rewardOpacity, rewardSlide]);
+	}, [achievement, visible, cardScale, cardOpacity, rewardOpacity, rewardSlide]);
 
 	const handleReveal = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -131,7 +137,7 @@ export function AchievementUnlockModal({ achievement, onDismiss }: Props) {
 
 	return (
 		<Modal
-			visible
+			visible={visible}
 			transparent
 			animationType="fade"
 			onRequestClose={handleClose}

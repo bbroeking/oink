@@ -16,6 +16,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
+import { RitualIconWell } from "./ui/RitualIconWell";
 import { dailyRitual, type RitualMode } from "../utils/rituals";
 import { formatHM } from "../utils/time";
 import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
@@ -130,6 +131,7 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 						{isBless ? "✦ blessing sent ✦" : "✦ curse cast ✦"}
 					</Text>
 					<Text style={styles.beatSub}>{result}</Text>
+					<Text style={styles.beatEffect}>{ritual.blurb}</Text>
 				</View>
 			)}
 
@@ -169,7 +171,14 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 			{(phase === "ready" || phase === "error") && (
 				<>
 					<View style={styles.ritualRow}>
-						<Image source={ritual.icon} style={styles.emojiImg} />
+						{/* No corner badge — the kicker above already names
+						    the mode (today's blessing / today's curse). */}
+						<RitualIconWell
+							icon={ritual.icon}
+							blessed={isBless}
+							size={44}
+							badge={false}
+						/>
 						<View style={{ flex: 1, minWidth: 0 }}>
 							<Text style={styles.name}>{ritual.name}</Text>
 							<Text style={styles.blurb}>{ritual.blurb}</Text>
@@ -237,7 +246,6 @@ const styles = StyleSheet.create({
 		gap: 10,
 		marginBottom: 10,
 	},
-	emojiImg: { width: 38, height: 38, resizeMode: "contain" },
 	name: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
 	blurb: {
 		fontFamily: FONTS.hand,
@@ -245,12 +253,14 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		marginTop: 1,
 	},
+	// paddingVertical 12 puts the Cast button at ~44pt tall — the
+	// minimum comfortable tap target.
 	btn: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		borderRadius: 12,
-		paddingVertical: 9,
+		paddingVertical: 12,
 		alignItems: "center",
 	},
 	btnText: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
@@ -289,6 +299,15 @@ const styles = StyleSheet.create({
 		fontSize: 12,
 		color: WHIMSY.ink,
 		marginTop: 2,
+		textAlign: "center",
+	},
+	// The effect itself ("2× tickle regen for an hour") so the caster sees what
+	// the ritual actually does, not just that it sent.
+	beatEffect: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.ink,
+		marginTop: 4,
 		textAlign: "center",
 	},
 });

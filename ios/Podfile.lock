@@ -270,8 +270,6 @@ PODS:
     - ExpoModulesCore
   - ExpoStoreReview (8.0.1):
     - ExpoModulesCore
-  - ExpoSymbols (0.2.0):
-    - ExpoModulesCore
   - ExpoSystemUI (4.0.6):
     - ExpoModulesCore
   - ExpoWebBrowser (14.0.1):
@@ -2163,7 +2161,6 @@ DEPENDENCIES:
   - "ExpoModulesCore (from `../node_modules/.pnpm/expo-modules-core@2.1.2/node_modules/expo-modules-core`)"
   - "ExpoSplashScreen (from `../node_modules/.pnpm/expo-splash-screen@0.29.18_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@ba_988c34839669b578b35dd72130541105/node_modules/expo-splash-screen/ios`)"
   - "ExpoStoreReview (from `../node_modules/.pnpm/expo-store-review@8.0.1_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel_3c652e15bed9a819404a40c9b5ba4c65/node_modules/expo-store-review/ios`)"
-  - "ExpoSymbols (from `../node_modules/.pnpm/expo-symbols@0.2.0_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core_8be7a997aedceb7059e8ecf55d2554b7/node_modules/expo-symbols/ios`)"
   - "ExpoSystemUI (from `../node_modules/.pnpm/expo-system-ui@4.0.6_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+co_249b5f9afb559899798df71fd8a9fce3/node_modules/expo-system-ui/ios`)"
   - "ExpoWebBrowser (from `../node_modules/.pnpm/expo-web-browser@14.0.1_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel_0f7c09be8406044339bfab2c78b5b101/node_modules/expo-web-browser/ios`)"
   - "EXUpdatesInterface (from `../node_modules/.pnpm/expo-updates-interface@1.0.0_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@_d676d16cf75721334eddd246929d7680/node_modules/expo-updates-interface/ios`)"
@@ -2307,8 +2304,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/.pnpm/expo-splash-screen@0.29.18_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@ba_988c34839669b578b35dd72130541105/node_modules/expo-splash-screen/ios"
   ExpoStoreReview:
     :path: "../node_modules/.pnpm/expo-store-review@8.0.1_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel_3c652e15bed9a819404a40c9b5ba4c65/node_modules/expo-store-review/ios"
-  ExpoSymbols:
-    :path: "../node_modules/.pnpm/expo-symbols@0.2.0_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core_8be7a997aedceb7059e8ecf55d2554b7/node_modules/expo-symbols/ios"
   ExpoSystemUI:
     :path: "../node_modules/.pnpm/expo-system-ui@4.0.6_expo@52.0.23_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+co_249b5f9afb559899798df71fd8a9fce3/node_modules/expo-system-ui/ios"
   ExpoWebBrowser:
@@ -2489,7 +2484,6 @@ SPEC CHECKSUMS:
   ExpoModulesCore: 9e0b600d2489daaace1e5813f18253ed14bb6e55
   ExpoSplashScreen: 5397c2419fb3ca0788de37ea2547deac376aad83
   ExpoStoreReview: 92ad323dd14485e7aa67d5b47248fb22876ffaee
-  ExpoSymbols: ed2f35e4a0290ff242eb295bd47adff2e46f5bfc
   ExpoSystemUI: 778d700c6f38d3d7b8794460f50c1ca05c4f7462
   ExpoWebBrowser: b658ba8a9161f1b54afb279591cfce2cb73330fa
   EXUpdatesInterface: 7c977640bdd8b85833c19e3959ba46145c5719db

@@ -7,8 +7,9 @@
 // Barn. The fetch + realtime live in useActiveEffects.
 
 import React, { useState } from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { HoofprintsSheet } from "./HoofprintsSheet";
+import { RitualIconWell } from "./ui/RitualIconWell";
 import { useActiveEffects } from "../hooks/useActiveEffects";
 import {
 	BLESSING_META,
@@ -48,24 +49,20 @@ export function BarnActiveEffectsStrip() {
 							{ transform: [{ rotate: i % 2 === 0 ? "-0.8deg" : "0.8deg" }] },
 						]}
 					>
-						<View
-							style={[
-								styles.iconWell,
-								blessed ? styles.iconWellBless : styles.iconWellCurse,
-							]}
-						>
-							{meta && (
-								<Image
-									source={meta.icon}
-									style={styles.icon}
-									resizeMode="contain"
-								/>
-							)}
-						</View>
+						<RitualIconWell
+							icon={meta?.icon}
+							blessed={blessed}
+							size={36}
+						/>
 						<View style={{ flex: 1, minWidth: 0 }}>
 							<Text style={styles.name} numberOfLines={1}>
 								{meta?.name ?? e.kind}
 							</Text>
+							{meta?.blurb && (
+								<Text style={styles.blurb} numberOfLines={2}>
+									{meta.blurb}
+								</Text>
+							)}
 							<View style={styles.metaRow}>
 								<View
 									style={[
@@ -104,7 +101,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: 8,
 		paddingHorizontal: 8,
-		paddingVertical: 6,
+		paddingVertical: 8,
 		borderRadius: 12,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
@@ -116,24 +113,18 @@ const styles = StyleSheet.create({
 	},
 	chipBless: { backgroundColor: WHIMSY.lilac },
 	chipCurse: { backgroundColor: WHIMSY.cream },
-	iconWell: {
-		width: 30,
-		height: 30,
-		borderRadius: 8,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center",
-		overflow: "hidden",
-	},
-	iconWellBless: { backgroundColor: WHIMSY.paper },
-	iconWellCurse: { backgroundColor: WHIMSY.ink },
-	icon: { width: 22, height: 22 },
 	name: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 13,
 		color: WHIMSY.ink,
 		lineHeight: 14,
+	},
+	blurb: {
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		color: WHIMSY.ink,
+		lineHeight: 13,
+		marginTop: 1,
 	},
 	metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
 	senderDot: {

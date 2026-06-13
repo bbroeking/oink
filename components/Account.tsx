@@ -6,10 +6,12 @@ import {
 	SafeAreaView,
 	Pressable,
 	Text,
+	TextInput,
 	Alert,
 	Linking,
 	Share,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
@@ -44,6 +46,10 @@ import { showPurchaseToast } from "./PurchaseToast";
 import {
 	myReferralSummary,
 	shareMessageForCode,
+	redeemReferralCode,
+	referralErrorMessage,
+	PENDING_REFERRAL_CODE_KEY,
+	REFERRAL_CODE_PATTERN,
 	type ReferralSummary,
 } from "@/utils/referrals";
 import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications";
@@ -73,6 +79,53 @@ export function Account({ session }: { session: Session }) {
 	// the engagement gate.
 	const [referral, setReferral] = useState<ReferralSummary | null>(null);
 	const [referralCodeCopied, setReferralCodeCopied] = useState(false);
+	// "Have a code?" entry — the Me-page home for redeeming a friend's
+	// referral code (the onboarding step was bypassed in build 89, which
+	// left the flow with no UI at all). Hidden once this account has
+	// redeemed (referred_by set) or after an in-session success.
+	const [hasRedeemed, setHasRedeemed] = useState<boolean | null>(null);
+	const [codeInput, setCodeInput] = useState("");
+	const [codeBusy, setCodeBusy] = useState(false);
+	const [codeError, setCodeError] = useState<string | null>(null);
+	const [codeInviter, setCodeInviter] = useState<string | null>(null);
+
+	// A deep-linked code stashed before sign-in (PENDING_REFERRAL_CODE_KEY)
+	// pre-fills the input — finally consuming the stranded stash.
+	useFocusEffect(
+		useCallback(() => {
+			AsyncStorage.getItem(PENDING_REFERRAL_CODE_KEY)
+				.then((c) => {
+					if (c) setCodeInput((cur) => cur || c);
+				})
+				.catch(() => {});
+		}, [])
+	);
+
+	const handleApplyCode = async () => {
+		const code = codeInput.trim().toUpperCase();
+		if (codeBusy || !code) return;
+		if (!REFERRAL_CODE_PATTERN.test(code)) {
+			setCodeError("Codes look like PIGGY-1234 — check with your friend?");
+			return;
+		}
+		setCodeBusy(true);
+		setCodeError(null);
+		const r = await redeemReferralCode(code);
+		setCodeBusy(false);
+		if (r?.ok) {
+			setCodeInviter(r.inviter_username ?? "your friend");
+			setHasRedeemed(true);
+			setSnouts((s) => s + 50); // server pays +50 on redeem
+			AsyncStorage.removeItem(PENDING_REFERRAL_CODE_KEY).catch(() => {});
+			showPurchaseToast({
+				type: "success",
+				title: "Code applied!",
+				text: `You're in ${r.inviter_username ?? "your friend"}'s sounder — +50 snouts.`,
+			});
+		} else {
+			setCodeError(referralErrorMessage(r && "reason" in r ? r.reason : undefined));
+		}
+	};
 	useFocusEffect(
 		useCallback(() => {
 			// New referral summary — drives the "Refer friends" card.
@@ -129,7 +182,7 @@ export function Account({ session }: { session: Session }) {
 			supabase
 				.from("profiles")
 				.select(
-					"username, discriminator, tickles_earned, counter, active_hat_id, is_vip, alignment_score, active_title:titles!profiles_active_title_id_fkey(name, placement)"
+					"username, discriminator, tickles_earned, counter, active_hat_id, is_vip, alignment_score, referred_by, active_title:titles!profiles_active_title_id_fkey(name, placement)"
 				)
 				.eq("id", session.user.id)
 				.single()
@@ -142,6 +195,7 @@ export function Account({ session }: { session: Session }) {
 						active_hat_id?: string | null;
 						is_vip?: boolean;
 						alignment_score?: number;
+						referred_by?: string | null;
 						active_title?:
 							| { name: string; placement: "pre" | "post" }
 							| { name: string; placement: "pre" | "post" }[]
@@ -154,7 +208,7 @@ export function Account({ session }: { session: Session }) {
 					if (error) {
 						const fallback = await supabase
 							.from("profiles")
-							.select("username, discriminator, tickles_earned, counter, active_hat_id, is_vip, alignment_score")
+							.select("username, discriminator, tickles_earned, counter, active_hat_id, is_vip, alignment_score, referred_by")
 							.eq("id", session.user.id)
 							.single();
 						row = fallback.data;
@@ -166,6 +220,7 @@ export function Account({ session }: { session: Session }) {
 					setActiveHat(row?.active_hat_id ?? null);
 					setIsVip(row?.is_vip ?? false);
 					setAlignmentScore(row?.alignment_score ?? 0);
+					setHasRedeemed(!!row?.referred_by);
 					const t = Array.isArray(row?.active_title)
 						? row?.active_title[0]
 						: row?.active_title;
@@ -408,6 +463,9 @@ export function Account({ session }: { session: Session }) {
 							const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 							return (
 								<View style={alignmentStoryStyles.effectsRow}>
+									{/* Regen scales linearly like blessings/curses
+									    (±0.4%/pt, capped ±10% — 20260630), so the plain
+									    signed % is honest at every score. */}
 									<Text style={alignmentStoryStyles.effect}>
 										Regen {sgn(fx.regenPct)}%
 									</Text>
@@ -653,6 +711,16 @@ export function Account({ session }: { session: Session }) {
 								goal={referral.next_milestone_at ?? 3}
 								capped={referral.next_milestone_at == null}
 							/>
+							{/* Pending = redeemed your code, hasn't crossed the
+							    engagement gate yet. Invisible before — which read
+							    as "my referral didn't work". */}
+							{referral.referrals_pending > 0 && (
+								<Text style={referralStyles.pendingNote}>
+									🐽 {referral.referrals_pending}{" "}
+									{referral.referrals_pending === 1 ? "friend" : "friends"}{" "}
+									on the way — credit lands once they've played a bit.
+								</Text>
+							)}
 							<Text style={referralStyles.fine}>
 								Each completed referral: +100 ★
 							</Text>
@@ -660,6 +728,56 @@ export function Account({ session }: { session: Session }) {
 								Your friend has to play a bit before the credit lands —
 								keeps it fair.
 							</Text>
+
+							{/* Have a code? — redeem a friend's code right here.
+							    Hidden once redeemed; eligibility (new players
+							    only) is the server's call and surfaces as
+							    friendly copy on a refused attempt. */}
+							{hasRedeemed === false && (
+								<View style={referralStyles.haveWrap}>
+									<View style={referralStyles.divider} />
+									<Text style={referralStyles.label}>
+										Got a code from a friend?
+									</Text>
+									<View style={referralStyles.entryRow}>
+										<TextInput
+											style={referralStyles.entryInput}
+											value={codeInput}
+											onChangeText={(t) => {
+												setCodeInput(t.toUpperCase());
+												if (codeError) setCodeError(null);
+											}}
+											placeholder="PIGGY-1234"
+											placeholderTextColor={WHIMSY.muteSoft}
+											autoCapitalize="characters"
+											autoCorrect={false}
+											maxLength={10}
+											editable={!codeBusy}
+										/>
+										<Pressable
+											onPress={handleApplyCode}
+											disabled={codeBusy || !codeInput.trim()}
+											style={[
+												referralStyles.applyBtn,
+												(codeBusy || !codeInput.trim()) &&
+													referralStyles.applyBtnDisabled,
+											]}
+										>
+											<Text style={referralStyles.applyBtnText}>
+												{codeBusy ? "…" : "Apply"}
+											</Text>
+										</Pressable>
+									</View>
+									{codeError && (
+										<Text style={referralStyles.entryError}>{codeError}</Text>
+									)}
+								</View>
+							)}
+							{codeInviter && (
+								<Text style={referralStyles.entrySuccess}>
+									You're in {codeInviter}'s sounder! +50 🐽
+								</Text>
+							)}
 						</Sticker>
 					)}
 
@@ -1375,6 +1493,56 @@ const settingsStyles = StyleSheet.create({
 // Sits between the Slop Club card and Settings on the Account screen.
 const referralStyles = StyleSheet.create({
 	card: { padding: 16, marginBottom: 16 },
+	haveWrap: { marginTop: 10 },
+	divider: {
+		borderBottomWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderStyle: "dashed",
+		opacity: 0.25,
+		marginBottom: 10,
+	},
+	entryRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+	entryInput: {
+		flex: 1,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 12,
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		letterSpacing: 1.2,
+		color: WHIMSY.ink,
+	},
+	applyBtn: {
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 12,
+		paddingHorizontal: 16,
+		paddingVertical: 9,
+	},
+	applyBtnDisabled: { opacity: 0.45 },
+	applyBtnText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
+	entryError: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: "#c0504d",
+		marginTop: 6,
+	},
+	pendingNote: {
+		fontFamily: FONTS.hand,
+		fontSize: 12.5,
+		color: WHIMSY.ink,
+		marginTop: 6,
+	},
+	entrySuccess: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: COLORS.successText,
+		marginTop: 10,
+	},
 	kicker: {
 		...KICKER_TEXT,
 		marginBottom: 8,

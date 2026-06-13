@@ -1,7 +1,8 @@
-// World Cup allegiance pick — a one-time, skippable modal that invites the
-// player to back one of the 47 qualified countries for the tournament. Picking
-// is LOCKED (server-enforced): first choice wins. On confirm the player gets
-// the country's flag (auto-equipped) + the Sunny Pitch soccer background.
+// World Cup allegiance pick — skippable modal inviting the player to back
+// one of the 47 qualified countries. SWITCHABLE any time (server 20260640):
+// launch popup for new players, and re-opened from the Barn flag thereafter.
+// On confirm the player gets the country's flag (auto-equipped); the first
+// pick also grants + equips the Sunny Pitch soccer background.
 // "Choose the right one" teases an end-of-tournament reward; we just store the
 // pick here and grade it against the champion later.
 import { useState } from "react";
@@ -28,10 +29,15 @@ interface Props {
 	onSkip: () => void;
 	// Successful pick — parent refreshes profile / closes. Receives the flag id.
 	onChosen: (flagId: string) => void;
+	// Current allegiance flag id ("flag_<slug>") when re-opened from the
+	// Barn flag — preselects the country so switching reads as a change.
+	currentFlagId?: string | null;
 }
 
-export function AllegianceModal({ visible, onSkip, onChosen }: Props) {
-	const [selected, setSelected] = useState<string | null>(null); // slug
+export function AllegianceModal({ visible, onSkip, onChosen, currentFlagId }: Props) {
+	const [selected, setSelected] = useState<string | null>(
+		currentFlagId ? currentFlagId.replace(/^flag_/, "") : null
+	); // slug
 	const [busy, setBusy] = useState(false);
 	const [done, setDone] = useState<{ name: string } | null>(null);
 
@@ -68,9 +74,8 @@ export function AllegianceModal({ visible, onSkip, onChosen }: Props) {
 							<Text style={styles.doneEmoji}>🎉</Text>
 							<Text style={styles.title}>You're backing {done.name}!</Text>
 							<Text style={styles.hint}>
-								You earned the {done.name} flag (now flying on your pig)
-								and the Sunny Pitch background. Cheer them all the way to
-								the final!
+								The {done.name} flag now flies on your Barn. Cheer them all
+								the way to the final — or switch any time by tapping it!
 							</Text>
 							<Button
 								size="md"
@@ -90,9 +95,9 @@ export function AllegianceModal({ visible, onSkip, onChosen }: Props) {
 							<Text style={styles.kicker}>the hog cup</Text>
 							<Text style={styles.title}>Pick your country</Text>
 							<Text style={styles.hint}>
-								Back one team for the whole tournament. Choose wisely — if
-								your country lifts the trophy, there may be a reward waiting
-								at the final whistle. 🏆
+								Back a team — their flag flies on your Barn. If your country
+								lifts the trophy, there may be a reward waiting at the final
+								whistle. 🏆
 							</Text>
 
 							<FlatList
@@ -135,7 +140,8 @@ export function AllegianceModal({ visible, onSkip, onChosen }: Props) {
 
 							<View style={styles.footer}>
 								<Text style={styles.lockNote}>
-									You can't change this later.
+									You can switch countries whenever you want — just tap the
+									flag on your Barn.
 								</Text>
 								<Button
 									size="md"

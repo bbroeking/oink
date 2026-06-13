@@ -21,10 +21,13 @@ export function alignmentLabel(score: number): AlignmentLabel {
 	return "neutral";
 }
 
-// The mechanical effects of alignment, mirrored from the SQL in
-// 20260577000000_alignment_teeth.sql so the UI can show the player exactly
-// what their nature is doing. Percentages are player-positive when > 0.
-//   regen   — generous regen faster (+10%), greedy slower (−10%), by label
+// The mechanical effects of alignment, mirrored from the SQL (regen:
+// 20260630_alignment_regen_linear; blessing/curse: 20260577_alignment_teeth)
+// so the UI can show the player exactly what their nature is doing.
+// Percentages are player-positive when > 0.
+//   regen   — LINEAR ±0.4%/point, capped ±10% (full strength at ±25 — the
+//             old step thresholds become the cap, so Angels/Goblins keep
+//             exactly their previous bonus while the middle scales smoothly)
 //   blessing — generous = better blesser (longer); scales with score
 //   curse    — greedy = better curser (longer); scales with score
 export function alignmentEffects(score: number): {
@@ -33,12 +36,7 @@ export function alignmentEffects(score: number): {
 	cursePct: number;
 } {
 	return {
-		regenPct:
-			score >= ALIGNMENT_ANGEL_THRESHOLD
-				? 10
-				: score <= ALIGNMENT_GOBLIN_THRESHOLD
-					? -10
-					: 0,
+		regenPct: Math.max(-10, Math.min(10, Math.round(score * 0.4))),
 		blessingPct: Math.round(score * 0.5),
 		cursePct: Math.round(-score * 0.5),
 	};

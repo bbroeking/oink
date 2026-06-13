@@ -15,7 +15,7 @@ import { PatrickHand_400Regular } from "@expo-google-fonts/patrick-hand";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Alert, AppState, LogBox, Linking } from "react-native";
 import "react-native-reanimated";
 
@@ -51,7 +51,11 @@ import {
 } from "@/components/AchievementUnlockModal";
 import { AllegianceModal } from "@/components/AllegianceModal";
 import { PurchaseToastHost } from "@/components/PurchaseToast";
-import { PopupQueueProvider, usePopupSlot } from "@/components/ui/PopupQueue";
+import {
+	PopupQueueProvider,
+	usePopupSlot,
+	POPUP_TEARDOWN_MS,
+} from "@/components/ui/PopupQueue";
 import {
 	PENDING_REFERRAL_CODE_KEY,
 	parseReferralCodeFromUrl,
@@ -100,6 +104,11 @@ function RootLayoutInner() {
 	const [finale, setFinale] = useState<FinaleResult | null>(null);
 	// "While you were away" — bless/curse received since last launch.
 	const [rituals, setRituals] = useState<RitualEvent[] | null>(null);
+	// The away-seen marker is written on modal DISMISS, not at fetch time —
+	// writing at fetch meant a wedge/force-kill before the player saw the
+	// modal permanently ate the batch (issue #8). Fetch stashes the value
+	// here; the WhileAwayModal onDismiss persists it.
+	const pendingAwaySeenRef = useRef<string | null>(null);
 	// Earned-but-unseen achievements, shown one reveal at a time.
 	const [achievements, setAchievements] = useState<UnlockedAchievement[]>([]);
 	// World Cup allegiance pick — shown once when the player hasn't chosen a
@@ -377,14 +386,15 @@ function RootLayoutInner() {
 				);
 			}
 			all.sort((a, b) => (a.ts < b.ts ? 1 : -1));
-			// Marker advances on the newest ritual/trade event only —
-			// system announcements have their own server-side seen
-			// tracking, so they don't push the marker forward (they're
-			// already filtered by my_unseen_announcements).
+			// Marker semantics: newest ritual/trade ts when present (system
+			// rows have their own server-side seen tracking); otherwise
+			// fetch-time now — system-ONLY batches must still persist a
+			// marker on dismiss, or a fresh install re-anchors `since` to
+			// "now" every boot and silently skips between-launch rituals.
+			// Stashed here, WRITTEN on modal dismiss (see render below).
 			const nonSystemNewest = all.find((r) => r.source !== "system");
-			if (nonSystemNewest) {
-				AsyncStorage.setItem(SEEN, nonSystemNewest.ts);
-			}
+			pendingAwaySeenRef.current =
+				nonSystemNewest?.ts ?? new Date().toISOString();
 			setRituals(
 				all.map<RitualEvent>((r) => {
 					if (r.source === "system") {
@@ -561,31 +571,39 @@ function RootLayoutInner() {
 				<Stack.Screen name="+not-found" />
 			</Stack>
 			<StatusBar style="auto" />
-			{/* Launch popups all route through the global PopupQueue — only the
-			    one the queue marks `visible` ever mounts, so two native modals
-			    never overlap (the iOS "stuck/invisible" bug). */}
-			{schism && schismSlot.visible && (
+			{/* Launch popups all route through the global PopupQueue. Each
+			    mounts on its own state, but the NATIVE modal's `visible` is
+			    driven by its queue slot, and the dismiss handlers are
+			    two-phase: release() hides the modal first, the state clears
+			    a POPUP_TEARDOWN_MS beat later. A presented modal is never
+			    unmounted mid-flight, so the next one can't present into an
+			    in-progress teardown and come up invisible (the iOS
+			    "stuck/invisible" bug — see PopupQueue.tsx). */}
+			{schism && (
 				<AlignmentSchismModal
+					visible={schismSlot.visible}
 					side={schism.side}
 					score={schism.score}
 					milestone={schism.milestone}
 					onDismiss={() => {
-						setSchism(null);
 						schismSlot.release();
+						setTimeout(() => setSchism(null), POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}
-			{finale && finaleSlot.visible && (
+			{finale && (
 				<JudgementDayModal
+					visible={finaleSlot.visible}
 					result={finale}
 					onDismiss={() => {
-						setFinale(null);
 						finaleSlot.release();
+						setTimeout(() => setFinale(null), POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}
-			{rituals && ritualsSlot.visible && (
+			{rituals && (
 				<WhileAwayModal
+					visible={ritualsSlot.visible}
 					events={rituals}
 					onDismiss={() => {
 						// Server-side mark-seen for any system announcements
@@ -599,30 +617,43 @@ function RootLayoutInner() {
 								}).then(() => {});
 							}
 						});
-						setRituals(null);
+						// Persist the away-seen marker only now that the player
+						// actually SAW the batch (see pendingAwaySeenRef).
+						if (pendingAwaySeenRef.current) {
+							AsyncStorage.setItem("away_seen_v1", pendingAwaySeenRef.current);
+							pendingAwaySeenRef.current = null;
+						}
 						ritualsSlot.release();
+						setTimeout(() => setRituals(null), POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}
-			{achievements.length > 0 && achievementsSlot.visible && (
+			{achievements.length > 0 && (
 				<AchievementUnlockModal
+					visible={achievementsSlot.visible}
 					achievement={achievements[0]}
 					onDismiss={() => {
-						setAchievements((q) => q.slice(1));
 						achievementsSlot.release();
+						// Advance AFTER the beat: while more unlocks remain,
+						// `want` stays true so the slot re-requests and the
+						// queue presents the next one once the gap clears.
+						setTimeout(
+							() => setAchievements((q) => q.slice(1)),
+							POPUP_TEARDOWN_MS
+						);
 					}}
 				/>
 			)}
-			{showAllegiance && allegianceSlot.visible && (
+			{showAllegiance && (
 				<AllegianceModal
-					visible
+					visible={allegianceSlot.visible}
 					onSkip={() => {
-						setShowAllegiance(false);
 						allegianceSlot.release();
+						setTimeout(() => setShowAllegiance(false), POPUP_TEARDOWN_MS);
 					}}
 					onChosen={() => {
-						setShowAllegiance(false);
 						allegianceSlot.release();
+						setTimeout(() => setShowAllegiance(false), POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}

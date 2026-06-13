@@ -13,9 +13,10 @@
 //
 // Lives at the top of the Inbox segment in the Friends hub.
 import React, { useState } from "react";
-import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
+import { RitualIconWell } from "./ui/RitualIconWell";
 import { CleanseModal } from "./CleanseModal";
 import { useActiveEffects } from "../hooks/useActiveEffects";
 import {
@@ -76,9 +77,14 @@ export function ActiveEffects() {
 								{blessed ? "Blessing" : "Curse"}
 							</Text>
 						</View>
-						{meta && (
-							<Image source={meta.icon} style={styles.icon} />
-						)}
+						{/* Icon well — no corner badge here: the corner pill
+						    above already labels the kind in text. */}
+						<RitualIconWell
+							icon={meta?.icon}
+							blessed={blessed}
+							size={44}
+							badge={false}
+						/>
 						<View style={{ flex: 1, minWidth: 0 }}>
 							<Text style={styles.name} numberOfLines={1}>
 								{meta?.name ?? e.kind}
@@ -120,6 +126,7 @@ export function ActiveEffects() {
 							{!blessed && (
 								<Pressable
 									onPress={() => setCleanseOpen(true)}
+									hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
 									style={({ pressed }) => [
 										styles.inlineCleanseBtn,
 										pressed && { opacity: 0.7 },
@@ -194,7 +201,6 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 		color: WHIMSY.paper,
 	},
-	icon: { width: 34, height: 34, resizeMode: "contain" },
 	name: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	blurb: {
 		fontFamily: FONTS.hand,
@@ -221,7 +227,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		borderRadius: 999,
-		paddingVertical: 4,
+		paddingVertical: 6,
 		paddingHorizontal: 10,
 	},
 	inlineCleanseBtnText: {

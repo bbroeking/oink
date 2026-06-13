@@ -24,6 +24,10 @@ import {
 } from "../../utils/iap";
 import { Sticker } from "../../components/ui/Sticker";
 import { Icon } from "../../components/ui/Icon";
+import {
+	MysteryHatReveal,
+	type MysteryBoxRevealPayload,
+} from "../../components/MysteryHatReveal";
 import { Glyph, type GlyphName } from "../../components/ui/Glyph";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
@@ -1000,6 +1004,11 @@ export default function SeasonScreen() {
 	// user gets a beat to read what they got and (for wearables) jump
 	// straight to the wardrobe to equip it.
 	const [claimedReward, setClaimedReward] = useState<TierRow | null>(null);
+	// Mystery-box claims carry their grant in the RPC response
+	// (granted_hat_id or fallback_snouts) — staged into the queue-slotted
+	// unboxing reveal instead of the generic claimed-reward dialog.
+	const [mysteryReveal, setMysteryReveal] =
+		useState<MysteryBoxRevealPayload | null>(null);
 
 	// Tier-up celebration: fires the banner + fanfare whenever
 	// season_state's current_tier increases between loads. Initial
@@ -1055,11 +1064,13 @@ export default function SeasonScreen() {
 	const handleClaim = async (tier: number, track: "free" | "premium") => {
 		if (busy) return;
 		setBusy(true);
-		const r = await rpc<{
-			ok: boolean;
-			reason?: string;
-			current_tier?: number;
-		}>("claim_tier_reward", {
+		const r = await rpc<
+			{
+				ok: boolean;
+				reason?: string;
+				current_tier?: number;
+			} & MysteryBoxRevealPayload
+		>("claim_tier_reward", {
 			target_tier: tier,
 			target_track: track,
 		});
@@ -1087,10 +1098,16 @@ export default function SeasonScreen() {
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
 			() => {}
 		);
-		// Surface a reward dialog so the user sees what they got + can
+		// Mystery-box claims stage the big unboxing reveal (the response
+		// names the granted hat / snout fallback); everything else gets
+		// the generic reward dialog so the user sees what they got + can
 		// jump to the wardrobe to equip wearables.
-		const claimedRow = tiersByNumber[tier]?.[track];
-		if (claimedRow) setClaimedReward(claimedRow);
+		if (r.granted_hat_id || r.fallback_snouts) {
+			setMysteryReveal(r);
+		} else {
+			const claimedRow = tiersByNumber[tier]?.[track];
+			if (claimedRow) setClaimedReward(claimedRow);
+		}
 		load();
 	};
 
@@ -1285,6 +1302,13 @@ export default function SeasonScreen() {
 						params: { view: "wardrobe" },
 					});
 				}}
+			/>
+
+			{/* Mystery Hat Box unboxing — queue-slotted, so it serializes
+			    with the launch/home popups instead of fighting them. */}
+			<MysteryHatReveal
+				reveal={mysteryReveal}
+				onDone={() => setMysteryReveal(null)}
 			/>
 		</View>
 	);

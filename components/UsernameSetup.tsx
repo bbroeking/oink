@@ -18,7 +18,16 @@ import {
 } from "react-native";
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
+import { isUsernameAllowed } from "@/constants/bannedWords";
 import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+
+// Friendly copy for moderation rejections — shared between the
+// client-side pre-check and the server trigger's username_not_allowed
+// error (the DB is authoritative; this check just saves a round trip).
+const MODERATION_COPY: Record<"banned" | "reserved", string> = {
+	banned: "That name won't fly in the barn — pick a different one.",
+	reserved: "That name's taken by the barn itself — pick a different one.",
+};
 
 interface Props {
 	userId: string;
@@ -35,6 +44,13 @@ export default function UsernameSetup({ userId, onSaved }: Props) {
 
 	const handleSave = async () => {
 		if (!valid || saving) return;
+		// Moderation pre-check before any network call. The profiles
+		// trigger enforces the same policy server-side.
+		const allowed = isUsernameAllowed(trimmed);
+		if (!allowed.ok) {
+			setError(MODERATION_COPY[allowed.reason]);
+			return;
+		}
 		setSaving(true);
 		setError("");
 		const { error: updateError } = await supabase
@@ -43,7 +59,10 @@ export default function UsernameSetup({ userId, onSaved }: Props) {
 			.eq("id", userId);
 		setSaving(false);
 		if (updateError) {
-			if (updateError.code === "23505") {
+			if (updateError.message?.includes("username_not_allowed")) {
+				// Server trigger rejected it (client list may lag the DB's).
+				setError(MODERATION_COPY.banned);
+			} else if (updateError.code === "23505") {
 				setError("That name is taken — try another.");
 			} else {
 				setError("Couldn't save. Try again.");

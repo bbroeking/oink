@@ -13,20 +13,15 @@ import {
 	useWindowDimensions,
 	type LayoutChangeEvent,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { formatHM } from "@/utils/time";
 import { Button, SectionHeader } from "../../components/ui";
-import { Icon } from "../../components/ui/Icon";
-import { Sticker } from "../../components/ui/Sticker";
-import { PigAvatar } from "../../components/ui/PigAvatar";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
 import { ClosetView } from "../../components/ClosetView";
 import { TroughSection } from "../../components/TroughSection";
-import { AllegianceCard } from "../../components/AllegianceCard";
 import {
 	HAT_IMAGES,
 	HatRow,
@@ -34,12 +29,11 @@ import {
 	CATEGORY_EMOJI,
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
-import { SLOT_COLUMN, slotForCategory } from "@/constants/slots";
+import { SLOT_COLUMN, slotForCategory, columnForCategory } from "@/constants/slots";
 import { categoryIcon } from "@/constants/emojiArt";
-import { COLORS, FONTS, KICKER_PILL, RARITY_GRADIENT, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_PILL, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
-import { RarityFx } from "../../components/ui/RarityFx";
 import {
 	BuyCelebration,
 	type BuyCelebrationHandle,
@@ -186,493 +180,56 @@ function HatThumb({
 	size?: number;
 	fill?: boolean;
 }) {
+	// fill mode: MEASURE the box, then render the Image at an explicit
+	// numeric size. Absolute-inset sizing (the previous fix) still hit the
+	// Yoga intrinsic-size quirk inside the mosaic's aspectRatio cells
+	// (sixth sighting) — bows/hats rendered at native px and cropped.
+	const [box, setBox] = useState<{ w: number; h: number } | null>(null);
 	const hatSrc = HAT_IMAGES[item.id];
-	const baseStyle = fill
-		? ({ flex: 1, width: "100%" as const, height: "100%" as const })
-		: ({ width: size ?? 100, height: size ?? 100 });
-	if (hatSrc) {
-		return (
-			<Image source={hatSrc} style={baseStyle} resizeMode="contain" />
-		);
-	}
 	// No item art + no per-item emoji → fall back to the category
 	// icon (real art), then to the category emoji glyph.
-	const catIcon = item.emoji ? null : categoryIcon(item.category);
-	if (catIcon) {
-		return <Image source={catIcon} style={baseStyle} resizeMode="contain" />;
-	}
-	return (
-		<Text style={{ fontSize: (size ?? 100) * 0.55 }}>
-			{item.emoji ?? CATEGORY_EMOJI[item.category ?? "hat"] ?? "?"}
-		</Text>
-	);
-}
-
-type CellShape = "square" | "tall" | "wide";
-
-function ItemCard({
-	item,
-	owned,
-	active,
-	canAfford,
-	busy,
-	wardrobeMode,
-	buyable = true,
-	cellShape = "square",
-	onBuy,
-	onEquip,
-	onUnequip,
-	onPreview,
-}: {
-	item: HatRow;
-	owned: boolean;
-	active: boolean;
-	canAfford: boolean;
-	busy: boolean;
-	wardrobeMode?: boolean;
-	buyable?: boolean;
-	// "wide" = cell wider than tall (e.g. 4×1, 4×2) — flip to horizontal
-	// layout (image left, body right) so neither half is starved.
-	// "tall" or "square" = vertical stack (image top, body bottom).
-	cellShape?: CellShape;
-	onBuy: () => void;
-	onEquip: () => void;
-	onUnequip: () => void;
-	onPreview?: () => void;
-}) {
-	const rarity = item.rarity ?? "common";
-	const rarityColor = RARITY_COLORS[rarity];
-	const isPremium = rarity === "epic" || rarity === "legendary";
-	const horizontal = cellShape === "wide";
-
-	const thumb = (
-		<RarityFx
-			rarity={rarity}
-			style={[
-				styles.cardThumbWrap,
-				horizontal && styles.cardThumbWrapHoriz,
-			]}
-		>
-			<LinearGradient
-				colors={RARITY_GRADIENT[rarity]}
-				style={styles.cardThumb}
-			>
-				<HatThumb item={item} fill />
-				<View
-					style={[
-						styles.rarityBadge,
-						{ backgroundColor: rarityColor },
-					]}
-				>
-					<Text style={styles.rarityText}>{rarity.toUpperCase()}</Text>
-				</View>
-			</LinearGradient>
-		</RarityFx>
-	);
-
-	const body = (
-		<View style={[styles.cardBody, horizontal && styles.cardBodyHoriz]}>
-			<Text
-				style={[styles.cardName, horizontal && styles.cardNameHoriz]}
-				// 2-line clamp + adjustsFontSizeToFit so a long name
-				// ("Sparkle Aura", "Sunset Farm") wraps cleanly in
-				// narrow cells instead of getting truncated to
-				// "Sparkl..." on a single line. minimumFontScale 0.7
-				// is enough to fit most names without going illegible.
-				numberOfLines={2}
-				adjustsFontSizeToFit
-				minimumFontScale={0.7}
-			>
-				{item.name}
+	const catIcon = !hatSrc && !item.emoji ? categoryIcon(item.category) : null;
+	const src = hatSrc ?? catIcon;
+	if (!fill) {
+		const sz = { width: size ?? 100, height: size ?? 100 };
+		if (src) return <Image source={src} style={sz} resizeMode="contain" />;
+		return (
+			<Text style={{ fontSize: (size ?? 100) * 0.55 }}>
+				{item.emoji ?? CATEGORY_EMOJI[item.category ?? "hat"] ?? "?"}
 			</Text>
-			<View style={styles.priceRow}>
-				{owned ? (
-					<Text
-						style={[
-							styles.cardOwnedTag,
-							active && { color: COLORS.successText },
-						]}
-					>
-						{active ? "✓ WEARING" : "OWNED"}
-					</Text>
-				) : item.cost <= 0 ? (
-					// Earn-only items (season pass + referral milestones)
-					// — show a label instead of a misleading "0" coin price.
-					<Text style={styles.cardOwnedTag}>SEASON PASS</Text>
-				) : (
-					<>
-						<SnoutCoin size={14} />
-						<Text style={styles.cardPrice}>
-							{item.cost.toLocaleString()}
-						</Text>
-					</>
-				)}
-			</View>
-			{active ? (
-				<Button size="sm" variant="ghost" full onPress={onUnequip}>
-					Take off
-				</Button>
-			) : owned ? (
-				<Button size="sm" variant="primary" full onPress={onEquip}>
-					Wear
-				</Button>
-			) : wardrobeMode ? null : !buyable ? (
-				<Button size="sm" variant="locked" full disabled>
-					Today only
-				</Button>
-			) : !canAfford ? (
-				<Button size="sm" variant="locked" full disabled>
-					Not enough
-				</Button>
-			) : (
-				<Button
-					size="sm"
-					variant="primary"
-					full
-					onPress={onBuy}
-					disabled={busy}
-				>
-					Buy
-				</Button>
-			)}
-		</View>
-	);
-
-	return (
-		<Pressable
-			onPress={onPreview}
-			style={[
-				styles.card,
-				horizontal && styles.cardHoriz,
-				{
-					borderColor: rarityColor,
-					shadowColor: isPremium ? rarityColor : "#000",
-					shadowOpacity: isPremium ? 0.4 : 0.06,
-					shadowRadius: isPremium ? 14 : 6,
-					shadowOffset: { width: 0, height: isPremium ? 6 : 2 },
-					elevation: isPremium ? 6 : 2,
-				},
-			]}
-		>
-			{thumb}
-			{body}
-		</Pressable>
-	);
-}
-
-function FeaturedCard({
-	item,
-	owned,
-	active,
-	canAfford,
-	busy,
-	onBuy,
-	onEquip,
-	onUnequip,
-}: {
-	item: HatRow;
-	owned: boolean;
-	active: boolean;
-	canAfford: boolean;
-	busy: boolean;
-	onBuy: () => void;
-	onEquip: () => void;
-	onUnequip: () => void;
-}) {
-	const rarity = item.rarity ?? "common";
-	const rarityColor = RARITY_COLORS[rarity];
+		);
+	}
+	// Backgrounds + auras are edge-to-edge art — cover the whole box.
+	// Everything else contain-fits a centered square with breathing room.
+	const fullBleed = item.category === "background" || item.category === "aura";
+	const side = box ? Math.max(0, Math.min(box.w, box.h) - 12) : 0;
 	return (
 		<View
-			style={[
-				styles.featured,
-				{
-					borderColor: rarityColor,
-					shadowColor: rarityColor,
-				},
-			]}
+			style={styles.thumbFillBox}
+			onLayout={(e: LayoutChangeEvent) => {
+				const { width, height } = e.nativeEvent.layout;
+				setBox({ w: width, h: height });
+			}}
 		>
-			<LinearGradient
-				colors={RARITY_GRADIENT[rarity]}
-				style={styles.featuredBg}
-				start={{ x: 0, y: 0 }}
-				end={{ x: 1, y: 1 }}
-			/>
-			<View style={styles.featuredRow}>
-				<View style={styles.featuredThumbWrap}>
-					<HatThumb item={item} size={110} />
-				</View>
-				<View style={styles.featuredText}>
-					<View
-						style={[
-							styles.rarityBadge,
-							{
-								position: "relative",
-								top: 0,
-								right: 0,
-								alignSelf: "flex-start",
-								backgroundColor: rarityColor,
-								marginBottom: 6,
-							},
-						]}
-					>
-						<Text style={styles.rarityText}>
-							{rarity.toUpperCase()}
-						</Text>
-					</View>
-					<Text style={styles.featuredName} numberOfLines={1}>
-						{item.name}
-					</Text>
-					{item.description && (
-						<Text style={styles.featuredDesc} numberOfLines={2}>
-							{item.description}
-						</Text>
-					)}
-					<View style={styles.featuredCtaRow}>
-						{!owned && (
-							<View style={styles.featuredPriceWrap}>
-								<SnoutCoin size={16} />
-								<Text style={styles.featuredPrice}>
-									{item.cost.toLocaleString()}
-								</Text>
-							</View>
-						)}
-						{active ? (
-							<Button size="sm" variant="ghost" onPress={onUnequip}>
-								Take off
-							</Button>
-						) : owned ? (
-							<Button size="sm" variant="primary" onPress={onEquip}>
-								Wear
-							</Button>
-						) : !canAfford ? (
-							<Button size="sm" variant="locked" disabled>
-								Not enough
-							</Button>
-						) : (
-							<Button
-								size="sm"
-								variant={
-									rarity === "legendary" ? "gold" : "primary"
-								}
-								onPress={onBuy}
-								disabled={busy}
-							>
-								Buy now
-							</Button>
-						)}
-					</View>
-				</View>
-			</View>
+			{box && src ? (
+				<Image
+					source={src}
+					style={
+						fullBleed
+							? { width: box.w, height: box.h }
+							: { width: side, height: side }
+					}
+					resizeMode={fullBleed ? "cover" : "contain"}
+				/>
+			) : !src && box ? (
+				<Text style={{ fontSize: Math.min(box.w, box.h) * 0.5 }}>
+					{item.emoji ?? CATEGORY_EMOJI[item.category ?? "hat"] ?? "?"}
+				</Text>
+			) : null}
 		</View>
 	);
 }
 
-// ── Bento daily-shop layout ─────────────────────────────────────
-//
-// Three goals:
-//   1. ZERO EMPTY CELLS — the layout is a function of the actual
-//      (post-filter) item count, so it always tiles the grid with no
-//      holes and no dead height, for any N.
-//   2. ROTATION — a left/right mirror flips by date so the Shop feels
-//      different day-to-day without authoring more layouts.
-//   3. TILE TAP TARGETS — tap anywhere on a tile opens the preview;
-//      the price pill is the only buy-action target. Owned/equipped
-//      state replaces the pill.
-//
-// Cells are {c, r, w, h} in 4-column grid units. The renderer places
-// them with absolute positioning so spans work without manual flex-fu.
-// ONLY hero (2×2), wide (2×1) and full-width (4×1) cells are used —
-// every cell is ≥2 columns so the horizontal image-left/body-right
-// ItemCard layout always has room for its action button. (Tall 1×2
-// cells were dropped: the square thumb left no horizontal body room
-// and truncated button labels.)
-type MosaicCell = { c: number; r: number; w: number; h: number };
-
-const MOSAIC_COLS = 4;
-
-// genBento(n) returns a perfect-tiling bento for exactly `n` items.
-// The featured (rarest) item always lands in the first/biggest cell.
-//
-//   n=1 → one full-width banner hero (4×2)
-//   n=2 → two heroes side by side (2×2 each)
-//   n≥3 → hero top-left (2×2) + wides filling the rest, two per row,
-//         with a lone trailing item promoted to a full-width banner so
-//         a row never ends half-empty.
-//
-// `mirror` flips every cell horizontally (hero on the right instead of
-// the left) — toggled by date for daily variety. The construction is
-// hole-free for all N, so there is no count the Shop can't render.
-function genBento(n: number, mirror: boolean): MosaicCell[] {
-	let cells: MosaicCell[];
-	if (n <= 0) {
-		return [];
-	} else if (n === 1) {
-		cells = [{ c: 0, r: 0, w: 4, h: 2 }];
-	} else if (n === 2) {
-		cells = [
-			{ c: 0, r: 0, w: 2, h: 2 },
-			{ c: 2, r: 0, w: 2, h: 2 },
-		];
-	} else {
-		cells = [{ c: 0, r: 0, w: 2, h: 2 }]; // hero
-		let rem = n - 1;
-		// Beside the hero: up to two wides stacked in the right column.
-		const rightRows = Math.min(rem, 2);
-		for (let i = 0; i < rightRows; i++) cells.push({ c: 2, r: i, w: 2, h: 1 });
-		rem -= rightRows;
-		// Below the hero: two wides per row, a lone leftover goes
-		// full-width so no row is left with a hole.
-		let r = 2;
-		while (rem > 0) {
-			if (rem === 1) {
-				cells.push({ c: 0, r, w: 4, h: 1 });
-				rem = 0;
-			} else {
-				cells.push({ c: 0, r, w: 2, h: 1 });
-				cells.push({ c: 2, r, w: 2, h: 1 });
-				rem -= 2;
-			}
-			r++;
-		}
-	}
-	if (mirror) {
-		cells = cells.map((cell) => ({ ...cell, c: MOSAIC_COLS - cell.c - cell.w }));
-	}
-	return cells;
-}
-
-function MosaicDailyGrid({
-	items,
-	featured,
-	owned,
-	isEquipped,
-	counter,
-	busyId,
-	onBuy,
-	onEquip,
-	onUnequip,
-	onPreview,
-	tileCenters,
-}: {
-	items: HatRow[];
-	featured: HatRow | null;
-	owned: Set<string>;
-	isEquipped: (id: string, cat: string | null | undefined) => boolean;
-	counter: number;
-	busyId: string | null;
-	onBuy: (h: HatRow) => void;
-	onEquip: (id: string, cat: string | null | undefined) => void;
-	onUnequip: (cat: string | null | undefined) => void;
-	onPreview: (h: HatRow) => void;
-	tileCenters?: React.MutableRefObject<Map<string, { x: number; y: number }>>;
-}) {
-	const { width: screenW } = useWindowDimensions();
-	const HORIZ_PADDING = 12;
-	const GAP = 12;
-	const innerW = screenW - HORIZ_PADDING * 2;
-	const COL_W = (innerW - GAP * (MOSAIC_COLS - 1)) / MOSAIC_COLS;
-	// Cells need ~120pt of vertical content room (thumb + name +
-	// price + button) so the Buy pill doesn't get clipped at the
-	// bottom of small 1×1 tiles. ROW_H = 1.5 × COL_W lands us
-	// there on iPhone widths. Bumped from the original 0.92 ratio
-	// after a screenshot showed the Buy button cut in half on
-	// "Sparkle..." / "Beanie" sized tiles.
-	const ROW_H = Math.round(COL_W * 1.5);
-
-	// Pair items to cells: rarest item into the biggest cell. Hoist
-	// `featured` to first if present so the curator's pick wins on ties.
-	const pool: HatRow[] = featured
-		? [featured, ...items.filter((i) => i.id !== featured.id)]
-		: items;
-	// RARITY_ORDER puts "legendary" first → lower indexOf == rarer.
-	// Ascending sort by index = rarest first.
-	const byRarity = [...pool].sort(
-		(a, b) =>
-			RARITY_ORDER.indexOf(a.rarity ?? "common") -
-			RARITY_ORDER.indexOf(b.rarity ?? "common")
-	);
-	// Build a template sized to exactly this many items, so every cell
-	// gets an item and every item gets a cell — no holes, no drops.
-	// Date toggles a horizontal mirror for daily variety.
-	const dayIdx = Math.floor(Date.now() / 86_400_000);
-	const tpl = genBento(byRarity.length, dayIdx % 2 === 1);
-	const cellsByArea = tpl
-		.map((p, idx) => ({ ...p, idx }))
-		.sort((a, b) => b.w * b.h - a.w * a.h);
-	const placements = cellsByArea
-		.map((cell, i) => ({ cell, item: byRarity[i] }))
-		.filter((p) => !!p.item);
-	// Grid height fits exactly the rows the template uses — short days
-	// don't leave dead space below the last tile.
-	const usedRows = tpl.reduce((max, c) => Math.max(max, c.r + c.h), 0);
-	const totalH = usedRows * ROW_H + GAP * Math.max(0, usedRows - 1);
-
-	const captureCenter = (itemId: string) => (e: LayoutChangeEvent) => {
-		if (!tileCenters) return;
-		e.target.measureInWindow((x, y, w, h) => {
-			tileCenters.current.set(itemId, { x: x + w / 2, y: y + h / 2 });
-		});
-	};
-
-	return (
-		<View style={{ width: innerW, height: totalH, position: "relative" }}>
-			{placements.map(({ cell, item }) => {
-				const left = cell.c * (COL_W + GAP);
-				const top = cell.r * (ROW_H + GAP);
-				const width = cell.w * COL_W + (cell.w - 1) * GAP;
-				const height = cell.h * ROW_H + (cell.h - 1) * GAP;
-				const isHero = cell.w >= 2 && cell.h >= 2;
-				const isWide = cell.w >= 2 && cell.h === 1;
-				const isTall = cell.h >= 2 && cell.w === 1;
-				const shape: CellShape = isWide ? "wide" : isTall ? "tall" : "square";
-				return (
-					<View
-						key={item.id}
-						style={{ position: "absolute", left, top, width, height }}
-						onLayout={captureCenter(item.id)}
-					>
-						<ItemCard
-							item={item}
-							owned={owned.has(item.id)}
-							active={isEquipped(item.id, item.category)}
-							canAfford={counter >= item.cost}
-							busy={busyId === item.id}
-							cellShape={shape}
-							onBuy={() => onBuy(item)}
-							onEquip={() => onEquip(item.id, item.category)}
-							onUnequip={() => onUnequip(item.category)}
-							onPreview={() => onPreview(item)}
-						/>
-						{/* Sparkle accent for premium hero cells — gives
-						    legendary/epic items an extra moment of glitter
-						    in the corner. Wrapped in a pointerEvents-none
-						    View because Text doesn't accept the prop. */}
-						{isHero && (item.rarity === "legendary" || item.rarity === "epic") && (
-							<View
-								pointerEvents="none"
-								style={{ position: "absolute", top: 6, right: 10 }}
-							>
-								<Text
-									style={{
-										fontFamily: FONTS.whimsy,
-										fontSize: 16,
-										color: WHIMSY.sun,
-									}}
-								>
-									✦
-								</Text>
-							</View>
-						)}
-					</View>
-				);
-			})}
-		</View>
-	);
-}
-
-// Single-row title card for the Titles shop tab. Text-based (no
-// image) since titles attach to the user's display name. Rarity
-// drives the border color, owned / not-affordable adjust the CTA.
 function ShopTitleRow({
 	title,
 	canAfford,
@@ -839,6 +396,246 @@ const shopTitleStyles = StyleSheet.create({
 	},
 });
 
+
+// ── Shop redesign (Claude Design handoff, Shop Layout.html) ─────────
+// Less text, more readable: rarity is a COLOR DOT + one legend (no word
+// pills), the image is the hero on a rarity-tinted panel, and the price
+// chip carries the buy-state (gold = affordable, muted + lock = not yet,
+// "✓ OWNED" tag = owned). No per-card buttons — tapping opens the
+// preview/buy sheet. Uniform 2-col grid replaces the bento mosaic.
+const SHOP_RARITY_DOT: Record<string, string> = {
+	common: "#cdbfae",
+	uncommon: "#7ba868",
+	rare: "#5a8bc5",
+	epic: "#a89bff",
+	legendary: "#d4a437",
+};
+const SHOP_RARITY_TINT: Record<string, string> = {
+	common: "#f4ebe0",
+	uncommon: "#d9ead0",
+	rare: "#cfe0ec",
+	epic: "#e2daf6",
+	legendary: "#ffe7ad",
+};
+
+function RarityLegend() {
+	return (
+		<View style={shopCardStyles.legend}>
+			{(["common", "uncommon", "rare", "epic", "legendary"] as const).map(
+				(r) => (
+					<View key={r} style={shopCardStyles.legendItem}>
+						<View
+							style={[
+								shopCardStyles.legendDot,
+								{ backgroundColor: SHOP_RARITY_DOT[r] },
+							]}
+						/>
+						<Text style={shopCardStyles.legendLabel}>{r}</Text>
+					</View>
+				)
+			)}
+		</View>
+	);
+}
+
+function ShopCard({
+	item,
+	owned,
+	active,
+	canAfford,
+	index,
+	onPress,
+	onCenter,
+}: {
+	item: HatRow;
+	owned: boolean;
+	active: boolean;
+	canAfford: boolean;
+	// Position in the grid — drives the alternating ±0.5° sticker tilt.
+	index: number;
+	onPress: () => void;
+	// Reports the card's window-space center (the buy celebration anchor).
+	onCenter?: (x: number, y: number) => void;
+}) {
+	const rarity = item.rarity ?? "common";
+	const ref = useRef<View>(null);
+	return (
+		<Pressable
+			ref={ref}
+			onPress={onPress}
+			onLayout={() => {
+				ref.current?.measureInWindow?.((x, y, w, h) =>
+					onCenter?.(x + w / 2, y + h / 2)
+				);
+			}}
+			style={[
+				shopCardStyles.card,
+				{ transform: [{ rotate: index % 2 === 0 ? "-0.5deg" : "0.5deg" }] },
+			]}
+		>
+			<View
+				style={[
+					shopCardStyles.thumb,
+					{ backgroundColor: SHOP_RARITY_TINT[rarity] },
+				]}
+			>
+				<View
+					style={[
+						shopCardStyles.rdot,
+						{ backgroundColor: SHOP_RARITY_DOT[rarity] },
+					]}
+				/>
+				{owned && (
+					<View style={shopCardStyles.ownedBadge}>
+						<Text style={shopCardStyles.ownedBadgeText}>✓</Text>
+					</View>
+				)}
+				<HatThumb item={item} fill />
+			</View>
+			<View style={shopCardStyles.foot}>
+				<Text numberOfLines={1} style={shopCardStyles.nm}>
+					{item.name}
+				</Text>
+				{owned ? (
+					<Text style={shopCardStyles.ownedTag}>
+						✓ {active ? "WEARING" : "OWNED"}
+					</Text>
+				) : item.cost <= 0 ? (
+					<Text style={[shopCardStyles.ownedTag, { color: WHIMSY.mute }]}>
+						SEASON PASS
+					</Text>
+				) : (
+					<View
+						style={[
+							shopCardStyles.chip,
+							canAfford ? shopCardStyles.chipBuy : shopCardStyles.chipLocked,
+						]}
+					>
+						<SnoutCoin size={14} />
+						<Text
+							style={[
+								shopCardStyles.chipText,
+								!canAfford && { color: WHIMSY.mute },
+							]}
+						>
+							{item.cost.toLocaleString()}
+						</Text>
+						{!canAfford && <Text style={shopCardStyles.chipLock}>🔒</Text>}
+					</View>
+				)}
+			</View>
+		</Pressable>
+	);
+}
+
+const shopCardStyles = StyleSheet.create({
+	legend: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		columnGap: 13,
+		rowGap: 6,
+		paddingHorizontal: 2,
+		paddingBottom: 12,
+	},
+	legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
+	legendDot: {
+		width: 11,
+		height: 11,
+		borderRadius: 6,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		...STICKER_SHADOW,
+	},
+	legendLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 10.5,
+		color: WHIMSY.mute,
+		textTransform: "uppercase",
+		letterSpacing: 0.5,
+	},
+	card: {
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 16,
+		overflow: "hidden",
+		...STICKER_SHADOW,
+	},
+	// aspectRatio is safe on VIEWS — HatThumb measures inside, so the
+	// image itself still gets explicit numerics (the Yoga-quirk cure).
+	thumb: {
+		aspectRatio: 1.18,
+		borderBottomWidth: 2.5,
+		borderColor: WHIMSY.ink,
+		position: "relative",
+	},
+	rdot: {
+		position: "absolute",
+		top: 9,
+		left: 9,
+		width: 14,
+		height: 14,
+		borderRadius: 7,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		zIndex: 2,
+		...STICKER_SHADOW,
+	},
+	ownedBadge: {
+		position: "absolute",
+		top: 7,
+		right: 7,
+		width: 26,
+		height: 26,
+		borderRadius: 13,
+		backgroundColor: WHIMSY.sage,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+		zIndex: 2,
+		...STICKER_SHADOW,
+	},
+	ownedBadgeText: { fontSize: 14, fontFamily: FONTS.bodyExtra, color: WHIMSY.ink },
+	foot: { paddingHorizontal: 11, paddingTop: 9, paddingBottom: 11, gap: 7 },
+	nm: { fontFamily: FONTS.displaySemi, fontSize: 15, color: WHIMSY.ink },
+	chip: {
+		alignSelf: "flex-start",
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingVertical: 4,
+		paddingLeft: 8,
+		paddingRight: 11,
+		...STICKER_SHADOW,
+	},
+	chipBuy: { backgroundColor: WHIMSY.sun },
+	chipLocked: {
+		backgroundColor: WHIMSY.cream,
+		borderColor: "rgba(42,31,21,.34)",
+	},
+	chipText: { fontFamily: FONTS.display, fontSize: 15, color: WHIMSY.ink },
+	chipLock: { fontSize: 12 },
+	ownedTag: {
+		alignSelf: "flex-start",
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		letterSpacing: 0.5,
+		textTransform: "uppercase",
+		color: "#5b8a4a",
+		paddingVertical: 4,
+	},
+	grid: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: 14,
+		paddingBottom: 8,
+	},
+});
+
 export default function ShopScreen() {
 	const [daily, setDaily] = useState<HatRow[]>([]);
 	const [allItems, setAllItems] = useState<HatRow[]>([]);
@@ -850,11 +647,7 @@ export default function ShopScreen() {
 	// Keyed by profiles column (active_hat_id, active_glasses_id, …).
 	const [activeIds, setActiveIds] = useState<Record<string, string | null>>({});
 	const isEquipped = (id: string, category: string | null | undefined) => {
-		const column =
-			category === "tickle_particle"
-				? "active_tickle_particle_id"
-				: SLOT_COLUMN[slotForCategory(category)];
-		return activeIds[column] === id;
+		return activeIds[columnForCategory(category)] === id;
 	};
 	const [counter, setCounter] = useState<number>(0);
 	// The current user's display name, used as the sample handle in
@@ -932,6 +725,7 @@ export default function ShopScreen() {
 			active_aura_id: string | null;
 			active_background_id: string | null;
 			active_held_id: string | null;
+			active_tickle_particle_id?: string | null;
 			active_flag_id: string | null;
 			active_title_id?: string | null;
 		};
@@ -947,14 +741,14 @@ export default function ShopScreen() {
 			// it so the shop still loads.
 			supabase
 				.from("profiles")
-				.select("username, counter, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_flag_id, active_title_id")
+				.select("username, counter, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, active_title_id")
 				.eq("id", user.id)
 				.single()
 				.then(async (res) => {
 					if (res.error) {
 						return supabase
 							.from("profiles")
-							.select("username, counter, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_flag_id")
+							.select("username, counter, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id")
 							.eq("id", user.id)
 							.single();
 					}
@@ -996,6 +790,7 @@ export default function ShopScreen() {
 				active_aura_id: pr.active_aura_id ?? null,
 				active_background_id: pr.active_background_id ?? null,
 				active_held_id: pr.active_held_id ?? null,
+				active_tickle_particle_id: pr.active_tickle_particle_id ?? null,
 				active_flag_id: pr.active_flag_id ?? null,
 			});
 		}
@@ -1083,6 +878,7 @@ export default function ShopScreen() {
 			reason?: string;
 			need?: number;
 			have?: number;
+			remaining?: number;
 		}>("buy_hat", {
 			target_hat_id: hat.id,
 		});
@@ -1134,7 +930,13 @@ export default function ShopScreen() {
 			});
 			return;
 		}
-		// Buy succeeded — show the success toast with the cost chip.
+		// Buy succeeded — snap the balance chip IMMEDIATELY (buy_hat
+		// returns the post-spend counter as `remaining`); load() below
+		// still reconciles owned/daily, but the spend must never wait
+		// on that round trip to show.
+		setCounter((c) => r.remaining ?? Math.max(0, c - hat.cost));
+		setOwned((prev) => new Set(prev).add(hat.id));
+		// Show the success toast with the cost chip.
 		showPurchaseToast({
 			type: "success",
 			title: `${hat.name} · Bought`,
@@ -1177,39 +979,35 @@ export default function ShopScreen() {
 			equipPlayer.seekTo(0);
 			equipPlayer.play();
 		} catch {}
-		// tickle_particle isn't a worn slot; everything else maps to its
-		// anchor-based slot column (head/eyes/face/neck/aura/held/bg/flag).
-		const column =
-			category === "tickle_particle"
-				? "active_tickle_particle_id"
-				: SLOT_COLUMN[slotForCategory(category)];
-		await supabase
-			.from("profiles")
-			.update({ [column]: itemId })
-			.eq("id", user.id);
-		setActiveIds((prev) => ({ ...prev, [column]: itemId }));
+		// Category-precise column (glasses + masks share the Face CHIP but
+		// keep separate columns — columnForCategory routes correctly).
+		const column = columnForCategory(category);
+		const update: Record<string, string | null> = { [column]: itemId };
+		// Face exclusivity: the merged chip shows one face item at a time,
+		// so equipping glasses clears any mask and vice versa. Unequips
+		// (itemId null) leave the sibling alone.
+		if (itemId) {
+			if (category === "glasses") update.active_mask_id = null;
+			if (category === "mask") update.active_glasses_id = null;
+		}
+		await supabase.from("profiles").update(update).eq("id", user.id);
+		setActiveIds((prev) => ({ ...prev, ...update }));
 	};
-
-	// Featured = highest-rarity item in today's shop
-	const featured = useMemo(() => {
-		if (!daily.length) return null;
-		return [...daily].sort(
-			(a, b) =>
-				(RARITY_RANK[b.rarity ?? "common"] ?? 0) -
-				(RARITY_RANK[a.rarity ?? "common"] ?? 0)
-		)[0];
-	}, [daily]);
-
-	const dailyRest = useMemo(
-		() => (featured ? daily.filter((d) => d.id !== featured.id) : daily),
-		[daily, featured]
-	);
 
 	const dailyIds = useMemo(() => new Set(daily.map((d) => d.id)), [daily]);
 
+	// Redesigned Today grid: numeric 2-col tile width (12px scroll padding
+	// ×2, 14px gap — never %-size grid children; Yoga-quirk discipline).
+	const { width: shopScreenW } = useWindowDimensions();
+	const dailyTileW = Math.floor((shopScreenW - 12 * 2 - 14) / 2);
+
 	const browseItems = useMemo(() => {
-		if (!categoryFilter) return allItems;
-		return allItems.filter((i) => i.category === categoryFilter);
+		// Flags are allegiance picks (Barn flag -> dialog), not shop goods —
+		// keep them out of the catalog. allItems stays intact so the Closet
+		// still sees owned flags.
+		const shoppable = allItems.filter((i) => i.category !== "flag");
+		if (!categoryFilter) return shoppable;
+		return shoppable.filter((i) => i.category === categoryFilter);
 	}, [allItems, categoryFilter]);
 
 	const browseRows = useMemo(() => buildRowsByRarity(browseItems), [browseItems]);
@@ -1234,20 +1032,6 @@ export default function ShopScreen() {
 		});
 	}, [allItems]);
 
-	const renderItem = ({ item }: { item: HatRow }) => (
-		<ItemCard
-			item={item}
-			owned={owned.has(item.id)}
-			active={isEquipped(item.id, item.category)}
-			canAfford={counter >= item.cost}
-			busy={busyId === item.id}
-			onBuy={() => handleBuy(item)}
-			onEquip={() => handleEquip(item.id, item.category)}
-			onUnequip={() => handleEquip(null, item.category)}
-			onPreview={() => setPreviewItem(item)}
-		/>
-	);
-
 	const renderListRow = (wardrobeMode: boolean) => ({ item }: { item: ListRow }) => {
 		if (item.type === "header") {
 			const rarity = item.rarity;
@@ -1268,37 +1052,30 @@ export default function ShopScreen() {
 			);
 		}
 		const [a, b] = item.items;
+		// Same redesigned card as Today — color dot + tinted panel + price
+		// chip; tap opens the preview sheet. Tilt alternates per row slot.
+		const rowIdx = Number(item.key.split("-").pop() ?? 0);
 		return (
 			<View style={styles.rowWrap}>
 				<View style={styles.rowSlot}>
-					<ItemCard
+					<ShopCard
 						item={a}
+						index={rowIdx}
 						owned={owned.has(a.id)}
 						active={isEquipped(a.id, a.category)}
 						canAfford={counter >= a.cost}
-						busy={busyId === a.id}
-						wardrobeMode={wardrobeMode}
-						buyable={false}
-						onBuy={() => handleBuy(a)}
-						onEquip={() => handleEquip(a.id, a.category)}
-						onUnequip={() => handleEquip(null, a.category)}
-						onPreview={() => setPreviewItem(a)}
+						onPress={() => setPreviewItem(a)}
 					/>
 				</View>
 				<View style={styles.rowSlot}>
 					{b ? (
-						<ItemCard
+						<ShopCard
 							item={b}
+							index={rowIdx + 1}
 							owned={owned.has(b.id)}
 							active={isEquipped(b.id, b.category)}
 							canAfford={counter >= b.cost}
-							busy={busyId === b.id}
-							wardrobeMode={wardrobeMode}
-							buyable={false}
-							onBuy={() => handleBuy(b)}
-							onEquip={() => handleEquip(b.id, b.category)}
-							onUnequip={() => handleEquip(null, b.category)}
-							onPreview={() => setPreviewItem(b)}
+							onPress={() => setPreviewItem(b)}
 						/>
 					) : null}
 				</View>
@@ -1367,56 +1144,40 @@ export default function ShopScreen() {
 					>
 						<SectionHeader
 							kicker="today's drop"
-							title="Featured"
+							title="Today's Drop"
 							right={`resets in ${formatCountdown(resetsIn)}`}
 							ruleWidth={72}
 						/>
+						<RarityLegend />
 						{daily.length === 0 ? (
 							<Text style={styles.empty}>
 								Empty shop. Come back tomorrow.
 							</Text>
 						) : (
 							<>
-								<MosaicDailyGrid
-									items={daily}
-									featured={featured}
-									owned={owned}
-									isEquipped={isEquipped}
-									counter={counter}
-									busyId={busyId}
-									onBuy={handleBuy}
-									onEquip={handleEquip}
-									onUnequip={(category) => handleEquip(null, category)}
-									onPreview={setPreviewItem}
-									tileCenters={tileCenters}
+								{/* Uniform 2-col grid of all 8 daily items — bento mosaic
+								    + featured hero retired per the redesign handoff.
+								    Numeric widths (Yoga-quirk discipline). */}
+								<View style={shopCardStyles.grid}>
+									{daily.map((item, i) => (
+										<View key={item.id} style={{ width: dailyTileW }}>
+											<ShopCard
+												item={item}
+												index={i}
+												owned={owned.has(item.id)}
+												active={isEquipped(item.id, item.category)}
+												canAfford={counter >= item.cost}
+												onPress={() => setPreviewItem(item)}
+												onCenter={(x, y) =>
+													tileCenters.current.set(item.id, { x, y })
+												}
+											/>
+										</View>
+									))}
+								</View>
+								<TroughSection
+									onBalance={(b) => setCounter(b)}
 								/>
-								<AllegianceCard />
-								<TroughSection />
-								{/* Bundle promo row — sits below the mosaic, sells
-								    a small bundle for snouts. Static for now; can
-								    be wired to a bundle SKU later. */}
-								<Sticker
-									color="cream"
-									rotate={-0.3}
-									radius={14}
-									style={styles.bundleSticker}
-								>
-									<View style={styles.bundleRow}>
-										<Icon name="gift" size={24} color={WHIMSY.ink} filled />
-										<View style={{ flex: 1, minWidth: 0 }}>
-											<Text style={styles.bundleTitle}>
-												Bundle: starter pack
-											</Text>
-											<Text style={styles.bundleSub}>
-												Chef + Party + Flowers · save 30 snouts
-											</Text>
-										</View>
-										<View style={styles.bundlePrice}>
-											<SnoutCoin size={14} />
-											<Text style={styles.bundlePriceText}>120</Text>
-										</View>
-									</View>
-								</Sticker>
 							</>
 						)}
 					</ScrollView>
@@ -1497,7 +1258,7 @@ export default function ShopScreen() {
 							<View style={styles.wardrobeIntro}>
 								<Text style={styles.wardrobeIntroTitle}>Titles</Text>
 								<Text style={styles.wardrobeIntroSub}>
-									Buy a title to attach to your name. Equip in Wardrobe.
+									Buy a title to attach to your name. Equip it in the Closet.
 								</Text>
 							</View>
 						}
@@ -1537,6 +1298,11 @@ export default function ShopScreen() {
 				balance={counter}
 				busy={previewItem ? busyId === previewItem.id : false}
 				buyable={previewItem ? dailyIds.has(previewItem.id) : true}
+				onTroughOpened={(spent, newBalance) =>
+					// Seed left the account server-side — reflect it in the
+					// header chip NOW, not on the next focus refetch.
+					setCounter((c) => newBalance ?? Math.max(0, c - spent))
+				}
 				onClose={() => setPreviewItem(null)}
 				onBuy={() => {
 					if (previewItem) {
@@ -1666,7 +1432,7 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 	},
 	grid: { paddingHorizontal: 12, paddingBottom: 100 },
-	// Today tab — scrolling container holding the 4×4 mosaic + bundle row.
+	// Today tab — scrolling container holding the 4×4 mosaic.
 	// The mosaic itself is fixed-height; the surrounding scroll lets the
 	// content breathe on smaller devices.
 	dailyScroll: { flex: 1 },
@@ -1674,40 +1440,6 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 12,
 		paddingTop: 4,
 		paddingBottom: 100,
-	},
-	bundleSticker: { padding: 12, marginTop: 16 },
-	bundleRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 12,
-	},
-	// Bundle glyph moved off Text-emoji onto <Icon name="gift" />.
-	bundleTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
-	bundleSub: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		marginTop: 2,
-	},
-	bundlePrice: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 4,
-		paddingHorizontal: 12,
-		paddingVertical: 7,
-		borderRadius: 999,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.lilacDeep,
-	},
-	bundlePriceText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.paper,
 	},
 	columnWrap: { gap: 10 },
 	rowWrap: {
@@ -1744,6 +1476,19 @@ const styles = StyleSheet.create({
 		height: 1.5,
 		borderRadius: 1,
 	},
+	// Measuring container for HatThumb's fill mode — the VIEW takes the
+	// insets (views resolve them fine; it's Images that fall back to
+	// intrinsic px), the Image inside gets measured numerics.
+	thumbFillBox: {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		alignItems: "center",
+		justifyContent: "center",
+		overflow: "hidden",
+	},
 	card: {
 		flex: 1,
 		backgroundColor: WHIMSY.paper,
@@ -1777,6 +1522,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		position: "relative",
+		overflow: "hidden",
 	},
 	cardBody: {
 		// Tighter padding so the small 1×1 + 2×1 cells get more
@@ -1811,6 +1557,11 @@ const styles = StyleSheet.create({
 		gap: 4,
 		marginBottom: 6,
 		minHeight: 16,
+	},
+	// (wide cells) name is left-aligned — keep the price under it,
+	// not floating centered in the column.
+	priceRowHoriz: {
+		justifyContent: "flex-start",
 	},
 	cardPrice: {
 		fontFamily: FONTS.whimsy,

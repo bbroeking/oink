@@ -23,14 +23,20 @@ import { Icon, IconName } from "../../components/ui/Icon";
 import Friends from "../../components/Friends";
 import { Inbox } from "../../components/Inbox";
 import { Leaderboard } from "../../components/Leaderboard";
+import { SounderCard } from "../../components/SounderCard";
+import { MUD_FIGHTS_VISIBLE } from "@/constants/featureFlags";
 import { FONTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
 
-type Segment = "friends" | "inbox" | "board";
+type Segment = "friends" | "inbox" | "board" | "sounder";
 
 const SEGMENTS: { key: Segment; label: string; icon: IconName }[] = [
 	{ key: "board", label: "Board", icon: "ranks" },
 	{ key: "inbox", label: "Inbox", icon: "bell" },
 	{ key: "friends", label: "Friends", icon: "friends" },
+	// Sounder Mud Fights (crews) — dark-launched.
+	...(MUD_FIGHTS_VISIBLE
+		? [{ key: "sounder" as Segment, label: "Sounder", icon: "crown" as IconName }]
+		: []),
 ];
 
 export default function FriendsHubScreen() {
@@ -119,6 +125,7 @@ export default function FriendsHubScreen() {
 							<Inbox userId={userId} onActionableCount={setInboxCount} />
 						) : null)}
 					{segment === "board" && <Leaderboard />}
+					{segment === "sounder" && MUD_FIGHTS_VISIBLE && <SounderCard />}
 				</View>
 			</SafeAreaView>
 		</View>
