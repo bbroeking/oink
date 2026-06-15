@@ -27,6 +27,7 @@ import { Icon, type IconName } from "./ui/Icon";
 import { Image } from "react-native";
 import { PigAvatar } from "./ui/PigAvatar";
 import { HAT_IMAGES } from "@/constants/hats";
+import type { TitlePlacement } from "@/constants/title_types";
 import { Sticker, Tape } from "./ui/Sticker";
 import { AlignmentBar } from "./ui/AlignmentBar";
 import { alignmentEffects } from "@/utils/alignment";
@@ -172,7 +173,7 @@ export function Account({ session }: { session: Session }) {
 	// renders TitlesSection inline; buying stays in the Titles tab.
 	const [activeTitle, setActiveTitle] = useState<{
 		name: string;
-		placement: "pre" | "post";
+		placement: TitlePlacement;
 	} | null>(null);
 	useFocusEffect(
 		useCallback(() => {
@@ -197,8 +198,8 @@ export function Account({ session }: { session: Session }) {
 						alignment_score?: number;
 						referred_by?: string | null;
 						active_title?:
-							| { name: string; placement: "pre" | "post" }
-							| { name: string; placement: "pre" | "post" }[]
+							| { name: string; placement: TitlePlacement }
+							| { name: string; placement: TitlePlacement }[]
 							| null;
 					};
 					// The supabase client is created without a Database

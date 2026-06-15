@@ -23,7 +23,7 @@ function textOf(tree: TestRenderer.ReactTestInstance): string {
 	const out: string[] = [];
 	function walk(node: TestRenderer.ReactTestInstance | string) {
 		if (typeof node === "string") { out.push(node); return; }
-		for (const c of node.children ?? []) walk(c as any);
+		for (const c of node.children ?? []) walk(c);
 	}
 	walk(tree);
 	return out.join("");

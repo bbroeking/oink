@@ -38,7 +38,7 @@ import { Shovel } from "./ui/Shovel";
 import { Glyph, IconText, glyphSource } from "./ui/Glyph";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { HAT_IMAGES } from "@/constants/hats";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, WHIMSY, SHADOW_SM } from "@/constants/theme";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
@@ -773,7 +773,7 @@ function TapPig({
 }
 
 const INK = WHIMSY.ink;
-const sticker = { shadowColor: INK, shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 };
+const sticker = SHADOW_SM;
 
 const styles = StyleSheet.create({
 	root: { ...StyleSheet.absoluteFillObject, zIndex: 100, backgroundColor: WHIMSY.cream },

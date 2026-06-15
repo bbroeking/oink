@@ -8,7 +8,7 @@ import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Glyph, IconText } from "./ui/Glyph";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, WHIMSY, SHADOW_SM } from "@/constants/theme";
 
 const STAKES = [10, 20, 50];
 
@@ -84,7 +84,7 @@ export function BuryTruffleButton({ buried, onBury, onCheck }: Props) {
 }
 
 const INK = WHIMSY.ink;
-const sticker = { shadowColor: INK, shadowOffset: { width: 2, height: 2 }, shadowOpacity: 1, shadowRadius: 0, elevation: 2 };
+const sticker = SHADOW_SM;
 const styles = StyleSheet.create({
 	wrap: { alignSelf: "center", alignItems: "center", marginTop: 10, gap: 7 },
 	row: { flexDirection: "row", alignItems: "center", gap: 10 },

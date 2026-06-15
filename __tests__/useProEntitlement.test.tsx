@@ -30,7 +30,7 @@ function textOf(r: TestRenderer.ReactTestRenderer): string {
 	const out: string[] = [];
 	function walk(n: TestRenderer.ReactTestInstance | string) {
 		if (typeof n === "string") { out.push(n); return; }
-		for (const c of n.children ?? []) walk(c as any);
+		for (const c of n.children ?? []) walk(c);
 	}
 	walk(r.root);
 	return out.join("");

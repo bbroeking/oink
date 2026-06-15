@@ -31,6 +31,7 @@ import { AlignmentBar } from "./ui/AlignmentBar";
 import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
 import type { TradeRow } from "@/constants/trade_types";
+import type { TitlePlacement } from "@/constants/title_types";
 import { formatHM } from "@/utils/time";
 import {
 	FONTS,
@@ -55,7 +56,7 @@ interface UserStats {
 	active_hat_id: string | null;
 	active_title_id: string | null;
 	active_title_name: string | null;
-	active_title_placement: "pre" | "post" | null;
+	active_title_placement: TitlePlacement | null;
 	given_total: number;
 	received_total: number;
 	generous_tier_name: string | null;

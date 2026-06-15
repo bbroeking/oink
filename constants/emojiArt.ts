@@ -3,7 +3,6 @@
 // them. See docs/openai-emoji-replacement-art.md.
 
 export const TROPHY = require("../assets/images/emoji/trophy.png");
-export const PIG = require("../assets/images/emoji/pig.png");
 
 // Cosmetic-category → art. `aura` and `necklace` have no dedicated
 // icon yet; categoryIcon() returns null for them (caller keeps the

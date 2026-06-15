@@ -4,6 +4,7 @@
 import { useState, useCallback } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Text, Image } from "react-native";
 import { HAT_IMAGES } from "@/constants/hats";
+import type { TitlePlacement } from "@/constants/title_types";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
@@ -28,7 +29,7 @@ type Scope = "global" | "friends" | "alignment";
 interface ActiveTitle {
 	id: string;
 	name: string;
-	placement: "pre" | "post";
+	placement: TitlePlacement;
 }
 
 interface ActiveHat {

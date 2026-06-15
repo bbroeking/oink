@@ -30,6 +30,7 @@ import {
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
 import { SLOT_COLUMN, slotForCategory, columnForCategory } from "@/constants/slots";
+import type { TitlePlacement } from "@/constants/title_types";
 import { categoryIcon } from "@/constants/emojiArt";
 import { COLORS, FONTS, KICKER_PILL, WHIMSY, STICKER_SHADOW, SHADOW_SM, SPACE, RADII, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
@@ -240,7 +241,7 @@ function ShopTitleRow({
 	title: {
 		id: string;
 		name: string;
-		placement: "pre" | "post";
+		placement: TitlePlacement;
 		description: string | null;
 		cost: number;
 		rarity: string;
@@ -680,7 +681,7 @@ export default function ShopScreen() {
 	type ShopTitle = {
 		id: string;
 		name: string;
-		placement: "pre" | "post";
+		placement: TitlePlacement;
 		description: string | null;
 		cost: number;
 		rarity: string;

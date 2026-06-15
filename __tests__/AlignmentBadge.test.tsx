@@ -16,7 +16,7 @@ function textOf(tree: TestRenderer.ReactTestInstance): string {
 			out.push(node);
 			return;
 		}
-		for (const c of node.children ?? []) walk(c as any);
+		for (const c of node.children ?? []) walk(c);
 	}
 	walk(tree);
 	return out.join("");
