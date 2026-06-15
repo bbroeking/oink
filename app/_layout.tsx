@@ -43,7 +43,7 @@ import {
 } from "@/components/JudgementDayModal";
 import {
 	WhileAwayModal,
-	type RitualEvent,
+	type WhileAwayEvent,
 } from "@/components/WhileAwayModal";
 import {
 	AchievementUnlockModal,
@@ -103,7 +103,7 @@ function RootLayoutInner() {
 	// Season 1 finale: pending Judgement Day verdict.
 	const [finale, setFinale] = useState<FinaleResult | null>(null);
 	// "While you were away" — bless/curse received since last launch.
-	const [rituals, setRituals] = useState<RitualEvent[] | null>(null);
+	const [rituals, setRituals] = useState<WhileAwayEvent[] | null>(null);
 	// The away-seen marker is written on modal DISMISS, not at fetch time —
 	// writing at fetch meant a wedge/force-kill before the player saw the
 	// modal permanently ate the batch (issue #8). Fetch stashes the value
@@ -396,7 +396,7 @@ function RootLayoutInner() {
 			pendingAwaySeenRef.current =
 				nonSystemNewest?.ts ?? new Date().toISOString();
 			setRituals(
-				all.map<RitualEvent>((r) => {
+				all.map<WhileAwayEvent>((r) => {
 					if (r.source === "system") {
 						return {
 							source: "system",

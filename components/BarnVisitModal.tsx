@@ -33,7 +33,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
-import { PigStage } from "./ui/PigStage";
+import { PigStage, type EquippedItem } from "./ui/PigStage";
 import { Shovel } from "./ui/Shovel";
 import { Glyph, IconText, glyphSource } from "./ui/Glyph";
 import { SnoutCoin } from "./ui/SnoutCoin";
@@ -54,8 +54,9 @@ interface Barn {
 	active_background_id: string | null;
 }
 
-// One equipped cosmetic slot.
-type Slot = { id: string; category: string | null; emoji: string | null } | null;
+// One equipped cosmetic slot — same {id, category, emoji} row PigStage
+// renders; reuse its EquippedItem contract rather than re-declaring it.
+type Slot = EquippedItem | null;
 // A pig's full worn outfit (everything PigStage can render except background).
 interface EquipSet {
 	hat: Slot;

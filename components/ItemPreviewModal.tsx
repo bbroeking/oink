@@ -189,7 +189,7 @@ export function ItemPreviewModal({
 	// is the main slot. PigStage handles z-order + HAT_REL anchor
 	// math from there — same code path the Barn uses, so re-tuning
 	// via the /item-anchor tool flows here automatically.
-	const previewSlot = { id: item.id, category: item.category, emoji: item.emoji };
+	const previewSlot = { id: item.id, category: item.category ?? null, emoji: item.emoji ?? null };
 	const stageEquipped = item.category === "aura" || item.category === "held"
 		? null
 		: previewSlot;

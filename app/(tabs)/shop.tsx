@@ -31,7 +31,7 @@ import {
 } from "@/constants/hats";
 import { SLOT_COLUMN, slotForCategory, columnForCategory } from "@/constants/slots";
 import { categoryIcon } from "@/constants/emojiArt";
-import { COLORS, FONTS, KICKER_PILL, SHADOWS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_PILL, WHIMSY, STICKER_SHADOW, SHADOW_SM, SPACE, RADII, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
 import {
@@ -299,6 +299,9 @@ function ShopTitleRow({
 					<Pressable
 						onPress={onBuy}
 						disabled={busy || !canAfford}
+						// Extend the small price chip to a ~44px hit area
+						// without growing its visual size (UI audit).
+						hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
 						style={({ pressed }) => [
 							shopTitleStyles.buyBtn,
 							!canAfford && shopTitleStyles.buyBtnDisabled,
@@ -320,22 +323,25 @@ const shopTitleStyles = StyleSheet.create({
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 12,
+		gap: SPACE.md,
 		paddingVertical: 14,
 		paddingHorizontal: 14,
 		backgroundColor: "white",
-		borderRadius: 12,
+		borderRadius: RADII.md,
+		// Sticker treatment (UI audit): 2px ink frame + the rarity rail
+		// on the left edge, hard (4,4) shadow.
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
 		borderLeftWidth: 5,
-		marginBottom: 10,
-		...SHADOWS.card,
+		marginBottom: SPACE.md,
+		...STICKER_SHADOW,
 	},
 	left: { flex: 1, minWidth: 0 },
-	right: { marginLeft: 8 },
+	right: { marginLeft: SPACE.sm },
+	// Canonical page-header kicker (KICKER_PILL: 11px tracked uppercase).
 	kicker: {
 		...KICKER_PILL,
-		fontSize: 10,
-		letterSpacing: 1.4,
-		marginBottom: 4,
+		marginBottom: SPACE.xs,
 	},
 	name: {
 		fontFamily: FONTS.whimsy,
@@ -369,7 +375,7 @@ const shopTitleStyles = StyleSheet.create({
 		gap: 6,
 		paddingHorizontal: 12,
 		paddingVertical: 8,
-		borderRadius: 10,
+		borderRadius: RADII.md,
 		backgroundColor: WHIMSY.lilac,
 	},
 	buyBtnDisabled: {
@@ -383,9 +389,9 @@ const shopTitleStyles = StyleSheet.create({
 	ownedTag: {
 		paddingHorizontal: 12,
 		paddingVertical: 6,
-		borderRadius: 10,
+		borderRadius: RADII.md,
 		backgroundColor: WHIMSY.paper,
-		borderWidth: 1,
+		borderWidth: 1.5,
 		borderColor: COLORS.border,
 	},
 	ownedTagText: {
@@ -532,12 +538,14 @@ const shopCardStyles = StyleSheet.create({
 	legend: {
 		flexDirection: "row",
 		flexWrap: "wrap",
-		columnGap: 13,
-		rowGap: 6,
-		paddingHorizontal: 2,
-		paddingBottom: 12,
+		columnGap: SPACE.md,
+		rowGap: SPACE.sm,
+		// Flush with the grid: the parent scroll content already insets
+		// PAGE-grid's 12, so the legend carries no extra horizontal pad.
+		paddingHorizontal: 0,
+		paddingBottom: SPACE.md,
 	},
-	legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
+	legendItem: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
 	legendDot: {
 		width: 11,
 		height: 11,
@@ -555,9 +563,9 @@ const shopCardStyles = StyleSheet.create({
 	},
 	card: {
 		backgroundColor: WHIMSY.paper,
-		borderWidth: 2.5,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 16,
+		borderRadius: RADII.xl,
 		overflow: "hidden",
 		...STICKER_SHADOW,
 	},
@@ -565,14 +573,15 @@ const shopCardStyles = StyleSheet.create({
 	// image itself still gets explicit numerics (the Yoga-quirk cure).
 	thumb: {
 		aspectRatio: 1.18,
-		borderBottomWidth: 2.5,
+		borderBottomWidth: 2,
 		borderColor: WHIMSY.ink,
 		position: "relative",
 	},
+	// Corner badges share a single 8px inset (UI audit).
 	rdot: {
 		position: "absolute",
-		top: 9,
-		left: 9,
+		top: SPACE.sm,
+		left: SPACE.sm,
 		width: 14,
 		height: 14,
 		borderRadius: 7,
@@ -583,8 +592,8 @@ const shopCardStyles = StyleSheet.create({
 	},
 	ownedBadge: {
 		position: "absolute",
-		top: 7,
-		right: 7,
+		top: SPACE.sm,
+		right: SPACE.sm,
 		width: 26,
 		height: 26,
 		borderRadius: 13,
@@ -597,7 +606,8 @@ const shopCardStyles = StyleSheet.create({
 		...STICKER_SHADOW,
 	},
 	ownedBadgeText: { fontSize: 14, fontFamily: FONTS.bodyExtra, color: WHIMSY.ink },
-	foot: { paddingHorizontal: 11, paddingTop: 9, paddingBottom: 11, gap: 7 },
+	// Symmetric 12px foot padding (UI audit) — was H11/T9/B11.
+	foot: { padding: SPACE.md, gap: SPACE.sm },
 	nm: { fontFamily: FONTS.displaySemi, fontSize: 15, color: WHIMSY.ink },
 	chip: {
 		alignSelf: "flex-start",
@@ -609,13 +619,17 @@ const shopCardStyles = StyleSheet.create({
 		borderRadius: 999,
 		paddingVertical: 4,
 		paddingLeft: 8,
-		paddingRight: 11,
-		...STICKER_SHADOW,
+		paddingRight: 12,
+		...SHADOW_SM,
 	},
 	chipBuy: { backgroundColor: WHIMSY.sun },
+	// Locked (can't-afford) reads as locked beyond color: muted cream
+	// fill + faded ink border + a lock glyph + muted text + reduced
+	// opacity. Same size as the buy chip so the grid doesn't reflow.
 	chipLocked: {
 		backgroundColor: WHIMSY.cream,
 		borderColor: "rgba(42,31,21,.34)",
+		opacity: 0.85,
 	},
 	chipText: { fontFamily: FONTS.display, fontSize: 15, color: WHIMSY.ink },
 	chipLock: { fontSize: 12 },
@@ -631,8 +645,10 @@ const shopCardStyles = StyleSheet.create({
 	grid: {
 		flexDirection: "row",
 		flexWrap: "wrap",
-		gap: 14,
-		paddingBottom: 8,
+		// Card-to-card 12 (UI audit). Mirrored in the dailyTileW formula —
+		// keep the two in sync (numeric-width Yoga discipline).
+		gap: SPACE.md,
+		paddingBottom: SPACE.sm,
 	},
 });
 
@@ -997,9 +1013,10 @@ export default function ShopScreen() {
 	const dailyIds = useMemo(() => new Set(daily.map((d) => d.id)), [daily]);
 
 	// Redesigned Today grid: numeric 2-col tile width (12px scroll padding
-	// ×2, 14px gap — never %-size grid children; Yoga-quirk discipline).
+	// ×2, SPACE.md gap — never %-size grid children; Yoga-quirk discipline).
+	// The gap constant MUST equal shopCardStyles.grid.gap.
 	const { width: shopScreenW } = useWindowDimensions();
-	const dailyTileW = Math.floor((shopScreenW - 12 * 2 - 14) / 2);
+	const dailyTileW = Math.floor((shopScreenW - 12 * 2 - SPACE.md) / 2);
 
 	const browseItems = useMemo(() => {
 		// Flags are allegiance picks (Barn flag -> dialog), not shop goods —
@@ -1146,7 +1163,6 @@ export default function ShopScreen() {
 							kicker="today's drop"
 							title="Today's Drop"
 							right={`resets in ${formatCountdown(resetsIn)}`}
-							ruleWidth={72}
 						/>
 						<RarityLegend />
 						{daily.length === 0 ? (
@@ -1334,14 +1350,15 @@ const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: WHIMSY.cream },
 	safeArea: { flex: 1 },
 	header: {
-		paddingHorizontal: 18,
+		paddingHorizontal: PAGE_PAD,
+		// TODO(ui-audit): SafeAreaView inset + 8 (deferred — device QA)
 		paddingTop: Platform.OS === "ios" ? 8 : 20,
-		paddingBottom: 8,
+		paddingBottom: SPACE.sm,
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
 	},
-	kicker: { ...KICKER_PILL, marginBottom: 2 },
+	kicker: { ...KICKER_PILL, marginBottom: SPACE.xs },
 	title: { fontSize: 32, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
 	// Snouts pocket — tilted sun sticker (matches the redesign's
 	// "snouts pocket" pattern: makes the balance feel like a chip
@@ -1350,7 +1367,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		paddingHorizontal: 12,
 		paddingVertical: 6,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		flexDirection: "row",
@@ -1366,12 +1383,12 @@ const styles = StyleSheet.create({
 	},
 	viewToggle: {
 		flexDirection: "row",
-		marginHorizontal: 18,
-		marginTop: 8,
-		marginBottom: 8,
+		marginHorizontal: PAGE_PAD,
+		marginTop: SPACE.sm,
+		marginBottom: SPACE.sm,
 		backgroundColor: WHIMSY.paper,
-		borderRadius: 22,
-		padding: 4,
+		borderRadius: RADII.xxl,
+		padding: SPACE.xs,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		...STICKER_SHADOW,
@@ -1379,7 +1396,7 @@ const styles = StyleSheet.create({
 	viewToggleBtn: {
 		flex: 1,
 		paddingVertical: 8,
-		borderRadius: 18,
+		borderRadius: RADII.xl,
 		alignItems: "center",
 	},
 	viewToggleBtnActive: {
@@ -1406,14 +1423,16 @@ const styles = StyleSheet.create({
 		paddingBottom: 8,
 	},
 	chipsRow: {
-		paddingHorizontal: 14,
-		paddingBottom: 10,
-		gap: 8,
+		// Flush with the grid: the FlatList content already insets the
+		// shared 12, so the chip rail carries no extra horizontal pad.
+		paddingHorizontal: 0,
+		paddingBottom: SPACE.md,
+		gap: SPACE.sm,
 	},
 	chip: {
 		paddingHorizontal: 14,
 		paddingVertical: 8,
-		borderRadius: 14,
+		borderRadius: RADII.lg,
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
@@ -1431,21 +1450,22 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		color: WHIMSY.ink,
 	},
-	grid: { paddingHorizontal: 12, paddingBottom: 100 },
+	grid: { paddingHorizontal: 12, paddingBottom: TAB_SAFE },
 	// Today tab — scrolling container holding the 4×4 mosaic.
 	// The mosaic itself is fixed-height; the surrounding scroll lets the
 	// content breathe on smaller devices.
 	dailyScroll: { flex: 1 },
 	dailyScrollContent: {
 		paddingHorizontal: 12,
-		paddingTop: 4,
-		paddingBottom: 100,
+		paddingTop: SPACE.xs,
+		paddingBottom: TAB_SAFE,
 	},
-	columnWrap: { gap: 10 },
+	columnWrap: { gap: SPACE.md },
 	rowWrap: {
 		flexDirection: "row",
-		gap: 10,
-		marginBottom: 12,
+		// Card-to-card 12 (UI audit).
+		gap: SPACE.md,
+		marginBottom: SPACE.md,
 	},
 	rowSlot: {
 		flex: 1,

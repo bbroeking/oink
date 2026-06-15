@@ -7,6 +7,12 @@
 // stateful hook (useActiveEffects) composes them in `hooks/`.
 
 import { rpc } from "./rpc";
+import {
+	BLESSING_META,
+	CURSE_META,
+	type BlessingKind,
+	type CurseKind,
+} from "./rituals";
 
 export interface Effect {
 	source: "blessing" | "curse";
@@ -14,6 +20,21 @@ export interface Effect {
 	expires_at: string;
 	sender_id: string | null;
 	sender_username: string | null;
+}
+
+// Per-effect display derivation shared by every render surface (the Barn
+// chip strip + the Inbox panel both hand-rolled the identical four lines):
+// whether it's a blessing, its ritual meta (icon/name/blurb — may be
+// undefined for an unknown kind, so callers keep guarding with `meta?.`),
+// the sender label with its blessing/curse fallback, and the avatar initial.
+export function effectMeta(e: Effect) {
+	const blessed = e.source === "blessing";
+	const meta = blessed
+		? BLESSING_META[e.kind as BlessingKind]
+		: CURSE_META[e.kind as CurseKind];
+	const senderName = e.sender_username ?? (blessed ? "a friend" : "someone");
+	const initial = (e.sender_username ?? "?").slice(0, 1).toUpperCase();
+	return { blessed, meta, senderName, initial };
 }
 
 // Fetch + cast the live effects on the caller. Always resolves with

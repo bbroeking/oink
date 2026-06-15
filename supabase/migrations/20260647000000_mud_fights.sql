@@ -111,7 +111,10 @@ DECLARE
 	bot boolean;
 	cnt int;
 BEGIN
-	SELECT is_bot INTO bot FROM public.crews WHERE id = NEW.crew_id;
+	-- FOR UPDATE locks the crews row so concurrent inserts for the SAME crew
+	-- serialize — otherwise two simultaneous accepts both read count=4 and both
+	-- pass, overfilling past CREW_CAP.
+	SELECT is_bot INTO bot FROM public.crews WHERE id = NEW.crew_id FOR UPDATE;
 	IF COALESCE(bot, false) THEN RETURN NEW; END IF;   -- bot crew unbounded (no real members)
 	SELECT count(*) INTO cnt FROM public.crew_members WHERE crew_id = NEW.crew_id;
 	IF cnt >= 5 THEN RAISE EXCEPTION 'crew_full'; END IF;
@@ -189,6 +192,14 @@ ALTER TABLE public.blessings DROP CONSTRAINT IF EXISTS blessings_kind_check;
 ALTER TABLE public.blessings ADD CONSTRAINT blessings_kind_check
 	CHECK (kind IN ('warm_tea', 'sun_beam', 'halo_kiss', 'bountiful_snouts', 'war_winner_regen'));
 
+-- The winner regen buff is a SELF-blessing (sender = receiver), which the
+-- original inline table CHECK (sender_id <> receiver_id) — auto-named
+-- blessings_check — forbids. Carve out the one system kind so resolve_war can
+-- grant it; all player-cast kinds still require sender <> receiver.
+ALTER TABLE public.blessings DROP CONSTRAINT IF EXISTS blessings_check;
+ALTER TABLE public.blessings ADD CONSTRAINT blessings_check
+	CHECK (sender_id <> receiver_id OR kind = 'war_winner_regen');
+
 -- regen_secs_for — body VERBATIM from 20260630000000_alignment_regen_linear.sql
 -- (the LATEST def — carrying from the older 20260598 would silently revert the
 -- linear-alignment factor) + ONE new factor: the war-winner regen buff.
@@ -228,12 +239,15 @@ AS $function$
 $function$;
 
 -- War-outcome titles get their own source so they stay independent of the
--- referral 'sounder' ladder. Carry the source list from the LATEST def
--- (20260526000000_finale.sql, which added 'season') + 'mud_war'.
+-- referral 'sounder' ladder. Carry the source list from the LATEST def —
+-- 20260569000000_world_cup_flags.sql (which added 'world_cup' AND seeded ~47
+-- wc_* title rows), NOT 20260526_finale (which only had through 'season').
+-- Omitting 'world_cup' would make ADD CONSTRAINT fail validation against those
+-- existing rows and abort the whole migration (carry-latest-def footgun).
 ALTER TABLE public.titles DROP CONSTRAINT IF EXISTS titles_source_check;
 ALTER TABLE public.titles ADD CONSTRAINT titles_source_check
 	CHECK (source IS NULL OR source IN
-		('battle_pass', 'shop', 'lucky', 'sounder', 'achievement', 'season', 'mud_war'));
+		('battle_pass', 'shop', 'lucky', 'sounder', 'achievement', 'season', 'world_cup', 'mud_war'));
 
 INSERT INTO public.titles (id, name, placement, description, source, for_sale, display_order)
 VALUES
@@ -408,10 +422,19 @@ BEGIN
 	             AND status IN ('pending', 'active')) THEN
 		RETURN jsonb_build_object('ok', false, 'reason', 'already_in_war');
 	END IF;
+	-- Target must be free of ANY live war (incl. a bot war it's the challenger
+	-- of) — otherwise it could end up in two simultaneous wars on accept.
 	IF EXISTS (SELECT 1 FROM public.mud_wars
 	           WHERE (challenger_crew = p_target OR defender_crew = p_target)
-	             AND status IN ('pending', 'active') AND is_bot_war = false) THEN
+	             AND status IN ('pending', 'active')) THEN
 		RETURN jsonb_build_object('ok', false, 'reason', 'target_busy');
+	END IF;
+	-- Anti-collusion: bound rematch farming to once per 24h per crew pair.
+	IF EXISTS (SELECT 1 FROM public.mud_wars
+	           WHERE status = 'resolved' AND resolved_at > now() - interval '24 hours'
+	             AND ((challenger_crew = my_crew AND defender_crew = p_target)
+	               OR (challenger_crew = p_target AND defender_crew = my_crew))) THEN
+		RETURN jsonb_build_object('ok', false, 'reason', 'rematch_cooldown');
 	END IF;
 	INSERT INTO public.mud_wars (challenger_crew, defender_crew, status, is_bot_war)
 		VALUES (my_crew, p_target, 'pending', false) RETURNING id INTO new_war;
@@ -472,6 +495,14 @@ BEGIN
 	IF w.id IS NULL OR w.status <> 'pending' THEN RETURN jsonb_build_object('ok', false, 'reason', 'no_war'); END IF;
 	IF NOT EXISTS (SELECT 1 FROM public.crews WHERE id = w.defender_crew AND leader_id = caller_id) THEN
 		RETURN jsonb_build_object('ok', false, 'reason', 'not_defender_leader');
+	END IF;
+	-- Defender must not already be in ANOTHER live war (e.g. a bot war as
+	-- challenger) — the partial unique indexes don't cover the cross-role case,
+	-- so accepting would silently put the crew in two simultaneous wars.
+	IF EXISTS (SELECT 1 FROM public.mud_wars
+	           WHERE (challenger_crew = w.defender_crew OR defender_crew = w.defender_crew)
+	             AND status IN ('pending', 'active') AND id <> p_war) THEN
+		RETURN jsonb_build_object('ok', false, 'reason', 'defender_busy');
 	END IF;
 	UPDATE public.mud_wars SET status = 'active', started_at = now(), ends_at = now() + interval '5 days'
 		WHERE id = p_war;
@@ -634,31 +665,41 @@ BEGIN
 			SELECT user_id, SUM(slings)::int AS own FROM public.mud_slings
 			WHERE war_id = p_war AND crew_id = winner GROUP BY user_id HAVING SUM(slings) > 0
 		LOOP
-			reward := m.own + share;
-			UPDATE public.profiles
-				SET counter        = counter + reward,
-				    tickles_earned = tickles_earned + reward,   -- exact 20260628 leaderboard shape
-				    war_wins       = war_wins + 1
-				WHERE id = m.user_id
-				RETURNING war_wins INTO wins_now;
-			-- Regen buff (self-blessing) — guarded.
+			IF w.is_bot_war THEN
+				-- Beating the house is PRACTICE: a flat, bounded snout stipend +
+				-- the regen buff only. NO tickles_earned (leaderboard) and NO
+				-- war_wins/titles — a fixed-pace bot you can re-challenge must not
+				-- be farmable for rank or prestige (the bot-farm exploit).
+				UPDATE public.profiles SET counter = counter + c_house WHERE id = m.user_id;
+			ELSE
+				reward := m.own + share;
+				UPDATE public.profiles
+					SET counter        = counter + reward,
+					    tickles_earned = tickles_earned + reward,   -- exact 20260628 leaderboard shape
+					    war_wins       = war_wins + 1
+					WHERE id = m.user_id
+					RETURNING war_wins INTO wins_now;
+			END IF;
+			-- Regen buff (self-blessing) — granted for any win.
 			BEGIN
 				INSERT INTO public.blessings (sender_id, receiver_id, kind, expires_at)
 					VALUES (m.user_id, m.user_id, 'war_winner_regen', now() + interval '72 hours');
 			EXCEPTION WHEN OTHERS THEN NULL; END;
-			-- Titles — guarded.
-			BEGIN
-				INSERT INTO public.user_titles (user_id, title_id) VALUES (m.user_id, 'mud_champion')
-					ON CONFLICT DO NOTHING;
-				IF wins_now >= 5 THEN
-					INSERT INTO public.user_titles (user_id, title_id) VALUES (m.user_id, 'mud_veteran')
+			-- Titles — real wars only (bot wins don't increment war_wins).
+			IF NOT w.is_bot_war THEN
+				BEGIN
+					INSERT INTO public.user_titles (user_id, title_id) VALUES (m.user_id, 'mud_champion')
 						ON CONFLICT DO NOTHING;
-				END IF;
-				IF wins_now >= 25 THEN
-					INSERT INTO public.user_titles (user_id, title_id) VALUES (m.user_id, 'mud_legend')
-						ON CONFLICT DO NOTHING;
-				END IF;
-			EXCEPTION WHEN OTHERS THEN NULL; END;
+					IF wins_now >= 5 THEN
+						INSERT INTO public.user_titles (user_id, title_id) VALUES (m.user_id, 'mud_veteran')
+							ON CONFLICT DO NOTHING;
+					END IF;
+					IF wins_now >= 25 THEN
+						INSERT INTO public.user_titles (user_id, title_id) VALUES (m.user_id, 'mud_legend')
+							ON CONFLICT DO NOTHING;
+					END IF;
+				EXCEPTION WHEN OTHERS THEN NULL; END;
+			END IF;
 		END LOOP;
 	END IF;
 
@@ -792,6 +833,11 @@ BEGIN
 	IF caller_id IS NULL THEN RETURN 'null'::jsonb; END IF;
 	SELECT * INTO w FROM public.mud_wars WHERE id = p_war;
 	IF w.id IS NULL THEN RETURN 'null'::jsonb; END IF;
+	-- Only participants may read a war's full roster + live slings. war_state is
+	-- SECURITY DEFINER (bypasses RLS), and war ids ship in announcements, so a
+	-- non-participant could otherwise scrape any war. This also gates the
+	-- lazy-resolve below so outsiders can't trigger someone else's resolution.
+	IF NOT public.is_war_participant(p_war, caller_id) THEN RETURN 'null'::jsonb; END IF;
 	-- Lazy resolve on first read after expiry, then re-read.
 	IF w.status = 'active' AND w.ends_at <= now() THEN
 		PERFORM public.resolve_war(p_war);
@@ -855,7 +901,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' A
 	        '00000000-0000-0000-0000-000000000000'::uuid)
 	  AND NOT EXISTS (SELECT 1 FROM public.mud_wars w
 	        WHERE (w.challenger_crew = c.id OR w.defender_crew = c.id)
-	          AND w.status IN ('pending', 'active') AND w.is_bot_war = false)
+	          AND w.status IN ('pending', 'active'))
 	  AND EXISTS (SELECT 1 FROM public.crew_members m
 	        WHERE m.crew_id = c.id AND public.are_friends(auth.uid(), m.user_id));
 $function$;
@@ -878,7 +924,11 @@ GRANT EXECUTE ON FUNCTION public.decline_challenge(uuid)           TO authentica
 GRANT EXECUTE ON FUNCTION public.sling_mud(uuid)                   TO authenticated;
 GRANT EXECUTE ON FUNCTION public.resolve_war(uuid)                 TO authenticated;
 GRANT EXECUTE ON FUNCTION public.crew_state()                      TO authenticated;
-GRANT EXECUTE ON FUNCTION public.war_side(uuid, uuid)             TO authenticated;
+-- war_side is an INTERNAL helper for war_state ONLY — it has no auth check and
+-- would leak any crew's roster + slings if callable. Postgres grants EXECUTE to
+-- PUBLIC by default, so we must REVOKE (not merely "not grant"). war_state is
+-- SECURITY DEFINER and runs as the owner, so it can still call war_side.
+REVOKE EXECUTE ON FUNCTION public.war_side(uuid, uuid)            FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.war_state(uuid)                   TO authenticated;
 GRANT EXECUTE ON FUNCTION public.my_war()                          TO authenticated;
 GRANT EXECUTE ON FUNCTION public.find_challengeable_crews()        TO authenticated;

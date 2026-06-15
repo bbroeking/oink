@@ -96,6 +96,32 @@ export const SHADOWS = {
 	},
 };
 
+// Small hard shadow for interactive chips / buttons / list rows (offset 2,2).
+// The lighter companion to STICKER_SHADOW (4,4) — the ONLY two shadow tiers
+// per the June 2026 UI audit. Soft SHADOWS.card is retired from sticker
+// contexts in favour of these two.
+export const SHADOW_SM = {
+	shadowColor: WHIMSY.ink,
+	shadowOffset: { width: 2, height: 2 },
+	shadowOpacity: 1,
+	shadowRadius: 0,
+	elevation: 2,
+};
+
+// Spacing scale (June 2026 UI audit) — use ONLY these for gaps / margins.
+// xs gutter, sm intra-card, md card-to-card, lg inter-section, xl loose.
+export const SPACE = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 } as const;
+
+// Canonical horizontal page padding — the page header AND the scroll-content
+// edges on every screen (grids needing numeric-width math may use 12 internally
+// only if the chips/legend directly above them match it).
+export const PAGE_PAD = 18;
+
+// The single scroll paddingBottom for tab-bar clearance (~50px bar + SPACE.xl).
+// Replaces the per-screen 80/100/110/120 values. Where a screen already reads
+// the bar height, prefer useBottomTabBarHeight() + SPACE.xl.
+export const TAB_SAFE = 74;
+
 // Shared paper-sticker tilt sequence — used by leaderboard rows and season tier
 // rows so each list item gets a slightly different scrapbook angle.
 export const ROW_TILTS = [-1.2, 0.8, -0.6, 0.5, -0.4, 1, -0.7, 0.6];

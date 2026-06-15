@@ -20,12 +20,13 @@ import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { log } from "@/utils/log";
 import { alignmentLabel, type AlignmentLabel } from "@/utils/alignment";
+// One equipped cosmetic slot. Identical to (and fed straight into)
+// PigStage's render contract, so re-use that single declaration rather
+// than maintaining a parallel copy. Re-exported under the EquipSlot name
+// that the rest of this hook + Stats already reference.
+import type { EquippedItem as EquipSlot } from "@/components/ui/PigStage";
 
-export interface EquipSlot {
-	id: string;
-	category: string | null;
-	emoji: string | null;
-}
+export type { EquipSlot };
 
 export interface Stats {
 	counter: number;

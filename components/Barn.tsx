@@ -25,7 +25,7 @@ import { Icon } from "./ui/Icon";
 import { Glyph, glyphSource, type GlyphName } from "./ui/Glyph";
 import { usePopupSlot } from "./ui/PopupQueue";
 import { Sticker, Tape } from "./ui/Sticker";
-import { WHIMSY, FONTS } from "@/constants/theme";
+import { WHIMSY, FONTS, SPACE, PAGE_PAD } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
 import { AllegianceModal } from "./AllegianceModal";
@@ -44,6 +44,7 @@ import {
 import { useHomeStats } from "@/hooks/useHomeStats";
 import { moodAnimation } from "@/utils/happiness";
 import { BuryTruffleButton } from "./BuryTruffleButton";
+import { OnboardingChecklist } from "./OnboardingChecklist";
 import { BuriedMound, type BuriedMoundHandle } from "./BuriedMound";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
 import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
@@ -367,6 +368,9 @@ export default function Barn() {
 	const truffle = useBuriedTruffle();
 	const moundRef = useRef<BuriedMoundHandle>(null);
 	const [truffleSheetOpen, setTruffleSheetOpen] = useState(false);
+	// First-week checklist re-check trigger — bumped on focus + after a tickle so
+	// the "Rosie's chores" card picks up milestones completed here or elsewhere.
+	const [onboardingKey, setOnboardingKey] = useState(0);
 
 	const showToast = useCallback(
 		(title: string, body: string, onPress?: () => void) => {
@@ -442,6 +446,7 @@ export default function Barn() {
 	useFocusEffect(
 		useCallback(() => {
 			fetchStats();
+			setOnboardingKey((k) => k + 1);
 			passEvents.check();
 			stipend.claim();
 			checkAlignment();
@@ -741,13 +746,27 @@ export default function Barn() {
 				    on you. Compact preview; the full panel lives in Friends
 				    → Inbox. Tapping a chip routes to the hub. */}
 				<BarnActiveEffectsStrip />
-				<BuryTruffleButton
-					buried={!!truffle.status?.buried}
-					onBury={() => {
-						moundRef.current?.playBury();
-						truffle.refresh();
-					}}
-					onCheck={() => setTruffleSheetOpen(true)}
+				{/* Fixed 12 gap above the truffle band so the spacing holds
+				    whether or not the (conditional) effects strip rendered
+				    above it — band layout no longer depends on the strip. */}
+				<View style={styles.truffleBand}>
+					<BuryTruffleButton
+						buried={!!truffle.status?.buried}
+						onBury={() => {
+							moundRef.current?.playBury();
+							truffle.refresh();
+						}}
+						onCheck={() => setTruffleSheetOpen(true)}
+					/>
+				</View>
+
+				{/* First-week checklist ("Rosie's chores") — onboarding guidance.
+				    Self-hides for users who've completed (or dismissed) it, so only
+				    new players see it. Server-authoritative idempotent rewards
+				    (migration 20260649); onClaimed refreshes the snout counter. */}
+				<OnboardingChecklist
+					refreshKey={onboardingKey}
+					onClaimed={() => fetchStats()}
 				/>
 
 				{/* Alignment placard removed — the hanging Pilgrim/
@@ -937,11 +956,18 @@ const styles = StyleSheet.create({
 	statsRow: {
 		flexDirection: "row",
 		justifyContent: "space-between",
-		paddingHorizontal: 14,
+		paddingHorizontal: PAGE_PAD,
+		// TODO(ui-audit): SafeAreaView inset + 8 (deferred — device QA)
 		paddingTop: Platform.OS === "ios" ? 12 : 24,
-		gap: 10,
+		gap: SPACE.md,
+		// Fixed band gap below the cards so spacing holds whether or not
+		// the conditional effects strip / truffle / lucky bands render.
+		marginBottom: SPACE.lg,
 		zIndex: 1,
 	},
+	// Fixed top gap for the truffle band — keeps a steady 12 below the
+	// cards/effects strip regardless of whether the strip rendered.
+	truffleBand: { marginTop: SPACE.md },
 	// Placard styles dropped with the JSX above.
 	// tickleHint dropped — the "tap rosie to tickle" prompt was
 	// noise once the pig was the only thing on screen.
@@ -1274,8 +1300,8 @@ devAlign: {
 	},
 	luckyBadgeRow: {
 		alignItems: "center",
-		marginTop: 8,
-		marginBottom: 4,
+		marginTop: SPACE.md,
+		marginBottom: SPACE.md,
 	},
 	luckyBadge: {
 		backgroundColor: WHIMSY.sun,

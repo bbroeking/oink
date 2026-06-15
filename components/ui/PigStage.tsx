@@ -33,10 +33,18 @@ import type {
 import { ITEM_PREBAKED, isPrebaked } from "../../constants/prebaked";
 import { SpritePig, PigAnimation } from "./SpritePig";
 
+// Canonical "one equipped cosmetic slot" shape. This is both PigStage's
+// render contract AND the data shape every producer hands it: useHomeStats
+// (Stats.activeHat etc.), BarnVisitModal's join projection, ClosetView's
+// slot() builder, and the shop preview modals all build/flow this exact
+// {id, category, emoji} row. Re-used as EquipSlot (useHomeStats) and Slot
+// (BarnVisitModal) so the shape is declared once. Keys are required;
+// values are nullable (category/emoji absent on a freshly-built slot read
+// back as null, never undefined).
 export interface EquippedItem {
 	id: string;
-	category?: string | null;
-	emoji?: string | null;
+	category: string | null;
+	emoji: string | null;
 }
 
 export interface PigStageProps {

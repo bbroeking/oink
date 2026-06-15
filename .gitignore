@@ -55,3 +55,7 @@ build-*.ipa
 
 # Cron scheduler runtime lock
 .claude/scheduled_tasks.lock
+.venv-tools/
+
+# Python bytecode
+__pycache__/

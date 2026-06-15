@@ -1,0 +1,77 @@
+---
+title: Wiki Glossary
+type: meta
+last_compiled: 2026-06-13
+---
+
+# Glossary — TTP Domain Terms
+
+The LLM-maintained dictionary of every domain term in Tickle the Pig, pulled
+from `CONTEXT.md` (the canonical domain + seams vocabulary), the concept-page
+titles, and their aliases. Each term gets a one-sentence definition and a
+`[[link]]` to its home page. Alphabetical. For grouping, see [[_topics]]; for
+the full catalog, see [[_index]].
+
+- **Achievements** — The threshold catalog that auto-grants snouts, hats, and titles when you cross a counter, with an infinite top-tier ladder and a reveal modal. → [[achievements-and-titles]]
+- **Active effect** — The receiver-side counterpart of a ritual: a blessing or curse currently in force on you, surfaced by the `my_active_effects` RPC and displayed as "Hoofprints." → [[blessings-curses-effects]]
+- **Alignment** — A -100..+100 reputation score (the season's permanent SOUL axis) driven by trade and ritual behavior, labeling you Goblin/Pilgrim/Angel and granting real regen/blessing/curse teeth. → [[alignment]]
+- **Allegiance** — A player's pick of one of 47 World Cup countries in the time-boxed BANNER event; the flag flies on their pig and Barn. → [[world-cup-allegiance]]
+- **Banner** — In the identity model, a disposable, time-boxed flag you fly for an event (e.g. World Cup allegiance), as opposed to the permanent SOUL or durable TRIBE. → [[identity-model]]
+- **Barn** — The player's home in TTP; the home-screen orchestrator (`Barn.tsx`) that renders the loop, bifurcating into the outdoor Exterior and the decoratable Interior. → [[barn-and-habitat]]
+- **Battle Pass / Season Pass** — A per-season IAP that unlocks the premium reward track; currently kill-switched off. → [[battle-pass-and-slop-club]]
+- **Blessing** — The positive sender-side ritual cast on a friend, landing as a timed beneficial active effect and shifting alignment toward generous. → [[blessings-curses-effects]]
+- **Cleanse** — Spending 5 snouts to clear an active effect ("Hoofprint") off your pig. → [[blessings-curses-effects]]
+- **Closet** — The typed-slot wardrobe for dressing up Rosie from owned cosmetics. → [[shop-cosmetics-closet]]
+- **Counter (`profiles.counter`)** — The single soft-currency balance column; the database home of snouts. → [[snouts-economy]]
+- **Core loop** — Tap Rosie to bank tickles, spend them on cosmetics; the root engine every other system multiplies into. → [[core-loop-and-tickle-trade]]
+- **Curse** — The negative sender-side ritual cast on a friend, landing as a timed debuff active effect and shifting alignment toward greedy; anti-grief capped. → [[blessings-curses-effects]]
+- **Devotion** — The cozy player-facing label for the internal `streak` engagement state. → [[streak-and-garden]]
+- **Drove** — The proposed player-facing name for the referral downline (already half-used in `drove_captain` titles), distinct from the friends graph. → [[referral-program]]
+- **Exterior** — The outdoor scene around the Barn (Rosie + clickable barn building + background scenery) that houses the Garden, ambient effects, and the entry to the Interior; documented but unbuilt. → [[barn-and-habitat]]
+- **finalize_season** — The finale RPC that ranks everyone by alignment, grants tiered finale titles + snouts, then wipes all alignment to 0. → [[seasons-and-judgement-day]]
+- **Friends graph** — The mutual-consent social graph (FriendshipStatus, 100-friend cap, username#1234 handles, six RPCs) of who you can bless, curse, trade with, and visit. → [[friends-graph]]
+- **Friendships layer** — `utils/friendships.ts`, the seam owning the FriendshipStatus type, friend-cap, the error-to-copy helper, and the six friendship-RPC wrappers. → [[architecture-seams]]
+- **Garden** — The UI surface for streak: a 5-stage growing visual in the Barn that *is* the readout (no number shown); currently headless/unbuilt. → [[streak-and-garden]]
+- **Goblin** — The greedy end of the alignment axis (≤ -25), styled goblin-gold. → [[alignment]]
+- **Growth loops / Virality** — TTP's model for how a cozy single-player pig game spreads: retention base first (visible streak), then a shareable identity artifact + two-sided social loops; most patterns already exist in code, unlaunched or invisible. → [[virality-and-growth-loops]]
+- **Habitat** — The player's decorated Interior: 6 typed slots plus an interior background; player-facing surfaces call it "the Barn." → [[barn-and-habitat]]
+- **Happiness** — A pig's medium-term [20,80] care state, driven mainly by your own tickling (friend-acts 25% as effective), that decays over time and multiplies regen. → [[happiness-and-mood]]
+- **Hoofprints** — The player-facing display name for active effects ("Hoofprints on you"); code uses the technical name, the term belongs to UI surfaces. → [[blessings-curses-effects]]
+- **IAP adapter pair** — `utils/iap.ts`'s `realIAP`/`noopIAP` adapters behind one `IAP` interface, concentrating the kill-switch decision at a single seam. → [[architecture-seams]]
+- **Identity model (SOUL / TRIBE / BANNER)** — The proposed three-layer frame reconciling TTP's overlapping "pick-a-side" systems and resolving the "Sounder" word collision. → [[identity-model]]
+- **Interior** — The decoratable inside of the Barn (where Habitat lives), reached by tapping the barn structure; documented but unbuilt. → [[barn-and-habitat]]
+- **Judgement Day** — The Season 1 finale moment fired by `finalize_season`, now scheduled by a live `pg_cron` job at noon UTC on July 15. → [[seasons-and-judgement-day]]
+- **Leaderboard** — The competitive rank board tracked separately from the spendable balance, keyed on `tickles_earned`. → [[snouts-economy]]
+- **Lucky Pig** — A rare client-rolled trigger opening a 10-tickle window where 30% of tickles double and 20% of triggers drop a rare folklore title. → [[lucky-pig]]
+- **Mood** — The visible readout for happiness and its only one: the pig's idle sprite itself (Sad/Content/Happy), never a number. → [[happiness-and-mood]]
+- **Mud Fights** — The optional weekly clan-war layer where a ≤5-friend Sounder fights on a buff-free, reset-to-zero field via a flat 20/day mud-sling; dark-launched. → [[sounder-mud-fights]]
+- **Notifications** — Best-effort Expo/APNs pushes fired from Postgres via pg_net, with `system_announcements` as the persistent backstop. → [[notifications]]
+- **Onboarding** — How a new player is taught the game; today a once-shown 2-screen welcome carousel (`Onboarding.tsx`, AsyncStorage `seen_onboarding`). The future stack: rewarded first-week checklist + just-in-time coachmarks + self-teaching empty states. → [[onboarding-and-guidance]]
+- **Pilgrim** — The neutral middle band of the alignment axis (between ±25). → [[alignment]]
+- **Pro (Slop Club)** — The recurring subscription granting QoL perks (2x regen, higher cap, more ritual casts, monthly snout stipend); kill-switched off. → [[battle-pass-and-slop-club]]
+- **Rarity tokens** — `constants/theme.ts`'s `RARITY_GRADIENT` / `RARITY_BG_SOLID` (and `RARITY_COLORS` in `constants/hats.ts`), the single source of truth keeping rarity surfaces from drifting. → [[architecture-seams]]
+- **Receiver-side effects layer** — `hooks/useActiveEffects.ts` + `utils/activeEffects.ts`, the single owner of the active-effect read path and the cleanse mutation. → [[architecture-seams]]
+- **Referral program** — The invite-link program (snout rewards, engagement gate, milestone titles) that grows the friends graph; dark-launched behind SOUNDER_VISIBLE. → [[referral-program]]
+- **Regen** — How fast a pig's tickle counter refills, computed by `regen_secs_for(uid)` from a VIP base times warm_tea, sluggish_snout, alignment, happiness, and war-winner factors, floored at 60s. → [[regen]]
+- **Ritual** — The sender-side act of casting a blessing or curse on another player; lives in `utils/rituals.ts` (metadata + daily rotation). → [[blessings-curses-effects]]
+- **Rosie** — The player's pig, the tappable focal point of the Barn whose idle sprite shows Mood. → [[core-loop-and-tickle-trade]]
+- **RPC layer** — `utils/rpc.ts`'s single generic `rpc<T>(name, params?)` absorbing the supabase-rpc cast + null/error handling for every call site. → [[architecture-seams]]
+- **Season** — The time-boxed competitive arc (Season 1 = Goblins vs Angels) that builds toward Judgement Day. → [[seasons-and-judgement-day]]
+- **Slop Club** — See Pro; the recurring subscription product. → [[battle-pass-and-slop-club]]
+- **Snouts** — TTP's single soft currency (`profiles.counter`): many faucets, one cosmetic sink. → [[snouts-economy]]
+- **Soul** — In the identity model, the permanent moral axis a player carries = alignment. → [[identity-model]]
+- **Sounder** — A contested word: in `CONTEXT.md` the player-facing name for the friends graph, in shipped code the referral downline, and in the new spec the war crew — the collision the identity model resolves (proposed: the TRIBE/war crew). → [[sounder-mud-fights]]
+- **Sticker** — The brand's base UI unit: a 2px ink-bordered, hard-shadowed, slightly-rotated paper card (`components/ui/Sticker.tsx`). → [[design-system]]
+- **Streak** — A player's consecutive-engagement state on a rolling 36h window that multiplies regen (caps at day 30, hard-resets after 36h idle); technical name `streak`. → [[streak-and-garden]]
+- **Tickle** — A unit of the regenerating tap resource banked by tapping Rosie and spent (as snouts) on cosmetics. → [[core-loop-and-tickle-trade]]
+- **Tickle Trade** — The friends-only ask/fulfill exchange where the asker pockets 2N for free (no repay), making greed the profitable move. → [[core-loop-and-tickle-trade]]
+- **Tired** — The in-fiction cap on a Visit: after 3–7 taps both pigs play the `tired` animation and you return home; visit-only (the home pig never tires). → [[barn-visiting]]
+- **Titles** — Equippable name decorations (one active `active_title_id` per user) granted from a multi-source taxonomy (folklore, finale, referral, event, achievement). → [[achievements-and-titles]]
+- **Tribe** — In the identity model, the durable crew a player belongs to = the Sounder war crew. → [[identity-model]]
+- **Trough** — The communal gift fund: an opener seeds a drive for a Shop item, friends donate snouts, and on full funding the opener gets the item while donors bank claimable 10:1 tickle rewards. → [[trough]]
+- **Verdict Card** — The proposed Judgement-Day shareable identity artifact (pig in its cosmetics + Saint↔Sinner alignment verdict + a persona/title + percentile + deep link); TTP's "Spotify Wrapped" / Wordle-grid equivalent. → [[virality-and-growth-loops]]
+- **Viral coefficient (k-factor)** — Invites-per-user × conversion; for TTP a CAC-subsidizer (k<1, value = the `1/(1−k)` multiplier on installs you already get), not exponential growth. → [[virality-and-growth-loops]]
+- **Visit** — A social act distinct from blessing/cursing/trading: opening a friend's pig view to tap-tickle their pig, capped by Tired, a 1h per-target cooldown, and a 5/day budget. → [[barn-visiting]]
+- **WHIMSY** — TTP's cozy storybook design system: warm palette, two display fonts (Caprasimo + Patrick Hand), and hard-shadowed paper Sticker cards. → [[design-system]]
+- **WhileAway modal** — The launch-time modal that surfaces queued `system_announcements` as a persistent notification backstop. → [[notifications]]
+- **World Cup** — See Allegiance; the time-boxed pick-a-side BANNER event backing one of 47 countries. → [[world-cup-allegiance]]

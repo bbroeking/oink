@@ -21,7 +21,7 @@ import {
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
-import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
+import { FONTS, TAB_SAFE, TITLE_RULE, WHIMSY } from "@/constants/theme";
 import { AlignmentBadge } from "./ui/AlignmentBadge";
 import { PigAvatar } from "./ui/PigAvatar";
 
@@ -78,7 +78,11 @@ export default function Friends({ userId }: { userId: string }) {
 
 	return (
 		<View style={styles.wrap}>
-			<Text style={styles.kicker}>★ friends</Text>
+			{/* No inline kicker — the Friends hub header already renders the
+			    page kicker ("★ FRIENDS"); stacking a second one here was the
+			    double-kicker the UI audit flagged. A short title rule marks
+			    the segment head instead. */}
+			<View style={styles.segRule} />
 			<View style={styles.tabsRow}>
 				<TabBtn label={`Friends · ${friends.length}`} active={tab === "friends"} onPress={() => setTab("friends")} />
 				<TabBtn label="Add" active={tab === "add"} onPress={() => setTab("add")} />
@@ -466,8 +470,10 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 const styles = StyleSheet.create({
 	wrap: { flex: 1, marginTop: 16, paddingHorizontal: 14 },
 	scroll: { flex: 1 },
-	scrollContent: { paddingBottom: 110 },
-	kicker: { ...KICKER_PILL, marginBottom: 8 },
+	scrollContent: { paddingBottom: TAB_SAFE },
+	// Segment head rule — the page header owns the kicker now; this short
+	// ink underline marks the Friends segment without a second kicker.
+	segRule: { ...TITLE_RULE, width: 64, marginBottom: 12 },
 	tabsRow: {
 		flexDirection: "row",
 		backgroundColor: WHIMSY.paper,
@@ -480,7 +486,7 @@ const styles = StyleSheet.create({
 		flex: 1,
 		paddingVertical: 8,
 		paddingHorizontal: 6,
-		borderRadius: 9,
+		borderRadius: 8,
 		alignItems: "center",
 	},
 	tabBtnActive: {
@@ -639,7 +645,7 @@ const styles = StyleSheet.create({
 	actionBtn: {
 		paddingHorizontal: 14,
 		paddingVertical: 7,
-		borderRadius: 10,
+		borderRadius: 12,
 		borderWidth: 1.5,
 	},
 	actionAccept: {

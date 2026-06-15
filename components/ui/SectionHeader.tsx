@@ -9,7 +9,7 @@ interface Props {
 	title: string;
 	/** Right-aligned secondary text (e.g. "resets in 4d", "12 items"). */
 	right?: React.ReactNode;
-	/** Width of the ink underline rule (in px). Default 90. */
+	/** Width of the ink underline rule (in px). Canonical 64 (June 2026 UI audit). */
 	ruleWidth?: number;
 	/** Container style override. */
 	style?: StyleProp<ViewStyle>;
@@ -25,7 +25,7 @@ export function SectionHeader({
 	kicker,
 	title,
 	right,
-	ruleWidth = 90,
+	ruleWidth = 64,
 	style,
 }: Props) {
 	return (

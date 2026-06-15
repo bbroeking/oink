@@ -19,12 +19,7 @@ import { SnoutCoin } from "./ui/SnoutCoin";
 import { RitualIconWell } from "./ui/RitualIconWell";
 import { CleanseModal } from "./CleanseModal";
 import { useActiveEffects } from "../hooks/useActiveEffects";
-import {
-	BLESSING_META,
-	CURSE_META,
-	type BlessingKind,
-	type CurseKind,
-} from "../utils/rituals";
+import { effectMeta } from "../utils/activeEffects";
 import { FONTS, KICKER_TEXT, WHIMSY, ROW_TILTS } from "@/constants/theme";
 import { SectionHeader } from "./ui/SectionHeader";
 
@@ -46,13 +41,7 @@ export function ActiveEffects() {
 				ruleWidth={132}
 			/>
 			{effects.map((e, i) => {
-				const blessed = e.source === "blessing";
-				const meta = blessed
-					? BLESSING_META[e.kind as BlessingKind]
-					: CURSE_META[e.kind as CurseKind];
-				const senderName =
-					e.sender_username ?? (blessed ? "a friend" : "someone");
-				const initial = (e.sender_username ?? "?").slice(0, 1).toUpperCase();
+				const { blessed, meta, senderName, initial } = effectMeta(e);
 				return (
 					<Sticker
 						key={`${e.source}-${e.kind}-${i}`}

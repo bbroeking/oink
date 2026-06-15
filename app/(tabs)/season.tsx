@@ -37,7 +37,7 @@ import {
 	type TierUpBannerHandle,
 } from "../../components/ui/TierUpBanner";
 import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
-import { FONTS, KICKER_TEXT, ROW_TILTS, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, ROW_TILTS, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW, SHADOW_SM, PAGE_PAD, TAB_SAFE, RADII, SPACE } from "@/constants/theme";
 import { daysUntilJudgement } from "@/utils/season";
 import { Button, SectionHeader } from "../../components/ui";
 import { useAudioPlayer } from "expo-audio";
@@ -482,7 +482,7 @@ const snakeStyles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 10,
+		borderRadius: RADII.md,
 		paddingHorizontal: 12,
 		paddingVertical: 5,
 	},
@@ -623,10 +623,10 @@ function VLTierRow({
 	const cardBg = isReady
 		? WHIMSY.sun
 		: isClaimed
-			? "#cfe2c6" // soft sage tint distinct from the row's regular paper
+			? WHIMSY.sage // soft sage tint distinct from the row's regular paper
 			: WHIMSY.paper;
 
-	const nodeBg = isReady ? WHIMSY.sun : isClaimed ? "#cfe2c6" : WHIMSY.paper;
+	const nodeBg = isReady ? WHIMSY.sun : isClaimed ? WHIMSY.sage : WHIMSY.paper;
 
 	return (
 		<View style={vlStyles.row}>
@@ -796,7 +796,7 @@ const vlStyles = StyleSheet.create({
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 	},
-	statPillClaimed: { backgroundColor: "#cfe2c6" },
+	statPillClaimed: { backgroundColor: WHIMSY.sage },
 	statPillReady: { backgroundColor: WHIMSY.sun },
 	statPillLocked: { backgroundColor: WHIMSY.paper },
 	statPillNum: {
@@ -884,19 +884,14 @@ const vlStyles = StyleSheet.create({
 		flex: 1,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 14,
+		borderRadius: RADII.lg,
 		paddingHorizontal: 14,
 		paddingVertical: 12,
 		marginVertical: 6,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 2, height: 2 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
+		...STICKER_SHADOW,
 	},
 	cardReady: {
-		shadowOffset: { width: 3, height: 3 },
-		shadowOpacity: 1,
+		...STICKER_SHADOW,
 	},
 	cardLocked: {
 		borderStyle: "dashed",
@@ -957,7 +952,7 @@ const vlStyles = StyleSheet.create({
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 	},
-	stateTagClaimed: { backgroundColor: "#cfe2c6" },
+	stateTagClaimed: { backgroundColor: WHIMSY.sage },
 	stateTagReady: { backgroundColor: WHIMSY.roseDeep },
 	stateTagLocked: {
 		backgroundColor: "transparent",
@@ -1212,7 +1207,6 @@ export default function SeasonScreen() {
 						<SectionHeader
 							kicker="season pass"
 							title={`Tier ${tier}/${season.total_tiers}`}
-							ruleWidth={110}
 							right={
 								PAID_BATTLE_PASS_ENABLED && IAP_ENABLED && !premium ? (
 									<>
@@ -1366,7 +1360,7 @@ function ClaimRewardDialog({
 			onRequestClose={onClose}
 		>
 			<View style={rewardStyles.backdrop}>
-				<Sticker color="paper" rotate={-1.2} radius={20} style={rewardStyles.card}>
+				<Sticker color="paper" rotate={-1.2} radius={RADII.xxl} style={rewardStyles.card}>
 					<Text style={rewardStyles.kicker}>★ unlocked</Text>
 					<View style={rewardStyles.hero}>{preview}</View>
 					<Text style={rewardStyles.title}>{display_label}</Text>
@@ -1463,7 +1457,7 @@ const passProgressStyles = StyleSheet.create({
 	},
 	fill: {
 		height: "100%",
-		backgroundColor: WHIMSY.sun,
+		backgroundColor: WHIMSY.lilacDeep,
 	},
 	label: {
 		fontFamily: FONTS.hand,
@@ -1501,7 +1495,8 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 	},
 	header: {
-		paddingHorizontal: 18,
+		paddingHorizontal: PAGE_PAD,
+		// TODO(ui-audit): SafeAreaView inset + 8 (deferred — device QA)
 		paddingTop: Platform.OS === "ios" ? 8 : 20,
 		paddingBottom: 8,
 	},
@@ -1517,7 +1512,7 @@ const styles = StyleSheet.create({
 	},
 	titleRule: {
 		...TITLE_RULE,
-		width: 90,
+		width: 64,
 		marginTop: 4,
 	},
 	// Right-slot decorations for the season-pass SectionHeader.
@@ -1534,11 +1529,7 @@ const styles = StyleSheet.create({
 		borderRadius: 999,
 		paddingHorizontal: 10,
 		paddingVertical: 4,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 2, height: 2 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
+		...SHADOW_SM,
 	},
 	unlockBtnText: {
 		fontFamily: FONTS.bodyExtra,
@@ -1547,9 +1538,10 @@ const styles = StyleSheet.create({
 	},
 	ctas: { flexDirection: "row", gap: 8, marginTop: 12 },
 	tierList: {
-		padding: 14,
-		paddingBottom: 110,
-		gap: 14,
+		paddingHorizontal: PAGE_PAD,
+		paddingTop: SPACE.lg,
+		paddingBottom: TAB_SAFE,
+		gap: SPACE.lg,
 	},
 	tierRow: {
 		flexDirection: "row",
@@ -1590,7 +1582,7 @@ const styles = StyleSheet.create({
 	stone: {
 		width: 42,
 		height: 42,
-		borderRadius: 10,
+		borderRadius: RADII.md,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.cream,
@@ -1639,7 +1631,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 10,
+		borderRadius: RADII.md,
 		paddingVertical: 6,
 		alignItems: "center",
 	},
@@ -1721,7 +1713,7 @@ const xpHowTo = StyleSheet.create({
 		gap: 10,
 		paddingVertical: 6,
 		paddingHorizontal: 8,
-		borderRadius: 9,
+		borderRadius: RADII.sm,
 		backgroundColor: WHIMSY.cream,
 		marginBottom: 5,
 	},

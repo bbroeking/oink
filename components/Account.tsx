@@ -31,7 +31,7 @@ import { Sticker, Tape } from "./ui/Sticker";
 import { AlignmentBar } from "./ui/AlignmentBar";
 import { alignmentEffects } from "@/utils/alignment";
 import Constants from "expo-constants";
-import { COLORS, FONTS, KICKER_PILL, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_PILL, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW, SPACE, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
 import {
 	IAP_ENABLED,
 	initIAP,
@@ -365,9 +365,11 @@ export function Account({ session }: { session: Session }) {
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safe}>
 				<ScrollView contentContainerStyle={styles.content}>
-					<Text style={styles.kicker}>★ your scrapbook</Text>
-					<Text style={styles.title}>Account</Text>
-					<View style={styles.titleRule} />
+					<View style={styles.header}>
+						<Text style={styles.kicker}>★ your scrapbook</Text>
+						<Text style={styles.title}>Account</Text>
+						<View style={styles.titleRule} />
+					</View>
 
 					{/* Your code card — scrapbook page */}
 					{username && (
@@ -447,7 +449,7 @@ export function Account({ session }: { session: Session }) {
 					    between the identity card and Achievements:
 					    Greedy ↔ score ↔ Generous + the bar + a hand-
 					    written one-liner about what moves it. */}
-					<View style={alignmentStoryStyles.wrap}>
+					<Sticker color="cream" rotate={-0.6} radius={18} style={alignmentStoryStyles.wrap}>
 						<Text style={alignmentStoryStyles.kicker}>★ alignment</Text>
 						<View style={alignmentStoryStyles.labelRow}>
 							<Text style={alignmentStoryStyles.greedy}>Greedy</Text>
@@ -495,7 +497,7 @@ export function Account({ session }: { session: Session }) {
 								how alignment works ›
 							</Text>
 						</Pressable>
-					</View>
+					</Sticker>
 
 					{/* Achievements entry — single-line tappable row that
 					    routes to the full grid. Sits above Sounder so it's
@@ -521,7 +523,7 @@ export function Account({ session }: { session: Session }) {
 					    dedicated Friends tab in the Season-1 social
 					    redesign. */}
 					{SOUNDER_VISIBLE && sounder && (
-						<Sticker color="paper" rotate={-0.6} radius={14} style={sounderStyles.card}>
+						<Sticker color="cream" rotate={-0.6} radius={14} style={sounderStyles.card}>
 							<View style={sounderStyles.headerRow}>
 								<Text style={sounderStyles.kicker}>★ your sounder</Text>
 								<Pressable onPress={() => router.push("/sounder")}>
@@ -736,7 +738,7 @@ export function Account({ session }: { session: Session }) {
 							{hasRedeemed === false && (
 								<View style={referralStyles.haveWrap}>
 									<View style={referralStyles.divider} />
-									<Text style={referralStyles.label}>
+									<Text style={referralStyles.haveLabel}>
 										Got a code from a friend?
 									</Text>
 									<View style={referralStyles.entryRow}>
@@ -985,7 +987,13 @@ function LifetimeStat({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: WHIMSY.cream },
 	safe: { flex: 1 },
-	content: { padding: 18, paddingBottom: 120 },
+	content: {
+		paddingHorizontal: PAGE_PAD,
+		paddingTop: PAGE_PAD,
+		paddingBottom: TAB_SAFE,
+		gap: SPACE.lg,
+	},
+	header: {},
 	kicker: {
 		...KICKER_TEXT,
 		marginBottom: 4,
@@ -998,13 +1006,11 @@ const styles = StyleSheet.create({
 	},
 	titleRule: {
 		...TITLE_RULE,
-		width: 80,
-		marginBottom: 18,
+		width: 64,
 	},
 	codeWrap: {
 		position: "relative",
 		paddingTop: 12,
-		marginBottom: 18,
 	},
 	codeTape: {
 		position: "absolute",
@@ -1109,7 +1115,7 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 	},
 	// ── Slop Club membership card ──────────────────────────────────
-	slopWrap: { marginBottom: 16, padding: 18 },
+	slopWrap: { padding: 18 },
 	slopRibbon: {
 		position: "absolute",
 		top: 14,
@@ -1275,7 +1281,6 @@ const sounderStyles = StyleSheet.create({
 	card: {
 		paddingHorizontal: 16,
 		paddingVertical: 14,
-		marginTop: 16,
 	},
 	headerRow: {
 		flexDirection: "row",
@@ -1329,7 +1334,7 @@ const sounderStyles = StyleSheet.create({
 // surface that closes the audit's "alignment is invisible on the
 // user's own screens" finding.
 const alignmentStoryStyles = StyleSheet.create({
-	wrap: { marginTop: 22 },
+	wrap: { padding: 16 },
 	kicker: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 11,
@@ -1408,13 +1413,13 @@ const achievementStyles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 12,
-		marginTop: 16,
 		paddingHorizontal: 14,
 		paddingVertical: 14,
 		backgroundColor: WHIMSY.paper,
 		borderRadius: 14,
-		borderWidth: 1.5,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
+		...STICKER_SHADOW,
 	},
 	iconBubble: {
 		width: 40,
@@ -1444,7 +1449,7 @@ const achievementStyles = StyleSheet.create({
 // Settings card — paper sticker grouping the housekeeping actions
 // into dashed-divided rows, with a hand-script footer underneath.
 const settingsStyles = StyleSheet.create({
-	wrap: { marginTop: 22 },
+	wrap: {},
 	kicker: {
 		...KICKER_TEXT,
 		marginBottom: 8,
@@ -1492,7 +1497,7 @@ const settingsStyles = StyleSheet.create({
 // "Refer friends" card — code + Copy + Share + milestone progress.
 // Sits between the Slop Club card and Settings on the Account screen.
 const referralStyles = StyleSheet.create({
-	card: { padding: 16, marginBottom: 16 },
+	card: { padding: 16 },
 	haveWrap: { marginTop: 10 },
 	divider: {
 		borderBottomWidth: 1.5,
@@ -1551,6 +1556,15 @@ const referralStyles = StyleSheet.create({
 		fontFamily: FONTS.hand,
 		fontSize: 12,
 		color: WHIMSY.mute,
+		marginBottom: 6,
+	},
+	// "Got a code from a friend?" — raised from hand 12 mute to
+	// bodyExtra 13 ink so the redeem entry reads as a real prompt,
+	// not fine print (June 2026 UI audit).
+	haveLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.ink,
 		marginBottom: 6,
 	},
 	codePill: {

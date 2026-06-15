@@ -28,13 +28,7 @@ import { SnoutCoin } from "./ui/SnoutCoin";
 import { RitualIconWell } from "./ui/RitualIconWell";
 import { CleanseModal } from "./CleanseModal";
 import { useActiveEffects } from "../hooks/useActiveEffects";
-import { formatLeft, type Effect } from "../utils/activeEffects";
-import {
-	BLESSING_META,
-	CURSE_META,
-	type BlessingKind,
-	type CurseKind,
-} from "../utils/rituals";
+import { effectMeta, formatLeft, type Effect } from "../utils/activeEffects";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -170,12 +164,7 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 // cream tint + ink icon well. Matches the design's EffectDetail
 // shape from screens/barn.jsx.
 function EffectCard({ effect }: { effect: Effect }) {
-	const blessed = effect.source === "blessing";
-	const meta = blessed
-		? BLESSING_META[effect.kind as BlessingKind]
-		: CURSE_META[effect.kind as CurseKind];
-	const senderName =
-		effect.sender_username ?? (blessed ? "a friend" : "someone");
+	const { blessed, meta, senderName } = effectMeta(effect);
 	return (
 		<Sticker
 			color={blessed ? "lilac" : "cream"}

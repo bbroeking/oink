@@ -11,13 +11,8 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { HoofprintsSheet } from "./HoofprintsSheet";
 import { RitualIconWell } from "./ui/RitualIconWell";
 import { useActiveEffects } from "../hooks/useActiveEffects";
-import {
-	BLESSING_META,
-	CURSE_META,
-	type BlessingKind,
-	type CurseKind,
-} from "../utils/rituals";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { effectMeta } from "../utils/activeEffects";
+import { FONTS, WHIMSY, SPACE, PAGE_PAD, RADII, SHADOW_SM } from "@/constants/theme";
 
 export function BarnActiveEffectsStrip() {
 	const { effects, formatLeft } = useActiveEffects();
@@ -32,13 +27,7 @@ export function BarnActiveEffectsStrip() {
 		<>
 		<View style={styles.strip}>
 			{effects.slice(0, 2).map((e, i) => {
-				const blessed = e.source === "blessing";
-				const meta = blessed
-					? BLESSING_META[e.kind as BlessingKind]
-					: CURSE_META[e.kind as CurseKind];
-				const senderName =
-					e.sender_username ?? (blessed ? "a friend" : "someone");
-				const initial = (e.sender_username ?? "?").slice(0, 1).toUpperCase();
+				const { blessed, meta, senderName, initial } = effectMeta(e);
 				return (
 					<Pressable
 						key={`${e.source}-${e.kind}-${i}`}
@@ -91,25 +80,24 @@ export function BarnActiveEffectsStrip() {
 const styles = StyleSheet.create({
 	strip: {
 		flexDirection: "row",
-		gap: 10,
-		paddingHorizontal: 16,
-		marginTop: 14,
+		gap: SPACE.md,
+		// Match the statsRow edge so the band lines up left/right (PAGE_PAD).
+		paddingHorizontal: PAGE_PAD,
+		// Top gap is owned by statsRow.marginBottom so the band spacing holds
+		// whether or not this (conditional) strip renders.
+		marginTop: 0,
 	},
 	chip: {
 		flex: 1,
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 8,
-		paddingHorizontal: 8,
-		paddingVertical: 8,
-		borderRadius: 12,
+		gap: SPACE.sm,
+		paddingHorizontal: SPACE.sm,
+		paddingVertical: SPACE.sm,
+		borderRadius: RADII.md,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 2, height: 2 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
+		...SHADOW_SM,
 	},
 	chipBless: { backgroundColor: WHIMSY.lilac },
 	chipCurse: { backgroundColor: WHIMSY.cream },

@@ -487,10 +487,13 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 									</View>
 
 									{/* Visit their Barn — see their pig + tickle it for them (social).
+									    FRIENDS-ONLY (player decision): visiting mints snouts +
+									    leaderboard to both pigs, so it's hidden for non-friends (the
+									    server are_friends check is the authoritative backstop).
 									    Pre-disabled when a visit can't succeed (locked to another
 									    barn / out of tickles / pig resting) so we never open the
 									    modal just to show a dead-end pop-up. */}
-									{visitBlock ? (
+									{stats.friendship_status !== "friends" ? null : visitBlock ? (
 										<View style={[styles.visitBtn, styles.visitBtnDisabled]}>
 											<Text style={[styles.visitBtnText, styles.visitBtnTextDisabled]}>
 												🏚 {visitBlock.label}

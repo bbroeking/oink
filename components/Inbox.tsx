@@ -912,9 +912,12 @@ const styles = StyleSheet.create({
 	// ink border so the button reads as locked-but-still-meaningful,
 	// not greyed-out-and-broken. Companion to the balance hint on the
 	// row's "asks for N · you have M" line.
+	// Cream fill + mute (not muteSoft) text/border so the locked button
+	// clears contrast — the old muteSoft-on-paper text washed out. Still
+	// disabled; reads as locked-but-legible, not greyed-out-and-broken.
 	penBtnLocked: {
-		backgroundColor: WHIMSY.muteSoft,
-		borderColor: WHIMSY.muteSoft,
+		backgroundColor: WHIMSY.cream,
+		borderColor: WHIMSY.mute,
 	},
 	penBtnLockedText: {
 		fontFamily: FONTS.bodyExtra,

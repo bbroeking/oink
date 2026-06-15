@@ -30,17 +30,14 @@ import {
 
 // Discriminated union — blessings + curses + trades + system
 // announcements all surface in the same launch modal so the player
-// gets ONE "what landed" moment instead of N separate ones. Old
-// name was RitualEvent; trades aren't rituals, system announcements
-// aren't either, so the type was renamed. Kept the RitualEvent
-// alias below so existing imports keep working through the rename.
+// gets ONE "what landed" moment instead of N separate ones. (Trades
+// aren't rituals and system announcements aren't either, so this is
+// named for the modal — "what landed while away" — not "rituals".)
 export type WhileAwayEvent =
 	| { source: "blessing"; kind: string; from: string | null }
 	| { source: "curse"; kind: string; from: string | null }
 	| { source: "trade_fulfilled"; amount: number; from: string | null }
 	| { source: "system"; announcementId: number; title: string; body: string };
-
-export type RitualEvent = WhileAwayEvent; // legacy alias
 
 export function WhileAwayModal({
 	visible,

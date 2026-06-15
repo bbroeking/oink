@@ -25,7 +25,7 @@ import { Inbox } from "../../components/Inbox";
 import { Leaderboard } from "../../components/Leaderboard";
 import { SounderCard } from "../../components/SounderCard";
 import { MUD_FIGHTS_VISIBLE } from "@/constants/featureFlags";
-import { FONTS, TITLE_RULE, WHIMSY } from "@/constants/theme";
+import { FONTS, KICKER_PILL, PAGE_PAD, SPACE, TITLE_RULE, WHIMSY } from "@/constants/theme";
 
 type Segment = "friends" | "inbox" | "board" | "sounder";
 
@@ -136,20 +136,14 @@ const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: WHIMSY.cream },
 	safeArea: { flex: 1 },
 	header: {
-		paddingHorizontal: 18,
+		paddingHorizontal: PAGE_PAD,
+		// TODO(ui-audit): SafeAreaView inset + 8 (deferred — device QA)
 		paddingTop: Platform.OS === "ios" ? 8 : 20,
 	},
-	kicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.6,
-		textTransform: "uppercase",
-		marginBottom: 2,
-	},
+	kicker: { ...KICKER_PILL, marginBottom: 2 },
 	title: { fontSize: 32, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
-	titleRule: { ...TITLE_RULE, width: 110, marginTop: 4 },
-	segWrap: { marginTop: 14 },
+	titleRule: { ...TITLE_RULE, width: 64, marginTop: 4 },
+	segWrap: { marginTop: SPACE.lg },
 	seg: { flexDirection: "row", padding: 4, gap: 4 },
 	segBtn: {
 		flex: 1,
@@ -183,5 +177,5 @@ const styles = StyleSheet.create({
 		fontSize: 10,
 		color: WHIMSY.paper,
 	},
-	body: { flex: 1, marginTop: 10 },
+	body: { flex: 1, marginTop: SPACE.md },
 });

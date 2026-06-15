@@ -118,6 +118,37 @@ export const HAT_IMAGES: Record<string, number> = {
 	// Stragglers
 	crown: require("../assets/images/hats/crown.png"),
 	safety_goggles: require("../assets/images/hats/safety_goggles.png"),
+	// Mud War (Season 2) — generated 2026-06-14 via docs/openai-mud-war-items.md,
+	// sliced by scripts/slice_mudwar.py. Items in hats/, backgrounds in
+	// backgrounds/. The festival accessories were re-keyed from Strip 5's baked
+	// transparency checkerboard via a luminance+saturation key; `confetti_aura`
+	// also had its night-scene bleed cut by slice_mudwar.night_cut (dynamic
+	// dark-column boundary) so all 4 festival pieces ship.
+	muddy_cap: require("../assets/images/hats/muddy_cap.png"),
+	slop_bucket_hat: require("../assets/images/hats/slop_bucket_hat.png"),
+	reed_hat: require("../assets/images/hats/reed_hat.png"),
+	bog_helmet: require("../assets/images/hats/bog_helmet.png"),
+	swamp_crown: require("../assets/images/hats/swamp_crown.png"),
+	slop_bucket: require("../assets/images/hats/slop_bucket.png"),
+	mud_shovel: require("../assets/images/hats/mud_shovel.png"),
+	mud_pie: require("../assets/images/hats/mud_pie.png"),
+	golden_truffle: require("../assets/images/hats/golden_truffle.png"),
+	crew_pennant: require("../assets/images/hats/crew_pennant.png"),
+	mud_splatter_aura: require("../assets/images/hats/mud_splatter_aura.png"),
+	swamp_bubble_aura: require("../assets/images/hats/swamp_bubble_aura.png"),
+	firefly_aura: require("../assets/images/hats/firefly_aura.png"),
+	golden_bog_aura: require("../assets/images/hats/golden_bog_aura.png"),
+	heirloom_mire_aura: require("../assets/images/hats/heirloom_mire_aura.png"),
+	mud_pit_bg: require("../assets/images/backgrounds/mud_pit_bg.png"),
+	reed_marsh_bg: require("../assets/images/backgrounds/reed_marsh_bg.png"),
+	mud_derby_bg: require("../assets/images/backgrounds/mud_derby_bg.png"),
+	bog_dusk_bg: require("../assets/images/backgrounds/bog_dusk_bg.png"),
+	golden_mire_bg: require("../assets/images/backgrounds/golden_mire_bg.png"),
+	festival_night_bg: require("../assets/images/backgrounds/festival_night_bg.png"),
+	rosette_cap: require("../assets/images/hats/rosette_cap.png"),
+	prize_sash: require("../assets/images/hats/prize_sash.png"),
+	festival_pennant: require("../assets/images/hats/festival_pennant.png"),
+	confetti_aura: require("../assets/images/hats/confetti_aura.png"),
 	// Tickle particles — equipable cosmetic that swaps the ♥/✦
 	// text glyphs floating above the pig on each tap. Catalog rows
 	// live in public.hats with category 'tickle_particle' (see

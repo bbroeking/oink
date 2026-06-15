@@ -28,6 +28,7 @@ ASSET_DIR = f"{REPO}/assets/images/hats"
 # need bbox math).
 BG_ASSET_DIR = f"{REPO}/assets/images/backgrounds"
 CATALOG_SQL = f"{REPO}/supabase/migrations/20260502030000_shop_catalog.sql"
+MUDWAR_SQL = f"{REPO}/supabase/migrations/20260650000000_mud_war_cosmetics.sql"
 OUTPUT_TS = f"{REPO}/constants/hat_overlays.generated.ts"
 OUTPUT_REPORT = f"{REPO}/tests/OVERLAY_REPORT.md"
 
@@ -105,15 +106,21 @@ DEFAULT_BOTTOM_NUDGE_PX = 24
 def parse_catalog():
     """Build {item_id: category} from the shop_catalog migration."""
     items = {}
-    with open(CATALOG_SQL) as f:
-        for line in f:
-            # Match rows like: ('beanie', 'Beanie', '🧢', 60, 11, 'hat', 'common', '...')
-            m = re.match(
-                r"^\('([^']+)',\s*'[^']+',\s*'[^']+',\s*\d+,\s*\d+,\s*'([^']+)',",
-                line,
-            )
-            if m:
-                items[m.group(1)] = m.group(2)
+    for sqlpath in (CATALOG_SQL, MUDWAR_SQL):
+        try:
+            fh = open(sqlpath)
+        except FileNotFoundError:
+            continue
+        with fh:
+            for line in fh:
+                # Match rows like: ('beanie', 'Beanie', '🧢', 60, 11, 'hat', '...')
+                # tolerant of leading indentation in newer migrations.
+                m = re.match(
+                    r"^\s*\('([^']+)',\s*'[^']+',\s*'[^']+',\s*\d+,\s*\d+,\s*'([^']+)',",
+                    line,
+                )
+                if m:
+                    items[m.group(1)] = m.group(2)
     # Originals not in catalog migration:
     for orig_id in ["wizard", "cowboy", "tophat", "party"]:
         items.setdefault(orig_id, "hat")

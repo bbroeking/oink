@@ -35,6 +35,14 @@ import { achievementIcon } from "@/constants/emojiArt";
 import {
 	FONTS,
 	WHIMSY,
+	KICKER_PILL,
+	TITLE_RULE,
+	PAGE_PAD,
+	TAB_SAFE,
+	STICKER_SHADOW,
+	SHADOW_SM,
+	SPACE,
+	RADII,
 } from "@/constants/theme";
 
 interface AchievementRow {
@@ -131,23 +139,23 @@ export default function AchievementsScreen() {
 						<Pressable onPress={() => router.back()} hitSlop={12}>
 							<Text style={styles.backBtnText}>‹ back</Text>
 						</Pressable>
+						<Text style={styles.kicker}>★ achievements</Text>
 						<Text style={styles.title}>Achievements</Text>
-						<View style={{ width: 50 }} />
-					</View>
-					<Text style={styles.statsLine}>
-						<Text style={styles.statsStar}>★ </Text>
-						<Text style={styles.statsUnlocked}>
-							{claimedCount} / {rows.length} unlocked
+						<View style={styles.titleRule} />
+						<Text style={styles.statsLine}>
+							<Text style={styles.statsUnlocked}>
+								{claimedCount} / {rows.length} unlocked
+							</Text>
+							{readyCount > 0 && (
+								<>
+									<Text style={styles.statsDot}> · </Text>
+									<Text style={styles.statsReady}>
+										{readyCount} ready to claim
+									</Text>
+								</>
+							)}
 						</Text>
-						{readyCount > 0 && (
-							<>
-								<Text style={styles.statsDot}> · </Text>
-								<Text style={styles.statsReady}>
-									{readyCount} ready to claim
-								</Text>
-							</>
-						)}
-					</Text>
+					</View>
 
 					{/* Filter chip row — flexGrow:0 on the ScrollView so it
 					    doesn't claim leftover vertical space (otherwise
@@ -340,39 +348,41 @@ function AchievementCard({
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
 	header: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		paddingHorizontal: 18,
+		paddingHorizontal: PAGE_PAD,
 		paddingTop: 8,
-		paddingBottom: 4,
+		paddingBottom: SPACE.md,
 	},
-	backBtnText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
+	backBtnText: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.mute,
+		marginBottom: SPACE.sm,
+	},
+	kicker: {
+		...KICKER_PILL,
+		marginBottom: SPACE.xs,
+	},
 	title: { fontFamily: FONTS.whimsy, fontSize: 26, color: WHIMSY.ink },
-	statsLine: {
-		paddingHorizontal: 18,
-		marginBottom: 10,
-		textAlign: "center",
+	titleRule: {
+		...TITLE_RULE,
+		width: 64,
+		marginTop: SPACE.xs,
+		marginBottom: SPACE.sm,
 	},
-	statsStar: {
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.accent,
-	},
+	statsLine: {},
 	statsUnlocked: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
+		...KICKER_PILL,
 		color: WHIMSY.ink,
 	},
-	statsDot: { color: WHIMSY.mute, fontSize: 13 },
+	statsDot: { ...KICKER_PILL, color: WHIMSY.mute },
 	statsReady: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
+		...KICKER_PILL,
 		color: WHIMSY.accent,
 	},
 	chipsRow: {
-		paddingHorizontal: 18,
-		paddingBottom: 8,
-		gap: 8,
+		paddingHorizontal: PAGE_PAD,
+		paddingBottom: SPACE.md,
+		gap: SPACE.sm,
 		flexDirection: "row",
 		// Center on the cross-axis so chips don't stretch vertically
 		// when the ScrollView container ends up taller than the chip
@@ -412,20 +422,16 @@ const styles = StyleSheet.create({
 		fontSize: 10,
 		color: WHIMSY.paper,
 	},
-	grid: { padding: 18, gap: 12, paddingBottom: 80 },
+	grid: { padding: PAGE_PAD, gap: SPACE.md, paddingBottom: TAB_SAFE },
 	card: {
 		backgroundColor: WHIMSY.paper,
-		borderRadius: 14,
+		borderRadius: RADII.lg,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		paddingHorizontal: 14,
 		paddingVertical: 14,
-		marginVertical: 6,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 3, height: 3 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 3,
+		marginVertical: 0,
+		...STICKER_SHADOW,
 		position: "relative",
 	},
 	// Ready: cream-tinted card so the eye lands here first when
@@ -472,9 +478,9 @@ const styles = StyleSheet.create({
 	cardBody: { flex: 1, minWidth: 0 },
 	titleRow: {
 		flexDirection: "row",
-		alignItems: "baseline",
+		alignItems: "flex-start",
 		justifyContent: "space-between",
-		gap: 8,
+		gap: SPACE.sm,
 	},
 	cardName: {
 		fontFamily: FONTS.whimsy,
@@ -496,13 +502,13 @@ const styles = StyleSheet.create({
 		marginBottom: 8,
 	},
 	progressTrack: {
-		height: 8,
-		borderWidth: 1.5,
+		height: 12,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		borderRadius: 999,
-		backgroundColor: WHIMSY.paper,
+		backgroundColor: WHIMSY.cream2,
 		overflow: "hidden",
-		marginTop: 4,
+		marginTop: SPACE.xs,
 	},
 	progressFill: {
 		height: "100%",
@@ -549,11 +555,7 @@ const styles = StyleSheet.create({
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.sun,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 2, height: 2 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
+		...SHADOW_SM,
 	},
 	claimBtnText: {
 		fontFamily: FONTS.bodyExtra,

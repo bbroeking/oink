@@ -43,6 +43,16 @@ import { FONTS, WHIMSY } from "@/constants/theme";
 
 export default function MudWarScreen() {
 	const { war, loading, refresh, sling } = useMudWar();
+	// "Start a new fight" on the resolved recap: mark this war dismissed so the
+	// screen drops to the NoWar challenge picker. my_war() keeps returning the
+	// resolved war, so refresh() alone can never advance past the recap.
+	const [dismissedWarId, setDismissedWarId] = useState<string | null>(null);
+	const dismissResolved = useCallback(() => {
+		if (war) setDismissedWarId(war.warId);
+		refresh();
+	}, [war, refresh]);
+	const resolvedDismissed =
+		!!war && war.status === "resolved" && war.warId === dismissedWarId;
 
 	return (
 		<>
@@ -61,14 +71,14 @@ export default function MudWarScreen() {
 						<View style={styles.center}>
 							<ActivityIndicator color={WHIMSY.accent} />
 						</View>
-					) : !war ? (
+					) : !war || resolvedDismissed ? (
 						<NoWar onChanged={refresh} />
 					) : war.status === "pending" ? (
 						<PendingWar war={war} onChanged={refresh} />
 					) : war.status === "active" ? (
 						<ActiveWar war={war} onSling={sling} />
 					) : (
-						<ResolvedWar war={war} onChanged={refresh} />
+						<ResolvedWar war={war} onChanged={dismissResolved} />
 					)}
 				</SafeAreaView>
 			</View>
@@ -161,6 +171,25 @@ function PendingWar({
 	war: NonNullable<ReturnType<typeof useMudWar>["war"]>;
 	onChanged: () => void;
 }) {
+	const [note, setNote] = useState<string | null>(null);
+	// Every defender-crew MEMBER reaches this screen, but only the leader may
+	// accept/decline — surface the rejection instead of a silent no-op.
+	async function act(fn: () => Promise<{ ok: boolean; reason?: string }>) {
+		const r = await fn();
+		if (r.ok) {
+			onChanged();
+		} else {
+			setNote(
+				r.reason === "not_defender_leader"
+					? "Only your Sounder's leader can accept or decline."
+					: r.reason === "defender_busy"
+					? "Your Sounder is already in another fight."
+					: r.reason === "no_war"
+					? "This challenge is no longer available."
+					: "Couldn't do that — try again."
+			);
+		}
+	}
 	if (war.iAmChallenger) {
 		return (
 			<View style={styles.center}>
@@ -180,25 +209,14 @@ function PendingWar({
 			</Text>
 			<Text style={styles.emptyBody}>Accept to start a 5-day Mud Fight.</Text>
 			<View style={styles.pendingBtns}>
-				<Button
-					variant="primary"
-					onPress={async () => {
-						await acceptChallenge(war.warId);
-						onChanged();
-					}}
-				>
+				<Button variant="primary" onPress={() => act(() => acceptChallenge(war.warId))}>
 					Accept
 				</Button>
-				<Button
-					variant="ghost"
-					onPress={async () => {
-						await declineChallenge(war.warId);
-						onChanged();
-					}}
-				>
+				<Button variant="ghost" onPress={() => act(() => declineChallenge(war.warId))}>
 					Decline
 				</Button>
 			</View>
+			{note && <Text style={styles.note}>{note}</Text>}
 		</View>
 	);
 }

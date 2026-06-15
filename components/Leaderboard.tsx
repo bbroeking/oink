@@ -14,7 +14,7 @@ import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker } from "./ui/Sticker";
 import { ListRowSkeleton } from "./ui/Skeleton";
 import { UserSheet } from "./UserSheet";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, SHADOW_SM, TAB_SAFE, WHIMSY } from "@/constants/theme";
 
 // Page size + hard upper bound for the global leaderboard. 25 lands
 // just over a single phone screen so each "Load more" is a deliberate
@@ -211,7 +211,9 @@ function ClippingRow({
 					) : null}
 				</View>
 				<View style={styles.rowScoreCol}>
-					<Text style={styles.rowScore}>
+					{/* numberOfLines=1 so 5-digit scores (e.g. "100,000")
+					    stay on one line instead of wrapping the column. */}
+					<Text style={styles.rowScore} numberOfLines={1}>
 						{showAlignment
 							? score > 0
 								? `+${score}`
@@ -349,18 +351,15 @@ export function Leaderboard() {
 						.not("username", "is", null)
 						.neq("username", "")
 						.order("tickles_earned", { ascending: false });
-				let result = (await runFriends(SELECT_WITH_TITLES)) as {
-					data: unknown;
-					error: unknown;
-				};
+				let result = await runFriends(SELECT_WITH_TITLES);
 				if (result.error) {
-					result = (await runFriends(SELECT_BASIC)) as {
-						data: unknown;
-						error: unknown;
-					};
+					result = await runFriends(SELECT_BASIC);
 					if (result.error) throw result.error;
 				}
-				setLeaderboard(normalize(result.data as RawRow[] | null));
+				// Dynamic select string → PostgREST infers a parser-error
+				// shape, so cast .data to our known row type (matches the
+				// global path). Double cast bridges that loose inference.
+				setLeaderboard(normalize(result.data as unknown as RawRow[] | null));
 				return;
 			}
 
@@ -463,13 +462,19 @@ export function Leaderboard() {
 					))}
 				</View>
 			) : leaderboard.length === 0 ? (
-				<Text style={styles.empty}>
-					{scope === "friends"
-						? "No friends yet. Add some on the Friends segment."
-						: scope === "alignment"
-							? "No one has taken a side yet. Trade to tip the scales."
-							: "No tickles yet. Be the first!"}
-				</Text>
+				// Empty state on a paper Sticker so it matches the Friends
+				// segment's empty card instead of reading as bare text.
+				<View style={styles.emptyWrap}>
+					<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
+						<Text style={styles.emptyText}>
+							{scope === "friends"
+								? "No friends yet. Add some on the Friends segment."
+								: scope === "alignment"
+									? "No one has taken a side yet. Trade to tip the scales."
+									: "No tickles yet. Be the first!"}
+						</Text>
+					</Sticker>
+				</View>
 			) : scope === "alignment" ? (
 				// Alignment leaderboard — TWO independent boards
 				// (Generous top + Greedy top), each with its own
@@ -516,7 +521,7 @@ export function Leaderboard() {
 								)}
 								{greedy.length > 0 && (
 									<>
-										<View style={[styles.alignSectionHeader, { marginTop: 18 }]}>
+										<View style={[styles.alignSectionHeader, { marginTop: 16 }]}>
 											<Text style={[styles.alignSectionText, styles.alignSectionGreedy]}>
 												GREEDY · top {greedy.length}
 											</Text>
@@ -631,7 +636,9 @@ const styles = StyleSheet.create({
 	toggleText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
 	toggleTextActive: { fontFamily: FONTS.whimsy, color: WHIMSY.ink },
 	champWrap: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 },
-	champ: { padding: 16 },
+	// Poster padding aligned to the ranked-row horizontal padding (14) so
+	// the champion card and the rows below share one left edge.
+	champ: { paddingVertical: 16, paddingHorizontal: 14 },
 	// Tape decoration tucked into the corner of the champion poster —
 	// rotated rose strip matching the design's `Tape color="rose"`.
 	champTape: {
@@ -672,7 +679,7 @@ const styles = StyleSheet.create({
 	// the no-emoji sweep — no inline style needed; Icon takes size +
 	// color directly.
 	list: { flex: 1 },
-	listContent: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 110 },
+	listContent: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: TAB_SAFE },
 	// Single sticker wrapping every ranked row — replaces per-row
 	// tilted stickers so the leaderboard reads as one cohesive card.
 	listSticker: {
@@ -688,11 +695,11 @@ const styles = StyleSheet.create({
 		marginBottom: 4,
 		paddingHorizontal: 4,
 	},
+	// In-card section header — unified on KICKER_TEXT (13px hand) per the
+	// UI audit so it matches the in-card kicker treatment elsewhere; the
+	// per-side gold/green color is overridden below.
 	alignSectionText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 1.4,
-		textTransform: "uppercase",
+		...KICKER_TEXT,
 	},
 	alignSectionGenerous: { color: "#C99B23" }, // matches Barn blessing countdown
 	alignSectionGreedy:   { color: "#5E7E49" }, // matches Barn curse countdown
@@ -701,7 +708,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		paddingVertical: 12,
 		paddingHorizontal: 14,
-		gap: 8,
+		gap: 12,
 	},
 	rowYouHighlight: {
 		backgroundColor: WHIMSY.cream,
@@ -740,10 +747,13 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},
-	// Score column — number above tiny ♥ suffix, right-aligned.
+	// Score column — number above tiny ♥ suffix, right-aligned. Sizes to
+	// its content (flexShrink 0) so a 5-digit score keeps its own column
+	// and the name (flex:1) yields width instead of the number wrapping.
 	rowScoreCol: {
 		alignItems: "flex-end",
 		minWidth: 60,
+		flexShrink: 0,
 	},
 	rowScore: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	rowScoreUnit: {
@@ -757,18 +767,14 @@ const styles = StyleSheet.create({
 	// magic — each tap pulls one more page of 25.
 	loadMoreBtn: {
 		alignSelf: "center",
-		marginTop: 14,
+		marginTop: 16,
 		paddingHorizontal: 20,
 		paddingVertical: 10,
 		borderRadius: 999,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.paper,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 2, height: 2 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
+		...SHADOW_SM,
 	},
 	loadMoreBtnText: {
 		fontFamily: FONTS.bodyExtra,
@@ -782,11 +788,18 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginTop: 14,
 	},
-	empty: {
-		textAlign: "center",
-		padding: 36,
-		color: WHIMSY.mute,
+	// Empty state — paper Sticker card matching the Friends segment's
+	// empty card. Replaces the old bare centered Text.
+	emptyWrap: { paddingHorizontal: 14, paddingTop: 12 },
+	emptyCard: {
+		paddingHorizontal: 16,
+		paddingVertical: 16,
+	},
+	emptyText: {
 		fontFamily: FONTS.hand,
 		fontSize: 15,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		lineHeight: 21,
 	},
 });
