@@ -39,7 +39,6 @@ export const HAT_OVERLAYS_GENERATED: Record<string, HatOverlay> = {
 	firefly_aura: { bottom: 0, left: 0, width: 300, height: 280 },
 	flowers: { bottom: 53, left: 214, width: 80, height: 112 },
 	forest_grove: { bottom: 0, left: 0, width: 300, height: 300 },
-	gas_mask: { bottom: 159, left: 84, width: 160, height: 120 },
 	gift_bow: { bottom: 273, left: 130, width: 80, height: 53 },
 	gold_aura: { bottom: 0, left: 0, width: 300, height: 284 },
 	golden_bog_aura: { bottom: 0, left: 0, width: 300, height: 292 },

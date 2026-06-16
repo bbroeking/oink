@@ -29,7 +29,6 @@ export const HAT_REL_DATA: Record<string, RelSpec> = {
 	electric_aura: { pivot: { x: 0.5071, y: 0.8392 }, widthFrac: 1.095, anchor: "body", behind: false },
 	fire_aura: { pivot: { x: 0.5, y: 0.5 }, widthFrac: 0.4, anchor: "body", behind: false },
 	flowers: { pivot: { x: 0.3679, y: 0.6982 }, widthFrac: 0.4, anchor: "hand_r", behind: false },
-	gas_mask: { pivot: { x: 0.5036, y: 0.3461 }, widthFrac: 1.08, anchor: "eyes", behind: false },
 	gift_bow: { pivot: { x: 0.4, y: 0.4277 }, widthFrac: 0.435, anchor: "head", behind: false },
 	gold_aura: { pivot: { x: 0.5071, y: 0.8154 }, widthFrac: 1.2, anchor: "body", behind: false },
 	hair_bow: { pivot: { x: 0.4071, y: 0.4648 }, widthFrac: 0.42, anchor: "head", behind: false },

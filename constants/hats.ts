@@ -75,7 +75,6 @@ export const HAT_IMAGES: Record<string, number> = {
 	velvet_bow: require("../assets/images/hats/velvet_bow.png"),
 	rainbow_bow: require("../assets/images/hats/rainbow_bow.png"),
 	robber_mask: require("../assets/images/hats/robber_mask.png"),
-	gas_mask: require("../assets/images/hats/gas_mask.png"),
 	carnival_mask: require("../assets/images/hats/carnival_mask.png"),
 	venice_mask: require("../assets/images/hats/venice_mask.png"),
 	skull_mask: require("../assets/images/hats/skull_mask.png"),
