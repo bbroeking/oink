@@ -51,8 +51,9 @@ This regenerates `constants/hat_overlays.generated.ts`. The script reads every P
 Start the placement tool to see how it looks on Rosie:
 
 ```bash
-# From repo root:
-python3 -m http.server 8765 > /tmp/anchor_server.log 2>&1 &
+# From repo root. anchor-server.py serves the tool AND accepts the
+# "Save to source" write-back (a plain `python3 -m http.server` won't):
+python3 tools/anchor-server.py > /tmp/anchor_server.log 2>&1 &
 open http://localhost:8765/tools/item-anchor.html
 ```
 
@@ -70,15 +71,15 @@ If the auto placement is off — wrong size, wrong anchor, mis-aligned pivot —
 3. **Drag the width slider** to set **widthFrac** — the item's width as a fraction of the 300px pig canvas. 0.4 is the default; large items (full hat, gas mask) go higher.
 4. The preview updates live.
 
-When it looks right, click **Copy RelSpec line for HAT_REL**. The output is in the exact format used in `constants/hat_rel.generated.ts`:
+When it looks right, click **Save to source ✎** — the server writes the line straight into `constants/hat_rel.generated.ts`, upserted in alphabetical order (the status line confirms `inserted`/`updated`). The **Copy RelSpec line** button still works if you'd rather paste by hand. The line format:
 
 ```ts
 astronaut: { pivot: { x: 0.485, y: 0.2479 }, widthFrac: 1, anchor: "head", behind: false },
 ```
 
-### 7. Paste into HAT_REL_DATA
+### 7. (Manual fallback) Paste into HAT_REL_DATA
 
-Open `constants/hat_rel.generated.ts` and paste the line **in alphabetical order** between sibling entries. Items in `HAT_REL_DATA` automatically override the auto-computed overlays for the same id.
+Only if you used Copy instead of Save: open `constants/hat_rel.generated.ts` and paste the line **in alphabetical order** between sibling entries. Items in `HAT_REL_DATA` automatically override the auto-computed overlays for the same id.
 
 ### 8. Verify
 

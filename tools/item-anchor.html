@@ -80,6 +80,7 @@
   <h2>4 · RelSpec</h2>
   <pre id="output">{}</pre>
   <button id="copy-btn">Copy RelSpec line for HAT_REL</button>
+  <button id="save-btn" style="margin-left: 8px; background: #9be29b;">Save to source ✎</button>
   <div class="small" id="copy-status" style="margin-top: 6px;"></div>
 </div>
 
@@ -374,6 +375,34 @@ function init() {
     } catch (e) {
       document.getElementById("copy-status").textContent = "Copy failed; select the JSON above manually.";
     }
+  };
+
+  // Save straight back into constants/hat_rel.generated.ts (needs
+  // anchor-server.py, not a plain http.server).
+  document.getElementById("save-btn").onclick = async () => {
+    const s = spec();
+    const status = document.getElementById("copy-status");
+    status.textContent = "Saving…";
+    try {
+      const res = await fetch("/save-rel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: state.itemId,
+          pivot: s.pivot,
+          widthFrac: s.widthFrac,
+          anchor: s.anchor,
+          behind: false,
+        }),
+      });
+      const j = await res.json();
+      status.textContent = j.ok
+        ? `✓ ${j.action} ${j.id} in hat_rel.generated.ts (${j.total} entries).`
+        : `Save failed: ${j.error || "unknown"}`;
+    } catch (e) {
+      status.textContent = "Save failed — is anchor-server.py running (not plain http.server)?";
+    }
+    setTimeout(() => (status.textContent = ""), 6000);
   };
 
   render();
