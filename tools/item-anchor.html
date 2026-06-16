@@ -310,13 +310,23 @@ function render() {
   const py = Math.round(s.pivot.y * 10000) / 10000;
   const wf = Math.round(s.widthFrac * 1000) / 1000;
   document.getElementById("output").textContent =
-    `\t${state.itemId}: { pivot: { x: ${px}, y: ${py} }, widthFrac: ${wf}, anchor: "${s.anchor}", behind: false },`;
+    `\t${state.itemId}: { pivot: { x: ${px}, y: ${py} }, widthFrac: ${wf}, anchor: "${s.anchor}", behind: ${s.behind ?? false} },`;
 }
 
 // ─────────────────────────────────────────────────────────────────────
 // Wire up
 // ─────────────────────────────────────────────────────────────────────
-function init() {
+async function init() {
+  // Load the current placements from source (HAT_REL_DATA) so picking an
+  // already-placed item shows its REAL pivot/anchor/width, not the default.
+  // (Falls back to localStorage + defaults if served without anchor-server.py.)
+  try {
+    const res = await fetch("/rel-data");
+    if (res.ok) Object.assign(state.rel, await res.json());
+  } catch (e) {
+    /* offline / plain http.server — keep localStorage + defaults */
+  }
+
   // Item grid
   const grid = document.getElementById("item-grid");
   ITEMS.forEach((item) => {
@@ -406,7 +416,7 @@ function init() {
           pivot: s.pivot,
           widthFrac: s.widthFrac,
           anchor: s.anchor,
-          behind: false,
+          behind: s.behind ?? false,
         }),
       });
       const j = await res.json();

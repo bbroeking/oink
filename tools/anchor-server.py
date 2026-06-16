@@ -56,9 +56,38 @@ def upsert_rel(d):
     return action, src.count("pivot:")
 
 
+def read_rel_data():
+    """Parse current HAT_REL_DATA -> {id: {pivot, widthFrac, anchor, behind}} so
+    the tool can load an item's real placement instead of the default."""
+    src = open(REL_FILE, "r").read()
+    out = {}
+    pat = re.compile(
+        r'^\t(\w+):\s*\{\s*pivot:\s*\{\s*x:\s*([-\d.]+),\s*y:\s*([-\d.]+)\s*\},'
+        r'\s*widthFrac:\s*([-\d.]+),\s*anchor:\s*"(\w+)",\s*behind:\s*(true|false)',
+        re.M,
+    )
+    for m in pat.finditer(src):
+        out[m.group(1)] = {
+            "pivot": {"x": float(m.group(2)), "y": float(m.group(3))},
+            "widthFrac": float(m.group(4)),
+            "anchor": m.group(5),
+            "behind": m.group(6) == "true",
+        }
+    return out
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **k):
         super().__init__(*a, directory=ROOT, **k)
+
+    def do_GET(self):
+        if self.path == "/rel-data":
+            try:
+                self._json(200, read_rel_data())
+            except Exception as e:
+                self._json(500, {"error": str(e)})
+            return
+        super().do_GET()
 
     def do_POST(self):
         if self.path != "/save-rel":
