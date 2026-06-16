@@ -19,8 +19,8 @@
   h2 { font-size: 13px; margin: 16px 0 8px; color: #ffaa66; text-transform: uppercase; letter-spacing: 1.5px; }
   .panel { background: #221a14; border: 1.5px solid #3a2c20; border-radius: 10px; padding: 18px; }
   .pig-wrap { position: relative; width: 300px; height: 300px; background: #fffaf0; border: 2px solid #ffd87a; border-radius: 12px; overflow: hidden; }
-  .pig-wrap img.pig { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-  .anchor-dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #ffd87a; background: rgba(255,216,122,.4); transform: translate(-50%,-50%); cursor: pointer; transition: all .15s; }
+  .pig-wrap img.pig { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; z-index: 1; }
+  .anchor-dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #ffd87a; background: rgba(255,216,122,.4); transform: translate(-50%,-50%); cursor: pointer; transition: all .15s; z-index: 5; }
   .anchor-dot:hover { background: rgba(255,216,122,.8); }
   .anchor-dot.active { background: #ff6b9b; border-color: #ff6b9b; width: 18px; height: 18px; }
   .anchor-label { position: absolute; font-size: 9px; color: #2a1f15; background: rgba(255,216,122,.9); padding: 1px 4px; border-radius: 4px; transform: translate(-50%, calc(-100% - 4px)); pointer-events: none; white-space: nowrap; }
@@ -80,6 +80,13 @@
     <div class="row">
       <label>anchor</label>
       <select id="anchor-select"></select>
+    </div>
+    <div class="row">
+      <label>z-order</label>
+      <label style="display:flex;align-items:center;gap:6px;font-weight:normal;cursor:pointer;">
+        <input type="checkbox" id="behind-check" />
+        behind the pig (drawn under Rosie)
+      </label>
     </div>
   </div>
 
@@ -305,6 +312,10 @@ function render() {
   overlay.style.top = (top * scale) + "px";
   overlay.style.width = (itemWPx * scale) + "px";
   overlay.style.height = (itemHPx * scale) + "px";
+  // z-order: behind=true draws the item UNDER the pig (z 0 < pig z 1); else above
+  // the pig but below the anchor dots (z 3 < dots z 5).
+  overlay.style.zIndex = s.behind ? 0 : 3;
+  document.getElementById("behind-check").checked = !!s.behind;
 
   // Output — match the existing HAT_REL_DATA entry format exactly so a
   // paste lands cleanly between sibling lines in hat_rel.generated.ts.
@@ -377,6 +388,9 @@ async function init() {
     sel.appendChild(opt);
   });
   sel.onchange = (e) => setSpec({ anchor: e.target.value });
+
+  // Behind-the-pig (z-axis) toggle
+  document.getElementById("behind-check").onchange = (e) => setSpec({ behind: e.target.checked });
 
   // Anchor dots on the pig
   const wrap = document.getElementById("pig-wrap");
