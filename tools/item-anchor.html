@@ -87,6 +87,7 @@
   <pre id="output">{}</pre>
   <button id="copy-btn">Copy RelSpec line for HAT_REL</button>
   <button id="save-btn" style="margin-left: 8px; background: #9be29b;">Save to source ✎</button>
+  <button id="save-all-btn" style="margin-left: 8px; background: #8fc7ff;">Save all ⤓</button>
   <div class="small" id="copy-status" style="margin-top: 6px;"></div>
 </div>
 
@@ -230,6 +231,7 @@ const state = {
   itemId: ITEMS[0].id,
   rel: JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"),
   itemAspect: 1,
+  edited: new Set(),  // ids the user changed this session — for "Save all"
 };
 
 function spec() {
@@ -238,6 +240,7 @@ function spec() {
 
 function setSpec(patch) {
   state.rel[state.itemId] = { ...spec(), ...patch };
+  state.edited.add(state.itemId);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.rel));
   render();
 }
@@ -425,6 +428,41 @@ async function init() {
     } catch (e) {
       status.textContent = "Save failed — is anchor-server.py running (not plain http.server)?";
     }
+    setTimeout(() => (status.textContent = ""), 6000);
+  };
+
+  // Save ALL the placements edited this session in one go.
+  document.getElementById("save-all-btn").onclick = async () => {
+    const status = document.getElementById("copy-status");
+    const ids = [...state.edited];
+    if (!ids.length) {
+      status.textContent = "No edits to save yet — adjust some items first.";
+      setTimeout(() => (status.textContent = ""), 4000);
+      return;
+    }
+    status.textContent = `Saving ${ids.length} placement(s)…`;
+    let ok = 0;
+    for (const id of ids) {
+      const s = state.rel[id];
+      try {
+        const res = await fetch("/save-rel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id,
+            pivot: s.pivot,
+            widthFrac: s.widthFrac,
+            anchor: s.anchor,
+            behind: s.behind ?? false,
+          }),
+        });
+        if ((await res.json()).ok) ok++;
+      } catch (e) {
+        /* keep going; report the total at the end */
+      }
+    }
+    status.textContent = `✓ Saved ${ok}/${ids.length} to hat_rel.generated.ts.`;
+    if (ok === ids.length) state.edited.clear();
     setTimeout(() => (status.textContent = ""), 6000);
   };
 
