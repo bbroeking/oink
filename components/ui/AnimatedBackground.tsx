@@ -1,12 +1,17 @@
-// A full-page background that cross-fades through a list of frames in a
-// ping-pong loop (forward then reverse), so e.g. the Northern Lights aurora
-// waves back and forth. Two stacked layers: the base frame stays fully opaque
-// underneath while the next frame fades in on top — so there's never a
-// transparent gap mid-transition. When a fade finishes, the faded-in frame
-// becomes the new base and the next one is chosen (bouncing at the ends).
+// A full-page background that cross-fades through a list of frames in a smooth,
+// SEAMLESS CIRCULAR loop (… → frameN → frame1 → …, every transition a cross-fade,
+// including the wrap, so there's no flick back to the start).
+//
+// Technique: two stacked layers. Each step the HIDDEN layer takes the next frame
+// and fades in OVER the currently-visible layer, then they swap z-order. A
+// layer's opacity is only ever reset to 0 while it sits hidden behind the other,
+// so there's never a one-frame flash of the wrong image and never a transparent
+// gap. The root is absolutely positioned edge-to-edge so the cover image centers
+// and fills with no side slivers.
 import React, { useEffect, useRef, useState } from "react";
 import {
 	Animated,
+	Easing,
 	StyleSheet,
 	View,
 	type ImageSourcePropType,
@@ -24,69 +29,98 @@ interface Props {
 export function AnimatedBackground({
 	frames,
 	children,
-	frameMs = 1400,
+	frameMs = 1700,
 	resizeMode = "cover",
 }: Props) {
 	const n = frames.length;
-	const [base, setBase] = useState(0);
-	const [top, setTop] = useState(n > 1 ? 1 : 0);
-	const fade = useRef(new Animated.Value(0)).current;
-	const dir = useRef(1);
+	const opA = useRef(new Animated.Value(1)).current; // layer A starts visible (frame 0)
+	const opB = useRef(new Animated.Value(0)).current;
+	const [a, setA] = useState(0); // frame index on layer A
+	const [b, setB] = useState(n > 1 ? 1 : 0); // frame index on layer B
+	const [aTop, setATop] = useState(false); // is layer A rendered on top?
 
 	useEffect(() => {
 		if (n < 2) return;
 		let cancelled = false;
+		let cur = 0; // the frame currently fully shown
+		let showingA = true; // is `cur` on layer A?
 
-		const run = (from: number) => {
-			let d = dir.current;
-			let to = from + d;
-			if (to > n - 1) {
-				d = -1;
-				to = from - 1;
-			} else if (to < 0) {
-				d = 1;
-				to = from + 1;
+		const tick = () => {
+			if (cancelled) return;
+			const next = (cur + 1) % n; // circular
+			if (showingA) {
+				// A holds `cur` at opacity 1. Bring `next` up on B, over A.
+				setB(next);
+				opB.setValue(0);
+				setATop(false); // B on top
+				Animated.timing(opB, {
+					toValue: 1,
+					duration: frameMs,
+					easing: Easing.linear,
+					useNativeDriver: true,
+				}).start(({ finished }) => {
+					if (!finished || cancelled) return;
+					cur = next;
+					showingA = false;
+					tick();
+				});
+			} else {
+				setA(next);
+				opA.setValue(0);
+				setATop(true); // A on top
+				Animated.timing(opA, {
+					toValue: 1,
+					duration: frameMs,
+					easing: Easing.linear,
+					useNativeDriver: true,
+				}).start(({ finished }) => {
+					if (!finished || cancelled) return;
+					cur = next;
+					showingA = true;
+					tick();
+				});
 			}
-			dir.current = d;
-			setBase(from);
-			setTop(to);
-			fade.setValue(0);
-			Animated.timing(fade, {
-				toValue: 1,
-				duration: frameMs,
-				useNativeDriver: true,
-			}).start(({ finished }) => {
-				if (finished && !cancelled) run(to);
-			});
 		};
 
-		run(0);
+		const id = setTimeout(tick, frameMs);
 		return () => {
 			cancelled = true;
-			fade.stopAnimation();
+			clearTimeout(id);
+			opA.stopAnimation();
+			opB.stopAnimation();
 		};
-	}, [n, frameMs, fade]);
+	}, [n, frameMs, opA, opB]);
 
 	if (n === 0) return <View style={styles.root}>{children}</View>;
 
+	const layerA = (
+		<Animated.Image
+			key="a"
+			source={frames[a]}
+			resizeMode={resizeMode}
+			style={[StyleSheet.absoluteFill, { opacity: opA }]}
+		/>
+	);
+	const layerB = (
+		<Animated.Image
+			key="b"
+			source={frames[b]}
+			resizeMode={resizeMode}
+			style={[StyleSheet.absoluteFill, { opacity: opB }]}
+		/>
+	);
+
 	return (
 		<View style={styles.root}>
-			<Animated.Image
-				source={frames[base]}
-				resizeMode={resizeMode}
-				style={StyleSheet.absoluteFill}
-			/>
-			<Animated.Image
-				source={frames[top]}
-				resizeMode={resizeMode}
-				style={[StyleSheet.absoluteFill, { opacity: fade }]}
-			/>
+			{aTop ? [layerB, layerA] : [layerA, layerB]}
 			<View style={styles.content}>{children}</View>
 		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	root: { flex: 1, width: "100%", height: "100%" },
+	// Absolute edge-to-edge (not flex/100%) so the cover image centers + fills
+	// with no side slivers from Yoga fractional rounding.
+	root: { ...StyleSheet.absoluteFillObject },
 	content: { flex: 1 },
 });
