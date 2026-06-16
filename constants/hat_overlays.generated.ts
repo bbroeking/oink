@@ -67,7 +67,6 @@ export const HAT_OVERLAYS_GENERATED: Record<string, HatOverlay> = {
 	mud_shovel: { bottom: 58, left: 214, width: 80, height: 101 },
 	mud_splatter_aura: { bottom: 0, left: 0, width: 300, height: 271 },
 	muddy_cap: { bottom: 289, left: 84, width: 160, height: 98 },
-	neckwarmer: { bottom: 134, left: 74, width: 180, height: 80 },
 	nerd_glasses: { bottom: 180, left: 56, width: 216, height: 79 },
 	party: { bottom: 289, left: 84, width: 160, height: 200 },
 	pencil: { bottom: 19, left: 214, width: 80, height: 180 },

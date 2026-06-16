@@ -39,7 +39,6 @@ export const HAT_IMAGES: Record<string, number> = {
 	winter_scarf: require("../assets/images/hats/winter_scarf.png"),
 	summer_kerchief: require("../assets/images/hats/summer_kerchief.png"),
 	ascot: require("../assets/images/hats/ascot.png"),
-	neckwarmer: require("../assets/images/hats/neckwarmer.png"),
 	rainbow_scarf: require("../assets/images/hats/rainbow_scarf.png"),
 	// Capes — REMOVED 2026-05-22. Like necklaces, the cape art never
 	// sat right on the pig (capes wrap the body — front-only art looks
