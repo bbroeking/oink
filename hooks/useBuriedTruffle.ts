@@ -18,7 +18,10 @@ export interface TruffleStatus {
 	diggers: TruffleDigger[];
 }
 
-const EMPTY: TruffleStatus = { buried: false, total: 0, remaining: 0, diggers: [] };
+// A fresh object each call, NOT a shared singleton — consumers run effects keyed
+// on the status reference (e.g. Barn's optimistic bury-spot hide), and a reused
+// reference makes setState bail out so those effects never re-fire.
+const empty = (): TruffleStatus => ({ buried: false, total: 0, remaining: 0, diggers: [] });
 
 export function useBuriedTruffle() {
 	const [status, setStatus] = useState<TruffleStatus | null>(null); // null = loading
@@ -39,10 +42,10 @@ export function useBuriedTruffle() {
 							remaining: r.remaining ?? 0,
 							diggers: r.diggers ?? [],
 						}
-					: EMPTY
+					: empty()
 			);
 		} else {
-			setStatus(EMPTY);
+			setStatus(empty());
 		}
 	}, []);
 

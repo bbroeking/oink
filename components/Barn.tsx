@@ -43,7 +43,8 @@ import {
 } from "@/utils/alignment";
 import { useHomeStats } from "@/hooks/useHomeStats";
 import { moodAnimation } from "@/utils/happiness";
-import { BuryTruffleButton } from "./BuryTruffleButton";
+import { BuryTruffleSpot } from "./BuryTruffleSpot";
+import { BuryTruffleSheet } from "./BuryTruffleSheet";
 import { BuriedMound, type BuriedMoundHandle } from "./BuriedMound";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
 import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
@@ -367,6 +368,13 @@ export default function Barn() {
 	const truffle = useBuriedTruffle();
 	const moundRef = useRef<BuriedMoundHandle>(null);
 	const [truffleSheetOpen, setTruffleSheetOpen] = useState(false);
+	const [buryOpen, setBuryOpen] = useState(false);
+	// Optimistically hide the bury spot the instant a bury succeeds so its shovel
+	// doesn't sit next to the mound's dig animation while truffle_status refreshes.
+	// Cleared in onBuried's finally (below) once the refresh settles — NOT via a
+	// status-reference effect, which can't fire on the empty→empty refresh path.
+	const [buryingNow, setBuryingNow] = useState(false);
+	const truffleBuried = !!truffle.status?.buried;
 
 	const showToast = useCallback(
 		(title: string, body: string, onPress?: () => void) => {
@@ -741,19 +749,10 @@ export default function Barn() {
 				    on you. Compact preview; the full panel lives in Friends
 				    → Inbox. Tapping a chip routes to the hub. */}
 				<BarnActiveEffectsStrip />
-				{/* Fixed 12 gap above the truffle band so the spacing holds
-				    whether or not the (conditional) effects strip rendered
-				    above it — band layout no longer depends on the strip. */}
-				<View style={styles.truffleBand}>
-					<BuryTruffleButton
-						buried={!!truffle.status?.buried}
-						onBury={() => {
-							moundRef.current?.playBury();
-							truffle.refresh();
-						}}
-						onCheck={() => setTruffleSheetOpen(true)}
-					/>
-				</View>
+				{/* Burying a truffle moved off this band and behind the
+				    truffle spot by the pig's feet (BuryTruffleSpot →
+				    BuryTruffleSheet) — the old inline control was unreadable
+				    on busy backgrounds. */}
 
 				{/* Alignment placard removed — the hanging Pilgrim/
 				    Generous/Greedy sign that used to live up here
@@ -803,15 +802,20 @@ export default function Barn() {
 									: null
 							}
 						/>
-						{/* Soft elliptical shadow under the pig — gives the
-						    sprite a little grounding without a hard drop. */}
-						<View pointerEvents="none" style={styles.pigShadow} />
-						{/* Buried-truffle mound by the pig's feet — glows while a
-						    truffle is buried, taps to check on it, plays the bury
-						    animation when you set one. */}
+						{/* No ground shadow under the pig — the painted "little
+						    circle" read as standing on a disc on busy backgrounds.
+						    (Baked sprite shadows were removed too.) */}
+						{/* Truffle spot by the pig's feet. Two mutually-exclusive
+						    states share this anchor: a planted shovel to BURY (tap →
+						    bury dialogue) when nothing's down, and the glowing mound
+						    to CHECK (tap → status sheet) once a truffle is buried. */}
+						<BuryTruffleSpot
+							visible={truffle.status != null && !truffleBuried && !buryingNow}
+							onPress={() => setBuryOpen(true)}
+						/>
 						<BuriedMound
 							ref={moundRef}
-							visible={!!truffle.status?.buried}
+							visible={truffleBuried}
 							onPress={() => setTruffleSheetOpen(true)}
 						/>
 					</View>
@@ -920,6 +924,25 @@ export default function Barn() {
 				}}
 			/>
 
+			{/* Bury dialogue — direct-tap modal (like the allegiance picker), so
+			    it stays out of the launch popup queue and owns the screen on tap. */}
+			<BuryTruffleSheet
+				open={buryOpen}
+				onClose={() => setBuryOpen(false)}
+				onBuried={async () => {
+					setBuryingNow(true);
+					moundRef.current?.playBury();
+					// Await the refresh, then always clear the optimistic hide so a
+					// failed/empty refresh can't wedge both affordances off-screen.
+					try {
+						await truffle.refresh();
+					} finally {
+						setBuryingNow(false);
+					}
+				}}
+				onResynced={() => truffle.refresh()}
+			/>
+
 			<BuriedTruffleSheet
 				open={truffleSlot.visible}
 				onClose={() => {
@@ -927,6 +950,7 @@ export default function Barn() {
 					truffleSlot.release();
 				}}
 				status={truffle.status}
+				onChanged={() => truffle.refresh()}
 			/>
 		</PageBackground>
 	);
@@ -951,9 +975,6 @@ const styles = StyleSheet.create({
 		marginBottom: SPACE.lg,
 		zIndex: 1,
 	},
-	// Fixed top gap for the truffle band — keeps a steady 12 below the
-	// cards/effects strip regardless of whether the strip rendered.
-	truffleBand: { marginTop: SPACE.md },
 	// Placard styles dropped with the JSX above.
 	// tickleHint dropped — the "tap rosie to tickle" prompt was
 	// noise once the pig was the only thing on screen.
@@ -1048,17 +1069,6 @@ const styles = StyleSheet.create({
 		// RN <Text>; the ink color stands out enough on its own against
 		// the painted barn backdrop.
 		marginLeft: -13, // visually center the glyph on left:50%
-	},
-	pigShadow: {
-		position: "absolute",
-		bottom: 4,
-		alignSelf: "center",
-		width: 180,
-		height: 14,
-		borderRadius: 90,
-		backgroundColor: "rgba(42,31,21,0.22)",
-		// Use opacity gradient via stacked transparent layers? RN doesn't
-		// do radial — flat ellipse with low alpha gets us close enough.
 	},
 	// Tiny red barn silhouette painted into the bottom-left horizon.
 	// Sits behind the SafeAreaView content so the pig + stickers always
