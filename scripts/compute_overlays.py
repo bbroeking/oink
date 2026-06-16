@@ -18,7 +18,6 @@ import os
 import re
 import sys
 from PIL import Image
-import numpy as np
 
 REPO = "/Users/bbroeking/projects/oink"
 ASSET_DIR = f"{REPO}/assets/images/hats"
@@ -136,39 +135,20 @@ def parse_catalog():
 
 
 def get_aspect(png_path):
-    """Trimmed-bbox aspect ratio of opaque pixels, or None if empty.
-
-    Filters out small outlier components (decorative sparkles etc.) so
-    the bbox tracks the main item silhouette. Diverging items end up
-    a few px off otherwise — this is the auto-correct that means we
-    rarely have to tune individual items by hand.
-    """
+    """Trimmed-bbox aspect ratio of opaque pixels, or None if empty. PIL-only
+    (the env is PEP-668 locked, no numpy/scipy — same as slice_mudwar.py). The
+    bbox keys off solid alpha (>50) so faint sub-threshold pixels don't expand
+    it to the full canvas; small decorative outliers (sparkles) are left in —
+    flag-and-hand-tune covers the rare item that needs it."""
     im = Image.open(png_path).convert("RGBA")
-    arr = np.array(im)
-    alpha = arr[:, :, 3]
-    mask = alpha > 50
-    if not mask.any():
+    bbox = im.getchannel("A").point(lambda a: 255 if a > 50 else 0).getbbox()
+    if not bbox:
         return None, None
-
-    try:
-        from scipy import ndimage
-        labeled, n_components = ndimage.label(mask)
-        if n_components > 1:
-            sizes = ndimage.sum(mask, labeled, range(1, n_components + 1))
-            largest = int(sizes.max())
-            keep = [
-                i + 1 for i, sz in enumerate(sizes)
-                if sz >= largest * 0.10
-            ]
-            mask = np.isin(labeled, keep)
-    except ImportError:
-        pass
-
-    if not mask.any():
+    l, t, r, b = bbox
+    w = r - l
+    h = b - t
+    if h <= 0:
         return None, None
-    ys, xs = np.where(mask)
-    w = int(xs.max() - xs.min() + 1)
-    h = int(ys.max() - ys.min() + 1)
     return w / h, (w, h)
 
 
