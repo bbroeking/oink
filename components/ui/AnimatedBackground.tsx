@@ -98,7 +98,7 @@ export function AnimatedBackground({
 			key="a"
 			source={frames[a]}
 			resizeMode={resizeMode}
-			style={[StyleSheet.absoluteFill, { opacity: opA }]}
+			style={[styles.fill, { opacity: opA }]}
 		/>
 	);
 	const layerB = (
@@ -106,7 +106,7 @@ export function AnimatedBackground({
 			key="b"
 			source={frames[b]}
 			resizeMode={resizeMode}
-			style={[StyleSheet.absoluteFill, { opacity: opB }]}
+			style={[styles.fill, { opacity: opB }]}
 		/>
 	);
 
@@ -119,8 +119,12 @@ export function AnimatedBackground({
 }
 
 const styles = StyleSheet.create({
-	// Absolute edge-to-edge (not flex/100%) so the cover image centers + fills
-	// with no side slivers from Yoga fractional rounding.
-	root: { ...StyleSheet.absoluteFillObject },
+	// flex:1 so it fills the screen via the parent's flex — same as the static
+	// PageBackground/ImageBackground that fills correctly.
+	root: { flex: 1, width: "100%", height: "100%" },
+	// Each frame fills the root. Explicit width/height 100% (not bare
+	// absoluteFill) so the <Image> stretches to the container instead of its
+	// intrinsic 355×593 — otherwise `cover` only fills a centered band.
+	fill: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" },
 	content: { flex: 1 },
 });
