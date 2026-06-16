@@ -1,81 +1,105 @@
 # OpenAI / ChatGPT — Northern Lights animated background (legendary)
 
-Turn the `northern_lights` legendary cosmetic from an aura into an **animated
-background**: a looping set of 3–4 painted night-sky frames whose aurora ribbons
-undulate when cross-faded in-engine. Full painted scenes (NOT transparent),
-portrait, matching the house background style (see `assets/images/backgrounds/
-bog_dusk_bg.png`, `golden_mire_bg.png`).
+`northern_lights` becomes an **animated background**: a Tickle-the-Pig painted
+version of a real aurora (reference: `~/Desktop/ttp-refs/northern-lights/
+aurora_reference.jpg`), as **6 frames** where the aurora colors **wave back and
+forth**. The engine **ping-pongs** the frames (1→2→…→6→5→…→1), so the wave reads
+as a continuous back-and-forth sway and no frame needs to seam back to frame 1.
 
-- **Final asset size:** 355 × 593 (portrait) per frame, PNG, downscaled from
-  ChatGPT's output. Files: `assets/images/backgrounds/northern_lights_1.png` …
-  `_4.png`.
-- **Loop:** the engine cross-fades 1 → 2 → 3 → 4 → 1 slowly (~1.6 s/frame). So
-  the stars, mountains, and horizon must stay **fixed** across all frames; only
-  the **aurora** moves. Frame 4 must read as "one step before frame 1" so the
-  wrap is seamless.
-- **Quota:** 4 frames = 4 image generations (ChatGPT free tier caps ~3–5/day).
-  3 frames also loops cleanly if we need to stop early.
+## The look (from the reference photo)
 
-## Style anchor (paste once)
+Vibrant aurora over water: green curtains overhead, magenta/pink curtains on the
+right, teal/blue on the left, a dark mountain silhouette at the lower-left, a calm
+sea and low grassy horizon along the bottom, deep blue starry sky. Render it as
+**Tickle the Pig storybook art**: flat painted illustration, soft saturated
+gradients, bold simple shapes, cozy children's-book feel — **NOT photorealistic**.
+It should feel **legendary**: luminous and magical.
 
-```
-I'm going to ask you to generate a sequence of FULL-SCENE background frames for a
-2D mobile game — a cozy children's storybook painted illustration. This is a
-BACKGROUND (a filled scene that fills the whole canvas), NOT a transparent item.
-NO characters, NO pigs, NO people, NO text. Portrait orientation, tall (about
-2:3, e.g. 1024×1536). Scene: a serene NIGHT SKY with a shimmering NORTHERN
-LIGHTS aurora (green + teal + violet ribbons) arcing across a deep indigo,
-star-speckled sky, above a simple dark low horizon of rounded hills/mountains.
-Soft painted gradients, gentle glow on the aurora, bold simple shapes, no harsh
-detail — it must read clearly behind game UI. It should feel LEGENDARY: rich,
-luminous, magical. Confirm the style, then I'll send the frames one at a time.
-```
+- **Final asset:** 355 × 593 (portrait) per frame, PNG, downscaled from ChatGPT's
+  output. Files: `assets/images/backgrounds/northern_lights_1.png` … `_6.png`.
+- **Fixed across frames:** sky color, stars, dark mountain, sea, horizon — all
+  identical every frame. ONLY the aurora curtains move/recolor.
+- **The wave:** Frame 1 = curtains swept toward the LEFT; progress them rightward
+  through Frame 6 = swept toward the RIGHT, with the green/pink/teal bands shifting
+  position as they sway. Ping-pong playback then sweeps them back left → a smooth
+  back-and-forth shimmer.
+- **Quota:** 6 generations. If your plan caps image-gen we'll get what we can and
+  resume; the wave works with 5 too.
 
-## Batch 1 of 4 — Frame 1 (establish the scene)
+## Style anchor (paste once — references are attached)
 
 ```
-FRAME 1 of a 4-frame seamless loop. Paint the full night-sky scene: deep indigo
-star-speckled sky, a low dark rounded-hill horizon along the bottom ~20%, and a
-NORTHERN LIGHTS aurora of layered green→teal→violet ribbons sweeping diagonally
-from lower-left up to upper-right, with a soft luminous glow. This frame is the
-reference for the next three — remember the exact star positions, hill shape, and
-color palette. Portrait, full filled scene, no text.
+I've attached a photo of a real aurora (northern lights). I want you to generate a
+sequence of FULL-SCENE background frames for a 2D mobile game (Tickle the Pig) that
+RE-PAINT this aurora scene in the game's art style: a flat, painted children's
+storybook illustration — soft saturated gradients, bold simple shapes, cozy and
+luminous, NOT photorealistic, NO photo texture. Keep the composition and colors of
+the attached photo: green aurora curtains overhead, magenta/pink curtains to the
+right, teal/blue to the left, a dark mountain silhouette lower-left, a calm sea and
+low grassy horizon at the bottom, deep-blue star-speckled sky. PORTRAIT orientation
+(tall, about 2:3, e.g. 1024×1536) — adapt the wide scene to a vertical frame. NO
+characters, NO pigs, NO people, NO text. It must feel LEGENDARY. I'll then ask for
+6 frames of a back-and-forth wave where ONLY the aurora moves. Confirm the style,
+then I'll send Frame 1.
 ```
 
-## Batch 2 of 4 — Frame 2 (aurora drifts)
+## Batch 1 of 6 — Frame 1 (establish; curtains swept LEFT)
 
 ```
-FRAME 2 of the loop. Keep the sky color, the stars, and the dark hills EXACTLY
-as in Frame 1 (same positions, same palette) — change ONLY the aurora: let the
-ribbons drift slightly to the right and undulate, the brightest fold moving up
-and over, as if one beat later in a slow shimmer. Same portrait, same framing.
+FRAME 1 of a 6-frame wave. Paint the full aurora scene in the storybook style we
+agreed: deep-blue starry sky, dark mountain silhouette lower-left, calm sea + low
+grassy horizon along the bottom, and the AURORA curtains — green overhead, with
+teal/blue and magenta/pink draperies — swept toward the LEFT side of the sky. This
+frame locks the sky, stars, mountain, and sea for the next five. Portrait, full
+filled painted scene, no text.
 ```
 
-## Batch 3 of 4 — Frame 3 (aurora peaks)
+## Batch 2 of 6 — Frame 2
 
 ```
-FRAME 3 of the loop. Same fixed sky, stars, and hills as Frames 1–2. Move the
-aurora ribbons further along the same drift — now at their fullest, brightest
-spread across the upper sky, a new violet fold rising on the left. Same portrait,
-same framing.
+FRAME 2. Keep the sky, stars, mountain, and sea EXACTLY as Frame 1. Move ONLY the
+aurora: the curtains sway a step to the right, the green fold drifting over and the
+pink edge widening. Same portrait, same painted style.
 ```
 
-## Batch 4 of 4 — Frame 4 (returning toward Frame 1)
+## Batch 3 of 6 — Frame 3
 
 ```
-FRAME 4 of the loop — the LAST frame before it wraps back to Frame 1. Same fixed
-sky, stars, and hills. Settle the aurora ribbons back toward their Frame-1
-positions (drifting left and dimming slightly), so cross-fading Frame 4 → Frame 1
-is seamless with no jump. Same portrait, same framing.
+FRAME 3. Same fixed sky/stars/mountain/sea. Aurora curtains sway further right,
+now centered overhead, brightest through the middle. Same portrait, same style.
+```
+
+## Batch 4 of 6 — Frame 4
+
+```
+FRAME 4. Same fixed sky/stars/mountain/sea. Aurora curtains continue rightward,
+the magenta/pink dominant on the right, teal trailing left. Same portrait, style.
+```
+
+## Batch 5 of 6 — Frame 5
+
+```
+FRAME 5. Same fixed sky/stars/mountain/sea. Aurora curtains nearly fully swept to
+the RIGHT, pink brightest on the right edge. Same portrait, same style.
+```
+
+## Batch 6 of 6 — Frame 6 (curtains swept RIGHT)
+
+```
+FRAME 6 — the right-most extreme of the wave. Same fixed sky/stars/mountain/sea.
+Aurora curtains fully swept to the RIGHT. (Playback ping-pongs back from here, so
+this is the opposite end of the sway from Frame 1 — no need to match Frame 1.) Same
+portrait, same painted style.
 ```
 
 ## Post-processing (after download)
 
 1. Crop/letterbox each frame to 2:3, downscale to **355×593**, save as
-   `assets/images/backgrounds/northern_lights_<n>.png`.
+   `assets/images/backgrounds/northern_lights_<n>.png` (1…6).
 2. Register the frame list in `constants/animatedBackgrounds.ts`
-   (`northern_lights → [frame1…frame4]`) and use frame 1 as the static card
-   thumbnail in `constants/hats.ts` `HAT_IMAGES.northern_lights`.
-3. `PageBackground` cross-fades the frames when the equipped bg is animated.
-4. Migration: flip `northern_lights` `category` `aura → background` (keep
-   legendary + cost), and clear any `active_aura_id = 'northern_lights'`.
+   (`northern_lights → [frame1…frame6]`) and use frame 1 (or a mid frame) as the
+   static card thumbnail in `constants/hats.ts` `HAT_IMAGES.northern_lights`.
+3. `PageBackground` cross-fades + **ping-pongs** the frames (forward then reverse)
+   when the equipped bg is animated — handles any 5–7 frame count.
+4. Migration: flip `northern_lights` `category` `aura → background` (keep legendary
+   + cost), and clear any `active_aura_id = 'northern_lights'`.

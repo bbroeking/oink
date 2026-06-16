@@ -6,6 +6,11 @@ import {
 	View,
 } from "react-native";
 import { HAT_IMAGES } from "@/constants/hats";
+import {
+	ANIMATED_BACKGROUNDS,
+	isAnimatedBackground,
+} from "@/constants/animatedBackgrounds";
+import { AnimatedBackground } from "./AnimatedBackground";
 
 interface Props {
 	/**
@@ -36,6 +41,18 @@ interface Props {
  * mount this component.
  */
 export function PageBackground({ bgId, children, resizeMode = "cover" }: Props) {
+	// Animated backgrounds (e.g. northern_lights) cross-fade a frame loop.
+	if (isAnimatedBackground(bgId)) {
+		return (
+			<AnimatedBackground
+				frames={ANIMATED_BACKGROUNDS[bgId!]}
+				resizeMode={resizeMode}
+			>
+				{children}
+			</AnimatedBackground>
+		);
+	}
+
 	const bgSrc =
 		(bgId && HAT_IMAGES[bgId]) ||
 		HAT_IMAGES.homestead_barn ||

@@ -144,6 +144,9 @@ export const HAT_IMAGES: Record<string, number> = {
 	bog_dusk_bg: require("../assets/images/backgrounds/bog_dusk_bg.png"),
 	golden_mire_bg: require("../assets/images/backgrounds/golden_mire_bg.png"),
 	festival_night_bg: require("../assets/images/backgrounds/festival_night_bg.png"),
+	// Animated background: frame 1 is the static shop-card thumbnail; the live
+	// frame loop lives in constants/animatedBackgrounds.ts.
+	northern_lights: require("../assets/images/backgrounds/northern_lights_1.png"),
 	rosette_cap: require("../assets/images/hats/rosette_cap.png"),
 	prize_sash: require("../assets/images/hats/prize_sash.png"),
 	festival_pennant: require("../assets/images/hats/festival_pennant.png"),
