@@ -44,7 +44,6 @@ import {
 import { useHomeStats } from "@/hooks/useHomeStats";
 import { moodAnimation } from "@/utils/happiness";
 import { BuryTruffleButton } from "./BuryTruffleButton";
-import { OnboardingChecklist } from "./OnboardingChecklist";
 import { BuriedMound, type BuriedMoundHandle } from "./BuriedMound";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
 import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
@@ -368,9 +367,6 @@ export default function Barn() {
 	const truffle = useBuriedTruffle();
 	const moundRef = useRef<BuriedMoundHandle>(null);
 	const [truffleSheetOpen, setTruffleSheetOpen] = useState(false);
-	// First-week checklist re-check trigger — bumped on focus + after a tickle so
-	// the "Rosie's chores" card picks up milestones completed here or elsewhere.
-	const [onboardingKey, setOnboardingKey] = useState(0);
 
 	const showToast = useCallback(
 		(title: string, body: string, onPress?: () => void) => {
@@ -446,7 +442,6 @@ export default function Barn() {
 	useFocusEffect(
 		useCallback(() => {
 			fetchStats();
-			setOnboardingKey((k) => k + 1);
 			passEvents.check();
 			stipend.claim();
 			checkAlignment();
@@ -759,15 +754,6 @@ export default function Barn() {
 						onCheck={() => setTruffleSheetOpen(true)}
 					/>
 				</View>
-
-				{/* First-week checklist ("Rosie's chores") — onboarding guidance.
-				    Self-hides for users who've completed (or dismissed) it, so only
-				    new players see it. Server-authoritative idempotent rewards
-				    (migration 20260649); onClaimed refreshes the snout counter. */}
-				<OnboardingChecklist
-					refreshKey={onboardingKey}
-					onClaimed={() => fetchStats()}
-				/>
 
 				{/* Alignment placard removed — the hanging Pilgrim/
 				    Generous/Greedy sign that used to live up here
