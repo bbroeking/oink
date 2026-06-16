@@ -611,16 +611,18 @@ const shopCardStyles = StyleSheet.create({
 	foot: { padding: SPACE.md, gap: SPACE.sm },
 	nm: { fontFamily: FONTS.displaySemi, fontSize: 15, color: WHIMSY.ink },
 	chip: {
-		alignSelf: "flex-start",
+		// Full-width pill button (the price IS the action) — was a small
+		// left-aligned chip; now stretches the card footer and centers content.
+		alignSelf: "stretch",
 		flexDirection: "row",
 		alignItems: "center",
+		justifyContent: "center",
 		gap: 6,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		borderRadius: 999,
-		paddingVertical: 4,
-		paddingLeft: 8,
-		paddingRight: 12,
+		paddingVertical: 8,
+		paddingHorizontal: 12,
 		...SHADOW_SM,
 	},
 	chipBuy: { backgroundColor: WHIMSY.sun },
@@ -635,13 +637,16 @@ const shopCardStyles = StyleSheet.create({
 	chipText: { fontFamily: FONTS.display, fontSize: 15, color: WHIMSY.ink },
 	chipLock: { fontSize: 12 },
 	ownedTag: {
-		alignSelf: "flex-start",
+		// Full-width + centered so OWNED / SEASON PASS share the price
+		// button's footprint (uniform card footer, no left-aligned outlier).
+		alignSelf: "stretch",
+		textAlign: "center",
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 12,
 		letterSpacing: 0.5,
 		textTransform: "uppercase",
 		color: "#5b8a4a",
-		paddingVertical: 4,
+		paddingVertical: 8,
 	},
 	grid: {
 		flexDirection: "row",
