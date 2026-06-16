@@ -25,6 +25,7 @@ import { Stack, router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Button } from "../components/ui/Button";
 import { Icon } from "../components/ui/Icon";
+import { WarSpoilsSheet } from "../components/WarSpoilsSheet";
 import { useMudWar } from "@/hooks/useMudWar";
 import { useCrew } from "@/hooks/useCrew";
 import {
@@ -53,6 +54,7 @@ export default function MudWarScreen() {
 	}, [war, refresh]);
 	const resolvedDismissed =
 		!!war && war.status === "resolved" && war.warId === dismissedWarId;
+	const [spoilsOpen, setSpoilsOpen] = useState(false);
 
 	return (
 		<>
@@ -64,8 +66,11 @@ export default function MudWarScreen() {
 							<Text style={styles.back}>‹ back</Text>
 						</Pressable>
 						<Text style={styles.title}>Mud Fight</Text>
-						<View style={{ width: 50 }} />
+						<Pressable onPress={() => setSpoilsOpen(true)} hitSlop={12}>
+							<Text style={styles.spoils}>🏆 Spoils</Text>
+						</Pressable>
 					</View>
+					<WarSpoilsSheet open={spoilsOpen} onClose={() => setSpoilsOpen(false)} />
 
 					{loading && !war ? (
 						<View style={styles.center}>
@@ -387,6 +392,7 @@ const styles = StyleSheet.create({
 	},
 	back: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
 	title: { fontFamily: FONTS.whimsy, fontSize: 26, color: WHIMSY.ink },
+	spoils: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.accent },
 	center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30, gap: 8 },
 	content: { padding: 20, paddingBottom: 80 },
 	lead: { fontFamily: FONTS.body, fontSize: 14, color: WHIMSY.mute, marginBottom: 16, textAlign: "center" },
