@@ -23,7 +23,13 @@ import { FONTS, MODAL_BACKDROP_BG, RARITY_BG_SOLID, WHIMSY, STICKER_SHADOW } fro
 // jitter) so the player sees the actual cosmetic, not a still
 // image. Bursts every ~900ms while the modal is mounted; clears
 // its interval + in-flight animations on unmount.
-function TickleParticlePreview({ source }: { source: number }) {
+function TickleParticlePreview({
+	source,
+	glyph,
+}: {
+	source: number | null;
+	glyph?: string;
+}) {
 	type Float = {
 		id: number;
 		dx: number;
@@ -93,24 +99,28 @@ function TickleParticlePreview({ source }: { source: number }) {
 					inputRange: [0, 0.15, 1],
 					outputRange: [0.55, f.scaleMax, f.scaleMax * 0.9],
 				});
-				return (
+				const animStyle = {
+					opacity,
+					transform: [
+						{ translateX },
+						{ translateY },
+						{ rotate: `${f.rot}deg` },
+						{ scale },
+					],
+				};
+				// No PNG yet (e.g. particle_bubble) → fall back to the item's
+				// emoji glyph so the burst still previews.
+				return source != null ? (
 					<Animated.Image
 						key={f.id}
 						source={source}
 						resizeMode="contain"
-						style={[
-							particleStyles.particle,
-							{
-								opacity,
-								transform: [
-									{ translateX },
-									{ translateY },
-									{ rotate: `${f.rot}deg` },
-									{ scale },
-								],
-							},
-						]}
+						style={[particleStyles.particle, animStyle]}
 					/>
+				) : (
+					<Animated.Text key={f.id} style={[particleStyles.glyph, animStyle]}>
+						{glyph || "✦"}
+					</Animated.Text>
 				);
 			})}
 		</View>
@@ -125,6 +135,16 @@ const particleStyles = StyleSheet.create({
 		width: 56,
 		height: 56,
 		marginLeft: -28,
+	},
+	glyph: {
+		position: "absolute",
+		left: "50%",
+		bottom: 36,
+		width: 56,
+		marginLeft: -28,
+		fontSize: 38,
+		lineHeight: 56,
+		textAlign: "center",
 	},
 });
 
@@ -221,8 +241,11 @@ export function ItemPreviewModal({
 							{ backgroundColor: RARITY_BG_SOLID[rarity] },
 						]}
 					>
-						{isTickleParticle && itemSrc ? (
-							<TickleParticlePreview source={itemSrc} />
+						{isTickleParticle ? (
+							<TickleParticlePreview
+								source={itemSrc ?? null}
+								glyph={item.emoji ?? undefined}
+							/>
 						) : isBackgroundItem && itemSrc ? (
 							<Image
 								source={itemSrc}
@@ -413,13 +436,15 @@ const styles = StyleSheet.create({
 	},
 	previewCard: {
 		width: "100%",
-		aspectRatio: 1,
+		// Taller than wide + pig anchored to the bottom, so tall items (hats)
+		// have headroom above and don't clip at the card's top edge.
+		aspectRatio: 0.85,
 		borderRadius: 18,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		overflow: "hidden",
 		alignItems: "center",
-		justifyContent: "center",
+		justifyContent: "flex-end",
 		marginBottom: 14,
 	},
 	// Fixed-size inner stage. Card-coord overlays land correctly only

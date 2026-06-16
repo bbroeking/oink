@@ -80,6 +80,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 	aura: "Auras",
 	held: "Held",
 	background: "Backgrounds",
+	flag: "Flags",
+	tickle_particle: "Tickle Particles",
 };
 
 const CATEGORY_DISPLAY_ORDER = [
