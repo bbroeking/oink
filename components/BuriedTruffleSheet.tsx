@@ -11,6 +11,7 @@ import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
 import type { TruffleStatus } from "@/hooks/useBuriedTruffle";
 
 const STAKES = [10, 20, 50];
+const POT_CAP = 50; // a buried pot can never hold more than 50 snouts
 
 interface Props {
 	open: boolean;
@@ -50,6 +51,7 @@ export function BuriedTruffleSheet({ open, onClose, status, onChanged }: Props) 
 
 	const pct = status.total > 0 ? Math.max(0, Math.min(1, status.remaining / status.total)) : 0;
 	const dugTotal = status.total - status.remaining;
+	const headroom = POT_CAP - status.remaining; // how many more snouts fit (cap 50)
 	const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [screenH, 0] });
 
 	const topUp = async () => {
@@ -65,6 +67,8 @@ export function BuriedTruffleSheet({ open, onClose, status, onChanged }: Props) 
 			onChanged?.(); // re-fetch — the pot/bar update in place
 		} else if (r.reason === "too_poor") {
 			setNote(`Need ${topUpStake} snouts to top up.`);
+		} else if (r.reason === "max_reached") {
+			setNote(`The pot maxes out at ${POT_CAP} snouts.`);
 		} else if (r.reason === "none") {
 			// Truffle was reclaimed / fully dug elsewhere — nothing charged. Resync + close.
 			onChanged?.();
@@ -108,18 +112,15 @@ export function BuriedTruffleSheet({ open, onClose, status, onChanged }: Props) 
 			<Animated.View pointerEvents="box-none" style={[styles.sheetWrap, { transform: [{ translateY }] }]}>
 				<View style={styles.sheet}>
 					<View style={styles.grabber} />
-					<IconText left={<Glyph name="star" size={12} />} gap={4}>
-						<Text style={styles.kicker}>YOUR TRUFFLE</Text>
-					</IconText>
 					<IconText right={<Glyph name="pigface" size={20} />} gap={6} style={styles.titleRow}>
-						<Text style={styles.title}>Buried truffle</Text>
+						<Text style={styles.title}>Your buried truffle</Text>
 					</IconText>
 
-					{/* remaining pot */}
+					{/* remaining pot — one glanceable line + bar */}
 					<View style={styles.potRow}>
 						<SnoutCoin size={22} />
 						<Text style={styles.potNum}>{status.remaining}</Text>
-						<Text style={styles.potCap}> / {status.total} left</Text>
+						<Text style={styles.potCap}>of {status.total} snouts left</Text>
 					</View>
 					<View style={styles.track}>
 						<View style={[styles.fill, { width: `${pct * 100}%` }]} />
@@ -149,38 +150,50 @@ export function BuriedTruffleSheet({ open, onClose, status, onChanged }: Props) 
 						</ScrollView>
 					)}
 
-					{/* Top up — add more snouts to the pot */}
+					{/* Top up — add more snouts to the pot, capped at 50 */}
 					<View style={styles.divider} />
-					<Text style={styles.actLabel}>Add to the pot</Text>
-					<View style={styles.stakes}>
-						{STAKES.map((s) => {
-							const on = s === topUpStake;
-							return (
-								<Pressable
-									key={s}
-									onPress={() => {
-										setTopUpStake(s);
-										setNote(null);
-										setConfirmReclaim(false); // disarm a pending reclaim
-									}}
-									style={[styles.chip, on && styles.chipOn]}
-								>
-									<SnoutCoin size={14} />
-									<Text style={[styles.chipText, on && styles.chipTextOn]}>{s}</Text>
-								</Pressable>
-							);
-						})}
-					</View>
+					{headroom < STAKES[0] ? (
+						<Text style={styles.maxNote}>Pot's at the {POT_CAP}-snout max.</Text>
+					) : (
+						<>
+							<Text style={styles.actLabel}>Add to the pot · up to {POT_CAP}</Text>
+							<View style={styles.stakes}>
+								{STAKES.map((s) => {
+									const on = s === topUpStake;
+									const tooMuch = s > headroom; // would push the pot past 50
+									return (
+										<Pressable
+											key={s}
+											disabled={tooMuch}
+											onPress={() => {
+												setTopUpStake(s);
+												setNote(null);
+												setConfirmReclaim(false); // disarm a pending reclaim
+											}}
+											style={[styles.chip, on && styles.chipOn, tooMuch && styles.chipOff]}
+										>
+											<SnoutCoin size={14} />
+											<Text style={[styles.chipText, on && styles.chipTextOn, tooMuch && styles.chipTextOff]}>{s}</Text>
+										</Pressable>
+									);
+								})}
+							</View>
+
+							<Pressable
+								onPress={topUp}
+								disabled={busy || topUpStake > headroom}
+								style={({ pressed }) => [
+									styles.topUpBtn,
+									topUpStake > headroom && styles.topUpBtnOff,
+									pressed && { opacity: 0.9 },
+								]}
+							>
+								<Text style={styles.topUpText}>{busy ? "…" : `Top up · ${topUpStake} snouts`}</Text>
+							</Pressable>
+						</>
+					)}
 
 					{note && <Text style={styles.note}>{note}</Text>}
-
-					<Pressable
-						onPress={topUp}
-						disabled={busy}
-						style={({ pressed }) => [styles.topUpBtn, pressed && { opacity: 0.9 }]}
-					>
-						<Text style={styles.topUpText}>{busy ? "…" : `Top up · ${topUpStake} snouts`}</Text>
-					</Pressable>
 
 					{/* Dig it back up — reclaim the unspent remainder + close the
 					    truffle (two-tap; armed state turns red to read as destructive) */}
@@ -222,7 +235,6 @@ const styles = StyleSheet.create({
 		...sticker,
 	},
 	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: 12 },
-	kicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
 	titleRow: { marginBottom: 14 },
 	title: { fontFamily: FONTS.whimsy, fontSize: 24, color: INK },
 
@@ -265,9 +277,12 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.cream,
 	},
 	chipOn: { backgroundColor: WHIMSY.sun },
+	chipOff: { opacity: 0.4, borderColor: WHIMSY.muteSoft }, // would exceed the 50 cap
 	chipText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.mute },
 	chipTextOn: { color: INK },
+	chipTextOff: { color: WHIMSY.muteSoft },
 
+	maxNote: { fontFamily: FONTS.hand, fontSize: 15, color: WHIMSY.mute, textAlign: "center", paddingVertical: 4 },
 	note: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.accent, textAlign: "center", marginTop: 12 },
 
 	topUpBtn: {
@@ -280,6 +295,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		...sticker,
 	},
+	topUpBtnOff: { opacity: 0.45 },
 	topUpText: { fontFamily: FONTS.whimsy, fontSize: 16, color: INK },
 
 	reclaimBtn: {
