@@ -48,7 +48,7 @@ import {
 	WonCosmetic,
 	MudBand,
 } from "@/utils/mudWars";
-import { DAILY_ALLOTMENT, THROWS_PER_DAY } from "@/constants/mudFights";
+import { DAILY_ALLOTMENT, THROWS_PER_DAY, WAR_LENGTH_DAYS } from "@/constants/mudFights";
 import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
@@ -300,6 +300,13 @@ function PendingWar({
 	);
 }
 
+// Which day of the 5-day siege we're on, from the end time.
+function siegeDay(endsAt: string | null): number {
+	if (!endsAt) return 1;
+	const daysLeft = Math.ceil((new Date(endsAt).getTime() - Date.now()) / 86400000);
+	return Math.min(WAR_LENGTH_DAYS, Math.max(1, WAR_LENGTH_DAYS - daysLeft + 1));
+}
+
 // ── Active: tug-of-war + the Slop Toss minigame ──────────────────────────────
 function ActiveWar({
 	war,
@@ -308,7 +315,13 @@ function ActiveWar({
 	war: NonNullable<ReturnType<typeof useMudWar>["war"]>;
 	onThrow: (band: MudBand) => void;
 }) {
-	const ropeTarget = ropePosition(war.mine.perCapita, war.them.perCapita);
+	// Phase 1b: the rope reflects the DAILY-TUG standings (ropeNorm, caller-POV
+	// -1..1 -> 0..1 fill). Falls back to the live per-capita ratio until the
+	// daily-tug migration is live.
+	const ropeTarget =
+		war.ropeNorm != null
+			? (war.ropeNorm + 1) / 2
+			: ropePosition(war.mine.perCapita, war.them.perCapita);
 
 	// ── Live tug-of-war rope ──────────────────────────────────────────────
 	// One Animated.Value (0..1) springs toward the score on every change, so
@@ -385,11 +398,11 @@ function ActiveWar({
 				</Animated.View>
 			)}
 
-			{/* Countdown */}
-			<Text style={styles.countdown}>
-				{war.isBotWar ? "vs The Mudlarks · " : ""}
-				{formatCountdown(war.endsAt)} left
+			{/* Siege chapter + countdown */}
+			<Text style={styles.siegeChapter}>
+				Day {siegeDay(war.endsAt)} of the Siege{war.isBotWar ? " — vs The Mudlarks" : ""}
 			</Text>
+			<Text style={styles.countdown}>{formatCountdown(war.endsAt)} left</Text>
 
 			{/* Tug-of-war bar */}
 			<View style={styles.scoreRow}>
@@ -461,14 +474,14 @@ function ResolvedWar({
 				/>
 			)}
 			<Text style={styles.emptyTitle}>
-				{draw ? "A draw" : iWon ? "Your Sounder won!" : "Your Sounder lost"}
+				{draw ? "A stalemate in the mire" : iWon ? "The horde is routed!" : "Driven into the mire"}
 			</Text>
 			<Text style={styles.emptyBody}>
 				{draw
-					? "Not enough mud was slung. Rally up and try again."
+					? "The rope held dead even — neither side broke."
 					: iWon
-					? "Snouts paid out and a 72h regen buff is on you."
-					: "Better luck next Mud Fight."}
+					? "The Mudlarks flee the bog — snouts paid and a 72h regen buff is on you."
+					: "The Mudlarks hold the field. Rally and raid again."}
 			</Text>
 			<Button variant="primary" onPress={onChanged} style={{ marginTop: 16 }}>
 				Start a new fight
@@ -531,7 +544,8 @@ const styles = StyleSheet.create({
 	targetName: { fontFamily: FONTS.body, fontSize: 15, color: WHIMSY.ink, flex: 1 },
 	targetCount: { color: WHIMSY.mute },
 	note: { fontFamily: FONTS.body, fontSize: 13, color: WHIMSY.accent, textAlign: "center", marginTop: 12 },
-	countdown: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.mute, textAlign: "center", marginBottom: 14 },
+	siegeChapter: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink, textAlign: "center", marginBottom: 1 },
+	countdown: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.mute, textAlign: "center", marginBottom: 14 },
 	scoreRow: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
 	sideName: { fontFamily: FONTS.whimsy, fontSize: 16, flex: 1 },
 	ropeTrack: {

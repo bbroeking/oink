@@ -78,6 +78,8 @@ export interface WarState {
 	iAmChallenger: boolean;
 	myRemainingToday: number;   // legacy tap model (sling_mud fallback)
 	myThrowsRemaining: number;  // throw-minigame budget (THROWS_PER_DAY - used today)
+	ropePos?: number;           // daily-tug rope (challenger-positive notches; Phase 1b)
+	ropeNorm?: number;          // rope normalized to the caller's POV, -1..1 (+ = me ahead)
 	mine: WarSide;
 	them: WarSide;
 }

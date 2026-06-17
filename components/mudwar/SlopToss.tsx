@@ -36,16 +36,18 @@ const STAGE_H = 380;
 // the sprite px; pts scales the vanity score; sprite is a PLACEHOLDER.
 interface Archetype {
 	key: string;
+	name: string; // player-facing
+	announce: string; // the "a goblin approaches" chip copy
 	sprite: number;
 	size: number;
 	pts: number; // vanity-points multiplier
 	weight: number;
 }
 const ARCHETYPES: Archetype[] = [
-	{ key: "grunt", sprite: HAT_IMAGES.mud_pie, size: 50, pts: 1.0, weight: 5 },
-	{ key: "scout", sprite: HAT_IMAGES.mud_pie, size: 38, pts: 1.5, weight: 3 }, // small = hard, worth more
-	{ key: "brute", sprite: HAT_IMAGES.mud_shovel, size: 76, pts: 0.7, weight: 3 }, // big = easy, worth less
-	{ key: "warboss", sprite: HAT_IMAGES.swamp_crown, size: 92, pts: 2.4, weight: 1 }, // rare, big payoff
+	{ key: "grunt", name: "Bog Grunt", announce: "A Bog Grunt charges!", sprite: HAT_IMAGES.mud_pie, size: 50, pts: 1.0, weight: 5 },
+	{ key: "scout", name: "Mire Scout", announce: "A Mire Scout darts past!", sprite: HAT_IMAGES.mud_pie, size: 38, pts: 1.5, weight: 3 }, // small = hard, worth more
+	{ key: "brute", name: "Slop Brute", announce: "A Slop Brute lumbers up!", sprite: HAT_IMAGES.mud_shovel, size: 76, pts: 0.7, weight: 3 }, // big = easy, worth less
+	{ key: "warboss", name: "Warboss", announce: "The Goblin King sends a WARBOSS!", sprite: HAT_IMAGES.swamp_crown, size: 92, pts: 2.4, weight: 1 }, // rare, big payoff
 ];
 const TOTAL_WEIGHT = ARCHETYPES.reduce((s, a) => s + a.weight, 0);
 function rollArchetype(): Archetype {
@@ -80,6 +82,7 @@ interface Floater {
 	x: number;
 	a: Animated.Value;
 	band: MudBand;
+	boss: boolean;
 }
 interface Splat {
 	id: number;
@@ -102,9 +105,20 @@ export function SlopToss({ onThrow, throwsRemaining }: Props) {
 
 	const [goblin, setGoblin] = useState<Archetype>(() => rollArchetype());
 	const goblinRef = useRef(goblin);
+	const gobAnnounce = useRef(new Animated.Value(0)).current;
 	useEffect(() => {
 		goblinRef.current = goblin;
-	}, [goblin]);
+		// Name the foe as it enters — a Warboss gets a louder beat (mini-event).
+		gobAnnounce.setValue(0);
+		if (goblin.key === "warboss") {
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+		}
+		Animated.sequence([
+			Animated.spring(gobAnnounce, { toValue: 1, useNativeDriver: true, speed: 16, bounciness: 8 }),
+			Animated.delay(goblin.key === "warboss" ? 1300 : 850),
+			Animated.timing(gobAnnounce, { toValue: 0, duration: 300, useNativeDriver: true }),
+		]).start();
+	}, [goblin, gobAnnounce]);
 
 	const [score, setScore] = useState(0);
 	const streakRef = useRef(0);
@@ -213,7 +227,7 @@ export function SlopToss({ onThrow, throwsRemaining }: Props) {
 
 			const fid = idRef.current++;
 			const fa = new Animated.Value(0);
-			setFloaters((f) => [...f, { id: fid, x: (Math.random() - 0.5) * 30, a: fa, band }]);
+			setFloaters((f) => [...f, { id: fid, x: (Math.random() - 0.5) * 30, a: fa, band, boss: arche.key === "warboss" }]);
 			Animated.timing(fa, { toValue: 1, duration: 850, useNativeDriver: true }).start(() =>
 				setFloaters((f) => f.filter((x) => x.id !== fid))
 			);
@@ -272,6 +286,18 @@ export function SlopToss({ onThrow, throwsRemaining }: Props) {
 						<Text style={styles.comboText}>x{combo} HOT STREAK</Text>
 					</Animated.View>
 				)}
+
+				{/* "A goblin approaches" chip — names the foe each crossing */}
+				<Animated.View
+					pointerEvents="none"
+					style={[
+						styles.announce,
+						goblin.key === "warboss" && styles.announceBoss,
+						{ opacity: gobAnnounce, transform: [{ translateY: gobAnnounce.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }] },
+					]}
+				>
+					<Text style={[styles.announceText, goblin.key === "warboss" && styles.announceBossText]}>{goblin.announce}</Text>
+				</Animated.View>
 
 				{/* Run lane: strike gate + gold post + the goblin */}
 				<View style={styles.lane} pointerEvents="none">
@@ -335,7 +361,15 @@ export function SlopToss({ onThrow, throwsRemaining }: Props) {
 							},
 						]}
 					>
-						{f.band === "perfect" ? "PERFECT!" : f.band === "good" ? "good" : f.band === "weak" ? "weak" : "escaped!"}
+						{f.boss && f.band === "perfect"
+							? "WARBOSS ROUTED!"
+							: f.band === "perfect"
+							? "SPLAT! routed"
+							: f.band === "good"
+							? "caught him"
+							: f.band === "weak"
+							? "glancing"
+							: "he scampered off!"}
 					</Animated.Text>
 				))}
 
@@ -347,8 +381,8 @@ export function SlopToss({ onThrow, throwsRemaining }: Props) {
 
 				<Text style={styles.label}>
 					{empty
-						? "Out of throws — come back tomorrow"
-						: `hold to aim · release on the gold · ${throwsRemaining} left`}
+						? "Out of slings — the horde regroups till tomorrow"
+						: `hold the bucket · let fly as he crosses · ${throwsRemaining} slings left`}
 				</Text>
 			</View>
 		</Animated.View>
@@ -377,6 +411,19 @@ const styles = StyleSheet.create({
 	scoreText: { fontFamily: FONTS.whimsy, fontSize: 20, color: "#fff" },
 	comboRibbon: { position: "absolute", top: 10, alignSelf: "center", backgroundColor: WHIMSY.sun, borderWidth: 2, borderColor: WHIMSY.ink, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4 },
 	comboText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+
+	announce: {
+		position: "absolute",
+		top: STAGE_H * 0.3,
+		alignSelf: "center",
+		backgroundColor: "rgba(20,16,28,0.6)",
+		borderRadius: 10,
+		paddingHorizontal: 12,
+		paddingVertical: 4,
+	},
+	announceText: { fontFamily: FONTS.hand, fontSize: 14, color: "#fff" },
+	announceBoss: { backgroundColor: WHIMSY.sun, borderWidth: 2, borderColor: WHIMSY.ink, paddingVertical: 6 },
+	announceBossText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
 
 	lane: { position: "absolute", left: 0, right: 0, top: STAGE_H * 0.42, height: 96 },
 	gate: { position: "absolute", top: 0, bottom: 0, backgroundColor: "rgba(91,201,125,0.32)", borderRadius: 6 },

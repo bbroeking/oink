@@ -76,11 +76,11 @@ export function MudWarResolvedModal({
 
 	const title = win
 		? isBotWar
-			? "You beat the Mudlarks!"
-			: "Your Sounder won!"
+			? "The Mudlarks are routed!"
+			: "The horde is routed!"
 		: result === "draw"
-		? "A draw"
-		: "Your Sounder lost";
+		? "A stalemate in the mire"
+		: "Driven into the mire";
 
 	return (
 		<Modal visible transparent animationType="fade" onRequestClose={onClose}>
@@ -91,7 +91,7 @@ export function MudWarResolvedModal({
 					radius={20}
 					style={styles.card}
 				>
-					<Text style={styles.kicker}>★ mud fight ★</Text>
+					<Text style={styles.kicker}>★ the siege ends ★</Text>
 
 					<Animated.View
 						style={[
@@ -141,10 +141,10 @@ export function MudWarResolvedModal({
 					) : (
 						<Text style={styles.subtitle}>
 							{win
-								? "Snouts paid out, and a 72-hour regen buff is on you."
+								? "The horde flees the bog — snouts paid and a 72-hour regen buff is on you."
 								: result === "draw"
-								? "Not enough mud was slung. Rally up and try again."
-								: "Better luck next Mud Fight."}
+								? "The rope held dead even — neither side broke."
+								: "The Mudlarks hold the field. Rally and raid again."}
 						</Text>
 					)}
 
