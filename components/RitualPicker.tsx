@@ -120,7 +120,7 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 			]}
 		>
 			<Text style={styles.kicker}>
-				{isBless ? "☀ today's blessing" : "🟢 today's curse"}
+				{isBless ? "✦ today's blessing" : "☁ today's curse"}
 			</Text>
 
 			{/* sent — the cast landed */}

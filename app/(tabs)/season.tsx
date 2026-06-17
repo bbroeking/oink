@@ -1181,8 +1181,9 @@ export default function SeasonScreen() {
 					<View style={styles.titleRule} />
 						{daysUntilJudgement() > 0 && (
 							<View style={styles.judgementBanner}>
+								<Icon name="scales" size={14} color={WHIMSY.ink} />
 								<Text style={styles.judgementText}>
-									⚖ Judgement Day in {daysUntilJudgement()}{" "}
+									Judgement Day in {daysUntilJudgement()}{" "}
 									{daysUntilJudgement() === 1 ? "day" : "days"}
 								</Text>
 							</View>
@@ -1473,6 +1474,9 @@ const styles = StyleSheet.create({
 	judgementBanner: {
 		marginTop: 10,
 		alignSelf: "center",
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 5,
 		backgroundColor: WHIMSY.lilac,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,

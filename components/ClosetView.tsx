@@ -22,6 +22,7 @@ import { PigStage } from "./ui/PigStage";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { TitlesSection } from "./TitlesSection";
 import { HAT_IMAGES, HatRow, PIG_CANVAS } from "@/constants/hats";
+import { categoryIcon } from "@/constants/emojiArt";
 import type { TitleRow } from "@/constants/title_types";
 import {
 	SLOT_ORDER,
@@ -239,13 +240,18 @@ export function ClosetView({
 											{ backgroundColor: it ? fill(it.rarity) : WHIMSY.paper },
 										]}
 									>
-										{src ? (
-											<Image source={src} style={styles.slotThumbImg} resizeMode="contain" />
-										) : it?.emoji ? (
-											<Text style={styles.slotEmoji}>{it.emoji}</Text>
-										) : (
-											<Text style={styles.slotPlus}>+</Text>
-										)}
+										{(() => {
+											// Prefer item art, then category art (real
+											// PNG). Auras/necklaces have no category art →
+											// the "+" placeholder. Never render raw emoji.
+											const catSrc = it ? categoryIcon(it.category) : null;
+											const thumbSrc = src ?? catSrc;
+											return thumbSrc ? (
+												<Image source={thumbSrc} style={styles.slotThumbImg} resizeMode="contain" />
+											) : (
+												<Text style={styles.slotPlus}>+</Text>
+											);
+										})()}
 									</View>
 									<Text style={styles.slotLabel}>{SLOT_LABEL[s]}</Text>
 								</Pressable>
@@ -291,11 +297,17 @@ export function ClosetView({
 									>
 										<View style={[styles.itemStripe, { backgroundColor: stripe(item.rarity) }]} />
 										<View style={[styles.itemThumb, { backgroundColor: fill(item.rarity) }]}>
-											{src ? (
-												<Image source={src} style={styles.itemThumbImg} resizeMode="contain" />
-											) : (
-												<Text style={styles.itemEmoji}>{item.emoji ?? "?"}</Text>
-											)}
+											{(() => {
+												// Item art → category art (real PNG) → a
+												// neutral print glyph. Never raw emoji.
+												const catSrc = categoryIcon(item.category);
+												const thumbSrc = src ?? catSrc;
+												return thumbSrc ? (
+													<Image source={thumbSrc} style={styles.itemThumbImg} resizeMode="contain" />
+												) : (
+													<Text style={styles.itemEmoji}>✦</Text>
+												);
+											})()}
 											{active && (
 												<View style={styles.check}>
 													<Text style={styles.checkText}>✓</Text>
@@ -417,7 +429,6 @@ const styles = StyleSheet.create({
 	},
 	// Explicit pt size (not %) — see itemThumbImg for why.
 	slotThumbImg: { width: 30, height: 30 },
-	slotEmoji: { fontSize: 26 },
 	slotPlus: { fontSize: 22, color: WHIMSY.mute },
 	slotLabel: {
 		fontFamily: FONTS.bodyExtra,

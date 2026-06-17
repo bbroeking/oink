@@ -689,7 +689,7 @@ export default function Barn() {
 					hitSlop={8}
 					style={[styles.barnFlag, styles.barnFlagEmpty]}
 				>
-					<Text style={styles.barnFlagEmptyGlyph}>🏳️</Text>
+					<Icon name="plus" size={20} color={WHIMSY.ink} />
 					<Text style={styles.barnFlagEmptyText}>pick a country</Text>
 				</Pressable>
 			) : null}

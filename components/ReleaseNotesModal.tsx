@@ -13,7 +13,8 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Sticker } from "./ui/Sticker";
-import { releaseIcon } from "../constants/emojiArt";
+import { Icon } from "./ui/Icon";
+import { releaseIcon, releaseIconName } from "../constants/emojiArt";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -53,16 +54,31 @@ export function ReleaseNotesModal({
 						<Text style={styles.headline}>{release.headline}</Text>
 						<Text style={styles.dateText}>v{release.version} · {release.date}</Text>
 						<ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
-							{release.items.map((it, i) => (
+							{release.items.map((it, i) => {
+								// Resolve the leading glyph WITHOUT ever rendering a
+								// raw emoji: art PNG first, then a fitting vector Icon,
+								// then a print glyph (keep the design glyphs the note
+								// already carries — ✦ ★ etc. — and ★-fallback the rest).
+								const art = releaseIcon(it.emoji);
+								const iconName = releaseIconName(it.emoji);
+								const PRINT_GLYPHS = ["★", "✦", "♥", "✓", "✕", "•", "→"];
+								const printGlyph =
+									it.emoji && PRINT_GLYPHS.includes(it.emoji)
+										? it.emoji
+										: "✦";
+								return (
 								<View key={i} style={styles.item}>
 									<View style={styles.emojiWrap}>
-										{releaseIcon(it.emoji) ? (
-											<Image
-												source={releaseIcon(it.emoji)!}
-												style={styles.emojiImg}
+										{art ? (
+											<Image source={art} style={styles.emojiImg} />
+										) : iconName ? (
+											<Icon
+												name={iconName as any}
+												size={20}
+												color={WHIMSY.ink}
 											/>
 										) : (
-											<Text style={styles.emoji}>{it.emoji ?? "★"}</Text>
+											<Text style={styles.emoji}>{printGlyph}</Text>
 										)}
 									</View>
 									<View style={{ flex: 1, minWidth: 0 }}>
@@ -70,7 +86,8 @@ export function ReleaseNotesModal({
 										<Text style={styles.itemBody}>{it.body}</Text>
 									</View>
 								</View>
-							))}
+								);
+							})}
 						</ScrollView>
 						<Pressable
 							onPress={handleClose}

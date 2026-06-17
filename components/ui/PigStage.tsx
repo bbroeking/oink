@@ -11,6 +11,7 @@
 
 import React from "react";
 import { View, Image, Text, StyleSheet } from "react-native";
+import { categoryIcon } from "../../constants/emojiArt";
 import {
 	HAT_IMAGES,
 	HAT_OVERLAYS,
@@ -173,20 +174,23 @@ export function resolveSlot(
 	return { itemId, category, emoji, imageSrc, prebaked, overlay };
 }
 
-// One overlay box — image OR emoji fallback. Same shape regardless
-// of whether the item renders behind or in front of the pig.
+// One overlay box — item art, then the category art placeholder, then
+// a neutral print glyph. The no-art path never renders a raw emoji.
 function ItemOverlay({
 	overlay,
 	imageSrc,
-	emoji,
+	category = null,
 	zIndex = 5,
 }: {
 	overlay: HatOverlay;
 	imageSrc: number | null;
-	emoji: string | null;
+	category?: string | null;
 	zIndex?: number;
 }) {
 	const { rotate, ...box } = overlay;
+	// No item PNG → fall back to the category icon art (auras/necklaces
+	// have none → categoryIcon null → the neutral glyph below).
+	const placeholderSrc = imageSrc ?? categoryIcon(category);
 	return (
 		<View
 			style={[
@@ -196,13 +200,13 @@ function ItemOverlay({
 				rotate ? { transform: [{ rotate: `${rotate}deg` }] } : null,
 			]}
 		>
-			{imageSrc ? (
+			{placeholderSrc ? (
 				<Image
-					source={imageSrc}
+					source={placeholderSrc}
 					style={styles.fillImage}
 					resizeMode="contain"
 				/>
-			) : emoji ? (
+			) : (
 				<Text
 					style={[
 						styles.emojiPlaceholder,
@@ -212,9 +216,9 @@ function ItemOverlay({
 						},
 					]}
 				>
-					{emoji}
+					✦
 				</Text>
-			) : null}
+			)}
 		</View>
 	);
 }
@@ -266,7 +270,7 @@ export function PigStage({
 				<ItemOverlay
 					overlay={auraSlot.overlay}
 					imageSrc={auraSlot.imageSrc}
-					emoji={null}
+					category={auraSlot.category}
 					zIndex={2}
 				/>
 			)}
@@ -274,7 +278,7 @@ export function PigStage({
 				<ItemOverlay
 					overlay={mainOverlay}
 					imageSrc={main?.imageSrc ?? null}
-					emoji={null}
+					category={mainCategory}
 					zIndex={3}
 				/>
 			)}
@@ -291,7 +295,7 @@ export function PigStage({
 				<ItemOverlay
 					overlay={mainOverlay}
 					imageSrc={main?.imageSrc ?? null}
-					emoji={main?.emoji ?? null}
+					category={mainCategory}
 					zIndex={10}
 				/>
 			)}
@@ -299,7 +303,7 @@ export function PigStage({
 				<ItemOverlay
 					overlay={neckSlot.overlay}
 					imageSrc={neckSlot.imageSrc}
-					emoji={neckSlot.emoji}
+					category={neckSlot.category}
 					zIndex={8}
 				/>
 			)}
@@ -307,7 +311,7 @@ export function PigStage({
 				<ItemOverlay
 					overlay={maskSlot.overlay}
 					imageSrc={maskSlot.imageSrc}
-					emoji={maskSlot.emoji}
+					category={maskSlot.category}
 					zIndex={9}
 				/>
 			)}
@@ -315,7 +319,7 @@ export function PigStage({
 				<ItemOverlay
 					overlay={glassesSlot.overlay}
 					imageSrc={glassesSlot.imageSrc}
-					emoji={glassesSlot.emoji}
+					category={glassesSlot.category}
 					zIndex={10}
 				/>
 			)}
@@ -323,7 +327,7 @@ export function PigStage({
 				<ItemOverlay
 					overlay={heldSlot.overlay}
 					imageSrc={heldSlot.imageSrc}
-					emoji={heldSlot.emoji}
+					category={heldSlot.category}
 					zIndex={11}
 				/>
 			)}
@@ -331,7 +335,7 @@ export function PigStage({
 				<ItemOverlay
 					overlay={flagSlot.overlay}
 					imageSrc={flagSlot.imageSrc}
-					emoji={flagSlot.emoji}
+					category={flagSlot.category}
 					zIndex={12}
 				/>
 			)}

@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Sticker } from "./ui/Sticker";
+import { Icon } from "./ui/Icon";
 import { Button } from "./ui";
 import { rpcAction } from "@/utils/rpc";
 import { HAT_IMAGES } from "@/constants/hats";
@@ -71,7 +72,7 @@ export function AllegianceModal({ visible, onSkip, onChosen, currentFlagId }: Pr
 					{done ? (
 						// ── Celebratory confirmation ──────────────────────
 						<View style={styles.doneWrap}>
-							<Text style={styles.doneEmoji}>🎉</Text>
+							<Icon name="trophy" size={52} color={WHIMSY.ink} />
 							<Text style={styles.title}>You're backing {done.name}!</Text>
 							<Text style={styles.hint}>
 								The {done.name} flag now flies on your Barn. Cheer them all
@@ -83,7 +84,7 @@ export function AllegianceModal({ visible, onSkip, onChosen, currentFlagId }: Pr
 								full
 								onPress={() => onChosen(`flag_${selected}`)}
 							>
-								Let's go ⚽
+								Let's go
 							</Button>
 						</View>
 					) : (
@@ -97,7 +98,7 @@ export function AllegianceModal({ visible, onSkip, onChosen, currentFlagId }: Pr
 							<Text style={styles.hint}>
 								Back a team — their flag flies on your Barn. If your country
 								lifts the trophy, there may be a reward waiting at the final
-								whistle. 🏆
+								whistle.
 							</Text>
 
 							<FlatList

@@ -23,6 +23,7 @@ import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { rpc, rpcAction } from "@/utils/rpc";
 import { PigAvatar } from "./ui/PigAvatar";
+import { Icon } from "./ui/Icon";
 import { Sticker } from "./ui/Sticker";
 import { BarnVisitModal } from "./BarnVisitModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
@@ -496,13 +497,19 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 									    modal just to show a dead-end pop-up. */}
 									{stats.friendship_status !== "friends" ? null : visitBlock ? (
 										<View style={[styles.visitBtn, styles.visitBtnDisabled]}>
-											<Text style={[styles.visitBtnText, styles.visitBtnTextDisabled]}>
-												🏚 {visitBlock.label}
-											</Text>
+											<View style={styles.visitBtnRow}>
+												<Icon name="tabBarn" size={18} color={WHIMSY.mute} />
+												<Text style={[styles.visitBtnText, styles.visitBtnTextDisabled]}>
+													{visitBlock.label}
+												</Text>
+											</View>
 										</View>
 									) : (
 										<Pressable onPress={() => setShowVisit(true)} style={({ pressed }) => [styles.visitBtn, pressed && { opacity: 0.8 }]}>
-											<Text style={styles.visitBtnText}>🏚 Visit {formatHandle(stats)}'s Barn</Text>
+											<View style={styles.visitBtnRow}>
+												<Icon name="tabBarn" size={18} color={WHIMSY.ink} />
+												<Text style={styles.visitBtnText}>Visit {formatHandle(stats)}'s Barn</Text>
+											</View>
 										</Pressable>
 									)}
 
@@ -1057,6 +1064,12 @@ const styles = StyleSheet.create({
 		paddingVertical: 10,
 		alignItems: "center",
 		marginBottom: 12,
+	},
+	visitBtnRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 7,
 	},
 	visitBtnText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
 	// Disabled Visit button — muted fill + ink, reads as "can't right now".

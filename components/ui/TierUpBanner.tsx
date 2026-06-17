@@ -134,7 +134,7 @@ export const TierUpBanner = forwardRef<TierUpBannerHandle>(
 						},
 					]}
 				>
-					✨
+					✦
 				</Animated.Text>
 			);
 		});

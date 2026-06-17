@@ -24,6 +24,7 @@ import { UserSheet } from "./UserSheet";
 import { FONTS, TAB_SAFE, TITLE_RULE, WHIMSY } from "@/constants/theme";
 import { AlignmentBadge } from "./ui/AlignmentBadge";
 import { PigAvatar } from "./ui/PigAvatar";
+import { Icon } from "./ui/Icon";
 
 // PostgREST returns 1:1 joins either as an object or a length-1
 // array. Flatten so consumers can read .name directly.
@@ -340,7 +341,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 			<Sticker color="paper" rotate={0} radius={14} style={styles.searchCard}>
 				<Text style={styles.kickerSmall}>FIND A FRIEND</Text>
 				<View style={styles.searchInputRow}>
-					<Text style={styles.searchGlyph}>🔍</Text>
+					<Icon name="search" size={16} color={WHIMSY.mute} />
 					<TextInput
 						style={styles.inputFlat}
 						value={query}
@@ -616,7 +617,6 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 12,
 		paddingVertical: 8,
 	},
-	searchGlyph: { fontSize: 16, color: WHIMSY.mute },
 	inputFlat: {
 		flex: 1,
 		fontFamily: FONTS.bodyExtra,

@@ -535,16 +535,3 @@ export const RARITY_COLORS: Record<string, string> = {
 	epic: "#9078FF",
 	legendary: "#F5C44A",
 };
-
-export const CATEGORY_EMOJI: Record<string, string> = {
-	hat: "🎩",
-	glasses: "👓",
-	bow: "🎀",
-	scarf: "🧣",
-	aura: "✨",
-	mask: "🎭",
-	cape: "🦸",
-	necklace: "📿",
-	held: "🪄",
-	background: "🏞️",
-};

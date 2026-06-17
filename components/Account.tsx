@@ -718,11 +718,18 @@ export function Account({ session }: { session: Session }) {
 							    engagement gate yet. Invisible before — which read
 							    as "my referral didn't work". */}
 							{referral.referrals_pending > 0 && (
-								<Text style={referralStyles.pendingNote}>
-									🐽 {referral.referrals_pending}{" "}
-									{referral.referrals_pending === 1 ? "friend" : "friends"}{" "}
-									on the way — credit lands once they've played a bit.
-								</Text>
+								<View style={referralStyles.pendingRow}>
+									<Image
+										source={require("@/assets/images/emoji/pig.png")}
+										style={referralStyles.pendingPig}
+										resizeMode="contain"
+									/>
+									<Text style={referralStyles.pendingNote}>
+										{referral.referrals_pending}{" "}
+										{referral.referrals_pending === 1 ? "friend" : "friends"}{" "}
+										on the way — credit lands once they've played a bit.
+									</Text>
+								</View>
 							)}
 							<Text style={referralStyles.fine}>
 								Each completed referral: +100 ★
@@ -777,9 +784,16 @@ export function Account({ session }: { session: Session }) {
 								</View>
 							)}
 							{codeInviter && (
-								<Text style={referralStyles.entrySuccess}>
-									You're in {codeInviter}'s sounder! +50 🐽
-								</Text>
+								<View style={referralStyles.successRow}>
+									<Text style={referralStyles.entrySuccess}>
+										You're in {codeInviter}'s sounder! +50
+									</Text>
+									<Image
+										source={require("@/assets/images/emoji/pig.png")}
+										style={referralStyles.successPig}
+										resizeMode="contain"
+									/>
+								</View>
 							)}
 						</Sticker>
 					)}
@@ -1537,17 +1551,37 @@ const referralStyles = StyleSheet.create({
 		color: "#c0504d",
 		marginTop: 6,
 	},
+	pendingRow: {
+		flexDirection: "row",
+		alignItems: "flex-start",
+		gap: 6,
+		marginTop: 6,
+	},
+	pendingPig: {
+		width: 16,
+		height: 16,
+		marginTop: 1,
+	},
 	pendingNote: {
+		flex: 1,
 		fontFamily: FONTS.hand,
 		fontSize: 12.5,
 		color: WHIMSY.ink,
-		marginTop: 6,
+	},
+	successRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		marginTop: 10,
+	},
+	successPig: {
+		width: 16,
+		height: 16,
 	},
 	entrySuccess: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: COLORS.successText,
-		marginTop: 10,
 	},
 	kicker: {
 		...KICKER_TEXT,

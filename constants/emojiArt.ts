@@ -5,8 +5,8 @@
 export const TROPHY = require("../assets/images/emoji/trophy.png");
 
 // Cosmetic-category → art. `aura` and `necklace` have no dedicated
-// icon yet; categoryIcon() returns null for them (caller keeps the
-// CATEGORY_EMOJI glyph).
+// icon yet; categoryIcon() returns null for them (caller falls back
+// to the ✦ print glyph).
 const CATEGORY_ICON: Record<string, number> = {
 	hat: require("../assets/images/emoji/cat/hat.png"),
 	glasses: require("../assets/images/emoji/cat/glasses.png"),
@@ -42,8 +42,8 @@ export function achievementIcon(id: string | null | undefined): number {
 }
 
 // Release-notes item emoji → art. Only the emoji with dedicated art
-// are listed; releaseIcon() returns null for the rest (✦, ⚖️, 👑),
-// which the modal then renders as the plain emoji glyph.
+// are listed; releaseIcon() returns null for the rest, which the modal
+// then resolves to an <Icon> (via releaseIconName) or a print glyph.
 const RELEASE_ICON: Record<string, number> = {
 	"🤝": require("../assets/images/emoji/trade.png"),
 	"👥": require("../assets/images/emoji/friends.png"),
@@ -53,8 +53,25 @@ const RELEASE_ICON: Record<string, number> = {
 	"☀️": require("../assets/images/emoji/sun-beam.png"),
 	"🟢": require("../assets/images/emoji/goblin-whisper.png"),
 	"📋": require("../assets/images/emoji/clipboard.png"),
+	"🐷": require("../assets/images/emoji/pig.png"),
+	"🐽": require("../assets/images/emoji/pig.png"),
 };
 
 export function releaseIcon(emoji: string | undefined): number | null {
 	return (emoji && RELEASE_ICON[emoji]) || null;
+}
+
+// Release-notes item emoji → Icon name, for emoji with no dedicated art
+// but a fitting vector Icon. Consumed by the modal as a second-tier
+// fallback after releaseIcon(); emoji handled by neither (👗, ⚽, ✨)
+// fall through to a print glyph in the modal. IconName isn't imported
+// here to avoid a UI→constants dependency; the modal types it.
+const RELEASE_ICON_NAME: Record<string, string> = {
+	"⚖️": "scales",
+	"👑": "crown",
+	"🏚️": "home",
+};
+
+export function releaseIconName(emoji: string | undefined): string | null {
+	return (emoji && RELEASE_ICON_NAME[emoji]) || null;
 }

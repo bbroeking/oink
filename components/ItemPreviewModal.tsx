@@ -242,9 +242,11 @@ export function ItemPreviewModal({
 						]}
 					>
 						{isTickleParticle ? (
+							// No `glyph` override — when there's no PNG art the
+							// preview falls back to the print glyph ✦, never a
+							// raw item emoji.
 							<TickleParticlePreview
 								source={itemSrc ?? null}
-								glyph={item.emoji ?? undefined}
 							/>
 						) : isBackgroundItem && itemSrc ? (
 							<Image

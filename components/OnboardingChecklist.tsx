@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
+import { Icon, type IconName } from "./ui/Icon";
 import { FONTS, WHIMSY, SPACE, PAGE_PAD, RADII, KICKER_TEXT } from "@/constants/theme";
 import {
 	getOnboardingProgress,
@@ -18,6 +19,18 @@ import {
 	allOnboardingDone,
 	type OnboardingMilestone,
 } from "@/utils/onboarding";
+
+// Milestone id → storybook Icon, replacing the raw emoji the server seeds in
+// onboarding_milestones.icon (pointing-finger / top-hat / handshake / hut /
+// sparkles). Ids are stable (migration 20260649); any unmapped id falls back to
+// no glyph rather than a bare emoji.
+const MILESTONE_ICON: Record<string, IconName> = {
+	first_tickle: "tickle",
+	dress: "crown",
+	friend: "handshake",
+	visit: "home",
+	ritual: "star",
+};
 
 interface Props {
 	// Bump from the parent (e.g. after a tickle / visit / friend-add) to re-check.
@@ -77,7 +90,11 @@ export function OnboardingChecklist({ refreshKey = 0, onClaimed }: Props) {
 					return (
 						<View key={m.id} style={styles.row}>
 							<View style={[styles.checkbox, m.claimed && styles.checkboxDone]}>
-								<Text style={styles.checkMark}>{m.claimed ? "✓" : m.icon ?? ""}</Text>
+								{m.claimed ? (
+									<Text style={styles.checkMark}>✓</Text>
+								) : MILESTONE_ICON[m.id] ? (
+									<Icon name={MILESTONE_ICON[m.id]} size={15} color={INK} />
+								) : null}
 							</View>
 							<View style={{ flex: 1 }}>
 								<Text style={[styles.rowName, m.claimed && styles.rowNameDone]}>

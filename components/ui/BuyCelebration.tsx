@@ -48,8 +48,8 @@ export const BuyCelebration = forwardRef<BuyCelebrationHandle>(
 				const count = tier === "premium" ? 10 : 7;
 				const palette =
 					tier === "premium"
-						? ["⭐", "✨", "💎", "🪙", "💫"]
-						: ["✨", "🪙", "⭐"];
+						? ["★", "✦", "♥"]
+						: ["✦", "★"];
 				const baseAngle = (Math.random() * Math.PI) / 4;
 				const newParts: Particle[] = Array.from({ length: count }, (_, i) => {
 					const angle = baseAngle + (i / count) * Math.PI * 2;

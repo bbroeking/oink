@@ -200,9 +200,7 @@ export function MysteryHatReveal({
 										resizeMode="contain"
 									/>
 								) : (
-									<Text style={styles.heroEmoji}>
-										{reveal?.granted_hat_emoji ?? "🎩"}
-									</Text>
+									<Text style={styles.heroEmoji}>✦</Text>
 								)}
 							</Animated.View>
 

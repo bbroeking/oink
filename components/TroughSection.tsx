@@ -57,7 +57,7 @@ function donateError(reason: string | undefined, have?: number): string {
 		case "donate_cooldown":
 			return "You've chipped into this Trough recently — once per 12h per Trough.";
 		case "already_funded":
-			return "Already funded! 🎉";
+			return "Already funded!";
 		case "drive_closed":
 			return "This Trough has closed.";
 		case "not_friends":
@@ -126,8 +126,8 @@ export function TroughSection({
 			setNote((n) => ({
 				...n,
 				[d.id]: r.funded
-					? "Funded! 🎉 Claim your reward below."
-					: "Chipped in! Thanks 🐽",
+					? "Funded! Claim your reward below."
+					: "Chipped in! Thanks",
 			}));
 		} else {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
@@ -148,7 +148,7 @@ export function TroughSection({
 			setNote((n) => ({
 				...n,
 				[d.id]: r.sent
-					? `Asked ${r.sent} ${r.sent === 1 ? "friend" : "friends"} to chip in 🐽`
+					? `Asked ${r.sent} ${r.sent === 1 ? "friend" : "friends"} to chip in`
 					: "No Sounder yet to ask.",
 			}));
 		} else {

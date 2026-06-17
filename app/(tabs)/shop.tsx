@@ -26,12 +26,12 @@ import {
 	HAT_IMAGES,
 	HatRow,
 	RARITY_COLORS,
-	CATEGORY_EMOJI,
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
 import { SLOT_COLUMN, slotForCategory, columnForCategory } from "@/constants/slots";
 import type { TitlePlacement } from "@/constants/title_types";
 import { categoryIcon } from "@/constants/emojiArt";
+import { Icon } from "@/components/ui/Icon";
 import { COLORS, FONTS, KICKER_PILL, WHIMSY, STICKER_SHADOW, SHADOW_SM, SPACE, RADII, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
@@ -189,16 +189,16 @@ function HatThumb({
 	// (sixth sighting) — bows/hats rendered at native px and cropped.
 	const [box, setBox] = useState<{ w: number; h: number } | null>(null);
 	const hatSrc = HAT_IMAGES[item.id];
-	// No item art + no per-item emoji → fall back to the category
-	// icon (real art), then to the category emoji glyph.
-	const catIcon = !hatSrc && !item.emoji ? categoryIcon(item.category) : null;
+	// No item art → fall back to the category icon (real art). Auras +
+	// necklaces have no category art (categoryIcon null) → neutral glyph.
+	const catIcon = !hatSrc ? categoryIcon(item.category) : null;
 	const src = hatSrc ?? catIcon;
 	if (!fill) {
 		const sz = { width: size ?? 100, height: size ?? 100 };
 		if (src) return <Image source={src} style={sz} resizeMode="contain" />;
 		return (
-			<Text style={{ fontSize: (size ?? 100) * 0.55 }}>
-				{item.emoji ?? CATEGORY_EMOJI[item.category ?? "hat"] ?? "?"}
+			<Text style={{ fontSize: (size ?? 100) * 0.55, color: WHIMSY.mute }}>
+				✦
 			</Text>
 		);
 	}
@@ -225,8 +225,8 @@ function HatThumb({
 					resizeMode={fullBleed ? "cover" : "contain"}
 				/>
 			) : !src && box ? (
-				<Text style={{ fontSize: Math.min(box.w, box.h) * 0.5 }}>
-					{item.emoji ?? CATEGORY_EMOJI[item.category ?? "hat"] ?? "?"}
+				<Text style={{ fontSize: Math.min(box.w, box.h) * 0.5, color: WHIMSY.mute }}>
+					✦
 				</Text>
 			) : null}
 		</View>
@@ -529,7 +529,7 @@ function ShopCard({
 						>
 							{item.cost.toLocaleString()}
 						</Text>
-						{!canAfford && <Text style={shopCardStyles.chipLock}>🔒</Text>}
+						{!canAfford && <Icon name="lock" size={12} color={WHIMSY.mute} />}
 					</View>
 				)}
 			</View>
@@ -637,7 +637,6 @@ const shopCardStyles = StyleSheet.create({
 		opacity: 0.85,
 	},
 	chipText: { fontFamily: FONTS.display, fontSize: 15, color: WHIMSY.ink },
-	chipLock: { fontSize: 12 },
 	ownedTag: {
 		// Full-width + centered so OWNED / SEASON PASS share the price
 		// button's footprint (uniform card footer, no left-aligned outlier).
