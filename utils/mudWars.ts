@@ -188,6 +188,12 @@ export function slingMud(
 export function resolveWar(warId: string): Promise<RpcResult<{ winner: string | null }>> {
 	return rpcAction<{ winner: string | null }>("resolve_war", { p_war: warId });
 }
+// DEV/TEST only — fast-forward a war to resolution (admin-gated server-side).
+// Wired to a __DEV__-only button on the war screen so we can playtest the full
+// arc (sling -> resolve -> spoils -> win modal) without the 5-day wait.
+export function devEndWarNow(warId: string): Promise<RpcResult<{ winner: string | null }>> {
+	return rpcAction<{ winner: string | null }>("dev_end_war_now", { p_war: warId });
+}
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 

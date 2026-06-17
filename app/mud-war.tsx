@@ -43,6 +43,7 @@ import {
 	ropePosition,
 	formatCountdown,
 	fetchWarSpoils,
+	devEndWarNow,
 	WonCosmetic,
 } from "@/utils/mudWars";
 import { DAILY_ALLOTMENT } from "@/constants/mudFights";
@@ -139,6 +140,22 @@ export default function MudWarScreen() {
 						<ActiveWar war={war} onSling={sling} />
 					) : (
 						<ResolvedWar war={war} onChanged={dismissResolved} />
+					)}
+
+					{/* DEV-only: fast-forward an active war to resolution (admin-gated
+					    server-side) so the sling -> resolve -> spoils -> win-modal arc
+					    is testable without the 5-day wait. */}
+					{__DEV__ && war?.status === "active" && (
+						<Pressable
+							onPress={async () => {
+								await devEndWarNow(war.warId);
+								refresh();
+							}}
+							hitSlop={8}
+							style={styles.devBtn}
+						>
+							<Text style={styles.devBtnText}>resolve now (dev)</Text>
+						</Pressable>
 					)}
 				</SafeAreaView>
 			</View>
@@ -690,6 +707,16 @@ const styles = StyleSheet.create({
 	title: { fontFamily: FONTS.whimsy, fontSize: 26, color: WHIMSY.ink },
 	spoilsBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
 	spoils: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.accent },
+	devBtn: {
+		position: "absolute",
+		bottom: 10,
+		right: 12,
+		backgroundColor: "rgba(20,16,28,0.7)",
+		borderRadius: 8,
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+	},
+	devBtnText: { fontFamily: FONTS.hand, fontSize: 11, color: "#fff" },
 	center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30, gap: 8 },
 	content: { padding: 20, paddingBottom: 80 },
 	lead: { fontFamily: FONTS.body, fontSize: 14, color: WHIMSY.mute, marginBottom: 16, textAlign: "center" },
