@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, Image, Pressable, Modal, Animated, Easing, StyleSheet, ScrollView, Dimensions } from "react-native";
 import { supabase } from "@/utils/supabase";
+import { Icon } from "@/components/ui/Icon";
 import { HAT_IMAGES, RARITY_COLORS, type Rarity } from "@/constants/hats";
 import { WAR_SPOILS_IDS } from "@/constants/mudFights";
 import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
@@ -94,10 +95,12 @@ export function WarSpoilsSheet({ open, onClose }: Props) {
 											) : null}
 											{r.owned ? (
 												<View style={[styles.check, { backgroundColor: color }]}>
-													<Text style={styles.checkMark}>✓</Text>
+													<Icon name="check" size={13} color={INK} strokeWidth={2.4} />
 												</View>
 											) : (
-												<Text style={styles.lock}>🔒</Text>
+												<View style={styles.lock}>
+													<Icon name="lock" size={14} color={WHIMSY.mute} strokeWidth={1.8} />
+												</View>
 											)}
 										</View>
 										<Text style={styles.name} numberOfLines={1}>{r.name}</Text>
@@ -156,8 +159,7 @@ const styles = StyleSheet.create({
 	thumb: { width: "78%", height: "78%" },
 	thumbLocked: { opacity: 0.32 },
 	check: { position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: INK, alignItems: "center", justifyContent: "center" },
-	checkMark: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: INK },
-	lock: { position: "absolute", top: 4, right: 5, fontSize: 13, opacity: 0.6 },
+	lock: { position: "absolute", top: 4, right: 5, opacity: 0.6 },
 	name: { fontFamily: FONTS.bodyExtra, fontSize: 11, color: INK, textAlign: "center", marginTop: 4, paddingHorizontal: 3 },
 	rarity: { fontFamily: FONTS.hand, fontSize: 11, textAlign: "center", textTransform: "capitalize" },
 

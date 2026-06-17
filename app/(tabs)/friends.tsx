@@ -6,7 +6,7 @@
 // Defaults to Board so the first impression on opening the hub is
 // the sounder ranked, not your own friend list.
 // See docs/season-1-social-redesign.md.
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
 	View,
 	StyleSheet,
@@ -16,6 +16,7 @@ import {
 	Text,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { Sticker } from "../../components/ui/Sticker";
@@ -40,7 +41,14 @@ const SEGMENTS: { key: Segment; label: string; icon: IconName }[] = [
 ];
 
 export default function FriendsHubScreen() {
-	const [segment, setSegment] = useState<Segment>("board");
+	// Deep-link target (e.g. the Sounder launch nudge routes "/(tabs)/friends?seg=sounder").
+	const { seg } = useLocalSearchParams<{ seg?: string }>();
+	const wantSounder = seg === "sounder" && MUD_FIGHTS_VISIBLE;
+	const [segment, setSegment] = useState<Segment>(wantSounder ? "sounder" : "board");
+	// Re-honor the param if the tab was already mounted when we navigated to it.
+	useEffect(() => {
+		if (wantSounder) setSegment("sounder");
+	}, [seg, wantSounder]);
 	const [userId, setUserId] = useState<string | null>(null);
 	const [inboxCount, setInboxCount] = useState(0);
 

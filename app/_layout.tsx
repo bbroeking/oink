@@ -50,6 +50,9 @@ import {
 	type UnlockedAchievement,
 } from "@/components/AchievementUnlockModal";
 import { AllegianceModal } from "@/components/AllegianceModal";
+import { SounderLaunchModal } from "@/components/SounderLaunchModal";
+import { MUD_FIGHTS_VISIBLE } from "@/constants/featureFlags";
+import { fetchCrewState } from "@/utils/mudWars";
 import { PurchaseToastHost } from "@/components/PurchaseToast";
 import {
 	PopupQueueProvider,
@@ -114,6 +117,9 @@ function RootLayoutInner() {
 	// World Cup allegiance pick — shown once when the player hasn't chosen a
 	// country yet and hasn't locally dismissed the prompt.
 	const [showAllegiance, setShowAllegiance] = useState(false);
+	// "Mud Wars are here — start a Sounder!" launch nudge: shown when the feature
+	// is live + the player has no crew, ≤ once/day until they create/join one.
+	const [sounderPrompt, setSounderPrompt] = useState(false);
 
 	// Global popup queue slots — every launch popup goes through PopupQueue so
 	// only one shows at a time (across root AND the Barn tab). Lower priority
@@ -123,6 +129,7 @@ function RootLayoutInner() {
 	const ritualsSlot = usePopupSlot("rituals", !!rituals, 30);
 	const achievementsSlot = usePopupSlot("achievements", achievements.length > 0, 40);
 	const allegianceSlot = usePopupSlot("allegiance", showAllegiance, 70);
+	const sounderSlot = usePopupSlot("sounderLaunch", sounderPrompt, 35);
 
 	// Resolve the initial auth state before letting the splash drop, so we
 	// transition straight into either auth or the home screen — no blank flash.
@@ -237,6 +244,27 @@ function RootLayoutInner() {
 			}
 		};
 		check();
+	}, [authChecked]);
+
+	// Mud Wars launch nudge — only when the feature is live (MUD_FIGHTS_VISIBLE)
+	// AND the player has no crew. Re-surfaces ≤ once per UTC day until they
+	// create/join a Sounder, then the noCrew gate stops it for good.
+	useEffect(() => {
+		if (!authChecked || !MUD_FIGHTS_VISIBLE) return;
+		let cancelled = false;
+		(async () => {
+			const { data: ures } = await supabase.auth.getUser();
+			if (cancelled || !ures.user) return;
+			const crew = await fetchCrewState();
+			if (cancelled || crew.crew) return;
+			const today = new Date().toISOString().slice(0, 10);
+			const last = await AsyncStorage.getItem("sounder_prompt_last");
+			if (cancelled || last === today) return;
+			setSounderPrompt(true);
+		})();
+		return () => {
+			cancelled = true;
+		};
 	}, [authChecked]);
 
 	// "While you were away" — surface blessings + curses RECEIVED
@@ -654,6 +682,22 @@ function RootLayoutInner() {
 					onChosen={() => {
 						allegianceSlot.release();
 						setTimeout(() => setShowAllegiance(false), POPUP_TEARDOWN_MS);
+					}}
+				/>
+			)}
+			{sounderPrompt && (
+				<SounderLaunchModal
+					visible={sounderSlot.visible}
+					onCreate={() => {
+						AsyncStorage.setItem("sounder_prompt_last", new Date().toISOString().slice(0, 10));
+						sounderSlot.release();
+						setTimeout(() => setSounderPrompt(false), POPUP_TEARDOWN_MS);
+						router.push("/(tabs)/friends?seg=sounder");
+					}}
+					onDismiss={() => {
+						AsyncStorage.setItem("sounder_prompt_last", new Date().toISOString().slice(0, 10));
+						sounderSlot.release();
+						setTimeout(() => setSounderPrompt(false), POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}

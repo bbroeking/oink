@@ -9,7 +9,9 @@
 // (useCrew, useMudWar) compose them in hooks/.
 
 import { rpc, rpcAction, RpcResult } from "./rpc";
+import { supabase } from "./supabase";
 import { DAILY_ALLOTMENT } from "@/constants/mudFights";
+import { type Rarity } from "@/constants/hats";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -113,6 +115,40 @@ export async function fetchWarState(warId?: string): Promise<WarState | null> {
 
 export async function fetchChallengeable(): Promise<ChallengeableCrew[]> {
 	return (await rpc<ChallengeableCrew[]>("find_challengeable_crews")) ?? [];
+}
+
+// The war-exclusive cosmetic the caller won from a given war, if any.
+// grant_war_spoils_on_resolve (20260660) drops a per-user `war_spoils`
+// system_announcement carrying data.hat_id; we read it back (RLS: own
+// rows only) so the resolved-war reveal can show the actual item. Returns
+// null when the player earned no cosmetic (bot war, or owned them all).
+export interface WonCosmetic {
+	id: string;
+	name: string;
+	rarity: Rarity;
+}
+
+export async function fetchWarSpoils(warId: string): Promise<WonCosmetic | null> {
+	const { data: auth } = await supabase.auth.getUser();
+	const uid = auth.user?.id;
+	if (!uid) return null;
+	const { data: ann } = await supabase
+		.from("system_announcements")
+		.select("data")
+		.eq("user_id", uid)
+		.eq("kind", "war_spoils")
+		.eq("data->>war_id", warId)
+		.order("dispatched_at", { ascending: false })
+		.limit(1)
+		.maybeSingle();
+	const hatId = (ann?.data as { hat_id?: string } | null)?.hat_id;
+	if (!hatId) return null;
+	const { data: hat } = await supabase
+		.from("hats")
+		.select("id, name, rarity")
+		.eq("id", hatId)
+		.maybeSingle();
+	return hat ? { id: hat.id, name: hat.name, rarity: hat.rarity as Rarity } : null;
 }
 
 // ── Action wrappers (rpcAction<T>) ───────────────────────────────────────────
