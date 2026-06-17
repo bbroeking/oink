@@ -30,6 +30,7 @@ import { Button } from "../components/ui/Button";
 import { Icon } from "../components/ui/Icon";
 import { WarSpoilsSheet } from "../components/WarSpoilsSheet";
 import { MudWarResolvedModal, WarResult } from "../components/MudWarResolvedModal";
+import { SlopToss } from "../components/mudwar/SlopToss";
 import { useMudWar } from "@/hooks/useMudWar";
 import { useCrew } from "@/hooks/useCrew";
 import {
@@ -45,13 +46,14 @@ import {
 	fetchWarSpoils,
 	devEndWarNow,
 	WonCosmetic,
+	MudBand,
 } from "@/utils/mudWars";
-import { DAILY_ALLOTMENT } from "@/constants/mudFights";
+import { DAILY_ALLOTMENT, THROWS_PER_DAY } from "@/constants/mudFights";
 import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 export default function MudWarScreen() {
-	const { war, loading, refresh, sling } = useMudWar();
+	const { war, loading, refresh, throwBand } = useMudWar();
 	// "Start a new fight" on the resolved recap: mark this war dismissed so the
 	// screen drops to the NoWar challenge picker. my_war() keeps returning the
 	// resolved war, so refresh() alone can never advance past the recap.
@@ -137,7 +139,7 @@ export default function MudWarScreen() {
 					) : war.status === "pending" ? (
 						<PendingWar war={war} onChanged={refresh} />
 					) : war.status === "active" ? (
-						<ActiveWar war={war} onSling={sling} />
+						<ActiveWar war={war} onThrow={throwBand} />
 					) : (
 						<ResolvedWar war={war} onChanged={dismissResolved} />
 					)}
@@ -298,99 +300,15 @@ function PendingWar({
 	);
 }
 
-// ── Active: tug-of-war + sling ───────────────────────────────────────────────
+// ── Active: tug-of-war + the Slop Toss minigame ──────────────────────────────
 function ActiveWar({
 	war,
-	onSling,
+	onThrow,
 }: {
 	war: NonNullable<ReturnType<typeof useMudWar>["war"]>;
-	onSling: () => Promise<{ ok: boolean; reason?: string }>;
+	onThrow: (band: MudBand) => void;
 }) {
 	const ropeTarget = ropePosition(war.mine.perCapita, war.them.perCapita);
-	const remaining = war.myRemainingToday;
-	const spent = DAILY_ALLOTMENT - remaining;
-	const empty = remaining <= 0;
-
-	// Tap juice — squish + flung mud splats. Splats carry a direction: "out"
-	// (my sling, flung up off the bucket) or "in" (an opponent sling raining
-	// down at me, fired from the realtime them.total bump below).
-	const scale = useRef(new Animated.Value(1)).current;
-	const [splats, setSplats] = useState<
-		{ id: number; x: number; a: Animated.Value; dir: "out" | "in"; fy: number }[]
-	>([]);
-	const idRef = useRef(0);
-
-	// power 0/1/2 (combo tier) throws more, wider, and higher.
-	const spawnSplats = useCallback((dir: "out" | "in", count: number, power = 0) => {
-		const fresh = Array.from({ length: count }).map(() => ({
-			id: idRef.current++,
-			x: (Math.random() - 0.5) * (90 + power * 30),
-			a: new Animated.Value(0),
-			dir,
-			fy: dir === "in" ? 90 : -(90 + power * 34),
-		}));
-		setSplats((s) => [...s, ...fresh]);
-		fresh.forEach((sp) => {
-			Animated.timing(sp.a, {
-				toValue: 1,
-				duration: dir === "in" ? 700 : 600,
-				useNativeDriver: true,
-			}).start(() => setSplats((s) => s.filter((x) => x.id !== sp.id)));
-		});
-	}, []);
-
-	// ── Bucket mud level ──────────────────────────────────────────────────
-	// The button fills with the day's allotment and drains a notch per sling
-	// (springs down + a slow surface sway for a liquid feel). Height is a layout
-	// prop, so JS-driven — one cheap clipped view inside the button.
-	const fillFrac = useRef(new Animated.Value(remaining / DAILY_ALLOTMENT)).current;
-	const sway = useRef(new Animated.Value(0)).current;
-	useEffect(() => {
-		Animated.spring(fillFrac, {
-			toValue: remaining / DAILY_ALLOTMENT,
-			useNativeDriver: false,
-			speed: 12,
-			bounciness: 12,
-		}).start();
-	}, [remaining, fillFrac]);
-	useEffect(() => {
-		const loop = Animated.loop(
-			Animated.sequence([
-				Animated.timing(sway, { toValue: 1, duration: 1600, useNativeDriver: false }),
-				Animated.timing(sway, { toValue: 0, duration: 1600, useNativeDriver: false }),
-			])
-		);
-		loop.start();
-		return () => loop.stop();
-	}, [sway]);
-
-	// ── Combo (visual only — never touches the server-authoritative score) ──
-	// Rapid slings (gaps < 800ms) build a streak: bigger splats, escalating
-	// haptics, an "xN SLOPPED!" ribbon, and a mud burst at the top tier.
-	const comboRef = useRef(0);
-	const lastTapRef = useRef(0);
-	const comboTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const [combo, setCombo] = useState(0);
-	const comboAnim = useRef(new Animated.Value(0)).current;
-	const burstAnim = useRef(new Animated.Value(0)).current;
-	useEffect(
-		() => () => {
-			if (comboTimer.current) clearTimeout(comboTimer.current);
-		},
-		[]
-	);
-	const showCombo = useCallback(
-		(streak: number) => {
-			setCombo(streak);
-			comboAnim.setValue(0);
-			Animated.spring(comboAnim, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 12 }).start();
-		},
-		[comboAnim]
-	);
-	const flashBurst = useCallback(() => {
-		burstAnim.setValue(0);
-		Animated.timing(burstAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
-	}, [burstAnim]);
 
 	// ── Live tug-of-war rope ──────────────────────────────────────────────
 	// One Animated.Value (0..1) springs toward the score on every change, so
@@ -402,7 +320,6 @@ function ActiveWar({
 	const [trackW, setTrackW] = useState(0);
 	const ropeAnim = useRef(new Animated.Value(ropeTarget)).current;
 	const prevRope = useRef(ropeTarget);
-	const prevThem = useRef(war.them.total);
 
 	// Lead-change punctuation.
 	const [lead, setLead] = useState<null | "took" | "lost">(null);
@@ -437,49 +354,6 @@ function ActiveWar({
 		else if (prev >= 0.5 && ropeTarget < 0.5) showLead("lost");
 		prevRope.current = ropeTarget;
 	}, [ropeTarget, ropeAnim, showLead]);
-
-	// Opponent slung → their total rose on the realtime refetch → rain mud at me.
-	useEffect(() => {
-		if (war.them.total > prevThem.current) spawnSplats("in", 2);
-		prevThem.current = war.them.total;
-	}, [war.them.total, spawnSplats]);
-
-	const onTap = useCallback(async () => {
-		if (empty) return;
-		const now = Date.now();
-		const streak = now - lastTapRef.current < 800 ? comboRef.current + 1 : 1;
-		comboRef.current = streak;
-		lastTapRef.current = now;
-		const tier = streak >= 6 ? 2 : streak >= 3 ? 1 : 0;
-
-		Haptics.impactAsync(
-			[
-				Haptics.ImpactFeedbackStyle.Light,
-				Haptics.ImpactFeedbackStyle.Medium,
-				Haptics.ImpactFeedbackStyle.Heavy,
-			][tier]
-		).catch(() => {});
-		Animated.sequence([
-			Animated.spring(scale, { toValue: 0.86, useNativeDriver: true, speed: 50, bounciness: 0 }),
-			Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 8 }),
-		]).start();
-		spawnSplats("out", [3, 5, 6][tier], tier);
-		if (streak >= 2) showCombo(streak);
-		if (tier === 2) flashBurst();
-
-		// Decay the streak after a gap so it reads as "rapid" only.
-		if (comboTimer.current) clearTimeout(comboTimer.current);
-		comboTimer.current = setTimeout(() => {
-			comboRef.current = 0;
-			setCombo(0);
-			Animated.timing(comboAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
-		}, 900);
-
-		const r = await onSling();
-		if (!r.ok && r.reason !== "daily_cap") {
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-		}
-	}, [empty, onSling, scale, spawnSplats, showCombo, flashBurst, comboAnim]);
 
 	const fillW = ropeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, trackW] });
 	const knotLeft = ropeAnim.interpolate({
@@ -547,101 +421,11 @@ function ActiveWar({
 				))}
 			</View>
 
-			{/* Sling button */}
-			<View style={styles.slingWrap}>
-				{/* Top-tier mud burst behind the bucket */}
-				<Animated.Image
-					source={HAT_IMAGES.mud_splatter_aura}
-					resizeMode="contain"
-					style={[
-						styles.slingBurst,
-						{
-							opacity: burstAnim.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0.7, 0] }),
-							transform: [{ scale: burstAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1.4] }) }],
-						},
-					]}
-				/>
-				{splats.map((sp) => {
-					const out = sp.dir === "out";
-					return (
-						<Animated.Image
-							key={sp.id}
-							source={out ? HAT_IMAGES.mud_pie : HAT_IMAGES.mud_splatter_aura}
-							resizeMode="contain"
-							style={[
-								out ? styles.splat : styles.splatIn,
-								{
-									transform: [
-										{ translateX: sp.x },
-										{
-											translateY: sp.a.interpolate({
-												inputRange: [0, 1],
-												outputRange: [0, sp.fy],
-											}),
-										},
-										{
-											scale: sp.a.interpolate({
-												inputRange: [0, 1],
-												outputRange: out ? [0.6, 1.2] : [1.1, 0.7],
-											}),
-										},
-									],
-									opacity: sp.a.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1, 0] }),
-								},
-							]}
-						/>
-					);
-				})}
-				<Pressable onPress={onTap} disabled={empty}>
-					{/* Shadow lives on the wrapper so the inner clip (overflow:hidden,
-					    for the mud fill) doesn't eat the sticker shadow. */}
-					<Animated.View style={[styles.slingShadow, { transform: [{ scale }] }]}>
-						<View style={[styles.slingBtn, empty && styles.slingBtnEmpty]}>
-							<Animated.View
-								pointerEvents="none"
-								style={[
-									styles.bucketFill,
-									{
-										height: fillFrac.interpolate({ inputRange: [0, 1], outputRange: [0, 150] }),
-										transform: [
-											{ translateY: sway.interpolate({ inputRange: [0, 1], outputRange: [2, -2] }) },
-										],
-									},
-								]}
-							/>
-							<Image
-								source={HAT_IMAGES.slop_bucket}
-								resizeMode="contain"
-								style={[styles.slingImg, empty && styles.slingImgEmpty]}
-							/>
-							<Text style={styles.slingLabel}>{empty ? "Out of mud" : "Sling mud!"}</Text>
-						</View>
-					</Animated.View>
-				</Pressable>
-
-				{/* Combo ribbon — pure juice, decoupled from score */}
-				{combo >= 2 && (
-					<Animated.View
-						pointerEvents="none"
-						style={[
-							styles.comboRibbon,
-							{
-								opacity: comboAnim,
-								transform: [{ scale: comboAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }],
-							},
-						]}
-					>
-						<Text style={styles.comboText}>x{combo} SLOPPED!</Text>
-					</Animated.View>
-				)}
-			</View>
-
-			<Text style={styles.remaining}>
-				{empty
-					? "Come back tomorrow for more mud."
-					: `${remaining} of ${DAILY_ALLOTMENT} slings left today`}
-			</Text>
-			{spent > 0 && <Text style={styles.spentNote}>You've slung {spent} today.</Text>}
+			{/* The Slop Toss minigame — owns its own bucket / splats / combo juice. */}
+			<SlopToss
+				onThrow={onThrow}
+				throwsRemaining={war.myThrowsRemaining ?? THROWS_PER_DAY}
+			/>
 		</ScrollView>
 	);
 }

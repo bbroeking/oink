@@ -76,10 +76,18 @@ export interface WarState {
 	isBotWar: boolean;
 	winnerCrew: string | null;
 	iAmChallenger: boolean;
-	myRemainingToday: number;
+	myRemainingToday: number;   // legacy tap model (sling_mud fallback)
+	myThrowsRemaining: number;  // throw-minigame budget (THROWS_PER_DAY - used today)
 	mine: WarSide;
 	them: WarSide;
 }
+
+// The 4 outcome bands of a mud throw. The CLIENT classifies the release into a
+// band and sends the ENUM; the SERVER owns the band->points map (whiff/weak/
+// good/perfect -> 0/1/2/3) so a forged band can't beat honest play. This mirror
+// is used only for the optimistic local bump.
+export type MudBand = "whiff" | "weak" | "good" | "perfect";
+export const BAND_POINTS: Record<MudBand, number> = { whiff: 0, weak: 1, good: 2, perfect: 3 };
 
 export interface ChallengeableCrew {
 	id: string;
@@ -184,6 +192,16 @@ export function slingMud(
 	warId: string
 ): Promise<RpcResult<{ slings_today: number; remaining: number }>> {
 	return rpcAction<{ slings_today: number; remaining: number }>("sling_mud", { p_war: warId });
+}
+// Throw-minigame submit: send the band ENUM; the server clamps to points + caps.
+export function throwMud(
+	warId: string,
+	band: MudBand
+): Promise<RpcResult<{ pts_awarded: number; slings_today: number; throws_remaining: number }>> {
+	return rpcAction<{ pts_awarded: number; slings_today: number; throws_remaining: number }>(
+		"throw_mud",
+		{ p_war: warId, p_band: band }
+	);
 }
 export function resolveWar(warId: string): Promise<RpcResult<{ winner: string | null }>> {
 	return rpcAction<{ winner: string | null }>("resolve_war", { p_war: warId });
