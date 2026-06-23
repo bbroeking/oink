@@ -176,7 +176,8 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 						<RitualIconWell
 							icon={ritual.icon}
 							blessed={isBless}
-							size={44}
+							size={60}
+							fillRatio={0.84}
 							badge={false}
 						/>
 						<View style={{ flex: 1, minWidth: 0 }}>

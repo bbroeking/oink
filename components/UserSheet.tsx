@@ -270,15 +270,17 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// Why the Visit button is blocked (null = a visit would work). Until the
 	// status RPC resolves, visitGate is null → button stays enabled and the
 	// modal's own guards remain the backstop.
+	// A visit no longer spends the visitor's tickle bank (20260661) — the only
+	// real blocks are the 3h per-pig nap (locked) and a mid-visit rest (resting).
+	// The old "Out of tickles to visit" branch was stale and falsely blocked
+	// players with an empty bank, so it's gone.
 	const visitBlock: { label: string } | null = !visitGate
 		? null
 		: visitGate.locked
-			? { label: visitGate.next_at ? `Come back in ${formatRemaining(visitGate.next_at)}` : "Come back soon" }
-			: (visitGate.balance ?? 1) < 1
-				? { label: "Out of tickles to visit" }
-				: visitGate.resting
-					? { label: "Their pig is resting — come back soon" }
-					: null;
+			? { label: visitGate.next_at ? `Napping · back in ${formatRemaining(visitGate.next_at)}` : "Napping — come back soon" }
+			: visitGate.resting
+				? { label: "Their pig is resting — come back soon" }
+				: null;
 
 	const addFriend = async () => {
 		if (!stats || !stats.username) return;

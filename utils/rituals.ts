@@ -45,13 +45,13 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 		name: "Warm Tea",
 		emoji: "☕",
 		icon: require("../assets/images/emoji/warm-tea.png"),
-		blurb: "2× tickle regen for an hour.",
+		blurb: "Tickle regen runs at double speed for a few hours.",
 	},
 	sun_beam: {
 		name: "Sun Beam",
 		emoji: "🌞",
 		icon: require("../assets/images/emoji/sun-beam.png"),
-		blurb: "Huge Lucky Pig boost — burns off when one fires.",
+		blurb: "A big Lucky-Pig boost — pops on the next lucky pig.",
 	},
 	halo_kiss: {
 		name: "Halo Kiss",
@@ -72,25 +72,25 @@ export const CURSE_META: Record<CurseKind, RitualMeta> = {
 		name: "Sluggish Snout",
 		emoji: "🐌",
 		icon: require("../assets/images/emoji/sluggish-snout.png"),
-		blurb: "Half tickle regen for an hour.",
+		blurb: "Tickle regen runs at half speed for a few hours.",
 	},
 	phantom_itch: {
 		name: "Phantom Itch",
 		emoji: "✨",
 		icon: require("../assets/images/emoji/phantom-itch.png"),
-		blurb: "1-in-3 taps slip — for 24h.",
+		blurb: "1 in 3 taps slip off — for a few hours.",
 	},
 	goblin_whisper: {
 		name: "Goblin Whisper",
 		emoji: "🟢",
 		icon: require("../assets/images/emoji/goblin-whisper.png"),
-		blurb: "A green miasma cloud for four hours.",
+		blurb: "A green haze hangs over the Barn — spooky, but harmless.",
 	},
 	coin_pinch: {
 		name: "Coin Pinch",
 		emoji: "🤏",
 		icon: require("../assets/images/emoji/coin-pinch.png"),
-		blurb: "Snips up to 3 snouts (capped per day).",
+		blurb: "Snips 1–3 snouts on the spot (max 10/day).",
 	},
 };
 

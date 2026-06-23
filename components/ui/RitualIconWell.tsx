@@ -22,8 +22,12 @@ import { FONTS, WHIMSY } from "@/constants/theme";
 interface Props {
 	icon?: ImageSourcePropType;
 	blessed: boolean;
-	// Well diameter in pt; the icon fills ~72% of it.
+	// Well diameter in pt; the icon fills ~`fillRatio` of it.
 	size?: number;
+	// Fraction of the well the art fills (default 0.72). Surfaces that want a
+	// bigger, more legible icon (the RitualPicker) can raise it without
+	// enlarging the icon on the smaller shared wells (Barn chips, ActiveEffects).
+	fillRatio?: number;
 	// Corner badge — pass false on surfaces that already label the
 	// kind in text (corner pill, section header, kicker).
 	badge?: boolean;
@@ -33,9 +37,10 @@ export function RitualIconWell({
 	icon,
 	blessed,
 	size = 40,
+	fillRatio = 0.72,
 	badge = true,
 }: Props) {
-	const iconSize = Math.round(size * 0.72);
+	const iconSize = Math.round(size * fillRatio);
 	return (
 		<View
 			style={[
