@@ -537,6 +537,14 @@ export default function Barn() {
 		);
 		const bonusEarned = doubleEarned;
 
+		// A Lucky Pig fired (the 5% client roll users actually see). Record it
+		// server-side so the "Lucky Pig" quests count it — the lucky_hog bounty
+		// ("Hit a Lucky Pig this week") and the lucky_lover achievement read
+		// lucky_pig_hits. Best-effort fire-and-forget (rpc() swallows errors).
+		if (triggered) {
+			void rpc("record_lucky_pig_hit");
+		}
+
 		if (triggered && effects.sunBeam) {
 			// sun_beam is consume-on-first-lucky — clear it as soon
 			// as a lucky pig actually fires so subsequent rolls drop

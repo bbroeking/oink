@@ -507,10 +507,10 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 											</View>
 										</View>
 									) : (
-										<Pressable onPress={() => setShowVisit(true)} style={({ pressed }) => [styles.visitBtn, pressed && { opacity: 0.8 }]}>
+										<Pressable onPress={() => setShowVisit(true)} style={({ pressed }) => [styles.visitBtn, pressed && { opacity: 0.85 }]}>
 											<View style={styles.visitBtnRow}>
-												<Icon name="tabBarn" size={18} color={WHIMSY.ink} />
-												<Text style={styles.visitBtnText}>Visit {formatHandle(stats)}'s Barn</Text>
+												<Icon name="tabBarn" size={24} color={WHIMSY.ink} />
+												<Text style={styles.visitBtnText}>Visit Barn</Text>
 											</View>
 										</Pressable>
 									)}
@@ -1058,12 +1058,13 @@ const styles = StyleSheet.create({
 	ritualToggleText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.mute },
 	ritualToggleTextActive: { color: WHIMSY.ink },
 	visitBtn: {
+		...STICKER_SHADOW,
 		alignSelf: "stretch",
 		backgroundColor: WHIMSY.sky,
-		borderWidth: 2,
+		borderWidth: 2.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 14,
-		paddingVertical: 10,
+		borderRadius: 16,
+		paddingVertical: 15,
 		alignItems: "center",
 		marginBottom: 12,
 	},
@@ -1071,9 +1072,9 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
-		gap: 7,
+		gap: 9,
 	},
-	visitBtnText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	visitBtnText: { fontFamily: FONTS.whimsy, fontSize: 19, color: WHIMSY.ink },
 	// Disabled Visit button — muted fill + ink, reads as "can't right now".
 	visitBtnDisabled: {
 		backgroundColor: WHIMSY.cream2,
