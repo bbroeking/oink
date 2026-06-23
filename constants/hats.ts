@@ -52,6 +52,10 @@ export const HAT_IMAGES: Record<string, number> = {
 	magic_wand: require("../assets/images/hats/magic_wand.png"),
 	toy_sword: require("../assets/images/hats/toy_sword.png"),
 	controller: require("../assets/images/hats/controller.png"),
+	// World Cup soccer ball (catalog row from 20260589). The art existed as a
+	// glyph but was never wired here, so the shop/on-pig render fell back to the
+	// "held" wand placeholder — now keyed to its real art.
+	soccer_ball: require("../assets/images/hats/soccer_ball.png"),
 	// Batch 5 — necklaces: REMOVED 2026-05-22. The necklace art never
 	// sat right on the pig (it didn't read as "around the neck").
 	// TODO: regenerate the necklace set with art tuned to the pig's
