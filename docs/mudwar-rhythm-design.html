@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Songs of the Bog — Mud War rhythm redesign</title>
+<style>
+  :root{
+    --cream:#f4ead7; --cream2:#efe2c8; --paper:#fbf4e4;
+    --ink:#2a1f15; --ink-soft:#4a3a28;
+    --olive:#5b7a3a; --olive-deep:#3a5c2e; --pickle:#6f8c46;
+    --gold:#f5c44a; --gold-deep:#d9a02e;
+    --mud:#6b4a2a; --mud-deep:#4a301a;
+    --red:#b8472d; --orange:#d98a2b;
+    --mute:#8a7a5f;
+    --line:#d8c6a2;
+    --shadow:0 2px 0 var(--mud-deep), 0 6px 18px rgba(42,31,21,.16);
+  }
+  *{box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--cream);
+    color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Georgia,"Times New Roman",serif;
+    line-height:1.6; font-size:17px;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:0 22px 90px}
+  a{color:var(--olive-deep)}
+  code,.mono{font-family:"SF Mono",ui-monospace,"Menlo",Consolas,monospace;font-size:.86em;
+    background:#efe2c8;border:1px solid var(--line);border-radius:5px;padding:.05em .38em}
+  h1,h2,h3{font-family:"Marker Felt","Comic Sans MS","Iowan Old Style",Georgia,serif;line-height:1.18;color:var(--ink)}
+
+  /* Hero */
+  header.hero{
+    background:
+      radial-gradient(120% 90% at 50% -10%, rgba(245,196,74,.30), transparent 60%),
+      linear-gradient(180deg, var(--olive-deep), #2f4a25);
+    color:var(--paper); border-bottom:5px solid var(--ink);
+    padding:54px 22px 40px; text-align:center; position:relative; overflow:hidden;
+  }
+  header.hero::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:26px;
+    background:repeating-linear-gradient(90deg,var(--ink) 0 22px,transparent 22px 44px);opacity:.18}
+  .kicker{letter-spacing:.32em;text-transform:uppercase;font-size:12.5px;color:var(--gold);font-family:inherit;margin:0 0 10px}
+  header.hero h1{font-size:52px;margin:0;color:#fff;text-shadow:0 2px 0 var(--mud-deep)}
+  .tagline{font-size:20px;margin:12px 0 0;color:#f5ecd6;font-style:italic}
+  .heroline{margin:22px auto 0;max-width:680px;color:#e9dcc0;font-size:15.5px}
+  .pillchips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+  .pillchips span{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);
+    border-radius:999px;padding:5px 13px;font-size:13px;color:#fff;font-family:inherit}
+
+  /* Section scaffold */
+  section{margin-top:46px}
+  .eyebrow{display:inline-block;font-family:inherit;letter-spacing:.18em;text-transform:uppercase;
+    font-size:12px;color:var(--olive-deep);background:#e7efd6;border:1px solid #cdddb0;
+    border-radius:6px;padding:3px 9px;margin-bottom:10px}
+  section h2{font-size:30px;margin:.1em 0 .35em;border-bottom:3px dotted var(--line);padding-bottom:.25em}
+  section h3{font-size:20px;margin:1.3em 0 .3em;color:var(--mud-deep)}
+  p{margin:.55em 0}
+  .lead{font-size:18.5px}
+
+  /* Cards */
+  .card{background:var(--paper);border:2px solid var(--ink);border-radius:14px;
+    padding:18px 20px;box-shadow:var(--shadow)}
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+  .card h3{margin-top:0}
+  .card .sub{color:var(--mute);font-size:13.5px;margin:-.2em 0 .6em}
+
+  /* badges */
+  .badge{display:inline-block;border-radius:999px;padding:2px 11px;font-size:12.5px;font-family:inherit;
+    font-weight:600;border:1.5px solid;letter-spacing:.02em;vertical-align:middle}
+  .b-pass{background:#dff0d2;color:#2f5a1f;border-color:#7fae5a}
+  .b-care{background:#fbecc2;color:#8a5e12;border-color:var(--gold-deep)}
+  .b-risk{background:#f6dcc6;color:#8a3a16;border-color:var(--orange)}
+  .b-new{background:#e8ddf2;color:#5a3a82;border-color:#9a7ec4}
+  .b-reuse{background:#d8ecdf;color:#1f5a3a;border-color:#5aae84}
+  .b-chg{background:#e6e1d2;color:#5a4a28;border-color:#b6a47a}
+
+  /* loop timeline */
+  .loop{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:8px}
+  @media(max-width:820px){.loop{grid-template-columns:1fr}}
+  .step{position:relative;background:var(--paper);border:2px solid var(--ink);padding:16px 16px 18px;
+    box-shadow:var(--shadow)}
+  .step:not(:last-child){border-right-width:2px}
+  .loop .step:nth-child(1){border-radius:14px 0 0 14px}
+  .loop .step:nth-child(4){border-radius:0 14px 14px 0}
+  @media(max-width:820px){.loop .step{border-radius:14px!important;margin-bottom:12px}}
+  .step .day{font-family:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .step .ph{font-family:"Marker Felt","Comic Sans MS",serif;font-size:21px;color:var(--olive-deep);margin:3px 0 6px}
+  .step.s-deploy .ph{color:var(--red)}
+  .step.s-hold .ph{color:var(--gold-deep)}
+  .step p{font-size:13.5px;margin:.3em 0 0;color:var(--ink-soft)}
+  .step .arrow{position:absolute;right:-13px;top:50%;transform:translateY(-50%);z-index:2;
+    width:24px;height:24px;background:var(--gold);border:2px solid var(--ink);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:bold;color:var(--ink);font-size:14px}
+  @media(max-width:820px){.step .arrow{display:none}}
+
+  /* lists */
+  ul.tight{margin:.4em 0;padding-left:1.25em}
+  ul.tight li{margin:.3em 0}
+  .mech{margin:.5em 0}
+  .mech b{color:var(--mud-deep)}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14.5px;background:var(--paper);
+    border:2px solid var(--ink);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#e7dcc2;font-family:inherit;letter-spacing:.04em;font-size:13px;text-transform:uppercase;color:var(--mud-deep)}
+  tr:last-child td{border-bottom:none}
+  td .k{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:13px;color:var(--olive-deep)}
+  td .v{font-weight:600}
+
+  /* callouts */
+  .note{border-left:5px solid var(--gold);background:#fbf1d6;padding:12px 16px;border-radius:0 10px 10px 0;margin:14px 0}
+  .note.fire{border-left-color:var(--red);background:#f8e6dc}
+  .note.firewall{border-left-color:var(--olive);background:#e9f1da}
+  .note b{color:var(--mud-deep)}
+
+  /* plan timeline */
+  .phase{display:flex;gap:16px;margin:0 0 14px}
+  .phase .tag{flex:0 0 auto;width:54px;height:54px;border-radius:12px;background:var(--olive-deep);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-family:"Marker Felt",serif;font-size:21px;
+    border:2px solid var(--ink);box-shadow:var(--shadow)}
+  .phase.p0 .tag{background:var(--red)}
+  .phase .body{flex:1;background:var(--paper);border:2px solid var(--ink);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow)}
+  .phase .body h3{margin:0 0 .2em;font-size:18px}
+  .phase .files{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:12px;color:var(--mute);margin-top:6px}
+  .phase .risk{font-size:13px;color:var(--red);margin-top:6px}
+
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 0;justify-content:center}
+  .toc a{font-size:13.5px;background:var(--paper);border:1.5px solid var(--ink);border-radius:999px;
+    padding:5px 13px;text-decoration:none;color:var(--ink);font-family:inherit}
+  .toc a:hover{background:var(--gold)}
+
+  footer{margin-top:60px;border-top:3px dotted var(--line);padding-top:18px;color:var(--mute);font-size:13.5px}
+  .meta{font-size:12.5px;color:var(--mute);text-align:center;margin-top:6px}
+  hr.soft{border:none;border-top:2px dotted var(--line);margin:30px 0}
+
+  /* Print / PDF */
+  @page{margin:14mm}
+  @media print{
+    body{background:#fff;font-size:12.5px}
+    .wrap{max-width:none;padding:0 4mm 8mm}
+    .toc{display:none}
+    header.hero{padding:30px 18px 24px}
+    header.hero h1{font-size:40px}
+    section{margin-top:26px}
+    section h2{font-size:24px}
+    .card,.phase,.step,.note,table,.loop,.grid{break-inside:avoid}
+    section{break-inside:auto}
+    .phase{page-break-inside:avoid}
+    a{color:var(--ink);text-decoration:none}
+    .step .arrow{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <p class="kicker">Tickle the Pig &middot; Mud War redesign</p>
+  <h1>Songs of the Bog</h1>
+  <p class="tagline">Build the mire, deploy the horde, hold the line to the beat.</p>
+  <p class="heroline">A Guitar-Hero rhythm evolution of the clan war. The skill core becomes a tap-on-the-beat
+    goblin defense; the strategy layer becomes a two-phase, double-blind duel over three snout-rich areas — built
+    on the Fronts substrate that already ships, so the validated coordination math and anti-cheat carry over intact.</p>
+  <div class="pillchips">
+    <span>7-day war &middot; 2 phases</span>
+    <span>3 contested areas</span>
+    <span>hidden goblin deployment</span>
+    <span>rhythm defense</span>
+    <span>flag-gated, off by default</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="toc">
+    <a href="#idea">The idea</a>
+    <a href="#loop">The war loop</a>
+    <a href="#pillars">Three pillars</a>
+    <a href="#rhythm">Rhythm core</a>
+    <a href="#meta">Strategy meta</a>
+    <a href="#economy">Economy firewall</a>
+    <a href="#coord">Coordination</a>
+    <a href="#constants">Locked numbers</a>
+    <a href="#data">Data &amp; anti-cheat</a>
+    <a href="#forks">Open forks</a>
+    <a href="#plan">Build plan</a>
+    <a href="#risks">Risks</a>
+  </nav>
+
+  <!-- ============ THE IDEA ============ -->
+  <section id="idea">
+    <span class="eyebrow">What this is</span>
+    <h2>The idea, in one breath</h2>
+    <p class="lead">Two Sounders (5-member clans) fight a 7-day war over <b>three shared areas</b> — the Truffle Field,
+      the Bog Bridge, and the Village Gate. First the crew <b>tends</b> the areas together (co-op), then each side
+      secretly <b>deploys</b> a goblin horde at the other's areas, and finally everyone <b>holds the line</b> by playing
+      a short rhythm run: tap on the beat to fling mud and keep the goblins out. Hold more areas than they do, and
+      the rope swings your way.</p>
+
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card">
+        <h3>What changed from "Fronts of the Bog"</h3>
+        <ul class="tight">
+          <li><b>Skill core &rarr; rhythm.</b> The single-goblin "hold &amp; release" timing toss becomes a
+            short Guitar-Hero stream of goblins you tap on the beat.</li>
+          <li><b>Fronts &rarr; areas you defend.</b> The 3 abstract contested fronts become 3 areas you actively
+            defend against a deployed wave.</li>
+          <li><b>Hidden pressure &rarr; hidden deployment.</b> The fuzzy hold-pressure becomes an <i>active</i>
+            double-blind: you choose which difficulty wave (easy/med/hard) attacks each of <i>their</i> areas.</li>
+          <li><b>One global grind &rarr; two phases.</b> A co-op <b>Tend</b> phase then a skill <b>Hold</b> phase.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>What stayed (and why that's the point)</h3>
+        <ul class="tight">
+          <li>The <b>multi-contributor fold</b> <span class="mono">SUM(LEAST(mud,12))</span> — the super-additive
+            engine the Monte-Carlo sim already certified at <b>96%</b> coordination-beats-scatter.</li>
+          <li>The <b>band-enum wire contract</b> and server-owned scoring (anti-cheat).</li>
+          <li>The <b>fog RLS</b>, the daily-tug rope, the <b>Elo ladder</b>, payouts, titles, cosmetics.</li>
+          <li>The <b>goblin art</b> (grunt / scout / brute / warboss + hit poses + mud splats) and all of Slop Toss's juice.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">
+      <b>The single most important design decision.</b> The rhythm run does <i>not</i> replace the team math — it
+      <i>feeds</i> it. Two or three crewmates each play a <b>short</b> run into the <b>same</b> area, and their banked
+      mud sums under the existing 12-cap and concede floor. So the proven "you can't hold an area solo; convergence
+      multiplies" engine stays exactly where it was measured, and the new minigame just becomes the input.
+    </div>
+  </section>
+
+  <!-- ============ THE LOOP ============ -->
+  <section id="loop">
+    <span class="eyebrow">Cadence</span>
+    <h2>The war loop</h2>
+    <p>Seven days, split across the existing 7-day fronts clock. The 5 "Hold" days map 1:1 onto the 5 already-scored
+       fronts days, so the rope and fold math are untouched.</p>
+    <div class="loop">
+      <div class="step s-build">
+        <div class="arrow">&rarr;</div>
+        <div class="day">Days 1&ndash;2</div>
+        <div class="ph">Tend the Mire</div>
+        <p>The whole crew slings its flat 7 throws/day (the shipped timing toss) to build depth at the 3 areas.
+           Decide <b>where to stack</b>. Self-assign which area you'll hold. No snouts spent.</p>
+      </div>
+      <div class="step s-deploy">
+        <div class="arrow">&rarr;</div>
+        <div class="day">End of day 2</div>
+        <div class="ph">Loose the Horde</div>
+        <p>Each crew secretly maps its three waves &mdash; <b>easy / med / hard</b> &mdash; onto the opponent's three
+           areas. Double-blind: you can't see where their hard wave lands. Re-choosable each Hold day.</p>
+      </div>
+      <div class="step s-hold">
+        <div class="arrow">&rarr;</div>
+        <div class="day">Days 3&ndash;7</div>
+        <div class="ph">Hold the Line</div>
+        <p>Defenders play short rhythm runs against the wave the enemy deployed. 2&ndash;3 can co-defend one area;
+           their mud sums. Each day the rope swings by the margin of areas net-held. Leader has one redeploy token.</p>
+      </div>
+      <div class="step s-resolve">
+        <div class="day">Day 7 (or ROUT)</div>
+        <div class="ph">The Mire Settles</div>
+        <p>Rope-side wins; an early rout fires at &plusmn;12. Winners split the pot, get the 72h buff, titles, a
+           war-exclusive cosmetic, and the Elo bump. A 24h cooldown blocks instant re-challenge.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PILLARS ============ -->
+  <section id="pillars">
+    <span class="eyebrow">The rubric</span>
+    <h2>Does it satisfy the three pillars?</h2>
+    <p>The same success test the Fronts design was held to — now <b>sim-validated</b>.
+       <span class="mono">scripts/sim_deploy.py</span> Monte-Carlo'd the deploy-Blotto across 5 seeds; all three pass.</p>
+    <div class="note firewall">
+      <b>P0 sim results (5 seeds).</b> Genuine dilemma — <b>0 pure saddle points</b>, no dominant deploy, no
+      dominant defense, best-response cycle ≥2, deploy swings held-V by ~2.7. <b>coord &gt; scatter 78–80%</b>
+      (coordination amplifies). <b>skilled-scatter &gt; unskilled-coord 86–93%</b> (skill can't be bought with
+      coordination). Mirror draw ~40% (not perpetual). A 3-active crew's maximin defense holds 5V — never
+      auto-locked-out. <b>The numbers are locked.</b>
+    </div>
+    <div class="grid g3" style="margin-top:14px">
+      <div class="card">
+        <h3>1 &middot; Strategy-predominant <span class="badge b-pass">pass</span></h3>
+        <p>Outcome = areas net-won, never raw activity. Three stacked reads vs the opponent: <b>where to build deep</b>,
+           <b>who co-defends what</b>, and <b>where each difficulty wave attacks</b> (the double-blind Blotto).</p>
+        <p class="sub" style="margin-top:8px">Sim-confirmed: the deploy×defense matrix has <b>0 saddle points</b>
+           and no dominant line; the attacker's best <i>hard</i> target is non-constant across where the defender hides
+           weak players. Deploying hard pays off only via hold-pressure on a thin/weak area &mdash; never universally.</p>
+      </div>
+      <div class="card">
+        <h3>2 &middot; Coordination amplifies <span class="badge b-pass">pass</span></h3>
+        <p>Super-additivity is the <i>original</i> fold <span class="mono">SUM(LEAST(mud,12))</span> across 2+ members
+           above the concede floor &mdash; reused, not reinvented. One capped contributor sits below the marquee floor,
+           so holding a contested area <b>requires</b> convergence.</p>
+        <p class="sub" style="margin-top:8px">Sim-confirmed: <b>coord &gt; scatter 78–80%</b> at equal skill. The
+           unvalidated &times;1.75 "backing" multiplier was dropped; coordination comes from concentration (the proven
+           (3,2,0) move), and tickle/barn fuel is access-only.</p>
+      </div>
+      <div class="card">
+        <h3>3 &middot; Normalized floor + skill ceiling <span class="badge b-pass">pass</span></h3>
+        <p>Floor is dead flat: <b>no snout buy-in</b>, the rope moves only on normalized 0&ndash;3 band-mud (never
+           wealth/VIP-skewed snouts), flat budgets for everyone. Skill raises the ceiling; a forged perfect run equals an
+           honest flawless one.</p>
+        <p class="sub" style="margin-top:8px">Sim-confirmed: <b>skilled-scatter beats unskilled-coord 86–93%</b> &mdash;
+           coordination can't substitute for skill. Build rule: the access token scores the <i>submitted</i> run, not
+           best-of-N, so retries buy <b>roster relief</b>, never a higher ceiling for the same skill.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RHYTHM CORE ============ -->
+  <section id="rhythm">
+    <span class="eyebrow">Skill core</span>
+    <h2>The rhythm run (Guitar Hero, cozy)</h2>
+    <p>Goblins stream down a single lane toward a fixed strike post. Tap on the beat to fling mud. It's a direct
+       evolution of Slop Toss's single-strike-zone timing &mdash; one thumb, playable muted via the existing gold-post
+       telegraph &mdash; so the whole juice stack ports over.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3>How it plays</h3>
+        <div class="mech"><b>Short &amp; retryable.</b> A run is ~12s with <b>3 scored notes</b> (plus unscored feint
+          goblins for density). Bands submit <i>per note</i>, so a dropped connection loses one note, not the run.</div>
+        <div class="mech"><b>One thumb, temporal window.</b> <span class="mono">classify()</span> is re-pointed from
+          spatial <span class="mono">|x&minus;0.5|</span> to temporal <span class="mono">|dt|</span>:
+          &le;45ms = <b>perfect</b>, &le;90ms = <b>good</b>, &le;150ms = <b>weak</b>, beyond / no tap = <b>leak</b>.</div>
+        <div class="mech"><b>Leak = forgone gain, softened.</b> A leak breaks the streak ("he slipped past!") and burns
+          <i>cosmetic</i> snouts only. It never steals real spendable snouts and never drags the rope below an honest run.</div>
+      </div>
+      <div class="card">
+        <h3>Why the rope can't be gamed</h3>
+        <div class="mech"><b>A hit's value is normalized.</b> Every hit banks the 0&ndash;3 band into
+          <span class="mono">mud_front_pushes</span>; a perfect is always 3, so a skilled defender banks full mud on
+          <i>any</i> difficulty (the skill ceiling is untouchable). Difficulty's rope effect is <b>hold-pressure</b> &mdash;
+          a hard wave raises the bar to hold the area (forcing a 3rd body) and mildly tightens windows (suppressing a
+          <i>weak</i> defender). The +2/+3/+4 snout numbers are separate cosmetic juice.</div>
+        <div class="mech"><b>Reused juice.</b> Hit-stop, screenshake, recoil, mud splats, floaters, gold-burst rings,
+          boss vignette, haptics, archetype art, focus-gated lifecycle &mdash; all verbatim from
+          <span class="mono">SlopToss.tsx</span>.</div>
+        <div class="mech"><b>New visually.</b> Multiple charted goblins on the lane at staggered offsets, plus a fixed
+          strike line instead of one moving release.</div>
+      </div>
+    </div>
+
+    <h3>The three "songs" = three difficulties</h3>
+    <table>
+      <tr><th>Song</th><th>Tempo / density</th><th>Cosmetic value &middot; leak</th><th>Who it punishes</th></tr>
+      <tr><td><span class="v">Bog Shuffle</span> &middot; easy</td><td>slow, ~1 goblin on screen, wide feel</td>
+          <td><span class="k">+2 &middot; &minus;4</span></td><td>Safe. Low reward, low risk.</td></tr>
+      <tr><td><span class="v">Mire March</span> &middot; med</td><td>medium, ~2 on screen, scouts mixed in</td>
+          <td><span class="k">+3 &middot; &minus;6</span></td><td>The honest default.</td></tr>
+      <tr><td><span class="v">Warboss Stomp</span> &middot; hard</td><td>fast, ~3 on screen, syncopated, warboss capstone</td>
+          <td><span class="k">+4 &middot; &minus;8</span></td><td>A skilled defender nets more; a weak one bleeds.</td></tr>
+    </table>
+    <p class="sub">These numbers touch only the cosmetic snout coffer — the rope always moves on the normalized band-mud.</p>
+  </section>
+
+  <!-- ============ STRATEGY META ============ -->
+  <section id="meta">
+    <span class="eyebrow">Strategy</span>
+    <h2>Three areas, variable concentration, hidden deployment</h2>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3>Defense: concentration is the lever</h3>
+        <p>Each member self-assigns which area they hold (<span class="mono">mud_war_plans</span>, reused as-is —
+          <b>multiple members may pick the same area</b>). The fold already sums <span class="mono">LEAST(mud,12)</span>
+          across all committers, so 2&ndash;3 defenders on the marquee clear the <b>0.6&middot;P concede floor</b> that one
+          alone cannot.</p>
+        <p>That re-instates the proven <b>(3, 2, 0)</b> Blotto move: stack the V=5 marquee, hold the V=4, <i>concede</i>
+          the V=3. Spreading 1-1-1 holds nothing.</p>
+      </div>
+      <div class="card s-deploy">
+        <h3>Offense: the double-blind horde</h3>
+        <p>Each crew secretly assigns its three waves <b>easy / med / hard</b> one-to-one onto the opponent's three areas
+          (new <span class="mono">mud_war_deploys</span>, leader-only, fogged). You point your hard wave at <i>their</i>
+          pile without seeing where theirs lands on yours.</p>
+        <p>Re-choosable per Hold day, so the read &rarr; counter &rarr; adapt loop survives all the duel rounds.
+          Both crews attack <b>and</b> defend, simultaneously, under fog.</p>
+      </div>
+    </div>
+
+    <div class="note fire">
+      <b>The leader's actual decision tree.</b> "Who's our cleanest rhythm player? Put two on the marquee.
+      Where will <i>they</i> point hard — at our fat Truffle Field, or will they expect us to stack it and feint hard at
+      the Gate? Do we deploy hard at their weakest defender, or play med everywhere and bank the safe margin?" That tension —
+      not twitch alone — is what decides the war.
+    </div>
+
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card">
+        <h3>No headcount lockout</h3>
+        <p>An area with no submitted run scores a <b>deterministic floor-defense</b> (a small fixed effMud from the war seed),
+          not auto-concede &mdash; so an absent member degrades the team gracefully. A 3-active crew reliably holds one area;
+          access tokens let them reach for a third.</p>
+      </div>
+      <div class="card">
+        <h3>Bot war is a real trainer</h3>
+        <p>The Mudlarks deploy a deterministic wave per area and defend via the existing <span class="mono">bot_front_eff</span>
+          scalar. The default onboarding entry point (<span class="mono">challenge_house</span>) practices the exact mechanic,
+          at zero wallet risk.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ECONOMY ============ -->
+  <section id="economy">
+    <span class="eyebrow">Economy</span>
+    <h2>The firewall: snouts as flavor, mud as the verdict</h2>
+    <p>Your idea framed goblins as "stealing snouts." We kept that <i>feel</i> but moved the real win condition off the
+       wallet, because the critics showed that staking real snouts breaks Pillar 3 (pay-to-win) and Pillar 6 (cozy
+       loss-aversion). The resolution:</p>
+
+    <div class="note firewall">
+      <b>The rope moves only on normalized band-mud.</b> A separate, purely <b>cosmetic</b> snout coffer per area is fed by
+      difficulty-scaled hits and drained by leaks (clamped at 0) &mdash; pure juice for the "goblins steal snouts" feel,
+      <i>never</i> read by the fold. The deploy's real bite on the rope is <b>hold-pressure</b> (a hard wave forces more
+      bodies onto an area), not the coffer &mdash; so a deep pile can never buffer weak defense, and no wallet is ever at risk.
+    </div>
+
+    <div class="grid g3" style="margin-top:14px">
+      <div class="card"><h3>No buy-in</h3><p>The Tend phase costs no snouts. The stake is the <b>mud you earn in-war</b>,
+        exactly as today &mdash; wealth and VIP buy nothing.</p></div>
+      <div class="card"><h3>Unchanged payout</h3><p><span class="mono">resolve_war</span> keeps its slings-based pot, the
+        <span class="mono">HOUSE_BONUS=25</span> bot path, the 72h buff, titles, cosmetics and gated Elo. No escrow, no
+        balance debit inside the safety-critical block.</p></div>
+      <div class="card"><h3>Win-trade cooldown</h3><p>A new <span class="mono">crews.next_war_at = now()+24h</span> stamped at
+        resolve blocks a colluding pair from instantly re-challenging to farm the mint.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ COORDINATION ============ -->
+  <section id="coord">
+    <span class="eyebrow">Teamwork fuel</span>
+    <h2>Tickles &amp; barns &mdash; one access lever, kept flat</h2>
+    <p>Your "send tickles / visit barns to give someone the chance to play" instinct is the access economy. We made it
+       <b>one</b> lever (not three), so it stays simple and can't leak pay-to-win.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3>Access fuel = an extra attempt</h3>
+        <p>A teammate's barn-visit or tickle (the unchanged <span class="mono">tickle_at_barn</span>) mints a flat,
+          war-scoped <b>access token</b>: at most <b>+1 short-song attempt per recipient per Hold day</b>. It turns a
+          3-active crew into a 4-active one &mdash; <b>roster relief</b>, never a per-hit power-up.</p>
+        <p>It scores the <i>submitted</i> run, not best-of-N. So retries buy coverage, not a fake ceiling.</p>
+      </div>
+      <div class="card">
+        <h3>Why it can't be farmed</h3>
+        <ul class="tight">
+          <li><b>Crew + war scoped</b>, not friend-graph scoped &mdash; an alt ring can't mint tokens by self-friending;
+            it must occupy one of the 5 seats.</li>
+          <li><b>Flat per-recipient cap</b> regardless of the sender's (faster-regen VIP) tickle bank &mdash; 10 alts grant
+            the same as 1 teammate.</li>
+          <li><b>Self-leak can't grief.</b> The fold <i>sums</i>, never subtracts: a bad actor tapping all-whiff contributes
+            0, they cannot drain mud others banked. The leader's redeploy token pulls them.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONSTANTS ============ -->
+  <section id="constants">
+    <span class="eyebrow">Tuning</span>
+    <h2>Locked numbers</h2>
+    <table>
+      <tr><th>Constant</th><th>Value</th><th>Why</th></tr>
+      <tr><td><span class="k">BUILD_DAYS / WAR_DAYS</span></td><td class="v">2 / 5</td><td>Sum to the locked 7-day fronts clock; the 5 Hold days map 1:1 onto the already-scored fronts days so the rope math is untouched.</td></tr>
+      <tr><td><span class="k">AREAS / V</span></td><td class="v">3 / [5, 4, 3]</td><td>The three areas are the three seeded fronts re-skinned (Truffle / Bridge / Gate) — inherits the validated empty-dominant-set Blotto with zero schema growth.</td></tr>
+      <tr><td><span class="k">NOTES_PER_RUN</span></td><td class="v">3 scored</td><td>Short, so 2&ndash;3 members co-defend one area and their mud SUMS under the 12-cap. A clean run banks ~9; two committers clear the marquee floor (~16) one can't.</td></tr>
+      <tr><td><span class="k">RUN_LENGTH_MS</span></td><td class="v">12000</td><td>A glanceable, retryable run for a single distracted mobile sitting — not a 32s one-shot a notification can destroy.</td></tr>
+      <tr><td><span class="k">RUNS_PER_DAY (Hold)</span></td><td class="v">2 + up to 1 token</td><td>Replaces the 7/21 throw budget on Hold days. Two flat runs for everyone; the access token grants at most one extra.</td></tr>
+      <tr><td><span class="k">PERFECT / GOOD / WEAK</span></td><td class="v">45 / 90 / 150 ms</td><td>Temporal analogs of Slop Toss's gold/green/weak half-widths; tightens to 35ms on hard via the existing streak ramp.</td></tr>
+      <tr><td><span class="k">HOLD_COEF</span></td><td class="v">0.78</td><td><b>Sim-locked.</b> Hold a contested area iff banked mud &ge; <span class="mono">HOLD_COEF · P · PRESS[diff]</span>. Tuned so a <i>hard</i> marquee needs 3 bodies (2&times;cap=24 &lt; 0.78&middot;26&middot;1.30=26.4) while med needs 2 — the lever that makes concentration pay.</td></tr>
+      <tr><td><span class="k">PRESS (hold-pressure)</span></td><td class="v">easy 0.80 · med 1.0 · hard 1.30</td><td><b>Sim-locked.</b> The deploy's rope effect: a harder wave raises the bar to hold the area, forcing more defenders. This is what makes the hidden deployment matter to the outcome.</td></tr>
+      <tr><td><span class="k">window mult / skill σ</span></td><td class="v">1.30/1.0/0.82 · 34/64/108ms</td><td>Difficulty also mildly tightens windows (suppresses a weak defender's mud); σ is the per-skill timing-error calibration (high banks ~full on any difficulty → skill ceiling preserved).</td></tr>
+      <tr><td><span class="k">coffer value / leak</span></td><td class="v">e +2/&minus;4 · m +3/&minus;6 · h +4/&minus;8</td><td><b>Cosmetic only</b> (off-rope juice for the "stolen snouts" feel). Free to tune — never touches the win condition.</td></tr>
+      <tr><td><span class="k">PER_AREA_CAP</span></td><td class="v">12</td><td>Reused PER_FRONT_CAP — caps one member's mud per area so holding still needs 2+ real defenders (the lone-ace kill, now load-bearing on defense).</td></tr>
+      <tr><td><span class="k">FRONT_SCALE / clamps / ROUT</span></td><td class="v">4 / ±4,±2,±5 / 12</td><td>Unchanged rope math; the rhythm outcome feeds <span class="mono">coord_notch</span> through the exact fold the sim certified.</td></tr>
+      <tr><td><span class="k">ATTEMPT_TOKEN_CAP / RALLY</span></td><td class="v">1 / 1</td><td>Flat per-recipient and per-pair caps sever VIP tickle-wealth from in-war power and cap alt-ring farming.</td></tr>
+      <tr><td><span class="k">WAR_COOLDOWN_HOURS</span></td><td class="v">24</td><td>Kills back-to-back win-trade cycling of the resolve mint.</td></tr>
+      <tr><td><span class="k">CHART_SEED</span></td><td class="v mono" style="font-size:11.5px">hashtext(war:day:area:diff:caller) &amp; 2147483647</td><td>Reuses seed_war_board's masked-hash pattern; folding caller_id in defeats the copy-a-perfect-array exploit between co-defenders.</td></tr>
+      <tr><td><span class="k">flag default</span></td><td class="v">mud_rhythm_on() = false</td><td>Same immutable-false gate as mud_fronts_on(); off-path reproduces migration 20260667 byte-for-byte.</td></tr>
+    </table>
+  </section>
+
+  <!-- ============ DATA MODEL ============ -->
+  <section id="data">
+    <span class="eyebrow">Implementation surface</span>
+    <h2>Data model &amp; anti-cheat</h2>
+    <p>One migration — <span class="mono">supabase/migrations/20260668000000_mud_war_rhythm.sql</span> — carrying every
+       touched function verbatim once (no carry-latest clobber), flag-gated off, with a golden-output regression test.</p>
+
+    <div class="grid g3" style="margin-top:14px">
+      <div class="card">
+        <h3><span class="badge b-reuse">reuse</span> as-is</h3>
+        <ul class="tight" style="font-size:14px">
+          <li><span class="mono">mud_wars</span> lifecycle + sweep</li>
+          <li><span class="mono">mud_front_pushes</span> — the super-additive fold, for both phases</li>
+          <li><span class="mono">mud_war_plans</span> — self-assign, multi-per-area</li>
+          <li><span class="mono">mud_war_fronts</span> board (V=[5,4,3])</li>
+          <li><span class="mono">resolve_war</span>, <span class="mono">score_mud_war_days</span>,
+              <span class="mono">fold_front_outcome/margin</span>, <span class="mono">seed_war_board</span></li>
+          <li><span class="mono">crew_ratings</span> + Elo + <span class="mono">/clan-ladder</span></li>
+          <li>fog RLS + <span class="mono">test_fog_rls.sql</span></li>
+          <li><span class="mono">tickle_at_barn</span> + <span class="mono">barn_visits</span></li>
+          <li>Slop Toss juice + FrontBoard UI + goblin art</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="badge b-chg">change</span> additively</h3>
+        <ul class="tight" style="font-size:14px">
+          <li><span class="mono">mud_wars</span> += <span class="mono">build_ends_at</span>,
+              <span class="mono">next_war_at</span>, <span class="mono">rhythm_enabled</span></li>
+          <li><span class="mono">mud_war_fronts</span> += <span class="mono">snout_coffer</span>
+              (cosmetic; never read by the rope)</li>
+          <li><span class="mono">score_mud_war_days</span> phase-gated — no-op on Tend days, unchanged on Hold</li>
+          <li><span class="mono">throw_mud</span> verbatim + sibling <span class="mono">submit_run</span> (band array)</li>
+          <li><span class="mono">challenge_*</span> += cooldown check &amp; stamp</li>
+          <li><span class="mono">war_state</span> += phase / deploy / snoutCoffer / accessTokens (superset; old clients ignore)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="badge b-new">new</span> tables</h3>
+        <p style="font-size:14px"><span class="mono">mud_war_deploys</span><br>
+          <span class="sub">(war, day, crew, target_area, difficulty)</span><br>
+          The hidden double-blind. Inherits the fronts fog RLS + realtime exclusion.</p>
+        <p style="font-size:14px"><span class="mono">mud_war_access</span><br>
+          <span class="sub">(war, recipient, day, tokens)</span><br>
+          War-scoped access pool minted from barn visits. The only place tickles touch the war.</p>
+      </div>
+    </div>
+
+    <h3>Rhythm anti-cheat, end to end</h3>
+    <div class="card">
+      <p style="margin-top:0">The wire contract stays <b>band-enum-only</b>. A Hold run submits an <b>array</b> of up to
+        3 bands. The server:</p>
+      <ol class="tight" style="margin:0">
+        <li>regenerates the deterministic chart from <span class="mono">CHART_SEED</span> to learn note count + per-note archetype;</li>
+        <li>validates <span class="mono">len(bands) == chart length</span> (reject mismatch — anti-replay; pad missing as leaks, truncate overlong);</li>
+        <li>maps each band via the <b>existing</b> <span class="mono">throw_mud</span> CASE (whiff/weak/good/perfect &rarr; 0/1/2/3), clamps per note;</li>
+        <li>banks the summed normalized mud into <span class="mono">mud_front_pushes</span> and applies the cosmetic coffer delta;</li>
+        <li>enforces the per-day run budget via the same race-safe <span class="mono">ON CONFLICT</span> guard.</li>
+      </ol>
+      <p style="margin-bottom:0"><b>Folding <span class="mono">caller_id</span> into the seed</b> defeats the copy-a-perfect-array
+        exploit between co-defenders. A forged all-perfect array yields exactly an honest flawless run —
+        <i>exploit ceiling equals skill ceiling.</i> The fog invariant (opponent's deployment unreadable until reveal) gets a
+        dedicated regression assertion in <span class="mono">test_fog_rls.sql</span>.</p>
+    </div>
+  </section>
+
+  <!-- ============ OPEN FORKS ============ -->
+  <section id="forks">
+    <span class="eyebrow">Decisions pending</span>
+    <h2>Open forks</h2>
+    <p>Proceeding on the bolded default; redirect any time.</p>
+    <table>
+      <tr><th>Question</th><th>Default</th><th>Alternative</th></tr>
+      <tr><td>How many may co-defend one area?</td><td class="v">Uncapped headcount, each capped at 12 mud — so concentration helps via more committers and (3,2,0) stays live.</td><td>Hard-cap 2/area to force spread — only if the sim shows 3-on-marquee trivially solves it.</td></tr>
+      <tr><td>Does the cosmetic coffer pay out?</td><td class="v">Pure juice / vanity — never pays real snouts, keeps the firewall absolute.</td><td>A tiny house-funded bonus for a full coffer — reintroduces a wealth-adjacent term; defer past v1.</td></tr>
+      <tr><td>Deploy authority?</td><td class="v">Leader-only (matches the redeploy gate; clean single-caller double-blind).</td><td>Each member deploys their own counter-wave — richer but multiplies the fog surface; defer.</td></tr>
+      <tr><td>Access-token timing?</td><td class="v">Same-day extra run on an under-defended area (legible relief).</td><td>Banked for the next Hold day — enables an alpha-strike; snowball risk; defer.</td></tr>
+      <tr><td>Difficulty rope knobs final?</td><td class="v"><b>RESOLVED.</b> <span class="mono">PRESS=0.80/1.0/1.30</span>, <span class="mono">HOLD_COEF=0.78</span>, window mult 1.30/1.0/0.82 — locked from <span class="mono">sim_deploy.py</span> (genuine dilemma across 5 seeds).</td><td>The cosmetic coffer numbers stay free to tune; a wider parameter sweep before prod is still wise.</td></tr>
+    </table>
+  </section>
+
+  <!-- ============ PLAN ============ -->
+  <section id="plan">
+    <span class="eyebrow">Roadmap</span>
+    <h2>Implementation plan</h2>
+
+    <div class="phase p0">
+      <div class="tag" style="background:var(--olive-deep)">P0&#10003;</div>
+      <div class="body">
+        <h3>Sim-gate the deploy Blotto <i>before any code</i> &mdash; <span style="color:var(--olive-deep)">DONE, PASS</span></h3>
+        <p><span class="mono">scripts/sim_deploy.py</span> Monte-Carlo'd the deploy game across 5 seeds. It <b>refuted</b> the
+          synthesis's "difficulty is cosmetic-only" claim (a cosmetic difficulty can't move the rope, so the Blotto would be
+          flavour) and <b>found the fix</b>: difficulty raises the area's <b>hold-pressure</b>. Result: genuine dilemma
+          (0 saddle points, no dominant deploy/defense, BR cycle ≥2), <b>coord&gt;scatter 78–80%</b>,
+          <b>skilled-scatter&gt;unskilled-coord 86–93%</b>, mirror draw ~40%, 3-active holds 5V. Numbers locked.</p>
+        <p class="files">scripts/sim_deploy.py · scripts/sim_fronts.py</p>
+        <p class="risk" style="color:var(--olive-deep)">Gate passed. Difficulty rope knobs (PRESS / HOLD_COEF / window mult) locked from the sim.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="tag">P1</div>
+      <div class="body">
+        <h3>One migration: schema + anti-cheat + folds, flag-gated off</h3>
+        <p><span class="mono">20260668000000_mud_war_rhythm.sql</span> carrying every touched function verbatim once:
+          the new columns + <span class="mono">mud_war_deploys</span> / <span class="mono">mud_war_access</span> with fog RLS;
+          the <span class="mono">submit_run</span> RPC; <span class="mono">set_deploy</span> (leader-only); the phase gate in
+          <span class="mono">score_mud_war_days</span>; the cooldown in <span class="mono">challenge_*</span>; bot deploy/defense;
+          <span class="mono">mud_rhythm_on()=false</span>. Plus a golden-output test asserting byte-identical behavior with the
+          flag off, and two new fog assertions.</p>
+        <p class="files">supabase/migrations/20260668000000_mud_war_rhythm.sql · scripts/test_fog_rls.sql · scripts/golden_output.sql</p>
+        <p class="risk">Carry-latest footgun (build 93). Mitigation: single migration, golden regression, diff every carried body against 20260667.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="tag">P2</div>
+      <div class="body">
+        <h3>Constants + client RPC wrappers + hook</h3>
+        <p><span class="mono">constants/mudFights.ts</span> gets the locked numbers (client mirror).
+          <span class="mono">utils/mudWars.ts</span> gets <span class="mono">submitRun</span> / <span class="mono">setDeploy</span>
+          wrappers + extended types (phase, deploy, snoutCoffer, accessTokens). <span class="mono">hooks/useMudWar.ts</span>
+          becomes phase-aware with an optimistic band-mud bump reusing the throwBand pattern; deploys stay <i>off</i> realtime (fog).</p>
+        <p class="files">constants/mudFights.ts · utils/mudWars.ts · hooks/useMudWar.ts</p>
+        <p class="risk">Client/server constant drift — keep the existing MUST-match comment block; the golden test pins the server side.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="tag">P3</div>
+      <div class="body">
+        <h3>Rhythm conveyor in the minigame component</h3>
+        <p>Rewrite the lap loop in <span class="mono">SlopToss.tsx</span> (or a new <span class="mono">RhythmDefense.tsx</span>):
+          a server-charted note conveyor, <span class="mono">classify()</span> re-pointed to temporal <span class="mono">|dt|</span>,
+          a per-note tap handler accumulating <span class="mono">bands[]</span>, incremental per-note submit, and an
+          <span class="mono">onRunComplete(area, bands[])</span> emit. Reuse the entire <span class="mono">fire()</span> juice body,
+          archetypes, telegraph, haptics; soften the leak copy.</p>
+        <p class="files">components/mudwar/SlopToss.tsx · components/mudwar/RhythmDefense.tsx (optional)</p>
+        <p class="risk">Juice regressions during the lap&rarr;conveyor rewrite; keep classify/scorePoints/fire signatures stable and unit-test <span class="mono">classify(|dt|)</span>.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="tag">P4</div>
+      <div class="body">
+        <h3>Two-phase board UI + deploy / hold sheets</h3>
+        <p><span class="mono">FrontBoard.tsx</span> renders Tend vs Hold, area depth, my deployed waves (own live), and the
+          post-fold recap (both sides + which difficulty hit where). <span class="mono">app/mud-war.tsx</span> gets the
+          phase-aware layout — Tend shows the toss + assignment; Hold shows the rhythm run + a deploy sheet + an access indicator.
+          Ship the living spec + this HTML.</p>
+        <p class="files">components/mudwar/FrontBoard.tsx · app/mud-war.tsx · docs/mudwar-rhythm-design.md</p>
+        <p class="risk">UI complexity vs "deeper yet simple" — verify the 3-line onboarding ("Tend 3 areas, then hold them to the beat; deploy your hardest wave where they're weakest") is actually true before shipping.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="tag">P5</div>
+      <div class="body">
+        <h3>Access fuel + abuse hardening + cooldown verify</h3>
+        <p>A <span class="mono">barn_visits</span> post-hook mints crew+war-scoped access tokens (1/pair/day, 1/recipient/day)
+          during a Hold-phase war. Verify the cooldown blocks back-to-back challenges, self-leak can't drain others' mud, and an
+          offline area scores floor-defense (not auto-concede).</p>
+        <p class="files">supabase/migrations/20260668000000_mud_war_rhythm.sql · hooks/useMudWar.ts · utils/mudWars.ts</p>
+        <p class="risk">Alt-ring token farming if minting leaks to the friends graph — gate strictly on is_crew_member / is_war_participant.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RISKS ============ -->
+  <section id="risks">
+    <span class="eyebrow">Honesty</span>
+    <h2>Residual risks &amp; mitigations</h2>
+    <table>
+      <tr><th>Risk</th><th>Mitigation</th></tr>
+      <tr><td>The difficulty-relative leak numbers are <i>asserted</i>, not yet proven to yield an empty dominant set — if hard still dominates, Pillar 1 regresses to "point hard at the juiciest pile."</td><td>P0 hard gate: <span class="mono">sim_deploy.py</span> must show non-constant best-difficulty + a best-response cycle before any migration code. Tune in-sim only.</td></tr>
+      <tr><td>Co-defense with short runs might let 3-on-marquee trivially solve the marquee, collapsing the concentration dilemma into "always stack the V=5."</td><td>Re-run the coord-vs-scatter sim with the summed-short-run model; if auto-won, raise the marquee P or cap committers/area (open fork) until (3,2,0)-vs-spread stays live.</td></tr>
+      <tr><td>Four-migration carry-latest footgun (build 93 already shipped this once) — silently deleting features from 20260667.</td><td>ONE migration carrying every touched body verbatim; a golden-output regression asserting byte-identical behavior with the flag off; diff each carried body before push.</td></tr>
+      <tr><td>Inherited resolve mint + win-trading still leaks value even with the cooldown.</td><td>The 24h cooldown caps cycle frequency and the rope now moves only on normalized skill-mud (no escrow to extract). If telemetry shows inflation, add a flat house-funded sink in a <i>separate</i> later migration, never inside the fold.</td></tr>
+      <tr><td>Offline / under-roster crews lose areas they can't physically cover across 5 Hold days.</td><td>Deterministic floor-defense for un-played areas; access tokens reach a third area; the concede floor gives graceful degradation (3-active reliably holds 1).</td></tr>
+      <tr><td>Cozy-fit: a rhythm-accuracy duel can read as sweaty against the gentle voice.</td><td>Short retryable runs (12s, per-note submit, dropped runs cost nothing), wide default windows, muted-playable, leak = "he slipped past!" not theft, all failure copy softened.</td></tr>
+    </table>
+  </section>
+
+  <hr class="soft" />
+
+  <section id="run">
+    <span class="eyebrow">To actually run it</span>
+    <h2>Activation checklist</h2>
+    <ol class="tight">
+      <li><b>Pass P0.</b> Build and green <span class="mono">scripts/sim_deploy.py</span>; lock the difficulty numbers from its output.</li>
+      <li><b>Author + audit</b> the single migration; run the golden-output + fog regression tests.</li>
+      <li><b>Apply the migration</b> locally — requires an explicit user "go" (never auto-pushed).</li>
+      <li><b>Flip</b> <span class="mono">mud_rhythm_on()</span> &rarr; true to activate rhythm wars on new challenges.</li>
+      <li><b>Playtest</b> in dev via the <span class="mono">__DEV__</span> fast-forward harness: verify Tend banks mud, Deploy fogs,
+        a Hold run commits per-note + sums across co-defenders, the rope folds, the recap reveals both sides, a rout resolves +
+        updates the ladder, and the off-path (flag off) is byte-identical.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <p><b>Songs of the Bog</b> — a fork of the Fronts of the Bog clan layer toward a Guitar-Hero rhythm core, two-phase
+      co-op&rarr;duel cadence, and an active double-blind goblin deployment. Designed to make all three pillars true while
+      honoring "deeper yet relatively simple," and to reuse the validated Fronts substrate (the super-additive fold, the
+      band-enum anti-cheat, the fog RLS, the Elo ladder) rather than rebuild it.</p>
+    <p class="meta">Synthesized from a 12-agent design loop — 5 dimension drafts, 6 adversarial pillar/ops/exploit/feel
+      critics (12 blockers, all folded in), 1 synthesis. Companion living doc: <span class="mono">docs/mudwar-rhythm-design.md</span>.</p>
+  </footer>
+
+</div>
+</body>
+</html>

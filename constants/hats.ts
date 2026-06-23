@@ -135,6 +135,19 @@ export const HAT_IMAGES: Record<string, number> = {
 	golden_truffle: require("../assets/images/hats/golden_truffle.png"),
 	crew_pennant: require("../assets/images/hats/crew_pennant.png"),
 	mud_splatter_aura: require("../assets/images/hats/mud_splatter_aura.png"),
+	// The Goblin King's horde + impact splats (Mud War Slop Toss / Songs of the Bog —
+	// in components/mudwar/SlopToss.tsx + RhythmDefense.tsx). Run + hit/recoil pose per
+	// goblin; sliced by scripts/slice_goblins.py.
+	goblin_grunt: require("../assets/images/hats/goblin_grunt.png"),
+	goblin_scout: require("../assets/images/hats/goblin_scout.png"),
+	goblin_brute: require("../assets/images/hats/goblin_brute.png"),
+	goblin_warboss: require("../assets/images/hats/goblin_warboss.png"),
+	goblin_grunt_hit: require("../assets/images/hats/goblin_grunt_hit.png"),
+	goblin_scout_hit: require("../assets/images/hats/goblin_scout_hit.png"),
+	goblin_brute_hit: require("../assets/images/hats/goblin_brute_hit.png"),
+	goblin_warboss_hit: require("../assets/images/hats/goblin_warboss_hit.png"),
+	mud_splat: require("../assets/images/hats/mud_splat.png"),
+	mud_splat_gold: require("../assets/images/hats/mud_splat_gold.png"),
 	swamp_bubble_aura: require("../assets/images/hats/swamp_bubble_aura.png"),
 	firefly_aura: require("../assets/images/hats/firefly_aura.png"),
 	golden_bog_aura: require("../assets/images/hats/golden_bog_aura.png"),
