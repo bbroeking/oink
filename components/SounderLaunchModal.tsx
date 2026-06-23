@@ -34,7 +34,28 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
 			<View style={styles.backdrop}>
 				<Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
 				<Animated.View style={[styles.card, { opacity: anim, transform: [{ scale }] }]}>
-					<Image source={HAT_IMAGES.crew_pennant} style={styles.hero} resizeMode="contain" />
+					{/* The debut art shows the Slop Toss combat: a warboss charges in, a splat lands. */}
+					<View style={styles.heroScene}>
+						<Animated.Image
+							source={HAT_IMAGES.goblin_warboss}
+							style={[
+								styles.hero,
+								{ transform: [
+									{ translateX: anim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) },
+									{ rotate: anim.interpolate({ inputRange: [0, 1], outputRange: ["-6deg", "0deg"] }) },
+								] },
+							]}
+							resizeMode="contain"
+						/>
+						<Animated.Image
+							source={HAT_IMAGES.mud_splat}
+							style={[
+								styles.heroSplat,
+								{ opacity: anim, transform: [{ scale: anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.2, 1.2, 1] }) }] },
+							]}
+							resizeMode="contain"
+						/>
+					</View>
 					<Text style={styles.kicker}>NEW · MUD WARS</Text>
 					<Text style={styles.title}>Mud Wars are here!</Text>
 					<Text style={styles.body}>
@@ -72,7 +93,9 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		...SHADOW_SM,
 	},
-	hero: { width: 84, height: 84, marginBottom: 8 },
+	heroScene: { width: 110, height: 92, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+	hero: { width: 84, height: 84 },
+	heroSplat: { position: "absolute", right: 6, bottom: 8, width: 38, height: 38 },
 	kicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
 	title: { fontFamily: FONTS.whimsy, fontSize: 26, color: INK, textAlign: "center", marginBottom: 10 },
 	body: { fontFamily: FONTS.hand, fontSize: 16, lineHeight: 22, color: WHIMSY.mute, textAlign: "center", marginBottom: 18 },

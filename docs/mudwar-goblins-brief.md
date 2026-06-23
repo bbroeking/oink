@@ -1,5 +1,14 @@
 # Mud Wars — Goblin Horde art brief (icon-gen)
 
+> **STATUS (2026-06-17): DONE — Batches 1–3 generated, sliced, and wired.**
+> The 10-sprite set (4 run + 4 hit + plain/gold splats) is sliced via
+> `scripts/slice_goblins.py` (valley-cut, not the hat slicer) into
+> `assets/images/hats/goblin_*` + `mud_splat*`, registered in `HAT_IMAGES`,
+> and wired into `components/mudwar/SlopToss.tsx` (run sprite, ~420ms hit-pose
+> swap on connect, the watching crowd, and gold splats for warboss hits).
+> Goblins are intentionally NOT in any shop catalog, so `compute_overlays.py`
+> skips them (they're never worn on the pig). Batch 4 (lane decals) still DEFERRED.
+
 Art for the Slop Toss minigame: the Goblin King's horde you pelt with mud, plus
 the impact splat. Generated via the ChatGPT icon-gen flow (`/icon-gen
 docs/mudwar-goblins-brief.md`). The connector CANNOT upload — drag the reference

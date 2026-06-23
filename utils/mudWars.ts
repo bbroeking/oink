@@ -69,6 +69,70 @@ export interface WarSide {
 
 export type WarStatus = "pending" | "active" | "resolved" | "declined";
 
+// ── Fronts (Phase 1c) — the contested-Blotto layer (war_fronts_state) ─────────
+// Present on WarState.fronts only when the war is fronts_enabled. The board shows
+// my own live mud per front; the opponent's allocation is fogged until a day folds
+// (then it surfaces in `recap`). Mirrors war_fronts_state in 20260667.
+export type PBand = "light" | "medium" | "heavy";
+
+export interface FrontCell {
+	front_key: string;
+	value: number;          // V (rope notches if held)
+	p_band: PBand;          // fuzzy hold-pressure hint (exact P hidden until fold)
+	mineMud: number;        // my crew's capped effMud on this front today
+	mineCommitters: number; // how many of my crew are committed here
+}
+export interface FrontPlan {
+	front_key: string;
+	locked: boolean;        // flips true on my first throw of the day
+}
+// The deployed-wave difficulty an opponent (or the bot) maps onto an area.
+export type Difficulty = "easy" | "med" | "hard";
+
+// The two recap shapes the server can send (war_fronts_state, post-fold):
+//  • fronts (head-to-head, non-rhythm): a single fold winner per front.
+//  • rhythm (mirror): each side holds independently vs the OTHER's deployed
+//    pressure; the wave that attacked MY area is revealed (attackingMe).
+// They're discriminated by DayRecap.mode so the board can render either.
+export interface RecapFrontFronts {
+	front_key: string;
+	value: number;
+	mineMud: number;
+	themMud: number;                          // revealed only post-fold
+	winner: "mine" | "them" | "none";         // server's authoritative fold outcome
+}
+export interface RecapFrontRhythm {
+	front_key: string;
+	value: number;
+	mineMud: number;
+	themMud: number;                          // revealed only post-fold
+	mineHeld: boolean;                        // did I clear my area's hold-pressure?
+	themHeld: boolean;                        // did the opponent clear theirs?
+	attackingMe: Difficulty;                  // the hidden wave the opponent sent at MY area
+	iDeployed: Difficulty;                    // the wave I sent at THEIR area
+}
+export type RecapFront = RecapFrontFronts | RecapFrontRhythm;
+export interface DayRecap {
+	day: string;
+	mode?: "fronts" | "rhythm";   // absent on pre-rhythm servers -> treat as "fronts"
+	fronts: RecapFront[];
+}
+export interface FrontsState {
+	phase?: WarPhase;             // 'build' (Tend) | 'war' (Hold) | a terminal status
+	board: FrontCell[];           // ordered by value desc
+	myPlan: FrontPlan | null;
+	myDeploy: Record<string, Difficulty> | null; // MY crew's deploy today (front_key -> diff); null until set
+	accessTokens: number;         // my extra Hold-run attempts today (from barn visits)
+	redeployUsed: boolean;        // my crew's one-per-war redeploy token spent?
+	weeklyModifier: string | null;
+	recap: DayRecap | null;       // last folded day, both sides revealed
+}
+
+// Phase of a rhythm war: Tend (build via the toss) -> Hold (defend via runs).
+// On a non-rhythm war the server reports 'war' throughout; a terminal status
+// (resolved/declined) can also surface here.
+export type WarPhase = "build" | "war" | WarStatus;
+
 export interface WarState {
 	warId: string;
 	status: WarStatus;
@@ -80,8 +144,23 @@ export interface WarState {
 	myThrowsRemaining: number;  // throw-minigame budget (THROWS_PER_DAY - used today)
 	ropePos?: number;           // daily-tug rope (challenger-positive notches; Phase 1b)
 	ropeNorm?: number;          // rope normalized to the caller's POV, -1..1 (+ = me ahead)
+	frontsEnabled?: boolean;    // this war uses the Fronts layer (Phase 1c)
+	rhythmEnabled?: boolean;    // this war uses the Rhythm layer (Phase 1d; implies frontsEnabled)
+	phase?: WarPhase;           // 'build' (Tend) | 'war' (Hold) | a terminal status
+	buildEndsAt?: string | null; // Tend->Hold boundary (started_at + 48h); null on non-rhythm
+	fronts?: FrontsState | null; // present iff frontsEnabled
 	mine: WarSide;
 	them: WarSide;
+}
+
+// The clan ladder — crew_leaderboard ("list of clans with relative strength").
+export interface LadderEntry {
+	crew_id: string;
+	name: string;
+	rating: number;
+	wars_played: number;
+	provisional: boolean;  // first 3 wars (high-K, unranked-ish)
+	memberCount: number;
 }
 
 // The 4 outcome bands of a mud throw. The CLIENT classifies the release into a
@@ -205,6 +284,58 @@ export function throwMud(
 		{ p_war: warId, p_band: band }
 	);
 }
+// ── Rhythm actions (Phase 1d) ────────────────────────────────────────────────
+// Hold-run submit: send the ARRAY of up to NOTES_PER_RUN band ENUMs (one per
+// scored goblin); the server maps each via the same CASE throw_mud uses, banks
+// the summed normalized mud into my area, and enforces the daily RUN budget.
+// Mirrors throwMud's wire-is-band-enum-only anti-cheat contract.
+export function submitRun(
+	warId: string,
+	bands: MudBand[]
+): Promise<RpcResult<{ run_pts: number; notes_scored: number; slings_today: number; runs_remaining: number; front: string }>> {
+	return rpcAction<{ run_pts: number; notes_scored: number; slings_today: number; runs_remaining: number; front: string }>(
+		"submit_run",
+		{ p_war: warId, p_bands: bands }
+	);
+}
+// Leader-only deploy: map this crew's one hard/med/easy wave onto the opponent's
+// THREE distinct areas (a bijection). Fogged + re-choosable until the day folds.
+export function setDeploy(
+	warId: string,
+	hardFront: string,
+	medFront: string,
+	easyFront: string
+): Promise<RpcResult<{ deploy: { hard: string; med: string; easy: string } }>> {
+	return rpcAction<{ deploy: { hard: string; med: string; easy: string } }>("set_deploy", {
+		p_war: warId,
+		p_hard_front: hardFront,
+		p_med_front: medFront,
+		p_easy_front: easyFront,
+	});
+}
+
+// ── Fronts actions (Phase 1c) ────────────────────────────────────────────────
+// Self-assign which front your throws land on (pre-lock only; locks on first throw).
+export function setFrontPlan(warId: string, frontKey: string): Promise<RpcResult<{ front: string }>> {
+	return rpcAction<{ front: string }>("set_front_plan", { p_war: warId, p_front_key: frontKey });
+}
+// Leader spends the crew's one redeploy token to move a (possibly locked) member.
+export function redeployMember(
+	warId: string,
+	userId: string,
+	frontKey: string
+): Promise<RpcResult<{ front: string }>> {
+	return rpcAction<{ front: string }>("redeploy_member", {
+		p_war: warId,
+		p_user: userId,
+		p_front_key: frontKey,
+	});
+}
+// The public clan ladder.
+export async function fetchCrewLeaderboard(limit = 50): Promise<LadderEntry[]> {
+	return (await rpc<LadderEntry[]>("crew_leaderboard", { p_limit: limit })) ?? [];
+}
+
 export function resolveWar(warId: string): Promise<RpcResult<{ winner: string | null }>> {
 	return rpcAction<{ winner: string | null }>("resolve_war", { p_war: warId });
 }
@@ -213,6 +344,13 @@ export function resolveWar(warId: string): Promise<RpcResult<{ winner: string | 
 // arc (sling -> resolve -> spoils -> win modal) without the 5-day wait.
 export function devEndWarNow(warId: string): Promise<RpcResult<{ winner: string | null }>> {
 	return rpcAction<{ winner: string | null }>("dev_end_war_now", { p_war: warId });
+}
+
+// DEV/TEST only — fast-forward a rhythm war from Tend into the HOLD phase so the
+// rhythm core (Hold runs + leader deploy + mirror fold) is reachable without the
+// 2-day Tend wait. Admin-gated server-side. Pairs with devEndWarNow.
+export function devSkipToHold(warId: string): Promise<RpcResult<{ phase: string }>> {
+	return rpcAction<{ phase: string }>("dev_skip_to_hold", { p_war: warId });
 }
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────

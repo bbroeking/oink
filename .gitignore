@@ -59,3 +59,4 @@ build-*.ipa
 
 # Python bytecode
 __pycache__/
+docs/mudwar-rhythm-design.pdf

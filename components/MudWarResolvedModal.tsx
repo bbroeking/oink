@@ -8,6 +8,7 @@
 import { useEffect, useRef } from "react";
 import {
 	Animated,
+	Easing,
 	Image,
 	Modal,
 	Pressable,
@@ -47,6 +48,7 @@ export function MudWarResolvedModal({
 	onClose,
 }: Props) {
 	const pop = useRef(new Animated.Value(0)).current;
+	const gloat = useRef(new Animated.Value(0)).current; // the Goblin King's taunt-bob on a loss
 
 	useEffect(() => {
 		if (!visible) {
@@ -64,7 +66,20 @@ export function MudWarResolvedModal({
 				? Haptics.NotificationFeedbackType.Success
 				: Haptics.NotificationFeedbackType.Warning
 		).catch(() => {});
-	}, [visible, result, pop]);
+		// On a loss the Goblin King gloats — a slow taunt-bob loop.
+		let loop: Animated.CompositeAnimation | undefined;
+		if (result === "loss") {
+			gloat.setValue(0);
+			loop = Animated.loop(
+				Animated.sequence([
+					Animated.timing(gloat, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+					Animated.timing(gloat, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+				])
+			);
+			loop.start();
+		}
+		return () => loop?.stop();
+	}, [visible, result, pop, gloat]);
 
 	if (!visible) return null;
 
@@ -100,21 +115,35 @@ export function MudWarResolvedModal({
 						]}
 					>
 						{win ? (
-							<Image
-								source={
-									wonCosmetic && HAT_IMAGES[wonCosmetic.id]
-										? HAT_IMAGES[wonCosmetic.id]
-										: HAT_IMAGES.swamp_crown
-								}
-								style={styles.heroImg}
-								resizeMode="contain"
-							/>
+							wonCosmetic && HAT_IMAGES[wonCosmetic.id] ? (
+								// The earned cosmetic IS the payoff — show it plainly.
+								<Image source={HAT_IMAGES[wonCosmetic.id]} style={styles.heroImg} resizeMode="contain" />
+							) : (
+								// No cosmetic to reveal — a routed goblin tumbling off instead.
+								<Animated.Image
+									source={HAT_IMAGES.goblin_grunt_hit}
+									style={[
+										styles.heroImg,
+										{ transform: [{ rotate: pop.interpolate({ inputRange: [0, 1], outputRange: ["40deg", "0deg"] }) }] },
+									]}
+									resizeMode="contain"
+								/>
+							)
 						) : result === "draw" ? (
 							<Icon name="handshake" size={84} color={WHIMSY.mute} />
 						) : (
-							<Image
-								source={HAT_IMAGES.mud_splatter_aura}
-								style={styles.heroImg}
+							// The Goblin King gloats over the mire.
+							<Animated.Image
+								source={HAT_IMAGES.goblin_warboss}
+								style={[
+									styles.heroImg,
+									{
+										transform: [
+											{ translateY: gloat.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) },
+											{ rotate: gloat.interpolate({ inputRange: [0, 1], outputRange: ["-3deg", "3deg"] }) },
+										],
+									},
+								]}
 								resizeMode="contain"
 							/>
 						)}

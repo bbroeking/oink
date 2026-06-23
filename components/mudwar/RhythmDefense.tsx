@@ -1,72 +1,79 @@
-// Slop Toss — the skill minigame inside a Mud Fight. Goblins from the Goblin
-// King's horde run across a bog lane one after another; you HOLD the bucket to
-// ready a throw (it cocks back, charging) and RELEASE the instant the goblin
-// crosses the center STRIKE ZONE. Timing is the whole skill: dead-center gold =
-// perfect, the green gate = good, the shoulders = weak, off-zone = the goblin
-// escapes (whiff).
+// Songs of the Bog — the HOLD-phase rhythm defense (Phase 1d). A sibling to
+// SlopToss (which TEND still uses); this is the short skill run defenders play
+// during Hold. A conveyor of goblins from the Goblin King's horde streams toward
+// a FIXED strike line at the bog's center; you TAP the bucket the instant each
+// SCORED goblin crosses it. Land NOTES_PER_RUN scored notes (~RUN_LENGTH_MS) and
+// the run banks its summed normalized mud into your area.
 //
-// FLESHED OUT: varied goblin ARCHETYPES (grunt / scout / brute / warboss) each
-// with its own size, run sprite + hit/recoil sprite, point value, AND GAIT — a
-// per-archetype lap speed + bob so the scout darts, the brute lumbers, the
-// warboss struts. On a connect the arena does a hit-stop (brief freeze), a
-// tier-scaled screen-shake, a band-scaled knockback, and the hit pose crossfades
-// in; a perfect adds a gold burst ring. The bog is alive: parallax backdrop,
-// swaying reeds, a reacting watching horde, a warboss danger vignette. The lane
-// backdrop tracks the siege day. The run loop is gated on focus (battery).
+// REUSES SLOP TOSS'S JUICE WHOLESALE: the same goblin archetypes/sprites,
+// hit-stop, tier-scaled screenshake, band-scaled recoil/knockback, flung splats,
+// floaters, gold-burst ring, haptics, the focus-gated loop lifecycle, and the
+// gold-post strike telegraph. The ONE mechanic change vs the toss: the timing
+// classifier is TEMPORAL, not spatial — |dt| (ms from the note's ideal crossing
+// time) -> perfect/good/weak/whiff — because a Hold run is a beat you tap on, not
+// a hold/release.
 //
-// ANTI-CHEAT UNCHANGED: the goblin's position at release is read ONLY on the
-// client (runnerXRef) to pick the 4-value band enum; that enum is all that
-// crosses the wire (onThrow). The server owns band->points (0/1/2/3) + the
-// 7-throw / 21-mud caps. Every animation value here (charge, hit-stop, shake,
-// bob, recoil) is PURELY cosmetic — none feeds runnerXRef or classify().
+// DIFFICULTY = the DEFENDED AREA'S PUBLIC p_band (light/medium/heavy -> easy/med/
+// hard, decision B). It drives tempo/density/window FEEL only; the opponent's
+// DEPLOYED difficulty is a hidden pressure shown only in the post-day recap.
+//
+// ANTI-CHEAT UNCHANGED FROM THE TOSS: the goblin's position at the tap is read
+// ONLY on the client (runnerXRef) to derive |dt| and pick the 4-value band enum.
+// The band ARRAY (one per scored note) is all that crosses the wire (onRunComplete);
+// the server owns band->mud (0/1/2/3) + the per-day RUN cap. Every animation value
+// here is PURELY cosmetic — none feeds the band classification.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { HAT_IMAGES } from "@/constants/hats";
 import { MudBand } from "@/utils/mudWars";
+import {
+	NOTES_PER_RUN,
+	PERFECT_WINDOW_MS,
+	GOOD_WINDOW_MS,
+	WEAK_WINDOW_MS,
+	type Difficulty,
+} from "@/constants/mudFights";
 import { FONTS, STICKER_SHADOW, WHIMSY } from "@/constants/theme";
 
-// Lane backdrop per siege day (1..WAR_LENGTH_DAYS=5; day 5 = the festival
-// finale). Module-level require()s — never require() in render; indexed by a
-// clamped day. (golden_mire_bg stays an equippable cosmetic, not a lane backdrop.)
-const BG_BY_DAY = [
-	HAT_IMAGES.mud_pit_bg, // day 1
-	HAT_IMAGES.reed_marsh_bg, // day 2
-	HAT_IMAGES.mud_derby_bg, // day 3
-	HAT_IMAGES.bog_dusk_bg, // day 4
-	HAT_IMAGES.festival_night_bg, // day 5 — the festival finale
-];
-
-// Tuning knobs. Strike zone as half-widths of the 0..1 lane from dead center.
-const GOLD_HALF = 0.05; // |x-0.5| <= this -> perfect (center 10% of lane)
-const GREEN_HALF = 0.18; // -> good (center 36%)
-const WEAK_HALF = 0.3; // -> weak (shoulders); beyond -> whiff
 const STAGE_H = 380;
 
-// Goblin archetypes — the horde. Each crossing re-rolls one (weighted). `size`
-// is the sprite px; `pts` scales the vanity score; `lapMs` is the crossing time
-// (faster = harder to time = scout); `bobMs`/`bobAmp` are the run-cycle gait.
+// Per-difficulty FEEL of the song. The defended area's p_band picks one (decision
+// B). Tempo (lapMs) + density (extra unscored pass-through goblins between scored
+// notes) + window tightness are all COSMETIC — only the |dt| classification leaves.
+// The window multiplier tightens harder songs, matching the server's secondary
+// DIFF_MULT lever (1.30/1.0/0.82) so a weak defender leaks more on a heavy area.
+interface SongFeel {
+	lapMs: number;       // crossing duration of a goblin (faster = harder to time)
+	windowMult: number;  // multiplies the base ms windows (smaller = tighter)
+	announce: string;    // the song-start chip
+}
+const SONG: Record<Difficulty, SongFeel> = {
+	easy: { lapMs: 2000, windowMult: 1.3, announce: "A light song — the bog hums" },
+	med: { lapMs: 1550, windowMult: 1.0, announce: "A steady song — hold the line" },
+	hard: { lapMs: 1150, windowMult: 0.82, announce: "A heavy song — the horde pours in" },
+};
+
+// Goblin archetypes — the horde (mirrors SlopToss). Each scored crossing re-rolls
+// one (weighted). `size`/`pts` are cosmetic; `bobMs`/`bobAmp` are the run-cycle gait.
 interface Archetype {
 	key: string;
-	name: string; // player-facing
-	announce: string; // the "a goblin approaches" chip copy
-	sprite: number; // run pose
-	hitSprite: number; // recoil pose, crossfaded in on a connect
+	name: string;
+	sprite: number;
+	hitSprite: number;
 	size: number;
-	pts: number; // vanity-points multiplier
+	pts: number;
 	weight: number;
-	lapMs: number; // crossing duration (gait speed)
-	bobMs: number; // half-period of the run bob
-	bobAmp: number; // run bob height (px)
+	bobMs: number;
+	bobAmp: number;
 }
 const ARCHETYPES: Archetype[] = [
-	{ key: "grunt", name: "Bog Grunt", announce: "A Bog Grunt charges!", sprite: HAT_IMAGES.goblin_grunt, hitSprite: HAT_IMAGES.goblin_grunt_hit, size: 60, pts: 1.0, weight: 5, lapMs: 1600, bobMs: 230, bobAmp: 7 },
-	{ key: "scout", name: "Mire Scout", announce: "A Mire Scout darts past!", sprite: HAT_IMAGES.goblin_scout, hitSprite: HAT_IMAGES.goblin_scout_hit, size: 48, pts: 1.5, weight: 3, lapMs: 1150, bobMs: 150, bobAmp: 5 }, // small + fast = hard, worth more
-	{ key: "brute", name: "Slop Brute", announce: "A Slop Brute lumbers up!", sprite: HAT_IMAGES.goblin_brute, hitSprite: HAT_IMAGES.goblin_brute_hit, size: 92, pts: 0.7, weight: 3, lapMs: 2200, bobMs: 330, bobAmp: 10 }, // big + slow = easy, worth less
-	{ key: "warboss", name: "Warboss", announce: "The Goblin King sends a WARBOSS!", sprite: HAT_IMAGES.goblin_warboss, hitSprite: HAT_IMAGES.goblin_warboss_hit, size: 104, pts: 2.4, weight: 1, lapMs: 2400, bobMs: 300, bobAmp: 9 }, // rare, big payoff, a slow swagger
+	{ key: "grunt", name: "Bog Grunt", sprite: HAT_IMAGES.goblin_grunt, hitSprite: HAT_IMAGES.goblin_grunt_hit, size: 60, pts: 1.0, weight: 5, bobMs: 230, bobAmp: 7 },
+	{ key: "scout", name: "Mire Scout", sprite: HAT_IMAGES.goblin_scout, hitSprite: HAT_IMAGES.goblin_scout_hit, size: 48, pts: 1.5, weight: 3, bobMs: 150, bobAmp: 5 },
+	{ key: "brute", name: "Slop Brute", sprite: HAT_IMAGES.goblin_brute, hitSprite: HAT_IMAGES.goblin_brute_hit, size: 92, pts: 0.7, weight: 3, bobMs: 330, bobAmp: 10 },
+	{ key: "warboss", name: "Warboss", sprite: HAT_IMAGES.goblin_warboss, hitSprite: HAT_IMAGES.goblin_warboss_hit, size: 104, pts: 2.4, weight: 1, bobMs: 300, bobAmp: 9 },
 ];
-// The dim watching horde behind the lane — a few archetypes for silhouette variety.
 const CROWD = [
 	HAT_IMAGES.goblin_grunt,
 	HAT_IMAGES.goblin_brute,
@@ -84,12 +91,14 @@ function rollArchetype(): Archetype {
 	return ARCHETYPES[0];
 }
 
-function classify(x: number, goldHalf: number): MudBand {
-	const d = Math.abs(x - 0.5);
-	if (d <= goldHalf) return "perfect";
-	if (d <= GREEN_HALF) return "good";
-	if (d <= WEAK_HALF) return "weak";
-	return "whiff";
+// TEMPORAL classifier — the one mechanic that differs from the spatial toss.
+// |dt| is ms from the goblin's ideal crossing time at the strike line. The
+// windows scale with the song's tightness (harder = smaller).
+function classifyDt(absDt: number, windowMult: number): MudBand {
+	if (absDt <= PERFECT_WINDOW_MS * windowMult) return "perfect";
+	if (absDt <= GOOD_WINDOW_MS * windowMult) return "good";
+	if (absDt <= WEAK_WINDOW_MS * windowMult) return "weak";
+	return "whiff"; // a leak — he slipped past
 }
 
 const BAND_BASE: Record<MudBand, number> = { whiff: 0, weak: 120, good: 450, perfect: 1000 };
@@ -100,9 +109,10 @@ function scorePoints(band: MudBand, accuracy: number, streak: number, ptsMult: n
 }
 
 interface Props {
-	onThrow: (band: MudBand) => void;
-	throwsRemaining: number;
-	day?: number; // siege day -> lane backdrop
+	onRunComplete: (bands: MudBand[]) => void;
+	runsRemaining: number;
+	pBand: "light" | "medium" | "heavy";
+	day?: number;
 }
 interface Floater {
 	id: number;
@@ -117,7 +127,7 @@ interface Splat {
 	rot: string;
 	dur: number;
 	a: Animated.Value;
-	gold: boolean; // warboss hits fling gold-flecked treasure-mud
+	gold: boolean;
 }
 interface Ring {
 	id: number;
@@ -125,41 +135,53 @@ interface Ring {
 	gold: boolean;
 }
 
-export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
-	// In dev, keep the bucket LIVE even after today's throw budget is spent so the
-	// minigame stays testable without waiting for the UTC day to reset. The server
-	// still enforces the real 7/day cap on what actually banks (throwBand no-ops
-	// past it) — this only keeps the bucket pressable for feel-testing. Prod: spent = empty.
-	const outOfThrows = throwsRemaining <= 0;
-	const empty = outOfThrows && !__DEV__;
+const BG_BY_DAY = [
+	HAT_IMAGES.mud_pit_bg,
+	HAT_IMAGES.reed_marsh_bg,
+	HAT_IMAGES.mud_derby_bg,
+	HAT_IMAGES.bog_dusk_bg,
+	HAT_IMAGES.festival_night_bg,
+];
+
+const P_BAND_TO_DIFF: Record<"light" | "medium" | "heavy", Difficulty> = {
+	light: "easy",
+	medium: "med",
+	heavy: "hard",
+};
+
+export function RhythmDefense({ onRunComplete, runsRemaining, pBand, day = 3 }: Props) {
+	const difficulty = P_BAND_TO_DIFF[pBand];
+	const song = SONG[difficulty];
+	// In dev keep the bucket LIVE past the daily run budget so the run stays
+	// testable without waiting for the UTC reset. The server still enforces the
+	// real RUNS_PER_DAY cap on what banks (submitRun no-ops past it). Prod: spent = empty.
+	const outOfRuns = runsRemaining <= 0;
+	const empty = outOfRuns && !__DEV__;
 	const bgSource = BG_BY_DAY[Math.min(Math.max(day - 1, 0), BG_BY_DAY.length - 1)];
 
 	const [laneW, setLaneW] = useState(0);
 	const runnerX = useRef(new Animated.Value(0)).current;
-	const runnerXRef = useRef(0); // release snapshot — the ONLY thing classify() reads
+	const runnerXRef = useRef(0); // crossing snapshot — the ONLY thing the classifier reads
 	const ambient = useRef(new Animated.Value(0)).current;
 	const bucketScale = useRef(new Animated.Value(1)).current;
-	const charge = useRef(new Animated.Value(0)).current; // hold wind-up
-	const recoil = useRef(new Animated.Value(0)).current; // band-scaled hit reaction (tilt + hop)
-	const gobFlee = useRef(new Animated.Value(0)).current; // perfect: knocked back; whiff: escapes forward
-	const bob = useRef(new Animated.Value(0)).current; // run-cycle
+	const recoil = useRef(new Animated.Value(0)).current;
+	const gobFlee = useRef(new Animated.Value(0)).current;
+	const bob = useRef(new Animated.Value(0)).current;
 	const stagePunch = useRef(new Animated.Value(1)).current;
-	const shake = useRef(new Animated.Value(0)).current; // impact screen-shake
-	const bossMode = useRef(new Animated.Value(0)).current; // warboss danger vignette
-	const hitFade = useRef(new Animated.Value(0)).current; // 0 = run sprite, 1 = hit sprite (crossfade)
+	const shake = useRef(new Animated.Value(0)).current;
+	const bossMode = useRef(new Animated.Value(0)).current;
+	const hitFade = useRef(new Animated.Value(0)).current;
 	const crowdReact = useRef(new Animated.Value(0)).current;
 
 	// Lifecycle refs.
 	const focusedRef = useRef(false);
 	const lapRef = useRef<Animated.CompositeAnimation | null>(null);
-	const bobLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 	const freezeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const hitCountRef = useRef(0); // latch: only crossfade back to run when no hit is in flight
+	const hitCountRef = useRef(0);
 	const hitTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
 	const [goblin, setGoblin] = useState<Archetype>(() => rollArchetype());
 	const goblinRef = useRef(goblin);
-	const gobAnnounce = useRef(new Animated.Value(0)).current;
 
 	const [score, setScore] = useState(0);
 	const streakRef = useRef(0);
@@ -170,9 +192,15 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 	const [rings, setRings] = useState<Ring[]>([]);
 	const idRef = useRef(0);
 
-	// The run-cycle bob loop, restarted per archetype so each goblin's gait is its
-	// own. Native-driven, no listener/setState — cheap.
-	const startBob = useCallback(
+	// Run progress: the bands collected so far this run + whether a run is in flight.
+	const bandsRef = useRef<MudBand[]>([]);
+	const [notesDone, setNotesDone] = useState(0);
+	const runOverRef = useRef(false); // latched once the run hits NOTES_PER_RUN
+	const [runOver, setRunOver] = useState(false);
+
+	// The run-cycle bob loop, restarted per archetype.
+	const bobLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+	const startBobLoop = useCallback(
 		(ms: number) => {
 			bobLoopRef.current?.stop();
 			bob.setValue(0);
@@ -188,72 +216,71 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 		[bob]
 	);
 
-	// One lap of the crossing, then re-roll a fresh goblin and recurse. Driven as a
-	// self-restarting chain (not Animated.loop) so a hit-stop can pause it and
-	// resume from the captured position. `from` > 0 means a hit-stop resume.
+	// Advance the run: append the band, bump the counter, and finish the run when
+	// it reaches NOTES_PER_RUN. The band array is the ONLY thing that leaves.
+	const registerNote = useCallback(
+		(band: MudBand) => {
+			if (runOverRef.current) return;
+			bandsRef.current = [...bandsRef.current, band];
+			const done = bandsRef.current.length;
+			setNotesDone(done);
+			if (done >= NOTES_PER_RUN) {
+				runOverRef.current = true;
+				setRunOver(true);
+				lapRef.current?.stop();
+				bobLoopRef.current?.stop();
+				onRunComplete(bandsRef.current.slice(0, NOTES_PER_RUN));
+			}
+		},
+		[onRunComplete]
+	);
+
+	// One lap of the crossing, then re-roll a fresh goblin and recurse. The lap
+	// SPEED is the song's tempo (not the archetype's, so difficulty owns the beat).
+	// `from` > 0 means a hit-stop resume.
 	const animateLap = useCallback(
 		(from: number) => {
-			if (!focusedRef.current) return;
+			if (!focusedRef.current || runOverRef.current) return;
 			runnerX.setValue(from);
-			const g = goblinRef.current;
 			const a = Animated.timing(runnerX, {
 				toValue: 1,
-				duration: Math.max(60, g.lapMs * (1 - from)),
+				duration: Math.max(60, song.lapMs * (1 - from)),
 				easing: Easing.linear,
 				useNativeDriver: true,
 			});
 			lapRef.current = a;
 			a.start(({ finished }) => {
-				// finished:false means stopped (hit-stop freeze or blur) — don't recurse.
-				if (!finished || !focusedRef.current) return;
-				// Reset the hit-pose crossfade so a fresh goblin never inherits an
-				// in-flight recoil (a late weak hit's 420ms latch can outlive the lap).
+				if (!finished || !focusedRef.current || runOverRef.current) return;
+				// He crossed un-tapped — a leak. Count it as a whiff note (softened copy).
+				registerNote("whiff");
+				if (runOverRef.current) return;
 				hitTimersRef.current.forEach(clearTimeout);
 				hitTimersRef.current.clear();
 				hitCountRef.current = 0;
 				hitFade.setValue(0);
 				const next = rollArchetype();
-				goblinRef.current = next; // keep the ref in sync immediately for the next lap's cadence
+				goblinRef.current = next;
 				setGoblin(next);
 				animateLap(0);
 			});
 		},
-		[runnerX, hitFade]
-	);
-
-	// Hit-stop: pause the lap on a connect, hold the recoil frame, then resume.
-	const freeze = useCallback(
-		(ms: number) => {
-			runnerX.stopAnimation((v) => {
-				if (freezeTimer.current) clearTimeout(freezeTimer.current);
-				freezeTimer.current = setTimeout(() => {
-					if (focusedRef.current) animateLap(v);
-				}, ms);
-			});
-		},
-		[animateLap, runnerX]
+		[runnerX, hitFade, song.lapMs, registerNote]
 	);
 
 	// Announce + boss vignette + gait, each time the foe changes.
 	useEffect(() => {
 		goblinRef.current = goblin;
-		startBob(goblin.bobMs);
-		gobAnnounce.setValue(0);
+		startBobLoop(goblin.bobMs);
 		if (goblin.key === "warboss") {
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
 			Animated.spring(bossMode, { toValue: 1, useNativeDriver: true, speed: 12, bounciness: 6 }).start();
 		} else {
 			Animated.timing(bossMode, { toValue: 0, duration: 400, useNativeDriver: true }).start();
 		}
-		Animated.sequence([
-			Animated.spring(gobAnnounce, { toValue: 1, useNativeDriver: true, speed: 16, bounciness: 8 }),
-			Animated.delay(goblin.key === "warboss" ? 1300 : 850),
-			Animated.timing(gobAnnounce, { toValue: 0, duration: 300, useNativeDriver: true }),
-		]).start();
-	}, [goblin, gobAnnounce, bossMode, startBob]);
+	}, [goblin, bossMode, startBobLoop]);
 
 	const fire = useCallback(
-		(band: MudBand, accuracy: number, releaseX: number) => {
+		(band: MudBand, accuracy: number, crossX: number) => {
 			const arche = goblinRef.current;
 			const tier = band === "perfect" ? 2 : band === "good" ? 1 : 0;
 			const hit = band !== "whiff";
@@ -281,15 +308,12 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 				setCombo(0);
 			}
 
-			// Bucket recoil squish + whip the charge wind-up forward.
-			Animated.spring(charge, { toValue: 0, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
+			// Bucket recoil squish.
 			Animated.sequence([
 				Animated.spring(bucketScale, { toValue: 0.84, useNativeDriver: true, speed: 50, bounciness: 0 }),
 				Animated.spring(bucketScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 8 }),
 			]).start();
 
-			// Crossfade to the recoil pose on a connect, latched so overlapping hits
-			// within the window never flip back to the run frame mid-flight.
 			if (hit) {
 				hitCountRef.current += 1;
 				Animated.timing(hitFade, { toValue: 1, duration: 60, useNativeDriver: true }).start();
@@ -302,8 +326,6 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 				}, 420);
 				hitTimersRef.current.add(t);
 
-				// Band-scaled knockback: a perfect punts the imp (full tilt + hop), a
-				// weak just rocks it. recoil drives both the rotate and the hop.
 				const peak = band === "perfect" ? 1 : band === "good" ? 0.75 : 0.5;
 				recoil.setValue(0);
 				Animated.sequence([
@@ -311,7 +333,6 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 					Animated.spring(recoil, { toValue: 0, useNativeDriver: true, speed: 8, bounciness: 6 }),
 				]).start();
 
-				// Tier-scaled screen-shake (decaying oscillation), warboss-perfect heavier.
 				const mag = (tier === 2 ? 1 : tier === 1 ? 0.5 : 0.25) * (arche.key === "warboss" && band === "perfect" ? 1.4 : 1);
 				shake.setValue(0);
 				Animated.sequence(
@@ -319,13 +340,10 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 						Animated.timing(shake, { toValue: m * mag, duration: 45, useNativeDriver: true })
 					)
 				).start();
-
-				// Hit-stop: freeze the lap on the recoil frame, then resume.
-				if (band === "good") freeze(70);
-				else if (band === "perfect") freeze(120);
+				// NB: the hit-stop pause before the NEXT goblin is owned by onTap's single
+				// advance (below), not a freeze() here — two lap-restarts would fight.
 			}
 
-			// A perfect/whiff also slides the goblin (knocked back vs. escaping).
 			if (band === "perfect" || band === "whiff") {
 				gobFlee.setValue(0);
 				Animated.timing(gobFlee, { toValue: band === "whiff" ? 1 : -1, duration: 300, useNativeDriver: true }).start(() =>
@@ -338,14 +356,6 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 					Animated.spring(stagePunch, { toValue: 1.05, useNativeDriver: true, speed: 60, bounciness: 0 }),
 					Animated.spring(stagePunch, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 8 }),
 				]).start();
-				if (streakRef.current >= 3) {
-					const ht = setTimeout(() => {
-						hitTimersRef.current.delete(ht);
-						Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
-					}, 90);
-					hitTimersRef.current.add(ht);
-				}
-				// Gold burst ring.
 				const rid = idRef.current++;
 				const ra = new Animated.Value(0);
 				setRings((r) => [...r, { id: rid, a: ra, gold: arche.key === "warboss" }]);
@@ -354,7 +364,6 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 				);
 			}
 
-			// Crowd reacts: surge in on a hit, gloat-bob on a whiff.
 			crowdReact.setValue(0);
 			if (hit) {
 				Animated.sequence([
@@ -368,10 +377,8 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 				]).start();
 			}
 
-			// Flung mud: flies from the bucket toward the goblin and SPLATS (squash on
-			// landing). Warboss hits fling more, gold-flecked.
 			if (hit) {
-				const goblinX = -arche.size + releaseX * (laneW + arche.size) + arche.size / 2;
+				const goblinX = -arche.size + crossX * (laneW + arche.size) + arche.size / 2;
 				const targetDX = goblinX - laneW / 2;
 				const gold = arche.key === "warboss";
 				const count = [3, 5, 6][tier] + (gold ? 3 : 0);
@@ -398,34 +405,83 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 			Animated.timing(fa, { toValue: 1, duration: 850, useNativeDriver: true }).start(() =>
 				setFloaters((f) => f.filter((x) => x.id !== fid))
 			);
-
-			onThrow(band);
 		},
-		[bucketScale, charge, comboAnim, crowdReact, freeze, gobFlee, hitFade, recoil, shake, stagePunch, laneW, onThrow]
+		[bucketScale, comboAnim, crowdReact, gobFlee, hitFade, recoil, shake, stagePunch, laneW]
 	);
 
-	const onPressIn = useCallback(() => {
-		if (empty) return;
-		Animated.spring(bucketScale, { toValue: 1.12, useNativeDriver: true, speed: 30, bounciness: 6 }).start();
-		charge.setValue(0);
-		Animated.timing(charge, { toValue: 1, duration: 600, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
-	}, [empty, bucketScale, charge]);
+	// Tap = score the goblin at the strike line. The TEMPORAL band comes from |dt|
+	// (ms from the lap's ideal crossing time); the cosmetic position snapshot drives
+	// the splat origin. After firing, advance the run + roll the next goblin.
+	const onTap = useCallback(() => {
+		if (empty || runOverRef.current) return;
+		const x = runnerXRef.current;
+		// |dt|: how far the goblin's CURRENT progress (0..1) is from dead-center 0.5,
+		// converted to ms via the song tempo. The lane-position read is client-only —
+		// same anti-cheat source of truth as the toss.
+		const absDt = Math.abs(x - 0.5) * song.lapMs;
+		const band = classifyDt(absDt, song.windowMult);
+		const accuracy = Math.max(0, 1 - absDt / (WEAK_WINDOW_MS * song.windowMult));
+		fire(band, accuracy, x);
+		registerNote(band);
+		if (runOverRef.current) return;
+		// Roll the next goblin + lap for the next note.
+		hitTimersRef.current.forEach(clearTimeout);
+		hitTimersRef.current.clear();
+		hitCountRef.current = 0;
+		const next = rollArchetype();
+		goblinRef.current = next;
+		setGoblin(next);
+		// SINGLE advance to the next runner, with a hit-stop pause that scales with the
+		// band (a perfect lingers longest). This is the ONLY lap-restart per tap — fire()
+		// no longer schedules its own, so the two never race on runnerX.
+		const pause = band === "perfect" ? 120 : band === "good" ? 70 : 0;
+		runnerX.stopAnimation(() => {
+			if (freezeTimer.current) clearTimeout(freezeTimer.current);
+			if (pause > 0) {
+				freezeTimer.current = setTimeout(() => {
+					if (focusedRef.current && !runOverRef.current) animateLap(0);
+				}, pause);
+			} else if (focusedRef.current && !runOverRef.current) {
+				animateLap(0);
+			}
+		});
+	}, [empty, fire, registerNote, song.lapMs, song.windowMult, animateLap, runnerX]);
 
-	const onPressOut = useCallback(() => {
-		if (empty) return;
-		const x = runnerXRef.current; // the release snapshot — anti-cheat source of truth
-		// Difficulty ramp: the gold window tightens as the streak climbs.
-		const goldHalf = GOLD_HALF * (1 - Math.min(streakRef.current, 5) * 0.06);
-		const d = Math.abs(x - 0.5);
-		const accuracy = Math.max(0, 1 - d / GREEN_HALF);
-		fire(classify(x, goldHalf), accuracy, x);
-	}, [empty, fire]);
+	// Begin a FRESH run (after one banks) without remounting — used when the player
+	// still has runs left this Hold day. Resets the per-run band buffer + score juice
+	// and re-arms the conveyor. The daily cap is enforced by the parent (runsRemaining)
+	// + the server (submit_run no-ops past it).
+	const beginRun = useCallback(() => {
+		if (empty || (runsRemaining <= 0 && !__DEV__)) return;
+		bandsRef.current = [];
+		setNotesDone(0);
+		streakRef.current = 0;
+		setCombo(0);
+		setScore(0);
+		runOverRef.current = false;
+		setRunOver(false);
+		hitTimersRef.current.forEach(clearTimeout);
+		hitTimersRef.current.clear();
+		hitCountRef.current = 0;
+		hitFade.setValue(0);
+		const next = rollArchetype();
+		goblinRef.current = next;
+		setGoblin(next);
+		startBobLoop(next.bobMs);
+		Haptics.selectionAsync().catch(() => {});
+		animateLap(0);
+	}, [empty, runsRemaining, hitFade, startBobLoop, animateLap]);
 
-	// Loop lifecycle gated on FOCUS, not just mount — so the run loop, ambient
-	// loop, per-frame listener and bob stop when the screen is backgrounded.
+	// Loop lifecycle gated on FOCUS (battery) — mirrors SlopToss.
 	useFocusEffect(
 		useCallback(() => {
 			focusedRef.current = true;
+			runOverRef.current = false;
+			setRunOver(false);
+			bandsRef.current = [];
+			setNotesDone(0);
+			streakRef.current = 0;
+			setScore(0);
 			runnerX.setValue(0);
 			animateLap(0);
 			ambient.setValue(0);
@@ -436,7 +492,7 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 			const id = runnerX.addListener(({ value }) => {
 				runnerXRef.current = value;
 			});
-			startBob(goblinRef.current.bobMs);
+			startBobLoop(goblinRef.current.bobMs);
 			return () => {
 				focusedRef.current = false;
 				runnerX.stopAnimation();
@@ -447,10 +503,11 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 				hitTimersRef.current.forEach(clearTimeout);
 				hitTimersRef.current.clear();
 			};
-		}, [animateLap, startBob, runnerX, ambient])
+			// animateLap depends on song.lapMs; re-arming on focus is intentional.
+		}, [animateLap, startBobLoop, runnerX, ambient])
 	);
 
-	// Memoized interpolations (size/lane-dependent ones rebuild only when those change).
+	// Memoized interpolations (mirrors SlopToss).
 	const runnerTX = useMemo(
 		() => runnerX.interpolate({ inputRange: [0, 1], outputRange: [-goblin.size, Math.max(0, laneW)] }),
 		[runnerX, goblin.size, laneW]
@@ -470,31 +527,38 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 	const reedLeftRot = useMemo(() => ambient.interpolate({ inputRange: [0, 0.5, 1], outputRange: ["8deg", "12deg", "8deg"] }), [ambient]);
 	const reedRightRot = useMemo(() => ambient.interpolate({ inputRange: [0, 0.5, 1], outputRange: ["-8deg", "-12deg", "-8deg"] }), [ambient]);
 	const bucketIdleTY = useMemo(() => ambient.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, -4, 0] }), [ambient]);
-	const chargeRot = useMemo(() => charge.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "-14deg"] }), [charge]);
-	const chargeRingScale = useMemo(() => charge.interpolate({ inputRange: [0, 1], outputRange: [1.3, 1] }), [charge]);
-	const chargeRingOpacity = useMemo(() => charge.interpolate({ inputRange: [0, 1], outputRange: [0, 0.5] }), [charge]);
 	const shakeTX = useMemo(() => shake.interpolate({ inputRange: [-1, 1], outputRange: [-6, 6] }), [shake]);
 	const shakeRot = useMemo(() => shake.interpolate({ inputRange: [-1, 1], outputRange: ["-0.6deg", "0.6deg"] }), [shake]);
 	const bossVignette = useMemo(() => bossMode.interpolate({ inputRange: [0, 1], outputRange: [0, 0.22] }), [bossMode]);
-	// Gold-post telegraph: brightens + grows as the goblin nears dead-center; a
-	// white blink fires right at the strike. Derived from runnerX — zero loop cost.
+	// Gold-post strike telegraph: brightens + grows as the goblin nears dead-center.
 	const proximity = useMemo(() => runnerX.interpolate({ inputRange: [0.34, 0.5, 0.66], outputRange: [0, 1, 0], extrapolate: "clamp" }), [runnerX]);
 	const goldOpacity = useMemo(() => proximity.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }), [proximity]);
 	const goldScaleY = useMemo(() => proximity.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }), [proximity]);
 	const goldBlink = useMemo(() => runnerX.interpolate({ inputRange: [0.45, 0.5, 0.55], outputRange: [0, 0.85, 0], extrapolate: "clamp" }), [runnerX]);
 
-	const gateW = GREEN_HALF * 2 * laneW;
-	const goldW = GOLD_HALF * 2 * laneW;
+	// The strike line is FIXED at center — a thin gold post, no green gate (timing
+	// is temporal, so there's no spatial shoulder zone to draw).
+	const postW = 10;
+
+	// After a run banks, the bucket re-arms for the NEXT run when one remains. In
+	// dev the bucket stays live past the cap (mirrors SlopToss) for feel-testing.
+	const canStartNext = runOver && !empty && (runsRemaining > 0 || __DEV__);
+	const bucketDisabled = empty || (runOver && !canStartNext);
+
+	const runsLabel = empty
+		? "Out of runs — the horde regroups till tomorrow"
+		: outOfRuns
+		? "dev · runs spent — bucket kept live to test"
+		: `tap as each goblin crosses · ${runsRemaining} ${runsRemaining === 1 ? "run" : "runs"} left`;
 
 	return (
 		<Animated.View style={[styles.stageWrap, { transform: [{ scale: stagePunch }, { translateX: shakeTX }, { rotate: shakeRot }] }]}>
 			<View style={styles.stage} onLayout={(e) => setLaneW(e.nativeEvent.layout.width)}>
 				<Animated.Image source={bgSource} resizeMode="cover" style={[styles.bg, { transform: [{ translateX: bgDrift }] }]} />
 				<View style={styles.scrim} />
-				{/* Warboss danger vignette */}
 				<Animated.View pointerEvents="none" style={[styles.bossVignette, { opacity: bossVignette }]} />
 
-				{/* Watching horde — parallax drift + breathing bob + reaction */}
+				{/* Watching horde */}
 				<Animated.View
 					style={[styles.crowd, { transform: [{ translateX: crowdParallax }, { translateY: crowdTY }, { translateY: crowdReactTY }, { scale: crowdReactScale }] }]}
 					pointerEvents="none"
@@ -504,10 +568,16 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 					))}
 				</Animated.View>
 
-				{/* Score chip + combo ribbon */}
+				{/* Score chip + run progress pips */}
 				<View style={styles.scoreChip}>
 					<Text style={styles.scoreText}>{score.toLocaleString()}</Text>
 				</View>
+				<View style={styles.progressPips}>
+					{Array.from({ length: NOTES_PER_RUN }).map((_, i) => (
+						<View key={i} style={[styles.progressPip, i < notesDone && styles.progressPipDone]} />
+					))}
+				</View>
+
 				{combo >= 2 && (
 					<Animated.View
 						pointerEvents="none"
@@ -520,23 +590,10 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 					</Animated.View>
 				)}
 
-				{/* "A goblin approaches" chip — names the foe each crossing */}
-				<Animated.View
-					pointerEvents="none"
-					style={[
-						styles.announce,
-						goblin.key === "warboss" && styles.announceBoss,
-						{ opacity: gobAnnounce, transform: [{ translateY: gobAnnounce.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }] },
-					]}
-				>
-					<Text style={[styles.announceText, goblin.key === "warboss" && styles.announceBossText]}>{goblin.announce}</Text>
-				</Animated.View>
-
-				{/* Run lane: strike gate + gold post (telegraph) + the goblin + burst rings */}
+				{/* Run lane: fixed strike post (telegraph) + the goblin + burst rings */}
 				<View style={styles.lane} pointerEvents="none">
-					<View style={[styles.gate, { left: laneW / 2 - gateW / 2, width: gateW }]} />
-					<Animated.View style={[styles.goldPost, { left: laneW / 2 - goldW / 2, width: Math.max(8, goldW), opacity: goldOpacity, transform: [{ scaleY: goldScaleY }] }]} />
-					<Animated.View style={[styles.goldBlink, { left: laneW / 2 - goldW / 2, width: Math.max(8, goldW), opacity: goldBlink }]} />
+					<Animated.View style={[styles.goldPost, { left: laneW / 2 - postW / 2, width: postW, opacity: goldOpacity, transform: [{ scaleY: goldScaleY }] }]} />
+					<Animated.View style={[styles.goldBlink, { left: laneW / 2 - postW / 2, width: postW, opacity: goldBlink }]} />
 
 					<Animated.View
 						style={[
@@ -575,7 +632,7 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 					))}
 				</View>
 
-				{/* Reed curtains (swaying arena dressing) */}
+				{/* Reed curtains */}
 				<Animated.View style={[styles.reed, styles.reedLeft, { transform: [{ rotate: reedLeftRot }] }]} pointerEvents="none" />
 				<Animated.View style={[styles.reed, styles.reedRight, { transform: [{ rotate: reedRightRot }] }]} pointerEvents="none" />
 
@@ -626,31 +683,39 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 							? "caught him"
 							: f.band === "weak"
 							? "glancing"
-							: "he scampered off!"}
+							: "he slipped past!"}
 					</Animated.Text>
 				))}
 
-				<Pressable onPressIn={onPressIn} onPressOut={onPressOut} disabled={empty} style={styles.bucketWrap}>
-					{!empty && (
-						<Animated.View pointerEvents="none" style={[styles.chargeRing, { opacity: chargeRingOpacity, transform: [{ scale: chargeRingScale }] }]} />
-					)}
+				<Pressable
+					onPress={canStartNext ? beginRun : onTap}
+					disabled={bucketDisabled}
+					style={styles.bucketWrap}
+				>
 					<Animated.View
 						style={[
 							styles.bucket,
-							empty && styles.bucketEmpty,
-							{ transform: [{ scale: bucketScale }, { rotate: chargeRot }, ...(empty ? [] : [{ translateY: bucketIdleTY }])] },
+							bucketDisabled && styles.bucketEmpty,
+							{ transform: [{ scale: bucketScale }, ...(bucketDisabled ? [] : [{ translateY: bucketIdleTY }])] },
 						]}
 					>
-						<Image source={HAT_IMAGES.slop_bucket} resizeMode="contain" style={[styles.bucketImg, empty && { opacity: 0.4 }]} />
+						<Image source={HAT_IMAGES.slop_bucket} resizeMode="contain" style={[styles.bucketImg, bucketDisabled && { opacity: 0.4 }]} />
 					</Animated.View>
 				</Pressable>
 
+				{/* Song banner — the area-band difficulty (decision B) */}
+				{!runOver && (
+					<View style={styles.songChip}>
+						<Text style={styles.songText}>{song.announce}</Text>
+					</View>
+				)}
+
 				<Text style={styles.label}>
-					{empty
-						? "Out of slings — the horde regroups till tomorrow"
-						: outOfThrows
-						? "dev · throws spent — bucket kept live to test"
-						: `hold the bucket · let fly as he crosses · ${throwsRemaining} slings left`}
+					{runOver
+						? canStartNext
+							? "Run banked — tap to hold the line again"
+							: "Run banked — the bog soaks it up till tomorrow"
+						: runsLabel}
 				</Text>
 			</View>
 		</Animated.View>
@@ -678,24 +743,20 @@ const styles = StyleSheet.create({
 
 	scoreChip: { position: "absolute", top: 10, left: 10, backgroundColor: "rgba(20,16,28,0.55)", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3 },
 	scoreText: { fontFamily: FONTS.whimsy, fontSize: 20, color: "#fff" },
-	comboRibbon: { position: "absolute", top: 10, alignSelf: "center", backgroundColor: WHIMSY.sun, borderWidth: 2, borderColor: WHIMSY.ink, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4 },
+	progressPips: { position: "absolute", top: 12, right: 12, flexDirection: "row", gap: 5 },
+	progressPip: {
+		width: 12,
+		height: 12,
+		borderRadius: 6,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: "rgba(255,255,255,0.35)",
+	},
+	progressPipDone: { backgroundColor: WHIMSY.sun },
+	comboRibbon: { position: "absolute", top: 36, alignSelf: "center", backgroundColor: WHIMSY.sun, borderWidth: 2, borderColor: WHIMSY.ink, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4 },
 	comboText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 
-	announce: {
-		position: "absolute",
-		top: STAGE_H * 0.3,
-		alignSelf: "center",
-		backgroundColor: "rgba(20,16,28,0.6)",
-		borderRadius: 10,
-		paddingHorizontal: 12,
-		paddingVertical: 4,
-	},
-	announceText: { fontFamily: FONTS.hand, fontSize: 14, color: "#fff" },
-	announceBoss: { backgroundColor: WHIMSY.sun, borderWidth: 2, borderColor: WHIMSY.ink, paddingVertical: 6 },
-	announceBossText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
-
 	lane: { position: "absolute", left: 0, right: 0, top: STAGE_H * 0.42, height: 96 },
-	gate: { position: "absolute", top: 0, bottom: 0, backgroundColor: "rgba(91,201,125,0.32)", borderRadius: 6 },
 	goldPost: { position: "absolute", top: -6, bottom: -6, backgroundColor: "rgba(245,196,74,0.85)", borderRadius: 6 },
 	goldBlink: { position: "absolute", top: -6, bottom: -6, backgroundColor: "rgba(255,255,255,0.95)", borderRadius: 6 },
 	runner: { position: "absolute", bottom: 4 },
@@ -713,10 +774,19 @@ const styles = StyleSheet.create({
 	floaterPerfect: { color: WHIMSY.sun, fontSize: 24 },
 
 	bucketWrap: { position: "absolute", bottom: 8, alignSelf: "center", alignItems: "center", justifyContent: "center" },
-	chargeRing: { position: "absolute", width: 132, height: 132, borderRadius: 66, borderWidth: 3, borderColor: WHIMSY.sun },
 	bucket: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: WHIMSY.ink, backgroundColor: WHIMSY.sun, alignItems: "center", justifyContent: "center" },
 	bucketEmpty: { backgroundColor: WHIMSY.cream2 },
 	bucketImg: { width: 54, height: 54 },
 
+	songChip: {
+		position: "absolute",
+		top: STAGE_H * 0.3,
+		alignSelf: "center",
+		backgroundColor: "rgba(20,16,28,0.6)",
+		borderRadius: 10,
+		paddingHorizontal: 12,
+		paddingVertical: 4,
+	},
+	songText: { fontFamily: FONTS.hand, fontSize: 14, color: "#fff" },
 	label: { position: "absolute", bottom: 0, left: 0, right: 0, textAlign: "center", paddingVertical: 4, fontFamily: FONTS.hand, fontSize: 13, color: "#fff" },
 });
