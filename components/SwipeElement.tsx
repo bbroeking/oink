@@ -80,6 +80,13 @@ export default function SwipeElement({
 	const sevenY = useRef(new Animated.Value(0)).current;
 	const [pigAnim, setPigAnim] = useState<PigAnimation>("idle");
 	const [pigFrameIdx, setPigFrameIdx] = useState(0);
+	// A tap that lands while the pig is mid-reaction is QUEUED here (not dropped)
+	// and replayed once the pig is back at rest — see fireReaction + the flush
+	// effect below. Keeps fast taps from feeling unresponsive ("dead pig").
+	const pendingTapRef = useRef(false);
+	// Mini-delay before a queued tap replays, so the transition reads cleanly
+	// rather than snapping straight from one reaction into the next. Tunable.
+	const MINI_DELAY_MS = 180;
 	// Mirror /item-anchor screen rel-placement overrides (dev-only).
 	const [relOverrides, setRelOverrides] = useState<
 		Record<string, RelSpec>
@@ -116,9 +123,35 @@ export default function SwipeElement({
 		"wave",
 	];
 
+	// Play one reaction + run the tickle. Extracted from handlePress so a tap
+	// that lands MID-reaction can be QUEUED (pendingTapRef) and replayed by the
+	// flush effect once the pig is back at rest — no tap is silently dropped.
+	const fireReaction = () => {
+		if (canTickle) {
+			const pick = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
+			setPigAnim(pick);
+			// Single-frame reactions (happy/surprise/wave) don't auto-complete —
+			// hold them briefly then revert. Jump auto-completes via onComplete.
+			if (pick !== "jump") {
+				setTimeout(() => {
+					setPigAnim((cur) => (cur === pick ? restingAnim : cur));
+				}, 700);
+			}
+			// Universal animation-watchdog: if `pick`'s natural exit never fires
+			// (sprite unmounted, focus changed mid-anim, or the last-tickle race
+			// where canTickle flips false before completion), force back to
+			// idle/sad. Without this, the rest-gate would lock all future taps.
+			const reactionPick = pick;
+			setTimeout(() => {
+				setPigAnim((cur) => (cur === reactionPick ? restingAnim : cur));
+			}, 2500);
+		}
+		onLuckySwipe();
+	};
+
 	const handlePress = () => {
-		// Always give tactile press feedback — even if we're going to ignore
-		// the tap because of an in-progress reaction.
+		// Always give tactile press feedback + the squish, even when the tap is
+		// going to be queued behind an in-progress reaction.
 		Haptics.impactAsync(
 			canTickle
 				? Haptics.ImpactFeedbackStyle.Light
@@ -137,39 +170,15 @@ export default function SwipeElement({
 			}),
 		]).start();
 
-		// Block taps while a reaction or 6-7 sequence is mid-play. The count
-		// and the new animation hold until the pig is back in idle/sad.
-		const reacting = !REST_STATES.has(pigAnim);
-		if (reacting) return;
-
-		if (canTickle) {
-			const pick = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
-			setPigAnim(pick);
-			// Single-frame reactions (happy/surprise/wave) don't auto-complete —
-			// hold them briefly then revert. Jump auto-completes via onComplete.
-			if (pick !== "jump") {
-				setTimeout(() => {
-					setPigAnim((cur) =>
-						cur === pick ? restingAnim : cur
-					);
-				}, 700);
-			}
-			// Universal animation-watchdog: if `pick`'s natural exit never
-			// fires (jump's onComplete didn't trigger because the sprite
-			// unmounted, focus changed mid-anim, or the very-last-tickle
-			// race where canTickle flips false before completion), force
-			// the state back to idle/sad. Tuned for the longest reaction
-			// (~1.6s jump) plus headroom. Without this, the `reacting`
-			// gate in handlePress locks all future taps. Same shape as
-			// the 6-7 safety timer below.
-			const reactionPick = pick;
-			setTimeout(() => {
-				setPigAnim((cur) =>
-					cur === reactionPick ? restingAnim : cur
-				);
-			}, 2500);
+		// Tap mid-reaction (or mid-6-7): DON'T drop it. Queue one pending tap so
+		// the pig responds with a fresh reaction once the current one ends (a
+		// mini-delay later), instead of feeling unresponsive. The flush effect
+		// below replays it. Collapses to a single pending reaction.
+		if (!REST_STATES.has(pigAnim)) {
+			pendingTapRef.current = true;
+			return;
 		}
-		onLuckySwipe();
+		fireReaction();
 	};
 
 	const handleJumpComplete = () => {
@@ -183,6 +192,20 @@ export default function SwipeElement({
 		// "idle" when balance regens.
 		setPigAnim(restingAnim);
 	};
+
+	// Flush a queued mid-reaction tap: once the pig is back at a resting pose
+	// and a tap was queued, replay it after MINI_DELAY_MS so no tap is lost and
+	// the transition reads cleanly. Deps are [pigAnim] ON PURPOSE — fireReaction
+	// is a fresh closure each render, so adding it would re-run the effect and
+	// clear the timeout before it fires. pendingTapRef is cleared first, so the
+	// effect is a harmless no-op on any unrelated re-render.
+	useEffect(() => {
+		if (!REST_STATES.has(pigAnim) || !pendingTapRef.current) return;
+		pendingTapRef.current = false;
+		const id = setTimeout(() => fireReaction(), MINI_DELAY_MS);
+		return () => clearTimeout(id);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [pigAnim]);
 
 	// 6-7 bounce sequence triggered by playSixSeven counter changing.
 	//
