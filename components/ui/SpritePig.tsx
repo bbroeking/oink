@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Image, ImageStyle, StyleProp } from "react-native";
+import { Animated, Image, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
 const FRAMES: Record<string, number> = {
 	idle_1: require("../../assets/images/sprites/rosie/idle_1.png"),
@@ -74,7 +74,7 @@ const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
 interface Props {
 	animation: PigAnimation;
 	size?: number;
-	style?: StyleProp<ImageStyle>;
+	style?: StyleProp<ViewStyle>;
 	onComplete?: () => void;
 	onFrame?: (idx: number) => void;
 	// Optional per-animation override that swaps in a different frame set.
@@ -152,11 +152,73 @@ export function SpritePig({
 	}, [idx]);
 
 	const key = activeFrames[Math.min(idx, activeFrames.length - 1)];
+	const curSrc = FRAMES[key];
+
+	// Cross-dissolve every frame change. The OUTGOING frame is held on a top
+	// layer and faded out over the incoming one, so the idle loop "circles"
+	// smoothly and every idle<->reaction swap blends instead of hard-cutting
+	// a pose. prevSrcRef lags one render (this effect runs each commit and
+	// updates it at the end), so on any source change it still holds the frame
+	// we were just showing — that's the one we fade out. Same two-layer trick
+	// as AnimatedBackground.
+	const [outgoing, setOutgoing] = useState<number | null>(null);
+	const outOpacity = useRef(new Animated.Value(0)).current;
+	const prevSrcRef = useRef<number | null>(null);
+	// Stop a mid-flight fade on unmount so its end-callback can't setState on a
+	// gone component (e.g. navigating away while a reaction is dissolving).
+	const mountedRef = useRef(true);
+	useEffect(
+		() => () => {
+			mountedRef.current = false;
+			outOpacity.stopAnimation();
+		},
+		[outOpacity]
+	);
+	useEffect(() => {
+		// Manual frame stepping (align tool) wants crisp frames — never blend.
+		if (frameIdx !== undefined) {
+			prevSrcRef.current = curSrc;
+			return;
+		}
+		const prev = prevSrcRef.current;
+		if (prev != null && prev !== curSrc) {
+			const period = 1000 / activeFps;
+			const dur = Math.min(CROSSFADE_MS, period * 0.6);
+			setOutgoing(prev);
+			outOpacity.stopAnimation();
+			outOpacity.setValue(1);
+			Animated.timing(outOpacity, {
+				toValue: 0,
+				duration: dur,
+				useNativeDriver: true,
+			}).start(({ finished }) => {
+				if (finished && mountedRef.current) setOutgoing(null);
+			});
+		}
+		prevSrcRef.current = curSrc;
+		// Only re-evaluate when the displayed source (or align-tool control)
+		// actually changes — not on every unrelated parent re-render. prevSrcRef
+		// still lags one render because it's written at the end of this effect.
+	}, [curSrc, activeFps, frameIdx, outOpacity]);
+
 	return (
-		<Image
-			source={FRAMES[key]}
-			style={[{ width: size, height: size }, style]}
-			resizeMode="contain"
-		/>
+		<View style={[{ width: size, height: size }, style]}>
+			<Image source={curSrc} style={styles.fill} resizeMode="contain" />
+			{outgoing != null && outgoing !== curSrc && (
+				<Animated.Image
+					source={outgoing}
+					style={[styles.fill, { opacity: outOpacity }]}
+					resizeMode="contain"
+				/>
+			)}
+		</View>
 	);
 }
+
+// Max cross-dissolve length; clamped below the frame period so fast
+// animations (jump/surprise) blend quickly and slow ones (idle) stay smooth.
+const CROSSFADE_MS = 150;
+
+const styles = StyleSheet.create({
+	fill: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" },
+});

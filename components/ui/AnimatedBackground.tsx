@@ -93,6 +93,7 @@ export function AnimatedBackground({
 
 	if (n === 0) return <View style={styles.root}>{children}</View>;
 
+	// Frames are non-interactive (pointerEvents lives in styles.fill — see note).
 	const layerA = (
 		<Animated.Image
 			key="a"
@@ -122,9 +123,12 @@ const styles = StyleSheet.create({
 	// flex:1 so it fills the screen via the parent's flex — same as the static
 	// PageBackground/ImageBackground that fills correctly.
 	root: { flex: 1, width: "100%", height: "100%" },
-	// Each frame fills the root. Explicit width/height 100% (not bare
-	// absoluteFill) so the <Image> stretches to the container instead of its
-	// intrinsic 355×593 — otherwise `cover` only fills a centered band.
-	fill: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" },
-	content: { flex: 1 },
+	// Explicit width/height 100% (not bare absoluteFill) so `cover` fills the
+	// screen instead of the image's intrinsic 355×593 (a centered band).
+	// pointerEvents:"none" + the zIndex pair are LOAD-BEARING: on the new arch
+	// (Fabric) an absolute sibling can hit-test ABOVE a later flex sibling, so
+	// without them these full-screen frames swallow every touch on the screen
+	// they back (the Barn went fully dead). Guarded by AnimatedBackground.test.
+	fill: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" },
+	content: { flex: 1, zIndex: 1 },
 });
