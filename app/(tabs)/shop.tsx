@@ -29,9 +29,9 @@ import {
 	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
 import { SLOT_COLUMN, slotForCategory, columnForCategory } from "@/constants/slots";
-import type { TitlePlacement } from "@/constants/title_types";
 import { categoryIcon } from "@/constants/emojiArt";
 import { Icon } from "@/components/ui/Icon";
+import { Glyph, IconText, type GlyphName } from "@/components/ui/Glyph";
 import { COLORS, FONTS, KICKER_PILL, WHIMSY, STICKER_SHADOW, SHADOW_SM, SPACE, RADII, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
@@ -82,6 +82,23 @@ const CATEGORY_LABELS: Record<string, string> = {
 	background: "Backgrounds",
 	flag: "Flags",
 	tickle_particle: "Tickle Particles",
+};
+
+// Per-category filter-chip icon, so the Collectibles filter rail reads at a
+// glance instead of text-only. Keys mirror CATEGORY_LABELS (flag is excluded
+// from the catalog, so it needs no chip icon).
+const CATEGORY_GLYPH: Record<string, GlyphName> = {
+	hat: "tophat",
+	glasses: "glasses",
+	bow: "bow",
+	scarf: "scarf",
+	mask: "mask",
+	necklace: "beads",
+	cape: "superhero",
+	held: "wand",
+	aura: "sparkle",
+	background: "scene",
+	tickle_particle: "party",
 };
 
 const CATEGORY_DISPLAY_ORDER = [
@@ -232,179 +249,6 @@ function HatThumb({
 		</View>
 	);
 }
-
-function ShopTitleRow({
-	title,
-	canAfford,
-	busy,
-	onBuy,
-	sampleHandle,
-}: {
-	title: {
-		id: string;
-		name: string;
-		placement: TitlePlacement;
-		description: string | null;
-		cost: number;
-		rarity: string;
-		owned: boolean;
-	};
-	canAfford: boolean;
-	busy: boolean;
-	onBuy: () => void;
-	// User's handle, baked into the preview so they see exactly how
-	// the title will read attached to their name.
-	sampleHandle: string;
-}) {
-	const rarityColor = RARITY_COLORS[title.rarity] ?? WHIMSY.ink;
-	return (
-		<View
-			style={[
-				shopTitleStyles.row,
-				{ borderLeftColor: rarityColor },
-			]}
-		>
-			<View style={shopTitleStyles.left}>
-				<Text style={shopTitleStyles.kicker}>
-					{title.placement === "post" ? "after your name" : "before your name"}
-				</Text>
-				{/* Live preview — the title rendered next to the sample
-				    handle in the exact pre/post order it'll appear on
-				    rosters + leaderboards. Bigger display font for the
-				    title, muted body weight for the handle. */}
-				<View style={shopTitleStyles.previewLine}>
-					{title.placement === "pre" ? (
-						<>
-							<Text style={shopTitleStyles.name}>{title.name}</Text>
-							<Text style={shopTitleStyles.previewHandle}>
-								{sampleHandle}
-							</Text>
-						</>
-					) : (
-						<>
-							<Text style={shopTitleStyles.previewHandle}>
-								{sampleHandle}
-							</Text>
-							<Text style={shopTitleStyles.name}>{title.name}</Text>
-						</>
-					)}
-				</View>
-				{title.description && (
-					<Text style={shopTitleStyles.desc}>{title.description}</Text>
-				)}
-			</View>
-			<View style={shopTitleStyles.right}>
-				{title.owned ? (
-					<View style={shopTitleStyles.ownedTag}>
-						<Text style={shopTitleStyles.ownedTagText}>Owned</Text>
-					</View>
-				) : (
-					<Pressable
-						onPress={onBuy}
-						disabled={busy || !canAfford}
-						// Extend the small price chip to a ~44px hit area
-						// without growing its visual size (UI audit).
-						hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-						style={({ pressed }) => [
-							shopTitleStyles.buyBtn,
-							!canAfford && shopTitleStyles.buyBtnDisabled,
-							pressed && { opacity: 0.7 },
-						]}
-					>
-						<SnoutCoin size={16} />
-						<Text style={shopTitleStyles.buyBtnText}>
-							{busy ? "…" : title.cost.toLocaleString()}
-						</Text>
-					</Pressable>
-				)}
-			</View>
-		</View>
-	);
-}
-
-const shopTitleStyles = StyleSheet.create({
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.md,
-		paddingVertical: 14,
-		paddingHorizontal: 14,
-		backgroundColor: "white",
-		borderRadius: RADII.md,
-		// Sticker treatment (UI audit): 2px ink frame + the rarity rail
-		// on the left edge, hard (4,4) shadow.
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderLeftWidth: 5,
-		marginBottom: SPACE.md,
-		...STICKER_SHADOW,
-	},
-	left: { flex: 1, minWidth: 0 },
-	right: { marginLeft: SPACE.sm },
-	// Canonical page-header kicker (KICKER_PILL: 11px tracked uppercase).
-	kicker: {
-		...KICKER_PILL,
-		marginBottom: SPACE.xs,
-	},
-	name: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-		lineHeight: 24,
-	},
-	// Live preview — title + handle baseline-aligned on a single line.
-	previewLine: {
-		flexDirection: "row",
-		alignItems: "baseline",
-		gap: 6,
-		flexWrap: "wrap",
-	},
-	// The sample handle inside the preview — body-bold, muted ink so
-	// the eye lands on the title (display font) first.
-	previewHandle: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 14,
-		color: WHIMSY.mute,
-	},
-	desc: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		marginTop: 4,
-	},
-	buyBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.lilac,
-	},
-	buyBtnDisabled: {
-		opacity: 0.45,
-	},
-	buyBtnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.ink,
-	},
-	ownedTag: {
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: COLORS.border,
-	},
-	ownedTagText: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		letterSpacing: 0.8,
-	},
-});
-
 
 // ── Shop redesign (Claude Design handoff, Shop Layout.html) ─────────
 // Less text, more readable: rarity is a COLOR DOT + one legend (no word
@@ -680,21 +524,7 @@ export default function ShopScreen() {
 	const [busyId, setBusyId] = useState<string | null>(null);
 	const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
 	const [resetsIn, setResetsIn] = useState<number>(0);
-	const [view, setView] = useState<"daily" | "browse" | "titles" | "wardrobe">("daily");
-	// Title catalog for the new Titles tab. Refreshed alongside the
-	// shop fetch + after any buy_title RPC so the owned/cost rows stay
-	// in sync with the user's balance.
-	type ShopTitle = {
-		id: string;
-		name: string;
-		placement: TitlePlacement;
-		description: string | null;
-		cost: number;
-		rarity: string;
-		owned: boolean;
-	};
-	const [titles, setTitles] = useState<ShopTitle[]>([]);
-	const [titleBusyId, setTitleBusyId] = useState<string | null>(null);
+	const [view, setView] = useState<"daily" | "browse" | "wardrobe">("daily");
 	const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
 	// Deep-link target: navigation from elsewhere (e.g. the battle-pass
@@ -705,16 +535,16 @@ export default function ShopScreen() {
 	useEffect(() => {
 		if (
 			params.view === "wardrobe" || params.view === "browse" ||
-			params.view === "daily" || params.view === "titles"
+			params.view === "daily"
 		) {
 			setView(params.view);
 			router.setParams({ view: undefined });
 		}
 	}, [params.view]);
-	// Title equip UI renders inside ClosetView (the wardrobe view); buying
-	// stays in the titles tab. activeTitleId is sourced from
-	// profiles.active_title_id (added in the 20260511 migration). userId
-	// is captured separately so TitlesSection can load owned titles.
+	// Title EQUIP UI renders inside ClosetView (the Closet view). Titles are
+	// earned-only now (see 20260677) — there is no shop buy path. activeTitleId
+	// is sourced from profiles.active_title_id (20260511); userId is captured
+	// separately so the Closet can load the player's owned titles.
 	const [userId, setUserId] = useState<string | null>(null);
 	const [activeTitleId, setActiveTitleId] = useState<string | null>(null);
 
@@ -752,12 +582,25 @@ export default function ShopScreen() {
 			active_flag_id: string | null;
 			active_title_id?: string | null;
 		};
-		const [dailyRes, allRes, ownedRes, profRes, resetsRes, titlesRes] = await Promise.all([
+		const [dailyRes, allRes, ownedRes, profRes, resetsRes] = await Promise.all([
 			rpc<HatRow[]>("daily_shop"),
+			// pass_exclusive lands in 20260675. On a pre-migration server the
+			// unknown column 400s the whole select — retry without it so Browse
+			// still loads (server daily_shop/buy_hat gate pass items regardless;
+			// the cost>0 filter hides them client-side until the column exists).
 			supabase
 				.from("hats")
-				.select("id, name, cost, display_order, emoji, image_path, category, rarity, description")
-				.order("display_order"),
+				.select("id, name, cost, display_order, emoji, image_path, category, rarity, description, pass_exclusive")
+				.order("display_order")
+				.then(async (res) => {
+					if (res.error) {
+						return supabase
+							.from("hats")
+							.select("id, name, cost, display_order, emoji, image_path, category, rarity, description")
+							.order("display_order");
+					}
+					return res;
+				}),
 			supabase.from("user_hats").select("hat_id").eq("user_id", user.id),
 			// active_title_id depends on the 20260511 migration. If the
 			// column isn't deployed yet the select errors — retry without
@@ -778,10 +621,6 @@ export default function ShopScreen() {
 					return res;
 				}),
 			rpc<number>("shop_resets_in_seconds"),
-			// shop_titles depends on the 20260519010000 migration; 404s
-			// when the migration hasn't been pushed yet, in which case
-			// we just leave the titles list empty.
-			rpc<ShopTitle[]>("shop_titles"),
 		]);
 		const filterPlaceable = (rows: HatRow[]) =>
 			rows.filter(
@@ -796,7 +635,7 @@ export default function ShopScreen() {
 		// they leak into the browseable shop (which players noticed).
 		setAllItems(
 			filterPlaceable((allRes.data as HatRow[]) ?? []).filter(
-				(r) => r.cost > 0 || ownedSet.has(r.id)
+				(r) => (r.cost > 0 && !r.pass_exclusive) || ownedSet.has(r.id)
 			)
 		);
 		setOwned(ownedSet);
@@ -820,62 +659,7 @@ export default function ShopScreen() {
 		setActiveTitleId(prof?.active_title_id ?? null);
 		setUserId(user.id);
 		setResetsIn(resetsRes ?? 0);
-		setTitles(titlesRes ?? []);
 	}, []);
-
-	// Spend snouts to grant a title. On success, optimistically flip
-	// `owned` + decrement balance so the UI doesn't wait for re-fetch.
-	const handleBuyTitle = useCallback(async (t: ShopTitle) => {
-		if (titleBusyId) return;
-		if (t.owned) return;
-		if (counter < t.cost) {
-			try {
-				deniedPlayer.seekTo(0);
-				deniedPlayer.play();
-			} catch {}
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
-				() => {}
-			);
-			Alert.alert("Not enough snouts", `Needs ${t.cost}, you have ${counter}.`);
-			return;
-		}
-		setTitleBusyId(t.id);
-		const r = await rpc<{ ok?: boolean; reason?: string; new_balance?: number }>(
-			"buy_title",
-			{ target_title_id: t.id }
-		);
-		setTitleBusyId(null);
-		if (!r?.ok) {
-			// `buy_title` actually returns one of: unauthenticated,
-			// not_for_sale, invalid_price, already_owned. The previous
-			// branch checked "insufficient_funds" which the RPC never
-			// returns — client pre-checks the balance at line ~982
-			// before calling, so we don't need to handle insufficient
-			// funds in the post-RPC error path.
-			Alert.alert(
-				"Couldn't buy",
-				r?.reason === "already_owned"
-					? "You already own this title."
-					: r?.reason === "not_for_sale"
-						? "This title isn't for sale."
-						: r?.reason === "invalid_price"
-							? "Pricing issue — try again."
-							: "Try again."
-			);
-			return;
-		}
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-			() => {}
-		);
-		try {
-			equipPlayer.seekTo(0);
-			equipPlayer.play();
-		} catch {}
-		setCounter(r.new_balance ?? counter - t.cost);
-		setTitles((prev) =>
-			prev.map((x) => (x.id === t.id ? { ...x, owned: true } : x))
-		);
-	}, [counter, deniedPlayer, equipPlayer, titleBusyId]);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -1048,7 +832,11 @@ export default function ShopScreen() {
 
 	const categories = useMemo(() => {
 		const set = new Set<string>();
-		allItems.forEach((i) => i.category && set.add(i.category));
+		// Flags are excluded from the catalog (browseItems drops them), so don't
+		// offer a "Flags" filter chip that would resolve to an empty grid.
+		allItems.forEach((i) => {
+			if (i.category && i.category !== "flag") set.add(i.category);
+		});
 		return Array.from(set).sort((a, b) => {
 			const ai = CATEGORY_DISPLAY_ORDER.indexOf(a);
 			const bi = CATEGORY_DISPLAY_ORDER.indexOf(b);
@@ -1125,12 +913,11 @@ export default function ShopScreen() {
 				</View>
 
 				<View style={styles.viewToggle}>
-					{(["daily", "browse", "titles", "wardrobe"] as const).map((v) => {
+					{(["daily", "browse", "wardrobe"] as const).map((v) => {
 						const active = v === view;
 						const label =
 							v === "daily" ? "Today"
-								: v === "browse" ? "Browse"
-								: v === "titles" ? "Titles"
+								: v === "browse" ? "Collectibles"
 								: "Closet";
 						return (
 							<Pressable
@@ -1232,17 +1019,23 @@ export default function ShopScreen() {
 										!categoryFilter && styles.chipActive,
 									]}
 								>
-									<Text
-										style={[
-											styles.chipText,
-											!categoryFilter && styles.chipTextActive,
-										]}
+									<IconText
+										left={<Glyph name="sparkles" size={14} />}
+										gap={5}
 									>
-										All
-									</Text>
+										<Text
+											style={[
+												styles.chipText,
+												!categoryFilter && styles.chipTextActive,
+											]}
+										>
+											All
+										</Text>
+									</IconText>
 								</Pressable>
 								{categories.map((c) => {
 									const active = categoryFilter === c;
+									const glyph = CATEGORY_GLYPH[c];
 									return (
 										<Pressable
 											key={c}
@@ -1254,14 +1047,23 @@ export default function ShopScreen() {
 												active && styles.chipActive,
 											]}
 										>
-											<Text
-												style={[
-													styles.chipText,
-													active && styles.chipTextActive,
-												]}
+											<IconText
+												left={
+													glyph ? (
+														<Glyph name={glyph} size={14} />
+													) : undefined
+												}
+												gap={5}
 											>
-												{CATEGORY_LABELS[c] ?? c}
-											</Text>
+												<Text
+													style={[
+														styles.chipText,
+														active && styles.chipTextActive,
+													]}
+												>
+													{CATEGORY_LABELS[c] ?? c}
+												</Text>
+											</IconText>
 										</Pressable>
 									);
 								})}
@@ -1270,33 +1072,6 @@ export default function ShopScreen() {
 						ListEmptyComponent={
 							<Text style={styles.empty}>Nothing here.</Text>
 						}
-					/>
-				) : view === "titles" ? (
-					<FlatList
-						key="titles"
-						data={titles}
-						keyExtractor={(t) => t.id}
-						contentContainerStyle={styles.grid}
-						ListHeaderComponent={
-							<View style={styles.wardrobeIntro}>
-								<Text style={styles.wardrobeIntroTitle}>Titles</Text>
-								<Text style={styles.wardrobeIntroSub}>
-									Buy a title to attach to your name. Equip it in the Closet.
-								</Text>
-							</View>
-						}
-						ListEmptyComponent={
-							<Text style={styles.empty}>No titles available.</Text>
-						}
-						renderItem={({ item: t }) => (
-							<ShopTitleRow
-								title={t}
-								canAfford={counter >= t.cost}
-								busy={titleBusyId === t.id}
-								onBuy={() => handleBuyTitle(t)}
-								sampleHandle={myUsername}
-							/>
-						)}
 					/>
 				) : (
 					<ClosetView
@@ -1433,6 +1208,9 @@ const styles = StyleSheet.create({
 		// Flush with the grid: the FlatList content already insets the
 		// shared 12, so the chip rail carries no extra horizontal pad.
 		paddingHorizontal: 0,
+		// Breathing room between the Today/Collectibles/Closet toggle and the
+		// category filter rail (was cramped — both used SPACE.sm).
+		paddingTop: SPACE.md,
 		paddingBottom: SPACE.md,
 		gap: SPACE.sm,
 	},

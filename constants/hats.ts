@@ -544,6 +544,10 @@ export interface HatRow {
 	category?: string;
 	rarity?: Rarity;
 	description?: string | null;
+	// True for battle-pass tier rewards — earned only, never sold. Server
+	// (daily_shop/buy_hat) is the source of truth; the client also hides them
+	// from Browse. Optional so pre-20260675 servers (no column) still parse.
+	pass_exclusive?: boolean;
 }
 
 export const RARITY_COLORS: Record<string, string> = {

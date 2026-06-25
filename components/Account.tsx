@@ -89,6 +89,10 @@ export function Account({ session }: { session: Session }) {
 	const [codeBusy, setCodeBusy] = useState(false);
 	const [codeError, setCodeError] = useState<string | null>(null);
 	const [codeInviter, setCodeInviter] = useState<string | null>(null);
+	// Pending-claim count for the Achievements row badge — achievements that
+	// have been earned (auto-granted) but not yet acknowledged on the screen
+	// (server: claimed && viewed_at IS NULL). Refreshed on focus.
+	const [unclaimedAchv, setUnclaimedAchv] = useState(0);
 
 	// A deep-linked code stashed before sign-in (PENDING_REFERRAL_CODE_KEY)
 	// pre-fills the input — finally consuming the stranded stash.
@@ -99,6 +103,14 @@ export function Account({ session }: { session: Session }) {
 					if (c) setCodeInput((cur) => cur || c);
 				})
 				.catch(() => {});
+		}, [])
+	);
+
+	useFocusEffect(
+		useCallback(() => {
+			rpc<number>("my_unclaimed_achievement_count").then((n) =>
+				setUnclaimedAchv(n ?? 0)
+			);
 		}, [])
 	);
 
@@ -513,9 +525,16 @@ export function Account({ session }: { session: Session }) {
 						<View style={{ flex: 1 }}>
 							<Text style={achievementStyles.label}>Achievements</Text>
 							<Text style={achievementStyles.sub}>
-								Track your generous + greedy ladders.
+								Track your devotion, generous + greedy ladders.
 							</Text>
 						</View>
+						{unclaimedAchv > 0 && (
+							<View style={achievementStyles.badge}>
+								<Text style={achievementStyles.badgeText}>
+									{unclaimedAchv > 99 ? "99+" : unclaimedAchv}
+								</Text>
+							</View>
+						)}
 						<Text style={achievementStyles.chev}>›</Text>
 					</Pressable>
 
@@ -1458,6 +1477,24 @@ const achievementStyles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 28,
 		color: WHIMSY.mute,
+	},
+	// "N ready to claim" badge — gold pill matching the icon bubble. Caps at
+	// "99+" so the pill never widens past a couple of glyphs.
+	badge: {
+		minWidth: 22,
+		height: 22,
+		borderRadius: 11,
+		paddingHorizontal: 6,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+	},
+	badgeText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.ink,
 	},
 });
 

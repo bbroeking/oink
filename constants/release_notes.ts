@@ -154,6 +154,36 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 		],
 	},
 
+	// ── Build 101 — titles earned, Collectibles, visit cooldowns. ────
+	{
+		version: "1.7.5",
+		date: "2026-06-25",
+		availableFrom: "2026-06-25", // immediate — ships with build 101
+		headline: "Titles are earned, not bought",
+		items: [
+			{
+				emoji: "🏆",
+				title: "Titles move to Achievements",
+				body: "Titles can no longer be bought in the shop — they're earned. Every title you already own is yours to keep, and there are new ways to earn more in the Achievements ladders, including a new Devotion track for lifetime tickling.",
+			},
+			{
+				emoji: "✦",
+				title: "Collectibles",
+				body: "The shop's middle tab is now “Collectibles” — the full set of everything there is to collect, owned or not, with a little icon for each category so it's clear what you're filtering by.",
+			},
+			{
+				emoji: "🐷",
+				title: "Barn visits, retuned",
+				body: "Visiting a friend gives a little burst of tickles, then that barn rests for 3 hours — a fair, cozy rhythm instead of an endless tap. A live countdown shows when you can come back.",
+			},
+			{
+				emoji: "🔧",
+				title: "Fixes",
+				body: "Declining a friend request now sticks, clearing a curse updates your Barn instantly, and your “what happened” feed shows when each thing happened.",
+			},
+		],
+	},
+
 	// ── Week 8 — the finale. ─────────────────────────────────────────
 	{
 		version: "1.8.0",

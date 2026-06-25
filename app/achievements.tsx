@@ -71,6 +71,7 @@ interface AchievementRow {
 const FILTERS = [
 	{ key: "all",      label: "All" },
 	{ key: "ready",    label: "Ready" },
+	{ key: "devotion", label: "Devotion" },
 	{ key: "generous", label: "Generous" },
 	{ key: "greedy",   label: "Greedy" },
 	{ key: "social",   label: "Social" },
@@ -79,6 +80,7 @@ const FILTERS = [
 type FilterKey = (typeof FILTERS)[number]["key"];
 
 const CATEGORY_LABEL: Record<string, string> = {
+	devotion: "DEVOTION",
 	generous: "GENEROUS",
 	greedy:   "GREEDY",
 	social:   "SOCIAL",
