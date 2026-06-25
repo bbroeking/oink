@@ -1,7 +1,8 @@
 import React from "react";
 import {
-	ImageBackground,
-	ImageBackgroundProps,
+	Dimensions,
+	Image,
+	ImageProps,
 	StyleSheet,
 	View,
 } from "react-native";
@@ -11,6 +12,14 @@ import {
 	isAnimatedBackground,
 } from "@/constants/animatedBackgrounds";
 import { AnimatedBackground } from "./AnimatedBackground";
+
+// Explicit screen pixels, NOT percentage / absoluteFill insets. A
+// percentage-sized background <Image> hits RN's Yoga indefinite-size quirk and
+// falls back toward the art's intrinsic size, rendering a centered band that
+// leaves an edge — most visibly the LEFT — showing the layer behind it. Numeric
+// SCREEN size is the reliable cure already proven by BarnVisitModal's
+// background. (Portrait-locked game, so module-level window size is fine.)
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
 interface Props {
 	/**
@@ -23,7 +32,7 @@ interface Props {
 	 */
 	bgId?: string | null;
 	children?: React.ReactNode;
-	resizeMode?: ImageBackgroundProps["resizeMode"];
+	resizeMode?: ImageProps["resizeMode"];
 }
 
 /**
@@ -59,24 +68,18 @@ export function PageBackground({ bgId, children, resizeMode = "cover" }: Props) 
 		require("../../assets/images/homepage-bg.jpg");
 
 	return (
-		<ImageBackground
-			source={bgSrc}
-			style={styles.root}
-			resizeMode={resizeMode}
-		>
+		<View style={styles.root}>
+			<Image source={bgSrc} resizeMode={resizeMode} style={styles.fill} />
 			<View style={styles.content}>{children}</View>
-		</ImageBackground>
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	root: {
-		// Edge-to-edge: needs a flex:1 parent to expand into.
-		flex: 1,
-		width: "100%",
-		height: "100%",
-	},
-	content: {
-		flex: 1,
-	},
+	// Edge-to-edge: needs a flex:1 parent to expand into.
+	root: { flex: 1 },
+	// Explicit screen pixels (see note above) so `cover` fills the whole screen
+	// instead of a centered intrinsic-width band.
+	fill: { position: "absolute", top: 0, left: 0, width: SCREEN_W, height: SCREEN_H },
+	content: { flex: 1 },
 });

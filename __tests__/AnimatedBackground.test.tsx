@@ -45,6 +45,27 @@ describe("AnimatedBackground — frames must not be in the touch path", () => {
 		act(() => r.unmount());
 	});
 
+	test("frames are sized in explicit screen pixels, not '100%'", async () => {
+		// Percentage sizing hits RN's Yoga indefinite-size quirk → the cover
+		// image falls back to intrinsic size, rendering a centered band that
+		// leaves an edge (notably the left) showing through. Explicit numeric
+		// screen pixels are the fix (mirrors PageBackground / BarnVisitModal).
+		const r = await renderAct(
+			<AnimatedBackground frames={[1, 2, 3]}>
+				<Text>content</Text>
+			</AnimatedBackground>
+		);
+		for (const f of frameNodes(r)) {
+			const flat = StyleSheet.flatten(f.props.style) as {
+				width?: number | string;
+				height?: number | string;
+			};
+			expect(typeof flat.width).toBe("number");
+			expect(typeof flat.height).toBe("number");
+		}
+		act(() => r.unmount());
+	});
+
 	test("renders the page content (children) so taps have something to hit", async () => {
 		const r = await renderAct(
 			<AnimatedBackground frames={[1, 2]}>

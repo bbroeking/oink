@@ -11,12 +11,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
 	Animated,
+	Dimensions,
 	Easing,
 	StyleSheet,
 	View,
 	type ImageSourcePropType,
 	type ImageResizeMode,
 } from "react-native";
+
+// Explicit screen pixels — see styles.fill note (matches PageBackground).
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
 interface Props {
 	frames: ImageSourcePropType[];
@@ -123,12 +127,13 @@ const styles = StyleSheet.create({
 	// flex:1 so it fills the screen via the parent's flex — same as the static
 	// PageBackground/ImageBackground that fills correctly.
 	root: { flex: 1, width: "100%", height: "100%" },
-	// Explicit width/height 100% (not bare absoluteFill) so `cover` fills the
-	// screen instead of the image's intrinsic 355×593 (a centered band).
+	// Explicit SCREEN pixels (not "100%") so `cover` fills the screen instead of
+	// the image's intrinsic size — the Yoga indefinite-size quirk that left a
+	// centered band with an edge sliver (matches PageBackground/BarnVisitModal).
 	// pointerEvents:"none" + the zIndex pair are LOAD-BEARING: on the new arch
 	// (Fabric) an absolute sibling can hit-test ABOVE a later flex sibling, so
 	// without them these full-screen frames swallow every touch on the screen
 	// they back (the Barn went fully dead). Guarded by AnimatedBackground.test.
-	fill: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0, pointerEvents: "none" },
+	fill: { position: "absolute", top: 0, left: 0, width: SCREEN_W, height: SCREEN_H, zIndex: 0, pointerEvents: "none" },
 	content: { flex: 1, zIndex: 1 },
 });
