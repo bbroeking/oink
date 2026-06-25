@@ -27,7 +27,20 @@ import "react-native-reanimated";
 // gracefully to solid; the visual hit is small, the OOM-prevention
 // is large. Replace with a real SVG <DashedDivider /> when we have
 // the cycles.
-LogBox.ignoreLogs(["Unsupported dashed", "Unsupported dotted"]);
+// "Invalid Refresh Token": benign, self-healing startup noise. On launch
+// auth-js's _recoverAndRefresh() tries to refresh a persisted session; if the
+// stored refresh token was already rotated/expired (a stale session left in
+// storage — common after reusing a sim/dev build) the server returns "Refresh
+// Token Not Found". auth-js logs it via console.error AND immediately clears
+// the session (_removeSession), so we're cleanly signed out — nothing to fix.
+// A getSession().catch() can't intercept it (the error is emitted inside the
+// library during init, not by our call), so we suppress the dev-only LogBox
+// toast here instead. Dev-only: LogBox is a no-op in production.
+LogBox.ignoreLogs([
+	"Unsupported dashed",
+	"Unsupported dotted",
+	"Invalid Refresh Token",
+]);
 import * as Sentry from "@sentry/react-native";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";

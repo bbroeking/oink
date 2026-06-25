@@ -166,7 +166,9 @@ export function Inbox({ userId, onActionableCount }: Props) {
 				.select("id, kind, sent_at, sender_id")
 				.eq("receiver_id", userId)
 				.order("sent_at", { ascending: false })
-				.limit(40);
+				// Pull up to 100 so the What-happened feed's "load more up to
+				// 100" has enough history (was 40 — capped what could be paged).
+				.limit(100);
 			const rows = (data ?? []) as {
 				id: string;
 				kind: string;
@@ -393,10 +395,13 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			r.requester_id,
 			`${r.username ?? "Friend"} added.`
 		);
+	// Decline = remove the incoming pending row. Must use remove_friendship
+	// (direction-agnostic), NOT cancel_friend_request — the decliner is the
+	// receiver, so cancel_* matches zero rows and the request reappears.
 	const declineFriend = (r: FriendReq) =>
 		doRpc(
-			"cancel_friend_request",
-			{ target_user_id: r.requester_id },
+			"remove_friendship",
+			{ other_user_id: r.requester_id },
 			r.requester_id,
 			"Request declined."
 		);
@@ -447,7 +452,12 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			at: Date.parse(c.sent_at),
 		})),
 	].sort((a, b) => (b.at || 0) - (a.at || 0));
+	// "Up to 100 in the past" — start at shownCount (10), Load-more grows it,
+	// capped at FEED_CAP. Display-only depth; no event is ever deleted.
+	const FEED_CAP = 100;
 	const passiveShown = passive.slice(0, shownCount);
+	const hasMorePassive =
+		passiveShown.length < Math.min(passive.length, FEED_CAP);
 
 	if (loading) {
 		return (
@@ -671,8 +681,11 @@ export function Inbox({ userId, onActionableCount }: Props) {
 						radius={14}
 						style={styles.flatList}
 					>
-						{passive.map((p, i) => {
-							const last = i === passive.length - 1;
+						{passiveShown.map((p, i) => {
+							// Last row only when nothing follows — keep the divider
+							// when a Load-more footer sits below it.
+							const last =
+								i === passiveShown.length - 1 && !hasMorePassive;
 							// Per-kind avatar bubble: small ink-outlined
 							// circle with a glyph + tinted background.
 							const bubbleStyle =
@@ -711,9 +724,24 @@ export function Inbox({ userId, onActionableCount }: Props) {
 										<Text style={glyphStyle}>{glyph}</Text>
 									</View>
 									<Text style={styles.passiveText}>{p.text}</Text>
+									{!!relTime(p.at) && (
+										<Text style={styles.passiveTime}>
+											{relTime(p.at)}
+										</Text>
+									)}
 								</View>
 							);
 						})}
+						{hasMorePassive && (
+							<Pressable
+								style={styles.loadMoreRow}
+								onPress={() =>
+									setShownCount((n) => Math.min(n + 10, FEED_CAP))
+								}
+							>
+								<Text style={styles.loadMoreText}>Load more</Text>
+							</Pressable>
+						)}
 					</Sticker>
 
 				</>

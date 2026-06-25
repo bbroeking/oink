@@ -50,7 +50,7 @@ import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
 import { useStipend } from "@/hooks/useStipend";
 import { usePassEvents } from "@/hooks/usePassEvents";
 import { useLuckyPig } from "@/hooks/useLuckyPig";
-import { useActiveEffects } from "@/hooks/useActiveEffects";
+import { useActiveEffectsContext } from "@/hooks/ActiveEffectsProvider";
 
 // Lucky Pig tunables live in utils/luckyPig.ts (extracted to the
 // useLuckyPig hook). Phantom-itch is the only ritual-effect tunable
@@ -300,11 +300,11 @@ export default function Barn() {
 	const [alignment, setAlignment] = useState<AlignmentLabel>("neutral");
 
 	// Active daily-ritual effects — drive the overlay + the tap loop.
-	// useActiveEffects is the single source of truth (BarnActiveEffectsStrip
-	// also subscribes; two channels for the same data is wasteful but
-	// cheap). We derive {blessed, cursed, sunBeam, phantomItch} predicates
-	// from the typed effects list for the inline checks below.
-	const activeEffects = useActiveEffects();
+	// Shared via ActiveEffectsProvider (one instance for the whole tab
+	// subtree), so a cleanse from the Hoofprints sheet or Inbox clears the
+	// overlay + chips here in lockstep. We derive {blessed, cursed, sunBeam,
+	// phantomItch} predicates from the typed effects list for the checks below.
+	const activeEffects = useActiveEffectsContext();
 	const effects = React.useMemo(
 		() => ({
 			blessed:     activeEffects.blessings.length > 0,

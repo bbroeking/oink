@@ -10,6 +10,7 @@ import UsernameSetup from "@/components/UsernameSetup";
 import { Onboarding } from "@/components/Onboarding";
 import { ReferralCodeEntry } from "@/components/ReferralCodeEntry";
 import { HangingSignsTabBar } from "@/components/ui/HangingSignsTabBar";
+import { ActiveEffectsProvider } from "@/hooks/ActiveEffectsProvider";
 import { WHIMSY, KICKER_TEXT } from "@/constants/theme";
 import { initIAP } from "@/utils/iap";
 import { usePopupHold } from "@/components/ui/PopupQueue";
@@ -157,22 +158,27 @@ export default function TabLayout() {
 	}
 
 	return (
-		<Tabs
-			// Custom tabBar — the swinging hanging-signs treatment
-			// from the design's bar-options.jsx (Option B). Replaces
-			// the default flat label+icon strip; the bar owns its
-			// own height, the wood-rail gradient, the per-tab signs
-			// with their sway loops, and the swing-in tap animation.
-			tabBar={(props) => (
-				<HangingSignsTabBar {...props} badges={{ season: bountyReady }} />
-			)}
-			screenOptions={{ headerShown: false }}
-		>
-			<Tabs.Screen name="index"   options={{ title: "Barn" }} />
-			<Tabs.Screen name="friends" options={{ title: "Friends" }} />
-			<Tabs.Screen name="season"  options={{ title: "Season" }} />
-			<Tabs.Screen name="shop"    options={{ title: "Shop" }} />
-			<Tabs.Screen name="account" options={{ title: "Me" }} />
-		</Tabs>
+		// One shared active-effects instance for the whole tab subtree, so a
+		// cleanse on the Barn/Inbox updates the overlay, chips, sheet, and inbox
+		// in lockstep (see ActiveEffectsProvider).
+		<ActiveEffectsProvider>
+			<Tabs
+				// Custom tabBar — the swinging hanging-signs treatment
+				// from the design's bar-options.jsx (Option B). Replaces
+				// the default flat label+icon strip; the bar owns its
+				// own height, the wood-rail gradient, the per-tab signs
+				// with their sway loops, and the swing-in tap animation.
+				tabBar={(props) => (
+					<HangingSignsTabBar {...props} badges={{ season: bountyReady }} />
+				)}
+				screenOptions={{ headerShown: false }}
+			>
+				<Tabs.Screen name="index"   options={{ title: "Barn" }} />
+				<Tabs.Screen name="friends" options={{ title: "Friends" }} />
+				<Tabs.Screen name="season"  options={{ title: "Season" }} />
+				<Tabs.Screen name="shop"    options={{ title: "Shop" }} />
+				<Tabs.Screen name="account" options={{ title: "Me" }} />
+			</Tabs>
+		</ActiveEffectsProvider>
 	);
 }

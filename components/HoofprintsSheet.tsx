@@ -27,7 +27,7 @@ import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { RitualIconWell } from "./ui/RitualIconWell";
 import { CleanseModal } from "./CleanseModal";
-import { useActiveEffects } from "../hooks/useActiveEffects";
+import { useActiveEffectsContext } from "../hooks/ActiveEffectsProvider";
 import { effectMeta, formatLeft, type Effect } from "../utils/activeEffects";
 import {
 	FONTS,
@@ -43,7 +43,9 @@ interface Props {
 }
 
 export function HoofprintsSheet({ open, onClose }: Props) {
-	const { blessings, curses, cleanse } = useActiveEffects({ enabled: open });
+	// Shared instance (always enabled) — see ActiveEffectsProvider. `open` still
+	// drives the sheet animation below; it no longer gates the data fetch.
+	const { blessings, curses, cleanse } = useActiveEffectsContext();
 	const [cleanseOpen, setCleanseOpen] = useState(false);
 
 	// Sheet animation. One Animated.Value drives backdrop opacity AND

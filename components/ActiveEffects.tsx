@@ -18,13 +18,13 @@ import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { RitualIconWell } from "./ui/RitualIconWell";
 import { CleanseModal } from "./CleanseModal";
-import { useActiveEffects } from "../hooks/useActiveEffects";
+import { useActiveEffectsContext } from "../hooks/ActiveEffectsProvider";
 import { effectMeta } from "../utils/activeEffects";
 import { FONTS, KICKER_TEXT, WHIMSY, ROW_TILTS } from "@/constants/theme";
 import { SectionHeader } from "./ui/SectionHeader";
 
 export function ActiveEffects() {
-	const { effects, curses, cleanse, formatLeft } = useActiveEffects();
+	const { effects, curses, cleanse, formatLeft } = useActiveEffectsContext();
 	// Inline Cleanse pill no longer fires the RPC directly — opens
 	// the shared CleanseModal so a stray tap doesn't instantly burn
 	// 5 snouts. The hook owns the optimistic update + the RPC.

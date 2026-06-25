@@ -1,6 +1,6 @@
 // Receiver-side counterpart to utils/activeEffects: owns the
 // friendship contract — the FriendshipStatus type, the friend cap,
-// the reason→copy mapping, and typed wrappers around the six
+// the reason→copy mapping, and typed wrappers around the seven
 // friendship RPCs. Render surfaces (Friends, UserSheet, Leaderboard)
 // consume this; no other module reaches into the friendship state.
 //
@@ -105,6 +105,18 @@ export function acceptFriendRequest(otherUserId: string) {
 
 export function cancelFriendRequest(targetUserId: string) {
 	return rpc("cancel_friend_request", { target_user_id: targetUserId });
+}
+
+// Decline an INCOMING request, or unfriend — deletes the friendship row
+// regardless of direction. This is NOT interchangeable with
+// cancelFriendRequest: cancel_friend_request only removes the caller's
+// own OUTGOING pending request (requester_id = caller), so a decliner —
+// who is the RECEIVER — matches zero rows there and the request silently
+// survives. The Inbox decline action must use this RPC.
+export function removeFriendship(otherUserId: string) {
+	return rpc<FriendActionResult>("remove_friendship", {
+		other_user_id: otherUserId,
+	});
 }
 
 export function getSuggestedUsers(limit: number = 3) {

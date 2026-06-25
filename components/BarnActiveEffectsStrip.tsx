@@ -10,12 +10,12 @@ import React, { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { HoofprintsSheet } from "./HoofprintsSheet";
 import { RitualIconWell } from "./ui/RitualIconWell";
-import { useActiveEffects } from "../hooks/useActiveEffects";
+import { useActiveEffectsContext } from "../hooks/ActiveEffectsProvider";
 import { effectMeta } from "../utils/activeEffects";
 import { FONTS, WHIMSY, SPACE, PAGE_PAD, RADII, SHADOW_SM } from "@/constants/theme";
 
 export function BarnActiveEffectsStrip() {
-	const { effects, formatLeft } = useActiveEffects();
+	const { effects, formatLeft } = useActiveEffectsContext();
 	// Tap a chip → open the full Hoofprints recap sheet so the
 	// player can read the actual effect (e.g. "1-in-3 taps slip")
 	// instead of just the kind name.

@@ -253,7 +253,17 @@ export function ClosetView({
 											);
 										})()}
 									</View>
-									<Text style={styles.slotLabel}>{SLOT_LABEL[s]}</Text>
+									{/* One line always — "BACKGROUND" overflows the fixed
+									    72px chip at full size, so shrink-to-fit instead of
+									    wrapping. Short labels (Hat, Eyes…) stay at 10pt. */}
+									<Text
+										style={styles.slotLabel}
+										numberOfLines={1}
+										adjustsFontSizeToFit
+										minimumFontScale={0.8}
+									>
+										{SLOT_LABEL[s]}
+									</Text>
 								</Pressable>
 							);
 						})}

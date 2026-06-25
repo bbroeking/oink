@@ -18,6 +18,7 @@ import {
 	sendFriendRequest,
 	acceptFriendRequest,
 	cancelFriendRequest,
+	removeFriendship,
 	getSuggestedUsers,
 	searchUsers,
 } from "../utils/friendships";
@@ -127,6 +128,15 @@ describe("typed wrappers", () => {
 		await cancelFriendRequest("user-uuid");
 		expect(mockRpc).toHaveBeenCalledWith("cancel_friend_request", {
 			target_user_id: "user-uuid",
+		});
+	});
+
+	// Decline (Inbox) and unfriend both route here — the direction-agnostic
+	// RPC, distinct from cancel_friend_request's outgoing-only delete.
+	test("removeFriendship passes the other user id", async () => {
+		await removeFriendship("user-uuid");
+		expect(mockRpc).toHaveBeenCalledWith("remove_friendship", {
+			other_user_id: "user-uuid",
 		});
 	});
 
