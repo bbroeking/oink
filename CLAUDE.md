@@ -2,6 +2,10 @@
 
 Single-developer React Native / Expo 52 game with Supabase backend. Ships to iOS via TestFlight / App Store. Notes here orient Claude Code sessions in this repo; the domain glossary lives in `CONTEXT.md` next to this file.
 
+## North Star
+
+`SKILL.md` (repo root) is the product charter: **Tickle the Pig connects friends, gives them things to collect, and reasons to work together (Connect · Collect · Cooperate).** Consult it and run changes through its decision lens before any product, design, content, or economy decision. When we make an important such decision, append it to `SKILL.md`'s decision log (what we chose + which pillar it serves).
+
 ## Build + ship
 
 - **Local builds only.** `eas build --local --platform ios --profile production` — cloud quota fills up.
