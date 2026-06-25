@@ -46,6 +46,7 @@ import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
+import { routeForScreen } from "@/utils/notificationRouting";
 import {
 	AlignmentSchismModal,
 	type SchismSide,
@@ -577,17 +578,25 @@ function RootLayoutInner() {
 	// One listener; expo-notifications coalesces foreground +
 	// background taps.
 	useEffect(() => {
-		const sub = Notifications.addNotificationResponseReceivedListener((res) => {
-			const data = (res.notification.request.content.data ?? {}) as {
-				screen?: string;
-			};
-			if (data.screen === "trade" || data.screen === "friends") {
-				router.replace("/friends");
-			} else if (data.screen === "achievements") {
-				router.replace("/achievements");
-			} else if (data.screen === "account") {
-				router.replace("/account");
+		const route = (screen: string | undefined) => {
+			const path = routeForScreen(screen);
+			if (path) router.replace(path as never);
+		};
+		// Cold launch: the app was opened by TAPPING a push while terminated.
+		// addNotificationResponseReceivedListener does NOT fire for that case, so
+		// read the response that launched us and route from it once.
+		Notifications.getLastNotificationResponseAsync().then((res) => {
+			if (res) {
+				const data = res.notification.request.content.data as { screen?: string };
+				route(data?.screen);
 			}
+		});
+		// Warm/foreground taps. routeForScreen is the single source of truth for
+		// the screen→route map (utils/notificationRouting) so the server's push
+		// `screen` values and the client router can't drift.
+		const sub = Notifications.addNotificationResponseReceivedListener((res) => {
+			const data = res.notification.request.content.data as { screen?: string };
+			route(data?.screen);
 		});
 		return () => sub.remove();
 	}, []);
