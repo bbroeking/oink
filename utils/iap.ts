@@ -43,8 +43,13 @@ import { log } from "./log";
 // Master kill switch — when false, the noop adapter is selected and
 // every IAP entry point becomes a no-op, nothing is initialized, and
 // no network calls are made. UI gates on it to hide paywall surfaces.
-// Flip to `true` to bring monetization back online.
-export const IAP_ENABLED = false;
+//
+// Default OFF. Turn it on at BUILD time with EXPO_PUBLIC_IAP_ENABLED=true
+// (set it in your env / eas.json profile) — for a sandbox/StoreKit demo build,
+// or the eventual production launch. Kept env-driven (not a hardcoded `true`)
+// so monetization can be demoed without committing it live before the
+// subscription redesign (regen pay-to-win removal, perks) lands.
+export const IAP_ENABLED = process.env.EXPO_PUBLIC_IAP_ENABLED === "true";
 
 // Public iOS API key — find at: https://app.revenuecat.com/projects/<project>/apps/<app>
 //
