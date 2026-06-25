@@ -1,0 +1,103 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "05EF1CB7-E0F0-4D5E-AE25-640BD291A285",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "8C9AE795-2C11-464F-8573-A678A0F58EC0",
+      "localizations" : [
+        {
+          "description" : "A one-time pass unlocking this season's battle-pass rewards.",
+          "displayName" : "Season Pass",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "season_pass",
+      "referenceName" : "Season Pass",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA"
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "E904ABAE-BC52-4037-902A-066AC2CF903D",
+      "localizations" : [
+
+      ],
+      "name" : "Slop Club",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "3.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "BD26B688-BCEE-43BF-9E2C-358D784A386C",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Monthly Slop Club membership.",
+              "displayName" : "Slop Club (Monthly)",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Slop Club Monthly",
+          "subscriptionGroupID" : "E904ABAE-BC52-4037-902A-066AC2CF903D",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "9BB365A6-B8A3-433D-BDE5-8AAB6AD2B5CF",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Yearly Slop Club membership — best value.",
+              "displayName" : "Slop Club (Yearly)",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Slop Club Yearly",
+          "subscriptionGroupID" : "E904ABAE-BC52-4037-902A-066AC2CF903D",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
