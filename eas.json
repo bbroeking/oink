@@ -8,13 +8,13 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_PRIVACY_URL": "https://bbroeking.github.io/oink/privacy.html"
+        "EXPO_PUBLIC_PRIVACY_URL": "https://ticklethepig.com/privacy"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_PRIVACY_URL": "https://bbroeking.github.io/oink/privacy.html"
+        "EXPO_PUBLIC_PRIVACY_URL": "https://ticklethepig.com/privacy"
       }
     },
     "production": {
@@ -23,7 +23,7 @@
         "image": "latest"
       },
       "env": {
-        "EXPO_PUBLIC_PRIVACY_URL": "https://bbroeking.github.io/oink/privacy.html",
+        "EXPO_PUBLIC_PRIVACY_URL": "https://ticklethepig.com/privacy",
         "EXPO_PUBLIC_SENTRY_DSN": "https://8a094ff0378a99d9a921aad9d57a3b56@o4511452672884736.ingest.us.sentry.io/4511452680749056"
       }
     }

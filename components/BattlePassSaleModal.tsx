@@ -22,12 +22,14 @@ interface Props {
 	busy?: boolean;
 }
 
-// Apple's standard EULA — fine for the shipping app until we write our own.
-const TC_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
-// Privacy policy URL — wired via env so we don't ship a 404 placeholder. Host
-// the page (legal/privacy-policy.html) and set EXPO_PUBLIC_PRIVACY_URL before
-// TestFlight submission. Until then the link is hidden.
-const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL || null;
+// Our own Terms of Service, hosted on ticklethepig.com (replaces Apple's stock
+// EULA placeholder). Source: landing/terms.html.
+const TC_URL = "https://ticklethepig.com/terms";
+// Privacy policy URL — env-overridable (EXPO_PUBLIC_PRIVACY_URL, set in
+// eas.json) so the host can change without a code edit; falls back to the
+// canonical page. Source: landing/privacy.html.
+const PRIVACY_URL =
+	process.env.EXPO_PUBLIC_PRIVACY_URL || "https://ticklethepig.com/privacy";
 
 const PASS_PERKS = [
 	"All 30 premium-track rewards",

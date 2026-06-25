@@ -614,11 +614,6 @@ export function Account({ session }: { session: Session }) {
 											detail="Tickle cap to 50 (from 25)"
 										/>
 										<SlopPerk
-											icon="clock"
-											label="Faster regen"
-											detail="Refills every 30m, not 60m"
-										/>
-										<SlopPerk
 											icon="premium"
 											label="Monthly stipend"
 											detail="+250 snouts on the 1st"
@@ -689,6 +684,25 @@ export function Account({ session }: { session: Session }) {
 									Auto-renews. Cancel anytime in Settings.
 								</Text>
 							)}
+							{/* Terms + Privacy on the purchase surface — Apple review
+							    expects both linked where a subscription is sold. */}
+							<View style={styles.slopLegal}>
+								<Pressable
+									onPress={() =>
+										Linking.openURL("https://ticklethepig.com/terms")
+									}
+								>
+									<Text style={styles.slopLegalLink}>Terms</Text>
+								</Pressable>
+								<Text style={styles.slopLegalDot}>·</Text>
+								<Pressable
+									onPress={() =>
+										Linking.openURL("https://ticklethepig.com/privacy")
+									}
+								>
+									<Text style={styles.slopLegalLink}>Privacy</Text>
+								</Pressable>
+							</View>
 						</Sticker>
 					)}
 
@@ -1262,6 +1276,26 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 15,
 		color: WHIMSY.ink,
+	},
+	slopLegal: {
+		flexDirection: "row",
+		justifyContent: "center",
+		alignItems: "center",
+		gap: 8,
+		marginTop: 10,
+	},
+	slopLegalLink: {
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		color: WHIMSY.ink,
+		opacity: 0.6,
+		textDecorationLine: "underline",
+	},
+	slopLegalDot: {
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		color: WHIMSY.ink,
+		opacity: 0.4,
 	},
 	slopFinePrint: {
 		fontFamily: FONTS.hand,
