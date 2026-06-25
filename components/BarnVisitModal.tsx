@@ -137,10 +137,12 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	// Hearts shared THIS visit only — for the nap summary.
 	const [gained, setGained] = useState(0);
 
-	// Tap-session: friend's pig tires over a random 3–7 taps (bounded by the
-	// server's 7/hr ceiling). Energy is the visible readout of that.
+	// Tap-session: the friend's pig tires over a random 3–7 taps. The CAP is now
+	// rolled and enforced server-side (tickle_at_barn / barn_visit_status), so we
+	// seed tapCap from the server and the bar matches what it will actually allow.
+	// Default 7 (full bar) until the server reports the roll on first status/tap.
 	const [tapCount, setTapCount] = useState(0);
-	const [tapCap] = useState(() => 3 + Math.floor(Math.random() * 5)); // 3–7
+	const [tapCap, setTapCap] = useState(7);
 	const [tired, setTired] = useState(false);
 	// Nap summary visibility. Mid-visit tire-out no longer slams the scrim
 	// over the barn — a small "All tickled out!" bubble pops instead, and
@@ -265,6 +267,8 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				resting?: boolean;
 				locked?: boolean;
 				next_at?: string | null;
+				taps_left?: number | null;
+				tap_cap?: number | null;
 			}>("barn_visit_status", { p_target: targetUserId });
 			if (!cancelled && st.ok) {
 				if (st.locked) {
@@ -272,6 +276,13 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 					setRestingOnArrival(true);
 				}
 				if (st.resting) setRestingOnArrival(true);
+				// Seed the energy bar from the server's authoritative remaining
+				// taps so a mid-visit re-entry shows the right level (and the
+				// server's random cap) instead of a fresh full bar.
+				if (st.tap_cap != null) {
+					setTapCap(st.tap_cap);
+					if (st.taps_left != null) setTapCount(st.tap_cap - st.taps_left);
+				}
 			}
 			setLoading(false);
 		})();
@@ -279,6 +290,16 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			cancelled = true;
 		};
 	}, [targetUserId]);
+
+	// Live countdown: while a per-friend lock is set, re-render once a second so
+	// the "comes back in Xh Ym" label (napUntil → lockLabel) ticks down instead
+	// of freezing at the value it had the moment the lock was set.
+	const [, setNowTick] = useState(0);
+	useEffect(() => {
+		if (!lockedUntil) return;
+		const id = setInterval(() => setNowTick((n) => n + 1), 1000);
+		return () => clearInterval(id);
+	}, [lockedUntil]);
 
 	const tireOut = () => {
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
@@ -290,6 +311,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		setBusy(true);
 		const r = await rpcAction<{
 			taps_left?: number;
+			tap_cap?: number;
 			next_at?: string | null;
 		}>("tickle_at_barn", { p_target: targetUserId });
 		setBusy(false);
@@ -299,10 +321,16 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			setYouHearts((n) => n + 1);
 			setFriendHearts((n) => n + 1);
 			setGained((g) => g + 1);
+			if (r.tap_cap != null) setTapCap(r.tap_cap);
 			const next = tapCount + 1;
 			setTapCount(next);
-			// Nap on the sleepy roll OR the shared hourly ceiling, whichever first.
-			if (next >= tapCap || (r.taps_left ?? 99) <= 0) setTimeout(tireOut, 520);
+			// Server is authoritative on when the visit is spent. The cap-hitting
+			// tap returns next_at, so start the 3h countdown immediately (re-entry
+			// would only show the same lock anyway).
+			if (next >= tapCap || (r.taps_left ?? 99) <= 0) {
+				if (r.next_at) setLockedUntil(r.next_at);
+				setTimeout(tireOut, 520);
+			}
 		} else if (r.reason === "tired" || r.reason === "no_tickles") {
 			// no_tickles only comes from a pre-20260646 server (visits used
 			// to spend your bank); treat it as the nap so there's a clean exit.
