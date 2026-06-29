@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Placement Studio</title>
+<style>
+  :root{
+    --ink:#3b2a1e;--cream:#fdf6ec;--panel:#fffdf8;--line:#e7d8c4;--gold:#caa04a;
+    --green:#3f9d63;--blue:#5c9dff;--red:#cf5b4e;--muted:#8c7a66;--chip:#f1e7d6;
+    --shadow:0 2px 0 #e7d8c4,0 6px 18px rgba(80,60,40,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    color:var(--ink);background:var(--cream);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:2px solid var(--line);
+    background:rgba(253,246,236,.97);flex-wrap:wrap}
+  h1{font-size:16px;margin:0;font-weight:800}
+  .tabs{display:flex;gap:6px}
+  .tab{border:1.5px solid var(--line);background:var(--panel);border-radius:99px;padding:6px 14px;
+    font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .status{margin-left:auto;font-size:12.5px;color:var(--muted)}
+  .status b{color:var(--green)}
+  main{flex:1;display:flex;min-height:0}
+  /* ITEMS MODE */
+  .rail{width:270px;border-right:2px solid var(--line);display:flex;flex-direction:column;background:var(--panel)}
+  .railhead{padding:10px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+  .railhead input{border:1.5px solid var(--line);border-radius:9px;padding:7px 9px;font:inherit;font-size:13px}
+  .chips{display:flex;gap:5px;flex-wrap:wrap}
+  .chip{border:1.5px solid var(--line);background:var(--panel);border-radius:99px;padding:3px 10px;font-size:11.5px;
+    font-weight:700;cursor:pointer;color:var(--muted)}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .list{overflow-y:auto;flex:1}
+  .row{display:flex;align-items:center;gap:9px;padding:7px 10px;cursor:pointer;border-bottom:1px solid #f3ece0}
+  .row:hover{background:#faf3e7}
+  .row.sel{background:#f3e7cf}
+  .row .th{width:38px;height:38px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;
+    background:#f3ece0;background-image:linear-gradient(45deg,#e4d8c6 25%,transparent 25%),linear-gradient(-45deg,#e4d8c6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e4d8c6 75%),linear-gradient(-45deg,transparent 75%,#e4d8c6 75%);
+    background-size:10px 10px;background-position:0 0,0 5px,5px -5px,-5px 0;overflow:hidden}
+  .row .th img{max-width:100%;max-height:100%}
+  .row .meta{min-width:0;flex:1}
+  .row .id{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .cat{font-size:10.5px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .dot.tuned{background:var(--green)}
+  .dot.def{background:var(--gold)}
+  .dot.none{background:#cbbfa e;background:#d7c8b2}
+  /* STAGE */
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;
+    background:radial-gradient(circle at 50% 40%,#fffdf8,#f4ead9)}
+  .stage{position:relative;background:#fbf4e8;border:2px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .stage .pig{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .stage .pig img{width:100%;height:100%;object-fit:contain}
+  .stage .item{position:absolute}
+  .stage .item img{width:100%;height:100%;object-fit:contain}
+  .anchorDot{position:absolute;width:13px;height:13px;border-radius:50%;border:2px solid #fff;
+    background:#5c9dff;transform:translate(-50%,-50%);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.4);z-index:30}
+  .anchorDot.on{background:var(--red);width:17px;height:17px}
+  .anchorDot .lbl{position:absolute;left:50%;top:-16px;transform:translateX(-50%);font-size:9px;font-weight:800;
+    color:#3b2a1e;background:rgba(255,255,255,.85);padding:0 3px;border-radius:3px;white-space:nowrap;pointer-events:none}
+  /* RIGHT PANEL */
+  .panel{width:300px;border-left:2px solid var(--line);background:var(--panel);padding:14px;overflow-y:auto;
+    display:flex;flex-direction:column;gap:14px}
+  .panel h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:#6e5a44}
+  .itemcanvas{width:150px;height:150px;margin:0 auto;position:relative;border:1.5px dashed var(--line);border-radius:10px;
+    background:#f3ece0;background-image:linear-gradient(45deg,#e4d8c6 25%,transparent 25%),linear-gradient(-45deg,#e4d8c6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e4d8c6 75%),linear-gradient(-45deg,transparent 75%,#e4d8c6 75%);
+    background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0;cursor:crosshair;touch-action:none}
+  .itemcanvas img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+  .pivotMark{position:absolute;width:14px;height:14px;border:2.5px solid var(--red);background:rgba(207,91,78,.35);
+    border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5}
+  .fld{display:flex;flex-direction:column;gap:5px}
+  .fld label{font-size:12px;font-weight:700;color:#6e5a44;display:flex;justify-content:space-between}
+  .fld label span{color:var(--muted);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--gold)}
+  select,.btn{border:1.5px solid var(--line);background:var(--panel);border-radius:9px;padding:8px;font:inherit;
+    font-size:13px;color:var(--ink);cursor:pointer}
+  .btn{font-weight:800}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.ghost{background:var(--panel)}
+  .toggle{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .empty{margin:auto;color:var(--muted)}
+  /* PIG MODE */
+  .pigbar{display:flex;gap:6px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .seg{display:flex;gap:4px}
+  .anchorList{font-size:12px;color:var(--muted)}
+  .anchorList .ar{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f3ece0}
+  .anchorList .ar.miss{color:var(--red);font-weight:700}
+  .dragDot{position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid #fff;background:var(--green);
+    transform:translate(-50%,-50%);cursor:grab;z-index:30;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .dragDot .lbl{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font-size:9px;font-weight:800;
+    color:#3b2a1e;background:rgba(255,255,255,.85);padding:0 3px;border-radius:3px;white-space:nowrap;pointer-events:none}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>🐷 Placement Studio</h1>
+  <div class="tabs">
+    <button class="tab on" data-m="items">Items</button>
+    <button class="tab" data-m="pig">Pig anatomy</button>
+  </div>
+  <div class="status" id="status">loading…</div>
+</header>
+
+<!-- ITEMS MODE -->
+<main id="mode-items">
+  <aside class="rail">
+    <div class="railhead">
+      <input id="search" placeholder="Search items…">
+      <div class="chips">
+        <button class="chip on" data-f="all">All</button>
+        <button class="chip" data-f="untuned">Untuned</button>
+        <button class="chip" data-f="members">Members</button>
+        <button class="chip" data-f="base">Base</button>
+      </div>
+    </div>
+    <div class="list" id="list"></div>
+  </aside>
+
+  <div class="stagewrap">
+    <div class="stage" id="stage"></div>
+  </div>
+
+  <aside class="panel" id="panel">
+    <div class="empty">Pick an item to tune its placement.</div>
+  </aside>
+</main>
+
+<!-- PIG MODE -->
+<main id="mode-pig" class="hidden" style="flex-direction:column">
+  <div class="pigbar">
+    <span class="hint" style="font-weight:700;color:#6e5a44">Animation:</span>
+    <select id="pig-anim"></select>
+    <span class="hint" style="font-weight:700;color:#6e5a44;margin-left:8px">Frame:</span>
+    <span class="seg" id="pig-frames"></span>
+    <button class="btn ghost" id="pig-onion" style="margin-left:8px">Onion skin: off</button>
+    <span class="status" id="pig-status"></span>
+  </div>
+  <div style="flex:1;display:flex;min-height:0">
+    <div class="stagewrap">
+      <div class="stage" id="pig-stage"></div>
+    </div>
+    <aside class="panel" style="width:260px">
+      <h3>Anchors (this frame)</h3>
+      <div class="anchorList" id="pig-anchorlist"></div>
+      <div class="hint">Drag a dot to move it. Missing anchors fall back to REST (shown dim) — drag to set one for this frame. <code>eyes</code>/<code>feet</code> are computed midpoints, not editable.</div>
+    </aside>
+  </div>
+</main>
+
+<script>
+const ANCHORS=["head","eye_l","eye_r","snout","mouth","neck","body","hand_l","hand_r","leg_l","leg_r"];
+const PIG_IMG="/img/assets/images/sprites/rosie/idle_1.png";
+const CARD=300, SCALE=1.5, S=CARD*SCALE; // stage px
+const $=(s,r=document)=>r.querySelector(s);
+let DATA={items:[],rest:{}}, REL={}, SEL=null, FILTER="all", Q="";
+let aspectCache={};
+
+// ---- load ----
+async function boot(){
+  DATA=await fetch("/api/data").then(r=>r.json());
+  // Seed the save-map from the FULL hat_rel (every hand-tuned entry, incl. ones
+  // whose art isn't under hats/) so a rebuild-all save never drops any.
+  REL={}; Object.keys(DATA.hatRel||{}).forEach(id=>{const s=DATA.hatRel[id];REL[id]={pivot:{...s.pivot},widthFrac:s.widthFrac,anchor:s.anchor,behind:!!s.behind};});
+  renderList();
+  $("#status").innerHTML=`${DATA.items.length} items · <b>${DATA.items.filter(i=>i.tuned).length}</b> tuned · ${DATA.items.filter(i=>!i.tuned).length} untuned`;
+  buildPigMode();
+}
+
+// ---- ITEMS: list ----
+function visible(){
+  return DATA.items.filter(it=>{
+    if(Q && !it.id.includes(Q)) return false;
+    if(FILTER==="untuned") return !it.tuned;
+    if(FILTER==="members") return it.members;
+    if(FILTER==="base") return !it.members;
+    return true;
+  });
+}
+function renderList(){
+  const list=$("#list"); list.innerHTML="";
+  visible().forEach(it=>{
+    const r=document.createElement("div"); r.className="row"+(SEL===it.id?" sel":"");
+    const dot=it.tuned?"tuned":(it.defaulted?"def":"none");
+    r.innerHTML=`<div class="th"><img src="/img/${it.image}"></div>
+      <div class="meta"><div class="id">${it.id}</div><div class="cat">${it.category||"—"}${it.members?" · members":""}</div></div>
+      <div class="dot ${dot}" title="${it.tuned?'hand-tuned':it.defaulted?'category default':'no spec'}"></div>`;
+    r.onclick=()=>select(it.id);
+    list.appendChild(r);
+  });
+}
+$("#search").oninput=e=>{Q=e.target.value.trim().toLowerCase();renderList();};
+document.querySelectorAll(".chip[data-f]").forEach(c=>c.onclick=()=>{
+  document.querySelectorAll(".chip[data-f]").forEach(x=>x.classList.remove("on"));
+  c.classList.add("on");FILTER=c.dataset.f;renderList();
+});
+
+// ---- ITEMS: selection + spec ----
+function curSpec(){
+  const it=DATA.items.find(i=>i.id===SEL);
+  return REL[SEL] || (it&&it.rel) || {pivot:{x:0.5,y:1},widthFrac:0.4,anchor:"head",behind:false};
+}
+function select(id){
+  SEL=id; renderList();
+  const it=DATA.items.find(i=>i.id===id);
+  const fullCanvas = it.category==="aura"||it.category==="background";
+  renderPanel(it,fullCanvas); drawStage(); drawItemCanvas();
+}
+
+function renderPanel(it,fullCanvas){
+  const s=curSpec();
+  $("#panel").innerHTML=`
+    <h3>${it.id}</h3>
+    <div class="hint">${it.category||"uncategorised"}${it.members?" · members":""} · ${it.tuned?"hand-tuned":it.defaulted?"category default":"no spec yet"}</div>
+    ${fullCanvas?`<div class="hint" style="color:var(--red)">${it.category} is full-canvas (rendered behind the pig at 300×300) — it has no pivot/anchor placement. Nothing to tune here.</div>`:`
+    <h3>Pivot (drag on the item)</h3>
+    <div class="itemcanvas" id="itemcanvas"><img src="/img/${it.image}"><div class="pivotMark" id="pivotMark"></div></div>
+    <div class="fld"><label>Anchor <span id="anchorName">${s.anchor}</span></label>
+      <div class="hint">Click a blue dot on the pig to attach here.</div></div>
+    <div class="fld"><label>Width <span id="wfVal">${s.widthFrac.toFixed(3)}</span></label>
+      <input type="range" id="wf" min="0.05" max="1.2" step="0.005" value="${s.widthFrac}"></div>
+    <div class="fld"><label>Pivot X <span id="pxVal">${s.pivot.x.toFixed(3)}</span></label>
+      <input type="range" id="px" min="-0.3" max="1.3" step="0.005" value="${s.pivot.x}"></div>
+    <div class="fld"><label>Pivot Y <span id="pyVal">${s.pivot.y.toFixed(3)}</span></label>
+      <input type="range" id="py" min="-0.3" max="1.3" step="0.005" value="${s.pivot.y}"></div>
+    <label class="toggle"><input type="checkbox" id="behind" ${s.behind?"checked":""}> Render behind pig</label>
+    <button class="btn ghost" id="resetDefault">Reset to category default</button>
+    <button class="btn primary" id="nextUntuned">Next untuned →</button>
+    <div class="hint" id="saveHint">Saved automatically to hat_rel.generated.ts.</div>
+    `}`;
+  if(fullCanvas) return;
+  const bind=(id,key,sub)=>{const el=$("#"+id);el.oninput=()=>{
+    const v=parseFloat(el.value); const sp=ensureRel();
+    if(sub){sp.pivot[sub]=v;}else{sp[key]=v;}
+    $("#"+id+"Val")&&($("#"+(key==='widthFrac'?'wf':key)+"Val").textContent=v.toFixed(3));
+    drawStage(); drawItemCanvas(); save();
+  };};
+  $("#wf").oninput=()=>{ensureRel().widthFrac=parseFloat($("#wf").value);$("#wfVal").textContent=parseFloat($("#wf").value).toFixed(3);drawStage();drawItemCanvas();save();};
+  $("#px").oninput=()=>{ensureRel().pivot.x=parseFloat($("#px").value);$("#pxVal").textContent=parseFloat($("#px").value).toFixed(3);drawStage();drawItemCanvas();save();};
+  $("#py").oninput=()=>{ensureRel().pivot.y=parseFloat($("#py").value);$("#pyVal").textContent=parseFloat($("#py").value).toFixed(3);drawStage();drawItemCanvas();save();};
+  $("#behind").onchange=()=>{ensureRel().behind=$("#behind").checked;drawStage();save();};
+  $("#resetDefault").onclick=()=>{const it=DATA.items.find(i=>i.id===SEL);if(it&&it.rel){REL[SEL]={...it.rel,pivot:{...it.rel.pivot}};select(SEL);save();}};
+  $("#nextUntuned").onclick=()=>{const u=visible().find(i=>!i.tuned&&i.id!==SEL)||DATA.items.find(i=>!i.tuned);if(u)select(u.id);};
+  setupItemCanvasDrag();
+}
+function ensureRel(){ if(!REL[SEL]){const s=curSpec();REL[SEL]={pivot:{...s.pivot},widthFrac:s.widthFrac,anchor:s.anchor,behind:!!s.behind};} return REL[SEL]; }
+
+// item-aspect (natural h/w), cached
+function itemAspect(src){return new Promise(res=>{if(aspectCache[src])return res(aspectCache[src]);const im=new Image();im.onload=()=>{aspectCache[src]=im.naturalHeight/im.naturalWidth||1;res(aspectCache[src]);};im.onerror=()=>res(1);im.src=src;});}
+
+async function drawStage(){
+  const it=DATA.items.find(i=>i.id===SEL); if(!it)return;
+  const st=$("#stage"); st.style.width=S+"px"; st.style.height=S+"px";
+  const fullCanvas=it.category==="aura"||it.category==="background";
+  const s=curSpec();
+  const src="/img/"+it.image, aspect=await itemAspect(src);
+  const w=s.widthFrac*CARD, h=w*aspect;
+  const a=DATA.rest[s.anchor]||DATA.rest.head;
+  const left=a.x - s.pivot.x*w, top=a.y - s.pivot.y*h;
+  const behind=!!s.behind;
+  let html=`<div class="pig" style="z-index:${behind?20:5}"><img src="${PIG_IMG}"></div>`;
+  if(!fullCanvas){
+    html+=`<div class="item" style="z-index:${behind?2:10};left:${left*SCALE}px;top:${top*SCALE}px;width:${w*SCALE}px;height:${h*SCALE}px"><img src="${src}"></div>`;
+  }else{
+    html+=`<div class="item" style="z-index:2;left:0;top:0;width:${S}px;height:${S}px"><img src="${src}" style="object-fit:cover"></div>`;
+  }
+  // anchor dots
+  if(!fullCanvas){
+    ANCHORS.concat(["eyes","feet"]).forEach(name=>{
+      const an=DATA.rest[name]; if(!an)return;
+      const on=name===s.anchor;
+      html+=`<div class="anchorDot ${on?'on':''}" data-anchor="${name}" style="left:${an.x*SCALE}px;top:${an.y*SCALE}px"><span class="lbl">${name}</span></div>`;
+    });
+  }
+  st.innerHTML=html;
+  st.querySelectorAll(".anchorDot").forEach(d=>d.onclick=()=>{ensureRel().anchor=d.dataset.anchor;$("#anchorName")&&($("#anchorName").textContent=d.dataset.anchor);drawStage();save();});
+}
+
+function drawItemCanvas(){
+  const mark=$("#pivotMark"), cv=$("#itemcanvas"); if(!mark||!cv)return;
+  const s=curSpec();
+  mark.style.left=(s.pivot.x*cv.clientWidth)+"px";
+  mark.style.top=(s.pivot.y*cv.clientHeight)+"px";
+}
+function setupItemCanvasDrag(){
+  const cv=$("#itemcanvas"); if(!cv)return;
+  let drag=false;
+  const set=e=>{const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+    const sp=ensureRel();sp.pivot.x=Math.max(-0.3,Math.min(1.3,x));sp.pivot.y=Math.max(-0.3,Math.min(1.3,y));
+    $("#px").value=sp.pivot.x;$("#py").value=sp.pivot.y;$("#pxVal").textContent=sp.pivot.x.toFixed(3);$("#pyVal").textContent=sp.pivot.y.toFixed(3);
+    drawItemCanvas();drawStage();save();};
+  cv.onpointerdown=e=>{drag=true;cv.setPointerCapture(e.pointerId);set(e);};
+  cv.onpointermove=e=>{if(drag)set(e);};
+  cv.onpointerup=()=>{drag=false;};
+}
+
+// ---- save (rebuild-all) ----
+let saveT;
+function save(){
+  // mark current item tuned in the list immediately
+  const it=DATA.items.find(i=>i.id===SEL); if(it&&!it.tuned){it.tuned=true;renderList();}
+  clearTimeout(saveT);
+  $("#status").innerHTML=`saving…`;
+  saveT=setTimeout(async()=>{
+    const r=await fetch("/api/save-rel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(REL)}).then(r=>r.json()).catch(()=>null);
+    $("#status").innerHTML=r&&r.ok?`<b>saved</b> · ${r.count} item specs in hat_rel.generated.ts`:`save failed`;
+  },350);
+}
+
+// ---- mode switch ----
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
+  const m=t.dataset.m;
+  $("#mode-items").classList.toggle("hidden",m!=="items");
+  $("#mode-pig").classList.toggle("hidden",m!=="pig");
+});
+
+// ============ PIG ANATOMY MODE ============
+let FRAMES={}, PANIM="idle", PFRAME=0, ONION=false;
+async function buildPigMode(){
+  const d=await fetch("/api/anchors").then(r=>r.json());
+  FRAMES=d.frames; DATA.rest=d.rest;
+  const sel=$("#pig-anim"); sel.innerHTML=Object.keys(FRAMES).map(a=>`<option>${a}</option>`).join("");
+  sel.onchange=()=>{PANIM=sel.value;PFRAME=0;drawPig();};
+  $("#pig-onion").onclick=()=>{ONION=!ONION;$("#pig-onion").textContent="Onion skin: "+(ONION?"on":"off");drawPig();};
+  drawPig();
+}
+function pigFrameImg(anim,frame){return `/img/assets/images/sprites/rosie/${anim}_${frame+1}.png`;}
+function resolvePig(name){ // frame value or REST fallback
+  const fr=FRAMES[PANIM]&&FRAMES[PANIM][PFRAME]||{};
+  if(name in fr) return {...fr[name],set:true};
+  if(DATA.rest[name]) return {...DATA.rest[name],set:false};
+  return null;
+}
+function drawPig(){
+  const frames=FRAMES[PANIM]||[];
+  $("#pig-frames").innerHTML=frames.map((_,i)=>`<button class="tab ${i===PFRAME?'on':''}" data-fr="${i}">${i}</button>`).join("");
+  $("#pig-frames").querySelectorAll("button").forEach(b=>b.onclick=()=>{PFRAME=+b.dataset.fr;drawPig();});
+  const st=$("#pig-stage"); st.style.width=S+"px"; st.style.height=S+"px";
+  let html=`<div class="pig"><img src="${pigFrameImg(PANIM,PFRAME)}"></div>`;
+  if(ONION&&PFRAME>0) html=`<div class="pig" style="opacity:.3"><img src="${pigFrameImg(PANIM,PFRAME-1)}"></div>`+html;
+  ANCHORS.forEach(name=>{
+    const a=resolvePig(name); if(!a)return;
+    html+=`<div class="dragDot" data-a="${name}" style="left:${a.x*SCALE}px;top:${a.y*SCALE}px;opacity:${a.set?1:.4};background:${a.set?'var(--green)':'#b9a98f'}"><span class="lbl">${name}</span></div>`;
+  });
+  st.innerHTML=html;
+  st.querySelectorAll(".dragDot").forEach(setupDotDrag);
+  // anchor list
+  $("#pig-anchorlist").innerHTML=ANCHORS.map(n=>{const a=resolvePig(n);const miss=!a||!a.set;
+    return `<div class="ar ${miss?'miss':''}"><span>${n}</span><span>${a?Math.round(a.x)+", "+Math.round(a.y):"—"}${miss?" (rest)":""}</span></div>`;}).join("");
+}
+function setupDotDrag(dot){
+  const st=$("#pig-stage"); let drag=false;
+  const set=e=>{const r=st.getBoundingClientRect();const x=(e.clientX-r.left)/SCALE,y=(e.clientY-r.top)/SCALE;
+    FRAMES[PANIM][PFRAME][dot.dataset.a]={x:Math.max(0,Math.min(CARD,x)),y:Math.max(0,Math.min(CARD,y))};
+    drawPig();savePig();};
+  dot.onpointerdown=e=>{drag=true;dot.setPointerCapture(e.pointerId);e.stopPropagation();};
+  dot.onpointermove=e=>{if(drag)set(e);};
+  dot.onpointerup=()=>{drag=false;};
+}
+let pigT;
+function savePig(){clearTimeout(pigT);$("#pig-status").textContent="saving…";
+  pigT=setTimeout(async()=>{const r=await fetch("/api/save-anchors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(FRAMES)}).then(r=>r.json()).catch(()=>null);
+    $("#pig-status").innerHTML=r&&r.ok?"<b>saved</b> to PIG_FRAME_ANCHORS":"save failed";},400);}
+
+boot();
+</script>
+</body>
+</html>
