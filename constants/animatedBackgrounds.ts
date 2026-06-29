@@ -13,6 +13,25 @@ export const ANIMATED_BACKGROUNDS: Record<string, ImageSourcePropType[]> = {
 		require("../assets/images/backgrounds/northern_lights_4.png"),
 		require("../assets/images/backgrounds/northern_lights_5.png"),
 	],
+	// Slop Club members-only (Cosmic Hog). Frames derived from one generated
+	// nebula scene by scripts/make_animated_bg.py (twinkling stars + gentle
+	// drift); HAT_IMAGES keys cosmic_drift_bg → frame 1 as the thumbnail.
+	cosmic_drift_bg: [
+		require("../assets/images/backgrounds/cosmic_drift_bg_1.png"),
+		require("../assets/images/backgrounds/cosmic_drift_bg_2.png"),
+		require("../assets/images/backgrounds/cosmic_drift_bg_3.png"),
+		require("../assets/images/backgrounds/cosmic_drift_bg_4.png"),
+		require("../assets/images/backgrounds/cosmic_drift_bg_5.png"),
+	],
+	// Slop Club members-only (Aurora Frost). Rippling aurora over a frosted
+	// snowfield; frames derived from one scene by make_animated_bg.py.
+	frostlight_dome_bg: [
+		require("../assets/images/backgrounds/frostlight_dome_bg_1.png"),
+		require("../assets/images/backgrounds/frostlight_dome_bg_2.png"),
+		require("../assets/images/backgrounds/frostlight_dome_bg_3.png"),
+		require("../assets/images/backgrounds/frostlight_dome_bg_4.png"),
+		require("../assets/images/backgrounds/frostlight_dome_bg_5.png"),
+	],
 };
 
 export function isAnimatedBackground(id: string | null | undefined): boolean {

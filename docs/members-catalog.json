@@ -1,0 +1,762 @@
+[
+  {
+    "id": "sovereign_jewel_crown",
+    "name": "Sovereign Jewel Crown",
+    "category": "hat",
+    "rarity": "legendary",
+    "cost": 5500,
+    "description": "A towering gold crown set with fat rounded rubies and a single sky-blue sapphire at its peak.",
+    "theme": "Royal Sty",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a tall royal gold crown sized to sit on a small piglet's head, with rounded points each tipped by a glossy pearl, ringed with fat cabochon rubies and one big sky-blue sapphire jewel set at the front peak, soft crimson velvet showing through the band. Thick dark brown outline, soft warm pastel gold and crimson colors, flat cel shading, storybook sticker look, gentle highlights on the jewels, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "ermine_coronet",
+    "name": "Ermine Coronet",
+    "category": "hat",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A soft crimson velvet cap rimmed in fluffy white ermine trim with little black tail-tip spots.",
+    "theme": "Royal Sty",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small piglet-sized coronet: a plush crimson velvet cap topped with a tiny gold tassel, its lower rim a band of fluffy white ermine fur dotted with little black ermine tail-tip spots. Thick dark brown outline, soft warm pastel crimson and cream colors, flat cel shading, storybook sticker look, soft fuzzy fur texture, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "royal_velvet_bow",
+    "name": "Royal Velvet Bow",
+    "category": "bow",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A plump crimson velvet bow cinched with a round gold buckle and a tiny jewel at its heart.",
+    "theme": "Royal Sty",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a plump crimson velvet bow sized for a small piglet, its two soft rounded loops cinched at the center by a round gold buckle holding a single tiny rounded ruby, with short trailing velvet tails edged in thin gold piping. Thick dark brown outline, soft warm pastel crimson and gold colors, flat cel shading, storybook sticker look, gentle velvet sheen, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "royal_pince_nez",
+    "name": "Royal Pince-Nez",
+    "category": "glasses",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "Dainty gold pince-nez spectacles with rounded lenses and a little jeweled chain.",
+    "theme": "Royal Sty",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of dainty royal pince-nez spectacles sized for a small piglet's face: two round gold-rimmed lenses joined by an ornate little gold nose-bridge, a thin gold chain dangling from one side ending in a tiny rounded jewel. Thick dark brown outline, soft warm pastel gold colors with pale glassy lenses, flat cel shading, storybook sticker look, soft glints on the gold, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "royal_scepter",
+    "name": "Royal Scepter",
+    "category": "held",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A short gold scepter topped with a rounded crimson jewel and a fluffy ermine collar.",
+    "theme": "Royal Sty",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a short royal scepter sized to be held by a small piglet: a stout twisty gold rod topped with a big rounded crimson jewel orb crowned by a tiny gold cross-finial, a little fluffy white ermine collar just below the orb. Thick dark brown outline, soft warm pastel gold and crimson colors, flat cel shading, storybook sticker look, gentle highlight on the jewel orb, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "majesty_gold_aura",
+    "name": "Majesty Aura",
+    "category": "aura",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A radiant ring of warm gold light studded with floating little crowns and rounded jewels.",
+    "theme": "Royal Sty",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a regal aura: a soft glowing ring of warm radiant gold light with gentle outward rays, orbited by little floating gold crowns, rounded ruby and sapphire jewels, and soft sparkles, leaving an empty rounded space in the center for a piglet. Thick dark brown outline on the floating elements, soft warm pastel gold and jewel-tone colors, flat cel shading, storybook sticker look, dreamy glow, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "throne_room_bg",
+    "name": "Royal Throne Room",
+    "category": "background",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A cozy palace hall draped in crimson velvet with a little gold throne and a long red carpet.",
+    "theme": "Royal Sty",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game scene that fills the whole frame as a backdrop: a warm palace throne room with tall crimson velvet drapes tied with gold cords, a little gold throne on a low dais, a long red carpet running down the middle, golden pillars, and a soft chandelier glow overhead. Thick dark brown outlines, soft warm pastel crimson and gold colors, flat cel shading, storybook sticker look, cozy and inviting, no text, no characters."
+  },
+  {
+    "id": "crown_spark_particle",
+    "name": "Crown Sparks",
+    "category": "tickle_particle",
+    "rarity": "common",
+    "cost": 1200,
+    "description": "A flurry of tiny gold crowns and rounded jewels that twinkle when you tickle.",
+    "theme": "Royal Sty",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a single tiny gold crown particle with a rounded ruby in its band and a soft four-point sparkle twinkle behind it, a clean simple sticker glyph meant to burst out in flurries during a tickle. Thick dark brown outline, soft warm pastel gold and crimson colors, flat cel shading, storybook sticker look, bright cheerful glint, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "ringed_planet_hat",
+    "name": "Ringed Planet Hat",
+    "category": "hat",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A tiny pastel ringed planet that hovers and slowly tilts atop the piglet's head.",
+    "theme": "Cosmic Hog",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small ringed planet hat sized to perch on a little piglet's head: a round soft lilac-and-periwinkle planet with a gentle pastel ring of stardust circling it, a few tiny glowing white stars tucked around it. Thick dark brown outline, soft warm pastel colors with deep purple and navy space accents, flat cel shading, storybook sticker look. Centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "crescent_moon_cap",
+    "name": "Crescent Moon Cap",
+    "category": "hat",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A cozy little crescent moon that rests like a nightcap with a dusting of sleepy stars.",
+    "theme": "Cosmic Hog",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a crescent moon cap sized for a small piglet's head: a soft cream-and-lavender crescent moon curving like a little nightcap, with a tiny glowing star hanging from the tip and a sprinkle of pastel stardust. Thick dark brown outline, soft warm pastel colors with deep purple and navy space accents, flat cel shading, storybook sticker look. Centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "stardust_bow",
+    "name": "Stardust Bow",
+    "category": "bow",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A plush ribbon bow speckled with twinkling stardust that gently shimmers.",
+    "theme": "Cosmic Hog",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a plush ribbon bow sized for a small piglet: a soft deep-purple and navy bow with pastel pink edges, dusted all over with tiny glowing white and lilac stardust specks and a couple of little stars. Thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look. Centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "galaxy_shades",
+    "name": "Galaxy Shades",
+    "category": "glasses",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "Round little sunglasses with swirling pastel nebula lenses full of tiny stars.",
+    "theme": "Cosmic Hog",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of round sunglasses sized for a small piglet's face: two round lenses filled with a swirling pastel nebula of pink, lilac and navy with tiny glowing stars inside, soft dark frames. Thick dark brown outline, soft warm pastel colors with deep purple and navy space accents, flat cel shading, storybook sticker look. Centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "comet_wand",
+    "name": "Comet Wand",
+    "category": "held",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A little star-tipped wand trailing a soft tail of pastel stardust.",
+    "theme": "Cosmic Hog",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small star-tipped wand sized for a little piglet to hold: a short navy-and-lilac handle topped with a glowing pastel-gold star, trailing a gentle curved tail of pink and lilac stardust and a few tiny stars. Thick dark brown outline, soft warm pastel colors with deep purple and navy space accents, flat cel shading, storybook sticker look. Centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "nebula_aura",
+    "name": "Nebula Aura",
+    "category": "aura",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A soft swirling halo of pastel nebula clouds and drifting stars that wraps the piglet.",
+    "theme": "Cosmic Hog",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a glowing aura ring: a soft circular swirl of pastel nebula clouds in pink, lilac, navy and deep purple, dotted with tiny glowing white stars and drifting stardust, shaped as a hollow halo with an empty center where a small piglet would stand. Thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look. Centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "cosmic_drift_bg",
+    "name": "Cosmic Drift",
+    "category": "background",
+    "rarity": "legendary",
+    "cost": 5500,
+    "description": "A dreamy deep-space scene of pastel nebulae, drifting planets and a sea of glowing stars.",
+    "theme": "Cosmic Hog",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game scene that fills the whole frame as a full backdrop: a dreamy deep-purple and navy night sky washed with soft pastel nebula clouds in pink and lilac, scattered glowing white stars, a couple of tiny rounded planets, a gentle crescent moon and trails of stardust. Thick dark brown outlines on the shapes, soft warm pastel colors, flat cel shading, storybook sticker look, no text."
+  },
+  {
+    "id": "stardust_sparkle_particle",
+    "name": "Stardust Sparkle",
+    "category": "tickle_particle",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "Each tickle bursts into a little puff of twinkling pastel stardust and tiny stars.",
+    "theme": "Cosmic Hog",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a single small stardust sparkle particle: a tiny glowing four-point star in soft pastel-gold and lilac surrounded by a few specks of pink and white stardust. Thick dark brown outline, soft warm pastel colors with deep purple and navy space accents, flat cel shading, storybook sticker look. Centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "daisy_flower_crown",
+    "name": "Daisy Flower Crown",
+    "category": "hat",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A woven ring of fresh daisies and soft greens, crowning the snout in cottage-garden sunshine.",
+    "theme": "Garden Gala",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a flower crown made of white daisies with sunny yellow centers and a few tiny pink roses, woven together with soft green leaves and stems, sized to sit on a small piglet's head like a circlet. Thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, isolated and centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "watering_can_hat",
+    "name": "Watering Can Cap",
+    "category": "hat",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A tipped pastel watering can perched on the head, trickling a tiny ribbon of garden rain.",
+    "theme": "Garden Gala",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a tilted pastel mint-green watering can worn like a little hat, with a rounded spout and a gentle ribbon of soft blue water droplets trickling out, a couple of tiny daisies tucked near the handle, sized to perch on a small piglet's head. Thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, isolated and centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "rosebud_bow",
+    "name": "Rosebud Ribbon Bow",
+    "category": "bow",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A plush pastel-pink bow dotted with tiny rosebuds, tied just so for the garden party.",
+    "theme": "Garden Gala",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a plush pastel-pink hair bow with two soft looped petals and trailing ribbon tails, dotted with a few tiny rosebuds and a sprig of green leaves at its knot, sized for a small piglet. Thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, isolated and centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "petal_specs",
+    "name": "Petal Garden Glasses",
+    "category": "glasses",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "Round flower-framed spectacles where each lens blooms with soft daisy petals.",
+    "theme": "Garden Gala",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of round eyeglasses whose two circular frames are wrapped in soft daisy petals, with pastel pink and white blossoms and tiny green leaves at the corners, clear gentle lenses, sized to fit a small piglet's face. Thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, isolated and centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "garden_trowel_held",
+    "name": "Blossom Garden Trowel",
+    "category": "held",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A cheerful little wooden trowel with a fresh daisy tucked into its handle, ready to tend the beds.",
+    "theme": "Garden Gala",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small cheerful garden trowel sized as a piglet-held prop: a warm wooden handle wrapped with a sprig of green leaves and a single white daisy with a sunny yellow center, a rounded pastel-silver scoop with a little dusting of soft brown soil. Thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, isolated and centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "butterfly_garden_aura",
+    "name": "Butterfly Garden Aura",
+    "category": "aura",
+    "rarity": "legendary",
+    "cost": 5500,
+    "description": "A drifting halo of pastel butterflies and floating petals that flutters gently around the pig.",
+    "theme": "Garden Gala",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a soft circular aura made of fluttering pastel butterflies in pink, lavender, and butter-yellow, with drifting flower petals and a few tiny sparkles forming a glowing ring, the center left open and empty for a pig to sit inside. Thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, the aura ring isolated and centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "cottage_garden_bg",
+    "name": "Cottage Garden",
+    "category": "background",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A sunny cottage garden of daisies, roses, and gentle greens humming with drifting butterflies.",
+    "theme": "Garden Gala",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game scene of a sunny cottage garden that fills the whole frame: soft pastel flowerbeds of white daisies and pink roses, gentle rolling green grass, a little white picket fence and trellis, drifting pastel butterflies, fluffy clouds in a warm sunny sky, and a pastel watering can resting among the blooms. Thick dark brown outlines on the main shapes, soft warm pastel colors, flat cel shading, storybook sticker look, the scene fills the entire frame as a full backdrop, no text."
+  },
+  {
+    "id": "ganache_truffle_crown",
+    "name": "Ganache Truffle Crown",
+    "category": "hat",
+    "rarity": "legendary",
+    "cost": 5500,
+    "description": "A glossy chocolate-mud crown dripping with caramel and crowned by a gilded truffle.",
+    "theme": "Mudlark Deluxe",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a tiny royal crown made of glossy chocolate-brown mud with a playful wet sheen, slow caramel drips running down its points, each point tipped with a polished golden truffle, soft warm pastel highlights catching the light, thick dark brown outline, flat cel shading, storybook sticker look, sized to sit on a small piglet's head, isolated centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "slop_pail_topper",
+    "name": "Slop Pail Topper",
+    "category": "hat",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "An overturned silver slop pail polished to a mirror shine with a single thick mud drip down the rim.",
+    "theme": "Mudlark Deluxe",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of an upside-down little silver slop pail polished to a soft mirror shine, a single thick glossy chocolate-brown mud drip rolling over the rim, a tiny brass handle, warm pastel reflections, thick dark brown outline, flat cel shading, storybook sticker look, sized to perch on a small piglet's head like a hat, isolated centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "truffle_medal_held",
+    "name": "Grand Trough Medal",
+    "category": "held",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A heavy gold first-place trough medal on a glossy ribbon, awarded for the muddiest wallow.",
+    "theme": "Mudlark Deluxe",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a large gleaming gold first-place medal shaped like a little feeding trough, hanging from a glossy chocolate-brown ribbon, a tiny embossed pig snout on the medal face, warm pastel gold highlights, thick dark brown outline, flat cel shading, storybook sticker look, sized as a small piglet-held prop, isolated centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "drip_glaze_aura",
+    "name": "Drip Glaze Aura",
+    "category": "aura",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "Glossy chocolate-mud droplets and golden flecks drip and orbit in a slow luxe halo.",
+    "theme": "Mudlark Deluxe",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a soft glowing ring aura made of glossy chocolate-brown mud droplets and tiny golden flecks, droplets dripping and drifting in a gentle circle with a playful wet sheen, warm pastel glow, thick dark brown outline on each droplet, flat cel shading, storybook sticker look, a ring-shaped aura that would surround a small piglet, isolated centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "spa_wallow_bg",
+    "name": "Truffle Spa Wallow",
+    "category": "background",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A luxe-but-grubby pig spa of steaming glossy mud baths, gold pails and trough medals on the wall.",
+    "theme": "Mudlark Deluxe",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game scene that fills the whole frame: a luxe-but-grubby piglet spa interior, steaming pools of glossy chocolate-brown mud with a playful sheen, polished gold slop pails along the edge, hanging trough medals and ribbons on a warm pastel wall, soft warm lighting, thick dark brown outlines, flat cel shading, storybook sticker look, full scene backdrop filling the frame, no text."
+  },
+  {
+    "id": "cocoa_sheen_specs",
+    "name": "Cocoa Sheen Specs",
+    "category": "glasses",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "Round glasses with glossy chocolate-mud frames and a warm golden glint.",
+    "theme": "Mudlark Deluxe",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of round eyeglasses with chunky glossy chocolate-brown mud frames and a playful wet sheen, a warm golden glint on each lens, soft warm pastel reflections, thick dark brown outline, flat cel shading, storybook sticker look, sized to rest on a small piglet's face, isolated centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "caramel_drip_bow",
+    "name": "Caramel Drip Bow",
+    "category": "bow",
+    "rarity": "common",
+    "cost": 1200,
+    "description": "A plump glossy bow of chocolate-mud ribbon with a slow caramel drip at the knot.",
+    "theme": "Mudlark Deluxe",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a plump glossy ribbon bow made of chocolate-brown mud with a playful wet sheen, a slow caramel drip hanging from the center knot, soft warm pastel highlights, thick dark brown outline, flat cel shading, storybook sticker look, sized as a small piglet hair bow, isolated centered on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "frosted_cupcake_crown",
+    "name": "Frosted Cupcake Crown",
+    "category": "hat",
+    "rarity": "legendary",
+    "cost": 5500,
+    "description": "A ring of frosted pastel cupcakes crowned with glossy cherries and a shower of sprinkles.",
+    "theme": "Confection Counter",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a tiny crown made of frosted pastel cupcakes sized for a small piglet's head, each cupcake topped with a swirl of soft pink and mint whipped frosting, a glossy red cherry, and scattered rainbow sprinkles, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "whipped_swirl_cap",
+    "name": "Whipped Swirl Cap",
+    "category": "hat",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A tall fluffy swirl of whipped cream capped with a single bright cherry.",
+    "theme": "Confection Counter",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a tall fluffy whipped-cream swirl hat sized for a small piglet's head, soft cream-white peaks with a gentle pastel sheen, topped with one glossy red cherry and a tiny green stem, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "cherry_pop_bow",
+    "name": "Cherry Pop Bow",
+    "category": "bow",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A glossy candy-red bow tied around a pair of plump twin cherries.",
+    "theme": "Confection Counter",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a glossy candy-red bow sized for a small piglet, the bow tied around two plump shiny cherries joined by a thin green stem, soft sugary highlights, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "lollipop_specs",
+    "name": "Lollipop Specs",
+    "category": "glasses",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "Round glasses with translucent swirl-lollipop lenses in cheerful candy colors.",
+    "theme": "Confection Counter",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of round glasses sized for a small piglet, each lens a translucent spiral swirl-lollipop in pastel pink and white candy colors with a glossy sugar shine, slim candy-striped frame, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "sprinkle_glaze_aura",
+    "name": "Sprinkle Glaze Aura",
+    "category": "aura",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A soft glaze of sugary pink light with tiny rainbow sprinkles drifting all around.",
+    "theme": "Confection Counter",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a glowing aura ring of soft sugary pink-and-cream glaze light with tiny floating rainbow sprinkles and sparkles drifting outward, glossy frosting sheen, thick dark brown outline on the sprinkles, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "confection_counter_bg",
+    "name": "Confection Counter Display",
+    "category": "background",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A cozy pastel bakery counter lined with cupcakes, candy jars, and tiered cakes under warm light.",
+    "theme": "Confection Counter",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game scene that fills the whole frame as a full backdrop: a warm pastel bakery counter lined with frosted cupcakes, glass candy jars full of lollipops and gumdrops, tiered cakes, and bowls of sprinkles, soft cream walls with gentle window light and a hanging bunting, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, no text."
+  },
+  {
+    "id": "sugar_sprinkle_particle",
+    "name": "Sugar Sprinkle Burst",
+    "category": "tickle_particle",
+    "rarity": "common",
+    "cost": 1200,
+    "description": "A cheerful little burst of tiny rainbow sugar sprinkles.",
+    "theme": "Confection Counter",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small confetti-like burst of tiny rounded rainbow sugar sprinkles in pastel pink, mint, yellow, and blue, with a faint sugary shine, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "silver_plume_helm",
+    "name": "Silver Plume Helm",
+    "category": "hat",
+    "rarity": "legendary",
+    "cost": 5500,
+    "description": "A gleaming silver knight helm crowned with a soft sweeping plume, ready for the gentlest of quests.",
+    "theme": "Storybook Knight",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a tiny rounded silver knight's helmet sized to sit on a small piglet's head, polished pale-silver armor with a little hinged visor and a tall soft sweeping cream-and-rose feather plume on top, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "squire_feather_cap",
+    "name": "Squire Feather Cap",
+    "category": "hat",
+    "rarity": "common",
+    "cost": 1200,
+    "description": "A humble felt squire cap with a single jaunty feather, perfect for a knight in training.",
+    "theme": "Storybook Knight",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small soft felt squire cap sized for a little piglet's head, dusty-blue fabric with a folded brim and one cheerful cream feather tucked in the side, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "heraldic_crest_bow",
+    "name": "Heraldic Crest Bow",
+    "category": "bow",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A tidy ribbon bow stamped with a friendly little shield crest, worn by gallant piglets everywhere.",
+    "theme": "Storybook Knight",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small plush ribbon bow in deep crimson and gold trim, with a tiny embroidered heraldic shield crest at the center knot, sized for a little piglet, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "knight_visor_specs",
+    "name": "Knight Visor Specs",
+    "category": "glasses",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A slim silver visor slit worn across the eyes, lending any piglet a noble squint.",
+    "theme": "Storybook Knight",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a slim pale-silver knight's visor with a narrow horizontal eye slit and tiny gold rivets, shaped to sit across a small piglet's eyes like glasses, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "round_buckler_held",
+    "name": "Round Buckler Shield",
+    "category": "held",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A small round wooden buckler painted with a cheerful pig crest, just the right size for a brave piglet.",
+    "theme": "Storybook Knight",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small round wooden buckler shield sized to be held by a little piglet, warm cream and crimson paint with a friendly tiny pig-snout crest in the center and a polished silver rim, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "gallant_valor_aura",
+    "name": "Gallant Valor Aura",
+    "category": "aura",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A warm shimmer of golden courage that drifts around the bravest of little knights.",
+    "theme": "Storybook Knight",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a soft glowing aura ring made of warm golden light with tiny floating heraldic sparkles and faint drifting silver shield motes, a gentle radiant halo meant to surround a small piglet, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "castle_courtyard_dawn_bg",
+    "name": "Castle Courtyard Dawn",
+    "category": "background",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A sunny stone castle courtyard draped with banners and curling ivy at first light.",
+    "theme": "Storybook Knight",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game scene that fills the entire frame as a full backdrop: a sunny storybook stone castle courtyard at gentle dawn, warm sandstone walls and rounded towers, colorful hanging heraldic banners, climbing green ivy, a cobblestone floor and a soft golden morning sky, thick dark brown outlines, soft warm pastel colors, flat cel shading, storybook sticker look, no text."
+  },
+  {
+    "id": "frost_monarch_crown",
+    "name": "Frost Monarch Crown",
+    "category": "hat",
+    "rarity": "legendary",
+    "cost": 5500,
+    "description": "A crown of pale-blue ice shards crowned with a shimmering aurora halo.",
+    "theme": "Aurora Frost",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a crown made of pale-blue ice shards and clear frosted crystals, with a soft shimmering aurora-light glow arcing above its tallest spire and tiny snow sparkles. Sized to sit on a small piglet's head. Thick dark brown outline, soft warm pastel colors cooled to icy blues and mint, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "aurora_glow_hood",
+    "name": "Aurora Glow Hood",
+    "category": "hat",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A snug winter hood trimmed with soft frost fur and a faint glow of northern lights.",
+    "theme": "Aurora Frost",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a snug knitted winter hood in pale icy blue with soft white frost-fur trim, dusted with snow crystals and a faint shimmer of green-and-pink aurora light along its edge. Sized to fit a small piglet's head. Thick dark brown outline, soft warm pastel colors cooled to wintry tones, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "frostlight_dome_bg",
+    "name": "Frostlight Dome",
+    "category": "background",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A hushed snowfield glowing under rippling ribbons of aurora light.",
+    "theme": "Aurora Frost",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game scene backdrop of a quiet snowfield at night beneath rippling ribbons of green, pink, and pale-blue aurora light, with soft snow crystals drifting, frosted pine silhouettes, and a gentle winter glow. The scene fills the whole frame as a full backdrop. Thick dark brown outlines on the foreground shapes, soft warm pastel colors cooled to icy blues and aurora hues, flat cel shading, storybook sticker look, no text."
+  },
+  {
+    "id": "aurora_veil_aura",
+    "name": "Aurora Veil",
+    "category": "aura",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A drifting veil of aurora light and tiny snow crystals wraps around you.",
+    "theme": "Aurora Frost",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a soft circular aura made of shimmering ribbons of pale-blue, mint, and pink aurora light with tiny drifting snow crystals and frost sparkles, glowing gently. Drawn as a ring-shaped glow meant to surround a small piglet. Thick dark brown outline on the light wisps, soft warm pastel colors cooled to wintry aurora tones, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "icicle_scepter",
+    "name": "Icicle Scepter",
+    "category": "held",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A little frosted scepter tipped with a glinting blue ice star.",
+    "theme": "Aurora Frost",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small frosted scepter wand, its pale-blue icy shaft tipped with a glinting six-point ice-crystal star that gives off soft frost sparkles and a faint aurora shimmer. Piglet-sized, just right to be held in a little hoof. Thick dark brown outline, soft warm pastel colors cooled to icy blues, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "snow_crystal_bow",
+    "name": "Snow Crystal Bow",
+    "category": "bow",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A dainty bow shaped from pale-blue snowflakes and frost ribbon.",
+    "theme": "Aurora Frost",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a dainty hair bow made of pale-blue frosted ribbon with a delicate snow-crystal snowflake at its center and a light dusting of sparkle. Sized as a small accessory bow for a little piglet. Thick dark brown outline, soft warm pastel colors cooled to icy blue and white, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "frost_spectacles",
+    "name": "Frost Spectacles",
+    "category": "glasses",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "Round glasses with lenses kissed by a thin sheen of winter frost.",
+    "theme": "Aurora Frost",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of round eyeglasses with pale-blue rims and lenses lightly frosted with feathery ice patterns and a soft aurora sheen. Sized to rest across a small piglet's snout and eyes. Thick dark brown outline, soft warm pastel colors cooled to wintry blue, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "snowglint_particle",
+    "name": "Snow Glint",
+    "category": "tickle_particle",
+    "rarity": "common",
+    "cost": 1200,
+    "description": "Tiny glinting snow crystals burst out each happy tickle.",
+    "theme": "Aurora Frost",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a single small sparkling snow crystal, a six-point pale-blue snowflake with a bright white glint and tiny frost sparkles around it, designed as a tiny burst particle. Thick dark brown outline, soft warm pastel colors cooled to icy blue and white, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "hibiscus_sun_crown",
+    "name": "Hibiscus Sun Crown",
+    "category": "hat",
+    "rarity": "legendary",
+    "cost": 5500,
+    "description": "A glowing crown of bright hibiscus blooms ringed by a tiny radiant tropical sun.",
+    "theme": "Tropic Luau",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a tropical flower crown sized for a small piglet's head, woven from big bright pink and orange hibiscus blooms with sunny yellow centers, ringed by a tiny warm glowing tropical sun and a few green palm leaves, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "pineapple_tiki_hat",
+    "name": "Pineapple Tiki Hat",
+    "category": "hat",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A cheerful golden pineapple hat with a leafy green crown and a tucked-in flower.",
+    "theme": "Tropic Luau",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a cheerful golden pineapple hat sized for a small piglet's head, rounded sunny-yellow pineapple body with a friendly cross-hatch texture, a leafy green spiky crown on top, and a single tucked-in pink hibiscus flower, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "plumeria_lei_bow",
+    "name": "Plumeria Lei Bow",
+    "category": "bow",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A soft tropical bow tied from white and yellow plumeria blossoms.",
+    "theme": "Tropic Luau",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small tropical hair bow sized for a piglet, tied from creamy white and warm yellow plumeria blossoms with little green leaf accents and a tiny knot of petals at the center, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "coconut_shell_shades",
+    "name": "Coconut Shell Shades",
+    "category": "glasses",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "Round beachy sunglasses with little carved coconut-shell rims and a hibiscus on the corner.",
+    "theme": "Tropic Luau",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of round beachy sunglasses sized for a piglet, with warm brown carved coconut-shell rims, soft amber sunset-tinted lenses, and a tiny pink hibiscus flower perched on one corner, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "pineapple_paradise_cup",
+    "name": "Pineapple Paradise Cup",
+    "category": "held",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A hollowed pineapple drink with a paper umbrella, a curly straw, and a cherry on top.",
+    "theme": "Tropic Luau",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a tropical pineapple drink sized to be held by a small piglet, a hollowed golden pineapple cup with a pastel paper umbrella, a curly pink straw, a slice of pineapple on the rim, and a little red cherry on top, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "island_sunglow_aura",
+    "name": "Island Sunglow Aura",
+    "category": "aura",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A warm golden sunset glow ringed with drifting hibiscus petals and tiny palm leaves.",
+    "theme": "Tropic Luau",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a glowing tropical aura ring, a soft warm golden sunset haze radiating outward with drifting bright pink hibiscus petals and tiny green palm leaves floating around the edge, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, a glowing ring of light isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "luau_lagoon_bg",
+    "name": "Luau Lagoon",
+    "category": "background",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A warm tropical lagoon at golden hour with leaning palms, tiki torches, and floating lanterns.",
+    "theme": "Tropic Luau",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game scene of a warm tropical lagoon at golden hour, leaning palm trees with big green fronds, a turquoise lagoon, soft sandy beach strung with flower garlands and glowing tiki torches, paper lanterns drifting overhead, and a big warm setting sun, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, filling the whole frame as a full scene backdrop, no text."
+  },
+  {
+    "id": "masquerade_plume_hat",
+    "name": "Masquerade Plume",
+    "category": "hat",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "An elegant deep-violet top hat crowned with a tall curling jewel-tone feather plume.",
+    "theme": "Midnight Masquerade",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of an elegant tiny ball-room top hat sized for a small piglet head, deep amethyst-violet velvet band with a thin gold ribbon, crowned with one tall curling teal-and-sapphire feather plume that sweeps to the side, soft warm pastel jewel tones, thick dark brown outline, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "candlelit_circlet",
+    "name": "Candlelit Circlet",
+    "category": "hat",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A delicate gold circlet set with tiny ruby and sapphire gems that glow like soft candlelight.",
+    "theme": "Midnight Masquerade",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a delicate slim gold circlet sized to rest on a small piglet head, dotted with tiny glowing ruby and sapphire cabochon gems and little warm candle-flame sparkles, soft warm pastel jewel tones, thick dark brown outline, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "midnight_eye_mask",
+    "name": "Midnight Eye Mask",
+    "category": "mask",
+    "rarity": "legendary",
+    "cost": 5500,
+    "description": "An ornate gold-filigree eye mask over deep midnight-violet velvet, dusted with shimmering gems.",
+    "theme": "Midnight Masquerade",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of an ornate masquerade eye mask sized for a small piglet face, deep midnight-violet velvet with swirling gold-filigree scrollwork around the eye holes, a small sapphire teardrop gem at the brow and tiny scattered jewel sparkles, soft warm pastel jewel tones, thick dark brown outline, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "velvet_jewel_bow",
+    "name": "Velvet Jewel Bow",
+    "category": "bow",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A plush emerald-velvet bow with gold trim and a single pearl gem at the knot.",
+    "theme": "Midnight Masquerade",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a plush emerald-green velvet bow sized for a small piglet, with thin gold-trim edges and a single round pearl gem set in the center knot, soft warm pastel jewel tones, thick dark brown outline, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "opera_lorgnette",
+    "name": "Opera Lorgnette",
+    "category": "glasses",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A pair of gold-rimmed opera lorgnette spectacles with a dainty curling handle.",
+    "theme": "Midnight Masquerade",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of dainty gold-rimmed opera lorgnette spectacles sized for a small piglet face, two oval lenses with a small curling ornate gold handle to one side and a tiny ruby accent, soft warm pastel jewel tones, thick dark brown outline, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "feathered_fan",
+    "name": "Feathered Fan",
+    "category": "held",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A folding ball-room fan of soft plum feathers with a gilded handle, piglet-sized.",
+    "theme": "Midnight Masquerade",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a small folding ball-room hand fan sized for a small piglet to hold, made of soft layered plum and rose feathers fanning out from a slim gilded handle, soft warm pastel jewel tones, thick dark brown outline, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "moonlit_ballroom_bg",
+    "name": "Moonlit Ballroom",
+    "category": "background",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A candlelit masquerade ballroom with a glowing chandelier, tall arched windows, and soft moonlight.",
+    "theme": "Midnight Masquerade",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game scene that fills the whole frame as a full backdrop: a grand candlelit masquerade ballroom at night, a glowing golden chandelier overhead, tall arched windows letting in soft blue moonlight, deep jewel-tone violet and emerald drapes, polished floor with warm candle reflections, soft warm pastel jewel tones, thick dark brown outline, flat cel shading, storybook sticker look, no text."
+  },
+  {
+    "id": "candleglow_aura",
+    "name": "Candleglow Aura",
+    "category": "aura",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A soft swirling halo of warm candlelight and tiny floating jewel sparkles.",
+    "theme": "Midnight Masquerade",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a soft swirling aura ring of warm golden candlelight haze with tiny floating violet and emerald jewel sparkles drifting around an empty center, soft warm pastel jewel tones, thick dark brown outline, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "slop_club_laurel_cap",
+    "name": "Slop Club Laurel Cap",
+    "category": "hat",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A soft cream cap ringed in gilded laurel leaves with a tiny snout-seal crest stamped on the brim.",
+    "theme": "Slop Club Signature",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a soft cream-colored club cap ringed with a wreath of gilded gold laurel leaves, a tiny embossed pig-snout seal crest stamped on the front brim, sized to sit on a small piglet's head. Thick dark brown outline, soft warm pastel cream and gold colors, flat cel shading, storybook sticker look, isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "slop_club_signet_visor",
+    "name": "Slop Club Signet Visor",
+    "category": "hat",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A sleek gold-trimmed cream visor with the club's pig-snout seal pressed into the band.",
+    "theme": "Slop Club Signature",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a sleek cream sport visor trimmed in glossy gold, a small embossed pig-snout seal crest centered on the headband, sized to fit snugly on a small piglet's head. Thick dark brown outline, soft warm pastel cream and gold colors, flat cel shading, storybook sticker look, isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "slop_club_seal_bow",
+    "name": "Slop Club Seal Bow",
+    "category": "bow",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A plush cream ribbon bow knotted around a glossy gold pig-snout seal medallion.",
+    "theme": "Slop Club Signature",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a plush cream-colored ribbon bow tied around a small round glossy gold medallion embossed with a pig-snout seal at the knot, sized as a little hair bow for a small piglet. Thick dark brown outline, soft warm pastel cream and gold colors, flat cel shading, storybook sticker look, isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "slop_club_monocle_crest",
+    "name": "Slop Club Crest Monocle",
+    "category": "glasses",
+    "rarity": "rare",
+    "cost": 3000,
+    "description": "A polished gold monocle on a cream cord, its rim engraved with the tiny club snout-seal.",
+    "theme": "Slop Club Signature",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a polished gold single-lens monocle on a thin cream cord, its rim engraved with a tiny pig-snout seal crest, sized to sit over one eye of a small piglet. Thick dark brown outline, soft warm pastel gold and cream colors, flat cel shading, storybook sticker look, isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "slop_club_membership_card",
+    "name": "Slop Club Membership Card",
+    "category": "held",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "description": "A glossy cream-and-gold club card embossed with the pig-snout seal, held proudly in hoof.",
+    "theme": "Slop Club Signature",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a glossy cream and gold club membership card embossed with a raised pig-snout seal crest in one corner, sized to be held in a small piglet's hoof. Thick dark brown outline, soft warm pastel cream and gold colors, flat cel shading, storybook sticker look, isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "slop_club_gilded_seal_aura",
+    "name": "Gilded Seal Aura",
+    "category": "aura",
+    "rarity": "epic",
+    "cost": 4200,
+    "description": "A ring of shimmering gold club seals and cream sparkles that orbits the pig in a warm halo.",
+    "theme": "Slop Club Signature",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game icon of a glowing circular aura made of floating gold pig-snout seal medallions, shimmering cream sparkles, and soft golden light forming a warm radiant ring around an empty center where a small piglet would stand. Thick dark brown outline, soft warm pastel gold and cream colors, flat cel shading, storybook sticker look, isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "slop_club_lounge_bg",
+    "name": "Slop Club Members Lounge",
+    "category": "background",
+    "rarity": "legendary",
+    "cost": 5500,
+    "description": "A plush gold-and-cream members lounge with velvet seats and the club snout-seal crest above the hearth.",
+    "theme": "Slop Club Signature",
+    "chatgpt_prompt": "A cute hand-drawn cozy mobile-game scene that fills the entire frame: a plush exclusive members club lounge with cream velvet armchairs, warm golden lamplight, gilded trim, a crackling hearth, and a large embossed pig-snout seal crest mounted on the wall above the mantel. Thick dark brown outlines, soft warm pastel cream and gold colors, flat cel shading, storybook backdrop look, full-frame scene with no isolated subject, no text, no ground shadow."
+  },
+  {
+    "id": "corn_on_the_cob",
+    "name": "Corn on the Cob",
+    "category": "held",
+    "rarity": "uncommon",
+    "cost": 2000,
+    "theme": "Mudlark Deluxe",
+    "description": "A plump buttery cob of corn, fresh off the farm and glistening.",
+    "chatgpt_prompt": "Generate a square image: A cute hand-drawn cozy mobile-game icon of a buttery corn on the cob sized to be held by a small piglet, plump glossy golden-yellow kernels with a melting butter sheen and a couple of bright green husk leaves peeled back at the base, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  },
+  {
+    "id": "slop_club_signet_crown",
+    "name": "Slop Club Signet Crown",
+    "category": "hat",
+    "rarity": "legendary",
+    "cost": 5500,
+    "theme": "Slop Club Signature",
+    "description": "The Slop Club crest cast in gold, a members-only signet with the snout seal at its heart.",
+    "chatgpt_prompt": "Generate a square image: A cute hand-drawn cozy mobile-game icon of a gold crown with red velvet and ruby jewels, a pink pig-snout emblem at the center front, sized for a small piglet head, thick dark brown outline, soft warm pastel colors, flat cel shading, storybook sticker look, centered and isolated on a plain white background, no text, no ground shadow."
+  }
+]
