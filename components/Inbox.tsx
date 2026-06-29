@@ -16,7 +16,6 @@ import {
 	StyleSheet,
 	Pressable,
 	ScrollView,
-	ActivityIndicator,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
@@ -27,6 +26,7 @@ import { FONTS, WHIMSY } from "@/constants/theme";
 import type { TradeRow } from "@/constants/trade_types";
 import { SectionHeader } from "./ui/SectionHeader";
 import { Sticker } from "./ui/Sticker";
+import { EmptyState, LoadingBeat } from "./ui/EmptyState";
 import { FRIEND_CAP_LIMIT } from "@/utils/friendships";
 
 interface FriendReq {
@@ -462,7 +462,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	if (loading) {
 		return (
 			<View style={styles.center}>
-				<ActivityIndicator color={WHIMSY.ink} />
+				<LoadingBeat label="checking the yard" />
 			</View>
 		);
 	}
@@ -482,10 +482,11 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			<ActiveEffects />
 
 			{empty && (
-				<Text style={styles.emptyText}>
-					The yard's quiet — no requests, no news. Trade or bless a
-					friend and the activity lands here.
-				</Text>
+				<EmptyState
+					glyph="bell"
+					title="The yard's quiet"
+					sub="Trade or bless a friend and the news lands here."
+				/>
 			)}
 
 			{/* Out to market — your pending outgoing trade requests */}

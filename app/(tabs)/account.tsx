@@ -3,6 +3,7 @@ import { Account } from "../../components/Account";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../../utils/supabase";
 import { View } from "react-native";
+import { WHIMSY } from "../../constants/theme";
 
 export default function AccountScreen() {
 	const [session, setSession] = useState<Session | null>(null);
@@ -18,7 +19,7 @@ export default function AccountScreen() {
 	}, []);
 
 	return (
-		<View style={{ flex: 1, backgroundColor: "#1A1A1A" }}>
+		<View style={{ flex: 1, backgroundColor: WHIMSY.cream }}>
 			{session && <Account session={session} />}
 		</View>
 	);

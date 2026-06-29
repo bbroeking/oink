@@ -11,6 +11,7 @@
 // Use-or-lose empty state at 0 remaining (the "tired" idea).
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PageHeader } from "../components/ui/PageHeader";
 import {
 	View,
 	Text,
@@ -124,22 +125,23 @@ export default function MudWarScreen() {
 			<Stack.Screen options={{ headerShown: false }} />
 			<View style={styles.bg}>
 				<SafeAreaView style={{ flex: 1 }}>
-					<View style={styles.header}>
-						<Pressable onPress={() => router.back()} hitSlop={12}>
-							<Text style={styles.back}>‹ back</Text>
-						</Pressable>
-						<Text style={styles.title}>Mud Fight</Text>
-						<View style={styles.headerRight}>
-							<Pressable onPress={() => router.push("/clan-ladder" as Href)} hitSlop={12} style={styles.spoilsBtn}>
-								<Icon name="trophy" size={15} color={WHIMSY.mute} />
-								<Text style={[styles.spoils, { color: WHIMSY.mute }]}>Ladder</Text>
-							</Pressable>
-							<Pressable onPress={() => setSpoilsOpen(true)} hitSlop={12} style={styles.spoilsBtn}>
-								<Icon name="trophy" size={15} color={WHIMSY.accent} />
-								<Text style={styles.spoils}>Spoils</Text>
-							</Pressable>
-						</View>
-					</View>
+					<PageHeader
+						kicker="mud fights"
+						title="Mud Fight"
+						onBack={() => router.back()}
+						right={
+							<View style={styles.headerRight}>
+								<Pressable onPress={() => router.push("/clan-ladder" as Href)} hitSlop={12} style={styles.spoilsBtn}>
+									<Icon name="trophy" size={15} color={WHIMSY.mute} />
+									<Text style={[styles.spoils, { color: WHIMSY.mute }]}>Ladder</Text>
+								</Pressable>
+								<Pressable onPress={() => setSpoilsOpen(true)} hitSlop={12} style={styles.spoilsBtn}>
+									<Icon name="trophy" size={15} color={WHIMSY.accent} />
+									<Text style={styles.spoils}>Spoils</Text>
+								</Pressable>
+							</View>
+						}
+					/>
 					<WarSpoilsSheet open={spoilsOpen} onClose={() => setSpoilsOpen(false)} />
 					<MudWarResolvedModal
 						visible={!!reveal}
@@ -657,16 +659,6 @@ function ResolvedWar({
 
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	header: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		paddingHorizontal: 18,
-		paddingTop: 8,
-		paddingBottom: 4,
-	},
-	back: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
-	title: { fontFamily: FONTS.whimsy, fontSize: 26, color: WHIMSY.ink },
 	headerRight: { flexDirection: "row", alignItems: "center", gap: 14 },
 	spoilsBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
 	spoils: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.accent },

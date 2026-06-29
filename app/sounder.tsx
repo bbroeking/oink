@@ -2,6 +2,7 @@
 // from Account's "Your sounder" card. Mirrors the regular leaderboard's
 // visual language so it feels native.
 import React, { useCallback, useState } from "react";
+import { PageHeader } from "../components/ui/PageHeader";
 import {
 	View,
 	Text,
@@ -14,7 +15,8 @@ import { Stack, router, Redirect } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { rpc } from "@/utils/rpc";
 import { Sticker } from "../components/ui/Sticker";
-import { FONTS, KICKER_TEXT, ROW_TILTS, WHIMSY } from "@/constants/theme";
+import { EmptyState, LoadingBeat } from "../components/ui/EmptyState";
+import { FONTS, ROW_TILTS, WHIMSY } from "@/constants/theme";
 import { SOUNDER_VISIBLE } from "@/constants/featureFlags";
 
 interface SounderRow {
@@ -58,31 +60,24 @@ export default function SounderScreen() {
 			<Stack.Screen options={{ headerShown: false }} />
 			<View style={styles.bg}>
 				<SafeAreaView style={{ flex: 1 }}>
-					<View style={styles.header}>
-						<Pressable
-							onPress={() => router.back()}
-							hitSlop={12}
-							style={styles.backBtn}
-						>
-							<Text style={styles.backBtnText}>← back</Text>
-						</Pressable>
-						<Text style={styles.title}>The Sounder</Text>
-						<View style={{ width: 50 }} />
-					</View>
-					<Text style={styles.kicker}>★ top recruiters</Text>
+					<PageHeader
+						kicker="top recruiters"
+						title="The Sounder"
+						onBack={() => router.back()}
+					/>
 
 					<ScrollView
 						style={{ flex: 1 }}
 						contentContainerStyle={styles.list}
 						showsVerticalScrollIndicator={false}
 					>
-						{loading && (
-							<Text style={styles.empty}>Loading the sounder…</Text>
-						)}
+						{loading && <LoadingBeat label="gathering the sounder" />}
 						{!loading && rows.length === 0 && (
-							<Text style={styles.empty}>
-								The sounder is empty. Be the first to bring a friend in.
-							</Text>
+							<EmptyState
+								glyph="friends"
+								title="The Sounder's empty"
+								sub="Be the first to bring a friend in."
+							/>
 						)}
 
 						{champ && (
@@ -155,26 +150,6 @@ export default function SounderScreen() {
 
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	header: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		paddingHorizontal: 18,
-		paddingTop: 8,
-		paddingBottom: 4,
-	},
-	backBtn: { paddingVertical: 6, paddingRight: 8 },
-	backBtnText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-	},
-	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 26,
-		color: WHIMSY.ink,
-	},
-	kicker: { ...KICKER_TEXT, paddingHorizontal: 18, marginBottom: 6 },
 	list: { padding: 18, gap: 10 },
 	champ: { paddingHorizontal: 18, paddingVertical: 16, marginBottom: 4 },
 	champKicker: {
@@ -241,12 +216,5 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.accent,
-	},
-	empty: {
-		textAlign: "center",
-		padding: 40,
-		color: WHIMSY.mute,
-		fontFamily: FONTS.hand,
-		fontSize: 15,
 	},
 });

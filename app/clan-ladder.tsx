@@ -3,6 +3,7 @@
 // MUD_FIGHTS_VISIBLE like the rest of Mud Wars; reached from the Mud Fight header.
 
 import { useCallback, useState } from "react";
+import { PageHeader } from "../components/ui/PageHeader";
 import { useFocusEffect } from "@react-navigation/native";
 import {
 	View,
@@ -42,13 +43,11 @@ export default function ClanLadderScreen() {
 			<Stack.Screen options={{ headerShown: false }} />
 			<View style={styles.bg}>
 				<SafeAreaView style={{ flex: 1 }}>
-					<View style={styles.header}>
-						<Pressable onPress={() => router.back()} hitSlop={12}>
-							<Text style={styles.back}>‹ back</Text>
-						</Pressable>
-						<Text style={styles.title}>Clan Ladder</Text>
-						<View style={{ width: 40 }} />
-					</View>
+					<PageHeader
+						kicker="ranked sounders"
+						title="Clan Ladder"
+						onBack={() => router.back()}
+					/>
 
 					{rows === null ? (
 						<View style={styles.center}>
@@ -96,16 +95,6 @@ export default function ClanLadderScreen() {
 
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	header: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		paddingHorizontal: 18,
-		paddingTop: 8,
-		paddingBottom: 4,
-	},
-	back: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
-	title: { fontFamily: FONTS.whimsy, fontSize: 26, color: WHIMSY.ink },
 	center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30, gap: 8 },
 	content: { padding: 18, paddingBottom: 60 },
 	lead: {

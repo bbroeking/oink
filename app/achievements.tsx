@@ -15,6 +15,7 @@
 // AchievementUnlockModal does on launch; auto-grant of the reward
 // itself happens server-side when the threshold is crossed.
 import React, { useCallback, useMemo, useState } from "react";
+import { PageHeader } from "../components/ui/PageHeader";
 import {
 	View,
 	Text,
@@ -29,6 +30,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
 import { Sticker } from "../components/ui/Sticker";
+import { EmptyState, LoadingBeat } from "../components/ui/EmptyState";
 import { SnoutCoin } from "../components/ui/SnoutCoin";
 import { HAT_IMAGES } from "@/constants/hats";
 import { achievementIcon } from "@/constants/emojiArt";
@@ -36,7 +38,6 @@ import {
 	FONTS,
 	WHIMSY,
 	KICKER_PILL,
-	TITLE_RULE,
 	PAGE_PAD,
 	TAB_SAFE,
 	STICKER_SHADOW,
@@ -137,27 +138,26 @@ export default function AchievementsScreen() {
 			<Stack.Screen options={{ headerShown: false }} />
 			<View style={styles.bg}>
 				<SafeAreaView style={{ flex: 1 }}>
-					<View style={styles.header}>
-						<Pressable onPress={() => router.back()} hitSlop={12}>
-							<Text style={styles.backBtnText}>‹ back</Text>
-						</Pressable>
-						<Text style={styles.kicker}>★ achievements</Text>
-						<Text style={styles.title}>Achievements</Text>
-						<View style={styles.titleRule} />
-						<Text style={styles.statsLine}>
-							<Text style={styles.statsUnlocked}>
-								{claimedCount} / {rows.length} unlocked
+					<PageHeader
+						kicker="achievements"
+						title="Achievements"
+						onBack={() => router.back()}
+						below={
+							<Text style={styles.statsLine}>
+								<Text style={styles.statsUnlocked}>
+									{claimedCount} / {rows.length} unlocked
+								</Text>
+								{readyCount > 0 && (
+									<>
+										<Text style={styles.statsDot}> · </Text>
+										<Text style={styles.statsReady}>
+											{readyCount} ready to claim
+										</Text>
+									</>
+								)}
 							</Text>
-							{readyCount > 0 && (
-								<>
-									<Text style={styles.statsDot}> · </Text>
-									<Text style={styles.statsReady}>
-										{readyCount} ready to claim
-									</Text>
-								</>
-							)}
-						</Text>
-					</View>
+						}
+					/>
 
 					{/* Filter chip row — flexGrow:0 on the ScrollView so it
 					    doesn't claim leftover vertical space (otherwise
@@ -202,13 +202,21 @@ export default function AchievementsScreen() {
 						contentContainerStyle={styles.grid}
 						showsVerticalScrollIndicator={false}
 					>
-						{loading && <Text style={styles.empty}>Loading…</Text>}
+						{loading && <LoadingBeat label="counting trophies" />}
 						{!loading && filtered.length === 0 && (
-							<Text style={styles.empty}>
-								{filter === "ready"
-									? "No achievements waiting to be claimed."
-									: "No achievements in this category yet."}
-							</Text>
+							<EmptyState
+								glyph="trophy"
+								title={
+									filter === "ready"
+										? "Nothing to claim yet"
+										: "No trophies in this category yet"
+								}
+								sub={
+									filter === "ready"
+										? "Earn one and it'll wait here for you."
+										: "Keep playing — they'll fill in."
+								}
+							/>
 						)}
 						{filtered.map((row) => (
 							<AchievementCard
@@ -349,28 +357,6 @@ function AchievementCard({
 // ── Styles ────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	header: {
-		paddingHorizontal: PAGE_PAD,
-		paddingTop: 8,
-		paddingBottom: SPACE.md,
-	},
-	backBtnText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		marginBottom: SPACE.sm,
-	},
-	kicker: {
-		...KICKER_PILL,
-		marginBottom: SPACE.xs,
-	},
-	title: { fontFamily: FONTS.whimsy, fontSize: 26, color: WHIMSY.ink },
-	titleRule: {
-		...TITLE_RULE,
-		width: 64,
-		marginTop: SPACE.xs,
-		marginBottom: SPACE.sm,
-	},
 	statsLine: {},
 	statsUnlocked: {
 		...KICKER_PILL,
@@ -574,12 +560,5 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 14,
 		color: WHIMSY.mute,
-	},
-	empty: {
-		textAlign: "center",
-		padding: 40,
-		color: WHIMSY.mute,
-		fontFamily: FONTS.hand,
-		fontSize: 15,
 	},
 });
