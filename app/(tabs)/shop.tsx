@@ -19,6 +19,7 @@ import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { formatHM } from "@/utils/time";
 import { Button, SectionHeader } from "../../components/ui";
+import { EmptyState } from "../../components/ui/EmptyState";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
 import { ClosetView } from "../../components/ClosetView";
 import { TroughSection } from "../../components/TroughSection";
@@ -32,6 +33,9 @@ import { SLOT_COLUMN, slotForCategory, columnForCategory } from "@/constants/slo
 import { categoryIcon } from "@/constants/emojiArt";
 import { Icon } from "@/components/ui/Icon";
 import { Glyph, IconText, type GlyphName } from "@/components/ui/Glyph";
+import { AnimatedCosmetic } from "@/components/ui/AnimatedCosmetic";
+import { cosmeticFxFor } from "@/constants/cosmeticFx";
+import { type ListRow, buildBrowseRows } from "@/constants/shopRows";
 import { COLORS, FONTS, KICKER_PILL, WHIMSY, STICKER_SHADOW, SHADOW_SM, SPACE, RADII, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
@@ -51,22 +55,6 @@ const RARITY_RANK: Record<string, number> = {
 	rare: 3,
 	epic: 4,
 	legendary: 5,
-};
-
-const RARITY_ORDER: Array<HatRow["rarity"] & string> = [
-	"legendary",
-	"epic",
-	"rare",
-	"uncommon",
-	"common",
-];
-
-const RARITY_LABELS: Record<string, string> = {
-	common: "Common",
-	uncommon: "Uncommon",
-	rare: "Rare",
-	epic: "Epic",
-	legendary: "Legendary",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -113,37 +101,6 @@ const CATEGORY_DISPLAY_ORDER = [
 	"aura",
 	"background",
 ];
-
-type ListRow =
-	| { type: "header"; key: string; title: string; rarity?: string }
-	| { type: "row"; key: string; items: HatRow[] };
-
-function buildRowsByRarity(items: HatRow[]): ListRow[] {
-	const groups: Record<string, HatRow[]> = {};
-	for (const i of items) {
-		const r = i.rarity ?? "common";
-		(groups[r] ??= []).push(i);
-	}
-	const rows: ListRow[] = [];
-	for (const r of RARITY_ORDER) {
-		const arr = groups[r];
-		if (!arr?.length) continue;
-		rows.push({
-			type: "header",
-			key: `h-${r}`,
-			title: RARITY_LABELS[r],
-			rarity: r,
-		});
-		for (let i = 0; i < arr.length; i += 2) {
-			rows.push({
-				type: "row",
-				key: `r-${r}-${i}`,
-				items: arr.slice(i, i + 2),
-			});
-		}
-	}
-	return rows;
-}
 
 function buildRowsByCategory(items: HatRow[]): ListRow[] {
 	const groups: Record<string, HatRow[]> = {};
@@ -210,8 +167,13 @@ function HatThumb({
 	// necklaces have no category art (categoryIcon null) → neutral glyph.
 	const catIcon = !hatSrc ? categoryIcon(item.category) : null;
 	const src = hatSrc ?? catIcon;
+	// Members-only / legendary items with an animation recipe render live
+	// (float + glow + shimmer + sparkles) instead of a flat Image.
+	const fx = hatSrc ? cosmeticFxFor(item.id) : undefined;
 	if (!fill) {
 		const sz = { width: size ?? 100, height: size ?? 100 };
+		if (fx && hatSrc)
+			return <AnimatedCosmetic source={hatSrc} fx={fx} size={size ?? 100} />;
 		if (src) return <Image source={src} style={sz} resizeMode="contain" />;
 		return (
 			<Text style={{ fontSize: (size ?? 100) * 0.55, color: WHIMSY.mute }}>
@@ -231,7 +193,9 @@ function HatThumb({
 				setBox({ w: width, h: height });
 			}}
 		>
-			{box && src ? (
+			{box && fx && hatSrc && !fullBleed ? (
+				<AnimatedCosmetic source={hatSrc} fx={fx} size={side} />
+			) : box && src ? (
 				<Image
 					source={src}
 					style={
@@ -297,6 +261,7 @@ function ShopCard({
 	active,
 	canAfford,
 	index,
+	locked,
 	onPress,
 	onCenter,
 }: {
@@ -306,6 +271,8 @@ function ShopCard({
 	canAfford: boolean;
 	// Position in the grid — drives the alternating ±0.5° sticker tilt.
 	index: number;
+	// Members-only item + caller isn't a Slop Club member → gold lock badge.
+	locked?: boolean;
 	onPress: () => void;
 	// Reports the card's window-space center (the buy celebration anchor).
 	onCenter?: (x: number, y: number) => void;
@@ -338,11 +305,15 @@ function ShopCard({
 						{ backgroundColor: SHOP_RARITY_DOT[rarity] },
 					]}
 				/>
-				{owned && (
+				{owned ? (
 					<View style={shopCardStyles.ownedBadge}>
 						<Text style={shopCardStyles.ownedBadgeText}>✓</Text>
 					</View>
-				)}
+				) : locked ? (
+					<View style={shopCardStyles.lockBadge}>
+						<Glyph name="lock" size={14} />
+					</View>
+				) : null}
 				<HatThumb item={item} fill />
 			</View>
 			<View style={shopCardStyles.foot}>
@@ -453,6 +424,22 @@ const shopCardStyles = StyleSheet.create({
 		...STICKER_SHADOW,
 	},
 	ownedBadgeText: { fontSize: 14, fontFamily: FONTS.bodyExtra, color: WHIMSY.ink },
+	// Gold members-only lock — same corner as the owned check, Slop Club hue.
+	lockBadge: {
+		position: "absolute",
+		top: SPACE.sm,
+		right: SPACE.sm,
+		width: 26,
+		height: 26,
+		borderRadius: 13,
+		backgroundColor: "#F5C44A",
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+		zIndex: 2,
+		...STICKER_SHADOW,
+	},
 	// Symmetric 12px foot padding (UI audit) — was H11/T9/B11.
 	foot: { padding: SPACE.md, gap: SPACE.sm },
 	nm: { fontFamily: FONTS.displaySemi, fontSize: 15, color: WHIMSY.ink },
@@ -526,6 +513,13 @@ export default function ShopScreen() {
 	const [resetsIn, setResetsIn] = useState<number>(0);
 	const [view, setView] = useState<"daily" | "browse" | "wardrobe">("daily");
 	const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+	// Slop Club membership — drives the lock badge + members section CTA in
+	// the Collectibles catalog (the buy itself is server-gated by buy_hat).
+	const [isVip, setIsVip] = useState<boolean>(false);
+	// Collapse state for the two Collectibles bands (members shown first).
+	const [collapsed, setCollapsed] = useState<{ members: boolean; everyone: boolean }>(
+		{ members: false, everyone: false }
+	);
 
 	// Deep-link target: navigation from elsewhere (e.g. the battle-pass
 	// reward dialog) can pass `?view=wardrobe` to jump straight there.
@@ -571,6 +565,7 @@ export default function ShopScreen() {
 		type ProfileRow = {
 			username: string | null;
 			counter: number | null;
+			is_vip?: boolean | null;
 			active_hat_id: string | null;
 			active_glasses_id: string | null;
 			active_mask_id: string | null;
@@ -590,7 +585,7 @@ export default function ShopScreen() {
 			// the cost>0 filter hides them client-side until the column exists).
 			supabase
 				.from("hats")
-				.select("id, name, cost, display_order, emoji, image_path, category, rarity, description, pass_exclusive")
+				.select("id, name, cost, display_order, emoji, image_path, category, rarity, description, pass_exclusive, members_only")
 				.order("display_order")
 				.then(async (res) => {
 					if (res.error) {
@@ -607,14 +602,14 @@ export default function ShopScreen() {
 			// it so the shop still loads.
 			supabase
 				.from("profiles")
-				.select("username, counter, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, active_title_id")
+				.select("username, counter, is_vip, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, active_title_id")
 				.eq("id", user.id)
 				.single()
 				.then(async (res) => {
 					if (res.error) {
 						return supabase
 							.from("profiles")
-							.select("username, counter, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id")
+							.select("username, counter, is_vip, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id")
 							.eq("id", user.id)
 							.single();
 					}
@@ -642,6 +637,7 @@ export default function ShopScreen() {
 		const prof = (profRes.data as ProfileRow | null) ?? null;
 		setCounter(prof?.counter ?? 0);
 		setMyUsername(prof?.username ?? "you");
+		setIsVip(!!prof?.is_vip);
 		{
 			const pr = prof ?? ({} as Partial<ProfileRow>);
 			setActiveIds({
@@ -813,12 +809,22 @@ export default function ShopScreen() {
 		// Flags are allegiance picks (Barn flag -> dialog), not shop goods —
 		// keep them out of the catalog. allItems stays intact so the Closet
 		// still sees owned flags.
-		const shoppable = allItems.filter((i) => i.category !== "flag");
+		// Members-only items are seeded ahead of their art (the catalog row
+		// lands before the PNG); hide any that don't yet have real art so the
+		// Members band never shows a category-fallback placeholder.
+		const shoppable = allItems.filter(
+			(i) =>
+				i.category !== "flag" &&
+				(!i.members_only || !!HAT_IMAGES[i.id])
+		);
 		if (!categoryFilter) return shoppable;
 		return shoppable.filter((i) => i.category === categoryFilter);
 	}, [allItems, categoryFilter]);
 
-	const browseRows = useMemo(() => buildRowsByRarity(browseItems), [browseItems]);
+	const browseRows = useMemo<ListRow[]>(
+		() => buildBrowseRows(browseItems, collapsed, isVip),
+		[browseItems, collapsed, isVip]
+	);
 
 	const ownedItems = useMemo(
 		() => allItems.filter((i) => owned.has(i.id)),
@@ -845,6 +851,38 @@ export default function ShopScreen() {
 	}, [allItems]);
 
 	const renderListRow = (wardrobeMode: boolean) => ({ item }: { item: ListRow }) => {
+		if (item.type === "section") {
+			const members = item.band === "members";
+			return (
+				<Pressable
+					onPress={() =>
+						setCollapsed((c) => ({ ...c, [item.band]: !c[item.band] }))
+					}
+					style={[
+						styles.bandHeader,
+						members ? styles.bandHeaderMembers : styles.bandHeaderEveryone,
+					]}
+				>
+					{members && (
+						<Glyph name={item.locked ? "lock" : "crown"} size={18} />
+					)}
+					<View style={{ flex: 1 }}>
+						<Text
+							style={[
+								styles.bandTitle,
+								members && { color: WHIMSY.ink },
+							]}
+						>
+							{item.title.toUpperCase()}
+						</Text>
+						{item.subtitle ? (
+							<Text style={styles.bandSubtitle}>{item.subtitle}</Text>
+						) : null}
+					</View>
+					<Text style={styles.bandChevron}>{item.collapsed ? "▸" : "▾"}</Text>
+				</Pressable>
+			);
+		}
 		if (item.type === "header") {
 			const rarity = item.rarity;
 			const accent = rarity ? RARITY_COLORS[rarity] : COLORS.ink4;
@@ -876,6 +914,7 @@ export default function ShopScreen() {
 						owned={owned.has(a.id)}
 						active={isEquipped(a.id, a.category)}
 						canAfford={counter >= a.cost}
+						locked={!isVip && !!a.members_only}
 						onPress={() => setPreviewItem(a)}
 					/>
 				</View>
@@ -887,6 +926,7 @@ export default function ShopScreen() {
 							owned={owned.has(b.id)}
 							active={isEquipped(b.id, b.category)}
 							canAfford={counter >= b.cost}
+							locked={!isVip && !!b.members_only}
 							onPress={() => setPreviewItem(b)}
 						/>
 					) : null}
@@ -960,9 +1000,11 @@ export default function ShopScreen() {
 						/>
 						<RarityLegend />
 						{daily.length === 0 ? (
-							<Text style={styles.empty}>
-								Empty shop. Come back tomorrow.
-							</Text>
+							<EmptyState
+								glyph="zzz"
+								title="All sold out for today"
+								sub="A fresh drop arrives at sunrise."
+							/>
 						) : (
 							<>
 								{/* Uniform 2-col grid of all 8 daily items — bento mosaic
@@ -1070,7 +1112,7 @@ export default function ShopScreen() {
 							</ScrollView>
 						}
 						ListEmptyComponent={
-							<Text style={styles.empty}>Nothing here.</Text>
+							<EmptyState glyph="search" title="Nothing in this band yet" />
 						}
 					/>
 				) : (
@@ -1280,6 +1322,39 @@ const styles = StyleSheet.create({
 		flex: 1,
 		height: 1.5,
 		borderRadius: 1,
+	},
+	// Collapsible band banner (members / everyone) — a tappable sticker bar.
+	bandHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 10,
+		paddingHorizontal: 12,
+		paddingVertical: 12,
+		marginTop: 14,
+		marginBottom: 4,
+		borderRadius: RADII.lg,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		...STICKER_SHADOW,
+	},
+	bandHeaderMembers: { backgroundColor: "#FFE7AD" },
+	bandHeaderEveryone: { backgroundColor: WHIMSY.paper },
+	bandTitle: {
+		fontSize: 15,
+		fontFamily: FONTS.whimsy,
+		color: WHIMSY.ink,
+		letterSpacing: 0.4,
+	},
+	bandSubtitle: {
+		fontSize: 11,
+		fontFamily: FONTS.bodyExtra,
+		color: WHIMSY.mute,
+		marginTop: 1,
+	},
+	bandChevron: {
+		fontSize: 16,
+		color: WHIMSY.ink,
+		fontFamily: FONTS.bodyExtra,
 	},
 	// Measuring container for HatThumb's fill mode — the VIEW takes the
 	// insets (views resolve them fine; it's Images that fall back to

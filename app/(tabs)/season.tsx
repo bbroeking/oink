@@ -19,10 +19,11 @@ import { rpc } from "@/utils/rpc";
 import {
 	initIAP,
 	IAP_ENABLED,
-	purchaseProductId,
-	PRODUCT_IDS,
+	presentPaywall,
+	OFFERING_IDS,
 } from "../../utils/iap";
 import { Sticker } from "../../components/ui/Sticker";
+import { EmptyState, LoadingBeat } from "../../components/ui/EmptyState";
 import { Icon } from "../../components/ui/Icon";
 import {
 	MysteryHatReveal,
@@ -32,6 +33,9 @@ import { Glyph, type GlyphName } from "../../components/ui/Glyph";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
 import { BountyBoard } from "../../components/BountyBoard";
+import { AlignmentBar } from "../../components/ui/AlignmentBar";
+import { AlignmentExplainerModal } from "../../components/AlignmentExplainerModal";
+import { alignmentEffects } from "@/utils/alignment";
 import {
 	TierUpBanner,
 	type TierUpBannerHandle,
@@ -995,6 +999,10 @@ export default function SeasonScreen() {
 	const [state, setState] = useState<SeasonState | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [saleOpen, setSaleOpen] = useState(false);
+	// Alignment placard moved here from the Me tab — the player's
+	// greedy↔generous score + its blessing/curse/regen modifiers.
+	const [alignmentScore, setAlignmentScore] = useState(0);
+	const [alignmentExplainerOpen, setAlignmentExplainerOpen] = useState(false);
 	// Reward dialog: set after a successful claim_tier_reward RPC so the
 	// user gets a beat to read what they got and (for wearables) jump
 	// straight to the wardrobe to equip it.
@@ -1015,8 +1023,22 @@ export default function SeasonScreen() {
 
 	const load = useCallback(async () => {
 		const data = await rpc<SeasonState>("season_state");
-		if (!data) return;
-		setState(data);
+		if (data) setState(data);
+		// Alignment placard reads the player's score directly off the
+		// profile (season_state doesn't carry it). getSession is cached,
+		// so this adds no network round-trip beyond the profile select.
+		const { data: sess } = await supabase.auth.getSession();
+		const uid = sess.session?.user?.id;
+		if (uid) {
+			const { data: prof } = await supabase
+				.from("profiles")
+				.select("alignment_score")
+				.eq("id", uid)
+				.single();
+			setAlignmentScore(
+				(prof as { alignment_score?: number } | null)?.alignment_score ?? 0
+			);
+		}
 	}, []);
 
 	useFocusEffect(
@@ -1116,11 +1138,11 @@ export default function SeasonScreen() {
 			await initIAP(user.id);
 		} catch {}
 
-		// The Season Pass is a one-time product — buy it directly (the
-		// BattlePassSaleModal is the merchandising), NOT via the
-		// subscription paywall. On success, grant_season_pass flips
+		// Present the Season Pass's OWN RevenueCat paywall design — the
+		// `season_pass` offering (separate from the Slop Club subscription
+		// offering). On purchase/restore, grant_season_pass flips
 		// premium_unlocked for the active season.
-		const result = await purchaseProductId(PRODUCT_IDS.seasonPass);
+		const result = await presentPaywall(OFFERING_IDS.seasonPass);
 		if (result.ok) {
 			await rpc("grant_season_pass");
 			load();
@@ -1131,8 +1153,9 @@ export default function SeasonScreen() {
 			return;
 		}
 		if (result.reason === "cancelled") return;
-		if (result.reason === "product_not_found") {
-			// The product isn't in a RevenueCat offering yet.
+		if (result.reason === "no_offering") {
+			// The `season_pass` offering / paywall isn't configured in
+			// RevenueCat yet.
 			Alert.alert(
 				"Season Pass",
 				"Storefront not configured yet. Unlock for free in dev?",
@@ -1155,14 +1178,18 @@ export default function SeasonScreen() {
 	if (!state) {
 		return (
 			<View style={[styles.container, styles.center]}>
-				<Text style={styles.empty}>Loading...</Text>
+				<LoadingBeat label="reading the season" />
 			</View>
 		);
 	}
 	if (!state.active) {
 		return (
 			<View style={[styles.container, styles.center]}>
-				<Text style={styles.empty}>No active season.</Text>
+				<EmptyState
+					glyph="cloud"
+					title="No season running"
+					sub="A new season will roll in soon."
+				/>
 			</View>
 		);
 	}
@@ -1268,6 +1295,60 @@ export default function SeasonScreen() {
 						claimedSet={claimedSet}
 						onClaim={handleClaim}
 					/>
+
+					{/* Alignment placard — moved here from the Me tab. Greedy
+					    ↔ score ↔ Generous + the bar, the blessing/curse/regen
+					    modifiers, and a tap-through to the full explainer. It
+					    belongs with the season because Judgement Day settles
+					    on alignment. */}
+					<View style={{ marginTop: 8 }}>
+						<SectionHeader kicker="standing" title="Alignment" />
+					</View>
+					<Sticker color="cream" rotate={-0.6} radius={18} style={alignmentStoryStyles.wrap}>
+						<View style={alignmentStoryStyles.labelRow}>
+							<Text style={alignmentStoryStyles.greedy}>Greedy</Text>
+							<Text style={alignmentStoryStyles.score}>
+								{alignmentScore >= 0 ? "+" : ""}
+								{alignmentScore}
+							</Text>
+							<Text style={alignmentStoryStyles.generous}>Generous</Text>
+						</View>
+						<AlignmentBar score={alignmentScore} />
+						{(() => {
+							const fx = alignmentEffects(alignmentScore);
+							const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+							return (
+								<View style={alignmentStoryStyles.effectsRow}>
+									<Text style={alignmentStoryStyles.effect}>
+										Regen {sgn(fx.regenPct)}%
+									</Text>
+									<Text style={alignmentStoryStyles.effect}>
+										Blessings {sgn(fx.blessingPct)}%
+									</Text>
+									<Text style={alignmentStoryStyles.effect}>
+										Curses {sgn(fx.cursePct)}%
+									</Text>
+								</View>
+							);
+						})()}
+						<Text style={alignmentStoryStyles.effectHint}>
+							Give freely → your blessings grow stronger. Keep to
+							yourself → your curses bite harder.
+						</Text>
+						<Text style={alignmentStoryStyles.hint}>
+							★ blessings push you up. asks for tickles pull you
+							down. ★
+						</Text>
+						<Pressable
+							testID="alignment-how-it-works"
+							onPress={() => setAlignmentExplainerOpen(true)}
+							hitSlop={8}
+						>
+							<Text style={alignmentStoryStyles.howLink}>
+								how alignment works ›
+							</Text>
+						</Pressable>
+					</Sticker>
 				</ScrollView>
 			</SafeAreaView>
 
@@ -1283,6 +1364,11 @@ export default function SeasonScreen() {
 				totalTiers={season.total_tiers}
 				busy={busy}
 			/>
+			{alignmentExplainerOpen && (
+				<AlignmentExplainerModal
+					onDismiss={() => setAlignmentExplainerOpen(false)}
+				/>
+			)}
 			{/* Fires on every cross-tier increase. Mounted at root so the
 			    sliding banner overlays the season list. */}
 			<TierUpBanner ref={tierBannerRef} />
@@ -1724,4 +1810,73 @@ const xpHowTo = StyleSheet.create({
 	label: { flex: 1, fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
 	xp: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
 	foot: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, textAlign: "center", marginTop: 4 },
+});
+
+// Alignment placard — moved off the Me tab onto the Season tab, where
+// Judgement Day settles on the player's greedy↔generous standing.
+const alignmentStoryStyles = StyleSheet.create({
+	wrap: { padding: 16, marginTop: 4 },
+	labelRow: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		justifyContent: "space-between",
+		marginBottom: 6,
+	},
+	greedy: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		letterSpacing: 1.2,
+		textTransform: "uppercase",
+		color: WHIMSY.goblin,
+	},
+	generous: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		letterSpacing: 1.2,
+		textTransform: "uppercase",
+		color: WHIMSY.angel,
+	},
+	score: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	hint: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 8,
+	},
+	effectsRow: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		justifyContent: "center",
+		gap: 8,
+		marginTop: 8,
+	},
+	effect: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream2,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		overflow: "hidden",
+	},
+	effectHint: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 7,
+		lineHeight: 17,
+	},
+	howLink: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.accent,
+		textAlign: "center",
+		letterSpacing: 0.3,
+		marginTop: 10,
+	},
 });

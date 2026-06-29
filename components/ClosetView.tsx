@@ -58,6 +58,19 @@ interface Props {
 	onTitleChange: (next: string | null) => void;
 }
 
+// Owned items hidden from the closet until art ships (orphans with no
+// HAT_IMAGES entry render a wrong category fallback — e.g. tiny_umbrella shows
+// the wand). Server-side these are also pulled from the shop + unequipped
+// (20260684). Remove an id here once its real art lands in the art pass.
+const HIDDEN_CLOSET_IDS = new Set<string>([
+	"acorn_bow", "bell_collar", "bone_necklace", "bumblebee_bow", "charm_necklace",
+	"choker", "diamond_pendant", "emerald_pendant", "ermine_cape", "firefly_lantern",
+	"fur_cape", "gas_mask", "gold_chain", "hero_cape", "jam_jar_lenses", "leather_cape",
+	"library_nook", "locket", "magician_cape", "moth_waltz", "mushroom_cap", "neckwarmer",
+	"paper_boat", "particle_bubble", "pearl_necklace", "pumpkin_patch", "ribbon_choker",
+	"royal_cape", "short_cape", "silk_cape", "star_cape", "tiny_umbrella", "vampire_cape",
+]);
+
 // Category sections, in order, with player-facing headings.
 const CAT_ORDER = [
 	"hat", "bow", "glasses", "mask", "scarf", "necklace",
@@ -138,9 +151,11 @@ export function ClosetView({
 		? ownedTitles.find((t) => t.id === activeTitleId)?.name ?? "…"
 		: null;
 
-	// Owned items grouped by category.
+	// Owned items grouped by category. Art-less orphans (HIDDEN_CLOSET_IDS) are
+	// filtered out so they don't render a wrong fallback thumbnail.
+	const visibleOwned = ownedItems.filter((i) => !HIDDEN_CLOSET_IDS.has(i.id));
 	const groups: Record<string, HatRow[]> = {};
-	ownedItems.forEach((i) => {
+	visibleOwned.forEach((i) => {
 		const c = i.category ?? "hat";
 		(groups[c] ??= []).push(i);
 	});
@@ -150,7 +165,7 @@ export function ClosetView({
 	// you can always take it off). Kills the "mystery empty slots" + the sideways
 	// scroll — they wrap to fit instead.
 	const slotsWithContent = new Set<EquipSlotKey>();
-	ownedItems.forEach((i) => slotsWithContent.add(slotForCategory(i.category)));
+	visibleOwned.forEach((i) => slotsWithContent.add(slotForCategory(i.category)));
 	SLOT_ORDER.forEach((s) => {
 		if (columnsForSlot(s).some((c) => activeIds[c])) slotsWithContent.add(s);
 	});
@@ -176,16 +191,18 @@ export function ClosetView({
 			{/* Live fitting-room preview + equip-slot chips. */}
 			<View style={styles.previewCard}>
 				<View style={styles.previewStageWrap}>
-					<View style={{ transform: [{ scale }] }}>
-						<PigStage
-							equipped={slot("active_hat_id")}
-							equippedGlasses={slot("active_glasses_id")}
-							equippedMask={slot("active_mask_id")}
-							equippedNeck={slot("active_neck_id")}
-							equippedAura={slot("active_aura_id")}
-							equippedHeld={slot("active_held_id")}
-							equippedFlag={slot("active_flag_id")}
-						/>
+					<View style={styles.pigVisualBox}>
+						<View style={[styles.pigScaler, { transform: [{ scale }] }]}>
+							<PigStage
+								equipped={slot("active_hat_id")}
+								equippedGlasses={slot("active_glasses_id")}
+								equippedMask={slot("active_mask_id")}
+								equippedNeck={slot("active_neck_id")}
+								equippedAura={slot("active_aura_id")}
+								equippedHeld={slot("active_held_id")}
+								equippedFlag={slot("active_flag_id")}
+							/>
+						</View>
 					</View>
 				</View>
 
@@ -405,10 +422,26 @@ const styles = StyleSheet.create({
 	},
 	previewStageWrap: {
 		width: 200,
-		height: 200,
+		// Taller than the 200² pig so a tall hat (crown) has headroom above
+		// instead of being clipped at the box top. Pig sits flush to the bottom.
+		height: 250,
 		alignItems: "center",
-		justifyContent: "center",
+		justifyContent: "flex-end",
 		overflow: "hidden",
+	},
+	// The pig's actual displayed footprint (200²), pinned to the bottom of the
+	// stage. overflow:"visible" lets a tall hat spill up into the headroom.
+	pigVisualBox: {
+		width: 200,
+		height: 200,
+		overflow: "visible",
+	},
+	// Centers the 300² PigStage within the 200² visual box; the scale transform
+	// (passed inline) then fits it. left/top = (200 - 300) / 2 = -50.
+	pigScaler: {
+		position: "absolute",
+		left: (200 - PIG_CANVAS) / 2,
+		top: (200 - PIG_CANVAS) / 2,
 	},
 	slotRow: {
 		flexDirection: "row",

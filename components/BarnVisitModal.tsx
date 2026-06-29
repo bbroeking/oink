@@ -142,8 +142,13 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	// seed tapCap from the server and the bar matches what it will actually allow.
 	// Default 7 (full bar) until the server reports the roll on first status/tap.
 	const [tapCount, setTapCount] = useState(0);
-	const [tapCap, setTapCap] = useState(7);
+	const [tapCap, setTapCap] = useState(1);
 	const [tired, setTired] = useState(false);
+	// Your shared visit budget: 3 different friends per window. All 3 refresh
+	// together 3h after your first visit. Server-authoritative (barn_visit_status).
+	const [visitsLeft, setVisitsLeft] = useState<number | null>(null);
+	const [visitBudget, setVisitBudget] = useState(3);
+	const [visitsRefreshAt, setVisitsRefreshAt] = useState<string | null>(null);
 	// Nap summary visibility. Mid-visit tire-out no longer slams the scrim
 	// over the barn — a small "All tickled out!" bubble pops instead, and
 	// the summary dialog shows when the player taps Leave. Rested-on-arrival
@@ -269,6 +274,9 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				next_at?: string | null;
 				taps_left?: number | null;
 				tap_cap?: number | null;
+				visits_left?: number | null;
+				visit_budget?: number | null;
+				visits_refresh_at?: string | null;
 			}>("barn_visit_status", { p_target: targetUserId });
 			if (!cancelled && st.ok) {
 				if (st.locked) {
@@ -276,13 +284,14 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 					setRestingOnArrival(true);
 				}
 				if (st.resting) setRestingOnArrival(true);
-				// Seed the energy bar from the server's authoritative remaining
-				// taps so a mid-visit re-entry shows the right level (and the
-				// server's random cap) instead of a fresh full bar.
 				if (st.tap_cap != null) {
 					setTapCap(st.tap_cap);
 					if (st.taps_left != null) setTapCount(st.tap_cap - st.taps_left);
 				}
+				// Your 3-visits-per-window budget, for the "visits left" bar.
+				if (st.visits_left != null) setVisitsLeft(st.visits_left);
+				if (st.visit_budget != null) setVisitBudget(st.visit_budget);
+				setVisitsRefreshAt(st.visits_refresh_at ?? null);
 			}
 			setLoading(false);
 		})();
@@ -313,6 +322,8 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			taps_left?: number;
 			tap_cap?: number;
 			next_at?: string | null;
+			visits_left?: number | null;
+			visits_refresh_at?: string | null;
 		}>("tickle_at_barn", { p_target: targetUserId });
 		setBusy(false);
 		if (r.ok) {
@@ -322,6 +333,9 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			setFriendHearts((n) => n + 1);
 			setGained((g) => g + 1);
 			if (r.tap_cap != null) setTapCap(r.tap_cap);
+			if (r.visits_left != null) setVisitsLeft(r.visits_left);
+			if (r.visits_refresh_at !== undefined)
+				setVisitsRefreshAt(r.visits_refresh_at ?? null);
 			const next = tapCount + 1;
 			setTapCount(next);
 			// Server is authoritative on when the visit is spent. The cap-hitting
@@ -376,11 +390,12 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		}
 	};
 
-	// Friend pig energy: how far through the sleepy roll we are (display only).
-	const energy = Math.max(0, Math.round(100 * (1 - tapCount / tapCap)));
-	const energyColor = energy > 50 ? "#62b048" : energy > 25 ? "#e8a82e" : "#ef7a5a";
-	const energyLabel =
-		energy > 66 ? "wide awake" : energy > 33 ? "having fun" : energy > 0 ? "getting sleepy" : "sleepy";
+	// Your visit budget (display only): how many of your 3 visits remain this
+	// window. All 3 refresh together 3h after your first visit.
+	const vLeft = visitsLeft ?? visitBudget;
+	const visitsColor = vLeft > 1 ? "#62b048" : vLeft === 1 ? "#e8a82e" : "#ef7a5a";
+	// Show the reset countdown whenever a window is active (you've used ≥1).
+	const visitsFreshIn = visitsRefreshAt ? lockLabel(visitsRefreshAt) : null;
 
 	// Shared squish transform entries for both pigs. Passed as an ARRAY so each
 	// pig can compose it WITH its own { scale } in one transform list — a second
@@ -492,42 +507,33 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 								</Animated.View>
 							</View>
 
-							{/* PIG ENERGY — the shared visit budget (replaces the old
-							    YOUR TICKLES bar: visits don't spend your bank anymore).
-							    Both pigs share it; it drains over the random 3–7 sleepy
-							    roll and everyone naps at zero. */}
-							<View style={styles.ticklesBar}>
-								<View style={styles.ticklesTop}>
-									<IconText left={<Glyph name="sparkle" size={12} />} gap={4}>
-									<Text style={styles.ticklesLabel}>PIG ENERGY</Text>
+							{/* Visits remaining — a plain status line, NOT a progress
+							    bar. You don't track "how full" your visits are; you just
+							    want "2 of 3 left · resets in 2h". One tickle per friend. */}
+							<View style={styles.visitsLine}>
+								<IconText left={<Glyph name="sparkle" size={13} />} gap={6}>
+									<Text style={styles.visitsLineText}>
+										<Text style={[styles.visitsLineNum, { color: visitsColor }]}>
+											{vLeft} of {visitBudget}
+										</Text>
+										<Text> Barn visits left</Text>
+										{visitsFreshIn ? (
+											<Text style={styles.visitsLineMute}>
+												{"  ·  resets in "}
+												{visitsFreshIn}
+											</Text>
+										) : null}
+									</Text>
 								</IconText>
-									<Text style={[styles.ticklesCount, { color: energyColor }]}>
-										{energyLabel}
-									</Text>
-								</View>
-								<View style={styles.ticklesTrack}>
-									<View
-										style={[
-											styles.ticklesFill,
-											{ width: `${energy}%`, backgroundColor: energyColor },
-										]}
-									/>
-								</View>
-								<View style={styles.ticklesFoot}>
-									<Text style={styles.ticklesFootText}>shared by both pigs</Text>
-									<Text style={styles.ticklesFootText}>
-										every tickle tires them a little
-									</Text>
-								</View>
 
-								{/* all tickled out — the pig hit its tap ceiling; nudge
-								    toward Leave (which opens the nap summary) instead of
-								    covering the barn immediately. */}
+								{/* post-tickle nudge — go spread the love to another friend */}
 								{tired && !restingOnArrival && !napOpen && (
 									<View style={styles.ticklesPop} pointerEvents="none">
-										<Text style={styles.ticklesPopTitle}>All tickled out!</Text>
+										<Text style={styles.ticklesPopTitle}>Tickled!</Text>
 										<Text style={styles.ticklesPopSub}>
-											tap Leave when you're ready
+											{vLeft > 0
+												? "go tickle another friend"
+												: "tap Leave when you're ready"}
 										</Text>
 										<View style={styles.ticklesPopTail} />
 									</View>
@@ -595,7 +601,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									<Text style={styles.napBody}>
 										{arrivedRested
 											? `${targetName}'s pig is worn out from a recent visit — give it a little while. You can still go tickle another friend's pig!`
-											: `The pigs are all tickled out! You can visit one friend every 3 hours, so come back to play another time.`}
+											: `The pigs need a rest! You can visit 3 different Barns every 3 hours — and each friend just once a day. Come back soon to tickle more.`}
 									</Text>
 									<View style={styles.napStats}>
 										<View style={styles.napStat}>
@@ -887,6 +893,16 @@ const styles = StyleSheet.create({
 		paddingBottom: 9,
 		...sticker,
 	},
+	// Plain "2 of 3 Barn visits left · resets in 2h" status line (no bar).
+	visitsLine: {
+		marginTop: 9,
+		alignItems: "center",
+		justifyContent: "center",
+		paddingVertical: 6,
+	},
+	visitsLineText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: INK },
+	visitsLineNum: { fontFamily: FONTS.whimsy, fontSize: 15 },
+	visitsLineMute: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.mute },
 	ticklesTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
 	ticklesLabel: { fontFamily: FONTS.bodyExtra, fontSize: 11, letterSpacing: 0.6, color: INK },
 	ticklesCount: { fontFamily: FONTS.whimsy, fontSize: 16, color: INK },

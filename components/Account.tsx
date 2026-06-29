@@ -15,12 +15,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
-import { AlignmentExplainerModal } from "./AlignmentExplainerModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Card, Button, SectionHeader } from "./ui";
 import { Icon, type IconName } from "./ui/Icon";
@@ -29,8 +28,6 @@ import { PigAvatar } from "./ui/PigAvatar";
 import { HAT_IMAGES } from "@/constants/hats";
 import type { TitlePlacement } from "@/constants/title_types";
 import { Sticker, Tape } from "./ui/Sticker";
-import { AlignmentBar } from "./ui/AlignmentBar";
-import { alignmentEffects } from "@/utils/alignment";
 import Constants from "expo-constants";
 import { COLORS, FONTS, KICKER_PILL, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW, SPACE, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
 import {
@@ -38,20 +35,25 @@ import {
 	initIAP,
 	isPro,
 	presentPaywall,
+	OFFERING_IDS,
 	presentCustomerCenter,
 	restorePurchases,
 	onCustomerInfoUpdate,
 } from "../utils/iap";
 import { SOUNDER_VISIBLE } from "@/constants/featureFlags";
 import { showPurchaseToast } from "./PurchaseToast";
+import { SnoutCoin } from "./ui/SnoutCoin";
+import { useStipend, type StipendStatus } from "@/hooks/useStipend";
 import {
 	myReferralSummary,
 	shareMessageForCode,
 	redeemReferralCode,
 	referralErrorMessage,
+	rewardNameForMilestone,
 	PENDING_REFERRAL_CODE_KEY,
 	REFERRAL_CODE_PATTERN,
 	type ReferralSummary,
+	type ReferralFriend,
 } from "@/utils/referrals";
 import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications";
 
@@ -59,7 +61,6 @@ export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
 	const [discriminator, setDiscriminator] = useState<string | null>(null);
 	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
-	const [alignmentExplainerOpen, setAlignmentExplainerOpen] = useState(false);
 	// Account-deletion confirm — required for App Store 5.1.1(v).
 	// On confirm: delete_my_account RPC cascades through every public
 	// table via ON DELETE CASCADE, then we sign out so the auth
@@ -174,11 +175,38 @@ export function Account({ session }: { session: Session }) {
 	const [currentTier, setCurrentTier] = useState<number | null>(null);
 	const [activeHat, setActiveHat] = useState<string | null>(null);
 	const [isVip, setIsVip] = useState<boolean>(false);
-	const [alignmentScore, setAlignmentScore] = useState<number>(0);
-	// Slop Club plan toggle on the membership card — yearly default
-	// (matches the design's "BEST VALUE" ribbon on yearly).
-	const [slopPlan, setSlopPlan] = useState<"monthly" | "yearly">("yearly");
 	const [busy, setBusy] = useState<boolean>(false);
+	// Slop Club monthly snout stipend — manual claim from the membership card.
+	const [stipendStatus, setStipendStatus] = useState<StipendStatus | null>(null);
+	const [stipendBusy, setStipendBusy] = useState(false);
+	const stipend = useStipend({
+		onClaimed: (granted) => {
+			setSnouts((s) => s + granted);
+			showPurchaseToast({
+				type: "success",
+				title: "Slop Club",
+				text: `+${granted} snouts — your monthly stipend`,
+			});
+		},
+	});
+	useFocusEffect(
+		useCallback(() => {
+			let cancelled = false;
+			stipend.status().then((s) => {
+				if (!cancelled) setStipendStatus(s);
+			});
+			return () => {
+				cancelled = true;
+			};
+		}, [stipend])
+	);
+	const handleClaimStipend = async () => {
+		if (stipendBusy) return;
+		setStipendBusy(true);
+		await stipend.claim(); // onClaimed handles the toast + snout bump
+		setStipendBusy(false);
+		stipend.status().then(setStipendStatus);
+	};
 	// Show the user's currently equipped title alongside their code so
 	// they can confirm at-a-glance that their title is wired up. Manage
 	// (equip/unequip) lives in the Closet (Shop → Wardrobe view), which
@@ -195,7 +223,7 @@ export function Account({ session }: { session: Session }) {
 			supabase
 				.from("profiles")
 				.select(
-					"username, discriminator, tickles_earned, counter, active_hat_id, is_vip, alignment_score, referred_by, active_title:titles!profiles_active_title_id_fkey(name, placement)"
+					"username, discriminator, tickles_earned, counter, active_hat_id, is_vip, referred_by, active_title:titles!profiles_active_title_id_fkey(name, placement)"
 				)
 				.eq("id", session.user.id)
 				.single()
@@ -207,7 +235,6 @@ export function Account({ session }: { session: Session }) {
 						counter?: number;
 						active_hat_id?: string | null;
 						is_vip?: boolean;
-						alignment_score?: number;
 						referred_by?: string | null;
 						active_title?:
 							| { name: string; placement: TitlePlacement }
@@ -221,7 +248,7 @@ export function Account({ session }: { session: Session }) {
 					if (error) {
 						const fallback = await supabase
 							.from("profiles")
-							.select("username, discriminator, tickles_earned, counter, active_hat_id, is_vip, alignment_score, referred_by")
+							.select("username, discriminator, tickles_earned, counter, active_hat_id, is_vip, referred_by")
 							.eq("id", session.user.id)
 							.single();
 						row = fallback.data;
@@ -232,7 +259,6 @@ export function Account({ session }: { session: Session }) {
 					setSnouts(row?.counter ?? 0);
 					setActiveHat(row?.active_hat_id ?? null);
 					setIsVip(row?.is_vip ?? false);
-					setAlignmentScore(row?.alignment_score ?? 0);
 					setHasRedeemed(!!row?.referred_by);
 					const t = Array.isArray(row?.active_title)
 						? row?.active_title[0]
@@ -285,29 +311,25 @@ export function Account({ session }: { session: Session }) {
 		try {
 			await initIAP(session.user.id);
 		} catch {}
-		const result = await presentPaywall();
+		// Plan selection (monthly/yearly) + purchase live entirely in
+		// RevenueCat's hosted paywall. is_vip is flipped server-side by the
+		// webhook on the purchase; we set it optimistically for instant UI.
+		const result = await presentPaywall(OFFERING_IDS.slopClub);
 		setBusy(false);
 		if (result.ok) {
-			const pro = await isPro();
-			if (pro) {
-				await rpc("dev_set_vip", { target: true });
-				setIsVip(true);
-				showPurchaseToast({
-					type: "success",
-					title: "Welcome to the Slop Club!",
-					text:
-						slopPlan === "yearly"
-							? "Auto-renews $29.99/yr"
-							: "Auto-renews $3.99/mo",
-				});
-			}
+			setIsVip(true);
+			showPurchaseToast({
+				type: "success",
+				title: "Welcome to the Slop Club!",
+				text: "You're in — manage anytime in Settings.",
+			});
 			return;
 		}
 		if (result.reason === "cancelled") return;
 		if (result.reason === "no_offering") {
 			Alert.alert(
 				"Slop Club",
-				"Storefront not configured yet (need ASC products + RC offering). Unlock for free in dev?",
+				"Storefront not configured yet (need ASC products + RC offering/paywall). Unlock for free in dev?",
 				[
 					{ text: "Cancel", style: "cancel" },
 					{
@@ -321,7 +343,7 @@ export function Account({ session }: { session: Session }) {
 			);
 			return;
 		}
-		Alert.alert("Couldn't open paywall", "Please try again.");
+		Alert.alert("Couldn't join the Slop Club", "Please try again.");
 	};
 
 	const handleManage = async () => {
@@ -457,61 +479,6 @@ export function Account({ session }: { session: Session }) {
 						</View>
 					)}
 
-					{/* Alignment story — the audit found alignment was
-					    invisible on the user's own profile. Block lives
-					    between the identity card and Achievements:
-					    Greedy ↔ score ↔ Generous + the bar + a hand-
-					    written one-liner about what moves it. */}
-					<Sticker color="cream" rotate={-0.6} radius={18} style={alignmentStoryStyles.wrap}>
-						<Text style={alignmentStoryStyles.kicker}>★ alignment</Text>
-						<View style={alignmentStoryStyles.labelRow}>
-							<Text style={alignmentStoryStyles.greedy}>Greedy</Text>
-							<Text style={alignmentStoryStyles.score}>
-								{alignmentScore >= 0 ? "+" : ""}
-								{alignmentScore}
-							</Text>
-							<Text style={alignmentStoryStyles.generous}>Generous</Text>
-						</View>
-						<AlignmentBar score={alignmentScore} />
-						{(() => {
-							const fx = alignmentEffects(alignmentScore);
-							const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
-							return (
-								<View style={alignmentStoryStyles.effectsRow}>
-									{/* Regen scales linearly like blessings/curses
-									    (±0.4%/pt, capped ±10% — 20260630), so the plain
-									    signed % is honest at every score. */}
-									<Text style={alignmentStoryStyles.effect}>
-										Regen {sgn(fx.regenPct)}%
-									</Text>
-									<Text style={alignmentStoryStyles.effect}>
-										Blessings {sgn(fx.blessingPct)}%
-									</Text>
-									<Text style={alignmentStoryStyles.effect}>
-										Curses {sgn(fx.cursePct)}%
-									</Text>
-								</View>
-							);
-						})()}
-						<Text style={alignmentStoryStyles.effectHint}>
-							Give freely → your blessings grow stronger. Keep to
-							yourself → your curses bite harder.
-						</Text>
-						<Text style={alignmentStoryStyles.hint}>
-							★ blessings push you up. asks for tickles pull you
-							down. ★
-						</Text>
-						<Pressable
-							testID="alignment-how-it-works"
-							onPress={() => setAlignmentExplainerOpen(true)}
-							hitSlop={8}
-						>
-							<Text style={alignmentStoryStyles.howLink}>
-								how alignment works ›
-							</Text>
-						</Pressable>
-					</Sticker>
-
 					{/* Achievements entry — single-line tappable row that
 					    routes to the full grid. Sits above Sounder so it's
 					    discoverable as the primary "see your progress" surface. */}
@@ -579,9 +546,8 @@ export function Account({ session }: { session: Session }) {
 						</Sticker>
 					)}
 
-					{/* Slop Club membership card — gold sticker, BEST VALUE
-					    ribbon on the yearly toggle, 4 perks, monthly/yearly
-					    toggle, Join CTA, fine-print. From the redesign. */}
+					{/* Slop Club membership card — perks, Join CTA (→ RevenueCat
+					    hosted paywall for plan/price), fine-print. */}
 					{IAP_ENABLED && (
 						<Sticker
 							color={isVip ? "lilac" : "sun"}
@@ -589,10 +555,10 @@ export function Account({ session }: { session: Session }) {
 							radius={16}
 							style={[styles.slopWrap, { overflow: "hidden" }]}
 						>
-							{/* Best-value ribbon — top-right corner overlay */}
-							{!isVip && (
-								<View style={styles.slopRibbon}>
-									<Text style={styles.slopRibbonText}>BEST VALUE</Text>
+							{/* Member badge — shown once joined */}
+							{isVip && (
+								<View style={styles.slopMemberBadge}>
+									<Text style={styles.slopMemberBadgeText}>★ MEMBER</Text>
 								</View>
 							)}
 
@@ -600,61 +566,86 @@ export function Account({ session }: { session: Session }) {
 							<Text style={styles.slopTitle}>Slop Club</Text>
 							<Text style={styles.slopTagline}>
 								{isVip
-									? "You're in. Perks active."
+									? "You're in — these perks are active:"
 									: "The good life for swine of standing."}
 							</Text>
 
-							{!isVip && (
-								<>
-									{/* Perks */}
-									<View style={styles.slopPerks}>
-										<SlopPerk
-											icon="trending"
-											label="Bigger bank"
-											detail="Tickle cap to 50 (from 25)"
-										/>
-										<SlopPerk
-											icon="premium"
-											label="Monthly stipend"
-											detail="+250 snouts on the 1st"
-										/>
-										<SlopPerk
-											icon="star"
-											label="Members-only items"
-											detail="Drops you won't see in the shop"
-										/>
+							{/* Monthly stipend claim — members claim 250 snouts once a
+							    month (resets on the 1st). */}
+							{isVip && stipendStatus?.isMember && (
+								stipendStatus.claimedThisMonth ? (
+									<View style={styles.stipendDone}>
+										<Icon name="check" size={13} color={WHIMSY.ink} strokeWidth={2.4} />
+										<Text style={styles.stipendDoneText}>
+											Stipend claimed —{" "}
+											{stipendStatus.nextAt
+												? `next on ${new Date(
+														stipendStatus.nextAt
+													).toLocaleDateString(undefined, {
+														month: "short",
+														day: "numeric",
+													})}`
+												: "next on the 1st"}
+										</Text>
 									</View>
-
-									{/* Plan toggle */}
-									<View style={styles.slopPlanRow}>
-										<Pressable
-											onPress={() => setSlopPlan("monthly")}
-											style={[
-												styles.slopPlan,
-												slopPlan === "monthly" && styles.slopPlanActive,
-											]}
-										>
-											<Text style={styles.slopPlanLabel}>Monthly</Text>
-											<Text style={styles.slopPlanPrice}>
-												$3.99<Text style={styles.slopPlanPeriod}>/mo</Text>
-											</Text>
-										</Pressable>
-										<Pressable
-											onPress={() => setSlopPlan("yearly")}
-											style={[
-												styles.slopPlan,
-												slopPlan === "yearly" && styles.slopPlanActive,
-											]}
-										>
-											<Text style={styles.slopPlanLabel}>Yearly</Text>
-											<Text style={styles.slopPlanPrice}>
-												$29.99<Text style={styles.slopPlanPeriod}>/yr</Text>
-											</Text>
-											<Text style={styles.slopPlanSave}>Save 37%</Text>
-										</Pressable>
-									</View>
-								</>
+								) : (
+									<Pressable
+										onPress={handleClaimStipend}
+										disabled={stipendBusy}
+										style={({ pressed }) => [
+											styles.stipendBtn,
+											(pressed || stipendBusy) && { opacity: 0.7 },
+										]}
+									>
+										<SnoutCoin size={16} />
+										<Text style={styles.stipendBtnText}>
+											{stipendBusy
+												? "Claiming…"
+												: `Claim ${stipendStatus.amount} snouts`}
+										</Text>
+									</Pressable>
+								)
 							)}
+
+							{/* Perks — shown in BOTH states. For members the icon
+							    wells light up gold (active) so the card celebrates
+							    membership instead of sitting empty; for prospects
+							    they're the pitch above the plan toggle. */}
+							<View style={styles.slopPerks}>
+								<SlopPerk
+									node={
+										<Image
+											source={require("@/assets/images/perks/bigger_bank.png")}
+											style={styles.perkArtImg}
+											resizeMode="contain"
+										/>
+									}
+									label="Bigger tickle bank"
+									detail="Hold 50 tickles, up from 25"
+								/>
+								<SlopPerk
+									node={
+										<Image
+											source={require("@/assets/images/perks/stipend.png")}
+											style={styles.perkArtImg}
+											resizeMode="contain"
+										/>
+									}
+									label="Monthly snout stipend"
+									detail="250 snouts on the 1st, every month"
+								/>
+								<SlopPerk
+									node={
+										<Image
+											source={require("@/assets/images/perks/members_drops.png")}
+											style={styles.perkArtImg}
+											resizeMode="contain"
+										/>
+									}
+									label="Members-only drops"
+									detail="Cosmetics you can't get in the shop"
+								/>
+							</View>
 
 							{isVip ? (
 								<Pressable
@@ -747,23 +738,47 @@ export function Account({ session }: { session: Session }) {
 								goal={referral.next_milestone_at ?? 3}
 								capped={referral.next_milestone_at == null}
 							/>
-							{/* Pending = redeemed your code, hasn't crossed the
-							    engagement gate yet. Invisible before — which read
-							    as "my referral didn't work". */}
-							{referral.referrals_pending > 0 && (
-								<View style={referralStyles.pendingRow}>
-									<Image
-										source={require("@/assets/images/emoji/pig.png")}
-										style={referralStyles.pendingPig}
-										resizeMode="contain"
-									/>
-									<Text style={referralStyles.pendingNote}>
-										{referral.referrals_pending}{" "}
-										{referral.referrals_pending === 1 ? "friend" : "friends"}{" "}
-										on the way — credit lands once they've played a bit.
+							{/* Slop Club granted at a referral milestone — show its
+							    live window while it's active. */}
+							{referral.slop_club_grant_until &&
+								new Date(referral.slop_club_grant_until).getTime() >
+									Date.now() && (
+									<Text style={referralStyles.grantNote}>
+										★ Slop Club active — until{" "}
+										{new Date(
+											referral.slop_club_grant_until
+										).toLocaleDateString(undefined, {
+											month: "short",
+											day: "numeric",
+										})}
 									</Text>
+								)}
+
+							{/* Recent referred friends + how close each is to counting
+							    (100 tickles · 3 active days). Replaces the bare
+							    "{N} on the way" aggregate. */}
+							{(referral.recent_friends ?? []).length > 0 && (
+								<View style={referralStyles.friendList}>
+									{(referral.recent_friends ?? []).slice(0, 3).map((f, i) => (
+										<ReferralFriendRow key={(f.username ?? "pig") + i} friend={f} />
+									))}
 								</View>
 							)}
+
+							{/* Into the full sounder + the reward ladder. */}
+							{(referral.referrals_completed > 0 ||
+								referral.referrals_pending > 0) && (
+								<Pressable
+									onPress={() => router.push("/sounder-progress" as Href)}
+									style={referralStyles.seeMore}
+									hitSlop={6}
+								>
+									<Text style={referralStyles.seeMoreText}>
+										Your sounder + rewards ›
+									</Text>
+								</Pressable>
+							)}
+
 							<Text style={referralStyles.fine}>
 								Each completed referral: +100 ★
 							</Text>
@@ -885,11 +900,6 @@ export function Account({ session }: { session: Session }) {
 				visible={releaseNotesOpen}
 				onClose={() => setReleaseNotesOpen(false)}
 			/>
-			{alignmentExplainerOpen && (
-				<AlignmentExplainerModal
-					onDismiss={() => setAlignmentExplainerOpen(false)}
-				/>
-			)}
 			<ConfirmDialog
 				open={deleteOpen}
 				title="Delete your account?"
@@ -918,18 +928,32 @@ export function Account({ session }: { session: Session }) {
 // One line of the Slop Club perks list — small ink icon + label + detail.
 function SlopPerk({
 	icon,
+	node,
 	label,
 	detail,
+	active,
 }: {
-	icon: IconName;
+	icon?: IconName;
+	// Custom art (e.g. the snout/tickle coin) rendered in the well instead of
+	// a vector Icon.
+	node?: React.ReactNode;
 	label: string;
 	detail: string;
+	// Members see their perks "lit up" (gold well); prospects see the plain pitch.
+	active?: boolean;
 }) {
 	return (
 		<View style={styles.slopPerk}>
-			<View style={styles.slopPerkIcon}>
-				<Icon name={icon} size={14} color={WHIMSY.ink} strokeWidth={2.2} />
-			</View>
+			{node ? (
+				// Custom sticker art stands on its own (no bordered well).
+				<View style={styles.slopPerkArt}>{node}</View>
+			) : (
+				<View style={[styles.slopPerkIcon, active && styles.slopPerkIconActive]}>
+					{icon ? (
+						<Icon name={icon} size={14} color={WHIMSY.ink} strokeWidth={2.2} />
+					) : null}
+				</View>
+			)}
 			<View style={{ flex: 1, minWidth: 0 }}>
 				<Text style={styles.slopPerkLabel}>{label}</Text>
 				<Text style={styles.slopPerkDetail}>{detail}</Text>
@@ -985,6 +1009,47 @@ function SettingRow({
 // "Friends invited: N / 3" line + a fill bar + a "Hat earned" badge
 // once capped. Pure presentational — caller computes completed / goal
 // from my_referral_summary.
+// One recent referred friend on the Account card: name + progress toward
+// counting (tickles/100, active-days/3), or a "counted" tick once complete.
+function ReferralFriendRow({ friend }: { friend: ReferralFriend }) {
+	const done = !!friend.completed;
+	const tRatio = Math.max(0, Math.min(1, friend.tickles / 100));
+	const dRatio = Math.max(0, Math.min(1, friend.active_days / 3));
+	return (
+		<View style={referralStyles.friendRow}>
+			<View style={referralStyles.friendTop}>
+				<Text style={referralStyles.friendName} numberOfLines={1}>
+					{friend.username ?? "a new pig"}
+				</Text>
+				{done ? (
+					<View style={referralStyles.friendDone}>
+						<Icon name="check" size={11} color={WHIMSY.ink} strokeWidth={2.4} />
+						<Text style={referralStyles.friendDoneText}>counted</Text>
+					</View>
+				) : (
+					<Text style={referralStyles.friendProg}>
+						{friend.tickles}/100 · {friend.active_days}/3
+					</Text>
+				)}
+			</View>
+			{!done && (
+				<View style={referralStyles.friendBars}>
+					<View style={referralStyles.friendBarTrack}>
+						<View
+							style={[referralStyles.friendBarFill, { width: `${tRatio * 100}%` }]}
+						/>
+					</View>
+					<View style={referralStyles.friendBarTrack}>
+						<View
+							style={[referralStyles.friendBarFill, { width: `${dRatio * 100}%` }]}
+						/>
+					</View>
+				</View>
+			)}
+		</View>
+	);
+}
+
 function ReferralMilestoneRow({
 	completed,
 	goal,
@@ -995,6 +1060,8 @@ function ReferralMilestoneRow({
 	capped: boolean;
 }) {
 	const ratio = Math.max(0, Math.min(1, capped ? 1 : completed / goal));
+	// The bar tracks whichever ladder rung is next (3/5/10/25/100/500/1000).
+	const reward = rewardNameForMilestone(goal);
 	return (
 		<View style={referralStyles.milestoneWrap}>
 			<View style={referralStyles.milestoneHeader}>
@@ -1002,7 +1069,7 @@ function ReferralMilestoneRow({
 					Friends invited: {completed} / {capped ? completed : goal}
 				</Text>
 				{capped && (
-					<Text style={referralStyles.milestoneBadge}>✓ Hat earned</Text>
+					<Text style={referralStyles.milestoneBadge}>✓ Rewards earned</Text>
 				)}
 			</View>
 			<View style={referralStyles.barTrack}>
@@ -1015,7 +1082,7 @@ function ReferralMilestoneRow({
 			</View>
 			{!capped && (
 				<Text style={referralStyles.milestoneFoot}>
-					{goal - completed} more for the Messenger Hat
+					{goal - completed} more for {reward}
 				</Text>
 			)}
 		</View>
@@ -1164,23 +1231,47 @@ const styles = StyleSheet.create({
 	},
 	// ── Slop Club membership card ──────────────────────────────────
 	slopWrap: { padding: 18 },
-	slopRibbon: {
+	stipendBtn: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 7,
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 12,
+		paddingVertical: 9,
+		marginTop: 12,
+		marginBottom: 4,
+	},
+	stipendBtnText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+	stipendDone: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 6,
+		marginTop: 12,
+		marginBottom: 4,
+		paddingVertical: 6,
+	},
+	stipendDoneText: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.mute },
+	slopMemberBadge: {
 		position: "absolute",
-		top: 14,
-		right: -32,
-		paddingHorizontal: 32,
-		paddingVertical: 3,
-		backgroundColor: WHIMSY.accent,
+		top: 12,
+		right: 12,
+		backgroundColor: WHIMSY.sun,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		transform: [{ rotate: "35deg" }],
+		borderRadius: 999,
+		paddingHorizontal: 10,
+		paddingVertical: 3,
 		zIndex: 2,
 	},
-	slopRibbonText: {
-		color: WHIMSY.paper,
+	slopMemberBadgeText: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 9,
 		letterSpacing: 1,
+		color: WHIMSY.ink,
 	},
 	slopKicker: {
 		...KICKER_TEXT,
@@ -1213,6 +1304,11 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
+	// Member state: the perk well lights up gold to read as "active".
+	slopPerkIconActive: { backgroundColor: WHIMSY.sun },
+	// Sticker-art perk icon — slightly larger than the vector well, no chrome.
+	slopPerkArt: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+	perkArtImg: { width: 44, height: 44 },
 	slopPerkLabel: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
@@ -1224,45 +1320,6 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		opacity: 0.7,
 		marginTop: 1,
-	},
-	slopPlanRow: { flexDirection: "row", gap: 10, marginTop: 16 },
-	slopPlan: {
-		flex: 1,
-		paddingVertical: 10,
-		paddingHorizontal: 10,
-		borderRadius: 12,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		alignItems: "center",
-	},
-	slopPlanActive: {
-		backgroundColor: WHIMSY.cream2,
-		borderWidth: 2.5,
-	},
-	slopPlanLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.ink,
-		letterSpacing: 0.4,
-	},
-	slopPlanPrice: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 18,
-		color: WHIMSY.ink,
-		marginTop: 2,
-	},
-	slopPlanPeriod: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		opacity: 0.7,
-	},
-	slopPlanSave: {
-		fontFamily: FONTS.hand,
-		fontSize: 11,
-		color: WHIMSY.accent,
-		marginTop: 2,
 	},
 	slopBtn: {
 		paddingVertical: 12,
@@ -1395,84 +1452,6 @@ const sounderStyles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 13,
 		color: WHIMSY.accent,
-	},
-});
-
-// Alignment story block on Account — the on-your-own-profile
-// surface that closes the audit's "alignment is invisible on the
-// user's own screens" finding.
-const alignmentStoryStyles = StyleSheet.create({
-	wrap: { padding: 16 },
-	kicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.6,
-		textTransform: "uppercase",
-		marginBottom: 6,
-	},
-	labelRow: {
-		flexDirection: "row",
-		alignItems: "baseline",
-		justifyContent: "space-between",
-		marginBottom: 6,
-	},
-	greedy: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 1.2,
-		textTransform: "uppercase",
-		color: WHIMSY.goblin,
-	},
-	generous: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		letterSpacing: 1.2,
-		textTransform: "uppercase",
-		color: WHIMSY.angel,
-	},
-	score: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
-	hint: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 8,
-	},
-	effectsRow: {
-		flexDirection: "row",
-		flexWrap: "wrap",
-		justifyContent: "center",
-		gap: 8,
-		marginTop: 8,
-	},
-	effect: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.ink,
-		backgroundColor: WHIMSY.cream2,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: 999,
-		paddingHorizontal: 8,
-		paddingVertical: 3,
-		overflow: "hidden",
-	},
-	effectHint: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 7,
-		lineHeight: 17,
-	},
-	howLink: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		letterSpacing: 0.3,
-		marginTop: 10,
 	},
 });
 
@@ -1766,10 +1745,71 @@ const referralStyles = StyleSheet.create({
 		color: WHIMSY.ink,
 		marginTop: 4,
 	},
+	// Live banner for an active referral-granted free month of Slop Club.
+	grantNote: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.ink,
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingHorizontal: 10,
+		paddingVertical: 4,
+		marginTop: 10,
+		alignSelf: "flex-start",
+		overflow: "hidden",
+	},
 	finePrint: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
 		color: WHIMSY.mute,
 		marginTop: 2,
+	},
+	// Recent referred-friends list (per-friend progress).
+	friendList: { marginTop: 12, gap: 9 },
+	friendRow: { gap: 5 },
+	friendTop: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+	},
+	friendName: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.ink,
+		flex: 1,
+		minWidth: 0,
+	},
+	friendProg: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		marginLeft: 8,
+	},
+	friendDone: { flexDirection: "row", alignItems: "center", gap: 4, marginLeft: 8 },
+	friendDoneText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.ink,
+		letterSpacing: 0.3,
+	},
+	friendBars: { flexDirection: "row", gap: 6 },
+	friendBarTrack: {
+		flex: 1,
+		height: 6,
+		borderRadius: 3,
+		backgroundColor: WHIMSY.cream2,
+		borderWidth: 1,
+		borderColor: WHIMSY.ink,
+		overflow: "hidden",
+	},
+	friendBarFill: { height: "100%", backgroundColor: WHIMSY.angel },
+	seeMore: { marginTop: 12, paddingVertical: 4 },
+	seeMoreText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		letterSpacing: 0.3,
 	},
 });

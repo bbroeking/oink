@@ -1,7 +1,16 @@
 import React from "react";
 import { Pressable, Text, View, StyleSheet, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { COLORS, FONTS } from "@/constants/theme";
+import { COLORS, FONTS, WHIMSY, SHADOW_SM } from "@/constants/theme";
+
+// Cozy treatment for the colorful gradient CTAs (primary/purple/gold): the
+// app's signature ink outline + hard "sticker" drop shadow, so they read as
+// hand-drawn buttons instead of flat gradient pills.
+const COZY_GRADIENT = {
+	borderWidth: 2,
+	borderColor: WHIMSY.ink,
+	...SHADOW_SM,
+};
 
 type Variant = "primary" | "purple" | "gold" | "dark" | "ghost" | "locked" | "success";
 type Size = "sm" | "md" | "lg";
@@ -39,7 +48,7 @@ const FLAT_VARIANTS: Partial<
 };
 
 const TEXT_COLORS: Record<Variant, string> = {
-	primary: "#fff",
+	primary: WHIMSY.ink,
 	purple: "#fff",
 	gold: "#5A3F00",
 	dark: "#fff",
@@ -106,7 +115,7 @@ export function Button({
 					colors={gradient}
 					start={{ x: 0, y: 0 }}
 					end={{ x: 0, y: 1 }}
-					style={baseStyle}
+					style={[baseStyle, COZY_GRADIENT]}
 				>
 					{inner}
 				</LinearGradient>

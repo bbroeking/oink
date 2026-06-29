@@ -47,7 +47,6 @@ import { TruffleButton } from "./TruffleButton";
 import { BuryTruffleSheet } from "./BuryTruffleSheet";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
 import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
-import { useStipend } from "@/hooks/useStipend";
 import { usePassEvents } from "@/hooks/usePassEvents";
 import { useLuckyPig } from "@/hooks/useLuckyPig";
 import { useActiveEffectsContext } from "@/hooks/ActiveEffectsProvider";
@@ -331,15 +330,6 @@ export default function Barn() {
 	// (or the "pick a country" pennant when no allegiance yet).
 	const [allegianceOpen, setAllegianceOpen] = useState(false);
 
-	// Slop Club monthly stipend. The hook calls onClaimed only when
-	// the RPC actually paid out (members + once-per-month).
-	const stipend = useStipend({
-		onClaimed: (granted) => {
-			showToast("Slop Club", `+${granted} snouts — your monthly stipend`);
-			fetchStats();
-		},
-	});
-
 	// Release-notes auto-show: fires once on Barn mount per app launch
 	// when the user hasn't seen the latest version yet.
 	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
@@ -445,7 +435,6 @@ export default function Barn() {
 		useCallback(() => {
 			fetchStats();
 			passEvents.check();
-			stipend.claim();
 			checkAlignment();
 			setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
 		}, [])
