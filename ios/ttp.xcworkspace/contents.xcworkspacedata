@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:ttp/TickleThePig.storekit">
+   </FileRef>
+   <FileRef
       location = "group:ttp.xcodeproj">
    </FileRef>
    <FileRef
