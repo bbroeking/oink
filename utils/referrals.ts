@@ -32,12 +32,57 @@ export const PENDING_REFERRAL_CODE_KEY = "pending_referral_code";
 
 // Caller's referral state for the Account "Refer friends" card.
 // Shape mirrors the server-side jsonb returned by my_referral_summary.
+// One invited friend's progress toward counting as a completed referral.
+// `tickles` and `active_days` are server-capped at the gate (100 / 3).
+export interface ReferralFriend {
+	username: string | null;
+	tickles: number;
+	active_days: number;
+	completed?: boolean; // present on recent_friends
+	redeemed_at: string | null;
+}
+
 export interface ReferralSummary {
 	ok: true;
 	code: string;
 	referrals_completed: number;
 	referrals_pending: number;
+	// The next ladder rung not yet reached (3/5/10/25/100/500/1000), or null
+	// once all are earned.
 	next_milestone_at: number | null;
+	// ISO timestamp the referral-granted free month/period of Slop Club
+	// expires, or null. Set at the 5/100/500/1000 milestones.
+	slop_club_grant_until: string | null;
+	// Invited friends who've redeemed but not yet completed (with progress).
+	pending_friends: ReferralFriend[];
+	// The 3 most recently referred friends (any status), for the card.
+	recent_friends: ReferralFriend[];
+}
+
+// The referral reward ladder — completed-referral count → reward. Mirrors the
+// server grants in 20260683_referral_reward_ladder.sql.
+export const REFERRAL_LADDER: { count: number; reward: string }[] = [
+	{ count: 3, reward: "Messenger Hat" },
+	{ count: 5, reward: "Free month of Slop Club" },
+	{ count: 10, reward: "Sounder Caller title + 500 snouts" },
+	{ count: 25, reward: "Pen Marshal title + 1,500 snouts" },
+	{ count: 100, reward: "Pied Piper title + 90 days Slop Club + 5,000 snouts" },
+	{ count: 500, reward: "Patron of the Pen title + 180 days Slop Club + 20,000 snouts" },
+	{ count: 1000, reward: "Worldbringer title + 1 year Slop Club + 100,000 snouts" },
+];
+
+// Short, inline reward name for the "{n} more for X" milestone foot line.
+export function rewardNameForMilestone(count: number | null): string {
+	switch (count) {
+		case 3: return "the Messenger Hat";
+		case 5: return "a free month of Slop Club";
+		case 10: return "the Sounder Caller title";
+		case 25: return "the Pen Marshal title";
+		case 100: return "Pied Piper + 90 days of Slop Club";
+		case 500: return "Patron of the Pen + 180 days of Slop Club";
+		case 1000: return "Worldbringer + a year of Slop Club";
+		default: return "the next reward";
+	}
 }
 
 // Discriminated result from redeem_referral_code. `reason` carries

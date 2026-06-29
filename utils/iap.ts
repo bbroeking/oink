@@ -75,6 +75,17 @@ export const PRODUCT_IDS = {
 	seasonPass: "season_pass",
 } as const;
 
+// Offering identifiers. Each RevenueCat *paywall design* is attached to
+// an Offering, so to route to a specific design you present a specific
+// offering — `slop_club` carries the subscription paywall, `season_pass`
+// carries the one-time Season Pass paywall. These MUST match the
+// Offering identifiers configured in the RevenueCat dashboard. Pass one
+// to presentPaywall(); omit it to fall back to the `current` offering.
+export const OFFERING_IDS = {
+	slopClub: "slop_club",
+	seasonPass: "season_pass",
+} as const;
+
 export type PaywallOutcome = {
 	ok: boolean;
 	reason?: "purchased" | "restored" | "cancelled" | "no_offering" | "error";
@@ -101,8 +112,10 @@ interface IAP {
 	getCustomerInfo(): Promise<CustomerInfo | null>;
 	onCustomerInfoUpdate(cb: (info: CustomerInfo) => void): () => void;
 	getCurrentOffering(): Promise<PurchasesOffering | null>;
-	presentPaywallIfNeeded(): Promise<PaywallOutcome>;
-	presentPaywall(): Promise<PaywallOutcome>;
+	// offeringId routes to that offering's paywall design; omit for the
+	// dashboard's `current` offering.
+	presentPaywallIfNeeded(offeringId?: string): Promise<PaywallOutcome>;
+	presentPaywall(offeringId?: string): Promise<PaywallOutcome>;
 	presentCustomerCenter(): Promise<void>;
 	purchasePackage(pkg: PurchasesPackage): Promise<PurchaseOutcome>;
 	purchaseProductId(productId: string): Promise<PurchaseOutcome>;
@@ -193,10 +206,17 @@ const realIAP: IAP = (() => {
 			}
 		},
 
-		async presentPaywallIfNeeded() {
+		async presentPaywallIfNeeded(offeringId) {
 			try {
+				let offering: PurchasesOffering | undefined;
+				if (offeringId) {
+					const offerings = await Purchases.getOfferings();
+					offering = offerings.all[offeringId];
+					if (!offering) return { ok: false, reason: "no_offering" };
+				}
 				const result = await RevenueCatUI.presentPaywallIfNeeded({
 					requiredEntitlementIdentifier: ENTITLEMENT_PRO,
+					...(offering ? { offering } : {}),
 				});
 				return mapPaywallResult(result);
 			} catch (e) {
@@ -205,9 +225,19 @@ const realIAP: IAP = (() => {
 			}
 		},
 
-		async presentPaywall() {
+		async presentPaywall(offeringId) {
 			try {
-				const result = await RevenueCatUI.presentPaywall();
+				const offerings = await Purchases.getOfferings();
+				// Prefer the requested offering; fall back to the current/default
+				// one so a Test Store or default-offering setup still shows a
+				// paywall (its monthly/yearly packages). Only truly-empty → the
+				// dev "Storefront not configured" fallback.
+				const offering =
+					(offeringId ? offerings.all[offeringId] : undefined) ??
+					offerings.current ??
+					undefined;
+				if (!offering) return { ok: false, reason: "no_offering" };
+				const result = await RevenueCatUI.presentPaywall({ offering });
 				return mapPaywallResult(result);
 			} catch (e) {
 				log.error("[iap] presentPaywall:", e);
@@ -267,8 +297,14 @@ const noopIAP: IAP = {
 	getCustomerInfo: async () => null,
 	onCustomerInfoUpdate: () => () => {},
 	getCurrentOffering: async () => null,
-	presentPaywallIfNeeded: async () => ({ ok: false, reason: "cancelled" }),
-	presentPaywall: async () => ({ ok: false, reason: "cancelled" }),
+	presentPaywallIfNeeded: async (_offeringId?: string) => ({
+		ok: false,
+		reason: "cancelled" as const,
+	}),
+	presentPaywall: async (_offeringId?: string) => ({
+		ok: false,
+		reason: "cancelled" as const,
+	}),
 	presentCustomerCenter: async () => {},
 	purchasePackage: async () => ({ ok: false, reason: "cancelled" }),
 	purchaseProductId: async () => ({ ok: false, reason: "cancelled" }),
@@ -291,8 +327,10 @@ export const getCustomerInfo = () => iap.getCustomerInfo();
 export const onCustomerInfoUpdate = (cb: (info: CustomerInfo) => void) =>
 	iap.onCustomerInfoUpdate(cb);
 export const getCurrentOffering = () => iap.getCurrentOffering();
-export const presentPaywallIfNeeded = () => iap.presentPaywallIfNeeded();
-export const presentPaywall = () => iap.presentPaywall();
+export const presentPaywallIfNeeded = (offeringId?: string) =>
+	iap.presentPaywallIfNeeded(offeringId);
+export const presentPaywall = (offeringId?: string) =>
+	iap.presentPaywall(offeringId);
 export const presentCustomerCenter = () => iap.presentCustomerCenter();
 export const purchasePackage = (pkg: PurchasesPackage) =>
 	iap.purchasePackage(pkg);

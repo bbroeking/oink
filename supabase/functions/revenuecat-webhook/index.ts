@@ -104,10 +104,22 @@ Deno.serve(async (req) => {
 	}
 
 	if (DEACTIVATING_EVENTS.has(event.type)) {
+		// Don't stomp an active referral-granted free month of Slop Club.
+		// is_vip can be on for two reasons (paid sub OR a referral grant);
+		// clearing it on a store expiration must preserve a grant that's
+		// still in its window. The nightly cron expires the grant later.
+		const { data: prof } = await supabase
+			.from("profiles")
+			.select("slop_club_grant_until")
+			.eq("id", userId)
+			.single();
+		const grantActive =
+			!!prof?.slop_club_grant_until &&
+			new Date(prof.slop_club_grant_until).getTime() > Date.now();
 		const { error } = await supabase
 			.from("profiles")
 			.update({
-				is_vip: false,
+				is_vip: grantActive,
 				vip_until: null,
 			})
 			.eq("id", userId);
