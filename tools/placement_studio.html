@@ -49,6 +49,13 @@
   /* STAGE */
   .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;
     background:radial-gradient(circle at 50% 40%,#fffdf8,#f4ead9)}
+  .animbar{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:50;display:flex;
+    align-items:center;gap:6px;flex-wrap:wrap;max-width:92%;background:rgba(255,253,248,.96);
+    border:1.5px solid var(--line);border-radius:99px;padding:5px 12px;box-shadow:var(--shadow)}
+  .animbar select{padding:4px 8px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12.5px;color:var(--ink);background:var(--panel)}
+  .animbar .fb{border:1.5px solid var(--line);background:var(--panel);border-radius:7px;min-width:26px;height:26px;
+    font-size:12px;font-weight:800;cursor:pointer;color:var(--ink)}
+  .animbar .fb.on{background:var(--ink);color:#fff;border-color:var(--ink)}
   .stage{position:relative;background:#fbf4e8;border:2px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
   .stage .pig{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
   .stage .pig img{width:100%;height:100%;object-fit:contain}
@@ -120,6 +127,7 @@
   </aside>
 
   <div class="stagewrap">
+    <div class="animbar" id="animbar"></div>
     <div class="stage" id="stage"></div>
   </div>
 
@@ -157,16 +165,48 @@ const CARD=300, SCALE=1.5, S=CARD*SCALE; // stage px
 const $=(s,r=document)=>r.querySelector(s);
 let DATA={items:[],rest:{}}, REL={}, SEL=null, FILTER="all", Q="";
 let aspectCache={};
+// Items-mode pose scrubber: preview the selected item across animations/frames
+// using the SAME per-frame anchors the app resolves (so you catch placement
+// that drifts on walk/jump/wave, not just idle).
+let IANIM="idle", IFRAME=0, IPLAY=null;
 
 // ---- load ----
 async function boot(){
   DATA=await fetch("/api/data").then(r=>r.json());
+  const an=await fetch("/api/anchors").then(r=>r.json()); FRAMES=an.frames; DATA.rest=an.rest;
   // Seed the save-map from the FULL hat_rel (every hand-tuned entry, incl. ones
   // whose art isn't under hats/) so a rebuild-all save never drops any.
   REL={}; Object.keys(DATA.hatRel||{}).forEach(id=>{const s=DATA.hatRel[id];REL[id]={pivot:{...s.pivot},widthFrac:s.widthFrac,anchor:s.anchor,behind:!!s.behind};});
-  renderList();
+  renderList(); drawAnimBar();
   $("#status").innerHTML=`${DATA.items.length} items · <b>${DATA.items.filter(i=>i.tuned).length}</b> tuned · ${DATA.items.filter(i=>!i.tuned).length} untuned`;
   buildPigMode();
+}
+
+// Resolve a pig anchor at (anim, frame) — mirrors resolveAnchor in hats.ts:
+// per-frame value, REST fallback, eyes/feet = computed L/R midpoints.
+function resolveA(anim, frame, name){
+  if(name==="eyes"){const l=resolveA(anim,frame,"eye_l"),r=resolveA(anim,frame,"eye_r");return {x:(l.x+r.x)/2,y:(l.y+r.y)/2};}
+  if(name==="feet"){const l=resolveA(anim,frame,"leg_l"),r=resolveA(anim,frame,"leg_r");return {x:(l.x+r.x)/2,y:(l.y+r.y)/2};}
+  const fr=(FRAMES[anim]&&FRAMES[anim][frame])||{};
+  return fr[name]||DATA.rest[name]||{x:150,y:150};
+}
+function drawAnimBar(){
+  const bar=$("#animbar"); if(!bar)return;
+  const anims=Object.keys(FRAMES); if(!anims.length){bar.innerHTML="";return;}
+  const nf=(FRAMES[IANIM]||[]).length||4;
+  bar.innerHTML=`<span class="sub" style="font-weight:700;color:#6e5a44">Pose</span>
+    <select id="ianim">${anims.map(a=>`<option ${a===IANIM?'selected':''}>${a}</option>`).join("")}</select>
+    ${Array.from({length:nf},(_,i)=>`<button class="fb ${i===IFRAME?'on':''}" data-f="${i}">${i+1}</button>`).join("")}
+    <button class="fb" id="iplay" style="min-width:30px">${IPLAY?'❚❚':'▶'}</button>`;
+  $("#ianim").onchange=e=>{IANIM=e.target.value;IFRAME=0;drawAnimBar();drawStage();};
+  bar.querySelectorAll(".fb[data-f]").forEach(b=>b.onclick=()=>{stopPlay();IFRAME=+b.dataset.f;drawAnimBar();drawStage();});
+  $("#iplay").onclick=togglePlay;
+}
+function stopPlay(){ if(IPLAY){clearInterval(IPLAY);IPLAY=null;} }
+function togglePlay(){
+  if(IPLAY){stopPlay();drawAnimBar();return;}
+  IPLAY=setInterval(()=>{const nf=(FRAMES[IANIM]||[]).length||4;IFRAME=(IFRAME+1)%nf;drawAnimBar();drawStage();},450);
+  drawAnimBar();
 }
 
 // ---- ITEMS: list ----
@@ -257,19 +297,19 @@ async function drawStage(){
   const s=curSpec();
   const src="/img/"+it.image, aspect=await itemAspect(src);
   const w=s.widthFrac*CARD, h=w*aspect;
-  const a=DATA.rest[s.anchor]||DATA.rest.head;
+  const a=resolveA(IANIM,IFRAME,s.anchor);              // per-frame anchor (idle/walk/jump/…)
   const left=a.x - s.pivot.x*w, top=a.y - s.pivot.y*h;
   const behind=!!s.behind;
-  let html=`<div class="pig" style="z-index:${behind?20:5}"><img src="${PIG_IMG}"></div>`;
+  let html=`<div class="pig" style="z-index:${behind?20:5}"><img src="${pigFrameImg(IANIM,IFRAME)}"></div>`;
   if(!fullCanvas){
     html+=`<div class="item" style="z-index:${behind?2:10};left:${left*SCALE}px;top:${top*SCALE}px;width:${w*SCALE}px;height:${h*SCALE}px"><img src="${src}"></div>`;
   }else{
     html+=`<div class="item" style="z-index:2;left:0;top:0;width:${S}px;height:${S}px"><img src="${src}" style="object-fit:cover"></div>`;
   }
-  // anchor dots
+  // anchor dots (move with the pose so you see exactly what the item tracks)
   if(!fullCanvas){
     ANCHORS.concat(["eyes","feet"]).forEach(name=>{
-      const an=DATA.rest[name]; if(!an)return;
+      const an=resolveA(IANIM,IFRAME,name); if(!an)return;
       const on=name===s.anchor;
       html+=`<div class="anchorDot ${on?'on':''}" data-anchor="${name}" style="left:${an.x*SCALE}px;top:${an.y*SCALE}px"><span class="lbl">${name}</span></div>`;
     });
