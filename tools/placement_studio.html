@@ -144,6 +144,10 @@
     <span class="hint" style="font-weight:700;color:#6e5a44;margin-left:8px">Frame:</span>
     <span class="seg" id="pig-frames"></span>
     <button class="btn ghost" id="pig-onion" style="margin-left:8px">Onion skin: off</button>
+    <span style="width:1px;height:22px;background:var(--line);margin:0 6px"></span>
+    <button class="btn ghost" id="pig-matchprev" title="Set every anchor in this frame to the previous frame's position">Match ← prev frame</button>
+    <button class="btn ghost" id="pig-freeze" title="Set ALL frames of this animation to this frame — nothing moves">Freeze: all frames = this</button>
+    <label class="toggle" style="margin-left:6px;font-size:12px"><input type="checkbox" id="pig-pin"> Pin edits to all frames</label>
     <span class="status" id="pig-status"></span>
   </div>
   <div style="flex:1;display:flex;min-height:0">
@@ -358,13 +362,27 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
 });
 
 // ============ PIG ANATOMY MODE ============
-let FRAMES={}, PANIM="idle", PFRAME=0, ONION=false;
+let FRAMES={}, PANIM="idle", PFRAME=0, ONION=false, PIN_ALL=false;
+const clone=o=>JSON.parse(JSON.stringify(o));
 async function buildPigMode(){
   const d=await fetch("/api/anchors").then(r=>r.json());
   FRAMES=d.frames; DATA.rest=d.rest;
   const sel=$("#pig-anim"); sel.innerHTML=Object.keys(FRAMES).map(a=>`<option>${a}</option>`).join("");
   sel.onchange=()=>{PANIM=sel.value;PFRAME=0;drawPig();};
   $("#pig-onion").onclick=()=>{ONION=!ONION;$("#pig-onion").textContent="Onion skin: "+(ONION?"on":"off");drawPig();};
+  $("#pig-pin").onchange=e=>{PIN_ALL=e.target.checked;};
+  // Match this frame to the previous one (every anchor) — for poses that
+  // shouldn't move between frames.
+  $("#pig-matchprev").onclick=()=>{
+    const f=FRAMES[PANIM]; if(!f||f.length<2)return;
+    f[PFRAME]=clone(f[(PFRAME-1+f.length)%f.length]); drawPig(); savePig();
+  };
+  // Freeze the whole animation: every frame = the current frame (nothing moves).
+  $("#pig-freeze").onclick=()=>{
+    const f=FRAMES[PANIM]; if(!f)return;
+    const cur=clone(f[PFRAME]); for(let i=0;i<f.length;i++) f[i]=clone(cur);
+    drawPig(); savePig();
+  };
   drawPig();
 }
 function pigFrameImg(anim,frame){return `/img/assets/images/sprites/rosie/${anim}_${frame+1}.png`;}
@@ -394,7 +412,11 @@ function drawPig(){
 function setupDotDrag(dot){
   const st=$("#pig-stage"); let drag=false;
   const set=e=>{const r=st.getBoundingClientRect();const x=(e.clientX-r.left)/SCALE,y=(e.clientY-r.top)/SCALE;
-    FRAMES[PANIM][PFRAME][dot.dataset.a]={x:Math.max(0,Math.min(CARD,x)),y:Math.max(0,Math.min(CARD,y))};
+    const pos={x:Math.max(0,Math.min(CARD,x)),y:Math.max(0,Math.min(CARD,y))};
+    // PIN_ALL: this anchor shouldn't move across the animation — write it to
+    // every frame at once. Otherwise just the current frame.
+    if(PIN_ALL) FRAMES[PANIM].forEach(fr=>fr[dot.dataset.a]={...pos});
+    else FRAMES[PANIM][PFRAME][dot.dataset.a]=pos;
     drawPig();savePig();};
   dot.onpointerdown=e=>{drag=true;dot.setPointerCapture(e.pointerId);e.stopPropagation();};
   dot.onpointermove=e=>{if(drag)set(e);};
