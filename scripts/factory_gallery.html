@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Image Factory — Review</title>
+<style>
+  :root{
+    --ink:#3b2a1e; --cream:#fdf6ec; --card:#fffdf8; --line:#e7d8c4;
+    --gold:#caa04a; --green:#3f9d63; --green-bg:#e6f4ea; --red:#cf5b4e; --red-bg:#fbe9e6;
+    --muted:#8c7a66; --shadow:0 2px 0 #e7d8c4, 0 6px 18px rgba(80,60,40,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    color:var(--ink);background:var(--cream);}
+  header{position:sticky;top:0;z-index:10;background:rgba(253,246,236,.96);
+    backdrop-filter:blur(6px);border-bottom:2px solid var(--line);padding:14px 20px;}
+  .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:13px}
+  .bar{height:10px;flex:1;min-width:160px;background:#efe3d2;border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,#7fc99a,var(--green));width:0}
+  .pill{border:1.5px solid var(--line);background:var(--card);border-radius:99px;padding:6px 12px;
+    font-size:13px;font-weight:600;cursor:pointer;color:var(--ink)}
+  .pill.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .counts span{font-weight:700}
+  main{padding:18px 20px 80px;max-width:1500px;margin:0 auto}
+  h2{font-size:15px;margin:26px 0 10px;padding-bottom:6px;border-bottom:1px dashed var(--line);
+    text-transform:uppercase;letter-spacing:.8px;color:#6e5a44}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:16px;overflow:hidden;
+    box-shadow:var(--shadow);display:flex;flex-direction:column;transition:.15s}
+  .card.approved{border-color:var(--green);box-shadow:0 0 0 2px var(--green-bg)}
+  .card.rejected{border-color:var(--red);box-shadow:0 0 0 2px var(--red-bg)}
+  .thumb{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;
+    background-color:#f3ece0;
+    background-image:linear-gradient(45deg,#e4d8c6 25%,transparent 25%),linear-gradient(-45deg,#e4d8c6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e4d8c6 75%),linear-gradient(-45deg,transparent 75%,#e4d8c6 75%);
+    background-size:22px 22px;background-position:0 0,0 11px,11px -11px,-11px 0}
+  .thumb.bg{background-image:none;background:#222}
+  .thumb.pig{background-image:none;background:#f3ece0}
+  .thumb img{max-width:100%;max-height:100%;display:block}
+  .thumb.bg img{width:100%;height:100%;object-fit:cover}
+  .thumb.pig img{width:100%;height:100%;object-fit:contain}
+  .badge{position:absolute;top:8px;right:8px;font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;
+    text-transform:uppercase;letter-spacing:.5px}
+  .badge.approved{background:var(--green);color:#fff}
+  .badge.rejected{background:var(--red);color:#fff}
+  .badge.pending{background:#efe3d2;color:#8c7a66}
+  .missing{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#a99;font-size:13px;font-weight:700}
+  .body{padding:10px 12px;display:flex;flex-direction:column;gap:8px;flex:1}
+  .name{font-weight:800;font-size:14px;line-height:1.2}
+  .tags{display:flex;gap:5px;flex-wrap:wrap}
+  .tag{font-size:10.5px;font-weight:700;color:#7a674f;background:#f1e7d6;border-radius:99px;padding:2px 7px}
+  .acts{display:flex;gap:8px}
+  .btn{flex:1;border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:8px;
+    font-weight:800;font-size:13px;cursor:pointer;color:var(--ink)}
+  .btn.yes.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .btn.no.on{background:var(--red);color:#fff;border-color:var(--red)}
+  textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:8px;font:inherit;font-size:12.5px;
+    resize:vertical;min-height:34px;background:#fffdf8;color:var(--ink)}
+  textarea:focus{outline:none;border-color:var(--gold)}
+  details{font-size:12px;color:var(--muted)}
+  details summary{cursor:pointer;font-weight:700;user-select:none}
+  details p{margin:6px 0 0;line-height:1.45;white-space:pre-wrap;color:#6e5a44}
+  .saved{font-size:11px;color:var(--green);opacity:0;transition:.2s}
+  .saved.show{opacity:1}
+  .empty{color:var(--muted);padding:40px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <h1 id="title">Image Factory</h1>
+    <div class="counts sub" id="counts"></div>
+    <div class="bar"><i id="prog"></i></div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <span class="sub">Filter:</span>
+    <button class="pill on" data-f="all">All</button>
+    <button class="pill" data-f="todo">Needs review</button>
+    <button class="pill" data-f="approved">Approved</button>
+    <button class="pill" data-f="rejected">Rejected</button>
+    <span class="seg" style="margin-left:auto">
+      <span class="sub" style="margin-right:8px">View:</span>
+      <button class="pill on" data-v="pig">🐷 On pig</button>
+      <button class="pill" data-v="cut">✂ Cutout</button>
+    </span>
+    <span class="sub" id="status" style="margin-left:14px"></span>
+  </div>
+</header>
+<main id="main"><div class="empty">Loading…</div></main>
+
+<script>
+let MAN={items:[]}, VERD={}, FILTER="all", VIEW="pig";
+const $=(s,r=document)=>r.querySelector(s);
+const mtimes={}, pmtimes={};
+
+// view-specific image: on-pig preview (opaque) vs raw cutout (checkerboard)
+function viewSrc(it){
+  if(VIEW==="pig" && it.preview && it.preview_exists)
+    return {src:`/img/${it.preview}?v=${it.preview_mtime}`, cls:"pig", exists:true};
+  return {src: it.exists?`/img/${it.image}?v=${it.mtime}`:null,
+          cls: it.kind==='background'?'bg':'', exists: !!it.exists};
+}
+
+async function load(){
+  const [m,v]=await Promise.all([
+    fetch("/api/manifest").then(r=>r.json()),
+    fetch("/api/verdicts").then(r=>r.json())
+  ]);
+  MAN=m; VERD=v;
+  $("#title").textContent=m.title||"Image Factory";
+  render();
+}
+function status(it){ return (VERD[it.id]&&VERD[it.id].status)||""; }
+
+function render(){
+  const items=MAN.items||[];
+  const counts={approved:0,rejected:0,pending:0};
+  items.forEach(it=>{const s=status(it); counts[s==="approved"?"approved":s==="rejected"?"rejected":"pending"]++;});
+  const total=items.length;
+  $("#counts").innerHTML=`<span style="color:var(--green)">${counts.approved}</span> approved · `+
+    `<span style="color:var(--red)">${counts.rejected}</span> rejected · `+
+    `<span>${counts.pending}</span> pending · ${total} total`;
+  $("#prog").style.width=total?Math.round(counts.approved/total*100)+"%":"0";
+
+  const show=items.filter(it=>{
+    const s=status(it);
+    if(FILTER==="all")return true;
+    if(FILTER==="approved")return s==="approved";
+    if(FILTER==="rejected")return s==="rejected";
+    if(FILTER==="todo")return s!=="approved"; // pending + rejected
+    return true;
+  });
+  const groups={};
+  show.forEach(it=>{(groups[it.group||"Items"]=groups[it.group||"Items"]||[]).push(it)});
+  const main=$("#main");
+  if(!show.length){main.innerHTML='<div class="empty">Nothing here for this filter.</div>';return;}
+  main.innerHTML="";
+  for(const g of Object.keys(groups)){
+    const h=document.createElement("h2"); h.textContent=g; main.appendChild(h);
+    const grid=document.createElement("div"); grid.className="grid";
+    groups[g].forEach(it=>grid.appendChild(card(it)));
+    main.appendChild(grid);
+  }
+}
+
+function card(it){
+  const s=status(it), fb=(VERD[it.id]&&VERD[it.id].feedback)||"";
+  const el=document.createElement("div");
+  el.className="card "+(s||""); el.dataset.id=it.id;
+  const badge=s==="approved"?"approved":s==="rejected"?"rejected":"pending";
+  const badgeTxt=s==="approved"?"yes":s==="rejected"?"no":"review";
+  const v=viewSrc(it);
+  mtimes[it.id]=it.mtime; pmtimes[it.id]=it.preview_mtime;
+  const imgHtml=v.exists
+    ? `<img src="${v.src}" alt="${it.name}">`
+    : `<div class="missing">no image yet</div>`;
+  el.innerHTML=`
+    <div class="thumb ${v.cls}">
+      ${imgHtml}
+      <span class="badge ${badge}">${badgeTxt}</span>
+    </div>
+    <div class="body">
+      <div class="name">${it.name}</div>
+      <div class="tags">${(it.tags||[]).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+      <div class="acts">
+        <button class="btn yes ${s==='approved'?'on':''}">✓ Yes</button>
+        <button class="btn no ${s==='rejected'?'on':''}">✗ No</button>
+      </div>
+      <textarea placeholder="Feedback (what to change)…">${fb.replace(/</g,"&lt;")}</textarea>
+      <div class="saved">saved ✓</div>
+      <details><summary>prompt</summary><p>${(it.prompt||"").replace(/</g,"&lt;")}</p></details>
+    </div>`;
+  const yes=el.querySelector(".yes"), no=el.querySelector(".no"), ta=el.querySelector("textarea"), saved=el.querySelector(".saved");
+  yes.onclick=()=>setVerdict(it.id,status(it)==="approved"?"":"approved");
+  no.onclick =()=>setVerdict(it.id,status(it)==="rejected"?"":"rejected");
+  let t; ta.oninput=()=>{clearTimeout(t);t=setTimeout(()=>save(it.id,{feedback:ta.value},saved),500)};
+  ta.onblur=()=>save(it.id,{feedback:ta.value},saved);
+  return el;
+}
+
+async function setVerdict(id,st){
+  VERD[id]=Object.assign({},VERD[id],{status:st});
+  await save(id,{status:st});
+  render();
+}
+async function save(id,patch,savedEl){
+  VERD[id]=Object.assign({},VERD[id],patch);
+  const r=await fetch("/api/verdict",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(Object.assign({id},patch))}).then(r=>r.json()).catch(()=>null);
+  if(r&&r.verdict)VERD[id]=r.verdict;
+  if(savedEl){savedEl.classList.add("show");setTimeout(()=>savedEl.classList.remove("show"),900);}
+}
+
+document.querySelectorAll(".pill[data-f]").forEach(p=>p.onclick=()=>{
+  document.querySelectorAll(".pill[data-f]").forEach(x=>x.classList.remove("on"));
+  p.classList.add("on"); FILTER=p.dataset.f; render();
+});
+document.querySelectorAll(".pill[data-v]").forEach(p=>p.onclick=()=>{
+  document.querySelectorAll(".pill[data-v]").forEach(x=>x.classList.remove("on"));
+  p.classList.add("on"); VIEW=p.dataset.v; render();
+});
+
+// live refresh: poll manifest; swap any image whose cutout OR preview changed
+// (so a regenerated item or a re-tuned placement updates in place).
+setInterval(async()=>{
+  try{
+    const m=await fetch("/api/manifest").then(r=>r.json());
+    let structural=(m.items||[]).length!==(MAN.items||[]).length;
+    (m.items||[]).forEach(it=>{
+      const imgChanged=mtimes[it.id]!==undefined && it.mtime!==mtimes[it.id];
+      const pvChanged =pmtimes[it.id]!==undefined && it.preview_mtime!==pmtimes[it.id];
+      if(imgChanged)mtimes[it.id]=it.mtime;
+      if(pvChanged)pmtimes[it.id]=it.preview_mtime;
+      if(imgChanged||pvChanged){
+        const card=document.querySelector(`.card[data-id="${it.id}"]`);
+        const img=card&&card.querySelector("img");
+        if(img){const v=viewSrc(it); if(v.src)img.src=v.src;}
+      }
+      if(mtimes[it.id]===undefined)structural=true;
+    });
+    MAN=m;
+    $("#status").textContent="updated "+new Date().toLocaleTimeString();
+    if(structural)render();
+  }catch(e){}
+},4000);
+
+load();
+</script>
+</body>
+</html>
