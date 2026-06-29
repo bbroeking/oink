@@ -6,6 +6,10 @@ Single-developer React Native / Expo 52 game with Supabase backend. Ships to iOS
 
 `SKILL.md` (repo root) is the product charter: **Tickle the Pig connects friends, gives them things to collect, and reasons to work together (Connect · Collect · Cooperate).** Consult it and run changes through its decision lens before any product, design, content, or economy decision. When we make an important such decision, append it to `SKILL.md`'s decision log (what we chose + which pillar it serves).
 
+## Design taste
+
+`docs/design/taste-standard.md` is the **craft lens** — the visual-quality companion to `SKILL.md`'s product lens. Consult it before any layout, component, color, type, spacing, or motion decision, and ask its two questions together: *which pillar does this serve?* and *would a designer who knows this game make this exact choice?* TTP's "slop" is **governance erosion** — the intentional tokens in `constants/theme.ts` (`WHIMSY`, `FONTS`, `RADII`, `SPACE`, `TYPE`, the sticker shadows) silently bypassed — not a generic-SaaS look. "Better frontend" means enforcing the taste that already exists. Reach for tokens, never inline a raw hex / size / radius / pad; use the shared primitives (`Sticker`, `Button`, `SectionHeader`, `EmptyState`/`LoadingBeat`, `Glyph`/`Icon`). Append important visual decisions to the standard's decision log.
+
 ## Build + ship
 
 - **Local builds only.** `eas build --local --platform ios --profile production` — cloud quota fills up.
