@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, ViewStyle, StyleProp } from "react-native";
-import { WHIMSY, FONTS, KICKER_TEXT, TITLE_RULE } from "@/constants/theme";
+import { WHIMSY, FONTS, KICKER_TEXT, TITLE_RULE, TYPE } from "@/constants/theme";
 
 interface Props {
 	/** Hand-script accent line above the title. Prefix "★ " baked in. */
@@ -60,11 +60,8 @@ const styles = StyleSheet.create({
 		justifyContent: "space-between",
 	},
 	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		lineHeight: 24,
+		...TYPE.sectionTitle,
 		color: WHIMSY.ink,
-		letterSpacing: 0.2,
 		flexShrink: 1,
 	},
 	right: {

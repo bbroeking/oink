@@ -71,6 +71,30 @@ export const FONTS = {
 	hand: "PatrickHand_400Regular",
 };
 
+// Type scale — role-based text styles (June 2026 taste pass). Compose with a
+// WHIMSY color per use (`{ ...TYPE.body, color: WHIMSY.ink }`); color is
+// intentionally NOT baked in so one role serves ink / mute / accent. Extracted
+// from the values already shipping in the redesigned primitives, not invented.
+// Reach for a role instead of a raw fontSize. See docs/design/taste-standard.md.
+export const TYPE = {
+	// Caprasimo (whimsy) — titles & numbers
+	display: { fontFamily: FONTS.whimsy, fontSize: 32, lineHeight: 34 },
+	pageTitle: { fontFamily: FONTS.whimsy, fontSize: 26, lineHeight: 28 },
+	sectionTitle: { fontFamily: FONTS.whimsy, fontSize: 22, lineHeight: 24, letterSpacing: 0.2 },
+	cardTitle: { fontFamily: FONTS.whimsy, fontSize: 18, lineHeight: 22, letterSpacing: 0.2 },
+	numeral: { fontFamily: FONTS.whimsy, fontSize: 16 },
+	// Nunito — reading text
+	body: { fontFamily: FONTS.body, fontSize: 15, lineHeight: 21 },
+	bodySm: { fontFamily: FONTS.body, fontSize: 13, lineHeight: 18 },
+	// Nunito ExtraBold — labels (often tracked)
+	label: { fontFamily: FONTS.bodyExtra, fontSize: 12, letterSpacing: 0.3 },
+	// PatrickHand — cozy accents / kickers / sub-text
+	kicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 0.4 },
+	hand: { fontFamily: FONTS.hand, fontSize: 14, lineHeight: 20 },
+	// Nunito ExtraBold caps — the tracked "pill" kicker
+	kickerPill: { fontFamily: FONTS.bodyExtra, fontSize: 11, letterSpacing: 1.6, textTransform: "uppercase" },
+} as const;
+
 export const RADII = {
 	sm: 8,
 	md: 12,
@@ -134,10 +158,8 @@ export const MODAL_BACKDROP_BG = "rgba(40,30,20,0.55)";
 // "★ snout season 1". Identical across Account, Onboarding, season,
 // BattlePassSaleModal. Compose with marginBottom override per screen.
 export const KICKER_TEXT = {
-	fontFamily: FONTS.hand,
-	fontSize: 13,
+	...TYPE.kicker,
 	color: WHIMSY.accent,
-	letterSpacing: 0.4,
 };
 
 // Pill-style kicker — tracked uppercase muted-ink band that sits above a
@@ -146,11 +168,8 @@ export const KICKER_TEXT = {
 // treatment. fontSize varies 10–11 and letterSpacing 1.4–1.6 between
 // screens; compose with overrides + marginBottom per use site.
 export const KICKER_PILL = {
-	fontFamily: FONTS.bodyExtra,
-	fontSize: 11,
+	...TYPE.kickerPill,
 	color: WHIMSY.mute,
-	letterSpacing: 1.6,
-	textTransform: "uppercase" as const,
 };
 
 // Short ink underline drawn under a section title. Identical on Account,
