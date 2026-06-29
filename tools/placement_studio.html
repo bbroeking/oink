@@ -147,6 +147,8 @@
     <span style="width:1px;height:22px;background:var(--line);margin:0 6px"></span>
     <button class="btn ghost" id="pig-matchprev" title="Set every anchor in this frame to the previous frame's position">Match ← prev frame</button>
     <button class="btn ghost" id="pig-freeze" title="Set ALL frames of this animation to this frame — nothing moves">Freeze: all frames = this</button>
+    <span class="seg" style="margin-left:6px"><button class="btn ghost" id="pig-scaledn" title="Scale all anchors smaller around their center">Scale −</button>
+    <button class="btn ghost" id="pig-scaleup" title="Scale all anchors larger around their center">Scale +</button></span>
     <label class="toggle" style="margin-left:6px;font-size:12px"><input type="checkbox" id="pig-pin"> Pin edits to all frames</label>
     <span class="status" id="pig-status"></span>
   </div>
@@ -371,6 +373,8 @@ async function buildPigMode(){
   sel.onchange=()=>{PANIM=sel.value;PFRAME=0;drawPig();};
   $("#pig-onion").onclick=()=>{ONION=!ONION;$("#pig-onion").textContent="Onion skin: "+(ONION?"on":"off");drawPig();};
   $("#pig-pin").onchange=e=>{PIN_ALL=e.target.checked;};
+  $("#pig-scaledn").onclick=()=>scaleFrame(0.97);
+  $("#pig-scaleup").onclick=()=>scaleFrame(1.03);
   // Match this frame to the previous one (every anchor) — for poses that
   // shouldn't move between frames.
   $("#pig-matchprev").onclick=()=>{
@@ -386,6 +390,19 @@ async function buildPigMode(){
   drawPig();
 }
 function pigFrameImg(anim,frame){return `/img/assets/images/sprites/rosie/${anim}_${frame+1}.png`;}
+// Scale every anchor of the current frame around their centroid (or all frames
+// when Pin is on). Missing anchors are materialised from REST first so the
+// whole cluster scales together.
+function scaleFrame(factor){
+  const apply=(fr)=>{
+    ANCHORS.forEach(n=>{ if(!fr[n]) fr[n]={...(DATA.rest[n]||{x:150,y:150})}; });
+    const cx=ANCHORS.reduce((s,n)=>s+fr[n].x,0)/ANCHORS.length;
+    const cy=ANCHORS.reduce((s,n)=>s+fr[n].y,0)/ANCHORS.length;
+    ANCHORS.forEach(n=>{ fr[n]={x:Math.round(cx+(fr[n].x-cx)*factor), y:Math.round(cy+(fr[n].y-cy)*factor)}; });
+  };
+  if(PIN_ALL) FRAMES[PANIM].forEach(apply); else apply(FRAMES[PANIM][PFRAME]);
+  drawPig(); savePig();
+}
 function resolvePig(name){ // frame value or REST fallback
   const fr=FRAMES[PANIM]&&FRAMES[PANIM][PFRAME]||{};
   if(name in fr) return {...fr[name],set:true};
