@@ -60,3 +60,6 @@ build-*.ipa
 # Python bytecode
 __pycache__/
 docs/mudwar-rhythm-design.pdf
+
+# Art-pass scratch staging (generated strips/scenes; outputs land in assets/)
+tmp/
