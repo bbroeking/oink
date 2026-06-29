@@ -136,6 +136,7 @@ export function SounderCard() {
 						full
 						disabled={busy || name.trim().length < 1}
 						onPress={onCreate}
+						style={{ marginTop: 4 }}
 					>
 						{busy ? "Creating…" : "Create your Sounder"}
 					</Button>

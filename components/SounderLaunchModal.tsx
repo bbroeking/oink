@@ -34,6 +34,14 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
 			<View style={styles.backdrop}>
 				<Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
 				<Animated.View style={[styles.card, { opacity: anim, transform: [{ scale }] }]}>
+					<Pressable
+						onPress={onDismiss}
+						hitSlop={10}
+						style={styles.closeBtn}
+						accessibilityLabel="Close"
+					>
+						<Text style={styles.closeText}>✕</Text>
+					</Pressable>
 					{/* The debut art shows the Slop Toss combat: a warboss charges in, a splat lands. */}
 					<View style={styles.heroScene}>
 						<Animated.Image
@@ -83,7 +91,10 @@ const INK = WHIMSY.ink;
 const styles = StyleSheet.create({
 	backdrop: { flex: 1, backgroundColor: "rgba(20,16,28,0.55)", alignItems: "center", justifyContent: "center", padding: 28 },
 	card: {
-		width: "100%",
+		// stretch to the backdrop's padded content width (capped) — using
+		// width:"100%" here resolved wider than the content box and pushed the
+		// card off-screen, clipping each wrapped line on the right.
+		alignSelf: "stretch",
 		maxWidth: 360,
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
@@ -93,6 +104,17 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		...SHADOW_SM,
 	},
+	closeBtn: {
+		position: "absolute",
+		top: 10,
+		right: 12,
+		width: 30,
+		height: 30,
+		alignItems: "center",
+		justifyContent: "center",
+		zIndex: 3,
+	},
+	closeText: { fontFamily: FONTS.whimsy, fontSize: 20, color: WHIMSY.mute },
 	heroScene: { width: 110, height: 92, alignItems: "center", justifyContent: "center", marginBottom: 8 },
 	hero: { width: 84, height: 84 },
 	heroSplat: { position: "absolute", right: 6, bottom: 8, width: 38, height: 38 },
