@@ -97,7 +97,10 @@
   .pigbar{display:flex;gap:6px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
   .seg{display:flex;gap:4px}
   .anchorList{font-size:12px;color:var(--muted)}
-  .anchorList .ar{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f3ece0}
+  .anchorList .ar{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #f3ece0}
+  .syncbtn{border:1px solid var(--line);background:var(--panel);border-radius:6px;font-size:10px;font-weight:800;
+    padding:1px 6px;cursor:pointer;color:#7a674f;margin-left:6px;white-space:nowrap}
+  .syncbtn:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
   .anchorList .ar.miss{color:var(--red);font-weight:700}
   .dragDot{position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid #fff;background:var(--green);
     transform:translate(-50%,-50%);cursor:grab;z-index:30;box-shadow:0 1px 3px rgba(0,0,0,.4)}
@@ -488,9 +491,19 @@ function drawPig(){
   });
   st.innerHTML=html;
   st.querySelectorAll(".dragDot").forEach(setupDotDrag);
-  // anchor list
+  // anchor list — each row has a "⇉ all" to sync THAT anchor across every frame
   $("#pig-anchorlist").innerHTML=ANCHORS.map(n=>{const a=resolvePig(n);const miss=!a||!a.set;
-    return `<div class="ar ${miss?'miss':''}"><span>${n}</span><span>${a?Math.round(a.x)+", "+Math.round(a.y):"—"}${miss?" (rest)":""}</span></div>`;}).join("");
+    return `<div class="ar ${miss?'miss':''}"><span>${n}</span><span>${a?Math.round(a.x)+", "+Math.round(a.y):"—"}${miss?" (rest)":""} <button class="syncbtn" data-sync="${n}" title="Set ${n} in ALL frames of ${PANIM} to this frame's value">⇉ all</button></span></div>`;}).join("");
+  $("#pig-anchorlist").querySelectorAll(".syncbtn").forEach(b=>b.onclick=()=>syncAnchorAcrossFrames(b.dataset.sync));
+}
+// Sync ONE anchor across all frames of the current animation to the current
+// frame's value (e.g. make every "head" match this frame) — leaves the rest.
+function syncAnchorAcrossFrames(name){
+  const f=FRAMES[PANIM]; if(!f)return;
+  const cur=resolvePig(name); if(!cur)return;
+  const val={x:cur.x,y:cur.y};
+  f.forEach(fr=>fr[name]={...val});
+  drawPig(); savePig();
 }
 function setupDotDrag(dot){
   const st=$("#pig-stage"); let drag=false;
