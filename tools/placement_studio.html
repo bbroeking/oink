@@ -174,12 +174,13 @@ let aspectCache={};
 // Items-mode pose scrubber: preview the selected item across animations/frames
 // using the SAME per-frame anchors the app resolves (so you catch placement
 // that drifts on walk/jump/wave, not just idle).
-let IANIM="idle", IFRAME=0, IPLAY=null;
+let IANIM="idle", IFRAME=0, IPLAY=null, ANIMSCALE={};
 
 // ---- load ----
 async function boot(){
   DATA=await fetch("/api/data").then(r=>r.json());
   const an=await fetch("/api/anchors").then(r=>r.json()); FRAMES=an.frames; DATA.rest=an.rest;
+  ANIMSCALE=DATA.animScale||{};
   // Seed the save-map from the FULL hat_rel (every hand-tuned entry, incl. ones
   // whose art isn't under hats/) so a rebuild-all save never drops any.
   REL={}; Object.keys(DATA.hatRel||{}).forEach(id=>{const s=DATA.hatRel[id];REL[id]={pivot:{...s.pivot},widthFrac:s.widthFrac,anchor:s.anchor,behind:!!s.behind};});
@@ -203,11 +204,19 @@ function drawAnimBar(){
   bar.innerHTML=`<span class="sub" style="font-weight:700;color:#6e5a44">Pose</span>
     <select id="ianim">${anims.map(a=>`<option ${a===IANIM?'selected':''}>${a}</option>`).join("")}</select>
     ${Array.from({length:nf},(_,i)=>`<button class="fb ${i===IFRAME?'on':''}" data-f="${i}">${i+1}</button>`).join("")}
-    <button class="fb" id="iplay" style="min-width:30px">${IPLAY?'❚❚':'▶'}</button>`;
+    <button class="fb" id="iplay" style="min-width:30px">${IPLAY?'❚❚':'▶'}</button>
+    <span style="width:1px;height:20px;background:var(--line);margin:0 4px"></span>
+    <span class="sub" style="font-weight:700;color:#6e5a44">Scale</span>
+    <input type="range" id="iscale" min="0.6" max="1.8" step="0.01" value="${ANIMSCALE[IANIM]||1}" style="width:96px;vertical-align:middle;accent-color:var(--gold)">
+    <span class="sub" id="iscaleval" style="min-width:34px">${(ANIMSCALE[IANIM]||1).toFixed(2)}×</span>`;
   $("#ianim").onchange=e=>{IANIM=e.target.value;IFRAME=0;drawAnimBar();drawStage();};
   bar.querySelectorAll(".fb[data-f]").forEach(b=>b.onclick=()=>{stopPlay();IFRAME=+b.dataset.f;drawAnimBar();drawStage();});
   $("#iplay").onclick=togglePlay;
+  $("#iscale").oninput=e=>{const v=parseFloat(e.target.value);ANIMSCALE[IANIM]=v;$("#iscaleval").textContent=v.toFixed(2)+"×";drawStage();saveAnimScale();};
 }
+let scaleT;
+function saveAnimScale(){clearTimeout(scaleT);
+  scaleT=setTimeout(()=>{fetch("/api/save-anim-scale",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(ANIMSCALE)}).catch(()=>{});},350);}
 function stopPlay(){ if(IPLAY){clearInterval(IPLAY);IPLAY=null;} }
 function togglePlay(){
   if(IPLAY){stopPlay();drawAnimBar();return;}
@@ -320,7 +329,11 @@ async function drawStage(){
       html+=`<div class="anchorDot ${on?'on':''}" data-anchor="${name}" style="left:${an.x*SCALE}px;top:${an.y*SCALE}px"><span class="lbl">${name}</span></div>`;
     });
   }
-  st.innerHTML=html;
+  // Apply the per-animation render scale as a card transform — pig + item + dots
+  // scale together around centre, exactly like the in-app pig card. This is what
+  // makes every pose read at the same size as idle.
+  const k=ANIMSCALE[IANIM]||1;
+  st.innerHTML=`<div style="position:absolute;inset:0;transform:scale(${k});transform-origin:50% 50%">${html}</div>`;
   st.querySelectorAll(".anchorDot").forEach(d=>d.onclick=()=>{ensureRel().anchor=d.dataset.anchor;$("#anchorName")&&($("#anchorName").textContent=d.dataset.anchor);drawStage();save();});
 }
 

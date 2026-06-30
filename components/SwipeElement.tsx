@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import { HAT_IMAGES, HAT_REL } from "../constants/hats";
+import { ANIM_SCALE } from "../constants/animScale.generated";
 import type { RelSpec } from "../constants/hat_overlay_types";
 import { PigAnimation } from "./ui/SpritePig";
 
@@ -341,7 +342,7 @@ export default function SwipeElement({
 								{
 									scale: Animated.multiply(
 										scale,
-										pigAnim === "surprise" || pigAnim === "wave" ? 1.18 : 1
+										ANIM_SCALE[pigAnim] ?? 1
 									),
 								},
 								{ rotate: rotateDeg },
