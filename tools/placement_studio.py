@@ -15,7 +15,7 @@ PigStage.resolveSlot math, and persists with the safe rebuild-all strategy:
 
   python3 tools/placement_studio.py   # http://127.0.0.1:8124/
 """
-import http.server, json, os, re, socketserver, posixpath
+import http.server, json, os, re, socketserver, posixpath, time
 from urllib.parse import urlparse, unquote
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -24,6 +24,10 @@ HAT_REL = os.path.join(ROOT, "constants", "hat_rel.generated.ts")
 MEMBERS_REL = os.path.join(ROOT, "constants", "membersRel.generated.ts")
 CATALOG = os.path.join(ROOT, "docs", "members-catalog.json")
 ANIM_SCALE_FILE = os.path.join(ROOT, "constants", "animScale.generated.ts")
+# Persistent art-rejection record (committed, NOT scratch): {id: {reason, ts}}.
+# Recorded for future generations — the art pipeline reads this to know which
+# items to regenerate and WHY (build_strip_prompts.py surfaces it).
+ART_REJECTIONS = os.path.join(ROOT, "docs", "art-rejections.json")
 HATS_DIR = os.path.join(ROOT, "assets", "images", "hats")
 ANIMS = ["idle", "walk", "jump", "happy", "sad", "tired", "surprise", "wave"]
 HTML = os.path.join(os.path.dirname(__file__), "placement_studio.html")
@@ -76,6 +80,20 @@ def parse_frame_anchors():
         if frames:
             out[anim] = frames
     return out
+
+
+def parse_rejections():
+    try:
+        return json.load(open(ART_REJECTIONS))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def write_rejections(data):
+    tmp = ART_REJECTIONS + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(data, f, indent=1, sort_keys=True)
+    os.replace(tmp, ART_REJECTIONS)
 
 
 def parse_anim_scale():
@@ -254,7 +272,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             # bell_collar, choker, diamond_pendant). Without this a rebuild-all
             # save would silently drop them.
             self._json(200, {"items": items, "rest": parse_rest_anchors(),
-                             "hatRel": hat_rel, "animScale": parse_anim_scale()})
+                             "hatRel": hat_rel, "animScale": parse_anim_scale(),
+                             "rejections": parse_rejections()})
         elif path == "/api/anchors":
             self._json(200, {"rest": parse_rest_anchors(), "frames": parse_frame_anchors()})
         elif path.startswith("/img/"):
@@ -289,6 +308,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif path == "/api/save-anim-scale":
                 write_anim_scale(data)
                 self._json(200, {"ok": True})
+            elif path == "/api/reject":
+                iid = data.get("id")
+                if not iid:
+                    self._json(400, {"error": "missing id"}); return
+                rej = parse_rejections()
+                if data.get("clear"):
+                    rej.pop(iid, None)
+                else:
+                    prev = rej.get(iid, {})
+                    rej[iid] = {"reason": data.get("reason", prev.get("reason", "")),
+                                "ts": prev.get("ts") or int(time.time())}
+                write_rejections(rej)
+                self._json(200, {"ok": True, "count": len(rej)})
             else:
                 self._json(404, {"error": "not found"})
         except Exception as exc:  # noqa: BLE001

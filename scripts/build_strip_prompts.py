@@ -62,3 +62,23 @@ for n, strip in enumerate(strips, 1):
 print("## BACKGROUNDS (one at a time, full-scene)")
 for it in backgrounds:
     print(f"- {it['id']:28s} [{it['theme']}]  {it['rarity']}")
+
+# Rejected art (recorded in docs/art-rejections.json via the Placement Studio).
+# These already have art but were flagged for regeneration — fold the reason
+# into the prompt so the next generation fixes what was wrong.
+try:
+    rej = json.load(open("docs/art-rejections.json"))
+except (FileNotFoundError, json.JSONDecodeError):
+    rej = {}
+if rej:
+    by_id = {it["id"]: it for it in cat}
+    print(f"\n## REJECTED — REGENERATE WITH FEEDBACK ({len(rej)})")
+    for rid, info in sorted(rej.items()):
+        reason = (info or {}).get("reason", "") or "(no reason given)"
+        it = by_id.get(rid)
+        print(f"\n### {rid}" + (f"  [{it['category']} · {it['theme']}]" if it else ""))
+        print(f"REASON: {reason}")
+        if it:
+            base = core(it["chatgpt_prompt"])
+            print(f"PROMPT: A cute hand-drawn cozy mobile-game icon of {base}. {STYLE}. "
+                  f"Fix from last attempt: {reason}. Centered, isolated on plain white, no text.")

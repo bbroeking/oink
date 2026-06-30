@@ -35,6 +35,9 @@
   .row{display:flex;align-items:center;gap:9px;padding:7px 10px;cursor:pointer;border-bottom:1px solid #f3ece0}
   .row:hover{background:#faf3e7}
   .row.sel{background:#f3e7cf}
+  .row.rej{background:#fbecea}
+  .row.rej.sel{background:#f4d8d2}
+  .rejmark{color:var(--red);font-weight:800}
   .row .th{width:38px;height:38px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;
     background:#f3ece0;background-image:linear-gradient(45deg,#e4d8c6 25%,transparent 25%),linear-gradient(-45deg,#e4d8c6 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e4d8c6 75%),linear-gradient(-45deg,transparent 75%,#e4d8c6 75%);
     background-size:10px 10px;background-position:0 0,0 5px,5px -5px,-5px 0;overflow:hidden}
@@ -87,6 +90,8 @@
   .btn.ghost{background:var(--panel)}
   .toggle{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}
   .hint{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .rejbox{border-top:1px solid var(--line);margin-top:4px;padding-top:10px;display:flex;flex-direction:column;gap:6px}
+  .rejbox .toggle{color:var(--red)}
   .empty{margin:auto;color:var(--muted)}
   /* PIG MODE */
   .pigbar{display:flex;gap:6px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -121,6 +126,7 @@
         <button class="chip" data-f="untuned">Untuned</button>
         <button class="chip" data-f="members">Members</button>
         <button class="chip" data-f="base">Base</button>
+        <button class="chip" data-f="rejected">⚠ Rejected</button>
       </div>
     </div>
     <div class="list" id="list"></div>
@@ -169,7 +175,7 @@ const ANCHORS=["head","eye_l","eye_r","snout","mouth","neck","body","hand_l","ha
 const PIG_IMG="/img/assets/images/sprites/rosie/idle_1.png";
 const CARD=300, SCALE=1.5, S=CARD*SCALE; // stage px
 const $=(s,r=document)=>r.querySelector(s);
-let DATA={items:[],rest:{}}, REL={}, SEL=null, FILTER="all", Q="";
+let DATA={items:[],rest:{}}, REL={}, SEL=null, FILTER="all", Q="", REJ={};
 let aspectCache={};
 // Items-mode pose scrubber: preview the selected item across animations/frames
 // using the SAME per-frame anchors the app resolves (so you catch placement
@@ -181,6 +187,7 @@ async function boot(){
   DATA=await fetch("/api/data").then(r=>r.json());
   const an=await fetch("/api/anchors").then(r=>r.json()); FRAMES=an.frames; DATA.rest=an.rest;
   ANIMSCALE=DATA.animScale||{};
+  REJ=DATA.rejections||{};
   // Seed the save-map from the FULL hat_rel (every hand-tuned entry, incl. ones
   // whose art isn't under hats/) so a rebuild-all save never drops any.
   REL={}; Object.keys(DATA.hatRel||{}).forEach(id=>{const s=DATA.hatRel[id];REL[id]={pivot:{...s.pivot},widthFrac:s.widthFrac,anchor:s.anchor,behind:!!s.behind};});
@@ -231,16 +238,18 @@ function visible(){
     if(FILTER==="untuned") return !it.tuned;
     if(FILTER==="members") return it.members;
     if(FILTER==="base") return !it.members;
+    if(FILTER==="rejected") return !!REJ[it.id];
     return true;
   });
 }
 function renderList(){
   const list=$("#list"); list.innerHTML="";
   visible().forEach(it=>{
-    const r=document.createElement("div"); r.className="row"+(SEL===it.id?" sel":"");
+    const rej=!!REJ[it.id];
+    const r=document.createElement("div"); r.className="row"+(SEL===it.id?" sel":"")+(rej?" rej":"");
     const dot=it.tuned?"tuned":(it.defaulted?"def":"none");
     r.innerHTML=`<div class="th"><img src="/img/${it.image}"></div>
-      <div class="meta"><div class="id">${it.id}</div><div class="cat">${it.category||"—"}${it.members?" · members":""}</div></div>
+      <div class="meta"><div class="id">${it.id}</div><div class="cat">${rej?'<span class="rejmark">⚠ rejected</span>':(it.category||"—")+(it.members?" · members":"")}</div></div>
       <div class="dot ${dot}" title="${it.tuned?'hand-tuned':it.defaulted?'category default':'no spec'}"></div>`;
     r.onclick=()=>select(it.id);
     list.appendChild(r);
@@ -284,7 +293,22 @@ function renderPanel(it,fullCanvas){
     <button class="btn ghost" id="resetDefault">Reset to category default</button>
     <button class="btn primary" id="nextUntuned">Next untuned →</button>
     <div class="hint" id="saveHint">Saved automatically to hat_rel.generated.ts.</div>
-    `}`;
+    `}
+    <div class="rejbox">
+      <label class="toggle"><input type="checkbox" id="rejToggle" ${REJ[SEL]?"checked":""}> ⚠ Reject this item's art</label>
+      <div class="hint">Flag bad / off-style art for regeneration — your reason is recorded (docs/art-rejections.json) for the next generation.</div>
+      <textarea id="rejReason" placeholder="Why reject the art? (wrong style, off-palette, can't sit on the pig…)" style="${REJ[SEL]?"":"display:none"}">${((REJ[SEL]&&REJ[SEL].reason)||"").replace(/</g,"&lt;")}</textarea>
+    </div>`;
+  // Reject handlers — work for EVERY item (incl. full-canvas aura/background art).
+  const rt=$("#rejToggle"), rr=$("#rejReason");
+  if(rt){
+    rt.onchange=()=>{
+      if(rt.checked){REJ[SEL]={reason:(REJ[SEL]&&REJ[SEL].reason)||""};rr.style.display="";rr.focus();saveReject(false);}
+      else{delete REJ[SEL];rr.style.display="none";saveReject(true);}
+      renderList();
+    };
+    let rrt; rr.oninput=()=>{if(!REJ[SEL])REJ[SEL]={reason:""};REJ[SEL].reason=rr.value;clearTimeout(rrt);rrt=setTimeout(()=>saveReject(false),400);};
+  }
   if(fullCanvas) return;
   const bind=(id,key,sub)=>{const el=$("#"+id);el.oninput=()=>{
     const v=parseFloat(el.value); const sp=ensureRel();
@@ -388,6 +412,13 @@ function save(){
     const r=await fetch("/api/save-rel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(REL)}).then(r=>r.json()).catch(()=>null);
     $("#status").innerHTML=r&&r.ok?`<b>saved</b> · ${r.count} item specs in hat_rel.generated.ts`:`save failed`;
   },350);
+}
+// Persist an art rejection (+ reason) to docs/art-rejections.json — the durable
+// record the generation pipeline reads. clear=true un-rejects.
+function saveReject(clear){
+  const body=clear?{id:SEL,clear:true}:{id:SEL,reason:(REJ[SEL]&&REJ[SEL].reason)||""};
+  fetch("/api/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+    .then(r=>r.json()).then(r=>{$("#status").innerHTML=`<b>${clear?"un-rejected":"rejected"}</b> · ${r.count} flagged in art-rejections.json`;}).catch(()=>{});
 }
 
 // ---- mode switch ----
