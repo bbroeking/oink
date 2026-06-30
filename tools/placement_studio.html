@@ -273,7 +273,7 @@ function renderPanel(it,fullCanvas){
     <h3>Pivot (drag on the item)</h3>
     <div class="itemcanvas" id="itemcanvas"><img src="/img/${it.image}"><div class="pivotMark" id="pivotMark"></div></div>
     <div class="fld"><label>Anchor <span id="anchorName">${s.anchor}</span></label>
-      <div class="hint">Click a blue dot on the pig to attach here.</div></div>
+      <div class="hint"><b>Drag the item on the pig</b> to move it. Click a blue dot to change which anchor it attaches to.</div></div>
     <div class="fld"><label>Width <span id="wfVal">${s.widthFrac.toFixed(3)}</span></label>
       <input type="range" id="wf" min="0.05" max="1.2" step="0.005" value="${s.widthFrac}"></div>
     <div class="fld"><label>Pivot X <span id="pxVal">${s.pivot.x.toFixed(3)}</span></label>
@@ -317,7 +317,7 @@ async function drawStage(){
   const behind=!!s.behind;
   let html=`<div class="pig" style="z-index:${behind?20:5}"><img src="${pigFrameImg(IANIM,IFRAME)}"></div>`;
   if(!fullCanvas){
-    html+=`<div class="item" style="z-index:${behind?2:10};left:${left*SCALE}px;top:${top*SCALE}px;width:${w*SCALE}px;height:${h*SCALE}px"><img src="${src}"></div>`;
+    html+=`<div class="item" style="z-index:${behind?2:10};left:${left*SCALE}px;top:${top*SCALE}px;width:${w*SCALE}px;height:${h*SCALE}px"><img src="${src}" draggable="false"></div>`;
   }else{
     html+=`<div class="item" style="z-index:2;left:0;top:0;width:${S}px;height:${S}px"><img src="${src}" style="object-fit:cover"></div>`;
   }
@@ -335,6 +335,28 @@ async function drawStage(){
   const k=ANIMSCALE[IANIM]||1;
   st.innerHTML=`<div style="position:absolute;inset:0;transform:scale(${k});transform-origin:50% 50%">${html}</div>`;
   st.querySelectorAll(".anchorDot").forEach(d=>d.onclick=()=>{ensureRel().anchor=d.dataset.anchor;$("#anchorName")&&($("#anchorName").textContent=d.dataset.anchor);drawStage();save();});
+  // Drag the item directly on the pig to move it (adjusts the pivot live).
+  if(!fullCanvas){
+    const el=st.querySelector(".item");
+    if(el){
+      el.style.cursor="grab";
+      let drag=false,lx=0,ly=0;
+      el.onpointerdown=e=>{drag=true;lx=e.clientX;ly=e.clientY;el.setPointerCapture(e.pointerId);el.style.cursor="grabbing";e.preventDefault();};
+      el.onpointermove=e=>{ if(!drag)return;
+        const sp=ensureRel();
+        sp.pivot.x-=((e.clientX-lx)/(SCALE*k))/w;
+        sp.pivot.y-=((e.clientY-ly)/(SCALE*k))/h;
+        lx=e.clientX; ly=e.clientY;
+        el.style.left=((a.x-sp.pivot.x*w)*SCALE)+"px";
+        el.style.top =((a.y-sp.pivot.y*h)*SCALE)+"px";
+        const px=$("#px"),py=$("#py");
+        if(px){px.value=sp.pivot.x;$("#pxVal").textContent=sp.pivot.x.toFixed(3);}
+        if(py){py.value=sp.pivot.y;$("#pyVal").textContent=sp.pivot.y.toFixed(3);}
+      };
+      const end=()=>{ if(!drag)return; drag=false; el.style.cursor="grab"; drawItemCanvas(); save(); };
+      el.onpointerup=end; el.onpointercancel=end;
+    }
+  }
 }
 
 function drawItemCanvas(){
