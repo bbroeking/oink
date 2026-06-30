@@ -463,16 +463,25 @@ function drawPig(){
 }
 function setupDotDrag(dot){
   const st=$("#pig-stage"); let drag=false;
-  const set=e=>{const r=st.getBoundingClientRect();const x=(e.clientX-r.left)/SCALE,y=(e.clientY-r.top)/SCALE;
-    const pos={x:Math.max(0,Math.min(CARD,x)),y:Math.max(0,Math.min(CARD,y))};
+  const move=e=>{ if(!drag)return;
+    const r=st.getBoundingClientRect();
+    const x=Math.max(0,Math.min(CARD,(e.clientX-r.left)/SCALE));
+    const y=Math.max(0,Math.min(CARD,(e.clientY-r.top)/SCALE));
+    const pos={x,y};
     // PIN_ALL: this anchor shouldn't move across the animation — write it to
     // every frame at once. Otherwise just the current frame.
     if(PIN_ALL) FRAMES[PANIM].forEach(fr=>fr[dot.dataset.a]={...pos});
     else FRAMES[PANIM][PFRAME][dot.dataset.a]=pos;
-    drawPig();savePig();};
-  dot.onpointerdown=e=>{drag=true;dot.setPointerCapture(e.pointerId);e.stopPropagation();};
-  dot.onpointermove=e=>{if(drag)set(e);};
-  dot.onpointerup=()=>{drag=false;};
+    // Move the dot LIVE (no full redraw) so the element + its pointer capture
+    // survive the drag — redrawing here destroyed the dot mid-drag, which is
+    // why it jumped once then "selected" whatever was under the cursor.
+    dot.style.left=(x*SCALE)+"px"; dot.style.top=(y*SCALE)+"px";
+    dot.style.opacity=1; dot.style.background="var(--green)";
+    savePig();};
+  dot.onpointerdown=e=>{drag=true;dot.setPointerCapture(e.pointerId);dot.style.cursor="grabbing";e.preventDefault();e.stopPropagation();};
+  dot.onpointermove=move;
+  dot.onpointerup=e=>{drag=false;try{dot.releasePointerCapture(e.pointerId);}catch(_){}drawPig();};
+  dot.onpointercancel=()=>{drag=false;drawPig();};
 }
 let pigT;
 function savePig(){clearTimeout(pigT);$("#pig-status").textContent="saving…";
