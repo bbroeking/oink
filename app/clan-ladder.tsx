@@ -1,6 +1,6 @@
 // Clan Ladder (Phase 1c) — the "list of clans with relative strength." Reads the
-// seasonal crew_ratings via crew_leaderboard(). Dark-launched behind
-// MUD_FIGHTS_VISIBLE like the rest of Mud Wars; reached from the Mud Fight header.
+// seasonal crew_ratings via crew_leaderboard(). Dark-launched behind the
+// `mud_wars` server flag like the rest of Mud Wars; reached from the Mud Fight header.
 
 import { useCallback, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -15,20 +15,22 @@ import {
 	ActivityIndicator,
 } from "react-native";
 import { Stack, router, Redirect } from "expo-router";
-import { MUD_FIGHTS_VISIBLE } from "@/constants/featureFlags";
+import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
 import { fetchCrewLeaderboard, LadderEntry } from "@/utils/mudWars";
 import { useCrew } from "@/hooks/useCrew";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 export default function ClanLadderScreen() {
+	const { visible: mudWarsVisible, loaded: flagLoaded } =
+		useFeatureFlagState("mud_wars");
 	const { crew } = useCrew();
 	const myCrewId = crew.crew?.id ?? null;
 	const [rows, setRows] = useState<LadderEntry[] | null>(null);
 
 	const load = useCallback(async () => {
-		if (!MUD_FIGHTS_VISIBLE) return; // don't fetch when the feature is hidden
+		if (!mudWarsVisible) return; // don't fetch when the season is dark
 		setRows(await fetchCrewLeaderboard(50));
-	}, []);
+	}, [mudWarsVisible]);
 	// Refetch on focus so a transient load failure self-heals (no error sentinel yet).
 	useFocusEffect(
 		useCallback(() => {
@@ -36,7 +38,8 @@ export default function ClanLadderScreen() {
 		}, [load])
 	);
 
-	if (!MUD_FIGHTS_VISIBLE) return <Redirect href="/(tabs)" />;
+	if (!flagLoaded) return null;
+	if (!mudWarsVisible) return <Redirect href="/(tabs)" />;
 
 	return (
 		<>

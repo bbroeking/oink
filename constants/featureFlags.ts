@@ -1,13 +1,10 @@
 // Project-wide feature visibility flags. Use these to dark-launch /
 // dark-relaunch UI surfaces without ripping out the implementation.
 // The backend stays as-is; only the UI is hidden.
-
-// DEV_PREVIEW: true in local dev (Expo dev client / simulator), but __DEV__ is
-// false in EVERY release build — TestFlight and the App Store included — so a
-// surface gated on this can be trialled locally yet can never reach users until
-// it's promoted to a hard `true`. The safe way to "see it in the UI" without
-// risking a leak to production.
-const DEV_PREVIEW = __DEV__;
+//
+// For flags that need to flip remotely or target one tester, use the
+// server-driven feature-flag system instead (hooks/useFeatureFlags.tsx) —
+// see the `mud_wars` note below.
 
 // The Sounder (referral program) UI is hidden for now — the
 // `my_sounder` / `sounder_leaderboard` RPCs are still live, the
@@ -20,8 +17,14 @@ const DEV_PREVIEW = __DEV__;
 // backend-only while these stay hidden.
 export const SOUNDER_VISIBLE = false;
 
-// Sounder Mud Fights (clan wars) — server (P1) ships live; the crew card on
-// the Friends hub, the /mud-war screen, and the resolved-modal render in local
-// dev so we can trial the feature, but stay hidden in TestFlight + production
-// via DEV_PREVIEW. Flip to a hard `true` to launch (season 2).
-export const MUD_FIGHTS_VISIBLE = DEV_PREVIEW;
+// Sounder Mud Fights (clan wars / Season 2) visibility MOVED to a server flag.
+// It's no longer a compile-time constant — the crew card on the Friends hub, the
+// /mud-war + /clan-ladder screens, and the launch nudge now gate on the runtime
+// `mud_wars` feature flag so the season can be flipped remotely and targeted at a
+// single tester without a rebuild. Read it with:
+//
+//   import { useFeatureFlag } from "@/hooks/useFeatureFlags";
+//   const mudWarsVisible = useFeatureFlag("mud_wars");
+//
+// Global default + Brian's per-user override are seeded in
+// supabase/migrations/20260692000000_feature_flags.sql.

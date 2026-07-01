@@ -1,5 +1,5 @@
-// Sounder Mud Fight screen (dark-launched via MUD_FIGHTS_VISIBLE; reached
-// from the SounderCard CTA). One screen, four states:
+// Sounder Mud Fight screen (dark-launched behind the `mud_wars` server flag;
+// reached from the SounderCard CTA). One screen, four states:
 //   • no war      → challenge the house or a friend's Sounder
 //   • pending     → defender accepts/declines; challenger waits
 //   • active      → tug-of-war bar + the sling-mud tap button
@@ -26,7 +26,7 @@ import {
 import { Stack, router, Redirect, type Href } from "expo-router";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MUD_FIGHTS_VISIBLE } from "@/constants/featureFlags";
+import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
 import { Button } from "../components/ui/Button";
 import { Icon } from "../components/ui/Icon";
 import { WarSpoilsSheet } from "../components/WarSpoilsSheet";
@@ -67,6 +67,11 @@ async function currentUserId(): Promise<string | null> {
 }
 
 export default function MudWarScreen() {
+	// Season 2 / Mud Wars visibility — the `mud_wars` server flag. `loaded`
+	// tells "still fetching" apart from "off" so a Brian-only deep link on cold
+	// start doesn't flash-redirect before the flag resolves.
+	const { visible: mudWarsVisible, loaded: flagLoaded } =
+		useFeatureFlagState("mud_wars");
 	const { war, loading, refresh, throwBand, submitRun, setDeploy, setFront } = useMudWar();
 	// "Start a new fight" on the resolved recap: mark this war dismissed so the
 	// screen drops to the NoWar challenge picker. my_war() keeps returning the
@@ -114,11 +119,12 @@ export default function MudWarScreen() {
 		};
 	}, [war]);
 
-	// Defense-in-depth: there is no entry point to this route in production (the
-	// Sounder card + its CTA are hidden behind MUD_FIGHTS_VISIBLE), but guard the
-	// screen itself so a deep link or stale nav state can never surface Mud Wars
-	// before launch. __DEV__ keeps it reachable locally.
-	if (!MUD_FIGHTS_VISIBLE) return <Redirect href="/(tabs)" />;
+	// Defense-in-depth: there is no entry point to this route when the season is
+	// dark (the Sounder card + its CTA are hidden behind the `mud_wars` flag), but
+	// guard the screen itself so a deep link or stale nav state can never surface
+	// Mud Wars before launch. Wait for the flag to resolve before bouncing.
+	if (!flagLoaded) return null;
+	if (!mudWarsVisible) return <Redirect href="/(tabs)" />;
 
 	return (
 		<>

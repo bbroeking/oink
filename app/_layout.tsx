@@ -65,7 +65,10 @@ import {
 } from "@/components/AchievementUnlockModal";
 import { AllegianceModal } from "@/components/AllegianceModal";
 import { SounderLaunchModal } from "@/components/SounderLaunchModal";
-import { MUD_FIGHTS_VISIBLE } from "@/constants/featureFlags";
+import {
+	FeatureFlagsProvider,
+	useFeatureFlag,
+} from "@/hooks/useFeatureFlags";
 import { fetchCrewState } from "@/utils/mudWars";
 import { PurchaseToastHost } from "@/components/PurchaseToast";
 import {
@@ -110,6 +113,9 @@ function RootLayoutInner() {
 		PatrickHand_400Regular,
 	});
 	const [authChecked, setAuthChecked] = useState(false);
+	// Season 2 / Mud Wars visibility — server flag (Brian-overridden), replaces
+	// the old compile-time MUD_FIGHTS_VISIBLE constant.
+	const mudWarsVisible = useFeatureFlag("mud_wars");
 	// Season 1: pending alignment-schism reveal. Set by the polling
 	// effect below when a user first crosses ±25 alignment.
 	const [schism, setSchism] = useState<{
@@ -260,11 +266,11 @@ function RootLayoutInner() {
 		check();
 	}, [authChecked]);
 
-	// Mud Wars launch nudge — only when the feature is live (MUD_FIGHTS_VISIBLE)
-	// AND the player has no crew. Re-surfaces ≤ once per UTC day until they
-	// create/join a Sounder, then the noCrew gate stops it for good.
+	// Mud Wars launch nudge — only when the feature is live (the `mud_wars`
+	// server flag) AND the player has no crew. Re-surfaces ≤ once per UTC day
+	// until they create/join a Sounder, then the noCrew gate stops it for good.
 	useEffect(() => {
-		if (!authChecked || !MUD_FIGHTS_VISIBLE) return;
+		if (!authChecked || !mudWarsVisible) return;
 		let cancelled = false;
 		(async () => {
 			const { data: ures } = await supabase.auth.getUser();
@@ -279,7 +285,7 @@ function RootLayoutInner() {
 		return () => {
 			cancelled = true;
 		};
-	}, [authChecked]);
+	}, [authChecked, mudWarsVisible]);
 
 	// "While you were away" — surface blessings + curses RECEIVED
 	// and trades ANSWERED since the last launch. Tracked client-side
@@ -737,7 +743,9 @@ function RootLayoutInner() {
 function RootLayoutWithQueue() {
 	return (
 		<PopupQueueProvider>
-			<RootLayoutInner />
+			<FeatureFlagsProvider>
+				<RootLayoutInner />
+			</FeatureFlagsProvider>
 		</PopupQueueProvider>
 	);
 }

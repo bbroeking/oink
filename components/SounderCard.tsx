@@ -1,5 +1,5 @@
 // SounderCard — crew management on the Friends hub (the "Sounder"
-// segment, dark-launched behind MUD_FIGHTS_VISIBLE).
+// segment, dark-launched behind the `mud_wars` server flag).
 //
 // No crew  → name input + "Create your Sounder" + any incoming invites.
 // In a crew → roster pips, leader invite picker (searchUsers — server

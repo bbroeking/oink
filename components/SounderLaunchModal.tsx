@@ -1,5 +1,5 @@
 // "Mud Wars are here — start a Sounder!" launch nudge. Shown (via the popup
-// queue) on launch when the feature is live (MUD_FIGHTS_VISIBLE) and the player
+// queue) on launch when the feature is live (the `mud_wars` server flag) and the player
 // has no crew, re-surfacing at most once/day until they create or join one. The
 // primary CTA routes to the Friends → Sounder tab where the crew-create form
 // lives. Gated by the caller in app/_layout.tsx.

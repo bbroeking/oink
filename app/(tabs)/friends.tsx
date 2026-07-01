@@ -6,7 +6,7 @@
 // Defaults to Board so the first impression on opening the hub is
 // the sounder ranked, not your own friend list.
 // See docs/season-1-social-redesign.md.
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import {
 	View,
 	StyleSheet,
@@ -25,25 +25,33 @@ import Friends from "../../components/Friends";
 import { Inbox } from "../../components/Inbox";
 import { Leaderboard } from "../../components/Leaderboard";
 import { SounderCard } from "../../components/SounderCard";
-import { MUD_FIGHTS_VISIBLE } from "@/constants/featureFlags";
+import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { FONTS, KICKER_PILL, PAGE_PAD, SPACE, TITLE_RULE, WHIMSY } from "@/constants/theme";
 
 type Segment = "friends" | "inbox" | "board" | "sounder";
 
-const SEGMENTS: { key: Segment; label: string; icon: IconName }[] = [
+const BASE_SEGMENTS: { key: Segment; label: string; icon: IconName }[] = [
 	{ key: "board", label: "Board", icon: "ranks" },
 	{ key: "inbox", label: "Inbox", icon: "bell" },
 	{ key: "friends", label: "Friends", icon: "friends" },
-	// Sounder Mud Fights (crews) — dark-launched.
-	...(MUD_FIGHTS_VISIBLE
-		? [{ key: "sounder" as Segment, label: "Sounder", icon: "crown" as IconName }]
-		: []),
 ];
 
 export default function FriendsHubScreen() {
+	// Sounder Mud Fights (crews) — gated on the `mud_wars` server flag.
+	const mudWarsVisible = useFeatureFlag("mud_wars");
+	const segments = useMemo(
+		() =>
+			mudWarsVisible
+				? [
+						...BASE_SEGMENTS,
+						{ key: "sounder" as Segment, label: "Sounder", icon: "crown" as IconName },
+					]
+				: BASE_SEGMENTS,
+		[mudWarsVisible]
+	);
 	// Deep-link target (e.g. the Sounder launch nudge routes "/(tabs)/friends?seg=sounder").
 	const { seg } = useLocalSearchParams<{ seg?: string }>();
-	const wantSounder = seg === "sounder" && MUD_FIGHTS_VISIBLE;
+	const wantSounder = seg === "sounder" && mudWarsVisible;
 	const [segment, setSegment] = useState<Segment>(wantSounder ? "sounder" : "board");
 	// Re-honor the param if the tab was already mounted when we navigated to it.
 	useEffect(() => {
@@ -90,7 +98,7 @@ export default function FriendsHubScreen() {
 					<View style={styles.titleRule} />
 					<View style={styles.segWrap}>
 						<Sticker color="paper" rotate={0} radius={22} style={styles.seg}>
-							{SEGMENTS.map((s) => {
+							{segments.map((s) => {
 								const active = s.key === segment;
 								const badge = s.key === "inbox" && inboxCount > 0;
 								return (
@@ -133,7 +141,7 @@ export default function FriendsHubScreen() {
 							<Inbox userId={userId} onActionableCount={setInboxCount} />
 						) : null)}
 					{segment === "board" && <Leaderboard />}
-					{segment === "sounder" && MUD_FIGHTS_VISIBLE && <SounderCard />}
+					{segment === "sounder" && mudWarsVisible && <SounderCard />}
 				</View>
 			</SafeAreaView>
 		</View>
