@@ -85,8 +85,8 @@ export default function SounderProgressScreen() {
 			<View style={styles.bg}>
 				<SafeAreaView style={{ flex: 1 }}>
 					<PageHeader
-						kicker="your sounder"
-						title="Your Sounder"
+						kicker="your drove"
+						title="Your Drove"
 						onBack={() => router.back()}
 						below={
 							<Text style={styles.statsLine}>
@@ -178,7 +178,7 @@ export default function SounderProgressScreen() {
 
 						{pending.length === 0 && completed === 0 && (
 							<Text style={styles.empty}>
-								Share your code from the Me tab to start your sounder.
+								Share your code from the Me tab to start your drove.
 							</Text>
 						)}
 					</ScrollView>

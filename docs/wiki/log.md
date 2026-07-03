@@ -351,3 +351,23 @@ fan-out workflow (6 parallel per-screen agents + a tsc/jest verify pass).
   new sets (Hungerer's Table w/ Famished-gated Crown capstone; Rooter's Kit w/ the
   Golden Snuffle Dust particle capstone), 2 animated Heirlooms in cosmeticFx vocab,
   and a 6-item generate-next shortlist = one new Sheet F batch.
+
+## [2026-07-03] compile | shipped the Soul/Tribe/Banner rename (Sounder collision)
+
+Implemented the [[identity-model]] naming resolution (was `status: draft`, now `stable`) —
+the BLOCKING first precondition in [Mud Wars — What's Next](outputs/memos/mudwar-whats-next-2026-07.md).
+The word "Sounder" meant three things; disambiguated as a display-name-only change on
+branch `feat/identity-model-sounder-rename`:
+
+- **War crew** keeps **"Sounder"** (the *Tribe* layer). No change.
+- **Friends graph** → **"Friends"** (7 client strings; trough/item-drive is friends-scoped
+  via `are_friends()`, not crew-scoped — a live-copy correction).
+- **Referral downline** → **"the Drove"** (12 client strings + the `titles` display
+  names/descriptions + the `donate_to_drive` / `update_profile_and_item_count` function
+  copy). `title_id`s, RPC names, and the `mud_wars`/`SOUNDER_VISIBLE` flags unchanged.
+
+Migration `20260705000000_identity_model_drove_rename.sql` carries the two functions
+verbatim (latest defs, string-swaps only) and was validated on the plain-Postgres Docker
+harness (11 titles correct, 0 leftover "sounder" copy). `CONTEXT.md` codified with the
+Soul/Tribe/Banner frame + the three disambiguated terms. SOUL (aura) and BANNER (event
+flag) cosmetic surfaces remain future work.
