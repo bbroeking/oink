@@ -26,22 +26,47 @@ primary developer's setup. Then read the project's canon before touching anythin
 ```bash
 git clone https://github.com/bbroeking/oink.git && cd oink
 cp .env.example .env       # then paste the real values Brian sent you
-npm install
+pnpm install               # this repo is pnpm-based (pnpm-lock.yaml) — NOT npm
 cd ios && COCOAPODS_DISABLE_STATS=true pod install && cd ..
 ```
 
-- If `pod install` fails with a null-byte/parse error (a known flake):
-  `cd ios && pod cache clean --all && rm -rf Pods Podfile.lock && COCOAPODS_DISABLE_STATS=true pod install`
+- **The repo uses pnpm**, not npm — install with `pnpm install`. (`npm i -g eas-cli` for
+  global CLIs is still fine.)
+- **`.env` does NOT drive the app's backend.** The Supabase URL + anon key are hardcoded in
+  `utils/supabase.ts`; the `.env` keys (`SUPABASE_URL` / `SUPABASE_ANON_KEY`) are read only by
+  tooling (`analytics-dashboard/`, `scripts/`). The app connects even with an empty `.env` —
+  still fill it so the tooling works.
+- If `pod install` fails with a null-byte/parse error (a known flake) — or leaves
+  `ios/Pods/RCT-Folly/folly/portability/` empty (missing `Config.h`, which fails the native
+  build later): `cd ios && pod cache clean --all && rm -rf Pods Podfile.lock && COCOAPODS_DISABLE_STATS=true pod install`
 
 ## 3. Run it (simulator)
 
+On an Xcode version that Expo 52 supports, `NODE_OPTIONS="--max-old-space-size=16384" npx expo run:ios` is the one-liner.
+
+**On Xcode 26, `expo run:ios` is broken** — its CLI can't parse Xcode 26's `devicectl`
+output, so it misroutes every build to the physical-device signing path and dies with
+"No code signing certificates are available to use." Until Expo 52's CLI catches up, build
+through `xcodebuild` directly and run Metro separately:
+
 ```bash
-NODE_OPTIONS="--max-old-space-size=16384" npx expo run:ios
+# 1. build for the booted simulator (find its UDID with `xcrun simctl list devices booted`)
+xcodebuild -workspace ios/ttp.xcworkspace -scheme ttp -configuration Debug \
+  -destination 'platform=iOS Simulator,id=<SIM_UDID>' -derivedDataPath ios/build \
+  -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+#    (CODE_SIGNING_ALLOWED=NO sidesteps the "resource fork / detritus not allowed" codesign
+#     failure — simulator apps don't need signing.)
+
+# 2. install + start Metro (16 GB heap) + launch, then deep-link the dev client to Metro
+xcrun simctl install <SIM_UDID> ios/build/Build/Products/Debug-iphonesimulator/ttp.app
+NODE_OPTIONS="--max-old-space-size=16384" npx expo start &   # bundle id: com.broeking.ttp
+xcrun simctl launch <SIM_UDID> com.broeking.ttp
+xcrun simctl openurl <SIM_UDID> "exp+ttp://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
 ```
 
 - **Metro NEEDS the 16 GB heap prefix** on every `expo start` / build command — it OOMs
   at the default on first bundle. Consider `alias exgo='NODE_OPTIONS="--max-old-space-size=16384" npx expo start'`.
-- Day-to-day after the first native build: `NODE_OPTIONS="--max-old-space-size=16384" npx expo start` and press `i`.
+- Day-to-day after the first native build: `NODE_OPTIONS="--max-old-space-size=16384" npx expo start` (press `i` only works via the fixed `expo run:ios` path; on Xcode 26, relaunch with the `simctl launch` line above).
 - Tests: `npx jest` (should be green before and after your changes).
 
 ## 4. Hard rules (these override anything else you'd normally do)
