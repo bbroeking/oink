@@ -277,3 +277,62 @@ fan-out workflow (6 parallel per-screen agents + a tsc/jest verify pass).
   legacy `COLORS` pink palette — routing modal CTAs through it recolors ItemPreviewModal)
   and #4 SafeAreaView/Platform-paddingTop rewrap (each fork now carries a `// TODO(ui-audit)`
   marker). Status block appended to the memo.
+
+## [2026-07-03] query | Season-2 push: Higgsfield storyboard + clan-war options + clan audit
+- Filed `outputs/memos/mudwar-challenge-options-2026-07.md` — 3 founder options for the
+  weekly clan-vs-clan challenge (A: ship rhythm war + Bog Weather buffs/debuffs on the
+  inert siege modifier; B: challenger-stakes-the-terms Gauntlet; C: race-not-duel
+  Hunger's-Hoard PvE-pressure carve). Recommends A now → C mid-season.
+- Filed `outputs/memos/clan-buildout-audit-2026-07.md` — client lifecycle coverage,
+  ranked gaps (redeploy picker dead path, zero war push deep-links, no leader
+  rename/kick/transfer RPCs, invites invisible outside the segment, no crew identity),
+  and the 3-way "Sounder" overload landmine (crew vs referral vs herd — 29 crew UI
+  strings across 7 files are the true rename surface).
+- Wrote `docs/great-hunger-higgsfield-storyboard.md` (repo docs, not wiki) — per-shot
+  image-to-video board for the 30s opening off the composited shot frames.
+
+## [2026-07-03] query | Mud Wars options A/B/C: research + build scopes filed
+- Filed `outputs/memos/mudwar-scope-a-weathered-2026-07.md` (~12 dev-days to bounded flip;
+  weather global-per-week + additive-only; Fort/redeploy client-only), `…scope-b-gauntlet…`
+  (B-v1 pin/counter-pin = strict superset of A, +~3 client days; variants staged behind
+  wars_played≥2), `…scope-c-hungers-hoard…` (11–15 days; race fold half-exists via the
+  bot-war branch; mode column + Golden-Tickles ledger buildable during A for 2–3 days).
+- Corrected `mudwar-consolidated-brief-2026-07.md` anti-cheat claim: caller_id-folded
+  CHART_SEED never shipped; seeds are hashtext(war:day:front), charts client-cosmetic.
+
+## [2026-07-03] compile | Founder direction: wars drain the Great Hunger + 8h heartbeat
+- Filed `outputs/memos/mudwar-hunger-arc-cadence-2026-07.md` — three-layer structure
+  (crew co-op → clan-vs-clan race → server-wide Hunger drain), the "Feedings" 8-hour
+  Snatch heartbeat (one free tap/window, +1 mud, crew echo bonus w/ retro-credit,
+  capped +6/day), and the season Hunger-energy meter (derived SUM, staged visible
+  weakening, Judgement-Day finale coupling). Supersedes the pure-duel framing in
+  mudwar-challenge-options: direction = Option A's build wearing Option C's story.
+  Adds ~4 dev-days to the A-v1 path (≈16 total to flip).
+
+## [2026-07-03] compile | Truffle Dig verb + full rewards spec
+- Revised `mudwar-hunger-arc-cadence-2026-07.md`: heartbeat verb is now the **Truffle
+  Dig** (scratch-to-root gesture, no fail state, 1/8h window, golden crew echo);
+  dug truffles are kept as the war currency.
+- Filed `outputs/memos/mudwar-rewards-spec-2026-07.md` — Golden Truffle economy
+  (sources: digs/milestones/resolve; sink: weekly-rotating Truffle Exchange at
+  25/60/120/250/500 by tier; pouch cap 999, no auto-conversion), full payout tables
+  (win/loss/draw/no-quorum/bot), in-week milestone mints 10/25/50, exclusives
+  release calendar (sets, Heirlooms, stage commemoratives, finale item), rarity
+  mapping of the shipped 25 items. Deletes resolve_war's raw-snout mint at flip
+  (closes precondition #2/B2). Net +3.0 dev-days → ≈19–20 days total to flip.
+- Code findings while verifying: (1) LIVE trigger grants a war cosmetic on EVERY
+  human-beats-bot war (docs claimed bot wars grant nothing) — spec fixes to
+  first-bot-win-only; (2) milestone mints must ride the same throw_mud/submit_run
+  carries as Bog Weather M1 (carry-latest-def footgun).
+
+## [2026-07-03] compile | Dig minigame ("the Patch") + clan progress views
+- Filed `outputs/memos/mudwar-dig-minigame-2026-07.md` — Sinnoh-Underground-style
+  6x5 mud board w/ emerging truffle silhouettes, rub + snout-shove tools, cozy
+  "stir meter" (graceful end, nothing lost, no fail state), week escalation.
+  Integration rec: L1 (heartbeat only; rhythm spine untouched). +3d over flat dig.
+- Filed `outputs/memos/mudwar-progress-views-2026-07.md` — 5 surfaces (WarLedgerStrip,
+  CrewEffort w/ gift-framed quiet-pig copy, RivalSide aggregate-only, shared drain
+  line + stage chip, AwayDigest). ~3.75d, mostly pure client. Findings: daily notches
+  are discarded at fold (20260666:81 — needs tiny mud_war_day_notches table riding
+  Bog Weather M1's SAME carry); war_side already ships opponent member names+mud to
+  the client (render restraint now, wire-trim later).
