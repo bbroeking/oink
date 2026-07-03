@@ -10,9 +10,9 @@
 // Dates are ISO (YYYY-MM-DD), UTC. Lexical compare == chronological.
 
 export const SEASON_1_START = "2026-05-20";
-// Judgement Day: 9:00 PM ET Jul 11, 2026 (= 01:00 UTC Jul 12; the server cron in
-// 20260658 is authoritative). Date-only here drives the whole-days countdown.
-export const SEASON_1_END = "2026-07-11";
+// Judgement Day: 8:00 PM ET Jul 12, 2026 (= 00:00 UTC Jul 13; the server cron in
+// 20260704500000 is authoritative). Date-only here drives the whole-days countdown.
+export const SEASON_1_END = "2026-07-12";
 
 // ISO date each Season 1 feature unlocks, keyed by feature id.
 // Week 1 features ship live at launch; the rest drip weekly.

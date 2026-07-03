@@ -346,3 +346,8 @@ fan-out workflow (6 parallel per-screen agents + a tsc/jest verify pass).
 - Filed `docs/great-hunger-art-manifest.md` (31-line asset inventory, P1-P4 batches,
   8-9 ChatGPT generations total) + `docs/briefs/s2-art-chatgpt-briefs.md` (paste-ready
   icon-gen batches, two style anchors, refs staging list).
+- Filed `outputs/memos/s2-accessory-ideas-2026-07.md` — 18 new accessory ideas across
+  the war's empty slots (mask/scarf/necklace/bow/cape/glasses/tickle_particle), two
+  new sets (Hungerer's Table w/ Famished-gated Crown capstone; Rooter's Kit w/ the
+  Golden Snuffle Dust particle capstone), 2 animated Heirlooms in cosmeticFx vocab,
+  and a 6-item generate-next shortlist = one new Sheet F batch.
