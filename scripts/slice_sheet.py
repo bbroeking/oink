@@ -14,6 +14,10 @@ import sys, os
 import numpy as np
 from PIL import Image, ImageDraw
 
+# Auto-shrink each sliced item (pngquant) so new art never bloats the bundle.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from optimize_assets import optimize
+
 
 def remove_white(src):
     im = Image.open(src).convert("RGB")
@@ -60,7 +64,9 @@ def save_cell(cell_rgba, out_id, margin=0.06):
     out = f"assets/images/hats/{out_id}.png"
     canvas.save(out)
     a = np.array(canvas)[:, :, 3]
-    print(f"  {out_id}: saved {out} ({int((a == 0).mean()*100)}% transparent)")
+    o, nw = optimize(out)   # pngquant in place — keep the bundle small as art lands
+    print(f"  {out_id}: saved {out} ({int((a == 0).mean()*100)}% transparent, "
+          f"{o // 1024}->{nw // 1024}KB)")
     return True
 
 

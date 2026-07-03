@@ -5,10 +5,10 @@
 export const ANIM_SCALE: Record<string, number> = {
 	idle: 1,
 	walk: 1,
-	jump: 1,
-	happy: 1,
-	sad: 1.04,
-	tired: 1.11,
-	surprise: 1.24,
-	wave: 1.37,
+	jump: 1.015,
+	happy: 0.979,
+	sad: 1.045,
+	tired: 1.106,
+	surprise: 0.975,
+	wave: 1.044,
 };

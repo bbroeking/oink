@@ -336,12 +336,15 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			if (r.visits_left != null) setVisitsLeft(r.visits_left);
 			if (r.visits_refresh_at !== undefined)
 				setVisitsRefreshAt(r.visits_refresh_at ?? null);
-			const next = tapCount + 1;
-			setTapCount(next);
-			// Server is authoritative on when the visit is spent. The cap-hitting
-			// tap returns next_at, so start the 3h countdown immediately (re-entry
-			// would only show the same lock anyway).
-			if (next >= tapCap || (r.taps_left ?? 99) <= 0) {
+			setTapCount(tapCount + 1);
+			// Server is authoritative on when the visit is spent: taps_left is the
+			// remaining tickles of this visit's 3–7 cap and hits 0 exactly on the
+			// cap-hitting tap. Gate on THAT, not local tapCap state — the cap is
+			// rolled server-side on the first tap, so the freshly-returned value is
+			// the only reliable signal (local tapCap is still its seed here). The
+			// cap-hitting tap also returns next_at, so we start the 24h countdown
+			// immediately (re-entry would only show the same lock anyway).
+			if ((r.taps_left ?? 99) <= 0) {
 				if (r.next_at) setLockedUntil(r.next_at);
 				setTimeout(tireOut, 520);
 			}
@@ -431,7 +434,8 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			    2×-zoomed top-left quadrant of the art ("broken background"). */}
 			<Image
 				source={bgSrc}
-				style={{ position: "absolute", top: 0, left: 0, width: SCREEN_W, height: SCREEN_H }}
+				// Overscan 2px each side (matches PageBackground) so no edge sliver shows.
+				style={{ position: "absolute", top: 0, left: -2, width: SCREEN_W + 4, height: SCREEN_H }}
 				resizeMode="cover"
 			/>
 			{/* soft top fade for title legibility — fades fully to the single
@@ -793,7 +797,12 @@ function TapPig({
 						equippedNeck={equip.neck}
 						equippedAura={equip.aura}
 						equippedHeld={equip.held}
-						pigAnimation={tired ? "tired" : "idle"}
+						// A just-tickled pig is HAPPY, not tired — the visit is "spent"
+						// after one tickle (1-tickle model, 20260682), but that's a
+						// success, so it should beam, not slump. (The old 3–7 tap model
+						// tired the pig out after many taps; a cap of 1 made that fire
+						// instantly and read as "tired after one tickle".)
+						pigAnimation={tired ? "happy" : "idle"}
 					/>
 				</Animated.View>
 			</View>

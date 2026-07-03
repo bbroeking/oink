@@ -79,7 +79,9 @@ const styles = StyleSheet.create({
 	// Edge-to-edge: needs a flex:1 parent to expand into.
 	root: { flex: 1 },
 	// Explicit screen pixels (see note above) so `cover` fills the whole screen
-	// instead of a centered intrinsic-width band.
-	fill: { position: "absolute", top: 0, left: 0, width: SCREEN_W, height: SCREEN_H },
+	// instead of a centered intrinsic-width band. Overscan 2px each side so a
+	// sub-pixel rounding gap can never leave a sliver of the layer behind showing
+	// at an edge — `cover` just crops the extra.
+	fill: { position: "absolute", top: 0, left: -2, width: SCREEN_W + 4, height: SCREEN_H },
 	content: { flex: 1 },
 });

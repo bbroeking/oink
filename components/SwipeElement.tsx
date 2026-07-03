@@ -15,10 +15,8 @@ import * as Haptics from "expo-haptics";
 import { HAT_IMAGES, HAT_REL } from "../constants/hats";
 import { ANIM_SCALE } from "../constants/animScale.generated";
 import type { RelSpec } from "../constants/hat_overlay_types";
-import { PigAnimation } from "./ui/SpritePig";
+import { PigAnimation, animDurationMs } from "./ui/SpritePig";
 
-// Resting poses driven by happiness/mood (vs transient reactions).
-const REST_POSES = new Set<PigAnimation>(["idle", "sad", "happy"]);
 import { PigStage, resolveSlot, type EquippedItem } from "./ui/PigStage";
 import { AnchorDebugOverlay, type DebugItem } from "./dev/AnchorDebugOverlay";
 
@@ -81,13 +79,28 @@ export default function SwipeElement({
 	const sevenY = useRef(new Animated.Value(0)).current;
 	const [pigAnim, setPigAnim] = useState<PigAnimation>("idle");
 	const [pigFrameIdx, setPigFrameIdx] = useState(0);
-	// A tap that lands while the pig is mid-reaction is QUEUED here (not dropped)
-	// and replayed once the pig is back at rest — see fireReaction + the flush
-	// effect below. Keeps fast taps from feeling unresponsive ("dead pig").
-	const pendingTapRef = useRef(false);
-	// Mini-delay before a queued tap replays, so the transition reads cleanly
-	// rather than snapping straight from one reaction into the next. Tunable.
-	const MINI_DELAY_MS = 180;
+	// Single source of truth for "what's playing": the active reaction (or the
+	// 6-7 celebration), or null when Rosie is at her resting/mood pose. A tickle
+	// CUTS whatever's playing and starts fresh; nothing else may change pigAnim
+	// while a reaction is active. One revert timer, cleared on every cut.
+	const activeReactionRef = useRef<PigAnimation | "sixseven" | null>(null);
+	const revertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// Latest mood pose, read by goToRest without closure staleness.
+	const restingRef = useRef(restingAnim);
+	restingRef.current = restingAnim;
+	const clearRevert = () => {
+		if (revertTimer.current) {
+			clearTimeout(revertTimer.current);
+			revertTimer.current = null;
+		}
+	};
+	// A reaction finished (or was cut) → settle back to the mood pose.
+	const goToRest = () => {
+		clearRevert();
+		activeReactionRef.current = null;
+		setPigAnim(restingRef.current);
+	};
+	useEffect(() => clearRevert, []); // clear the timer on unmount
 	// Mirror /item-anchor screen rel-placement overrides (dev-only).
 	const [relOverrides, setRelOverrides] = useState<
 		Record<string, RelSpec>
@@ -104,14 +117,13 @@ export default function SwipeElement({
 		}, [])
 	);
 
-	// The three mood/resting poses (set by happiness), distinct from
-	// transient reactions (jump/wave/surprise).
-	const REST_STATES = REST_POSES;
+	// Resting pose follows mood (happiness) — but NEVER while a reaction or the
+	// 6-7 celebration is playing. (The old flash: `happy` doubles as a rest pose,
+	// so a happy REACTION got yanked back to idle mid-play. activeReactionRef gates
+	// it now.)
 	useEffect(() => {
-		// Resting pose follows mood (happiness), not tickle balance.
-		// Only swap when at rest — never interrupt a reaction.
-		setPigAnim((a) => (REST_STATES.has(a) ? restingAnim : a));
-	}, [restingAnim, REST_STATES]);
+		if (activeReactionRef.current === null) setPigAnim(restingAnim);
+	}, [restingAnim]);
 
 	// Weighted reaction pool — jump is the default vibe, others are "spice".
 	// 3/6 = 50% jump, 1/6 each of happy/surprise/wave.
@@ -124,28 +136,20 @@ export default function SwipeElement({
 		"wave",
 	];
 
-	// Play one reaction + run the tickle. Extracted from handlePress so a tap
-	// that lands MID-reaction can be QUEUED (pendingTapRef) and replayed by the
-	// flush effect once the pig is back at rest — no tap is silently dropped.
+	// Play one reaction + run the tickle. Cuts whatever's currently playing (a
+	// tap always interrupts), then arms a single revert timer back to rest.
 	const fireReaction = () => {
 		if (canTickle) {
 			const pick = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
+			// CUT whatever's playing (clear its revert), then start the new one.
+			clearRevert();
+			activeReactionRef.current = pick;
 			setPigAnim(pick);
-			// Single-frame reactions (happy/surprise/wave) don't auto-complete —
-			// hold them briefly then revert. Jump auto-completes via onComplete.
-			if (pick !== "jump") {
-				setTimeout(() => {
-					setPigAnim((cur) => (cur === pick ? restingAnim : cur));
-				}, 700);
-			}
-			// Universal animation-watchdog: if `pick`'s natural exit never fires
-			// (sprite unmounted, focus changed mid-anim, or the last-tickle race
-			// where canTickle flips false before completion), force back to
-			// idle/sad. Without this, the rest-gate would lock all future taps.
-			const reactionPick = pick;
-			setTimeout(() => {
-				setPigAnim((cur) => (cur === reactionPick ? restingAnim : cur));
-			}, 2500);
+			// One revert timer = both the natural exit AND the watchdog. loop:false
+			// (jump/surprise) also exit early via onComplete; loop:true (happy/wave)
+			// play exactly one full cycle then this fires. +120ms lets the final
+			// frame settle before reverting.
+			revertTimer.current = setTimeout(goToRest, animDurationMs(pick) + 120);
 		}
 		onLuckySwipe();
 	};
@@ -171,54 +175,28 @@ export default function SwipeElement({
 			}),
 		]).start();
 
-		// Tap mid-reaction (or mid-6-7): DON'T drop it. Queue one pending tap so
-		// the pig responds with a fresh reaction once the current one ends (a
-		// mini-delay later), instead of feeling unresponsive. The flush effect
-		// below replays it. Collapses to a single pending reaction.
-		if (!REST_STATES.has(pigAnim)) {
-			pendingTapRef.current = true;
-			return;
-		}
+		// A tickle ALWAYS interrupts: cut whatever Rosie is doing and kick off a
+		// fresh reaction. (The old path QUEUED the tap and replayed it once the
+		// current reaction ended — those back-to-back replays were the other half
+		// of the "flashing".)
 		fireReaction();
 	};
 
-	const handleJumpComplete = () => {
-		// Always exit "jump" when the animation completes, regardless of
-		// canTickle's current value. If we only transitioned when
-		// canTickle was true, a tap that consumed the last tickle would
-		// strand pigAnim at "jump" (canTickle flips to false during the
-		// RPC round-trip → handlePress's `reacting` gate then refuses
-		// every future tap). "sad" is the right exit when out of
-		// tickles — useEffect on `canTickle` will normalize back to
-		// "idle" when balance regens.
-		setPigAnim(restingAnim);
+	// A loop:false reaction (jump / surprise) finished its single play → settle
+	// back to rest. No-op if a tickle already cut to a new reaction: SpritePig
+	// clears the old frame interval on the swap, so a cut anim's onComplete never
+	// fires, and goToRest is idempotent anyway.
+	const handleAnimComplete = () => {
+		goToRest();
 	};
-
-	// Flush a queued mid-reaction tap: once the pig is back at a resting pose
-	// and a tap was queued, replay it after MINI_DELAY_MS so no tap is lost and
-	// the transition reads cleanly. Deps are [pigAnim] ON PURPOSE — fireReaction
-	// is a fresh closure each render, so adding it would re-run the effect and
-	// clear the timeout before it fires. pendingTapRef is cleared first, so the
-	// effect is a harmless no-op on any unrelated re-render.
-	useEffect(() => {
-		if (!REST_STATES.has(pigAnim) || !pendingTapRef.current) return;
-		pendingTapRef.current = false;
-		const id = setTimeout(() => fireReaction(), MINI_DELAY_MS);
-		return () => clearTimeout(id);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [pigAnim]);
 
 	// 6-7 bounce sequence triggered by playSixSeven counter changing.
 	//
 	// Race-safety with the random-reaction system:
-	// - When 6-7 fires, we set pigAnim to "happy". If a `jump` was mid-flight,
-	//   SpritePig's effect cleanup clears the old interval, and the deferred
-	//   onComplete is gated on `pigAnim === "jump"` (via the prop swap below)
-	//   so handleJumpComplete becomes a no-op.
-	// - If 6-7 fires while a happy/surprise/wave is mid-700ms-hold, the
-	//   trailing setTimeout uses a functional setState that checks
-	//   `cur === pick` and no-ops when happy has overridden it.
-	// Don't refactor either of these without preserving those guards.
+	// 6-7 registers as activeReactionRef="sixseven" (so the mood effect won't yank
+	// it) and clears any in-flight reaction's revert timer. A tickle mid-6-7 cuts
+	// it like any reaction; the 6-7's own revert is guarded on the ref still being
+	// "sixseven", so it no-ops if a tickle already took over.
 	useEffect(() => {
 		if (!playSixSeven) return;
 		const tilt = (val: number, dur = 200) =>
@@ -251,6 +229,10 @@ export default function SwipeElement({
 		sevenOpacity.setValue(0);
 		sixY.setValue(0);
 		sevenY.setValue(0);
+		// The 6-7 is a special celebration reaction — register it so the mood
+		// effect won't yank it and so a tickle can cut it like any other.
+		clearRevert();
+		activeReactionRef.current = "sixseven";
 		setPigAnim("happy");
 
 		try {
@@ -270,8 +252,9 @@ export default function SwipeElement({
 			tilt(1, 180),
 			tilt(0, 200),
 		]).start(() => {
-			if (canTickle) setPigAnim("idle");
-			else setPigAnim("sad");
+			// Revert only if the 6-7 is still the active reaction (a tickle may
+			// have already cut it to a new one).
+			if (activeReactionRef.current === "sixseven") goToRest();
 		});
 
 		// Safety reset — if the .start() callback never fires (component
@@ -284,10 +267,7 @@ export default function SwipeElement({
 		// sequence (~2.1s) + a buffer; if pigAnim is STILL "happy" by then,
 		// force it back to idle/sad regardless of canTickle's current value.
 		const safetyTimer = setTimeout(() => {
-			setPigAnim((cur) => {
-				if (cur === "happy") return canTickle ? "idle" : "sad";
-				return cur;
-			});
+			if (activeReactionRef.current === "sixseven") goToRest();
 		}, 3000);
 		return () => clearTimeout(safetyTimer);
 	}, [playSixSeven, canTickle]);
@@ -355,7 +335,9 @@ export default function SwipeElement({
 						pigFrameIdx={pigFrameIdx}
 						onPigFrame={setPigFrameIdx}
 						onPigComplete={
-							pigAnim === "jump" ? handleJumpComplete : undefined
+							pigAnim === "jump" || pigAnim === "surprise"
+							? handleAnimComplete
+							: undefined
 						}
 						equipped={mainEquipped}
 						equippedGlasses={equippedGlasses}

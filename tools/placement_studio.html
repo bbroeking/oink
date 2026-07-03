@@ -245,18 +245,33 @@ function visible(){
     return true;
   });
 }
+// Categories with no on-pig anatomy placement: full-canvas (aura/background) and
+// tickle particles (a burst effect played on tap, never anchored to the pig).
+function noPlacement(cat){ return cat==="aura"||cat==="background"||cat==="tickle_particle"; }
+function makeRow(it){
+  const rej=!!REJ[it.id];
+  const r=document.createElement("div"); r.className="row"+(SEL===it.id?" sel":"")+(rej?" rej":"");
+  const dot=it.tuned?"tuned":(it.defaulted?"def":"none");
+  r.innerHTML=`<div class="th"><img src="/img/${it.image}"></div>
+    <div class="meta"><div class="id">${it.id}</div><div class="cat">${rej?'<span class="rejmark">⚠ rejected</span>':(it.category||"—")+(it.members?" · members":"")}</div></div>
+    <div class="dot ${dot}" title="${it.tuned?'hand-tuned':it.defaulted?'category default':'no spec'}"></div>`;
+  r.onclick=()=>select(it.id);
+  return r;
+}
 function renderList(){
   const list=$("#list"); list.innerHTML="";
-  visible().forEach(it=>{
-    const rej=!!REJ[it.id];
-    const r=document.createElement("div"); r.className="row"+(SEL===it.id?" sel":"")+(rej?" rej":"");
-    const dot=it.tuned?"tuned":(it.defaulted?"def":"none");
-    r.innerHTML=`<div class="th"><img src="/img/${it.image}"></div>
-      <div class="meta"><div class="id">${it.id}</div><div class="cat">${rej?'<span class="rejmark">⚠ rejected</span>':(it.category||"—")+(it.members?" · members":"")}</div></div>
-      <div class="dot ${dot}" title="${it.tuned?'hand-tuned':it.defaulted?'category default':'no spec'}"></div>`;
-    r.onclick=()=>select(it.id);
-    list.appendChild(r);
-  });
+  const vis=visible();
+  const isParticle=it=>it.category==="tickle_particle";
+  // placeable items first, then particles in their own section
+  vis.filter(it=>!isParticle(it)).forEach(it=>list.appendChild(makeRow(it)));
+  const parts=vis.filter(isParticle);
+  if(parts.length){
+    const hdr=document.createElement("div");
+    hdr.style.cssText="padding:9px 10px 5px;font-weight:700;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut,#9a8c78);border-top:1px solid var(--line,#e7d8c4);margin-top:6px";
+    hdr.textContent="Tickle particles · not placed on the pig";
+    list.appendChild(hdr);
+    parts.forEach(it=>list.appendChild(makeRow(it)));
+  }
 }
 $("#search").oninput=e=>{Q=e.target.value.trim().toLowerCase();renderList();};
 document.querySelectorAll(".chip[data-f]").forEach(c=>c.onclick=()=>{
@@ -272,7 +287,7 @@ function curSpec(){
 function select(id){
   SEL=id; renderList();
   const it=DATA.items.find(i=>i.id===id);
-  const fullCanvas = it.category==="aura"||it.category==="background";
+  const fullCanvas = noPlacement(it.category);
   renderPanel(it,fullCanvas); drawStage(); drawItemCanvas();
 }
 
@@ -281,7 +296,7 @@ function renderPanel(it,fullCanvas){
   $("#panel").innerHTML=`
     <h3>${it.id}</h3>
     <div class="hint">${it.category||"uncategorised"}${it.members?" · members":""} · ${it.tuned?"hand-tuned":it.defaulted?"category default":"no spec yet"}</div>
-    ${fullCanvas?`<div class="hint" style="color:var(--red)">${it.category} is full-canvas (rendered behind the pig at 300×300) — it has no pivot/anchor placement. Nothing to tune here.</div>`:`
+    ${fullCanvas?`<div class="hint" style="color:var(--red)">${it.category==="tickle_particle"?"Tickle particles are a burst effect played on tap — not placed on the pig. Nothing to tune here.":`${it.category} is full-canvas (rendered behind the pig at 300×300) — it has no pivot/anchor placement. Nothing to tune here.`}</div>`:`
     <h3>Pivot (drag on the item)</h3>
     <div class="itemcanvas" id="itemcanvas"><img src="/img/${it.image}"><div class="pivotMark" id="pivotMark"></div></div>
     <div class="fld"><label>Anchor <span id="anchorName">${s.anchor}</span></label>
@@ -335,7 +350,7 @@ function itemAspect(src){return new Promise(res=>{if(aspectCache[src])return res
 async function drawStage(){
   const it=DATA.items.find(i=>i.id===SEL); if(!it)return;
   const st=$("#stage"); st.style.width=S+"px"; st.style.height=S+"px";
-  const fullCanvas=it.category==="aura"||it.category==="background";
+  const fullCanvas=noPlacement(it.category);
   const s=curSpec();
   const src="/img/"+it.image, aspect=await itemAspect(src);
   const w=s.widthFrac*CARD, h=w*aspect;

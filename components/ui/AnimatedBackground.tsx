@@ -134,6 +134,7 @@ const styles = StyleSheet.create({
 	// (Fabric) an absolute sibling can hit-test ABOVE a later flex sibling, so
 	// without them these full-screen frames swallow every touch on the screen
 	// they back (the Barn went fully dead). Guarded by AnimatedBackground.test.
-	fill: { position: "absolute", top: 0, left: 0, width: SCREEN_W, height: SCREEN_H, zIndex: 0, pointerEvents: "none" },
+	// Overscan 2px each side (matches PageBackground) so no edge sliver shows.
+	fill: { position: "absolute", top: 0, left: -2, width: SCREEN_W + 4, height: SCREEN_H, zIndex: 0, pointerEvents: "none" },
 	content: { flex: 1, zIndex: 1 },
 });

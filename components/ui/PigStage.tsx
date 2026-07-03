@@ -10,7 +10,7 @@
 // through both surfaces from one component.
 
 import React from "react";
-import { View, Image, Text, StyleSheet } from "react-native";
+import { View, Image, Text, StyleSheet, Animated, Easing } from "react-native";
 import { categoryIcon } from "../../constants/emojiArt";
 import {
 	HAT_IMAGES,
@@ -33,6 +33,21 @@ import type {
 } from "../../constants/hat_overlay_types";
 import { ITEM_PREBAKED, isPrebaked } from "../../constants/prebaked";
 import { SpritePig, PigAnimation } from "./SpritePig";
+
+// Auras that ROTATE — radial rays / rings / sunbursts read well spinning. Every
+// OTHER aura gently pulses (breathes) instead: a spinning flame or mist looks
+// wrong, but a pulse suits any glow. See PigStage's aura-animation block.
+const AURA_SPIN = new Set<string>([
+	"gold_aura",
+	"majesty_gold_aura",
+	"holy_aura",
+	"gallant_valor_aura",
+	"rainbow_aura",
+	"sparkle_aura",
+	"island_sunglow_aura",
+	"slop_club_gilded_seal_aura",
+	"nebula_aura",
+]);
 
 // Canonical "one equipped cosmetic slot" shape. This is both PigStage's
 // render contract AND the data shape every producer hands it: useHomeStats
@@ -181,16 +196,26 @@ function ItemOverlay({
 	imageSrc,
 	category = null,
 	zIndex = 5,
+	spin,
+	pulse,
 }: {
 	overlay: HatOverlay;
 	imageSrc: number | null;
 	category?: string | null;
 	zIndex?: number;
+	// Aura animations: spin = "0deg".."360deg" rotation; pulse = a scale that
+	// breathes out→in→out. An aura gets one or the other (chosen in PigStage).
+	spin?: Animated.AnimatedInterpolation<string>;
+	pulse?: Animated.AnimatedInterpolation<number>;
 }) {
 	const { rotate, ...box } = overlay;
 	// No item PNG → fall back to the category icon art (auras/necklaces
 	// have none → categoryIcon null → the neutral glyph below).
 	const placeholderSrc = imageSrc ?? categoryIcon(category);
+	const animTransform = [
+		...(spin ? [{ rotate: spin }] : []),
+		...(pulse ? [{ scale: pulse }] : []),
+	];
 	return (
 		<View
 			style={[
@@ -201,11 +226,19 @@ function ItemOverlay({
 			]}
 		>
 			{placeholderSrc ? (
-				<Image
-					source={placeholderSrc}
-					style={styles.fillImage}
-					resizeMode="contain"
-				/>
+				animTransform.length ? (
+					<Animated.Image
+						source={placeholderSrc}
+						style={[styles.fillImage, { transform: animTransform }]}
+						resizeMode="contain"
+					/>
+				) : (
+					<Image
+						source={placeholderSrc}
+						style={styles.fillImage}
+						resizeMode="contain"
+					/>
+				)
 			) : (
 				<Text
 					style={[
@@ -264,15 +297,74 @@ export function PigStage({
 		(mainCategory ? !!Z_BEHIND_PIG[mainCategory] : false);
 	const showMainOverlay = mainOverlay && !hideAccessory;
 
+	// Simple aura animations. Radial rays/rings/sunbursts (AURA_SPIN) rotate slowly
+	// around Rosie; everything else — soft glows, elemental, particle clouds —
+	// gently breathes out→in→out (a spinning flame/mist looks wrong). Native-driven
+	// (cheap); the loops only run while an aura is equipped.
+	const hasAura = !!auraSlot?.overlay;
+	const auraSpinRaw = React.useRef(new Animated.Value(0)).current;
+	const auraPulseRaw = React.useRef(new Animated.Value(0)).current;
+	React.useEffect(() => {
+		if (!hasAura) return;
+		const spin = Animated.loop(
+			Animated.timing(auraSpinRaw, {
+				toValue: 1,
+				duration: 12000,
+				easing: Easing.linear,
+				useNativeDriver: true,
+			}),
+		);
+		const pulse = Animated.loop(
+			Animated.sequence([
+				Animated.timing(auraPulseRaw, {
+					toValue: 1,
+					duration: 1400,
+					easing: Easing.inOut(Easing.quad),
+					useNativeDriver: true,
+				}),
+				Animated.timing(auraPulseRaw, {
+					toValue: 0,
+					duration: 1400,
+					easing: Easing.inOut(Easing.quad),
+					useNativeDriver: true,
+				}),
+			]),
+		);
+		spin.start();
+		pulse.start();
+		return () => {
+			spin.stop();
+			pulse.stop();
+		};
+	}, [auraSpinRaw, auraPulseRaw, hasAura]);
+	const auraSpin = auraSpinRaw.interpolate({
+		inputRange: [0, 1],
+		outputRange: ["0deg", "360deg"],
+	});
+	// out (big) → in (small) → out — a gentle ±6% breathe.
+	const auraPulse = auraPulseRaw.interpolate({
+		inputRange: [0, 1],
+		outputRange: [1.06, 0.94],
+	});
+	const auraSpins = !!auraSlot?.itemId && AURA_SPIN.has(auraSlot.itemId);
+
 	return (
 		<View style={styles.stage}>
 			{auraSlot?.overlay && (
-				<ItemOverlay
-					overlay={auraSlot.overlay}
-					imageSrc={auraSlot.imageSrc}
-					category={auraSlot.category}
-					zIndex={2}
-				/>
+				// Aura overflows the stage (no clip) so a pulsing halo can breathe
+				// past the card edge without a hard box showing. The baked radial
+				// falloff keeps the overflow faint. pointerEvents:none so the glow
+				// never eats a tap.
+				<View style={styles.auraLayer} pointerEvents="none">
+					<ItemOverlay
+						overlay={auraSlot.overlay}
+						imageSrc={auraSlot.imageSrc}
+						category={auraSlot.category}
+						zIndex={2}
+						spin={auraSpins ? auraSpin : undefined}
+						pulse={auraSpins ? undefined : auraPulse}
+					/>
+				</View>
 			)}
 			{showMainOverlay && mainIsBehind && (
 				<ItemOverlay
@@ -355,6 +447,20 @@ const styles = StyleSheet.create({
 		top: 0,
 		width: PIG_CANVAS,
 		height: PIG_CANVAS,
+	},
+	// Aura layer: NOT clipped — the halo overflows the stage so a pulsing aura can
+	// breathe past the card without revealing a hard clip-box edge. It's the
+	// radial alpha falloff baked into the aura art (scripts/soften_aura_edges.py)
+	// that keeps the overflow faint instead of spilling a solid glow onto
+	// neighbours. Sits behind the pig (zIndex 2).
+	auraLayer: {
+		position: "absolute",
+		left: 0,
+		top: 0,
+		width: PIG_CANVAS,
+		height: PIG_CANVAS,
+		overflow: "visible",
+		zIndex: 2,
 	},
 	overlayBox: {
 		position: "absolute",

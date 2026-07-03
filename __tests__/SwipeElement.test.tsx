@@ -28,7 +28,10 @@ jest.mock("../components/ui/PigStage", () => ({
 	PigStage: () => null,
 	resolveSlot: () => null,
 }));
-jest.mock("../components/ui/SpritePig", () => ({ PigAnimation: {} }));
+jest.mock("../components/ui/SpritePig", () => ({
+	PigAnimation: {},
+	animDurationMs: () => 1000,
+}));
 jest.mock("../components/dev/AnchorDebugOverlay", () => ({
 	AnchorDebugOverlay: () => null,
 }));
@@ -70,7 +73,7 @@ describe("SwipeElement — pig tap wiring", () => {
 		act(() => r.unmount());
 	});
 
-	test("a mid-reaction tap is QUEUED (not dropped) and replays after the reaction", async () => {
+	test("a mid-reaction tap CUTS the current reaction and fires a fresh one immediately (no queue)", async () => {
 		jest.useFakeTimers();
 		// Force "surprise" — a transient reaction (not a rest pose): floor(0.7*6)=4.
 		const rand = jest.spyOn(Math, "random").mockReturnValue(0.7);
@@ -86,20 +89,10 @@ describe("SwipeElement — pig tap wiring", () => {
 		});
 		expect(onLuckySwipe).toHaveBeenCalledTimes(1);
 
-		// 2nd tap lands MID-reaction → queued, NOT fired again (the old code
-		// silently dropped it).
+		// 2nd tap lands MID-reaction → INTERRUPTS: cuts the current reaction and
+		// fires a fresh one immediately. No queue, no replay delay.
 		await act(async () => {
 			pressable.props.onPress();
-		});
-		expect(onLuckySwipe).toHaveBeenCalledTimes(1);
-
-		// The reaction's 700ms hold reverts the pig to rest...
-		await act(async () => {
-			jest.advanceTimersByTime(720);
-		});
-		// ...then the queued tap replays after the ~180ms mini-delay.
-		await act(async () => {
-			jest.advanceTimersByTime(220);
 		});
 		expect(onLuckySwipe).toHaveBeenCalledTimes(2);
 

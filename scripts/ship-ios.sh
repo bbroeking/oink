@@ -34,6 +34,12 @@ fi
 # 1. Bump build
 ./scripts/bump-build.sh
 
+# 1b. Optimize bundled images (idempotent — only shrinks new/unoptimized art, so
+# anything that didn't come through the slice pipeline still ships small).
+echo ""
+echo "→ Optimizing images..."
+python3 scripts/optimize_assets.py
+
 # 2. Clean prior artifacts
 rm -rf "$ARCHIVE_PATH" "$EXPORT_PATH"
 mkdir -p "$BUILD_DIR"

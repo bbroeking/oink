@@ -9,6 +9,7 @@
 		"web": "expo start --web",
 		"test": "jest --watchAll",
 		"lint": "expo lint",
+		"optimize": "python3 scripts/optimize_assets.py",
 		"db:push": "npx supabase db push",
 		"db:reset": "npx supabase db reset",
 		"db:pull": "npx supabase db pull",

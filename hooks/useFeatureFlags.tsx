@@ -26,7 +26,9 @@ import { rpc } from "@/utils/rpc";
 
 // Add a key here as each dark-launched surface moves to a server flag. The
 // string must match an app_config.key seeded by a migration.
-export type FeatureFlagKey = "mud_wars";
+//   mud_wars   — Season 2 Sounder Mud Fights (20260692)
+//   world_boss — The Great Hunger server-wide co-op event (intro + raid)
+export type FeatureFlagKey = "mud_wars" | "world_boss";
 
 type FlagMap = Partial<Record<FeatureFlagKey, boolean>>;
 

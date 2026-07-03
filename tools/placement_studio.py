@@ -119,12 +119,46 @@ def write_anim_scale(data):
     open(ANIM_SCALE_FILE, "w").write(body)
 
 
-def catalog_categories():
+# Base + Mud War cosmetics live in the DB, not docs/members-catalog.json, so the
+# studio used to render them with no category — auras (firefly_aura,
+# confetti_aura, …) then fell through to the head-item path and looked wrong.
+# Parse their category straight from the catalog migrations so the studio knows
+# an aura is an aura. (Mirrors scripts/pig_preview.py:sql_categories.)
+SQL_CATALOGS = ["supabase/migrations/20260502030000_shop_catalog.sql",
+                "supabase/migrations/20260650000000_mud_war_cosmetics.sql"]
+
+
+def sql_categories():
     out = {}
+    for sql in SQL_CATALOGS:
+        p = os.path.join(ROOT, sql)
+        if not os.path.isfile(p):
+            continue
+        for line in open(p):
+            m = re.match(r"^\s*\('([^']+)',\s*'[^']*',\s*(?:'[^']*'|NULL),\s*\d+,\s*\d+,\s*'([^']+)',", line)
+            if m:
+                out[m.group(1)] = {"category": m.group(2), "members": False, "name": m.group(1)}
+    return out
+
+
+def catalog_categories():
+    out = sql_categories()                       # base + mud-war items (from migrations)
     if os.path.isfile(CATALOG):
-        for it in json.load(open(CATALOG)):
+        for it in json.load(open(CATALOG)):       # members catalog wins on overlap
             out[it["id"]] = {"category": it["category"], "members": True, "name": it["name"]}
     return out
+
+
+# Mud War game sprites live in assets/images/hats/ but are NOT placeable
+# cosmetics — goblin enemies (run + hit poses) and thrown mud projectiles, used
+# in components/mudwar/ + app/mud-war.tsx. Skip them so they never show up as
+# items to place on Rosie. (mud_pie / mud_shovel / slop_bucket DO have RelSpecs
+# — they're held cosmetics won in Mud War — so they're intentionally kept.)
+NON_COSMETIC = frozenset({
+    "goblin_grunt", "goblin_scout", "goblin_brute", "goblin_warboss",
+    "goblin_grunt_hit", "goblin_scout_hit", "goblin_brute_hit", "goblin_warboss_hit",
+    "mud_splat", "mud_splat_gold",
+})
 
 
 def build_items():
@@ -136,6 +170,8 @@ def build_items():
         if not fn.endswith(".png"):
             continue
         iid = fn[:-4]
+        if iid in NON_COSMETIC:
+            continue
         meta = cats.get(iid, {})
         eff = hat_rel.get(iid) or members_rel.get(iid)
         items.append({

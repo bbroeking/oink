@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Animation Studio</title>
+<style>
+  :root { --ink:#2a1f15; --cream:#fbeee2; --paper:#fffaf0; --line:#e7d8c4; --mut:#9a8c78; --accent:#c25a3f; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#f4ece0; color:var(--ink);
+    font:14px/1.4 Nunito, -apple-system, system-ui, sans-serif; }
+  .topbar { position:sticky; top:0; z-index:10; display:flex; gap:10px; align-items:center;
+    padding:12px 16px; background:var(--paper); border-bottom:2px solid var(--ink); flex-wrap:wrap; }
+  h1 { font-size:16px; margin:0 12px 0 0; letter-spacing:.02em; }
+  button { font:700 13px Nunito,sans-serif; color:var(--ink); background:var(--cream);
+    border:2px solid var(--ink); border-radius:10px; padding:7px 13px; cursor:pointer;
+    box-shadow:2px 2px 0 var(--ink); }
+  button:active { transform:translate(1px,1px); box-shadow:1px 1px 0 var(--ink); }
+  button.primary { background:#ffd87a; }
+  label.tog { display:flex; align-items:center; gap:5px; font-weight:700; }
+  .status { color:var(--mut); font-weight:700; }
+  #grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+    gap:14px; padding:16px; }
+  .card { background:var(--paper); border:2px solid var(--ink); border-radius:14px;
+    box-shadow:3px 3px 0 var(--ink); overflow:hidden; }
+  .stage { position:relative; width:100%; aspect-ratio:1/1; background:
+    repeating-conic-gradient(#f0e6d6 0% 25%, #f7efe3 0% 50%) 50%/28px 28px; overflow:visible;
+    border-bottom:2px solid var(--ink); }
+  .layer, .layer img { position:absolute; inset:0; width:100%; height:100%; }
+  .layer img { object-fit:contain; }
+  .ghost { opacity:.22; filter:grayscale(.3); }
+  .baseline { position:absolute; left:0; right:0; border-top:1px dashed #d06a5a; opacity:.5; }
+  .ctrl { padding:9px 11px; }
+  .name { font-weight:800; letter-spacing:.03em; text-transform:uppercase; font-size:11px; }
+  .sub { color:var(--mut); font-weight:700; font-size:10px; }
+  .row { display:flex; align-items:center; gap:8px; margin-top:6px; }
+  .val { font-weight:800; min-width:44px; }
+  .val.off { color:var(--accent); }
+  input[type=range] { flex:1; accent-color:var(--accent); }
+  .reset { font-size:11px; padding:3px 8px; box-shadow:1px 1px 0 var(--ink); }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>Animation Studio</h1>
+    <button id="play">⏸ Pause</button>
+    <button id="autofit" class="primary">Auto-fit all → idle</button>
+    <label class="tog"><input type="checkbox" id="ghost" checked> idle ghost</label>
+    <label class="tog"><input type="checkbox" id="base" checked> baseline</label>
+    <span class="status" id="status"></span>
+  </div>
+  <div id="grid"></div>
+
+<script>
+const IMG = f => `/img/assets/images/sprites/rosie/${f}.png`;
+let DATA, SCALE, cards = [], playing = true, t0 = performance.now();
+
+async function boot() {
+  DATA = await (await fetch("/api/data")).json();
+  SCALE = { ...DATA.scale };
+  const grid = document.getElementById("grid");
+  const idleFrame0 = DATA.animations.idle.frames[0];
+  cards = DATA.order.map(name => {
+    const a = DATA.animations[name];
+    const card = document.createElement("div"); card.className = "card";
+    const frames = a.frames.map((f, i) =>
+      `<img src="${IMG(f)}" style="opacity:${i===0?1:0}">`).join("");
+    card.innerHTML = `
+      <div class="stage">
+        <div class="layer ghost" data-ghost><img src="${IMG(idleFrame0)}" style="transform:scale(${SCALE.idle||1})"></div>
+        <div class="layer" data-scaler style="transform:scale(${SCALE[name]||1})">${frames}</div>
+        <div class="baseline" data-base style="top:78%"></div>
+      </div>
+      <div class="ctrl">
+        <div class="name">${name}</div>
+        <div class="sub">${a.frames.length} frames · ${a.fps} fps · ${a.loop?"loop":"one-shot"}</div>
+        <div class="row">
+          <span class="val" data-val>${(SCALE[name]||1).toFixed(3)}</span>
+          <input type="range" min="0.80" max="1.30" step="0.005" value="${SCALE[name]||1}" data-slider>
+          <button class="reset" data-reset>1.0</button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+    const imgs = [...card.querySelectorAll('[data-scaler] img')];
+    const scaler = card.querySelector('[data-scaler]');
+    const val = card.querySelector('[data-val]');
+    const slider = card.querySelector('[data-slider]');
+    const setScale = (v, save=true) => {
+      SCALE[name] = v; scaler.style.transform = `scale(${v})`;
+      val.textContent = v.toFixed(3); slider.value = v;
+      val.classList.toggle("off", Math.abs(v - (SCALE.idle||1)) > 0.001 && name !== "idle" ? false : false);
+      if (save) fetch("/api/scale", {method:"POST", headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({name, value: v})});
+    };
+    slider.oninput = e => setScale(parseFloat(e.target.value));
+    card.querySelector('[data-reset]').onclick = () => setScale(1);
+    return { name, anim: a, imgs, setScale, idx: -1 };
+  });
+  document.getElementById("status").textContent = `${cards.length} animations · edits save to animScale.generated.ts`;
+  requestAnimationFrame(tick);
+}
+
+function tick(now) {
+  const el = now - t0;
+  cards.forEach(c => {
+    const { frames, fps } = c.anim;
+    const idx = Math.floor(el / (1000 / fps)) % frames.length;
+    if (idx !== c.idx) {
+      c.imgs.forEach((im, i) => im.style.opacity = i === idx ? 1 : 0);
+      c.idx = idx;
+    }
+  });
+  if (playing) requestAnimationFrame(tick);
+}
+
+document.getElementById("play").onclick = e => {
+  playing = !playing;
+  e.target.textContent = playing ? "⏸ Pause" : "▶ Play";
+  if (playing) { t0 = performance.now() - (t0 % 100000); requestAnimationFrame(tick); }
+};
+document.getElementById("ghost").onchange = e =>
+  document.querySelectorAll('[data-ghost]').forEach(g => g.style.display = e.target.checked ? "" : "none");
+document.getElementById("base").onchange = e =>
+  document.querySelectorAll('[data-base]').forEach(b => b.style.display = e.target.checked ? "" : "none");
+document.getElementById("autofit").onclick = async () => {
+  const st = document.getElementById("status"); st.textContent = "computing…";
+  const r = await (await fetch("/api/autofit", {method:"POST", headers:{'Content-Type':'application/json'}, body:"{}"})).json();
+  if (r.ok) { cards.forEach(c => c.setScale(r.scale[c.name] ?? 1, false)); st.textContent = "auto-fit applied → saved to animScale.generated.ts"; }
+  else st.textContent = "autofit failed: " + (r.error||"");
+};
+boot();
+</script>
+</body>
+</html>

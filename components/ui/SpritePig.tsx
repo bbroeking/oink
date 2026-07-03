@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Image, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import { Image, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
 const FRAMES: Record<string, number> = {
 	idle_1: require("../../assets/images/sprites/rosie/idle_1.png"),
@@ -70,6 +70,14 @@ const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
 	},
 	wave: { frames: ["wave_1", "wave_2", "wave_3", "wave_4"], fps: 4, loop: true },
 };
+
+// One full play/cycle of an animation, in ms. Callers (SwipeElement) hold a
+// reaction this long so it plays through completely before reverting to rest,
+// instead of being cut off mid-cycle by a flat timer.
+export function animDurationMs(animation: PigAnimation): number {
+	const cfg = ANIMATIONS[animation] ?? ANIMATIONS.idle;
+	return Math.round((cfg.frames.length / cfg.fps) * 1000);
+}
 
 interface Props {
 	animation: PigAnimation;
@@ -151,73 +159,25 @@ export function SpritePig({
 		frameRef.current?.(idx);
 	}, [idx]);
 
-	const key = activeFrames[Math.min(idx, activeFrames.length - 1)];
-	const curSrc = FRAMES[key];
-
-	// Cross-dissolve every frame change. The OUTGOING frame is held on a top
-	// layer and faded out over the incoming one, so the idle loop "circles"
-	// smoothly and every idle<->reaction swap blends instead of hard-cutting
-	// a pose. prevSrcRef lags one render (this effect runs each commit and
-	// updates it at the end), so on any source change it still holds the frame
-	// we were just showing — that's the one we fade out. Same two-layer trick
-	// as AnimatedBackground.
-	const [outgoing, setOutgoing] = useState<number | null>(null);
-	const outOpacity = useRef(new Animated.Value(0)).current;
-	const prevSrcRef = useRef<number | null>(null);
-	// Stop a mid-flight fade on unmount so its end-callback can't setState on a
-	// gone component (e.g. navigating away while a reaction is dissolving).
-	const mountedRef = useRef(true);
-	useEffect(
-		() => () => {
-			mountedRef.current = false;
-			outOpacity.stopAnimation();
-		},
-		[outOpacity]
-	);
-	useEffect(() => {
-		// Manual frame stepping (align tool) wants crisp frames — never blend.
-		if (frameIdx !== undefined) {
-			prevSrcRef.current = curSrc;
-			return;
-		}
-		const prev = prevSrcRef.current;
-		if (prev != null && prev !== curSrc) {
-			const period = 1000 / activeFps;
-			const dur = Math.min(CROSSFADE_MS, period * 0.6);
-			setOutgoing(prev);
-			outOpacity.stopAnimation();
-			outOpacity.setValue(1);
-			Animated.timing(outOpacity, {
-				toValue: 0,
-				duration: dur,
-				useNativeDriver: true,
-			}).start(({ finished }) => {
-				if (finished && mountedRef.current) setOutgoing(null);
-			});
-		}
-		prevSrcRef.current = curSrc;
-		// Only re-evaluate when the displayed source (or align-tool control)
-		// actually changes — not on every unrelated parent re-render. prevSrcRef
-		// still lags one render because it's written at the end of this effect.
-	}, [curSrc, activeFps, frameIdx, outOpacity]);
-
+	// Flip-book: every frame of the current animation is mounted at once and we
+	// just toggle which one is visible (opacity 1 vs 0). No Image `source` swaps
+	// during the loop → no decode/flash; never two poses on screen → no ghost.
+	// fadeDuration={0} disables Android's default image fade-in.
+	const safeIdx = Math.min(idx, activeFrames.length - 1);
 	return (
 		<View style={[{ width: size, height: size }, style]}>
-			<Image source={curSrc} style={styles.fill} resizeMode="contain" />
-			{outgoing != null && outgoing !== curSrc && (
-				<Animated.Image
-					source={outgoing}
-					style={[styles.fill, { opacity: outOpacity }]}
+			{activeFrames.map((f, i) => (
+				<Image
+					key={i}
+					source={FRAMES[f]}
+					style={[styles.fill, { opacity: i === safeIdx ? 1 : 0 }]}
 					resizeMode="contain"
+					fadeDuration={0}
 				/>
-			)}
+			))}
 		</View>
 	);
 }
-
-// Max cross-dissolve length; clamped below the frame period so fast
-// animations (jump/surprise) blend quickly and slow ones (idle) stay smooth.
-const CROSSFADE_MS = 150;
 
 const styles = StyleSheet.create({
 	fill: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" },

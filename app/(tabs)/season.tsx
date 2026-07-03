@@ -32,6 +32,7 @@ import {
 import { Glyph, type GlyphName } from "../../components/ui/Glyph";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
+import { GreatHungerIntroModal } from "../../components/GreatHungerIntroModal";
 import { BountyBoard } from "../../components/BountyBoard";
 import { AlignmentBar } from "../../components/ui/AlignmentBar";
 import { AlignmentExplainerModal } from "../../components/AlignmentExplainerModal";
@@ -998,6 +999,10 @@ const vlStyles = StyleSheet.create({
 export default function SeasonScreen() {
 	const [state, setState] = useState<SeasonState | null>(null);
 	const [busy, setBusy] = useState(false);
+	// DEV-only: preview the Great Hunger (Season 2) intro storybook without
+	// needing the world_boss flag seeded. Remove the chip + this state once the
+	// intro is wired into the launch PopupQueue behind useFeatureFlag('world_boss').
+	const [devIntro, setDevIntro] = useState(false);
 	const [saleOpen, setSaleOpen] = useState(false);
 	// Alignment placard moved here from the Me tab — the player's
 	// greedy↔generous score + its blessing/curse/regen modifiers.
@@ -1206,6 +1211,26 @@ export default function SeasonScreen() {
 					<Text style={styles.kicker}>★ {season.name.toLowerCase()}</Text>
 					<Text style={styles.title}>Goblins vs Angels</Text>
 					<View style={styles.titleRule} />
+					{__DEV__ && (
+						<Pressable
+							onPress={() => setDevIntro(true)}
+							hitSlop={8}
+							style={{
+								alignSelf: "flex-start",
+								marginTop: 8,
+								paddingHorizontal: 12,
+								paddingVertical: 5,
+								borderRadius: RADII.md,
+								borderWidth: 2,
+								borderColor: WHIMSY.ink,
+								backgroundColor: WHIMSY.lilac,
+							}}
+						>
+							<Text style={{ fontFamily: FONTS.bodyExtra, fontSize: 11, color: WHIMSY.ink }}>
+								▶ preview: Great Hunger intro
+							</Text>
+						</Pressable>
+					)}
 						{daysUntilJudgement() > 0 && (
 							<View style={styles.judgementBanner}>
 								<Icon name="scales" size={14} color={WHIMSY.ink} />
@@ -1391,6 +1416,16 @@ export default function SeasonScreen() {
 				reveal={mysteryReveal}
 				onDone={() => setMysteryReveal(null)}
 			/>
+
+			{/* DEV preview of the Season 2 intro (trigger via the header chip).
+			    Production trigger will live in the launch PopupQueue gated on
+			    useFeatureFlag('world_boss'). */}
+			{__DEV__ && (
+				<GreatHungerIntroModal
+					visible={devIntro}
+					onDone={() => setDevIntro(false)}
+				/>
+			)}
 		</View>
 	);
 }

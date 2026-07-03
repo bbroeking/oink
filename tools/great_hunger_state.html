@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Great Hunger State</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #121416;
+        --panel: #1b1e22;
+        --panel-2: #23272d;
+        --ink: #f7efe2;
+        --muted: #b9b0a4;
+        --line: #363b43;
+        --gold: #f3bf37;
+        --rose: #ff91aa;
+        --mud: #765039;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .shell {
+        min-height: 100vh;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 14px clamp(14px, 3vw, 32px);
+        border-bottom: 1px solid var(--line);
+        background: rgba(18, 20, 22, 0.94);
+        backdrop-filter: blur(14px);
+      }
+
+      .brand {
+        min-width: 0;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .subtle {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 2px;
+      }
+
+      .nav {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .nav a {
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 13px;
+        background: #171a1d;
+      }
+
+      .nav a:hover {
+        color: var(--ink);
+        border-color: #565d68;
+      }
+
+      main {
+        padding: 24px clamp(14px, 3vw, 32px) 56px;
+      }
+
+      section {
+        margin: 0 auto 34px;
+        max-width: 1400px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 12px;
+      }
+
+      h2 {
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      .badge-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 0 9px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 12px;
+        background: #181b1f;
+      }
+
+      .badge.gold {
+        color: #ffe2a0;
+        border-color: rgba(243, 191, 55, 0.45);
+        background: rgba(243, 191, 55, 0.1);
+      }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .story-grid {
+        grid-template-columns: repeat(7, minmax(132px, 1fr));
+      }
+
+      .sprite-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .gif-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+
+      .frame {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      .frame img {
+        width: 100%;
+        height: auto;
+        background: #0d0f11;
+      }
+
+      .caption {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 9px 10px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .caption strong {
+        color: var(--ink);
+        font-weight: 750;
+      }
+
+      .wide-shot {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--panel);
+      }
+
+      .wide-shot img {
+        width: 100%;
+      }
+
+      .preview-tile {
+        display: grid;
+        place-items: center;
+        min-height: 190px;
+        padding: 12px;
+        background:
+          linear-gradient(45deg, #15181c 25%, transparent 25%),
+          linear-gradient(-45deg, #15181c 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #15181c 75%),
+          linear-gradient(-45deg, transparent 75%, #15181c 75%);
+        background-color: #101215;
+        background-size: 28px 28px;
+        background-position:
+          0 0,
+          0 14px,
+          14px -14px,
+          -14px 0;
+      }
+
+      .preview-tile img {
+        max-height: 180px;
+        object-fit: contain;
+      }
+
+      .sheet-wrap {
+        display: grid;
+        gap: 10px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .sheet-wrap img {
+        width: 100%;
+        background: #111317;
+      }
+
+      .manifest {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        background: var(--panel);
+      }
+
+      .metric span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+
+      .metric b {
+        font-size: 14px;
+      }
+
+      @media (max-width: 1100px) {
+        .story-grid {
+          grid-template-columns: repeat(4, minmax(130px, 1fr));
+        }
+      }
+
+      @media (max-width: 780px) {
+        .topbar {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .nav {
+          justify-content: flex-start;
+        }
+
+        .story-grid,
+        .sprite-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <h1>The Great Hunger</h1>
+          <p class="subtle">current storyboard and sprite state</p>
+        </div>
+        <nav class="nav" aria-label="Sections">
+          <a href="#storyboard">Storyboard</a>
+          <a href="#rosie">Rosie</a>
+          <a href="#hunger">Hunger</a>
+          <a href="#previews">GIFs</a>
+        </nav>
+      </header>
+
+      <main>
+        <section id="storyboard">
+          <div class="section-head">
+            <div>
+              <h2>Storyboard</h2>
+              <p class="subtle">joy -> theft -> grey -> empty world -> the Hunger begins</p>
+            </div>
+            <div class="badge-row">
+              <span class="badge gold">7 shots</span>
+              <span class="badge">ends down</span>
+            </div>
+          </div>
+          <div class="wide-shot">
+            <img src="../assets/concepts/great-hungerer/storyboard/storyboard_contact_sheet_v1.png" alt="Seven-shot Great Hunger storyboard contact sheet" />
+          </div>
+        </section>
+
+        <section>
+          <div class="grid story-grid">
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/storyboard/shot_01_valley_of_tickles.png" alt="Valley of tickles" />
+              <div class="caption"><strong>01</strong><span>valley</span></div>
+            </article>
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/storyboard/shot_02_rosie_asleep.png" alt="Rosie asleep" />
+              <div class="caption"><strong>02</strong><span>asleep</span></div>
+            </article>
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/storyboard/shot_03_hunger_arrives.png" alt="The Hunger arrives" />
+              <div class="caption"><strong>03</strong><span>arrival</span></div>
+            </article>
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/storyboard/shot_04_the_theft.png" alt="The theft" />
+              <div class="caption"><strong>04</strong><span>theft</span></div>
+            </article>
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/storyboard/shot_05_grey_dawn.png" alt="Grey dawn" />
+              <div class="caption"><strong>05</strong><span>grey dawn</span></div>
+            </article>
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/storyboard/shot_06_empty_valley.png" alt="Empty valley" />
+              <div class="caption"><strong>06</strong><span>empty</span></div>
+            </article>
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/storyboard/shot_07_hunger_begins.png" alt="The Hunger begins" />
+              <div class="caption"><strong>07</strong><span>begins</span></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="rosie">
+          <div class="section-head">
+            <div>
+              <h2>Rosie</h2>
+              <p class="subtle">idle, happy, sad, surprise, tired, jump, walk, wave</p>
+            </div>
+            <span class="badge">real shipped frames</span>
+          </div>
+          <div class="grid sprite-grid">
+            <div class="sheet-wrap">
+              <img src="../assets/concepts/great-hungerer/sprites/rosie_all_states_contact_v1.png" alt="Rosie all states contact sheet" />
+              <div class="caption"><strong>review sheet</strong><span>8 x 4</span></div>
+            </div>
+            <div class="sheet-wrap">
+              <img src="../assets/concepts/great-hungerer/sprites/rosie_walk_turnaround_v1.png" alt="Rosie walk turnaround sheet" />
+              <div class="caption"><strong>turnaround</strong><span>transparent PNG</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="hunger">
+          <div class="section-head">
+            <div>
+              <h2>The Hunger</h2>
+              <p class="subtle">meaner crowned-hog reference, action rows, and turnaround</p>
+            </div>
+            <span class="badge gold">v2 meaner</span>
+          </div>
+          <div class="grid sprite-grid">
+            <div class="sheet-wrap">
+              <img src="../assets/concepts/great-hungerer/sprites/great_hunger_action_contact_v2.png" alt="Great Hunger action contact sheet" />
+              <div class="caption"><strong>action sheet</strong><span>idle, waddle, gloat, slurp</span></div>
+            </div>
+            <div class="sheet-wrap">
+              <img src="../assets/concepts/great-hungerer/sprites/great_hunger_walk_turnaround_v2.png" alt="Great Hunger walk turnaround sheet" />
+              <div class="caption"><strong>turnaround</strong><span>transparent PNG</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="previews">
+          <div class="section-head">
+            <div>
+              <h2>Animated Previews</h2>
+              <p class="subtle">looping GIF exports</p>
+            </div>
+            <span class="badge">preview timing only</span>
+          </div>
+          <div class="grid gif-grid">
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/rosie_idle_preview_v1.gif" alt="Rosie idle preview" /></div><div class="caption"><strong>Rosie</strong><span>idle</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/rosie_happy_preview_v1.gif" alt="Rosie happy preview" /></div><div class="caption"><strong>Rosie</strong><span>happy</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/rosie_sad_preview_v1.gif" alt="Rosie sad preview" /></div><div class="caption"><strong>Rosie</strong><span>sad</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/rosie_surprise_preview_v1.gif" alt="Rosie surprise preview" /></div><div class="caption"><strong>Rosie</strong><span>surprise</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/rosie_tired_preview_v1.gif" alt="Rosie tired preview" /></div><div class="caption"><strong>Rosie</strong><span>tired</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/rosie_jump_preview_v1.gif" alt="Rosie jump preview" /></div><div class="caption"><strong>Rosie</strong><span>jump</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/rosie_walk_preview_v1.gif" alt="Rosie walk preview" /></div><div class="caption"><strong>Rosie</strong><span>walk</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/rosie_wave_preview_v1.gif" alt="Rosie wave preview" /></div><div class="caption"><strong>Rosie</strong><span>wave</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/great_hunger_idle_preview_v2.gif" alt="Great Hunger idle preview" /></div><div class="caption"><strong>Hunger</strong><span>idle</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/great_hunger_waddle_preview_v2.gif" alt="Great Hunger waddle preview" /></div><div class="caption"><strong>Hunger</strong><span>waddle</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/great_hunger_gloat_preview_v2.gif" alt="Great Hunger gloat preview" /></div><div class="caption"><strong>Hunger</strong><span>gloat</span></div></article>
+            <article class="frame"><div class="preview-tile"><img src="../assets/concepts/great-hungerer/sprites/great_hunger_slurp_preview_v2.gif" alt="Great Hunger slurp preview" /></div><div class="caption"><strong>Hunger</strong><span>slurp</span></div></article>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-head">
+            <div>
+              <h2>Files</h2>
+              <p class="subtle">source anchors and generated packs</p>
+            </div>
+          </div>
+          <div class="manifest">
+            <div class="metric"><b>Rosie source</b><span>assets/images/sprites/rosie</span></div>
+            <div class="metric"><b>Hunger source</b><span>great_hunger_mean_reference_cutout_v2.png</span></div>
+            <div class="metric"><b>Storyboard</b><span>assets/concepts/great-hungerer/storyboard</span></div>
+            <div class="metric"><b>Sprites</b><span>assets/concepts/great-hungerer/sprites</span></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

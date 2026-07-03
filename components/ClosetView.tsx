@@ -32,7 +32,7 @@ import {
 	slotForCategory,
 	type EquipSlotKey,
 } from "@/constants/slots";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, STICKER_SHADOW, WHIMSY } from "@/constants/theme";
 import { Dimensions } from "react-native";
 
 // Explicit tile geometry. Yoga (this RN vintage) refuses to treat
@@ -94,6 +94,29 @@ const RARITY_STRIPE: Record<string, string> = {
 const fill = (r: string | undefined) => RARITY_FILL[r ?? "common"] ?? RARITY_FILL.common;
 const stripe = (r: string | undefined) => RARITY_STRIPE[r ?? "common"] ?? RARITY_STRIPE.common;
 
+// Paper-doll: a signature WHIMSY tint per equip slot, painted behind the slot's
+// item/category icon so the slots flanking Rosie read as a colourful dress-up tray.
+const SLOT_TINT: Record<string, string> = {
+	head: WHIMSY.sun,
+	face: WHIMSY.sky,
+	neck: WHIMSY.rose,
+	held: WHIMSY.sage,
+	tickle: WHIMSY.lilac,
+	aura: WHIMSY.peach,
+	background: WHIMSY.cream2,
+	flag: WHIMSY.sky,
+};
+
+// Rosie's preview footprint in the paper-doll. Smaller than the old 200 so the
+// equip-slot columns have room to flank her on both sides.
+const PIG_PREVIEW = 150;
+// The scene window behind Rosie is a touch wider + taller than she is so a
+// margin of background shows all around her (room for the hat, aura + flag to
+// read). Capped so the flanking slot columns still clear a 64px chip on an SE
+// (card inner width = SCREEN_W − 60; each column = (inner − PIG_WINDOW_W) / 2).
+const PIG_WINDOW_W = 184;
+const PIG_WINDOW_H = 210;
+
 export function ClosetView({
 	ownedItems,
 	allItems,
@@ -127,7 +150,7 @@ export function ClosetView({
 		return { id, category: it?.category ?? null, emoji: it?.emoji ?? null };
 	};
 
-	const scale = 200 / PIG_CANVAS;
+	const scale = PIG_PREVIEW / PIG_CANVAS;
 
 	const scrollToCategory = useCallback((slotKey: EquipSlotKey) => {
 		// Find the first category that maps to this slot and has a section.
@@ -171,6 +194,63 @@ export function ClosetView({
 	});
 	const visibleSlots = SLOT_ORDER.filter((s) => slotsWithContent.has(s));
 
+	// Paper-doll arrangement: every equip slot is a chip split into two columns
+	// that flank Rosie left + right.
+	// Flag is no longer a closet slot chip — the country flag is picked from the
+	// Barn (home) bottom-left corner. Background takes its place in the flanking
+	// set (no more wide tray beneath the pig); SLOT_ORDER runs …aura,
+	// background, so with flag dropped, background lands in flag's old spot.
+	const flankSlots = visibleSlots.filter((s) => s !== "flag");
+
+	// The equipped background, rendered as the scene inside the preview window —
+	// a scoped version of the Barn's full-page background so you can preview it
+	// here. HAT_IMAGES keys animated backgrounds to their frame-1 thumbnail, so
+	// this resolves both static and animated ids (they animate live on the Barn).
+	const bgId = activeIds["active_background_id"] ?? null;
+	const bgPreviewSrc = bgId ? HAT_IMAGES[bgId] ?? null : null;
+	const splitAt = Math.ceil(flankSlots.length / 2);
+	const leftSlots = flankSlots.slice(0, splitAt);
+	const rightSlots = flankSlots.slice(splitAt);
+
+	// One equip slot: tinted thumb (item art → category art → +), tap scrolls to
+	// that section, ✕ takes it off.
+	const renderSlot = (s: EquipSlotKey) => {
+		const equippedId =
+			columnsForSlot(s)
+				.map((c) => activeIds[c])
+				.find((v) => v) ?? null;
+		const it = equippedId ? byId.current.get(equippedId) : null;
+		const src = equippedId ? HAT_IMAGES[equippedId] : null;
+		const thumbSrc = src ?? (it ? categoryIcon(it.category) : null);
+		return (
+			<Pressable
+				key={s}
+				onPress={() => scrollToCategory(s)}
+				style={styles.slotChip}
+			>
+				{equippedId && it ? (
+					<Pressable
+						onPress={() => onEquip(null, it.category)}
+						style={styles.slotRemove}
+						hitSlop={{ top: 6, right: 6, bottom: 18, left: 18 }}
+					>
+						<Text style={styles.slotRemoveText}>✕</Text>
+					</Pressable>
+				) : null}
+				<View style={[styles.slotThumb, { backgroundColor: SLOT_TINT[s] ?? WHIMSY.cream2 }]}>
+					{thumbSrc ? (
+						<Image source={thumbSrc} style={styles.slotThumbImg} resizeMode="contain" />
+					) : (
+						<Text style={styles.slotPlus}>+</Text>
+					)}
+				</View>
+				<Text style={styles.slotLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+					{SLOT_LABEL[s]}
+				</Text>
+			</Pressable>
+		);
+	};
+
 	return (
 		<ScrollView
 			ref={scrollRef}
@@ -188,26 +268,41 @@ export function ClosetView({
 				</View>
 			</View>
 
-			{/* Live fitting-room preview + equip-slot chips. */}
+			{/* Paper-doll fitting room: Rosie centred, equip slots flank her,
+			    then her nameplate. */}
 			<View style={styles.previewCard}>
-				<View style={styles.previewStageWrap}>
-					<View style={styles.pigVisualBox}>
-						<View style={[styles.pigScaler, { transform: [{ scale }] }]}>
-							<PigStage
-								equipped={slot("active_hat_id")}
-								equippedGlasses={slot("active_glasses_id")}
-								equippedMask={slot("active_mask_id")}
-								equippedNeck={slot("active_neck_id")}
-								equippedAura={slot("active_aura_id")}
-								equippedHeld={slot("active_held_id")}
-								equippedFlag={slot("active_flag_id")}
+				<View style={styles.paperDoll}>
+					<View style={styles.slotCol}>{leftSlots.map((s) => renderSlot(s))}</View>
+					{/* Scene window: the equipped background fills a rounded window with
+					    Rosie composited in front and a margin of scene around her so the
+					    hat, aura + flag all read. Clipped (overflow hidden) — the aura's
+					    baked radial falloff keeps that clip soft, no hard box. */}
+					<View style={styles.pigWindow}>
+						{bgPreviewSrc && (
+							<Image
+								source={bgPreviewSrc}
+								style={styles.pigWindowBg}
+								resizeMode="cover"
 							/>
+						)}
+						<View style={styles.pigVisualBox}>
+							<View style={[styles.pigScaler, { transform: [{ scale }] }]}>
+								<PigStage
+									equipped={slot("active_hat_id")}
+									equippedGlasses={slot("active_glasses_id")}
+									equippedMask={slot("active_mask_id")}
+									equippedNeck={slot("active_neck_id")}
+									equippedAura={slot("active_aura_id")}
+									equippedHeld={slot("active_held_id")}
+									equippedFlag={slot("active_flag_id")}
+								/>
+							</View>
 						</View>
 					</View>
+					<View style={styles.slotCol}>{rightSlots.map((s) => renderSlot(s))}</View>
 				</View>
 
-				{/* Title chip — the pig's nameplate. Tapping scrolls to the
-				    Titles section below, same pattern as the slot chips. */}
+				{/* Title chip — the pig's nameplate; tapping scrolls to Titles. */}
 				{userId != null && (
 					<Pressable onPress={scrollToTitles} style={styles.titleChip}>
 						<Text style={styles.titleChipKicker}>title</Text>
@@ -221,70 +316,6 @@ export function ClosetView({
 							{activeTitleName ?? "No title — tap to pick"}
 						</Text>
 					</Pressable>
-				)}
-
-				{visibleSlots.length > 0 && (
-					<View style={styles.slotRow}>
-						{visibleSlots.map((s) => {
-							// Face reads mask ?? glasses (merged chip, two columns).
-							const equippedId =
-								columnsForSlot(s)
-									.map((c) => activeIds[c])
-									.find((v) => v) ?? null;
-							const it = equippedId ? byId.current.get(equippedId) : null;
-							const src = equippedId ? HAT_IMAGES[equippedId] : null;
-							return (
-								<Pressable
-									key={s}
-									onPress={() => scrollToCategory(s)}
-									style={styles.slotChip}
-								>
-									{equippedId && it ? (
-										// Asymmetric hitSlop grows the 24pt ✕ to a 44pt
-										// square anchored on the chip's top-right corner
-										// (hitSlop can't extend past the parent chip).
-										<Pressable
-											onPress={() => onEquip(null, it.category)}
-											style={styles.slotRemove}
-											hitSlop={{ top: 0, right: 0, bottom: 20, left: 20 }}
-										>
-											<Text style={styles.slotRemoveText}>✕</Text>
-										</Pressable>
-									) : null}
-									<View
-										style={[
-											styles.slotThumb,
-											{ backgroundColor: it ? fill(it.rarity) : WHIMSY.paper },
-										]}
-									>
-										{(() => {
-											// Prefer item art, then category art (real
-											// PNG). Auras/necklaces have no category art →
-											// the "+" placeholder. Never render raw emoji.
-											const catSrc = it ? categoryIcon(it.category) : null;
-											const thumbSrc = src ?? catSrc;
-											return thumbSrc ? (
-												<Image source={thumbSrc} style={styles.slotThumbImg} resizeMode="contain" />
-											) : (
-												<Text style={styles.slotPlus}>+</Text>
-											);
-										})()}
-									</View>
-									{/* One line always — "BACKGROUND" overflows the fixed
-									    72px chip at full size, so shrink-to-fit instead of
-									    wrapping. Short labels (Hat, Eyes…) stay at 10pt. */}
-									<Text
-										style={styles.slotLabel}
-										numberOfLines={1}
-										adjustsFontSizeToFit
-										minimumFontScale={0.8}
-									>
-										{SLOT_LABEL[s]}
-									</Text>
-								</Pressable>
-							);
-						})}
-					</View>
 				)}
 			</View>
 
@@ -414,51 +445,77 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.cream,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 16,
-		paddingTop: 8,
-		paddingBottom: 12,
-		paddingHorizontal: 12,
+		borderRadius: 18,
+		padding: 14,
 		alignItems: "center",
+		gap: 10,
+		...STICKER_SHADOW,
 	},
-	previewStageWrap: {
-		width: 200,
-		// Taller than the 200² pig so a tall hat (crown) has headroom above
-		// instead of being clipped at the box top. Pig sits flush to the bottom.
-		height: 250,
+	// Paper-doll: flex columns flank Rosie so she stays centred no matter how many
+	// slots each side has.
+	paperDoll: {
+		flexDirection: "row",
+		alignItems: "center",
+		alignSelf: "stretch",
+	},
+	slotCol: {
+		flex: 1,
+		gap: 8,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	// Scene window behind Rosie: the equipped background clipped to a rounded
+	// rect, sized a touch larger than the pig so a margin of scene shows all
+	// around her. Rosie is pinned near the bottom (paddingBottom) with headroom
+	// above for a tall hat; overflow:hidden does the final clip to the rounded
+	// window (the aura's baked falloff keeps that clip soft).
+	pigWindow: {
+		width: PIG_WINDOW_W,
+		height: PIG_WINDOW_H,
+		borderRadius: 16,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream2,
+		overflow: "hidden",
 		alignItems: "center",
 		justifyContent: "flex-end",
-		overflow: "hidden",
+		paddingBottom: 8,
 	},
-	// The pig's actual displayed footprint (200²), pinned to the bottom of the
-	// stage. overflow:"visible" lets a tall hat spill up into the headroom.
+	// Explicit numeric size (NOT inset:0 / percentage) — an inset-sized Image
+	// hits RN's indefinite-size fallback and renders a centered intrinsic band
+	// (see PageBackground's note). Cover-fills the window edge to edge.
+	pigWindowBg: {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		width: PIG_WINDOW_W,
+		height: PIG_WINDOW_H,
+	},
+	// The pig's displayed footprint. overflow:"visible" lets a tall hat spill up
+	// into the window's headroom; pigWindow does the final clip at its edge.
 	pigVisualBox: {
-		width: 200,
-		height: 200,
+		width: PIG_PREVIEW,
+		height: PIG_PREVIEW,
 		overflow: "visible",
 	},
-	// Centers the 300² PigStage within the 200² visual box; the scale transform
-	// (passed inline) then fits it. left/top = (200 - 300) / 2 = -50.
+	// Centers the 300² PigStage within the visual box; the scale transform
+	// (passed inline) then fits it.
 	pigScaler: {
 		position: "absolute",
-		left: (200 - PIG_CANVAS) / 2,
-		top: (200 - PIG_CANVAS) / 2,
-	},
-	slotRow: {
-		flexDirection: "row",
-		flexWrap: "wrap",
-		justifyContent: "center",
-		gap: 8,
-		marginTop: 8,
+		left: (PIG_PREVIEW - PIG_CANVAS) / 2,
+		top: (PIG_PREVIEW - PIG_CANVAS) / 2,
 	},
 	slotChip: {
-		width: 72,
+		width: 64,
 		alignItems: "center",
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		paddingVertical: 7,
+		borderRadius: 14,
+		paddingVertical: 6,
 		position: "relative",
+		...STICKER_SHADOW,
+		shadowOffset: { width: 2, height: 2 },
 	},
 	slotThumb: {
 		width: 40,
@@ -481,17 +538,30 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 		marginTop: 4,
 	},
+	// A small paper badge pinned to the chip's top-right corner. A bare ✕ over
+	// the thumbnail art read as a stray mark colliding with the tile; the filled
+	// badge + ink border makes it an intentional "remove" affordance sitting on
+	// the corner. hitSlop (on the Pressable) keeps the tap target generous.
 	slotRemove: {
 		position: "absolute",
-		top: 0,
-		right: 0,
-		zIndex: 2,
-		width: 24,
-		height: 24,
+		top: 2,
+		right: 2,
+		zIndex: 3,
+		width: 20,
+		height: 20,
+		borderRadius: 10,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	slotRemoveText: { fontSize: 12, fontWeight: "900", color: WHIMSY.ink },
+	slotRemoveText: {
+		fontSize: 10,
+		fontWeight: "900",
+		color: WHIMSY.ink,
+		lineHeight: 12,
+	},
 	// Nameplate pill under the pig. minHeight 44 keeps it a full-size
 	// tap target without hitSlop.
 	titleChip: {
