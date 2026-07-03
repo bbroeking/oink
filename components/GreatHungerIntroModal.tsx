@@ -44,9 +44,10 @@ import {
 } from "@/constants/theme";
 
 // ── Beat script ──────────────────────────────────────────────────────
-// bg = scenery; hero = foreground character; heroTint darkens the pig into
-// the looming Hungry Hog silhouette (placeholder). fog = overlay intensity
-// (the "peckish fog" rolls in as the Hunger arrives, then eases as we rally).
+// bg = scenery; hero = foreground character (Rosie sticker on valley/rally
+// beats, the real Hungerer render on "arrive"); heroTint stays available for
+// silhouette beats. fog = overlay intensity (the "peckish fog" rolls in as
+// the Hunger arrives, then eases as we rally).
 type Beat = {
 	key: string;
 	bg: ImageSourcePropType;
@@ -61,10 +62,11 @@ type Beat = {
 	cta?: string;
 };
 
-// Placeholder hero — the full-body Rosie sticker. The "arrive" beat tints it
-// to an ink silhouette as the stand-in looming Hungry Hog until the real art
-// (Midjourney → Blender) lands; swap per-beat `hero` requires then.
+// Heroes: the full-body Rosie sticker carries the valley/rally beats; the
+// "arrive" beat shows the REAL Great Hungerer (the LOCKED crowned-hog render,
+// alpha cutout, bundled via assets/images/hunger/).
 const PIG = require("../assets/images/pig.png");
+const HUNGER = require("../assets/images/hunger/great_hungerer_hero.png");
 
 const BEATS: Beat[] = [
 	{
@@ -80,8 +82,7 @@ const BEATS: Beat[] = [
 	{
 		key: "arrive",
 		bg: require("../assets/images/backgrounds/bog_dusk_bg.png"),
-		hero: PIG,
-		heroTint: WHIMSY.ink,
+		hero: HUNGER,
 		heroScale: 2.1,
 		breathe: true,
 		sparkles: "eaten",

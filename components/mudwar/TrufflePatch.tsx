@@ -42,7 +42,7 @@ import { FONTS, WHIMSY, RADII, SPACE, STICKER_SHADOW, SHADOW_SM } from "@/consta
 const PATCH_ART = {
 	truffle: HAT_IMAGES.mud_pie, // plain truffle stand-in
 	golden: HAT_IMAGES.golden_truffle,
-	hunger: require("../../assets/images/pig.png"), // tinted = the gorging Hunger
+	hunger: require("../../assets/images/hunger/great_hungerer_chip.png"), // the gorging Hungerer (real art)
 	mud: ["#c2a077", "#a5825f", "#8a6b4f"] as const, // layer 1 → 3 (shallow → deep)
 	silhouette: "rgba(42,31,21,0.55)",
 } as const;
@@ -310,10 +310,7 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 				</View>
 				<Image
 					source={PATCH_ART.hunger}
-					style={[
-						styles.hunger,
-						{ tintColor: WHIMSY.ink, transform: [{ rotate: hungerWobble }] },
-					]}
+					style={[styles.hunger, { transform: [{ rotate: hungerWobble }] }]}
 					resizeMode="contain"
 				/>
 			</View>
@@ -491,7 +488,7 @@ const styles = StyleSheet.create({
 		marginTop: 2,
 	},
 	stirFill: { height: "100%", backgroundColor: WHIMSY.roseDeep },
-	hunger: { width: 44, height: 44, opacity: 0.85 },
+	hunger: { width: 44, height: 44 },
 	board: {
 		flexDirection: "row",
 		flexWrap: "wrap",

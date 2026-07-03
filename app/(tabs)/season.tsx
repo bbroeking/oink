@@ -1285,7 +1285,9 @@ export default function SeasonScreen() {
 							</Text>
 						</Pressable>
 					)}
-						{daysUntilJudgement() > 0 && (
+						{/* Season 1 only — S2's clock is the Hungerer's drain + the war
+						    cadence, not a doomsday date. */}
+						{!s2 && daysUntilJudgement() > 0 && (
 							<View style={styles.judgementBanner}>
 								<Icon name="scales" size={14} color={WHIMSY.ink} />
 								<Text style={styles.judgementText}>
