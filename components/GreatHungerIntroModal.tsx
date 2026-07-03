@@ -165,6 +165,11 @@ export function GreatHungerIntroModal({
 	onDone: (action: "rally" | "skip") => void;
 }) {
 	const [beat, setBeat] = useState(0);
+	// Restart the tale on every open — the season tab's "Hear the tale again"
+	// chip re-opens this modal, and a retold story must start at beat one.
+	useEffect(() => {
+		if (visible) setBeat(0);
+	}, [visible]);
 	const B = BEATS[beat];
 	const isLast = beat === BEATS.length - 1;
 

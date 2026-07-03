@@ -35,7 +35,13 @@ import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
 import { GreatHungerIntroModal } from "../../components/GreatHungerIntroModal";
 import { SeasonEndModal, DEV_PREVIEW_REWARD } from "../../components/SeasonEndModal";
 import { useSeasonEnd } from "../../hooks/useSeasonEnd";
-import { GreatHungerMeter } from "../../components/GreatHungerMeter";
+import { HungerHero } from "../../components/season2/HungerHero";
+import { SeasonStory } from "../../components/season2/SeasonStory";
+import { SounderSteps } from "../../components/season2/SounderSteps";
+import { SpoilsShowcase } from "../../components/season2/SpoilsShowcase";
+import { useCrew } from "../../hooks/useCrew";
+import { useMudWar } from "@/hooks/useMudWar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFeatureFlag } from "../../hooks/useFeatureFlags";
 import { BountyBoard } from "../../components/BountyBoard";
 import { AlignmentBar } from "../../components/ui/AlignmentBar";
@@ -1003,14 +1009,23 @@ const vlStyles = StyleSheet.create({
 export default function SeasonScreen() {
 	const [state, setState] = useState<SeasonState | null>(null);
 	const [busy, setBusy] = useState(false);
-	// DEV-only: preview the Great Hunger (Season 2) intro storybook without
-	// needing the world_boss flag seeded. Remove the chip + this state once the
-	// intro is wired into the launch PopupQueue behind useFeatureFlag('world_boss').
-	const [devIntro, setDevIntro] = useState(false);
-	// The Hungerer's season vignette — server flag (world_boss, seeded by the
-	// held 20260704200000 migration) with the same __DEV__ preview escape hatch
-	// as the intro chip above.
+	// Season-2 mode — the world_boss server flag (seeded by the held
+	// 20260704200000 migration) with the __DEV__ escape hatch so the local
+	// test account lives in the new season before the flag flips for anyone
+	// else. Season-1 rendering is fully preserved on the else-branch.
 	const worldBoss = useFeatureFlag("world_boss");
+	const s2 = worldBoss || __DEV__;
+	// The Great Hunger intro storybook — auto-opens on this account's FIRST
+	// visit to the Season-2 tab (AsyncStorage stamp, per-user) and re-opens any
+	// time from the hero's "Hear the tale again" chip.
+	const [introOpen, setIntroOpen] = useState(false);
+	const [uid, setUid] = useState<string | null>(null);
+	// Sounder + war state drive the walkthrough stepper / live-war strip.
+	const crewHook = useCrew(s2);
+	const mudWar = useMudWar(
+		crewHook.crew.warId ?? undefined,
+		s2 && crewHook.crew.inWar
+	);
 	// Season-end reveal — the beta Founding Herd recap. Live path: season1_finale
 	// flag + an unseen my_beta_reward grant (held 20260704400000). Dev preview
 	// chip mirrors the intro's escape hatch.
@@ -1047,6 +1062,7 @@ export default function SeasonScreen() {
 		// so this adds no network round-trip beyond the profile select.
 		const { data: sess } = await supabase.auth.getSession();
 		const uid = sess.session?.user?.id;
+		setUid(uid ?? null);
 		if (uid) {
 			const { data: prof } = await supabase
 				.from("profiles")
@@ -1064,6 +1080,25 @@ export default function SeasonScreen() {
 			load();
 		}, [load])
 	);
+
+	// First visit to the new season → the tale tells itself. Stamped per user
+	// on dismiss so it never auto-plays twice; the "Hear the tale again" chip
+	// stays for every retelling after.
+	useEffect(() => {
+		if (!s2 || !uid) return;
+		let cancelled = false;
+		AsyncStorage.getItem(`s2_intro_seen:${uid}`).then((v) => {
+			if (!cancelled && !v) setIntroOpen(true);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [s2, uid]);
+
+	const dismissIntro = useCallback(() => {
+		setIntroOpen(false);
+		if (uid) AsyncStorage.setItem(`s2_intro_seen:${uid}`, "1").catch(() => {});
+	}, [uid]);
 
 	// Detect tier-up between successive season_state loads. Record the
 	// first observed tier as a baseline (no celebration on initial open)
@@ -1220,30 +1255,16 @@ export default function SeasonScreen() {
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
 				<View style={styles.header}>
-					{/* "Goblins vs Angels" — the redesigned framing for Season 1. */}
-					<Text style={styles.kicker}>★ {season.name.toLowerCase()}</Text>
-					<Text style={styles.title}>Goblins vs Angels</Text>
+					{/* Season 2 wears the Hungerer's name; Season 1 keeps its framing.
+					    (The old dev intro-preview chip is gone — the real retrigger
+					    lives on the hero as "Hear the tale again".) */}
+					<Text style={styles.kicker}>
+						{s2 ? "★ season 2 — mud wars" : `★ ${season.name.toLowerCase()}`}
+					</Text>
+					<Text style={styles.title}>
+						{s2 ? "The Great Hunger" : "Goblins vs Angels"}
+					</Text>
 					<View style={styles.titleRule} />
-					{__DEV__ && (
-						<Pressable
-							onPress={() => setDevIntro(true)}
-							hitSlop={8}
-							style={{
-								alignSelf: "flex-start",
-								marginTop: 8,
-								paddingHorizontal: 12,
-								paddingVertical: 5,
-								borderRadius: RADII.md,
-								borderWidth: 2,
-								borderColor: WHIMSY.ink,
-								backgroundColor: WHIMSY.lilac,
-							}}
-						>
-							<Text style={{ fontFamily: FONTS.bodyExtra, fontSize: 11, color: WHIMSY.ink }}>
-								▶ preview: Great Hunger intro
-							</Text>
-						</Pressable>
-					)}
 					{__DEV__ && (
 						<Pressable
 							onPress={() => setDevSeasonEnd(true)}
@@ -1284,20 +1305,37 @@ export default function SeasonScreen() {
 				    slot below. */}
 
 				<ScrollView contentContainerStyle={styles.tierList}>
-					<BountyBoard />
-
-					{/* The Great Hungerer — the season boss, visibly weakened by
-					    every clan's war effort (hunger_meter derived read). Gated
-					    on the world_boss server flag; visible in dev builds for
-					    preview like the intro chip. */}
-					{(worldBoss || __DEV__) && (
+					{/* ── Season 2 — the boss leads the tab, then the story, then
+					    the path into the fight, then what the fight pays. ── */}
+					{s2 && (
 						<>
+							<SectionHeader kicker="the season boss" title="The Great Hungerer" />
+							<HungerHero onTellTale={() => setIntroOpen(true)} />
+
 							<View style={{ marginTop: 8 }}>
-								<SectionHeader kicker="season 2" title="The Great Hungerer" />
+								<SectionHeader
+									kicker="what's happening"
+									title="The Season of the Hunger"
+								/>
 							</View>
-							<GreatHungerMeter />
+							<SeasonStory />
+
+							<View style={{ marginTop: 8 }}>
+								<SectionHeader
+									kicker="your sounder"
+									title={crewHook.crew.crew?.name ?? "Join the fight"}
+								/>
+							</View>
+							<SounderSteps crewHook={crewHook} war={mudWar.war} />
+
+							<View style={{ marginTop: 8 }}>
+								<SectionHeader kicker="war spoils" title="What you can earn" />
+							</View>
+							<SpoilsShowcase />
 						</>
 					)}
+
+					<BountyBoard />
 
 					{/* Section header for the pass — matches BountyBoard's
 					    header above so the two sections sit in the same
@@ -1463,14 +1501,11 @@ export default function SeasonScreen() {
 				onDone={() => setMysteryReveal(null)}
 			/>
 
-			{/* DEV preview of the Season 2 intro (trigger via the header chip).
-			    Production trigger will live in the launch PopupQueue gated on
-			    useFeatureFlag('world_boss'). */}
-			{__DEV__ && (
-				<GreatHungerIntroModal
-					visible={devIntro}
-					onDone={() => setDevIntro(false)}
-				/>
+			{/* Season 2 intro storybook — auto-plays on the first Season-2 visit
+			    (per-user AsyncStorage stamp) and re-opens from the hero's
+			    "Hear the tale again" chip. */}
+			{s2 && (
+				<GreatHungerIntroModal visible={introOpen} onDone={dismissIntro} />
 			)}
 
 			{/* Season-end reveal — the beta Founding Herd recap. Live when the
