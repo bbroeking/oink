@@ -85,6 +85,20 @@ export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
 	hard: "Hard",
 };
 
+// ── Truffle Patch (the 8h feeding-window dig heartbeat) — client mirror.
+// MUST match supabase/migrations/20260704100000_truffle_patch.sql. The board
+// PRNG/parity contract lives in utils/rooting.ts.
+export const ROOTING_WINDOW_SECS = 28800; // 8h feedings — 3 per day
+export const STIR_BUDGET = 20;  // a session ends (gracefully) at full stir
+export const STIR_RUB = 1;      // quiet scratch
+export const STIR_SHOVE = 3;    // loud scoop
+export const SHOVE_HOLD_MS = 400;
+export const ROOT_MUD_CAP_WINDOW = 2; // ≤2 truffles = ≤2 mud per rooting
+export const ROOT_MUD_CAP_DAY = 6;    // rooting is the floor, not the ceiling
+export const PATCH_COLS = 6;
+export const PATCH_ROWS = 5;
+export const TRUFFLE_POUCH_CAP = 999; // golden_truffles hard cap (never lossy)
+
 export const ATTEMPT_TOKEN_CAP = 1; // grant_war_access caps a recipient at 1 token/Hold day
 export const WAR_COOLDOWN_HOURS = 24; // crews.next_war_at win-trade cooldown
 export const BUILD_DAYS = 2; // Tend phase (days 1-2), build via the toss

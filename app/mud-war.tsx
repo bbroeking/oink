@@ -34,6 +34,12 @@ import { MudWarResolvedModal, WarResult } from "../components/MudWarResolvedModa
 import { SlopToss } from "../components/mudwar/SlopToss";
 import { RhythmDefense } from "../components/mudwar/RhythmDefense";
 import { FrontBoard } from "../components/mudwar/FrontBoard";
+import { FeedingStrip } from "../components/mudwar/FeedingStrip";
+import { WarLedgerStrip } from "../components/mudwar/WarLedgerStrip";
+import { CrewEffort } from "../components/mudwar/CrewEffort";
+import { RivalSide } from "../components/mudwar/RivalSide";
+import { HungerStageChip } from "../components/mudwar/HungerStageChip";
+import { useHungerMeter } from "@/hooks/useHungerMeter";
 import { useMudWar } from "@/hooks/useMudWar";
 import { useCrew } from "@/hooks/useCrew";
 import {
@@ -378,6 +384,9 @@ function ActiveWar({
 	}, []);
 	const isLeader = !!uid && crew.crew?.leader_id === uid;
 
+	// Season-2: the Hungerer's energy stage (hidden until the meter RPC is live).
+	const hunger = useHungerMeter();
+
 	// Phase (rhythm wars only) — drives which minigame renders. Non-rhythm wars
 	// report 'war' throughout, so they keep the toss exactly as before.
 	const isHold = war.rhythmEnabled === true && war.phase === "war";
@@ -531,6 +540,7 @@ function ActiveWar({
 				Day {siegeDay(war.endsAt, totalDays)} of {totalDays} — the Siege{war.isBotWar ?" — vs The Mudlarks" : ""}
 			</Text>
 			<Text style={styles.countdown}>{formatCountdown(war.endsAt)} left</Text>
+			{hunger.available && <HungerStageChip stage={hunger.stage} />}
 
 			{/* Tug-of-war bar */}
 			<View style={styles.scoreRow}>
@@ -558,14 +568,35 @@ function ActiveWar({
 				<Text style={[styles.percap, { textAlign: "right" }]}>{war.them.perCapita} / head</Text>
 			</View>
 
+			{/* Day-by-day ledger + the shared drain on the Hungerer */}
+			<WarLedgerStrip
+				totalDays={totalDays}
+				currentDay={siegeDay(war.endsAt, totalDays)}
+				ropeNorm={war.ropeNorm}
+			/>
+			<Text style={styles.drainLine}>
+				{`Together you've pried ${war.mine.total + war.them.total} tickles off him this war.`}
+			</Text>
+
 			<QuorumLine mine={war.mine} them={war.them} isBotWar={war.isBotWar} />
 
-			{/* Roster pips */}
-			<View style={styles.pipsRow}>
-				{war.mine.members.map((m) => (
-					<View key={m.user_id} style={[styles.pip, m.slings > 0 && styles.pipLit]} />
-				))}
-			</View>
+			{/* Crew effort — each pig's additive pile (replaces the anonymous pips) + the rival, at arm's length */}
+			<CrewEffort
+				members={war.mine.members}
+				myUserId={uid}
+				leaderId={crew.crew?.leader_id ?? null}
+			/>
+			<RivalSide
+				crewName={war.them.crew?.name ?? null}
+				perCapita={war.them.perCapita}
+				active={war.them.active}
+				isBot={war.isBotWar}
+			/>
+
+			{/* The Truffle Patch heartbeat (Season 2 P1) — one dig per 8h feeding,
+			    any phase. Self-contained: owns its rooting session + modal; banked
+			    mud reaches the rope via the screen's existing realtime refresh. */}
+			<FeedingStrip warId={war.warId} />
 
 			{/* Contested-areas board (Phase 1c/1d) — commit your throws/runs to an area.
 			    Only present when fronts_enabled; otherwise the screen is the plain rope +
@@ -755,16 +786,7 @@ const styles = StyleSheet.create({
 	splatIn: { position: "absolute", bottom: 178, width: 36, height: 36 },
 	percap: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink, flex: 1 },
 	quorum: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.accent, textAlign: "center", marginTop: 10 },
-	pipsRow: { flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 16 },
-	pip: {
-		width: 14,
-		height: 14,
-		borderRadius: 7,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.cream,
-	},
-	pipLit: { backgroundColor: WHIMSY.sun },
+	drainLine: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.accent, textAlign: "center", marginTop: 4 },
 	slingWrap: { alignItems: "center", justifyContent: "flex-end", marginTop: 28, height: 200 },
 	splat: { position: "absolute", bottom: 120, width: 30, height: 30 },
 	slingShadow: {

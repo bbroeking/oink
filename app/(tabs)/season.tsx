@@ -33,6 +33,8 @@ import { Glyph, type GlyphName } from "../../components/ui/Glyph";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
 import { GreatHungerIntroModal } from "../../components/GreatHungerIntroModal";
+import { GreatHungerMeter } from "../../components/GreatHungerMeter";
+import { useFeatureFlag } from "../../hooks/useFeatureFlags";
 import { BountyBoard } from "../../components/BountyBoard";
 import { AlignmentBar } from "../../components/ui/AlignmentBar";
 import { AlignmentExplainerModal } from "../../components/AlignmentExplainerModal";
@@ -1003,6 +1005,10 @@ export default function SeasonScreen() {
 	// needing the world_boss flag seeded. Remove the chip + this state once the
 	// intro is wired into the launch PopupQueue behind useFeatureFlag('world_boss').
 	const [devIntro, setDevIntro] = useState(false);
+	// The Hungerer's season vignette — server flag (world_boss, seeded by the
+	// held 20260704200000 migration) with the same __DEV__ preview escape hatch
+	// as the intro chip above.
+	const worldBoss = useFeatureFlag("world_boss");
 	const [saleOpen, setSaleOpen] = useState(false);
 	// Alignment placard moved here from the Me tab — the player's
 	// greedy↔generous score + its blessing/curse/regen modifiers.
@@ -1252,6 +1258,19 @@ export default function SeasonScreen() {
 
 				<ScrollView contentContainerStyle={styles.tierList}>
 					<BountyBoard />
+
+					{/* The Great Hungerer — the season boss, visibly weakened by
+					    every clan's war effort (hunger_meter derived read). Gated
+					    on the world_boss server flag; visible in dev builds for
+					    preview like the intro chip. */}
+					{(worldBoss || __DEV__) && (
+						<>
+							<View style={{ marginTop: 8 }}>
+								<SectionHeader kicker="season 2" title="The Great Hungerer" />
+							</View>
+							<GreatHungerMeter />
+						</>
+					)}
 
 					{/* Section header for the pass — matches BountyBoard's
 					    header above so the two sections sit in the same

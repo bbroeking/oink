@@ -1,0 +1,161 @@
+// The Great Hungerer — season-screen vignette of the world boss, staged by the
+// server-wide energy meter (hooks/useHungerMeter). The whole barnyard's war
+// effort drains him; this is where players SEE it: he shrinks, his glow thins,
+// his crown slips, and the stage is named only as a hand-written whisper —
+// never a number or a bar (taste standard: feelings are shown, not labeled).
+//
+// ART SLOTS: follows GreatHungerIntroModal's placeholder pattern — the tinted
+// full-body pig on a real bog background stands in for the Hungerer until the
+// generated art lands. Swap art per-stage via HUNGER_ART only; the staging
+// math + copy stay put. Nothing imports from assets/concepts/ (not bundled).
+
+import { useEffect } from "react";
+import { View, Text, Image, ImageBackground, StyleSheet } from "react-native";
+import Animated, {
+	useSharedValue,
+	useAnimatedStyle,
+	withRepeat,
+	withSequence,
+	withTiming,
+	Easing,
+} from "react-native-reanimated";
+import { Glyph } from "./ui/Glyph";
+import {
+	FONTS,
+	RADII,
+	SPACE,
+	STICKER_SHADOW,
+	TYPE,
+	WHIMSY,
+} from "@/constants/theme";
+import {
+	useHungerMeter,
+	HUNGER_STAGE_LINE,
+	type HungerStage,
+} from "@/hooks/useHungerMeter";
+
+const PIG = require("../assets/images/pig.png");
+const BOG = require("../assets/images/backgrounds/bog_dusk_bg.png");
+
+// Per-stage staging: how big he looms, how strong his gorged glow is, how far
+// the crown has slipped, and how hard he's breathing. One row per stage so the
+// real art drops in per-stage without touching the render.
+type StageArt = {
+	hero: number; // scale of the boss silhouette
+	aura: number; // 0..1 opacity of the gorged glow behind him
+	crownTilt: number; // degrees — slips as he weakens
+	breatheTo: number; // breathing amplitude (smug & slow → shallow & tired)
+};
+const HUNGER_ART: Record<HungerStage, StageArt> = {
+	gorged: { hero: 1.5, aura: 0.55, crownTilt: -4, breatheTo: 1.05 },
+	stuffed: { hero: 1.42, aura: 0.45, crownTilt: -7, breatheTo: 1.045 },
+	full: { hero: 1.32, aura: 0.35, crownTilt: -11, breatheTo: 1.04 },
+	peckish: { hero: 1.2, aura: 0.24, crownTilt: -17, breatheTo: 1.03 },
+	hungry: { hero: 1.08, aura: 0.14, crownTilt: -26, breatheTo: 1.02 },
+	famished: { hero: 0.94, aura: 0.06, crownTilt: -38, breatheTo: 1.012 },
+};
+
+export function GreatHungerMeter() {
+	const meter = useHungerMeter();
+	const art = HUNGER_ART[meter.stage];
+
+	// Slow gorging breath — amplitude eases down as he weakens.
+	const breathe = useSharedValue(1);
+	useEffect(() => {
+		breathe.value = withRepeat(
+			withSequence(
+				withTiming(art.breatheTo, {
+					duration: 1700,
+					easing: Easing.inOut(Easing.quad),
+				}),
+				withTiming(1, { duration: 1700, easing: Easing.inOut(Easing.quad) })
+			),
+			-1,
+			true
+		);
+	}, [art.breatheTo, breathe]);
+	const heroStyle = useAnimatedStyle(() => ({
+		transform: [{ scale: art.hero * breathe.value }],
+	}));
+
+	return (
+		<View style={styles.wrap}>
+			<ImageBackground
+				source={BOG}
+				style={styles.scene}
+				imageStyle={styles.sceneImg}
+				resizeMode="cover"
+			>
+				{/* Gorged glow — thins as the barnyard drains him. */}
+				<View
+					pointerEvents="none"
+					style={[styles.aura, { opacity: art.aura }]}
+				/>
+
+				<Animated.View style={[styles.heroWrap, heroStyle]}>
+					{/* Crown slips with each stage. */}
+					<View
+						style={[styles.crown, { transform: [{ rotate: `${art.crownTilt}deg` }] }]}
+					>
+						<Glyph name="crown" size={30} />
+					</View>
+					<Image
+						source={PIG}
+						resizeMode="contain"
+						style={[styles.hero, { tintColor: WHIMSY.ink }]}
+					/>
+				</Animated.View>
+
+				{/* Stage whisper — the only words on the scene. */}
+				<View style={styles.whisperCard}>
+					<Text style={styles.whisper}>{HUNGER_STAGE_LINE[meter.stage]}</Text>
+				</View>
+			</ImageBackground>
+		</View>
+	);
+}
+
+const styles = StyleSheet.create({
+	wrap: {
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.xl,
+		overflow: "hidden",
+		...STICKER_SHADOW,
+		backgroundColor: WHIMSY.ink,
+	},
+	scene: {
+		height: 190,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	sceneImg: { borderRadius: RADII.xl - 2 },
+	aura: {
+		position: "absolute",
+		width: 220,
+		height: 220,
+		borderRadius: 110,
+		backgroundColor: WHIMSY.sun,
+	},
+	heroWrap: { alignItems: "center" },
+	hero: { width: 120, height: 120 },
+	crown: { marginBottom: -14, zIndex: 1 },
+	whisperCard: {
+		position: "absolute",
+		left: SPACE.md,
+		right: SPACE.md,
+		bottom: SPACE.sm,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.md,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.xs + 2,
+	},
+	whisper: {
+		...TYPE.hand,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.ink,
+		textAlign: "center",
+	},
+});

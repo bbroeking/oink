@@ -336,3 +336,13 @@ fan-out workflow (6 parallel per-screen agents + a tsc/jest verify pass).
   are discarded at fold (20260666:81 — needs tiny mud_war_day_notches table riding
   Bog Weather M1's SAME carry); war_side already ships opponent member names+mud to
   the client (render restraint now, wire-trim later).
+
+## [2026-07-03] decision | Truffle Patch crowned; full build begins
+- Founder crowned the Truffle Patch (mock #1) after the three-way playable bake-off.
+  Decision set logged in SKILL.md (Patch heartbeat + Golden Truffle economy +
+  wars-drain-the-Hungerer). Build phases: P1 Patch in-app, P2 progress surfaces,
+  P3 Hungerer staging everywhere, P4 Truffle Exchange, P5 flip prep. Art manifest +
+  ChatGPT brief pack being compiled for the icon-gen pipeline.
+- Filed `docs/great-hunger-art-manifest.md` (31-line asset inventory, P1-P4 batches,
+  8-9 ChatGPT generations total) + `docs/briefs/s2-art-chatgpt-briefs.md` (paste-ready
+  icon-gen batches, two style anchors, refs staging list).
