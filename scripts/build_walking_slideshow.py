@@ -33,17 +33,44 @@ BOARD = REPO / "assets/concepts/great-hungerer/storyboard"
 OUTDIR = REPO / "assets/concepts/great-hungerer"
 
 # ── The 7 beats (docs/wiki/outputs/memos/great-hog-storyboard-v2-2026-07.md) ──
-# (file, on-screen line, move, grade) — move: "in" push-in, "driftL"/"driftR"
-# lateral drift, "inDeep" the final slow push. grade: (saturation, brightness).
-SHOTS = [
-    ("shot_01_valley_of_tickles.png", "Once, the valley glowed gold…", "in", None),
-    ("shot_02_rosie_asleep.png", "…and no one loved them\nmore than Rosie.", "driftR", None),
-    ("shot_03_hunger_arrives.png", "But then… the Great Hunger.", "in", None),
-    ("shot_04_the_theft.png", "He ate every last tickle.", "driftL", None),
-    ("shot_05_grey_dawn.png", "Morning came. The gold was gone.", "in", (0.75, 0.0)),
-    ("shot_06_empty_valley.png", "The tickles were gone.\nEvery last one.", "driftR", (0.72, -0.02)),
-    ("shot_07_hunger_begins.png", "The Great Hunger has begun.", "inDeep", (0.68, -0.03)),
-]
+# Two sets share the beats: "storyboard" = the composited placeholder board
+# (v1); "higgsfield" = the Jul-2 Midjourney picks in higgsfield_set/ (v2, see
+# its manifest.md). Entry: (file, on-screen line, move, grade, crop_top,
+# box_bottom) — move: "in" push-in, "driftL"/"driftR" lateral drift, "inDeep"
+# the final slow push; grade: (saturation, brightness) or None; crop_top: frac
+# of the source height to crop off the top BEFORE scaling (0 = none — used to
+# drop shot 1's garbled MJ title banner); box_bottom: caption scrim's bottom
+# edge in output px (None = the H-300 default; MJ frames are face-filling, so
+# captions ride lower — or top-band on the theft shot, whose bottom holds the
+# tiny barn the stream pours from).
+SETS = {
+    "storyboard": [
+        ("shot_01_valley_of_tickles.png", "Once, the valley glowed gold…", "in", None, 0.0, None),
+        ("shot_02_rosie_asleep.png", "…and no one loved them\nmore than Rosie.", "driftR", None, 0.0, None),
+        ("shot_03_hunger_arrives.png", "But then… the Great Hunger.", "in", None, 0.0, None),
+        ("shot_04_the_theft.png", "He ate every last tickle.", "driftL", None, 0.0, None),
+        ("shot_05_grey_dawn.png", "Morning came. The gold was gone.", "in", (0.75, 0.0), 0.0, None),
+        ("shot_06_empty_valley.png", "The tickles were gone.\nEvery last one.", "driftR", (0.72, -0.02), 0.0, None),
+        ("shot_07_hunger_begins.png", "The Great Hunger has begun.", "inDeep", (0.68, -0.03), 0.0, None),
+    ],
+    "higgsfield": [
+        ("shot_01_valley_of_tickles.png", "Once, the valley glowed gold…", "in", None, 0.14, None),
+        ("shot_02_rosie_asleep.png", "…and no one loved them\nmore than Rosie.", "driftR", None, 0.0, 1740),
+        ("shot_03_hunger_arrives.png", "But then… the Great Hunger.", "in", None, 0.0, 1740),
+        ("shot_04_the_theft.png", "He ate every last tickle.", "driftL", None, 0.0, 310),
+        ("shot_05_grey_dawn.png", "Morning came. The gold was gone.", "in", (0.85, 0.0), 0.0, 1740),
+        ("shot_06_empty_valley.png", "The tickles were gone.\nEvery last one.", "driftR", (0.80, -0.02), 0.0, 1740),
+        ("shot_07_hunger_begins.png", "The Great Hunger has begun.", "inDeep", (0.88, -0.02), 0.0, 1600),
+    ],
+}
+SET_DIRS = {
+    "storyboard": "assets/concepts/great-hungerer/storyboard",
+    "higgsfield": "assets/concepts/great-hungerer/higgsfield_set",
+}
+SET_OUTS = {
+    "storyboard": "great_hunger_slideshow_v1.mp4",
+    "higgsfield": "great_hunger_slideshow_v2.mp4",
+}
 CTA = "Help win them back."
 
 W, H = 1080, 1920
@@ -105,14 +132,22 @@ def render_caption(path: Path, text: str, fontfile: str, size: int,
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--set", choices=list(SETS), default="storyboard",
+                    help="which shot set to render (storyboard=v1, higgsfield=v2)")
+    ap.add_argument("--shots-dir", type=str, default=None, help="override the set's shot dir")
     ap.add_argument("--shot-dur", type=float, default=4.4)
     ap.add_argument("--last-dur", type=float, default=7.0)
     ap.add_argument("--fade", type=float, default=0.6)
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--music", type=str, default=None, help="optional audio bed")
-    ap.add_argument("--out", type=str, default=str(OUTDIR / "great_hunger_slideshow_v1.mp4"))
+    ap.add_argument("--out", type=str, default=None)
     ap.add_argument("--no-gif", action="store_true")
     args = ap.parse_args()
+
+    SHOTS = SETS[args.set]
+    board = Path(args.shots_dir) if args.shots_dir else REPO / SET_DIRS[args.set]
+    if args.out is None:
+        args.out = str(OUTDIR / SET_OUTS[args.set])
 
     caprasimo = find_font("Caprasimo_400Regular.ttf",
                           ["/System/Library/Fonts/Supplemental/Georgia Bold.ttf",
@@ -135,9 +170,9 @@ def main() -> None:
     # ── Caption PNGs + their absolute time windows ────────────────────────
     starts = [0.0] + offsets  # visual start of each shot
     captions = []  # (png, ts, te)
-    for k, (_f, text, _m, _g) in enumerate(SHOTS):
+    for k, (_f, text, _m, _g, _ct, bb) in enumerate(SHOTS):
         png = tmp / f"line{k}.png"
-        render_caption(png, text, caprasimo, 58, (255, 246, 230), H - 300, 82)
+        render_caption(png, text, caprasimo, 58, (255, 246, 230), bb or (H - 300), 82)
         ts = starts[k] + (0.45 if k == 0 else args.fade + 0.25)
         te = offsets[k] if k < len(offsets) else total - 0.4
         captions.append((png, round(ts, 2), round(te, 2)))
@@ -147,10 +182,11 @@ def main() -> None:
 
     # ── Filtergraph ───────────────────────────────────────────────────────
     filters = []
-    for k, (fname, _text, move, grade) in enumerate(SHOTS):
+    for k, (fname, _text, move, grade, crop_top, _bb) in enumerate(SHOTS):
         frames = round(durs[k] * args.fps)
+        pre = f"crop=iw:ih*{1 - crop_top:.3f}:0:ih*{crop_top:.3f}," if crop_top else ""
         chain = (
-            f"[{k}:v]scale={OVER_W}:{OVER_H}:force_original_aspect_ratio=increase,"
+            f"[{k}:v]{pre}scale={OVER_W}:{OVER_H}:force_original_aspect_ratio=increase,"
             f"crop={OVER_W}:{OVER_H},setsar=1,"
             f"{zoompan(move, frames, args.fps)}"
         )
@@ -184,7 +220,7 @@ def main() -> None:
 
     cmd = ["ffmpeg", "-y"]
     for fname, *_ in SHOTS:
-        cmd += ["-i", str(BOARD / fname)]
+        cmd += ["-i", str(board / fname)]
     for png, _ts, _te in captions:
         cmd += ["-loop", "1", "-framerate", str(args.fps), "-t", str(total), "-i", str(png)]
     if args.music:
@@ -198,7 +234,7 @@ def main() -> None:
     subprocess.run(cmd, check=True, capture_output=True)
 
     if not args.no_gif:
-        gif = str(OUTDIR / "great_hunger_slideshow_preview.gif")
+        gif = str(Path(args.out).with_suffix("")) + "_preview.gif"
         speed = total / (3.0 * len(SHOTS))  # ≈3s per shot in the preview
         vf = (f"setpts=PTS/{speed:.3f},fps=10,scale=480:-1:flags=lanczos,"
               "split[a][b];[a]palettegen[p];[b][p]paletteuse")
