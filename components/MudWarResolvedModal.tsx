@@ -37,6 +37,10 @@ interface Props {
 	result: WarResult;
 	isBotWar: boolean;
 	wonCosmetic: WonCosmetic | null;
+	// Golden-Truffle purse paid at resolve (Season 2 P4). Optional — only
+	// rendered when the server actually returned an amount, so the modal
+	// degrades cleanly on pre-Exchange servers.
+	truffles?: number | null;
 	onClose: () => void;
 }
 
@@ -45,6 +49,7 @@ export function MudWarResolvedModal({
 	result,
 	isBotWar,
 	wonCosmetic,
+	truffles,
 	onClose,
 }: Props) {
 	const pop = useRef(new Animated.Value(0)).current;
@@ -177,6 +182,17 @@ export function MudWarResolvedModal({
 						</Text>
 					)}
 
+					{typeof truffles === "number" && truffles > 0 ? (
+						<View style={styles.truffleRow}>
+							{HAT_IMAGES.golden_truffle ? (
+								<Image source={HAT_IMAGES.golden_truffle} style={styles.truffleImg} resizeMode="contain" />
+							) : null}
+							<Text style={styles.truffleText}>
+								{`+${truffles} golden truffles for your pouch`}
+							</Text>
+						</View>
+					) : null}
+
 					<Pressable
 						onPress={onClose}
 						style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.7 }]}
@@ -255,6 +271,14 @@ const styles = StyleSheet.create({
 		marginTop: 8,
 		marginBottom: 4,
 	},
+	truffleRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		marginTop: 8,
+	},
+	truffleImg: { width: 20, height: 20 },
+	truffleText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
 	doneBtn: {
 		marginTop: 14,
 		paddingHorizontal: 28,

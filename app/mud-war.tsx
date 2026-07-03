@@ -30,6 +30,8 @@ import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
 import { Button } from "../components/ui/Button";
 import { Icon } from "../components/ui/Icon";
 import { WarSpoilsSheet } from "../components/WarSpoilsSheet";
+import { TruffleExchangeSheet } from "../components/mudwar/TruffleExchangeSheet";
+import { useTruffles } from "@/hooks/useTruffles";
 import { MudWarResolvedModal, WarResult } from "../components/MudWarResolvedModal";
 import { SlopToss } from "../components/mudwar/SlopToss";
 import { RhythmDefense } from "../components/mudwar/RhythmDefense";
@@ -90,6 +92,10 @@ export default function MudWarScreen() {
 	const resolvedDismissed =
 		!!war && war.status === "resolved" && war.warId === dismissedWarId;
 	const [spoilsOpen, setSpoilsOpen] = useState(false);
+	const [exchangeOpen, setExchangeOpen] = useState(false);
+	// Golden Truffle pouch + Exchange rotation (Season 2 P4; cozy-closed until
+	// the 20260704300000 migration is live).
+	const truffles = useTruffles();
 
 	// Resolved-war celebration. Resolution happens lazily on this screen's
 	// fetch, so the first time a player views a freshly-resolved war we fire the
@@ -151,10 +157,25 @@ export default function MudWarScreen() {
 									<Icon name="trophy" size={15} color={WHIMSY.accent} />
 									<Text style={styles.spoils}>Spoils</Text>
 								</Pressable>
+								<Pressable onPress={() => setExchangeOpen(true)} hitSlop={12} style={styles.spoilsBtn}>
+									{HAT_IMAGES.golden_truffle ? (
+										<Image source={HAT_IMAGES.golden_truffle} style={styles.pouchIcon} resizeMode="contain" />
+									) : (
+										<Icon name="gift" size={15} color={WHIMSY.accent} />
+									)}
+									<Text style={styles.spoils}>
+										{truffles.available ? String(truffles.balance) : "Exchange"}
+									</Text>
+								</Pressable>
 							</View>
 						}
 					/>
 					<WarSpoilsSheet open={spoilsOpen} onClose={() => setSpoilsOpen(false)} />
+					<TruffleExchangeSheet
+						open={exchangeOpen}
+						onClose={() => setExchangeOpen(false)}
+						truffles={truffles}
+					/>
 					<MudWarResolvedModal
 						visible={!!reveal}
 						result={reveal?.result ?? "draw"}
@@ -699,6 +720,7 @@ const styles = StyleSheet.create({
 	headerRight: { flexDirection: "row", alignItems: "center", gap: 14 },
 	spoilsBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
 	spoils: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.accent },
+	pouchIcon: { width: 16, height: 16 },
 	devBtn: {
 		position: "absolute",
 		bottom: 10,

@@ -33,6 +33,8 @@ import { Glyph, type GlyphName } from "../../components/ui/Glyph";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
 import { GreatHungerIntroModal } from "../../components/GreatHungerIntroModal";
+import { SeasonEndModal, DEV_PREVIEW_REWARD } from "../../components/SeasonEndModal";
+import { useSeasonEnd } from "../../hooks/useSeasonEnd";
 import { GreatHungerMeter } from "../../components/GreatHungerMeter";
 import { useFeatureFlag } from "../../hooks/useFeatureFlags";
 import { BountyBoard } from "../../components/BountyBoard";
@@ -1009,6 +1011,11 @@ export default function SeasonScreen() {
 	// held 20260704200000 migration) with the same __DEV__ preview escape hatch
 	// as the intro chip above.
 	const worldBoss = useFeatureFlag("world_boss");
+	// Season-end reveal — the beta Founding Herd recap. Live path: season1_finale
+	// flag + an unseen my_beta_reward grant (held 20260704400000). Dev preview
+	// chip mirrors the intro's escape hatch.
+	const seasonEnd = useSeasonEnd();
+	const [devSeasonEnd, setDevSeasonEnd] = useState(false);
 	const [saleOpen, setSaleOpen] = useState(false);
 	// Alignment placard moved here from the Me tab — the player's
 	// greedy↔generous score + its blessing/curse/regen modifiers.
@@ -1237,6 +1244,26 @@ export default function SeasonScreen() {
 							</Text>
 						</Pressable>
 					)}
+					{__DEV__ && (
+						<Pressable
+							onPress={() => setDevSeasonEnd(true)}
+							hitSlop={8}
+							style={{
+								alignSelf: "flex-start",
+								marginTop: 8,
+								paddingHorizontal: 12,
+								paddingVertical: 5,
+								borderRadius: RADII.md,
+								borderWidth: 2,
+								borderColor: WHIMSY.ink,
+								backgroundColor: WHIMSY.sage,
+							}}
+						>
+							<Text style={{ fontFamily: FONTS.bodyExtra, fontSize: 11, color: WHIMSY.ink }}>
+								▶ preview: season-end rewards
+							</Text>
+						</Pressable>
+					)}
 						{daysUntilJudgement() > 0 && (
 							<View style={styles.judgementBanner}>
 								<Icon name="scales" size={14} color={WHIMSY.ink} />
@@ -1445,6 +1472,18 @@ export default function SeasonScreen() {
 					onDone={() => setDevIntro(false)}
 				/>
 			)}
+
+			{/* Season-end reveal — the beta Founding Herd recap. Live when the
+			    season1_finale flag is on and the caller has an unseen grant;
+			    the dev chip previews with a stand-in reward. */}
+			<SeasonEndModal
+				visible={seasonEnd.show || devSeasonEnd}
+				reward={seasonEnd.reward ?? DEV_PREVIEW_REWARD}
+				onDone={() => {
+					setDevSeasonEnd(false);
+					seasonEnd.dismiss();
+				}}
+			/>
 		</View>
 	);
 }

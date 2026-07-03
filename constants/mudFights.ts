@@ -126,3 +126,49 @@ export const WAR_SPOILS_IDS = [
 	"mud_pit_bg", "reed_marsh_bg", "mud_derby_bg", "bog_dusk_bg", "golden_mire_bg", "festival_night_bg",
 	"rosette_cap", "prize_sash", "festival_pennant", "confetti_aura",
 ] as const;
+
+// ── The Truffle Exchange (Season 2 P4) — client mirror. ──────────────────────
+// MUST MATCH supabase/migrations/20260704300000_truffle_exchange.sql:
+// exchange_week_stock()'s tier arrays (alphabetic within tier) + token_cost
+// prices + the milestone table in mint_mud_milestones().
+export type ExchangeTier = "muddy" | "caked" | "prize" | "champion" | "heirloom";
+
+export const EXCHANGE_TIERS: Record<ExchangeTier, readonly string[]> = {
+	muddy: ["mud_pit_bg", "mud_shovel", "mud_splatter_aura", "muddy_cap", "slop_bucket"],
+	caked: ["mud_pie", "reed_hat", "reed_marsh_bg", "slop_bucket_hat", "swamp_bubble_aura"],
+	prize: ["bog_helmet", "crew_pennant", "firefly_aura", "golden_truffle", "mud_derby_bg", "prize_sash", "rosette_cap"],
+	champion: ["bog_dusk_bg", "confetti_aura", "festival_pennant", "golden_bog_aura", "swamp_crown"],
+	heirloom: ["festival_night_bg", "golden_mire_bg", "heirloom_mire_aura"],
+};
+
+export const EXCHANGE_PRICES: Record<ExchangeTier, number> = {
+	muddy: 25,
+	caked: 60,
+	prize: 120,
+	champion: 250,
+	heirloom: 500,
+};
+
+// War-facing tier names relabel the shipped hats.rarity values (spec §5).
+export const RARITY_TO_TIER: Record<string, ExchangeTier> = {
+	common: "muddy",
+	uncommon: "caked",
+	rare: "prize",
+	epic: "champion",
+	legendary: "heirloom",
+};
+
+export const EXCHANGE_TIER_LABEL: Record<ExchangeTier, string> = {
+	muddy: "Muddy",
+	caked: "Caked",
+	prize: "Prize",
+	champion: "Champion",
+	heirloom: "Heirloom",
+};
+
+// In-week personal-mud milestone mints (cross threshold → truffles; ≤30/war).
+export const TRUFFLE_MILESTONES: ReadonlyArray<readonly [number, number]> = [
+	[10, 5],
+	[25, 10],
+	[50, 15],
+];
