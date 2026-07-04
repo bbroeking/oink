@@ -1031,6 +1031,10 @@ export default function SeasonScreen() {
 	// chip mirrors the intro's escape hatch.
 	const seasonEnd = useSeasonEnd();
 	const [devSeasonEnd, setDevSeasonEnd] = useState(false);
+	// Persistent re-entry into the season-end recap. The auto-reveal only
+	// plays once (seen-stamp), so this lets a player look back at their
+	// Founding Herd rewards any time via the season-pass header icon.
+	const [recapOpen, setRecapOpen] = useState(false);
 	const [saleOpen, setSaleOpen] = useState(false);
 	// Alignment placard moved here from the Me tab — the player's
 	// greedy↔generous score + its blessing/curse/regen modifiers.
@@ -1346,19 +1350,43 @@ export default function SeasonScreen() {
 						<SectionHeader
 							kicker="season pass"
 							title={`Tier ${tier}/${season.total_tiers}`}
-							right={
-								PAID_BATTLE_PASS_ENABLED && IAP_ENABLED && !premium ? (
+							right={(() => {
+								const showUnlock =
+									PAID_BATTLE_PASS_ENABLED && IAP_ENABLED && !premium;
+								// The recap icon only earns its place when there's
+								// actually a Founding Herd grant to look back on
+								// (dev always sees it so the affordance can be
+								// exercised without a server grant — the modal
+								// falls back to DEV_PREVIEW_REWARD).
+								const showRecap = seasonEnd.reward != null || __DEV__;
+								if (!showUnlock && !showRecap) return undefined;
+								return (
 									<>
-										<Text style={styles.vipKicker}>★ VIP</Text>
-										<Pressable
-											onPress={() => setSaleOpen(true)}
-											style={styles.unlockBtn}
-										>
-											<Text style={styles.unlockBtnText}>Unlock</Text>
-										</Pressable>
+										{showUnlock && (
+											<>
+												<Text style={styles.vipKicker}>★ VIP</Text>
+												<Pressable
+													onPress={() => setSaleOpen(true)}
+													style={styles.unlockBtn}
+												>
+													<Text style={styles.unlockBtnText}>Unlock</Text>
+												</Pressable>
+											</>
+										)}
+										{showRecap && (
+											<Pressable
+												onPress={() => setRecapOpen(true)}
+												hitSlop={8}
+												style={styles.recapBtn}
+												accessibilityRole="button"
+												accessibilityLabel="See your season-end rewards"
+											>
+												<Glyph name="crown" size={16} />
+											</Pressable>
+										)}
 									</>
-								) : undefined
-							}
+								);
+							})()}
 						/>
 					</View>
 
@@ -1514,10 +1542,11 @@ export default function SeasonScreen() {
 			    season1_finale flag is on and the caller has an unseen grant;
 			    the dev chip previews with a stand-in reward. */}
 			<SeasonEndModal
-				visible={seasonEnd.show || devSeasonEnd}
+				visible={seasonEnd.show || devSeasonEnd || recapOpen}
 				reward={seasonEnd.reward ?? DEV_PREVIEW_REWARD}
 				onDone={() => {
 					setDevSeasonEnd(false);
+					setRecapOpen(false);
 					seasonEnd.dismiss();
 				}}
 			/>
@@ -1755,6 +1784,20 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 11,
 		color: WHIMSY.paper,
+	},
+	// Persistent season-end recap entry point — a small crown sticker in the
+	// season-pass header's right slot. Paper-craft: sun fill, ink border,
+	// hard offset shadow.
+	recapBtn: {
+		width: 34,
+		height: 34,
+		borderRadius: 999,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		...SHADOW_SM,
 	},
 	ctas: { flexDirection: "row", gap: 8, marginTop: 12 },
 	tierList: {

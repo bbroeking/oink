@@ -1,12 +1,21 @@
 // The season-end reveal — decides when the SeasonEndModal shows.
 //
-// Shows only when ALL of:
-//   1. the season1_finale server flag is ON (seeded FALSE by the held
+// Two outputs, deliberately decoupled:
+//   • `reward` — the caller's Founding Herd grant, available whenever the
+//     season1_finale flag is ON and my_beta_reward() returns a grant. It does
+//     NOT depend on the seen-stamp, so it survives dismissal — that's what
+//     lets season.tsx keep a persistent recap entry point ("only show the icon
+//     when there IS a reward to recap").
+//   • `show` — the ONE-TIME auto-open. True only when a reward exists AND
+//     there's no local seen-stamp (AsyncStorage). `dismiss` writes the stamp,
+//     so the modal auto-opens exactly once per device; the recap icon reopens
+//     it thereafter.
+//
+// Gates on:
+//   1. the season1_finale server flag (seeded FALSE by the held
 //      20260704400000 migration — the founder's single reveal switch),
-//   2. my_beta_reward() returns the caller's grant (rows exist only after
-//      grant_beta_rewards() fires at season end),
-//   3. no local seen-stamp (AsyncStorage) — the server row is the durable
-//      truth; the stamp only stops re-shows on this device.
+//   2. my_beta_reward() returning the caller's grant (rows exist only after
+//      grant_beta_rewards() fires at season end).
 //
 // Safe on live/pre-migration servers: the flag reads false (safe default in
 // useFeatureFlags) so the RPC is never even called.
@@ -47,8 +56,11 @@ export function useSeasonEnd(): {
 		if (!finale) return;
 		let alive = true;
 		(async () => {
-			const seen = await AsyncStorage.getItem(SEEN_KEY);
-			if (seen || !alive) return;
+			// The grant is the durable truth (my_beta_reward returns it for as
+			// long as the row exists), so we always fetch it when the finale
+			// flag is on — even after the reveal has been seen. This keeps
+			// `reward` available so a persistent recap entry point can re-open
+			// the moment; the seen-stamp only decides the ONE auto-open.
 			const r = await rpc<MyBetaRewardRow>("my_beta_reward");
 			if (!alive || !r?.pending || !r.tier) return;
 			setReward({
@@ -57,7 +69,8 @@ export function useSeasonEnd(): {
 				titleName: r.title_name ?? null,
 				snouts: r.snouts ?? 0,
 			});
-			setShow(true);
+			const seen = await AsyncStorage.getItem(SEEN_KEY);
+			if (alive && !seen) setShow(true);
 		})();
 		return () => {
 			alive = false;
