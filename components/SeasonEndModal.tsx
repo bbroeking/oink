@@ -35,6 +35,10 @@ import { BETA_TIER_LINE, type BetaTier } from "@/utils/betaRewards";
 import type { BetaReward } from "@/hooks/useSeasonEnd";
 
 const PIG = require("../assets/images/pig.png");
+// The Season-2 teaser silhouette: the REAL Great Hungerer render (alpha
+// cutout), tinted to ink so only his looming shape reads at the fences — the
+// "something stirs" beat swaps to this instead of a Rosie-shaped stand-in.
+const HUNGER = require("../assets/images/hunger/great_hungerer_hero.png");
 
 // Dev-preview stand-in so the __DEV__ chip can show the full flow without a
 // server grant (mirrors a top-3 outcome).
@@ -50,6 +54,7 @@ type Beat = {
 	bg: ImageSourcePropType;
 	kicker: string;
 	line: string;
+	hero?: ImageSourcePropType; // per-beat character; defaults to Rosie (PIG)
 	heroTint?: string;
 	heroScale: number;
 	cta?: string;
@@ -78,6 +83,7 @@ function beatsFor(tier: BetaTier): Beat[] {
 			bg: require("../assets/images/backgrounds/bog_dusk_bg.png"),
 			kicker: "something stirs",
 			line: "Rest well — something enormous is snuffling at the fences. Season 2 is coming.",
+			hero: HUNGER,
 			heroTint: WHIMSY.ink,
 			heroScale: 1.9,
 			cta: "See you in the bog",
@@ -128,7 +134,7 @@ export function SeasonEndModal({
 				>
 					<ImageBackground source={B.bg} style={styles.scene} resizeMode="cover">
 						<Image
-							source={PIG}
+							source={B.hero ?? PIG}
 							resizeMode="contain"
 							style={[
 								styles.hero,
