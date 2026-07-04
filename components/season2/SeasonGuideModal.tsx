@@ -51,7 +51,7 @@ const STEPS: { g: GlyphName; title: string; line: string }[] = [
 	{
 		g: "flame",
 		title: "Scuffle rival Sounders",
-		line: "Sling mud, hold the rope. Wins pay tickles for what YOU did — every sling and dig counts.",
+		line: "Scuffles are dig-offs — out-dig the rival Sounder across the feedings. Wins pay tickles for what YOU dug.",
 	},
 	{
 		g: "heart",

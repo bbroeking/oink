@@ -679,9 +679,12 @@ function ActiveWar({
 			)}
 
 			{/* The skill minigame. In a rhythm war's HOLD phase the defender plays a
-			    short RhythmDefense run (banks via submit_run); in Tend (or any
-			    non-rhythm war) it's the Slop Toss as before. */}
-			{isHold ? (
+			    short RhythmDefense run (banks via submit_run). SLOP TOSS IS
+			    RETIRED (2026-07-04): scuffles are dig-offs — the Truffle Patch
+			    above is the game, and its found truffles mint the rope's mud
+			    (submit_rooting → mud_slings). Rope pace and the rout threshold
+			    may need retuning to dig-only scoring — watch the first wars. */}
+			{isHold && (
 				<>
 					<RhythmDefense
 						onRunComplete={onRunComplete}
@@ -691,12 +694,6 @@ function ActiveWar({
 					/>
 					{runNote && <Text style={styles.note}>{runNote}</Text>}
 				</>
-			) : (
-				<SlopToss
-					onThrow={onThrow}
-					throwsRemaining={war.myThrowsRemaining ?? THROWS_PER_DAY}
-					day={siegeDay(war.endsAt, totalDays)}
-				/>
 			)}
 
 			{/* Yield — leader-only, two-tap. Concedes the scuffle: the rope

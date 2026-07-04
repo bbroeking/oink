@@ -33,15 +33,16 @@ VOICE = "Samantha"
 VOICE_RATE = "142"
 ELEVENLABS_DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"
 ELEVENLABS_DEFAULT_MODEL_ID = "eleven_multilingual_v2"
-CTA_DURATION = 1.8
+CTA_DURATION = 2.35
 CTA_AUDIO_OVERLAP = 0.55
 APP_NAME = "Tickle the Pig"
 APP_ICON = ROOT / "assets" / "images" / "icon.png"
-CTA_TITLE = "Season 2: The Great Hunger"
+ROSIE_SPRITE = GENERATED_SOURCES / "rosie_actual_idle_1.png"
+CTA_TITLE = "The Great Hunger"
 CTA_SUBTITLE = "Help bring back the joy."
-CTA_LINES = ("The Mud Wars begin July 11.", "On the App Store")
-CTA_BUTTON = "Play on the App Store"
-CTA_CAPTION = "Season 2 begins July 11. Help Rosie bring back the joy."
+CTA_LINES = ("Season 2", "July 11")
+CTA_BUTTON = "Download on the App Store"
+CTA_CAPTION = "Tickle the Pig"
 BASE_STORY_DURATIONS = [4.0, 2.35, 2.8, 3.5, 3.65, 2.35, 4.05]
 
 
@@ -567,6 +568,22 @@ def rounded_icon(path: Path, size: int, radius: int) -> Image.Image:
     return icon
 
 
+def paste_with_shadow(
+    frame: Image.Image,
+    sprite: Image.Image,
+    xy: tuple[int, int],
+    *,
+    shadow_offset: tuple[int, int] = (0, 18),
+) -> None:
+    alpha = sprite.getchannel("A")
+    shadow_mask = alpha.filter(ImageFilter.GaussianBlur(18))
+
+    shadow = Image.new("RGBA", sprite.size, (0, 0, 0, 132))
+    shadow.putalpha(shadow_mask)
+    frame.alpha_composite(shadow, (xy[0] + shadow_offset[0], xy[1] + shadow_offset[1]))
+    frame.alpha_composite(sprite, xy)
+
+
 def wrap_text(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, max_width: int) -> list[str]:
     words = text.split()
     lines: list[str] = []
@@ -615,64 +632,71 @@ def render_cta_frames(index: int, duration: float) -> tuple[Path, int]:
         shutil.rmtree(shot_dir)
     shot_dir.mkdir(parents=True, exist_ok=True)
 
-    base = Image.open(PANELS / SHOTS[-1].panel_name).convert("RGB")
-    title_font = load_font(58, bold=True)
-    hero_font = load_font(72, bold=True)
-    subtitle_font = load_font(38, bold=True)
-    small_font = load_font(29, bold=False)
-    button_font = load_font(32, bold=True)
-    app_font = load_font(34, bold=True)
-    icon = rounded_icon(APP_ICON, 98, 22)
+    base = Image.open(PANELS / SHOTS[0].panel_name).convert("RGB")
+    season_font = load_font(42, bold=True)
+    title_font = load_font(82, bold=True)
+    subtitle_font = load_font(44, bold=True)
+    date_font = load_font(54, bold=True)
+    small_font = load_font(30, bold=False)
+    badge_font = load_font(32, bold=True)
+    app_font = load_font(36, bold=True)
+    icon = rounded_icon(APP_ICON, 104, 24)
+    rosie = Image.open(ROSIE_SPRITE).convert("RGBA").resize((430, 445), Image.Resampling.LANCZOS)
     frame_count = max(1, math.ceil(duration * FPS))
 
     for frame_index in range(frame_count):
         t = frame_index / max(1, frame_count - 1)
-        frame = cover_frame(base, SHOTS[-1], 0.9 + 0.1 * t)
-        add_hoard_glow(frame, t)
-        dark = Image.new("RGBA", (WIDTH, HEIGHT), (4, 5, 6, 70))
-        frame.alpha_composite(dark)
-        add_vignette(frame, 108)
+        frame = cover_frame(base, SHOTS[0], 0.72 + 0.18 * t)
+        warm = ImageEnhance.Color(frame.convert("RGB")).enhance(1.18).convert("RGBA")
+        frame.paste(warm)
+        add_warm_motes(frame, t, 9908, count=80)
+        frame.alpha_composite(Image.new("RGBA", (WIDTH, HEIGHT), (4, 7, 10, 46)))
+        add_vignette(frame, 92)
 
         overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay, "RGBA")
         for y in range(0, HEIGHT, 8):
-            top_alpha = max(0, 150 - y // 4)
-            bottom_alpha = max(0, (y - 1180) // 3)
-            alpha = min(180, max(top_alpha, bottom_alpha))
+            top_alpha = max(0, 118 - y // 5)
+            bottom_alpha = max(0, (y - 1160) // 4)
+            alpha = min(172, max(top_alpha, bottom_alpha))
             if alpha:
                 draw.rectangle((0, y, WIDTH, y + 8), fill=(2, 3, 4, alpha))
 
-        for i in range(34):
-            angle = i * math.tau / 26 + t * 0.9
-            x = WIDTH / 2 + math.cos(angle) * (240 + (i % 5) * 34)
-            y = 610 + math.sin(angle * 0.76) * (88 + (i % 4) * 18)
-            add_glow_dot(draw, x, y, 2.0 + (i % 3), 42 + round(36 * math.sin(angle) ** 2))
-
-        rise = round((1.0 - smoothstep(t)) * 28)
-        draw_centered_text(draw, CTA_TITLE.upper(), 110 + rise, title_font, (244, 217, 156, 255), stroke_width=4)
-        draw_centered_text(draw, CTA_SUBTITLE, 226 + rise, hero_font, (255, 250, 235, 255), stroke_width=5)
-        draw_centered_text(draw, CTA_LINES[0], 340 + rise, subtitle_font, (255, 209, 75, 255), stroke_width=4)
-
-        lockup_w = 760
-        lockup_h = 152
-        lockup_x = round((WIDTH - lockup_w) / 2)
-        lockup_y = 1188
-        draw.rounded_rectangle((lockup_x, lockup_y, lockup_x + lockup_w, lockup_y + lockup_h), radius=22, fill=(6, 7, 8, 186), outline=(255, 204, 82, 98), width=2)
-        overlay.alpha_composite(icon, (lockup_x + 28, lockup_y + 27))
-        draw_text(draw, (lockup_x + 150, lockup_y + 30), APP_NAME, app_font, (255, 250, 240, 255), stroke_fill=(0, 0, 0, 170), stroke_width=2)
-        draw_text(draw, (lockup_x + 150, lockup_y + 78), CTA_LINES[1], small_font, (219, 205, 183, 255), stroke_fill=(0, 0, 0, 140), stroke_width=1)
-
-        button_w = 332
-        button_h = 58
-        button_x = lockup_x + lockup_w - button_w - 28
-        button_y = lockup_y + 47
-        draw.rounded_rectangle((button_x, button_y, button_x + button_w, button_y + button_h), radius=14, fill=(246, 184, 41, 246), outline=(85, 51, 25, 160), width=2)
-        button_bbox = draw.textbbox((0, 0), CTA_BUTTON, font=button_font)
-        button_text_x = button_x + round((button_w - (button_bbox[2] - button_bbox[0])) / 2)
-        draw_text(draw, (button_text_x, button_y + 13), CTA_BUTTON, button_font, (38, 24, 15, 255))
-
-        draw_centered_text(draw, CTA_CAPTION, 1744, small_font, (248, 241, 224, 238), stroke_width=3)
         frame.alpha_composite(overlay)
+
+        rise = round((1.0 - smoothstep(t)) * 24)
+        cta = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(cta, "RGBA")
+        draw_centered_text(draw, CTA_LINES[0].upper(), 118 + rise, season_font, (255, 213, 85, 255), stroke_width=4)
+        draw_centered_text(draw, CTA_TITLE.upper(), 190 + rise, title_font, (255, 248, 226, 255), stroke_width=5)
+        draw_centered_text(draw, CTA_SUBTITLE, 315 + rise, subtitle_font, (255, 248, 226, 255), stroke_width=4)
+        draw_centered_text(draw, CTA_LINES[1].upper(), 392 + rise, date_font, (255, 213, 85, 255), stroke_width=5)
+        frame.alpha_composite(cta)
+
+        rosie_x = round((WIDTH - rosie.width) / 2)
+        rosie_y = 760 + round(math.sin(t * math.tau) * 8)
+        paste_with_shadow(frame, rosie, (rosie_x, rosie_y))
+
+        lockup = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(lockup, "RGBA")
+        lockup_w = 820
+        lockup_h = 288
+        lockup_x = round((WIDTH - lockup_w) / 2)
+        lockup_y = 1356
+        draw.rounded_rectangle((lockup_x, lockup_y, lockup_x + lockup_w, lockup_y + lockup_h), radius=28, fill=(8, 9, 11, 212), outline=(255, 210, 92, 116), width=2)
+        lockup.alpha_composite(icon, (lockup_x + 36, lockup_y + 38))
+        draw_text(draw, (lockup_x + 166, lockup_y + 42), CTA_CAPTION, app_font, (255, 250, 240, 255), stroke_width=1)
+        draw_text(draw, (lockup_x + 166, lockup_y + 91), "Mobile game", small_font, (219, 205, 183, 255), stroke_width=1)
+
+        badge_x = lockup_x + 166
+        badge_y = lockup_y + 158
+        badge_w = 574
+        badge_h = 76
+        draw.rounded_rectangle((badge_x, badge_y, badge_x + badge_w, badge_y + badge_h), radius=18, fill=(4, 4, 5, 255), outline=(255, 255, 255, 70), width=2)
+        badge_bbox = draw.textbbox((0, 0), CTA_BUTTON, font=badge_font)
+        badge_text_x = badge_x + round((badge_w - (badge_bbox[2] - badge_bbox[0])) / 2)
+        draw_text(draw, (badge_text_x, badge_y + 20), CTA_BUTTON, badge_font, (255, 255, 255, 255))
+        frame.alpha_composite(lockup)
         frame.convert("RGB").save(shot_dir / f"frame_{frame_index + 1:04d}.jpg", quality=93, optimize=True)
 
     return shot_dir, frame_count
