@@ -116,16 +116,14 @@ export function GreatHungerMeter() {
 			    thresholds stay retunable mid-season. */}
 			{meter.available && (
 				<View style={styles.creditRow}>
-					<Text style={styles.creditLevel}>
-						Lv {meter.stageIndex + 1} · {HUNGER_LEVEL_NAME[meter.stage]}
-					</Text>
+					<Text style={styles.creditLevel}>{HUNGER_LEVEL_NAME[meter.stage]}</Text>
 					<Text style={styles.creditNum}>
 						{formatCredit(hungerCredit(meter.total))}
-						<Text style={styles.creditLabel}> hunger credit</Text>
+						<Text style={styles.creditLabel}> tickles reclaimed</Text>
 					</Text>
 					{meter.nextThreshold != null && (
 						<Text style={styles.creditNext}>
-							next at {formatCredit(hungerCredit(meter.nextThreshold))}
+							he weakens at {formatCredit(hungerCredit(meter.nextThreshold))}
 						</Text>
 					)}
 				</View>

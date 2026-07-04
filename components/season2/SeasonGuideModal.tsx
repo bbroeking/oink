@@ -102,15 +102,14 @@ export function SeasonGuideModal({
 							</View>
 						))}
 
-						{/* The level ladder — named levels, big credit numbers. */}
-						<Text style={styles.ladderKicker}>★ his hunger, level by level ★</Text>
+						{/* The ladder — gorged → famished, counted in tickles
+						    reclaimed. He ate the valley's tickles; the barnyard
+						    steals every last one back. */}
+						<Text style={styles.ladderKicker}>★ steal back the tickles ★</Text>
 						{HUNGER_STAGES.map((stage, i) => {
 							const here = meter.available && meter.stageIndex === i;
 							return (
 								<View key={stage} style={[styles.ladderRow, here && styles.ladderRowHere]}>
-									<Text style={[styles.ladderLevel, here && styles.ladderHereText]}>
-										Lv {i + 1}
-									</Text>
 									<Text style={[styles.ladderName, here && styles.ladderHereText]}>
 										{HUNGER_LEVEL_NAME[stage]}
 										{here ? " — he is here" : ""}
@@ -122,8 +121,8 @@ export function SeasonGuideModal({
 							);
 						})}
 						<Text style={styles.ladderFoot}>
-							Every dig, sling, and blessing feeds the count. The bog is
-							keeping score.
+							He ate the valley's tickles. Every dig and blessing pries
+							them back — starve him from Gorged to Famished.
 						</Text>
 					</ScrollView>
 

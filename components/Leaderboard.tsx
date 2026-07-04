@@ -9,6 +9,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { getFriendIds } from "@/utils/friendships";
+import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { log } from "../utils/log";
 import { Icon } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
@@ -235,6 +236,12 @@ export function Leaderboard() {
 	const [scope, setScope] = useState<Scope>("global");
 	const [myId, setMyId] = useState<string | null>(null);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+	// Alignment isn't a thing in Season 2 — the greedy/generous board
+	// retires with Judgement Day, so its scope tab hides once s2 is live.
+	const s2 = useFeatureFlag("world_boss") || __DEV__;
+	const scopes: Scope[] = s2
+		? ["global", "friends"]
+		: ["global", "friends", "alignment"];
 	// Paginated load-more state for the global scope. Friends scope is
 	// already bounded by the 100-friend cap; alignment is RPC-served
 	// with a fixed per_side, so neither needs pagination.
@@ -420,7 +427,7 @@ export function Leaderboard() {
 		<View style={styles.container}>
 			<View style={styles.toggleWrap}>
 				<Sticker color="paper" rotate={0} radius={22} style={styles.toggle}>
-					{(["global", "friends", "alignment"] as Scope[]).map((s) => {
+					{scopes.map((s) => {
 						const active = s === scope;
 						return (
 							<Pressable

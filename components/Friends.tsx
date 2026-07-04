@@ -20,6 +20,7 @@ import {
 } from "@/utils/friendships";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { fetchFriendsCrews } from "@/utils/mudWars";
+import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
 import { FONTS, TAB_SAFE, TITLE_RULE, WHIMSY } from "@/constants/theme";
@@ -188,6 +189,8 @@ function FriendsList({
 	crewNames: Map<string, string>;
 	onPick: (id: string) => void;
 }) {
+	// Alignment isn't a thing in Season 2 — the badge retires with S1.
+	const s2 = useFeatureFlag("world_boss") || __DEV__;
 	if (friends.length === 0) {
 		return (
 			<Sticker color="paper" rotate={-0.5} radius={12} style={styles.empty}>
@@ -244,7 +247,7 @@ function FriendsList({
 								<Text style={styles.rowMeta}>
 									{(f.tickles_earned ?? 0).toLocaleString()}
 								</Text>
-								{typeof f.alignment_score === "number" && (
+								{!s2 && typeof f.alignment_score === "number" && (
 									<>
 										<View style={styles.rowMetaDot} />
 										<AlignmentBadge

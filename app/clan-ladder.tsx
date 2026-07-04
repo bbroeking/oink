@@ -24,6 +24,66 @@ import { useCrew } from "@/hooks/useCrew";
 import { Icon } from "@/components/ui/Icon";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
+// ── DEV mock Sounders — design bodies for a sparse beta board ────────────────
+const MOCK_SOUNDERS: SpiritEntry[] = [
+	{
+		crew_id: "mock-1", name: "The Mud Maulers", memberCount: 5,
+		kindness: 42, activity: 88, spirit: 26, rating: 1261, wars: 9,
+		members: [
+			{ username: "Rosie", role: "leader" },
+			{ username: "Pip", role: "member" },
+			{ username: "Moo", role: "member" },
+			{ username: "Clover", role: "member" },
+			{ username: "Biscuit", role: "member" },
+		],
+	},
+	{
+		crew_id: "mock-2", name: "Trough Loyalists", memberCount: 4,
+		kindness: 51, activity: 40, spirit: 23, rating: 1187, wars: 6,
+		members: [
+			{ username: "Jen", role: "leader" },
+			{ username: "Waddles", role: "member" },
+			{ username: "Snoot", role: "member" },
+			{ username: "Pudding", role: "member" },
+		],
+	},
+	{
+		crew_id: "mock-3", name: "Bog Standard", memberCount: 3,
+		kindness: 18, activity: 45, spirit: 21, rating: 1224, wars: 7,
+		members: [
+			{ username: "Hamlet", role: "leader" },
+			{ username: "Porkchop", role: "member" },
+			{ username: "Truffle", role: "member" },
+		],
+	},
+	{
+		crew_id: "mock-4", name: "The Gilded Snouts", memberCount: 2,
+		kindness: 24, activity: 12, spirit: 18, rating: null, wars: 0,
+		members: [
+			{ username: "Duchess", role: "leader" },
+			{ username: "Petunia", role: "member" },
+		],
+	},
+	{
+		crew_id: "mock-5", name: "Famished Five", memberCount: 5,
+		kindness: 9, activity: 51, spirit: 12, rating: 1096, wars: 11,
+		members: [
+			{ username: "Grunt", role: "leader" },
+			{ username: "Squeal", role: "member" },
+			{ username: "Wallow", role: "member" },
+			{ username: "Mucky", role: "member" },
+			{ username: "Rind", role: "member" },
+		],
+	},
+];
+
+function padWithMockSounders(live: SpiritEntry[]): SpiritEntry[] {
+	const taken = new Set(live.map((r) => r.name));
+	return [...live, ...MOCK_SOUNDERS.filter((m) => !taken.has(m.name))].sort(
+		(a, b) => b.spirit - a.spirit || b.kindness - a.kindness
+	);
+}
+
 export default function ClanLadderScreen() {
 	const { visible: mudWarsVisible, loaded: flagLoaded } =
 		useFeatureFlagState("mud_wars");
@@ -38,7 +98,13 @@ export default function ClanLadderScreen() {
 
 	const load = useCallback(async () => {
 		if (!mudWarsVisible) return; // don't fetch when the season is dark
-		setRows(await fetchSounderStandings(50));
+		const live = await fetchSounderStandings(50);
+		// DEV ONLY: pad a sparse board with mock Sounders so the standings
+		// design can be judged with real-looking data. Never ships: gated on
+		// __DEV__, and live rows always outrank the mocks' insertion.
+		setRows(
+			__DEV__ && live.length < 4 ? padWithMockSounders(live) : live
+		);
 	}, [mudWarsVisible]);
 	// Refetch on focus so a transient load failure self-heals (no error sentinel yet).
 	useFocusEffect(

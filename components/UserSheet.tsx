@@ -29,6 +29,7 @@ import { BarnVisitModal } from "./BarnVisitModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { RitualPicker } from "./RitualPicker";
 import { useCrew } from "@/hooks/useCrew";
+import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { AlignmentBar } from "./ui/AlignmentBar";
 import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
@@ -139,6 +140,8 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const isCrewmate =
 		!!targetUserId &&
 		myCrewState.members.some((m) => m.user_id === targetUserId);
+	// Alignment isn't a thing in Season 2 — its bar retires with S1.
+	const s2 = useFeatureFlag("world_boss") || __DEV__;
 	const [stats, setStats] = useState<UserStats | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
@@ -470,12 +473,14 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 										</View>
 									</View>
 
-									<View style={styles.alignBarWrap}>
-										<AlignmentBar
-											score={stats.alignment_score}
-											label={stats.alignment_label}
-										/>
-									</View>
+									{!s2 && (
+										<View style={styles.alignBarWrap}>
+											<AlignmentBar
+												score={stats.alignment_score}
+												label={stats.alignment_label}
+											/>
+										</View>
+									)}
 
 									<View style={styles.statsRow}>
 										<StatCol

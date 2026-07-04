@@ -1464,12 +1464,11 @@ export default function SeasonScreen() {
 						onClaim={handleClaim}
 					/>
 
-					{/* Alignment placard — moved here from the Me tab. Greedy
-					    ↔ score ↔ Generous + the bar, the blessing/curse/regen
-					    modifiers, and a tap-through to the full explainer.
-					    It belongs with the season: S1's finale settles on
-					    alignment; in S2 it stays as the daily blessing/curse
-					    dial (no reckoning). */}
+					{/* Alignment placard — SEASON 1 ONLY. Alignment isn't a thing
+					    in Season 2 (the mechanics still hum server-side, but the
+					    identity UI retires with Judgement Day). */}
+					{!s2 && (
+					<>
 					<View style={{ marginTop: 8 }}>
 						<SectionHeader kicker="standing" title="Alignment" />
 					</View>
@@ -1518,6 +1517,8 @@ export default function SeasonScreen() {
 							</Text>
 						</Pressable>
 					</Sticker>
+					</>
+					)}
 				</ScrollView>
 			</SafeAreaView>
 
