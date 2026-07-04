@@ -165,6 +165,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [digging, setDigging] = useState(false);
 	const [digNote, setDigNote] = useState<string | null>(null);
 
+	// Great Hunger barn forage: the arrival tap can turn up a lone Golden
+	// Truffle the Hungerer missed (server tickle_at_barn, gated on world_boss,
+	// once per UTC day). Cozy one-time reveal for the rest of the visit.
+	const [foragedTruffle, setForagedTruffle] = useState(false);
+
 	// Both pigs' full worn outfits so the diorama shows what each is wearing.
 	// (Flags are intentionally not shown in the visit diorama for now.)
 	const [hostEquip, setHostEquip] = useState<EquipSet>(EMPTY_EQUIP);
@@ -324,11 +329,19 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			next_at?: string | null;
 			visits_left?: number | null;
 			visits_refresh_at?: string | null;
+			golden_truffle_found?: boolean;
 		}>("tickle_at_barn", { p_target: targetUserId });
 		setBusy(false);
 		if (r.ok) {
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 			playTap();
+			// A Golden Truffle surfaced while rooting around the Barn — a warmer
+			// success beat than the tickle itself, so pop the reveal + a heavier
+			// haptic. Server has already minted it (once/day); this is display-only.
+			if (r.golden_truffle_found) {
+				setForagedTruffle(true);
+				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+			}
 			setYouHearts((n) => n + 1);
 			setFriendHearts((n) => n + 1);
 			setGained((g) => g + 1);
@@ -553,6 +566,23 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 							<View style={styles.diorama}>
 								{/* soft spotlight to lift the pair off the warm background */}
 								<View pointerEvents="none" style={styles.spotlight} />
+
+								{/* Great Hunger barn forage — a cozy reveal when the arrival
+								    tap uncovers a lone Golden Truffle. Sits above the pigs so
+								    it reads as "look what you found," distinct from the host's
+								    buried-shovel truffle below. */}
+								{foragedTruffle && (
+									<View pointerEvents="none" style={styles.forageReveal}>
+										<Image source={HAT_IMAGES.golden_truffle} style={styles.forageTruffle} resizeMode="contain" />
+										<View style={styles.forageTextWrap}>
+											<IconText left={<Glyph name="sparkle" size={12} />} gap={4}>
+												<Text style={styles.forageKicker}>A GLINT IN THE HAY</Text>
+											</IconText>
+											<Text style={styles.forageTitle}>You uncovered a Golden Truffle!</Text>
+											<Text style={styles.forageSub}>One the Great Hungerer missed.</Text>
+										</View>
+									</View>
+								)}
 								{/* you — set back: smaller, higher, shifted left */}
 								<TapPig
 									me
@@ -1018,6 +1048,30 @@ const styles = StyleSheet.create({
 	},
 	truffleFoundRow: { flexDirection: "row", alignItems: "center", gap: 5 },
 	truffleFound: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK, flexShrink: 1 },
+
+	// Barn-forage Golden Truffle reveal — a cozy sticker banner above the pigs.
+	forageReveal: {
+		position: "absolute",
+		top: "6%",
+		alignSelf: "center",
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 10,
+		maxWidth: "88%",
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: INK,
+		borderRadius: 16,
+		paddingHorizontal: 14,
+		paddingVertical: 10,
+		zIndex: 7,
+		...sticker,
+	},
+	forageTruffle: { width: 38, height: 38 },
+	forageTextWrap: { flexShrink: 1 },
+	forageKicker: { fontFamily: FONTS.hand, fontSize: 11, letterSpacing: 1, color: WHIMSY.accent },
+	forageTitle: { fontFamily: FONTS.whimsy, fontSize: 15, color: INK, marginTop: 1 },
+	forageSub: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, marginTop: 1 },
 
 	// Out-of-tickles callout — anchored just above the YOUR TICKLES bar.
 	ticklesPop: {
