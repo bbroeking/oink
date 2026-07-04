@@ -56,6 +56,24 @@ describe("tier tables", () => {
 		expect(new Set(all)).toEqual(new Set(WAR_SPOILS_IDS as unknown as string[]));
 	});
 
+	it("every war-spoil is reachable through the rotation (no orphan is unbuyable)", () => {
+		// Season-2 audit invariant: with the Truffle Patch replacing the raw-snout
+		// war mint, the Exchange is a primary way to obtain war spoils — so EVERY
+		// one of the 25 must actually surface in some weekly stock. This sweeps the
+		// modular pick across seeds + both week parities and asserts full coverage,
+		// catching a future array-resize / off-by-one that would silently strand an
+		// item (mirrors the SQL exchange_week_stock() coverage checked on Postgres).
+		const reached = new Set<string>();
+		for (let seed = 0; seed <= 4000; seed++) {
+			for (const week of [2, 3]) {
+				// even → champion marquee, odd → heirloom marquee
+				for (const id of pickRotation(seed, week)) reached.add(id);
+			}
+		}
+		expect(reached).toEqual(new Set(WAR_SPOILS_IDS as unknown as string[]));
+		expect(reached.size).toBe(25);
+	});
+
 	it("maps ids to spec prices (25/60/120/250/500)", () => {
 		expect(priceForId("muddy_cap")).toBe(25);
 		expect(priceForId("reed_hat")).toBe(60);
