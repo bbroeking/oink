@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import os
 import random
@@ -32,16 +33,16 @@ VOICE = "Samantha"
 VOICE_RATE = "142"
 ELEVENLABS_DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"
 ELEVENLABS_DEFAULT_MODEL_ID = "eleven_multilingual_v2"
-CTA_DURATION = 2.25
-CTA_AUDIO_OVERLAP = 0.75
+CTA_DURATION = 1.8
+CTA_AUDIO_OVERLAP = 0.55
 APP_NAME = "Tickle the Pig"
 APP_ICON = ROOT / "assets" / "images" / "icon.png"
-CTA_TITLE = "Play Season 2"
-CTA_SUBTITLE = "The joy is missing."
-CTA_LINES = ("Help bring it back July 11.", "On the App Store")
-CTA_BUTTON = "Play Season 2 on the App Store"
-CTA_CAPTION = "Play Season 2 on the App Store. Help bring back the joy."
-BASE_STORY_DURATIONS = [7.15, 4.05, 4.85, 5.3, 6.35, 5.45, 6.0]
+CTA_TITLE = "Season 2: The Great Hunger"
+CTA_SUBTITLE = "Help bring back the joy."
+CTA_LINES = ("The Mud Wars begin July 11.", "On the App Store")
+CTA_BUTTON = "Play on the App Store"
+CTA_CAPTION = "Season 2 begins July 11. Help Rosie bring back the joy."
+BASE_STORY_DURATIONS = [4.0, 2.35, 2.8, 3.5, 3.65, 2.35, 4.05]
 
 
 @dataclass(frozen=True)
@@ -64,7 +65,7 @@ SHOTS = [
         slug="shot_01_valley_of_tickles",
         title="The Tickle Bloom",
         target_duration=4.0,
-        narration="Once, the valley glowed with tickles. Little sparks of joy, rising from every puddle, petal, and porch light.",
+        narration="The valley once glowed with tickles, golden sparks of joy in every porch light and puddle.",
         motion="Slow push through golden motes. Warm, drifting, alive.",
         panel_name="shot_01_valley_of_tickles.png",
         effect="warm_motes",
@@ -76,7 +77,7 @@ SHOTS = [
         slug="shot_02_rosie_asleep",
         title="Rosie's Dream",
         target_duration=4.0,
-        narration="Rosie dreamed beneath their glow, safe in the hush before morning.",
+        narration="Rosie slept through the hush before dawn.",
         motion="Gentle push toward sleeping Rosie. Motes orbit softly.",
         panel_name="shot_02_rosie_asleep.png",
         effect="sleep_motes",
@@ -88,7 +89,7 @@ SHOTS = [
         slug="shot_03_hunger_arrives",
         title="The Crown Blocks The Moon",
         target_duration=4.0,
-        narration="But joy has a scent. And far beyond the reeds, something hungry found it.",
+        narration="Then something crowned and hungry found the glow.",
         motion="Low-angle reveal. Crown crosses the moon.",
         panel_name="shot_03_hunger_arrives.png",
         effect="ominous_glint",
@@ -100,7 +101,7 @@ SHOTS = [
         slug="shot_04_the_theft",
         title="The Great Slurp",
         target_duration=6.0,
-        narration="The Great Hunger opened his mouth, and the whole valley began to dim.",
+        narration="The Great Hunger opened wide, and the tickles streamed from every home.",
         motion="Wide spiral of golden motes pulled from barns and flowers into the Hunger.",
         panel_name="shot_04_the_theft.png",
         effect="slurp_streams",
@@ -112,7 +113,7 @@ SHOTS = [
         slug="shot_05_grey_dawn",
         title="The Last Tickle",
         target_duration=4.0,
-        narration="By dawn, only one small spark remained. Rosie reached for it, but even that light slipped away.",
+        narration="By morning, the color was gone. One last spark reached Rosie, then slipped away.",
         motion="Rosie reaches. The last mote flickers from gold to grey.",
         panel_name="shot_05_grey_dawn.png",
         effect="last_tickle",
@@ -124,7 +125,7 @@ SHOTS = [
         slug="shot_06_empty_valley",
         title="The Quiet Valley",
         target_duration=4.0,
-        narration="Then she saw the truth. It was not only her barn. Every home had gone quiet.",
+        narration="The whole valley had gone quiet.",
         motion="Slow pan across opened barns and sad pigs.",
         panel_name="shot_06_empty_valley.png",
         effect="grey_drift",
@@ -136,7 +137,7 @@ SHOTS = [
         slug="shot_07_hunger_begins",
         title="The Hoard On The Hill",
         target_duration=4.5,
-        narration="High on the hill, the Hunger kept what he had stolen. And the valley waited for someone brave enough to win it back.",
+        narration="High on the hill, he kept what he stole. Now Rosie needs everyone to win the joy back.",
         motion="Rosie from behind. Distant hoard glows. End unresolved.",
         panel_name="shot_07_hunger_begins.png",
         effect="hoard_glow",
@@ -386,7 +387,8 @@ def build_elevenlabs_voiceover(index: int, text: str, previous_text: str, next_t
         headers={"xi-api-key": api_key, "Content-Type": "application/json"},
         method="POST",
     )
-    audio = TMP / f"shot_{index:02d}_elevenlabs.mp3"
+    text_hash = hashlib.sha1(text.encode("utf-8")).hexdigest()[:10]
+    audio = TMP / f"shot_{index:02d}_elevenlabs_{text_hash}.mp3"
     if audio.exists() and not os.environ.get("FORCE_ELEVENLABS_REGEN"):
         return audio
     try:
@@ -614,85 +616,63 @@ def render_cta_frames(index: int, duration: float) -> tuple[Path, int]:
     shot_dir.mkdir(parents=True, exist_ok=True)
 
     base = Image.open(PANELS / SHOTS[-1].panel_name).convert("RGB")
-    title_font = load_font(76, bold=True)
-    subtitle_font = load_font(40, bold=True)
-    small_font = load_font(30, bold=False)
-    label_font = load_font(29, bold=True)
-    button_font = load_font(30, bold=True)
-    app_font = load_font(32, bold=True)
-    icon = rounded_icon(APP_ICON, 112, 24)
+    title_font = load_font(58, bold=True)
+    hero_font = load_font(72, bold=True)
+    subtitle_font = load_font(38, bold=True)
+    small_font = load_font(29, bold=False)
+    button_font = load_font(32, bold=True)
+    app_font = load_font(34, bold=True)
+    icon = rounded_icon(APP_ICON, 98, 22)
     frame_count = max(1, math.ceil(duration * FPS))
 
     for frame_index in range(frame_count):
         t = frame_index / max(1, frame_count - 1)
-        frame = cover_frame(base, SHOTS[-1], 0.82 + 0.18 * t)
+        frame = cover_frame(base, SHOTS[-1], 0.9 + 0.1 * t)
         add_hoard_glow(frame, t)
-        frame = frame.filter(ImageFilter.GaussianBlur(2.2))
-        dark = Image.new("RGBA", (WIDTH, HEIGHT), (6, 6, 7, 104))
+        dark = Image.new("RGBA", (WIDTH, HEIGHT), (4, 5, 6, 70))
         frame.alpha_composite(dark)
         add_vignette(frame, 108)
 
         overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay, "RGBA")
-        for i in range(56):
-            angle = i * math.tau / 42 + t * 0.8
-            radius = 230 + (i % 7) * 28
-            x = WIDTH / 2 + math.cos(angle) * radius
-            y = 800 + math.sin(angle * 0.7) * (105 + (i % 5) * 16)
-            add_glow_dot(draw, x, y, 2.5 + (i % 3), 62 + round(42 * math.sin(angle) ** 2))
+        for y in range(0, HEIGHT, 8):
+            top_alpha = max(0, 150 - y // 4)
+            bottom_alpha = max(0, (y - 1180) // 3)
+            alpha = min(180, max(top_alpha, bottom_alpha))
+            if alpha:
+                draw.rectangle((0, y, WIDTH, y + 8), fill=(2, 3, 4, alpha))
 
-        board_x, board_y = 108, 520
-        board_w, board_h = 864, 810
-        post_color = (76, 49, 34, 238)
-        trim = (205, 145, 49, 180)
-        parchment = (222, 197, 154, 244)
-        parchment_shadow = (62, 35, 22, 155)
+        for i in range(34):
+            angle = i * math.tau / 26 + t * 0.9
+            x = WIDTH / 2 + math.cos(angle) * (240 + (i % 5) * 34)
+            y = 610 + math.sin(angle * 0.76) * (88 + (i % 4) * 18)
+            add_glow_dot(draw, x, y, 2.0 + (i % 3), 42 + round(36 * math.sin(angle) ** 2))
 
-        # In-world sign posts behind the parchment board.
-        draw.rounded_rectangle((board_x + 72, board_y + 44, board_x + 118, board_y + board_h + 110), radius=18, fill=post_color)
-        draw.rounded_rectangle((board_x + board_w - 118, board_y + 44, board_x + board_w - 72, board_y + board_h + 110), radius=18, fill=post_color)
-        draw.rounded_rectangle((board_x + 14, board_y + 58, board_x + board_w - 14, board_y + board_h - 18), radius=36, fill=(72, 45, 30, 240))
-        draw.rounded_rectangle((board_x + 34, board_y + 82, board_x + board_w - 34, board_y + board_h - 42), radius=28, outline=trim, width=4)
-        draw.rounded_rectangle((board_x + 72, board_y + 120, board_x + board_w - 72, board_y + board_h - 86), radius=24, fill=parchment_shadow)
-        draw.rounded_rectangle((board_x + 58, board_y + 104, board_x + board_w - 58, board_y + board_h - 102), radius=24, fill=parchment)
+        rise = round((1.0 - smoothstep(t)) * 28)
+        draw_centered_text(draw, CTA_TITLE.upper(), 110 + rise, title_font, (244, 217, 156, 255), stroke_width=4)
+        draw_centered_text(draw, CTA_SUBTITLE, 226 + rise, hero_font, (255, 250, 235, 255), stroke_width=5)
+        draw_centered_text(draw, CTA_LINES[0], 340 + rise, subtitle_font, (255, 209, 75, 255), stroke_width=4)
 
-        # Little crown-like brass marker at the top.
-        crown_y = board_y + 70
-        crown_x = WIDTH // 2
-        crown_points = [
-            (crown_x - 56, crown_y + 34),
-            (crown_x - 38, crown_y - 8),
-            (crown_x - 16, crown_y + 20),
-            (crown_x, crown_y - 18),
-            (crown_x + 16, crown_y + 20),
-            (crown_x + 38, crown_y - 8),
-            (crown_x + 56, crown_y + 34),
-        ]
-        draw.polygon(crown_points, fill=(229, 168, 44, 236), outline=(89, 47, 18, 190))
-        draw.rounded_rectangle((crown_x - 60, crown_y + 28, crown_x + 60, crown_y + 48), radius=8, fill=(245, 190, 63, 245), outline=(89, 47, 18, 190), width=2)
+        lockup_w = 760
+        lockup_h = 152
+        lockup_x = round((WIDTH - lockup_w) / 2)
+        lockup_y = 1188
+        draw.rounded_rectangle((lockup_x, lockup_y, lockup_x + lockup_w, lockup_y + lockup_h), radius=22, fill=(6, 7, 8, 186), outline=(255, 204, 82, 98), width=2)
+        overlay.alpha_composite(icon, (lockup_x + 28, lockup_y + 27))
+        draw_text(draw, (lockup_x + 150, lockup_y + 30), APP_NAME, app_font, (255, 250, 240, 255), stroke_fill=(0, 0, 0, 170), stroke_width=2)
+        draw_text(draw, (lockup_x + 150, lockup_y + 78), CTA_LINES[1], small_font, (219, 205, 183, 255), stroke_fill=(0, 0, 0, 140), stroke_width=1)
 
-        text_dark = (54, 34, 25, 255)
-        text_muted = (92, 68, 52, 255)
-        draw_centered_text(draw, "SEASON 2: THE GREAT HUNGER", board_y + 164, label_font, text_muted, stroke_fill=(255, 255, 255, 0), stroke_width=0)
-        draw_centered_text(draw, CTA_TITLE, board_y + 228, title_font, text_dark, stroke_fill=(255, 255, 255, 0), stroke_width=0)
-        draw_centered_text(draw, CTA_SUBTITLE, board_y + 336, subtitle_font, text_dark, stroke_fill=(255, 255, 255, 0), stroke_width=0)
-        draw_centered_text(draw, CTA_LINES[0], board_y + 396, small_font, text_muted, stroke_fill=(255, 255, 255, 0), stroke_width=0)
+        button_w = 332
+        button_h = 58
+        button_x = lockup_x + lockup_w - button_w - 28
+        button_y = lockup_y + 47
+        draw.rounded_rectangle((button_x, button_y, button_x + button_w, button_y + button_h), radius=14, fill=(246, 184, 41, 246), outline=(85, 51, 25, 160), width=2)
+        button_bbox = draw.textbbox((0, 0), CTA_BUTTON, font=button_font)
+        button_text_x = button_x + round((button_w - (button_bbox[2] - button_bbox[0])) / 2)
+        draw_text(draw, (button_text_x, button_y + 13), CTA_BUTTON, button_font, (38, 24, 15, 255))
 
-        button_w = 650
-        button_h = 78
-        button_x = round((WIDTH - button_w) / 2)
-        button_y = board_y + 494
-        draw.rounded_rectangle((button_x + 4, button_y + 7, button_x + button_w + 4, button_y + button_h + 7), radius=18, fill=(71, 39, 22, 120))
-        draw.rounded_rectangle((button_x, button_y, button_x + button_w, button_y + button_h), radius=18, fill=(247, 185, 45, 250), outline=(92, 54, 24, 185), width=2)
-        draw_centered_text(draw, CTA_BUTTON, button_y + 20, button_font, (47, 27, 16, 255), stroke_fill=(255, 255, 255, 0), stroke_width=0)
-
-        icon_x, icon_y = board_x + 260, board_y + 584
-        overlay.alpha_composite(icon, (icon_x, icon_y))
-        draw_text(draw, (icon_x + 142, icon_y + 16), APP_NAME, app_font, text_dark)
-        draw_text(draw, (icon_x + 142, icon_y + 58), CTA_LINES[1], small_font, text_muted)
-
-        frame.alpha_composite(overlay.filter(ImageFilter.GaussianBlur(0.2)))
-        draw_bottom_caption(frame, CTA_CAPTION)
+        draw_centered_text(draw, CTA_CAPTION, 1744, small_font, (248, 241, 224, 238), stroke_width=3)
+        frame.alpha_composite(overlay)
         frame.convert("RGB").save(shot_dir / f"frame_{frame_index + 1:04d}.jpg", quality=93, optimize=True)
 
     return shot_dir, frame_count

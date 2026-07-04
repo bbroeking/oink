@@ -7,17 +7,17 @@
 - Voice provider: elevenlabs
 - Audio mode: continuous narration track
 - ElevenLabs voice id: `JBFqnCBsd6RMkjVDRZzb`
-- CTA: Play Season 2 / Help bring it back July 11. On the App Store
+- CTA: Season 2: The Great Hunger / The Mud Wars begin July 11. On the App Store
 
 | Shot | Duration | Frames | Panel | Effect | Narration |
 |---|---:|---:|---|---|---|
-| 1 | 7.1s | 85 | `shot_01_valley_of_tickles.png` | warm_motes | Once, the valley glowed with tickles. Little sparks of joy, rising from every puddle, petal, and porch light. |
-| 2 | 4.0s | 48 | `shot_02_rosie_asleep.png` | sleep_motes | Rosie dreamed beneath their glow, safe in the hush before morning. |
-| 3 | 4.8s | 58 | `shot_03_hunger_arrives.png` | ominous_glint | But joy has a scent. And far beyond the reeds, something hungry found it. |
-| 4 | 5.2s | 63 | `shot_04_the_theft.png` | slurp_streams | The Great Hunger opened his mouth, and the whole valley began to dim. |
-| 5 | 6.3s | 76 | `shot_05_grey_dawn.png` | last_tickle | By dawn, only one small spark remained. Rosie reached for it, but even that light slipped away. |
-| 6 | 5.4s | 65 | `shot_06_empty_valley.png` | grey_drift | Then she saw the truth. It was not only her barn. Every home had gone quiet. |
-| 7 | 5.9s | 71 | `shot_07_hunger_begins.png` | hoard_glow | High on the hill, the Hunger kept what he had stolen. And the valley waited for someone brave enough to win it back. |
-| 8 | 2.2s | 27 | `shot_07_hunger_begins.png` | cta_card | Play Season 2. Help bring it back July 11. On the App Store |
+| 1 | 5.1s | 61 | `shot_01_valley_of_tickles.png` | warm_motes | The valley once glowed with tickles, golden sparks of joy in every porch light and puddle. |
+| 2 | 3.0s | 36 | `shot_02_rosie_asleep.png` | sleep_motes | Rosie slept through the hush before dawn. |
+| 3 | 3.6s | 43 | `shot_03_hunger_arrives.png` | ominous_glint | Then something crowned and hungry found the glow. |
+| 4 | 4.5s | 54 | `shot_04_the_theft.png` | slurp_streams | The Great Hunger opened wide, and the tickles streamed from every home. |
+| 5 | 4.7s | 56 | `shot_05_grey_dawn.png` | last_tickle | By morning, the color was gone. One last spark reached Rosie, then slipped away. |
+| 6 | 3.0s | 36 | `shot_06_empty_valley.png` | grey_drift | The whole valley had gone quiet. |
+| 7 | 5.2s | 62 | `shot_07_hunger_begins.png` | hoard_glow | High on the hill, he kept what he stole. Now Rosie needs everyone to win the joy back. |
+| 8 | 1.8s | 22 | `shot_07_hunger_begins.png` | cta_card | Season 2: The Great Hunger. The Mud Wars begin July 11. On the App Store |
 
-Total runtime: 41.1s
+Total runtime: 30.8s

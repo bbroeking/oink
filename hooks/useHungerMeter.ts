@@ -46,6 +46,40 @@ export interface HungerMeter {
 	available: boolean; // false until the RPC exists / responds
 }
 
+// ── Hunger CREDIT — the obfuscation layer ────────────────────────────
+// Players see named LEVELS and big "hunger credit" numbers, never the raw
+// server totals: credit = raw × HUNGER_CREDIT_SCALE. The real thresholds
+// stay tiny and server-tunable while the season is live — we retune the
+// server array freely and nothing players saw is contradicted, because
+// every displayed number derives from what the server reports.
+export const HUNGER_CREDIT_SCALE = 1000;
+
+export const HUNGER_LEVEL_NAME: Record<HungerStage, string> = {
+	gorged: "Gorged",
+	stuffed: "Stuffed",
+	full: "Full",
+	peckish: "Peckish",
+	hungry: "Hungry",
+	famished: "Famished",
+};
+
+// PROVISIONAL display ladder for the season guide — mirrors the server's
+// current thresholds ([40,100,200,340,520], 20260704200000) × the credit
+// scale. These are placeholder magnitudes: we tune the real numbers
+// server-side while the season runs; this mirror is display-only and only
+// used where the live nextThreshold isn't available per-level.
+export const HUNGER_LEVEL_CREDIT_PREVIEW: number[] = [
+	0, 40, 100, 200, 340, 520,
+].map((t) => t * HUNGER_CREDIT_SCALE);
+
+export function hungerCredit(rawTotal: number): number {
+	return rawTotal * HUNGER_CREDIT_SCALE;
+}
+
+export function formatCredit(n: number): string {
+	return n.toLocaleString("en-US");
+}
+
 const FALLBACK: HungerMeter = {
 	stage: "gorged",
 	stageIndex: 0,

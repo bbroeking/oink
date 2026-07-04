@@ -38,6 +38,7 @@ import { useSeasonEnd } from "../../hooks/useSeasonEnd";
 import { HungerHero } from "../../components/season2/HungerHero";
 import { SeasonStory } from "../../components/season2/SeasonStory";
 import { SounderSteps } from "../../components/season2/SounderSteps";
+import { SeasonGuideModal } from "../../components/season2/SeasonGuideModal";
 import { SpoilsShowcase } from "../../components/season2/SpoilsShowcase";
 import { useCrew } from "../../hooks/useCrew";
 import { useMudWar } from "@/hooks/useMudWar";
@@ -1085,6 +1086,32 @@ export default function SeasonScreen() {
 		}, [load])
 	);
 
+	// Season guide — "how the season works" + the Hunger level ladder.
+	// TESTING MODE: pops on EVERY Season-tab focus so the flow can be
+	// exercised repeatedly; flip GUIDE_EVERY_VISIT to false before public S2
+	// to gate it behind the per-user AsyncStorage stamp below.
+	const GUIDE_EVERY_VISIT = true;
+	const [guideOpen, setGuideOpen] = useState(false);
+	useFocusEffect(
+		useCallback(() => {
+			if (!s2) return;
+			if (GUIDE_EVERY_VISIT) {
+				setGuideOpen(true);
+				return;
+			}
+			if (!uid) return;
+			AsyncStorage.getItem(`s2_guide_seen:${uid}`).then((v) => {
+				if (!v) setGuideOpen(true);
+			});
+		}, [s2, uid])
+	);
+	const dismissGuide = useCallback(() => {
+		setGuideOpen(false);
+		if (!GUIDE_EVERY_VISIT && uid) {
+			AsyncStorage.setItem(`s2_guide_seen:${uid}`, "1").catch(() => {});
+		}
+	}, [uid]);
+
 	// First visit to the new season → the tale tells itself. Stamped per user
 	// on dismiss so it never auto-plays twice; the "Hear the tale again" chip
 	// stays for every retelling after.
@@ -1540,6 +1567,15 @@ export default function SeasonScreen() {
 			    "Hear the tale again" chip. */}
 			{s2 && (
 				<GreatHungerIntroModal visible={introOpen} onDone={dismissIntro} />
+			)}
+
+			{/* The season guide — every visit while testing (GUIDE_EVERY_VISIT);
+			    yields to the intro storybook when both want the stage. */}
+			{s2 && (
+				<SeasonGuideModal
+					visible={guideOpen && !introOpen}
+					onDismiss={dismissGuide}
+				/>
 			)}
 
 			{/* Season-end reveal — the beta Founding Herd recap. Live when the

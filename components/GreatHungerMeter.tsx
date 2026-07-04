@@ -30,6 +30,9 @@ import {
 import {
 	useHungerMeter,
 	HUNGER_STAGE_LINE,
+	HUNGER_LEVEL_NAME,
+	hungerCredit,
+	formatCredit,
 	type HungerStage,
 } from "@/hooks/useHungerMeter";
 
@@ -106,6 +109,27 @@ export function GreatHungerMeter() {
 					<Text style={styles.whisper}>{HUNGER_STAGE_LINE[meter.stage]}</Text>
 				</View>
 			</ImageBackground>
+
+			{/* Level + credit strip — progression numbers (allowed by the taste
+			    standard; feelings stay in the vignette above). Credit is the
+			    obfuscated scale: raw server totals × HUNGER_CREDIT_SCALE, so
+			    thresholds stay retunable mid-season. */}
+			{meter.available && (
+				<View style={styles.creditRow}>
+					<Text style={styles.creditLevel}>
+						Lv {meter.stageIndex + 1} · {HUNGER_LEVEL_NAME[meter.stage]}
+					</Text>
+					<Text style={styles.creditNum}>
+						{formatCredit(hungerCredit(meter.total))}
+						<Text style={styles.creditLabel}> hunger credit</Text>
+					</Text>
+					{meter.nextThreshold != null && (
+						<Text style={styles.creditNext}>
+							next at {formatCredit(hungerCredit(meter.nextThreshold))}
+						</Text>
+					)}
+				</View>
+			)}
 		</View>
 	);
 }
@@ -152,4 +176,24 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		textAlign: "center",
 	},
+	creditRow: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		gap: SPACE.sm,
+		backgroundColor: WHIMSY.paper,
+		borderTopWidth: 2,
+		borderTopColor: WHIMSY.ink,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.xs + 2,
+	},
+	creditLevel: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.ink },
+	creditNum: {
+		flex: 1,
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+		textAlign: "right",
+	},
+	creditLabel: { fontFamily: FONTS.hand, fontSize: 11, color: WHIMSY.mute },
+	creditNext: { fontFamily: FONTS.hand, fontSize: 11, color: WHIMSY.mute },
 });
