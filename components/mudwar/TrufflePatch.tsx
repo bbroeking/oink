@@ -73,6 +73,9 @@ interface EndState {
 
 export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 	const board = useMemo(() => generateBoard(session.seed), [session.seed]);
+	// Co-op depth: a crewmate already dug this feeding → he's more distracted,
+	// so you can stir more before he notices (matches the server's 25-action cap).
+	const stirBudget = session.coop ? STIR_BUDGET * 1.25 : STIR_BUDGET;
 
 	// Float layers so rub-splash can take half-layers off neighbors.
 	const [layers, setLayers] = useState<number[]>(() => [...board.layers]);
@@ -156,7 +159,7 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 				collectedRef.current.has("truffle_d");
 			if (bothTruffles) {
 				finish("Clean and quiet — he never noticed.");
-			} else if (stirRef.current >= STIR_BUDGET) {
+			} else if (stirRef.current >= stirBudget) {
 				finish("He stirred — you trotted off with your armful.");
 			}
 		},
@@ -166,14 +169,14 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 	const applyAction = useCallback(
 		(kind: "rub" | "shove", idx: number) => {
 			if (endedRef.current) return;
-			if (stirRef.current >= STIR_BUDGET) return; // ends BETWEEN actions
+			if (stirRef.current >= stirBudget) return; // ends BETWEEN actions
 			if (idx < 0 || idx >= PATCH_ROWS * PATCH_COLS) return;
 			if (layersRef.current[idx] <= 0 && kind === "rub") return; // free re-rub: no stir
 			actionsRef.current += 1;
 			stirRef.current += kind === "rub" ? STIR_RUB : STIR_SHOVE;
 			setStir(stirRef.current);
 			Animated.timing(stirAnim, {
-				toValue: Math.min(1, stirRef.current / STIR_BUDGET),
+				toValue: Math.min(1, stirRef.current / stirBudget),
 				duration: 160,
 				useNativeDriver: false,
 			}).start();
@@ -285,7 +288,7 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 		inputRange: [0, 1],
 		outputRange: ["0%", "100%"],
 	});
-	const hungerWobble = stir >= STIR_BUDGET * 0.75 ? "-3deg" : "0deg";
+	const hungerWobble = stir >= stirBudget * 0.75 ? "-3deg" : "0deg";
 
 	return (
 		<View style={styles.wrap}>
@@ -304,6 +307,12 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 			<View style={styles.vigRow}>
 				<View style={styles.stirCol}>
 					<Text style={styles.stirLabel}>his attention</Text>
+				{session.coop && (
+					<Text style={styles.depthChip}>crew dug too — dig deeper</Text>
+				)}
+				{session.blessed && (
+					<Text style={styles.depthChip}>blessed — luckier digs</Text>
+				)}
 					<View style={styles.stirTrack}>
 						<Animated.View style={[styles.stirFill, { width: stirW }]} />
 					</View>
@@ -537,6 +546,11 @@ const styles = StyleSheet.create({
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		transform: [{ rotate: "-8deg" }],
+	},
+	depthChip: {
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		color: WHIMSY.accent,
 	},
 	whisper: {
 		fontFamily: FONTS.hand,

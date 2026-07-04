@@ -23,6 +23,11 @@ export interface RootingSession {
 	windowIndex: number;
 	windowEndsAtMs: number;
 	practice: boolean;
+	// Co-op depth (20260706200000): a crewmate already dug this feeding →
+	// the patch lets you dig deeper (bigger stir budget); an active
+	// blessing makes digs luckier (bonus truffle on any find).
+	coop: boolean;
+	blessed: boolean;
 }
 
 export interface RootingOutcome {
@@ -33,7 +38,13 @@ export interface RootingOutcome {
 	practice: boolean;
 }
 
-type OpenPayload = { seed: number; window_index: number; window_ends_at: string };
+type OpenPayload = {
+	seed: number;
+	window_index: number;
+	window_ends_at: string;
+	coop?: boolean;
+	blessed?: boolean;
+};
 type SubmitPayload = {
 	mud: number;
 	truffles: number;
@@ -79,6 +90,8 @@ export function useRooting(warId: string | null) {
 				windowIndex: r.window_index,
 				windowEndsAtMs: new Date(r.window_ends_at).getTime(),
 				practice: false,
+				coop: r.coop ?? false,
+				blessed: r.blessed ?? false,
 			};
 			setSession(s);
 			return { ok: true, session: s };
@@ -94,6 +107,8 @@ export function useRooting(warId: string | null) {
 				windowIndex: win,
 				windowEndsAtMs: windowEndsAtMs(win),
 				practice: true,
+				coop: false,
+				blessed: false,
 			};
 			setSession(s);
 			return { ok: true, session: s };
