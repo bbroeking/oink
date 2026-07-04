@@ -1,10 +1,13 @@
 // SounderCard — crew management on the Friends hub (the "Sounder"
 // segment, dark-launched behind the `mud_wars` server flag).
 //
-// No crew  → name input + "Create your Sounder" + any incoming invites.
-// In a crew → roster pips, leader invite picker (searchUsers — server
-//             enforces are_friends), pending invites, a Mud Fight CTA
-//             that routes to /mud-war, and Leave.
+// No crew  → join-first: incoming invites + open-Sounder list lead;
+//             founding your own demotes to a secondary form below.
+// In a crew → roster pips where every empty slot is a "+" button that
+//             opens FriendInvitePicker (any member can invite; server
+//             enforces are_friends + cap), pending invites, a Mud Scuffle
+//             CTA that routes to /mud-war, standings link, leadership
+//             handoff on member rows, and Leave.
 //
 // All war flow (challenge / accept / sling / resolve) lives on the
 // /mud-war screen; this card is crew bookkeeping only.
@@ -21,24 +24,32 @@ import {
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { supabase } from "@/utils/supabase";
+import { kickCrewMember, transferCrewLeadership } from "@/utils/mudWars";
 import { Button } from "./ui/Button";
 import { Icon } from "./ui/Icon";
-import { useCrew } from "@/hooks/useCrew";
-import { searchUsers, Profile } from "@/utils/friendships";
+import { JoinableSounders } from "./JoinableSounders";
+import { FriendInvitePicker } from "./FriendInvitePicker";
+import { UserSheet } from "./UserSheet";
+import { useCrew, useJoinableCrews } from "@/hooks/useCrew";
 import { CREW_CAP } from "@/constants/mudFights";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 export function SounderCard() {
 	const router = useRouter();
-	const { crew, loading, create, invite, accept, decline, leave } = useCrew();
-	const [me, setMe] = useState<string | null>(null);
+	const crewHook = useCrew();
+	const { crew, loading, create, accept, decline, leave } = crewHook;
+	const joinable = useJoinableCrews(!crew.crew);
 	const [name, setName] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
-
-	// Invite picker (leader only).
-	const [query, setQuery] = useState("");
-	const [results, setResults] = useState<Profile[]>([]);
+	const [pickerOpen, setPickerOpen] = useState(false);
+	// Tapping a member row opens UserSheet — the one door for bless (and,
+	// for friends, ask/curse/visit). Crewmates get the bless-only panel.
+	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+	// Leadership handoff / kick: first tap arms ("sure?"), second tap acts.
+	const [handoffArmedId, setHandoffArmedId] = useState<string | null>(null);
+	const [kickArmedId, setKickArmedId] = useState<string | null>(null);
+	const [me, setMe] = useState<string | null>(null);
 
 	useEffect(() => {
 		supabase.auth.getUser().then(({ data }) => setMe(data.user?.id ?? null));
@@ -48,6 +59,44 @@ export function SounderCard() {
 	const isLeader = !!me && crew.crew?.leader_id === me;
 	const memberCount = crew.members.length;
 
+	async function onHandoff(userId: string) {
+		if (handoffArmedId !== userId) {
+			setHandoffArmedId(userId);
+			setKickArmedId(null);
+			return;
+		}
+		setHandoffArmedId(null);
+		setNote(null);
+		const r = await transferCrewLeadership(userId);
+		if (!r.ok) {
+			setNote(
+				r.reason === "not_leader"
+					? "Only the leader can hand off the crown."
+					: "Couldn't hand off the crown — try again."
+			);
+		}
+		await crewHook.refresh();
+	}
+
+	async function onKick(userId: string) {
+		if (kickArmedId !== userId) {
+			setKickArmedId(userId);
+			setHandoffArmedId(null);
+			return;
+		}
+		setKickArmedId(null);
+		setNote(null);
+		const r = await kickCrewMember(userId);
+		if (!r.ok) {
+			setNote(
+				r.reason === "in_war"
+					? "The scuffle holds the roster — kick once it's settled."
+					: "Couldn't remove them — try again."
+			);
+		}
+		await crewHook.refresh();
+	}
+
 	async function onCreate() {
 		if (busy) return;
 		setBusy(true);
@@ -56,29 +105,6 @@ export function SounderCard() {
 		setBusy(false);
 		if (!r.ok) setNote(createError(r.reason));
 		else setName("");
-	}
-
-	async function onSearch(text: string) {
-		setQuery(text);
-		if (text.trim().length < 2) {
-			setResults([]);
-			return;
-		}
-		const rows = (await searchUsers(text.trim(), 8)) ?? [];
-		// Drop people already in the crew.
-		const here = new Set(crew.members.map((m) => m.user_id));
-		setResults(rows.filter((p) => !here.has(p.id)));
-	}
-
-	async function onInvite(p: Profile) {
-		setNote(null);
-		const r = await invite(p.id);
-		if (!r.ok) setNote(inviteError(r.reason, p.username));
-		else {
-			setNote(`Invited ${p.username ?? "them"}.`);
-			setQuery("");
-			setResults([]);
-		}
 	}
 
 	if (loading && !crew.crew && crew.invitesIn.length === 0) {
@@ -117,30 +143,48 @@ export function SounderCard() {
 			)}
 
 			{!inCrew ? (
-				<View style={styles.section}>
-					<Text style={styles.heading}>Start your Sounder</Text>
-					<Text style={styles.sub}>
-						Rally up to {CREW_CAP} friends, then take on another Sounder in a
-						Mud Fight.
-					</Text>
-					<TextInput
-						style={styles.input}
-						placeholder="Name your Sounder"
-						placeholderTextColor={WHIMSY.muteSoft}
-						value={name}
-						onChangeText={setName}
-						maxLength={24}
-					/>
-					<Button
-						variant="primary"
-						full
-						disabled={busy || name.trim().length < 1}
-						onPress={onCreate}
-						style={{ marginTop: 4 }}
-					>
-						{busy ? "Creating…" : "Create your Sounder"}
-					</Button>
-				</View>
+				<>
+					{/* Join-first: open Sounders lead, founding follows. */}
+					{joinable.crews.length > 0 && (
+						<View style={styles.section}>
+							<Text style={styles.heading}>Join a Sounder</Text>
+							<Text style={styles.sub}>
+								Slip into an open Sounder — the war will introduce you.
+							</Text>
+							<JoinableSounders
+								crews={joinable.crews}
+								crewHook={crewHook}
+								onStale={joinable.refresh}
+							/>
+						</View>
+					)}
+					<View style={styles.section}>
+						<Text style={styles.heading}>
+							{joinable.crews.length > 0 ? "Or start your own" : "Start your Sounder"}
+						</Text>
+						<Text style={styles.sub}>
+							Rally up to {CREW_CAP} friends, then take on another Sounder in a
+							Mud Scuffle.
+						</Text>
+						<TextInput
+							style={styles.input}
+							placeholder="Name your Sounder"
+							placeholderTextColor={WHIMSY.muteSoft}
+							value={name}
+							onChangeText={setName}
+							maxLength={24}
+						/>
+						<Button
+							variant="primary"
+							full
+							disabled={busy || name.trim().length < 1}
+							onPress={onCreate}
+							style={{ marginTop: 4 }}
+						>
+							{busy ? "Creating…" : "Create your Sounder"}
+						</Button>
+					</View>
+				</>
 			) : (
 				<>
 					<View style={styles.section}>
@@ -150,16 +194,32 @@ export function SounderCard() {
 								{memberCount}/{CREW_CAP}
 							</Text>
 						</View>
+						{/* Filled pips for members; every open slot is a "+" that
+						    opens the friends picker — inviting should be one tap
+						    from the roster, not a hunt through search. */}
 						<View style={styles.pips}>
-							{Array.from({ length: CREW_CAP }).map((_, i) => (
-								<View
-									key={i}
-									style={[styles.pip, i < memberCount && styles.pipFilled]}
-								/>
-							))}
+							{Array.from({ length: CREW_CAP }).map((_, i) =>
+								i < memberCount ? (
+									<View key={i} style={[styles.pip, styles.pipFilled]} />
+								) : (
+									<Pressable
+										key={i}
+										testID={`sounder-slot-plus-${i}`}
+										onPress={() => setPickerOpen(true)}
+										style={styles.plusSlot}
+										hitSlop={6}
+									>
+										<Icon name="plus" size={12} color={WHIMSY.ink} strokeWidth={3} />
+									</Pressable>
+								)
+							)}
 						</View>
 						{crew.members.map((m) => (
-							<View key={m.user_id} style={styles.memberRow}>
+							<Pressable
+								key={m.user_id}
+								onPress={() => setSelectedUserId(m.user_id)}
+								style={styles.memberRow}
+							>
 								<Icon
 									name={m.role === "leader" ? "crown" : "friends"}
 									size={14}
@@ -167,11 +227,38 @@ export function SounderCard() {
 								/>
 								<Text style={styles.memberName}>{m.username ?? "Pig"}</Text>
 								{m.role === "leader" && <Text style={styles.leaderTag}>leader</Text>}
-							</View>
+								{/* Leadership handoff + kick — leader-only, on other
+								    members, two-tap confirms so a stray tap can't
+								    crown or boot anyone. */}
+								{isLeader && m.user_id !== me && (
+									<>
+										<Pressable onPress={() => onHandoff(m.user_id)} hitSlop={8}>
+											<Text
+												style={[
+													styles.handoffLink,
+													handoffArmedId === m.user_id && styles.handoffArmed,
+												]}
+											>
+												{handoffArmedId === m.user_id ? "hand crown? sure ›" : "make leader"}
+											</Text>
+										</Pressable>
+										<Pressable onPress={() => onKick(m.user_id)} hitSlop={8}>
+											<Text
+												style={[
+													styles.handoffLink,
+													kickArmedId === m.user_id && styles.handoffArmed,
+												]}
+											>
+												{kickArmedId === m.user_id ? "kick? sure ›" : "kick"}
+											</Text>
+										</Pressable>
+									</>
+								)}
+							</Pressable>
 						))}
 					</View>
 
-					{/* Mud Fight CTA */}
+					{/* Mud Scuffle CTA */}
 					<View style={styles.section}>
 						<Button
 							variant="gold"
@@ -181,37 +268,9 @@ export function SounderCard() {
 							// include /mud-war on the next `expo start`; cast keeps tsc green now.
 							onPress={() => router.push("/mud-war" as Href)}
 						>
-							{crew.inWar ? "View the Mud Fight" : "Start a Mud Fight"}
+							{crew.inWar ? "View the Mud Scuffle" : "Start a Mud Scuffle"}
 						</Button>
 					</View>
-
-					{/* Leader invite picker */}
-					{isLeader && memberCount < CREW_CAP && (
-						<View style={styles.section}>
-							<Text style={styles.sectionTitle}>Invite a friend</Text>
-							<TextInput
-								style={styles.input}
-								placeholder="Search a friend's name"
-								placeholderTextColor={WHIMSY.muteSoft}
-								value={query}
-								onChangeText={onSearch}
-								autoCapitalize="none"
-							/>
-							{results.map((p) => (
-								<Pressable
-									key={p.id}
-									style={styles.resultRow}
-									onPress={() => onInvite(p)}
-								>
-									<Text style={styles.memberName}>
-										{p.username ?? "Pig"}
-										{p.discriminator ? `#${p.discriminator}` : ""}
-									</Text>
-									<Text style={styles.inviteCta}>Invite</Text>
-								</Pressable>
-							))}
-						</View>
-					)}
 
 					{crew.invitesOut.length > 0 && (
 						<View style={styles.section}>
@@ -224,11 +283,36 @@ export function SounderCard() {
 						</View>
 					)}
 
+					{/* Spirit standings — the kindest, most active Sounders. */}
+					<View style={styles.section}>
+						<Pressable
+							onPress={() => router.push("/clan-ladder" as Href)}
+							style={styles.standingsRow}
+							hitSlop={6}
+						>
+							<Icon name="trophy" size={16} color={WHIMSY.ink} />
+							<Text style={styles.standingsText}>Sounder standings</Text>
+							<Text style={styles.standingsChevron}>›</Text>
+						</Pressable>
+					</View>
+
 					<View style={styles.section}>
 						<Button variant="ghost" full onPress={() => leave()}>
 							Leave Sounder
 						</Button>
 					</View>
+
+					<FriendInvitePicker
+						visible={pickerOpen}
+						onDismiss={() => setPickerOpen(false)}
+						crewHook={crewHook}
+					/>
+
+					<UserSheet
+						targetUserId={selectedUserId}
+						onDismiss={() => setSelectedUserId(null)}
+						onFriendshipChanged={crewHook.refresh}
+					/>
 				</>
 			)}
 
@@ -245,22 +329,6 @@ function createError(reason?: string): string {
 			return "Pick a name (1–24 characters).";
 		default:
 			return "Couldn't create your Sounder.";
-	}
-}
-
-function inviteError(reason: string | undefined, name: string | null): string {
-	const who = name ?? "them";
-	switch (reason) {
-		case "not_friends":
-			return `You can only invite friends. Add ${who} first.`;
-		case "invitee_in_crew":
-			return `${who} is already in a Sounder.`;
-		case "crew_full":
-			return "Your Sounder is full.";
-		case "already_invited":
-			return `${who} already has a pending invite.`;
-		default:
-			return "Couldn't send that invite.";
 	}
 }
 
@@ -299,7 +367,21 @@ const styles = StyleSheet.create({
 	},
 	crewHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
 	count: { fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.mute },
-	pips: { flexDirection: "row", gap: 6, marginVertical: 2 },
+	pips: { flexDirection: "row", alignItems: "center", gap: 6, marginVertical: 2 },
+	plusSlot: {
+		width: 22,
+		height: 22,
+		borderRadius: 11,
+		borderWidth: 1.5,
+		borderStyle: "dashed",
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	standingsRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+	standingsText: { flex: 1, fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.ink },
+	standingsChevron: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.mute },
 	pip: {
 		width: 16,
 		height: 16,
@@ -312,6 +394,13 @@ const styles = StyleSheet.create({
 	memberRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 2 },
 	memberName: { fontFamily: FONTS.body, fontSize: 15, color: WHIMSY.ink, flex: 1 },
 	leaderTag: { fontFamily: FONTS.bodyExtra, fontSize: 10, color: WHIMSY.accent, textTransform: "uppercase" },
+	handoffLink: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
+	},
+	handoffArmed: { color: WHIMSY.accent },
 	inviteRow: { gap: 6, paddingVertical: 4 },
 	inviteText: { fontFamily: FONTS.body, fontSize: 14, color: WHIMSY.ink },
 	bold: { fontFamily: FONTS.bodyExtra },

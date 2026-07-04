@@ -1,0 +1,74 @@
+<!-- @dsCard group="Foundations" name="WHIMSY tokens" subtitle="Palette, four fonts, hard sticker shadows, tilt — from constants/theme.ts" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TTP Foundations — WHIMSY</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@700&family=Nunito:wght@700;800&family=Patrick+Hand&display=swap');
+  :root{
+    --ink:#2a1f15; --paper:#fffaf0; --cream:#fbeee2; --cream2:#f6e6d4;
+    --rose:#ffd6dc; --sky:#c8e3f0; --sage:#c9dec1; --sun:#ffd87a;
+    --accent:#c25a3f; --angel:#a89bff; --goblin:#d4a437;
+    --mute:rgba(40,30,20,.6);
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--cream);font-family:'Nunito',sans-serif;color:var(--ink);
+       display:flex;justify-content:center;padding:24px 0 48px}
+  .wrap{width:390px;padding:0 20px}
+  h2{font-family:'Patrick Hand',cursive;letter-spacing:2.5px;text-transform:uppercase;
+     font-size:13px;color:var(--mute);margin:22px 0 10px}
+  .swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .sw{border:2.5px solid var(--ink);border-radius:12px;height:56px;box-shadow:2px 2px 0 var(--ink);
+      position:relative}
+  .sw span{position:absolute;left:6px;bottom:4px;font-size:9.5px;font-weight:800;
+           background:var(--paper);border:1.5px solid var(--ink);border-radius:5px;padding:0 4px}
+  .type .row{background:var(--paper);border:2.5px solid var(--ink);border-radius:12px;
+             box-shadow:2px 2px 0 var(--ink);padding:10px 14px;margin-bottom:10px}
+  .type .lbl{font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--mute);text-transform:uppercase}
+  .caprasimo{font-family:'Caprasimo',serif;font-size:24px}
+  .fredoka{font-family:'Fredoka',sans-serif;font-weight:700;font-size:20px}
+  .nunito{font-family:'Nunito',sans-serif;font-weight:700;font-size:15px}
+  .hand{font-family:'Patrick Hand',cursive;font-size:16px}
+  .stickers{display:flex;gap:16px}
+  .stick{flex:1;border:3px solid var(--ink);border-radius:16px;background:var(--paper);
+         padding:14px;text-align:center;font-family:'Patrick Hand',cursive;font-size:13px}
+  .stick.big{box-shadow:4px 4px 0 var(--ink);transform:rotate(-1.2deg)}
+  .stick.small{box-shadow:2px 2px 0 var(--ink);transform:rotate(.8deg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>★ palette — WHIMSY ★</h2>
+  <div class="swatches">
+    <div class="sw" style="background:#2a1f15"><span>ink</span></div>
+    <div class="sw" style="background:#fffaf0"><span>paper</span></div>
+    <div class="sw" style="background:#fbeee2"><span>cream</span></div>
+    <div class="sw" style="background:#f6e6d4"><span>cream2</span></div>
+    <div class="sw" style="background:#ffd6dc"><span>rose</span></div>
+    <div class="sw" style="background:#c8e3f0"><span>sky</span></div>
+    <div class="sw" style="background:#c9dec1"><span>sage</span></div>
+    <div class="sw" style="background:#ffd87a"><span>sun</span></div>
+    <div class="sw" style="background:#c25a3f"><span>accent</span></div>
+    <div class="sw" style="background:#a89bff"><span>angel</span></div>
+    <div class="sw" style="background:#d4a437"><span>goblin</span></div>
+    <div class="sw" style="background:rgba(40,30,20,.6)"><span>mute</span></div>
+  </div>
+
+  <h2>★ four fonts, each with a job ★</h2>
+  <div class="type">
+    <div class="row"><div class="lbl">whimsy · titles</div><div class="caprasimo">Caprasimo — The Great Hunger</div></div>
+    <div class="row"><div class="lbl">display · buttons</div><div class="fredoka">Fredoka — Start a Mud Fight</div></div>
+    <div class="row"><div class="lbl">body</div><div class="nunito">Nunito — Five snouts, one banner, no pig shoos a hog alone.</div></div>
+    <div class="row"><div class="lbl">hand · kickers</div><div class="hand">Patrick Hand — ★ your sounder ★</div></div>
+  </div>
+
+  <h2>★ stickers: hard shadows + tilt ★</h2>
+  <div class="stickers">
+    <div class="stick big">STICKER_SHADOW<br>4,4 / radius 0 / tilt −1.2°</div>
+    <div class="stick small">SHADOW_SM<br>2,2 / radius 0 / tilt +0.8°</div>
+  </div>
+</div>
+</body>
+</html>

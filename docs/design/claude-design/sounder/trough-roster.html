@@ -1,0 +1,127 @@
+<!-- @dsCard group="Sounder" name="Direction 2 — The Trough Roster" subtitle="Crew as a living scene: pigs gathered at the communal trough" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sounder — Trough Roster</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@700&family=Nunito:wght@700;800&family=Patrick+Hand&display=swap');
+  :root{
+    --ink:#2a1f15; --paper:#fffaf0; --cream:#fbeee2; --cream2:#f6e6d4;
+    --rose:#ffd6dc; --sky:#c8e3f0; --sage:#c9dec1; --sun:#ffd87a;
+    --accent:#c25a3f; --mute:rgba(40,30,20,.6); --mutesoft:rgba(40,30,20,.4);
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--cream);font-family:'Nunito',sans-serif;color:var(--ink);
+       display:flex;justify-content:center;padding:24px 0 48px}
+  .phone{width:390px;padding:0 20px}
+  .kicker{font-family:'Patrick Hand',cursive;letter-spacing:2.5px;text-transform:uppercase;
+          font-size:13px;color:var(--mute);text-align:center;margin:8px 0 10px}
+  /* ── the scene sticker ─────────────────────────── */
+  .scene{border:3px solid var(--ink);border-radius:20px;box-shadow:4px 4px 0 var(--ink);
+         transform:rotate(-.8deg);overflow:hidden;background:var(--sky);position:relative}
+  .nameplate{position:absolute;top:12px;left:50%;transform:translateX(-50%) rotate(1deg);
+             background:var(--paper);border:2.5px solid var(--ink);border-radius:12px;
+             box-shadow:2px 2px 0 var(--ink);padding:6px 18px;text-align:center;z-index:3}
+  .nameplate h1{font-family:'Caprasimo',serif;font-size:22px;line-height:1}
+  .nameplate .sub{font-family:'Patrick Hand',cursive;font-size:12px;color:var(--mute)}
+  .cloud{position:absolute;background:var(--paper);border-radius:999px;opacity:.9}
+  .grass{position:absolute;left:0;right:0;bottom:0;height:58%;background:var(--sage);
+         border-top:3px solid var(--ink);border-top-left-radius:50% 18px;border-top-right-radius:50% 18px}
+  .sceneInner{position:relative;height:250px}
+  /* pigs standing on the grass */
+  .herd{position:absolute;left:0;right:0;bottom:74px;display:flex;justify-content:center;
+        gap:8px;z-index:2;align-items:flex-end}
+  .spot{width:60px;text-align:center;position:relative}
+  .spot svg.pig{width:56px;height:56px;filter:drop-shadow(2px 2px 0 rgba(42,31,21,.9))}
+  .spot .crown{position:absolute;top:-14px;left:50%;transform:translateX(-50%) rotate(-8deg);width:26px;z-index:2}
+  .tag{display:inline-block;background:var(--paper);border:2px solid var(--ink);border-radius:8px;
+       font-family:'Patrick Hand',cursive;font-size:12px;padding:1px 8px;margin-top:4px;
+       box-shadow:1.5px 1.5px 0 var(--ink)}
+  .spot:nth-child(odd) .tag{transform:rotate(-1.5deg)}
+  .spot:nth-child(even) .tag{transform:rotate(1.2deg)}
+  .spot.open .dash{width:48px;height:30px;margin:0 auto;border:2.5px dashed var(--ink);
+                   border-radius:50%;opacity:.4;background:rgba(255,250,240,.4)}
+  .spot.open .tag{background:transparent;box-shadow:none;border-style:dashed;color:var(--mute)}
+  /* trough */
+  .trough{position:absolute;left:50%;transform:translateX(-50%);bottom:22px;width:280px;height:46px;
+          background:var(--cream2);border:3px solid var(--ink);border-radius:10px;
+          box-shadow:2px 2px 0 var(--ink);z-index:1;overflow:hidden}
+  .trough .slop{position:absolute;top:6px;left:8px;right:8px;height:14px;background:var(--goblin,#d4a437);
+                border:2px solid var(--ink);border-radius:8px;opacity:.85}
+  .trough .slat{position:absolute;top:0;bottom:0;width:2.5px;background:var(--ink);opacity:.35}
+  .roomLine{position:absolute;bottom:2px;left:0;right:0;text-align:center;
+            font-family:'Patrick Hand',cursive;font-size:12.5px;color:var(--ink);opacity:.75;z-index:3}
+  /* ── cards below ───────────────────────────────── */
+  .card{background:var(--paper);border:3px solid var(--ink);border-radius:18px;
+        box-shadow:4px 4px 0 var(--ink);padding:16px;margin-top:16px}
+  .card.tilt1{transform:rotate(.6deg)}
+  .card.tilt2{transform:rotate(-.5deg)}
+  .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+       background:var(--sun);border:3px solid var(--ink);border-radius:999px;
+       box-shadow:2px 2px 0 var(--ink);padding:13px;font-family:'Fredoka',sans-serif;
+       font-weight:700;font-size:17px;color:var(--ink);cursor:pointer}
+  .btn svg{width:20px;height:20px}
+  .cardKicker{font-family:'Patrick Hand',cursive;letter-spacing:2px;text-transform:uppercase;
+              font-size:12px;color:var(--mute);margin-bottom:8px}
+  .search{width:100%;border:2.5px solid var(--ink);border-radius:12px;background:var(--cream);
+          padding:11px 14px;font-family:'Nunito';font-weight:700;font-size:14px;color:var(--mute)}
+  .hint{font-family:'Patrick Hand',cursive;font-size:13px;color:var(--mute);margin-top:8px;text-align:center}
+  .leave{display:block;text-align:center;margin-top:18px;font-family:'Patrick Hand',cursive;
+         font-size:14px;color:var(--mute);text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="phone">
+  <p class="kicker">★ your sounder ★</p>
+
+  <div class="scene">
+    <div class="sceneInner">
+      <div class="nameplate"><h1>Sonder</h1><div class="sub">2 of 5 at the trough</div></div>
+      <div class="cloud" style="top:20px;left:14px;width:54px;height:18px"></div>
+      <div class="cloud" style="top:44px;right:20px;width:70px;height:20px"></div>
+      <div class="grass"></div>
+
+      <div class="herd">
+        <div class="spot">
+          <svg class="crown" viewBox="0 0 40 24"><path d="M4 20 L4 8 L12 14 L20 4 L28 14 L36 8 L36 20 Z" fill="#ffd87a" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/></svg>
+          <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><ellipse cx="18" cy="41" rx="4" ry="2.5" fill="#f2a9b8" opacity=".7"/><ellipse cx="46" cy="41" rx="4" ry="2.5" fill="#f2a9b8" opacity=".7"/><path d="M22 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><path d="M36 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          <br><span class="tag">Brian</span>
+        </div>
+        <div class="spot">
+          <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><ellipse cx="18" cy="41" rx="4" ry="2.5" fill="#f2a9b8" opacity=".7"/><ellipse cx="46" cy="41" rx="4" ry="2.5" fill="#f2a9b8" opacity=".7"/><circle cx="25" cy="32" r="2" fill="#2a1f15"/><circle cx="39" cy="32" r="2" fill="#2a1f15"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          <br><span class="tag">Jen</span>
+        </div>
+        <div class="spot open"><div class="dash"></div><br><span class="tag">open</span></div>
+        <div class="spot open"><div class="dash"></div><br><span class="tag">open</span></div>
+        <div class="spot open"><div class="dash"></div><br><span class="tag">open</span></div>
+      </div>
+
+      <div class="trough">
+        <div class="slop"></div>
+        <div class="slat" style="left:25%"></div>
+        <div class="slat" style="left:50%"></div>
+        <div class="slat" style="left:75%"></div>
+      </div>
+      <div class="roomLine">room at the trough for 3 more</div>
+    </div>
+  </div>
+
+  <div class="card tilt1">
+    <button class="btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21 V4"/><path d="M5 4 Q12 1 19 5 L16 9 L19 13 Q12 10 5 12"/></svg>
+      Start a Mud Fight
+    </button>
+  </div>
+
+  <div class="card tilt2">
+    <div class="cardKicker">call a friend to the trough</div>
+    <input class="search" placeholder="Search a friend's name">
+    <div class="hint">wars count with 2+ pigs slinging</div>
+  </div>
+
+  <a class="leave" href="#">leave your Sounder › no hard feelings</a>
+</div>
+</body>
+</html>

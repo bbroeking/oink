@@ -1,4 +1,4 @@
-// Sounder Mud Fight screen (dark-launched behind the `mud_wars` server flag;
+// Sounder Mud Scuffle screen (dark-launched behind the `mud_wars` server flag;
 // reached from the SounderCard CTA). One screen, four states:
 //   • no war      → challenge the house or a friend's Sounder
 //   • pending     → defender accepts/declines; challenger waits
@@ -55,6 +55,9 @@ import {
 	ropePosition,
 	formatCountdown,
 	fetchWarSpoils,
+	forfeitWar,
+	fetchMatchHistory,
+	MatchEntry,
 	devEndWarNow,
 	devSkipToHold,
 	WonCosmetic,
@@ -81,7 +84,7 @@ export default function MudWarScreen() {
 	const { visible: mudWarsVisible, loaded: flagLoaded } =
 		useFeatureFlagState("mud_wars");
 	const { war, loading, refresh, throwBand, submitRun, setDeploy, setFront } = useMudWar();
-	// "Start a new fight" on the resolved recap: mark this war dismissed so the
+	// "Start a new scuffle" on the resolved recap: mark this war dismissed so the
 	// screen drops to the NoWar challenge picker. my_war() keeps returning the
 	// resolved war, so refresh() alone can never advance past the recap.
 	const [dismissedWarId, setDismissedWarId] = useState<string | null>(null);
@@ -144,8 +147,8 @@ export default function MudWarScreen() {
 			<View style={styles.bg}>
 				<SafeAreaView style={{ flex: 1 }}>
 					<PageHeader
-						kicker="mud fights"
-						title="Mud Fight"
+						kicker="mud scuffles"
+						title="Mud Scuffle"
 						onBack={() => router.back()}
 						right={
 							<View style={styles.headerRight}>
@@ -199,6 +202,7 @@ export default function MudWarScreen() {
 							onRun={submitRun}
 							onDeploy={setDeploy}
 							onSetFront={setFront}
+							onChanged={refresh}
 						/>
 					) : (
 						<ResolvedWar war={war} onChanged={dismissResolved} />
@@ -257,10 +261,10 @@ function NoWar({ onChanged }: { onChanged: () => void }) {
 		if (!r.ok) {
 			setNote(
 				r.reason === "not_leader"
-					? "Only your Sounder's leader can start a Mud Fight."
+					? "Only your Sounder's leader can start a Mud Scuffle."
 					: r.reason === "already_in_war"
-					? "Your Sounder is already in a fight."
-					: "Couldn't start that fight."
+					? "Your Sounder is already in a scuffle."
+					: "Couldn't start that scuffle."
 			);
 		} else {
 			onChanged();
@@ -273,7 +277,7 @@ function NoWar({ onChanged }: { onChanged: () => void }) {
 				<Image source={HAT_IMAGES.crew_pennant} style={styles.hero} resizeMode="contain" />
 				<Text style={styles.emptyTitle}>No Sounder yet</Text>
 				<Text style={styles.emptyBody}>
-					Create or join a Sounder from the Friends tab to start a Mud Fight.
+					Create or join a Sounder from the Friends tab to start a Mud Scuffle.
 				</Text>
 			</View>
 		);
@@ -282,7 +286,7 @@ function NoWar({ onChanged }: { onChanged: () => void }) {
 	return (
 		<ScrollView contentContainerStyle={styles.content}>
 			<Text style={styles.lead}>
-				Start a Mud Fight. Everyone gets {DAILY_ALLOTMENT} mud-slings a day —
+				Start a Mud Scuffle. Everyone gets {DAILY_ALLOTMENT} mud-slings a day —
 				no buffs, no advantages. Most mud per head wins.
 			</Text>
 
@@ -292,7 +296,7 @@ function NoWar({ onChanged }: { onChanged: () => void }) {
 				icon={<Icon name="trophy" size={16} color="#5A3F00" />}
 				onPress={() => start(challengeHouse)}
 			>
-				Fight the house (The Mudlarks)
+				Scuffle with the house (The Mudlarks)
 			</Button>
 
 			{targets.length > 0 && (
@@ -312,8 +316,47 @@ function NoWar({ onChanged }: { onChanged: () => void }) {
 				</View>
 			)}
 
+			<MatchHistory />
+
 			{note && <Text style={styles.note}>{note}</Text>}
 		</ScrollView>
+	);
+}
+
+// ── Past scuffles — the crew's match history (crew_match_history) ────────────
+function MatchHistory() {
+	const [rows, setRows] = useState<MatchEntry[] | null>(null);
+	useEffect(() => {
+		fetchMatchHistory(10).then(setRows);
+	}, []);
+	if (!rows || rows.length === 0) return null;
+	return (
+		<View style={{ marginTop: 18 }}>
+			<Text style={styles.sectionTitle}>Past scuffles</Text>
+			{rows.map((r) => (
+				<View key={r.war_id} style={styles.historyRow}>
+					<Text
+						style={[
+							styles.historyResult,
+							r.result === "won" && styles.historyWon,
+							r.result === "lost" && styles.historyLost,
+						]}
+					>
+						{r.result}
+					</Text>
+					<Text style={styles.historyOpponent} numberOfLines={1}>
+						vs {r.opponent}
+						{r.forfeited ? (r.yieldedByUs ? " · we yielded" : " · they yielded") : ""}
+					</Text>
+					<Text style={styles.historyDate}>
+						{new Date(r.resolvedAt).toLocaleDateString(undefined, {
+							month: "short",
+							day: "numeric",
+						})}
+					</Text>
+				</View>
+			))}
+		</View>
 	);
 }
 
@@ -337,7 +380,7 @@ function PendingWar({
 				r.reason === "not_defender_leader"
 					? "Only your Sounder's leader can accept or decline."
 					: r.reason === "defender_busy"
-					? "Your Sounder is already in another fight."
+					? "Your Sounder is already in another scuffle."
 					: r.reason === "no_war"
 					? "This challenge is no longer available."
 					: "Couldn't do that — try again."
@@ -361,7 +404,7 @@ function PendingWar({
 			<Text style={styles.emptyTitle}>
 				{war.them.crew?.name ?? "A Sounder"} challenged you!
 			</Text>
-			<Text style={styles.emptyBody}>Accept to start a 5-day Mud Fight.</Text>
+			<Text style={styles.emptyBody}>Accept to start a 5-day Mud Scuffle.</Text>
 			<View style={styles.pendingBtns}>
 				<Button variant="primary" onPress={() => act(() => acceptChallenge(war.warId))}>
 					Accept
@@ -390,12 +433,14 @@ function ActiveWar({
 	onRun,
 	onDeploy,
 	onSetFront,
+	onChanged,
 }: {
 	war: NonNullable<ReturnType<typeof useMudWar>["war"]>;
 	onThrow: (band: MudBand) => void;
 	onRun: ReturnType<typeof useMudWar>["submitRun"];
 	onDeploy: ReturnType<typeof useMudWar>["setDeploy"];
 	onSetFront: ReturnType<typeof useMudWar>["setFront"];
+	onChanged: () => void;
 }) {
 	// Am I my Sounder's leader? Gates the deploy sheet (set_deploy is leader-only).
 	const { crew } = useCrew();
@@ -653,7 +698,42 @@ function ActiveWar({
 					day={siegeDay(war.endsAt, totalDays)}
 				/>
 			)}
+
+			{/* Yield — leader-only, two-tap. Concedes the scuffle: the rope
+			    goes to them, elo applies as a loss. */}
+			{isLeader && (
+				<GiveUpLink warId={war.warId} onChanged={onChanged} />
+			)}
 		</ScrollView>
+	);
+}
+
+// ── Yield the scuffle — quiet link, armed on first tap ───────────────────────
+function GiveUpLink({ warId, onChanged }: { warId: string; onChanged: () => void }) {
+	const [armed, setArmed] = useState(false);
+	const [busy, setBusy] = useState(false);
+	const yieldWar = async () => {
+		if (!armed) {
+			setArmed(true);
+			return;
+		}
+		if (busy) return;
+		setBusy(true);
+		const r = await forfeitWar(warId);
+		setBusy(false);
+		setArmed(false);
+		if (r.ok) onChanged();
+	};
+	return (
+		<Pressable onPress={yieldWar} hitSlop={8} style={styles.giveUpWrap}>
+			<Text style={[styles.giveUpText, armed && styles.giveUpArmed]}>
+				{busy
+					? "yielding…"
+					: armed
+						? "yield the scuffle? the rope goes to them ›"
+						: "yield the scuffle ›"}
+			</Text>
+		</Pressable>
 	);
 }
 
@@ -761,6 +841,34 @@ const styles = StyleSheet.create({
 	targetName: { fontFamily: FONTS.body, fontSize: 15, color: WHIMSY.ink, flex: 1 },
 	targetCount: { color: WHIMSY.mute },
 	note: { fontFamily: FONTS.body, fontSize: 13, color: WHIMSY.accent, textAlign: "center", marginTop: 12 },
+	giveUpWrap: { marginTop: 20, alignSelf: "center" },
+	giveUpText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
+	},
+	giveUpArmed: { color: WHIMSY.accent },
+	historyRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+		paddingVertical: 5,
+		borderBottomWidth: 1.5,
+		borderBottomColor: WHIMSY.cream2,
+	},
+	historyResult: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		letterSpacing: 1,
+		textTransform: "uppercase",
+		color: WHIMSY.mute,
+		width: 44,
+	},
+	historyWon: { color: WHIMSY.accent },
+	historyLost: { color: WHIMSY.muteSoft },
+	historyOpponent: { flex: 1, fontFamily: FONTS.body, fontSize: 13, color: WHIMSY.ink },
+	historyDate: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
 	siegeChapter: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink, textAlign: "center", marginBottom: 1 },
 	countdown: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.mute, textAlign: "center", marginBottom: 14 },
 	scoreRow: { flexDirection: "row", justifyContent: "space-between", gap: 10 },

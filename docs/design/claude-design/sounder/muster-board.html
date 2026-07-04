@@ -1,0 +1,121 @@
+<!-- @dsCard group="Sounder" name="Direction 3 — The Muster Board" subtitle="Crew as a paper-craft noticeboard: taped name cards, wax-sealed challenge" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sounder — Muster Board</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@700&family=Nunito:wght@700;800&family=Patrick+Hand&display=swap');
+  :root{
+    --ink:#2a1f15; --paper:#fffaf0; --cream:#fbeee2; --cream2:#f6e6d4;
+    --rose:#ffd6dc; --sky:#c8e3f0; --sage:#c9dec1; --sun:#ffd87a;
+    --accent:#c25a3f; --mute:rgba(40,30,20,.6); --mutesoft:rgba(40,30,20,.4);
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--cream);font-family:'Nunito',sans-serif;color:var(--ink);
+       display:flex;justify-content:center;padding:24px 0 48px}
+  .phone{width:390px;padding:0 20px}
+  .kicker{font-family:'Patrick Hand',cursive;letter-spacing:2.5px;text-transform:uppercase;
+          font-size:13px;color:var(--mute);text-align:center;margin:8px 0 14px}
+  /* ── hanging title plank ───────────────────────── */
+  .strings{display:flex;justify-content:space-between;margin:0 90px;height:20px}
+  .strings i{width:2.5px;background:var(--ink);opacity:.7}
+  .plank{margin:0 48px;background:var(--sun);border:3px solid var(--ink);border-radius:10px;
+         box-shadow:3px 3px 0 var(--ink);transform:rotate(-1deg);padding:8px 12px;text-align:center}
+  .plank h1{font-family:'Caprasimo',serif;font-size:24px;line-height:1}
+  .plank .sub{font-family:'Patrick Hand',cursive;font-size:12.5px;color:var(--mute)}
+  /* ── the board ─────────────────────────────────── */
+  .board{margin-top:14px;background:var(--cream2);border:3px solid var(--ink);border-radius:16px;
+         box-shadow:4px 4px 0 var(--ink);padding:18px 14px 14px;position:relative;
+         background-image:radial-gradient(rgba(42,31,21,.05) 1.6px, transparent 1.6px);
+         background-size:14px 14px}
+  .note{position:relative;background:var(--paper);border:2.5px solid var(--ink);border-radius:10px;
+        box-shadow:2px 2px 0 var(--ink);display:flex;align-items:center;gap:10px;
+        padding:10px 12px;margin-bottom:12px}
+  .note:nth-child(odd){transform:rotate(-.9deg)}
+  .note:nth-child(even){transform:rotate(.8deg)}
+  .tape{position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-2deg);
+        width:64px;height:16px;background:rgba(200,227,240,.75);border:1.5px solid rgba(42,31,21,.35)}
+  .note svg.pig{width:38px;height:38px;flex:none}
+  .note .who{flex:1;min-width:0}
+  .note .nm{font-family:'Fredoka',sans-serif;font-weight:700;font-size:16px}
+  .note .ln{font-family:'Patrick Hand',cursive;font-size:12.5px;color:var(--mute)}
+  .stamp{font-family:'Nunito';font-weight:800;font-size:10px;letter-spacing:1.5px;color:var(--accent);
+         border:2px solid var(--accent);border-radius:6px;padding:2px 7px;transform:rotate(6deg);
+         text-transform:uppercase;opacity:.9}
+  .note.open{background:transparent;border-style:dashed;box-shadow:none}
+  .note.open .nm{font-family:'Patrick Hand',cursive;font-weight:400;font-size:14.5px;color:var(--mute)}
+  .note.open .pin{width:14px;height:14px;border-radius:50%;background:var(--accent);
+                  border:2px solid var(--ink);flex:none}
+  /* ── the challenge letter ──────────────────────── */
+  .letter{margin-top:18px;background:var(--paper);border:3px solid var(--ink);border-radius:6px;
+          box-shadow:4px 4px 0 var(--ink);transform:rotate(.7deg);padding:16px 16px 14px;position:relative}
+  .letter::before{content:"";position:absolute;inset:6px;border:1.5px dashed rgba(42,31,21,.3);
+                  border-radius:4px;pointer-events:none}
+  .letter .lk{font-family:'Patrick Hand',cursive;letter-spacing:2px;text-transform:uppercase;
+              font-size:11.5px;color:var(--mute)}
+  .letter h2{font-family:'Caprasimo',serif;font-size:19px;margin:2px 0 10px}
+  .seal{position:absolute;top:-14px;right:14px;width:44px;height:44px;border-radius:50%;
+        background:var(--accent);border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink);
+        display:flex;align-items:center;justify-content:center;transform:rotate(-8deg)}
+  .seal svg{width:24px;height:24px}
+  .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+       background:var(--sun);border:3px solid var(--ink);border-radius:999px;
+       box-shadow:2px 2px 0 var(--ink);padding:12px;font-family:'Fredoka',sans-serif;
+       font-weight:700;font-size:16px;color:var(--ink);cursor:pointer}
+  /* ── invite + leave notes ──────────────────────── */
+  .invite{margin-top:18px;background:var(--paper);border:3px solid var(--ink);border-radius:16px;
+          box-shadow:4px 4px 0 var(--ink);transform:rotate(-.5deg);padding:14px 16px}
+  .cardKicker{font-family:'Patrick Hand',cursive;letter-spacing:2px;text-transform:uppercase;
+              font-size:12px;color:var(--mute);margin-bottom:8px}
+  .search{width:100%;border:2.5px solid var(--ink);border-radius:12px;background:var(--cream);
+          padding:11px 14px;font-family:'Nunito';font-weight:700;font-size:14px;color:var(--mute)}
+  .leaveNote{margin:20px auto 0;width:210px;background:var(--paper);border:2px dashed var(--mutesoft);
+             border-radius:8px;transform:rotate(1.5deg);padding:8px 12px;text-align:center;
+             font-family:'Patrick Hand',cursive;font-size:13px;color:var(--mute)}
+  .leaveNote a{color:var(--accent);text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="phone">
+  <p class="kicker">★ your sounder ★</p>
+
+  <div class="strings"><i></i><i></i></div>
+  <div class="plank"><h1>Sonder</h1><div class="sub">the muster · 2 of 5 snouts</div></div>
+
+  <div class="board">
+    <div class="note">
+      <div class="tape"></div>
+      <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><path d="M22 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><path d="M36 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+      <div class="who"><div class="nm">Brian</div><div class="ln">first snout in the mud</div></div>
+      <span class="stamp">leader</span>
+    </div>
+    <div class="note">
+      <div class="tape" style="transform:translateX(-50%) rotate(2.5deg)"></div>
+      <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="25" cy="32" r="2" fill="#2a1f15"/><circle cx="39" cy="32" r="2" fill="#2a1f15"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+      <div class="who"><div class="nm">Jen</div><div class="ln">joined 2 days ago</div></div>
+    </div>
+    <div class="note open"><div class="pin"></div><div class="who"><div class="nm">pin a friend here ›</div></div></div>
+    <div class="note open"><div class="pin" style="background:#c8e3f0"></div><div class="who"><div class="nm">pin a friend here ›</div></div></div>
+    <div class="note open"><div class="pin" style="background:#c9dec1"></div><div class="who"><div class="nm">pin a friend here ›</div></div></div>
+  </div>
+
+  <div class="letter">
+    <div class="seal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fffaf0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21 V4"/><path d="M5 4 Q12 1 19 5 L16 9 L19 13 Q12 10 5 12"/></svg>
+    </div>
+    <div class="lk">a challenge awaits</div>
+    <h2>The bog calls for the Sonder</h2>
+    <button class="btn">Answer with mud</button>
+  </div>
+
+  <div class="invite">
+    <div class="cardKicker">invite a friend</div>
+    <input class="search" placeholder="Search a friend's name">
+  </div>
+
+  <div class="leaveNote">packing your trotters?<br><a href="#">leave the Sounder › no hard feelings</a></div>
+</div>
+</body>
+</html>

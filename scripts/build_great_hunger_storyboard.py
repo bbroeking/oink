@@ -21,6 +21,7 @@ HUNGER_REF = Path.home() / "Downloads" / "ChatGPT Image Jul 2, 2026, 05_23_14 PM
 W, H = 1080, 1920
 GREEN = (0, 255, 0, 255)
 ROSIE_STATES = ("idle", "happy", "sad", "surprise", "tired", "jump", "walk", "wave")
+ROSIE_SHADOW_STATES = {"happy", "surprise"}
 
 
 def open_rgba(path: Path) -> Image.Image:
@@ -62,6 +63,52 @@ def tint(img: Image.Image, color: tuple[int, int, int], strength: float) -> Imag
 def desaturate(img: Image.Image, amount: float = 0.8) -> Image.Image:
     grey = ImageEnhance.Color(img).enhance(1 - amount)
     return ImageEnhance.Brightness(grey).enhance(0.86)
+
+
+def clean_rosie_frame(img: Image.Image, state: str) -> Image.Image:
+    """Remove source-sheet floor ovals from review/animation exports only."""
+    frame = img.copy()
+    if state not in ROSIE_SHADOW_STATES:
+        return frame
+    pix = frame.load()
+    start_y = round(frame.height * 0.62)
+    visited: set[tuple[int, int]] = set()
+
+    def is_shadow_pixel(x: int, y: int) -> bool:
+        r, g, b, a = pix[x, y]
+        if a == 0 or y < start_y:
+            return False
+        neutral = max(r, g, b) - min(r, g, b) < 48
+        return neutral and r > 150 and g > 150 and b > 150
+
+    for y in range(start_y, frame.height):
+        for x in range(frame.width):
+            if (x, y) in visited or not is_shadow_pixel(x, y):
+                continue
+            stack = [(x, y)]
+            component: list[tuple[int, int]] = []
+            visited.add((x, y))
+            while stack:
+                cx, cy = stack.pop()
+                component.append((cx, cy))
+                for nx, ny in ((cx + 1, cy), (cx - 1, cy), (cx, cy + 1), (cx, cy - 1)):
+                    if nx < 0 or ny < start_y or nx >= frame.width or ny >= frame.height or (nx, ny) in visited:
+                        continue
+                    if is_shadow_pixel(nx, ny):
+                        visited.add((nx, ny))
+                        stack.append((nx, ny))
+
+            xs = [p[0] for p in component]
+            ys = [p[1] for p in component]
+            width = max(xs) - min(xs) + 1
+            height = max(ys) - min(ys) + 1
+            low = max(ys) > round(frame.height * 0.75)
+            flat = height <= round(frame.height * 0.16)
+            wide_enough = width >= round(frame.width * 0.12)
+            if low and flat and wide_enough:
+                for px, py in component:
+                    pix[px, py] = (255, 255, 255, 0)
+    return frame
 
 
 def remove_light_checker(img: Image.Image) -> Image.Image:
@@ -227,7 +274,8 @@ def build_rosie_animation_pack() -> None:
     for row, state in enumerate(ROSIE_STATES):
         frames = []
         for col in range(4):
-            frame = fit(open_rgba(ROOT / "assets" / "images" / "sprites" / "rosie" / f"{state}_{col + 1}.png"), height=205)
+            raw = open_rgba(ROOT / "assets" / "images" / "sprites" / "rosie" / f"{state}_{col + 1}.png")
+            frame = fit(clean_rosie_frame(raw, state), height=205)
             frames.append(frame)
             center = (cell * col + cell // 2, cell * row + 148)
             paste_center(sheet, frame, center)
@@ -274,22 +322,34 @@ def build_hunger_action_pack(hunger: Image.Image) -> None:
 
     action_frames: dict[str, list[Image.Image]] = {}
     action_frames["idle"] = [
-        hunger_variant(hunger, 286, tilt, squash)
-        for tilt, squash in [(-1.5, 1.0), (1, 0.98), (-0.5, 1.01), (1.5, 0.99)]
+        hunger_variant(hunger, 282, tilt, squash)
+        for tilt, squash in [(-1.5, 1.0), (1, 0.96), (-0.5, 1.03), (1.5, 0.98)]
     ]
     action_frames["waddle"] = [
-        hunger_variant(hunger, 292, tilt, squash)
-        for tilt, squash in [(-3, 1.0), (2, 0.97), (-2, 1.02), (3, 0.98)]
+        hunger_variant(hunger, height, tilt, squash)
+        for height, tilt, squash in [(285, -8, 1.0), (302, 3, 0.94), (288, 7, 1.02), (300, -3, 0.95)]
     ]
-    action_frames["gloat"] = [
-        hunger_variant(hunger, 294, tilt, squash)
-        for tilt, squash in [(-5, 0.98), (-2, 1.02), (3, 1.0), (6, 0.97)]
-    ]
+    action_frames["gloat"] = []
+    for idx, (height, tilt, squash) in enumerate([(292, -7, 0.98), (310, -2, 1.02), (300, 5, 0.96), (318, 8, 1.03)]):
+        frame_canvas = Image.new("RGBA", (cell, cell), (0, 0, 0, 0))
+        d = ImageDraw.Draw(frame_canvas, "RGBA")
+        glow_alpha = [55, 90, 130, 85][idx]
+        d.ellipse((56, 224, 296, 322), fill=(255, 191, 37, glow_alpha))
+        for mote in range(24):
+            random.seed(idx * 100 + mote)
+            x = random.randint(42, 310)
+            y = random.randint(170, 316)
+            r = random.randint(3, 8)
+            d.ellipse((x - r, y - r, x + r, y + r), fill=(255, 215, 68, random.randint(80, 190)))
+        paste_center(frame_canvas, hunger_variant(hunger, height, tilt, squash), (176, 174 + [8, -8, 2, -10][idx]))
+        action_frames["gloat"].append(frame_canvas)
     slurp_frames = []
     for idx, (tilt, squash) in enumerate([(-2, 1.0), (1, 0.98), (-1, 1.02), (2, 0.99)]):
         frame_canvas = Image.new("RGBA", (cell, cell), (0, 0, 0, 0))
-        frame_canvas.alpha_composite(draw_gold_burp((cell, cell), direction=1))
-        paste_center(frame_canvas, hunger_variant(hunger, 286, tilt, squash), (178, 184 + [0, -6, 0, 5][idx]))
+        stream = draw_gold_burp((cell, cell), direction=1)
+        frame_canvas.alpha_composite(stream)
+        frame_canvas.alpha_composite(stream.rotate([0, -10, 8, -4][idx], resample=Image.BICUBIC))
+        paste_center(frame_canvas, hunger_variant(hunger, 286 + [0, 16, 6, 20][idx], tilt, squash), (178, 184 + [0, -10, 2, 8][idx]))
         slurp_frames.append(frame_canvas)
     action_frames["slurp"] = slurp_frames
 
@@ -514,9 +574,11 @@ def main() -> None:
         "- Storyboard output: `assets/concepts/great-hungerer/storyboard/`\n"
         "- Sprite output: `assets/concepts/great-hungerer/sprites/`\n"
         "- Rosie animation pack: `rosie_all_states_sheet_v1.png`, `rosie_all_states_contact_v1.png`, "
-        "and `rosie_{idle,happy,sad,surprise,tired,jump,walk,wave}_preview_v1.gif`.\n"
+        "and `rosie_{idle,happy,sad,surprise,tired,jump,walk,wave}_preview_v1.gif`. "
+        "`happy` and `surprise` exports remove the source floor ovals without modifying shipped source sprites.\n"
         "- Hunger animation pack: `great_hunger_action_sheet_v2.png`, `great_hunger_action_contact_v2.png`, "
-        "`great_hunger_walk_turnaround_v2.png`, and `great_hunger_{idle,waddle,gloat,slurp}_preview_v2.gif`.\n"
+        "and `great_hunger_{idle,waddle,gloat,slurp}_preview_v2.gif`. "
+        "The generated rear/turnaround sheet is rejected for production and should not be used as an animation target.\n"
         "- Note: these are first-pass composited production placeholders. The prompt pack in "
         "`docs/great-hunger-opening-production.md` remains the source for higher-fidelity AI reruns.\n",
         encoding="utf-8",

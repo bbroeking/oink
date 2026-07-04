@@ -116,7 +116,7 @@ const BEATS: Beat[] = [
 		sparkles: "rising",
 		fog: 0.1,
 		kicker: "to the mud",
-		line: "Rally your Sounder. It’s time for Mud Wars.",
+		line: "Rally your Sounder. It’s time for Mud Scuffles.",
 		cta: "Rally your Sounder",
 	},
 ];

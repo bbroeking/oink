@@ -1307,12 +1307,22 @@ export default function SeasonScreen() {
 				    slot below. */}
 
 				<ScrollView contentContainerStyle={styles.tierList}>
-					{/* ── Season 2 — the boss leads the tab, then the story, then
-					    the path into the fight, then what the fight pays. ── */}
+					{/* ── Season 2 — the boss leads the tab, then YOUR SOUNDER
+					    (the path into the scuffle comes before the lore — joining
+					    is the season's first verb), then the story, then what
+					    the scuffling pays. ── */}
 					{s2 && (
 						<>
 							<SectionHeader kicker="the season boss" title="The Great Hungerer" />
 							<HungerHero onTellTale={() => setIntroOpen(true)} />
+
+							<View style={{ marginTop: 8 }}>
+								<SectionHeader
+									kicker="your sounder"
+									title={crewHook.crew.crew?.name ?? "Join the scuffle"}
+								/>
+							</View>
+							<SounderSteps crewHook={crewHook} war={mudWar.war} />
 
 							<View style={{ marginTop: 8 }}>
 								<SectionHeader
@@ -1323,15 +1333,7 @@ export default function SeasonScreen() {
 							<SeasonStory />
 
 							<View style={{ marginTop: 8 }}>
-								<SectionHeader
-									kicker="your sounder"
-									title={crewHook.crew.crew?.name ?? "Join the fight"}
-								/>
-							</View>
-							<SounderSteps crewHook={crewHook} war={mudWar.war} />
-
-							<View style={{ marginTop: 8 }}>
-								<SectionHeader kicker="war spoils" title="What you can earn" />
+								<SectionHeader kicker="scuffle spoils" title="What you can earn" />
 							</View>
 							<SpoilsShowcase />
 						</>
@@ -1409,9 +1411,10 @@ export default function SeasonScreen() {
 
 					{/* Alignment placard — moved here from the Me tab. Greedy
 					    ↔ score ↔ Generous + the bar, the blessing/curse/regen
-					    modifiers, and a tap-through to the full explainer. It
-					    belongs with the season because Judgement Day settles
-					    on alignment. */}
+					    modifiers, and a tap-through to the full explainer.
+					    It belongs with the season: S1's finale settles on
+					    alignment; in S2 it stays as the daily blessing/curse
+					    dial (no reckoning). */}
 					<View style={{ marginTop: 8 }}>
 						<SectionHeader kicker="standing" title="Alignment" />
 					</View>
@@ -1477,6 +1480,7 @@ export default function SeasonScreen() {
 			/>
 			{alignmentExplainerOpen && (
 				<AlignmentExplainerModal
+					s2={s2}
 					onDismiss={() => setAlignmentExplainerOpen(false)}
 				/>
 			)}
@@ -1943,7 +1947,7 @@ const xpHowTo = StyleSheet.create({
 });
 
 // Alignment placard — moved off the Me tab onto the Season tab, where
-// Judgement Day settles on the player's greedy↔generous standing.
+// the season's stakes live (S1: the finale verdict; S2: blessing/curse power).
 const alignmentStoryStyles = StyleSheet.create({
 	wrap: { padding: 16, marginTop: 4 },
 	labelRow: {

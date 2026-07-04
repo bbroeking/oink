@@ -1,14 +1,25 @@
-// Client-side metadata + daily-rotation logic for the Season 1
-// blessing / curse rituals. The rotation MUST match the SQL
-// daily_blessing_kind / daily_curse_kind functions exactly
-// (EXTRACT(DOY) % 4) or the UI will offer a different kind than
-// the server will accept.
+// Client-side metadata + daily-rotation logic for the blessing / curse
+// rituals. The rotation MUST match the SQL daily_blessing_kind /
+// daily_curse_kind functions exactly (EXTRACT(DOY) % 4) or the UI will
+// offer a different kind than the server will accept.
+//
+// Season 2 swaps in a new blessing set (same mechanics, Hunger fiction):
+// the server rolls the S2 pool when the world_boss GLOBAL flag is on, so
+// callers pass the same flag here (per-user dev overrides can preview the
+// S2 art but the server's cast follows the global — cosmetic-only skew).
 
 export type BlessingKind =
 	| "warm_tea"
 	| "sun_beam"
 	| "halo_kiss"
-	| "bountiful_snouts";
+	| "bountiful_snouts"
+	| "mud_wrap"
+	| "glimmer_truffle"
+	| "snoot_boop"
+	| "trough_bounty"
+	// System-granted (never in the daily rotation): the crew-wide Chorus
+	// glow — 3+ crewmates casting within 30 min.
+	| "chorus_glow";
 
 export type CurseKind =
 	| "sluggish_snout"
@@ -24,6 +35,15 @@ export const BLESSING_ROTATION: BlessingKind[] = [
 	"sun_beam",
 	"halo_kiss",
 	"bountiful_snouts",
+];
+// Season-2 set — mechanical analogs in the same rotation slots
+// (regen / lucky / +tickles / +snouts), so the day's MECHANIC is
+// identical across seasons and only the fiction changes.
+export const BLESSING_ROTATION_S2: BlessingKind[] = [
+	"mud_wrap",
+	"glimmer_truffle",
+	"snoot_boop",
+	"trough_bounty",
 ];
 export const CURSE_ROTATION: CurseKind[] = [
 	"sluggish_snout",
@@ -65,6 +85,39 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 		icon: require("../assets/images/emoji/bountiful-snouts.png"),
 		blurb: "+5 snouts, right now.",
 	},
+	// ── Season 2 set — icons are S1 stand-ins until the icon-gen art
+	//    pass lands (mud-wrap / glimmer-truffle / snoot-boop /
+	//    trough-bounty pngs). ──
+	mud_wrap: {
+		name: "Mud Wrap",
+		emoji: "🛁",
+		icon: require("../assets/images/emoji/warm-tea.png"),
+		blurb: "A warm mud wrap — tickle regen runs double speed for a few hours.",
+	},
+	glimmer_truffle: {
+		name: "Glimmer Truffle",
+		emoji: "🍄",
+		icon: require("../assets/images/emoji/sun-beam.png"),
+		blurb: "A glimmering truffle — pops on your next lucky pig.",
+	},
+	snoot_boop: {
+		name: "Snoot Boop",
+		emoji: "🐽",
+		icon: require("../assets/images/emoji/halo-kiss.png"),
+		blurb: "+5 tickles, right now.",
+	},
+	trough_bounty: {
+		name: "Trough Bounty",
+		emoji: "🥣",
+		icon: require("../assets/images/emoji/bountiful-snouts.png"),
+		blurb: "+5 snouts, right now.",
+	},
+	chorus_glow: {
+		name: "Chorus Glow",
+		emoji: "🎶",
+		icon: require("../assets/images/emoji/blessed.png"),
+		blurb: "The Sounder sang together — regen runs double for the hour.",
+	},
 };
 
 export const CURSE_META: Record<CurseKind, RitualMeta> = {
@@ -101,8 +154,8 @@ export function dayOfYearUTC(d: Date = new Date()): number {
 	return Math.floor((now - start) / 86_400_000);
 }
 
-export function dailyBlessingKind(d: Date = new Date()): BlessingKind {
-	return BLESSING_ROTATION[dayOfYearUTC(d) % 4];
+export function dailyBlessingKind(d: Date = new Date(), s2 = false): BlessingKind {
+	return (s2 ? BLESSING_ROTATION_S2 : BLESSING_ROTATION)[dayOfYearUTC(d) % 4];
 }
 
 export function dailyCurseKind(d: Date = new Date()): CurseKind {
@@ -110,10 +163,10 @@ export function dailyCurseKind(d: Date = new Date()): CurseKind {
 }
 
 // Unified accessor used by RitualPicker so it doesn't branch on mode
-// at every call site.
-export function dailyRitual(mode: RitualMode, d: Date = new Date()) {
+// at every call site. `s2` mirrors the server's world_boss GLOBAL.
+export function dailyRitual(mode: RitualMode, d: Date = new Date(), s2 = false) {
 	if (mode === "bless") {
-		const kind = dailyBlessingKind(d);
+		const kind = dailyBlessingKind(d, s2);
 		return { kind, ...BLESSING_META[kind] };
 	}
 	const kind = dailyCurseKind(d);

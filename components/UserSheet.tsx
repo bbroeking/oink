@@ -28,6 +28,7 @@ import { Sticker } from "./ui/Sticker";
 import { BarnVisitModal } from "./BarnVisitModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { RitualPicker } from "./RitualPicker";
+import { useCrew } from "@/hooks/useCrew";
 import { AlignmentBar } from "./ui/AlignmentBar";
 import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
@@ -130,6 +131,14 @@ function formatRemaining(iso: string): string {
 }
 
 export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Props) {
+	// Crewmates can be blessed without being friends (send_blessing allows
+	// friends OR crewmates) — derive crewmate-ness from the caller's own
+	// roster so the sheet can offer the bless panel to non-friend sounder
+	// mates. Ask / Curse / Visit stay friends-only.
+	const { crew: myCrewState } = useCrew();
+	const isCrewmate =
+		!!targetUserId &&
+		myCrewState.members.some((m) => m.user_id === targetUserId);
 	const [stats, setStats] = useState<UserStats | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
@@ -579,6 +588,28 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 												/>
 											)}
 										</>
+									) : isCrewmate && stats.friendship_status !== "self" ? (
+										<>
+											{/* Non-friend sounder mate — bless-only panel. The
+											    herd you fight beside deserves warmth before the
+											    friend request lands; Ask/Curse/Visit stay
+											    friends-only. */}
+											<Text style={styles.crewmateKicker}>
+												★ rides in your sounder ★
+											</Text>
+											<RitualPicker
+												mode="bless"
+												targetUserId={stats.user_id}
+												targetName={stats.username ?? "crewmate"}
+											/>
+											<ActionButton
+												status={stats.friendship_status}
+												busy={busy}
+												onAdd={addFriend}
+												onCancel={cancelOutgoing}
+												onAccept={acceptIncoming}
+											/>
+										</>
 									) : (
 										<ActionButton
 											status={stats.friendship_status}
@@ -875,6 +906,7 @@ const styles = StyleSheet.create({
 	statsDivider: { width: 1.5, backgroundColor: WHIMSY.ink, marginVertical: 6 },
 	statCol: { flex: 1, alignItems: "center", gap: 4 },
 	statLabel: { ...KICKER_TEXT, fontSize: 10 },
+	crewmateKicker: { ...KICKER_TEXT, textAlign: "center", marginBottom: 6 },
 	statValue: { fontFamily: FONTS.whimsy, fontSize: 22 },
 	tierChip: {
 		paddingHorizontal: 10,

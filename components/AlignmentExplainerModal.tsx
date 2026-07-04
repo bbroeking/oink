@@ -1,7 +1,9 @@
 // Visual explainer for the Generous ◄──► Greedy alignment system.
 // Pure "how it works" card — no mechanics to configure, alignment is
-// an identity (label + schism + leaderboard + Judgement Day titles),
-// so the explainer leans almost entirely on the spectrum visual.
+// an identity (label + schism + leaderboard), so the explainer leans
+// almost entirely on the spectrum visual. The closing stakes line is
+// season-aware: S1 builds toward Judgement Day titles; S2 has no
+// reckoning, so the stakes are the blessing/curse effects themselves.
 //
 // Tone borrowed wholesale from AlignmentSchismModal: paper Sticker
 // card on a dim backdrop, Caprasimo headline, PatrickHand body, the
@@ -33,6 +35,8 @@ import {
 
 interface Props {
 	onDismiss: () => void;
+	/** Season 2 drops the Judgement Day framing — no reckoning is coming. */
+	s2?: boolean;
 }
 
 // The three zones, left → right along the spectrum. range copy mirrors
@@ -43,7 +47,7 @@ const ZONES = [
 	{ emblem: "halo" as const, name: "Generous", range: "+25 & above", tint: WHIMSY.angel },
 ];
 
-export function AlignmentExplainerModal({ onDismiss }: Props) {
+export function AlignmentExplainerModal({ onDismiss, s2 = false }: Props) {
 	const scale = useRef(new Animated.Value(0)).current;
 	const opacity = useRef(new Animated.Value(0)).current;
 
@@ -129,8 +133,9 @@ export function AlignmentExplainerModal({ onDismiss }: Props) {
 						</View>
 
 						<Text style={styles.stakes}>
-							When Judgement Day comes, the most Generous and the most
-							Greedy earn titles no one can claim again.
+							{s2
+								? "The farther you lean, the stronger your blessings and curses grow. Your nature is yours to feed."
+								: "When Judgement Day comes, the most Generous and the most Greedy earn titles no one can claim again."}
 						</Text>
 
 						<Pressable

@@ -22,8 +22,8 @@ const BEATS: { g: GlyphName; kicker: string; line: string }[] = [
 	},
 	{
 		g: "flame",
-		kicker: "the fight",
-		line: "Sounders wage Mud Wars over his feeding grounds, and dig truffles back while he gorges.",
+		kicker: "the scuffles",
+		line: "Sounders pile into Mud Scuffles over his feeding grounds, and dig truffles back while he gorges.",
 	},
 	{
 		g: "crown",

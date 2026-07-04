@@ -19,6 +19,7 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
+import { claimEcho, fetchActiveEcho, type EchoState } from "@/utils/mudWars";
 import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
 import { Icon } from "./ui/Icon";
@@ -308,10 +309,27 @@ export default function Barn() {
 		() => ({
 			blessed:     activeEffects.blessings.length > 0,
 			cursed:      activeEffects.curses.length > 0,
-			sunBeam:     activeEffects.effects.some((e) => e.kind === "sun_beam"),
+			// Lucky-pig boost — sun_beam (S1) or glimmer_truffle (S2), same
+			// consume-on-first-lucky mechanic. luckyKind targets the clear.
+			sunBeam:     activeEffects.effects.some(
+				(e) => e.kind === "sun_beam" || e.kind === "glimmer_truffle"
+			),
+			luckyKind:   activeEffects.effects.find(
+				(e) => e.kind === "sun_beam" || e.kind === "glimmer_truffle"
+			)?.kind ?? null,
 			phantomItch: activeEffects.effects.some((e) => e.kind === "phantom_itch"),
 		}),
 		[activeEffects.blessings, activeEffects.curses, activeEffects.effects]
+	);
+
+	// Echo — a crewmate's Lucky Pig rings for 10 minutes; the first tap
+	// while it rings catches +1 tickle (claim_echo, once per pig per echo).
+	// Focus-fetched so re-opening the Barn inside the window still catches.
+	const [echo, setEcho] = useState<EchoState | null>(null);
+	useFocusEffect(
+		useCallback(() => {
+			fetchActiveEcho().then(setEcho);
+		}, [])
 	);
 
 	// Home stats (counter, balance, equipped cosmetics, season tier).
@@ -534,20 +552,34 @@ export default function Barn() {
 			void rpc("record_lucky_pig_hit");
 		}
 
-		if (triggered && effects.sunBeam) {
-			// sun_beam is consume-on-first-lucky — clear it as soon
-			// as a lucky pig actually fires so subsequent rolls drop
-			// back to the base chance instead of keeping the boost
-			// for the rest of the timed window. Best-effort: a
-			// network failure leaves the buff in place but the
-			// blessing's own 4h expiry caps the worst case. The
-			// hook's realtime channel doesn't watch UPDATE on
-			// blessings, so a manual refresh syncs the derived
-			// sunBeam predicate.
+		// Catch a ringing Echo — a crewmate's lucky moment pays this tap
+		// +1 tickle. Optimistically consume so a tap-storm claims once;
+		// server dedups per (echo, pig) regardless.
+		if (echo) {
+			setEcho(null);
+			void (async () => {
+				const r = await claimEcho();
+				if (r.ok) {
+					heartFloatsRef.current?.spawn();
+					Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+				}
+			})();
+		}
+
+		if (triggered && effects.sunBeam && effects.luckyKind) {
+			// The lucky boost (sun_beam S1 / glimmer_truffle S2) is
+			// consume-on-first-lucky — clear it as soon as a lucky pig
+			// actually fires so subsequent rolls drop back to the base
+			// chance instead of keeping the boost for the rest of the
+			// timed window. Best-effort: a network failure leaves the
+			// buff in place but the blessing's own 4h expiry caps the
+			// worst case. The hook's realtime channel doesn't watch
+			// UPDATE on blessings, so a manual refresh syncs the
+			// derived predicate.
 			void (async () => {
 				try {
 					await rpc("clear_blessing", {
-						target_kind: "sun_beam",
+						target_kind: effects.luckyKind,
 					});
 					await activeEffects.refresh();
 				} catch {

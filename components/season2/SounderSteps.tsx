@@ -1,15 +1,18 @@
 // The Season-2 front door — a three-step walkthrough that takes a pig from
 // "no Sounder" to "marching on the bog", driven by real crew state:
 //
-//   1. Found your Sounder   (create + name — inline, right here)
+//   1. Join a Sounder       (invites + open-Sounder list lead; founding
+//                            your own is the demoted fallback — a 5-cap
+//                            crew game fragments if every pig founds)
 //   2. Rally your friends   (invite via the Friends hub picker; pips show 5)
 //   3. March on the bog     (challenge CTA → /mud-war)
 //
 // Completed steps collapse to checked stamps; the current step is expanded
 // with ONE clear action. When a war is live the stepper yields to a compact
-// war strip (day, standing, and the way back to the front). Reuses useCrew's
-// actions — the SounderCard on the Friends hub stays the roster-management
-// home; this is the season's guided path into it.
+// war strip (day, standing, and the way back to the front). A quiet leave
+// link sits under the stepper (server blocks leaving mid-war). Reuses
+// useCrew's actions — the SounderCard on the Friends hub stays the
+// roster-management home; this is the season's guided path into it.
 
 import { useState } from "react";
 import {
@@ -25,7 +28,8 @@ import { Sticker } from "../ui/Sticker";
 import { Icon } from "../ui/Icon";
 import { Glyph } from "../ui/Glyph";
 import { Button } from "../ui/Button";
-import type { UseCrew } from "@/hooks/useCrew";
+import { JoinableSounders } from "../JoinableSounders";
+import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
 import type { WarState } from "@/utils/mudWars";
 import {
 	CREW_CAP,
@@ -43,8 +47,8 @@ import {
 } from "@/constants/theme";
 import { sounderStepView, warDay, ropeLeanLine } from "./stepState";
 
-const STEP_META: { key: "create" | "invite" | "march"; n: number; title: string }[] = [
-	{ key: "create", n: 1, title: "Found your Sounder" },
+const STEP_META: { key: "join" | "invite" | "march"; n: number; title: string }[] = [
+	{ key: "join", n: 1, title: "Join a Sounder" },
 	{ key: "invite", n: 2, title: "Rally your friends" },
 	{ key: "march", n: 3, title: "March on the bog" },
 ];
@@ -90,7 +94,7 @@ export function SounderSteps({
 						{current ? (
 							<Sticker color="paper" rotate={-0.5} radius={RADII.lg} style={styles.currentCard}>
 								<Text style={styles.stepTitle}>{s.title}</Text>
-								{s.key === "create" && <CreateStep crewHook={crewHook} />}
+								{s.key === "join" && <JoinStep crewHook={crewHook} />}
 								{s.key === "invite" && <InviteStep crewHook={crewHook} />}
 								{s.key === "march" && <MarchStep />}
 							</Sticker>
@@ -103,7 +107,7 @@ export function SounderSteps({
 									]}
 								>
 									{s.title}
-									{done && s.key === "create" && crew.crew
+									{done && s.key === "join" && crew.crew
 										? ` — ${crew.crew.name}`
 										: ""}
 									{done && s.key === "invite"
@@ -115,16 +119,77 @@ export function SounderSteps({
 					</View>
 				);
 			})}
+			{/* Easy out — leaving should cost a tap, not a hunt. Only rendered
+			    outside a live war (the war strip replaces the stepper, and the
+			    server blocks mid-war leaves anyway). */}
+			{crew.crew && <LeaveLink crewHook={crewHook} />}
 		</View>
 	);
 }
 
-// ── Step 1 — found + name, inline ────────────────────────────────────
-function CreateStep({ crewHook }: { crewHook: UseCrew }) {
+// ── Step 1 — join-first: invites, then open Sounders; founding demoted ──
+function JoinStep({ crewHook }: { crewHook: UseCrew }) {
+	const invites = crewHook.crew.invitesIn;
+	const joinable = useJoinableCrews();
+	const [founding, setFounding] = useState(false);
+
+	// Nothing to join and nobody calling — founding is the only way in, so
+	// the form leads instead of hiding behind the link.
+	const nothingToJoin =
+		!joinable.loading && joinable.crews.length === 0 && invites.length === 0;
+	const showFoundForm = founding || nothingToJoin;
+
+	return (
+		<View>
+			<Text style={styles.stepSub}>
+				{nothingToJoin
+					? "No open Sounders right now — raise the first banner and the bog fills in behind you."
+					: "Five snouts, one banner. Slip into an open Sounder — the war will introduce you."}
+			</Text>
+
+			{/* A friend already wants you — the warmest way in. */}
+			{invites.map((inv) => (
+				<View key={inv.id} style={styles.inviteRow}>
+					<Glyph name="friends" size={18} />
+					<Text style={styles.inviteText} numberOfLines={2}>
+						{inv.inviter_name ?? "A friend"} wants you in {inv.crew_name}
+					</Text>
+					<Pressable
+						onPress={() => crewHook.accept(inv.id)}
+						style={styles.joinBtn}
+						hitSlop={6}
+					>
+						<Text style={styles.joinBtnText}>Join</Text>
+					</Pressable>
+					<Pressable onPress={() => crewHook.decline(inv.id)} hitSlop={8}>
+						<Text style={styles.declineText}>decline</Text>
+					</Pressable>
+				</View>
+			))}
+
+			<JoinableSounders
+				crews={joinable.crews}
+				crewHook={crewHook}
+				onStale={joinable.refresh}
+			/>
+
+			{showFoundForm ? (
+				<FoundForm crewHook={crewHook} topGap={!nothingToJoin} />
+			) : (
+				<Pressable onPress={() => setFounding(true)} hitSlop={8}>
+					<Text style={styles.foundLink}>or found your own ›</Text>
+				</Pressable>
+			)}
+		</View>
+	);
+}
+
+// The demoted founding form — expanded via "or found your own ›", or led
+// with when there's nothing to join.
+function FoundForm({ crewHook, topGap }: { crewHook: UseCrew; topGap: boolean }) {
 	const [name, setName] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
-	const invites = crewHook.crew.invitesIn;
 
 	const found = async () => {
 		const trimmed = name.trim();
@@ -145,31 +210,7 @@ function CreateStep({ crewHook }: { crewHook: UseCrew }) {
 	};
 
 	return (
-		<View>
-			<Text style={styles.stepSub}>
-				Five snouts, one banner. Give yours a name the bog will remember.
-			</Text>
-
-			{/* A friend already wants you — joining beats founding. */}
-			{invites.map((inv) => (
-				<View key={inv.id} style={styles.inviteRow}>
-					<Glyph name="friends" size={18} />
-					<Text style={styles.inviteText} numberOfLines={2}>
-						{inv.inviter_name ?? "A friend"} wants you in {inv.crew_name}
-					</Text>
-					<Pressable
-						onPress={() => crewHook.accept(inv.id)}
-						style={styles.joinBtn}
-						hitSlop={6}
-					>
-						<Text style={styles.joinBtnText}>Join</Text>
-					</Pressable>
-					<Pressable onPress={() => crewHook.decline(inv.id)} hitSlop={8}>
-						<Text style={styles.declineText}>decline</Text>
-					</Pressable>
-				</View>
-			))}
-
+		<View style={topGap ? { marginTop: SPACE.md } : undefined}>
 			<TextInput
 				value={name}
 				onChangeText={setName}
@@ -188,13 +229,39 @@ function CreateStep({ crewHook }: { crewHook: UseCrew }) {
 	);
 }
 
+// ── Quiet leave — under the stepper, one tap, no hunt ────────────────
+function LeaveLink({ crewHook }: { crewHook: UseCrew }) {
+	const [note, setNote] = useState<string | null>(null);
+	const leave = async () => {
+		setNote(null);
+		const r = await crewHook.leave();
+		if (r.ok) {
+			Haptics.selectionAsync().catch(() => {});
+		} else {
+			setNote(
+				r.reason === "in_war"
+					? "The war holds you — leave once it's settled."
+					: "Couldn't leave — try again."
+			);
+		}
+	};
+	return (
+		<View>
+			<Pressable onPress={leave} hitSlop={8}>
+				<Text style={styles.leaveLink}>leave your Sounder ›</Text>
+			</Pressable>
+			{!!note && <Text style={styles.note}>{note}</Text>}
+		</View>
+	);
+}
+
 // ── Step 2 — rally friends into the roster ───────────────────────────
 function InviteStep({ crewHook }: { crewHook: UseCrew }) {
 	const { members, invitesOut } = crewHook.crew;
 	return (
 		<View>
 			<Text style={styles.stepSub}>
-				Wars count with {QUORUM}+ pigs slinging. Invite the friends you'd share
+				Scuffles count with {QUORUM}+ pigs slinging. Invite the friends you'd share
 				a trough with.
 			</Text>
 			<View style={styles.pipsRow}>
@@ -234,7 +301,7 @@ function MarchStep() {
 	return (
 		<View>
 			<Text style={styles.stepSub}>
-				Your Sounder stands ready. Challenge a rival — every war pries tickles
+				Your Sounder stands ready. Challenge a rival — every scuffle pries tickles
 				off the Hungerer.
 			</Text>
 			<Button
@@ -264,7 +331,7 @@ function WarStrip({
 			<View style={styles.warHead}>
 				<Glyph name="flame" size={20} />
 				<Text style={styles.warTitle} numberOfLines={1}>
-					{crewName ?? "Your Sounder"} is at war
+					{crewName ?? "Your Sounder"} is mid-scuffle
 				</Text>
 				<Text style={styles.warDay}>
 					Day {day} of {totalDays}
@@ -401,6 +468,22 @@ const styles = StyleSheet.create({
 		color: WHIMSY.accent,
 		textAlign: "center",
 		marginTop: SPACE.sm,
+		textDecorationLine: "underline",
+	},
+	foundLink: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.accent,
+		textAlign: "center",
+		marginTop: SPACE.md,
+		textDecorationLine: "underline",
+	},
+	leaveLink: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: SPACE.xs,
 		textDecorationLine: "underline",
 	},
 	warStrip: { paddingHorizontal: SPACE.lg, paddingVertical: SPACE.md },

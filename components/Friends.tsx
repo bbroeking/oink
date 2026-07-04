@@ -19,6 +19,7 @@ import {
 	type Profile,
 } from "@/utils/friendships";
 import { ensurePushPermission } from "../utils/pushNotifications";
+import { fetchFriendsCrews } from "@/utils/mudWars";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
 import { FONTS, TAB_SAFE, TITLE_RULE, WHIMSY } from "@/constants/theme";
@@ -40,6 +41,9 @@ type Tab = "friends" | "add";
 export default function Friends({ userId }: { userId: string }) {
 	const [tab, setTab] = useState<Tab>("friends");
 	const [friends, setFriends] = useState<Profile[]>([]);
+	// friend_id → Sounder name, so each row can say which herd a friend
+	// rides with (friends_crews — empty until the migration is live).
+	const [crewNames, setCrewNames] = useState<Map<string, string>>(new Map());
 	// Tapping a friend opens UserSheet — the one door for ask / bless
 	// / curse.
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -55,15 +59,20 @@ export default function Friends({ userId }: { userId: string }) {
 		const ids = (await getFriendIds()) ?? [];
 		const capped = ids.slice(0, FRIEND_CAP_LIMIT);
 		if (capped.length > 0) {
-			const { data } = await supabase
-				.from("profiles")
-				.select(
-					"id, username, tickles_earned, discriminator, alignment_score, active_hat_id, active_hat:hats!profiles_active_hat_id_fkey(name)"
-				)
-				.in("id", capped);
+			const [{ data }, friendCrews] = await Promise.all([
+				supabase
+					.from("profiles")
+					.select(
+						"id, username, tickles_earned, discriminator, alignment_score, active_hat_id, active_hat:hats!profiles_active_hat_id_fkey(name)"
+					)
+					.in("id", capped),
+				fetchFriendsCrews(),
+			]);
 			setFriends((data as Profile[]) ?? []);
+			setCrewNames(new Map(friendCrews.map((fc) => [fc.friend_id, fc.crew_name])));
 		} else {
 			setFriends([]);
+			setCrewNames(new Map());
 		}
 	}, [userId]);
 
@@ -100,7 +109,11 @@ export default function Friends({ userId }: { userId: string }) {
 				showsVerticalScrollIndicator={false}
 			>
 				{tab === "friends" && (
-					<FriendsList friends={friends} onPick={setSelectedUserId} />
+					<FriendsList
+						friends={friends}
+						crewNames={crewNames}
+						onPick={setSelectedUserId}
+					/>
 				)}
 
 				{tab === "add" && <AddFriend userId={userId} onSent={load} />}
@@ -168,9 +181,11 @@ function InitialAvatar({ name }: { name: string | null | undefined }) {
 
 function FriendsList({
 	friends,
+	crewNames,
 	onPick,
 }: {
 	friends: Profile[];
+	crewNames: Map<string, string>;
 	onPick: (id: string) => void;
 }) {
 	if (friends.length === 0) {
@@ -193,6 +208,7 @@ function FriendsList({
 			{sorted.map((f, i) => {
 				const last = i === sorted.length - 1;
 				const wears = hatName(f);
+				const crewName = crewNames.get(f.id);
 				return (
 					<Pressable
 						key={f.id}
@@ -239,6 +255,13 @@ function FriendsList({
 									</>
 								)}
 							</View>
+							)}
+							{/* Which herd they ride with — the Sounder is part of a
+							    pig's identity now, so it reads at a glance. */}
+							{!!crewName && (
+								<Text style={styles.rowCrewText} numberOfLines={1}>
+									in {crewName}
+								</Text>
 							)}
 						</View>
 						<Text style={styles.rowChevron}>›</Text>
@@ -568,6 +591,12 @@ const styles = StyleSheet.create({
 		fontSize: 11,
 		color: WHIMSY.mute,
 		marginTop: 4,
+	},
+	rowCrewText: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.accent,
+		marginTop: 2,
 	},
 	rowMetaLine: {
 		flexDirection: "row",

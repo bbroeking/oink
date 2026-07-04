@@ -4,9 +4,11 @@
 
 import type { CrewState } from "@/utils/mudWars";
 
-// The stepper's four states. "create"/"invite"/"march" are the three visible
-// steps; "war" collapses the stepper into the compact live-war strip.
-export type SounderStepKey = "create" | "invite" | "march" | "war";
+// The stepper's four states. "join"/"invite"/"march" are the three visible
+// steps ("join" covers both joining an open Sounder and founding one — the
+// join path leads); "war" collapses the stepper into the compact live-war
+// strip.
+export type SounderStepKey = "join" | "invite" | "march" | "war";
 
 export interface SounderStepView {
 	current: SounderStepKey;
@@ -14,12 +16,12 @@ export interface SounderStepView {
 	done: Exclude<SounderStepKey, "war">[];
 }
 
-// no crew            → create
+// no crew            → join
 // crew, in a war     → war (regardless of roster size — the war strip leads)
 // crew of 1          → invite
 // crew of 2+         → march
 export function sounderStepFor(crew: CrewState): SounderStepKey {
-	if (!crew.crew) return "create";
+	if (!crew.crew) return "join";
 	if (crew.inWar && crew.warId) return "war";
 	if (crew.members.length < 2) return "invite";
 	return "march";
@@ -28,14 +30,14 @@ export function sounderStepFor(crew: CrewState): SounderStepKey {
 export function sounderStepView(crew: CrewState): SounderStepView {
 	const current = sounderStepFor(crew);
 	switch (current) {
-		case "create":
+		case "join":
 			return { current, done: [] };
 		case "invite":
-			return { current, done: ["create"] };
+			return { current, done: ["join"] };
 		case "march":
-			return { current, done: ["create", "invite"] };
+			return { current, done: ["join", "invite"] };
 		case "war":
-			return { current, done: ["create", "invite", "march"] };
+			return { current, done: ["join", "invite", "march"] };
 	}
 }
 

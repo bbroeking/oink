@@ -168,6 +168,10 @@
         grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       }
 
+      .cta-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
       .frame {
         overflow: hidden;
         border: 1px solid var(--line);
@@ -206,6 +210,188 @@
 
       .wide-shot img {
         width: 100%;
+      }
+
+      .video-review {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .video-shell,
+      .video-notes {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      .video-shell video {
+        display: block;
+        width: 100%;
+        max-height: 78vh;
+        background: #050607;
+      }
+
+      .video-notes {
+        padding: 18px;
+      }
+
+      .video-notes h3 {
+        font-size: 22px;
+        line-height: 1.15;
+        margin-bottom: 10px;
+      }
+
+      .video-notes p {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .video-notes p + p {
+        margin-top: 12px;
+      }
+
+      .slideshow {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        gap: 14px;
+        align-items: stretch;
+        margin-bottom: 14px;
+      }
+
+      .slide-stage,
+      .script-panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      .slide-stage {
+        position: relative;
+        min-height: 520px;
+      }
+
+      .slide {
+        display: none;
+        height: 100%;
+      }
+
+      .slide.is-active {
+        display: grid;
+      }
+
+      .slide img {
+        width: 100%;
+        height: 100%;
+        min-height: 520px;
+        object-fit: cover;
+      }
+
+      .slide-meta {
+        position: absolute;
+        left: 14px;
+        bottom: 14px;
+        right: 14px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: end;
+        pointer-events: none;
+      }
+
+      .slide-title {
+        padding: 9px 11px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 6px;
+        background: rgba(13, 15, 17, 0.76);
+        backdrop-filter: blur(10px);
+      }
+
+      .slide-title strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .slide-title span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .script-panel {
+        display: flex;
+        flex-direction: column;
+        min-height: 520px;
+      }
+
+      .script-body {
+        padding: 18px;
+        flex: 1;
+      }
+
+      .script-body h3 {
+        font-size: 22px;
+        line-height: 1.15;
+        margin-bottom: 12px;
+      }
+
+      .narration {
+        color: #f2e0c5;
+        font-size: 18px;
+        line-height: 1.45;
+      }
+
+      .motion-note {
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .slide-controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        padding: 12px;
+        border-top: 1px solid var(--line);
+        background: #15181c;
+      }
+
+      button {
+        min-height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel-2);
+        color: var(--ink);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      button:hover {
+        border-color: #59606a;
+      }
+
+      .progress {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        padding: 0 12px 12px;
+        background: #15181c;
+      }
+
+      .dot {
+        height: 5px;
+        border-radius: 999px;
+        background: #343941;
+      }
+
+      .dot.is-active {
+        background: var(--gold);
       }
 
       .preview-tile {
@@ -288,7 +474,9 @@
         }
 
         .story-grid,
-        .sprite-grid {
+        .sprite-grid,
+        .video-review,
+        .slideshow {
           grid-template-columns: 1fr;
         }
       }
@@ -302,7 +490,10 @@
           <p class="subtle">current storyboard and sprite state</p>
         </div>
         <nav class="nav" aria-label="Sections">
-          <a href="#storyboard">Storyboard</a>
+          <a href="#video">Video</a>
+          <a href="#storyboard">Story</a>
+          <a href="#board">Board</a>
+          <a href="#cta">CTA</a>
           <a href="#rosie">Rosie</a>
           <a href="#hunger">Hunger</a>
           <a href="#previews">GIFs</a>
@@ -313,48 +504,145 @@
         <section id="storyboard">
           <div class="section-head">
             <div>
-              <h2>Storyboard</h2>
-              <p class="subtle">joy -> theft -> grey -> empty world -> the Hunger begins</p>
+              <h2>Story Slideshow</h2>
+              <p class="subtle">pensive narration pass for the Season 2 opening</p>
             </div>
             <div class="badge-row">
-              <span class="badge gold">7 shots</span>
+              <span class="badge gold">41.1s</span>
+              <span class="badge gold">8 shots</span>
+              <span class="badge gold">generated panels</span>
               <span class="badge">ends down</span>
             </div>
           </div>
+          <div id="video" class="video-review" aria-label="Great Hunger narrated story video">
+            <div class="video-shell">
+              <video controls playsinline preload="metadata" poster="../assets/concepts/great-hungerer/generated_panels/shot_07_hunger_begins.png">
+                <source src="../assets/concepts/great-hungerer/video/great_hunger_generated_panels_animated_v2.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <aside class="video-notes">
+              <h3>Narrated MP4 Story Cut</h3>
+              <p>This cut uses the seven generated panels plus an app-icon download CTA card, rendered into animated frames with slow camera movement, motes, glints, grey drift, and hoard glow.</p>
+              <p>Runtime is 41.1 seconds with one continuous ElevenLabs narration track, burned-in story captions, and a faster 2.25-second season-hook download page that enters under the final narration tail.</p>
+            </aside>
+          </div>
+          <div class="slideshow" aria-label="Great Hunger storyline slideshow">
+            <div class="slide-stage">
+              <article class="slide is-active" data-title="The Tickle Bloom" data-time="4s" data-narration="Once, the valley glowed with tickles. Little sparks of joy, rising from every puddle, petal, and porch light." data-motion="Slow push through golden motes. Warm, drifting, alive.">
+                <img src="../assets/concepts/great-hungerer/generated_panels/shot_01_valley_of_tickles.png" alt="The Tickle Bloom" />
+              </article>
+              <article class="slide" data-title="Rosie's Dream" data-time="4s" data-narration="Rosie dreamed beneath their glow, safe in the hush before morning." data-motion="Gentle push toward sleeping Rosie. Motes orbit softly.">
+                <img src="../assets/concepts/great-hungerer/generated_panels/shot_02_rosie_asleep.png" alt="Rosie's Dream" />
+              </article>
+              <article class="slide" data-title="The Crown Blocks The Moon" data-time="4s" data-narration="But joy has a scent. And far beyond the reeds, something hungry found it." data-motion="Low-angle reveal. The tiny crown crosses the moon before the Hunger's face appears.">
+                <img src="../assets/concepts/great-hungerer/generated_panels/shot_03_hunger_arrives.png" alt="The Crown Blocks The Moon" />
+              </article>
+              <article class="slide" data-title="The Great Slurp" data-time="6s" data-narration="The Great Hunger opened his mouth, and the whole valley began to dim." data-motion="A wide spiral of golden motes pulls from barns and flowers into the Hunger.">
+                <img src="../assets/concepts/great-hungerer/generated_panels/shot_04_the_theft.png" alt="The Great Slurp" />
+              </article>
+              <article class="slide" data-title="The Last Tickle" data-time="4s" data-narration="By dawn, only one small spark remained. Rosie reached for it, but even that light slipped away." data-motion="Rosie reaches. The last mote flickers from gold to grey before contact.">
+                <img src="../assets/concepts/great-hungerer/generated_panels/shot_05_grey_dawn.png" alt="The Last Tickle" />
+              </article>
+              <article class="slide" data-title="The Quiet Valley" data-time="4s" data-narration="Then she saw the truth. It was not only her barn. Every home had gone quiet." data-motion="Slow pan across opened barns and sad little pigs.">
+                <img src="../assets/concepts/great-hungerer/generated_panels/shot_06_empty_valley.png" alt="The Quiet Valley" />
+              </article>
+              <article class="slide" data-title="The Hoard On The Hill" data-time="4s" data-narration="High on the hill, the Hunger kept what he had stolen. And the valley waited for someone brave enough to win it back." data-motion="Rosie from behind. Distant hoard glows. Hold unresolved silence before title.">
+                <img src="../assets/concepts/great-hungerer/generated_panels/shot_07_hunger_begins.png" alt="The Hoard On The Hill" />
+              </article>
+              <div class="slide-meta">
+                <div class="slide-title"><strong id="slideTitle">The Tickle Bloom</strong><span id="slideTime">4s</span></div>
+              </div>
+            </div>
+            <aside class="script-panel">
+              <div class="script-body">
+                <h3 id="scriptTitle">The Tickle Bloom</h3>
+                <p id="scriptNarration" class="narration">Once, the valley glowed with tickles. Little sparks of joy, rising from every puddle, petal, and porch light.</p>
+                <p id="scriptMotion" class="motion-note">Slow push through golden motes. Warm, drifting, alive.</p>
+              </div>
+              <div class="slide-controls">
+                <button type="button" id="prevSlide">Prev</button>
+                <button type="button" id="playSlide">Play</button>
+                <button type="button" id="nextSlide">Next</button>
+              </div>
+              <div class="progress" aria-hidden="true">
+                <span class="dot is-active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              </div>
+            </aside>
+          </div>
+          <div class="section-head">
+            <div>
+              <h2>Storyboard Board</h2>
+              <p class="subtle">current generated panel set in story order</p>
+            </div>
+          </div>
           <div class="wide-shot">
-            <img src="../assets/concepts/great-hungerer/storyboard/storyboard_contact_sheet_v1.png" alt="Seven-shot Great Hunger storyboard contact sheet" />
+            <img src="../assets/concepts/great-hungerer/generated_panels/generated_panels_contact_sheet_v1.jpg" alt="Seven-shot Great Hunger generated panel contact sheet" />
           </div>
         </section>
 
-        <section>
+        <section id="board">
           <div class="grid story-grid">
             <article class="frame">
-              <img src="../assets/concepts/great-hungerer/storyboard/shot_01_valley_of_tickles.png" alt="Valley of tickles" />
+              <img src="../assets/concepts/great-hungerer/generated_panels/shot_01_valley_of_tickles.png" alt="Valley of tickles" />
               <div class="caption"><strong>01</strong><span>valley</span></div>
             </article>
             <article class="frame">
-              <img src="../assets/concepts/great-hungerer/storyboard/shot_02_rosie_asleep.png" alt="Rosie asleep" />
+              <img src="../assets/concepts/great-hungerer/generated_panels/shot_02_rosie_asleep.png" alt="Rosie asleep" />
               <div class="caption"><strong>02</strong><span>asleep</span></div>
             </article>
             <article class="frame">
-              <img src="../assets/concepts/great-hungerer/storyboard/shot_03_hunger_arrives.png" alt="The Hunger arrives" />
+              <img src="../assets/concepts/great-hungerer/generated_panels/shot_03_hunger_arrives.png" alt="The Hunger arrives" />
               <div class="caption"><strong>03</strong><span>arrival</span></div>
             </article>
             <article class="frame">
-              <img src="../assets/concepts/great-hungerer/storyboard/shot_04_the_theft.png" alt="The theft" />
+              <img src="../assets/concepts/great-hungerer/generated_panels/shot_04_the_theft.png" alt="The theft" />
               <div class="caption"><strong>04</strong><span>theft</span></div>
             </article>
             <article class="frame">
-              <img src="../assets/concepts/great-hungerer/storyboard/shot_05_grey_dawn.png" alt="Grey dawn" />
+              <img src="../assets/concepts/great-hungerer/generated_panels/shot_05_grey_dawn.png" alt="Grey dawn" />
               <div class="caption"><strong>05</strong><span>grey dawn</span></div>
             </article>
             <article class="frame">
-              <img src="../assets/concepts/great-hungerer/storyboard/shot_06_empty_valley.png" alt="Empty valley" />
+              <img src="../assets/concepts/great-hungerer/generated_panels/shot_06_empty_valley.png" alt="Empty valley" />
               <div class="caption"><strong>06</strong><span>empty</span></div>
             </article>
             <article class="frame">
-              <img src="../assets/concepts/great-hungerer/storyboard/shot_07_hunger_begins.png" alt="The Hunger begins" />
+              <img src="../assets/concepts/great-hungerer/generated_panels/shot_07_hunger_begins.png" alt="The Hunger begins" />
               <div class="caption"><strong>07</strong><span>begins</span></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="cta">
+          <div class="section-head">
+            <div>
+              <h2>Download CTA Examples</h2>
+              <p class="subtle">end-card directions using the real app icon and the sad valley background</p>
+            </div>
+            <div class="badge-row">
+              <span class="badge gold">4 options</span>
+              <span class="badge">current cut uses 01</span>
+            </div>
+          </div>
+          <div class="wide-shot">
+            <img src="../assets/concepts/great-hungerer/cta_examples/cta_examples_contact_sheet.jpg" alt="Great Hunger download CTA examples contact sheet" />
+          </div>
+          <div class="grid cta-grid" style="margin-top: 14px;">
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/cta_examples/cta_01_quest_notice.jpg" alt="CTA option 1 quest notice" />
+              <div class="caption"><strong>01</strong><span>quest notice</span></div>
+            </article>
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/cta_examples/cta_02_mud_wars.jpg" alt="CTA option 2 mud wars" />
+              <div class="caption"><strong>02</strong><span>mud wars</span></div>
+            </article>
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/cta_examples/cta_03_valley_pledge.jpg" alt="CTA option 3 valley pledge" />
+              <div class="caption"><strong>03</strong><span>valley pledge</span></div>
+            </article>
+            <article class="frame">
+              <img src="../assets/concepts/great-hungerer/cta_examples/cta_04_seal.jpg" alt="CTA option 4 seal" />
+              <div class="caption"><strong>04</strong><span>seal</span></div>
             </article>
           </div>
         </section>
@@ -383,9 +671,12 @@
           <div class="section-head">
             <div>
               <h2>The Hunger</h2>
-              <p class="subtle">meaner crowned-hog reference, action rows, and turnaround</p>
+              <p class="subtle">meaner crowned-hog reference and rough action loops; no rear turnaround in use</p>
             </div>
-            <span class="badge gold">v2 meaner</span>
+            <div class="badge-row">
+              <span class="badge gold">v2 meaner</span>
+              <span class="badge">turnaround rejected</span>
+            </div>
           </div>
           <div class="grid sprite-grid">
             <div class="sheet-wrap">
@@ -393,8 +684,8 @@
               <div class="caption"><strong>action sheet</strong><span>idle, waddle, gloat, slurp</span></div>
             </div>
             <div class="sheet-wrap">
-              <img src="../assets/concepts/great-hungerer/sprites/great_hunger_walk_turnaround_v2.png" alt="Great Hunger walk turnaround sheet" />
-              <div class="caption"><strong>turnaround</strong><span>transparent PNG</span></div>
+              <img src="../assets/concepts/great-hungerer/great_hunger_mean_reference_cutout_v2.png" alt="Great Hunger mean identity reference" />
+              <div class="caption"><strong>identity reference</strong><span>use for Higgsfield/video generation</span></div>
             </div>
           </div>
         </section>
@@ -433,11 +724,71 @@
           <div class="manifest">
             <div class="metric"><b>Rosie source</b><span>assets/images/sprites/rosie</span></div>
             <div class="metric"><b>Hunger source</b><span>great_hunger_mean_reference_cutout_v2.png</span></div>
-            <div class="metric"><b>Storyboard</b><span>assets/concepts/great-hungerer/storyboard</span></div>
+            <div class="metric"><b>Narration</b><span>docs/great-hunger-opening-script.md</span></div>
+            <div class="metric"><b>Story MP4</b><span>assets/concepts/great-hungerer/video/great_hunger_generated_panels_animated_v2.mp4</span></div>
+            <div class="metric"><b>Video manifest</b><span>assets/concepts/great-hungerer/generated_panel_video_manifest_v1.md</span></div>
+            <div class="metric"><b>Generated panels</b><span>assets/concepts/great-hungerer/generated_panels</span></div>
             <div class="metric"><b>Sprites</b><span>assets/concepts/great-hungerer/sprites</span></div>
           </div>
         </section>
       </main>
     </div>
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const dots = Array.from(document.querySelectorAll(".dot"));
+      const title = document.querySelector("#slideTitle");
+      const time = document.querySelector("#slideTime");
+      const scriptTitle = document.querySelector("#scriptTitle");
+      const narration = document.querySelector("#scriptNarration");
+      const motion = document.querySelector("#scriptMotion");
+      const playButton = document.querySelector("#playSlide");
+      let active = 0;
+      let timer = null;
+
+      function showSlide(index) {
+        active = (index + slides.length) % slides.length;
+        slides.forEach((slide, i) => slide.classList.toggle("is-active", i === active));
+        dots.forEach((dot, i) => dot.classList.toggle("is-active", i === active));
+        const slide = slides[active];
+        title.textContent = slide.dataset.title;
+        time.textContent = slide.dataset.time;
+        scriptTitle.textContent = slide.dataset.title;
+        narration.textContent = slide.dataset.narration;
+        motion.textContent = slide.dataset.motion;
+      }
+
+      function stop() {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+        playButton.textContent = "Play";
+      }
+
+      function play() {
+        if (timer) {
+          stop();
+          return;
+        }
+        playButton.textContent = "Pause";
+        timer = setInterval(() => showSlide(active + 1), 4200);
+      }
+
+      document.querySelector("#prevSlide").addEventListener("click", () => {
+        stop();
+        showSlide(active - 1);
+      });
+      document.querySelector("#nextSlide").addEventListener("click", () => {
+        stop();
+        showSlide(active + 1);
+      });
+      playButton.addEventListener("click", play);
+      dots.forEach((dot, index) => {
+        dot.addEventListener("click", () => {
+          stop();
+          showSlide(index);
+        });
+      });
+    </script>
   </body>
 </html>

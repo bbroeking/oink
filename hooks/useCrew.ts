@@ -13,11 +13,14 @@ import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "@/utils/supabase";
 import {
 	CrewState,
+	JoinableCrew,
 	fetchCrewState,
+	fetchJoinable,
 	createCrew as createCrewRpc,
 	inviteToCrew as inviteRpc,
 	acceptInvite as acceptRpc,
 	declineInvite as declineRpc,
+	joinCrew as joinRpc,
 	leaveCrew as leaveRpc,
 } from "@/utils/mudWars";
 import { RpcResult } from "@/utils/rpc";
@@ -39,6 +42,7 @@ export interface UseCrew {
 	invite: (userId: string) => Promise<RpcResult<{}>>;
 	accept: (inviteId: string) => Promise<RpcResult<{ crew_id: string }>>;
 	decline: (inviteId: string) => Promise<RpcResult<{}>>;
+	join: (crewId: string) => Promise<RpcResult<{ crew_id: string }>>;
 	leave: () => Promise<RpcResult<{}>>;
 }
 
@@ -148,11 +152,42 @@ export function useCrew(enabled = true): UseCrew {
 		[refresh]
 	);
 
+	const join = useCallback(
+		async (crewId: string) => {
+			const r = await joinRpc(crewId);
+			await refresh();
+			return r;
+		},
+		[refresh]
+	);
+
 	const leave = useCallback(async () => {
 		const r = await leaveRpc();
 		await refresh();
 		return r;
 	}, [refresh]);
 
-	return { crew, loading, refresh, create, invite, accept, decline, leave };
+	return { crew, loading, refresh, create, invite, accept, decline, join, leave };
+}
+
+// Open Sounders the caller could join right now (find_joinable_crews).
+// Focus-refreshed like useCrew; callers re-fetch after a failed join so a
+// just-filled or just-warring crew falls off the list.
+export function useJoinableCrews(enabled = true) {
+	const [crews, setCrews] = useState<JoinableCrew[]>([]);
+	const [loading, setLoading] = useState(true);
+
+	const refresh = useCallback(async () => {
+		if (!enabled) return;
+		setCrews(await fetchJoinable());
+		setLoading(false);
+	}, [enabled]);
+
+	useFocusEffect(
+		useCallback(() => {
+			if (enabled) refresh();
+		}, [enabled, refresh])
+	);
+
+	return { crews, loading, refresh };
 }

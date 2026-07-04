@@ -17,6 +17,7 @@ import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
 import { RitualIconWell } from "./ui/RitualIconWell";
+import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { dailyRitual, type RitualMode } from "../utils/rituals";
 import { formatHM } from "../utils/time";
 import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
@@ -51,7 +52,10 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 	// How many of today's rituals are left (used / cap), for the visible counter.
 	const [usage, setUsage] = useState<{ used: number; cap: number } | null>(null);
 
-	const ritual = dailyRitual(mode);
+	// Season-2 blessing set once world_boss is on — mirrors the server's
+	// daily_blessing_kind so the previewed kind matches the cast.
+	const s2 = useFeatureFlag("world_boss");
+	const ritual = dailyRitual(mode, new Date(), s2);
 	const isBless = mode === "bless";
 
 	useEffect(() => {

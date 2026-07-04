@@ -28,8 +28,8 @@ const member = (id: string) => ({
 });
 
 describe("sounderStepFor", () => {
-	it("no crew → create", () => {
-		expect(sounderStepFor(base)).toBe("create");
+	it("no crew → join", () => {
+		expect(sounderStepFor(base)).toBe("join");
 	});
 
 	it("crew of 1 → invite", () => {
@@ -86,24 +86,24 @@ describe("sounderStepFor", () => {
 });
 
 describe("sounderStepView", () => {
-	it("create → nothing done", () => {
-		expect(sounderStepView(base)).toEqual({ current: "create", done: [] });
+	it("join → nothing done", () => {
+		expect(sounderStepView(base)).toEqual({ current: "join", done: [] });
 	});
 
-	it("invite → create stamped", () => {
+	it("invite → join stamped", () => {
 		expect(
 			sounderStepView({ ...base, crew: CREW, members: [member("u1")] })
-		).toEqual({ current: "invite", done: ["create"] });
+		).toEqual({ current: "invite", done: ["join"] });
 	});
 
-	it("march → create + invite stamped", () => {
+	it("march → join + invite stamped", () => {
 		expect(
 			sounderStepView({
 				...base,
 				crew: CREW,
 				members: [member("u1"), member("u2")],
 			})
-		).toEqual({ current: "march", done: ["create", "invite"] });
+		).toEqual({ current: "march", done: ["join", "invite"] });
 	});
 
 	it("war → all three stamped", () => {
@@ -115,7 +115,7 @@ describe("sounderStepView", () => {
 				inWar: true,
 				warId: "w1",
 			})
-		).toEqual({ current: "war", done: ["create", "invite", "march"] });
+		).toEqual({ current: "war", done: ["join", "invite", "march"] });
 	});
 });
 

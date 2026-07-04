@@ -176,6 +176,40 @@ export interface ChallengeableCrew {
 	memberCount: number;
 }
 
+// An open Sounder the caller could join without an invite: has a free slot,
+// at least one member, and no live war (find_joinable_crews mirrors these).
+export interface JoinableCrew {
+	id: string;
+	name: string;
+	memberCount: number;
+	leaderName: string | null;
+}
+
+// Which Sounder a friend of the caller is in (friends_crews). Friends with
+// no crew simply don't appear.
+export interface FriendCrew {
+	friend_id: string;
+	crew_id: string;
+	crew_name: string;
+	memberCount: number;
+}
+
+// A row of the Sounder standings (sounder_standings) — spirit (7-day
+// activity + intra-crew kindness, per snout) plus the scuffle elo
+// (crew_ratings; null before a crew's first scuffle) and the roster for
+// the expandable leaderboard rows.
+export interface SpiritEntry {
+	crew_id: string;
+	name: string;
+	memberCount: number;
+	kindness: number;
+	activity: number;
+	spirit: number;
+	rating: number | null;
+	wars: number | null;
+	members: { username: string | null; role: "leader" | "member" }[];
+}
+
 // ── Query wrappers (rpc<T>) ──────────────────────────────────────────────────
 // Each always resolves to a usable rest-state value (null/empty on error),
 // matching fetchActiveEffects' "no useful distinction at the render layer".
@@ -204,6 +238,18 @@ export async function fetchWarState(warId?: string): Promise<WarState | null> {
 
 export async function fetchChallengeable(): Promise<ChallengeableCrew[]> {
 	return (await rpc<ChallengeableCrew[]>("find_challengeable_crews")) ?? [];
+}
+
+export async function fetchJoinable(): Promise<JoinableCrew[]> {
+	return (await rpc<JoinableCrew[]>("find_joinable_crews")) ?? [];
+}
+
+export async function fetchFriendsCrews(): Promise<FriendCrew[]> {
+	return (await rpc<FriendCrew[]>("friends_crews")) ?? [];
+}
+
+export async function fetchSounderStandings(limit = 50): Promise<SpiritEntry[]> {
+	return (await rpc<SpiritEntry[]>("sounder_standings", { p_limit: limit })) ?? [];
 }
 
 // The war-exclusive cosmetic the caller won from a given war, if any.
@@ -256,6 +302,48 @@ export function declineInvite(inviteId: string): Promise<RpcResult<{}>> {
 }
 export function leaveCrew(): Promise<RpcResult<{}>> {
 	return rpcAction("leave_crew");
+}
+export function joinCrew(crewId: string): Promise<RpcResult<{ crew_id: string }>> {
+	return rpcAction<{ crew_id: string }>("join_crew", { p_crew: crewId });
+}
+export function transferCrewLeadership(newLeaderId: string): Promise<RpcResult<{}>> {
+	return rpcAction("transfer_crew_leadership", { p_new_leader: newLeaderId });
+}
+export function kickCrewMember(memberId: string): Promise<RpcResult<{}>> {
+	return rpcAction("kick_crew_member", { p_member: memberId });
+}
+// Leader-only concede: the other side wins now, elo applies as a loss.
+export function forfeitWar(warId: string): Promise<RpcResult<{}>> {
+	return rpcAction("forfeit_war", { p_war: warId });
+}
+export function claimEcho(): Promise<RpcResult<{ tickles: number }>> {
+	return rpcAction<{ tickles: number }>("claim_echo");
+}
+
+// A resolved scuffle in the crew's match history (crew_match_history).
+export interface MatchEntry {
+	war_id: string;
+	opponent: string;
+	result: "won" | "lost" | "draw";
+	forfeited: boolean;
+	yieldedByUs: boolean;
+	ropePos: number;
+	isBot: boolean;
+	resolvedAt: string;
+}
+export async function fetchMatchHistory(limit = 20): Promise<MatchEntry[]> {
+	return (await rpc<MatchEntry[]>("crew_match_history", { p_limit: limit })) ?? [];
+}
+
+// The caller's currently catchable echo (crewmate's lucky pig, <10 min,
+// unclaimed) — null when the bog is quiet.
+export interface EchoState {
+	id: number;
+	sourceName: string | null;
+	expiresAt: string;
+}
+export async function fetchActiveEcho(): Promise<EchoState | null> {
+	return (await rpc<EchoState | null>("active_echo")) ?? null;
 }
 export function challengeCrew(targetCrewId: string): Promise<RpcResult<{ war_id: string }>> {
 	return rpcAction<{ war_id: string }>("challenge_crew", { p_target: targetCrewId });
