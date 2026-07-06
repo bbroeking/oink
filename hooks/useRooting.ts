@@ -13,6 +13,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { rpcAction, RpcResult } from "@/utils/rpc";
 import {
 	ClaimableFind,
+	claimableFinds,
+	generateBoard,
+	normalizePouch,
 	practiceSeed,
 	windowIndex,
 	windowEndsAtMs,
@@ -122,12 +125,20 @@ export function useRooting(warId: string | null) {
 			actions: number
 		): Promise<RpcResult<{ outcome: RootingOutcome }>> => {
 			if (!warId || !session) return { ok: false, reason: "no_session" };
+			// LAST GATE: p_finds must be a REAL array of THIS seed's server-valid
+			// ids no matter what shape arrived at runtime (a bare "shimmer" string
+			// reached PostgREST as a scalar on device → 22P02 malformed array
+			// literal). Normalize, then re-intersect against the seeded board.
+			const safeFinds = claimableFinds(
+				generateBoard(session.seed),
+				normalizePouch(finds as unknown as Parameters<typeof normalizePouch>[0])
+			);
 			const markDug = async () => {
 				setDugThisWindow(true);
 				await AsyncStorage.setItem(dugKey(warId, session.windowIndex), "1");
 			};
 			if (session.practice) {
-				const truffles = finds.filter(
+				const truffles = safeFinds.filter(
 					(f) => f === "truffle_l" || f === "truffle_d"
 				).length;
 				await markDug();
@@ -143,7 +154,7 @@ export function useRooting(warId: string | null) {
 			}
 			const r = await rpcAction<SubmitPayload>("submit_rooting", {
 				p_war: warId,
-				p_finds: finds,
+				p_finds: safeFinds,
 				p_actions: actions,
 			});
 			if (!r.ok) {

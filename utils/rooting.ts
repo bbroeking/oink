@@ -198,6 +198,20 @@ export function generateBoard(seed: number): PatchBoard {
 // stone (inert, unclaimable). Order-stable, deduped. Every dig game routes its
 // pouch through here so the payload is uniform and seed-true — the game consumes
 // the real board, it does not mint its own keys.
+// LAST-GATE pouch normalizer for the submit chokepoint (useRooting.submit).
+// Device logs proved a bare "shimmer" STRING can reach PostgREST as p_finds
+// (→ 22P02 "malformed array literal") despite every typed caller passing
+// arrays — so the hook normalizes ANY runtime shape (string / null / Set /
+// array) into a real array before the seed-true intersection. Pure + tested.
+export function normalizePouch(
+	finds: ClaimableFind[] | ClaimableFind | Iterable<ClaimableFind> | null | undefined
+): ClaimableFind[] {
+	if (finds == null) return [];
+	if (Array.isArray(finds)) return finds;
+	if (typeof finds === "string") return [finds];
+	return Array.from(finds);
+}
+
 export function claimableFinds(
 	board: PatchBoard,
 	collected: Iterable<Find>

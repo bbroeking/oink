@@ -11,6 +11,7 @@ import {
 	Minstd,
 	generateBoard,
 	claimableFinds,
+	normalizePouch,
 	windowIndex,
 	windowEndsAtMs,
 	feedingCountdown,
@@ -180,6 +181,52 @@ describe("claimableFinds — the submit_rooting payload builder", () => {
 				expect(f).not.toBe("stone");
 			}
 		}
+	});
+});
+
+describe("normalizePouch — the last gate before p_finds (22P02 regression)", () => {
+	// Device repro: a bare "shimmer" STRING reached PostgREST as a scalar and
+	// Postgres threw 22P02 `malformed array literal: "shimmer"`. The submit
+	// chokepoint (useRooting.submit) now normalizes any runtime shape and
+	// re-intersects against the seeded board, so this class of payload can
+	// never leave the client again.
+	function seedWithShimmer(): number {
+		for (let seed = 1; seed < 500; seed++) {
+			if (generateBoard(seed).finds.includes("shimmer")) return seed;
+		}
+		throw new Error("no shimmer seed found");
+	}
+
+	it("wraps the exact device payload (bare string) into a valid array", () => {
+		const seed = seedWithShimmer();
+		const pouch = normalizePouch("shimmer" as never);
+		expect(Array.isArray(pouch)).toBe(true);
+		const safe = claimableFinds(generateBoard(seed), pouch);
+		expect(safe).toEqual(["shimmer"]);
+	});
+
+	it("passes arrays through untouched and materializes Sets", () => {
+		expect(normalizePouch(["truffle_l", "shimmer"] as never)).toEqual([
+			"truffle_l",
+			"shimmer",
+		]);
+		expect(normalizePouch(new Set(["truffle_l"]) as never)).toEqual([
+			"truffle_l",
+		]);
+	});
+
+	it("null/undefined become the empty array (never a scalar)", () => {
+		expect(normalizePouch(null)).toEqual([]);
+		expect(normalizePouch(undefined)).toEqual([]);
+	});
+
+	it("a forged single-string id still gets board-intersected away", () => {
+		const seed = seedWithShimmer();
+		const safe = claimableFinds(
+			generateBoard(seed),
+			normalizePouch("not_a_real_find" as never)
+		);
+		expect(safe).toEqual([]);
 	});
 });
 
