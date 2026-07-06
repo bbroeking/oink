@@ -140,8 +140,8 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const isCrewmate =
 		!!targetUserId &&
 		myCrewState.members.some((m) => m.user_id === targetUserId);
-	// Alignment isn't a thing in Season 2 — its bar retires with S1.
-	const s2 = useFeatureFlag("world_boss") || __DEV__;
+	// Alignment isn't a thing in Season 1 — its bar retires with S0.
+	const s1 = useFeatureFlag("world_boss") || __DEV__;
 	const [stats, setStats] = useState<UserStats | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
@@ -473,7 +473,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 										</View>
 									</View>
 
-									{!s2 && (
+									{!s1 && (
 										<View style={styles.alignBarWrap}>
 											<AlignmentBar
 												score={stats.alignment_score}

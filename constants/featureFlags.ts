@@ -17,7 +17,7 @@
 // backend-only while these stay hidden.
 export const SOUNDER_VISIBLE = false;
 
-// Sounder Mud Fights (clan wars / Season 2) visibility MOVED to a server flag.
+// Sounder Mud Fights (clan wars / Season 1) visibility MOVED to a server flag.
 // It's no longer a compile-time constant — the crew card on the Friends hub, the
 // /mud-war + /clan-ladder screens, and the launch nudge now gate on the runtime
 // `mud_wars` feature flag so the season can be flipped remotely and targeted at a

@@ -52,6 +52,19 @@ target 'ttp' do
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
 
+    # fmt 11.0.2 (pinned by RN 0.76.9) fails under the Xcode 26 toolchain:
+    # FMT_STRING's consteval path errors with "call to consteval function ...
+    # is not a constant expression" (format-inl.h). Disabling consteval for
+    # the fmt pod restores the runtime-checked path — safe, upstream-known.
+    installer.pods_project.targets.each do |t|
+      next unless t.name == 'fmt'
+      t.build_configurations.each do |c|
+        defs = c.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
+        defs = Array(defs) | ['FMT_USE_CONSTEVAL=0', 'FMT_CONSTEVAL=']
+        c.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
+      end
+    end
+
     # This is necessary for Xcode 14, because it signs resource bundles by default
     # when building for devices.
     installer.target_installation_results.pod_target_installation_results

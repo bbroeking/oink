@@ -113,17 +113,17 @@ function RootLayoutInner() {
 		PatrickHand_400Regular,
 	});
 	const [authChecked, setAuthChecked] = useState(false);
-	// Season 2 / Mud Wars visibility — server flag (Brian-overridden), replaces
+	// Season 1 / Mud Wars visibility — server flag (Brian-overridden), replaces
 	// the old compile-time MUD_FIGHTS_VISIBLE constant.
 	const mudWarsVisible = useFeatureFlag("mud_wars");
-	// Season 1: pending alignment-schism reveal. Set by the polling
+	// Season 0: pending alignment-schism reveal. Set by the polling
 	// effect below when a user first crosses ±25 alignment.
 	const [schism, setSchism] = useState<{
 		side: SchismSide;
 		score: number;
 		milestone: 25 | 50 | 100;
 	} | null>(null);
-	// Season 1 finale: pending Judgement Day verdict.
+	// Season 0 finale: pending Judgement Day verdict.
 	const [finale, setFinale] = useState<FinaleResult | null>(null);
 	// "While you were away" — bless/curse received since last launch.
 	const [rituals, setRituals] = useState<WhileAwayEvent[] | null>(null);

@@ -507,7 +507,7 @@ export function Account({ session }: { session: Session }) {
 
 					{/* Your Sounder (referral). Hidden behind SOUNDER_VISIBLE.
 				    Friends moved to the
-					    dedicated Friends tab in the Season-1 social
+					    dedicated Friends tab in the Season-0 social
 					    redesign. */}
 					{SOUNDER_VISIBLE && sounder && (
 						<Sticker color="cream" rotate={-0.6} radius={14} style={sounderStyles.card}>

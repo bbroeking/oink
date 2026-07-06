@@ -1,4 +1,4 @@
-// Season 1 schedule + the release-notes drip. These pin the
+// Season 0 schedule + the release-notes drip. These pin the
 // contract that a "what's new" card never surfaces before the
 // feature it announces.
 
@@ -6,7 +6,7 @@ import {
 	featureUnlocked,
 	seasonWeek,
 	seasonActive,
-	SEASON_1_UNLOCKS,
+	SEASON_0_UNLOCKS,
 } from "../utils/season";
 import { currentRelease, RELEASE_NOTES } from "../constants/release_notes";
 
@@ -37,7 +37,7 @@ describe("featureUnlocked", () => {
 
 	test("every feature is eventually unlocked", () => {
 		const farFuture = at("2027-01-01");
-		for (const f of Object.keys(SEASON_1_UNLOCKS) as (keyof typeof SEASON_1_UNLOCKS)[]) {
+		for (const f of Object.keys(SEASON_0_UNLOCKS) as (keyof typeof SEASON_0_UNLOCKS)[]) {
 			expect(featureUnlocked(f, farFuture)).toBe(true);
 		}
 	});
@@ -53,7 +53,7 @@ describe("seasonWeek", () => {
 	});
 
 	test("blessings unlock falls in week 3", () => {
-		expect(seasonWeek(at(SEASON_1_UNLOCKS.blessings))).toBe(3);
+		expect(seasonWeek(at(SEASON_0_UNLOCKS.blessings))).toBe(3);
 	});
 
 	test("clamps to 1 before the season starts", () => {

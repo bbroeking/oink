@@ -52,10 +52,10 @@ export function RitualPicker({ mode, targetUserId, targetName, onCast }: Props) 
 	// How many of today's rituals are left (used / cap), for the visible counter.
 	const [usage, setUsage] = useState<{ used: number; cap: number } | null>(null);
 
-	// Season-2 blessing set once world_boss is on — mirrors the server's
+	// Season-1 blessing set once world_boss is on — mirrors the server's
 	// daily_blessing_kind so the previewed kind matches the cast.
-	const s2 = useFeatureFlag("world_boss");
-	const ritual = dailyRitual(mode, new Date(), s2);
+	const s1 = useFeatureFlag("world_boss");
+	const ritual = dailyRitual(mode, new Date(), s1);
 	const isBless = mode === "bless";
 
 	useEffect(() => {

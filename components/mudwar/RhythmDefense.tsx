@@ -26,6 +26,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
+import { ReclaimSlam, ReclaimSlamHandle } from "./ReclaimSlam";
 import { HAT_IMAGES } from "@/constants/hats";
 import { MudBand } from "@/utils/mudWars";
 import {
@@ -197,6 +198,8 @@ export function RhythmDefense({ onRunComplete, runsRemaining, pBand, day = 3 }: 
 	const [notesDone, setNotesDone] = useState(0);
 	const runOverRef = useRef(false); // latched once the run hits NOTES_PER_RUN
 	const [runOver, setRunOver] = useState(false);
+	// Reclaim slam — fires when a run banks (joy pried back from the horde).
+	const slamRef = useRef<ReclaimSlamHandle>(null);
 
 	// The run-cycle bob loop, restarted per archetype.
 	const bobLoopRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -230,6 +233,13 @@ export function RhythmDefense({ onRunComplete, runsRemaining, pBand, day = 3 }: 
 				lapRef.current?.stop();
 				bobLoopRef.current?.stop();
 				onRunComplete(bandsRef.current.slice(0, NOTES_PER_RUN));
+				// The run banks — a full reclaim burst rips joy from the horde up to
+				// your score tally (this beat has no haptic of its own, so slam owns it).
+				slamRef.current?.slam({
+					intensity: "burst",
+					from: { x: 0.5, y: 0.5 },
+					to: { x: 0.13, y: 0.1 },
+				});
 			}
 		},
 		[onRunComplete]
@@ -717,6 +727,10 @@ export function RhythmDefense({ onRunComplete, runsRemaining, pBand, day = 3 }: 
 							: "Run banked — the bog soaks it up till tomorrow"
 						: runsLabel}
 				</Text>
+
+				{/* Reclaim slam — the banked run rips joy from the horde (mid-field)
+				    up to your score tally (top-left). */}
+				<ReclaimSlam ref={slamRef} />
 			</View>
 		</Animated.View>
 	);

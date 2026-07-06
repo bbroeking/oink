@@ -33,7 +33,7 @@ async function renderAct(node: React.ReactElement) {
 }
 
 const base: FinaleResult = {
-	season_key: "season_1",
+	season_key: "season_0",
 	final_score: 88,
 	side: "generous",
 	side_rank: 1,
@@ -80,7 +80,7 @@ describe("JudgementDayModal", () => {
 
 	test("neutral bracket → Calm in the Storm, no rank line", async () => {
 		const neutral: FinaleResult = {
-			season_key: "season_1",
+			season_key: "season_0",
 			final_score: 0,
 			side: "neutral",
 			side_rank: null,
@@ -119,7 +119,7 @@ describe("JudgementDayModal", () => {
 			await Promise.resolve();
 		});
 		expect(mockRpc).toHaveBeenCalledWith("mark_finale_seen", {
-			target_season_key: "season_1",
+			target_season_key: "season_0",
 		});
 		expect(onDismiss).toHaveBeenCalled();
 		act(() => r.unmount());

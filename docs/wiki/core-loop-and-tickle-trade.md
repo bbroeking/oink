@@ -15,7 +15,7 @@ last_compiled: 2026-06-13
 
 # Core Loop & Tickle Trade
 
-The minute-to-minute loop — tap the pig to bank tickles, then spend them on cosmetics — and the friend-to-friend **Tickle Trade** that turns that bank into Season 1's moral engine, where asking is the greedy-but-profitable move.
+The minute-to-minute loop — tap the pig to bank tickles, then spend them on cosmetics — and the friend-to-friend **Tickle Trade** that turns that bank into Season 0's moral engine, where asking is the greedy-but-profitable move.
 
 ## How it works
 
@@ -32,7 +32,7 @@ The minute-to-minute loop — tap the pig to bank tickles, then spend them on co
 - `supabase/migrations/20260520010000_tickle_trades.sql` — table, RLS, `request_tickles` / `fulfill_tickle_trade` / `cancel_tickle_trade` / `my_tickle_trades` RPCs.
 - `supabase/migrations/20260527000000_trade_economy_flip.sql` — current behavior: asker gets 2N, no repay, 24h cooldown in `request_tickles`.
 - `supabase/migrations/20260521000000_alignment.sql` — trigger turning a fulfilled trade into a ±2 alignment shift.
-- `utils/season.ts` — Season 1 schedule; `seasonActive` gates whether the moral layer is live.
+- `utils/season.ts` — Season 0 schedule; `seasonActive` gates whether the moral layer is live.
 - `docs/systems-overview.md` — prose spec of the loop and economy.
 
 ## Connects to

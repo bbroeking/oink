@@ -16,7 +16,7 @@ Judgement Day is the season finale: a single RPC, `finalize_season`, ranks every
 
 ## How it works
 
-`finalize_season(season_key default 'season_1')` loops over every named profile and buckets each by `alignment_score` sign — `generous` (>0), `greedy` (<0), or `neutral` (0). Within each side a `ROW_NUMBER()` window assigns `side_rank` (generous ranked by score DESC, greedy by score ASC) (`supabase/migrations/20260526000000_finale.sql`).
+`finalize_season(season_key default 'season_0')` loops over every named profile and buckets each by `alignment_score` sign — `generous` (>0), `greedy` (<0), or `neutral` (0). Within each side a `ROW_NUMBER()` window assigns `side_rank` (generous ranked by score DESC, greedy by score ASC) (`supabase/migrations/20260526000000_finale.sql`).
 
 Rewards by bracket (same file):
 
@@ -29,12 +29,12 @@ Each player's outcome is written to `season_finales` keyed by `(user_id, season_
 
 The client never calls `finalize_season`. Instead `my_finale_result()` (granted to authenticated) returns the caller's latest unseen `season_finales` row so `JudgementDayModal` can show the verdict; `mark_finale_seen(season_key)` stamps `seen_at`.
 
-**Automated, not manual.** `supabase/migrations/20260579000000_judgement_day_cron.sql` schedules a pg_cron job `judgement-day-season-1` at `0 12 15 7 *` = **noon UTC, July 15**, running `SELECT public.finalize_season('season_1')`. Verified live (`SELECT * FROM cron.job`): jobid 2, active, exact schedule + command. The migration deliberately does **not** re-run `CREATE EXTENSION pg_cron` (Supabase's after-create hook errors 2BP01 on the existing grant state).
+**Automated, not manual.** First scheduled by `supabase/migrations/20260579000000_judgement_day_cron.sql` (noon UTC Jul 15), the job was **rescheduled to `0 0 13 7 *` = 00:00 UTC Jul 13 (8 PM ET Jul 12)** by `20260704500000_judgement_day_beta_grants.sql`, which also coupled it to `grant_beta_rewards()` + the `season1_finale` flag flip, and **renamed to `judgement-day-season-0`** running `run_judgement_day_season0()` (→ `finalize_season('season_0')`) by `20260709000000_season_renumber.sql`. The original migration deliberately does **not** re-run `CREATE EXTENSION pg_cron` (Supabase's after-create hook errors 2BP01 on the existing grant state).
 
 ## Key files
 
 - `supabase/migrations/20260526000000_finale.sql` — `season_finales` table, 5 finale titles, `finalize_season`, `my_finale_result`, `mark_finale_seen`.
-- `supabase/migrations/20260579000000_judgement_day_cron.sql` — schedules the destructive cron job (noon UTC July 15).
+- `supabase/migrations/20260579000000_judgement_day_cron.sql` — schedules the destructive cron job (superseded schedule/name: see `20260704500000` + `20260709000000`).
 - `docs/season-1-implementation-log.md` — Phase 4 build notes (Phase 4 still calls the cron "deferred"; the cron migration superseded that).
 - `components/JudgementDayModal.tsx` — reads `my_finale_result`, renders the verdict.
 
@@ -49,7 +49,7 @@ The client never calls `finalize_season`. Instead `my_finale_result()` (granted 
 
 ## Open questions / risks
 
-- **Destructive + fully automated.** The cron will wipe all alignment at noon UTC July 15 with no human in the loop. To cancel: `SELECT cron.unschedule('judgement-day-season-1')`.
+- **Destructive + fully automated.** The cron will wipe all alignment at 00:00 UTC Jul 13 with no human in the loop. To cancel: `SELECT cron.unschedule('judgement-day-season-0')`.
 - **Stale doc.** `docs/systems-overview.md` "Known gaps" (line 183) and `season-1-implementation-log.md` Phase 4 both still say finalize_season is a manual SQL call with no cron — wrong since the cron migration landed. Should be corrected.
-- **Season 2 reuses the schedule.** The cron hardcodes `'season_1'`, so next July it re-fires `finalize_season('season_1')` — idempotent (no-op for already-finalized users), so it will NOT finalize a real Season 2. A future season needs its own job/key.
+- **Season 1 reuses the schedule.** The cron hardcodes `'season_0'`, so next July it re-fires `finalize_season('season_0')` — idempotent (no-op for already-finalized users), so it will NOT finalize a real Season 1. A future season needs its own job/key.
 - **No `seraph_wings` / `cursed_crown` exclusive items** — finale grants titles + snouts only; cosmetic items deferred pending art (`season-1-implementation-log.md`).

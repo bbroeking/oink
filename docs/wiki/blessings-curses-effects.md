@@ -15,7 +15,7 @@ last_compiled: 2026-06-13
 
 # Blessings, Curses & Active Effects
 
-The Season 1 friend-to-friend ritual system: a player casts a **blessing** (angel-coded) or **curse** (goblin-coded) on a friend, which lands on the receiver as a timed **active effect** — shown player-facing as "Hoofprints."
+The Season 0 friend-to-friend ritual system: a player casts a **blessing** (angel-coded) or **curse** (goblin-coded) on a friend, which lands on the receiver as a timed **active effect** — shown player-facing as "Hoofprints."
 
 ## How it works
 
@@ -53,7 +53,7 @@ Casting shifts the sender's [[alignment]]: blessing `+1`, curse `−1` (`shift_a
 - [[snouts-economy]] — `bountiful_snouts`/`coin_pinch` move snouts; cleanse costs 5.
 - [[friends-graph]] — `are_friends` gates who you can bless or curse.
 - [[notifications]] — incoming casts surface in the Inbox ("bob cursed you").
-- [[seasons-and-judgement-day]] — rituals are the Season 1 alignment driver.
+- [[seasons-and-judgement-day]] — rituals are the Season 0 alignment driver.
 - [[battle-pass-and-slop-club]] — VIP/Pro raises the daily cast cap to 5.
 
 ## Open questions / risks

@@ -1,34 +1,33 @@
-// Friend invite picker — tapping a "+" slot on the Sounder roster slides
-// this BOTTOM SHEET up: the caller's whole friends list, each row either
-// invitable (free agent) or labeled with the Sounder they already ride
-// with (friends_crews). Invites go through useCrew.invite — any crew
-// member can rally friends (the server enforces are_friends + the cap).
+// Friend invite picker — tapping a "+" slot or the "Call a snout to your
+// banner" CTA on the Sounder card slides this BOTTOM SHEET up: the caller's
+// whole friends list in the crew row grammar (Frame C of the
+// invite-matchmaking mockup), each row one of four states:
+//   crewmate — rides with you            → status "crewmate"
+//   free     — no crew yet, free to ride → sun "Invite" pill
+//   taken    — in another Sounder        → status "taken"
+//   pending  — waiting on your last ask… → status "waiting…"
+// Invites go through useCrew.invite — any crew member can rally friends
+// (the server enforces are_friends + the cap).
 
 import { useEffect, useState } from "react";
-import {
-	Modal,
-	View,
-	Text,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-	ActivityIndicator,
-} from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/utils/supabase";
-import { PigAvatar } from "./ui/PigAvatar";
+import { CrewSheet } from "./CrewSheet";
+import {
+	AccentNote,
+	CrewPortrait,
+	CrewRow,
+	DiscText,
+	HandLink,
+	RowStatus,
+	SunPill,
+} from "./CrewRow";
+import { EmptyState, LoadingBeat } from "./ui/EmptyState";
 import type { UseCrew } from "@/hooks/useCrew";
 import { fetchFriendsCrews, type FriendCrew } from "@/utils/mudWars";
 import { getFriendIds, FRIEND_CAP_LIMIT, type Profile } from "@/utils/friendships";
-import {
-	FONTS,
-	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
-	RADII,
-	SPACE,
-	TYPE,
-	WHIMSY,
-} from "@/constants/theme";
+import { SPACE } from "@/constants/theme";
 
 function inviteError(reason?: string): string {
 	switch (reason) {
@@ -87,7 +86,6 @@ export function FriendInvitePicker({
 
 	const myCrewId = crewHook.crew.crew?.id ?? null;
 	const waitingIds = new Set(crewHook.crew.invitesOut.map((i) => i.invitee_id));
-	const slotsLeft = 5 - crewHook.crew.members.length;
 
 	const invite = async (friendId: string) => {
 		if (busyId) return;
@@ -103,160 +101,74 @@ export function FriendInvitePicker({
 	};
 
 	return (
-		<Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
-			<View style={styles.backdrop}>
-				{/* Tap above the sheet to dismiss. */}
-				<Pressable style={styles.backdropTap} onPress={onDismiss} />
-				<View style={styles.sheet}>
-					<View style={styles.grabber} />
-					<Text style={styles.kicker}>★ rally a friend ★</Text>
-					<Text style={styles.headline}>
-						{slotsLeft === 1 ? "One spot left" : `${slotsLeft} spots at the trough`}
-					</Text>
+		<CrewSheet
+			visible={visible}
+			onDismiss={onDismiss}
+			title="Call a snout to your banner"
+			sub="tap a friend to pin them to an open slot"
+		>
+			{friends === null ? (
+				<LoadingBeat />
+			) : friends.length === 0 ? (
+				<EmptyState
+					glyph="friends"
+					title="No friends yet"
+					sub="add some pigs on the Friends tab first."
+				/>
+			) : (
+				<ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+					{friends.map((f, idx) => {
+						const fc = crewsByFriend.get(f.id);
+						const crewmate = !!fc && fc.crew_id === myCrewId;
+						const waiting = waitingIds.has(f.id);
+						const sub = crewmate
+							? "rides with you"
+							: fc
+								? `in ${fc.crew_name}`
+								: waiting
+									? "waiting on your last ask…"
+									: "no crew yet — free to ride";
+						const right = crewmate ? (
+							<RowStatus>crewmate</RowStatus>
+						) : fc ? (
+							<RowStatus>taken</RowStatus>
+						) : waiting ? (
+							<RowStatus>waiting…</RowStatus>
+						) : (
+							<SunPill onPress={() => invite(f.id)} disabled={busyId !== null}>
+								{busyId === f.id ? "Inviting…" : "Invite"}
+							</SunPill>
+						);
+						return (
+							<CrewRow
+								key={f.id}
+								divider={idx > 0}
+								left={<CrewPortrait hatId={f.active_hat_id ?? null} />}
+								title={
+									<>
+										{f.username ?? "—"}
+										{f.discriminator ? <DiscText> #{f.discriminator}</DiscText> : null}
+									</>
+								}
+								sub={sub}
+								right={right}
+							/>
+						);
+					})}
+				</ScrollView>
+			)}
 
-					{friends === null ? (
-						<View style={styles.center}>
-							<ActivityIndicator color={WHIMSY.accent} />
-						</View>
-					) : friends.length === 0 ? (
-						<Text style={styles.emptyText}>
-							No friends yet — add some pigs on the Friends tab first.
-						</Text>
-					) : (
-						<ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-							{friends.map((f) => {
-								const fc = crewsByFriend.get(f.id);
-								const waiting = waitingIds.has(f.id);
-								return (
-									<View key={f.id} style={styles.row}>
-										<PigAvatar size={34} hatId={f.active_hat_id ?? null} />
-										<View style={styles.who}>
-											<Text style={styles.name} numberOfLines={1}>
-												{f.username ?? "—"}
-												{f.discriminator ? (
-													<Text style={styles.disc}>#{f.discriminator}</Text>
-												) : null}
-											</Text>
-											{fc && (
-												<Text style={styles.inCrew} numberOfLines={1}>
-													{fc.crew_id === myCrewId
-														? "rides with you"
-														: `in ${fc.crew_name}`}
-												</Text>
-											)}
-										</View>
-										{fc ? null : waiting ? (
-											<Text style={styles.waiting}>waiting…</Text>
-										) : (
-											<Pressable
-												onPress={() => invite(f.id)}
-												disabled={busyId !== null}
-												style={[styles.inviteBtn, busyId === f.id && { opacity: 0.6 }]}
-												hitSlop={6}
-											>
-												<Text style={styles.inviteBtnText}>
-													{busyId === f.id ? "Inviting…" : "Invite"}
-												</Text>
-											</Pressable>
-										)}
-									</View>
-								);
-							})}
-						</ScrollView>
-					)}
+			{!!note && <AccentNote style={styles.note}>{note}</AccentNote>}
 
-					{!!note && <Text style={styles.note}>{note}</Text>}
-
-					<Pressable onPress={onDismiss} style={styles.doneBtn} hitSlop={6}>
-						<Text style={styles.doneText}>Done</Text>
-					</Pressable>
-				</View>
-			</View>
-		</Modal>
+			<HandLink onPress={onDismiss} style={styles.done}>
+				Done
+			</HandLink>
+		</CrewSheet>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
-		justifyContent: "flex-end",
-		backgroundColor: MODAL_BACKDROP_BG,
-	},
-	backdropTap: { flex: 1 },
-	// Bottom sheet — paper sticker anchored to the bottom edge: ink border
-	// on the three visible sides, top corners rounded, grabber on top.
-	sheet: {
-		backgroundColor: WHIMSY.paper,
-		borderTopLeftRadius: RADII.xxl,
-		borderTopRightRadius: RADII.xxl,
-		borderWidth: 3,
-		borderBottomWidth: 0,
-		borderColor: WHIMSY.ink,
-		paddingHorizontal: SPACE.lg,
-		paddingTop: SPACE.sm,
-		paddingBottom: SPACE.xl,
-	},
-	grabber: {
-		alignSelf: "center",
-		width: 44,
-		height: 5,
-		borderRadius: 3,
-		backgroundColor: WHIMSY.muteSoft,
-		marginBottom: SPACE.sm,
-	},
-	kicker: { ...KICKER_TEXT, textAlign: "center", marginBottom: 4 },
-	headline: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: SPACE.md,
-	},
-	center: { paddingVertical: SPACE.xl, alignItems: "center" },
-	emptyText: {
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		paddingVertical: SPACE.lg,
-	},
-	list: { maxHeight: 340 },
-	row: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		paddingVertical: 8,
-		borderBottomWidth: 1.5,
-		borderBottomColor: WHIMSY.cream2,
-	},
-	who: { flex: 1, minWidth: 0 },
-	name: { ...TYPE.bodySm, fontFamily: FONTS.bodyExtra, color: WHIMSY.ink },
-	disc: { fontFamily: FONTS.body, color: WHIMSY.muteSoft },
-	inCrew: { ...TYPE.kicker, fontFamily: FONTS.hand, color: WHIMSY.mute },
-	waiting: { ...TYPE.kicker, fontFamily: FONTS.hand, color: WHIMSY.mute },
-	inviteBtn: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: 5,
-		minHeight: 32,
-		justifyContent: "center",
-	},
-	inviteBtnText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.ink },
-	note: {
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: SPACE.sm,
-	},
-	doneBtn: { alignSelf: "center", marginTop: SPACE.md, paddingHorizontal: SPACE.lg },
-	doneText: {
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
+	list: { maxHeight: 380 },
+	note: { textAlign: "center", marginTop: SPACE.sm },
+	done: { alignSelf: "center", marginTop: SPACE.md, paddingHorizontal: SPACE.lg },
 });

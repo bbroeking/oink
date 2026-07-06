@@ -57,7 +57,7 @@ describe("tier tables", () => {
 	});
 
 	it("every war-spoil is reachable through the rotation (no orphan is unbuyable)", () => {
-		// Season-2 audit invariant: with the Truffle Patch replacing the raw-snout
+		// Season-1 audit invariant: with the Truffle Patch replacing the raw-snout
 		// war mint, the Exchange is a primary way to obtain war spoils — so EVERY
 		// one of the 25 must actually surface in some weekly stock. This sweeps the
 		// modular pick across seeds + both week parities and asserts full coverage,

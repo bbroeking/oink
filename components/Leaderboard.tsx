@@ -9,7 +9,11 @@ import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { getFriendIds } from "@/utils/friendships";
-import { fetchSounderStandings, type SpiritEntry } from "@/utils/mudWars";
+import {
+	fetchLeagueStandings,
+	fetchSounderStandings,
+	type LeagueEntry,
+} from "@/utils/mudWars";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { log } from "../utils/log";
 import { Icon } from "./ui/Icon";
@@ -27,6 +31,12 @@ const LEADERBOARD_PAGE_SIZE = 25;
 const LEADERBOARD_MAX_ROWS = 100;
 
 type Scope = "global" | "friends" | "alignment" | "sounders";
+
+// A Sounder-scope row: the season-table record (the ranked thing) with the
+// Spirit warmth stats merged in for the subline. Two cheap RPCs, joined
+// client-side by crew_id — the league RPC deliberately doesn't duplicate
+// spirit math (docs/sounder-league-spec.md).
+type LeagueBoardRow = LeagueEntry & { kindness: number; activity: number };
 
 interface ActiveTitle {
 	id: string;
@@ -236,13 +246,13 @@ export function Leaderboard() {
 	const [loading, setLoading] = useState(true);
 	const [scope, setScope] = useState<Scope>("global");
 	const [myId, setMyId] = useState<string | null>(null);
-	const [sounderRows, setSounderRows] = useState<SpiritEntry[]>([]);
+	const [sounderRows, setSounderRows] = useState<LeagueBoardRow[]>([]);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-	// Alignment isn't a thing in Season 2 — the greedy/generous board
-	// retires with Judgement Day, so its scope tab hides once s2 is live.
-	const s2 = useFeatureFlag("world_boss") || __DEV__;
-	// S2 swaps the alignment board for the Sounder rankings.
-	const scopes: Scope[] = s2
+	// Alignment isn't a thing in Season 1 — the greedy/generous board
+	// retires with Judgement Day, so its scope tab hides once s1 is live.
+	const s1 = useFeatureFlag("world_boss") || __DEV__;
+	// S1 swaps the alignment board for the Sounder rankings.
+	const scopes: Scope[] = s1
 		? ["global", "friends", "sounders"]
 		: ["global", "friends", "alignment"];
 	// Paginated load-more state for the global scope. Friends scope is
@@ -303,9 +313,21 @@ export function Leaderboard() {
 			setMyId(user?.id ?? null);
 
 			if (scope === "sounders") {
-				// The Sounder rankings — crews by Spirit (sounder_standings),
-				// the board that replaced alignment for the new season.
-				setSounderRows(await fetchSounderStandings(50));
+				// The Sounder League — the board that replaced alignment for
+				// the new season. The season table ranks (wins, no draws);
+				// Spirit rides along for the warmth subline.
+				const [league, spiritRows] = await Promise.all([
+					fetchLeagueStandings(50),
+					fetchSounderStandings(50),
+				]);
+				const spiritBy = new Map(spiritRows.map((s) => [s.crew_id, s]));
+				setSounderRows(
+					league.map((l) => ({
+						...l,
+						kindness: spiritBy.get(l.crew_id)?.kindness ?? 0,
+						activity: spiritBy.get(l.crew_id)?.activity ?? 0,
+					}))
+				);
 				setLeaderboard([]);
 				setHasMore(false);
 				setLoading(false);
@@ -468,7 +490,9 @@ export function Leaderboard() {
 										? "Global"
 										: s === "friends"
 											? "Friends"
-											: "Alignment"}
+											: s === "sounders"
+												? "Sounders"
+												: "Alignment"}
 								</Text>
 							</Pressable>
 						);
@@ -482,21 +506,10 @@ export function Leaderboard() {
 						<ListRowSkeleton key={i} />
 					))}
 				</View>
-			) : leaderboard.length === 0 ? (
-				// Empty state on a paper Sticker so it matches the Friends
-				// segment's empty card instead of reading as bare text.
-				<View style={styles.emptyWrap}>
-					<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
-						<Text style={styles.emptyText}>
-							{scope === "friends"
-								? "No friends yet. Add some on the Friends segment."
-								: scope === "alignment"
-									? "No one has taken a side yet. Trade to tip the scales."
-									: "No tickles yet. Be the first!"}
-						</Text>
-					</Sticker>
-				</View>
 			) : scope === "sounders" ? (
+				// BEFORE the shared empty check — this scope keeps its rows in
+				// sounderRows (leaderboard stays [] here), so the generic
+				// leaderboard.length === 0 branch used to swallow it entirely.
 				<ScrollView
 					style={styles.list}
 					contentContainerStyle={styles.listContent}
@@ -513,21 +526,40 @@ export function Leaderboard() {
 										{c.name}
 									</Text>
 									<Text style={styles.rowSub} numberOfLines={1}>
+										{c.wins}–{c.losses}
+										{" · "}
 										{c.memberCount} {c.memberCount === 1 ? "snout" : "snouts"}
 										{" · "}
 										{c.kindness} kind · {c.activity} fierce
 									</Text>
 								</View>
-								<Text style={styles.sounderSpirit}>{c.spirit}</Text>
+								<View style={{ alignItems: "center" }}>
+									<Text style={styles.sounderSpirit}>{c.ribbons}</Text>
+									<Text style={styles.sounderSpiritLabel}>ribbons</Text>
+								</View>
 							</View>
 						))}
 						{sounderRows.length === 0 && (
 							<Text style={styles.rowSub}>
-								No Sounders on the board yet — join one from the Sounder tab.
+								No Sounders on the table yet — join one from the Sounder tab.
 							</Text>
 						)}
 					</Sticker>
 				</ScrollView>
+			) : leaderboard.length === 0 ? (
+				// Empty state on a paper Sticker so it matches the Friends
+				// segment's empty card instead of reading as bare text.
+				<View style={styles.emptyWrap}>
+					<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
+						<Text style={styles.emptyText}>
+							{scope === "friends"
+								? "No friends yet. Add some on the Friends segment."
+								: scope === "alignment"
+									? "No one has taken a side yet. Trade to tip the scales."
+									: "No tickles yet. Be the first!"}
+						</Text>
+					</Sticker>
+				</View>
 			) : scope === "alignment" ? (
 				// Alignment leaderboard — TWO independent boards
 				// (Generous top + Greedy top), each with its own
@@ -674,6 +706,13 @@ const styles = StyleSheet.create({
 		fontSize: 18,
 		color: WHIMSY.ink,
 		marginLeft: 8,
+	},
+	sounderSpiritLabel: {
+		fontFamily: FONTS.hand,
+		fontSize: 10,
+		color: WHIMSY.mute,
+		marginLeft: 8,
+		marginTop: -2,
 	},
 	container: { flex: 1 },
 	toggleWrap: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 2 },

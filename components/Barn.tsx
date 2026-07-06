@@ -264,7 +264,7 @@ function WoodenSign({
 			<Sticker color="peach" rotate={-2.5} radius={12} style={styles.sign}>
 				<View style={styles.signInner}>
 					<View style={{ flex: 1 }}>
-						<Text style={styles.signLabel}>snout season 1 ★</Text>
+						<Text style={styles.signLabel}>snout season 0 ★</Text>
 						<Text style={styles.signTier}>
 							Tier {tier} of {totalTiers}
 						</Text>
@@ -295,7 +295,7 @@ export default function Barn() {
 	// in-app companion.
 	const prevAlignmentRef = useRef<number | null>(null);
 
-	// Season 1: current alignment, drives BarnOverlay theming. Hydrated
+	// Season 0: current alignment, drives BarnOverlay theming. Hydrated
 	// in checkAlignment() below (on every focus).
 	const [alignment, setAlignment] = useState<AlignmentLabel>("neutral");
 
@@ -309,7 +309,7 @@ export default function Barn() {
 		() => ({
 			blessed:     activeEffects.blessings.length > 0,
 			cursed:      activeEffects.curses.length > 0,
-			// Lucky-pig boost — sun_beam (S1) or glimmer_truffle (S2), same
+			// Lucky-pig boost — sun_beam (S0) or glimmer_truffle (S1), same
 			// consume-on-first-lucky mechanic. luckyKind targets the clear.
 			sunBeam:     activeEffects.effects.some(
 				(e) => e.kind === "sun_beam" || e.kind === "glimmer_truffle"
@@ -567,7 +567,7 @@ export default function Barn() {
 		}
 
 		if (triggered && effects.sunBeam && effects.luckyKind) {
-			// The lucky boost (sun_beam S1 / glimmer_truffle S2) is
+			// The lucky boost (sun_beam S0 / glimmer_truffle S1) is
 			// consume-on-first-lucky — clear it as soon as a lucky pig
 			// actually fires so subsequent rolls drop back to the base
 			// chance instead of keeping the boost for the rest of the
@@ -934,7 +934,7 @@ export default function Barn() {
 			/>
 
 			{/* Tickle trades moved to the Friends-tab Inbox in the
-			    Season-1 social redesign — no Barn pill or modal. */}
+			    Season-0 social redesign — no Barn pill or modal. */}
 
 			<ReleaseNotesModal
 				visible={releaseNotesSlot.visible}

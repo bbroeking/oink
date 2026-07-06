@@ -4,11 +4,15 @@
 
 const mockRpc = jest.fn();
 const mockError = jest.fn();
+const mockWarn = jest.fn();
 jest.mock("../utils/supabase", () => ({
 	supabase: { rpc: (...args: unknown[]) => mockRpc(...args) },
 }));
 jest.mock("../utils/log", () => ({
-	log: { error: (...args: unknown[]) => mockError(...args) },
+	log: {
+		error: (...args: unknown[]) => mockError(...args),
+		warn: (...args: unknown[]) => mockWarn(...args),
+	},
 }));
 
 import { rpc, rpcAction } from "../utils/rpc";
@@ -17,6 +21,7 @@ describe("rpc", () => {
 	beforeEach(() => {
 		mockRpc.mockReset();
 		mockError.mockReset();
+		mockWarn.mockReset();
 	});
 
 	test("returns cast data on success", async () => {
@@ -39,6 +44,31 @@ describe("rpc", () => {
 		});
 		expect(await rpc<{ x: number }>("foo")).toBeNull();
 		expect(mockError).toHaveBeenCalledWith("[rpc:foo]", "permission denied");
+		expect(mockWarn).not.toHaveBeenCalled();
+	});
+
+	test("transient network failure warns (not errors) and returns null", async () => {
+		mockRpc.mockResolvedValue({
+			data: null,
+			error: { message: "Network request failed" },
+		});
+		expect(await rpc<{ x: number }>("bounty_ready_count")).toBeNull();
+		expect(mockWarn).toHaveBeenCalledWith(
+			"[rpc:bounty_ready_count]",
+			"Network request failed",
+			"(transient network)"
+		);
+		expect(mockError).not.toHaveBeenCalled();
+	});
+
+	test("fetch TypeError warns (not errors)", async () => {
+		mockRpc.mockResolvedValue({
+			data: null,
+			error: { name: "TypeError", message: "Failed to fetch" },
+		});
+		expect(await rpc("foo")).toBeNull();
+		expect(mockWarn).toHaveBeenCalled();
+		expect(mockError).not.toHaveBeenCalled();
 	});
 
 	test("passes params through to supabase.rpc", async () => {
@@ -58,6 +88,7 @@ describe("rpcAction — failure-shape normalization", () => {
 	beforeEach(() => {
 		mockRpc.mockReset();
 		mockError.mockReset();
+		mockWarn.mockReset();
 	});
 
 	test("ok:true passes the payload through", async () => {
@@ -93,6 +124,18 @@ describe("rpcAction — failure-shape normalization", () => {
 		const r = await rpcAction("send_blessing");
 		expect(r).toEqual({ ok: false, reason: "network" });
 		expect(mockError).toHaveBeenCalledWith("[rpc:send_blessing]", "boom");
+		expect(mockWarn).not.toHaveBeenCalled();
+	});
+
+	test("transient network failure → reason 'network' but warns (no red box)", async () => {
+		mockRpc.mockResolvedValue({
+			data: null,
+			error: { message: "Network request failed" },
+		});
+		const r = await rpcAction("bounty_ready_count");
+		expect(r).toEqual({ ok: false, reason: "network" });
+		expect(mockWarn).toHaveBeenCalled();
+		expect(mockError).not.toHaveBeenCalled();
 	});
 
 	test("null data → reason 'no_data'", async () => {

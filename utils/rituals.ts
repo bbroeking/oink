@@ -3,10 +3,10 @@
 // daily_curse_kind functions exactly (EXTRACT(DOY) % 4) or the UI will
 // offer a different kind than the server will accept.
 //
-// Season 2 swaps in a new blessing set (same mechanics, Hunger fiction):
-// the server rolls the S2 pool when the world_boss GLOBAL flag is on, so
+// Season 1 swaps in a new blessing set (same mechanics, Hunger fiction):
+// the server rolls the S1 pool when the world_boss GLOBAL flag is on, so
 // callers pass the same flag here (per-user dev overrides can preview the
-// S2 art but the server's cast follows the global — cosmetic-only skew).
+// S1 art but the server's cast follows the global — cosmetic-only skew).
 
 export type BlessingKind =
 	| "warm_tea"
@@ -36,10 +36,10 @@ export const BLESSING_ROTATION: BlessingKind[] = [
 	"halo_kiss",
 	"bountiful_snouts",
 ];
-// Season-2 set — mechanical analogs in the same rotation slots
+// Season-1 set — mechanical analogs in the same rotation slots
 // (regen / lucky / +tickles / +snouts), so the day's MECHANIC is
 // identical across seasons and only the fiction changes.
-export const BLESSING_ROTATION_S2: BlessingKind[] = [
+export const BLESSING_ROTATION_S1: BlessingKind[] = [
 	"mud_wrap",
 	"glimmer_truffle",
 	"snoot_boop",
@@ -85,7 +85,7 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 		icon: require("../assets/images/emoji/bountiful-snouts.png"),
 		blurb: "+5 snouts, right now.",
 	},
-	// ── Season 2 set — icons are S1 stand-ins until the icon-gen art
+	// ── Season 1 set — icons are S0 stand-ins until the icon-gen art
 	//    pass lands (mud-wrap / glimmer-truffle / snoot-boop /
 	//    trough-bounty pngs). ──
 	mud_wrap: {
@@ -154,8 +154,8 @@ export function dayOfYearUTC(d: Date = new Date()): number {
 	return Math.floor((now - start) / 86_400_000);
 }
 
-export function dailyBlessingKind(d: Date = new Date(), s2 = false): BlessingKind {
-	return (s2 ? BLESSING_ROTATION_S2 : BLESSING_ROTATION)[dayOfYearUTC(d) % 4];
+export function dailyBlessingKind(d: Date = new Date(), s1 = false): BlessingKind {
+	return (s1 ? BLESSING_ROTATION_S1 : BLESSING_ROTATION)[dayOfYearUTC(d) % 4];
 }
 
 export function dailyCurseKind(d: Date = new Date()): CurseKind {
@@ -163,10 +163,10 @@ export function dailyCurseKind(d: Date = new Date()): CurseKind {
 }
 
 // Unified accessor used by RitualPicker so it doesn't branch on mode
-// at every call site. `s2` mirrors the server's world_boss GLOBAL.
-export function dailyRitual(mode: RitualMode, d: Date = new Date(), s2 = false) {
+// at every call site. `s1` mirrors the server's world_boss GLOBAL.
+export function dailyRitual(mode: RitualMode, d: Date = new Date(), s1 = false) {
 	if (mode === "bless") {
-		const kind = dailyBlessingKind(d, s2);
+		const kind = dailyBlessingKind(d, s1);
 		return { kind, ...BLESSING_META[kind] };
 	}
 	const kind = dailyCurseKind(d);

@@ -2,16 +2,20 @@
 //
 // DRIP MODEL: each entry carries an `availableFrom` date. An entry
 // stays invisible — to the modal AND to currentRelease() — until that
-// date arrives. So future Season 1 features can be authored now
+// date arrives. So future Season 0 features can be authored now
 // without spoiling them: the blessings card simply won't surface
 // until blessings actually unlock. `availableFrom` dates come from
 // utils/season.ts so the announcement and the feature roll out
 // together.
 //
+// NOTE on numbering: the greedy/generous era was renumbered to
+// Season 0 (2026-07-06). Entries already shipped to players keep
+// their original "Season 1" copy — they're history.
+//
 // AsyncStorage tracks last-seen version; the modal auto-fires when
 // the current (latest available) release is newer than that.
 
-import { SEASON_1_UNLOCKS } from "@/utils/season";
+import { SEASON_0_UNLOCKS } from "@/utils/season";
 
 export interface ReleaseNote {
 	version: string;
@@ -26,7 +30,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 	{
 		version: "1.4.0",
 		date: "2026-05-20",
-		availableFrom: SEASON_1_UNLOCKS.alignment, // launch
+		availableFrom: SEASON_0_UNLOCKS.alignment, // launch
 		headline: "Season 1 begins: Goblins vs Angels",
 		items: [
 			{
@@ -71,7 +75,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 	{
 		version: "1.5.0",
 		date: "2026-06-03",
-		availableFrom: SEASON_1_UNLOCKS.blessings,
+		availableFrom: SEASON_0_UNLOCKS.blessings,
 		headline: "Daily Blessings",
 		items: [
 			{
@@ -128,7 +132,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 	{
 		version: "1.6.0",
 		date: "2026-06-10",
-		availableFrom: SEASON_1_UNLOCKS.curses,
+		availableFrom: SEASON_0_UNLOCKS.curses,
 		headline: "Daily Curses",
 		items: [
 			{
@@ -143,7 +147,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 	{
 		version: "1.7.0",
 		date: "2026-06-24",
-		availableFrom: SEASON_1_UNLOCKS.bounties,
+		availableFrom: SEASON_0_UNLOCKS.bounties,
 		headline: "Weekly Bounties",
 		items: [
 			{
@@ -188,13 +192,13 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 	{
 		version: "1.8.0",
 		date: "2026-07-08",
-		availableFrom: SEASON_1_UNLOCKS.finale,
+		availableFrom: SEASON_0_UNLOCKS.finale,
 		headline: "Judgement Day approaches",
 		items: [
 			{
 				emoji: "👑",
 				title: "The season ends",
-				body: "Season 1 is closing. The alignment leaderboard ranks the most generous and most greedy — when the gavel falls, the top 3 of each side earn titles no one will be able to claim again. Then the slate wipes for Season 2.",
+				body: "Season 0 is closing. The alignment leaderboard ranks the most generous and most greedy — when the gavel falls, the top 3 of each side earn titles no one will be able to claim again. Then the slate wipes for Season 1.",
 			},
 		],
 	},

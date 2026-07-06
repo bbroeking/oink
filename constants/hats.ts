@@ -121,7 +121,7 @@ export const HAT_IMAGES: Record<string, number> = {
 	// Stragglers
 	crown: require("../assets/images/hats/crown.png"),
 	safety_goggles: require("../assets/images/hats/safety_goggles.png"),
-	// Mud War (Season 2) — generated 2026-06-14 via docs/openai-mud-war-items.md,
+	// Mud War (Season 1) — generated 2026-06-14 via docs/openai-mud-war-items.md,
 	// sliced by scripts/slice_mudwar.py. Items in hats/, backgrounds in
 	// backgrounds/. The festival accessories were re-keyed from Strip 5's baked
 	// transparency checkerboard via a luminance+saturation key; `confetti_aura`
@@ -153,6 +153,9 @@ export const HAT_IMAGES: Record<string, number> = {
 	northern_lights: require("../assets/images/backgrounds/northern_lights_1.png"),
 	rosette_cap: require("../assets/images/hats/rosette_cap.png"),
 	prize_sash: require("../assets/images/hats/prize_sash.png"),
+	// Beta founder reward — legendary 'neck' rosette pendant (seeded in
+	// supabase migration 20260704400000_beta_rewards.sql).
+	beta_founder_ribbon: require("../assets/images/hats/beta_founder_ribbon.png"),
 	festival_pennant: require("../assets/images/hats/festival_pennant.png"),
 	confetti_aura: require("../assets/images/hats/confetti_aura.png"),
 	// Slop Toss horde — minigame sprites (NOT wearable cosmetics; rendered only

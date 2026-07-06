@@ -189,8 +189,8 @@ function FriendsList({
 	crewNames: Map<string, string>;
 	onPick: (id: string) => void;
 }) {
-	// Alignment isn't a thing in Season 2 — the badge retires with S1.
-	const s2 = useFeatureFlag("world_boss") || __DEV__;
+	// Alignment isn't a thing in Season 1 — the badge retires with S0.
+	const s1 = useFeatureFlag("world_boss") || __DEV__;
 	if (friends.length === 0) {
 		return (
 			<Sticker color="paper" rotate={-0.5} radius={12} style={styles.empty}>
@@ -247,7 +247,7 @@ function FriendsList({
 								<Text style={styles.rowMeta}>
 									{(f.tickles_earned ?? 0).toLocaleString()}
 								</Text>
-								{!s2 && typeof f.alignment_score === "number" && (
+								{!s1 && typeof f.alignment_score === "number" && (
 									<>
 										<View style={styles.rowMetaDot} />
 										<AlignmentBadge

@@ -16,7 +16,7 @@ last_compiled: 2026-06-13
 
 # Alignment (Goblins vs Angels)
 
-A per-player reputation score from -100 to +100, derived purely from trade and ritual behavior — generous acts push you toward Angel, selfish ones toward Goblin. It is the core axis of Season 1 and has real mechanical "teeth."
+A per-player reputation score from -100 to +100, derived purely from trade and ritual behavior — generous acts push you toward Angel, selfish ones toward Goblin. It is the core axis of Season 0 and has real mechanical "teeth."
 
 ## How it works
 

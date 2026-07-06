@@ -40,7 +40,14 @@ import {
 	MODAL_BACKDROP_BG,
 } from "@/constants/theme";
 
-export function FeedingStrip({ warId }: { warId: string }) {
+export function FeedingStrip({
+	warId,
+	onReclaim,
+}: {
+	warId: string;
+	// Fired when a dig banks joy back — the war page ticks the Hunger down.
+	onReclaim?: () => void;
+}) {
 	const { session, dugThisWindow, open, submit, clear } = useRooting(warId);
 	const [note, setNote] = useState<string | null>(null);
 	const [countdown, setCountdown] = useState(feedingCountdown());
@@ -108,6 +115,8 @@ export function FeedingStrip({ warId }: { warId: string }) {
 										actions: number
 									) => {
 										const r = await submit(finds, actions);
+										// A dig that banked joy ticks the Hunger down on the war page.
+										if (r.ok && r.outcome && r.outcome.mud > 0) onReclaim?.();
 										return r.ok ? r.outcome : null;
 									},
 									onClose: clear,

@@ -2,7 +2,9 @@
 //
 // Two outputs, deliberately decoupled:
 //   • `reward` — the caller's Founding Herd grant, available whenever the
-//     season1_finale flag is ON and my_beta_reward() returns a grant. It does
+//     season1_finale flag (legacy key name — it means the SEASON-0 finale;
+//     see hooks/useFeatureFlags.tsx) is ON and my_beta_reward() returns a
+//     grant. It does
 //     NOT depend on the seen-stamp, so it survives dismissal — that's what
 //     lets season.tsx keep a persistent recap entry point ("only show the icon
 //     when there IS a reward to recap").
@@ -12,8 +14,9 @@
 //     it thereafter.
 //
 // Gates on:
-//   1. the season1_finale server flag (seeded FALSE by the held
-//      20260704400000 migration — the founder's single reveal switch),
+//   1. the season1_finale server flag (legacy name for the season-0 finale;
+//      seeded FALSE by the held 20260704400000 migration — the founder's
+//      single reveal switch),
 //   2. my_beta_reward() returning the caller's grant (rows exist only after
 //      grant_beta_rewards() fires at season end).
 //

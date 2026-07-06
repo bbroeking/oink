@@ -1,0 +1,364 @@
+<!-- @dsCard group="Sounder" name="Invite / Matchmaking surfaces" subtitle="Crewless invite page, found form, friend-invite sheet, in-crew invites strip, pass-the-crown — one paper sticker, one row grammar" viewport="2620x1080" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="design_doc_mode" content="canvas">
+<title>Sounder — Invite / Matchmaking</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=Fredoka:wght@700&family=Nunito:wght@700;800&family=Patrick+Hand&display=swap');
+  :root{
+    --ink:#2a1f15; --paper:#fffaf0; --cream:#fbeee2; --cream2:#f6e6d4;
+    --rose:#ffd6dc; --sky:#c8e3f0; --sage:#c9dec1; --sun:#ffd87a;
+    --accent:#c25a3f; --angel:#a89bff; --goblin:#d4a437;
+    --mute:rgba(40,30,20,.6); --mutesoft:rgba(40,30,20,.4);
+  }
+  *{box-sizing:border-box;margin:0}
+  body{font-family:'Nunito',sans-serif;color:var(--ink)}
+
+  /* frame on canvas */
+  .frame{position:absolute}
+  .flabel{font-family:'Patrick Hand',cursive;letter-spacing:1.5px;text-transform:uppercase;
+          font-size:15px;color:#8a7a68;margin-bottom:12px;padding-left:4px}
+  .flabel b{color:var(--ink)}
+  .screen{width:434px;background:var(--cream);border:3px solid var(--ink);border-radius:34px;
+          box-shadow:8px 10px 0 rgba(42,31,21,.9);padding:24px 22px 30px;position:relative;overflow:hidden}
+
+  /* header */
+  .kick{font-family:'Patrick Hand',cursive;letter-spacing:2.5px;text-transform:uppercase;
+        font-size:12.5px;color:var(--mute);display:flex;align-items:center;gap:7px}
+  .kick svg{width:14px;height:14px}
+  h1.big{font-family:'Caprasimo',serif;font-size:34px;line-height:1;margin:4px 0 2px}
+  .rule{width:78px;height:3px;background:var(--mutesoft);border-radius:2px;margin:10px 0 16px}
+
+  /* tab bar */
+  .tabs{display:flex;align-items:center;justify-content:space-between;gap:4px;
+        background:var(--paper);border:3px solid var(--ink);border-radius:999px;
+        box-shadow:3px 3px 0 var(--ink);padding:7px 9px;margin-bottom:18px}
+  .tab{display:flex;align-items:center;gap:5px;font-family:'Nunito';font-weight:800;font-size:13px;
+       color:var(--mute);padding:5px 8px;border-radius:999px}
+  .tab svg{width:15px;height:15px}
+  .tab.on{background:var(--sun);border:2.5px solid var(--ink);box-shadow:2px 2px 0 var(--ink);
+          color:var(--ink);padding:5px 12px}
+
+  /* the one paper sticker */
+  .muster{background:var(--paper);border:3px solid var(--ink);border-radius:22px;
+          box-shadow:5px 5px 0 var(--ink);transform:rotate(-.5deg);padding:18px 16px 16px}
+  .muster.flat{transform:none}
+  .skick{font-family:'Patrick Hand',cursive;letter-spacing:1.5px;text-transform:uppercase;
+         font-size:12.5px;color:var(--accent);display:flex;align-items:center;gap:8px;margin:2px 2px 11px}
+  .skick::after{content:"";flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--mutesoft) 0 6px,transparent 6px 11px)}
+  .skick.plain::after{display:none}
+  .sect+.sect{margin-top:20px}
+
+  /* row grammar: portrait · body · pill */
+  .row{display:flex;align-items:center;gap:12px;padding:8px 2px}
+  .row+.row{border-top:2px dashed rgba(42,31,21,.14)}
+  .port{width:48px;height:48px;flex:none;border-radius:50%;background:var(--paper);
+        border:2.5px solid var(--ink);box-shadow:2px 2px 0 var(--ink);
+        display:flex;align-items:center;justify-content:center;position:relative}
+  .port svg.pig{width:38px;height:38px}
+  .port.rose{background:var(--rose)}.port.sky{background:var(--sky)}
+  .port.sage{background:var(--sage)}.port.sun{background:var(--sun)}
+  .port .crown{position:absolute;top:-13px;left:50%;transform:translateX(-50%) rotate(-8deg);width:24px}
+  .body{flex:1;min-width:0}
+  .nm{font-family:'Fredoka',sans-serif;font-weight:700;font-size:16px;line-height:1.15}
+  .nm .accent{color:var(--accent)}
+  .ln{font-family:'Patrick Hand',cursive;font-size:13px;color:var(--mute);margin-top:2px}
+  .disc{font-family:'Nunito';font-weight:800;font-size:12px;color:var(--mutesoft)}
+  .rt{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+
+  /* sun pill — the one button everywhere a row acts */
+  .pill{font-family:'Fredoka',sans-serif;font-weight:700;font-size:13px;color:var(--ink);
+        background:var(--sun);border:2.5px solid var(--ink);border-radius:999px;
+        box-shadow:2px 2px 0 var(--ink);padding:7px 17px;cursor:pointer;white-space:nowrap}
+  .decline{font-family:'Patrick Hand',cursive;font-size:13px;color:var(--mute);
+           text-decoration:underline;cursor:pointer;white-space:nowrap}
+  .status{font-family:'Patrick Hand',cursive;font-size:13.5px;color:var(--mutesoft);white-space:nowrap}
+
+  /* demoted found link + form */
+  .foundlink{display:block;text-align:center;margin-top:16px;font-family:'Patrick Hand',cursive;
+             font-size:15px;color:var(--mute);text-decoration:underline;cursor:pointer}
+  .foundform .flabelin{font-family:'Patrick Hand',cursive;font-size:14px;color:var(--mute);margin-bottom:8px}
+  .field{width:100%;border:2.5px solid var(--ink);border-radius:14px;background:var(--cream);
+         padding:12px 15px;font-family:'Nunito';font-weight:800;font-size:15px;color:var(--ink);
+         box-shadow:inset 2px 2px 0 rgba(42,31,21,.05)}
+  .field::placeholder{color:var(--mutesoft);font-weight:700}
+  .btnbig{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+          background:var(--sun);border:3px solid var(--ink);border-radius:999px;
+          box-shadow:3px 3px 0 var(--ink);padding:14px;font-family:'Fredoka',sans-serif;
+          font-weight:700;font-size:18px;color:var(--ink);margin-top:12px;cursor:pointer}
+  .btnbig svg{width:20px;height:20px}
+  .foundcopy{font-family:'Patrick Hand',cursive;font-size:14.5px;color:var(--mute);
+             text-align:center;margin-top:12px;line-height:1.4}
+
+  .note{font-family:'Patrick Hand',cursive;font-size:12.5px;color:var(--accent);margin-top:3px}
+  .leave{display:block;text-align:center;margin-top:18px;font-family:'Patrick Hand',cursive;
+         font-size:14px;color:var(--mute);text-decoration:underline}
+
+  /* mini crew card (frame D) */
+  .crewmini{background:var(--paper);border:3px solid var(--ink);border-radius:18px;
+            box-shadow:4px 4px 0 var(--ink);padding:14px 16px;margin-bottom:16px}
+  .crewmini .top{display:flex;align-items:baseline;justify-content:space-between}
+  .crewmini h3{font-family:'Caprasimo',serif;font-size:22px}
+  .crewmini .cnt{font-family:'Fredoka',sans-serif;font-weight:700;font-size:15px;color:var(--mute)}
+  .pips{display:flex;align-items:center;gap:9px;margin-top:10px}
+  .pip{width:20px;height:20px;border-radius:50%;background:var(--sun);border:2.5px solid var(--ink)}
+  .pip.open{background:transparent;border-style:dashed;color:var(--mutesoft);
+            display:flex;align-items:center;justify-content:center;font-family:'Fredoka';font-size:13px}
+  .invitecta{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+             background:var(--sun);border:3px solid var(--ink);border-radius:999px;
+             box-shadow:2px 2px 0 var(--ink);padding:11px;margin-top:14px;
+             font-family:'Fredoka',sans-serif;font-weight:700;font-size:16px;color:var(--ink);cursor:pointer}
+  .invitecta svg{width:19px;height:19px}
+  .slothint{font-family:'Patrick Hand',cursive;font-size:12.5px;color:var(--mute);margin-top:8px}
+
+  /* bottom sheet (frame C) */
+  .sheetwrap{position:relative;height:812px;background:var(--cream);border-radius:0}
+  .scrim{position:absolute;inset:0;background:rgba(42,31,21,.34)}
+  .ghost{padding:24px 22px;filter:saturate(.6)}
+  .sheet{position:absolute;left:-3px;right:-3px;bottom:-3px;background:var(--paper);
+         border:3px solid var(--ink);border-top-left-radius:26px;border-top-right-radius:26px;
+         box-shadow:0 -6px 0 rgba(42,31,21,.12);padding:12px 18px 22px}
+  .grab{width:52px;height:5px;border-radius:3px;background:var(--mutesoft);margin:0 auto 12px}
+  .sheettitle{font-family:'Caprasimo',serif;font-size:21px;margin-bottom:2px}
+  .sheetsub{font-family:'Patrick Hand',cursive;font-size:13px;color:var(--mute);margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<!-- ═══════ FRAME A — crewless: invites + open sounders ═══════ -->
+<div class="frame" style="left:60px;top:70px">
+  <div class="flabel">crewless · <b>a friend asked you in</b></div>
+  <div class="screen">
+    <div class="kick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.6 5.9 20.4l1.5-6.8L2.2 9l6.9-.7z"/></svg> FRIENDS</div>
+    <h1 class="big">Find your Sounder</h1>
+    <div class="rule"></div>
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9h12l-1 8a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z"/><path d="M6 9V6a6 6 0 0 1 12 0v3"/></svg>Board</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v14H3z"/><path d="M3 7l9 6 9-6"/></svg>Inbox</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M17 6a3 3 0 0 1 0 6"/><path d="M18 20a5 5 0 0 0-3-4.6"/></svg>Friends</div>
+      <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M4 18l1.5-9 4 4 2.5-6 2.5 6 4-4L20 18z"/></svg>Sounder</div>
+    </div>
+
+    <div class="muster">
+      <!-- invites: warmest path, leads -->
+      <div class="sect">
+        <div class="skick">a friend wants you</div>
+        <div class="row">
+          <div class="port rose">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffe0e5" stroke="#2a1f15" stroke-width="2.5"/><path d="M22 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><path d="M36 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm"><span class="accent">Rosie</span> wants you in <span class="accent">The Mud Maulers</span></div><div class="ln">room for two more snouts</div></div>
+          <div class="rt"><button class="pill">Join</button><span class="decline">not today</span></div>
+        </div>
+        <div class="row">
+          <div class="port sky">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="25" cy="32" r="2" fill="#2a1f15"/><circle cx="39" cy="32" r="2" fill="#2a1f15"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm"><span class="accent">Denny</span> wants you in <span class="accent">Bog Standard</span></div><div class="ln">one seat left at the trough</div></div>
+          <div class="rt"><button class="pill">Join</button><span class="decline">not today</span></div>
+        </div>
+        <div class="row">
+          <div class="port sun">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="25" cy="32" r="2" fill="#2a1f15"/><circle cx="39" cy="32" r="2" fill="#2a1f15"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm"><span class="accent">Milo</span> wanted you in <span class="accent">Hog Wild</span></div><div class="ln">filled up before you tapped</div></div>
+          <div class="rt"><span class="status">full now</span></div>
+        </div>
+        <div class="note" style="margin-left:60px">the bog moves fast — that banner's full.</div>
+      </div>
+
+      <!-- found: demoted footnote -->
+      <a class="foundlink">or found your own ›</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ FRAME B — crewless: nothing to join ═══════ -->
+<div class="frame" style="left:560px;top:70px">
+  <div class="flabel">crewless · <b>no invites yet → found your own</b></div>
+  <div class="screen">
+    <div class="kick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.6 5.9 20.4l1.5-6.8L2.2 9l6.9-.7z"/></svg> FRIENDS</div>
+    <h1 class="big">Find your Sounder</h1>
+    <div class="rule"></div>
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9h12l-1 8a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z"/><path d="M6 9V6a6 6 0 0 1 12 0v3"/></svg>Board</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v14H3z"/><path d="M3 7l9 6 9-6"/></svg>Inbox</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M17 6a3 3 0 0 1 0 6"/><path d="M18 20a5 5 0 0 0-3-4.6"/></svg>Friends</div>
+      <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M4 18l1.5-9 4 4 2.5-6 2.5 6 4-4L20 18z"/></svg>Sounder</div>
+    </div>
+
+    <div class="muster">
+      <div class="sect foundform">
+        <div class="skick plain">nobody's asked you in yet</div>
+        <div class="flabelin">name your Sounder</div>
+        <input class="field" value="The First Furrow" readonly>
+        <button class="btnbig">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21 V4"/><path d="M5 4 Q12 1 19 5 L16 9 L19 13 Q12 10 5 12"/></svg>
+          Found the Sounder
+        </button>
+        <div class="foundcopy">raise the first banner and the<br>bog fills in behind you.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ FRAME C — friend-invite bottom sheet ═══════ -->
+<div class="frame" style="left:1060px;top:70px">
+  <div class="flabel">in a crew · <b>FriendInvitePicker sheet</b></div>
+  <div class="screen" style="padding:0">
+    <div class="sheetwrap">
+      <!-- dimmed crew scene behind -->
+      <div class="ghost">
+        <div class="kick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.6 5.9 20.4l1.5-6.8L2.2 9l6.9-.7z"/></svg> FRIENDS</div>
+        <h1 class="big">Your Sounder</h1>
+        <div class="rule"></div>
+        <div class="crewmini">
+          <div class="top"><h3>Sonder</h3><span class="cnt">2/5</span></div>
+          <div class="pips"><span class="pip"></span><span class="pip"></span><span class="pip open">+</span><span class="pip open">+</span><span class="pip open">+</span></div>
+          <button class="invitecta"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Call a snout to your banner</button>
+        </div>
+      </div>
+      <div class="scrim"></div>
+
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sheettitle">Call a snout to your banner</div>
+        <div class="sheetsub">tap a friend to pin them to an open slot</div>
+
+        <div class="row">
+          <div class="port rose">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffe0e5" stroke="#2a1f15" stroke-width="2.5"/><path d="M22 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><path d="M36 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm">Rosie <span class="disc">#0192</span></div><div class="ln">rides with you</div></div>
+          <div class="rt"><span class="status">crewmate</span></div>
+        </div>
+        <div class="row">
+          <div class="port sky">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="25" cy="32" r="2" fill="#2a1f15"/><circle cx="39" cy="32" r="2" fill="#2a1f15"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm">Denny <span class="disc">#4417</span></div><div class="ln">no crew yet — free to ride</div></div>
+          <div class="rt"><button class="pill">Invite</button></div>
+        </div>
+        <div class="row">
+          <div class="port sage">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><path d="M22 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><path d="M36 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm">Jen <span class="disc">#8830</span></div><div class="ln">in The Bog Trotters</div></div>
+          <div class="rt"><span class="status">taken</span></div>
+        </div>
+        <div class="row">
+          <div class="port sun">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="25" cy="32" r="2" fill="#2a1f15"/><circle cx="39" cy="32" r="2" fill="#2a1f15"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm">Milo <span class="disc">#2261</span></div><div class="ln">waiting on your last ask…</div></div>
+          <div class="rt"><span class="status">waiting…</span></div>
+        </div>
+        <div class="row">
+          <div class="port rose">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffe0e5" stroke="#2a1f15" stroke-width="2.5"/><path d="M22 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><path d="M36 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm">Otis <span class="disc">#5098</span></div><div class="ln">no crew yet — free to ride</div></div>
+          <div class="rt"><button class="pill">Invite</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ FRAME D — in-crew invites strip (non-actionable) ═══════ -->
+<div class="frame" style="left:1560px;top:70px">
+  <div class="flabel">already in a crew · <b>invites you can't act on</b></div>
+  <div class="screen">
+    <div class="kick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.6 5.9 20.4l1.5-6.8L2.2 9l6.9-.7z"/></svg> FRIENDS</div>
+    <h1 class="big">Your Sounder</h1>
+    <div class="rule"></div>
+
+    <div class="crewmini">
+      <div class="top"><h3>Sonder</h3><span class="cnt">2/5</span></div>
+      <div class="pips"><span class="pip"></span><span class="pip"></span><span class="pip open">+</span><span class="pip open">+</span><span class="pip open">+</span></div>
+      <div class="slothint">3 open slots · tap ＋ or the button below to fill them</div>
+      <button class="invitecta"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Call a snout to your banner</button>
+    </div>
+
+    <div class="muster">
+      <div class="sect">
+        <div class="skick">asks waiting on the wind</div>
+        <div class="row">
+          <div class="port rose">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffe0e5" stroke="#2a1f15" stroke-width="2.5"/><path d="M22 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><path d="M36 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm"><span class="accent">Rosie</span> wants you in <span class="accent">The Mud Maulers</span></div><div class="ln">you're riding with the Sonder</div></div>
+          <div class="rt"><span class="decline">let it go</span></div>
+        </div>
+        <div class="row">
+          <div class="port sky">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="25" cy="32" r="2" fill="#2a1f15"/><circle cx="39" cy="32" r="2" fill="#2a1f15"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm"><span class="accent">Denny</span> wants you in <span class="accent">Bog Standard</span></div><div class="ln">you're riding with the Sonder</div></div>
+          <div class="rt"><span class="decline">let it go</span></div>
+        </div>
+      </div>
+      <div class="foundcopy" style="color:var(--accent);margin-top:16px">one Sounder at a time —<br><a href="#" style="color:var(--accent)">leave yours</a> to answer an invite.</div>
+    </div>
+
+    <a class="leave" href="#">leave your Sounder › no hard feelings</a>
+  </div>
+</div>
+
+<!-- ═══════ FRAME E — pass the crown (transfer ownership) ═══════ -->
+<div class="frame" style="left:2060px;top:70px">
+  <div class="flabel">you lead · <b>pass the crown to a crewmate</b></div>
+  <div class="screen" style="padding:0">
+    <div class="sheetwrap">
+      <!-- dimmed crew scene behind -->
+      <div class="ghost">
+        <div class="kick"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.6 5.9 20.4l1.5-6.8L2.2 9l6.9-.7z"/></svg> FRIENDS</div>
+        <h1 class="big">Your Sounder</h1>
+        <div class="rule"></div>
+        <div class="crewmini">
+          <div class="top"><h3>Sonder</h3><span class="cnt">3/5</span></div>
+          <div class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip open">+</span><span class="pip open">+</span></div>
+          <div class="slothint"><span style="color:var(--accent)">you wear the crown · pass it before you leave ›</span></div>
+        </div>
+      </div>
+      <div class="scrim"></div>
+
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sheettitle">Pass the crown</div>
+        <div class="sheetsub">one pig wears it — hand the Sonder to a crewmate</div>
+
+        <div class="row">
+          <div class="port sun">
+            <svg class="crown" viewBox="0 0 40 24"><path d="M4 20 L4 8 L12 14 L20 4 L28 14 L36 8 L36 20 Z" fill="#ffd87a" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/></svg>
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><path d="M22 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><path d="M36 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm">Brian <span class="disc">you</span></div><div class="ln">wearing the crown now</div></div>
+          <div class="rt"><span class="status" style="color:var(--accent)">leader</span></div>
+        </div>
+        <div class="row">
+          <div class="port sky">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="25" cy="32" r="2" fill="#2a1f15"/><circle cx="39" cy="32" r="2" fill="#2a1f15"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm">Jen <span class="disc">#8830</span></div><div class="ln">rides with you · 12 mud wins</div></div>
+          <div class="rt"><button class="pill">Crown them</button></div>
+        </div>
+        <div class="row">
+          <div class="port sage">
+            <svg class="pig" viewBox="0 0 64 64"><path d="M14 22 Q10 8 22 12 Q16 16 18 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><path d="M50 22 Q54 8 42 12 Q48 16 46 24 Z" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5" stroke-linejoin="round"/><circle cx="32" cy="36" r="20" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.5"/><path d="M22 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><path d="M36 32 q3 3 6 0" fill="none" stroke="#2a1f15" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#f7c2cc" stroke="#2a1f15" stroke-width="2.5"/><circle cx="29" cy="42" r="1.4" fill="#2a1f15"/><circle cx="35" cy="42" r="1.4" fill="#2a1f15"/></svg>
+          </div>
+          <div class="body"><div class="nm">Rosie <span class="disc">#0192</span></div><div class="ln">rides with you · joined today</div></div>
+          <div class="rt"><button class="pill">Crown them</button></div>
+        </div>
+
+        <div class="foundcopy" style="margin-top:14px">the crown passes at once — you stay in the crew as a rider.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

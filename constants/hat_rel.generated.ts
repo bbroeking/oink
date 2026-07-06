@@ -12,6 +12,7 @@ export const HAT_REL_DATA: Record<string, RelSpec> = {
 	bandana_red: { pivot: { x: 0.4857, y: 0.165 }, widthFrac: 0.4, anchor: "neck", behind: false },
 	beanie: { pivot: { x: 0.535, y: 0.95 }, widthFrac: 0.4, anchor: "head", behind: true },
 	bell_collar: { pivot: { x: 0.4893, y: 0.3716 }, widthFrac: 0.4, anchor: "neck", behind: false },
+	beta_founder_ribbon: { pivot: { x: 0.5071, y: 0.6926 }, widthFrac: 0.4, anchor: "neck", behind: false },
 	black_bow_tie: { pivot: { x: 0.5071, y: 0.5359 }, widthFrac: 0.4, anchor: "neck", behind: false },
 	bog_helmet: { pivot: { x: 0.5, y: 0.9 }, widthFrac: 0.46, anchor: "head", behind: false },
 	bunny_ears: { pivot: { x: 0.4921, y: 0.8825 }, widthFrac: 0.52, anchor: "head", behind: false },

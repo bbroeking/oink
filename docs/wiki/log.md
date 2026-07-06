@@ -351,3 +351,5 @@ fan-out workflow (6 parallel per-screen agents + a tsc/jest verify pass).
   new sets (Hungerer's Table w/ Famished-gated Crown capstone; Rooter's Kit w/ the
   Golden Snuffle Dust particle capstone), 2 animated Heirlooms in cosmeticFx vocab,
   and a 6-item generate-next shortlist = one new Sheet F batch.
+
+## [2026-07-06] renumber | greedy/generous era → Season 0, The Great Hunger → Season 1

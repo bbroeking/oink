@@ -10,13 +10,37 @@
 import { supabase } from "./supabase";
 import { log } from "./log";
 
+// A transient connectivity blip (offline, Supabase API outage, DNS hiccup)
+// surfaces as a fetch-level TypeError — "Network request failed" on RN,
+// "Failed to fetch" on web. These are routine and self-heal on the next
+// poll/focus, so they log as a warning (Sentry breadcrumb, no LogBox red
+// box) instead of an error. Every OTHER failure class (permission denied,
+// SQL error, bad params, …) still routes to log.error → Sentry issue.
+function isTransientNetworkError(error: { message?: string; name?: string } | null): boolean {
+	if (!error) return false;
+	if (error.name === "TypeError") return true;
+	return /network request failed|failed to fetch|fetch failed|network error/i.test(
+		error.message ?? ""
+	);
+}
+
+// Routes an RPC error to warn (transient network blip) or error (everything
+// else), so Sentry/LogBox don't treat routine connectivity failures as bugs.
+function logRpcError(name: string, error: { message?: string; name?: string }): void {
+	if (isTransientNetworkError(error)) {
+		log.warn(`[rpc:${name}]`, error.message, "(transient network)");
+	} else {
+		log.error(`[rpc:${name}]`, error.message);
+	}
+}
+
 export async function rpc<T = unknown>(
 	name: string,
 	params?: Record<string, unknown>
 ): Promise<T | null> {
 	const { data, error } = await supabase.rpc(name, params);
 	if (error) {
-		log.error(`[rpc:${name}]`, error.message);
+		logRpcError(name, error);
 		return null;
 	}
 	return (data as T) ?? null;
@@ -45,7 +69,7 @@ export async function rpcAction<T = Record<string, never>>(
 ): Promise<RpcResult<T>> {
 	const { data, error } = await supabase.rpc(name, params);
 	if (error) {
-		log.error(`[rpc:${name}]`, error.message);
+		logRpcError(name, error);
 		return { ok: false, reason: "network" };
 	}
 	if (data == null || typeof data !== "object") {

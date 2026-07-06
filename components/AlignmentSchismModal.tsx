@@ -1,7 +1,7 @@
 // One-time fullscreen reveal that fires when a user's alignment_score
 // first crosses ±25. Tells them their behavior is starting to take
 // shape — they're showing a Generous (angel) or Greedy (goblin)
-// nature. Setup for everything that follows in Season 1.
+// nature. Setup for everything that follows in Season 0.
 //
 // Driven by check_schism_status RPC → app/_layout polls on focus →
 // if 'angel' or 'goblin' returned, mounts this modal. Dismiss calls

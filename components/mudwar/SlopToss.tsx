@@ -23,6 +23,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
+import { ReclaimSlam, ReclaimSlamHandle } from "./ReclaimSlam";
 import { HAT_IMAGES } from "@/constants/hats";
 import { MudBand } from "@/utils/mudWars";
 import { FONTS, STICKER_SHADOW, WHIMSY } from "@/constants/theme";
@@ -163,6 +164,8 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 
 	const [score, setScore] = useState(0);
 	const streakRef = useRef(0);
+	// Reclaim slam — a landed throw pries joy from the foe to your tally.
+	const slamRef = useRef<ReclaimSlamHandle>(null);
 	const [combo, setCombo] = useState(0);
 	const comboAnim = useRef(new Animated.Value(0)).current;
 	const [floaters, setFloaters] = useState<Floater[]>([]);
@@ -279,6 +282,17 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 				Animated.spring(comboAnim, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 12 }).start();
 			} else {
 				setCombo(0);
+			}
+
+			// A landed throw rips joy from the foe up to your tally — scaled by band
+			// (a perfect bursts, a weak wisps). haptic:false — fire() already buzzed.
+			if (hit) {
+				slamRef.current?.slam({
+					intensity: band === "perfect" ? "burst" : band === "good" ? "pop" : "wisp",
+					from: { x: 0.5, y: 0.45 },
+					to: { x: 0.13, y: 0.1 },
+					haptic: false,
+				});
 			}
 
 			// Bucket recoil squish + whip the charge wind-up forward.
@@ -652,6 +666,9 @@ export function SlopToss({ onThrow, throwsRemaining, day = 1 }: Props) {
 						? "dev · throws spent — bucket kept live to test"
 						: `hold the bucket · let fly as he crosses · ${throwsRemaining} slings left`}
 				</Text>
+
+				{/* Reclaim slam — a landed throw rips joy from the foe to your tally. */}
+				<ReclaimSlam ref={slamRef} />
 			</View>
 		</Animated.View>
 	);

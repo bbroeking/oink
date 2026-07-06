@@ -33,13 +33,18 @@ import { Glyph, type GlyphName } from "../../components/ui/Glyph";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
 import { GreatHungerIntroModal } from "../../components/GreatHungerIntroModal";
-import { SeasonEndModal } from "../../components/SeasonEndModal";
+import {
+	SeasonEndModal,
+	DEV_PREVIEW_REWARDS,
+} from "../../components/SeasonEndModal";
 import { useSeasonEnd } from "../../hooks/useSeasonEnd";
-import { HungerHero } from "../../components/season2/HungerHero";
-import { SeasonStory } from "../../components/season2/SeasonStory";
-import { SounderSteps } from "../../components/season2/SounderSteps";
-import { SeasonGuideModal } from "../../components/season2/SeasonGuideModal";
-import { SpoilsShowcase } from "../../components/season2/SpoilsShowcase";
+import type { BetaReward } from "../../hooks/useSeasonEnd";
+import { HungerHero } from "../../components/season1/HungerHero";
+import { SeasonStory } from "../../components/season1/SeasonStory";
+import { SounderSteps } from "../../components/season1/SounderSteps";
+import { LeaguePlacard } from "../../components/season1/LeaguePlacard";
+import { SeasonGuideModal } from "../../components/season1/SeasonGuideModal";
+import { SpoilsShowcase } from "../../components/season1/SpoilsShowcase";
 import { useCrew } from "../../hooks/useCrew";
 import { useMudWar } from "@/hooks/useMudWar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -1010,34 +1015,40 @@ const vlStyles = StyleSheet.create({
 export default function SeasonScreen() {
 	const [state, setState] = useState<SeasonState | null>(null);
 	const [busy, setBusy] = useState(false);
-	// Season-2 mode — the world_boss server flag (seeded by the held
+	// Season-1 mode — the world_boss server flag (seeded by the held
 	// 20260704200000 migration) with the __DEV__ escape hatch so the local
 	// test account lives in the new season before the flag flips for anyone
-	// else. Season-1 rendering is fully preserved on the else-branch.
+	// else. Season-0 rendering is fully preserved on the else-branch.
 	const worldBoss = useFeatureFlag("world_boss");
-	const s2 = worldBoss || __DEV__;
+	const s1 = worldBoss || __DEV__;
 	// The Great Hunger intro storybook — auto-opens on this account's FIRST
-	// visit to the Season-2 tab (AsyncStorage stamp, per-user) and re-opens any
+	// visit to the Season-1 tab (AsyncStorage stamp, per-user) and re-opens any
 	// time from the hero's "Hear the tale again" chip.
 	const [introOpen, setIntroOpen] = useState(false);
-	// First-ever S2 visit leads with the cinematic tale reel inside the
+	// First-ever S1 visit leads with the cinematic tale reel inside the
 	// intro modal; retellings from the hero chip start on the storybook.
 	const [introReel, setIntroReel] = useState(false);
 	const [uid, setUid] = useState<string | null>(null);
 	// Sounder + war state drive the walkthrough stepper / live-war strip.
-	const crewHook = useCrew(s2);
+	const crewHook = useCrew(s1);
 	const mudWar = useMudWar(
 		crewHook.crew.warId ?? undefined,
-		s2 && crewHook.crew.inWar
+		s1 && crewHook.crew.inWar
 	);
 	// Season-end reveal — the beta Founding Herd recap. Live path: season1_finale
-	// flag + an unseen my_beta_reward grant (held 20260704400000). Dev preview
-	// chip mirrors the intro's escape hatch.
+	// flag (legacy key name — it means the SEASON-0 finale; the key shipped in
+	// build 103 and never changes) + an unseen my_beta_reward grant (held
+	// 20260704400000). Dev preview chip mirrors the intro's escape hatch.
 	const seasonEnd = useSeasonEnd();
 	// Persistent re-entry into the season-end recap. The auto-reveal only
 	// plays once (seen-stamp), so this lets a player look back at their
 	// Founding Herd rewards any time via the season-pass header icon.
 	const [recapOpen, setRecapOpen] = useState(false);
+	// __DEV__-only founder-gift preview: cycles the four tiers so the full
+	// reveal (chip count + copy per tier) is testable without a server grant.
+	// Always null in production — never touches the live season1_finale gate.
+	const [devReward, setDevReward] = useState<BetaReward | null>(null);
+	const [devTierIdx, setDevTierIdx] = useState(0);
 	const [saleOpen, setSaleOpen] = useState(false);
 	// Alignment placard moved here from the Me tab — the player's
 	// greedy↔generous score + its blessing/curse/regen modifiers.
@@ -1090,13 +1101,15 @@ export default function SeasonScreen() {
 
 	// Season guide — "how the season works" + the Hunger level ladder.
 	// TESTING MODE: pops on EVERY Season-tab focus so the flow can be
-	// exercised repeatedly; flip GUIDE_EVERY_VISIT to false before public S2
+	// exercised repeatedly; flip GUIDE_EVERY_VISIT to false before public S1
 	// to gate it behind the per-user AsyncStorage stamp below.
+	// (The `s2_*` AsyncStorage keys keep their pre-renumber names — shipped
+	// devices already carry the stamps.)
 	const GUIDE_EVERY_VISIT = true;
 	const [guideOpen, setGuideOpen] = useState(false);
 	useFocusEffect(
 		useCallback(() => {
-			if (!s2) return;
+			if (!s1) return;
 			if (GUIDE_EVERY_VISIT) {
 				setGuideOpen(true);
 				return;
@@ -1105,7 +1118,7 @@ export default function SeasonScreen() {
 			AsyncStorage.getItem(`s2_guide_seen:${uid}`).then((v) => {
 				if (!v) setGuideOpen(true);
 			});
-		}, [s2, uid])
+		}, [s1, uid])
 	);
 	const dismissGuide = useCallback(() => {
 		setGuideOpen(false);
@@ -1118,7 +1131,7 @@ export default function SeasonScreen() {
 	// on dismiss so it never auto-plays twice; the "Hear the tale again" chip
 	// stays for every retelling after.
 	useEffect(() => {
-		if (!s2 || !uid) return;
+		if (!s1 || !uid) return;
 		let cancelled = false;
 		AsyncStorage.getItem(`s2_intro_seen:${uid}`).then((v) => {
 			if (!cancelled && !v) {
@@ -1129,7 +1142,7 @@ export default function SeasonScreen() {
 		return () => {
 			cancelled = true;
 		};
-	}, [s2, uid]);
+	}, [s1, uid]);
 
 	const dismissIntro = useCallback(() => {
 		setIntroOpen(false);
@@ -1291,22 +1304,38 @@ export default function SeasonScreen() {
 		<View style={styles.container}>
 			<SafeAreaView style={styles.safeArea}>
 				<View style={styles.header}>
-					{/* Season 2 wears the Hungerer's name; Season 1 keeps its framing.
+					{/* Season 1 wears the Hungerer's name; Season 0 keeps its framing.
 					    (The old dev intro-preview chip is gone — the real retrigger
 					    lives on the hero as "Hear the tale again".) */}
 					<Text style={styles.kicker}>
-						{s2 ? "★ season 2 — mud wars" : `★ ${season.name.toLowerCase()}`}
+						{s1 ? "★ season 1 — mud wars" : `★ ${season.name.toLowerCase()}`}
 					</Text>
 					<Text style={styles.title}>
-						{s2 ? "The Great Hunger" : "Goblins vs Angels"}
+						{s1 ? "The Great Hunger" : "Goblins vs Angels"}
 					</Text>
 					<View style={styles.titleRule} />
-					{/* (The dev "preview: season-end rewards" chip is gone — the
-					    real entry point is the pass header's recap icon, which
-					    only shows when a reward exists.) */}
-						{/* Season 1 only — S2's clock is the Hungerer's drain + the war
+					{/* Live entry point is the pass header's recap icon (only shows
+					    when a real grant exists). This __DEV__-only chip cycles the
+					    four founder tiers so the reveal is previewable without a
+					    grant; it never renders in production. */}
+					{__DEV__ && (
+						<Pressable
+							onPress={() => {
+								const r = DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length];
+								setDevTierIdx((n) => n + 1);
+								setDevReward(r);
+							}}
+							hitSlop={8}
+							style={styles.devRewardChip}
+						>
+							<Text style={styles.devRewardChipText}>
+								dev · founder gift ({DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length].tier})
+							</Text>
+						</Pressable>
+					)}
+						{/* Season 0 only — S1's clock is the Hungerer's drain + the war
 						    cadence, not a doomsday date. */}
-						{!s2 && daysUntilJudgement() > 0 && (
+						{!s1 && daysUntilJudgement() > 0 && (
 							<View style={styles.judgementBanner}>
 								<Icon name="scales" size={14} color={WHIMSY.ink} />
 								<Text style={styles.judgementText}>
@@ -1326,11 +1355,11 @@ export default function SeasonScreen() {
 				    slot below. */}
 
 				<ScrollView contentContainerStyle={styles.tierList}>
-					{/* ── Season 2 — the boss leads the tab, then YOUR SOUNDER
+					{/* ── Season 1 — the boss leads the tab, then YOUR SOUNDER
 					    (the path into the scuffle comes before the lore — joining
 					    is the season's first verb), then the story, then what
 					    the scuffling pays. ── */}
-					{s2 && (
+					{s1 && (
 						<>
 							<SectionHeader kicker="the season boss" title="The Great Hungerer" />
 							<HungerHero
@@ -1347,6 +1376,10 @@ export default function SeasonScreen() {
 								/>
 							</View>
 							<SounderSteps crewHook={crewHook} war={mudWar.war} />
+							{/* The league placard — the table slot the S0 Alignment
+							    placard vacates. Term clock only; the season's end
+							    date is deliberately unannounced. */}
+							<LeaguePlacard />
 
 							<View style={{ marginTop: 8 }}>
 								<SectionHeader
@@ -1454,10 +1487,10 @@ export default function SeasonScreen() {
 						onClaim={handleClaim}
 					/>
 
-					{/* Alignment placard — SEASON 1 ONLY. Alignment isn't a thing
-					    in Season 2 (the mechanics still hum server-side, but the
+					{/* Alignment placard — SEASON 0 ONLY. Alignment isn't a thing
+					    in Season 1 (the mechanics still hum server-side, but the
 					    identity UI retires with Judgement Day). */}
-					{!s2 && (
+					{!s1 && (
 					<>
 					<View style={{ marginTop: 8 }}>
 						<SectionHeader kicker="standing" title="Alignment" />
@@ -1526,7 +1559,7 @@ export default function SeasonScreen() {
 			/>
 			{alignmentExplainerOpen && (
 				<AlignmentExplainerModal
-					s2={s2}
+					s1={s1}
 					onDismiss={() => setAlignmentExplainerOpen(false)}
 				/>
 			)}
@@ -1553,10 +1586,10 @@ export default function SeasonScreen() {
 				onDone={() => setMysteryReveal(null)}
 			/>
 
-			{/* Season 2 intro storybook — auto-plays on the first Season-2 visit
+			{/* Season 1 intro storybook — auto-plays on the first Season-1 visit
 			    (per-user AsyncStorage stamp) and re-opens from the hero's
 			    "Hear the tale again" chip. */}
-			{s2 && (
+			{s1 && (
 				<GreatHungerIntroModal
 					visible={introOpen}
 					onDone={dismissIntro}
@@ -1566,7 +1599,7 @@ export default function SeasonScreen() {
 
 			{/* The season guide — every visit while testing (GUIDE_EVERY_VISIT);
 			    yields to the intro storybook when both want the stage. */}
-			{s2 && (
+			{s1 && (
 				<SeasonGuideModal
 					visible={guideOpen && !introOpen}
 					onDismiss={dismissGuide}
@@ -1576,12 +1609,13 @@ export default function SeasonScreen() {
 			{/* Season-end reveal — the beta Founding Herd recap. Live when the
 			    season1_finale flag is on and the caller has an unseen grant, or
 			    re-opened from the pass header's recap icon. */}
-			{seasonEnd.reward && (
+			{(seasonEnd.reward || devReward) && (
 				<SeasonEndModal
-					visible={seasonEnd.show || recapOpen}
-					reward={seasonEnd.reward}
+					visible={seasonEnd.show || recapOpen || devReward != null}
+					reward={devReward ?? seasonEnd.reward!}
 					onDone={() => {
 						setRecapOpen(false);
+						setDevReward(null);
 						seasonEnd.dismiss();
 					}}
 				/>
@@ -1835,6 +1869,16 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		...SHADOW_SM,
 	},
+	// __DEV__-only founder-gift preview chip (never ships).
+	devRewardChip: {
+		alignSelf: "center",
+		marginTop: 8,
+		backgroundColor: "rgba(20,16,28,0.7)",
+		borderRadius: 8,
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+	},
+	devRewardChipText: { fontFamily: FONTS.hand, fontSize: 11, color: "#fff" },
 	ctas: { flexDirection: "row", gap: 8, marginTop: 12 },
 	tierList: {
 		paddingHorizontal: PAGE_PAD,
@@ -2022,7 +2066,7 @@ const xpHowTo = StyleSheet.create({
 });
 
 // Alignment placard — moved off the Me tab onto the Season tab, where
-// the season's stakes live (S1: the finale verdict; S2: blessing/curse power).
+// the season's stakes live (S0: the finale verdict; S1: blessing/curse power).
 const alignmentStoryStyles = StyleSheet.create({
 	wrap: { padding: 16, marginTop: 4 },
 	labelRow: {

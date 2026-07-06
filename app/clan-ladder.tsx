@@ -1,9 +1,11 @@
-// Sounder Standings — the crew ranking by SPIRIT (7-day war activity +
-// intra-crew kindness, per snout) via sounder_standings(). The war elo
-// (crew_ratings) demotes to a small chip per row — winning wars is one way
-// to spirit, being good to your herd is the other. Dark-launched behind the
-// `mud_wars` server flag like the rest of Mud Wars; reached from the Mud
-// Fight header and the SounderCard's standings link.
+// Sounder League — the season table, ranked by PRIZE RIBBONS (the crew Elo
+// rebased to a trophy scale: start 200, floor 0, K 40→24 by rope margin)
+// via sounder_league_standings(), with the SPIRIT board (7-day war activity +
+// intra-crew kindness, per snout) as the second tab. W–L is the record
+// subline; no fixture ends in a draw. Dark-launched behind the `mud_wars`
+// server flag like the rest of Mud Wars; reached from the Mud Fight header
+// and the SounderCard's standings link.
+// Spec: docs/sounder-league-spec.md.
 
 import { useCallback, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -19,7 +21,15 @@ import {
 } from "react-native";
 import { Stack, router, Redirect } from "expo-router";
 import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
-import { fetchSounderStandings, SpiritEntry } from "@/utils/mudWars";
+import {
+	fetchLeagueStandings,
+	fetchSounderStandings,
+	leagueSort,
+	spiritSort,
+	padWithMocks,
+	LeagueEntry,
+	SpiritEntry,
+} from "@/utils/mudWars";
 import { useCrew } from "@/hooks/useCrew";
 import { Icon } from "@/components/ui/Icon";
 import { FONTS, WHIMSY } from "@/constants/theme";
@@ -27,14 +37,13 @@ import { FONTS, WHIMSY } from "@/constants/theme";
 // ── DEV mock Sounders — design bodies for a sparse beta board ────────────────
 const MOCK_SOUNDERS: SpiritEntry[] = [
 	{
-		crew_id: "mock-1", name: "The Mud Maulers", memberCount: 5,
-		kindness: 42, activity: 88, spirit: 26, rating: 1261, wars: 9,
+		crew_id: "mock-1", name: "The Mud Maulers", memberCount: 4,
+		kindness: 42, activity: 88, spirit: 33, rating: 1261, wars: 9,
 		members: [
 			{ username: "Rosie", role: "leader" },
 			{ username: "Pip", role: "member" },
 			{ username: "Moo", role: "member" },
 			{ username: "Clover", role: "member" },
-			{ username: "Biscuit", role: "member" },
 		],
 	},
 	{
@@ -65,45 +74,62 @@ const MOCK_SOUNDERS: SpiritEntry[] = [
 		],
 	},
 	{
-		crew_id: "mock-5", name: "Famished Five", memberCount: 5,
-		kindness: 9, activity: 51, spirit: 12, rating: 1096, wars: 11,
+		crew_id: "mock-5", name: "Famished Five", memberCount: 4,
+		kindness: 9, activity: 51, spirit: 15, rating: 1096, wars: 11,
 		members: [
 			{ username: "Grunt", role: "leader" },
 			{ username: "Squeal", role: "member" },
 			{ username: "Wallow", role: "member" },
 			{ username: "Mucky", role: "member" },
-			{ username: "Rind", role: "member" },
 		],
 	},
 ];
 
-function padWithMockSounders(live: SpiritEntry[]): SpiritEntry[] {
-	const taken = new Set(live.map((r) => r.name));
-	return [...live, ...MOCK_SOUNDERS.filter((m) => !taken.has(m.name))].sort(
-		(a, b) => b.spirit - a.spirit || b.kindness - a.kindness
-	);
-}
+// League-shaped twins of the mock crews (same names/rosters, table records).
+const MOCK_LEAGUE: LeagueEntry[] = MOCK_SOUNDERS.map((s, i) => ({
+	crew_id: s.crew_id,
+	name: s.name,
+	memberCount: s.memberCount,
+	ribbons: [286, 241, 219, 200, 164][i],
+	provisional: [false, false, false, true, false][i],
+	played: [4, 4, 3, 2, 4][i],
+	wins: [4, 3, 2, 0, 1][i],
+	losses: [0, 1, 1, 2, 3][i],
+	diff: [21, 9, 4, -8, -14][i],
+	members: s.members,
+}));
 
 export default function ClanLadderScreen() {
 	const { visible: mudWarsVisible, loaded: flagLoaded } =
 		useFeatureFlagState("mud_wars");
 	const { crew } = useCrew();
 	const myCrewId = crew.crew?.id ?? null;
-	const [rows, setRows] = useState<SpiritEntry[] | null>(null);
-	// Two boards over one payload: Spirit (kindest + most active, the
-	// celebrated board) and Elo (win a scuffle → rises, lose → falls).
-	const [board, setBoard] = useState<"spirit" | "elo">("spirit");
+	const [league, setLeague] = useState<LeagueEntry[] | null>(null);
+	const [spirit, setSpirit] = useState<SpiritEntry[] | null>(null);
+	// Two boards: the season Table (fixture record — the ranked one) and
+	// Spirit (kindest + most active per snout, still celebrated second).
+	const [board, setBoard] = useState<"table" | "spirit">("table");
 	// Tap a row to expand its roster.
 	const [expanded, setExpanded] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
 		if (!mudWarsVisible) return; // don't fetch when the season is dark
-		const live = await fetchSounderStandings(50);
+		const [liveLeague, liveSpirit] = await Promise.all([
+			fetchLeagueStandings(50),
+			fetchSounderStandings(50),
+		]);
 		// DEV ONLY: pad a sparse board with mock Sounders so the standings
 		// design can be judged with real-looking data. Never ships: gated on
 		// __DEV__, and live rows always outrank the mocks' insertion.
-		setRows(
-			__DEV__ && live.length < 4 ? padWithMockSounders(live) : live
+		setLeague(
+			__DEV__ && liveLeague.length < 4
+				? padWithMocks(liveLeague, MOCK_LEAGUE, leagueSort)
+				: liveLeague
+		);
+		setSpirit(
+			__DEV__ && liveSpirit.length < 4
+				? padWithMocks(liveSpirit, MOCK_SOUNDERS, spiritSort)
+				: liveSpirit
 		);
 	}, [mudWarsVisible]);
 	// Refetch on focus so a transient load failure self-heals (no error sentinel yet).
@@ -116,14 +142,16 @@ export default function ClanLadderScreen() {
 	if (!flagLoaded) return null;
 	if (!mudWarsVisible) return <Redirect href="/(tabs)" />;
 
+	const rows = board === "table" ? league : spirit;
+
 	return (
 		<>
 			<Stack.Screen options={{ headerShown: false }} />
 			<View style={styles.bg}>
 				<SafeAreaView style={{ flex: 1 }}>
 					<PageHeader
-						kicker="the kindest, fiercest herds"
-						title="Sounder Standings"
+						kicker="the season table"
+						title="Sounder League"
 						onBack={() => router.back()}
 					/>
 
@@ -135,15 +163,15 @@ export default function ClanLadderScreen() {
 						<View style={styles.center}>
 							<Text style={styles.emptyTitle}>No Sounders on the board yet</Text>
 							<Text style={styles.emptyBody}>
-								Sling mud, dig truffles, and bless your crewmates — spirit
-								counts everything a herd does together.
+								Every term the league hands your Sounder a rival. Answer the
+								fixture — sling mud, dig truffles — and the table remembers.
 							</Text>
 						</View>
 					) : (
 						<ScrollView contentContainerStyle={styles.content}>
-							{/* Board toggle — Spirit is the celebrated default. */}
+							{/* Board toggle — the Table is the ranked default. */}
 							<View style={styles.boardTabs}>
-								{(["spirit", "elo"] as const).map((b) => (
+								{(["table", "spirit"] as const).map((b) => (
 									<Pressable
 										key={b}
 										onPress={() => setBoard(b)}
@@ -155,81 +183,107 @@ export default function ClanLadderScreen() {
 												board === b && styles.boardTabTextActive,
 											]}
 										>
-											{b === "spirit" ? "Spirit" : "Elo"}
+											{b === "table" ? "Table" : "Spirit"}
 										</Text>
 									</Pressable>
 								))}
 							</View>
 							<Text style={styles.lead}>
-								{board === "spirit"
-									? "Ranked by Spirit — this week's scuffle effort plus the kindness crewmates show each other, counted per snout."
-									: "Ranked by Elo — win a Mud Scuffle and it rises, lose one and it falls."}
+								{board === "table"
+									? "Ranked by Prize Ribbons — beat a stronger Sounder, win more ribbons. Each term the league pairs you with a rival, and no scuffle ends in a draw."
+									: "Ranked by Spirit — this week's scuffle effort plus the kindness crewmates show each other, counted per snout."}
 							</Text>
-							{(board === "spirit"
-								? rows
-								: [...rows].sort(
-										(a, b) =>
-											(b.rating ?? -1) - (a.rating ?? -1) || b.spirit - a.spirit
-									)
-							).map((r, i) => {
-								const mine = r.crew_id === myCrewId;
-								const open = expanded === r.crew_id;
-								return (
-									<Pressable
-										key={r.crew_id}
-										onPress={() => setExpanded(open ? null : r.crew_id)}
-										style={[styles.row, mine && styles.rowMine]}
-									>
-										<View style={styles.rowTop}>
-											<Text style={[styles.rank, i < 3 && styles.rankTop]}>{i + 1}</Text>
-											<View style={styles.mid}>
-												<Text style={styles.name} numberOfLines={1}>
-													{r.name}
-													{mine ? " · you" : ""}
-												</Text>
-												<Text style={styles.sub}>
-													{board === "spirit"
-														? `${r.kindness} kind · ${r.activity} fierce · ${r.memberCount} ${r.memberCount === 1 ? "snout" : "snouts"}`
-														: `${r.wars ?? 0} ${(r.wars ?? 0) === 1 ? "scuffle" : "scuffles"} · ${r.memberCount} ${r.memberCount === 1 ? "snout" : "snouts"}`}
-												</Text>
-											</View>
-											<View style={styles.spiritCol}>
-												<Text style={styles.spirit}>
-													{board === "spirit" ? r.spirit : (r.rating ?? "—")}
-												</Text>
-												<Text style={styles.spiritLabel}>
-													{board === "spirit" ? "spirit" : "elo"}
-												</Text>
-											</View>
-										</View>
-										{/* Tap-to-expand roster — leader first. */}
-										{open && (
-											<View style={styles.roster}>
-												{r.members.map((m, j) => (
-													<View key={j} style={styles.rosterRow}>
-														<Icon
-															name={m.role === "leader" ? "crown" : "friends"}
-															size={12}
-															color={WHIMSY.ink}
-														/>
-														<Text style={styles.rosterName} numberOfLines={1}>
-															{m.username ?? "Pig"}
+							{board === "table"
+								? (league ?? []).map((r, i) => {
+										const mine = r.crew_id === myCrewId;
+										const open = expanded === r.crew_id;
+										return (
+											<Pressable
+												key={r.crew_id}
+												onPress={() => setExpanded(open ? null : r.crew_id)}
+												style={[styles.row, mine && styles.rowMine]}
+											>
+												<View style={styles.rowTop}>
+													<Text style={[styles.rank, i < 3 && styles.rankTop]}>{i + 1}</Text>
+													<View style={styles.mid}>
+														<Text style={styles.name} numberOfLines={1}>
+															{r.name}
+															{mine ? " · you" : ""}
 														</Text>
-														{m.role === "leader" && (
-															<Text style={styles.rosterLeader}>leader</Text>
-														)}
+														<Text style={styles.sub}>
+															{`${r.wins}–${r.losses} · ${r.played} ${r.played === 1 ? "fixture" : "fixtures"} · mud ${r.diff > 0 ? "+" : ""}${r.diff}${r.provisional ? " · new banner" : ""}`}
+														</Text>
 													</View>
-												))}
-											</View>
-										)}
-									</Pressable>
-								);
-							})}
+													<View style={styles.spiritCol}>
+														<Text style={styles.spirit}>{r.ribbons}</Text>
+														<Text style={styles.spiritLabel}>ribbons</Text>
+													</View>
+												</View>
+												{open && <Roster members={r.members} />}
+											</Pressable>
+										);
+									})
+								: (spirit ?? []).map((r, i) => {
+										const mine = r.crew_id === myCrewId;
+										const open = expanded === r.crew_id;
+										return (
+											<Pressable
+												key={r.crew_id}
+												onPress={() => setExpanded(open ? null : r.crew_id)}
+												style={[styles.row, mine && styles.rowMine]}
+											>
+												<View style={styles.rowTop}>
+													<Text style={[styles.rank, i < 3 && styles.rankTop]}>{i + 1}</Text>
+													<View style={styles.mid}>
+														<Text style={styles.name} numberOfLines={1}>
+															{r.name}
+															{mine ? " · you" : ""}
+														</Text>
+														<Text style={styles.sub}>
+															{`${r.kindness} kind · ${r.activity} fierce · ${r.memberCount} ${r.memberCount === 1 ? "snout" : "snouts"}`}
+														</Text>
+													</View>
+													<View style={styles.spiritCol}>
+														<Text style={styles.spirit}>{r.spirit}</Text>
+														<Text style={styles.spiritLabel}>spirit</Text>
+													</View>
+												</View>
+												{open && <Roster members={r.members} />}
+											</Pressable>
+										);
+									})}
 						</ScrollView>
 					)}
 				</SafeAreaView>
 			</View>
 		</>
+	);
+}
+
+// Tap-to-expand roster — leader first (payload order).
+function Roster({
+	members,
+}: {
+	members: { username: string | null; role: "leader" | "member" }[];
+}) {
+	return (
+		<View style={styles.roster}>
+			{members.map((m, j) => (
+				<View key={j} style={styles.rosterRow}>
+					<Icon
+						name={m.role === "leader" ? "crown" : "friends"}
+						size={12}
+						color={WHIMSY.ink}
+					/>
+					<Text style={styles.rosterName} numberOfLines={1}>
+						{m.username ?? "Pig"}
+					</Text>
+					{m.role === "leader" && (
+						<Text style={styles.rosterLeader}>leader</Text>
+					)}
+				</View>
+			))}
+		</View>
 	);
 }
 

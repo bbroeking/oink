@@ -185,13 +185,13 @@ export function JudgementDayModal({ result, visible = true, onDismiss }: Props) 
 								<View style={styles.rewardRow}>
 									<Text style={styles.rewardGlyph}>✦</Text>
 									<Text style={styles.rewardText}>
-										Carry it into Season 2
+										Carry it into Season 1
 									</Text>
 								</View>
 							)}
 						</View>
 						<Text style={styles.resetNote}>
-							Season 2 begins — alignment reset to Neutral.
+							Season 1 begins — alignment reset to Neutral.
 						</Text>
 					</Sticker>
 

@@ -26,7 +26,18 @@ import { Inbox } from "../../components/Inbox";
 import { Leaderboard } from "../../components/Leaderboard";
 import { SounderCard } from "../../components/SounderCard";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
-import { FONTS, KICKER_PILL, PAGE_PAD, SPACE, TITLE_RULE, WHIMSY } from "@/constants/theme";
+import { useCrew } from "@/hooks/useCrew";
+import {
+	FONTS,
+	KICKER_PILL,
+	PAGE_PAD,
+	RADII,
+	SHADOW_SM,
+	SPACE,
+	TITLE_RULE,
+	TYPE,
+	WHIMSY,
+} from "@/constants/theme";
 
 type Segment = "friends" | "inbox" | "board" | "sounder";
 
@@ -39,6 +50,11 @@ const BASE_SEGMENTS: { key: Segment; label: string; icon: IconName }[] = [
 export default function FriendsHubScreen() {
 	// Sounder Mud Fights (crews) — gated on the `mud_wars` server flag.
 	const mudWarsVisible = useFeatureFlag("mud_wars");
+	// Crew state is owned here (not inside SounderCard) so the page title and
+	// the card share ONE fetch: the header reads "Find your Sounder" while
+	// crewless and "Your Sounder" once you ride with a crew. Enabled only when
+	// the flag is on, so non-flag users never pay for the fetch/realtime.
+	const crewHook = useCrew(mudWarsVisible);
 	const segments = useMemo(
 		() =>
 			mudWarsVisible
@@ -94,10 +110,17 @@ export default function FriendsHubScreen() {
 			<SafeAreaView style={styles.safeArea}>
 				<View style={styles.header}>
 					<Text style={styles.kicker}>★ friends</Text>
-					<Text style={styles.title}>Your Sounder</Text>
+					{/* The Sounder segment's title tracks crew state (crewless →
+					    "Find your Sounder"); every other segment keeps the hub
+					    name. */}
+					<Text style={styles.title}>
+						{segment === "sounder" && !crewHook.crew.crew
+							? "Find your Sounder"
+							: "Your Sounder"}
+					</Text>
 					<View style={styles.titleRule} />
 					<View style={styles.segWrap}>
-						<Sticker color="paper" rotate={0} radius={22} style={styles.seg}>
+						<Sticker color="paper" rotate={0} radius={RADII.xxl} style={styles.seg}>
 							{segments.map((s) => {
 								const active = s.key === segment;
 								const badge = s.key === "inbox" && inboxCount > 0;
@@ -105,14 +128,16 @@ export default function FriendsHubScreen() {
 									<Pressable
 										key={s.key}
 										onPress={() => setSegment(s.key)}
+										accessibilityRole="button"
+										accessibilityLabel={s.label}
+										accessibilityState={{ selected: active }}
 										style={[styles.segBtn, active && styles.segBtnActive]}
 									>
 										<Icon
 											name={s.icon}
-											size={14}
-											filled={active}
-											color={WHIMSY.ink}
-											strokeWidth={1.8}
+											size={15}
+											color={active ? WHIMSY.ink : WHIMSY.mute}
+											strokeWidth={2.4}
 										/>
 										<Text
 											style={[styles.segText, active && styles.segTextActive]}
@@ -141,7 +166,9 @@ export default function FriendsHubScreen() {
 							<Inbox userId={userId} onActionableCount={setInboxCount} />
 						) : null)}
 					{segment === "board" && <Leaderboard />}
-					{segment === "sounder" && mudWarsVisible && <SounderCard />}
+					{segment === "sounder" && mudWarsVisible && (
+						<SounderCard crewHook={crewHook} />
+					)}
 				</View>
 			</SafeAreaView>
 		</View>
@@ -157,26 +184,30 @@ const styles = StyleSheet.create({
 		paddingTop: Platform.OS === "ios" ? 8 : 20,
 	},
 	kicker: { ...KICKER_PILL, marginBottom: 2 },
-	title: { fontSize: 32, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
+	title: { ...TYPE.display, color: WHIMSY.ink },
 	titleRule: { ...TITLE_RULE, width: 64, marginTop: 4 },
 	segWrap: { marginTop: SPACE.lg },
-	seg: { flexDirection: "row", padding: 4, gap: 4 },
+	seg: { flexDirection: "row", alignItems: "center", padding: SPACE.xs, gap: SPACE.xs },
+	// Every segment carries a transparent 2px border so the active pill's ink
+	// border adds no width jitter when it lights up.
 	segBtn: {
 		flex: 1,
-		paddingVertical: 8,
-		borderRadius: 18,
+		paddingVertical: SPACE.sm,
+		borderRadius: RADII.xxl,
+		borderWidth: 2,
+		borderColor: "transparent",
 		flexDirection: "row",
 		justifyContent: "center",
 		alignItems: "center",
-		gap: 6,
+		gap: SPACE.xs,
 	},
 	segBtnActive: {
 		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
+		...SHADOW_SM,
 	},
-	segText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
-	segTextActive: { fontFamily: FONTS.whimsy, color: WHIMSY.ink },
+	segText: { ...TYPE.bodySm, fontFamily: FONTS.bodyExtra, color: WHIMSY.mute },
+	segTextActive: { color: WHIMSY.ink },
 	badge: {
 		minWidth: 18,
 		height: 18,

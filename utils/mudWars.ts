@@ -248,8 +248,76 @@ export async function fetchFriendsCrews(): Promise<FriendCrew[]> {
 	return (await rpc<FriendCrew[]>("friends_crews")) ?? [];
 }
 
+// crew_state's member payload carries no avatar fields, so the Sounder
+// roster used to draw every crewmate as a bare pig while the Leaderboard —
+// which selects `profiles.active_hat_id` directly under RLS — showed each
+// player's equipped look. This fills that gap the same way: one profiles
+// read keyed by member id → a map of user_id → equipped hat, so crew
+// surfaces render the SAME PigAvatar look a Leaderboard row does.
+export async function fetchMemberHats(
+	userIds: string[]
+): Promise<Map<string, string | null>> {
+	if (userIds.length === 0) return new Map();
+	const { data } = await supabase
+		.from("profiles")
+		.select("id, active_hat_id")
+		.in("id", userIds);
+	const rows = (data as { id: string; active_hat_id: string | null }[] | null) ?? [];
+	return new Map(rows.map((r) => [r.id, r.active_hat_id]));
+}
+
 export async function fetchSounderStandings(limit = 50): Promise<SpiritEntry[]> {
 	return (await rpc<SpiritEntry[]>("sounder_standings", { p_limit: limit })) ?? [];
+}
+
+// A row of the Sounder League table (sounder_league_standings) — ranked by
+// Prize Ribbons (the crew Elo rebased to a trophy scale: new Sounders start
+// at 200, floor 0, K 40→24 scaled by rope margin). W–L is the season's
+// fixture record (no draws; played = wins + losses); diff is the summed
+// final rope from this crew's side ("mud difference"). provisional = fewer
+// than 3 rated scuffles, the high-K settling-in window.
+export interface LeagueEntry {
+	crew_id: string;
+	name: string;
+	memberCount: number;
+	ribbons: number;
+	provisional: boolean;
+	played: number;
+	wins: number;
+	losses: number;
+	diff: number;
+	members: { username: string | null; role: "leader" | "member" }[];
+}
+
+// my_league_state() — the season placard's one call: the open term, my
+// crew's fixture in it, my season record, and my table position. Nullable
+// fields go null when crewless / the season is dark / no term is open.
+export interface MyLeagueState {
+	ok: boolean;
+	season: string | null;
+	term: { term_no: number; starts_at: string; ends_at: string } | null;
+	fixture: {
+		war_id: string | null;
+		opponent: string | null;
+		opponent_crew: string;
+		is_bot: boolean;
+		result: "a" | "b" | "unanswered" | null;
+		// true/false once the fixture resolved for/against MY crew;
+		// null while pending or unanswered.
+		won: boolean | null;
+	} | null;
+	record: { played: number; wins: number; losses: number } | null;
+	// My crew's Prize Ribbons (null when crewless).
+	ribbons: number | null;
+	position: number | null;
+}
+
+export async function fetchLeagueStandings(limit = 50): Promise<LeagueEntry[]> {
+	return (await rpc<LeagueEntry[]>("sounder_league_standings", { p_limit: limit })) ?? [];
+}
+
+export async function fetchMyLeagueState(): Promise<MyLeagueState | null> {
+	return await rpc<MyLeagueState>("my_league_state");
 }
 
 // The war-exclusive cosmetic the caller won from a given war, if any.
@@ -475,4 +543,67 @@ export function formatCountdown(iso: string | null): string {
 
 export function remainingToday(slingsToday: number): number {
 	return Math.max(0, DAILY_ALLOTMENT - slingsToday);
+}
+
+// ── League / ladder sorting (extracted from app/clan-ladder.tsx) ──────────────
+// The season Table rank order: Prize Ribbons desc, then the fixture record
+// (wins desc), then mud difference desc, then name for a stable tiebreak. The
+// Spirit board ranks by spirit desc, then kindness. Kept here (pure) so the
+// board's ordering is unit-tested and can't silently drift from the design.
+export function leagueSort(a: LeagueEntry, b: LeagueEntry): number {
+	return (
+		b.ribbons - a.ribbons ||
+		b.wins - a.wins ||
+		b.diff - a.diff ||
+		a.name.localeCompare(b.name)
+	);
+}
+
+export function spiritSort(a: SpiritEntry, b: SpiritEntry): number {
+	return b.spirit - a.spirit || b.kindness - a.kindness;
+}
+
+// Pad a sparse live board with design mocks (DEV only), de-duped by name so a
+// live crew never doubles a mock twin, then sorted by the board's comparator.
+// Live rows are appended first, so on an equal sort key they keep their place.
+export function padWithMocks<T extends { name: string }>(
+	live: T[],
+	mocks: T[],
+	sort: (a: T, b: T) => number
+): T[] {
+	const taken = new Set(live.map((r) => r.name));
+	return [...live, ...mocks.filter((m) => !taken.has(m.name))].sort(sort);
+}
+
+// ── League placard copy (extracted from components/season1/LeaguePlacard.tsx) ─
+// Whole-number ordinal ("1st", "2nd", "3rd", "11th") for the table position.
+export function ordinal(n: number): string {
+	const rem10 = n % 10;
+	const rem100 = n % 100;
+	if (rem10 === 1 && rem100 !== 11) return `${n}st`;
+	if (rem10 === 2 && rem100 !== 12) return `${n}nd`;
+	if (rem10 === 3 && rem100 !== 13) return `${n}rd`;
+	return `${n}th`;
+}
+
+// Days remaining in the open term (floored at 0), for the fixture subline.
+export function leagueDaysLeft(endsAt: string, now: number = Date.now()): number {
+	return Math.max(0, Math.ceil((new Date(endsAt).getTime() - now) / 86_400_000));
+}
+
+// The placard's one-line fixture status for the open term: a live pairing with
+// the term clock, a settled win/loss, or the between-terms rest state.
+export function leagueFixtureLine(
+	state: Pick<MyLeagueState, "fixture" | "term">,
+	now: number = Date.now()
+): string {
+	const { fixture, term } = state;
+	if (fixture && fixture.result === null && term) {
+		const d = leagueDaysLeft(term.ends_at, now);
+		return `This term: vs ${fixture.opponent ?? "a rival Sounder"} · ${d} ${d === 1 ? "day" : "days"} left`;
+	}
+	if (fixture?.won === true) return `This term: beat ${fixture.opponent ?? "your rival"}`;
+	if (fixture?.won === false)
+		return `This term: lost to ${fixture.opponent ?? "your rival"} — next term rallies soon`;
+	return "No fixture this term — the league pairs you when the next term rolls";
 }

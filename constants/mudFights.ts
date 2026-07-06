@@ -19,7 +19,7 @@ export const DAILY_MUD_CAP = THROWS_PER_DAY * PER_THROW_MAX; // 21
 export const WAR_LENGTH_DAYS = 5; // active war window, stamped at accept (legacy per-capita wars)
 export const WAR_LENGTH_DAYS_FRONTS = 7; // fronts-enabled wars run 7 days (MUST match challenge_house/accept_challenge in 20260667)
 export const QUORUM = 2; // min active members for a crew's score to count
-export const CREW_CAP = 5; // max members per Sounder
+export const CREW_CAP = 4; // max members per Sounder (5→4 in 20260707000000_sounder_league.sql; existing 5-crews grandfathered)
 export const BOT_DAILY_PACE = 12; // house "ghost crew" synthetic per-day score
 export const HOUSE_BONUS = 25; // flat snout bonus for beating the house (no loser pot)
 export const BUFF_HOURS = 72; // war-winner regen buff duration
@@ -127,7 +127,7 @@ export const WAR_SPOILS_IDS = [
 	"rosette_cap", "prize_sash", "festival_pennant", "confetti_aura",
 ] as const;
 
-// ── The Truffle Exchange (Season 2 P4) — client mirror. ──────────────────────
+// ── The Truffle Exchange (Season 1 P4) — client mirror. ──────────────────────
 // MUST MATCH supabase/migrations/20260704300000_truffle_exchange.sql:
 // exchange_week_stock()'s tier arrays (alphabetic within tier) + token_cost
 // prices + the milestone table in mint_mud_milestones().

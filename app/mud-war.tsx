@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";
+import { SectionHeader } from "../components/ui/SectionHeader";
 import {
 	View,
 	Text,
@@ -23,7 +24,7 @@ import {
 	Animated,
 	ActivityIndicator,
 } from "react-native";
-import { Stack, router, Redirect, type Href } from "expo-router";
+import { Stack, router, Redirect, useLocalSearchParams, type Href } from "expo-router";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
@@ -41,6 +42,25 @@ import { WarLedgerStrip } from "../components/mudwar/WarLedgerStrip";
 import { CrewEffort } from "../components/mudwar/CrewEffort";
 import { RivalSide } from "../components/mudwar/RivalSide";
 import { HungerStageChip } from "../components/mudwar/HungerStageChip";
+import { ScuffleExplainerModal } from "../components/mudwar/ScuffleExplainerModal";
+import { DevWarStateSheet } from "../components/mudwar/DevWarStateSheet";
+import {
+	useWarStateOverride,
+	type DevUiOverride,
+} from "../components/mudwar/devWarState";
+import {
+	opponentName,
+	myName,
+	ropeState,
+	siegeDay,
+	termLine,
+	warActions,
+	warTotalDays,
+	resolvedCopy,
+	scoreboardCopy,
+	drainLine,
+	isHoldPhase,
+} from "../components/mudwar/warCopy";
 import { useHungerMeter } from "@/hooks/useHungerMeter";
 import { useMudWar } from "@/hooks/useMudWar";
 import { useCrew } from "@/hooks/useCrew";
@@ -66,7 +86,7 @@ import {
 } from "@/utils/mudWars";
 import { DAILY_ALLOTMENT, THROWS_PER_DAY, WAR_LENGTH_DAYS, WAR_LENGTH_DAYS_FRONTS, RUNS_PER_DAY } from "@/constants/mudFights";
 import { HAT_IMAGES } from "@/constants/hats";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, SPACE, WHIMSY } from "@/constants/theme";
 import { supabase } from "@/utils/supabase";
 
 // The caller's auth id — used to gate the leader-only deploy sheet.
@@ -78,12 +98,29 @@ async function currentUserId(): Promise<string | null> {
 }
 
 export default function MudWarScreen() {
-	// Season 2 / Mud Wars visibility — the `mud_wars` server flag. `loaded`
+	// Season 1 / Mud Wars visibility — the `mud_wars` server flag. `loaded`
 	// tells "still fetching" apart from "off" so a Brian-only deep link on cold
 	// start doesn't flash-redirect before the flag resolves.
 	const { visible: mudWarsVisible, loaded: flagLoaded } =
 		useFeatureFlagState("mud_wars");
-	const { war, loading, refresh, throwBand, submitRun, setDeploy, setFront } = useMudWar();
+	const {
+		war: fetchedWar,
+		loading,
+		refresh,
+		throwBand,
+		submitRun,
+		setDeploy,
+		setFront,
+	} = useMudWar();
+	// __DEV__-only live-tweak harness. In production this is an inert
+	// passthrough (war === fetchedWar, ui === {}); in dev it merges Brian's
+	// overrides (or a synthesized mock) over the real war so the same
+	// components render every state. See components/mudwar/devWarState.ts.
+	const dev = useWarStateOverride(fetchedWar);
+	const war = dev.war;
+	const [devSheetOpen, setDevSheetOpen] = useState(false);
+	// Deep-link section focus from the entry strip (?focus=dig|hold|bog).
+	const params = useLocalSearchParams<{ focus?: string }>();
 	// "Start a new scuffle" on the resolved recap: mark this war dismissed so the
 	// screen drops to the NoWar challenge picker. my_war() keeps returning the
 	// resolved war, so refresh() alone can never advance past the recap.
@@ -96,7 +133,7 @@ export default function MudWarScreen() {
 		!!war && war.status === "resolved" && war.warId === dismissedWarId;
 	const [spoilsOpen, setSpoilsOpen] = useState(false);
 	const [exchangeOpen, setExchangeOpen] = useState(false);
-	// Golden Truffle pouch + Exchange rotation (Season 2 P4; cozy-closed until
+	// Golden Truffle pouch + Exchange rotation (Season 1 P4; cozy-closed until
 	// the 20260704300000 migration is live).
 	const truffles = useTruffles();
 
@@ -113,13 +150,16 @@ export default function MudWarScreen() {
 	const revealedWarRef = useRef<string | null>(null);
 
 	useEffect(() => {
-		if (!war || war.status !== "resolved") return;
-		const id = war.warId;
+		// Key off the REAL fetched war, not the dev-overridden one, so a
+		// mocked "resolved" state never fires a fake spoils reveal.
+		const w = fetchedWar;
+		if (!w || w.status !== "resolved") return;
+		const id = w.warId;
 		if (revealedWarRef.current === id) return;
 		revealedWarRef.current = id;
-		const iWon = !!war.winnerCrew && war.winnerCrew === war.mine.crew?.id;
-		const result: WarResult = !war.winnerCrew ? "draw" : iWon ? "win" : "loss";
-		const isBotWar = war.isBotWar;
+		const iWon = !!w.winnerCrew && w.winnerCrew === w.mine.crew?.id;
+		const result: WarResult = !w.winnerCrew ? "draw" : iWon ? "win" : "loss";
+		const isBotWar = w.isBotWar;
 		let cancelled = false;
 		(async () => {
 			const key = `mudwar_resolve_seen_${id}`;
@@ -132,7 +172,7 @@ export default function MudWarScreen() {
 		return () => {
 			cancelled = true;
 		};
-	}, [war]);
+	}, [fetchedWar]);
 
 	// Defense-in-depth: there is no entry point to this route when the season is
 	// dark (the Sounder card + its CTA are hidden behind the `mud_wars` flag), but
@@ -203,14 +243,39 @@ export default function MudWarScreen() {
 							onDeploy={setDeploy}
 							onSetFront={setFront}
 							onChanged={refresh}
+							focus={params.focus}
+							devUi={dev.ui}
 						/>
 					) : (
 						<ResolvedWar war={war} onChanged={dismissResolved} />
 					)}
 
+					{/* DEV-only: the war-state live-tweak harness — a small chip that
+					    opens a sheet overriding every field the UI renders (opponent,
+					    rope, day, scores, budgets, status). Never ships. */}
+					{__DEV__ && (
+						<Pressable
+							onPress={() => setDevSheetOpen(true)}
+							hitSlop={8}
+							style={[styles.devBtn, styles.devChip]}
+						>
+							<Text style={styles.devBtnText}>
+								{dev.active ? "dev war ✎" : "dev war"}
+							</Text>
+						</Pressable>
+					)}
+					{__DEV__ && (
+						<DevWarStateSheet
+							open={devSheetOpen}
+							onClose={() => setDevSheetOpen(false)}
+							ctrl={dev}
+						/>
+					)}
+
 					{/* DEV-only: skip a rhythm war's Tend phase so the HOLD core (rhythm
-					    runs + deploy + mirror fold) is reachable without the 2-day wait. */}
-					{__DEV__ && war?.status === "active" && war.rhythmEnabled === true && war.phase === "build" && (
+					    runs + deploy + mirror fold) is reachable without the 2-day wait.
+					    Only for a REAL war (a mock has no server row to skip). */}
+					{__DEV__ && !dev.active && war?.status === "active" && war.rhythmEnabled === true && war.phase === "build" && (
 						<Pressable
 							onPress={async () => {
 								await devSkipToHold(war.warId);
@@ -225,8 +290,8 @@ export default function MudWarScreen() {
 
 					{/* DEV-only: fast-forward an active war to resolution (admin-gated
 					    server-side) so the sling -> resolve -> spoils -> win-modal arc
-					    is testable without the 5-day wait. */}
-					{__DEV__ && war?.status === "active" && (
+					    is testable without the 5-day wait. Real wars only. */}
+					{__DEV__ && !dev.active && war?.status === "active" && (
 						<Pressable
 							onPress={async () => {
 								await devEndWarNow(war.warId);
@@ -286,8 +351,9 @@ function NoWar({ onChanged }: { onChanged: () => void }) {
 	return (
 		<ScrollView contentContainerStyle={styles.content}>
 			<Text style={styles.lead}>
-				Start a Mud Scuffle. Everyone gets {DAILY_ALLOTMENT} mud-slings a day —
-				no buffs, no advantages. Most mud per head wins.
+				Start a Mud Scuffle — two herds racing to reclaim joy from the Great
+				Hunger. Everyone digs the same feedings, no buffs, no advantages. Every
+				scoop weakens him; the herd that wins back more joy per pig leads.
 			</Text>
 
 			<Button
@@ -418,14 +484,6 @@ function PendingWar({
 	);
 }
 
-// Which day of the siege we're on, from the end time. War length varies by mode:
-// fronts wars run WAR_LENGTH_DAYS_FRONTS (7), legacy per-capita wars WAR_LENGTH_DAYS (5).
-function siegeDay(endsAt: string | null, totalDays: number = WAR_LENGTH_DAYS): number {
-	if (!endsAt) return 1;
-	const daysLeft = Math.ceil((new Date(endsAt).getTime() - Date.now()) / 86400000);
-	return Math.min(totalDays, Math.max(1, totalDays - daysLeft + 1));
-}
-
 // ── Active: tug-of-war + the skill minigame (Toss in Tend, Rhythm in Hold) ────
 function ActiveWar({
 	war,
@@ -434,6 +492,8 @@ function ActiveWar({
 	onDeploy,
 	onSetFront,
 	onChanged,
+	focus,
+	devUi,
 }: {
 	war: NonNullable<ReturnType<typeof useMudWar>["war"]>;
 	onThrow: (band: MudBand) => void;
@@ -441,6 +501,10 @@ function ActiveWar({
 	onDeploy: ReturnType<typeof useMudWar>["setDeploy"];
 	onSetFront: ReturnType<typeof useMudWar>["setFront"];
 	onChanged: () => void;
+	// Deep-link section to scroll to (?focus=dig|hold|bog).
+	focus?: string;
+	// __DEV__ UI-local overrides (runs left / dug this feeding).
+	devUi?: DevUiOverride;
 }) {
 	// Am I my Sounder's leader? Gates the deploy sheet (set_deploy is leader-only).
 	const { crew } = useCrew();
@@ -450,12 +514,44 @@ function ActiveWar({
 	}, []);
 	const isLeader = !!uid && crew.crew?.leader_id === uid;
 
-	// Season-2: the Hungerer's energy stage (hidden until the meter RPC is live).
+	// Season-1: the Hungerer's energy stage (hidden until the meter RPC is live).
 	const hunger = useHungerMeter();
+
+	// The Hunger "tick": a quick flinch on his stage chip + the drain line each
+	// time a herd's scoop reclaims joy — the payoff slam reaching the war page so
+	// his meter visibly ticks down (the minigame owns the golden-mote burst).
+	const hungerPulse = useRef(new Animated.Value(0)).current;
+	const tickHunger = useCallback(() => {
+		hungerPulse.setValue(0);
+		Animated.sequence([
+			Animated.spring(hungerPulse, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 14 }),
+			Animated.timing(hungerPulse, { toValue: 0, duration: 260, useNativeDriver: true }),
+		]).start();
+	}, [hungerPulse]);
 
 	// Phase (rhythm wars only) — drives which minigame renders. Non-rhythm wars
 	// report 'war' throughout, so they keep the toss exactly as before.
-	const isHold = war.rhythmEnabled === true && war.phase === "war";
+	const isHold = isHoldPhase(war);
+
+	// "How the scuffle works ›" explainer (below the fold).
+	const [explainerOpen, setExplainerOpen] = useState(false);
+
+	// Deep-link section scroll. The entry strip links ?focus=dig|hold|bog; we
+	// capture each section's Y on layout and scroll to it (once it's measured).
+	const scrollRef = useRef<ScrollView>(null);
+	const sectionY = useRef<Record<string, number>>({});
+	const onSectionLayout = useCallback(
+		(key: string) => (e: { nativeEvent: { layout: { y: number } } }) => {
+			sectionY.current[key] = e.nativeEvent.layout.y;
+			if (focus === key) {
+				scrollRef.current?.scrollTo({
+					y: Math.max(0, e.nativeEvent.layout.y - 12),
+					animated: true,
+				});
+			}
+		},
+		[focus]
+	);
 
 	// Front-commit feedback (e.g. "locked — ask your leader to redeploy you").
 	const [frontNote, setFrontNote] = useState<string | null>(null);
@@ -491,6 +587,8 @@ function ActiveWar({
 	useEffect(() => {
 		setRunsRemaining(RUNS_PER_DAY + accessTokens);
 	}, [accessTokens, war.warId, utcDay]);
+	// Dev harness can force the displayed remaining-runs count for state preview.
+	const effRunsRemaining = devUi?.runsRemaining ?? runsRemaining;
 
 	// Hold-run feedback (softened to the cozy voice).
 	const [runNote, setRunNote] = useState<string | null>(null);
@@ -501,6 +599,8 @@ function ActiveWar({
 			if (r.ok) {
 				// Reconcile to the server's authoritative remaining count.
 				setRunsRemaining(r.runs_remaining);
+				// The run banked — tick the Hunger down on the war page too.
+				tickHunger();
 			} else {
 				if (typeof r.runs_remaining === "number") setRunsRemaining(r.runs_remaining);
 				setRunNote(
@@ -514,7 +614,7 @@ function ActiveWar({
 				);
 			}
 		},
-		[onRun]
+		[onRun, tickHunger]
 	);
 	// War length varies by mode (fronts wars run 7 days, legacy 5).
 	const totalDays = war.frontsEnabled ? WAR_LENGTH_DAYS_FRONTS : WAR_LENGTH_DAYS;
@@ -577,8 +677,17 @@ function ActiveWar({
 		outputRange: [0, Math.max(0, trackW - 14)],
 	});
 
+	const opp = opponentName(war);
+	const rope = ropeState(war);
+	const countdown = formatCountdown(war.endsAt);
+	const actions = warActions(war, {
+		isHold,
+		runsRemaining: effRunsRemaining,
+		dugThisWindow: devUi?.dugThisWindow,
+	});
+
 	return (
-		<ScrollView contentContainerStyle={styles.content}>
+		<ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
 			{/* Lead-change banner */}
 			{lead && (
 				<Animated.View
@@ -601,72 +710,149 @@ function ActiveWar({
 				</Animated.View>
 			)}
 
-			{/* Siege chapter + countdown */}
-			<Text style={styles.siegeChapter}>
-				Day {siegeDay(war.endsAt, totalDays)} of {totalDays} — the Siege{war.isBotWar ?" — vs The Mudlarks" : ""}
-			</Text>
-			<Text style={styles.countdown}>{formatCountdown(war.endsAt)} left</Text>
-			{hunger.available && <HungerStageChip stage={hunger.stage} />}
-
-			{/* Tug-of-war bar */}
-			<View style={styles.scoreRow}>
-				<Text style={[styles.sideName, { color: WHIMSY.accent }]} numberOfLines={1}>
-					{war.mine.crew?.name ?? "You"}
-				</Text>
-				<View style={styles.themSide}>
-					{war.isBotWar && (
-						<Image source={HAT_IMAGES.goblin_warboss} style={styles.themGoblin} resizeMode="contain" />
-					)}
-					<Text style={styles.themName} numberOfLines={1}>
-						{war.them.crew?.name ?? "Them"}
+			{/* ── WHO — your Sounder vs the opponent, the rope as scoreboard ── */}
+			<View onLayout={onSectionLayout("bog")}>
+				<SectionHeader kicker="the scuffle" title={`${myName(war)} vs ${opp}`} />
+				<View style={styles.scoreRow}>
+					<Text style={[styles.sideName, { color: WHIMSY.accent }]} numberOfLines={1}>
+						{myName(war)}
 					</Text>
+					<View style={styles.themSide}>
+						{war.isBotWar && (
+							<Image source={HAT_IMAGES.goblin_warboss} style={styles.themGoblin} resizeMode="contain" />
+						)}
+						<Text style={styles.themName} numberOfLines={1}>
+							{opp}
+						</Text>
+					</View>
 				</View>
-			</View>
-			<View
-				style={styles.ropeTrack}
-				onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
-			>
-				<Animated.View style={[styles.ropeMine, { width: fillW }]} />
-				<Animated.View style={[styles.ropeKnot, { left: knotLeft }]} />
-			</View>
-			<View style={styles.scoreRow}>
-				<Text style={styles.percap}>{war.mine.perCapita} / head</Text>
-				<Text style={[styles.percap, { textAlign: "right" }]}>{war.them.perCapita} / head</Text>
+				<View
+					style={styles.ropeTrack}
+					onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
+				>
+					<Animated.View style={[styles.ropeMine, { width: fillW }]} />
+					<Animated.View style={[styles.ropeKnot, { left: knotLeft }]} />
+				</View>
+				<View style={styles.scoreRow}>
+					<View style={styles.percapCol}>
+						<Text style={styles.percapNum}>{war.mine.perCapita}</Text>
+						<Text style={styles.percapLabel}>{scoreboardCopy().mine}</Text>
+					</View>
+					<View style={[styles.percapCol, { alignItems: "flex-end" }]}>
+						<Text style={styles.percapNum}>{war.them.perCapita}</Text>
+						<Text style={styles.percapLabel}>{scoreboardCopy().theirs}</Text>
+					</View>
+				</View>
+				<Text style={styles.scoreCaption}>{scoreboardCopy().caption}</Text>
 			</View>
 
-			{/* Day-by-day ledger + the shared drain on the Hungerer */}
-			<WarLedgerStrip
-				totalDays={totalDays}
-				currentDay={siegeDay(war.endsAt, totalDays)}
-				ropeNorm={war.ropeNorm}
-			/>
-			<Text style={styles.drainLine}>
-				{`Together you've pried ${war.mine.total + war.them.total} tickles off him this war.`}
-			</Text>
+			{/* ── WHERE THE ROPE IS — plain-language standing + the day ── */}
+			<View style={styles.standing}>
+				<Text style={styles.standingLine}>{rope.line}</Text>
+				<Text style={styles.standingSub}>{termLine(war, countdown)}</Text>
+				{hunger.available && (
+					<Animated.View
+						style={{
+							marginTop: SPACE.xs,
+							transform: [
+								{
+									scale: hungerPulse.interpolate({
+										inputRange: [0, 1],
+										outputRange: [1, 0.9],
+									}),
+								},
+							],
+						}}
+					>
+						<HungerStageChip stage={hunger.stage} />
+					</Animated.View>
+				)}
+			</View>
 
 			<QuorumLine mine={war.mine} them={war.them} isBotWar={war.isBotWar} />
 
-			{/* Crew effort — each pig's additive pile (replaces the anonymous pips) + the rival, at arm's length */}
+			{/* ── WHAT TO DO NOW — the playable actions, front and center ── */}
+			<View style={{ marginTop: SPACE.lg }}>
+				<SectionHeader kicker="your move" title="What to do now" />
+			</View>
+
+			{/* Dig — the Truffle Patch heartbeat, one dig per 8h feeding. The
+			    primary action of every scuffle; owns its own dug/cooldown copy. */}
+			<View onLayout={onSectionLayout("dig")}>
+				<FeedingStrip warId={war.warId} onReclaim={tickHunger} />
+			</View>
+
+			{/* Hold the line — rhythm runs, only once the horde marches. */}
+			{isHold && (
+				<View onLayout={onSectionLayout("hold")}>
+					<RhythmDefense
+						onRunComplete={onRunComplete}
+						runsRemaining={effRunsRemaining}
+						pBand={defendedPBand(war)}
+						day={siegeDay(war.endsAt, totalDays)}
+					/>
+					{runNote && <Text style={styles.note}>{runNote}</Text>}
+				</View>
+			)}
+
+			{/* Spent-action explanations in the cozy hand voice (e.g. "you've dug
+			    this feeding — the patch fills again in 2h"). */}
+			{actions
+				.filter((a) => !a.enabled && a.reason)
+				.map((a) => (
+					<Text key={a.key} style={styles.actionReason}>
+						{a.reason}
+					</Text>
+				))}
+
+			{/* Your crew's pile + the rival at arm's length. */}
 			<CrewEffort
 				members={war.mine.members}
 				myUserId={uid}
 				leaderId={crew.crew?.leader_id ?? null}
 			/>
 			<RivalSide
-				crewName={war.them.crew?.name ?? null}
+				crewName={opp}
 				perCapita={war.them.perCapita}
 				active={war.them.active}
 				isBot={war.isBotWar}
 			/>
 
-			{/* The Truffle Patch heartbeat (Season 2 P1) — one dig per 8h feeding,
-			    any phase. Self-contained: owns its rooting session + modal; banked
-			    mud reaches the rope via the screen's existing realtime refresh. */}
-			<FeedingStrip warId={war.warId} />
+			{/* ── Below the fold — how it works, the week, the contested areas ── */}
+			<Pressable
+				onPress={() => setExplainerOpen(true)}
+				hitSlop={8}
+				style={styles.howWrap}
+			>
+				<Text style={styles.howLink}>how the scuffle works ›</Text>
+			</Pressable>
 
-			{/* Contested-areas board (Phase 1c/1d) — commit your throws/runs to an area.
-			    Only present when fronts_enabled; otherwise the screen is the plain rope +
-			    Slop Toss as before. Phase-aware: it shows the deploy sheet in Hold. */}
+			<WarLedgerStrip
+				totalDays={totalDays}
+				currentDay={siegeDay(war.endsAt, totalDays)}
+				ropeNorm={war.ropeNorm}
+			/>
+			<Animated.Text
+				style={[
+					styles.drainLine,
+					{
+						transform: [
+							{
+								scale: hungerPulse.interpolate({
+									inputRange: [0, 1],
+									outputRange: [1, 1.06],
+								}),
+							},
+						],
+					},
+				]}
+			>
+				{drainLine(war.mine.total + war.them.total)}
+			</Animated.Text>
+
+			{/* Contested-areas board (fronts/notches) — the advanced layer, demoted
+			    below the fold so the first screenful stays plain. Only present when
+			    fronts_enabled; the dig-off above counts on its own. */}
 			{war.fronts && war.fronts.board.length > 0 && (
 				<FrontBoard
 					fronts={war.fronts}
@@ -678,29 +864,16 @@ function ActiveWar({
 				/>
 			)}
 
-			{/* The skill minigame. In a rhythm war's HOLD phase the defender plays a
-			    short RhythmDefense run (banks via submit_run). SLOP TOSS IS
-			    RETIRED (2026-07-04): scuffles are dig-offs — the Truffle Patch
-			    above is the game, and its found truffles mint the rope's mud
-			    (submit_rooting → mud_slings). Rope pace and the rout threshold
-			    may need retuning to dig-only scoring — watch the first wars. */}
-			{isHold && (
-				<>
-					<RhythmDefense
-						onRunComplete={onRunComplete}
-						runsRemaining={runsRemaining}
-						pBand={defendedPBand(war)}
-						day={siegeDay(war.endsAt, totalDays)}
-					/>
-					{runNote && <Text style={styles.note}>{runNote}</Text>}
-				</>
-			)}
-
 			{/* Yield — leader-only, two-tap. Concedes the scuffle: the rope
 			    goes to them, elo applies as a loss. */}
 			{isLeader && (
 				<GiveUpLink warId={war.warId} onChanged={onChanged} />
 			)}
+
+			<ScuffleExplainerModal
+				visible={explainerOpen}
+				onClose={() => setExplainerOpen(false)}
+			/>
 		</ScrollView>
 	);
 }
@@ -764,6 +937,7 @@ function ResolvedWar({
 }) {
 	const iWon = !!war.winnerCrew && war.winnerCrew === war.mine.crew?.id;
 	const draw = !war.winnerCrew;
+	const copy = resolvedCopy(war);
 	return (
 		<View style={styles.center}>
 			{draw ? (
@@ -775,18 +949,10 @@ function ResolvedWar({
 					resizeMode="contain"
 				/>
 			)}
-			<Text style={styles.emptyTitle}>
-				{draw ? "A stalemate in the mire" : iWon ? "The horde is routed!" : "Driven into the mire"}
-			</Text>
-			<Text style={styles.emptyBody}>
-				{draw
-					? "The rope held dead even — neither side broke."
-					: iWon
-					? "The Mudlarks flee the bog — snouts paid and a 72h regen buff is on you."
-					: "The Mudlarks hold the field. Rally and raid again."}
-			</Text>
+			<Text style={styles.emptyTitle}>{copy.title}</Text>
+			<Text style={styles.emptyBody}>{copy.body}</Text>
 			<Button variant="primary" onPress={onChanged} style={{ marginTop: 16 }}>
-				Start a new fight
+				Start a new scuffle
 			</Button>
 		</View>
 	);
@@ -808,6 +974,9 @@ const styles = StyleSheet.create({
 		paddingVertical: 4,
 	},
 	devBtnText: { fontFamily: FONTS.hand, fontSize: 11, color: "#fff" },
+	// Dev war-state chip — bottom-LEFT so it clears the resolve/skip buttons
+	// (which sit bottom-right).
+	devChip: { left: 12, right: undefined },
 	center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30, gap: 8 },
 	content: { padding: 20, paddingBottom: 80 },
 	lead: { fontFamily: FONTS.body, fontSize: 14, color: WHIMSY.mute, marginBottom: 16, textAlign: "center" },
@@ -912,6 +1081,45 @@ const styles = StyleSheet.create({
 	leadText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.accent },
 	splatIn: { position: "absolute", bottom: 178, width: 36, height: 36 },
 	percap: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink, flex: 1 },
+	// WHO scoreboard — the two per-pig mud tallies with plain labels a new
+	// player parses at a glance.
+	percapCol: { flex: 1 },
+	percapNum: { fontFamily: FONTS.whimsy, fontSize: 22, color: WHIMSY.ink },
+	percapLabel: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, marginTop: -2 },
+	scoreCaption: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.accent,
+		textAlign: "center",
+		marginTop: SPACE.xs,
+	},
+	// WHERE THE ROPE IS — the plain-language standing block.
+	standing: { alignItems: "center", marginTop: SPACE.md },
+	standingLine: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink, textAlign: "center" },
+	standingSub: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		letterSpacing: 0.3,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 2,
+	},
+	// WHAT TO DO NOW — spent-action explanation in the hand voice.
+	actionReason: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: SPACE.sm,
+	},
+	// Below-the-fold "how the scuffle works ›" link.
+	howWrap: { alignSelf: "center", marginTop: SPACE.xl, marginBottom: SPACE.xs },
+	howLink: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
+	},
 	quorum: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.accent, textAlign: "center", marginTop: 10 },
 	drainLine: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.accent, textAlign: "center", marginTop: 4 },
 	slingWrap: { alignItems: "center", justifyContent: "flex-end", marginTop: 28, height: 200 },

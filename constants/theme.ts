@@ -155,7 +155,7 @@ export const ROW_TILTS = [-1.2, 0.8, -0.6, 0.5, -0.4, 1, -0.7, 0.6];
 export const MODAL_BACKDROP_BG = "rgba(40,30,20,0.55)";
 
 // Tiny accent text that sits above a section title — e.g. "★ welcome",
-// "★ snout season 1". Identical across Account, Onboarding, season,
+// "★ snout season 0". Identical across Account, Onboarding, season,
 // BattlePassSaleModal. Compose with marginBottom override per screen.
 export const KICKER_TEXT = {
 	...TYPE.kicker,

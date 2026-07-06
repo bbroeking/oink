@@ -40,10 +40,13 @@ APP_ICON = ROOT / "assets" / "images" / "icon.png"
 ROSIE_SPRITE = GENERATED_SOURCES / "rosie_actual_idle_1.png"
 CTA_TITLE = "The Great Hunger"
 CTA_SUBTITLE = "Help bring back the joy."
-CTA_LINES = ("Season 2", "July 11")
-CTA_BUTTON = "Download on the App Store"
+CTA_LINES = ("Season 1", "July 11")
 CTA_CAPTION = "Tickle the Pig"
 BASE_STORY_DURATIONS = [4.0, 2.35, 2.8, 3.5, 3.65, 2.35, 4.05]
+
+
+def env_flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 @dataclass(frozen=True)
@@ -638,11 +641,11 @@ def render_cta_frames(index: int, duration: float) -> tuple[Path, int]:
     subtitle_font = load_font(44, bold=True)
     date_font = load_font(54, bold=True)
     small_font = load_font(30, bold=False)
-    badge_font = load_font(32, bold=True)
     app_font = load_font(36, bold=True)
     icon = rounded_icon(APP_ICON, 104, 24)
     rosie = Image.open(ROSIE_SPRITE).convert("RGBA").resize((430, 445), Image.Resampling.LANCZOS)
     frame_count = max(1, math.ceil(duration * FPS))
+    hide_app_card = env_flag("GH_HIDE_FINAL_APP_CARD")
 
     for frame_index in range(frame_count):
         t = frame_index / max(1, frame_count - 1)
@@ -674,29 +677,21 @@ def render_cta_frames(index: int, duration: float) -> tuple[Path, int]:
         frame.alpha_composite(cta)
 
         rosie_x = round((WIDTH - rosie.width) / 2)
-        rosie_y = 760 + round(math.sin(t * math.tau) * 8)
+        rosie_y = (860 if hide_app_card else 760) + round(math.sin(t * math.tau) * 8)
         paste_with_shadow(frame, rosie, (rosie_x, rosie_y))
 
-        lockup = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(lockup, "RGBA")
-        lockup_w = 820
-        lockup_h = 288
-        lockup_x = round((WIDTH - lockup_w) / 2)
-        lockup_y = 1356
-        draw.rounded_rectangle((lockup_x, lockup_y, lockup_x + lockup_w, lockup_y + lockup_h), radius=28, fill=(8, 9, 11, 212), outline=(255, 210, 92, 116), width=2)
-        lockup.alpha_composite(icon, (lockup_x + 36, lockup_y + 38))
-        draw_text(draw, (lockup_x + 166, lockup_y + 42), CTA_CAPTION, app_font, (255, 250, 240, 255), stroke_width=1)
-        draw_text(draw, (lockup_x + 166, lockup_y + 91), "Mobile game", small_font, (219, 205, 183, 255), stroke_width=1)
-
-        badge_x = lockup_x + 166
-        badge_y = lockup_y + 158
-        badge_w = 574
-        badge_h = 76
-        draw.rounded_rectangle((badge_x, badge_y, badge_x + badge_w, badge_y + badge_h), radius=18, fill=(4, 4, 5, 255), outline=(255, 255, 255, 70), width=2)
-        badge_bbox = draw.textbbox((0, 0), CTA_BUTTON, font=badge_font)
-        badge_text_x = badge_x + round((badge_w - (badge_bbox[2] - badge_bbox[0])) / 2)
-        draw_text(draw, (badge_text_x, badge_y + 20), CTA_BUTTON, badge_font, (255, 255, 255, 255))
-        frame.alpha_composite(lockup)
+        if not hide_app_card:
+            lockup = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(lockup, "RGBA")
+            lockup_w = 820
+            lockup_h = 168
+            lockup_x = round((WIDTH - lockup_w) / 2)
+            lockup_y = 1448
+            draw.rounded_rectangle((lockup_x, lockup_y, lockup_x + lockup_w, lockup_y + lockup_h), radius=28, fill=(8, 9, 11, 212), outline=(255, 210, 92, 116), width=2)
+            lockup.alpha_composite(icon, (lockup_x + 42, lockup_y + 32))
+            draw_text(draw, (lockup_x + 176, lockup_y + 43), CTA_CAPTION, app_font, (255, 250, 240, 255), stroke_width=1)
+            draw_text(draw, (lockup_x + 176, lockup_y + 92), "Mobile game", small_font, (219, 205, 183, 255), stroke_width=1)
+            frame.alpha_composite(lockup)
         frame.convert("RGB").save(shot_dir / f"frame_{frame_index + 1:04d}.jpg", quality=93, optimize=True)
 
     return shot_dir, frame_count
@@ -849,7 +844,8 @@ def main() -> None:
     durations.append(clip_duration)
     print(f"shot_08_cta: {frame_count} frames, {clip_duration:.2f}s")
 
-    out_path = VIDEO / "great_hunger_generated_panels_animated_v2.mp4"
+    output_name = os.environ.get("GH_OUTPUT_NAME", "great_hunger_generated_panels_animated_v2.mp4")
+    out_path = VIDEO / output_name
     build_full_video(frame_dirs, audio, out_path, audio_duration)
     write_manifest(durations, out_path, provider)
     print(out_path)

@@ -1,0 +1,14 @@
+diff --git a/third-party-podspecs/fmt.podspec b/third-party-podspecs/fmt.podspec
+index 121be5011de5e34ceb526f4ea60e085a595676d0..c2554144fac0d4578c42c3fb3058e5d640104211 100644
+--- a/third-party-podspecs/fmt.podspec
++++ b/third-party-podspecs/fmt.podspec
+@@ -19,6 +19,9 @@ Pod::Spec.new do |spec|
+   }
+   spec.pod_target_xcconfig = {
+     "CLANG_CXX_LANGUAGE_STANDARD" => rct_cxx_language_standard(),
++    # fmt 11 consteval breaks under the Xcode 26 toolchain; force the
++    # runtime-checked path (TTP patch, see ios/Podfile note).
++    "GCC_PREPROCESSOR_DEFINITIONS" => "$(inherited) FMT_USE_CONSTEVAL=0 FMT_CONSTEVAL=",
+   }
+   spec.platforms = min_supported_versions
+   spec.libraries = "c++"

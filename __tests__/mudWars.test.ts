@@ -14,6 +14,8 @@ import {
 	ropePosition,
 	formatCountdown,
 	remainingToday,
+	BAND_POINTS,
+	type MudBand,
 } from "../utils/mudWars";
 import { DAILY_ALLOTMENT } from "../constants/mudFights";
 
@@ -52,6 +54,22 @@ describe("remainingToday", () => {
 	});
 	test("never negative even past the cap", () => {
 		expect(remainingToday(DAILY_ALLOTMENT + 5)).toBe(0);
+	});
+});
+
+describe("BAND_POINTS", () => {
+	// The client classifies a throw release into a band and sends the ENUM;
+	// the SERVER owns the band→points map (throw_mud in the mud_fights
+	// migration). This mirror is the optimistic local bump only — it MUST
+	// match whiff/weak/good/perfect → 0/1/2/3 or the optimistic tally lies.
+	test("mirrors the server whiff/weak/good/perfect → 0/1/2/3 map", () => {
+		expect(BAND_POINTS).toEqual({ whiff: 0, weak: 1, good: 2, perfect: 3 });
+	});
+	test("points rise monotonically with band quality", () => {
+		const order: MudBand[] = ["whiff", "weak", "good", "perfect"];
+		const pts = order.map((b) => BAND_POINTS[b]);
+		expect(pts).toEqual([...pts].sort((a, b) => a - b));
+		expect(new Set(pts).size).toBe(order.length);
 	});
 });
 

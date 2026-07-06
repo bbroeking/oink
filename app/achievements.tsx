@@ -76,6 +76,7 @@ const FILTERS = [
 	{ key: "generous", label: "Generous" },
 	{ key: "greedy",   label: "Greedy" },
 	{ key: "social",   label: "Social" },
+	{ key: "scuffle",  label: "Scuffle" },
 ] as const;
 
 type FilterKey = (typeof FILTERS)[number]["key"];
@@ -85,6 +86,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 	generous: "GENEROUS",
 	greedy:   "GREEDY",
 	social:   "SOCIAL",
+	scuffle:  "SCUFFLE",
 };
 
 export default function AchievementsScreen() {

@@ -1,2 +1,2 @@
 patchedDependencies:
-  expo-dev-menu@6.0.15: patches/expo-dev-menu@6.0.15.patch
+  react-native@0.76.9: patches/react-native@0.76.9.patch

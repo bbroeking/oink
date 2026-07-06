@@ -188,6 +188,34 @@ export function generateBoard(seed: number): PatchBoard {
 	return { layers, cells, finds, truffleL, truffleD };
 }
 
+// ── Finds submission (server contract) ───────────────────────────────────────
+//
+// The set of finds to hand submit_rooting(p_finds text[]). It is ALWAYS a proper
+// array, and every id in it is one the server accepts for THIS seed's board —
+// board.finds === rooting_finds(seed) by the parity contract above. We intersect
+// what the player collected against that authoritative set, so a submit can never
+// carry a forged/client-invented id (rejected server-side as bad_finds) nor a
+// stone (inert, unclaimable). Order-stable, deduped. Every dig game routes its
+// pouch through here so the payload is uniform and seed-true — the game consumes
+// the real board, it does not mint its own keys.
+export function claimableFinds(
+	board: PatchBoard,
+	collected: Iterable<Find>
+): ClaimableFind[] {
+	const valid = new Set<ClaimableFind>(board.finds);
+	const out: ClaimableFind[] = [];
+	const seen = new Set<ClaimableFind>();
+	for (const f of collected) {
+		if (f === "stone") continue; // stones are never claimable
+		const cf = f as ClaimableFind;
+		if (valid.has(cf) && !seen.has(cf)) {
+			seen.add(cf);
+			out.push(cf);
+		}
+	}
+	return out;
+}
+
 // ── Feeding-window math ──────────────────────────────────────────────────────
 
 export function windowIndex(nowMs: number = Date.now()): number {

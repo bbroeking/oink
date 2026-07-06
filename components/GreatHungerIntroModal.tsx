@@ -1,4 +1,4 @@
-// The Great Hunger — Season 2 intro. A 5-beat animated storybook that
+// The Great Hunger — Season 1 intro. A 5-beat animated storybook that
 // introduces the season villain: a Hungry Hog eating the world's tickles
 // (narratively = the global regen "blight"), and the call to rally your
 // Sounder for Mud Wars. Follows the established full-screen season-moment
@@ -10,7 +10,7 @@
 // Hog). Swap the `hero` requires for the Midjourney/Meshy hog art + per-beat
 // scene art as it lands — the beat copy + motion stay put.
 
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Modal,
 	View,
@@ -32,6 +32,7 @@ import Animated, {
 	Easing,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { Button } from "./ui";
 import { Glyph, IconText } from "./ui/Glyph";
 import {
@@ -122,75 +123,16 @@ const BEATS: Beat[] = [
 ];
 
 // ── The tale reel ────────────────────────────────────────────────────
-// "Watch the tale" plays the full cinematic seven-shot Great Hunger story —
-// the same beats the offline slideshow renders (great_hunger_slideshow_v2.mp4),
-// but native: the real Midjourney "higgsfield" story art crossfaded with a
-// slow Ken Burns drift, the captions carried VERBATIM from the render's build
-// script (scripts/build_walking_slideshow.py, the `higgsfield` set + CTA).
-//
-// We render it natively rather than embedding the 13 MB .mp4 because the repo
-// ships no video player (no expo-av / expo-video in package.json) — reanimated
-// crossfades over the shot frames are the animation vocabulary this app already
-// speaks, keep the world responding *now* (no buffering), and cost only the
-// seven bundled stills instead of a video module + a large binary. The frames
-// live under assets/concepts/great-hungerer/higgsfield_set/. See the PR notes
-// for the remote-.mp4 alternative if a true video player ever lands.
-type Shot = {
-	key: string;
-	img: ImageSourcePropType;
-	line: string;
-	move: "in" | "inDeep" | "driftR" | "driftL";
-	cta?: string;
-};
-
-const SHOTS: Shot[] = [
-	{
-		key: "valley",
-		img: require("../assets/concepts/great-hungerer/higgsfield_set/shot_01_valley_of_tickles.png"),
-		line: "Once, the valley glowed gold…",
-		move: "in",
-	},
-	{
-		key: "asleep",
-		img: require("../assets/concepts/great-hungerer/higgsfield_set/shot_02_rosie_asleep.png"),
-		line: "…and no one loved them\nmore than Rosie.",
-		move: "driftR",
-	},
-	{
-		key: "arrive",
-		img: require("../assets/concepts/great-hungerer/higgsfield_set/shot_03_hunger_arrives.png"),
-		line: "But then… the Great Hunger.",
-		move: "in",
-	},
-	{
-		key: "theft",
-		img: require("../assets/concepts/great-hungerer/higgsfield_set/shot_04_the_theft.png"),
-		line: "He ate every last tickle.",
-		move: "driftL",
-	},
-	{
-		key: "dawn",
-		img: require("../assets/concepts/great-hungerer/higgsfield_set/shot_05_grey_dawn.png"),
-		line: "Morning came. The gold was gone.",
-		move: "in",
-	},
-	{
-		key: "empty",
-		img: require("../assets/concepts/great-hungerer/higgsfield_set/shot_06_empty_valley.png"),
-		line: "The tickles were gone.\nEvery last one.",
-		move: "driftR",
-	},
-	{
-		key: "begun",
-		img: require("../assets/concepts/great-hungerer/higgsfield_set/shot_07_hunger_begins.png"),
-		line: "The Great Hunger has begun.",
-		move: "inDeep",
-		cta: "Help win them back.",
-	},
-];
-
-// How long each shot holds before auto-advancing (a tap skips ahead sooner).
-const SHOT_MS = 4200;
+// "Watch the tale" plays the REAL cinematic — the generated-panel animated
+// cut with the ElevenLabs narration track (captions burned into the frames,
+// so no native caption card renders over it). The bundled asset is a
+// mobile re-encode of assets/concepts/great-hungerer/video/
+// great_hunger_generated_panels_animated_v2_no_app_section.mp4: trimmed at
+// 29.1s to drop the dated marketing CTA card (players watching this are
+// already inside Season 1), 720×1280 CRF-27 → 4.1 MB. The 40 MB master
+// stays out of the bundle (nothing require()s it). This retires the native
+// Ken Burns slideshow that stood in while the repo shipped no video player.
+const TALE_VIDEO = require("../assets/video/great_hunger_tale.mp4");
 
 // A single tickle-sparkle that drifts (up when "rising", toward the hog's maw
 // when "eaten") on a staggered repeat.
@@ -236,7 +178,7 @@ export function GreatHungerIntroModal({
 	// Fired on the final CTA ("Rally your Sounder") or Skip — the parent
 	// dismisses and can route on to the season.
 	onDone: (action: "rally" | "skip") => void;
-	// First-ever Season-2 visit leads with the cinematic tale reel; the
+	// First-ever Season-1 visit leads with the cinematic tale reel; the
 	// storybook beats wait underneath for when it closes.
 	autoPlayReel?: boolean;
 }) {
@@ -373,45 +315,10 @@ export function GreatHungerIntroModal({
 	);
 }
 
-// ── Ken Burns ────────────────────────────────────────────────────────
-// A slow, hand-wound push/drift on a still, so the reel breathes like the
-// rendered slideshow instead of snapping between flat frames. The `move`
-// mirrors the per-shot camera hint in the build script.
-function KenBurns({
-	move,
-	duration,
-	children,
-}: {
-	move: Shot["move"];
-	duration: number;
-	children: ReactNode;
-}) {
-	const t = useSharedValue(0);
-	useEffect(() => {
-		t.value = 0;
-		t.value = withTiming(1, { duration, easing: Easing.inOut(Easing.quad) });
-	}, [t, duration]);
-	const style = useAnimatedStyle(() => {
-		const p = t.value;
-		let scale = 1;
-		let tx = 0;
-		if (move === "in") scale = 1 + p * 0.08;
-		else if (move === "inDeep") scale = 1 + p * 0.12;
-		else if (move === "driftR") {
-			scale = 1.06;
-			tx = (p - 0.5) * 40;
-		} else if (move === "driftL") {
-			scale = 1.06;
-			tx = (0.5 - p) * 40;
-		}
-		return { transform: [{ scale }, { translateX: tx }] };
-	});
-	return (
-		<Animated.View style={[StyleSheet.absoluteFill, style]}>{children}</Animated.View>
-	);
-}
-
 // ── The tale reel ────────────────────────────────────────────────────
+// The outer component gates on `visible` so the player mounts fresh per
+// open (autoplay from 0:00 every time) and releases on close — useVideoPlayer
+// ties the native player's lifetime to the mount.
 function GreatHungerTaleReel({
 	visible,
 	onClose,
@@ -419,30 +326,26 @@ function GreatHungerTaleReel({
 	visible: boolean;
 	onClose: () => void;
 }) {
-	const [i, setI] = useState(0);
-	useEffect(() => {
-		if (visible) setI(0);
-	}, [visible]);
-	const S = SHOTS[i];
-	const isLast = i === SHOTS.length - 1;
-
-	// Auto-advance until the closing shot, which holds on its CTA until tapped.
-	useEffect(() => {
-		if (!visible || isLast) return;
-		const id = setTimeout(
-			() => setI((n) => Math.min(n + 1, SHOTS.length - 1)),
-			SHOT_MS
-		);
-		return () => clearTimeout(id);
-	}, [visible, i, isLast]);
-
-	const tap = useCallback(() => {
-		Haptics.selectionAsync().catch(() => {});
-		if (isLast) onClose();
-		else setI((n) => n + 1);
-	}, [isLast, onClose]);
-
 	if (!visible) return null;
+	return <TaleReelPlayer onClose={onClose} />;
+}
+
+function TaleReelPlayer({ onClose }: { onClose: () => void }) {
+	// Holds the final frame + native CTA card once narration finishes.
+	const [ended, setEnded] = useState(false);
+	const player = useVideoPlayer(TALE_VIDEO, (p) => {
+		p.loop = false;
+		p.play();
+	});
+	useEffect(() => {
+		const sub = player.addListener("playToEnd", () => setEnded(true));
+		return () => sub.remove();
+	}, [player]);
+
+	const finish = useCallback(() => {
+		Haptics.selectionAsync().catch(() => {});
+		onClose();
+	}, [onClose]);
 
 	return (
 		<Animated.View
@@ -450,42 +353,32 @@ function GreatHungerTaleReel({
 			exiting={FadeOut.duration(200)}
 			style={styles.reelRoot}
 		>
-			{/* Tap the scene to skip ahead (or close on the final shot). */}
-			<Pressable style={StyleSheet.absoluteFill} onPress={tap}>
-				<Animated.View
-					key={S.key}
-					entering={FadeIn.duration(560)}
-					exiting={FadeOut.duration(300)}
-					style={StyleSheet.absoluteFill}
-				>
-					<KenBurns move={S.move} duration={SHOT_MS + 900}>
-						<Image source={S.img} resizeMode="cover" style={styles.reelImg} />
-					</KenBurns>
-				</Animated.View>
+			{/* Captions ride inside the video; controls stay native-free so
+			    the cinematic reads as a story moment, not a media player. */}
+			<VideoView
+				player={player}
+				style={StyleSheet.absoluteFill}
+				contentFit="cover"
+				nativeControls={false}
+			/>
 
-				{/* A soft ink veil keeps the warm palette cinematic and the
-				    caption legible over bright frames. */}
-				<View pointerEvents="none" style={styles.reelVeil} />
-
-				<View pointerEvents="none" style={styles.reelCaptionWrap}>
-					<Animated.View
-						key={`rc-${S.key}`}
-						entering={FadeIn.duration(440).delay(180)}
-						style={styles.card}
-					>
-						<Text style={styles.line}>{S.line}</Text>
-						{S.cta ? <Text style={styles.reelCta}>{S.cta}</Text> : null}
-					</Animated.View>
-					<View style={styles.dots}>
-						{SHOTS.map((_, k) => (
-							<View key={k} style={[styles.dot, k === i && styles.dotActive]} />
-						))}
+			{/* Narration done — hold the last frame under the closing card. */}
+			{ended && (
+				<Pressable style={StyleSheet.absoluteFill} onPress={finish}>
+					<View style={styles.reelCaptionWrap}>
+						<Animated.View
+							entering={FadeIn.duration(440).delay(120)}
+							style={styles.card}
+						>
+							<Text style={styles.line}>The Great Hunger has begun.</Text>
+							<Text style={styles.reelCta}>Help win them back.</Text>
+						</Animated.View>
 					</View>
-				</View>
-			</Pressable>
+				</Pressable>
+			)}
 
-			{/* Close the reel and return to the beats. */}
-			<Pressable onPress={onClose} style={styles.reelClose} hitSlop={12}>
+			{/* Close the reel and return to the beats — a tale must never trap. */}
+			<Pressable onPress={finish} style={styles.reelClose} hitSlop={12}>
 				<Glyph name="close" size={16} />
 			</Pressable>
 		</Animated.View>
@@ -577,10 +470,6 @@ const styles = StyleSheet.create({
 
 	// The cinematic reel overlay.
 	reelRoot: { ...StyleSheet.absoluteFillObject, backgroundColor: WHIMSY.ink },
-	reelImg: { width: "100%", height: "100%" },
-	// A light ink veil (the shared backdrop tint, softened) — keeps the warm
-	// palette cinematic and the caption legible over bright frames.
-	reelVeil: { ...StyleSheet.absoluteFillObject, backgroundColor: MODAL_BACKDROP_BG, opacity: 0.5 },
 	reelCaptionWrap: {
 		position: "absolute",
 		left: SPACE.lg,

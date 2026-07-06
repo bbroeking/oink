@@ -17,7 +17,7 @@ Each entry is `[[slug]] — one-line summary`. The maintenance log lives in
 
 ## Core Loop & Economy
 
-- [[core-loop-and-tickle-trade]] — Tap Rosie to bank tickles for cosmetics, and the friends-only ask/fulfill Tickle Trade where the asker pockets 2N for free (no repay), making greed the profitable move that drives Season 1 alignment.
+- [[core-loop-and-tickle-trade]] — Tap Rosie to bank tickles for cosmetics, and the friends-only ask/fulfill Tickle Trade where the asker pockets 2N for free (no repay), making greed the profitable move that drives Season 0 alignment.
 - [[happiness-and-mood]] — A pig's [20,80] care state driven mainly by your own tickling (friend-acts 25% as effective) that decays over time and multiplies tickle regen; its only readout is Mood — the sad/content/happy idle sprite, never a number.
 - [[regen]] — How fast a pig's tickle counter refills, via regen_secs_for(uid): a VIP-tiered base multiplied by warm_tea, sluggish_snout, linear-alignment, happiness, and war_winner_regen factors, floored at 60s.
 - [[streak-and-garden]] — Consecutive-engagement state on a rolling 36h window that multiplies tickle regen (linear cap at day 30 = 0.75×), read out via the Garden — a 5-stage growing Barn visual with no number; multiplier spec'd but currently headless/unbuilt.
@@ -26,7 +26,7 @@ Each entry is `[[slug]] — one-line summary`. The maintenance log lives in
 
 ## Social
 
-- [[blessings-curses-effects]] — Season 1 friend-to-friend ritual system: sender-side blessings/curses (daily-rotating, alignment-shifting, anti-grief capped) land on receivers as timed active effects shown as "Hoofprints," cleansable for 5 snouts.
+- [[blessings-curses-effects]] — Season 0 friend-to-friend ritual system: sender-side blessings/curses (daily-rotating, alignment-shifting, anti-grief capped) land on receivers as timed active effects shown as "Hoofprints," cleansable for 5 snouts.
 - [[friends-graph]] — The mutual-consent social graph (FriendshipStatus, 100-friend cap, username#1234 handles, six RPCs) of who you can bless, curse, trade with, and visit.
 - [[referral-program]] — Invite-link referral program (snout rewards, engagement gate, milestone titles) — two systems coexist on referred_by, all UI dark-launched behind SOUNDER_VISIBLE, blocked on public launch.
 - [[barn-visiting]] — Going to a friend's Barn to tap-tickle their pig for them — visiting is giving (not earning): host gains tickles + a smaller happiness bump, you gain tickles + full happiness, bounded by a 3-7 tap Tired cap, a per-target 1h cooldown, and a 5/day budget.

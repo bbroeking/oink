@@ -1,13 +1,13 @@
 # The Great Hunger generated-panel animated cut
 
-- Output: `assets/concepts/great-hungerer/video/great_hunger_generated_panels_animated_v2.mp4`
+- Output: `assets/concepts/great-hungerer/video/great_hunger_generated_panels_animated_v2_no_app_section.mp4`
 - Panels: `assets/concepts/great-hungerer/generated_panels`
 - Frame sequences: `tmp/great-hunger-animated-cut/frames`
 - Frame rate: 12 fps
 - Voice provider: elevenlabs
 - Audio mode: continuous narration track
 - ElevenLabs voice id: `JBFqnCBsd6RMkjVDRZzb`
-- CTA: The Great Hunger / Season 2 July 11
+- CTA: The Great Hunger / Season 1 July 11
 
 | Shot | Duration | Frames | Panel | Effect | Narration |
 |---|---:|---:|---|---|---|
@@ -18,6 +18,6 @@
 | 5 | 4.7s | 56 | `shot_05_grey_dawn.png` | last_tickle | By morning, the color was gone. One last spark reached Rosie, then slipped away. |
 | 6 | 3.0s | 36 | `shot_06_empty_valley.png` | grey_drift | The whole valley had gone quiet. |
 | 7 | 5.2s | 62 | `shot_07_hunger_begins.png` | hoard_glow | High on the hill, he kept what he stole. Now Rosie needs everyone to win the joy back. |
-| 8 | 2.4s | 29 | `shot_07_hunger_begins.png` | cta_card | The Great Hunger. Season 2 July 11 |
+| 8 | 2.4s | 29 | `shot_07_hunger_begins.png` | cta_card | The Great Hunger. Season 1 July 11 |
 
 Total runtime: 31.4s

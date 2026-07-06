@@ -10,12 +10,14 @@ jest.mock("../utils/log", () => ({ log: { error: jest.fn() } }));
 import {
 	Minstd,
 	generateBoard,
+	claimableFinds,
 	windowIndex,
 	windowEndsAtMs,
 	feedingCountdown,
 	practiceSeed,
 	stirCost,
 } from "../utils/rooting";
+import type { Find } from "../utils/rooting";
 import {
 	PATCH_COLS,
 	PATCH_ROWS,
@@ -108,6 +110,76 @@ describe("generateBoard", () => {
 		const dc = Math.abs((a % PATCH_COLS) - (b % PATCH_COLS));
 		expect(dr + dc).toBe(1); // orthogonally adjacent
 		expect(new Set(board.truffleL).size).toBe(3);
+	});
+});
+
+describe("claimableFinds — the submit_rooting payload builder", () => {
+	// A seed whose board carries a shimmer, so we can exercise the shimmer path.
+	const shimmerSeed = [1, 7, 42, 31337, 999983, 2147483646, 5555, 12345].find(
+		(s) => generateBoard(s).finds.includes("shimmer")
+	)!;
+
+	test("always returns a real array — even for a single find", () => {
+		const board = generateBoard(shimmerSeed);
+		const out = claimableFinds(board, new Set<Find>(["shimmer"]));
+		expect(Array.isArray(out)).toBe(true);
+		expect(out).toEqual(["shimmer"]); // a proper text[] element, not a scalar
+	});
+
+	test("drops stones — they are inert / unclaimable", () => {
+		const board = generateBoard(42);
+		const out = claimableFinds(board, new Set<Find>(["truffle_l", "stone"]));
+		expect(out).not.toContain("stone");
+		expect(out).toContain("truffle_l");
+	});
+
+	test("drops forged / not-on-this-board ids (never sends bad_finds)", () => {
+		// A board WITHOUT a shimmer: collecting one anyway must not leak through.
+		const noShimmer = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].find(
+			(s) => !generateBoard(s).finds.includes("shimmer")
+		)!;
+		const board = generateBoard(noShimmer);
+		const out = claimableFinds(board, new Set<Find>(["truffle_l", "shimmer"]));
+		expect(out).not.toContain("shimmer");
+		expect(out).toContain("truffle_l");
+	});
+
+	test("dedupes and preserves first-seen order", () => {
+		const board = generateBoard(shimmerSeed);
+		// Arrays (not Sets) can carry dupes — the builder must collapse them.
+		const out = claimableFinds(board, [
+			"truffle_l",
+			"truffle_l",
+			"shimmer",
+			"truffle_l",
+		] as Find[]);
+		expect(out).toEqual(["truffle_l", "shimmer"]);
+	});
+
+	test("empty collection → empty array", () => {
+		const board = generateBoard(42);
+		expect(claimableFinds(board, new Set<Find>())).toEqual([]);
+	});
+
+	test("output is always a subset of the seed's server-valid finds", () => {
+		for (const seed of [1, 7, 42, 31337, 999983, 2147483646]) {
+			const board = generateBoard(seed);
+			// Throw every possible find at it, including junk + stone.
+			const all: Find[] = [
+				"truffle_l",
+				"truffle_d",
+				"shimmer",
+				"junk_boot",
+				"junk_wrap",
+				"stone",
+			];
+			const out = claimableFinds(board, all);
+			expect(Array.isArray(out)).toBe(true);
+			for (const f of out) {
+				expect(board.finds).toContain(f); // every id is server-valid
+				expect(f).not.toBe("stone");
+			}
+		}
 	});
 });
 

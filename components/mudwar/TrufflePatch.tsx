@@ -1,4 +1,4 @@
-// The Truffle Patch — the 8h feeding-window dig session (Season 2's heartbeat
+// The Truffle Patch — the 8h feeding-window dig session (Season 1's heartbeat
 // minigame; crowned 2026-07-03, see SKILL.md decision log).
 //
 // One chill scratch-to-dig board: rub (quiet, +1 stir) or snout-shove (loud,
@@ -31,8 +31,9 @@ import {
 	STIR_SHOVE,
 	SHOVE_HOLD_MS,
 } from "@/constants/mudFights";
-import { generateBoard, ClaimableFind, Find } from "@/utils/rooting";
+import { generateBoard, claimableFinds, ClaimableFind, Find } from "@/utils/rooting";
 import { RootingOutcome, RootingSession } from "@/hooks/useRooting";
+import { ReclaimSlam, ReclaimSlamHandle } from "./ReclaimSlam";
 import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, WHIMSY, RADII, SPACE, STICKER_SHADOW, SHADOW_SM } from "@/constants/theme";
 
@@ -95,12 +96,28 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 
 	const stirAnim = useRef(new Animated.Value(0)).current;
 	const popAnim = useRef(new Animated.Value(0)).current;
+	// The reclaim slam — golden joy-motes rip from the gorging Hunger (top-right)
+	// to your pouch (bottom) on every find, and he flinches as the joy tears free.
+	const slamRef = useRef<ReclaimSlamHandle>(null);
+	const hungerFlinch = useRef(new Animated.Value(0)).current;
+	const reclaimBurst = useCallback(
+		(intensity: "wisp" | "pop" | "burst") => {
+			// caller already fires the find's own haptic on this same beat, so the
+			// slam skips its haptic to avoid stacking two buzzes.
+			slamRef.current?.slam({ intensity, haptic: false });
+			hungerFlinch.setValue(0);
+			Animated.sequence([
+				Animated.spring(hungerFlinch, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 16 }),
+				Animated.timing(hungerFlinch, { toValue: 0, duration: 240, useNativeDriver: true }),
+			]).start();
+		},
+		[hungerFlinch]
+	);
 
-	const claimables = useCallback((): ClaimableFind[] => {
-		return [...collectedRef.current].filter(
-			(f): f is ClaimableFind => f !== "stone"
-		);
-	}, []);
+	const claimables = useCallback(
+		(): ClaimableFind[] => claimableFinds(board, collectedRef.current),
+		[board]
+	);
 
 	const finish = useCallback(
 		async (line: string) => {
@@ -135,11 +152,14 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 					speed: 14,
 					bounciness: 14,
 				}).start();
+				reclaimBurst("pop");
 			} else {
 				Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+				// a shimmer frees a wisp of tickle-motes; junk/stone tear nothing loose.
+				if (kind === "shimmer") reclaimBurst("wisp");
 			}
 		},
-		[popAnim]
+		[popAnim, reclaimBurst]
 	);
 
 	const afterReveal = useCallback(
@@ -317,9 +337,22 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 						<Animated.View style={[styles.stirFill, { width: stirW }]} />
 					</View>
 				</View>
-				<Image
+				<Animated.Image
 					source={PATCH_ART.hunger}
-					style={[styles.hunger, { transform: [{ rotate: hungerWobble }] }]}
+					style={[
+						styles.hunger,
+						{
+							transform: [
+								{ rotate: hungerWobble },
+								{
+									scale: hungerFlinch.interpolate({
+										inputRange: [0, 1],
+										outputRange: [1, 0.86],
+									}),
+								},
+							],
+						},
+					]}
 					resizeMode="contain"
 				/>
 			</View>
@@ -420,6 +453,9 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 					</Pressable>
 				</View>
 			)}
+
+			{/* Reclaim slam overlay — golden joy-motes from the Hunger to your pouch. */}
+			<ReclaimSlam ref={slamRef} />
 		</View>
 	);
 }

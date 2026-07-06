@@ -14,10 +14,12 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Glyph } from "../ui/Glyph";
 import { Button } from "../ui/Button";
+import { ReclaimSlam, ReclaimSlamHandle } from "./ReclaimSlam";
 import type { RootingSession } from "@/hooks/useRooting";
 import type { RootingOutcome } from "@/hooks/useRooting";
 import {
 	generateBoard,
+	claimableFinds,
 	type ClaimableFind,
 	type Find,
 } from "@/utils/rooting";
@@ -58,9 +60,11 @@ export function DeepRoot({ session, onSubmit, onClose }: Props) {
 	const collectedRef = useRef<Set<Find>>(new Set());
 	const windRef = useRef(0);
 	const endedRef = useRef(false);
+	// Reclaim slam — joy-motes rip from his corner (top) to your pouch (bottom).
+	const slamRef = useRef<ReclaimSlamHandle>(null);
 
 	const claimables = (): ClaimableFind[] =>
-		[...collectedRef.current].filter((f): f is ClaimableFind => f !== "stone");
+		claimableFinds(board, collectedRef.current);
 
 	const finish = async (why: string) => {
 		if (endedRef.current) return;
@@ -101,6 +105,13 @@ export function DeepRoot({ session, onSubmit, onClose }: Props) {
 				setCollected([...collectedRef.current]);
 				setLine(`you rooted up ${FIND_LABEL[cell.kind]}.`);
 				Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+				// The scoop reclaims joy — golden burst for a truffle, a wisp for
+				// a shimmer. (haptic:false — the grab already buzzed on this beat.)
+				slamRef.current?.slam({
+					intensity: cell.kind.startsWith("truffle") ? "pop" : "wisp",
+					to: { x: 0.24, y: 0.95 },
+					haptic: false,
+				});
 			}
 		} else if (cell?.kind === "stone") {
 			setLine("clonk — stone.");
@@ -213,6 +224,8 @@ export function DeepRoot({ session, onSubmit, onClose }: Props) {
 					</Pressable>
 				)}
 			</View>
+
+			<ReclaimSlam ref={slamRef} />
 		</View>
 	);
 }

@@ -5,8 +5,13 @@
 import {
 	betaTierForRank,
 	qualifiesForBeta,
+	betaRewardChips,
 	BETA_TIER_SNOUTS,
+	BETA_TIER_TITLE,
 	BETA_TIER_LINE,
+	BETA_FOUNDER_RIBBON_ID,
+	BETA_FOUNDER_RIBBON_RARITY,
+	BETA_FOUNDING_HERD_TITLE,
 } from "../utils/betaRewards";
 
 describe("betaTierForRank", () => {
@@ -68,5 +73,71 @@ describe("tier metadata", () => {
 				expect(BETA_TIER_LINE[tier]).toBeTruthy();
 			}
 		);
+	});
+});
+
+describe("betaRewardChips", () => {
+	it("founding-herd tier: base title + ribbon + snouts, no duplicate title", () => {
+		const chips = betaRewardChips({
+			titleName: BETA_TIER_TITLE.founding_herd, // "Founding Herd"
+			snouts: BETA_TIER_SNOUTS.founding_herd,
+		});
+		expect(chips.map((c) => c.kind)).toEqual(["title", "cosmetic", "snouts"]);
+		// Exactly one title chip — the rank title equals the base title, so it
+		// must NOT be added twice.
+		expect(chips.filter((c) => c.kind === "title")).toHaveLength(1);
+		expect(chips[0].label).toBe(BETA_FOUNDING_HERD_TITLE);
+	});
+
+	it("podium/top tiers carry the rank title FIRST, then the base title", () => {
+		const chips = betaRewardChips({
+			titleName: BETA_TIER_TITLE.snoutfather, // "Snoutfather"
+			snouts: BETA_TIER_SNOUTS.snoutfather,
+		});
+		expect(chips.map((c) => c.kind)).toEqual([
+			"title",
+			"title",
+			"cosmetic",
+			"snouts",
+		]);
+		expect(chips[0].label).toBe("Snoutfather");
+		expect(chips[1].label).toBe(BETA_FOUNDING_HERD_TITLE);
+	});
+
+	it.each([
+		["bog_royalty", "Bog Royalty", 4],
+		["trough_table", "Of the Trough Table", 4],
+	] as const)(
+		"%s gets its rank title on top (4 chips)",
+		(tier, title, count) => {
+			const chips = betaRewardChips({
+				titleName: BETA_TIER_TITLE[tier],
+				snouts: BETA_TIER_SNOUTS[tier],
+			});
+			expect(chips).toHaveLength(count);
+			expect(chips[0].label).toBe(title);
+		}
+	);
+
+	it("the cosmetic chip carries the ribbon id + rarity for the art lookup", () => {
+		const chips = betaRewardChips({ titleName: null, snouts: 250 });
+		const cosmetic = chips.find((c) => c.kind === "cosmetic");
+		expect(cosmetic).toBeDefined();
+		expect(cosmetic?.hatId).toBe(BETA_FOUNDER_RIBBON_ID);
+		expect(cosmetic?.rarity).toBe(BETA_FOUNDER_RIBBON_RARITY);
+		expect(cosmetic?.glyph).toBe("bow");
+	});
+
+	it("snouts chip is always LAST and carries the numeric amount", () => {
+		const chips = betaRewardChips({ titleName: "Snoutfather", snouts: 1000 });
+		const last = chips[chips.length - 1];
+		expect(last.kind).toBe("snouts");
+		expect(last.amount).toBe(1000);
+		expect(last.label).toBe("1000 snouts");
+	});
+
+	it("a null title (unranked participant) still yields the base three chips", () => {
+		const chips = betaRewardChips({ titleName: null, snouts: 250 });
+		expect(chips.map((c) => c.kind)).toEqual(["title", "cosmetic", "snouts"]);
 	});
 });

@@ -23,6 +23,13 @@ import {
 	WEEKLY_MODIFIER_LABEL,
 	DIFFICULTY_LABEL,
 } from "@/constants/mudFights";
+import {
+	frontValueLabel,
+	recapOutcomeSentence,
+	commitMarkerLine,
+	frontBoardLead,
+	weeklyModifierExplainer,
+} from "./warCopy";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 interface Props {
@@ -38,15 +45,11 @@ interface Props {
 	note?: string | null;
 }
 
-// Type guard: a rhythm-mode recap row carries mineHeld; the fronts row carries winner.
-function isRhythmRecap(rf: RecapFront): rf is Extract<RecapFront, { mineHeld: boolean }> {
-	return "mineHeld" in rf;
-}
-
 export function FrontBoard({ fronts, onPick, rhythm, onDeploy, isLeader, note }: Props) {
 	const myFront = fronts.myPlan?.front_key ?? null;
 	const locked = !!fronts.myPlan?.locked;
 	const modLabel = fronts.weeklyModifier ? WEEKLY_MODIFIER_LABEL[fronts.weeklyModifier] : "";
+	const modWhy = fronts.weeklyModifier ? weeklyModifierExplainer(fronts.weeklyModifier) : "";
 	// Hold-phase UI (deploy sheet, access tokens, "defend" copy) is RHYTHM-only —
 	// a plain fronts war also reports phase 'war' but must look exactly as before.
 	const isWarPhase = !!rhythm && fronts.phase === "war";
@@ -55,9 +58,12 @@ export function FrontBoard({ fronts, onPick, rhythm, onDeploy, isLeader, note }:
 	return (
 		<View style={styles.wrap}>
 			{!!modLabel && (
-				<View style={styles.modChip}>
-					<Text style={styles.modText}>This week · {modLabel}</Text>
-				</View>
+				<>
+					<View style={styles.modChip}>
+						<Text style={styles.modText}>This week · {modLabel}</Text>
+					</View>
+					{!!modWhy && <Text style={styles.modWhy}>{modWhy}</Text>}
+				</>
 			)}
 
 			{isBuildPhase && (
@@ -74,8 +80,9 @@ export function FrontBoard({ fronts, onPick, rhythm, onDeploy, isLeader, note }:
 			)}
 
 			<Text style={styles.heading}>
-				{isWarPhase ? "Areas — defend your line" : "Fronts — commit your throws"}
+				{isWarPhase ? "Areas — defend your line" : "Areas — where your mud lands"}
 			</Text>
+			<Text style={styles.lead}>{frontBoardLead(isWarPhase)}</Text>
 			{fronts.board.map((f) => {
 				const mine = f.front_key === myFront;
 				return (
@@ -96,9 +103,14 @@ export function FrontBoard({ fronts, onPick, rhythm, onDeploy, isLeader, note }:
 								{frontName(f.front_key)}
 							</Text>
 							<Text style={styles.frontHint}>
-								{P_BAND_LABEL[f.p_band] ?? f.p_band}
-								{f.mineMud > 0 ? ` · ${f.mineMud} mud` : ""}
+								{frontValueLabel(f.value)} · {P_BAND_LABEL[f.p_band] ?? f.p_band}
+								{f.mineMud > 0 ? ` · ${f.mineMud} mud from your herd` : ""}
 							</Text>
+							{mine && (
+								<Text style={styles.mineNote}>
+									▸ {commitMarkerLine(locked, isWarPhase)}
+								</Text>
+							)}
 						</View>
 						{/* my crew's committers as pips */}
 						<View style={styles.pips}>
@@ -106,9 +118,6 @@ export function FrontBoard({ fronts, onPick, rhythm, onDeploy, isLeader, note }:
 								<View key={i} style={styles.pip} />
 							))}
 						</View>
-						{mine && (
-							<Text style={styles.youTag}>{locked ? (isWarPhase ? "▸ holding" : "▸ throwing") : "▸ you"}</Text>
-						)}
 					</Pressable>
 				);
 			})}
@@ -140,41 +149,17 @@ export function FrontBoard({ fronts, onPick, rhythm, onDeploy, isLeader, note }:
 	);
 }
 
-// One recap row — renders either fold shape.
+// One recap row — a full sentence a new pig parses, either fold shape. The
+// wording (and the held/tied/lost coloring) comes from warCopy so tests pin it.
 function RecapRow({ rf }: { rf: RecapFront }) {
-	if (isRhythmRecap(rf)) {
-		// MIRROR: I hold my area iff I cleared the opponent's hidden wave. Show that
-		// wave (attackingMe) + whether I held.
-		return (
-			<View style={styles.recapRow}>
-				<Text style={styles.recapName} numberOfLines={1}>
-					{frontName(rf.front_key)}
-				</Text>
-				<Text style={styles.recapWave} numberOfLines={1}>
-					{DIFFICULTY_LABEL[rf.attackingMe as Difficulty] ?? rf.attackingMe} wave
-				</Text>
-				<Text style={[styles.recapTag, rf.mineHeld ? styles.held : styles.lost]}>
-					{rf.mineHeld ? "held" : "fell"}
-				</Text>
-			</View>
-		);
-	}
-	// HEAD-TO-HEAD (fronts-only): the server's authoritative fold winner.
+	const held = "mineHeld" in rf ? rf.mineHeld : rf.winner === "mine";
+	const tied = !("mineHeld" in rf) && rf.winner === "none";
 	return (
 		<View style={styles.recapRow}>
-			<Text style={styles.recapName} numberOfLines={1}>
-				{frontName(rf.front_key)}
-			</Text>
-			<Text style={styles.recapScore}>
-				{rf.mineMud} v {rf.themMud}
-			</Text>
 			<Text
-				style={[
-					styles.recapTag,
-					rf.winner === "mine" ? styles.held : rf.winner === "none" ? styles.tied : styles.lost,
-				]}
+				style={[styles.recapLine, held ? styles.held : tied ? styles.tied : styles.lost]}
 			>
-				{rf.winner === "mine" ? "held" : rf.winner === "none" ? "no one" : "lost"}
+				{recapOutcomeSentence(rf)}
 			</Text>
 		</View>
 	);
@@ -309,6 +294,14 @@ const styles = StyleSheet.create({
 		marginBottom: 10,
 	},
 	modText: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.ink },
+	modWhy: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: -6,
+		marginBottom: 10,
+	},
 	phaseNote: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.mute, textAlign: "center", marginBottom: 10 },
 	recap: {
 		backgroundColor: WHIMSY.cream2,
@@ -327,10 +320,7 @@ const styles = StyleSheet.create({
 		marginBottom: 6,
 	},
 	recapRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 2 },
-	recapName: { fontFamily: FONTS.body, fontSize: 13, color: WHIMSY.ink, flex: 1 },
-	recapScore: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.mute, width: 56, textAlign: "right" },
-	recapWave: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.lilacDeep, width: 80, textAlign: "right" },
-	recapTag: { fontFamily: FONTS.whimsy, fontSize: 12, width: 44, textAlign: "right" },
+	recapLine: { fontFamily: FONTS.body, fontSize: 13, flex: 1 },
 	held: { color: WHIMSY.accent },
 	tied: { color: WHIMSY.mute },
 	lost: { color: WHIMSY.lilacDeep },
@@ -340,8 +330,9 @@ const styles = StyleSheet.create({
 		letterSpacing: 1.4,
 		textTransform: "uppercase",
 		color: WHIMSY.mute,
-		marginBottom: 8,
+		marginBottom: 2,
 	},
+	lead: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, marginBottom: 8 },
 	front: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -369,6 +360,7 @@ const styles = StyleSheet.create({
 	frontMid: { flex: 1 },
 	frontName: { fontFamily: FONTS.body, fontSize: 15, color: WHIMSY.ink },
 	frontHint: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, marginTop: 1 },
+	mineNote: { fontFamily: FONTS.whimsy, fontSize: 12, color: WHIMSY.ink, marginTop: 2 },
 	pips: { flexDirection: "row", gap: 3, alignItems: "center" },
 	pip: {
 		width: 10,
@@ -378,7 +370,6 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.lilacDeep,
 	},
-	youTag: { fontFamily: FONTS.whimsy, fontSize: 12, color: WHIMSY.ink, marginLeft: 2 },
 	access: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.accent, textAlign: "center", marginTop: 2, marginBottom: 2 },
 	// Deploy sheet.
 	deployToggle: {

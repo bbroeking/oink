@@ -37,7 +37,7 @@ interface Props {
 	result: WarResult;
 	isBotWar: boolean;
 	wonCosmetic: WonCosmetic | null;
-	// Golden-Truffle purse paid at resolve (Season 2 P4). Optional — only
+	// Golden-Truffle purse paid at resolve (Season 1 P4). Optional — only
 	// rendered when the server actually returned an amount, so the modal
 	// degrades cleanly on pre-Exchange servers.
 	truffles?: number | null;
