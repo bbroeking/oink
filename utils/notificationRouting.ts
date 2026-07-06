@@ -15,6 +15,8 @@ export const NOTIFICATION_SCREENS = [
 	"achievements",
 	"account",
 	"season",
+	"scuffle",
+	"sounder",
 ] as const;
 
 export type NotificationScreen = (typeof NOTIFICATION_SCREENS)[number];
@@ -32,6 +34,10 @@ export function routeForScreen(screen: string | null | undefined): string | null
 			return "/account";
 		case "season":
 			return "/season"; // bounties (and the season pass) live here
+		case "scuffle":
+			return "/mud-war"; // a scuffle event (challenge/resolve) → the war screen
+		case "sounder":
+			return "/(tabs)/friends?seg=sounder"; // a crew invite → the Sounder hub segment
 		default:
 			return null;
 	}

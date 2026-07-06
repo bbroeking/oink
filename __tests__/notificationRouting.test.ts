@@ -24,6 +24,11 @@ describe("routeForScreen — push deep-link map", () => {
 		expect(routeForScreen("account")).toBe("/account");
 	});
 
+	test("war/crew events deep-link: scuffle → the war screen, sounder → the crew hub", () => {
+		expect(routeForScreen("scuffle")).toBe("/mud-war");
+		expect(routeForScreen("sounder")).toBe("/(tabs)/friends?seg=sounder");
+	});
+
 	test("unknown / missing screen → null (no navigation)", () => {
 		expect(routeForScreen("nonsense")).toBeNull();
 		expect(routeForScreen(undefined)).toBeNull();
