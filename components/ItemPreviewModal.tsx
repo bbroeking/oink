@@ -354,7 +354,7 @@ export function ItemPreviewModal({
 										showPurchaseToast({
 											type: "success",
 											title: "Trough opened!",
-											text: "Your Sounder can chip in now — find it in the Shop.",
+											text: "Your Friends can chip in now — find it in the Shop.",
 											cost: seed,
 										});
 										onTroughOpened?.(seed, r.balance);
@@ -380,7 +380,7 @@ export function ItemPreviewModal({
 							</Button>
 							<Text style={styles.troughHint}>
 								Start it for {Math.ceil(item.cost * 0.1).toLocaleString()} snouts
-								— your Sounder chips in the rest.
+								— your Friends chip in the rest.
 							</Text>
 						</View>
 					)}

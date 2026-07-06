@@ -64,7 +64,7 @@ export interface ReferralSummary {
 export const REFERRAL_LADDER: { count: number; reward: string }[] = [
 	{ count: 3, reward: "Messenger Hat" },
 	{ count: 5, reward: "Free month of Slop Club" },
-	{ count: 10, reward: "Sounder Caller title + 500 snouts" },
+	{ count: 10, reward: "Drove Caller title + 500 snouts" },
 	{ count: 25, reward: "Pen Marshal title + 1,500 snouts" },
 	{ count: 100, reward: "Pied Piper title + 90 days Slop Club + 5,000 snouts" },
 	{ count: 500, reward: "Patron of the Pen title + 180 days Slop Club + 20,000 snouts" },
@@ -76,7 +76,7 @@ export function rewardNameForMilestone(count: number | null): string {
 	switch (count) {
 		case 3: return "the Messenger Hat";
 		case 5: return "a free month of Slop Club";
-		case 10: return "the Sounder Caller title";
+		case 10: return "the Drove Caller title";
 		case 25: return "the Pen Marshal title";
 		case 100: return "Pied Piper + 90 days of Slop Club";
 		case 500: return "Patron of the Pen + 180 days of Slop Club";

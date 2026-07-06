@@ -512,7 +512,7 @@ export function Account({ session }: { session: Session }) {
 					{SOUNDER_VISIBLE && sounder && (
 						<Sticker color="cream" rotate={-0.6} radius={14} style={sounderStyles.card}>
 							<View style={sounderStyles.headerRow}>
-								<Text style={sounderStyles.kicker}>★ your sounder</Text>
+								<Text style={sounderStyles.kicker}>★ your drove</Text>
 								<Pressable onPress={() => router.push("/sounder")}>
 									<Text style={sounderStyles.link}>leaderboard →</Text>
 								</Pressable>
@@ -523,7 +523,7 @@ export function Account({ session }: { session: Session }) {
 								</Text>
 								<View style={{ flex: 1, marginLeft: 12 }}>
 									<Text style={sounderStyles.countLabel}>
-										{sounder.engaged_count === 1 ? "pig in your sounder" : "pigs in your sounder"}
+										{sounder.engaged_count === 1 ? "pig in your drove" : "pigs in your drove"}
 									</Text>
 									{!!sounder.rank && (
 										<Text style={sounderStyles.rankLine}>
@@ -540,7 +540,7 @@ export function Account({ session }: { session: Session }) {
 							)}
 							{!sounder.next_title && (
 								<Text style={sounderStyles.progressLine}>
-									You've unlocked every sounder title. Maintain the herd!
+									You've unlocked every drove title. Maintain the herd!
 								</Text>
 							)}
 						</Sticker>

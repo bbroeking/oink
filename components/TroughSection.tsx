@@ -61,7 +61,7 @@ function donateError(reason: string | undefined, have?: number): string {
 		case "drive_closed":
 			return "This Trough has closed.";
 		case "not_friends":
-			return "Only the opener's Sounder can chip in.";
+			return "Only the opener's Friends can chip in.";
 		default:
 			return "Couldn't chip in. Try again.";
 	}
@@ -149,7 +149,7 @@ export function TroughSection({
 				...n,
 				[d.id]: r.sent
 					? `Asked ${r.sent} ${r.sent === 1 ? "friend" : "friends"} to chip in`
-					: "No Sounder yet to ask.",
+					: "No Friends yet to ask.",
 			}));
 		} else {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
@@ -183,7 +183,7 @@ export function TroughSection({
 			<View style={styles.explainer}>
 				<Text style={styles.explainerTitle}>How the Trough works</Text>
 				<Text style={styles.explainerBody}>
-					Open a drive for any shop item you want, and your Sounder pitches in
+					Open a drive for any shop item you want, and your Friends pitch in
 					snouts. When it fills, you get the item — and everyone who chipped in
 					gets snouts & leaderboard score back, plus XP for helping.
 				</Text>
@@ -349,7 +349,7 @@ export function TroughSection({
 							>
 								<Glyph name="pigface" size={15} />
 								<Text style={styles.nudgeBtnText}>
-									{busy === d.id ? "asking…" : "Ask your Sounder to chip in"}
+									{busy === d.id ? "asking…" : "Ask your Friends to chip in"}
 								</Text>
 							</Pressable>
 						)}

@@ -62,7 +62,7 @@ export default function SounderScreen() {
 				<SafeAreaView style={{ flex: 1 }}>
 					<PageHeader
 						kicker="top recruiters"
-						title="The Sounder"
+						title="The Drove"
 						onBack={() => router.back()}
 					/>
 
@@ -71,11 +71,11 @@ export default function SounderScreen() {
 						contentContainerStyle={styles.list}
 						showsVerticalScrollIndicator={false}
 					>
-						{loading && <LoadingBeat label="gathering the sounder" />}
+						{loading && <LoadingBeat label="gathering the drove" />}
 						{!loading && rows.length === 0 && (
 							<EmptyState
 								glyph="friends"
-								title="The Sounder's empty"
+								title="The Drove's empty"
 								sub="Be the first to bring a friend in."
 							/>
 						)}

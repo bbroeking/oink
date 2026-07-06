@@ -94,7 +94,7 @@ export default function FriendsHubScreen() {
 			<SafeAreaView style={styles.safeArea}>
 				<View style={styles.header}>
 					<Text style={styles.kicker}>★ friends</Text>
-					<Text style={styles.title}>Your Sounder</Text>
+					<Text style={styles.title}>Your Friends</Text>
 					<View style={styles.titleRule} />
 					<View style={styles.segWrap}>
 						<Sticker color="paper" rotate={0} radius={22} style={styles.seg}>
