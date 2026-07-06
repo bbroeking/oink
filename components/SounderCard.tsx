@@ -120,6 +120,10 @@ export function SounderCard() {
 		<ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
 			{/* Incoming invites — shown whether or not you have a crew (you can
 			    only act on them when crewless; server enforces). */}
+			{/* Incoming invites — actionable ONLY when crewless. One Sounder at
+			    a time: while you ride with a crew, an invite can't be accepted
+			    (the server would refuse), so we don't show a Join that lies —
+			    just the ask and a decline. */}
 			{crew.invitesIn.length > 0 && (
 				<View style={styles.section}>
 					<Text style={styles.sectionTitle}>Invites</Text>
@@ -131,15 +135,22 @@ export function SounderCard() {
 								{i.crew_name}
 							</Text>
 							<View style={styles.inviteBtns}>
-								<Button size="sm" variant="primary" onPress={() => accept(i.id)}>
-									Join
-								</Button>
+								{!inCrew && (
+									<Button size="sm" variant="primary" onPress={() => accept(i.id)}>
+										Join
+									</Button>
+								)}
 								<Button size="sm" variant="ghost" onPress={() => decline(i.id)}>
 									Decline
 								</Button>
 							</View>
 						</View>
 					))}
+					{inCrew && (
+						<Text style={styles.inviteHint}>
+							one Sounder at a time — leave yours to answer an invite
+						</Text>
+					)}
 				</View>
 			)}
 
@@ -426,6 +437,13 @@ const styles = StyleSheet.create({
 	handoffArmed: { color: WHIMSY.accent },
 	inviteRow: { gap: 6, paddingVertical: 4 },
 	inviteText: { fontFamily: FONTS.body, fontSize: 14, color: WHIMSY.ink },
+	inviteHint: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 2,
+	},
 	bold: { fontFamily: FONTS.bodyExtra },
 	inviteBtns: { flexDirection: "row", gap: 8 },
 	resultRow: {
