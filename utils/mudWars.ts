@@ -312,6 +312,10 @@ export function transferCrewLeadership(newLeaderId: string): Promise<RpcResult<{
 export function kickCrewMember(memberId: string): Promise<RpcResult<{}>> {
 	return rpcAction("kick_crew_member", { p_member: memberId });
 }
+// Leader-only: dissolve the whole Sounder; every member returns to the pool.
+export function disbandCrew(): Promise<RpcResult<{}>> {
+	return rpcAction("disband_crew");
+}
 // Leader-only concede: the other side wins now, elo applies as a loss.
 export function forfeitWar(warId: string): Promise<RpcResult<{}>> {
 	return rpcAction("forfeit_war", { p_war: warId });

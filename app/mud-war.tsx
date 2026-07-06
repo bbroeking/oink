@@ -83,7 +83,7 @@ export default function MudWarScreen() {
 	// start doesn't flash-redirect before the flag resolves.
 	const { visible: mudWarsVisible, loaded: flagLoaded } =
 		useFeatureFlagState("mud_wars");
-	const { war, loading, refresh, throwBand, submitRun, setDeploy, setFront } = useMudWar();
+	const { war, loading, refresh, throwBand, submitRun, setDeploy, setFront, redeploy } = useMudWar();
 	// "Start a new scuffle" on the resolved recap: mark this war dismissed so the
 	// screen drops to the NoWar challenge picker. my_war() keeps returning the
 	// resolved war, so refresh() alone can never advance past the recap.
@@ -202,6 +202,7 @@ export default function MudWarScreen() {
 							onRun={submitRun}
 							onDeploy={setDeploy}
 							onSetFront={setFront}
+							onRedeploy={redeploy}
 							onChanged={refresh}
 						/>
 					) : (
@@ -433,6 +434,7 @@ function ActiveWar({
 	onRun,
 	onDeploy,
 	onSetFront,
+	onRedeploy,
 	onChanged,
 }: {
 	war: NonNullable<ReturnType<typeof useMudWar>["war"]>;
@@ -440,6 +442,7 @@ function ActiveWar({
 	onRun: ReturnType<typeof useMudWar>["submitRun"];
 	onDeploy: ReturnType<typeof useMudWar>["setDeploy"];
 	onSetFront: ReturnType<typeof useMudWar>["setFront"];
+	onRedeploy: ReturnType<typeof useMudWar>["redeploy"];
 	onChanged: () => void;
 }) {
 	// Am I my Sounder's leader? Gates the deploy sheet (set_deploy is leader-only).
@@ -673,6 +676,8 @@ function ActiveWar({
 					onPick={pickFront}
 					rhythm={war.rhythmEnabled === true}
 					onDeploy={onDeploy}
+					onRedeploy={onRedeploy}
+					members={war.mine.members}
 					isLeader={isLeader}
 					note={frontNote}
 				/>

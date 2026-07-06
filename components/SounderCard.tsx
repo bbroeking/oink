@@ -24,7 +24,7 @@ import {
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { supabase } from "@/utils/supabase";
-import { kickCrewMember, transferCrewLeadership } from "@/utils/mudWars";
+import { kickCrewMember, transferCrewLeadership, disbandCrew } from "@/utils/mudWars";
 import { Button } from "./ui/Button";
 import { Icon } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
@@ -50,6 +50,7 @@ export function SounderCard() {
 	// Leadership handoff / kick: first tap arms ("sure?"), second tap acts.
 	const [handoffArmedId, setHandoffArmedId] = useState<string | null>(null);
 	const [kickArmedId, setKickArmedId] = useState<string | null>(null);
+	const [disbandArmed, setDisbandArmed] = useState(false);
 	const [me, setMe] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -93,6 +94,30 @@ export function SounderCard() {
 				r.reason === "in_war"
 					? "The scuffle holds the roster — kick once it's settled."
 					: "Couldn't remove them — try again."
+			);
+		}
+		await crewHook.refresh();
+	}
+
+	// Disband the whole Sounder — two-tap arm (more destructive than a kick,
+	// so the confirm copy spells out that everyone leaves).
+	async function onDisband() {
+		if (!disbandArmed) {
+			setDisbandArmed(true);
+			setHandoffArmedId(null);
+			setKickArmedId(null);
+			return;
+		}
+		setDisbandArmed(false);
+		setNote(null);
+		const r = await disbandCrew();
+		if (!r.ok) {
+			setNote(
+				r.reason === "in_war"
+					? "The scuffle holds the roster — disband once it's settled."
+					: r.reason === "not_leader"
+					? "Only the leader can disband the Sounder."
+					: "Couldn't disband — try again."
 			);
 		}
 		await crewHook.refresh();
@@ -317,6 +342,15 @@ export function SounderCard() {
 						<Text style={styles.leaveText}>leave your Sounder › no hard feelings</Text>
 					</Pressable>
 
+					{/* Disband — leader-only, quieter still; two-tap so it can't misfire. */}
+					{isLeader && (
+						<Pressable onPress={onDisband} hitSlop={8} style={styles.disbandWrap}>
+							<Text style={[styles.disbandText, disbandArmed && styles.disbandArmed]}>
+								{disbandArmed ? "disband? everyone leaves › sure" : "disband your Sounder"}
+							</Text>
+						</Pressable>
+					)}
+
 					<FriendInvitePicker
 						visible={pickerOpen}
 						onDismiss={() => setPickerOpen(false)}
@@ -426,6 +460,14 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textDecorationLine: "underline",
 	},
+	disbandWrap: { alignSelf: "center", marginTop: 0, marginBottom: 8 },
+	disbandText: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.muteSoft,
+		textDecorationLine: "underline",
+	},
+	disbandArmed: { color: WHIMSY.accent },
 	memberName: { fontFamily: FONTS.body, fontSize: 15, color: WHIMSY.ink, flex: 1 },
 	leaderTag: { fontFamily: FONTS.bodyExtra, fontSize: 10, color: WHIMSY.accent, textTransform: "uppercase" },
 	handoffLink: {

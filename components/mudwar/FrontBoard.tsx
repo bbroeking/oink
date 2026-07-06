@@ -10,13 +10,14 @@
 // area) and the rhythm MIRROR (mineHeld/themHeld + the hidden wave that attacked
 // MY area). The opponent's CURRENT-day allocation is never shown (the fog).
 //
-// Redeploy: the one-per-war token STATUS is shown here; the leader move-a-member
-// picker is a follow-up (v1 is self-commit only).
+// Redeploy: the one-per-war token STATUS is shown here, plus a leader-only
+// move-a-member picker (RedeploySheet) that spends the token to relocate one
+// locked member onto another area (redeploy_member RPC).
 
 import { useMemo, useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
-import { FrontsState, RecapFront, Difficulty } from "@/utils/mudWars";
+import { FrontsState, RecapFront, Difficulty, WarSideMember } from "@/utils/mudWars";
 import {
 	frontName,
 	P_BAND_LABEL,
@@ -34,7 +35,11 @@ interface Props {
 	rhythm?: boolean;
 	// Leader-only deploy (Hold phase). Maps hard/med/easy onto 3 distinct areas.
 	onDeploy?: (hardFront: string, medFront: string, easyFront: string) => Promise<{ ok: boolean; reason?: string }>;
-	isLeader?: boolean;     // gates the deploy sheet
+	// Leader-only redeploy — move ONE locked member onto a different area (spends the
+	// one-per-war token). members is my own Sounder's roster (war.mine.members).
+	onRedeploy?: (userId: string, frontKey: string) => Promise<{ ok: boolean; reason?: string }>;
+	members?: WarSideMember[];
+	isLeader?: boolean;     // gates the deploy + redeploy sheets
 	note?: string | null;
 }
 
@@ -43,7 +48,7 @@ function isRhythmRecap(rf: RecapFront): rf is Extract<RecapFront, { mineHeld: bo
 	return "mineHeld" in rf;
 }
 
-export function FrontBoard({ fronts, onPick, rhythm, onDeploy, isLeader, note }: Props) {
+export function FrontBoard({ fronts, onPick, rhythm, onDeploy, onRedeploy, members, isLeader, note }: Props) {
 	const myFront = fronts.myPlan?.front_key ?? null;
 	const locked = !!fronts.myPlan?.locked;
 	const modLabel = fronts.weeklyModifier ? WEEKLY_MODIFIER_LABEL[fronts.weeklyModifier] : "";
@@ -128,6 +133,11 @@ export function FrontBoard({ fronts, onPick, rhythm, onDeploy, isLeader, note }:
 			<Text style={styles.redeploy}>
 				Redeploy token: {fronts.redeployUsed ? "spent" : "1 available (leader)"}
 			</Text>
+			{/* Leader-only redeploy picker — move one locked member onto another area.
+			    Spends the one-per-war token; hidden once spent (status line covers that). */}
+			{isLeader && onRedeploy && !fronts.redeployUsed && (members?.length ?? 0) > 0 && (
+				<RedeploySheet fronts={fronts} members={members!} onRedeploy={onRedeploy} />
+			)}
 			{locked && (
 				<Text style={styles.lockedNote}>
 					{isWarPhase
@@ -292,6 +302,127 @@ function DeploySheet({
 				<Text style={styles.deploySendText}>{sending ? "Loosing…" : "Loose them"}</Text>
 			</Pressable>
 			{!!deployNote && <Text style={styles.deployNote}>{deployNote}</Text>}
+		</View>
+	);
+}
+
+// Leader redeploy sheet — pick ONE member + a target area, then spend the
+// one-per-war token to move them. Mirrors DeploySheet's collapse/expand shape.
+// The server (redeploy_member) is authoritative; a locked member is overwritten
+// onto the chosen front. Only rendered while the token is unspent.
+function RedeploySheet({
+	fronts,
+	members,
+	onRedeploy,
+}: {
+	fronts: FrontsState;
+	members: WarSideMember[];
+	onRedeploy: NonNullable<Props["onRedeploy"]>;
+}) {
+	const [open, setOpen] = useState(false);
+	const [userId, setUserId] = useState<string | null>(null);
+	const [frontKey, setFrontKey] = useState<string | null>(null);
+	const [note, setNote] = useState<string | null>(null);
+	const [sending, setSending] = useState(false);
+
+	const ready = !!userId && !!frontKey;
+
+	const send = async () => {
+		if (!ready || sending) return;
+		setSending(true);
+		setNote(null);
+		const r = await onRedeploy(userId!, frontKey!);
+		setSending(false);
+		if (r.ok) {
+			const who = members.find((m) => m.user_id === userId)?.username ?? "your member";
+			setNote(`${who} redeployed to ${frontName(frontKey!)}.`);
+			setOpen(false);
+			setUserId(null);
+			setFrontKey(null);
+		} else {
+			setNote(
+				r.reason === "not_your_member"
+					? "That pig isn't in your Sounder."
+					: r.reason === "bad_front"
+					? "Pick one of today's areas."
+					: r.reason === "redeploy_spent"
+					? "You've already spent this scuffle's redeploy."
+					: r.reason === "not_leader"
+					? "Only your Sounder's leader can redeploy."
+					: "Couldn't redeploy — try again."
+			);
+		}
+	};
+
+	if (!open) {
+		return (
+			<Pressable style={styles.deployToggle} onPress={() => setOpen(true)}>
+				<Text style={styles.deployToggleText}>▸ Redeploy a member (leader)</Text>
+			</Pressable>
+		);
+	}
+
+	return (
+		<View style={styles.deploy}>
+			<Text style={styles.deployTitle}>Redeploy a member</Text>
+			<Text style={styles.deploySub}>Move one of your pigs onto another area — costs your one scuffle redeploy.</Text>
+
+			<View style={styles.deployRow}>
+				<Text style={styles.deployDiff}>Who</Text>
+				<View style={styles.deployOptions}>
+					{members.map((m) => {
+						const on = m.user_id === userId;
+						return (
+							<Pressable
+								key={m.user_id}
+								onPress={() => {
+									Haptics.selectionAsync().catch(() => {});
+									setNote(null);
+									setUserId(m.user_id);
+								}}
+								style={[styles.deployChip, on && styles.deployChipOn]}
+							>
+								<Text style={[styles.deployChipText, on && styles.deployChipTextOn]} numberOfLines={1}>
+									{m.username ?? "pig"}
+								</Text>
+							</Pressable>
+						);
+					})}
+				</View>
+			</View>
+
+			<View style={styles.deployRow}>
+				<Text style={styles.deployDiff}>To area</Text>
+				<View style={styles.deployOptions}>
+					{fronts.board.map((f) => {
+						const on = f.front_key === frontKey;
+						return (
+							<Pressable
+								key={f.front_key}
+								onPress={() => {
+									Haptics.selectionAsync().catch(() => {});
+									setNote(null);
+									setFrontKey(f.front_key);
+								}}
+								style={[styles.deployChip, on && styles.deployChipOn]}
+							>
+								<Text style={[styles.deployChipText, on && styles.deployChipTextOn]} numberOfLines={1}>
+									{frontName(f.front_key)}
+								</Text>
+							</Pressable>
+						);
+					})}
+				</View>
+			</View>
+
+			<Pressable
+				onPress={send}
+				disabled={!ready || sending}
+				style={[styles.deploySend, (!ready || sending) && styles.deploySendOff]}
+			>
+				<Text style={styles.deploySendText}>{sending ? "Redeploying…" : "Redeploy"}</Text>
+			</Pressable>
+			{!!note && <Text style={styles.deployNote}>{note}</Text>}
 		</View>
 	);
 }
