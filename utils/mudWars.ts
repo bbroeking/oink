@@ -316,6 +316,10 @@ export function kickCrewMember(memberId: string): Promise<RpcResult<{}>> {
 export function disbandCrew(): Promise<RpcResult<{}>> {
 	return rpcAction("disband_crew");
 }
+// Leader-only: rename the Sounder (1–24 chars, mirrors create_crew's rules).
+export function setCrewName(name: string): Promise<RpcResult<{ name: string }>> {
+	return rpcAction<{ name: string }>("set_crew_name", { p_name: name });
+}
 // Leader-only concede: the other side wins now, elo applies as a loss.
 export function forfeitWar(warId: string): Promise<RpcResult<{}>> {
 	return rpcAction("forfeit_war", { p_war: warId });

@@ -24,7 +24,7 @@ import {
 } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { supabase } from "@/utils/supabase";
-import { kickCrewMember, transferCrewLeadership, disbandCrew } from "@/utils/mudWars";
+import { kickCrewMember, transferCrewLeadership, disbandCrew, setCrewName } from "@/utils/mudWars";
 import { Button } from "./ui/Button";
 import { Icon } from "./ui/Icon";
 import { PigAvatar } from "./ui/PigAvatar";
@@ -51,6 +51,9 @@ export function SounderCard() {
 	const [handoffArmedId, setHandoffArmedId] = useState<string | null>(null);
 	const [kickArmedId, setKickArmedId] = useState<string | null>(null);
 	const [disbandArmed, setDisbandArmed] = useState(false);
+	// Inline crew rename (leader only).
+	const [renaming, setRenaming] = useState(false);
+	const [nameDraft, setNameDraft] = useState("");
 	const [me, setMe] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -120,6 +123,28 @@ export function SounderCard() {
 					: "Couldn't disband — try again."
 			);
 		}
+		await crewHook.refresh();
+	}
+
+	async function onSaveName() {
+		const next = nameDraft.trim();
+		if (next.length < 1 || next === crew.crew?.name) {
+			setRenaming(false);
+			return;
+		}
+		setNote(null);
+		const r = await setCrewName(next);
+		if (!r.ok) {
+			setNote(
+				r.reason === "bad_name"
+					? "Pick a name (1–24 characters)."
+					: r.reason === "not_leader"
+					? "Only the leader can rename the Sounder."
+					: "Couldn't rename — try again."
+			);
+			return;
+		}
+		setRenaming(false);
 		await crewHook.refresh();
 	}
 
@@ -226,7 +251,32 @@ export function SounderCard() {
 				<>
 					<View style={styles.section}>
 						<View style={styles.crewHeader}>
-							<Text style={styles.heading}>{crew.crew!.name}</Text>
+							{renaming ? (
+								<TextInput
+									style={[styles.input, styles.renameInput]}
+									value={nameDraft}
+									onChangeText={setNameDraft}
+									maxLength={24}
+									autoFocus
+									onBlur={onSaveName}
+									onSubmitEditing={onSaveName}
+									returnKeyType="done"
+									placeholder="Name your Sounder"
+									placeholderTextColor={WHIMSY.muteSoft}
+								/>
+							) : (
+								<Pressable
+									style={styles.crewNameWrap}
+									disabled={!isLeader}
+									onPress={() => {
+										setNameDraft(crew.crew!.name);
+										setRenaming(true);
+									}}
+								>
+									<Text style={styles.heading}>{crew.crew!.name}</Text>
+									{isLeader && <Icon name="edit" size={13} color={WHIMSY.mute} />}
+								</Pressable>
+							)}
 							<Text style={styles.count}>
 								{memberCount}/{CREW_CAP}
 							</Text>
@@ -415,6 +465,8 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.cream,
 	},
 	crewHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+	crewNameWrap: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
+	renameInput: { flex: 1, marginRight: 10, paddingVertical: 6 },
 	count: { fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.mute },
 	pips: { flexDirection: "row", alignItems: "center", gap: 6, marginVertical: 2 },
 	plusSlot: {
