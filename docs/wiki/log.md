@@ -351,3 +351,7 @@ fan-out workflow (6 parallel per-screen agents + a tsc/jest verify pass).
   new sets (Hungerer's Table w/ Famished-gated Crown capstone; Rooter's Kit w/ the
   Golden Snuffle Dust particle capstone), 2 animated Heirlooms in cosmeticFx vocab,
   and a 6-item generate-next shortlist = one new Sheet F batch.
+
+## [2026-07-07] memo | Mud Wars founder-decisions doc
+
+Drafted [Mud Wars — Founder Decisions](outputs/memos/mudwar-founder-decisions-2026-07.md), gathering the pending Season-2 decisions (payout model, crew permanence, cadence, v1 co-op choice, finale + flip timing) with options, tradeoffs, what each gates, and the verified current code reality per decision. Corrects a stale claim (the Great Hunger meter is built + dark via `hunger_meter()`/`world_boss`, not designed-only) and notes preconditions 1 & 3 + the redeploy UI are done in PRs #22/#23 — leaving payout (#2) and launch-coupling (#4) as the only remaining flip blockers, both founder calls.
