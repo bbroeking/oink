@@ -27,6 +27,7 @@ import { supabase } from "@/utils/supabase";
 import { kickCrewMember, transferCrewLeadership } from "@/utils/mudWars";
 import { Button } from "./ui/Button";
 import { Icon } from "./ui/Icon";
+import { PigAvatar } from "./ui/PigAvatar";
 import { JoinableSounders } from "./JoinableSounders";
 import { FriendInvitePicker } from "./FriendInvitePicker";
 import { UserSheet } from "./UserSheet";
@@ -214,52 +215,71 @@ export function SounderCard() {
 								)
 							)}
 						</View>
+						{/* Roster — a pig per row: avatar, name, role; the leader's
+						    manage actions sit as a quiet second line so rows read
+						    as pigs first, controls second. Tap a row → UserSheet
+						    (bless / befriend). Pending invites join the roster as
+						    ghost rows — one section tells the whole herd story. */}
 						{crew.members.map((m) => (
 							<Pressable
 								key={m.user_id}
 								onPress={() => setSelectedUserId(m.user_id)}
 								style={styles.memberRow}
 							>
-								<Icon
-									name={m.role === "leader" ? "crown" : "friends"}
-									size={14}
-									color={WHIMSY.ink}
-								/>
-								<Text style={styles.memberName}>{m.username ?? "Pig"}</Text>
-								{m.role === "leader" && <Text style={styles.leaderTag}>leader</Text>}
-								{/* Leadership handoff + kick — leader-only, on other
-								    members, two-tap confirms so a stray tap can't
-								    crown or boot anyone. */}
-								{isLeader && m.user_id !== me && (
-									<>
-										<Pressable onPress={() => onHandoff(m.user_id)} hitSlop={8}>
-											<Text
-												style={[
-													styles.handoffLink,
-													handoffArmedId === m.user_id && styles.handoffArmed,
-												]}
-											>
-												{handoffArmedId === m.user_id ? "hand crown? sure ›" : "make leader"}
-											</Text>
-										</Pressable>
-										<Pressable onPress={() => onKick(m.user_id)} hitSlop={8}>
-											<Text
-												style={[
-													styles.handoffLink,
-													kickArmedId === m.user_id && styles.handoffArmed,
-												]}
-											>
-												{kickArmedId === m.user_id ? "kick? sure ›" : "kick"}
-											</Text>
-										</Pressable>
-									</>
-								)}
+								<PigAvatar size={32} hatId={null} />
+								<View style={{ flex: 1, minWidth: 0 }}>
+									<View style={styles.memberNameLine}>
+										<Text style={styles.memberName} numberOfLines={1}>
+											{m.username ?? "Pig"}
+										</Text>
+										{m.role === "leader" && (
+											<>
+												<Icon name="crown" size={12} color={WHIMSY.ink} />
+												<Text style={styles.leaderTag}>leader</Text>
+											</>
+										)}
+									</View>
+									{isLeader && m.user_id !== me && (
+										<View style={styles.manageRow}>
+											<Pressable onPress={() => onHandoff(m.user_id)} hitSlop={8}>
+												<Text
+													style={[
+														styles.handoffLink,
+														handoffArmedId === m.user_id && styles.handoffArmed,
+													]}
+												>
+													{handoffArmedId === m.user_id ? "hand crown? sure ›" : "make leader"}
+												</Text>
+											</Pressable>
+											<Text style={styles.manageDot}>·</Text>
+											<Pressable onPress={() => onKick(m.user_id)} hitSlop={8}>
+												<Text
+													style={[
+														styles.handoffLink,
+														kickArmedId === m.user_id && styles.handoffArmed,
+													]}
+												>
+													{kickArmedId === m.user_id ? "kick? sure ›" : "kick"}
+												</Text>
+											</Pressable>
+										</View>
+									)}
+								</View>
 							</Pressable>
+						))}
+						{crew.invitesOut.map((i) => (
+							<View key={i.id} style={[styles.memberRow, styles.memberRowGhost]}>
+								<View style={styles.ghostAvatar} />
+								<Text style={styles.pendingText}>
+									{i.invitee_name ?? "Someone"} — invited, waiting…
+								</Text>
+							</View>
 						))}
 					</View>
 
-					{/* Mud Scuffle CTA */}
+					{/* The scuffle — the section the roster exists for. */}
 					<View style={styles.section}>
+						<Text style={styles.sectionTitle}>The scuffle</Text>
 						<Button
 							variant="gold"
 							full
@@ -270,37 +290,21 @@ export function SounderCard() {
 						>
 							{crew.inWar ? "View the Mud Scuffle" : "Start a Mud Scuffle"}
 						</Button>
-					</View>
-
-					{crew.invitesOut.length > 0 && (
-						<View style={styles.section}>
-							<Text style={styles.sectionTitle}>Pending invites</Text>
-							{crew.invitesOut.map((i) => (
-								<Text key={i.id} style={styles.pendingText}>
-									{i.invitee_name ?? "Someone"} — waiting…
-								</Text>
-							))}
-						</View>
-					)}
-
-					{/* Spirit standings — the kindest, most active Sounders. */}
-					<View style={styles.section}>
 						<Pressable
 							onPress={() => router.push("/clan-ladder" as Href)}
 							style={styles.standingsRow}
 							hitSlop={6}
 						>
-							<Icon name="trophy" size={16} color={WHIMSY.ink} />
 							<Text style={styles.standingsText}>Sounder standings</Text>
 							<Text style={styles.standingsChevron}>›</Text>
 						</Pressable>
 					</View>
 
-					<View style={styles.section}>
-						<Button variant="ghost" full onPress={() => leave()}>
-							Leave Sounder
-						</Button>
-					</View>
+					{/* Leaving is easy but quiet — a hand-written line, not a
+					    button competing with the scuffle CTA. */}
+					<Pressable onPress={() => leave()} hitSlop={8} style={styles.leaveWrap}>
+						<Text style={styles.leaveText}>leave your Sounder › no hard feelings</Text>
+					</Pressable>
 
 					<FriendInvitePicker
 						visible={pickerOpen}
@@ -391,7 +395,26 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.cream,
 	},
 	pipFilled: { backgroundColor: WHIMSY.sun },
-	memberRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 2 },
+	memberRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 5 },
+	memberRowGhost: { opacity: 0.55 },
+	memberNameLine: { flexDirection: "row", alignItems: "center", gap: 5 },
+	manageRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 1 },
+	manageDot: { color: WHIMSY.muteSoft },
+	ghostAvatar: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		borderWidth: 1.5,
+		borderStyle: "dashed",
+		borderColor: WHIMSY.muteSoft,
+	},
+	leaveWrap: { alignSelf: "center", marginTop: 4, marginBottom: 8 },
+	leaveText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
+	},
 	memberName: { fontFamily: FONTS.body, fontSize: 15, color: WHIMSY.ink, flex: 1 },
 	leaderTag: { fontFamily: FONTS.bodyExtra, fontSize: 10, color: WHIMSY.accent, textTransform: "uppercase" },
 	handoffLink: {

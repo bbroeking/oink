@@ -91,6 +91,12 @@ export function FeedingStrip({ warId }: { warId: string }) {
 			>
 				<View style={styles.backdrop}>
 					<View style={styles.modalBody}>
+						{/* Leave without submitting — the session keeps its seed
+						    server-side, so coming back this feeding resumes the
+						    same board. One dismiss for all three games. */}
+						<Pressable onPress={clear} style={styles.dismissRow} hitSlop={8}>
+							<Text style={styles.dismissText}>leave it for now ›</Text>
+						</Pressable>
 						{session &&
 							(() => {
 								// This feeding's game — all three share the session
@@ -163,4 +169,11 @@ const styles = StyleSheet.create({
 		padding: SPACE.lg,
 	},
 	modalBody: { width: "100%" },
+	dismissRow: { alignSelf: "flex-end", marginBottom: SPACE.xs, paddingHorizontal: 4 },
+	dismissText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.paper,
+		textDecorationLine: "underline",
+	},
 });

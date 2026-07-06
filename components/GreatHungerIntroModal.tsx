@@ -230,23 +230,28 @@ function Sparkle({ delay, eaten }: { delay: number; eaten?: boolean }) {
 export function GreatHungerIntroModal({
 	visible,
 	onDone,
+	autoPlayReel = false,
 }: {
 	visible: boolean;
 	// Fired on the final CTA ("Rally your Sounder") or Skip — the parent
 	// dismisses and can route on to the season.
 	onDone: (action: "rally" | "skip") => void;
+	// First-ever Season-2 visit leads with the cinematic tale reel; the
+	// storybook beats wait underneath for when it closes.
+	autoPlayReel?: boolean;
 }) {
 	const [beat, setBeat] = useState(0);
 	// The cinematic "watch the tale" reel, layered over the beats on demand.
 	const [reelOpen, setReelOpen] = useState(false);
 	// Restart the tale on every open — the season tab's "Hear the tale again"
 	// chip re-opens this modal, and a retold story must start at beat one.
+	// A first-visit open leads with the reel itself.
 	useEffect(() => {
 		if (visible) {
 			setBeat(0);
-			setReelOpen(false);
+			setReelOpen(autoPlayReel);
 		}
-	}, [visible]);
+	}, [visible, autoPlayReel]);
 	const B = BEATS[beat];
 	const isLast = beat === BEATS.length - 1;
 

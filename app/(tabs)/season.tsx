@@ -33,7 +33,7 @@ import { Glyph, type GlyphName } from "../../components/ui/Glyph";
 import { TickleIcon } from "../../components/ui/SnoutCoin";
 import { BattlePassSaleModal } from "../../components/BattlePassSaleModal";
 import { GreatHungerIntroModal } from "../../components/GreatHungerIntroModal";
-import { SeasonEndModal, DEV_PREVIEW_REWARD } from "../../components/SeasonEndModal";
+import { SeasonEndModal } from "../../components/SeasonEndModal";
 import { useSeasonEnd } from "../../hooks/useSeasonEnd";
 import { HungerHero } from "../../components/season2/HungerHero";
 import { SeasonStory } from "../../components/season2/SeasonStory";
@@ -1020,6 +1020,9 @@ export default function SeasonScreen() {
 	// visit to the Season-2 tab (AsyncStorage stamp, per-user) and re-opens any
 	// time from the hero's "Hear the tale again" chip.
 	const [introOpen, setIntroOpen] = useState(false);
+	// First-ever S2 visit leads with the cinematic tale reel inside the
+	// intro modal; retellings from the hero chip start on the storybook.
+	const [introReel, setIntroReel] = useState(false);
 	const [uid, setUid] = useState<string | null>(null);
 	// Sounder + war state drive the walkthrough stepper / live-war strip.
 	const crewHook = useCrew(s2);
@@ -1031,7 +1034,6 @@ export default function SeasonScreen() {
 	// flag + an unseen my_beta_reward grant (held 20260704400000). Dev preview
 	// chip mirrors the intro's escape hatch.
 	const seasonEnd = useSeasonEnd();
-	const [devSeasonEnd, setDevSeasonEnd] = useState(false);
 	// Persistent re-entry into the season-end recap. The auto-reveal only
 	// plays once (seen-stamp), so this lets a player look back at their
 	// Founding Herd rewards any time via the season-pass header icon.
@@ -1119,7 +1121,10 @@ export default function SeasonScreen() {
 		if (!s2 || !uid) return;
 		let cancelled = false;
 		AsyncStorage.getItem(`s2_intro_seen:${uid}`).then((v) => {
-			if (!cancelled && !v) setIntroOpen(true);
+			if (!cancelled && !v) {
+				setIntroReel(true); // first visit → the tale plays itself
+				setIntroOpen(true);
+			}
 		});
 		return () => {
 			cancelled = true;
@@ -1296,26 +1301,9 @@ export default function SeasonScreen() {
 						{s2 ? "The Great Hunger" : "Goblins vs Angels"}
 					</Text>
 					<View style={styles.titleRule} />
-					{__DEV__ && (
-						<Pressable
-							onPress={() => setDevSeasonEnd(true)}
-							hitSlop={8}
-							style={{
-								alignSelf: "flex-start",
-								marginTop: 8,
-								paddingHorizontal: 12,
-								paddingVertical: 5,
-								borderRadius: RADII.md,
-								borderWidth: 2,
-								borderColor: WHIMSY.ink,
-								backgroundColor: WHIMSY.sage,
-							}}
-						>
-							<Text style={{ fontFamily: FONTS.bodyExtra, fontSize: 11, color: WHIMSY.ink }}>
-								▶ preview: season-end rewards
-							</Text>
-						</Pressable>
-					)}
+					{/* (The dev "preview: season-end rewards" chip is gone — the
+					    real entry point is the pass header's recap icon, which
+					    only shows when a reward exists.) */}
 						{/* Season 1 only — S2's clock is the Hungerer's drain + the war
 						    cadence, not a doomsday date. */}
 						{!s2 && daysUntilJudgement() > 0 && (
@@ -1345,7 +1333,12 @@ export default function SeasonScreen() {
 					{s2 && (
 						<>
 							<SectionHeader kicker="the season boss" title="The Great Hungerer" />
-							<HungerHero onTellTale={() => setIntroOpen(true)} />
+							<HungerHero
+								onTellTale={() => {
+									setIntroReel(false);
+									setIntroOpen(true);
+								}}
+							/>
 
 							<View style={{ marginTop: 8 }}>
 								<SectionHeader
@@ -1383,11 +1376,8 @@ export default function SeasonScreen() {
 								const showUnlock =
 									PAID_BATTLE_PASS_ENABLED && IAP_ENABLED && !premium;
 								// The recap icon only earns its place when there's
-								// actually a Founding Herd grant to look back on
-								// (dev always sees it so the affordance can be
-								// exercised without a server grant — the modal
-								// falls back to DEV_PREVIEW_REWARD).
-								const showRecap = seasonEnd.reward != null || __DEV__;
+								// actually a Founding Herd grant to look back on.
+								const showRecap = seasonEnd.reward != null;
 								if (!showUnlock && !showRecap) return undefined;
 								return (
 									<>
@@ -1567,7 +1557,11 @@ export default function SeasonScreen() {
 			    (per-user AsyncStorage stamp) and re-opens from the hero's
 			    "Hear the tale again" chip. */}
 			{s2 && (
-				<GreatHungerIntroModal visible={introOpen} onDone={dismissIntro} />
+				<GreatHungerIntroModal
+					visible={introOpen}
+					onDone={dismissIntro}
+					autoPlayReel={introReel}
+				/>
 			)}
 
 			{/* The season guide — every visit while testing (GUIDE_EVERY_VISIT);
@@ -1580,17 +1574,18 @@ export default function SeasonScreen() {
 			)}
 
 			{/* Season-end reveal — the beta Founding Herd recap. Live when the
-			    season1_finale flag is on and the caller has an unseen grant;
-			    the dev chip previews with a stand-in reward. */}
-			<SeasonEndModal
-				visible={seasonEnd.show || devSeasonEnd || recapOpen}
-				reward={seasonEnd.reward ?? DEV_PREVIEW_REWARD}
-				onDone={() => {
-					setDevSeasonEnd(false);
-					setRecapOpen(false);
-					seasonEnd.dismiss();
-				}}
-			/>
+			    season1_finale flag is on and the caller has an unseen grant, or
+			    re-opened from the pass header's recap icon. */}
+			{seasonEnd.reward && (
+				<SeasonEndModal
+					visible={seasonEnd.show || recapOpen}
+					reward={seasonEnd.reward}
+					onDone={() => {
+						setRecapOpen(false);
+						seasonEnd.dismiss();
+					}}
+				/>
+			)}
 		</View>
 	);
 }
