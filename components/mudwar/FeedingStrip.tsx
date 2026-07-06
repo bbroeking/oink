@@ -1,7 +1,15 @@
 // The feeding strip — the war screen's 8h heartbeat entry point.
 //
 // Shows the current feeding's countdown ("He gorges again in 2h 10m"), whether
-// you've rooted this feeding, and opens the Truffle Patch as a modal card.
+// you've rooted this feeding, and opens THIS FEEDING'S GAME as a modal card.
+// Scuffles are a SET of games: each 8h window deterministically rotates
+// through the three lab games (windowIndex % 3 — same for the whole
+// barnyard, so crewmates share the same game each feeding):
+//   0 → The Truffle Patch (scratch the soil quietly)
+//   1 → The Deep Root     (root downward on your wind)
+//   2 → The Snout Hook    (drop the hook on the sweep)
+// All three run the same server session (seeded board, validated submit),
+// so the economy, co-op depth, and blessed digs are identical across games.
 // One rooting per member per feeding; a missed feeding costs nothing and is
 // never displayed as a loss (gift-not-guilt).
 
@@ -9,8 +17,20 @@ import { useEffect, useState } from "react";
 import { View, Text, Pressable, Modal, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useRooting } from "@/hooks/useRooting";
-import { feedingCountdown } from "@/utils/rooting";
+import { feedingCountdown, windowIndex } from "@/utils/rooting";
 import { TrufflePatch } from "./TrufflePatch";
+import { DeepRoot } from "./DeepRoot";
+import { SnoutHook } from "./SnoutHook";
+
+const GAMES = [
+	{ name: "The Truffle Patch", verb: "Root the patch" },
+	{ name: "The Deep Root", verb: "Root deep" },
+	{ name: "The Snout Hook", verb: "Drop the hook" },
+] as const;
+
+export function feedingGameIndex(win: number = windowIndex()): number {
+	return ((win % 3) + 3) % 3;
+}
 import {
 	FONTS,
 	WHIMSY,
@@ -24,6 +44,7 @@ export function FeedingStrip({ warId }: { warId: string }) {
 	const { session, dugThisWindow, open, submit, clear } = useRooting(warId);
 	const [note, setNote] = useState<string | null>(null);
 	const [countdown, setCountdown] = useState(feedingCountdown());
+	const game = GAMES[feedingGameIndex(session?.windowIndex ?? windowIndex())];
 
 	useEffect(() => {
 		const t = setInterval(() => setCountdown(feedingCountdown()), 30000);
@@ -52,13 +73,13 @@ export function FeedingStrip({ warId }: { warId: string }) {
 				<Text style={styles.line}>
 					{dugThisWindow
 						? `You rooted this feeding — next in ${countdown}`
-						: `He's gorging — the patch is soft. ${countdown} left`}
+						: `He's gorging — ${game.name} is on. ${countdown} left`}
 				</Text>
 				{!!note && <Text style={styles.note}>{note}</Text>}
 			</View>
 			{!dugThisWindow && (
 				<Pressable onPress={start} style={styles.btn} hitSlop={8}>
-					<Text style={styles.btnText}>Root the patch</Text>
+					<Text style={styles.btnText}>{game.verb}</Text>
 				</Pressable>
 			)}
 
@@ -70,16 +91,30 @@ export function FeedingStrip({ warId }: { warId: string }) {
 			>
 				<View style={styles.backdrop}>
 					<View style={styles.modalBody}>
-						{session && (
-							<TrufflePatch
-								session={session}
-								onSubmit={async (finds, actions) => {
-									const r = await submit(finds, actions);
-									return r.ok ? r.outcome : null;
-								}}
-								onClose={clear}
-							/>
-						)}
+						{session &&
+							(() => {
+								// This feeding's game — all three share the session
+								// contract, so the swap is presentation-only.
+								const props = {
+									session,
+									onSubmit: async (
+										finds: Parameters<typeof submit>[0],
+										actions: number
+									) => {
+										const r = await submit(finds, actions);
+										return r.ok ? r.outcome : null;
+									},
+									onClose: clear,
+								};
+								switch (feedingGameIndex(session.windowIndex)) {
+									case 1:
+										return <DeepRoot {...props} />;
+									case 2:
+										return <SnoutHook {...props} />;
+									default:
+										return <TrufflePatch {...props} />;
+								}
+							})()}
 					</View>
 				</View>
 			</Modal>

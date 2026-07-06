@@ -9,6 +9,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { getFriendIds } from "@/utils/friendships";
+import { fetchSounderStandings, type SpiritEntry } from "@/utils/mudWars";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { log } from "../utils/log";
 import { Icon } from "./ui/Icon";
@@ -25,7 +26,7 @@ import { FONTS, KICKER_TEXT, SHADOW_SM, TAB_SAFE, WHIMSY } from "@/constants/the
 const LEADERBOARD_PAGE_SIZE = 25;
 const LEADERBOARD_MAX_ROWS = 100;
 
-type Scope = "global" | "friends" | "alignment";
+type Scope = "global" | "friends" | "alignment" | "sounders";
 
 interface ActiveTitle {
 	id: string;
@@ -235,12 +236,14 @@ export function Leaderboard() {
 	const [loading, setLoading] = useState(true);
 	const [scope, setScope] = useState<Scope>("global");
 	const [myId, setMyId] = useState<string | null>(null);
+	const [sounderRows, setSounderRows] = useState<SpiritEntry[]>([]);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 	// Alignment isn't a thing in Season 2 — the greedy/generous board
 	// retires with Judgement Day, so its scope tab hides once s2 is live.
 	const s2 = useFeatureFlag("world_boss") || __DEV__;
+	// S2 swaps the alignment board for the Sounder rankings.
 	const scopes: Scope[] = s2
-		? ["global", "friends"]
+		? ["global", "friends", "sounders"]
 		: ["global", "friends", "alignment"];
 	// Paginated load-more state for the global scope. Friends scope is
 	// already bounded by the 100-friend cap; alignment is RPC-served
@@ -298,6 +301,16 @@ export function Leaderboard() {
 				data: { user },
 			} = await supabase.auth.getUser();
 			setMyId(user?.id ?? null);
+
+			if (scope === "sounders") {
+				// The Sounder rankings — crews by Spirit (sounder_standings),
+				// the board that replaced alignment for the new season.
+				setSounderRows(await fetchSounderStandings(50));
+				setLeaderboard([]);
+				setHasMore(false);
+				setLoading(false);
+				return;
+			}
 
 			if (scope === "alignment") {
 				const rows = await rpc<
@@ -483,6 +496,38 @@ export function Leaderboard() {
 						</Text>
 					</Sticker>
 				</View>
+			) : scope === "sounders" ? (
+				<ScrollView
+					style={styles.list}
+					contentContainerStyle={styles.listContent}
+				>
+					<Sticker color="paper" rotate={-0.4} radius={14} style={styles.listSticker}>
+						{sounderRows.map((c, i) => (
+							<View
+								key={c.crew_id}
+								style={[styles.row, i < sounderRows.length - 1 && styles.rowDivider]}
+							>
+								<Text style={styles.rowRank}>#{i + 1}</Text>
+								<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
+									<Text style={styles.rowName} numberOfLines={1}>
+										{c.name}
+									</Text>
+									<Text style={styles.rowSub} numberOfLines={1}>
+										{c.memberCount} {c.memberCount === 1 ? "snout" : "snouts"}
+										{" · "}
+										{c.kindness} kind · {c.activity} fierce
+									</Text>
+								</View>
+								<Text style={styles.sounderSpirit}>{c.spirit}</Text>
+							</View>
+						))}
+						{sounderRows.length === 0 && (
+							<Text style={styles.rowSub}>
+								No Sounders on the board yet — join one from the Sounder tab.
+							</Text>
+						)}
+					</Sticker>
+				</ScrollView>
 			) : scope === "alignment" ? (
 				// Alignment leaderboard — TWO independent boards
 				// (Generous top + Greedy top), each with its own
@@ -624,6 +669,12 @@ export function Leaderboard() {
 }
 
 const styles = StyleSheet.create({
+	sounderSpirit: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 18,
+		color: WHIMSY.ink,
+		marginLeft: 8,
+	},
 	container: { flex: 1 },
 	toggleWrap: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 2 },
 	toggle: { flexDirection: "row", padding: 4, gap: 4 },
