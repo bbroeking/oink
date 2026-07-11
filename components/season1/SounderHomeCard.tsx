@@ -183,6 +183,13 @@ function CrewedHome({
 					</Button>
 				)}
 				{!!cta.note && <Text style={styles.note}>{cta.note}</Text>}
+				{/* Dev escape hatch: play the dig any time (fresh practice board,
+				    mints nothing) — the phase gate makes on-device testing painful. */}
+				{__DEV__ && cta.startPractice && (
+					<Pressable onPress={cta.startPractice} hitSlop={6}>
+						<Text style={styles.burrowLink}>dev · practice dig ›</Text>
+					</Pressable>
+				)}
 				{/* The relic shelf — the dig's collection page (Part D). */}
 				<Pressable onPress={() => router.push("/dig-collection")} hitSlop={6}>
 					<Text style={styles.burrowLink}>the Burrow Book ›</Text>

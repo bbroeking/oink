@@ -210,6 +210,12 @@ export const HAT_IMAGES: Record<string, number> = {
 	particle_bubble: require("../assets/images/tickle-particles/bubble.png"),
 	pumpkin_patch:   require("../assets/images/backgrounds/pumpkin_patch.png"),
 	library_nook:    require("../assets/images/backgrounds/library_nook.png"),
+	// Release Party Crown — legendary grant-only hat, gifted via a Golden Ticket
+	// redemption at the launch party (never sold). Seeded server-side in
+	// supabase migration 20260733000000_release_party_crown.sql.
+	// ⚠️ ANCHOR GATE: needs one placement pass in tools/placement_studio
+	// (http://127.0.0.1:8124/) before it sits right on Rosie's head.
+	release_party_crown: require("../assets/images/hats/release_party_crown.png"),
 };
 
 // Slop Club members-only art — AUTO-WIRED from constants/membersImages.generated

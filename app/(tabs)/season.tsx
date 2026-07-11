@@ -1683,7 +1683,7 @@ export default function SeasonScreen() {
 										{showVip && (
 											<>
 												<Text style={styles.vipKicker}>★ VIP</Text>
-												{IAP_ENABLED ? (
+												{IAP_ENABLED && PURCHASES_LIVE ? (
 													<Pressable
 														onPress={handleUnlockPremium}
 														style={styles.unlockBtn}

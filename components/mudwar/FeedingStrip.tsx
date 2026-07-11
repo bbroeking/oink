@@ -47,6 +47,9 @@ export interface FeedingCta {
 	note: string | null;
 	/** Open the Truffle Patch dig for this feeding. */
 	start: () => Promise<void>;
+	/** DEV-ONLY: open a practice dig any time (fresh board each open, mints
+	 *  nothing, ignores the phase gate). Undefined in release builds. */
+	startPractice?: () => void;
 	/** The dig modal — render it once beside whatever trigger you show. */
 	modal: ReactNode;
 }
@@ -60,7 +63,8 @@ function ctaClock() {
 }
 
 export function useFeedingCta(onDug?: () => void): FeedingCta {
-	const { session, dugThisWindow, noCrew, open, submit, clear } = useRooting();
+	const { session, dugThisWindow, noCrew, open, openPractice, submit, clear } =
+		useRooting();
 	const [note, setNote] = useState<string | null>(null);
 	const [clock, setClock] = useState(ctaClock);
 
@@ -114,7 +118,17 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 		</Modal>
 	);
 
-	return { dugThisWindow, noCrew, phaseOpen, countdown, note, start, modal };
+	return {
+		dugThisWindow,
+		noCrew,
+		phaseOpen,
+		countdown,
+		note,
+		start,
+		// Dev escape hatch for testing the dig outside the 4h open band.
+		startPractice: __DEV__ ? () => openPractice() : undefined,
+		modal,
+	};
 }
 
 export function FeedingStrip({

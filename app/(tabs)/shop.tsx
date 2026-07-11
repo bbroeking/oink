@@ -353,26 +353,6 @@ function ShopCard({
 }
 
 const shopCardStyles = StyleSheet.create({
-	// Golden Ticket entry row at the shop's foot.
-	codeRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		marginTop: SPACE.lg,
-		paddingHorizontal: SPACE.lg,
-		paddingVertical: SPACE.md,
-		borderRadius: RADII.md,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		...SHADOW_SM,
-	},
-	codeRowText: {
-		flex: 1,
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
 	legend: {
 		flexDirection: "row",
 		flexWrap: "wrap",
@@ -966,6 +946,23 @@ export default function ShopScreen() {
 						<Text style={styles.kicker}>★ your closet</Text>
 						<Text style={styles.title}>Shop</Text>
 					</View>
+					{/* Golden Ticket entry — a compact chip-chrome icon in the
+					    header (ink border + paper face + SHADOW_SM, matching the
+					    header-adjacent chips). Routes to the scan-code screen
+					    (camera + manual entry). Was a footer text row; promoted
+					    to the top so redeeming a launch-party gift is findable. */}
+					<Pressable
+						onPress={() => router.push("/scan-code")}
+						hitSlop={12}
+						accessibilityRole="button"
+						accessibilityLabel="Redeem a Golden Ticket"
+						style={({ pressed }) => [
+							styles.ticketBtn,
+							pressed && { opacity: 0.7 },
+						]}
+					>
+						<Glyph name="gift" size={20} />
+					</Pressable>
 					<View style={styles.balance}>
 						<SnoutCoin size={20} />
 						<Text style={styles.balanceText}>{counter.toLocaleString()}</Text>
@@ -1052,22 +1049,6 @@ export default function ShopScreen() {
 								/>
 							</>
 						)}
-						{/* Golden Ticket entry — a small "Have a code?" row at the
-						    foot of the shop, thematically where getting-stuff lives.
-						    Routes to the scan-code screen (camera + manual entry). */}
-						<Pressable
-							onPress={() => router.push("/scan-code")}
-							style={({ pressed }) => [
-								shopCardStyles.codeRow,
-								pressed && { opacity: 0.7 },
-							]}
-						>
-							<Glyph name="gift" size={20} />
-							<Text style={shopCardStyles.codeRowText}>
-								Have a Golden Ticket? Redeem a code
-							</Text>
-							<Glyph name="arrowRight" size={16} style={{ opacity: 0.6 }} />
-						</Pressable>
 					</ScrollView>
 				) : view === "browse" ? (
 					<FlatList
@@ -1220,6 +1201,21 @@ const styles = StyleSheet.create({
 	},
 	kicker: { ...KICKER_PILL, marginBottom: SPACE.xs },
 	title: { fontSize: 32, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
+	// Golden Ticket chip — square paper-face icon button next to the
+	// balance pocket. Ink border + SHADOW_SM chrome so it reads as a
+	// tappable chip, not a floating glyph.
+	ticketBtn: {
+		width: 40,
+		height: 40,
+		borderRadius: RADII.md,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		alignItems: "center",
+		justifyContent: "center",
+		marginRight: SPACE.sm,
+		...SHADOW_SM,
+	},
 	// Snouts pocket — tilted sun sticker (matches the redesign's
 	// "snouts pocket" pattern: makes the balance feel like a chip
 	// you keep, not a system bar).

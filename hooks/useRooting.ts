@@ -279,5 +279,26 @@ export function useRooting() {
 
 	const clear = useCallback(() => setSession(null), []);
 
-	return { session, dugThisWindow, noCrew, open, submit, clear };
+	// DEV-ONLY practice opener: dig any time, ignoring the 4h-open/4h-guarded
+	// phase gate and the one-dig-per-feeding rule. Seeded off the current
+	// minute so every open deals a fresh board; practice sessions mint nothing
+	// (submit()'s practice branch), so this can never touch the real economy.
+	// Call sites must gate on __DEV__ — this hook stays behavior-neutral.
+	const openPractice = useCallback((): RootingSession => {
+		const s: RootingSession = {
+			seed: practiceSeed("dev", Math.floor(Date.now() / 60000)),
+			windowIndex: win,
+			windowEndsAtMs: windowEndsAtMs(win),
+			practice: true,
+			coop: false,
+			blessed: false,
+			crewDug: [],
+			uniqueId: null,
+			carry: null,
+		};
+		setSession(s);
+		return s;
+	}, [win]);
+
+	return { session, dugThisWindow, noCrew, open, openPractice, submit, clear };
 }

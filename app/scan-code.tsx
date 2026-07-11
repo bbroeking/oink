@@ -22,9 +22,10 @@ import {
 	Image,
 	Linking,
 	ScrollView,
+	KeyboardAvoidingView,
+	Platform,
 } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { CameraView, useCameraPermissions } from "expo-camera";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -53,6 +54,42 @@ import {
 	TAB_SAFE,
 } from "@/constants/theme";
 
+// ── expo-camera, resolved defensively ───────────────────────────────────────
+// The CURRENT dev client is built without the expo-camera native module, so a
+// static `import { CameraView, useCameraPermissions } from "expo-camera"` blows
+// up (the JS require pulls in a TurboModule that isn't linked) — a blank void /
+// red box before the manual-entry card ever renders. Resolve the module at load
+// time inside a try/catch: if it's absent, `Camera` is null and we substitute a
+// no-op permission hook that reports "no camera on this device". The manual-code
+// card is always usable, so a missing native module degrades gracefully instead
+// of crashing. Once the native module ships in a future build, the live scanner
+// lights up with no code change.
+//
+// The substitute hook is chosen ONCE here (module scope), so calling it
+// unconditionally in the component stays Rules-of-Hooks-safe.
+type CameraModule = {
+	CameraView: React.ComponentType<any>;
+	useCameraPermissions: () => [
+		{ granted: boolean; canAskAgain: boolean } | null,
+		() => Promise<unknown>,
+	];
+};
+let Camera: CameraModule | null = null;
+try {
+	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	const mod = require("expo-camera");
+	if (mod?.CameraView && mod?.useCameraPermissions) {
+		Camera = mod as CameraModule;
+	}
+} catch {
+	Camera = null;
+}
+// When the native module is missing, a permission that never grants and can
+// never be asked — CameraPane collapses to the "no camera, type instead" card.
+const useCameraPermissionsSafe: CameraModule["useCameraPermissions"] =
+	Camera?.useCameraPermissions ??
+	(() => [{ granted: false, canAskAgain: false }, async () => undefined]);
+
 // The shape redeem_code() returns on ok:true (spec §1b).
 type Reveal = {
 	kind: string;
@@ -66,7 +103,7 @@ type Reveal = {
 
 export default function ScanCodeScreen() {
 	const params = useLocalSearchParams<{ code?: string }>();
-	const [permission, requestPermission] = useCameraPermissions();
+	const [permission, requestPermission] = useCameraPermissionsSafe();
 
 	const [manual, setManual] = useState("");
 	const [busy, setBusy] = useState(false);
@@ -175,36 +212,46 @@ export default function ScanCodeScreen() {
 						title="Redeem a Code"
 						onBack={() => router.back()}
 					/>
-					<ScrollView
-						contentContainerStyle={styles.scroll}
-						showsVerticalScrollIndicator={false}
-						keyboardShouldPersistTaps="handled"
+					<KeyboardAvoidingView
+						style={{ flex: 1 }}
+						behavior={Platform.OS === "ios" ? "padding" : undefined}
 					>
-						{reveal ? (
-							<RevealCard reveal={reveal} onDone={() => router.back()} />
-						) : (
-							<>
-								<CameraPane
-									permission={permission}
-									requestPermission={requestPermission}
-									onScanned={onScanned}
-								/>
-								<ManualEntry
-									value={manual}
-									onChange={(t) => {
-										setManual(t);
-										if (error) setError(null);
-										// Editing clears the failed-payload guard so a manual
-										// re-submit isn't suppressed by the scanner cooldown.
-										lastFailedPayload.current = null;
-									}}
-									onSubmit={() => submit(manual)}
-									busy={busy}
-									error={error}
-								/>
-							</>
-						)}
-					</ScrollView>
+						<ScrollView
+							contentContainerStyle={[
+								styles.scroll,
+								// Center the reveal card in the available height; the
+								// scan/type flow flows from the top.
+								reveal && styles.scrollCentered,
+							]}
+							showsVerticalScrollIndicator={false}
+							keyboardShouldPersistTaps="handled"
+						>
+							{reveal ? (
+								<RevealCard reveal={reveal} onDone={() => router.back()} />
+							) : (
+								<>
+									<CameraPane
+										permission={permission}
+										requestPermission={requestPermission}
+										onScanned={onScanned}
+									/>
+									<ManualEntry
+										value={manual}
+										onChange={(t) => {
+											setManual(t);
+											if (error) setError(null);
+											// Editing clears the failed-payload guard so a manual
+											// re-submit isn't suppressed by the scanner cooldown.
+											lastFailedPayload.current = null;
+										}}
+										onSubmit={() => submit(manual)}
+										busy={busy}
+										error={error}
+									/>
+								</>
+							)}
+						</ScrollView>
+					</KeyboardAvoidingView>
 				</SafeAreaView>
 			</View>
 		</>
@@ -219,10 +266,25 @@ function CameraPane({
 	requestPermission,
 	onScanned,
 }: {
-	permission: ReturnType<typeof useCameraPermissions>[0];
-	requestPermission: ReturnType<typeof useCameraPermissions>[1];
+	permission: ReturnType<CameraModule["useCameraPermissions"]>[0];
+	requestPermission: ReturnType<CameraModule["useCameraPermissions"]>[1];
 	onScanned: (data: string) => void;
 }) {
+	// No native camera module in this build → collapse straight to the gentle
+	// "type it instead" card. The manual field below carries the whole flow.
+	if (!Camera) {
+		return (
+			<Sticker color="paper" rotate={0.4} radius={RADII.lg} style={styles.permCard}>
+				<Glyph name="search" size={36} style={{ opacity: 0.9, marginBottom: 8 }} />
+				<Text style={styles.permTitle}>Type your code below</Text>
+				<Text style={styles.permSub}>
+					The camera scanner isn't available on this device — pop your Golden
+					Ticket code into the field below.
+				</Text>
+			</Sticker>
+		);
+	}
+
 	// Permission still resolving.
 	if (!permission) {
 		return (
@@ -275,13 +337,14 @@ function CameraPane({
 	}
 
 	// Granted → live scanner.
+	const CameraView = Camera.CameraView;
 	return (
 		<View style={styles.cameraFrame}>
 			<CameraView
 				style={StyleSheet.absoluteFill}
 				facing="back"
 				barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-				onBarcodeScanned={({ data }) => onScanned(data)}
+				onBarcodeScanned={({ data }: { data: string }) => onScanned(data)}
 			/>
 			<View pointerEvents="none" style={styles.reticle} />
 			<Text style={styles.scanHint}>hold a Golden Ticket in the frame</Text>
@@ -412,6 +475,9 @@ function RevealCard({ reveal, onDone }: { reveal: Reveal; onDone: () => void }) 
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
 	scroll: { paddingHorizontal: PAGE_PAD, paddingBottom: TAB_SAFE },
+	// When the reveal card is up it's the only content — grow to fill and
+	// center it vertically so the gift sits mid-screen, not pinned to the top.
+	scrollCentered: { flexGrow: 1, justifyContent: "center" },
 	// Camera pane — a tall rounded ink-framed window.
 	cameraFrame: {
 		aspectRatio: 1,

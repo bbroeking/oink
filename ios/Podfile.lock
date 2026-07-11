@@ -227,6 +227,10 @@ PODS:
     - ExpoModulesCore
   - ExpoBlur (14.0.3):
     - ExpoModulesCore
+  - ExpoCamera (16.0.18):
+    - ExpoModulesCore
+    - ZXingObjC/OneD
+    - ZXingObjC/PDF417
   - ExpoClipboard (7.0.1):
     - ExpoModulesCore
   - ExpoFileSystem (18.0.12):
@@ -2183,6 +2187,11 @@ PODS:
   - Sentry/HybridSDK (8.48.0)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
+  - ZXingObjC/Core (3.6.9)
+  - ZXingObjC/OneD (3.6.9):
+    - ZXingObjC/Core
+  - ZXingObjC/PDF417 (3.6.9):
+    - ZXingObjC/Core
 
 DEPENDENCIES:
   - "boost (from `../node_modules/.pnpm/react-native@0.76.9_patch_hash=dc8442249a990b60a38e8845892fdaa5c34d009a59af13671696ee7a_5edebc48ce6715c97244e4421818cbc1/node_modules/react-native/third-party-podspecs/boost.podspec`)"
@@ -2201,6 +2210,7 @@ DEPENDENCIES:
   - "ExpoAsset (from `../node_modules/.pnpm/expo-asset@11.0.5_expo@52.0.49_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@_7de8e0c0085ac9697f3b70a585307aa7/node_modules/expo-asset/ios`)"
   - "ExpoAudio (from `../node_modules/.pnpm/expo-audio@0.3.5_expo@52.0.49_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@7_d19e70fa6fe0e1357c7a0a4b4995900f/node_modules/expo-audio/ios`)"
   - "ExpoBlur (from `../node_modules/.pnpm/expo-blur@14.0.3_expo@52.0.49_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@7_eb047bd67c92b5d773479f171be78d62/node_modules/expo-blur/ios`)"
+  - "ExpoCamera (from `../node_modules/.pnpm/expo-camera@16.0.18_cf0efc839e343127644273d1afec898e/node_modules/expo-camera/ios`)"
   - "ExpoClipboard (from `../node_modules/.pnpm/expo-clipboard@7.0.1_expo@52.0.49_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+co_3e37b7c5c56be698810d56a9f1e6c907/node_modules/expo-clipboard/ios`)"
   - "ExpoFileSystem (from `../node_modules/.pnpm/expo-file-system@18.0.12_expo@52.0.49_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babe_c5e061d4e534b358fdb97388945120d6/node_modules/expo-file-system/ios`)"
   - "ExpoFont (from `../node_modules/.pnpm/expo-font@13.0.4_expo@52.0.49_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@7_0bd0383ce91609685fe328dc29610504/node_modules/expo-font/ios`)"
@@ -2301,6 +2311,7 @@ SPEC REPOS:
     - RiveRuntime
     - Sentry
     - SocketRocket
+    - ZXingObjC
 
 EXTERNAL SOURCES:
   boost:
@@ -2335,6 +2346,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/.pnpm/expo-audio@0.3.5_expo@52.0.49_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@7_d19e70fa6fe0e1357c7a0a4b4995900f/node_modules/expo-audio/ios"
   ExpoBlur:
     :path: "../node_modules/.pnpm/expo-blur@14.0.3_expo@52.0.49_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+core@7_eb047bd67c92b5d773479f171be78d62/node_modules/expo-blur/ios"
+  ExpoCamera:
+    :path: "../node_modules/.pnpm/expo-camera@16.0.18_cf0efc839e343127644273d1afec898e/node_modules/expo-camera/ios"
   ExpoClipboard:
     :path: "../node_modules/.pnpm/expo-clipboard@7.0.1_expo@52.0.49_@babel+core@7.26.0_@babel+preset-env@7.26.0_@babel+co_3e37b7c5c56be698810d56a9f1e6c907/node_modules/expo-clipboard/ios"
   ExpoFileSystem:
@@ -2530,6 +2543,7 @@ SPEC CHECKSUMS:
   ExpoAsset: 48386d40d53a8c1738929b3ed509bcad595b5516
   ExpoAudio: 5fe5fc98236b820c4affd09e0631de1c7a7c299b
   ExpoBlur: 392c1207f71d0ecf22371621c1fbd44ba84d9742
+  ExpoCamera: 0a3e78de7b1ca8c438ee6784fa6f22c5b1b36966
   ExpoClipboard: 44fd1c8959ee8f6175d059dc011b154c9709a969
   ExpoFileSystem: 42d363d3b96f9afab980dcef60d5657a4443c655
   ExpoFont: f354e926f8feae5e831ec8087f36652b44a0b188
@@ -2625,6 +2639,7 @@ SPEC CHECKSUMS:
   Sentry: 1ca8405451040482877dcd344dfa3ef80b646631
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: feb4910aba9742cfedc059e2b2902e22ffe9954a
+  ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
 PODFILE CHECKSUM: 3a3c4e07ce37b8beebe52aa38adf204776efdec9
 
