@@ -1192,20 +1192,15 @@ function RevealedCell({
 		);
 	}
 	if (kind === "truffle_l" || kind === "truffle_d") {
-		// A truffle PIECE still embedded in the ground: only its top peeks out of
-		// a mud mound. Playtest proved a free-floating (even dimmed) truffle image
-		// reads as a WHOLE truffle — two peeked cells looked like "2 truffles
-		// found" while the pouch honestly said 0. The mound makes "not yours yet"
-		// visible; the whole prize only pops once the cluster fully excavates.
+		// A truffle PIECE: smaller + dimmer than the cluster's finished BigTruffle
+		// pop (the mound experiment read as a broken blob — founder killed it).
+		// "Not yours yet" is carried by the whisper line + the '​N of 2' copy.
 		return (
-			<View style={styles.chunkWrap}>
-				<Image
-					source={PATCH_ART.truffle}
-					style={[styles.truffleChunk, { transform: [{ translateY: size * 0.06 }] }]}
-					resizeMode="contain"
-				/>
-				<View style={styles.chunkMound} />
-			</View>
+			<Image
+				source={PATCH_ART.truffle}
+				style={[styles.truffleChunk, { transform: [{ translateY: size * 0.06 }] }]}
+				resizeMode="contain"
+			/>
 		);
 	}
 	if (kind === "shimmer") return <ShimmerFind size={size} />;
@@ -1509,29 +1504,7 @@ const styles = StyleSheet.create({
 	findImg: { width: "82%", height: "82%" },
 	// A half-sunk truffle chunk: smaller + dimmer than a full find (the nudge-down
 	// is applied inline off the tile size), so a peeked cell reads as a piece.
-	// Piece-still-buried: the truffle sits low in the cell with a mud mound
-	// covering its lower half, so a peeked cell can't be mistaken for a prize.
-	chunkWrap: {
-		width: "100%",
-		height: "100%",
-		alignItems: "center",
-		justifyContent: "center",
-		overflow: "hidden",
-	},
 	truffleChunk: { width: "62%", height: "62%", opacity: 0.95 },
-	// A LOW mound — a lip of dirt over the truffle's base. The first cut was
-	// mound-dominant and swallowed the gold (founder: "this looks broken");
-	// the gold is the message, the dirt is the caveat.
-	chunkMound: {
-		position: "absolute",
-		bottom: "10%",
-		width: "60%",
-		height: "18%",
-		borderRadius: 999,
-		backgroundColor: PATCH_ART.mud[1],
-		borderWidth: 1,
-		borderColor: "rgba(42,31,21,0.18)",
-	},
 	// The one big dug-up truffle sitting over a claimed cluster.
 	bigTruffleWrap: {
 		position: "absolute",
