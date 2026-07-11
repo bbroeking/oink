@@ -1,36 +1,26 @@
-// The feeding strip — the war screen's 8h heartbeat entry point.
+// The feeding dig — the 8h dig heartbeat entry point.
 //
-// Shows the current feeding's countdown ("He gorges again in 2h 10m"), whether
-// you've rooted this feeding, and opens THIS FEEDING'S GAME as a modal card.
-// Scuffles are a SET of games: each 8h window deterministically rotates
-// through the three lab games (windowIndex % 3 — same for the whole
-// barnyard, so crewmates share the same game each feeding):
-//   0 → The Truffle Patch (scratch the soil quietly)
-//   1 → The Deep Root     (root downward on your wind)
-//   2 → The Snout Hook    (drop the hook on the sweep)
-// All three run the same server session (seeded board, validated submit),
-// so the economy, co-op depth, and blessed digs are identical across games.
-// One rooting per member per feeding; a missed feeding costs nothing and is
-// never displayed as a loss (gift-not-guilt).
+// `useFeedingCta` is the reusable core: it owns the current-feeding countdown,
+// the "already rooted" state, and the Truffle Patch modal (open/submit) — so any
+// surface can render its OWN trigger (a Button, a strip) and drop the returned
+// `modal` element beside it. `FeedingStrip` is the original chrome (a cream strip
+// with an inline "Root the patch" button); the SounderHomeCard consumes the hook
+// directly for its play/cooldown line.
+//
+// Digging is crew-gated and purely co-op vs the Great Hungerer: one rooting per
+// member per feeding; a missed feeding costs nothing and is never displayed as a
+// loss (gift-not-guilt).
 
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { View, Text, Pressable, Modal, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useRooting } from "@/hooks/useRooting";
-import { feedingCountdown, windowIndex } from "@/utils/rooting";
+import {
+	nextOpenCountdown,
+	patchPhaseOpen,
+	phaseClosesCountdown,
+} from "@/utils/rooting";
 import { TrufflePatch } from "./TrufflePatch";
-import { DeepRoot } from "./DeepRoot";
-import { SnoutHook } from "./SnoutHook";
-
-const GAMES = [
-	{ name: "The Truffle Patch", verb: "Root the patch" },
-	{ name: "The Deep Root", verb: "Root deep" },
-	{ name: "The Snout Hook", verb: "Drop the hook" },
-] as const;
-
-export function feedingGameIndex(win: number = windowIndex()): number {
-	return ((win % 3) + 3) % 3;
-}
 import {
 	FONTS,
 	WHIMSY,
@@ -40,21 +30,42 @@ import {
 	MODAL_BACKDROP_BG,
 } from "@/constants/theme";
 
-export function FeedingStrip({
-	warId,
-	onReclaim,
-}: {
-	warId: string;
-	// Fired when a dig banks joy back — the war page ticks the Hunger down.
-	onReclaim?: () => void;
-}) {
-	const { session, dugThisWindow, open, submit, clear } = useRooting(warId);
+export interface FeedingCta {
+	/** True once the caller has rooted this feeding window. */
+	dugThisWindow: boolean;
+	/** True when the caller has no Sounder (digging is crew-gated). */
+	noCrew: boolean;
+	/** True while the patch is diggable (first 4h of the window); GUARDED after. */
+	phaseOpen: boolean;
+	/**
+	 * The live line for the current state:
+	 *  open + not dug → time until the patch closes;
+	 *  otherwise      → time until the patch next opens.
+	 */
+	countdown: string;
+	/** A gentle inline note after a failed open (already rooted / no crew / retry). */
+	note: string | null;
+	/** Open the Truffle Patch dig for this feeding. */
+	start: () => Promise<void>;
+	/** The dig modal — render it once beside whatever trigger you show. */
+	modal: ReactNode;
+}
+
+function ctaClock() {
+	const open = patchPhaseOpen();
+	return {
+		phaseOpen: open,
+		countdown: open ? phaseClosesCountdown() : nextOpenCountdown(),
+	};
+}
+
+export function useFeedingCta(onDug?: () => void): FeedingCta {
+	const { session, dugThisWindow, noCrew, open, submit, clear } = useRooting();
 	const [note, setNote] = useState<string | null>(null);
-	const [countdown, setCountdown] = useState(feedingCountdown());
-	const game = GAMES[feedingGameIndex(session?.windowIndex ?? windowIndex())];
+	const [clock, setClock] = useState(ctaClock);
 
 	useEffect(() => {
-		const t = setInterval(() => setCountdown(feedingCountdown()), 30000);
+		const t = setInterval(() => setClock(ctaClock()), 15000);
 		return () => clearInterval(t);
 	}, []);
 
@@ -66,12 +77,56 @@ export function FeedingStrip({
 			setNote(
 				r.reason === "already_rooted"
 					? "You rooted this feeding — he gorges again soon."
-					: r.reason === "war_over" || r.reason === "war_not_active"
-					? "The mire has settled — no patch to root."
+					: r.reason === "no_crew"
+					? "Join a Sounder to dig at the feeding."
+					: r.reason === "patch_closed"
+					? `He's guarding the patch — it opens in ${nextOpenCountdown()}.`
 					: "The patch is being stubborn — try again."
 			);
 		}
 	};
+
+	const { phaseOpen, countdown } = clock;
+
+	const modal = (
+		<Modal visible={!!session} transparent animationType="fade" onRequestClose={clear}>
+			<View style={styles.backdrop}>
+				<View style={styles.modalBody}>
+					{/* Leave without submitting — the session keeps its seed
+					    server-side, so coming back this feeding resumes the
+					    same board. */}
+					<Pressable onPress={clear} style={styles.dismissRow} hitSlop={8}>
+						<Text style={styles.dismissText}>leave it for now ›</Text>
+					</Pressable>
+					{session && (
+						<TrufflePatch
+							session={session}
+							onSubmit={async (finds, actions, missed) => {
+								const r = await submit(finds, actions, missed);
+								if (r.ok && r.outcome && !r.outcome.practice) onDug?.();
+								return r.ok ? r.outcome : null;
+							}}
+							onClose={clear}
+						/>
+					)}
+				</View>
+			</View>
+		</Modal>
+	);
+
+	return { dugThisWindow, noCrew, phaseOpen, countdown, note, start, modal };
+}
+
+export function FeedingStrip({
+	onDug,
+}: {
+	// Fired after ANY successful real submit (banked or drained) — the season
+	// tab uses it to refresh the meter / herd presence / milestones, which
+	// otherwise sit stale under this modal (focus never changes).
+	onDug?: () => void;
+}) {
+	const { dugThisWindow, noCrew, phaseOpen, countdown, note, start, modal } =
+		useFeedingCta(onDug);
 
 	return (
 		<View style={styles.wrap}>
@@ -79,60 +134,19 @@ export function FeedingStrip({
 				<Text style={styles.kicker}>THE FEEDING</Text>
 				<Text style={styles.line}>
 					{dugThisWindow
-						? `You rooted this feeding — next in ${countdown}`
-						: `He's gorging — ${game.name} is on. ${countdown} left`}
+						? `You rooted this feeding — the patch opens again in ${countdown}`
+						: phaseOpen
+						? `He's gorging — the patch is open. ${countdown} left`
+						: `He's guarding the patch — it opens in ${countdown}`}
 				</Text>
 				{!!note && <Text style={styles.note}>{note}</Text>}
 			</View>
-			{!dugThisWindow && (
+			{!dugThisWindow && !noCrew && phaseOpen && (
 				<Pressable onPress={start} style={styles.btn} hitSlop={8}>
-					<Text style={styles.btnText}>{game.verb}</Text>
+					<Text style={styles.btnText}>Root the patch</Text>
 				</Pressable>
 			)}
-
-			<Modal
-				visible={!!session}
-				transparent
-				animationType="fade"
-				onRequestClose={clear}
-			>
-				<View style={styles.backdrop}>
-					<View style={styles.modalBody}>
-						{/* Leave without submitting — the session keeps its seed
-						    server-side, so coming back this feeding resumes the
-						    same board. One dismiss for all three games. */}
-						<Pressable onPress={clear} style={styles.dismissRow} hitSlop={8}>
-							<Text style={styles.dismissText}>leave it for now ›</Text>
-						</Pressable>
-						{session &&
-							(() => {
-								// This feeding's game — all three share the session
-								// contract, so the swap is presentation-only.
-								const props = {
-									session,
-									onSubmit: async (
-										finds: Parameters<typeof submit>[0],
-										actions: number
-									) => {
-										const r = await submit(finds, actions);
-										// A dig that banked joy ticks the Hunger down on the war page.
-										if (r.ok && r.outcome && r.outcome.mud > 0) onReclaim?.();
-										return r.ok ? r.outcome : null;
-									},
-									onClose: clear,
-								};
-								switch (feedingGameIndex(session.windowIndex)) {
-									case 1:
-										return <DeepRoot {...props} />;
-									case 2:
-										return <SnoutHook {...props} />;
-									default:
-										return <TrufflePatch {...props} />;
-								}
-							})()}
-					</View>
-				</View>
-			</Modal>
+			{modal}
 		</View>
 	);
 }

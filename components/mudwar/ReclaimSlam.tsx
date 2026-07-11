@@ -1,5 +1,5 @@
 // ── ReclaimSlam ──────────────────────────────────────────────────────────────
-// The shared "slam" payoff for every scuffle minigame: the moment a scoop lands,
+// The shared "slam" payoff for the dig minigame: the moment a scoop lands,
 // a burst of golden joy-motes rips FROM a Hungerer-side anchor and flies TO the
 // player's tally — the earned points made visible as joy pried back from the
 // Great Hunger (see SKILL.md 2026-07-06 decision). Reuses the Barn HeartFloats

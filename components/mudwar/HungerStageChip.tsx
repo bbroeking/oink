@@ -1,8 +1,5 @@
-// The Hungerer's stage, as a small chip for the war screen's header zone —
-// "He's Peckish." — so every war visibly connects to the season boss. Styled
-// after FrontBoard's weather modChip so the two chips read as siblings.
-// EXPORT-ONLY: the parent (app/mud-war.tsx) mounts it; see
-// docs/mudwar-ui-integration.md.
+// The Hungerer's stage, as a small chip — "He's Peckish." — so a season
+// surface visibly connects to the boss. EXPORT-ONLY: a parent mounts it.
 
 import { View, Text, StyleSheet } from "react-native";
 import { FONTS, WHIMSY } from "@/constants/theme";

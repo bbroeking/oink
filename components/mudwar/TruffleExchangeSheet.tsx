@@ -26,7 +26,7 @@ import { HAT_IMAGES, RARITY_COLORS, type Rarity } from "@/constants/hats";
 import {
 	RARITY_TO_TIER,
 	EXCHANGE_TIER_LABEL,
-} from "@/constants/mudFights";
+} from "@/constants/dig";
 import { restockWhisper } from "@/utils/truffleExchange";
 import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
 import { useTruffles } from "@/hooks/useTruffles";
@@ -60,7 +60,7 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 		setConfirming(null);
 		if (r.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-			setNote("Traded. It's yours — wear it muddy.");
+			setNote("Traded. It's yours — wear it proud.");
 		} else {
 			setNote(
 				r.reason === "insufficient"
@@ -172,7 +172,7 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 					)}
 
 					{note ? <Text style={styles.note}>{note}</Text> : null}
-					<Text style={styles.footnote}>Earned in the bog, never bought.</Text>
+					<Text style={styles.footnote}>Earned at the feedings, never bought.</Text>
 
 					<Pressable onPress={onClose} style={styles.doneBtn}>
 						<Text style={styles.doneText}>Done</Text>

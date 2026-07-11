@@ -24,7 +24,9 @@ CREATE TABLE public.profiles (
 	tickles_earned int NOT NULL DEFAULT 0,
 	alignment_max_pos int NOT NULL DEFAULT 0,
 	alignment_max_neg int NOT NULL DEFAULT 0,
-	counter int NOT NULL DEFAULT 0
+	counter int NOT NULL DEFAULT 0,
+	golden_truffles int NOT NULL DEFAULT 0,   -- 20260704100000 truffle pouch (for the coop-dig rebuild)
+	active_title_id text
 );
 
 -- Legacy achievement counter sources (my_achievements is SQL-language, so
@@ -229,3 +231,82 @@ LANGUAGE sql AS $$ SELECT '{}'::jsonb $$;
 CREATE TABLE public.user_hats (
 	user_id uuid, hat_id text, PRIMARY KEY (user_id, hat_id)
 );
+
+-- hats — minimal shape for the race podium fallback (20260719): one random
+-- unowned war_exclusive item (the 20260660 spoils-catalog flag). Exactly three
+-- catalog rows so the owns-everything fallback is reachable in a smoke.
+CREATE TABLE public.hats (
+	id            text PRIMARY KEY,
+	war_exclusive boolean NOT NULL DEFAULT false,
+	token_cost    int
+);
+INSERT INTO public.hats (id, war_exclusive) VALUES
+	('muddy_cap', true), ('reed_hat', true), ('bog_helmet', true),
+	('plain_cap', false);
+
+-- ── Co-op dig rebuild deps (20260714000000) ─────────────────────────────────
+-- These live in unchained migrations (truffle_patch / season XP) in prod; the
+-- coop-dig rebuild carries the dig RPCs that call them, so stub them here so the
+-- smoke can actually mint + drain.
+CREATE TABLE public.war_truffles (
+	id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+	user_id uuid, amount int, reason text, war_id uuid,
+	created_at timestamptz DEFAULT now()
+);
+
+-- mint_truffles — cap-aware mint (verbatim behavior from 20260704100000).
+CREATE FUNCTION public.mint_truffles(p_user uuid, p_amount int, p_reason text, p_war uuid)
+RETURNS int LANGUAGE plpgsql AS $$
+DECLARE bal int; actual int;
+BEGIN
+	IF p_amount IS NULL OR p_amount <= 0 THEN RETURN 0; END IF;
+	SELECT golden_truffles INTO bal FROM public.profiles WHERE id = p_user FOR UPDATE;
+	IF bal IS NULL THEN RETURN 0; END IF;
+	actual := LEAST(p_amount, GREATEST(0, 999 - bal));
+	IF actual = 0 THEN RETURN 0; END IF;
+	UPDATE public.profiles SET golden_truffles = golden_truffles + actual WHERE id = p_user;
+	INSERT INTO public.war_truffles (user_id, amount, reason, war_id) VALUES (p_user, actual, p_reason, p_war);
+	RETURN actual;
+END $$;
+
+-- rooting_finds — VERBATIM from 20260704100000 (client parity contract).
+CREATE FUNCTION public.rooting_finds(p_seed int)
+RETURNS text[] LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE
+	state bigint := p_seed; orient int; vert int; shimmer int; junk int;
+	finds text[] := ARRAY['truffle_l', 'truffle_d'];
+BEGIN
+	state := (state * 16807) % 2147483647; orient  := (state % 4)::int;
+	state := (state * 16807) % 2147483647; vert    := (state % 2)::int;
+	state := (state * 16807) % 2147483647; shimmer := (state % 2)::int;
+	state := (state * 16807) % 2147483647; junk    := (state % 2)::int;
+	IF shimmer = 1 THEN finds := finds || 'shimmer'::text; END IF;
+	finds := finds || (CASE junk WHEN 0 THEN 'junk_boot' ELSE 'junk_wrap' END)::text;
+	RETURN finds;
+END $$;
+
+CREATE FUNCTION public.grant_season_xp(uid uuid, amount int) RETURNS void
+LANGUAGE sql AS $$ SELECT $$;
+
+-- is_crew_member — kept crew helper (20260647); the coop-dig RLS policies use it.
+CREATE FUNCTION public.is_crew_member(p_crew uuid, p_user uuid) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $$
+	SELECT EXISTS (SELECT 1 FROM public.crew_members WHERE crew_id = p_crew AND user_id = p_user) $$;
+
+-- ── Push delivery RECORDING stub (real def: 20260520050000, pg_net → exp.host).
+-- The dig-off push migration (20260718) calls send_push_to_user; the smokes
+-- assert against push_outbox instead of a live pg_net queue.
+CREATE TABLE public.push_outbox (
+	id      bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	user_id uuid, title text, body text, data jsonb,
+	sent_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE FUNCTION public.send_push_to_user(
+	target_user_id uuid, push_title text, push_body text,
+	push_data jsonb DEFAULT '{}'::jsonb
+) RETURNS jsonb LANGUAGE plpgsql AS $$
+BEGIN
+	INSERT INTO public.push_outbox (user_id, title, body, data)
+		VALUES (target_user_id, push_title, push_body, push_data);
+	RETURN jsonb_build_object('ok', true);
+END $$;

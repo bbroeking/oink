@@ -19,6 +19,32 @@ CHAIN=(
 	supabase/migrations/20260709000000_season_renumber.sql
 	supabase/migrations/20260710000000_season1_achievements.sql
 	supabase/migrations/20260713000000_plain_totals_fixtures.sql
+	# 20260714 tears the war/league stack back out and rebuilds the co-op dig —
+	# the chain builds the whole thing up, then this rips it down + rebuilds.
+	supabase/migrations/20260714000000_coop_dig_rebuild.sql
+	# 20260715 layers the 24h dig-off (versus) back on top of the co-op dig.
+	supabase/migrations/20260715000000_digoff.sql
+	# 20260716 wraps open_rooting/submit_rooting in the {ok:...} rpcAction envelope.
+	supabase/migrations/20260716000000_rooting_rpc_envelope.sql
+	# 20260717 fixes the 22P02 shimmer landmine in rooting_finds (untyped ||
+	# literal) — replaces 00_stub's copy so the smokes exercise the REAL board fn.
+	supabase/migrations/20260717000000_rooting_finds_shimmer_cast.sql
+	# 20260718 adds the three dig-off push moments + the 10-min sweeper cron.
+	supabase/migrations/20260718000000_digoff_pushes.sql
+	# 20260719 replaces the 1-v-1 dig-off with the global Mon/Thu race.
+	supabase/migrations/20260719000000_digoff_race.sql
+	# 20260720 makes the race weekly Monday-anchored + adds the season board.
+	supabase/migrations/20260720000000_weekly_race_season_board.sql
+	# 20260721 adds the 4h-open/4h-guarded patch phase + the ttp.fake_now clock.
+	supabase/migrations/20260721000000_patch_phase.sql
+	# 20260722 adds race_crew_detail — the per-member dig-off ledger RPC.
+	supabase/migrations/20260722000000_race_crew_detail.sql
+	# 20260723 adds rename_crew — leader-only Sounder rename.
+	supabase/migrations/20260723000000_rename_crew.sql
+	# 20260724 flips the world_boss per-user override for the founder profile.
+	supabase/migrations/20260724000000_world_boss_brian_override.sql
+	# 20260725 makes create_crew assign a random Sounder name (ignores p_name).
+	supabase/migrations/20260725000000_random_crew_names.sql
 )
 
 NAME="pgharness_$$"

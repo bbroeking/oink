@@ -1,4 +1,4 @@
-// utils/sound.ts — tiny cozy SFX layer for the scuffle minigames.
+// utils/sound.ts — tiny cozy SFX layer for the dig minigame.
 //
 // A thin imperative wrapper over expo-audio's `createAudioPlayer` (not the
 // `useAudioPlayer` hook, so play-by-key works from anywhere, not just render).
