@@ -8,18 +8,21 @@
 // server totals × HUNGER_CREDIT_SCALE, so the real (tiny, tunable)
 // thresholds never show and can be retuned mid-season.
 
+import { useState } from "react";
 import {
 	Modal,
 	View,
 	Text,
+	TextInput,
 	Pressable,
 	ScrollView,
 	StyleSheet,
+	Alert,
 } from "react-native";
 import { Sticker } from "../ui/Sticker";
 import { Glyph, type GlyphName } from "../ui/Glyph";
 import { Button } from "../ui/Button";
-import { CREW_CAP_WORD } from "@/constants/mudFights";
+import { CREW_CAP_WORD } from "@/constants/crews";
 import {
 	useHungerMeter,
 	HUNGER_STAGES,
@@ -42,38 +45,93 @@ const STEPS: { g: GlyphName; title: string; line: string }[] = [
 	{
 		g: "friends",
 		title: "Join a Sounder",
-		line: `${CREW_CAP_WORD} snouts, one banner. Slip into an open Sounder or tap a + slot to rally friends.`,
+		line: `${CREW_CAP_WORD} snouts, one banner. Slip into an open Sounder or tap a + slot to rally friends — the dig needs a herd.`,
 	},
 	{
 		g: "gem",
-		title: "Dig the Truffle Patch",
-		line: "Every 8 hours the Hungerer gorges — dig while he's distracted. Golden Truffles buy scuffle exclusives.",
+		title: "Dig every feeding",
+		line: "Every 8 hours the Hungerer gorges — dig the Truffle Patch open through his first four hours, then he guards it the next four while he digests. Every truffle is yours to keep.",
 	},
 	{
-		g: "flame",
-		title: "Scuffle rival Sounders",
-		line: "Scuffles are dig-offs — out-dig the rival Sounder across the feedings. Wins pay tickles for what YOU dug.",
+		g: "trophy",
+		title: "Earn herd milestones",
+		line: "Your Sounder's finds add up for good. Cross a milestone and every member earns a title and a snout purse.",
 	},
 	{
-		g: "heart",
-		title: "Tend your herd",
-		line: "Bless your crewmates. Three voices in half an hour raise the Chorus — the whole Sounder glows.",
+		g: "star",
+		title: "Race the week",
+		line: "Every find counts forever on the season board. Each week the best diggers take spoils — the standings settle every Monday.",
 	},
 	{
 		g: "ogre",
 		title: "Starve the Hungerer",
-		line: "Everything the barnyard does drains him, level by level, until the herd drives him from the bog.",
+		line: "Every truffle the herd digs back drains him, level by level, until the whole valley starves him and takes its joy home.",
 	},
 ];
 
 export function SeasonGuideModal({
 	visible,
 	onDismiss,
+	onLeave,
+	onRename,
+	crewName,
 }: {
 	visible: boolean;
 	onDismiss: () => void;
+	/** When set (caller is in a Sounder), a quiet leave action shows in the
+	    footer with a two-tap Alert confirm. */
+	onLeave?: () => void;
+	/** When set (caller LEADS the Sounder), a quiet rename affordance shows in
+	    the footer. Resolves { ok } so we can hold the row open on failure. */
+	onRename?: (name: string) => Promise<{ ok: boolean }>;
+	/** Current Sounder name — prefills the rename input. */
+	crewName?: string;
 }) {
 	const meter = useHungerMeter();
+
+	// Inline rename row (leader only) — collapsed until the link is tapped.
+	const [renaming, setRenaming] = useState(false);
+	const [renameText, setRenameText] = useState(crewName ?? "");
+	const [renameBusy, setRenameBusy] = useState(false);
+	const [renameNote, setRenameNote] = useState<string | null>(null);
+
+	const openRename = () => {
+		setRenameText(crewName ?? "");
+		setRenameNote(null);
+		setRenaming(true);
+	};
+
+	const saveRename = async () => {
+		const trimmed = renameText.trim();
+		if (!trimmed || renameBusy || !onRename) return;
+		setRenameBusy(true);
+		setRenameNote(null);
+		const r = await onRename(trimmed);
+		setRenameBusy(false);
+		if (r.ok) {
+			setRenaming(false);
+		} else {
+			setRenameNote("that name didn't stick — try another, short and snappy");
+		}
+	};
+
+	const confirmLeave = () => {
+		Alert.alert(
+			"Leave your Sounder?",
+			"You'll stop digging with this herd. You can join another any time.",
+			[
+				{ text: "Stay", style: "cancel" },
+				{
+					text: "Leave",
+					style: "destructive",
+					onPress: () => {
+						onLeave?.();
+						onDismiss();
+					},
+				},
+			]
+		);
+	};
 
 	return (
 		<Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
@@ -128,8 +186,44 @@ export function SeasonGuideModal({
 					</ScrollView>
 
 					<Button size="md" variant="primary" full onPress={onDismiss}>
-						To the bog
+						To the patch
 					</Button>
+					{onRename &&
+						(renaming ? (
+							<View style={styles.renameRow}>
+								<TextInput
+									value={renameText}
+									onChangeText={setRenameText}
+									maxLength={24}
+									placeholder="name your Sounder"
+									placeholderTextColor={WHIMSY.muteSoft}
+									style={styles.renameInput}
+									returnKeyType="done"
+									onSubmitEditing={saveRename}
+									autoFocus
+								/>
+								<Button
+									size="sm"
+									variant="primary"
+									onPress={saveRename}
+									disabled={renameBusy || !renameText.trim()}
+								>
+									{renameBusy ? "…" : "Save"}
+								</Button>
+							</View>
+						) : (
+							<Pressable onPress={openRename} hitSlop={8} style={styles.renameLinkRow}>
+								<Text style={styles.renameLink}>rename your Sounder ›</Text>
+							</Pressable>
+						))}
+					{onRename && renaming && !!renameNote && (
+						<Text style={styles.renameNote}>{renameNote}</Text>
+					)}
+					{onLeave && (
+						<Pressable onPress={confirmLeave} hitSlop={8} style={styles.leaveRow}>
+							<Text style={styles.leaveLink}>leave your Sounder ›</Text>
+						</Pressable>
+					)}
 				</Sticker>
 			</View>
 		</Modal>
@@ -158,7 +252,7 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginBottom: SPACE.md,
 	},
-	scroll: { maxHeight: 420, marginBottom: SPACE.md },
+	scroll: { maxHeight: 420, marginTop: SPACE.xs, marginBottom: SPACE.md },
 	stepRow: {
 		flexDirection: "row",
 		alignItems: "flex-start",
@@ -220,5 +314,46 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textAlign: "center",
 		marginTop: SPACE.sm,
+	},
+	leaveRow: { alignSelf: "center", marginTop: SPACE.sm, paddingVertical: 4 },
+	leaveLink: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
+	},
+	// Leader-only rename affordance — the collapsed link matches leaveLink;
+	// the expanded row pairs a name field with a small Save button.
+	renameLinkRow: { alignSelf: "center", marginTop: SPACE.sm, paddingVertical: 4 },
+	renameLink: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
+	},
+	renameRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
+		marginTop: SPACE.sm,
+	},
+	renameInput: {
+		flex: 1,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.md,
+		backgroundColor: WHIMSY.cream,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: 8,
+		fontFamily: FONTS.body,
+		fontSize: 15,
+		color: WHIMSY.ink,
+	},
+	renameNote: {
+		...TYPE.hand,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.accent,
+		textAlign: "center",
+		marginTop: SPACE.xs,
 	},
 });

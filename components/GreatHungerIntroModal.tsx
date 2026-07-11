@@ -12,11 +12,19 @@
 // out of the bundle (nothing require()s it).
 
 import { useCallback, useEffect, useState } from "react";
-import { Modal, View, Text, StyleSheet, useWindowDimensions } from "react-native";
+import {
+	Modal,
+	View,
+	Text,
+	Pressable,
+	StyleSheet,
+	useWindowDimensions,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { Sticker } from "./ui/Sticker";
 import { Button } from "./ui";
+import { Icon } from "./ui/Icon";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -57,10 +65,20 @@ function TaleCard({ onDone }: { onDone: (action: "rally" | "skip") => void }) {
 	const { height: screenH } = useWindowDimensions();
 	// The narration's end flips the CTA from a quiet leave to the rally beat.
 	const [ended, setEnded] = useState(false);
+	// Starts muted — the tale can auto-play without ambushing the room; the
+	// speaker chip on the frame unmutes the narration on demand.
+	const [muted, setMuted] = useState(true);
 	const player = useVideoPlayer(TALE_VIDEO, (p) => {
 		p.loop = false;
+		p.muted = true;
 		p.play();
 	});
+	const toggleMute = useCallback(() => {
+		setMuted((m) => {
+			player.muted = !m;
+			return !m;
+		});
+	}, [player]);
 	useEffect(() => {
 		const sub = player.addListener("playToEnd", () => setEnded(true));
 		return () => sub.remove();
@@ -98,6 +116,18 @@ function TaleCard({ onDone }: { onDone: (action: "rally" | "skip") => void }) {
 						contentFit="cover"
 						nativeControls={false}
 					/>
+					<Pressable
+						onPress={toggleMute}
+						hitSlop={8}
+						accessibilityRole="button"
+						accessibilityLabel={muted ? "Unmute the tale" : "Mute the tale"}
+						style={({ pressed }) => [
+							styles.muteChip,
+							pressed && { opacity: 0.8 },
+						]}
+					>
+						<Icon name={muted ? "speakerOff" : "speaker"} size={16} color={WHIMSY.ink} />
+					</Pressable>
 				</View>
 
 				<Button size="lg" variant="primary" full onPress={rally}>
@@ -140,5 +170,20 @@ const styles = StyleSheet.create({
 		overflow: "hidden",
 		backgroundColor: WHIMSY.ink,
 		marginBottom: SPACE.md,
+	},
+	// Sound toggle riding the video's bottom-right corner — paper chip,
+	// ink ring, same sticker language as the card it sits in.
+	muteChip: {
+		position: "absolute",
+		bottom: SPACE.sm,
+		right: SPACE.sm,
+		width: 34,
+		height: 34,
+		borderRadius: 17,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
 	},
 });

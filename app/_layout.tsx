@@ -65,11 +65,12 @@ import {
 } from "@/components/AchievementUnlockModal";
 import { AllegianceModal } from "@/components/AllegianceModal";
 import { SounderLaunchModal } from "@/components/SounderLaunchModal";
+import { GreatHungerIntroModal } from "@/components/GreatHungerIntroModal";
 import {
 	FeatureFlagsProvider,
 	useFeatureFlag,
 } from "@/hooks/useFeatureFlags";
-import { fetchCrewState } from "@/utils/mudWars";
+import { fetchCrewState } from "@/utils/crews";
 import { PurchaseToastHost } from "@/components/PurchaseToast";
 import {
 	PopupQueueProvider,
@@ -82,6 +83,14 @@ import {
 	redeemReferralCode,
 	referralErrorMessage,
 } from "@/utils/referrals";
+import {
+	PENDING_REDEMPTION_CODE_KEY,
+	parseRedemptionPayload,
+} from "@/utils/redemption";
+import {
+	markCeremonyShown,
+	ceremonyShownThisSession,
+} from "@/utils/ceremonyGate";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
 // without a project still works.
@@ -113,9 +122,13 @@ function RootLayoutInner() {
 		PatrickHand_400Regular,
 	});
 	const [authChecked, setAuthChecked] = useState(false);
-	// Season 1 / Mud Wars visibility — server flag (Brian-overridden), replaces
-	// the old compile-time MUD_FIGHTS_VISIBLE constant.
-	const mudWarsVisible = useFeatureFlag("mud_wars");
+	// Season 1 co-op dig visibility — server flag (Brian-overridden). Gates the
+	// "start a Sounder" launch nudge.
+	// Align with the Season tab's crew gate (world_boss || __DEV__). coop_dig
+	// stayed false, so the Sounder launch nudge never fired even after the season
+	// went live. See friends.tsx for the matching fix.
+	const worldBoss = useFeatureFlag("world_boss");
+	const coopDig = worldBoss || __DEV__;
 	// Season 0: pending alignment-schism reveal. Set by the polling
 	// effect below when a user first crosses ±25 alignment.
 	const [schism, setSchism] = useState<{
@@ -137,9 +150,17 @@ function RootLayoutInner() {
 	// World Cup allegiance pick — shown once when the player hasn't chosen a
 	// country yet and hasn't locally dismissed the prompt.
 	const [showAllegiance, setShowAllegiance] = useState(false);
-	// "Mud Wars are here — start a Sounder!" launch nudge: shown when the feature
-	// is live + the player has no crew, ≤ once/day until they create/join one.
+	// "Start a Sounder!" launch nudge: shown when the feature is live + the
+	// player has no crew, ≤ once/day until they create/join one.
 	const [sounderPrompt, setSounderPrompt] = useState(false);
+	// The Great Hunger (Season 1) intro cinematic. The founder wants the tale
+	// to tell itself on the MAIN page at login (not only on the Season tab), so
+	// the FIRST-VIEW auto-present is owned here at root — same gating as the old
+	// season-tab effect (world_boss flag + not-yet-stamped s2_intro_seen:{uid}).
+	// The Season tab keeps only the manual "Hear the tale again" replay path.
+	// hungerIntroUid carries the user id so the dismiss handler can stamp.
+	const [hungerIntro, setHungerIntro] = useState(false);
+	const [hungerIntroUid, setHungerIntroUid] = useState<string | null>(null);
 
 	// Global popup queue slots — every launch popup goes through PopupQueue so
 	// only one shows at a time (across root AND the Barn tab). Lower priority
@@ -147,9 +168,25 @@ function RootLayoutInner() {
 	const schismSlot = usePopupSlot("schism", !!schism, 10);
 	const finaleSlot = usePopupSlot("finale", !!finale, 20);
 	const ritualsSlot = usePopupSlot("rituals", !!rituals, 30);
-	const achievementsSlot = usePopupSlot("achievements", achievements.length > 0, 40);
+	// Suppressed for the session if a ceremony (recap / hungerIntro) fired —
+	// the carousel surfaces next login instead (flip-day stacking ceiling).
+	const achievementsSlot = usePopupSlot(
+		"achievements",
+		achievements.length > 0 && !ceremonyShownThisSession(),
+		40
+	);
 	const allegianceSlot = usePopupSlot("allegiance", showAllegiance, 70);
 	const sounderSlot = usePopupSlot("sounderLaunch", sounderPrompt, 35);
+	// The flip-day ceremony chain is recap (seasonEnd, pri 25 in season.tsx) →
+	// intro (pri 27): slotting the intro just ABOVE the recap guarantees it can
+	// never co-present over the recap on the season-flip login.
+	const hungerIntroSlot = usePopupSlot("hungerIntro", hungerIntro, 27);
+	// The moment a ceremony PRESENTS (not on dismiss), latch the session gate so
+	// the achievements carousel + release notes hold their `want` for next login
+	// (flip-day stacking ceiling — SKILL.md 2026-07-11).
+	useEffect(() => {
+		if (hungerIntroSlot.visible) markCeremonyShown();
+	}, [hungerIntroSlot.visible]);
 
 	// Resolve the initial auth state before letting the splash drop, so we
 	// transition straight into either auth or the home screen — no blank flash.
@@ -266,11 +303,11 @@ function RootLayoutInner() {
 		check();
 	}, [authChecked]);
 
-	// Mud Wars launch nudge — only when the feature is live (the `mud_wars`
+	// Sounder launch nudge — only when the feature is live (the `coop_dig`
 	// server flag) AND the player has no crew. Re-surfaces ≤ once per UTC day
 	// until they create/join a Sounder, then the noCrew gate stops it for good.
 	useEffect(() => {
-		if (!authChecked || !mudWarsVisible) return;
+		if (!authChecked || !coopDig) return;
 		let cancelled = false;
 		(async () => {
 			const { data: ures } = await supabase.auth.getUser();
@@ -285,7 +322,28 @@ function RootLayoutInner() {
 		return () => {
 			cancelled = true;
 		};
-	}, [authChecked, mudWarsVisible]);
+	}, [authChecked, coopDig]);
+
+	// Great Hunger intro — first-view auto-present at login. Same gate the
+	// Season tab used to own: the world_boss flag (coopDig = world_boss || DEV)
+	// AND no `s2_intro_seen:{uid}` stamp yet. Queue-slotted (pri 27) so it
+	// serializes behind the season-end recap on flip day and never fights it.
+	useEffect(() => {
+		if (!authChecked || !coopDig) return;
+		let cancelled = false;
+		(async () => {
+			const { data: ures } = await supabase.auth.getUser();
+			const me = ures?.user?.id;
+			if (cancelled || !me) return;
+			const seen = await AsyncStorage.getItem(`s2_intro_seen:${me}`);
+			if (cancelled || seen) return;
+			setHungerIntroUid(me);
+			setHungerIntro(true);
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [authChecked, coopDig]);
 
 	// "While you were away" — surface blessings + curses RECEIVED
 	// and trades ANSWERED since the last launch. Tracked client-side
@@ -510,7 +568,8 @@ function RootLayoutInner() {
 	}, [authChecked]);
 
 	// Referral deep-link handler. Universal Link
-	// `https://ticklethepig.com/r/<code>` → app:
+	// `https://ticklethepig.com/i/<code>` (canonical; legacy /r/<code>
+	// still parses) → app:
 	//   - if signed in, prompt to apply (rare; existing user
 	//     opened the link by mistake; gate-cross is unlikely so
 	//     misuse doesn't matter)
@@ -576,6 +635,78 @@ function RootLayoutInner() {
 			sub.remove();
 		};
 	}, []);
+
+	// Golden-Ticket redemption deep-link handler. Universal Link
+	// `https://ticklethepig.com/redeem/<CODE>` (or the custom scheme
+	// `ticklethepig://redeem/<CODE>`):
+	//   - if signed in → push the scan-code screen with the code as a param;
+	//     scan-code prefills the field and auto-submits.
+	//   - if not signed in → stash under PENDING_REDEMPTION_CODE_KEY (mirror of
+	//     the referral stash); scan-code redeems it after a session exists.
+	// Only fires for /redeem/ links; parseRedemptionPayload returns null for
+	// anything else (referral /i/ /r/ links stay owned by the handler above).
+	useEffect(() => {
+		let cancelled = false;
+
+		const handle = async (url: string | null) => {
+			if (!url || !/\/redeem\//i.test(url)) return;
+			const code = parseRedemptionPayload(url);
+			if (!code) return;
+
+			const { data } = await supabase.auth.getSession();
+			if (cancelled) return;
+			if (!data.session) {
+				await AsyncStorage.setItem(PENDING_REDEMPTION_CODE_KEY, code);
+				return;
+			}
+			router.push({ pathname: "/scan-code", params: { code } });
+		};
+
+		Linking.getInitialURL().then(handle);
+		const sub = Linking.addEventListener("url", (event) => handle(event.url));
+
+		return () => {
+			cancelled = true;
+			sub.remove();
+		};
+	}, []);
+
+	// Post-auth Golden-Ticket redemption pickup. The deep-link handler above
+	// stashes a redemption code under PENDING_REDEMPTION_CODE_KEY when the tap
+	// arrives signed-out (the primary booth flow: scan → install → sign up).
+	// Nothing else consumes that stash, so without this the grant is silently
+	// dropped. Mirror the referral deep-link pattern (Alert-then-navigate): once
+	// a session exists, if a pending code is stashed, prompt and route to
+	// /scan-code (which prefills + auto-submits it), then clear the key so it can
+	// never re-fire later.
+	useEffect(() => {
+		if (!authChecked) return;
+		let cancelled = false;
+		(async () => {
+			const code = await AsyncStorage.getItem(PENDING_REDEMPTION_CODE_KEY);
+			if (cancelled || !code) return;
+			const { data } = await supabase.auth.getSession();
+			if (cancelled || !data.session) return;
+			// Clear FIRST so this fires at most once even if the prompt is left open.
+			await AsyncStorage.removeItem(PENDING_REDEMPTION_CODE_KEY);
+			if (cancelled) return;
+			Alert.alert(
+				"Redeem your Golden Ticket?",
+				"You scanned a code before signing in. Claim it now?",
+				[
+					{ text: "Later", style: "cancel" },
+					{
+						text: "Redeem",
+						onPress: () =>
+							router.push({ pathname: "/scan-code", params: { code } }),
+					},
+				]
+			);
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [authChecked]);
 
 	// Push tap → deep route. Payload `data.screen` drives where the
 	// tap lands:
@@ -726,6 +857,23 @@ function RootLayoutInner() {
 						AsyncStorage.setItem("sounder_prompt_last", new Date().toISOString().slice(0, 10));
 						sounderSlot.release();
 						setTimeout(() => setSounderPrompt(false), POPUP_TEARDOWN_MS);
+					}}
+				/>
+			)}
+			{/* Great Hunger intro — the tale, told at login on the main page.
+			    Queue-slotted at pri 27 (just above the season-end recap) so on
+			    flip day the chain is recap → intro, never both at once. */}
+			{hungerIntro && (
+				<GreatHungerIntroModal
+					visible={hungerIntroSlot.visible}
+					onDone={() => {
+						hungerIntroSlot.release();
+						if (hungerIntroUid) {
+							AsyncStorage.setItem(`s2_intro_seen:${hungerIntroUid}`, "1").catch(
+								() => {}
+							);
+						}
+						setTimeout(() => setHungerIntro(false), POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}

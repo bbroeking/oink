@@ -5,7 +5,14 @@
 // scroll = the tale, gift = the earnables. One modal, two topics — the chrome
 // (backdrop, card, dismiss) is identical, only the content swaps.
 
-import { Modal, View, Text, ScrollView, StyleSheet } from "react-native";
+import {
+	Modal,
+	View,
+	Text,
+	ScrollView,
+	StyleSheet,
+	useWindowDimensions,
+} from "react-native";
 import { Sticker } from "../ui/Sticker";
 import { Button } from "../ui/Button";
 import { SeasonStory } from "./SeasonStory";
@@ -23,7 +30,7 @@ export type SeasonInfoTopic = "story" | "spoils";
 
 const COPY: Record<SeasonInfoTopic, { kicker: string; title: string }> = {
 	story: { kicker: "★ what's happening ★", title: "The Season of the Hunger" },
-	spoils: { kicker: "★ scuffle spoils ★", title: "What you can earn" },
+	spoils: { kicker: "★ the truffle exchange ★", title: "What you can earn" },
 };
 
 export function SeasonInfoModal({
@@ -36,6 +43,13 @@ export function SeasonInfoModal({
 	onDismiss: () => void;
 }) {
 	const copy = topic ? COPY[topic] : null;
+	// Cap the scroll region to a fraction of the screen so the whole card —
+	// title above, dismiss button below — always fits within the centered
+	// backdrop and nothing clips off the top/bottom edges (matches the
+	// screenH-fraction cap in GreatHungerIntroModal). Leaves ~40% for title,
+	// button, card padding and the backdrop's own inset.
+	const { height: screenH } = useWindowDimensions();
+	const scrollMaxH = Math.round(screenH * 0.6);
 	return (
 		<Modal
 			visible={topic != null}
@@ -57,7 +71,11 @@ export function SeasonInfoModal({
 							<Text style={styles.headline}>{copy.title}</Text>
 						</>
 					)}
-					<ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+					<ScrollView
+						style={[styles.scroll, { maxHeight: scrollMaxH }]}
+						contentContainerStyle={styles.scrollContent}
+						showsVerticalScrollIndicator={false}
+					>
 						{topic === "story" && <SeasonStory />}
 						{topic === "spoils" && <SpoilsShowcase />}
 					</ScrollView>
@@ -92,5 +110,12 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginBottom: SPACE.md,
 	},
-	scroll: { maxHeight: 460, marginBottom: SPACE.md },
+	// maxHeight is set inline from the screen height; keep only the spacing
+	// below the scroll region here. A small top margin keeps the first
+	// (tilted) beat card off the headline above it.
+	scroll: { marginTop: SPACE.xs, marginBottom: SPACE.md },
+	// Top pad gives the first tilted sticker corner room to clear the title;
+	// trailing pad so the last beat card clears the fade edge / dismiss button
+	// when the story overflows and scrolls.
+	scrollContent: { paddingTop: SPACE.xs, paddingBottom: SPACE.xs },
 });

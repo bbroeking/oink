@@ -77,13 +77,13 @@ describe("stageProgress", () => {
 		).toBe(1);
 	});
 	it("reads within-stage drain against the live next threshold", () => {
-		// Gorged (floor 0), next boundary 40, total 17 → 42.5%.
+		// Gorged (floor 0), next boundary 600, total 240 → 40%.
 		expect(
-			stageProgress({ stageIndex: 0, total: 17, nextThreshold: 40, available: true })
-		).toBeCloseTo(17 / 40);
-		// Stuffed (preview floor 40), next 100, total 70 → halfway.
+			stageProgress({ stageIndex: 0, total: 240, nextThreshold: 600, available: true })
+		).toBeCloseTo(240 / 600);
+		// Stuffed (preview floor 600), next 1800, total 1200 → halfway.
 		expect(
-			stageProgress({ stageIndex: 1, total: 70, nextThreshold: 100, available: true })
+			stageProgress({ stageIndex: 1, total: 1200, nextThreshold: 1800, available: true })
 		).toBeCloseTo(0.5);
 	});
 	it("clamps to 0..1 when a server retune skews the preview floor", () => {

@@ -42,7 +42,8 @@ export function PigAvatar({ size = 40, hatId, border, style }: Props) {
 					/>
 				) : (
 					<Image
-						source={require("../../assets/images/pig.png")}
+						// Rosie's real sprite — not the legacy soft-shaded pig.png.
+						source={require("../../assets/images/sprites/rosie/idle_1.png")}
 						style={{
 							width: size * 0.95,
 							height: size * 0.95,

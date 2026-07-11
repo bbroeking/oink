@@ -23,6 +23,7 @@ import {
 	type ImageSourcePropType,
 } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Button } from "./ui";
 import { Glyph } from "./ui/Glyph";
@@ -33,8 +34,10 @@ import {
 	MODAL_BACKDROP_BG,
 	RADII,
 	RARITY_BG_SOLID,
+	SHADOW_SM,
 	SPACE,
 	STICKER_SHADOW,
+	TYPE,
 	WHIMSY,
 } from "@/constants/theme";
 import {
@@ -47,7 +50,9 @@ import {
 } from "@/utils/betaRewards";
 import type { BetaReward } from "@/hooks/useSeasonEnd";
 
-const PIG = require("../assets/images/pig.png");
+// Rosie herself (her real sprite frame) — NOT the legacy soft-shaded
+// assets/images/pig.png, which reads as a different pig entirely.
+const PIG = require("../assets/images/sprites/rosie/idle_1.png");
 // The Season-1 teaser silhouette: the REAL Great Hungerer render (alpha
 // cutout), tinted to ink so only his looming shape reads at the fences — the
 // "something stirs" beat swaps to this instead of a Rosie-shaped stand-in.
@@ -119,6 +124,7 @@ export function SeasonEndModal({
 	reward: BetaReward;
 	onDone: () => void;
 }) {
+	const insets = useSafeAreaInsets();
 	const [beat, setBeat] = useState(0);
 	// The founder's gift is a two-stage moment on the "earned" beat: the
 	// wrapped box waits, the primary button opens it (chips burst in), and only
@@ -187,12 +193,22 @@ export function SeasonEndModal({
 
 				<View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.veil]} />
 
-				{/* A season moment must never trap. */}
-				<Pressable onPress={close} style={styles.skip} hitSlop={12}>
+				{/* A season moment must never trap. Anchor below the status bar /
+				    notch / Dynamic Island so the chip never clips under it. */}
+				<Pressable
+					onPress={close}
+					style={[styles.skip, { top: insets.top + SPACE.sm }]}
+					hitSlop={12}
+				>
 					<Text style={styles.skipText}>Skip</Text>
 				</Pressable>
 
-				<View style={styles.cardWrap}>
+				<View
+					style={[
+						styles.cardWrap,
+						{ bottom: Math.max(insets.bottom, SPACE.md) + SPACE.lg },
+					]}
+				>
 					<Animated.View
 						key={`c-${B.key}`}
 						entering={FadeIn.duration(420).delay(120)}
@@ -342,14 +358,17 @@ function BetaGiftReveal({
 						],
 					}}
 				>
-					<RewardChip chip={chip} snoutShown={snoutShown} />
+					<RewardCard chip={chip} snoutShown={snoutShown} />
 				</RNAnimated.View>
 			))}
 		</View>
 	);
 }
 
-function RewardChip({
+// One earned reward, shown as a small sticker card: the art is the hero up top,
+// a short label beneath. The showcase row wraps and centers so 2-4 cards read
+// as a little display case of what you got — not a bullet list.
+function RewardCard({
 	chip,
 	snoutShown,
 }: {
@@ -357,43 +376,60 @@ function RewardChip({
 	snoutShown: number;
 }) {
 	return (
-		<View style={styles.chip}>
-			<ChipIcon chip={chip} />
-			<Text style={styles.chipText} numberOfLines={1}>
-				{chip.kind === "snouts" ? `${snoutShown} snouts` : chip.label}
+		<View style={styles.card2}>
+			<View style={styles.cardArt}>
+				<RewardArt chip={chip} snoutShown={snoutShown} />
+			</View>
+			<Text style={styles.cardLabel} numberOfLines={2}>
+				{chip.kind === "snouts" ? "snouts" : chip.label}
 			</Text>
 		</View>
 	);
 }
 
-function ChipIcon({ chip }: { chip: BetaRewardChip }) {
-	if (chip.kind === "snouts") return <SnoutCoin size={18} />;
+function RewardArt({
+	chip,
+	snoutShown,
+}: {
+	chip: BetaRewardChip;
+	snoutShown: number;
+}) {
+	if (chip.kind === "snouts") {
+		return (
+			<View style={styles.snoutArt}>
+				<SnoutCoin size={40} />
+				{/* Numeral BESIDE the coin — overlaid on the pig face it was unreadable. */}
+				<Text style={styles.snoutCount}>{snoutShown}</Text>
+			</View>
+		);
+	}
 	if (chip.kind === "cosmetic") {
 		const art = chip.hatId ? HAT_IMAGES[chip.hatId] : undefined;
 		if (art) {
-			return (
-				<View style={styles.cosmeticThumb}>
-					<Image source={art} style={styles.cosmeticImg} resizeMode="contain" />
-				</View>
-			);
+			return <Image source={art} style={styles.cosmeticArt} resizeMode="contain" />;
 		}
-		// Art hasn't landed yet — a rarity-tinted swatch behind the bow glyph.
+		// Art hasn't landed yet — a rarity-tinted plate behind the bow glyph.
 		// The graceful fallback, NOT the orphan-cosmetic render bug (20260685).
 		return (
 			<View
 				style={[
-					styles.cosmeticThumb,
+					styles.artPlate,
 					{
 						backgroundColor:
 							RARITY_BG_SOLID[chip.rarity ?? "common"] ?? WHIMSY.cream,
 					},
 				]}
 			>
-				<Glyph name="bow" size={14} />
+				<Glyph name="bow" size={34} />
 			</View>
 		);
 	}
-	return <Glyph name={chip.glyph} size={16} />;
+	// title → the crown on a sun plate.
+	return (
+		<View style={[styles.artPlate, { backgroundColor: WHIMSY.sun }]}>
+			<Glyph name="crown" size={38} />
+		</View>
+	);
 }
 
 const styles = StyleSheet.create({
@@ -403,7 +439,7 @@ const styles = StyleSheet.create({
 	veil: { backgroundColor: MODAL_BACKDROP_BG, opacity: 0.25 },
 	skip: {
 		position: "absolute",
-		top: 52,
+		// top is supplied inline from safe-area insets (notch / Dynamic Island).
 		right: 20,
 		paddingHorizontal: 12,
 		paddingVertical: 6,
@@ -417,7 +453,7 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		left: SPACE.lg,
 		right: SPACE.lg,
-		bottom: 44,
+		// bottom is supplied inline from safe-area insets (home indicator).
 		gap: SPACE.md,
 	},
 	card: {
@@ -443,7 +479,52 @@ const styles = StyleSheet.create({
 		lineHeight: 28,
 		color: WHIMSY.ink,
 	},
-	rewards: { marginTop: SPACE.md, gap: SPACE.sm },
+	rewards: {
+		marginTop: SPACE.md,
+		flexDirection: "row",
+		flexWrap: "wrap",
+		justifyContent: "center",
+		gap: SPACE.sm,
+	},
+	card2: {
+		width: 100,
+		alignItems: "center",
+		gap: SPACE.xs,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.md,
+		padding: SPACE.sm,
+		...SHADOW_SM,
+	},
+	cardArt: { height: 60, alignItems: "center", justifyContent: "center" },
+	cardLabel: {
+		...TYPE.kicker,
+		color: WHIMSY.ink,
+		textAlign: "center",
+	},
+	cosmeticArt: { width: 56, height: 56 },
+	artPlate: {
+		width: 56,
+		height: 56,
+		borderRadius: 28,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+		overflow: "hidden",
+	},
+	snoutArt: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: SPACE.xs,
+	},
+	snoutCount: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.ink,
+	},
 	giftWrap: {
 		marginTop: SPACE.md,
 		alignItems: "center",
@@ -456,30 +537,6 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		textAlign: "center",
 	},
-	cosmeticThumb: {
-		width: 24,
-		height: 24,
-		borderRadius: RADII.sm,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center",
-		overflow: "hidden",
-	},
-	cosmeticImg: { width: 20, height: 20 },
-	chip: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		alignSelf: "flex-start",
-		backgroundColor: WHIMSY.cream,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: 6,
-	},
-	chipText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
 	dots: { flexDirection: "row", justifyContent: "center", gap: 7 },
 	dot: {
 		width: 8,

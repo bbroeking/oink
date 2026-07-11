@@ -202,6 +202,32 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			},
 		],
 	},
+
+	// ── Season 1 — the Truffle Patch deepens. ────────────────────────
+	{
+		version: "1.9.0",
+		date: "2026-07-12",
+		availableFrom: "2026-07-12",
+		headline: "The Truffle Patch runs deeper",
+		items: [
+			{
+				title: "Choose your dig",
+				body: "The patch is richer than one dig can clear. Read the mounds, pick what you chase — and what you leave behind is a story for next feeding.",
+			},
+			{
+				title: "The Burrow Book",
+				body: "Strange somethings are buried in the patch now. First catches light their page in the Burrow Book. Twelve entries wait in the dark.",
+			},
+			{
+				title: "The full field",
+				body: "The Dig-Off board now opens into the whole race — every Sounder, your herd pinned at the top, load more as deep as you dare.",
+			},
+			{
+				title: "A quieter, louder bog",
+				body: "The dig has sounds now — scrapes, creaks, and the pop of a truffle coming free. Plus a pile of polish across the season screens.",
+			},
+		],
+	},
 ];
 
 // The newest release whose availableFrom date has arrived. Future

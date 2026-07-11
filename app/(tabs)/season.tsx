@@ -24,6 +24,8 @@ import {
 } from "../../utils/iap";
 import { Sticker } from "../../components/ui/Sticker";
 import { EmptyState, LoadingBeat } from "../../components/ui/EmptyState";
+import { usePopupSlot } from "../../components/ui/PopupQueue";
+import { markCeremonyShown } from "../../utils/ceremonyGate";
 import { Icon } from "../../components/ui/Icon";
 import {
 	MysteryHatReveal,
@@ -40,15 +42,14 @@ import {
 import { useSeasonEnd } from "../../hooks/useSeasonEnd";
 import type { BetaReward } from "../../hooks/useSeasonEnd";
 import { HungerHero } from "../../components/season1/HungerHero";
-import { SounderSteps } from "../../components/season1/SounderSteps";
-import { LeaguePlacard } from "../../components/season1/LeaguePlacard";
+import { SounderHomeCard } from "../../components/season1/SounderHomeCard";
+import { RaceSection } from "../../components/season1/RaceSection";
 import { SeasonGuideModal } from "../../components/season1/SeasonGuideModal";
 import {
 	SeasonInfoModal,
 	type SeasonInfoTopic,
 } from "../../components/season1/SeasonInfoModal";
 import { useCrew } from "../../hooks/useCrew";
-import { useMudWar } from "@/hooks/useMudWar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFeatureFlag } from "../../hooks/useFeatureFlags";
 import { BountyBoard } from "../../components/BountyBoard";
@@ -60,7 +61,7 @@ import {
 	type TierUpBannerHandle,
 } from "../../components/ui/TierUpBanner";
 import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
-import { FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW, SHADOW_SM, PAGE_PAD, TAB_SAFE, RADII, SPACE } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW, SHADOW_SM, PAGE_PAD, TAB_SAFE, RADII, SPACE, TYPE } from "@/constants/theme";
 import { daysUntilJudgement } from "@/utils/season";
 import { Button, SectionHeader } from "../../components/ui";
 import { useAudioPlayer } from "expo-audio";
@@ -761,42 +762,128 @@ function VerticalListPassTrack({
 	tiersByNumber,
 	claimedSet,
 	onClaim,
+	track,
+	premiumUnlocked,
 }: {
 	totalTiers: number;
 	currentTier: number;
 	tiersByNumber: Record<number, { free?: TierRow; premium?: TierRow }>;
 	claimedSet: Set<string>;
 	onClaim: (tier: number, track: "free" | "premium") => void;
+	track: "free" | "premium";
+	premiumUnlocked: boolean;
 }) {
-	const stats = tierStatsFor(totalTiers, currentTier, claimedSet);
+	// Premium track under glass — every row locked, no claim, no VIP
+	// pill (the whole track is premium). Otherwise the normal per-tier
+	// stats (free track, or an unlocked premium track).
+	const premiumLocked = track === "premium" && !premiumUnlocked;
+	const stats = premiumLocked
+		? { claimed: 0, ready: 0, locked: totalTiers }
+		: tierStatsFor(totalTiers, currentTier, claimedSet);
 	const tiers = Array.from({ length: totalTiers }, (_, i) => i + 1);
 	return (
 		<View>
 			<StatsPills stats={stats} />
 			<View style={{ marginTop: 8 }}>
 				{tiers.map((t, i) => {
-					const free = tiersByNumber[t]?.free;
-					const hasVipReward = !!tiersByNumber[t]?.premium;
-					const state: TierState = claimedSet.has(`${t}:free`)
-						? "claimed"
-						: t <= currentTier
-							? "ready"
-							: "locked";
+					const reward = tiersByNumber[t]?.[track];
+					// VIP pill only makes sense on the free track — it marks
+					// a free row that ALSO carries a premium reward.
+					const hasVipReward =
+						track === "free" && !!tiersByNumber[t]?.premium;
+					const state: TierState = premiumLocked
+						? "locked"
+						: claimedSet.has(`${t}:${track}`)
+							? "claimed"
+							: t <= currentTier
+								? "ready"
+								: "locked";
 					return (
 						<VLTierRow
 							key={t}
 							tier={t}
 							state={state}
-							reward={free}
+							reward={reward}
 							premium={hasVipReward}
 							isFirst={i === 0}
 							isLast={i === tiers.length - 1}
-							onClaim={() => onClaim(t, "free")}
+							onClaim={() => onClaim(t, track)}
 						/>
 					);
 				})}
 			</View>
 		</View>
+	);
+}
+
+// 2-segment Free / Premium toggle above the pass list. Both segments
+// are always tappable — viewing a locked premium track is the point.
+// Active segment: sun fill + ink outline + whimsy font; inactive: paper.
+function PassTrackTabs({
+	track,
+	onChange,
+	premiumUnlocked,
+}: {
+	track: "free" | "premium";
+	onChange: (t: "free" | "premium") => void;
+	premiumUnlocked: boolean;
+}) {
+	const segments: { key: "free" | "premium"; label: string }[] = [
+		{ key: "free", label: "Free" },
+		{ key: "premium", label: "Premium" },
+	];
+	return (
+		<View style={passTabStyles.row}>
+			{segments.map((seg) => {
+				const active = track === seg.key;
+				const showLock = seg.key === "premium" && !premiumUnlocked;
+				return (
+					<Pressable
+						key={seg.key}
+						onPress={() => onChange(seg.key)}
+						style={[
+							passTabStyles.seg,
+							active ? passTabStyles.segActive : passTabStyles.segInactive,
+						]}
+						accessibilityRole="button"
+						accessibilityState={{ selected: active }}
+						accessibilityLabel={`${seg.label} pass track`}
+					>
+						{showLock && (
+							<Icon name="lock" size={11} color={WHIMSY.ink} filled />
+						)}
+						<Text style={passTabStyles.segText}>{seg.label}</Text>
+					</Pressable>
+				);
+			})}
+		</View>
+	);
+}
+
+// Locked-premium call-to-action banner. Sits above the list when the
+// player is browsing the premium track without the pass; the Unlock
+// button is the primary purchase CTA for that view.
+function PremiumLockedBanner({ onUnlock }: { onUnlock: () => void }) {
+	return (
+		<Sticker color="lilac" rotate={-0.6} radius={RADII.xl} style={passBannerStyles.wrap}>
+			<View style={passBannerStyles.textCol}>
+				<Text style={passBannerStyles.title}>★ Premium Pass</Text>
+				<Text style={passBannerStyles.body}>
+					Unlock to claim every premium reward.
+				</Text>
+			</View>
+			<Pressable
+				onPress={onUnlock}
+				style={({ pressed }) => [
+					passBannerStyles.btn,
+					pressed && { opacity: 0.85 },
+				]}
+				accessibilityRole="button"
+				accessibilityLabel="Unlock the premium pass"
+			>
+				<Text style={passBannerStyles.btnText}>Unlock</Text>
+			</Pressable>
+		</Sticker>
 	);
 }
 
@@ -1014,6 +1101,76 @@ const vlStyles = StyleSheet.create({
 	},
 });
 
+// Free / Premium track toggle. Mirrors the app's pill/segment look
+// (ink outline, whimsy font) — there's no shared segment primitive.
+const passTabStyles = StyleSheet.create({
+	row: {
+		flexDirection: "row",
+		gap: SPACE.sm,
+		marginTop: SPACE.sm,
+		marginBottom: SPACE.xs,
+	},
+	seg: {
+		flex: 1,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 5,
+		paddingVertical: 8,
+		borderRadius: 999,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+	},
+	segActive: { backgroundColor: WHIMSY.sun },
+	segInactive: { backgroundColor: WHIMSY.paper },
+	segText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+	},
+});
+
+// Locked-premium unlock banner.
+const passBannerStyles = StyleSheet.create({
+	wrap: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: SPACE.md,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+		marginTop: SPACE.sm,
+		marginBottom: SPACE.xs,
+	},
+	textCol: {
+		flex: 1,
+		minWidth: 0,
+	},
+	title: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 16,
+		color: WHIMSY.ink,
+	},
+	body: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.ink,
+		marginTop: 2,
+	},
+	btn: {
+		backgroundColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingHorizontal: 18,
+		paddingVertical: 9,
+	},
+	btnText: {
+		color: WHIMSY.paper,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		letterSpacing: 0.4,
+	},
+});
+
 export default function SeasonScreen() {
 	const [state, setState] = useState<SeasonState | null>(null);
 	const [busy, setBusy] = useState(false);
@@ -1028,17 +1185,38 @@ export default function SeasonScreen() {
 	// re-opens any time from the hero's "Hear the tale again" chip.
 	const [introOpen, setIntroOpen] = useState(false);
 	const [uid, setUid] = useState<string | null>(null);
-	// Sounder + war state drive the walkthrough stepper / live-war strip.
+	// Sounder state drives the walkthrough stepper (join → dig).
 	const crewHook = useCrew(s1);
-	const mudWar = useMudWar(
-		crewHook.crew.warId ?? undefined,
-		s1 && crewHook.crew.inWar
-	);
+	// Bumped after every real dig submit — the patch modal never blurs this
+	// screen, so the meter / herd presence / milestones need an explicit tick
+	// to leave their pre-dig numbers behind (stale-cards bug, 2026-07-07).
+	const [digTick, setDigTick] = useState(0);
+	const handleDug = useCallback(() => {
+		setDigTick((t) => t + 1);
+		crewHook.refresh?.().catch?.(() => {});
+	}, [crewHook.refresh]);
+	// Leaving your Sounder now lives in the season-guide dialog's footer.
+	const handleLeave = useCallback(() => {
+		crewHook.leave().catch(() => {});
+	}, [crewHook.leave]);
 	// Season-end reveal — the beta Founding Herd recap. Live path: season1_finale
 	// flag (legacy key name — it means the SEASON-0 finale; the key shipped in
 	// build 103 and never changes) + an unseen my_beta_reward grant (held
 	// 20260704400000). Dev preview chip mirrors the intro's escape hatch.
 	const seasonEnd = useSeasonEnd();
+	// Route the AUTO season-end recap through the global popup queue so it never
+	// co-presents with another native Modal (sounder nudge, finale verdict, etc.)
+	// — iOS renders two native Modals stacked/clipped. Priority 25 sits just after
+	// the finale verdict (20) and before the sounder nudge (35): verdict → recap →
+	// nudge. Manual re-open (recapOpen) and the __DEV__ preview bypass the queue.
+	const seasonEndSlot = usePopupSlot("seasonEnd", seasonEnd.show, 25);
+	// When the recap PRESENTS (auto path), latch the session ceremony gate so the
+	// achievements carousel + release notes hold for next login — flip-day
+	// stacking ceiling (SKILL.md 2026-07-11). Only the queued auto-reveal counts
+	// as the ceremony; the manual header-icon re-open (recapOpen) does not.
+	useEffect(() => {
+		if (seasonEndSlot.visible) markCeremonyShown();
+	}, [seasonEndSlot.visible]);
 	// Persistent re-entry into the season-end recap. The auto-reveal only
 	// plays once (seen-stamp), so this lets a player look back at their
 	// Founding Herd rewards any time via the season-pass header icon.
@@ -1049,6 +1227,9 @@ export default function SeasonScreen() {
 	const [devReward, setDevReward] = useState<BetaReward | null>(null);
 	const [devTierIdx, setDevTierIdx] = useState(0);
 	const [saleOpen, setSaleOpen] = useState(false);
+	// Which pass track the player is browsing — free by default. Only
+	// surfaces tabs when the season actually has premium rewards.
+	const [passTrack, setPassTrack] = useState<"free" | "premium">("free");
 	// The season's reference sheets (story / earnables) — opened from the two
 	// header icon buttons; the tab's scroll stays the playable path.
 	const [infoTopic, setInfoTopic] = useState<SeasonInfoTopic | null>(null);
@@ -1103,13 +1284,26 @@ export default function SeasonScreen() {
 		}, [load])
 	);
 
+	// Unlock the premium battle-pass track via Slop Club membership. The
+	// premium pass is a Slop Club perk, not a separate consumable — so we
+	// present the Slop Club subscription paywall (same offering
+	// components/Account.tsx uses). On purchase, is_vip flips server-side
+	// via the RevenueCat webhook; re-running load() re-reads season_state,
+	// which then reports premium_unlocked: true.
+	const handleUnlockPremium = useCallback(async () => {
+		const result = await presentPaywall(OFFERING_IDS.slopClub);
+		if (result.ok) {
+			await load();
+		}
+	}, [load]);
+
 	// Season guide — "how the season works" + the Hunger level ladder.
 	// TESTING MODE: pops on EVERY Season-tab focus so the flow can be
 	// exercised repeatedly; flip GUIDE_EVERY_VISIT to false before public S1
 	// to gate it behind the per-user AsyncStorage stamp below.
 	// (The `s2_*` AsyncStorage keys keep their pre-renumber names — shipped
 	// devices already carry the stamps.)
-	const GUIDE_EVERY_VISIT = true;
+	const GUIDE_EVERY_VISIT = false;
 	const [guideOpen, setGuideOpen] = useState(false);
 	useFocusEffect(
 		useCallback(() => {
@@ -1131,24 +1325,13 @@ export default function SeasonScreen() {
 		}
 	}, [uid]);
 
-	// First visit to the new season → the tale tells itself. Stamped per user
-	// on dismiss so it never auto-plays twice; the "Hear the tale again" chip
-	// stays for every retelling after.
-	useEffect(() => {
-		if (!s1 || !uid) return;
-		let cancelled = false;
-		AsyncStorage.getItem(`s2_intro_seen:${uid}`).then((v) => {
-			if (!cancelled && !v) setIntroOpen(true);
-		});
-		return () => {
-			cancelled = true;
-		};
-	}, [s1, uid]);
-
+	// The FIRST-VIEW auto-present of the tale now lives at ROOT (app/_layout.tsx)
+	// so it tells itself on the MAIN page at login, queue-slotted (pri 27) behind
+	// the season-end recap. This tab keeps ONLY the manual "Hear the tale again"
+	// replay chip (setIntroOpen(true)) — a plain Modal, no queue, no stamp.
 	const dismissIntro = useCallback(() => {
 		setIntroOpen(false);
-		if (uid) AsyncStorage.setItem(`s2_intro_seen:${uid}`, "1").catch(() => {});
-	}, [uid]);
+	}, []);
 
 	// Detect tier-up between successive season_state loads. Record the
 	// first observed tier as a baseline (no celebration on initial open)
@@ -1300,6 +1483,9 @@ export default function SeasonScreen() {
 	const season = state.season!;
 	const tier = state.current_tier ?? 1;
 	const premium = state.premium_unlocked ?? false;
+	// Show the Free/Premium tabs only when the season actually seeds
+	// premium rewards; otherwise the free list stands alone (today's UI).
+	const hasPremiumTrack = (state.tiers ?? []).some((r) => r.track === "premium");
 
 	return (
 		<View style={styles.container}>
@@ -1311,7 +1497,7 @@ export default function SeasonScreen() {
 					<View style={styles.headerRow}>
 						<View style={{ flex: 1, minWidth: 0 }}>
 							<Text style={styles.kicker}>
-								{s1 ? "★ season 1 — mud wars" : `★ ${season.name.toLowerCase()}`}
+								{s1 ? "★ season 1 — the great hunger" : `★ ${season.name.toLowerCase()}`}
 							</Text>
 							{/* One line beside the icon row — shrink before wrapping
 							    (a two-line title under three buttons read as clutter). */}
@@ -1388,8 +1574,8 @@ export default function SeasonScreen() {
 							</Text>
 						</Pressable>
 					)}
-						{/* Season 0 only — S1's clock is the Hungerer's drain + the war
-						    cadence, not a doomsday date. */}
+						{/* Season 0 only — S1's clock is the Hungerer's drain + the
+						    feeding cadence, not a doomsday date. */}
 						{!s1 && daysUntilJudgement() > 0 && (
 							<View style={styles.judgementBanner}>
 								<Icon name="scales" size={14} color={WHIMSY.ink} />
@@ -1410,45 +1596,68 @@ export default function SeasonScreen() {
 				    slot below. */}
 
 				<ScrollView contentContainerStyle={styles.tierList}>
-					{/* ── Season 1 — the boss leads the tab, then YOUR SOUNDER
-					    (the path into the scuffle comes before the lore — joining
-					    is the season's first verb), then the story, then what
-					    the scuffling pays. ── */}
+					{/* ── Season 1 — the boss leads the tab (story spine), then YOUR
+					    SOUNDER: the dig CTA if you're in a herd, the join-first door
+					    if you're not (joining is the season's first verb). Then the
+					    herd presence strip (who's dug this feeding) and the herd
+					    milestones row. The story + earnables shelf live in the
+					    header-icon modals, off the scroll. ── */}
 					{s1 && (
 						<>
 							{/* The boss leads with no section header — the page title
 							    ("The Great Hunger") already names him; a second
 							    near-identical headline read as a duplicate. */}
-							<HungerHero />
+							<HungerHero refreshKey={digTick} />
 
 							<View style={{ marginTop: 8 }}>
 								<SectionHeader
+									style={{ marginBottom: 0 }}
 									kicker="your sounder"
-									title={crewHook.crew.crew?.name ?? "Join the scuffle"}
+									title={crewHook.crew.crew?.name ?? "Join a Sounder"}
+									right={
+										<Pressable onPress={() => setGuideOpen(true)} hitSlop={8}>
+											<Text style={styles.guideLink}>how it works ›</Text>
+										</Pressable>
+									}
 								/>
 							</View>
-							<SounderSteps crewHook={crewHook} war={mudWar.war} />
-							{/* The league placard — the table slot the S0 Alignment
-							    placard vacates. Term clock only; the season's end
-							    date is deliberately unannounced. */}
-							<LeaguePlacard />
-							{/* The season story + earnables shelf live in the
-							    header-icon modals (SeasonInfoModal), off the scroll. */}
+							{/* One compact card: the join-first door when crewless, else
+							    roster + play/cooldown + milestone. The game's explanation +
+							    the leave action live in the guide dialog (opened from the
+							    header's "how it works" link above). */}
+							<SounderHomeCard
+								crewHook={crewHook}
+								uid={uid}
+								onDug={handleDug}
+								refreshKey={digTick}
+							/>
+
+							{/* The dig-off — the cumulative season board (headline) + the
+							    weekly beat. Feature-dark (renders nothing) until the
+							    migration is pushed. Only meaningful once you're in a Sounder. */}
+							{crewHook.crew.crew && (
+								<RaceSection
+									myCrewId={crewHook.crew.crew.id}
+									crewSize={crewHook.crew.members.length}
+									refreshKey={digTick}
+								/>
+							)}
 						</>
 					)}
 
 					<BountyBoard />
 
-					{/* Section header for the pass — matches BountyBoard's
-					    header above so the two sections sit in the same
-					    visual rhythm. */}
-					<View style={{ marginTop: 8 }}>
+					{/* Section header for the pass — the list gap (SPACE.sm) owns
+					    the seam above; no extra margin so the sections sit tight. */}
+					<View>
 						<SectionHeader
 							kicker="season pass"
 							title={`Tier ${tier}/${season.total_tiers}`}
 							right={(() => {
-								const showUnlock =
-									PAID_BATTLE_PASS_ENABLED && IAP_ENABLED && !premium;
+								// Show the VIP marker + a CTA whenever the caller isn't a
+								// member. When IAP is live it's the real "Unlock"; when IAP
+								// is off (TestFlight) it's a disabled "Coming Soon".
+								const showVip = !premium;
 								// The recap icon only earns its place when there's
 								// actually a Founding Herd grant to look back on.
 								const showRecap = seasonEnd.reward != null;
@@ -1464,15 +1673,28 @@ export default function SeasonScreen() {
 										>
 											<Glyph name="star" size={16} />
 										</Pressable>
-										{showUnlock && (
+										{showVip && (
 											<>
 												<Text style={styles.vipKicker}>★ VIP</Text>
-												<Pressable
-													onPress={() => setSaleOpen(true)}
-													style={styles.unlockBtn}
-												>
-													<Text style={styles.unlockBtnText}>Unlock</Text>
-												</Pressable>
+												{IAP_ENABLED ? (
+													<Pressable
+														onPress={handleUnlockPremium}
+														style={styles.unlockBtn}
+														accessibilityRole="button"
+														accessibilityLabel="Unlock the premium pass"
+													>
+														<Text style={styles.unlockBtnText}>Unlock</Text>
+													</Pressable>
+												) : (
+													<View
+														style={[styles.unlockBtn, styles.comingSoonBtn]}
+														accessibilityLabel="Premium pass coming soon"
+													>
+														<Text style={[styles.unlockBtnText, styles.comingSoonText]}>
+															Coming Soon
+														</Text>
+													</View>
+												)}
 											</>
 										)}
 										{showRecap && (
@@ -1528,12 +1750,24 @@ export default function SeasonScreen() {
 					    display-only stats pills above. Replaces the
 					    snake; matches the design's bottom-of-screen
 					    reference. */}
+					{hasPremiumTrack && (
+						<PassTrackTabs
+							track={passTrack}
+							onChange={setPassTrack}
+							premiumUnlocked={premium}
+						/>
+					)}
+					{hasPremiumTrack && passTrack === "premium" && !premium && (
+						<PremiumLockedBanner onUnlock={handleUnlockPremium} />
+					)}
 					<VerticalListPassTrack
 						totalTiers={season.total_tiers}
 						currentTier={tier}
 						tiersByNumber={tiersByNumber}
 						claimedSet={claimedSet}
 						onClaim={handleClaim}
+						track={hasPremiumTrack ? passTrack : "free"}
+						premiumUnlocked={premium}
 					/>
 
 					{/* Alignment placard — SEASON 0 ONLY. Alignment isn't a thing
@@ -1646,6 +1880,13 @@ export default function SeasonScreen() {
 				<SeasonGuideModal
 					visible={guideOpen && !introOpen}
 					onDismiss={dismissGuide}
+						onLeave={crewHook.crew.crew ? handleLeave : undefined}
+						onRename={
+							crewHook.crew.crew && crewHook.crew.crew.leader_id === uid
+								? crewHook.rename
+								: undefined
+						}
+						crewName={crewHook.crew.crew?.name}
 				/>
 			)}
 
@@ -1664,12 +1905,13 @@ export default function SeasonScreen() {
 			    re-opened from the pass header's recap icon. */}
 			{(seasonEnd.reward || devReward) && (
 				<SeasonEndModal
-					visible={seasonEnd.show || recapOpen || devReward != null}
+					visible={seasonEndSlot.visible || recapOpen || devReward != null}
 					reward={devReward ?? seasonEnd.reward!}
 					onDone={() => {
 						setRecapOpen(false);
 						setDevReward(null);
 						seasonEnd.dismiss();
+						seasonEndSlot.release();
 					}}
 				/>
 			)}
@@ -1841,6 +2083,13 @@ const passProgressStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
 	container: { flex: 1, backgroundColor: WHIMSY.cream },
+	// Guide-dialog link — lives in the "your sounder" header's right slot.
+	guideLink: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.accent,
+		textDecorationLine: "underline",
+	},
 	judgementBanner: {
 		marginTop: 10,
 		alignSelf: "center",
@@ -1928,6 +2177,15 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 11,
 		color: WHIMSY.paper,
+	},
+	// IAP-off variant of the unlock CTA: muted, shadowless, non-interactive.
+	comingSoonBtn: {
+		backgroundColor: WHIMSY.cream2,
+		shadowOpacity: 0,
+		elevation: 0,
+	},
+	comingSoonText: {
+		color: WHIMSY.mute,
 	},
 	// Persistent season-end recap entry point — a small crown sticker in the
 	// season-pass header's right slot. Paper-craft: sun fill, ink border,

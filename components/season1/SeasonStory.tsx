@@ -1,13 +1,13 @@
 // "What's happening this season" — a four-beat storybook strip that explains
-// Season 1 in the game's own words: the theft, the Sounders, the fight-back,
-// and driving the Hungerer off. Static copy, zero jargon, no numbers — the
-// mechanics live on the war screen; this is the campfire version. (No dates:
+// Season 1 in the game's own words: the theft, the Sounders, the dig,
+// and starving the Hungerer off. Static copy, zero jargon, no numbers — the
+// mechanics live on the season tab; this is the campfire version. (No dates:
 // S1 deliberately has no Judgement-Day countdown.)
 
 import { View, Text, StyleSheet } from "react-native";
 import { Sticker } from "../ui/Sticker";
 import { Glyph, type GlyphName } from "../ui/Glyph";
-import { CREW_CAP_WORD } from "@/constants/mudFights";
+import { CREW_CAP_WORD } from "@/constants/crews";
 import { FONTS, ROW_TILTS, SPACE, TYPE, WHIMSY } from "@/constants/theme";
 
 const BEATS: { g: GlyphName; kicker: string; line: string }[] = [
@@ -22,14 +22,14 @@ const BEATS: { g: GlyphName; kicker: string; line: string }[] = [
 		line: `So pigs band into Sounders — ${CREW_CAP_WORD.toLowerCase()} snouts, one banner — because no pig shoos a hog alone.`,
 	},
 	{
-		g: "flame",
-		kicker: "the scuffles",
-		line: "Sounders pile into Mud Scuffles over his feeding grounds, and dig truffles back while he gorges.",
+		g: "gem",
+		kicker: "the dig",
+		line: "He gorges in 8-hour feedings — for the first four hours the patch lies open to sneaky snouts, then he guards it while he digests.",
 	},
 	{
 		g: "crown",
 		kicker: "the last feast",
-		line: "Every truffle pried back leaves him a little weaker — until the whole herd drives him from the bog.",
+		line: "Every truffle pried back leaves him a little weaker — until the whole herd starves him and takes the valley home.",
 	},
 ];
 

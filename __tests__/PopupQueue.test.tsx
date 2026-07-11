@@ -375,3 +375,76 @@ describe("usePopupHold (pre-shell gate)", () => {
 		expect(reg.rituals.visible).toBe(true); // want persisted, re-presents
 	});
 });
+
+// ── ceremony gate — flip-day stacking ceiling (SKILL.md 2026-07-11) ──
+// A ceremony (season-end recap pri 25 / Great Hunger intro pri 27) presenting
+// this session must suppress the housekeeping popups (achievements 40, release
+// notes 45) for the rest of the session — they surface next login. The gate is
+// an in-memory module flag; the real slots set it when they present and read it
+// in their `want`. This test wires a housekeeping Probe exactly that way.
+import {
+	markCeremonyShown,
+	ceremonyShownThisSession,
+	__resetCeremonyGate,
+} from "../utils/ceremonyGate";
+
+// A ceremony Probe that latches the gate the moment it becomes visible (mirrors
+// the `if (slot.visible) markCeremonyShown()` effect on the real ceremony slots).
+function CeremonyProbe({ want, priority }: { want: boolean; priority: number }) {
+	const slot = usePopupSlot("ceremony", want, priority);
+	reg.ceremony = slot;
+	React.useEffect(() => {
+		if (slot.visible) markCeremonyShown();
+	}, [slot.visible]);
+	return null;
+}
+
+// A housekeeping Probe whose want is gated on the session flag (as the real
+// achievements/releaseNotes slots are).
+function HousekeepingProbe({ baseWant }: { baseWant: boolean }) {
+	const slot = usePopupSlot(
+		"housekeeping",
+		baseWant && !ceremonyShownThisSession(),
+		45
+	);
+	reg.housekeeping = slot;
+	return null;
+}
+
+describe("ceremony gate (flip-day stacking ceiling)", () => {
+	beforeEach(() => __resetCeremonyGate());
+	afterEach(() => __resetCeremonyGate());
+
+	it("a ceremony presenting suppresses a later housekeeping want this session", () => {
+		let setBase: React.Dispatch<React.SetStateAction<boolean>> = () => {};
+		function Wrap() {
+			const [base, sb] = useState(false);
+			setBase = sb;
+			return (
+				<PopupQueueProvider>
+					<CeremonyProbe want={true} priority={27} />
+					<HousekeepingProbe baseWant={base} />
+				</PopupQueueProvider>
+			);
+		}
+		act(() => {
+			renderer = TestRenderer.create(<Wrap />);
+		});
+		// Ceremony presents at login and latches the gate.
+		expect(reg.ceremony.visible).toBe(true);
+		expect(ceremonyShownThisSession()).toBe(true);
+
+		// Housekeeping's backing state goes true AFTER the ceremony fired — but
+		// the gate keeps its `want` false, so it never presents this session.
+		act(() => setBase(true));
+		expect(reg.housekeeping.visible).toBe(false);
+
+		// Even after the ceremony hides and the queue drains, housekeeping stays
+		// suppressed for the rest of the session (it would surface next login).
+		release("ceremony");
+		act(() => {
+			jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS * 2);
+		});
+		expect(reg.housekeeping.visible).toBe(false);
+	});
+});

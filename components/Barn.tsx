@@ -19,14 +19,15 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
-import { claimEcho, fetchActiveEcho, type EchoState } from "@/utils/mudWars";
+import { claimEcho, fetchActiveEcho, type EchoState } from "@/utils/crews";
 import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
 import { Icon } from "./ui/Icon";
 import { Glyph, glyphSource, type GlyphName } from "./ui/Glyph";
 import { usePopupSlot } from "./ui/PopupQueue";
+import { ceremonyShownThisSession } from "@/utils/ceremonyGate";
 import { Sticker, Tape } from "./ui/Sticker";
-import { WHIMSY, FONTS, SPACE, PAGE_PAD } from "@/constants/theme";
+import { WHIMSY, FONTS, SPACE, PAGE_PAD, SHADOW_SM } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
 import { AllegianceModal } from "./AllegianceModal";
@@ -209,6 +210,7 @@ function PaperTicket({
 	chipGlyph = "heart",
 	subValue,
 	onPress,
+	ribbon,
 }: {
 	label: string;
 	value: string;
@@ -217,6 +219,10 @@ function PaperTicket({
 	chipGlyph?: GlyphName;
 	subValue?: string;
 	onPress?: () => void;
+	// Small sun pill hanging off the ticket's bottom edge — a transient
+	// state tag on this stat (e.g. the lucky-pig window on the tickle
+	// bank). Anchored to the card so it never floats over the scene.
+	ribbon?: string;
 }) {
 	const Wrap: React.ElementType = onPress ? Pressable : View;
 	return (
@@ -244,6 +250,12 @@ function PaperTicket({
 					</View>
 				</View>
 			</Sticker>
+			{ribbon && (
+				<View style={[styles.ticketRibbon, { transform: [{ rotate: `${rotate * 0.6}deg` }] }]}>
+					<Glyph name="sparkle" size={11} />
+					<Text style={styles.ticketRibbonText}>{ribbon}</Text>
+				</View>
+			)}
 		</Wrap>
 	);
 }
@@ -428,7 +440,14 @@ export default function Barn() {
 	// a time — in concert with the root launch modals, never overlapping. Lower
 	// priority shows first; truffle sheet is user-tapped so it jumps the line.
 	const truffleSlot = usePopupSlot("truffleSheet", truffleSheetOpen, 5);
-	const releaseNotesSlot = usePopupSlot("releaseNotes", releaseNotesOpen, 45);
+	// Suppressed for the session if a ceremony (season-end recap / Great Hunger
+	// intro) fired this login — the notes surface next login instead (flip-day
+	// stacking ceiling, SKILL.md 2026-07-11).
+	const releaseNotesSlot = usePopupSlot(
+		"releaseNotes",
+		releaseNotesOpen && !ceremonyShownThisSession(),
+		45
+	);
 	const luckyTitleSlot = usePopupSlot("luckyTitle", !!luckyPig.unlockedTitle, 50);
 	const luckyPigSlot = usePopupSlot("luckyPig", luckyPig.luckyModalOpen, 55);
 	const sixSevenSlot = usePopupSlot("sixSeven", sixSevenDialog, 60);
@@ -765,6 +784,11 @@ export default function Barn() {
 						rotate={2.5}
 						chipGlyph="sparkle"
 						onPress={handleAvailableTap}
+						ribbon={
+							luckyPig.luckyTicklesLeft > 0
+								? `Lucky pig · ${luckyPig.luckyTicklesLeft} left`
+								: undefined
+						}
 					/>
 				</View>
 
@@ -791,19 +815,9 @@ export default function Barn() {
 				    was redundant with the Account alignment story
 				    block and crowded the painted scene. */}
 
-				{/* Active lucky-pig window indicator. Sits below the
-				    stat cards + above the pig — never collides with the
-				    dev buttons (top-right absolute) or the cards. */}
-				{luckyPig.luckyTicklesLeft > 0 && (
-					<View style={styles.luckyBadgeRow}>
-						<View style={[styles.luckyBadge, styles.luckyBadgeInner]}>
-							<Glyph name="sparkle" size={13} />
-							<Text style={styles.luckyBadgeText}>
-								Lucky pig · {luckyPig.luckyTicklesLeft} left
-							</Text>
-						</View>
-					</View>
-				)}
+				{/* Lucky-pig window indicator moved onto the READY TO TICKLE
+				    ticket as a hanging ribbon — anchored to the stat it
+				    modifies instead of floating alone over the scene. */}
 
 				<View style={styles.mainSection}>
 					<View style={styles.swipeContainer}>
@@ -1306,24 +1320,29 @@ devAlign: {
 		color: WHIMSY.mute,
 		marginTop: 1,
 	},
-	luckyBadgeRow: {
+	// Lucky-window ribbon hanging off a PaperTicket's bottom edge —
+	// same sun-pill language the old floating badge used, now anchored
+	// to the stat it modifies.
+	ticketRibbon: {
+		position: "absolute",
+		bottom: -12,
+		alignSelf: "center",
+		flexDirection: "row",
 		alignItems: "center",
-		marginTop: SPACE.md,
-		marginBottom: SPACE.md,
-	},
-	luckyBadge: {
+		gap: 4,
 		backgroundColor: WHIMSY.sun,
 		borderRadius: 999,
-		paddingHorizontal: 14,
-		paddingVertical: 6,
+		paddingHorizontal: 10,
+		paddingVertical: 3,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
+		zIndex: 3,
+		...SHADOW_SM,
 	},
-	luckyBadgeInner: { flexDirection: "row", alignItems: "center", gap: 5 },
-	luckyBadgeText: {
+	ticketRibbonText: {
 		fontFamily: FONTS.whimsy,
-		fontSize: 13,
+		fontSize: 11,
 		color: WHIMSY.ink,
-		letterSpacing: 0.4,
+		letterSpacing: 0.3,
 	},
 });
