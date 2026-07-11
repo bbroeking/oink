@@ -4,9 +4,6 @@
 // (prefill, display), so a sloppy parse can never mis-grant — it just fails the
 // server lookup with `unknown`.
 
-// The universal-link host our printed QR codes point at. Same host as referrals.
-export const REDEMPTION_URL_HOST = "ticklethepig.com";
-
 // AsyncStorage key for a code that landed via deep link before the user was
 // signed in. scan-code reads + clears it once a session exists (mirror of
 // PENDING_REFERRAL_CODE_KEY in utils/referrals.ts).

@@ -212,12 +212,15 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				.from("profiles")
 				.select(`username, tickles_earned, active_background_id, ${EQUIP_SELECT}`)
 				.eq("id", targetUserId)
+				// Dynamic select string → declare the row type through the
+				// builder so .data lands as BarnProfileRow | null, no cast.
+				.returns<BarnProfileRow[]>()
 				.maybeSingle();
 			if (cancelled || !data) {
 				setLoading(false);
 				return;
 			}
-			const d = data as unknown as BarnProfileRow;
+			const d = data;
 			setBarn({
 				username: d.username ?? null,
 				tickles_earned: d.tickles_earned ?? 0,
@@ -232,9 +235,12 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 					.from("profiles")
 					.select(`tickles_earned, ${EQUIP_SELECT}`)
 					.eq("id", ures.user.id)
+					// Dynamic select string → declare the row type through the
+					// builder so .data lands as MyProfileRow | null, no cast.
+					.returns<MyProfileRow[]>()
 					.maybeSingle();
 				if (!cancelled && me) {
-					const m = me as unknown as MyProfileRow;
+					const m = me;
 					setMyEquip(rowToEquip(m));
 					setYouHearts(m.tickles_earned ?? 0); // live base for the YOU tally
 				}

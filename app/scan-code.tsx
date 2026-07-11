@@ -53,6 +53,10 @@ import {
 	PAGE_PAD,
 	TAB_SAFE,
 } from "@/constants/theme";
+// `import type` is fully erased at compile time (no verbatimModuleSyntax) and
+// stripped by Babel's TS preset, so it never emits the runtime `require` that
+// the defensive block below guards against — it only pulls in the prop types.
+import type { CameraViewProps } from "expo-camera";
 
 // ── expo-camera, resolved defensively ───────────────────────────────────────
 // The CURRENT dev client is built without the expo-camera native module, so a
@@ -68,7 +72,7 @@ import {
 // The substitute hook is chosen ONCE here (module scope), so calling it
 // unconditionally in the component stays Rules-of-Hooks-safe.
 type CameraModule = {
-	CameraView: React.ComponentType<any>;
+	CameraView: React.ComponentType<CameraViewProps>;
 	useCameraPermissions: () => [
 		{ granted: boolean; canAskAgain: boolean } | null,
 		() => Promise<unknown>,

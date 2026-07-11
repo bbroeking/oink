@@ -37,7 +37,7 @@ export function TruffleCatalogSheet({ open, onClose }: Props) {
 
 		let cancelled = false;
 		(async () => {
-			const ids = EXCHANGE_ITEM_IDS as unknown as string[];
+			const ids: string[] = [...EXCHANGE_ITEM_IDS];
 			const { data: auth } = await supabase.auth.getUser();
 			const uid = auth.user?.id;
 			const [catRes, ownedRes] = await Promise.all([

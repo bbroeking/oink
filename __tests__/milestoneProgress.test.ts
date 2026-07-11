@@ -50,7 +50,7 @@ describe("milestoneProgress", () => {
 
 	it("clamps junk input (negatives / NaN) to zero finds", () => {
 		expect(milestoneProgress(-40).lifetimeFinds).toBe(0);
-		expect(milestoneProgress(NaN as unknown as number).lifetimeFinds).toBe(0);
+		expect(milestoneProgress(NaN).lifetimeFinds).toBe(0);
 	});
 
 	it("has a title for every threshold in the shared constant", () => {

@@ -3,7 +3,7 @@
 // (members first), the collapse behaviour (a collapsed band hides its rows),
 // the lock state (non-members see locked=true on the members band), and the
 // graceful degrade (no members items => plain rarity list, no band banners).
-import { buildBrowseRows } from "../constants/shopRows";
+import { buildBrowseRows, type ListRow } from "../constants/shopRows";
 import type { HatRow } from "../constants/hats";
 
 const item = (id: string, over: Partial<HatRow> = {}): HatRow => ({
@@ -26,8 +26,10 @@ describe("buildBrowseRows — members band", () => {
 			OPEN,
 			true,
 		);
-		const sections = rows.filter((r) => r.type === "section");
-		expect(sections.map((s) => (s as any).band)).toEqual(["members", "everyone"]);
+		const sections = rows.filter(
+			(r): r is Extract<ListRow, { type: "section" }> => r.type === "section",
+		);
+		expect(sections.map((s) => s.band)).toEqual(["members", "everyone"]);
 		// the very first row is the members band banner
 		expect(rows[0]).toMatchObject({ type: "section", band: "members" });
 	});
@@ -47,7 +49,7 @@ describe("buildBrowseRows — members band", () => {
 			true,
 		);
 		// members banner present, but no item row carrying the crown
-		expect(rows.some((r) => r.type === "section" && (r as any).band === "members")).toBe(true);
+		expect(rows.some((r) => r.type === "section" && r.band === "members")).toBe(true);
 		const flat = rows.flatMap((r) => (r.type === "row" ? r.items.map((i) => i.id) : []));
 		expect(flat).not.toContain("crown");
 		expect(flat).toContain("beanie"); // everyone band still expanded

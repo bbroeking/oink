@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Sticker } from "./ui/Sticker";
-import { Icon } from "./ui/Icon";
+import { Icon, type IconName } from "./ui/Icon";
 import { releaseIcon, releaseIconName } from "../constants/emojiArt";
 import {
 	FONTS,
@@ -73,7 +73,7 @@ export function ReleaseNotesModal({
 											<Image source={art} style={styles.emojiImg} />
 										) : iconName ? (
 											<Icon
-												name={iconName as any}
+												name={iconName as IconName}
 												size={20}
 												color={WHIMSY.ink}
 											/>

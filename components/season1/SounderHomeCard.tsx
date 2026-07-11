@@ -23,7 +23,7 @@ import { Button } from "../ui/Button";
 import { LoadingBeat } from "../ui/EmptyState";
 import { CrewPortrait } from "../CrewRow";
 import { JoinableSounders } from "../JoinableSounders";
-import { useFeedingCta } from "../mudwar/FeedingStrip";
+import { useFeedingCta } from "../mudwar/useFeedingCta";
 import { useRosterHats } from "@/hooks/useRosterHats";
 import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
 import {

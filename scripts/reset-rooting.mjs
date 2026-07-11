@@ -8,7 +8,7 @@
 //
 // The service-role key bypasses RLS. It is read from the environment, never hard-coded.
 // No key in the prod env → this can't touch prod; keep it that way.
-import { createClient } from "@supabase/supabase-js";
+import { serviceClient } from "./serviceClient.mjs";
 
 const username = process.argv[2];
 const doAll = process.argv.includes("--all");
@@ -18,18 +18,7 @@ if (!username) {
 	process.exit(1);
 }
 
-const REF = "wbcnhvvakptoinwkulmn";
-const url =
-	process.env.SUPABASE_URL ||
-	process.env.EXPO_PUBLIC_SUPABASE_URL ||
-	`https://${REF}.supabase.co`;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!key) {
-	console.error("Missing SUPABASE_SERVICE_ROLE_KEY — add it to .env.local and retry.");
-	process.exit(1);
-}
-
-const db = createClient(url, key, { auth: { persistSession: false } });
+const db = serviceClient();
 
 // The 8h feeding window the RPCs bucket on: floor(epoch_seconds / 28800).
 // Must match open_rooting/submit_rooting's `floor(extract(epoch FROM now)/28800)`.

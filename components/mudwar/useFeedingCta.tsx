@@ -1,11 +1,10 @@
-// The feeding dig — the 8h dig heartbeat entry point.
+// The feeding dig hook — the 8h dig heartbeat entry point.
 //
 // `useFeedingCta` is the reusable core: it owns the current-feeding countdown,
 // the "already rooted" state, and the Truffle Patch modal (open/submit) — so any
-// surface can render its OWN trigger (a Button, a strip) and drop the returned
-// `modal` element beside it. `FeedingStrip` is the original chrome (a cream strip
-// with an inline "Root the patch" button); the SounderHomeCard consumes the hook
-// directly for its play/cooldown line.
+// surface can render its OWN trigger (a Button, a line) and drop the returned
+// `modal` element beside it. The SounderHomeCard consumes the hook directly for
+// its play/cooldown line.
 //
 // Digging is crew-gated and purely co-op vs the Great Hungerer: one rooting per
 // member per feeding; a missed feeding costs nothing and is never displayed as a
@@ -21,14 +20,7 @@ import {
 	phaseClosesCountdown,
 } from "@/utils/rooting";
 import { TrufflePatch } from "./TrufflePatch";
-import {
-	FONTS,
-	WHIMSY,
-	RADII,
-	SPACE,
-	SHADOW_SM,
-	MODAL_BACKDROP_BG,
-} from "@/constants/theme";
+import { FONTS, WHIMSY, SPACE, MODAL_BACKDROP_BG } from "@/constants/theme";
 
 export interface FeedingCta {
 	/** True once the caller has rooted this feeding window. */
@@ -131,74 +123,7 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 	};
 }
 
-export function FeedingStrip({
-	onDug,
-}: {
-	// Fired after ANY successful real submit (banked or drained) — the season
-	// tab uses it to refresh the meter / herd presence / milestones, which
-	// otherwise sit stale under this modal (focus never changes).
-	onDug?: () => void;
-}) {
-	const { dugThisWindow, noCrew, phaseOpen, countdown, note, start, modal } =
-		useFeedingCta(onDug);
-
-	return (
-		<View style={styles.wrap}>
-			<View style={styles.textCol}>
-				<Text style={styles.kicker}>THE FEEDING</Text>
-				<Text style={styles.line}>
-					{dugThisWindow
-						? `You rooted this feeding — the patch opens again in ${countdown}`
-						: phaseOpen
-						? `He's gorging — the patch is open. ${countdown} left`
-						: `He's guarding the patch — it opens in ${countdown}`}
-				</Text>
-				{!!note && <Text style={styles.note}>{note}</Text>}
-			</View>
-			{!dugThisWindow && !noCrew && phaseOpen && (
-				<Pressable onPress={start} style={styles.btn} hitSlop={8}>
-					<Text style={styles.btnText}>Root the patch</Text>
-				</Pressable>
-			)}
-			{modal}
-		</View>
-	);
-}
-
 const styles = StyleSheet.create({
-	wrap: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.md,
-		backgroundColor: WHIMSY.cream,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.sm,
-		marginTop: SPACE.lg,
-		...SHADOW_SM,
-	},
-	textCol: { flex: 1 },
-	kicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
-		letterSpacing: 1.4,
-		textTransform: "uppercase",
-		color: WHIMSY.mute,
-	},
-	line: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.ink, marginTop: 1 },
-	note: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.accent, marginTop: 2 },
-	btn: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.sm,
-		...SHADOW_SM,
-	},
-	btnText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.ink },
 	backdrop: {
 		flex: 1,
 		backgroundColor: MODAL_BACKDROP_BG,

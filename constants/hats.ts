@@ -158,20 +158,6 @@ export const HAT_IMAGES: Record<string, number> = {
 	beta_founder_ribbon: require("../assets/images/hats/beta_founder_ribbon.png"),
 	festival_pennant: require("../assets/images/hats/festival_pennant.png"),
 	confetti_aura: require("../assets/images/hats/confetti_aura.png"),
-	// Slop Toss horde — minigame sprites (NOT wearable cosmetics; rendered only
-	// in components/mudwar/SlopToss.tsx). A run + a hit/recoil pose per goblin
-	// archetype, plus the two impact splats. Sliced from strip6/7/8 via
-	// scripts/slice_goblins.py.
-	goblin_grunt: require("../assets/images/hats/goblin_grunt.png"),
-	goblin_scout: require("../assets/images/hats/goblin_scout.png"),
-	goblin_brute: require("../assets/images/hats/goblin_brute.png"),
-	goblin_warboss: require("../assets/images/hats/goblin_warboss.png"),
-	goblin_grunt_hit: require("../assets/images/hats/goblin_grunt_hit.png"),
-	goblin_scout_hit: require("../assets/images/hats/goblin_scout_hit.png"),
-	goblin_brute_hit: require("../assets/images/hats/goblin_brute_hit.png"),
-	goblin_warboss_hit: require("../assets/images/hats/goblin_warboss_hit.png"),
-	mud_splat: require("../assets/images/hats/mud_splat.png"),
-	mud_splat_gold: require("../assets/images/hats/mud_splat_gold.png"),
 	// Tickle particles — equipable cosmetic that swaps the ♥/✦
 	// text glyphs floating above the pig on each tap. Catalog rows
 	// live in public.hats with category 'tickle_particle' (see

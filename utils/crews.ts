@@ -7,6 +7,7 @@
 
 import { rpc, rpcAction, RpcResult } from "./rpc";
 import { supabase } from "./supabase";
+import { nonneg, coerceIntArray } from "./jsonb";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -84,16 +85,8 @@ const EMPTY_CREW_STATE: CrewState = {
 // object, but the flat CrewState contract every consumer reads puts them at the
 // top level. Hoist them here at the single fetch chokepoint so callers stay on
 // the flat shape (this is why the milestone bar read 0/150 while the server said
-// 4 — the spread never lifted the nested values).
-function coerceNonNegInt(v: unknown): number {
-	const n = Math.floor(Number(v));
-	return Number.isFinite(n) && n > 0 ? n : 0;
-}
-function coerceIntArray(v: unknown): number[] {
-	if (!Array.isArray(v)) return [];
-	return v.map((x) => Math.floor(Number(x))).filter((n) => Number.isFinite(n));
-}
-
+// 4 — the spread never lifted the nested values). The defensive coercers live in
+// utils/jsonb.ts so the "never trust the wire" rules stay in one place.
 export async function fetchCrewState(): Promise<CrewState> {
 	const s = await rpc<Partial<CrewState>>("crew_state");
 	if (!s) return EMPTY_CREW_STATE;
@@ -101,7 +94,7 @@ export async function fetchCrewState(): Promise<CrewState> {
 	return {
 		...EMPTY_CREW_STATE,
 		...s,
-		lifetime_finds: coerceNonNegInt(nested?.lifetime_finds ?? s.lifetime_finds),
+		lifetime_finds: nonneg(nested?.lifetime_finds ?? s.lifetime_finds),
 		milestones_claimed: coerceIntArray(
 			nested?.milestones_claimed ?? s.milestones_claimed
 		),

@@ -24,12 +24,12 @@ import {
 	windowIndex,
 	windowEndsAtMs,
 } from "@/utils/rooting";
+// A crewmate who has already dug this feeding — the feeding-state read module
+// owns this shape; re-exported here so existing `import { CrewDug } from
+// "@/hooks/useRooting"` call sites (if any) keep resolving.
+import type { CrewDug } from "@/utils/dig";
 
-// A crewmate who has already dug this feeding.
-export interface CrewDug {
-	user_id: string;
-	display_name: string;
-}
+export type { CrewDug };
 
 export interface RootingSession {
 	seed: number;

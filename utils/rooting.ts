@@ -352,7 +352,7 @@ function formatLeft(leftMs: number): string {
 	return h > 0 ? `${h}h ${m}m` : `${Math.max(1, m)}m`;
 }
 
-// ── Patch phases (2026-07-07 founder call) ───────────────────────────────────
+// ── Patch phases ─────────────────────────────────────────────────────────────
 // Within each 8h feeding window the patch alternates: OPEN for the first
 // PATCH_OPEN_SECS (dig while he gorges), then GUARDED for the rest (cooldown).
 // A session opened in-phase may still submit until the window ends. MUST

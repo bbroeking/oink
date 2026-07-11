@@ -6,6 +6,7 @@
 // in hooks/useRooting.ts; the pure board math in utils/rooting.ts.
 
 import { rpc } from "./rpc";
+import { num, str, strOrNull, obj, nonneg } from "./jsonb";
 import { MILESTONE_THRESHOLDS } from "@/constants/dig";
 
 // A crewmate who has already dug this feeding (feeding_state / open_rooting).
@@ -96,23 +97,8 @@ export function milestoneProgress(lifetimeFinds: number): MilestoneProgress {
 // race_standings() then resolves null (rpc() swallows the missing-function
 // error) and the feature renders dark — exactly like useHungerMeter's fallback.
 
-// ── Defensive scalar coercion (jsonb fields may be missing / typed loosely) ───
-function num(v: unknown, dflt = 0): number {
-	const n = typeof v === "number" ? v : Number(v);
-	return Number.isFinite(n) ? n : dflt;
-}
-function str(v: unknown, dflt = ""): string {
-	return typeof v === "string" ? v : dflt;
-}
-function strOrNull(v: unknown): string | null {
-	return typeof v === "string" && v ? v : null;
-}
-function obj(v: unknown): Record<string, unknown> {
-	return v && typeof v === "object" ? (v as Record<string, unknown>) : {};
-}
-function nonneg(v: unknown): number {
-	return Math.max(0, Math.floor(num(v)));
-}
+// Defensive jsonb coercion (fields may be missing / typed loosely) — the shared
+// helpers live in utils/jsonb.ts so the rules can't drift between call sites.
 
 // ── Server-contract types ─────────────────────────────────────────────────────
 export interface RaceCycleInfo {
@@ -431,7 +417,7 @@ export function formatRaceCountdown(
 	return h >= 1 ? `${h}h` : `${Math.max(1, m)}m`;
 }
 
-// ── The pinned-row selector — the founder's standings-list spec ────────────────
+// ── The pinned-row selector — the standings-list spec ──────────────────────────
 // Returns the exact rows to render:
 //   • the top `visible` ranked rows;
 //   • if my crew is ranked WITHIN them → highlighted in place (no pin);

@@ -9,7 +9,7 @@
 //                   accepted friendships / barn visits / sent blessings + curses.
 //
 // The service-role key bypasses RLS. It is read from the environment, never hard-coded.
-import { createClient } from "@supabase/supabase-js";
+import { serviceClient } from "./serviceClient.mjs";
 
 const username = process.argv[2];
 const doReset = process.argv.includes("--reset");
@@ -20,18 +20,7 @@ if (!username) {
 	process.exit(1);
 }
 
-const REF = "wbcnhvvakptoinwkulmn";
-const url =
-	process.env.SUPABASE_URL ||
-	process.env.EXPO_PUBLIC_SUPABASE_URL ||
-	`https://${REF}.supabase.co`;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!key) {
-	console.error("Missing SUPABASE_SERVICE_ROLE_KEY — add it to .env.local and retry.");
-	process.exit(1);
-}
-
-const db = createClient(url, key, { auth: { persistSession: false } });
+const db = serviceClient();
 
 const EQUIP_COLS = [
 	"active_hat_id", "active_glasses_id", "active_mask_id", "active_neck_id",

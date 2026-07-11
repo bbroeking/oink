@@ -237,6 +237,10 @@ function ClippingRow({
 export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 	const [loading, setLoading] = useState(true);
+	// A failed fetch (both the titles-join select AND its no-titles retry
+	// threw) surfaces as a cozy error card with a retry, instead of silently
+	// rendering an empty board. A later successful fetch clears it.
+	const [error, setError] = useState(false);
 	const [scope, setScope] = useState<Scope>(initialScope ?? "global");
 	const [myId, setMyId] = useState<string | null>(null);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -283,14 +287,18 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 					// false, so eq(false) covers every row.
 					.eq("hide_from_leaderboard", false)
 					.order("tickles_earned", { ascending: false })
-					.range(from, from + count - 1);
+					.range(from, from + count - 1)
+					// Dynamic select string → PostgREST infers a parser-error
+					// row shape; declare our known row type through the builder
+					// so .data lands as RawRow[] without an escape-hatch cast.
+					.returns<RawRow[]>();
 			let result = await run(SELECT_WITH_TITLES);
 			if (result.error) {
 				log.error("Leaderboard titles join failed, retrying without:", result.error);
 				result = await run(SELECT_BASIC);
 				if (result.error) throw result.error;
 			}
-			return normalize(result.data as unknown as RawRow[] | null);
+			return normalize(result.data);
 		},
 		[]
 	);
@@ -298,6 +306,7 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 	const fetchLeaderboard = useCallback(async () => {
 		setLoading(true);
 		setHasMore(false);
+		setError(false);
 		try {
 			const {
 				data: { user },
@@ -363,16 +372,17 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 						.in("id", friendIds)
 						.not("username", "is", null)
 						.neq("username", "")
-						.order("tickles_earned", { ascending: false });
+						.order("tickles_earned", { ascending: false })
+						// Dynamic select string → PostgREST infers a parser-error
+						// row shape; declare our known row type through the builder
+						// (matches the global path) instead of casting .data.
+						.returns<RawRow[]>();
 				let result = await runFriends(SELECT_WITH_TITLES);
 				if (result.error) {
 					result = await runFriends(SELECT_BASIC);
 					if (result.error) throw result.error;
 				}
-				// Dynamic select string → PostgREST infers a parser-error
-				// shape, so cast .data to our known row type (matches the
-				// global path). Double cast bridges that loose inference.
-				setLeaderboard(normalize(result.data as unknown as RawRow[] | null));
+				setLeaderboard(normalize(result.data));
 				return;
 			}
 
@@ -387,8 +397,11 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 			);
 
 			rpc("mark_all_pass_events_seen").then(() => {});
-		} catch (error) {
-			log.error("Error fetching leaderboard:", error);
+		} catch (err) {
+			log.error("Error fetching leaderboard:", err);
+			// Both the titles-join select and its no-titles retry threw — the
+			// Board couldn't load. Surface a retry instead of an empty list.
+			setError(true);
 		} finally {
 			setLoading(false);
 		}
@@ -473,6 +486,23 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 					{Array.from({ length: 6 }).map((_, i) => (
 						<ListRowSkeleton key={i} />
 					))}
+				</View>
+			) : error ? (
+				// Fetch failed (both selects threw) — a cozy card with a
+				// hand-link retry, so the Board never renders silently empty.
+				<View style={styles.emptyWrap}>
+					<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
+						<Text style={styles.emptyText}>
+							the Board is being shy — give it another nudge.
+						</Text>
+						<Pressable
+							onPress={fetchLeaderboard}
+							hitSlop={8}
+							style={styles.retryLink}
+						>
+							<Text style={styles.retryText}>try again ›</Text>
+						</Pressable>
+					</Sticker>
 				</View>
 			) : leaderboard.length === 0 ? (
 				// Empty state on a paper Sticker so it matches the Friends
@@ -814,5 +844,14 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textAlign: "center",
 		lineHeight: 21,
+	},
+	// Hand-link retry under the error copy — accent + underline, matching
+	// the "leave it for now ›" hand-link grammar used elsewhere.
+	retryLink: { alignSelf: "center", marginTop: 10, paddingHorizontal: 4 },
+	retryText: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.accent,
+		textDecorationLine: "underline",
 	},
 });

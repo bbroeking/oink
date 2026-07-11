@@ -153,9 +153,9 @@ function RootLayoutInner() {
 	// "Start a Sounder!" launch nudge: shown when the feature is live + the
 	// player has no crew, ≤ once/day until they create/join one.
 	const [sounderPrompt, setSounderPrompt] = useState(false);
-	// The Great Hunger (Season 1) intro cinematic. The founder wants the tale
-	// to tell itself on the MAIN page at login (not only on the Season tab), so
-	// the FIRST-VIEW auto-present is owned here at root — same gating as the old
+	// The Great Hunger (Season 1) intro cinematic. The tale must tell itself on
+	// the MAIN page at login (not only on the Season tab), so the FIRST-VIEW
+	// auto-present is owned here at root — same gating as the old
 	// season-tab effect (world_boss flag + not-yet-stamped s2_intro_seen:{uid}).
 	// The Season tab keeps only the manual "Hear the tale again" replay path.
 	// hungerIntroUid carries the user id so the dismiss handler can stamp.

@@ -20,7 +20,7 @@
 //
 // The service-role key bypasses RLS (the redemption_codes table has ZERO client
 // policies). It is read from the environment, never hard-coded.
-import { createClient } from "@supabase/supabase-js";
+import { serviceClient } from "./serviceClient.mjs";
 import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -78,15 +78,7 @@ if (expiresArg) {
 }
 
 // ── Supabase (service role) ──────────────────────────────────────────────────
-const REF = "wbcnhvvakptoinwkulmn";
-const url =
-	process.env.SUPABASE_URL ||
-	process.env.EXPO_PUBLIC_SUPABASE_URL ||
-	`https://${REF}.supabase.co`;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!key) die("Missing SUPABASE_SERVICE_ROLE_KEY — add it to .env.local and retry.");
-
-const db = createClient(url, key, { auth: { persistSession: false } });
+const db = serviceClient(die);
 
 // If minting a hat grant, validate the id against the hats table BEFORE any insert.
 if (grant.kind === "hat") {

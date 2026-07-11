@@ -30,13 +30,16 @@ export function TitlesSection({ userId, activeTitleId, onChange, onTitlesLoaded 
 		const { data, error } = await supabase
 			.from("user_titles")
 			.select("title_id, titles(id, name, placement, description)")
-			.eq("user_id", userId);
+			// Nested-join select → PostgREST infers a parser-error row shape;
+			// declare our known row type through the builder instead of casting.
+			.eq("user_id", userId)
+			.returns<RawRow[]>();
 		if (error) {
 			setTitles([]);
 			onTitlesLoaded?.([]);
 			return;
 		}
-		const rows = (data ?? []) as unknown as RawRow[];
+		const rows = data ?? [];
 		const loaded = rows
 			.map((r) => r.titles)
 			.filter((t): t is TitleRow => !!t)

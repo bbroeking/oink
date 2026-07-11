@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
 		gap: SPACE.xl,
 		marginTop: SPACE.md,
 	},
-	// Real button chrome (founder: these read as plain text) — the app's chip
+	// Real button chrome — without it these read as plain text; the app's chip
 	// grammar: cream face, ink border, sticker shadow, pressed dim.
 	troveBtn: {
 		flexDirection: "row",
