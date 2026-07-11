@@ -1,6 +1,6 @@
 // Season-1 hero — the Great Hungerer, big and strong at the top of the season
 // tab, with the "power we're taking back" strip beneath him: six stage
-// segments that fill as the WHOLE barnyard's war effort drains him. The
+// segments that fill as the WHOLE barnyard's dig effort drains him. The
 // vignette (GreatHungerMeter) owns the feeling AND the numbers (its stat row
 // reads stage · tickles reclaimed · weakens-at); this strip is just the
 // stages-crossed readout plus the one flavor line. The tale replay lives in
@@ -19,15 +19,15 @@ import {
 	HUNGER_STAGES,
 } from "@/hooks/useHungerMeter";
 
-export function HungerHero() {
-	const meter = useHungerMeter();
+export function HungerHero({ refreshKey }: { refreshKey?: number }) {
+	const meter = useHungerMeter(refreshKey);
 	// Within-stage drain — the current segment fills live toward the next
 	// stage (the six segments together read as one power bar for the boss).
 	const pct = stageProgress(meter);
 
 	return (
 		<View>
-			<GreatHungerMeter />
+			<GreatHungerMeter refreshKey={refreshKey} />
 
 			{/* The power we're taking back — six stage segments; crossed ones
 			    are full, the current one fills as the herd drains him. */}
@@ -51,8 +51,8 @@ export function HungerHero() {
 					})}
 				</View>
 				<Text style={styles.everyWar}>
-					Every Mud War weakens him — win or lose, the bog keeps what you pry
-					loose.
+					Every truffle the herd digs back weakens him — dig at his feedings
+					and the whole valley pries its joy loose.
 				</Text>
 			</View>
 		</View>

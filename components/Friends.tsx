@@ -20,12 +20,13 @@ import {
 	type Profile,
 } from "@/utils/friendships";
 import { ensurePushPermission } from "../utils/pushNotifications";
-import { fetchFriendsCrews } from "@/utils/mudWars";
+import { fetchFriendsCrews } from "@/utils/crews";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
+import { type UseCrew } from "@/hooks/useCrew";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
 import { BarnVisitModal } from "./BarnVisitModal";
-import { FONTS, TAB_SAFE, WHIMSY } from "@/constants/theme";
+import { FONTS, RADII, SHADOW_SM, SPACE, TAB_SAFE, WHIMSY } from "@/constants/theme";
 import { AlignmentBadge } from "./ui/AlignmentBadge";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Icon } from "./ui/Icon";
@@ -41,12 +42,21 @@ function hatName(p: Profile): string | null {
 // just your friend list + add.
 type Tab = "friends" | "add";
 
-export default function Friends({ userId }: { userId: string }) {
+export default function Friends({
+	userId,
+	crewHook,
+	onViewSounder,
+}: {
+	userId: string;
+	crewHook?: UseCrew;
+	onViewSounder?: () => void;
+}) {
 	const [tab, setTab] = useState<Tab>("friends");
 	const [friends, setFriends] = useState<Profile[]>([]);
 	// friend_id → Sounder name, so each row can say which herd a friend
 	// rides with (friends_crews — empty until the migration is live).
 	const [crewNames, setCrewNames] = useState<Map<string, string>>(new Map());
+
 	// Tapping a friend opens UserSheet — the one door for ask / bless
 	// / curse.
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -112,6 +122,27 @@ export default function Friends({ userId }: { userId: string }) {
 				contentContainerStyle={styles.scrollContent}
 				showsVerticalScrollIndicator={false}
 			>
+				{/* Your own Sounder — pinned to the top of the friends list so the
+				    hub shows the herd you ride with, not just the people you follow.
+				    Taps through to the Sounder segment. Only when you're in a crew. */}
+				{tab === "friends" && crewHook?.crew.crew && (
+					<Pressable
+						onPress={onViewSounder}
+						accessibilityRole="button"
+						accessibilityLabel={`Your Sounder, ${crewHook.crew.crew.name}`}
+						style={styles.sounderBanner}
+					>
+						<Icon name="crown" size={20} color={WHIMSY.ink} strokeWidth={2} />
+						<View style={styles.sounderText}>
+							<Text style={styles.sounderKicker}>★ your sounder</Text>
+							<Text style={styles.sounderName} numberOfLines={1}>
+								{crewHook.crew.crew.name}
+							</Text>
+						</View>
+						<Text style={styles.sounderView}>View ›</Text>
+					</Pressable>
+				)}
+
 				{tab === "friends" && (
 					<FriendsList
 						friends={friends}
@@ -544,6 +575,29 @@ const styles = StyleSheet.create({
 	wrap: { flex: 1, marginTop: 16, paddingHorizontal: 14 },
 	scroll: { flex: 1 },
 	scrollContent: { paddingBottom: TAB_SAFE },
+	// "Your Sounder" banner pinned above the friends list.
+	sounderBanner: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 2.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.lg,
+		paddingVertical: SPACE.sm,
+		paddingHorizontal: SPACE.md,
+		marginBottom: SPACE.md,
+		...SHADOW_SM,
+	},
+	sounderText: { flex: 1 },
+	sounderKicker: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.accent,
+		letterSpacing: 0.4,
+	},
+	sounderName: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
+	sounderView: { fontFamily: FONTS.display, fontSize: 13, color: WHIMSY.ink },
 	tabsRow: {
 		flexDirection: "row",
 		backgroundColor: WHIMSY.paper,

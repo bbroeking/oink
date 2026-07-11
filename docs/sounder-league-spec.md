@@ -1,5 +1,10 @@
 # Sounder League — the Alignment slot becomes the clan ladder (spec)
 
+> **SUPERSEDED 2026-07-06** by `docs/season1-coop-dig-spec.md` — the entire
+> war/league stack was removed in the first-principles co-op rebuild (see
+> `SKILL.md` decision log; code archived at `archive/sounder-league-2026-07-06`).
+> Kept for history only.
+
 **Status:** adopted 2026-07-05 (decision logged in `SKILL.md`), pending implementation. Cross-link from `docs/wiki/alignment.md` + `docs/wiki/sounder-mud-fights.md` when the wiki recompiles.
 
 ## What this is

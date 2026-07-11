@@ -9,7 +9,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { getFriendIds } from "@/utils/friendships";
-import { SounderLeague } from "./SounderLeague";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { log } from "../utils/log";
 import { Icon } from "./ui/Icon";
@@ -26,7 +25,7 @@ import { FONTS, KICKER_TEXT, SHADOW_SM, TAB_SAFE, WHIMSY } from "@/constants/the
 const LEADERBOARD_PAGE_SIZE = 25;
 const LEADERBOARD_MAX_ROWS = 100;
 
-type Scope = "global" | "friends" | "alignment" | "sounders";
+type Scope = "global" | "friends" | "alignment";
 // The scopes a host can open the board on (alignment is season-0 internal).
 export type BoardScope = Exclude<Scope, "alignment">;
 
@@ -246,7 +245,7 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 	const s1 = useFeatureFlag("world_boss") || __DEV__;
 	// S1 swaps the alignment board for the Sounder rankings.
 	const scopes: Scope[] = s1
-		? ["global", "friends", "sounders"]
+		? ["global", "friends"]
 		: ["global", "friends", "alignment"];
 	// Paginated load-more state for the global scope. Friends scope is
 	// already bounded by the 100-friend cap; alignment is RPC-served
@@ -304,15 +303,6 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				data: { user },
 			} = await supabase.auth.getUser();
 			setMyId(user?.id ?? null);
-
-			if (scope === "sounders") {
-				// The Sounder League renders (and fetches) itself — see the
-				// SounderLeague branch below. Nothing to load here.
-				setLeaderboard([]);
-				setHasMore(false);
-				setLoading(false);
-				return;
-			}
 
 			if (scope === "alignment") {
 				const rows = await rpc<
@@ -470,9 +460,7 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 										? "Global"
 										: s === "friends"
 											? "Friends"
-											: s === "sounders"
-												? "Sounders"
-												: "Alignment"}
+											: "Alignment"}
 								</Text>
 							</Pressable>
 						);
@@ -480,12 +468,7 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				</Sticker>
 			</View>
 
-			{scope === "sounders" ? (
-				// BEFORE the loading check — the league board fetches and
-				// renders itself (Table/Spirit tabs, rosters, its own
-				// LoadingBeat); the skeletons here belong to the pig scopes.
-				<SounderLeague />
-			) : loading ? (
+			{loading ? (
 				<View style={styles.listContent}>
 					{Array.from({ length: 6 }).map((_, i) => (
 						<ListRowSkeleton key={i} />

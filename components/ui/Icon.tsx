@@ -41,6 +41,7 @@ export type IconName =
 	| "friends"
 	| "bell"
 	| "speaker"
+	| "speakerOff"
 	| "signOut"
 	| "hat"
 	| "trending"
@@ -621,6 +622,51 @@ function Render({
 				</G>
 			);
 
+		case "speaker":
+			return (
+				<G>
+					<Path
+						d="M4 9.5 H8 L13 5 V19 L8 14.5 H4 Z"
+						fill={filled ? "#F5C44A" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					<Path
+						d="M16 9.5 a4 4 0 0 1 0 5"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinecap="round"
+					/>
+					<Path
+						d="M18.5 7.5 a7 7 0 0 1 0 9"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinecap="round"
+					/>
+				</G>
+			);
+		case "speakerOff":
+			return (
+				<G>
+					<Path
+						d="M4 9.5 H8 L13 5 V19 L8 14.5 H4 Z"
+						fill={filled ? "#F5C44A" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					<Path
+						d="M16 9.5 L21 14.5 M21 9.5 L16 14.5"
+						fill="none"
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinecap="round"
+					/>
+				</G>
+			);
 		default:
 			return null;
 	}

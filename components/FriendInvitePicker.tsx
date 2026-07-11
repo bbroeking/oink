@@ -25,7 +25,7 @@ import {
 } from "./CrewRow";
 import { EmptyState, LoadingBeat } from "./ui/EmptyState";
 import type { UseCrew } from "@/hooks/useCrew";
-import { fetchFriendsCrews, type FriendCrew } from "@/utils/mudWars";
+import { fetchFriendsCrews, type FriendCrew } from "@/utils/crews";
 import { getFriendIds, FRIEND_CAP_LIMIT, type Profile } from "@/utils/friendships";
 import { SPACE } from "@/constants/theme";
 

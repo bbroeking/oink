@@ -59,22 +59,27 @@ const SEGMENT_HEADERS: Record<Segment, { kicker: string; title: string }> = {
 const SEGMENT_KEYS: Segment[] = ["board", "inbox", "friends", "sounder"];
 
 export default function FriendsHubScreen() {
-	// Sounder Mud Fights (crews) — gated on the `mud_wars` server flag.
-	const mudWarsVisible = useFeatureFlag("mud_wars");
+	// Sounder (co-op crews) — gate on the SAME condition as the Season tab
+	// (`world_boss || __DEV__`), not the standalone `coop_dig` flag. coop_dig
+	// stayed false and hid the Sounder from Friends even while Season showed it
+	// (and would keep hiding it after the world_boss flip). Aligning the two
+	// keeps the crew visible in both places whenever the season is live.
+	const worldBoss = useFeatureFlag("world_boss");
+	const coopDig = worldBoss || __DEV__;
 	// Crew state is owned here (not inside SounderCard) so the page title and
 	// the card share ONE fetch: the header reads "Find your Sounder" while
 	// crewless and "Your Sounder" once you ride with a crew. Enabled only when
 	// the flag is on, so non-flag users never pay for the fetch/realtime.
-	const crewHook = useCrew(mudWarsVisible);
+	const crewHook = useCrew(coopDig);
 	const segments = useMemo(
 		() =>
-			mudWarsVisible
+			coopDig
 				? [
 						...BASE_SEGMENTS,
 						{ key: "sounder" as Segment, label: "Sounder", icon: "crown" as IconName },
 					]
 				: BASE_SEGMENTS,
-		[mudWarsVisible]
+		[coopDig]
 	);
 	// Deep-link target — any segment can be routed to (e.g. the launch nudge
 	// sends "?seg=sounder", the SounderCard sends "?seg=board"). Sounder is
@@ -84,7 +89,7 @@ export default function FriendsHubScreen() {
 		typeof seg === "string" && (SEGMENT_KEYS as string[]).includes(seg)
 			? (seg as Segment)
 			: null;
-	const targetSeg = wantSeg && !(wantSeg === "sounder" && !mudWarsVisible) ? wantSeg : null;
+	const targetSeg = wantSeg && !(wantSeg === "sounder" && !coopDig) ? wantSeg : null;
 	const [segment, setSegment] = useState<Segment>(targetSeg ?? "board");
 	// Which scope the Board opens on. Stays undefined (Global default) until a
 	// jump asks for a specific one — the Sounder card's standings note opens
@@ -179,7 +184,13 @@ export default function FriendsHubScreen() {
 
 				<View style={styles.body}>
 					{segment === "friends" &&
-						(userId ? <Friends userId={userId} /> : null)}
+						(userId ? (
+							<Friends
+								userId={userId}
+								crewHook={coopDig ? crewHook : undefined}
+								onViewSounder={() => setSegment("sounder")}
+							/>
+						) : null)}
 					{segment === "inbox" &&
 						(userId ? (
 							<Inbox userId={userId} onActionableCount={setInboxCount} />
@@ -191,13 +202,10 @@ export default function FriendsHubScreen() {
 					{segment === "board" && (
 						<Leaderboard key={boardScope ?? "default"} initialScope={boardScope} />
 					)}
-					{segment === "sounder" && mudWarsVisible && (
+					{segment === "sounder" && coopDig && (
 						<SounderCard
 							crewHook={crewHook}
-							onShowBoard={() => {
-								setBoardScope("sounders");
-								setSegment("board");
-							}}
+							onShowBoard={() => setSegment("board")}
 						/>
 					)}
 				</View>

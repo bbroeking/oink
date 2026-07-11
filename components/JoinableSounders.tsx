@@ -12,8 +12,8 @@ import { View, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { AccentNote, CrewPortrait, CrewRow, SunPill } from "./CrewRow";
 import type { UseCrew } from "@/hooks/useCrew";
-import type { JoinableCrew } from "@/utils/mudWars";
-import { CREW_CAP } from "@/constants/mudFights";
+import type { JoinableCrew } from "@/utils/crews";
+import { CREW_CAP } from "@/constants/crews";
 import { SPACE } from "@/constants/theme";
 import { joinError } from "./sounder/inviteState";
 

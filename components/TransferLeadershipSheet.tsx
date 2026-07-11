@@ -17,7 +17,7 @@ import {
 	SunPill,
 	theCrew,
 } from "./CrewRow";
-import { transferCrewLeadership } from "@/utils/mudWars";
+import { transferCrewLeadership } from "@/utils/crews";
 import type { UseCrew } from "@/hooks/useCrew";
 import { useRosterHats } from "@/hooks/useRosterHats";
 import { SPACE, TYPE, WHIMSY } from "@/constants/theme";

@@ -8,6 +8,7 @@
 // render the looming, un-dented boss rather than an error or a blank.
 
 import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { rpc } from "@/utils/rpc";
 
 export type HungerStage =
@@ -46,13 +47,13 @@ export interface HungerMeter {
 	available: boolean; // false until the RPC exists / responds
 }
 
-// ── Hunger CREDIT — the obfuscation layer ────────────────────────────
-// Players see named LEVELS and big "hunger credit" numbers, never the raw
-// server totals: credit = raw × HUNGER_CREDIT_SCALE. The real thresholds
-// stay tiny and server-tunable while the season is live — we retune the
-// server array freely and nothing players saw is contradicted, because
-// every displayed number derives from what the server reports.
-export const HUNGER_CREDIT_SCALE = 1000;
+// ── Hunger credit ─────────────────────────────────────────────────────
+// One find = one tickle reclaimed, displayed raw (founder call 2026-07-07:
+// the old ×1000 "big number" fiction made a single 4-find dig read as
+// "4,000 reclaimed", which undercut the meter's credibility). The scale
+// constant survives at 1 so every display keeps deriving from what the
+// server reports — retuning stays a server-side act.
+export const HUNGER_CREDIT_SCALE = 1;
 
 export const HUNGER_LEVEL_NAME: Record<HungerStage, string> = {
 	gorged: "Gorged",
@@ -64,12 +65,11 @@ export const HUNGER_LEVEL_NAME: Record<HungerStage, string> = {
 };
 
 // PROVISIONAL display ladder for the season guide — mirrors the server's
-// current thresholds ([40,100,200,340,520], 20260704200000) × the credit
-// scale. These are placeholder magnitudes: we tune the real numbers
-// server-side while the season runs; this mirror is display-only and only
-// used where the live nextThreshold isn't available per-level.
+// current thresholds ([600, 1800, 3600, 6000, 9000], 20260714000000, in
+// finds). Display-only, used where the live nextThreshold isn't available
+// per-level; the server array is the truth and can be retuned live.
 export const HUNGER_LEVEL_CREDIT_PREVIEW: number[] = [
-	0, 40, 100, 200, 340, 520,
+	0, 600, 1800, 3600, 6000, 9000,
 ].map((t) => t * HUNGER_CREDIT_SCALE);
 
 export function hungerCredit(rawTotal: number): number {
@@ -127,7 +127,12 @@ interface Wire {
 	next_threshold?: number | null;
 }
 
-export function useHungerMeter(): HungerMeter & { refresh: () => Promise<void> } {
+// `refreshKey`: bump to force a refetch from the SAME screen — the dig happens
+// in a modal that never blurs the season tab, so focus alone can't catch a
+// meter that just moved (the stale-cards bug, 2026-07-07).
+export function useHungerMeter(
+	refreshKey?: number
+): HungerMeter & { refresh: () => Promise<void> } {
 	const [meter, setMeter] = useState<HungerMeter>(FALLBACK);
 
 	const refresh = useCallback(async () => {
@@ -147,7 +152,15 @@ export function useHungerMeter(): HungerMeter & { refresh: () => Promise<void> }
 
 	useEffect(() => {
 		refresh();
-	}, [refresh]);
+	}, [refresh, refreshKey]);
+
+	// Fetch-on-mount alone left the meter stale for a whole session; refetch
+	// whenever the hosting screen regains focus too.
+	useFocusEffect(
+		useCallback(() => {
+			refresh();
+		}, [refresh])
+	);
 
 	return { ...meter, refresh };
 }

@@ -76,7 +76,9 @@ const FILTERS = [
 	{ key: "generous", label: "Generous" },
 	{ key: "greedy",   label: "Greedy" },
 	{ key: "social",   label: "Social" },
-	{ key: "scuffle",  label: "Scuffle" },
+	// Server display_category for these rows is "the_dig" (re-themed from the
+	// retired "scuffle" key in the co-op-dig rebuild).
+	{ key: "the_dig",  label: "The Dig" },
 ] as const;
 
 type FilterKey = (typeof FILTERS)[number]["key"];
@@ -86,7 +88,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 	generous: "GENEROUS",
 	greedy:   "GREEDY",
 	social:   "SOCIAL",
-	scuffle:  "SCUFFLE",
+	the_dig:  "THE DIG",
 };
 
 export default function AchievementsScreen() {

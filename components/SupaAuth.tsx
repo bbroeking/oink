@@ -24,7 +24,7 @@ import {
 import { AppleAuth } from "./AppleAuth";
 import { Sticker } from "./ui/Sticker";
 import { supabase } from "../utils/supabase";
-import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW, PAGE_PAD } from "@/constants/theme";
 
 export default function SupaAuth() {
 	const [showEmail, setShowEmail] = useState(false);
@@ -194,10 +194,14 @@ export default function SupaAuth() {
 
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	safe: { flex: 1, justifyContent: "space-between", paddingHorizontal: 22 },
+	// NOTE: horizontal padding lives on the children, not here — RN's
+	// built-in SafeAreaView replaces author padding with its own inset
+	// padding, so paddingHorizontal set on it silently drops on device.
+	safe: { flex: 1, justifyContent: "space-between" },
 	hero: {
 		alignItems: "center",
 		paddingTop: 24,
+		paddingHorizontal: PAGE_PAD,
 		flex: 1,
 		justifyContent: "center",
 	},
@@ -226,6 +230,7 @@ const styles = StyleSheet.create({
 	},
 	cardWrap: {
 		paddingBottom: 24,
+		paddingHorizontal: PAGE_PAD,
 	},
 	card: {
 		padding: 20,

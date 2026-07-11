@@ -4,7 +4,7 @@ Single-developer React Native / Expo 52 game with Supabase backend. Ships to iOS
 
 ## North Star
 
-`SKILL.md` (repo root) is the product charter: **Tickle the Pig connects friends, gives them things to collect, and reasons to work together (Connect · Collect · Cooperate).** Consult it and run changes through its decision lens before any product, design, content, or economy decision. When we make an important such decision, append it to `SKILL.md`'s decision log (what we chose + which pillar it serves).
+`SKILL.md` (repo root) is the product charter: **Tickle the Pig connects friends into herds, gives them things to collect, and gives the herd a race to run — together (Connect · Collect · Contend).** Consult it and run changes through its decision lens before any product, design, content, or economy decision. When we make an important such decision, append it to `SKILL.md`'s decision log (what we chose + which pillar it serves). (Charter rewritten 2026-07-07; the old charter/log live in git history.)
 
 ## Design taste
 

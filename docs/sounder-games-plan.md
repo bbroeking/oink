@@ -1,5 +1,10 @@
 # Sounder games — master plan (mechanics, scoring flow, condensed UI)
 
+> **SUPERSEDED 2026-07-06** by `docs/season1-coop-dig-spec.md` — the grill
+> session this doc was drafted for concluded with removing the war/league
+> stack entirely (see `SKILL.md` decision log; code archived at
+> `archive/sounder-league-2026-07-06`). Kept for history only.
+
 2026-07-06. Ground truth from code/migrations; companion to
 docs/sounder-league-spec.md and the s2-game-loop workshop memo. Status:
 draft for the grill session — decisions land back into this doc.

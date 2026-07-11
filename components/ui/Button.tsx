@@ -39,11 +39,14 @@ const GRADIENT_VARIANTS: Partial<Record<Variant, [string, string]>> = {
 };
 
 const FLAT_VARIANTS: Partial<
-	Record<Variant, { bg: string; color: string; border?: string }>
+	Record<Variant, { bg: string; color: string; border?: string; bw?: number }>
 > = {
 	dark: { bg: "#1A1A1A", color: "#fff" },
 	ghost: { bg: "#FFFFFF", color: "#1A1A1A", border: COLORS.border },
-	locked: { bg: COLORS.paper3, color: COLORS.ink4 },
+	// The "asleep button": full chrome (2px ink outline, muted paper fill + ink
+	// text) with NO opacity crush, so a disabled CTA reads as a button that's
+	// resting rather than a washed-out, borderless pill.
+	locked: { bg: COLORS.paper3, color: COLORS.ink4, border: WHIMSY.ink, bw: 2 },
 	success: { bg: COLORS.successBg, color: COLORS.successText, border: "#C0DCA0" },
 };
 
@@ -102,7 +105,9 @@ export function Button({
 		alignItems: "center",
 		justifyContent: "center",
 		alignSelf: full ? "stretch" : undefined,
-		opacity: disabled ? 0.5 : 1,
+		// The locked variant is itself the disabled look — don't double-punish it
+		// with an opacity crush; every other variant still dims when disabled.
+		opacity: disabled && variant !== "locked" ? 0.5 : 1,
 		...style,
 	};
 
@@ -128,9 +133,14 @@ export function Button({
 			baseStyle,
 			{
 				backgroundColor: flat?.bg ?? "#fff",
-				borderWidth: flat?.border ? 1.5 : 0,
+				borderWidth: flat?.border ? (flat.bw ?? 1.5) : 0,
 				borderColor: flat?.border,
-				opacity: pressed && !disabled ? 0.85 : disabled ? 0.5 : 1,
+				opacity:
+					pressed && !disabled
+						? 0.85
+						: disabled && variant !== "locked"
+							? 0.5
+							: 1,
 			},
 		]}>
 			{inner}

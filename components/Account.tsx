@@ -327,20 +327,30 @@ export function Account({ session }: { session: Session }) {
 		}
 		if (result.reason === "cancelled") return;
 		if (result.reason === "no_offering") {
-			Alert.alert(
-				"Slop Club",
-				"Storefront not configured yet (need ASC products + RC offering/paywall). Unlock for free in dev?",
-				[
-					{ text: "Cancel", style: "cancel" },
-					{
-						text: "Unlock (dev)",
-						onPress: async () => {
-							await rpc("dev_set_vip", { target: true });
-							setIsVip(true);
+			// Dev-only: the "unlock for free" shortcut must never reach a real
+			// user or an App Review pass (it reads as a broken/incomplete store).
+			// In production, no_offering degrades to a plain "not available" note.
+			if (__DEV__) {
+				Alert.alert(
+					"Slop Club",
+					"Storefront not configured yet (need ASC products + RC offering/paywall). Unlock for free in dev?",
+					[
+						{ text: "Cancel", style: "cancel" },
+						{
+							text: "Unlock (dev)",
+							onPress: async () => {
+								await rpc("dev_set_vip", { target: true });
+								setIsVip(true);
+							},
 						},
-					},
-				]
-			);
+					]
+				);
+			} else {
+				Alert.alert(
+					"Slop Club",
+					"The Slop Club isn't available right now — please try again soon."
+				);
+			}
 			return;
 		}
 		Alert.alert("Couldn't join the Slop Club", "Please try again.");

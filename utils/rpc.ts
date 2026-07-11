@@ -24,11 +24,23 @@ function isTransientNetworkError(error: { message?: string; name?: string } | nu
 	);
 }
 
-// Routes an RPC error to warn (transient network blip) or error (everything
-// else), so Sentry/LogBox don't treat routine connectivity failures as bugs.
-function logRpcError(name: string, error: { message?: string; name?: string }): void {
+// A dark-launched client calling an RPC whose migration hasn't been pushed
+// yet surfaces as PostgREST's "Could not find the function …" (PGRST202).
+// Callers built for this (feature-dark fallbacks: hunger_meter, digoff_state)
+// render nothing on null — the miss is expected, not a bug.
+function isMissingFunctionError(error: { message?: string; code?: string } | null): boolean {
+	if (!error) return false;
+	if (error.code === "PGRST202") return true;
+	return /could not find the function/i.test(error.message ?? "");
+}
+
+// Routes an RPC error to warn (transient network blip, unpushed function) or
+// error (everything else), so Sentry/LogBox don't treat routine failures as bugs.
+function logRpcError(name: string, error: { message?: string; name?: string; code?: string }): void {
 	if (isTransientNetworkError(error)) {
 		log.warn(`[rpc:${name}]`, error.message, "(transient network)");
+	} else if (isMissingFunctionError(error)) {
+		log.warn(`[rpc:${name}]`, error.message, "(feature dark — migration unpushed)");
 	} else {
 		log.error(`[rpc:${name}]`, error.message);
 	}

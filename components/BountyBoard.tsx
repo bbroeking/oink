@@ -68,5 +68,7 @@ export function BountyBoard() {
 }
 
 const styles = StyleSheet.create({
-	wrap: { marginBottom: 14 },
+	// No own bottom margin — the season tab's list gap (SPACE.sm) owns the
+	// seam to the next section; a second margin here double-counted it.
+	wrap: {},
 });

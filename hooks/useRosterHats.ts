@@ -6,7 +6,7 @@
 // re-fetched only when the roster's id set changes.
 
 import { useEffect, useState } from "react";
-import { fetchMemberHats } from "@/utils/mudWars";
+import { fetchMemberHats } from "@/utils/crews";
 
 export function useRosterHats(userIds: string[]): Map<string, string | null> {
 	const [hats, setHats] = useState<Map<string, string | null>>(new Map());

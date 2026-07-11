@@ -26,14 +26,14 @@ import { rpc } from "@/utils/rpc";
 
 // Add a key here as each dark-launched surface moves to a server flag. The
 // string must match an app_config.key seeded by a migration.
-//   mud_wars        — Season 1 Sounder Mud Fights (20260692)
+//   coop_dig        — Season 1 co-op Truffle Patch surfaces (crew + feeding)
 //   world_boss      — The Great Hunger server-wide co-op event (intro + raid)
 //   season1_finale  — the SEASON-0 end reveal: beta founder rewards recap
 //                     (20260704400000). LEGACY NAME: the key predates the
 //                     2026-07-06 renumber (greedy/generous era = Season 0,
 //                     The Great Hunger = Season 1). Shipped build 103 reads
 //                     this exact string — never rename it.
-export type FeatureFlagKey = "mud_wars" | "world_boss" | "season1_finale";
+export type FeatureFlagKey = "coop_dig" | "world_boss" | "season1_finale";
 
 type FlagMap = Partial<Record<FeatureFlagKey, boolean>>;
 

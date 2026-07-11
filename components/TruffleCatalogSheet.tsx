@@ -1,15 +1,14 @@
-// "War Spoils" — a rewards-display sheet for Mud Wars: the 25 war-exclusive
-// cosmetics you can win, grouped by rarity, with owned items lit + a ✓ and
-// unearned ones dimmed. Win a mud war (resolve_war → grant_war_spoils trigger,
-// 20260660) to earn a random unowned one. Catalog comes from the hats table
-// (keyed by WAR_SPOILS_IDS so it works whether or not the war_exclusive column
-// is deployed); owned state from user_hats.
+// TruffleCatalogSheet — a catalog of the 25 exchange-exclusive cosmetics,
+// grouped by rarity, with owned items lit + a check and unearned ones dimmed.
+// Earn them by digging Golden Truffles at the feedings and trading at the
+// Truffle Exchange. Catalog comes from the hats table (keyed by
+// EXCHANGE_ITEM_IDS); owned state from user_hats.
 import { useEffect, useRef, useState } from "react";
 import { View, Text, Image, Pressable, Modal, Animated, Easing, StyleSheet, ScrollView, Dimensions } from "react-native";
 import { supabase } from "@/utils/supabase";
 import { Icon } from "@/components/ui/Icon";
 import { HAT_IMAGES, RARITY_COLORS, type Rarity } from "@/constants/hats";
-import { WAR_SPOILS_IDS } from "@/constants/mudFights";
+import { EXCHANGE_ITEM_IDS } from "@/constants/dig";
 import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
 
 interface SpoilRow {
@@ -26,7 +25,7 @@ interface Props {
 	onClose: () => void;
 }
 
-export function WarSpoilsSheet({ open, onClose }: Props) {
+export function TruffleCatalogSheet({ open, onClose }: Props) {
 	const screenH = useRef(Dimensions.get("window").height).current;
 	const anim = useRef(new Animated.Value(0)).current;
 	const [rows, setRows] = useState<SpoilRow[] | null>(null);
@@ -38,7 +37,7 @@ export function WarSpoilsSheet({ open, onClose }: Props) {
 
 		let cancelled = false;
 		(async () => {
-			const ids = WAR_SPOILS_IDS as unknown as string[];
+			const ids = EXCHANGE_ITEM_IDS as unknown as string[];
 			const { data: auth } = await supabase.auth.getUser();
 			const uid = auth.user?.id;
 			const [catRes, ownedRes] = await Promise.all([
@@ -61,7 +60,7 @@ export function WarSpoilsSheet({ open, onClose }: Props) {
 	if (!open) return null;
 
 	const ownedCount = rows ? rows.filter((r) => r.owned).length : 0;
-	const total = rows ? rows.length : WAR_SPOILS_IDS.length;
+	const total = rows ? rows.length : EXCHANGE_ITEM_IDS.length;
 	const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [screenH, 0] });
 
 	return (
@@ -72,10 +71,10 @@ export function WarSpoilsSheet({ open, onClose }: Props) {
 			<Animated.View pointerEvents="box-none" style={[styles.sheetWrap, { transform: [{ translateY }] }]}>
 				<View style={styles.sheet}>
 					<View style={styles.grabber} />
-					<Text style={styles.kicker}>WAR SPOILS</Text>
-					<Text style={styles.title}>What you can win</Text>
+					<Text style={styles.kicker}>EXCLUSIVES</Text>
+					<Text style={styles.title}>What you can earn</Text>
 					<Text style={styles.sub}>
-						Win a mud war and a contributing crew-mate earns a random war-exclusive cosmetic.
+						Dig at the feedings for Golden Truffles, then trade them for these exclusives at the Exchange.
 						{"  "}
 						<Text style={styles.count}>{ownedCount}/{total} earned</Text>
 					</Text>

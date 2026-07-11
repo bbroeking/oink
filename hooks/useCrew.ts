@@ -17,12 +17,13 @@ import {
 	fetchCrewState,
 	fetchJoinable,
 	createCrew as createCrewRpc,
+	renameCrew as renameRpc,
 	inviteToCrew as inviteRpc,
 	acceptInvite as acceptRpc,
 	declineInvite as declineRpc,
 	joinCrew as joinRpc,
 	leaveCrew as leaveRpc,
-} from "@/utils/mudWars";
+} from "@/utils/crews";
 import { RpcResult } from "@/utils/rpc";
 
 const EMPTY: CrewState = {
@@ -30,8 +31,8 @@ const EMPTY: CrewState = {
 	members: [],
 	invitesIn: [],
 	invitesOut: [],
-	inWar: false,
-	warId: null,
+	lifetime_finds: 0,
+	milestones_claimed: [],
 };
 
 export interface UseCrew {
@@ -39,6 +40,7 @@ export interface UseCrew {
 	loading: boolean;
 	refresh: () => Promise<void>;
 	create: (name: string) => Promise<RpcResult<{ crew_id: string }>>;
+	rename: (name: string) => Promise<RpcResult<{}>>;
 	invite: (userId: string) => Promise<RpcResult<{}>>;
 	accept: (inviteId: string) => Promise<RpcResult<{ crew_id: string }>>;
 	decline: (inviteId: string) => Promise<RpcResult<{}>>;
@@ -122,6 +124,15 @@ export function useCrew(enabled = true): UseCrew {
 		[refresh]
 	);
 
+	const rename = useCallback(
+		async (name: string) => {
+			const r = await renameRpc(name);
+			if (r.ok) await refresh();
+			return r;
+		},
+		[refresh]
+	);
+
 	const invite = useCallback(
 		async (userId: string) => {
 			const r = await inviteRpc(userId);
@@ -167,7 +178,7 @@ export function useCrew(enabled = true): UseCrew {
 		return r;
 	}, [refresh]);
 
-	return { crew, loading, refresh, create, invite, accept, decline, join, leave };
+	return { crew, loading, refresh, create, rename, invite, accept, decline, join, leave };
 }
 
 // Open Sounders the caller could join right now (find_joinable_crews).

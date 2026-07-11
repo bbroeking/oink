@@ -11,7 +11,7 @@ import {
 	acceptInviteResult,
 	joinError,
 } from "../components/sounder/inviteState";
-import { CREW_CAP } from "../constants/mudFights";
+import { CREW_CAP } from "../constants/crews";
 
 const inv = (id: string, crew_id: string) => ({ id, crew_id });
 

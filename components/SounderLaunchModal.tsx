@@ -1,13 +1,19 @@
-// "Mud Wars are here — start a Sounder!" launch nudge. Shown (via the popup
-// queue) on launch when the feature is live (the `mud_wars` server flag) and the player
-// has no crew, re-surfacing at most once/day until they create or join one. The
-// primary CTA routes to the Friends → Sounder tab where the crew-create form
-// lives. Gated by the caller in app/_layout.tsx.
+// "The Great Hunger is here — join a Sounder!" launch nudge. Shown (via the
+// popup queue) on launch when the co-op-dig season is live (the `coop_dig`
+// server flag) and the player has no crew, re-surfacing at most once/day until
+// they create or join one. The primary CTA routes to the Friends → Sounder tab
+// where the join/create form lives. Gated by the caller in app/_layout.tsx.
 import { useEffect, useRef } from "react";
-import { View, Text, Image, Pressable, Modal, Animated, StyleSheet } from "react-native";
+import { View, Text, Image, Pressable, Modal, Animated, StyleSheet, Dimensions } from "react-native";
 import * as Haptics from "expo-haptics";
 import { HAT_IMAGES } from "@/constants/hats";
 import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
+
+const HUNGERER = require("../assets/images/hunger/great_hungerer_chip.png");
+
+// Fixed card width (never wider than the screen minus gutters) — avoids the
+// alignSelf:"stretch"/maxWidth edge case that clipped wrapped lines on the right.
+const CARD_W = Math.min(340, Dimensions.get("window").width - 48);
 
 interface Props {
 	visible: boolean;
@@ -33,7 +39,8 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
 		<Modal visible transparent animationType="none" onRequestClose={onDismiss}>
 			<View style={styles.backdrop}>
 				<Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
-				<Animated.View style={[styles.card, { opacity: anim, transform: [{ scale }] }]}>
+				<Animated.View style={[styles.animWrap, { opacity: anim, transform: [{ scale }] }]}>
+					<View style={styles.card}>
 					<Pressable
 						onPress={onDismiss}
 						hitSlop={10}
@@ -42,10 +49,11 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
 					>
 						<Text style={styles.closeText}>✕</Text>
 					</Pressable>
-					{/* The debut art shows the Slop Toss combat: a warboss charges in, a splat lands. */}
+					{/* The debut art: the Great Hungerer looming, a golden truffle
+					    pried loose toward the herd. */}
 					<View style={styles.heroScene}>
 						<Animated.Image
-							source={HAT_IMAGES.goblin_warboss}
+							source={HUNGERER}
 							style={[
 								styles.hero,
 								{ transform: [
@@ -56,7 +64,7 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
 							resizeMode="contain"
 						/>
 						<Animated.Image
-							source={HAT_IMAGES.mud_splat}
+							source={HAT_IMAGES.golden_truffle}
 							style={[
 								styles.heroSplat,
 								{ opacity: anim, transform: [{ scale: anim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.2, 1.2, 1] }) }] },
@@ -64,23 +72,24 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
 							resizeMode="contain"
 						/>
 					</View>
-					<Text style={styles.kicker}>NEW · MUD WARS</Text>
-					<Text style={styles.title}>Mud Wars are here!</Text>
+					<Text style={styles.kicker}>NEW · THE GREAT HUNGER</Text>
+					<Text style={styles.title}>The Great Hunger is here!</Text>
 					<Text style={styles.body}>
-						Rally a <Text style={styles.bodyStrong}>Sounder</Text> — a crew of up to 5 — and
-						sling mud in 5-day wars. Winners split the pot in snouts, score a regen buff, and
-						earn <Text style={styles.bodyStrong}>war-only cosmetics</Text>.
+						Join a <Text style={styles.bodyStrong}>Sounder</Text> and dig at the
+						Hungerer's feedings. The <Text style={styles.bodyStrong}>truffles are
+						yours</Text> — and every find starves him a little more.
 					</Text>
 
 					<Pressable
 						onPress={onCreate}
 						style={({ pressed }) => [styles.primary, pressed && { opacity: 0.9 }]}
 					>
-						<Text style={styles.primaryText}>Create a Sounder</Text>
+						<Text style={styles.primaryText}>Join a Sounder</Text>
 					</Pressable>
 					<Pressable onPress={onDismiss} hitSlop={8} style={styles.later}>
 						<Text style={styles.laterText}>Maybe later</Text>
 					</Pressable>
+					</View>
 				</Animated.View>
 			</View>
 		</Modal>
@@ -90,12 +99,12 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
 const INK = WHIMSY.ink;
 const styles = StyleSheet.create({
 	backdrop: { flex: 1, backgroundColor: "rgba(20,16,28,0.55)", alignItems: "center", justifyContent: "center", padding: 28 },
+	// The animated layer carries ONLY opacity+scale+width — no fill/border/shadow,
+	// which iOS renders as detached offset artifacts under a transform. The static
+	// inner `card` draws the fill + border so they stay perfectly aligned.
+	animWrap: { width: CARD_W },
 	card: {
-		// stretch to the backdrop's padded content width (capped) — using
-		// width:"100%" here resolved wider than the content box and pushed the
-		// card off-screen, clipping each wrapped line on the right.
-		alignSelf: "stretch",
-		maxWidth: 360,
+		width: "100%",
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: INK,

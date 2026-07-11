@@ -1,5 +1,5 @@
 // SounderCard — crew management on the Friends hub (the "Sounder"
-// segment, dark-launched behind the `mud_wars` server flag). Implements
+// segment, dark-launched behind the `coop_dig` server flag). Implements
 // the invite-matchmaking mockup (docs/design/claude-design/sounder/
 // invite-matchmaking.html):
 //
@@ -11,11 +11,11 @@
 //             "Call a snout to your banner" CTA → FriendInvitePicker),
 //             a NON-actionable incoming-invites strip ("asks waiting on
 //             the wind" — one Sounder at a time, "let it go" only), the
-//             Mud Scuffle CTA, the pass-the-crown sheet for leaders, and
-//             a quiet leave link.
+//             Golden Truffle economy doors (rewards + exchange), a herd
+//             dig-milestone summary, and a quiet leave link.
 //
-// All war flow (challenge / accept / sling / resolve) lives on the
-// /mud-war screen; this card is crew bookkeeping only.
+// This card is crew bookkeeping only; the dig itself lives in the feeding
+// strip.
 
 import { useEffect, useState } from "react";
 import {
@@ -27,18 +27,14 @@ import {
 	StyleSheet,
 	ScrollView,
 } from "react-native";
-import { useRouter, type Href } from "expo-router";
 import { supabase } from "@/utils/supabase";
 import {
 	fetchFriendsCrews,
-	formatCountdown,
 	kickCrewMember,
 	type InviteIn,
-	type WarState,
-} from "@/utils/mudWars";
+} from "@/utils/crews";
 import { Button } from "./ui/Button";
 import { Icon } from "./ui/Icon";
-import { Glyph } from "./ui/Glyph";
 import { Sticker } from "./ui/Sticker";
 import { LoadingBeat } from "./ui/EmptyState";
 import {
@@ -59,21 +55,14 @@ import { JoinableSounders } from "./JoinableSounders";
 import { FriendInvitePicker } from "./FriendInvitePicker";
 import { TransferLeadershipSheet } from "./TransferLeadershipSheet";
 import { UserSheet } from "./UserSheet";
-import { WarSpoilsSheet } from "./WarSpoilsSheet";
+import { TruffleCatalogSheet } from "./TruffleCatalogSheet";
 import { TruffleExchangeSheet } from "./mudwar/TruffleExchangeSheet";
 import { useTruffles } from "@/hooks/useTruffles";
 import { HAT_IMAGES } from "@/constants/hats";
 import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
-import { useMudWar } from "@/hooks/useMudWar";
 import { useRosterHats } from "@/hooks/useRosterHats";
-import { CREW_CAP } from "@/constants/mudFights";
-import {
-	opponentName,
-	ropeState,
-	siegeDay,
-	warActions,
-	warTotalDays,
-} from "./mudwar/warCopy";
+import { milestoneProgress } from "@/utils/dig";
+import { CREW_CAP } from "@/constants/crews";
 import {
 	acceptInviteResult,
 	createError,
@@ -103,20 +92,14 @@ export function SounderCard({
 	crewHook: UseCrew;
 	onShowBoard?: () => void;
 }) {
-	const router = useRouter();
 	const { crew, loading, create, accept, decline, leave } = crewHook;
 	const joinable = useJoinableCrews(!crew.crew);
-	// A live war turns the bare "View the Mud Scuffle" CTA into the informative
-	// WarStrip treatment (opponent · rope · day). Only fetches while in a war;
-	// until the state lands we fall back to the simple button.
-	const mudWar = useMudWar(crew.warId ?? undefined, crew.inWar);
 	const [name, setName] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const [crownOpen, setCrownOpen] = useState(false);
-	// War-economy doors — the spoils collection + the Truffle Exchange live on
-	// this card (the scuffle page stays pure play).
+	// Golden Truffle economy doors — the rewards catalog + the Truffle Exchange.
 	const [spoilsOpen, setSpoilsOpen] = useState(false);
 	const [exchangeOpen, setExchangeOpen] = useState(false);
 	// Golden Truffle pouch + Exchange rotation (Season 1 P4; cozy-closed until
@@ -190,11 +173,7 @@ export function SounderCard({
 		setNote(null);
 		const r = await kickCrewMember(userId);
 		if (!r.ok) {
-			setNote(
-				r.reason === "in_war"
-					? "The scuffle holds the roster — kick once it's settled."
-					: "Couldn't remove them — try again."
-			);
+			setNote("Couldn't remove them — try again.");
 		}
 		await crewHook.refresh();
 	}
@@ -241,7 +220,7 @@ export function SounderCard({
 				</Text>
 			</Pressable>
 			<Text style={styles.foundCopy}>
-				raise the first banner and the{"\n"}bog fills in behind you.
+				raise the first banner and the{"\n"}herd fills in behind you.
 			</Text>
 		</View>
 	);
@@ -294,7 +273,7 @@ export function SounderCard({
 							})}
 							{anyStale && (
 								<AccentNote style={styles.staleNote}>
-									the bog moves fast — that banner's full.
+									the herd moves fast — that banner's full.
 								</AccentNote>
 							)}
 						</View>
@@ -460,47 +439,25 @@ export function SounderCard({
 				</Sticker>
 			)}
 
-			{/* The scuffle — the section the roster exists for. */}
+			{/* The Golden Truffle economy — the rewards catalog + the Exchange.
+			    (The herd milestone summary leads the card.) */}
 			<Sticker color="paper" rotate={0.4} radius={RADII.xl} style={styles.crewMini}>
-				{/* Kicker with a trailing dashed rule. */}
-				<View style={styles.scuffleKick}>
-					<Text style={styles.scuffleKickText}>the scuffle</Text>
-					<View style={styles.scuffleKickRule} />
-				</View>
-				{crew.inWar && mudWar.war ? (
-					<ScuffleSummary
-						war={mudWar.war}
-						crewName={crew.crew!.name}
-						onGo={(focus) => router.push(`/mud-war?focus=${focus}` as Href)}
-					/>
-				) : (
-					<Button
-						variant="gold"
-						full
-						icon={<Icon name="trophy" size={16} color="#5A3F00" />}
-						// Cast: expo-router regenerates the typed-routes union to
-						// include /mud-war on the next `expo start`; cast keeps tsc green now.
-						onPress={() => router.push("/mud-war" as Href)}
-					>
-						{crew.inWar ? "View the Mud Scuffle" : "Start a Mud Scuffle"}
-					</Button>
-				)}
-				{/* War-economy doors — the spoils collection + the Truffle
-				    Exchange. Quiet hand-links so they never compete with the
-				    scuffle CTA. */}
+				{/* Herd dig-milestone summary — the Sounder's lifetime finds toward
+				    the next re-themed title (quiet accomplishment, never a chore). */}
+				<MilestoneSummary lifetimeFinds={crew.lifetime_finds} />
 				<View style={styles.troveRow}>
 					<Pressable
 						onPress={() => setSpoilsOpen(true)}
 						hitSlop={8}
-						style={styles.troveBtn}
+						style={({ pressed }) => [styles.troveBtn, pressed && styles.trovePressed]}
 					>
 						<Icon name="trophy" size={15} color={WHIMSY.accent} />
-						<Text style={styles.troveText}>Spoils</Text>
+						<Text style={styles.troveText}>Rewards</Text>
 					</Pressable>
 					<Pressable
 						onPress={() => setExchangeOpen(true)}
 						hitSlop={8}
-						style={styles.troveBtn}
+						style={({ pressed }) => [styles.troveBtn, pressed && styles.trovePressed]}
 					>
 						{HAT_IMAGES.golden_truffle ? (
 							<Image
@@ -518,18 +475,9 @@ export function SounderCard({
 						</Text>
 					</Pressable>
 				</View>
-				{/* Standings live in the hub's Board segment — this note switches
-				    segments in place instead of pushing a route. */}
-				<Pressable onPress={onShowBoard} style={styles.boardNote} hitSlop={6}>
-					<Text style={styles.boardNoteText}>
-						standings live in the{" "}
-						<Text style={styles.boardNoteAccent}>Board</Text> now ›
-					</Text>
-				</Pressable>
 			</Sticker>
 
-			{/* Leaving is easy but quiet — a hand-written line, not a
-			    button competing with the scuffle CTA. */}
+			{/* Leaving is easy but quiet — a hand-written line, not a button. */}
 			<HandLink onPress={() => leave()} style={styles.leaveWrap}>
 				leave your Sounder › no hard feelings
 			</HandLink>
@@ -546,7 +494,7 @@ export function SounderCard({
 				crewHook={crewHook}
 			/>
 
-			<WarSpoilsSheet open={spoilsOpen} onClose={() => setSpoilsOpen(false)} />
+			<TruffleCatalogSheet open={spoilsOpen} onClose={() => setSpoilsOpen(false)} />
 			<TruffleExchangeSheet
 				open={exchangeOpen}
 				onClose={() => setExchangeOpen(false)}
@@ -564,56 +512,39 @@ export function SounderCard({
 	);
 }
 
-// ── Live-war summary — the WarStrip treatment, inlined under "the scuffle".
-// WHO (you vs them) · WHERE THE ROPE IS (plain words + day/countdown) · then
-// dig/bog actions that deep-link the war page. Reuses the same pure warCopy
-// helpers as SounderSteps.WarStrip so the two surfaces never drift.
-function ScuffleSummary({
-	war,
-	crewName,
-	onGo,
-}: {
-	war: WarState;
-	crewName: string;
-	onGo: (focus: string) => void;
-}) {
-	const total = warTotalDays(war);
-	const day = siegeDay(war.endsAt, total);
-	const opp = opponentName(war);
-	const rope = ropeState(war);
-	const countdown = formatCountdown(war.endsAt);
-	const actions = warActions(war);
+// Compact herd-milestone line for the crew card — earned title + progress to
+// the next, e.g. "Root Rustler earned · 214/600 to Truffle Baron". Kept small
+// and social; the season tab owns the fuller milestones row.
+function MilestoneSummary({ lifetimeFinds }: { lifetimeFinds: number }) {
+	const m = milestoneProgress(lifetimeFinds);
+	let line: string;
+	if (m.allDone) {
+		line = `${m.earnedTitle} earned · the herd's dug it all`;
+	} else if (m.earnedTitle) {
+		line = `${m.earnedTitle} earned · ${m.lifetimeFinds}/${m.nextThreshold} to ${m.nextTitle}`;
+	} else {
+		line = `${m.lifetimeFinds}/${m.nextThreshold} to ${m.nextTitle}`;
+	}
 	return (
-		<View style={styles.scuffleSummary}>
-			<View style={styles.warHead}>
-				<Glyph name="flame" size={20} />
-				<Text style={styles.warTitle} numberOfLines={1}>
-					{crewName} vs {opp}
-				</Text>
-				<Text style={styles.warDay}>
-					Day {day}/{total}
-				</Text>
-			</View>
-			<Text style={styles.warLean}>{rope.line}</Text>
-			{!!countdown && <Text style={styles.warClock}>{countdown} left in the day</Text>}
-			<View style={styles.warActions}>
-				{actions.map((a) => (
-					<Button
-						key={a.key}
-						size="sm"
-						variant={a.key === "bog" ? "ghost" : "primary"}
-						onPress={() => onGo(a.focus)}
-					>
-						{a.label}
-					</Button>
-				))}
-			</View>
+		<View style={styles.milestoneRow}>
+			<Icon name="trophy" size={15} color={WHIMSY.accent} />
+			<Text style={styles.milestoneText} numberOfLines={1}>
+				{line}
+			</Text>
 		</View>
 	);
 }
 
 const styles = StyleSheet.create({
 	scroll: { flex: 1 },
+	milestoneRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.xs,
+		justifyContent: "center",
+		marginBottom: SPACE.sm,
+	},
+	milestoneText: { ...TYPE.hand, color: WHIMSY.mute, flexShrink: 1 },
 	content: { padding: PAGE_PAD, paddingBottom: TAB_SAFE, gap: SPACE.md },
 	// The one paper sticker the crewless states live in (Frames A & B).
 	muster: { padding: SPACE.lg, paddingBottom: SPACE.lg },
@@ -709,66 +640,31 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginTop: SPACE.lg,
 	},
-	// Live-war summary — mirrors SounderSteps.WarStrip's visual grammar.
-	scuffleSummary: { marginTop: SPACE.sm },
-	warHead: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
-	warTitle: {
-		flex: 1,
-		...TYPE.cardTitle,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-	},
-	warDay: { ...TYPE.label, fontFamily: FONTS.bodyExtra, color: WHIMSY.mute },
-	warLean: {
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.ink,
-		marginTop: SPACE.xs,
-	},
-	warClock: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		marginTop: 2,
-		marginBottom: SPACE.md,
-	},
-	warActions: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm },
-	// Scuffle header — hand kicker + a flex-1 dashed rule.
-	scuffleKick: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		marginBottom: SPACE.md,
-	},
-	scuffleKickText: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textTransform: "uppercase",
-		letterSpacing: 2,
-	},
-	scuffleKickRule: {
-		flex: 1,
-		height: 0,
-		borderTopWidth: 2.5,
-		borderStyle: "dashed",
-		borderColor: WHIMSY.muteSoft,
-	},
-	// War-economy doors — centered icon + hand-text pair, matching HandLink's
-	// quiet weight.
+	// Golden Truffle economy doors — centered icon + hand-text pair, matching
+	// HandLink's quiet weight.
 	troveRow: {
 		flexDirection: "row",
 		justifyContent: "center",
 		gap: SPACE.xl,
 		marginTop: SPACE.md,
 	},
-	troveBtn: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
-	troveText: { ...TYPE.hand, color: WHIMSY.accent },
+	// Real button chrome (founder: these read as plain text) — the app's chip
+	// grammar: cream face, ink border, sticker shadow, pressed dim.
+	troveBtn: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.xs,
+		backgroundColor: WHIMSY.cream,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.md,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.xs + 2,
+		...SHADOW_SM,
+	},
+	trovePressed: { opacity: 0.7 },
+	troveText: { ...TYPE.hand, color: WHIMSY.ink },
 	troveIcon: { width: 16, height: 16 },
-	// "standings live in the Board now ›" — centered hand note, Board in accent.
-	boardNote: { marginTop: SPACE.sm, alignSelf: "stretch" },
-	boardNoteText: { ...TYPE.hand, color: WHIMSY.mute, textAlign: "center" },
-	boardNoteAccent: { fontFamily: FONTS.bodyExtra, color: WHIMSY.accent },
 	leaveWrap: { alignSelf: "center", marginTop: SPACE.xs, marginBottom: SPACE.sm },
 	note: {
 		...TYPE.bodySm,

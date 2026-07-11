@@ -1,5 +1,10 @@
 # Sounder Mud Fights — clan-war plan (next season)
 
+> **SUPERSEDED 2026-07-06** by `docs/season1-coop-dig-spec.md` — the entire
+> war/league stack was removed in the first-principles co-op rebuild (see
+> `SKILL.md` decision log; code archived at `archive/sounder-league-2026-07-06`).
+> Kept for history only.
+
 **Source:** 2026-06-13 voice brainstorm (sounder-off / barn-off) distilled, plus
 the sim-verified scoring work harvested from
 `docs/explorations/2026-06-08-pinned-design-teams-pageant-minigames.md` (the

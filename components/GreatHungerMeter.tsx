@@ -57,8 +57,8 @@ const HUNGER_ART: Record<HungerStage, StageArt> = {
 	famished: { hero: 0.94, aura: 0.06, slump: -9.5, breatheTo: 1.012 },
 };
 
-export function GreatHungerMeter() {
-	const meter = useHungerMeter();
+export function GreatHungerMeter({ refreshKey }: { refreshKey?: number } = {}) {
+	const meter = useHungerMeter(refreshKey);
 	const art = HUNGER_ART[meter.stage];
 
 	// Slow gorging breath — amplitude eases down as he weakens.

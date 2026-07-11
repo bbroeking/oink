@@ -4,7 +4,7 @@
 // re-derives it. These mirrors exist for tests and for the display-only
 // preview when the RPC isn't deployed yet — they must never gate a purchase.
 
-import { EXCHANGE_TIERS, EXCHANGE_PRICES, type ExchangeTier } from "@/constants/mudFights";
+import { EXCHANGE_TIERS, EXCHANGE_PRICES, type ExchangeTier } from "@/constants/dig";
 
 // tier lookup for a war-spoil id (null for non-exchange items).
 export function tierForId(id: string): ExchangeTier | null {

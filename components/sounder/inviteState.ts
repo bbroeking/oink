@@ -5,8 +5,8 @@
 // precedent). The copy lives here too so the two surfaces can never drift on
 // the same message.
 
-import { CREW_CAP } from "@/constants/mudFights";
-import type { InviteIn } from "@/utils/mudWars";
+import { CREW_CAP } from "@/constants/crews";
+import type { InviteIn } from "@/utils/crews";
 
 const SEAT_WORDS = ["", "one", "two", "three", "four", "five"];
 
@@ -67,7 +67,7 @@ export function acceptInviteResult(reason?: string): AcceptOutcome {
 export function joinError(reason?: string): string {
 	switch (reason) {
 		case "crew_full":
-			return "Just filled up — the bog moves fast.";
+			return "Just filled up — the herd moves fast.";
 		case "crew_in_war":
 			return "They're mid-war — catch them after.";
 		case "already_in_crew":

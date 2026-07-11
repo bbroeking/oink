@@ -12,9 +12,9 @@ import {
 	EXCHANGE_TIERS,
 	EXCHANGE_PRICES,
 	TRUFFLE_MILESTONES,
-	WAR_SPOILS_IDS,
+	EXCHANGE_ITEM_IDS,
 	type ExchangeTier,
-} from "../constants/mudFights";
+} from "../constants/dig";
 
 describe("exchange rotation (client mirror)", () => {
 	it("is deterministic: same seed + week → same stock", () => {
@@ -53,7 +53,7 @@ describe("tier tables", () => {
 		);
 		expect(all).toHaveLength(25);
 		expect(new Set(all).size).toBe(25);
-		expect(new Set(all)).toEqual(new Set(WAR_SPOILS_IDS as unknown as string[]));
+		expect(new Set(all)).toEqual(new Set(EXCHANGE_ITEM_IDS as unknown as string[]));
 	});
 
 	it("every war-spoil is reachable through the rotation (no orphan is unbuyable)", () => {
@@ -70,7 +70,7 @@ describe("tier tables", () => {
 				for (const id of pickRotation(seed, week)) reached.add(id);
 			}
 		}
-		expect(reached).toEqual(new Set(WAR_SPOILS_IDS as unknown as string[]));
+		expect(reached).toEqual(new Set(EXCHANGE_ITEM_IDS as unknown as string[]));
 		expect(reached.size).toBe(25);
 	});
 
