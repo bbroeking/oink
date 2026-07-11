@@ -86,6 +86,7 @@ const PATCH_ART = {
 	truffle: HAT_IMAGES.golden_truffle,
 	hunger: require("../../assets/images/hunger/great_hungerer_chip.png"), // the gorging Hungerer (real art)
 	mote: require("../../assets/images/tickle-particles/bubble.png"), // shimmer glow base
+	stone: require("../../assets/images/patch/stone.png"), // the dud find (real sprite)
 	mud: ["#c2a077", "#a5825f", "#8a6b4f"] as const, // layer 1 → 3 (shallow → deep)
 	silhouette: "rgba(42,31,21,0.55)",
 } as const;
@@ -1191,19 +1192,28 @@ function RevealedCell({
 		);
 	}
 	if (kind === "truffle_l" || kind === "truffle_d") {
-		// A half-sunk golden CHUNK, not a full truffle — smaller, dimmer and nudged
-		// down so a single peeked cell reads as a piece still stuck in the mud
-		// (the whole prize only appears once the cluster is fully excavated).
+		// A truffle PIECE still embedded in the ground: only its top peeks out of
+		// a mud mound. Playtest proved a free-floating (even dimmed) truffle image
+		// reads as a WHOLE truffle — two peeked cells looked like "2 truffles
+		// found" while the pouch honestly said 0. The mound makes "not yours yet"
+		// visible; the whole prize only pops once the cluster fully excavates.
 		return (
-			<Image
-				source={PATCH_ART.truffle}
-				style={[styles.truffleChunk, { transform: [{ translateY: size * 0.12 }] }]}
-				resizeMode="contain"
-			/>
+			<View style={styles.chunkWrap}>
+				<Image
+					source={PATCH_ART.truffle}
+					style={[styles.truffleChunk, { transform: [{ translateY: size * 0.18 }] }]}
+					resizeMode="contain"
+				/>
+				<View style={styles.chunkMound} />
+			</View>
 		);
 	}
 	if (kind === "shimmer") return <ShimmerFind size={size} />;
-	if (kind === "stone") return <StoneFind />;
+	if (kind === "stone") {
+		// Real sprite — the old border-radius pebble read as a UI glitch
+		// (founder: "broken hover") the moment it surfaced.
+		return <Image source={PATCH_ART.stone} style={styles.stoneImg} resizeMode="contain" />;
+	}
 	return <JunkFind kind={kind} />;
 }
 
@@ -1220,15 +1230,6 @@ function ShimmerFind({ size }: { size: number }) {
 	);
 }
 
-// A simple drawn pebble — asymmetric ink-outlined clod with a light top glint,
-// tilted so it reads hand-placed rather than a grey circle.
-function StoneFind() {
-	return (
-		<View style={styles.stone}>
-			<View style={styles.stoneGlint} />
-		</View>
-	);
-}
 
 // Junk reads distinctly per kind: a boot silhouette vs a crinkled wrapper. The
 // reveal chip names it too, so the shape only needs to be readable-at-a-glance.
@@ -1508,7 +1509,26 @@ const styles = StyleSheet.create({
 	findImg: { width: "82%", height: "82%" },
 	// A half-sunk truffle chunk: smaller + dimmer than a full find (the nudge-down
 	// is applied inline off the tile size), so a peeked cell reads as a piece.
+	// Piece-still-buried: the truffle sits low in the cell with a mud mound
+	// covering its lower half, so a peeked cell can't be mistaken for a prize.
+	chunkWrap: {
+		width: "100%",
+		height: "100%",
+		alignItems: "center",
+		justifyContent: "center",
+		overflow: "hidden",
+	},
 	truffleChunk: { width: "55%", height: "55%", opacity: 0.9 },
+	chunkMound: {
+		position: "absolute",
+		bottom: "6%",
+		width: "78%",
+		height: "34%",
+		borderRadius: 999,
+		backgroundColor: PATCH_ART.mud[1],
+		borderWidth: 1,
+		borderColor: "rgba(42,31,21,0.18)",
+	},
 	// The one big dug-up truffle sitting over a claimed cluster.
 	bigTruffleWrap: {
 		position: "absolute",
@@ -1537,32 +1557,8 @@ const styles = StyleSheet.create({
 	shimmerSpark: { position: "absolute" },
 	shimmerSparkSm: { position: "absolute", right: "18%", top: "20%" },
 
-	// Stone — asymmetric ink-outlined pebble with a light glint.
-	stone: {
-		width: "56%",
-		height: "46%",
-		backgroundColor: WHIMSY.muteSoft,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderTopLeftRadius: 999,
-		borderBottomRightRadius: 999,
-		borderTopRightRadius: RADII.sm,
-		borderBottomLeftRadius: RADII.sm,
-		transform: [{ rotate: "-7deg" }],
-		alignItems: "center",
-		justifyContent: "center",
-		overflow: "hidden",
-	},
-	stoneGlint: {
-		position: "absolute",
-		top: "16%",
-		left: "18%",
-		width: "34%",
-		height: "26%",
-		borderRadius: 999,
-		backgroundColor: WHIMSY.paper,
-		opacity: 0.5,
-	},
+	// Stone — real sprite, sized like the other find art.
+	stoneImg: { width: "62%", height: "62%" },
 
 	// Junk — boot silhouette.
 	bootWrap: { width: "58%", height: "58%" },
