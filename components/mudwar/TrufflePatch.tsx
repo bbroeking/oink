@@ -1201,7 +1201,7 @@ function RevealedCell({
 			<View style={styles.chunkWrap}>
 				<Image
 					source={PATCH_ART.truffle}
-					style={[styles.truffleChunk, { transform: [{ translateY: size * 0.18 }] }]}
+					style={[styles.truffleChunk, { transform: [{ translateY: size * 0.06 }] }]}
 					resizeMode="contain"
 				/>
 				<View style={styles.chunkMound} />
@@ -1518,12 +1518,15 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		overflow: "hidden",
 	},
-	truffleChunk: { width: "55%", height: "55%", opacity: 0.9 },
+	truffleChunk: { width: "62%", height: "62%", opacity: 0.95 },
+	// A LOW mound — a lip of dirt over the truffle's base. The first cut was
+	// mound-dominant and swallowed the gold (founder: "this looks broken");
+	// the gold is the message, the dirt is the caveat.
 	chunkMound: {
 		position: "absolute",
-		bottom: "6%",
-		width: "78%",
-		height: "34%",
+		bottom: "10%",
+		width: "60%",
+		height: "18%",
 		borderRadius: 999,
 		backgroundColor: PATCH_ART.mud[1],
 		borderWidth: 1,
