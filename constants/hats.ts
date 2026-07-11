@@ -216,6 +216,12 @@ export const HAT_IMAGES: Record<string, number> = {
 	// ⚠️ ANCHOR GATE: needs one placement pass in tools/placement_studio
 	// (http://127.0.0.1:8124/) before it sits right on Rosie's head.
 	release_party_crown: require("../assets/images/hats/release_party_crown.png"),
+	// Ticket Taker's Cap — rare grant-only hat for general Golden-Ticket
+	// giveaways (street QR, creator drops). Seeded in migration 20260734.
+	// ⚠️ ANCHOR GATE: placement pass needed (same as the crown). Art ships
+	// from build 108 — grants redeemed on 107 show the fallback plate until
+	// the update lands.
+	ticket_takers_cap: require("../assets/images/hats/ticket_takers_cap.png"),
 };
 
 // Slop Club members-only art — AUTO-WIRED from constants/membersImages.generated
