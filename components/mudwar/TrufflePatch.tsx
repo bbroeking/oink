@@ -87,6 +87,10 @@ const PATCH_ART = {
 	hunger: require("../../assets/images/hunger/great_hungerer_chip.png"), // the gorging Hungerer (real art)
 	mote: require("../../assets/images/tickle-particles/bubble.png"), // shimmer glow base
 	stone: require("../../assets/images/patch/stone.png"), // the dud find (real sprite)
+	// Junk finds reuse the relic sprites — same objects in the fiction, and the
+	// drawn-View placeholders read as UI glitches the moment they surfaced.
+	junk_boot: require("../../assets/images/uniques/old_boot.png"),
+	junk_wrap: require("../../assets/images/uniques/licked_wrapper.png"),
 	mud: ["#c2a077", "#a5825f", "#8a6b4f"] as const, // layer 1 → 3 (shallow → deep)
 	silhouette: "rgba(42,31,21,0.55)",
 } as const;
@@ -152,8 +156,8 @@ const REVEAL_LABELS: Record<Find, string> = {
 	truffle_d: "Golden Truffle!",
 	shimmer: "tickle-motes!",
 	stone: "just a stone",
-	junk_boot: "old boot — junk",
-	junk_wrap: "old wrapper — junk",
+	junk_boot: "his old boot — junk",
+	junk_wrap: "a licked wrapper — junk",
 	unique: "a relic!",
 };
 
@@ -337,7 +341,7 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 		revealBeatAnim.setValue(0);
 		Animated.sequence([
 			Animated.spring(revealBeatAnim, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 12 }),
-			Animated.delay(720),
+			Animated.delay(1300),
 			Animated.timing(revealBeatAnim, { toValue: 2, duration: 260, useNativeDriver: true }),
 		]).start();
 	}, [revealBeat, revealBeatAnim]);
@@ -849,8 +853,8 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 													/>
 												)}
 												{silhouette && (
-													// Uniform lump for EVERY buried find (founder call) — you can't
-													// tell truffle from stone from relic until you commit. Mystery.
+													// Uniform lump for EVERY buried find — you can't tell truffle
+													// from stone from relic until you commit. Mystery is the point.
 													// A gilded lump (the one that got away) wears a sun-toned gleam
 													// so its earlier-showing silhouette reads as the shinier prize.
 													<View style={[styles.silhouette, gilded && styles.silhouetteGild]}>
@@ -933,9 +937,9 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 }
 
 // ── The itemized end card ────────────────────────────────────────────────────
-// One honest line per thing that happened, each with its icon (founder ask:
-// "I'm unclear what all these data points mean"). The first-truffle rule is
-// spelled out inline whenever more truffles were dug than minted.
+// One honest line per thing that happened, each with its icon — the raw data
+// points read as opaque without them. The first-truffle rule is spelled out
+// inline whenever more truffles were dug than minted.
 function EndCard({
 	end,
 	submitting,
@@ -1110,6 +1114,14 @@ function RevealChip({
 				style={styles.revealIconImg}
 				resizeMode="contain"
 			/>
+		) : beat.kind === "stone" || beat.kind === "junk_boot" || beat.kind === "junk_wrap" ? (
+			// Every find's chip carries its art — a text-only chip left players
+			// unsure what they'd just dug up.
+			<Image
+				source={PATCH_ART[beat.kind]}
+				style={styles.revealIconImg}
+				resizeMode="contain"
+			/>
 		) : null;
 	const label = isUnique ? `${uniqueDef.name}!` : REVEAL_LABELS[beat.kind];
 	return (
@@ -1192,21 +1204,24 @@ function RevealedCell({
 		);
 	}
 	if (kind === "truffle_l" || kind === "truffle_d") {
-		// A truffle PIECE: smaller + dimmer than the cluster's finished BigTruffle
-		// pop (the mound experiment read as a broken blob — founder killed it).
-		// "Not yours yet" is carried by the whisper line + the '​N of 2' copy.
+		// A truffle PIECE renders as an ink SILHOUETTE — the not-yours-yet
+		// vocabulary the Burrow Book already uses for undiscovered relics. Any
+		// golden piece (even small/dim) read as a second whole truffle and made
+		// the "1 of 2 dug" count feel wrong; gold now only ever means CAUGHT
+		// (the BigTruffle pop). A mound overlay was tried too — broken blob.
 		return (
 			<Image
 				source={PATCH_ART.truffle}
 				style={[styles.truffleChunk, { transform: [{ translateY: size * 0.06 }] }]}
 				resizeMode="contain"
+				tintColor={WHIMSY.ink}
 			/>
 		);
 	}
 	if (kind === "shimmer") return <ShimmerFind size={size} />;
 	if (kind === "stone") {
-		// Real sprite — the old border-radius pebble read as a UI glitch
-		// (founder: "broken hover") the moment it surfaced.
+		// Real sprite — a border-radius pebble read as a UI glitch
+		// (a stray hover state) the moment it surfaced.
 		return <Image source={PATCH_ART.stone} style={styles.stoneImg} resizeMode="contain" />;
 	}
 	return <JunkFind kind={kind} />;
@@ -1226,23 +1241,10 @@ function ShimmerFind({ size }: { size: number }) {
 }
 
 
-// Junk reads distinctly per kind: a boot silhouette vs a crinkled wrapper. The
-// reveal chip names it too, so the shape only needs to be readable-at-a-glance.
+// Junk renders with its real sprite; the reveal chip names it on the beat.
 function JunkFind({ kind }: { kind: Find }) {
-	if (kind === "junk_boot") {
-		return (
-			<View style={styles.bootWrap}>
-				<View style={styles.bootShaft} />
-				<View style={styles.bootFoot} />
-			</View>
-		);
-	}
-	return (
-		<View style={styles.wrapWrap}>
-			<View style={styles.wrapBody} />
-			<View style={styles.wrapTwist} />
-		</View>
-	);
+	const art = kind === "junk_boot" ? PATCH_ART.junk_boot : PATCH_ART.junk_wrap;
+	return <Image source={art} style={styles.findImg} resizeMode="contain" />;
 }
 
 function PouchChip({
@@ -1504,7 +1506,7 @@ const styles = StyleSheet.create({
 	findImg: { width: "82%", height: "82%" },
 	// A half-sunk truffle chunk: smaller + dimmer than a full find (the nudge-down
 	// is applied inline off the tile size), so a peeked cell reads as a piece.
-	truffleChunk: { width: "62%", height: "62%", opacity: 0.95 },
+	truffleChunk: { width: "58%", height: "58%", opacity: 0.55 },
 	// The one big dug-up truffle sitting over a claimed cluster.
 	bigTruffleWrap: {
 		position: "absolute",
@@ -1535,54 +1537,6 @@ const styles = StyleSheet.create({
 
 	// Stone — real sprite, sized like the other find art.
 	stoneImg: { width: "62%", height: "62%" },
-
-	// Junk — boot silhouette.
-	bootWrap: { width: "58%", height: "58%" },
-	bootShaft: {
-		position: "absolute",
-		left: "20%",
-		top: 0,
-		width: "34%",
-		height: "78%",
-		backgroundColor: PATCH_ART.mud[2],
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderTopLeftRadius: RADII.sm,
-		borderTopRightRadius: RADII.sm,
-	},
-	bootFoot: {
-		position: "absolute",
-		left: "18%",
-		bottom: 0,
-		width: "74%",
-		height: "34%",
-		backgroundColor: PATCH_ART.mud[2],
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.sm,
-		borderTopLeftRadius: 2,
-	},
-	// Junk — crinkled wrapper.
-	wrapWrap: { width: "56%", height: "56%", alignItems: "center", justifyContent: "center" },
-	wrapBody: {
-		width: "100%",
-		height: "70%",
-		backgroundColor: WHIMSY.peach,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.sm,
-		transform: [{ rotate: "-8deg" }],
-	},
-	wrapTwist: {
-		position: "absolute",
-		width: "26%",
-		height: "100%",
-		backgroundColor: WHIMSY.peach,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: 2,
-		transform: [{ rotate: "-8deg" }],
-	},
 
 	depthChip: {
 		...TYPE.kicker,
