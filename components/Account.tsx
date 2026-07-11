@@ -25,7 +25,6 @@ import { Card, Button, SectionHeader } from "./ui";
 import { Icon, type IconName } from "./ui/Icon";
 import { Image } from "react-native";
 import { PigAvatar } from "./ui/PigAvatar";
-import { HAT_IMAGES } from "@/constants/hats";
 import type { TitlePlacement } from "@/constants/title_types";
 import { Sticker, Tape } from "./ui/Sticker";
 import Constants from "expo-constants";
@@ -40,7 +39,7 @@ import {
 	restorePurchases,
 	onCustomerInfoUpdate,
 } from "../utils/iap";
-import { SOUNDER_VISIBLE } from "@/constants/featureFlags";
+import { PURCHASES_LIVE, SOUNDER_VISIBLE } from "@/constants/featureFlags";
 import { showPurchaseToast } from "./PurchaseToast";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { useStipend, type StipendStatus } from "@/hooks/useStipend";
@@ -429,18 +428,11 @@ export function Account({ session }: { session: Session }) {
 							<Sticker color="rose" rotate={-1} radius={18} style={styles.codeCard}>
 								<View style={styles.codeRow}>
 									<View style={styles.codeAvatar}>
+										{/* Me rows render bare pigs by founder call
+										    2026-07-11 — the scrapbook flowers charm was
+										    removed; the avatar shows only the pig's own
+										    equipped cosmetic (activeHat) if any. */}
 										<PigAvatar size={56} hatId={activeHat} />
-										{/* Scrapbook flowers overlay — small charm
-										    detail from the redesign. Only shows when
-										    the player isn't already wearing flowers
-										    in the main slot. */}
-										{activeHat !== "flowers" &&
-											HAT_IMAGES["flowers"] && (
-												<Image
-													source={HAT_IMAGES["flowers"]}
-													style={styles.avatarFlowers}
-												/>
-											)}
 									</View>
 									<View style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
 										<Text style={styles.codeLabel}>your code</Text>
@@ -666,21 +658,26 @@ export function Account({ session }: { session: Session }) {
 								</Pressable>
 							) : (
 								<Pressable
-									onPress={handleUnlockPro}
-									disabled={busy}
+									onPress={PURCHASES_LIVE ? handleUnlockPro : undefined}
+									disabled={busy || !PURCHASES_LIVE}
 									style={({ pressed }) => [
 										styles.slopBtn,
 										{ backgroundColor: WHIMSY.lilac },
 										(pressed || busy) && { opacity: 0.7 },
+										!PURCHASES_LIVE && { opacity: 0.75 },
 									]}
 								>
 									<Text style={styles.slopBtnText}>
-										{busy ? "…" : "Join the Slop Club"}
+										{!PURCHASES_LIVE
+											? "Coming soon…"
+											: busy
+											? "…"
+											: "Join the Slop Club"}
 									</Text>
 								</Pressable>
 							)}
 
-							{!isVip && (
+							{!isVip && PURCHASES_LIVE && (
 								<Text style={styles.slopFinePrint}>
 									Auto-renews. Cancel anytime in Settings.
 								</Text>
@@ -1149,15 +1146,6 @@ const styles = StyleSheet.create({
 	codeRow: {
 		flexDirection: "row",
 		alignItems: "center",
-	},
-	avatarFlowers: {
-		position: "absolute",
-		top: -10,
-		left: 4,
-		width: 52,
-		height: 38,
-		resizeMode: "contain",
-		transform: [{ rotate: "-6deg" }],
 	},
 	codeAvatar: {
 		borderRadius: 32,

@@ -25,3 +25,10 @@ export const SOUNDER_VISIBLE = false;
 //
 //   import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 //   const coopDig = useFeatureFlag("coop_dig");
+
+// Slop Club / premium-pass PURCHASE CTAs are "Coming soon…" until the
+// storefront goes live (founder call, 2026-07-11). The paywall wiring
+// (RevenueCat handleUnlockPro / presentPaywall) stays intact — flipping
+// this to true restores both buy buttons (Account membership card + the
+// season pass PremiumLockedBanner).
+export const PURCHASES_LIVE = false;

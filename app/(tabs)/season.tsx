@@ -64,6 +64,7 @@ import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
 import { FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW, SHADOW_SM, PAGE_PAD, TAB_SAFE, RADII, SPACE, TYPE } from "@/constants/theme";
 import { daysUntilJudgement } from "@/utils/season";
 import { Button, SectionHeader } from "../../components/ui";
+import { PURCHASES_LIVE } from "../../constants/featureFlags";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 
@@ -873,15 +874,21 @@ function PremiumLockedBanner({ onUnlock }: { onUnlock: () => void }) {
 				</Text>
 			</View>
 			<Pressable
-				onPress={onUnlock}
+				onPress={PURCHASES_LIVE ? onUnlock : undefined}
+				disabled={!PURCHASES_LIVE}
 				style={({ pressed }) => [
 					passBannerStyles.btn,
-					pressed && { opacity: 0.85 },
+					pressed && PURCHASES_LIVE && { opacity: 0.85 },
+					!PURCHASES_LIVE && { opacity: 0.75 },
 				]}
 				accessibilityRole="button"
-				accessibilityLabel="Unlock the premium pass"
+				accessibilityLabel={
+					PURCHASES_LIVE ? "Unlock the premium pass" : "Premium pass coming soon"
+				}
 			>
-				<Text style={passBannerStyles.btnText}>Unlock</Text>
+				<Text style={passBannerStyles.btnText}>
+					{PURCHASES_LIVE ? "Unlock" : "Coming soon…"}
+				</Text>
 			</Pressable>
 		</Sticker>
 	);
