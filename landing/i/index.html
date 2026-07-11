@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tickle the Pig — your friend's herd code</title>
+<meta name="description" content="A friend invited you into their herd on Tickle the Pig. Grab the code and join in." />
+<!-- Open Graph so the link looks good when shared in iMessage / social.
+     Absolute URLs are required — relative paths don't resolve in scrapers. -->
+<meta property="og:title" content="Join my herd in Tickle the Pig" />
+<meta property="og:description" content="Your friend's herd code is inside. Come tickle a pig with us." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://ticklethepig.com" />
+<meta property="og:image" content="https://ticklethepig.com/og.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Rosie — a cheerful pink pig — Tickle the Pig" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Join my herd in Tickle the Pig" />
+<meta name="twitter:description" content="Your friend's herd code is inside. Come tickle a pig with us." />
+<meta name="twitter:image" content="https://ticklethepig.com/og.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Archivo+Black&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #2a1f15;
+    --paper: #fffaf0;
+    --cream: #f7efe1;
+    --rose: #ffd6dc;
+    --rose-deep: #f8a8b3;
+    --sage: #c9dec1;
+    --sun: #ffd87a;
+    --lilac: #d6c8f0;
+    --mute: #9a8c7a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(circle at 12% 18%, rgba(255,214,220,.45), transparent 38%),
+      radial-gradient(circle at 88% 82%, rgba(214,200,240,.40), transparent 40%),
+      var(--paper);
+    color: var(--ink);
+    font-family: "Archivo", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 20px;
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+
+  /* ---- floating background confetti stars ---- */
+  .bg-stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .bg-stars b {
+    position: absolute;
+    color: var(--rose-deep);
+    font-size: 18px;
+    opacity: .5;
+    animation: float-up linear infinite;
+  }
+  @keyframes float-up {
+    0%   { transform: translateY(20px) rotate(0deg) scale(.6); opacity: 0; }
+    15%  { opacity: .55; }
+    85%  { opacity: .55; }
+    100% { transform: translateY(-110vh) rotate(220deg) scale(1); opacity: 0; }
+  }
+
+  /* ---- card ---- */
+  .card {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    border: 3px solid var(--ink);
+    border-radius: 26px;
+    box-shadow: 8px 8px 0 var(--ink);
+    max-width: 560px;
+    width: 100%;
+    padding: 26px 30px 26px;
+    text-align: center;
+    transform: rotate(-0.6deg) scale(.94);
+    opacity: 0;
+    animation: card-pop .7s cubic-bezier(.2,1.3,.4,1) .05s forwards;
+  }
+  @keyframes card-pop {
+    0%   { opacity: 0; transform: rotate(3deg) scale(.86) translateY(18px); }
+    70%  { opacity: 1; transform: rotate(-1.4deg) scale(1.012) translateY(0); }
+    100% { opacity: 1; transform: rotate(-0.6deg) scale(1); }
+  }
+
+  .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--rose-deep);
+    font-weight: 800;
+    margin-bottom: 14px;
+    opacity: 0;
+    animation: rise .55s ease-out .35s forwards;
+  }
+  .kicker .tw { display: inline-block; animation: twinkle 2.4s ease-in-out infinite; }
+  .kicker .tw:last-child { animation-delay: 1.2s; }
+  @keyframes twinkle {
+    0%, 100% { transform: scale(1) rotate(0); opacity: .9; }
+    50%      { transform: scale(1.35) rotate(18deg); opacity: 1; }
+  }
+
+  /* ---- Rosie ---- */
+  .rosie-stage {
+    position: relative;
+    width: 100%;
+    max-width: 168px;
+    margin: 0 auto 6px;
+    aspect-ratio: 370 / 383;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .rosie-stage::before {
+    content: "";
+    position: absolute;
+    inset: 14% 8% 16% 8%;
+    background: radial-gradient(circle, rgba(255,214,220,.85), rgba(255,214,220,0) 70%);
+    border-radius: 50%;
+    z-index: 0;
+    animation: halo 3.4s ease-in-out infinite;
+  }
+  @keyframes halo { 0%,100%{transform:scale(.96);opacity:.8;} 50%{transform:scale(1.06);opacity:1;} }
+  .rosie-wrap {
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    transform-origin: 50% 88%;
+    animation: rosie-in .7s cubic-bezier(.2,1.4,.4,1) .5s forwards;
+  }
+  .rosie {
+    width: 100%;
+    display: block;
+    transform-origin: 50% 88%;
+    animation: bob 3.2s ease-in-out 1.2s infinite;
+    will-change: transform;
+  }
+  @keyframes rosie-in {
+    0% { opacity: 0; transform: scale(.4) rotate(-12deg) translateY(30px); }
+    70%{ opacity: 1; transform: scale(1.06) rotate(3deg); }
+    100%{ opacity: 1; transform: scale(1) rotate(0); }
+  }
+  @keyframes bob { 0%,100%{transform:translateY(0) rotate(-1deg);} 50%{transform:translateY(-7px) rotate(1deg);} }
+  .rosie-stage.tickled .rosie { animation: wiggle .5s ease-in-out 1; }
+  @keyframes wiggle {
+    0%,100%{ transform: rotate(0) translateY(0); }
+    15%{ transform: rotate(-7deg) translateY(-4px); }
+    30%{ transform: rotate(6deg) translateY(-8px); }
+    45%{ transform: rotate(-6deg) translateY(-4px); }
+    60%{ transform: rotate(5deg) translateY(-7px); }
+    75%{ transform: rotate(-4deg) translateY(-2px); }
+  }
+  .giggle {
+    position: absolute;
+    top: 2%; left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 13px;
+    font-weight: 800;
+    padding: 5px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .giggle.show { animation: pop-giggle 1.1s ease-out 1; }
+  @keyframes pop-giggle {
+    0%{ opacity:0; transform: translateX(-50%) translateY(6px) scale(.6); }
+    25%{ opacity:1; transform: translateX(-50%) translateY(-6px) scale(1); }
+    75%{ opacity:1; transform: translateX(-50%) translateY(-10px) scale(1); }
+    100%{ opacity:0; transform: translateX(-50%) translateY(-22px) scale(.9); }
+  }
+  .spark {
+    position: absolute;
+    font-size: 16px;
+    pointer-events: none;
+    z-index: 2;
+    animation: spark-fly .8s ease-out forwards;
+  }
+  @keyframes spark-fly {
+    0%{ opacity: 0; transform: translate(0,0) scale(.2); }
+    20%{ opacity: 1; }
+    100%{ opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.1) rotate(var(--dr)); }
+  }
+
+  h1 {
+    font-family: "Archivo Black", "Archivo", sans-serif;
+    font-weight: 900;
+    font-size: clamp(22px, 5.5vw, 30px);
+    line-height: 1.05;
+    letter-spacing: -.5px;
+    margin-bottom: 18px;
+    opacity: 0;
+    animation: rise .55s ease-out .58s forwards;
+  }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ---- the big code ---- */
+  .code-label {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin-bottom: 10px;
+    opacity: 0;
+    animation: rise .55s ease-out .72s forwards;
+  }
+  .code-pill {
+    display: block;
+    background: var(--cream);
+    border: 3px solid var(--ink);
+    border-radius: 18px;
+    padding: 18px 16px;
+    margin-bottom: 12px;
+    box-shadow: 4px 4px 0 var(--ink);
+    cursor: pointer;
+    opacity: 0;
+    animation: rise .55s ease-out .8s forwards;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .code-pill:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 var(--ink); }
+  .code-pill:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+  .code {
+    display: block;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: clamp(30px, 9vw, 46px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--ink);
+    line-height: 1.1;
+    word-break: break-word;
+  }
+  .copy-hint {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--rose-deep);
+  }
+  .code-pill.copied .copy-hint { color: #3f9d5a; }
+
+  .join-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    background: var(--lilac);
+    border: 3px solid var(--ink);
+    border-radius: 15px;
+    padding: 16px;
+    font-family: "Archivo", sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: 4px 4px 0 var(--ink);
+    margin-bottom: 14px;
+    opacity: 0;
+    animation: rise .55s ease-out .88s forwards;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .join-btn .ja { transition: transform .2s; }
+  .join-btn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 var(--ink); }
+  .join-btn:hover .ja { transform: translateX(5px); }
+  .join-btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+
+  .steps {
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--sage);
+    border: 2.5px solid var(--ink);
+    border-radius: 15px;
+    padding: 13px 16px;
+    line-height: 1.5;
+    text-align: left;
+    opacity: 0;
+    animation: rise .55s ease-out .96s forwards;
+  }
+  .steps strong { font-weight: 800; }
+  .steps ol { margin: 4px 0 0 20px; }
+  .steps li { margin-bottom: 3px; }
+  .no-code {
+    color: var(--mute);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    background: var(--cream);
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 11px 20px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .hint {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    color: var(--mute);
+    margin-top: 12px;
+    opacity: 0;
+    animation: rise .5s ease-out 1.3s forwards;
+  }
+
+  /* safety net: if intro animations never run (background tab / throttled) */
+  body.shown .card { opacity: 1; transform: rotate(-0.6deg); }
+  body.shown .kicker,
+  body.shown h1,
+  body.shown .code-label,
+  body.shown .code-pill,
+  body.shown .join-btn,
+  body.shown .steps,
+  body.shown .hint { opacity: 1; }
+  body.shown .card,
+  body.shown .kicker,
+  body.shown h1,
+  body.shown .code-label,
+  body.shown .code-pill,
+  body.shown .join-btn,
+  body.shown .steps,
+  body.shown .hint,
+  body.shown .rosie-wrap { animation: none !important; }
+  body.shown .rosie-wrap { opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .card, .kicker, h1, .code-label, .code-pill, .join-btn, .steps, .hint, .rosie-wrap { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="bg-stars" id="bgStars" aria-hidden="true"></div>
+
+  <div class="card">
+    <div class="kicker"><span class="tw">★</span> Tickle the Pig <span class="tw">★</span></div>
+
+    <div class="rosie-stage" id="rosieStage" role="button" tabindex="0" aria-label="Tickle Rosie the pig">
+      <div class="giggle" id="giggle">hehehe!</div>
+      <div class="rosie-wrap"><img class="rosie" src="/rosie.png" alt="Rosie the pig" draggable="false" /></div>
+    </div>
+
+    <h1 id="headline">A friend saved you a spot in their herd.</h1>
+
+    <div id="code-block">
+      <div class="code-label">Your friend's herd code</div>
+      <div class="code-pill" id="codePill" role="button" tabindex="0" aria-label="Copy herd code">
+        <span class="code" id="code">—</span>
+        <span class="copy-hint" id="copyHint">tap to copy</span>
+      </div>
+    </div>
+
+    <!-- Defaults to the public TestFlight beta. The script below auto-
+         upgrades this button to the App Store the moment the listing goes
+         live (Apple lookup id 6740339848) — no redeploy needed. -->
+    <a class="join-btn" id="join" href="https://testflight.apple.com/join/5dDhSNN9">
+      Join the beta <span class="ja">→</span>
+    </a>
+
+    <div class="steps" id="steps">
+      <strong>How to join the herd:</strong>
+      <ol>
+        <li>Tap your code above to copy it.</li>
+        <li>Join the beta + install the app.</li>
+        <li>When the app asks for a code, paste it in.</li>
+      </ol>
+    </div>
+
+    <p class="hint">psst — tap Rosie 🐽</p>
+  </div>
+
+  <div class="toast" id="toast">Code copied ✓</div>
+
+<script>
+  /* reveal safety net (covers background-tab animation throttling) */
+  setTimeout(function () { document.body.classList.add('shown'); }, 1600);
+
+  /* ---------- background confetti stars ---------- */
+  (function () {
+    var wrap = document.getElementById('bgStars');
+    var glyphs = ['★', '✦', '✧', '♥'];
+    var n = window.innerWidth < 540 ? 9 : 16;
+    for (var i = 0; i < n; i++) {
+      var s = document.createElement('b');
+      s.textContent = glyphs[i % glyphs.length];
+      s.style.left = Math.random() * 100 + 'vw';
+      s.style.fontSize = (12 + Math.random() * 14) + 'px';
+      var dur = 9 + Math.random() * 10;
+      s.style.animationDuration = dur + 's';
+      s.style.animationDelay = (-Math.random() * dur) + 's';
+      s.style.color = i % 4 === 3 ? '#f8a8b3' : (i % 2 ? '#d6c8f0' : '#f8a8b3');
+      wrap.appendChild(s);
+    }
+  })();
+
+  /* ---------- tickle Rosie ---------- */
+  (function () {
+    var stage = document.getElementById('rosieStage');
+    var giggle = document.getElementById('giggle');
+    var giggles = ['hehehe!', 'oink!', 'teehee!', 'wheee!', 'snort!'];
+    var sparks = ['★', '✦', '♥', '✧'];
+    var gi = 0;
+    function burst() {
+      for (var i = 0; i < 9; i++) {
+        var s = document.createElement('span');
+        s.className = 'spark';
+        s.textContent = sparks[i % sparks.length];
+        s.style.left = (35 + Math.random() * 30) + '%';
+        s.style.top = (30 + Math.random() * 30) + '%';
+        s.style.color = i % 2 ? '#f8a8b3' : '#ffd87a';
+        var ang = Math.random() * Math.PI * 2;
+        var dist = 50 + Math.random() * 55;
+        s.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
+        s.style.setProperty('--dy', (Math.sin(ang) * dist - 30) + 'px');
+        s.style.setProperty('--dr', (Math.random() * 360 - 180) + 'deg');
+        stage.appendChild(s);
+        (function (el) { setTimeout(function () { el.remove(); }, 820); })(s);
+      }
+    }
+    function tickle() {
+      stage.classList.remove('tickled');
+      void stage.offsetWidth; /* restart animation */
+      stage.classList.add('tickled');
+      giggle.textContent = giggles[gi++ % giggles.length];
+      giggle.classList.remove('show');
+      void giggle.offsetWidth;
+      giggle.classList.add('show');
+      burst();
+    }
+    stage.addEventListener('click', tickle);
+    stage.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tickle(); }
+    });
+  })();
+
+  /* ---------- App Store cutover (auto) ----------
+     The Join button defaults to the TestFlight beta (in the HTML). The app's
+     App Store listing isn't public yet, so a hard link would 404. Instead we
+     ask Apple's lookup API (JSONP — CORS-safe) whether the app is live; the
+     moment it is, we upgrade the button to the App Store with no redeploy. */
+  (function () {
+    var APPSTORE_ID = '6740339848';
+    var APPSTORE_URL = 'https://apps.apple.com/app/id' + APPSTORE_ID;
+    var joinBtn = document.getElementById('join');
+    if (!joinBtn) return;
+    var cb = '__ttpStoreCheck';
+    var s;
+    window[cb] = function (data) {
+      try {
+        if (data && data.resultCount > 0) {
+          joinBtn.setAttribute('href', APPSTORE_URL);
+          joinBtn.innerHTML = 'Download on the App Store <span class="ja">→</span>';
+          var steps = document.getElementById('steps');
+          var li = steps && steps.querySelector('ol li:nth-child(2)');
+          if (li) li.innerHTML = 'Install the app from the App Store.';
+        }
+      } catch (e) {}
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+      try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+    };
+    s = document.createElement('script');
+    s.src = 'https://itunes.apple.com/lookup?id=' + APPSTORE_ID + '&callback=' + cb;
+    s.onerror = function () { if (s && s.parentNode) s.parentNode.removeChild(s); };
+    document.head.appendChild(s);
+  })();
+
+  /* ---------- referral (herd) code ---------- */
+  // Pull the code out of the path: /i/ROSIE-K3T9  (also tolerate ?code=).
+  // Matches the format the app emits + validates (REFERRAL_CODE_PATTERN
+  // in utils/referrals.ts): 5 letters, dash, 4 alphanumerics.
+  var PATTERN = /^[A-Z]{5}-[A-Z0-9]{4}$/;
+  function extractCode() {
+    var parts = window.location.pathname.split('/').filter(Boolean); // ['i','ROSIE-K3T9']
+    var raw = parts.length >= 2 && parts[0].toLowerCase() === 'i' ? parts[1] : '';
+    if (!raw) raw = new URLSearchParams(window.location.search).get('code') || '';
+    var c = decodeURIComponent(raw).toUpperCase().trim();
+    return PATTERN.test(c) ? c : null;
+  }
+
+  var code = extractCode();
+  var codeEl = document.getElementById('code');
+  var codePill = document.getElementById('codePill');
+  var copyHint = document.getElementById('copyHint');
+  var codeBlock = document.getElementById('code-block');
+  var toast = document.getElementById('toast');
+
+  function legacyCopy() {
+    var ta = document.createElement('textarea');
+    ta.value = code; document.body.appendChild(ta);
+    ta.select(); try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  function showToast() {
+    toast.classList.add('show');
+    setTimeout(function () { toast.classList.remove('show'); }, 1600);
+  }
+
+  function markCopied() {
+    codePill.classList.add('copied');
+    copyHint.textContent = 'copied ✓';
+    showToast();
+  }
+
+  function doCopy() {
+    if (!code) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(markCopied).catch(function () {
+        legacyCopy(); markCopied();
+      });
+    } else {
+      legacyCopy(); markCopied();
+    }
+  }
+
+  if (code) {
+    codeEl.textContent = code;
+    // Pre-warm the clipboard so the in-app first-launch clipboard sniff
+    // (parseReferralCodeFromClipboard) can pick it up. Best-effort —
+    // browsers may block clipboard writes without a user gesture, so the
+    // tap-to-copy pill is the reliable path.
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).catch(function () {});
+    }
+    codePill.addEventListener('click', doCopy);
+    codePill.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); doCopy(); }
+    });
+  } else {
+    // No valid code in the path = organic visitor or a malformed code.
+    // Welcome them in rather than telling them they're missing something.
+    // Hide the redeem steps (they reference a code that doesn't exist).
+    document.getElementById('headline').textContent = 'Come tickle a pig with us.';
+    codeBlock.innerHTML = '<p class="no-code">Came in without a friend\'s code? No worries — join the beta and start tickling. (Herd codes get the inviter +50 snouts; nothing\'s lost if you don\'t have one.)</p>';
+    var steps = document.getElementById('steps');
+    if (steps) steps.style.display = 'none';
+  }
+</script>
+</body>
+</html>

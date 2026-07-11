@@ -99,6 +99,23 @@ export function ReferralCodeEntry({ onDone }: Props) {
 	const trimmed = code.trim().toUpperCase();
 	const validShape = REFERRAL_CODE_PATTERN.test(trimmed);
 
+	// One-tap paste: pull the clipboard on demand and drop a matching
+	// code into the field. Complements the mount-time prefill for the
+	// case where the user copied their code from the landing page after
+	// this screen already mounted (clipboard was empty on mount).
+	const pasteFromClipboard = async () => {
+		try {
+			const clip = await Clipboard.getStringAsync();
+			const fromClip = parseReferralCodeFromClipboard(clip);
+			if (fromClip) {
+				setCode(fromClip);
+				if (status.kind === "error") setStatus({ kind: "idle" });
+			}
+		} catch {
+			// Clipboard unavailable / denied — silent; user can type.
+		}
+	};
+
 	const finish = async () => {
 		await AsyncStorage.setItem(SEEN_KEY, "1").catch(() => {});
 		onDone();
@@ -178,6 +195,16 @@ export function ReferralCodeEntry({ onDone }: Props) {
 							radius={20}
 							style={[styles.card, STICKER_SHADOW]}
 						>
+							<Pressable
+								onPress={pasteFromClipboard}
+								disabled={status.kind === "applying"}
+								style={({ pressed }) => [
+									styles.pasteChip,
+									pressed && { opacity: 0.7 },
+								]}
+							>
+								<Text style={styles.pasteChipText}>Paste code</Text>
+							</Pressable>
 							<TextInput
 								style={[
 									styles.input,
@@ -275,6 +302,18 @@ const styles = StyleSheet.create({
 	},
 	cardWrap: { paddingBottom: 24 },
 	card: { padding: 18 },
+	pasteChip: {
+		alignSelf: "flex-end",
+		paddingVertical: 6,
+		paddingHorizontal: 10,
+		marginBottom: 8,
+	},
+	pasteChipText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
+	},
 	input: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 18,

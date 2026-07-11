@@ -20,9 +20,11 @@ import { rpc } from "./rpc";
 // non-alpha from the username before padding.
 export const REFERRAL_CODE_PATTERN = /^[A-Z]{5}-[A-Z0-9]{4}$/;
 
-// Universal Link host. The /r/<code> route is the one we listen for
-// in app/_layout.tsx; the apex landing page (hosted separately)
-// renders code lookup + an App Store badge for uninstalled users.
+// Universal Link host. The /i/<code> route is the canonical invite
+// link we listen for in app/_layout.tsx; the apex landing page
+// (hosted separately) renders code lookup + an App Store badge for
+// uninstalled users. The legacy /r/<code> path is still accepted by
+// the parser for links shared before the rename.
 export const REFERRAL_URL_HOST = "ticklethepig.com";
 
 // AsyncStorage key for a code that landed via deep link before the
@@ -126,9 +128,10 @@ export function referralErrorMessage(
 }
 
 // Pulls a referral code out of a deep link. Returns the upper-cased
-// code if the URL matches `https://<host>/r/<code>` and the code
-// passes the format regex; otherwise null. Tolerates trailing
-// slashes, query strings, and case differences in the path tail.
+// code if the URL matches `https://<host>/i/<code>` (canonical) or
+// the legacy `https://<host>/r/<code>` and the code passes the
+// format regex; otherwise null. Tolerates trailing slashes, query
+// strings, and case differences in the path tail.
 export function parseReferralCodeFromUrl(url: string | null): string | null {
 	if (!url) return null;
 	let parsed: URL;
@@ -138,8 +141,9 @@ export function parseReferralCodeFromUrl(url: string | null): string | null {
 		return null;
 	}
 	if (parsed.hostname.toLowerCase() !== REFERRAL_URL_HOST) return null;
-	// Match /r/<something> at the start of the path. Trim trailing slash.
-	const match = parsed.pathname.match(/^\/r\/([^/?#]+)\/?$/i);
+	// Match /i/<something> (canonical) or /r/<something> (legacy) at the
+	// start of the path. Trim trailing slash.
+	const match = parsed.pathname.match(/^\/[ir]\/([^/?#]+)\/?$/i);
 	if (!match) return null;
 	const candidate = match[1].toUpperCase();
 	if (!REFERRAL_CODE_PATTERN.test(candidate)) return null;
@@ -166,7 +170,7 @@ export function shareMessageForCode(code: string): string {
 	return `Come tickle a pig with me. My code:
 ${code}
 
-https://${REFERRAL_URL_HOST}/r/${code}`;
+https://${REFERRAL_URL_HOST}/i/${code}`;
 }
 
 // ── Typed RPC wrappers ──────────────────────────────────────────

@@ -114,7 +114,13 @@ describe("referralErrorMessage", () => {
 });
 
 describe("parseReferralCodeFromUrl", () => {
-	test("extracts from a well-formed referral URL", () => {
+	test("extracts from a well-formed /i/ invite URL", () => {
+		expect(
+			parseReferralCodeFromUrl(`https://${REFERRAL_URL_HOST}/i/ROSIE-K3T9`)
+		).toBe("ROSIE-K3T9");
+	});
+
+	test("still extracts from the legacy /r/ URL", () => {
 		expect(
 			parseReferralCodeFromUrl(`https://${REFERRAL_URL_HOST}/r/ROSIE-K3T9`)
 		).toBe("ROSIE-K3T9");
@@ -122,33 +128,33 @@ describe("parseReferralCodeFromUrl", () => {
 
 	test("uppercases a lowercase tail", () => {
 		expect(
-			parseReferralCodeFromUrl(`https://${REFERRAL_URL_HOST}/r/rosie-k3t9`)
+			parseReferralCodeFromUrl(`https://${REFERRAL_URL_HOST}/i/rosie-k3t9`)
 		).toBe("ROSIE-K3T9");
 	});
 
 	test("tolerates a trailing slash", () => {
 		expect(
-			parseReferralCodeFromUrl(`https://${REFERRAL_URL_HOST}/r/ROSIE-K3T9/`)
+			parseReferralCodeFromUrl(`https://${REFERRAL_URL_HOST}/i/ROSIE-K3T9/`)
 		).toBe("ROSIE-K3T9");
 	});
 
 	test("tolerates a query string", () => {
 		expect(
 			parseReferralCodeFromUrl(
-				`https://${REFERRAL_URL_HOST}/r/ROSIE-K3T9?utm_source=ig`
+				`https://${REFERRAL_URL_HOST}/i/ROSIE-K3T9?utm_source=ig`
 			)
 		).toBe("ROSIE-K3T9");
 	});
 
 	test("rejects a malformed code in a valid URL shape", () => {
 		expect(
-			parseReferralCodeFromUrl(`https://${REFERRAL_URL_HOST}/r/notacode`)
+			parseReferralCodeFromUrl(`https://${REFERRAL_URL_HOST}/i/notacode`)
 		).toBeNull();
 	});
 
 	test("rejects the wrong host", () => {
 		expect(
-			parseReferralCodeFromUrl("https://example.com/r/ROSIE-K3T9")
+			parseReferralCodeFromUrl("https://example.com/i/ROSIE-K3T9")
 		).toBeNull();
 	});
 
@@ -195,10 +201,10 @@ describe("parseReferralCodeFromClipboard", () => {
 });
 
 describe("shareMessageForCode", () => {
-	test("includes the code and the URL", () => {
+	test("includes the code and the /i/ invite URL", () => {
 		const msg = shareMessageForCode("ROSIE-K3T9");
 		expect(msg).toContain("ROSIE-K3T9");
-		expect(msg).toContain(`https://${REFERRAL_URL_HOST}/r/ROSIE-K3T9`);
+		expect(msg).toContain(`https://${REFERRAL_URL_HOST}/i/ROSIE-K3T9`);
 	});
 
 	test("opens with the come-tickle hook", () => {
