@@ -353,6 +353,26 @@ function ShopCard({
 }
 
 const shopCardStyles = StyleSheet.create({
+	// Golden Ticket entry row at the shop's foot.
+	codeRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
+		marginTop: SPACE.lg,
+		paddingHorizontal: SPACE.lg,
+		paddingVertical: SPACE.md,
+		borderRadius: RADII.md,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		...SHADOW_SM,
+	},
+	codeRowText: {
+		flex: 1,
+		fontFamily: FONTS.hand,
+		fontSize: 15,
+		color: WHIMSY.ink,
+	},
 	legend: {
 		flexDirection: "row",
 		flexWrap: "wrap",
@@ -1032,6 +1052,22 @@ export default function ShopScreen() {
 								/>
 							</>
 						)}
+						{/* Golden Ticket entry — a small "Have a code?" row at the
+						    foot of the shop, thematically where getting-stuff lives.
+						    Routes to the scan-code screen (camera + manual entry). */}
+						<Pressable
+							onPress={() => router.push("/scan-code")}
+							style={({ pressed }) => [
+								shopCardStyles.codeRow,
+								pressed && { opacity: 0.7 },
+							]}
+						>
+							<Glyph name="gift" size={20} />
+							<Text style={shopCardStyles.codeRowText}>
+								Have a Golden Ticket? Redeem a code
+							</Text>
+							<Glyph name="arrowRight" size={16} style={{ opacity: 0.6 }} />
+						</Pressable>
 					</ScrollView>
 				) : view === "browse" ? (
 					<FlatList

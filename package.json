@@ -41,6 +41,7 @@
 		"expo-asset": "~11.0.5",
 		"expo-audio": "~0.3.5",
 		"expo-blur": "~14.0.3",
+		"expo-camera": "~16.0.18",
 		"expo-clipboard": "~7.0.1",
 		"expo-constants": "~17.0.8",
 		"expo-dev-client": "~5.0.20",
@@ -82,6 +83,7 @@
 		"jest-expo": "~52.0.6",
 		"patch-package": "^8.0.1",
 		"postinstall-postinstall": "^2.1.0",
+		"qrcode": "^1.5.4",
 		"react-test-renderer": "18.3.1",
 		"typescript": "^5.3.3"
 	},
