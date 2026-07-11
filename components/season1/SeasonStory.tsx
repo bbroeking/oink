@@ -7,6 +7,7 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Sticker } from "../ui/Sticker";
 import { Glyph, type GlyphName } from "../ui/Glyph";
+import { CREW_CAP_WORD } from "@/constants/mudFights";
 import { FONTS, ROW_TILTS, SPACE, TYPE, WHIMSY } from "@/constants/theme";
 
 const BEATS: { g: GlyphName; kicker: string; line: string }[] = [
@@ -18,7 +19,7 @@ const BEATS: { g: GlyphName; kicker: string; line: string }[] = [
 	{
 		g: "friends",
 		kicker: "the sounders",
-		line: "So pigs band into Sounders — five snouts, one banner — because no pig shoos a hog alone.",
+		line: `So pigs band into Sounders — ${CREW_CAP_WORD.toLowerCase()} snouts, one banner — because no pig shoos a hog alone.`,
 	},
 	{
 		g: "flame",

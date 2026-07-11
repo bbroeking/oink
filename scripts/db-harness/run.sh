@@ -18,6 +18,7 @@ CHAIN=(
 	supabase/migrations/20260708000000_sounder_ribbons.sql
 	supabase/migrations/20260709000000_season_renumber.sql
 	supabase/migrations/20260710000000_season1_achievements.sql
+	supabase/migrations/20260713000000_plain_totals_fixtures.sql
 )
 
 NAME="pgharness_$$"

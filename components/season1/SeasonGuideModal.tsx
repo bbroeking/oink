@@ -19,6 +19,7 @@ import {
 import { Sticker } from "../ui/Sticker";
 import { Glyph, type GlyphName } from "../ui/Glyph";
 import { Button } from "../ui/Button";
+import { CREW_CAP_WORD } from "@/constants/mudFights";
 import {
 	useHungerMeter,
 	HUNGER_STAGES,
@@ -41,7 +42,7 @@ const STEPS: { g: GlyphName; title: string; line: string }[] = [
 	{
 		g: "friends",
 		title: "Join a Sounder",
-		line: "Five snouts, one banner. Slip into an open Sounder or tap a + slot to rally friends.",
+		line: `${CREW_CAP_WORD} snouts, one banner. Slip into an open Sounder or tap a + slot to rally friends.`,
 	},
 	{
 		g: "gem",

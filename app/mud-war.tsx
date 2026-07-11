@@ -1,18 +1,19 @@
 // Sounder Mud Scuffle screen (dark-launched behind the `mud_wars` server flag;
 // reached from the SounderCard CTA). One screen, four states:
-//   • no war      → challenge the house or a friend's Sounder
+//   • no war      → the lobby: why we scuffle + an auto-match CTA (the League
+//                   drops you in vs the next Sounder up the table)
 //   • pending     → defender accepts/declines; challenger waits
-//   • active      → tug-of-war bar + the sling-mud tap button
-//   • resolved    → result summary (the celebratory reveal is the global
-//                   MudWarResolvedModal; this is the quiet on-screen recap)
-//
-// The sling button reuses the Visit-screen tap feel (squish + flung
-// particles) inline — kept self-contained so it doesn't couple to Barn.
-// Use-or-lose empty state at 0 remaining (the "tired" idea).
+//   • active      → the score hero (rope + per-pig tallies + tap-to-expand
+//                   breakdown), your move (the FeedingStrip dig heartbeat, plus
+//                   a Hold rhythm run on siege days), a standings mini, and a
+//                   below-the-fold details expander
+//   • resolved    → quiet on-screen recap (the celebratory reveal is the global
+//                   MudWarResolvedModal)
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";
-import { SectionHeader } from "../components/ui/SectionHeader";
+import { Sticker } from "../components/ui/Sticker";
+import { Glyph } from "../components/ui/Glyph";
 import {
 	View,
 	Text,
@@ -24,23 +25,18 @@ import {
 	Animated,
 	ActivityIndicator,
 } from "react-native";
-import { Stack, router, Redirect, useLocalSearchParams, type Href } from "expo-router";
+import { Stack, router, Redirect, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFeatureFlagState } from "@/hooks/useFeatureFlags";
 import { Button } from "../components/ui/Button";
 import { Icon } from "../components/ui/Icon";
-import { WarSpoilsSheet } from "../components/WarSpoilsSheet";
-import { TruffleExchangeSheet } from "../components/mudwar/TruffleExchangeSheet";
-import { useTruffles } from "@/hooks/useTruffles";
 import { MudWarResolvedModal, WarResult } from "../components/MudWarResolvedModal";
-import { SlopToss } from "../components/mudwar/SlopToss";
 import { RhythmDefense } from "../components/mudwar/RhythmDefense";
 import { FrontBoard } from "../components/mudwar/FrontBoard";
 import { FeedingStrip } from "../components/mudwar/FeedingStrip";
 import { WarLedgerStrip } from "../components/mudwar/WarLedgerStrip";
-import { CrewEffort } from "../components/mudwar/CrewEffort";
-import { RivalSide } from "../components/mudwar/RivalSide";
+import { ScoreboardBreakdown } from "../components/mudwar/ScoreboardBreakdown";
 import { HungerStageChip } from "../components/mudwar/HungerStageChip";
 import { ScuffleExplainerModal } from "../components/mudwar/ScuffleExplainerModal";
 import { DevWarStateSheet } from "../components/mudwar/DevWarStateSheet";
@@ -51,13 +47,16 @@ import {
 import {
 	opponentName,
 	myName,
+	lobbyCopy,
+	rivalActivityLine,
+	memberBreakdown,
 	ropeState,
 	siegeDay,
 	termLine,
 	warActions,
-	warTotalDays,
 	resolvedCopy,
 	scoreboardCopy,
+	scoreboardTapHint,
 	drainLine,
 	isHoldPhase,
 } from "../components/mudwar/warCopy";
@@ -65,11 +64,8 @@ import { useHungerMeter } from "@/hooks/useHungerMeter";
 import { useMudWar } from "@/hooks/useMudWar";
 import { useCrew } from "@/hooks/useCrew";
 import {
-	WarSide,
-	ChallengeableCrew,
-	fetchChallengeable,
+	type WarState,
 	challengeHouse,
-	challengeCrew,
 	acceptChallenge,
 	declineChallenge,
 	ropePosition,
@@ -84,9 +80,9 @@ import {
 	MudBand,
 	PBand,
 } from "@/utils/mudWars";
-import { DAILY_ALLOTMENT, THROWS_PER_DAY, WAR_LENGTH_DAYS, WAR_LENGTH_DAYS_FRONTS, RUNS_PER_DAY } from "@/constants/mudFights";
+import { WAR_LENGTH_DAYS, WAR_LENGTH_DAYS_FRONTS, RUNS_PER_DAY, QUORUM } from "@/constants/mudFights";
 import { HAT_IMAGES } from "@/constants/hats";
-import { FONTS, SPACE, WHIMSY } from "@/constants/theme";
+import { FONTS, RADII, SHADOW_SM, SPACE, STICKER_SHADOW, WHIMSY } from "@/constants/theme";
 import { supabase } from "@/utils/supabase";
 
 // The caller's auth id — used to gate the leader-only deploy sheet.
@@ -131,11 +127,6 @@ export default function MudWarScreen() {
 	}, [war, refresh]);
 	const resolvedDismissed =
 		!!war && war.status === "resolved" && war.warId === dismissedWarId;
-	const [spoilsOpen, setSpoilsOpen] = useState(false);
-	const [exchangeOpen, setExchangeOpen] = useState(false);
-	// Golden Truffle pouch + Exchange rotation (Season 1 P4; cozy-closed until
-	// the 20260704300000 migration is live).
-	const truffles = useTruffles();
 
 	// Resolved-war celebration. Resolution happens lazily on this screen's
 	// fetch, so the first time a player views a freshly-resolved war we fire the
@@ -181,43 +172,29 @@ export default function MudWarScreen() {
 	if (!flagLoaded) return null;
 	if (!mudWarsVisible) return <Redirect href="/(tabs)" />;
 
+	// The page-header crown reflects the state: the lobby invites you to start;
+	// a live war names the two Sounders (kicker "· live"); pending/resolved keep
+	// the plain title. resolvedDismissed drops back to the lobby (NoWar).
+	const inLobby = !war || resolvedDismissed;
+	const headerCopy =
+		!inLobby && war.status === "active"
+			? { kicker: "the scuffle · live", title: `${myName(war)} vs ${opponentName(war)}` }
+			: inLobby
+			? { kicker: "the scuffle", title: "Start a Mud Scuffle" }
+			: { kicker: "the scuffle", title: "Mud Scuffle" };
+
 	return (
 		<>
 			<Stack.Screen options={{ headerShown: false }} />
 			<View style={styles.bg}>
 				<SafeAreaView style={{ flex: 1 }}>
+					{/* No Ladder/Spoils/Exchange in the header — standings live in
+					    the Friends hub's Board segment, and the spoils + Truffle
+					    Exchange doors live on the Sounder card ("Your Sounder"). */}
 					<PageHeader
-						kicker="mud scuffles"
-						title="Mud Scuffle"
+						kicker={headerCopy.kicker}
+						title={headerCopy.title}
 						onBack={() => router.back()}
-						right={
-							<View style={styles.headerRight}>
-								<Pressable onPress={() => router.push("/clan-ladder" as Href)} hitSlop={12} style={styles.spoilsBtn}>
-									<Icon name="trophy" size={15} color={WHIMSY.mute} />
-									<Text style={[styles.spoils, { color: WHIMSY.mute }]}>Ladder</Text>
-								</Pressable>
-								<Pressable onPress={() => setSpoilsOpen(true)} hitSlop={12} style={styles.spoilsBtn}>
-									<Icon name="trophy" size={15} color={WHIMSY.accent} />
-									<Text style={styles.spoils}>Spoils</Text>
-								</Pressable>
-								<Pressable onPress={() => setExchangeOpen(true)} hitSlop={12} style={styles.spoilsBtn}>
-									{HAT_IMAGES.golden_truffle ? (
-										<Image source={HAT_IMAGES.golden_truffle} style={styles.pouchIcon} resizeMode="contain" />
-									) : (
-										<Icon name="gift" size={15} color={WHIMSY.accent} />
-									)}
-									<Text style={styles.spoils}>
-										{truffles.available ? String(truffles.balance) : "Exchange"}
-									</Text>
-								</Pressable>
-							</View>
-						}
-					/>
-					<WarSpoilsSheet open={spoilsOpen} onClose={() => setSpoilsOpen(false)} />
-					<TruffleExchangeSheet
-						open={exchangeOpen}
-						onClose={() => setExchangeOpen(false)}
-						truffles={truffles}
 					/>
 					<MudWarResolvedModal
 						visible={!!reveal}
@@ -245,6 +222,7 @@ export default function MudWarScreen() {
 							onChanged={refresh}
 							focus={params.focus}
 							devUi={dev.ui}
+							devActive={dev.active}
 						/>
 					) : (
 						<ResolvedWar war={war} onChanged={dismissResolved} />
@@ -269,6 +247,13 @@ export default function MudWarScreen() {
 							open={devSheetOpen}
 							onClose={() => setDevSheetOpen(false)}
 							ctrl={dev}
+							// One-tap WIN/LOSS/DRAW previews fire the REAL celebration
+							// modal from override data — no spoils/RPC. The real-war
+							// reveal effect stays keyed off fetchedWar, so previews
+							// can never mark a real war's celebration as seen.
+							onPreview={(outcome) =>
+								setReveal({ result: outcome, isBotWar: false, wonCosmetic: null })
+							}
 						/>
 					)}
 
@@ -309,17 +294,13 @@ export default function MudWarScreen() {
 	);
 }
 
-// ── No war: challenge options ────────────────────────────────────────────────
+// ── No war: the lobby — why we scuffle + the auto-match CTA ───────────────────
+// The manual "Challenge a Sounder" picker is gone (2026-07-06): the League cron
+// schedules fixtures, so the single CTA auto-matches vs the next Sounder up the
+// table (challengeHouse). Standings moved to the Friends hub's Board segment.
 function NoWar({ onChanged }: { onChanged: () => void }) {
 	const { crew } = useCrew();
-	const [targets, setTargets] = useState<ChallengeableCrew[]>([]);
 	const [note, setNote] = useState<string | null>(null);
-
-	useEffect(() => {
-		fetchChallengeable().then(setTargets);
-	}, []);
-
-	const noCrew = !crew.crew;
 
 	async function start(fn: () => Promise<{ ok: boolean; reason?: string }>) {
 		const r = await fn();
@@ -336,7 +317,7 @@ function NoWar({ onChanged }: { onChanged: () => void }) {
 		}
 	}
 
-	if (noCrew) {
+	if (!crew.crew) {
 		return (
 			<View style={styles.center}>
 				<Image source={HAT_IMAGES.crew_pennant} style={styles.hero} resizeMode="contain" />
@@ -348,39 +329,43 @@ function NoWar({ onChanged }: { onChanged: () => void }) {
 		);
 	}
 
+	const copy = lobbyCopy();
+	// The three bullet circles tint sky / sage / rose, in order.
+	const bulletTints = [WHIMSY.sky, WHIMSY.sage, WHIMSY.rose];
+
 	return (
 		<ScrollView contentContainerStyle={styles.content}>
-			<Text style={styles.lead}>
-				Start a Mud Scuffle — two herds racing to reclaim joy from the Great
-				Hunger. Everyone digs the same feedings, no buffs, no advantages. Every
-				scoop weakens him; the herd that wins back more joy per pig leads.
-			</Text>
-
-			<Button
-				variant="gold"
-				full
-				icon={<Icon name="trophy" size={16} color="#5A3F00" />}
-				onPress={() => start(challengeHouse)}
-			>
-				Scuffle with the house (The Mudlarks)
-			</Button>
-
-			{targets.length > 0 && (
-				<View style={{ marginTop: 18 }}>
-					<Text style={styles.sectionTitle}>Challenge a Sounder</Text>
-					{targets.map((t) => (
-						<View key={t.id} style={styles.targetRow}>
-							<Text style={styles.targetName}>
-								{t.name}{" "}
-								<Text style={styles.targetCount}>· {t.memberCount}</Text>
-							</Text>
-							<Button size="sm" variant="primary" onPress={() => start(() => challengeCrew(t.id))}>
-								Challenge
-							</Button>
+			<Sticker color="paper" rotate={0} border={3} radius={RADII.xxl} style={styles.card}>
+				{/* "why we scuffle" — the dark storyteller callout */}
+				<View style={styles.bark}>
+					<Text style={styles.barkKicker}>{copy.whyKicker}</Text>
+					<Text style={styles.barkBody}>{copy.whyBody}</Text>
+				</View>
+				<Text style={styles.lobbyBody}>{copy.body}</Text>
+				<View style={styles.bulletList}>
+					{copy.bullets.map((b, i) => (
+						<View key={i} style={styles.bulletRow}>
+							<View style={[styles.bulletBadge, { backgroundColor: bulletTints[i] }]}>
+								{b.badgeGlyph ? (
+									<Glyph name={b.badgeGlyph} size={16} />
+								) : (
+									<Text style={styles.bulletBadgeText}>{b.badge}</Text>
+								)}
+							</View>
+							<Text style={styles.bulletLine}>{b.line}</Text>
 						</View>
 					))}
 				</View>
-			)}
+			</Sticker>
+
+			{/* Auto-match — the League drops you in vs the next Sounder (challengeHouse). */}
+			<Pressable
+				onPress={() => start(challengeHouse)}
+				style={({ pressed }) => [styles.goldPill, pressed && styles.goldPillPressed]}
+			>
+				<Text style={styles.goldPillText}>{copy.cta}</Text>
+			</Pressable>
+			<Text style={styles.lobbyNote}>{copy.note}</Text>
 
 			<MatchHistory />
 
@@ -431,7 +416,7 @@ function PendingWar({
 	war,
 	onChanged,
 }: {
-	war: NonNullable<ReturnType<typeof useMudWar>["war"]>;
+	war: WarState;
 	onChanged: () => void;
 }) {
 	const [note, setNote] = useState<string | null>(null);
@@ -494,8 +479,9 @@ function ActiveWar({
 	onChanged,
 	focus,
 	devUi,
+	devActive,
 }: {
-	war: NonNullable<ReturnType<typeof useMudWar>["war"]>;
+	war: WarState;
 	onThrow: (band: MudBand) => void;
 	onRun: ReturnType<typeof useMudWar>["submitRun"];
 	onDeploy: ReturnType<typeof useMudWar>["setDeploy"];
@@ -505,6 +491,8 @@ function ActiveWar({
 	focus?: string;
 	// __DEV__ UI-local overrides (runs left / dug this feeding).
 	devUi?: DevUiOverride;
+	// __DEV__ override harness is driving the displayed war (fake numbers).
+	devActive?: boolean;
 }) {
 	// Am I my Sounder's leader? Gates the deploy sheet (set_deploy is leader-only).
 	const { crew } = useCrew();
@@ -533,8 +521,27 @@ function ActiveWar({
 	// report 'war' throughout, so they keep the toss exactly as before.
 	const isHold = isHoldPhase(war);
 
-	// "How the scuffle works ›" explainer (below the fold).
+	// "How the scuffle works ›" explainer (below the fold). `explainerScoring`
+	// opens it scrolled to the scoring section (from the scoreboard's own link).
 	const [explainerOpen, setExplainerOpen] = useState(false);
+	const [explainerScoring, setExplainerScoring] = useState(false);
+	const openExplainer = useCallback((scoring: boolean) => {
+		setExplainerScoring(scoring);
+		setExplainerOpen(true);
+	}, []);
+
+	// Scoreboard transparency: tap a per-pig tally to expand who's behind it.
+	// One side at a time; tapping the open side collapses it.
+	const [openSide, setOpenSide] = useState<null | "mine" | "them">(null);
+	const toggleSide = useCallback(
+		(s: "mine" | "them") => setOpenSide((cur) => (cur === s ? null : s)),
+		[]
+	);
+
+	// "How this scuffle works" — the below-the-fold details expander (drain line,
+	// the week's ledger, the full explainer link). Collapsed by default so the
+	// first screenful stays the score hero + your move.
+	const [detailsOpen, setDetailsOpen] = useState(false);
 
 	// Deep-link section scroll. The entry strip links ?focus=dig|hold|bog; we
 	// capture each section's Y on layout and scroll to it (once it's measured).
@@ -671,11 +678,9 @@ function ActiveWar({
 		prevRope.current = ropeTarget;
 	}, [ropeTarget, ropeAnim, showLead]);
 
+	// The rose fill's width springs with the rope; its ink right-edge (a 2.5px
+	// border) is the divider between my side and theirs.
 	const fillW = ropeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, trackW] });
-	const knotLeft = ropeAnim.interpolate({
-		inputRange: [0, 1],
-		outputRange: [0, Math.max(0, trackW - 14)],
-	});
 
 	const opp = opponentName(war);
 	const rope = ropeState(war);
@@ -685,6 +690,12 @@ function ActiveWar({
 		runsRemaining: effRunsRemaining,
 		dugThisWindow: devUi?.dugThisWindow,
 	});
+	// The standings-mini "your pile" top row — war_side ships members slings-desc,
+	// so row 0 is the biggest digger. A crown marks the leader; "(you)" marks me.
+	const myRows = memberBreakdown(war.mine.members, uid, crew.crew?.leader_id ?? null);
+	const topDigger = myRows[0] ?? null;
+	// Joy reclaimed from the Hunger = both herds' totals (the bark strip headline).
+	const joyReclaimed = war.mine.total + war.them.total;
 
 	return (
 		<ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
@@ -710,158 +721,253 @@ function ActiveWar({
 				</Animated.View>
 			)}
 
-			{/* ── WHO — your Sounder vs the opponent, the rope as scoreboard ── */}
+			{/* ═══ SCORE HERO — names, the rope, the tallies, standing, Hunger ═══ */}
 			<View onLayout={onSectionLayout("bog")}>
-				<SectionHeader kicker="the scuffle" title={`${myName(war)} vs ${opp}`} />
-				<View style={styles.scoreRow}>
-					<Text style={[styles.sideName, { color: WHIMSY.accent }]} numberOfLines={1}>
-						{myName(war)}
-					</Text>
-					<View style={styles.themSide}>
-						{war.isBotWar && (
-							<Image source={HAT_IMAGES.goblin_warboss} style={styles.themGoblin} resizeMode="contain" />
-						)}
-						<Text style={styles.themName} numberOfLines={1}>
-							{opp}
+				<Sticker color="paper" rotate={0} border={3} radius={RADII.xxl} style={styles.card}>
+					{/* Side names — mine (accent) left, theirs (lilac) right. */}
+					<View style={styles.sideRow}>
+						<Text style={styles.mineName} numberOfLines={1}>
+							{myName(war)}
 						</Text>
+						<View style={styles.themSide}>
+							{war.isBotWar && (
+								<Image source={HAT_IMAGES.goblin_warboss} style={styles.themGoblin} resizeMode="contain" />
+							)}
+							<Text style={styles.theirName} numberOfLines={1}>
+								{opp}
+							</Text>
+						</View>
 					</View>
-				</View>
-				<View
-					style={styles.ropeTrack}
-					onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
-				>
-					<Animated.View style={[styles.ropeMine, { width: fillW }]} />
-					<Animated.View style={[styles.ropeKnot, { left: knotLeft }]} />
-				</View>
-				<View style={styles.scoreRow}>
-					<View style={styles.percapCol}>
-						<Text style={styles.percapNum}>{war.mine.perCapita}</Text>
-						<Text style={styles.percapLabel}>{scoreboardCopy().mine}</Text>
-					</View>
-					<View style={[styles.percapCol, { alignItems: "flex-end" }]}>
-						<Text style={styles.percapNum}>{war.them.perCapita}</Text>
-						<Text style={styles.percapLabel}>{scoreboardCopy().theirs}</Text>
-					</View>
-				</View>
-				<Text style={styles.scoreCaption}>{scoreboardCopy().caption}</Text>
-			</View>
 
-			{/* ── WHERE THE ROPE IS — plain-language standing + the day ── */}
-			<View style={styles.standing}>
-				<Text style={styles.standingLine}>{rope.line}</Text>
-				<Text style={styles.standingSub}>{termLine(war, countdown)}</Text>
-				{hunger.available && (
-					<Animated.View
-						style={{
-							marginTop: SPACE.xs,
-							transform: [
-								{
-									scale: hungerPulse.interpolate({
-										inputRange: [0, 1],
-										outputRange: [1, 0.9],
-									}),
-								},
-							],
-						}}
+					{/* The rope — my rose fill (ink right-edge divider); remainder lilac. */}
+					<View
+						style={styles.ropeTrack}
+						onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
 					>
-						<HungerStageChip stage={hunger.stage} />
+						<Animated.View style={[styles.ropeMine, { width: fillW }]} />
+					</View>
+
+					{/* Big tallies — tap either to expand who's behind the number. */}
+					<View style={styles.scoreRow}>
+						<Pressable
+							onPress={() => toggleSide("mine")}
+							hitSlop={8}
+							style={styles.percapCol}
+							accessibilityRole="button"
+							accessibilityLabel={`Your herd — ${war.mine.perCapita} joy per pig. Tap for the breakdown.`}
+						>
+							<Text style={styles.tallyMine}>
+								{war.mine.perCapita}
+								<Text style={styles.tallyCaret}>{openSide === "mine" ? " ▾" : " ▸"}</Text>
+							</Text>
+							<Text style={styles.tallyLabel}>{scoreboardCopy().mine}</Text>
+						</Pressable>
+						<Pressable
+							onPress={() => toggleSide("them")}
+							hitSlop={8}
+							style={[styles.percapCol, { alignItems: "flex-end" }]}
+							accessibilityRole="button"
+							accessibilityLabel={`Their herd — ${war.them.perCapita} joy per pig. Tap for the breakdown.`}
+						>
+							<Text style={styles.tallyThem}>
+								<Text style={styles.tallyCaret}>{openSide === "them" ? "▾ " : "▸ "}</Text>
+								{war.them.perCapita}
+							</Text>
+							<Text style={[styles.tallyLabel, styles.tallyLabelThem]}>
+								{scoreboardCopy().theirs}
+							</Text>
+						</Pressable>
+					</View>
+					<Text style={styles.scoreCaption}>{scoreboardCopy().caption}</Text>
+					{openSide ? (
+						<ScoreboardBreakdown
+							side={openSide}
+							war={war}
+							myUserId={uid}
+							leaderId={crew.crew?.leader_id ?? null}
+							devActive={devActive}
+							onScoringPress={() => openExplainer(true)}
+						/>
+					) : (
+						<Pressable
+							onPress={() => toggleSide("mine")}
+							hitSlop={6}
+							style={styles.tapHintWrap}
+						>
+							<Text style={styles.tapHint}>{scoreboardTapHint()}</Text>
+						</Pressable>
+					)}
+
+					{/* Plain-language standing + the day. */}
+					<Text style={styles.ropeLine}>{rope.line}</Text>
+					<Text style={styles.dayLine}>{termLine(war, countdown)}</Text>
+
+					{/* Quorum — only while your herd is short of two active pigs. */}
+					{!war.mine.quorumMet && (
+						<View style={styles.quorumChip}>
+							<Glyph name="friends" size={12} />
+							<Text style={styles.quorumChipText}>
+								needs {QUORUM}+ active teammates to count
+							</Text>
+						</View>
+					)}
+
+					{/* vs the Great Hunger — the bark strip, flinching on each reclaim. */}
+					<Animated.View
+						style={[
+							styles.barkStrip,
+							{
+								transform: [
+									{
+										scale: hungerPulse.interpolate({
+											inputRange: [0, 1],
+											outputRange: [1, 0.97],
+										}),
+									},
+								],
+							},
+						]}
+					>
+						<View style={styles.barkStripHead}>
+							<Text style={styles.barkKickerSm}>vs the Great Hunger</Text>
+							<Text style={styles.barkTally}>{joyReclaimed} joy clawed back</Text>
+						</View>
+						<Text style={styles.barkStripBody}>
+							Every scoop from both herds lands on the Hunger — the scuffle is
+							just the proxy.
+						</Text>
+						{hunger.available && (
+							<View style={styles.barkHungerChip}>
+								<HungerStageChip stage={hunger.stage} />
+							</View>
+						)}
 					</Animated.View>
-				)}
+				</Sticker>
 			</View>
 
-			<QuorumLine mine={war.mine} them={war.them} isBotWar={war.isBotWar} />
-
-			{/* ── WHAT TO DO NOW — the playable actions, front and center ── */}
-			<View style={{ marginTop: SPACE.lg }}>
-				<SectionHeader kicker="your move" title="What to do now" />
+			{/* ═══ YOUR MOVE — the feeding heartbeat (+ Hold on rhythm wars) ═══ */}
+			<View
+				style={styles.cardGap}
+				onLayout={(e) => {
+					onSectionLayout("dig")(e);
+					if (isHold) onSectionLayout("hold")(e);
+				}}
+			>
+				<Sticker color="paper" rotate={0} border={3} radius={RADII.xxl} style={styles.card}>
+					<Text style={styles.moveKicker}>your move</Text>
+					<FeedingStrip warId={war.warId} onReclaim={tickHunger} />
+					{isHold && (
+						<View>
+							<RhythmDefense
+								onRunComplete={onRunComplete}
+								runsRemaining={effRunsRemaining}
+								pBand={defendedPBand(war)}
+								day={siegeDay(war.endsAt, totalDays)}
+							/>
+							{runNote && <Text style={styles.note}>{runNote}</Text>}
+						</View>
+					)}
+					{/* Spent-action explanations in the cozy hand voice. */}
+					{actions
+						.filter((a) => !a.enabled && a.reason)
+						.map((a) => (
+							<Text key={a.key} style={styles.actionReason}>
+								{a.reason}
+							</Text>
+						))}
+				</Sticker>
 			</View>
 
-			{/* Dig — the Truffle Patch heartbeat, one dig per 8h feeding. The
-			    primary action of every scuffle; owns its own dug/cooldown copy. */}
-			<View onLayout={onSectionLayout("dig")}>
-				<FeedingStrip warId={war.warId} onReclaim={tickHunger} />
+			{/* ═══ STANDINGS MINI — your pile vs theirs (double-blind on theirs) ═══ */}
+			<View style={styles.duoRow}>
+				<Sticker color="paper" rotate={0} border={3} radius={RADII.xl} style={styles.duoCard}>
+					<Text style={styles.duoKicker}>your pile</Text>
+					<Text style={styles.duoTotalMine}>{war.mine.total}</Text>
+					{topDigger ? (
+						<View style={styles.duoDiggerRow}>
+							{topDigger.isLeader && <Glyph name="crown" size={13} />}
+							<Text style={styles.duoDiggerName} numberOfLines={1}>
+								{topDigger.name}
+								{topDigger.isYou ? " (you)" : ""}
+							</Text>
+						</View>
+					) : (
+						<Text style={styles.duoQuiet}>no pigs in the mud yet</Text>
+					)}
+				</Sticker>
+				<Sticker color="paper" rotate={0} border={3} radius={RADII.xl} style={styles.duoCard}>
+					<Text style={styles.duoKicker} numberOfLines={1}>
+						{opp.toLowerCase()}
+					</Text>
+					<Text style={styles.duoTotalThem}>{war.them.total}</Text>
+					<Text style={styles.duoQuiet}>{rivalActivityLine(war.them.active)}</Text>
+				</Sticker>
 			</View>
 
-			{/* Hold the line — rhythm runs, only once the horde marches. */}
-			{isHold && (
-				<View onLayout={onSectionLayout("hold")}>
-					<RhythmDefense
-						onRunComplete={onRunComplete}
-						runsRemaining={effRunsRemaining}
-						pBand={defendedPBand(war)}
-						day={siegeDay(war.endsAt, totalDays)}
+			{/* ═══ AREAS — the contested-fronts board (legacy fronts wars only) ═══ */}
+			{war.fronts && war.fronts.board.length > 0 && (
+				<View style={styles.cardGap}>
+					<FrontBoard
+						fronts={war.fronts}
+						onPick={pickFront}
+						rhythm={war.rhythmEnabled === true}
+						onDeploy={onDeploy}
+						isLeader={isLeader}
+						note={frontNote}
 					/>
-					{runNote && <Text style={styles.note}>{runNote}</Text>}
 				</View>
 			)}
 
-			{/* Spent-action explanations in the cozy hand voice (e.g. "you've dug
-			    this feeding — the patch fills again in 2h"). */}
-			{actions
-				.filter((a) => !a.enabled && a.reason)
-				.map((a) => (
-					<Text key={a.key} style={styles.actionReason}>
-						{a.reason}
-					</Text>
-				))}
-
-			{/* Your crew's pile + the rival at arm's length. */}
-			<CrewEffort
-				members={war.mine.members}
-				myUserId={uid}
-				leaderId={crew.crew?.leader_id ?? null}
-			/>
-			<RivalSide
-				crewName={opp}
-				perCapita={war.them.perCapita}
-				active={war.them.active}
-				isBot={war.isBotWar}
-			/>
-
-			{/* ── Below the fold — how it works, the week, the contested areas ── */}
+			{/* ═══ DETAILS — how it works / the week / the full explainer ═══ */}
 			<Pressable
-				onPress={() => setExplainerOpen(true)}
-				hitSlop={8}
-				style={styles.howWrap}
+				onPress={() => setDetailsOpen((v) => !v)}
+				style={styles.detailsBtn}
+				accessibilityRole="button"
+				accessibilityLabel="How this scuffle works"
 			>
-				<Text style={styles.howLink}>how the scuffle works ›</Text>
+				<Text style={styles.detailsBtnText}>How this scuffle works</Text>
+				<Text style={styles.detailsChev}>{detailsOpen ? "▾" : "▸"}</Text>
 			</Pressable>
-
-			<WarLedgerStrip
-				totalDays={totalDays}
-				currentDay={siegeDay(war.endsAt, totalDays)}
-				ropeNorm={war.ropeNorm}
-			/>
-			<Animated.Text
-				style={[
-					styles.drainLine,
-					{
-						transform: [
-							{
-								scale: hungerPulse.interpolate({
-									inputRange: [0, 1],
-									outputRange: [1, 1.06],
-								}),
-							},
-						],
-					},
-				]}
-			>
-				{drainLine(war.mine.total + war.them.total)}
-			</Animated.Text>
-
-			{/* Contested-areas board (fronts/notches) — the advanced layer, demoted
-			    below the fold so the first screenful stays plain. Only present when
-			    fronts_enabled; the dig-off above counts on its own. */}
-			{war.fronts && war.fronts.board.length > 0 && (
-				<FrontBoard
-					fronts={war.fronts}
-					onPick={pickFront}
-					rhythm={war.rhythmEnabled === true}
-					onDeploy={onDeploy}
-					isLeader={isLeader}
-					note={frontNote}
-				/>
+			{detailsOpen && (
+				<Sticker color="paper" rotate={0} border={3} radius={RADII.xl} style={styles.detailsCard}>
+					<View>
+						<Text style={styles.detailsKicker}>how it works</Text>
+						<Animated.Text
+							style={[
+								styles.detailsDrain,
+								{
+									transform: [
+										{
+											scale: hungerPulse.interpolate({
+												inputRange: [0, 1],
+												outputRange: [1, 1.06],
+											}),
+										},
+									],
+								},
+							]}
+						>
+							{drainLine(joyReclaimed)}
+						</Animated.Text>
+					</View>
+					<View style={styles.detailsHair} />
+					<View>
+						<Text style={styles.detailsKicker}>the week so far</Text>
+						<WarLedgerStrip
+							totalDays={totalDays}
+							currentDay={siegeDay(war.endsAt, totalDays)}
+							ropeNorm={war.ropeNorm}
+						/>
+					</View>
+					<View style={styles.detailsHair} />
+					<Pressable
+						onPress={() => openExplainer(false)}
+						hitSlop={8}
+						style={styles.explainLinkWrap}
+					>
+						<Text style={styles.explainLink}>how the scuffle works ›</Text>
+					</Pressable>
+				</Sticker>
 			)}
 
 			{/* Yield — leader-only, two-tap. Concedes the scuffle: the rope
@@ -872,6 +978,8 @@ function ActiveWar({
 
 			<ScuffleExplainerModal
 				visible={explainerOpen}
+				focusScoring={explainerScoring}
+				frontsEnabled={war.frontsEnabled === true}
 				onClose={() => setExplainerOpen(false)}
 			/>
 		</ScrollView>
@@ -910,7 +1018,7 @@ function GiveUpLink({ warId, onChanged }: { warId: string; onChanged: () => void
 // The area the caller is defending this Hold day → its public p_band drives the
 // playable song's difficulty (decision B). Defaults to the cheapest area (the
 // server's own default for an unset plan) so the song reflects what they'll hold.
-function defendedPBand(war: NonNullable<ReturnType<typeof useMudWar>["war"]>): PBand {
+function defendedPBand(war: WarState): PBand {
 	const board = war.fronts?.board ?? [];
 	if (board.length === 0) return "medium";
 	const myKey = war.fronts?.myPlan?.front_key ?? null;
@@ -918,21 +1026,12 @@ function defendedPBand(war: NonNullable<ReturnType<typeof useMudWar>["war"]>): P
 	return cell.p_band;
 }
 
-function QuorumLine({ mine, them, isBotWar }: { mine: WarSide; them: WarSide; isBotWar: boolean }) {
-	if (mine.quorumMet) return null;
-	return (
-		<Text style={styles.quorum}>
-			Need 2+ active members to count — rally your Sounder!
-		</Text>
-	);
-}
-
 // ── Resolved: quiet recap (modal does the celebration) ───────────────────────
 function ResolvedWar({
 	war,
 	onChanged,
 }: {
-	war: NonNullable<ReturnType<typeof useMudWar>["war"]>;
+	war: WarState;
 	onChanged: () => void;
 }) {
 	const iWon = !!war.winnerCrew && war.winnerCrew === war.mine.crew?.id;
@@ -958,12 +1057,32 @@ function ResolvedWar({
 	);
 }
 
+// Hand-drawn tracked-uppercase kicker — the recurring section label across the
+// war surfaces (bark strips, the standings duo, the details expander). One base;
+// each site overrides color / margin (and `moveKicker` bumps the size). Kept a
+// local const, not a theme token: PatrickHand uppercase kickers only live here
+// (the shared TYPE.kicker is Nunito, TYPE.kickerPill is bodyExtra).
+const HAND_KICKER = {
+	fontFamily: FONTS.hand,
+	fontSize: 11,
+	letterSpacing: 1.5,
+	textTransform: "uppercase",
+} as const;
+
+// The dark "storyteller" callout box (WHIMSY.bark) — the lobby's "why we
+// scuffle" panel and the hero's "vs the Great Hunger" strip are the same box;
+// only the outer margin differs per placement.
+const BARK_PANEL = {
+	backgroundColor: WHIMSY.bark,
+	borderWidth: 2.5,
+	borderColor: WHIMSY.ink,
+	borderRadius: RADII.lg,
+	paddingVertical: SPACE.md,
+	paddingHorizontal: SPACE.md,
+} as const;
+
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	headerRight: { flexDirection: "row", alignItems: "center", gap: 14 },
-	spoilsBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
-	spoils: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.accent },
-	pouchIcon: { width: 16, height: 16 },
 	devBtn: {
 		position: "absolute",
 		bottom: 10,
@@ -979,7 +1098,6 @@ const styles = StyleSheet.create({
 	devChip: { left: 12, right: undefined },
 	center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30, gap: 8 },
 	content: { padding: 20, paddingBottom: 80 },
-	lead: { fontFamily: FONTS.body, fontSize: 14, color: WHIMSY.mute, marginBottom: 16, textAlign: "center" },
 	hero: { width: 92, height: 92, marginBottom: 8 },
 	heroIcon: { marginBottom: 12 },
 	emptyTitle: { fontFamily: FONTS.whimsy, fontSize: 22, color: WHIMSY.ink, textAlign: "center" },
@@ -992,20 +1110,6 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		marginBottom: 8,
 	},
-	targetRow: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: 14,
-		paddingHorizontal: 12,
-		paddingVertical: 10,
-		marginBottom: 8,
-	},
-	targetName: { fontFamily: FONTS.body, fontSize: 15, color: WHIMSY.ink, flex: 1 },
-	targetCount: { color: WHIMSY.mute },
 	note: { fontFamily: FONTS.body, fontSize: 13, color: WHIMSY.accent, textAlign: "center", marginTop: 12 },
 	giveUpWrap: { marginTop: 20, alignSelf: "center" },
 	giveUpText: {
@@ -1035,35 +1139,47 @@ const styles = StyleSheet.create({
 	historyLost: { color: WHIMSY.muteSoft },
 	historyOpponent: { flex: 1, fontFamily: FONTS.body, fontSize: 13, color: WHIMSY.ink },
 	historyDate: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
-	siegeChapter: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink, textAlign: "center", marginBottom: 1 },
-	countdown: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.mute, textAlign: "center", marginBottom: 14 },
 	scoreRow: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
-	sideName: { fontFamily: FONTS.whimsy, fontSize: 16, flex: 1 },
+	// ── Card stack (Your Sounder redesign) — paper Sticker padding + gaps. ──
+	card: { paddingHorizontal: SPACE.lg, paddingVertical: SPACE.lg },
+	cardGap: { marginTop: SPACE.lg },
+	// SCORE HERO — the two Sounder names above the rope.
+	sideRow: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		marginBottom: SPACE.sm,
+	},
+	mineName: { fontFamily: FONTS.display, fontSize: 17, color: WHIMSY.accent, flex: 1 },
 	themSide: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "flex-end" },
 	themGoblin: { width: 28, height: 28, marginRight: 6 },
-	themName: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.lilacDeep, textAlign: "right", flexShrink: 1 },
+	theirName: {
+		fontFamily: FONTS.display,
+		fontSize: 17,
+		color: WHIMSY.lilacDeep,
+		textAlign: "right",
+		flexShrink: 1,
+	},
+	// The rope — lilac track (their remainder), my rose fill with an ink
+	// right-edge divider marking the boundary.
 	ropeTrack: {
 		height: 22,
-		borderRadius: 11,
-		borderWidth: 2,
+		borderRadius: 999,
+		borderWidth: 2.5,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.lilac,
-		marginVertical: 6,
+		marginVertical: SPACE.sm,
 		overflow: "hidden",
 		justifyContent: "center",
 	},
-	ropeMine: { position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: WHIMSY.roseDeep },
-	// The contested knot — absolutely positioned; its `left` is spring-driven so
-	// it visibly yanks toward whoever just slung.
-	ropeKnot: {
+	ropeMine: {
 		position: "absolute",
-		top: -2,
-		bottom: -2,
-		width: 14,
-		borderRadius: 7,
-		borderWidth: 2,
+		left: 0,
+		top: 0,
+		bottom: 0,
+		backgroundColor: WHIMSY.rose,
+		borderRightWidth: 2.5,
 		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
 	},
 	leadBanner: {
 		position: "absolute",
@@ -1079,13 +1195,23 @@ const styles = StyleSheet.create({
 	},
 	leadPennant: { width: 22, height: 22 },
 	leadText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.accent },
-	splatIn: { position: "absolute", bottom: 178, width: 36, height: 36 },
-	percap: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink, flex: 1 },
-	// WHO scoreboard — the two per-pig mud tallies with plain labels a new
-	// player parses at a glance.
+	// Big per-pig tallies — accent (mine) vs lilac (theirs), with a caret.
 	percapCol: { flex: 1 },
-	percapNum: { fontFamily: FONTS.whimsy, fontSize: 22, color: WHIMSY.ink },
-	percapLabel: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, marginTop: -2 },
+	tallyMine: { fontFamily: FONTS.whimsy, fontSize: 30, color: WHIMSY.accent },
+	tallyThem: { fontFamily: FONTS.whimsy, fontSize: 30, color: WHIMSY.lilacDeep, textAlign: "right" },
+	tallyCaret: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.mute },
+	tallyLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		letterSpacing: 1,
+		textTransform: "uppercase",
+		color: WHIMSY.mute,
+		marginTop: 2,
+	},
+	tallyLabelThem: { textAlign: "right" },
+	// "tap a herd to see who's digging ›" — the collapsed-state affordance.
+	tapHintWrap: { alignSelf: "center", marginTop: SPACE.xs },
+	tapHint: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
 	scoreCaption: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
@@ -1093,18 +1219,51 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginTop: SPACE.xs,
 	},
-	// WHERE THE ROPE IS — the plain-language standing block.
-	standing: { alignItems: "center", marginTop: SPACE.md },
-	standingLine: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink, textAlign: "center" },
-	standingSub: {
+	// Plain standing + the day, under the tallies.
+	ropeLine: { fontFamily: FONTS.whimsy, fontSize: 19, color: WHIMSY.ink, marginTop: SPACE.md },
+	dayLine: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
+		fontSize: 13,
 		letterSpacing: 0.3,
 		color: WHIMSY.mute,
-		textAlign: "center",
 		marginTop: 2,
 	},
-	// WHAT TO DO NOW — spent-action explanation in the hand voice.
+	// Quorum — a small peach warning pill (only while under two active pigs).
+	quorumChip: {
+		flexDirection: "row",
+		alignItems: "center",
+		alignSelf: "flex-start",
+		gap: 6,
+		backgroundColor: WHIMSY.peach,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 999,
+		paddingVertical: 5,
+		paddingHorizontal: SPACE.md,
+		marginTop: SPACE.md,
+	},
+	quorumChipText: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.accent },
+	// vs the Great Hunger — the dark bark strip inside the hero.
+	barkStrip: { ...BARK_PANEL, marginTop: SPACE.lg },
+	barkStripHead: {
+		flexDirection: "row",
+		alignItems: "baseline",
+		justifyContent: "space-between",
+		gap: SPACE.sm,
+	},
+	barkKickerSm: { ...HAND_KICKER, color: WHIMSY.sun, flexShrink: 1 },
+	barkTally: { fontFamily: FONTS.display, fontSize: 13, color: WHIMSY.barkText },
+	barkStripBody: {
+		fontFamily: FONTS.body,
+		fontSize: 12,
+		lineHeight: 18,
+		color: WHIMSY.barkMute,
+		marginTop: 6,
+	},
+	barkHungerChip: { marginTop: SPACE.sm, alignItems: "flex-start" },
+	// YOUR MOVE — the accent hand-kicker over the FeedingStrip.
+	moveKicker: { ...HAND_KICKER, fontSize: 12, letterSpacing: 2, color: WHIMSY.accent },
+	// Spent-action explanation in the hand voice.
 	actionReason: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
@@ -1112,57 +1271,91 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginTop: SPACE.sm,
 	},
-	// Below-the-fold "how the scuffle works ›" link.
-	howWrap: { alignSelf: "center", marginTop: SPACE.xl, marginBottom: SPACE.xs },
-	howLink: {
+	// STANDINGS MINI DUO — two flex-1 paper cards.
+	duoRow: { flexDirection: "row", gap: SPACE.md, marginTop: SPACE.lg },
+	duoCard: { flex: 1, paddingHorizontal: SPACE.md, paddingVertical: SPACE.md },
+	duoKicker: { ...HAND_KICKER, color: WHIMSY.mute, marginBottom: 6 },
+	duoTotalMine: { fontFamily: FONTS.whimsy, fontSize: 28, color: WHIMSY.ink },
+	duoTotalThem: { fontFamily: FONTS.whimsy, fontSize: 28, color: WHIMSY.lilacDeep },
+	duoDiggerRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 },
+	duoDiggerName: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink, flexShrink: 1 },
+	duoQuiet: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.mute, marginTop: 6 },
+	// DETAILS EXPANDER — a cream sticker button + the expanded paper card.
+	detailsBtn: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		backgroundColor: WHIMSY.cream,
+		borderWidth: 2.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.lg,
+		paddingHorizontal: SPACE.lg,
+		paddingVertical: SPACE.md,
+		marginTop: SPACE.lg,
+		...SHADOW_SM,
+	},
+	detailsBtnText: { fontFamily: FONTS.display, fontSize: 15, color: WHIMSY.ink },
+	detailsChev: { fontFamily: FONTS.display, fontSize: 14, color: WHIMSY.ink },
+	detailsCard: {
+		paddingHorizontal: SPACE.lg,
+		paddingVertical: SPACE.lg,
+		marginTop: SPACE.md,
+		gap: SPACE.lg,
+	},
+	detailsKicker: { ...HAND_KICKER, color: WHIMSY.mute, marginBottom: 5 },
+	detailsDrain: { fontFamily: FONTS.body, fontSize: 14, lineHeight: 21, color: WHIMSY.ink },
+	detailsHair: { height: 2, backgroundColor: WHIMSY.ink, opacity: 0.1, borderRadius: 1 },
+	explainLinkWrap: { alignSelf: "center" },
+	explainLink: {
 		fontFamily: FONTS.hand,
 		fontSize: 14,
-		color: WHIMSY.mute,
+		color: WHIMSY.accent,
 		textDecorationLine: "underline",
 	},
-	quorum: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.accent, textAlign: "center", marginTop: 10 },
-	drainLine: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.accent, textAlign: "center", marginTop: 4 },
-	slingWrap: { alignItems: "center", justifyContent: "flex-end", marginTop: 28, height: 200 },
-	splat: { position: "absolute", bottom: 120, width: 30, height: 30 },
-	slingShadow: {
-		borderRadius: 75,
-		backgroundColor: WHIMSY.sun,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 4, height: 4 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
+	// ── The lobby (NoWar) — the Start-a-Mud-Scuffle card + gold CTA. Card
+	// surfaces share the `card` padding above.
+	bark: { ...BARK_PANEL, marginBottom: SPACE.md },
+	barkKicker: { ...HAND_KICKER, color: WHIMSY.sun, marginBottom: 4 },
+	barkBody: { fontFamily: FONTS.body, fontSize: 14, lineHeight: 21, color: WHIMSY.barkText },
+	lobbyBody: {
+		fontFamily: FONTS.body,
+		fontSize: 16,
+		lineHeight: 24,
+		color: WHIMSY.ink,
+		marginBottom: SPACE.md,
 	},
-	slingBtn: {
-		width: 150,
-		height: 150,
-		borderRadius: 75,
-		borderWidth: 3,
+	bulletList: { gap: SPACE.sm + 2 },
+	bulletRow: { flexDirection: "row", alignItems: "center", gap: SPACE.md },
+	bulletBadge: {
+		width: 30,
+		height: 30,
+		borderRadius: 15,
+		borderWidth: 2.5,
 		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
 		alignItems: "center",
 		justifyContent: "center",
-		overflow: "hidden",
 	},
-	slingBtnEmpty: { backgroundColor: WHIMSY.cream2 },
-	bucketFill: { position: "absolute", left: 0, right: 0, bottom: 0, backgroundColor: "rgba(74,48,26,0.5)" },
-	slingBurst: { position: "absolute", bottom: 0, alignSelf: "center", width: 230, height: 230 },
-	comboRibbon: {
-		position: "absolute",
-		top: 0,
-		alignSelf: "center",
+	bulletBadgeText: { fontFamily: FONTS.display, fontSize: 14, color: WHIMSY.ink },
+	bulletLine: { fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.ink, flex: 1 },
+	goldPill: {
 		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
+		borderWidth: 3,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		paddingHorizontal: 12,
-		paddingVertical: 4,
+		borderRadius: 999,
+		paddingVertical: SPACE.lg,
+		alignItems: "center",
+		justifyContent: "center",
+		marginTop: SPACE.lg,
+		...STICKER_SHADOW,
 	},
-	comboText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
-	slingImg: { width: 52, height: 52 },
-	slingImgEmpty: { opacity: 0.4 },
-	slingLabel: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink, marginTop: 4 },
-	remaining: { fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.ink, textAlign: "center", marginTop: 18 },
-	spentNote: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.mute, textAlign: "center", marginTop: 2 },
+	goldPillPressed: { opacity: 0.9 },
+	goldPillText: { fontFamily: FONTS.display, fontSize: 18, color: WHIMSY.ink },
+	lobbyNote: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: SPACE.md,
+	},
 	pendingBtns: { flexDirection: "row", gap: 12, marginTop: 16 },
 });

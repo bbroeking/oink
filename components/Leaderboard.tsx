@@ -9,11 +9,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { getFriendIds } from "@/utils/friendships";
-import {
-	fetchLeagueStandings,
-	fetchSounderStandings,
-	type LeagueEntry,
-} from "@/utils/mudWars";
+import { SounderLeague } from "./SounderLeague";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { log } from "../utils/log";
 import { Icon } from "./ui/Icon";
@@ -31,12 +27,8 @@ const LEADERBOARD_PAGE_SIZE = 25;
 const LEADERBOARD_MAX_ROWS = 100;
 
 type Scope = "global" | "friends" | "alignment" | "sounders";
-
-// A Sounder-scope row: the season-table record (the ranked thing) with the
-// Spirit warmth stats merged in for the subline. Two cheap RPCs, joined
-// client-side by crew_id — the league RPC deliberately doesn't duplicate
-// spirit math (docs/sounder-league-spec.md).
-type LeagueBoardRow = LeagueEntry & { kindness: number; activity: number };
+// The scopes a host can open the board on (alignment is season-0 internal).
+export type BoardScope = Exclude<Scope, "alignment">;
 
 interface ActiveTitle {
 	id: string;
@@ -241,12 +233,13 @@ function ClippingRow({
 	);
 }
 
-export function Leaderboard() {
+// `initialScope` lets a host open the board on a specific tab (the Sounder
+// card's "standings live in the Board" note lands on the Sounders scope).
+export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [scope, setScope] = useState<Scope>("global");
+	const [scope, setScope] = useState<Scope>(initialScope ?? "global");
 	const [myId, setMyId] = useState<string | null>(null);
-	const [sounderRows, setSounderRows] = useState<LeagueBoardRow[]>([]);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 	// Alignment isn't a thing in Season 1 — the greedy/generous board
 	// retires with Judgement Day, so its scope tab hides once s1 is live.
@@ -313,21 +306,8 @@ export function Leaderboard() {
 			setMyId(user?.id ?? null);
 
 			if (scope === "sounders") {
-				// The Sounder League — the board that replaced alignment for
-				// the new season. The season table ranks (wins, no draws);
-				// Spirit rides along for the warmth subline.
-				const [league, spiritRows] = await Promise.all([
-					fetchLeagueStandings(50),
-					fetchSounderStandings(50),
-				]);
-				const spiritBy = new Map(spiritRows.map((s) => [s.crew_id, s]));
-				setSounderRows(
-					league.map((l) => ({
-						...l,
-						kindness: spiritBy.get(l.crew_id)?.kindness ?? 0,
-						activity: spiritBy.get(l.crew_id)?.activity ?? 0,
-					}))
-				);
+				// The Sounder League renders (and fetches) itself — see the
+				// SounderLeague branch below. Nothing to load here.
 				setLeaderboard([]);
 				setHasMore(false);
 				setLoading(false);
@@ -500,52 +480,17 @@ export function Leaderboard() {
 				</Sticker>
 			</View>
 
-			{loading ? (
+			{scope === "sounders" ? (
+				// BEFORE the loading check — the league board fetches and
+				// renders itself (Table/Spirit tabs, rosters, its own
+				// LoadingBeat); the skeletons here belong to the pig scopes.
+				<SounderLeague />
+			) : loading ? (
 				<View style={styles.listContent}>
 					{Array.from({ length: 6 }).map((_, i) => (
 						<ListRowSkeleton key={i} />
 					))}
 				</View>
-			) : scope === "sounders" ? (
-				// BEFORE the shared empty check — this scope keeps its rows in
-				// sounderRows (leaderboard stays [] here), so the generic
-				// leaderboard.length === 0 branch used to swallow it entirely.
-				<ScrollView
-					style={styles.list}
-					contentContainerStyle={styles.listContent}
-				>
-					<Sticker color="paper" rotate={-0.4} radius={14} style={styles.listSticker}>
-						{sounderRows.map((c, i) => (
-							<View
-								key={c.crew_id}
-								style={[styles.row, i < sounderRows.length - 1 && styles.rowDivider]}
-							>
-								<Text style={styles.rowRank}>#{i + 1}</Text>
-								<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
-									<Text style={styles.rowName} numberOfLines={1}>
-										{c.name}
-									</Text>
-									<Text style={styles.rowSub} numberOfLines={1}>
-										{c.wins}–{c.losses}
-										{" · "}
-										{c.memberCount} {c.memberCount === 1 ? "snout" : "snouts"}
-										{" · "}
-										{c.kindness} kind · {c.activity} fierce
-									</Text>
-								</View>
-								<View style={{ alignItems: "center" }}>
-									<Text style={styles.sounderSpirit}>{c.ribbons}</Text>
-									<Text style={styles.sounderSpiritLabel}>ribbons</Text>
-								</View>
-							</View>
-						))}
-						{sounderRows.length === 0 && (
-							<Text style={styles.rowSub}>
-								No Sounders on the table yet — join one from the Sounder tab.
-							</Text>
-						)}
-					</Sticker>
-				</ScrollView>
 			) : leaderboard.length === 0 ? (
 				// Empty state on a paper Sticker so it matches the Friends
 				// segment's empty card instead of reading as bare text.
@@ -701,19 +646,6 @@ export function Leaderboard() {
 }
 
 const styles = StyleSheet.create({
-	sounderSpirit: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 18,
-		color: WHIMSY.ink,
-		marginLeft: 8,
-	},
-	sounderSpiritLabel: {
-		fontFamily: FONTS.hand,
-		fontSize: 10,
-		color: WHIMSY.mute,
-		marginLeft: 8,
-		marginTop: -2,
-	},
 	container: { flex: 1 },
 	toggleWrap: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 2 },
 	toggle: { flexDirection: "row", padding: 4, gap: 4 },

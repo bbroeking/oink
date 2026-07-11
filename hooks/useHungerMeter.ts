@@ -94,6 +94,22 @@ export function stageForIndex(index: number): HungerStage {
 	return HUNGER_STAGES[i];
 }
 
+// Within-stage progress (0..1) — how far the herd has drained him toward the
+// NEXT stage. The ceiling is the live next_threshold; the floor comes from the
+// display-preview ladder (the server owns real boundaries, so a retune can
+// briefly skew the floor — clamping keeps the bar honest-looking either way).
+// 1 when he's famished (no next threshold left), 0 while the meter is dark.
+export function stageProgress(
+	m: Pick<HungerMeter, "stageIndex" | "total" | "nextThreshold" | "available">
+): number {
+	if (!m.available) return 0;
+	if (m.nextThreshold == null) return 1;
+	const floor = (HUNGER_LEVEL_CREDIT_PREVIEW[m.stageIndex] ?? 0) / HUNGER_CREDIT_SCALE;
+	const span = m.nextThreshold - floor;
+	if (span <= 0) return 0;
+	return Math.max(0, Math.min(1, (m.total - floor) / span));
+}
+
 // Pure threshold mapper (mirrors the server fold; used by tests + any local
 // preview). Boundaries are the server's to own — this mirror is display-only.
 export function stageIndexForTotal(total: number, thresholds: number[]): number {

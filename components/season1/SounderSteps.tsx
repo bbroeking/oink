@@ -33,6 +33,7 @@ import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
 import { formatCountdown, type WarState } from "@/utils/mudWars";
 import {
 	CREW_CAP,
+	CREW_CAP_WORD,
 	QUORUM,
 } from "@/constants/mudFights";
 import {
@@ -149,7 +150,7 @@ function JoinStep({ crewHook }: { crewHook: UseCrew }) {
 			<Text style={styles.stepSub}>
 				{nothingToJoin
 					? "No open Sounders right now — raise the first banner and the bog fills in behind you."
-					: "Five snouts, one banner. Slip into an open Sounder — the war will introduce you."}
+					: `${CREW_CAP_WORD} snouts, one banner. Slip into an open Sounder — the war will introduce you.`}
 			</Text>
 
 			{/* A friend already wants you — the warmest way in. */}

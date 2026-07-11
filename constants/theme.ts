@@ -17,6 +17,12 @@ export const WHIMSY = {
 	accent: "#c25a3f",
 	mute: "rgba(40,30,20,0.6)",
 	muteSoft: "rgba(40,30,20,0.4)",
+	// Dark "storyteller" callout — the why-we-scuffle / vs-the-Great-Hunger
+	// strips on the war surfaces (Your Sounder redesign, 2026-07-06). Ink-dark
+	// bark panel with warm cream text; kicker text on bark uses WHIMSY.sun.
+	bark: "#3a2c1e",
+	barkText: "#fff3e2",
+	barkMute: "#e8d9c6",
 	// Alignment tints — Goblins vs Angels.
 	angel: "#a89bff",
 	goblin: "#d4a437",

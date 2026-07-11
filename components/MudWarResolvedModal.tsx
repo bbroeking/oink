@@ -21,6 +21,7 @@ import { Icon } from "./ui/Icon";
 import { Sticker } from "./ui/Sticker";
 import { HAT_IMAGES, RARITY_COLORS } from "@/constants/hats";
 import { WonCosmetic } from "@/utils/mudWars";
+import type { WarOutcome } from "./mudwar/warCopy";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -30,7 +31,8 @@ import {
 	WHIMSY,
 } from "@/constants/theme";
 
-export type WarResult = "win" | "loss" | "draw";
+// The war-outcome union lives in warCopy; WarResult is this modal's name for it.
+export type WarResult = WarOutcome;
 
 interface Props {
 	visible: boolean;

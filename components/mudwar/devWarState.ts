@@ -27,8 +27,9 @@ export interface WarOverride {
 	isBotWar?: boolean;
 	rhythmEnabled?: boolean;
 	phase?: WarPhase;
-	/** For a resolved war: did MY crew win? Maps to winnerCrew. */
-	won?: boolean;
+	/** For a resolved war: did MY crew win? Maps to winnerCrew. `null` = a draw
+	    (winnerCrew forced null); `undefined` = leave the base war's winner. */
+	won?: boolean | null;
 }
 
 // UI-local values that aren't part of WarState but the WHAT-TO-DO block reads.
@@ -129,10 +130,13 @@ export function applyWarOverride(
 	if (ov.rhythmEnabled != null) next.rhythmEnabled = ov.rhythmEnabled;
 	if (ov.phase != null) next.phase = ov.phase;
 	if (ov.status != null) next.status = ov.status;
-	if (ov.won != null) {
-		next.winnerCrew = ov.won
-			? next.mine.crew?.id ?? MOCK_MY_CREW_ID
-			: next.them.crew?.id ?? MOCK_THEM_CREW_ID;
+	if (ov.won !== undefined) {
+		next.winnerCrew =
+			ov.won == null
+				? null // explicit draw
+				: ov.won
+					? next.mine.crew?.id ?? MOCK_MY_CREW_ID
+					: next.them.crew?.id ?? MOCK_THEM_CREW_ID;
 	}
 	return next;
 }

@@ -112,3 +112,5 @@ Fixing it means **enforcing the taste that already exists**, not imposing a new 
   `KICKER_TEXT`/`KICKER_PILL` now derive from `TYPE`; the three header/text primitives consume it.
   Retires the "no type scale / 634 raw sizes" gap at the root; screen-level sizes migrate
   incrementally. Serves **craft / hierarchy & comprehension.**
+
+- **2026-07-06 — Added the `bark` token family (`WHIMSY.bark`/`barkText`/`barkMute`) for dark storyteller callouts.** The "Your Sounder" design (Claude Design → Simplifying page hierarchy) introduces ink-dark panels that carry the Great Hunger fiction on the war surfaces ("why we scuffle", "vs the Great Hunger"). Rather than let `#3a2c1e` leak as inline hex, the trio joins `WHIMSY`: bark panel, warm cream text, softer cream body — kickers on bark use `WHIMSY.sun`. One sanctioned dark surface, tokenized before first use, so the storyteller voice stays governable. Serves **craft / governance** (the token system grows on purpose, never by leak).

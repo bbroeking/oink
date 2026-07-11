@@ -9,14 +9,24 @@
 // Every string here is player-facing and cozy: no "fronts", no "notches",
 // no "per-capita" — a new pig should parse each line on first read.
 
-import type { WarState, RecapFront, RecapFrontRhythm } from "@/utils/mudWars";
+import type {
+	WarState,
+	WarSideMember,
+	RecapFront,
+	RecapFrontRhythm,
+} from "@/utils/mudWars";
 import {
 	WAR_LENGTH_DAYS,
 	WAR_LENGTH_DAYS_FRONTS,
+	QUORUM,
 	BOT_CREW_NAME,
 	DIFFICULTY_LABEL,
 	frontName,
 } from "@/constants/mudFights";
+// Type-only: the union of valid ribbon-glyph names. Erased at compile, so this
+// pure copy module stays React/RN-free at runtime while the bullet's glyph is
+// validated at its definition site (a typo'd glyph name won't compile).
+import type { GlyphName } from "@/components/ui/Glyph";
 
 // Total days this war runs (fronts wars are 7, legacy per-capita wars 5).
 export function warTotalDays(war: Pick<WarState, "frontsEnabled">): number {
@@ -47,6 +57,55 @@ export function opponentName(war: Pick<WarState, "them" | "isBotWar">): string {
 // Your own crew's name for the scoreboard.
 export function myName(war: Pick<WarState, "mine">): string {
 	return war.mine.crew?.name ?? "Your Sounder";
+}
+
+// ── The lobby — "why we scuffle" + how a scuffle runs ────────────────────────
+// The Start-a-Mud-Scuffle card copy (Your Sounder redesign, 2026-07-06). Kept
+// here (not inline in the war page) so the day-count tracks WAR_LENGTH_DAYS in
+// one place and the lobby voice is unit-tested with the rest of the war copy.
+// Season 1 fixture wars are plain totals over WAR_LENGTH_DAYS.
+export interface LobbyBullet {
+	/** Short text badge in the circle ("5", "2+"); omitted when a glyph is used. */
+	badge?: string;
+	/** …or a Glyph name for the ribbon row (the war page renders it, no number). */
+	badgeGlyph?: GlyphName;
+	/** The one-line explanation beside the badge. */
+	line: string;
+}
+
+export interface LobbyCopy {
+	whyKicker: string;
+	whyBody: string;
+	body: string;
+	bullets: LobbyBullet[];
+	cta: string;
+	note: string;
+}
+
+// "5 days" / "1 day" — the war window, spoken from the constant so the copy
+// can never drift from WAR_LENGTH_DAYS.
+function lobbyDayCount(): string {
+	// WAR_LENGTH_DAYS is a const literal; widen so the pluralization compare is
+	// legal if the window ever changes to 1.
+	const n: number = WAR_LENGTH_DAYS;
+	return `${n} ${n === 1 ? "day" : "days"}`;
+}
+
+export function lobbyCopy(): LobbyCopy {
+	const days = lobbyDayCount();
+	return {
+		whyKicker: "why we scuffle",
+		whyBody:
+			"The Great Hunger can't be fought head-on. Every scuffle is a proxy — two Sounders sling mud at each other, and all of it lands on the Hunger. The harder you fight, the more joy you claw back.",
+		body: `Wade your Sounder into the bog against a rival crew. Sling the most mud over ${days} to bank Prize Ribbons — and starve the Hunger a little more.`,
+		bullets: [
+			{ badge: String(WAR_LENGTH_DAYS), line: `Runs for ${days}, then settles` },
+			{ badge: `${QUORUM}+`, line: `Needs ${QUORUM}+ active teammates to count` },
+			{ badgeGlyph: "trophy", line: "Every scoop weakens the Great Hunger" },
+		],
+		cta: "Auto-match my Sounder ›",
+		note: "the League drops you straight in against the next Sounder up the table",
+	};
 }
 
 // ── Where the rope is, in plain words ────────────────────────────────────────
@@ -125,6 +184,167 @@ export function scoreboardCopy(): ScoreboardCopy {
 // (the rivalry is collective; the rope only decides who carries more home).
 export function drainLine(totalReclaimed: number): string {
 	return `Every scoop — from either herd — weakens him. Together you've won back ${totalReclaimed} joy this scuffle.`;
+}
+
+// ── Scoreboard transparency — who's behind the number, and is it real ────────
+// The two per-pig tallies are the headline, but a new player should be able to
+// SEE who dug for each and how a scoop becomes a point. These pure helpers turn
+// WarState into the tap-to-expand breakdown the war page renders, keeping the
+// bot's synthetic pace visibly labeled and the rival's individuals hidden (the
+// double-blind is the war's soul). No numbers are invented here;
+// `slings` is each member's real banked mud (throws + Hold runs + digs summed).
+
+export type ParticipationState = "active" | "quiet";
+
+export function participationState(
+	m: Pick<WarSideMember, "slings">
+): ParticipationState {
+	return m.slings > 0 ? "active" : "quiet";
+}
+
+// A member's hand-voice state note. The quiet pig is NEVER shamed — a soft,
+// gift-framed line, matching the roster's cozy voice.
+export function participationNote(state: ParticipationState): string {
+	return state === "active"
+		? "dug in"
+		: "hasn't reached the bog yet";
+}
+
+// One row of YOUR herd's breakdown — name, points, and whether they've shown up.
+export interface MemberBreakdownRow {
+	userId: string;
+	name: string;
+	points: number;
+	state: ParticipationState;
+	note: string;
+	isYou: boolean;
+	isLeader: boolean;
+}
+
+// war_side ships members already sorted slings-desc; we keep that order so the
+// biggest diggers head the list. A quiet pig reads as "a quiet pig", never blank.
+export function memberBreakdown(
+	members: WarSideMember[],
+	myUserId?: string | null,
+	leaderId?: string | null
+): MemberBreakdownRow[] {
+	return members.map((m) => {
+		const state = participationState(m);
+		return {
+			userId: m.user_id,
+			name: m.username ?? "a quiet pig",
+			points: m.slings,
+			state,
+			note: participationNote(state),
+			isYou: !!myUserId && m.user_id === myUserId,
+			isLeader: !!leaderId && m.user_id === leaderId,
+		};
+	});
+}
+
+// How many of your herd have actually dug (for the "N of M in the mud" summary).
+export function activeCount(members: WarSideMember[]): number {
+	return members.filter((m) => m.slings > 0).length;
+}
+
+// The opponent side never lists individuals: the house is a synthetic pace with
+// NO pigs behind it, and a real rival's diggers stay fogged (double-blind).
+export type TheirBreakdown =
+	| { kind: "synthetic"; label: string; total: number }
+	| { kind: "hidden"; activeCount: number; perCapita: number; note: string };
+
+export function theirBreakdown(
+	war: Pick<WarState, "them" | "isBotWar">
+): TheirBreakdown {
+	if (war.isBotWar) {
+		return {
+			kind: "synthetic",
+			label: syntheticPaceLine(),
+			total: war.them.total,
+		};
+	}
+	return {
+		kind: "hidden",
+		activeCount: war.them.active ?? 0,
+		perCapita: war.them.perCapita,
+		note: rivalHiddenNote(),
+	};
+}
+
+// The house crew's honest label — a steady drip of synthetic points, no roster.
+// Never invents pig names (there are no pigs behind The Mudlarks).
+export function syntheticPaceLine(): string {
+	return `${BOT_CREW_NAME} keep a steady pace — no pigs behind it.`;
+}
+
+// Why a real rival shows a pace but no names — the double-blind, in one line.
+export function rivalHiddenNote(): string {
+	return "Who dug what stays hidden between rival Sounders — you see their pace, not their pigs.";
+}
+
+// The rival herd's activity for the standings mini card — aggregate-only, the
+// double-blind (never names their pigs). "N pigs in the mud" / "nobody active
+// yet".
+export function rivalActivityLine(active: number | null): string {
+	const n = Math.max(0, active ?? 0);
+	if (n === 0) return "nobody active yet";
+	return `${n} ${n === 1 ? "pig" : "pigs"} in the mud`;
+}
+
+// The per-point metadata legend under your herd's breakdown: what one point is.
+export function pointMetaLine(): string {
+	return "Each point is one scoop of joy — a truffle dug, or a goblin caught in the Hold.";
+}
+
+// The tap affordance under the scoreboard caption.
+export function scoreboardTapHint(): string {
+	return "tap a herd to see who's digging ›";
+}
+
+// The scoreboard's own scoring link (opens the explainer at the scoring section).
+export function scoringLinkLabel(): string {
+	return "how the scoring works ›";
+}
+
+// The small tag pinned to the board when the __DEV__ override harness is driving
+// fake numbers — so synthetic dev data can never be mistaken for a real scuffle.
+export function devDataTagLabel(): string {
+	return "dev data";
+}
+
+// ── How points are scored (the explainer's scoring section) ──────────────────
+// The mechanics — a scoop is worth 1, digs and Hold runs both bank mud, a daily
+// per-pig cap, the two-pig quorum, per-pig averaging into the rope — spelled out
+// in the cozy voice (no "slings", "per-capita", "quorum", "notches").
+export interface ScoringRule {
+	title: string;
+	line: string;
+}
+
+export function scoringRules(frontsEnabled: boolean = false): ScoringRule[] {
+	return [
+		{
+			title: "Every scoop is worth one",
+			// Season 1 is plain totals: a scoop counts once, whoever scoops more
+			// joy pulls the rope. The Hold clause only belongs to legacy fronts
+			// wars (rhythm rides the fronts system) — see the 2026-07-06 decision.
+			line: frontsEnabled
+				? "Each truffle you root up — and each goblin you catch on the beat in the Hold — is one scoop of joy for your herd."
+				: "Each truffle you root up is one scoop of joy for your herd. Every scoop counts once — whoever scoops more joy pulls the rope.",
+		},
+		{
+			title: "A daily fill, per pig",
+			line: "Each pig can win back only so much joy a day, so no single pig carries the whole scuffle. Dig the same feeding as a crewmate and the fill lifts a little.",
+		},
+		{
+			title: "Two pigs to count",
+			line: "A herd needs at least two pigs digging for its joy to count that day — one pig alone can't hold the rope.",
+		},
+		{
+			title: "Per pig, not per crowd",
+			line: "Both herds' joy is averaged per pig, and the difference leans the rope. A small herd that all show up can out-pull a big, quiet one.",
+		},
+	];
 }
 
 // A compact "Day N of M · 2h left" standing subline for the header zone.

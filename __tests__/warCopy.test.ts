@@ -5,10 +5,12 @@
 // available), bot-opponent naming, and war-over states.
 
 import type { WarState, WarSide } from "../utils/mudWars";
-import { BOT_CREW_NAME } from "../constants/mudFights";
+import { BOT_CREW_NAME, WAR_LENGTH_DAYS } from "../constants/mudFights";
 import {
 	opponentName,
 	myName,
+	lobbyCopy,
+	rivalActivityLine,
 	ropeState,
 	warActions,
 	isHoldPhase,
@@ -25,7 +27,20 @@ import {
 	commitMarkerLine,
 	frontBoardLead,
 	weeklyModifierExplainer,
+	participationState,
+	participationNote,
+	memberBreakdown,
+	activeCount,
+	theirBreakdown,
+	syntheticPaceLine,
+	rivalHiddenNote,
+	pointMetaLine,
+	scoreboardTapHint,
+	scoringLinkLabel,
+	devDataTagLabel,
+	scoringRules,
 } from "../components/mudwar/warCopy";
+import type { WarSideMember } from "../utils/mudWars";
 import {
 	applyWarOverride,
 	mockWarState,
@@ -86,6 +101,41 @@ describe("opponentName", () => {
 	it("names your own crew, with a fallback", () => {
 		expect(myName(makeWar())).toBe("The Mud Maulers");
 		expect(myName(makeWar({ mine: side(null, 5) }))).toBe("Your Sounder");
+	});
+});
+
+// ── lobbyCopy — the Start-a-Mud-Scuffle card ─────────────────────────────────
+
+describe("lobbyCopy", () => {
+	it("tracks WAR_LENGTH_DAYS in the day-count copy", () => {
+		const c = lobbyCopy();
+		const days = `${WAR_LENGTH_DAYS} days`;
+		expect(c.body).toContain(days);
+		expect(c.bullets[0].badge).toBe(String(WAR_LENGTH_DAYS));
+		expect(c.bullets[0].line).toContain(days);
+	});
+	it("needs a two-pig quorum and auto-matches", () => {
+		const c = lobbyCopy();
+		expect(c.bullets[1].badge).toBe("2+");
+		expect(c.cta).toMatch(/auto-match/i);
+	});
+	it("the ribbon bullet is a glyph, not a number", () => {
+		const b = lobbyCopy().bullets[2];
+		expect(b.badgeGlyph).toBeTruthy();
+		expect(b.badge).toBeUndefined();
+	});
+});
+
+// ── rivalActivityLine — the standings-mini rival voice ───────────────────────
+
+describe("rivalActivityLine", () => {
+	it("reads nobody active yet at zero / null", () => {
+		expect(rivalActivityLine(0)).toBe("nobody active yet");
+		expect(rivalActivityLine(null)).toBe("nobody active yet");
+	});
+	it("counts pigs in the mud, singular vs plural", () => {
+		expect(rivalActivityLine(1)).toBe("1 pig in the mud");
+		expect(rivalActivityLine(3)).toBe("3 pigs in the mud");
 	});
 });
 
@@ -355,6 +405,18 @@ describe("devWarState override merge", () => {
 		expect(warOutcome(w!)).toBe("loss");
 	});
 
+	it("maps won=null onto an explicit draw (no winner)", () => {
+		const w = applyWarOverride(
+			makeWar(),
+			{ status: "resolved", won: null },
+			false,
+			now
+		);
+		expect(w!.status).toBe("resolved");
+		expect(w!.winnerCrew).toBeNull();
+		expect(warOutcome(w!)).toBe("draw");
+	});
+
 	it("mockWarState is a coherent active war", () => {
 		const m = mockWarState(now);
 		expect(m.mine.crew?.id).toBe(MOCK_MY_CREW_ID);
@@ -491,5 +553,178 @@ describe("weeklyModifierExplainer", () => {
 	it("is empty for none/unknown so no stray line renders", () => {
 		expect(weeklyModifierExplainer("none")).toBe("");
 		expect(weeklyModifierExplainer("something_new")).toBe("");
+	});
+});
+
+// ── Scoreboard transparency — who's behind the number, and is it real ────────
+
+function member(
+	user_id: string,
+	username: string | null,
+	slings: number
+): WarSideMember {
+	return { user_id, username, slings };
+}
+
+describe("participationState + participationNote", () => {
+	it("a pig that has dug is active", () => {
+		expect(participationState(member("u1", "Rosie", 3))).toBe("active");
+	});
+	it("a pig with zero mud is quiet", () => {
+		expect(participationState(member("u2", "Pip", 0))).toBe("quiet");
+	});
+	it("the quiet note is gift-framed, never shaming", () => {
+		expect(participationNote("quiet")).toBe("hasn't reached the bog yet");
+		expect(participationNote("quiet")).not.toMatch(/lazy|fail|no|zero/i);
+		expect(participationNote("active")).toBe("dug in");
+	});
+});
+
+describe("memberBreakdown", () => {
+	const members = [
+		member("me", "Rosie", 9),
+		member("boss", "Clover", 5),
+		member("q", "Pip", 0),
+		member("anon", null, 2),
+	];
+
+	it("maps each member to a row with points and participation", () => {
+		const rows = memberBreakdown(members, "me", "boss");
+		expect(rows).toHaveLength(4);
+		expect(rows[0]).toMatchObject({
+			userId: "me",
+			name: "Rosie",
+			points: 9,
+			state: "active",
+			isYou: true,
+			isLeader: false,
+		});
+	});
+
+	it("marks the leader and preserves the server's slings-desc order", () => {
+		const rows = memberBreakdown(members, "me", "boss");
+		expect(rows[1]).toMatchObject({ name: "Clover", isLeader: true });
+		expect(rows.map((r) => r.points)).toEqual([9, 5, 0, 2]);
+	});
+
+	it("flags the quiet pig with the gift-framed note", () => {
+		const rows = memberBreakdown(members);
+		const quiet = rows.find((r) => r.userId === "q")!;
+		expect(quiet.state).toBe("quiet");
+		expect(quiet.note).toBe("hasn't reached the bog yet");
+	});
+
+	it("names a nameless pig 'a quiet pig' instead of leaving it blank", () => {
+		const rows = memberBreakdown(members);
+		expect(rows.find((r) => r.userId === "anon")!.name).toBe("a quiet pig");
+	});
+
+	it("no user id → no 'you' / 'leader' flags", () => {
+		const rows = memberBreakdown(members);
+		expect(rows.every((r) => !r.isYou && !r.isLeader)).toBe(true);
+	});
+});
+
+describe("activeCount", () => {
+	it("counts only pigs who have dug", () => {
+		expect(
+			activeCount([member("a", "A", 3), member("b", "B", 0), member("c", "C", 1)])
+		).toBe(2);
+	});
+	it("is 0 for an all-quiet herd", () => {
+		expect(activeCount([member("a", "A", 0)])).toBe(0);
+	});
+});
+
+describe("theirBreakdown", () => {
+	function them(perCapita: number, active: number | null, total = perCapita): WarSide {
+		return {
+			crew: { id: "them", name: "Trough Loyalists", is_bot: false },
+			members: [member("x", "Secret", 5)], // war_side may carry rows; we NEVER expose them
+			total,
+			active,
+			perCapita,
+			quorumMet: true,
+		};
+	}
+
+	it("a house war shows a LABELED synthetic pace, never fake pig names", () => {
+		const b = theirBreakdown(makeWar({ isBotWar: true, them: them(24, null, 24) }));
+		expect(b.kind).toBe("synthetic");
+		if (b.kind === "synthetic") {
+			expect(b.label).toBe(syntheticPaceLine());
+			expect(b.total).toBe(24);
+			expect(b.label).toContain(BOT_CREW_NAME);
+			expect(b.label).toMatch(/no pigs behind it/i);
+			expect(b.label).not.toContain("Secret");
+		}
+	});
+
+	it("a real rival stays fogged — a pace and a count, no individuals", () => {
+		const b = theirBreakdown(makeWar({ isBotWar: false, them: them(5, 3) }));
+		expect(b.kind).toBe("hidden");
+		if (b.kind === "hidden") {
+			expect(b.activeCount).toBe(3);
+			expect(b.perCapita).toBe(5);
+			expect(b.note).toBe(rivalHiddenNote());
+			expect(b.note).not.toContain("Secret");
+		}
+	});
+
+	it("the double-blind never leaks an opponent member name", () => {
+		const b = theirBreakdown(makeWar({ isBotWar: false, them: them(5, 3) }));
+		expect(JSON.stringify(b)).not.toContain("Secret");
+	});
+});
+
+describe("scoreboard transparency copy", () => {
+	it("the synthetic pace names the house and denies pigs behind it", () => {
+		expect(syntheticPaceLine()).toContain(BOT_CREW_NAME);
+		expect(syntheticPaceLine()).toMatch(/steady pace/i);
+		expect(syntheticPaceLine()).toMatch(/no pigs behind it/i);
+	});
+	it("the rival note frames the double-blind (pace, not pigs)", () => {
+		expect(rivalHiddenNote()).toMatch(/hidden/i);
+		expect(rivalHiddenNote()).toMatch(/pace/i);
+	});
+	it("the per-point legend says a point is one scoop of joy", () => {
+		expect(pointMetaLine()).toMatch(/one scoop of joy/i);
+		expect(pointMetaLine()).toMatch(/truffle/i);
+	});
+	it("the tap hint and links are plain and cozy", () => {
+		expect(scoreboardTapHint()).toMatch(/tap/i);
+		expect(scoringLinkLabel()).toBe("how the scoring works ›");
+		expect(devDataTagLabel()).toBe("dev data");
+	});
+});
+
+describe("scoringRules", () => {
+	const rules = scoringRules();
+	const all = rules.map((r) => `${r.title} ${r.line}`).join(" ");
+
+	it("covers each mechanic the founder asked for", () => {
+		expect(all).toMatch(/scoop/i);            // a point per scoop (slings ×1 / dig → mud)
+		expect(all).toMatch(/truffle|goblin/i);   // both scoring gestures
+		expect(all).toMatch(/day/i);              // daily caps
+		expect(all).toMatch(/two pigs/i);         // quorum
+		expect(all).toMatch(/per pig/i);          // per-pig averaging
+		expect(all).toMatch(/rope/i);             // …into the rope
+	});
+
+	it("stays in the cozy voice — no engine jargon", () => {
+		expect(all).not.toMatch(/slings|per-capita|percapita|quorum|notch/i);
+	});
+
+	it("defaults (S1 plain totals) to the one-scoop sentence, no Hold copy", () => {
+		const plain = scoringRules().map((r) => `${r.title} ${r.line}`).join(" ");
+		expect(plain).toMatch(/every scoop counts once/i);
+		expect(plain).toMatch(/whoever scoops more joy pulls the rope/i);
+		expect(plain).not.toMatch(/on the beat in the hold/i);
+		expect(plain).not.toMatch(/goblin/i);
+	});
+
+	it("surfaces the Hold clause only for a legacy fronts war", () => {
+		const fronts = scoringRules(true).map((r) => `${r.title} ${r.line}`).join(" ");
+		expect(fronts).toMatch(/on the beat in the hold/i);
 	});
 });

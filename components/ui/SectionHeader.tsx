@@ -74,6 +74,7 @@ const styles = StyleSheet.create({
 		marginLeft: 8,
 		flexDirection: "row",
 		alignItems: "center",
+		gap: 8,
 	},
 	rule: {
 		...TITLE_RULE,

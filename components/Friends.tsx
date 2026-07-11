@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
 	StyleSheet,
 	View,
@@ -7,6 +7,7 @@ import {
 	Pressable,
 	ActivityIndicator,
 	ScrollView,
+	Modal,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
@@ -23,7 +24,8 @@ import { fetchFriendsCrews } from "@/utils/mudWars";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
-import { FONTS, TAB_SAFE, TITLE_RULE, WHIMSY } from "@/constants/theme";
+import { BarnVisitModal } from "./BarnVisitModal";
+import { FONTS, TAB_SAFE, WHIMSY } from "@/constants/theme";
 import { AlignmentBadge } from "./ui/AlignmentBadge";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Icon } from "./ui/Icon";
@@ -48,6 +50,9 @@ export default function Friends({ userId }: { userId: string }) {
 	// Tapping a friend opens UserSheet — the one door for ask / bless
 	// / curse.
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+	// The row's barn button jumps straight into the visit (its own Modal —
+	// unlike UserSheet's inline overlay, nothing here is already modal).
+	const [visiting, setVisiting] = useState<{ id: string; name: string } | null>(null);
 
 	const load = useCallback(async () => {
 		// Friends — via friend_ids RPC (returns the accepted set).
@@ -89,11 +94,9 @@ export default function Friends({ userId }: { userId: string }) {
 
 	return (
 		<View style={styles.wrap}>
-			{/* No inline kicker — the Friends hub header already renders the
-			    page kicker ("★ FRIENDS"); stacking a second one here was the
-			    double-kicker the UI audit flagged. A short title rule marks
-			    the segment head instead. */}
-			<View style={styles.segRule} />
+			{/* No inline kicker or rule — the Friends hub header owns the
+			    per-segment kicker, title, AND title rule; anything here
+			    doubles it. */}
 			<View style={styles.tabsRow}>
 				<TabBtn label={`Friends · ${friends.length}`} active={tab === "friends"} onPress={() => setTab("friends")} />
 				<TabBtn label="Add" active={tab === "add"} onPress={() => setTab("add")} />
@@ -114,6 +117,9 @@ export default function Friends({ userId }: { userId: string }) {
 						friends={friends}
 						crewNames={crewNames}
 						onPick={setSelectedUserId}
+						onVisit={(f) =>
+							setVisiting({ id: f.id, name: f.username ?? "friend" })
+						}
 					/>
 				)}
 
@@ -125,6 +131,24 @@ export default function Friends({ userId }: { userId: string }) {
 				onDismiss={() => setSelectedUserId(null)}
 				onFriendshipChanged={load}
 			/>
+
+			{/* Barn visit from the row button. BarnVisitModal is a plain
+			    absolute-fill overlay (it can't nest a Modal under UserSheet's),
+			    so from this non-modal screen it needs its own Modal to cover
+			    the tab bar. */}
+			{visiting && (
+				<Modal
+					visible
+					animationType="slide"
+					onRequestClose={() => setVisiting(null)}
+				>
+					<BarnVisitModal
+						targetUserId={visiting.id}
+						targetName={visiting.name}
+						onClose={() => setVisiting(null)}
+					/>
+				</Modal>
+			)}
 		</View>
 	);
 }
@@ -184,10 +208,12 @@ function FriendsList({
 	friends,
 	crewNames,
 	onPick,
+	onVisit,
 }: {
 	friends: Profile[];
 	crewNames: Map<string, string>;
 	onPick: (id: string) => void;
+	onVisit: (friend: Profile) => void;
 }) {
 	// Alignment isn't a thing in Season 1 — the badge retires with S0.
 	const s1 = useFeatureFlag("world_boss") || __DEV__;
@@ -207,7 +233,10 @@ function FriendsList({
 	const atCap = sorted.length >= FRIEND_CAP_LIMIT;
 	return (
 	  <>
-		<Sticker color="paper" rotate={-0.4} radius={14} style={styles.listSticker}>
+		{/* rotate 0: on a tall list even a fraction of a degree shears the
+		    bottom corners sideways out of the scroll clip — tilt is for
+		    small stickers only. */}
+		<Sticker color="paper" rotate={0} radius={14} style={styles.listSticker}>
 			{sorted.map((f, i) => {
 				const last = i === sorted.length - 1;
 				const wears = hatName(f);
@@ -267,6 +296,23 @@ function FriendsList({
 								</Text>
 							)}
 						</View>
+						{/* Visit their Barn — a one-tap door on the row itself so
+						    visiting never depends on opening the profile sheet
+						    first. Every row here is a friend (the server's
+						    are_friends gate always passes); the modal handles
+						    napping/resting itself. */}
+						<Pressable
+							onPress={() => onVisit(f)}
+							hitSlop={8}
+							accessibilityRole="button"
+							accessibilityLabel={`Visit ${f.username ?? "friend"}'s barn`}
+							style={({ pressed }) => [
+								styles.rowVisitBtn,
+								pressed && styles.rowVisitBtnPressed,
+							]}
+						>
+							<Icon name="tabBarn" size={18} color={WHIMSY.ink} />
+						</Pressable>
 						<Text style={styles.rowChevron}>›</Text>
 					</Pressable>
 				);
@@ -390,7 +436,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 
 			{/* Real search results, when the user has typed. */}
 			{results.length > 0 && (
-				<Sticker color="paper" rotate={-0.3} radius={14} style={styles.listSticker}>
+				<Sticker color="paper" rotate={0} radius={14} style={styles.listSticker}>
 					{results.map((p, i) => {
 						const last = i === results.length - 1;
 						return (
@@ -441,7 +487,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 			{query.length === 0 && suggestions.length > 0 && (
 				<>
 					<Text style={styles.kickerSmall}>SUGGESTIONS</Text>
-					<Sticker color="paper" rotate={-0.3} radius={14} style={styles.listSticker}>
+					<Sticker color="paper" rotate={0} radius={14} style={styles.listSticker}>
 						{suggestions.map((p, i) => {
 							const last = i === suggestions.length - 1;
 							return (
@@ -498,9 +544,6 @@ const styles = StyleSheet.create({
 	wrap: { flex: 1, marginTop: 16, paddingHorizontal: 14 },
 	scroll: { flex: 1 },
 	scrollContent: { paddingBottom: TAB_SAFE },
-	// Segment head rule — the page header owns the kicker now; this short
-	// ink underline marks the Friends segment without a second kicker.
-	segRule: { ...TITLE_RULE, width: 64, marginBottom: 12 },
 	tabsRow: {
 		flexDirection: "row",
 		backgroundColor: WHIMSY.paper,
@@ -629,6 +672,20 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		paddingLeft: 8,
 	},
+	// Per-row barn door — small sun circle so "visit" reads as the row's
+	// action while the row itself stays the profile door.
+	rowVisitBtn: {
+		width: 34,
+		height: 34,
+		borderRadius: 17,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.sun,
+		alignItems: "center",
+		justifyContent: "center",
+		marginLeft: 8,
+	},
+	rowVisitBtnPressed: { backgroundColor: WHIMSY.cream2 },
 	// Add panel — paper sticker with magnifier + input.
 	searchCard: { paddingVertical: 12, paddingHorizontal: 14 },
 	kickerSmall: {

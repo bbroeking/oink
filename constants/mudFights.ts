@@ -20,6 +20,14 @@ export const WAR_LENGTH_DAYS = 5; // active war window, stamped at accept (legac
 export const WAR_LENGTH_DAYS_FRONTS = 7; // fronts-enabled wars run 7 days (MUST match challenge_house/accept_challenge in 20260667)
 export const QUORUM = 2; // min active members for a crew's score to count
 export const CREW_CAP = 4; // max members per Sounder (5→4 in 20260707000000_sounder_league.sql; existing 5-crews grandfathered)
+// Prose form for player-facing copy ("Four snouts, one banner") — derived so
+// the story can never oversell the roster if the cap moves again. Capitalized;
+// mid-sentence sites lowercase it.
+export const CREW_CAP_WORD = (
+	["zero", "one", "two", "three", "four", "five", "six", "seven", "eight"][
+		CREW_CAP
+	] ?? String(CREW_CAP)
+).replace(/^./, (c) => c.toUpperCase());
 export const BOT_DAILY_PACE = 12; // house "ghost crew" synthetic per-day score
 export const HOUSE_BONUS = 25; // flat snout bonus for beating the house (no loser pot)
 export const BUFF_HOURS = 72; // war-winner regen buff duration

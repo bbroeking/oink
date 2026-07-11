@@ -40,11 +40,13 @@ import {
 import { useSeasonEnd } from "../../hooks/useSeasonEnd";
 import type { BetaReward } from "../../hooks/useSeasonEnd";
 import { HungerHero } from "../../components/season1/HungerHero";
-import { SeasonStory } from "../../components/season1/SeasonStory";
 import { SounderSteps } from "../../components/season1/SounderSteps";
 import { LeaguePlacard } from "../../components/season1/LeaguePlacard";
 import { SeasonGuideModal } from "../../components/season1/SeasonGuideModal";
-import { SpoilsShowcase } from "../../components/season1/SpoilsShowcase";
+import {
+	SeasonInfoModal,
+	type SeasonInfoTopic,
+} from "../../components/season1/SeasonInfoModal";
 import { useCrew } from "../../hooks/useCrew";
 import { useMudWar } from "@/hooks/useMudWar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -58,7 +60,7 @@ import {
 	type TierUpBannerHandle,
 } from "../../components/ui/TierUpBanner";
 import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
-import { FONTS, KICKER_TEXT, ROW_TILTS, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW, SHADOW_SM, PAGE_PAD, TAB_SAFE, RADII, SPACE } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW, SHADOW_SM, PAGE_PAD, TAB_SAFE, RADII, SPACE } from "@/constants/theme";
 import { daysUntilJudgement } from "@/utils/season";
 import { Button, SectionHeader } from "../../components/ui";
 import { useAudioPlayer } from "expo-audio";
@@ -1021,13 +1023,10 @@ export default function SeasonScreen() {
 	// else. Season-0 rendering is fully preserved on the else-branch.
 	const worldBoss = useFeatureFlag("world_boss");
 	const s1 = worldBoss || __DEV__;
-	// The Great Hunger intro storybook — auto-opens on this account's FIRST
-	// visit to the Season-1 tab (AsyncStorage stamp, per-user) and re-opens any
-	// time from the hero's "Hear the tale again" chip.
+	// The Great Hunger intro — the tale cinematic. Auto-opens on this account's
+	// FIRST visit to the Season-1 tab (AsyncStorage stamp, per-user) and
+	// re-opens any time from the hero's "Hear the tale again" chip.
 	const [introOpen, setIntroOpen] = useState(false);
-	// First-ever S1 visit leads with the cinematic tale reel inside the
-	// intro modal; retellings from the hero chip start on the storybook.
-	const [introReel, setIntroReel] = useState(false);
 	const [uid, setUid] = useState<string | null>(null);
 	// Sounder + war state drive the walkthrough stepper / live-war strip.
 	const crewHook = useCrew(s1);
@@ -1050,6 +1049,11 @@ export default function SeasonScreen() {
 	const [devReward, setDevReward] = useState<BetaReward | null>(null);
 	const [devTierIdx, setDevTierIdx] = useState(0);
 	const [saleOpen, setSaleOpen] = useState(false);
+	// The season's reference sheets (story / earnables) — opened from the two
+	// header icon buttons; the tab's scroll stays the playable path.
+	const [infoTopic, setInfoTopic] = useState<SeasonInfoTopic | null>(null);
+	// "How to earn XP" — the pass header's star button.
+	const [xpHelpOpen, setXpHelpOpen] = useState(false);
 	// Alignment placard moved here from the Me tab — the player's
 	// greedy↔generous score + its blessing/curse/regen modifiers.
 	const [alignmentScore, setAlignmentScore] = useState(0);
@@ -1134,10 +1138,7 @@ export default function SeasonScreen() {
 		if (!s1 || !uid) return;
 		let cancelled = false;
 		AsyncStorage.getItem(`s2_intro_seen:${uid}`).then((v) => {
-			if (!cancelled && !v) {
-				setIntroReel(true); // first visit → the tale plays itself
-				setIntroOpen(true);
-			}
+			if (!cancelled && !v) setIntroOpen(true);
 		});
 		return () => {
 			cancelled = true;
@@ -1307,13 +1308,67 @@ export default function SeasonScreen() {
 					{/* Season 1 wears the Hungerer's name; Season 0 keeps its framing.
 					    (The old dev intro-preview chip is gone — the real retrigger
 					    lives on the hero as "Hear the tale again".) */}
-					<Text style={styles.kicker}>
-						{s1 ? "★ season 1 — mud wars" : `★ ${season.name.toLowerCase()}`}
-					</Text>
-					<Text style={styles.title}>
-						{s1 ? "The Great Hunger" : "Goblins vs Angels"}
-					</Text>
-					<View style={styles.titleRule} />
+					<View style={styles.headerRow}>
+						<View style={{ flex: 1, minWidth: 0 }}>
+							<Text style={styles.kicker}>
+								{s1 ? "★ season 1 — mud wars" : `★ ${season.name.toLowerCase()}`}
+							</Text>
+							{/* One line beside the icon row — shrink before wrapping
+							    (a two-line title under three buttons read as clutter). */}
+							<Text
+								style={styles.title}
+								numberOfLines={1}
+								adjustsFontSizeToFit
+								minimumFontScale={0.7}
+							>
+								{s1 ? "The Great Hunger" : "Goblins vs Angels"}
+							</Text>
+							<View style={styles.titleRule} />
+						</View>
+						{/* Reference sheets — the tale cinematic (scene), the season
+						    story (scroll), and the earnables shelf (gift). Their
+						    sections left the scroll for these modals. */}
+						{s1 && (
+							<View style={styles.headerBtns}>
+								<Pressable
+									onPress={() => setIntroOpen(true)}
+									hitSlop={8}
+									accessibilityRole="button"
+									accessibilityLabel="Hear the tale again"
+									style={({ pressed }) => [
+										styles.headerBtn,
+										pressed && styles.headerBtnPressed,
+									]}
+								>
+									<Glyph name="scene" size={18} />
+								</Pressable>
+								<Pressable
+									onPress={() => setInfoTopic("story")}
+									hitSlop={8}
+									accessibilityRole="button"
+									accessibilityLabel="The season's story"
+									style={({ pressed }) => [
+										styles.headerBtn,
+										pressed && styles.headerBtnPressed,
+									]}
+								>
+									<Icon name="scroll" size={18} color={WHIMSY.ink} />
+								</Pressable>
+								<Pressable
+									onPress={() => setInfoTopic("spoils")}
+									hitSlop={8}
+									accessibilityRole="button"
+									accessibilityLabel="What you can earn"
+									style={({ pressed }) => [
+										styles.headerBtn,
+										pressed && styles.headerBtnPressed,
+									]}
+								>
+									<Icon name="gift" size={18} color={WHIMSY.ink} />
+								</Pressable>
+							</View>
+						)}
+					</View>
 					{/* Live entry point is the pass header's recap icon (only shows
 					    when a real grant exists). This __DEV__-only chip cycles the
 					    four founder tiers so the reveal is previewable without a
@@ -1361,13 +1416,10 @@ export default function SeasonScreen() {
 					    the scuffling pays. ── */}
 					{s1 && (
 						<>
-							<SectionHeader kicker="the season boss" title="The Great Hungerer" />
-							<HungerHero
-								onTellTale={() => {
-									setIntroReel(false);
-									setIntroOpen(true);
-								}}
-							/>
+							{/* The boss leads with no section header — the page title
+							    ("The Great Hunger") already names him; a second
+							    near-identical headline read as a duplicate. */}
+							<HungerHero />
 
 							<View style={{ marginTop: 8 }}>
 								<SectionHeader
@@ -1380,19 +1432,8 @@ export default function SeasonScreen() {
 							    placard vacates. Term clock only; the season's end
 							    date is deliberately unannounced. */}
 							<LeaguePlacard />
-
-							<View style={{ marginTop: 8 }}>
-								<SectionHeader
-									kicker="what's happening"
-									title="The Season of the Hunger"
-								/>
-							</View>
-							<SeasonStory />
-
-							<View style={{ marginTop: 8 }}>
-								<SectionHeader kicker="scuffle spoils" title="What you can earn" />
-							</View>
-							<SpoilsShowcase />
+							{/* The season story + earnables shelf live in the
+							    header-icon modals (SeasonInfoModal), off the scroll. */}
 						</>
 					)}
 
@@ -1411,9 +1452,18 @@ export default function SeasonScreen() {
 								// The recap icon only earns its place when there's
 								// actually a Founding Herd grant to look back on.
 								const showRecap = seasonEnd.reward != null;
-								if (!showUnlock && !showRecap) return undefined;
 								return (
 									<>
+										{/* How XP is earned — reference sheet, one tap away. */}
+										<Pressable
+											onPress={() => setXpHelpOpen(true)}
+											hitSlop={8}
+											style={styles.recapBtn}
+											accessibilityRole="button"
+											accessibilityLabel="How to earn XP"
+										>
+											<Glyph name="star" size={16} />
+										</Pressable>
 										{showUnlock && (
 											<>
 												<Text style={styles.vipKicker}>★ VIP</Text>
@@ -1470,8 +1520,7 @@ export default function SeasonScreen() {
 						);
 					})()}
 
-					{/* How to earn XP — make pass progress legible. */}
-					<XPHowTo xpPer={season.xp_per_tier || 100} />
+					{/* "How to earn XP" lives in the header-star modal (XPHowToModal). */}
 
 					{/* Vertical-list pass track — straight column of node +
 					    card rows with per-state visual treatment (sage
@@ -1586,16 +1635,10 @@ export default function SeasonScreen() {
 				onDone={() => setMysteryReveal(null)}
 			/>
 
-			{/* Season 1 intro storybook — auto-plays on the first Season-1 visit
-			    (per-user AsyncStorage stamp) and re-opens from the hero's
-			    "Hear the tale again" chip. */}
-			{s1 && (
-				<GreatHungerIntroModal
-					visible={introOpen}
-					onDone={dismissIntro}
-					autoPlayReel={introReel}
-				/>
-			)}
+			{/* Season 1 intro — the tale cinematic. Auto-plays on the first
+			    Season-1 visit (per-user AsyncStorage stamp) and re-opens from
+			    the hero's "Hear the tale again" chip. */}
+			{s1 && <GreatHungerIntroModal visible={introOpen} onDone={dismissIntro} />}
 
 			{/* The season guide — every visit while testing (GUIDE_EVERY_VISIT);
 			    yields to the intro storybook when both want the stage. */}
@@ -1605,6 +1648,16 @@ export default function SeasonScreen() {
 					onDismiss={dismissGuide}
 				/>
 			)}
+
+			{/* The header-icon reference sheets — story (scroll) / earnables (gift). */}
+			<SeasonInfoModal topic={infoTopic} onDismiss={() => setInfoTopic(null)} />
+
+			{/* The pass header's star button — how XP is earned. */}
+			<XPHowToModal
+				xpPer={season.xp_per_tier || 100}
+				visible={xpHelpOpen}
+				onDismiss={() => setXpHelpOpen(false)}
+			/>
 
 			{/* Season-end reveal — the beta Founding Herd recap. Live when the
 			    season1_finale flag is on and the caller has an unseen grant, or
@@ -1762,7 +1815,9 @@ const rewardStyles = StyleSheet.create({
 });
 
 const passProgressStyles = StyleSheet.create({
-	wrap: { marginTop: 10, marginBottom: 4, paddingHorizontal: 4 },
+	// Tight under the section header's rule — the header/bar/label read as one
+	// block, not three floating strips.
+	wrap: { marginTop: 0, marginBottom: 2, paddingHorizontal: 4 },
 	track: {
 		height: 12,
 		borderRadius: 999,
@@ -1780,7 +1835,7 @@ const passProgressStyles = StyleSheet.create({
 		fontSize: 13,
 		color: WHIMSY.mute,
 		textAlign: "center",
-		marginTop: 5,
+		marginTop: 3,
 	},
 });
 
@@ -1818,6 +1873,25 @@ const styles = StyleSheet.create({
 		// TODO(ui-audit): SafeAreaView inset + 8 (deferred — device QA)
 		paddingTop: Platform.OS === "ios" ? 8 : 20,
 		paddingBottom: 8,
+	},
+	headerRow: { flexDirection: "row", alignItems: "flex-start" },
+	// The reference-sheet doors — small paper sticker circles by the title.
+	headerBtns: { flexDirection: "row", gap: SPACE.sm, marginLeft: SPACE.sm },
+	headerBtn: {
+		width: 38,
+		height: 38,
+		borderRadius: 19,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		alignItems: "center",
+		justifyContent: "center",
+		...SHADOW_SM,
+	},
+	headerBtnPressed: {
+		transform: [{ translateX: 2 }, { translateY: 2 }],
+		shadowOpacity: 0,
+		elevation: 0,
 	},
 	kicker: {
 		...KICKER_TEXT,
@@ -1884,7 +1958,9 @@ const styles = StyleSheet.create({
 		paddingHorizontal: PAGE_PAD,
 		paddingTop: SPACE.lg,
 		paddingBottom: TAB_SAFE,
-		gap: SPACE.lg,
+		// sm, not lg: section headers already carry their own bottom margins,
+		// so a large container gap double-counted into dead space at every seam.
+		gap: SPACE.sm,
 	},
 	tierRow: {
 		flexDirection: "row",
@@ -2017,9 +2093,19 @@ const styles = StyleSheet.create({
 	},
 });
 
-// "How to earn XP" — a plain, always-visible card so pass progress is legible.
-// Values mirror the season-XP grants (home tickle +3, visit +5, etc.).
-function XPHowTo({ xpPer }: { xpPer: number }) {
+// "How to earn XP" — reference sheet in the season's modal chrome (backdrop +
+// paper sticker card, matching SeasonGuideModal/SeasonInfoModal), opened from
+// the pass header's star button. Values mirror the season-XP grants (home
+// tickle +3, visit +5, etc.).
+function XPHowToModal({
+	xpPer,
+	visible,
+	onDismiss,
+}: {
+	xpPer: number;
+	visible: boolean;
+	onDismiss: () => void;
+}) {
 	const ROWS: { g: GlyphName; label: string; xp: string }[] = [
 		{ g: "pigface", label: "Tickle your pig", xp: "+3" },
 		{ g: "barn", label: "Visit a friend's barn", xp: "+5" },
@@ -2029,40 +2115,76 @@ function XPHowTo({ xpPer }: { xpPer: number }) {
 		{ g: "ogre", label: "Send a curse", xp: "+2 / day" },
 	];
 	return (
-		<Sticker color="paper" rotate={-0.6} radius={14} style={xpHowTo.card}>
-			<View style={xpHowTo.head}>
-				<Glyph name="star" size={14} />
-				<Text style={xpHowTo.title}>How to earn XP</Text>
+		<Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+			<View style={xpHowTo.backdrop}>
+				<Sticker
+					color="paper"
+					rotate={-0.8}
+					radius={20}
+					border={3}
+					style={[xpHowTo.card, STICKER_SHADOW]}
+				>
+					<Text style={xpHowTo.kicker}>★ season pass ★</Text>
+					<Text style={xpHowTo.headline}>How to earn XP</Text>
+					{ROWS.map((r) => (
+						<View key={r.label} style={xpHowTo.row}>
+							<Glyph name={r.g} size={18} />
+							<Text style={xpHowTo.label}>{r.label}</Text>
+							<Text style={xpHowTo.xp}>{r.xp}</Text>
+						</View>
+					))}
+					<Text style={xpHowTo.foot}>{xpPer} XP = 1 tier</Text>
+					<Button size="md" variant="primary" full onPress={onDismiss}>
+						Back to the season
+					</Button>
+				</Sticker>
 			</View>
-			{ROWS.map((r) => (
-				<View key={r.label} style={xpHowTo.row}>
-					<Glyph name={r.g} size={18} />
-					<Text style={xpHowTo.label}>{r.label}</Text>
-					<Text style={xpHowTo.xp}>{r.xp}</Text>
-				</View>
-			))}
-			<Text style={xpHowTo.foot}>{xpPer} XP = 1 tier</Text>
-		</Sticker>
+		</Modal>
 	);
 }
 
 const xpHowTo = StyleSheet.create({
-	card: { marginTop: 10, marginBottom: 4, padding: 14 },
-	head: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 8 },
-	title: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	backdrop: {
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: MODAL_BACKDROP_BG,
+		padding: 24,
+	},
+	card: {
+		width: "100%",
+		maxWidth: 400,
+		paddingHorizontal: SPACE.lg,
+		paddingVertical: SPACE.lg,
+	},
+	kicker: { ...KICKER_TEXT, textAlign: "center", marginBottom: 4 },
+	headline: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 24,
+		color: WHIMSY.ink,
+		textAlign: "center",
+		marginBottom: SPACE.md,
+	},
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 10,
 		paddingVertical: 6,
-		paddingHorizontal: 8,
+		paddingHorizontal: SPACE.sm,
 		borderRadius: RADII.sm,
 		backgroundColor: WHIMSY.cream,
 		marginBottom: 5,
 	},
 	label: { flex: 1, fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
 	xp: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
-	foot: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, textAlign: "center", marginTop: 4 },
+	foot: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 4,
+		marginBottom: SPACE.md,
+	},
 });
 
 // Alignment placard — moved off the Me tab onto the Season tab, where

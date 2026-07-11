@@ -63,12 +63,14 @@ interface Props {
 // the wand). Server-side these are also pulled from the shop + unequipped
 // (20260684). Remove an id here once its real art lands in the art pass.
 const HIDDEN_CLOSET_IDS = new Set<string>([
-	"acorn_bow", "bell_collar", "bone_necklace", "bumblebee_bow", "charm_necklace",
-	"choker", "diamond_pendant", "emerald_pendant", "ermine_cape", "firefly_lantern",
-	"fur_cape", "gas_mask", "gold_chain", "hero_cape", "jam_jar_lenses", "leather_cape",
-	"library_nook", "locket", "magician_cape", "moth_waltz", "mushroom_cap", "neckwarmer",
-	"paper_boat", "particle_bubble", "pearl_necklace", "pumpkin_patch", "ribbon_choker",
-	"royal_cape", "short_cape", "silk_cape", "star_cape", "tiny_umbrella", "vampire_cape",
+	// The 2026-07-06 art-backlog pass shipped art for all 11 hidden 20260632
+	// items (mushroom_cap … library_nook) — removed here. What remains are the
+	// deleted capes/necklaces (never re-seeded).
+	"bell_collar", "bone_necklace", "charm_necklace", "choker", "diamond_pendant",
+	"emerald_pendant", "ermine_cape", "fur_cape", "gas_mask", "gold_chain",
+	"hero_cape", "leather_cape", "locket", "magician_cape",
+	"neckwarmer", "pearl_necklace", "ribbon_choker", "royal_cape", "short_cape",
+	"silk_cape", "star_cape", "vampire_cape",
 ]);
 
 // Category sections, in order, with player-facing headings.

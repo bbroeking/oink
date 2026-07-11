@@ -14,18 +14,35 @@ import {
 } from "@/constants/theme";
 import type { WarStatus, WarPhase } from "@/utils/mudWars";
 import type { UseWarStateOverride } from "./devWarState";
+import type { WarOutcome } from "./warCopy";
 
 export function DevWarStateSheet({
 	open,
 	onClose,
 	ctrl,
+	onPreview,
 }: {
 	open: boolean;
 	onClose: () => void;
 	ctrl: UseWarStateOverride;
+	/** Fire the REAL resolved celebration modal from override data (no spoils RPC). */
+	onPreview?: (outcome: WarOutcome) => void;
 }) {
 	if (!__DEV__) return null;
 	const { override, mockOn, setField, setMockOn, reset } = ctrl;
+
+	// One tap → a full resolved override (status + winner + plausible totals)
+	// that drives the war page's resolved recap AND the celebration modal. The
+	// modal fires via onPreview (setReveal in the parent) so no spoils/RPC runs.
+	const preview = (outcome: WarOutcome) => {
+		setMockOn(true);
+		setField("status", "resolved");
+		setField("won", outcome === "draw" ? null : outcome === "win");
+		setField("myPerCapita", outcome === "loss" ? 28 : outcome === "draw" ? 31 : 34);
+		setField("themPerCapita", outcome === "win" ? 28 : outcome === "draw" ? 31 : 34);
+		onPreview?.(outcome);
+		onClose();
+	};
 
 	return (
 		<Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
@@ -40,6 +57,18 @@ export function DevWarStateSheet({
 					<Text style={styles.sub}>
 						Overrides merge over the real war (or a mock). Blank = untouched.
 					</Text>
+
+					<View style={styles.presetRow}>
+						<Pressable onPress={() => preview("win")} style={[styles.preset, styles.presetWin]}>
+							<Text style={styles.presetText}>Preview WIN</Text>
+						</Pressable>
+						<Pressable onPress={() => preview("loss")} style={[styles.preset, styles.presetLoss]}>
+							<Text style={styles.presetText}>Preview LOSS</Text>
+						</Pressable>
+						<Pressable onPress={() => preview("draw")} style={[styles.preset, styles.presetDraw]}>
+							<Text style={styles.presetText}>Preview DRAW</Text>
+						</Pressable>
+					</View>
 
 					<ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: SPACE.lg }}>
 						<ToggleRow
@@ -134,11 +163,19 @@ export function DevWarStateSheet({
 						{override.status === "resolved" && (
 							<SegRow
 								label="Resolved outcome"
-								options={["win", "loss"] as const}
+								options={["win", "loss", "draw"] as const}
 								value={
-									override.won == null ? undefined : override.won ? "win" : "loss"
+									override.won === undefined
+										? undefined
+										: override.won === null
+											? "draw"
+											: override.won
+												? "win"
+												: "loss"
 								}
-								onChange={(o) => setField("won", o === "win")}
+								onChange={(o) =>
+									setField("won", o === "win" ? true : o === "loss" ? false : null)
+								}
 							/>
 						)}
 					</ScrollView>
@@ -297,6 +334,19 @@ const styles = StyleSheet.create({
 	title: { ...TYPE.cardTitle, color: WHIMSY.ink },
 	reset: { ...TYPE.kicker, fontFamily: FONTS.hand, color: WHIMSY.accent, textDecorationLine: "underline" },
 	sub: { ...TYPE.hand, fontFamily: FONTS.hand, color: WHIMSY.mute, marginTop: 2, marginBottom: SPACE.sm },
+	presetRow: { flexDirection: "row", gap: SPACE.sm, marginBottom: SPACE.sm },
+	preset: {
+		flex: 1,
+		paddingVertical: 9,
+		borderRadius: RADII.md,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+	},
+	presetWin: { backgroundColor: WHIMSY.sage },
+	presetLoss: { backgroundColor: WHIMSY.rose },
+	presetDraw: { backgroundColor: WHIMSY.cream2 },
+	presetText: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.ink },
 	body: { flexGrow: 0 },
 	row: {
 		flexDirection: "row",

@@ -196,6 +196,20 @@ export const HAT_IMAGES: Record<string, number> = {
 	devil_horns:  require("../assets/images/hats/devil_horns.png"),
 	leaf_crown:   require("../assets/images/hats/leaf_crown.png"),
 	messenger:    require("../assets/images/hats/messenger.png"),
+	// Art-backlog pass — generated 2026-07-06 via ChatGPT with
+	// docs/openai-missing-items-icons.md, sliced by scripts/slice_missing_items.py.
+	// Restores all 11 of the 20260632 daily-shop-expand items hidden by 20260685.
+	mushroom_cap:    require("../assets/images/hats/mushroom_cap.png"),
+	paper_boat:      require("../assets/images/hats/paper_boat.png"),
+	jam_jar_lenses:  require("../assets/images/hats/jam_jar_lenses.png"),
+	acorn_bow:       require("../assets/images/hats/acorn_bow.png"),
+	bumblebee_bow:   require("../assets/images/hats/bumblebee_bow.png"),
+	firefly_lantern: require("../assets/images/hats/firefly_lantern.png"),
+	tiny_umbrella:   require("../assets/images/hats/tiny_umbrella.png"),
+	moth_waltz:      require("../assets/images/hats/moth_waltz.png"),
+	particle_bubble: require("../assets/images/tickle-particles/bubble.png"),
+	pumpkin_patch:   require("../assets/images/backgrounds/pumpkin_patch.png"),
+	library_nook:    require("../assets/images/backgrounds/library_nook.png"),
 };
 
 // Slop Club members-only art — AUTO-WIRED from constants/membersImages.generated

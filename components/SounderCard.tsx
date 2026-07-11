@@ -22,6 +22,7 @@ import {
 	View,
 	Text,
 	TextInput,
+	Image,
 	Pressable,
 	StyleSheet,
 	ScrollView,
@@ -58,6 +59,10 @@ import { JoinableSounders } from "./JoinableSounders";
 import { FriendInvitePicker } from "./FriendInvitePicker";
 import { TransferLeadershipSheet } from "./TransferLeadershipSheet";
 import { UserSheet } from "./UserSheet";
+import { WarSpoilsSheet } from "./WarSpoilsSheet";
+import { TruffleExchangeSheet } from "./mudwar/TruffleExchangeSheet";
+import { useTruffles } from "@/hooks/useTruffles";
+import { HAT_IMAGES } from "@/constants/hats";
 import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
 import { useMudWar } from "@/hooks/useMudWar";
 import { useRosterHats } from "@/hooks/useRosterHats";
@@ -89,7 +94,15 @@ import {
 // `crewHook` is lifted into the Friends hub (app/(tabs)/friends.tsx) and
 // passed down so the crew-state-driven page title ("Find your Sounder" vs
 // "Your Sounder") and this card share ONE fetch — no double subscription.
-export function SounderCard({ crewHook }: { crewHook: UseCrew }) {
+// `onShowBoard` switches the Friends hub to its Board segment — the standings
+// moved into the hub (Your Sounder redesign), so the card only points at them.
+export function SounderCard({
+	crewHook,
+	onShowBoard,
+}: {
+	crewHook: UseCrew;
+	onShowBoard?: () => void;
+}) {
 	const router = useRouter();
 	const { crew, loading, create, accept, decline, leave } = crewHook;
 	const joinable = useJoinableCrews(!crew.crew);
@@ -102,6 +115,13 @@ export function SounderCard({ crewHook }: { crewHook: UseCrew }) {
 	const [note, setNote] = useState<string | null>(null);
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const [crownOpen, setCrownOpen] = useState(false);
+	// War-economy doors — the spoils collection + the Truffle Exchange live on
+	// this card (the scuffle page stays pure play).
+	const [spoilsOpen, setSpoilsOpen] = useState(false);
+	const [exchangeOpen, setExchangeOpen] = useState(false);
+	// Golden Truffle pouch + Exchange rotation (Season 1 P4; cozy-closed until
+	// the 20260704300000 migration is live).
+	const truffles = useTruffles();
 	// The founding form is demoted behind "or found your own ›" whenever
 	// there's anything to join; this expands it in place.
 	const [foundOpen, setFoundOpen] = useState(false);
@@ -442,7 +462,11 @@ export function SounderCard({ crewHook }: { crewHook: UseCrew }) {
 
 			{/* The scuffle — the section the roster exists for. */}
 			<Sticker color="paper" rotate={0.4} radius={RADII.xl} style={styles.crewMini}>
-				<CrewSectionKicker>the scuffle</CrewSectionKicker>
+				{/* Kicker with a trailing dashed rule. */}
+				<View style={styles.scuffleKick}>
+					<Text style={styles.scuffleKickText}>the scuffle</Text>
+					<View style={styles.scuffleKickRule} />
+				</View>
 				{crew.inWar && mudWar.war ? (
 					<ScuffleSummary
 						war={mudWar.war}
@@ -461,13 +485,46 @@ export function SounderCard({ crewHook }: { crewHook: UseCrew }) {
 						{crew.inWar ? "View the Mud Scuffle" : "Start a Mud Scuffle"}
 					</Button>
 				)}
-				<Pressable
-					onPress={() => router.push("/clan-ladder" as Href)}
-					style={styles.standingsRow}
-					hitSlop={6}
-				>
-					<Text style={styles.standingsText}>Sounder standings</Text>
-					<Text style={styles.standingsChevron}>›</Text>
+				{/* War-economy doors — the spoils collection + the Truffle
+				    Exchange. Quiet hand-links so they never compete with the
+				    scuffle CTA. */}
+				<View style={styles.troveRow}>
+					<Pressable
+						onPress={() => setSpoilsOpen(true)}
+						hitSlop={8}
+						style={styles.troveBtn}
+					>
+						<Icon name="trophy" size={15} color={WHIMSY.accent} />
+						<Text style={styles.troveText}>Spoils</Text>
+					</Pressable>
+					<Pressable
+						onPress={() => setExchangeOpen(true)}
+						hitSlop={8}
+						style={styles.troveBtn}
+					>
+						{HAT_IMAGES.golden_truffle ? (
+							<Image
+								source={HAT_IMAGES.golden_truffle}
+								style={styles.troveIcon}
+								resizeMode="contain"
+							/>
+						) : (
+							<Icon name="gift" size={15} color={WHIMSY.accent} />
+						)}
+						<Text style={styles.troveText}>
+							{truffles.available
+								? `Exchange · ${truffles.balance}`
+								: "Exchange"}
+						</Text>
+					</Pressable>
+				</View>
+				{/* Standings live in the hub's Board segment — this note switches
+				    segments in place instead of pushing a route. */}
+				<Pressable onPress={onShowBoard} style={styles.boardNote} hitSlop={6}>
+					<Text style={styles.boardNoteText}>
+						standings live in the{" "}
+						<Text style={styles.boardNoteAccent}>Board</Text> now ›
+					</Text>
 				</Pressable>
 			</Sticker>
 
@@ -487,6 +544,13 @@ export function SounderCard({ crewHook }: { crewHook: UseCrew }) {
 				visible={crownOpen}
 				onDismiss={() => setCrownOpen(false)}
 				crewHook={crewHook}
+			/>
+
+			<WarSpoilsSheet open={spoilsOpen} onClose={() => setSpoilsOpen(false)} />
+			<TruffleExchangeSheet
+				open={exchangeOpen}
+				onClose={() => setExchangeOpen(false)}
+				truffles={truffles}
 			/>
 
 			<UserSheet
@@ -599,22 +663,26 @@ const styles = StyleSheet.create({
 	},
 	crewName: { ...TYPE.sectionTitle, color: WHIMSY.ink, flexShrink: 1 },
 	crewCount: { ...TYPE.body, fontFamily: FONTS.display, color: WHIMSY.mute },
-	pips: { flexDirection: "row", alignItems: "center", gap: SPACE.sm, marginTop: SPACE.sm },
+	pips: { flexDirection: "row", alignItems: "center", gap: SPACE.sm + 1, marginTop: SPACE.sm },
+	// Slot dots — 26px circles. Filled: sun with the SHADOW_SM tier (the design's
+	// 1.5px micro-shadow rounds up to the small tier; the two-tier rule holds).
 	pip: {
-		width: 20,
-		height: 20,
-		borderRadius: RADII.md,
-		borderWidth: 2,
+		width: 26,
+		height: 26,
+		borderRadius: 13,
+		borderWidth: 2.5,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.sun,
+		...SHADOW_SM,
 	},
+	// Open: dashed muteSoft ring around the "+" into the friends picker.
 	pipOpen: {
-		width: 20,
-		height: 20,
-		borderRadius: RADII.md,
-		borderWidth: 2,
+		width: 26,
+		height: 26,
+		borderRadius: 13,
+		borderWidth: 2.5,
 		borderStyle: "dashed",
-		borderColor: WHIMSY.ink,
+		borderColor: WHIMSY.muteSoft,
 		alignItems: "center",
 		justifyContent: "center",
 	},
@@ -665,14 +733,42 @@ const styles = StyleSheet.create({
 		marginBottom: SPACE.md,
 	},
 	warActions: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm },
-	standingsRow: {
+	// Scuffle header — hand kicker + a flex-1 dashed rule.
+	scuffleKick: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.sm,
-		marginTop: SPACE.sm,
+		marginBottom: SPACE.md,
 	},
-	standingsText: { flex: 1, ...TYPE.bodySm, fontFamily: FONTS.bodyExtra, color: WHIMSY.ink },
-	standingsChevron: { ...TYPE.cardTitle, color: WHIMSY.mute },
+	scuffleKickText: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.accent,
+		textTransform: "uppercase",
+		letterSpacing: 2,
+	},
+	scuffleKickRule: {
+		flex: 1,
+		height: 0,
+		borderTopWidth: 2.5,
+		borderStyle: "dashed",
+		borderColor: WHIMSY.muteSoft,
+	},
+	// War-economy doors — centered icon + hand-text pair, matching HandLink's
+	// quiet weight.
+	troveRow: {
+		flexDirection: "row",
+		justifyContent: "center",
+		gap: SPACE.xl,
+		marginTop: SPACE.md,
+	},
+	troveBtn: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
+	troveText: { ...TYPE.hand, color: WHIMSY.accent },
+	troveIcon: { width: 16, height: 16 },
+	// "standings live in the Board now ›" — centered hand note, Board in accent.
+	boardNote: { marginTop: SPACE.sm, alignSelf: "stretch" },
+	boardNoteText: { ...TYPE.hand, color: WHIMSY.mute, textAlign: "center" },
+	boardNoteAccent: { fontFamily: FONTS.bodyExtra, color: WHIMSY.accent },
 	leaveWrap: { alignSelf: "center", marginTop: SPACE.xs, marginBottom: SPACE.sm },
 	note: {
 		...TYPE.bodySm,
