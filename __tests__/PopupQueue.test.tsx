@@ -448,3 +448,130 @@ describe("ceremony gate (flip-day stacking ceiling)", () => {
 		expect(reg.housekeeping.visible).toBe(false);
 	});
 });
+
+// ── same-slot re-present race: a want flips true mid-teardown of that SAME slot ──
+// The two-phase dismiss clears the want a beat AFTER release(); a slot whose want
+// re-arms during its OWN drain (e.g. a fresh trigger lands while it's animating
+// out) must be re-admitted at gap end, not lost or double-presented. reqsRef is
+// read live at admission, so the final membership at gap end wins.
+describe("same-slot re-present during its own drain", () => {
+	it("re-arming the want mid-drain re-presents the same slot after the gap", () => {
+		mount({ luckyPig: { want: true, priority: 55 } });
+		expectOnlyVisible("luckyPig");
+
+		// Dismiss: release() hides it, drain begins. The want is still true.
+		release("luckyPig");
+		expectOnlyVisible(null);
+		advance(200); // mid-drain
+
+		// The two-phase state clear lands (want → false)…
+		setWant("luckyPig", false);
+		advance(50);
+		// …and then a fresh trigger re-arms the SAME slot before the gap ends.
+		setWant("luckyPig", true);
+
+		// At gap end the live membership (want true again) is re-admitted — the
+		// slot re-presents rather than the queue losing it or going idle.
+		advance(POPUP_HANDOFF_GAP_MS - 250);
+		expectOnlyVisible("luckyPig");
+	});
+
+	it("a want that re-arms then dies again mid-drain leaves the queue idle, not wedged", () => {
+		mount({ truffleSheet: { want: true, priority: 5 } });
+		expectOnlyVisible("truffleSheet");
+
+		release("truffleSheet");
+		advance(100);
+		setWant("truffleSheet", false); // beat clears the want
+		advance(50);
+		setWant("truffleSheet", true); // flickers back…
+		advance(20);
+		setWant("truffleSheet", false); // …and dies again before gap end
+		advance(POPUP_HANDOFF_GAP_MS);
+		expectOnlyVisible(null); // no phantom re-present, no deadlock
+
+		// The queue is healthy: a later want presents directly from idle.
+		setWant("truffleSheet", true);
+		expectOnlyVisible("truffleSheet");
+	});
+});
+
+// ── quiet-login Sounder nudge: the fallback that only fires on an empty queue ──
+// The sounder slot's want ANDs with !anyPopupPresentedThisSession(): if ANY other
+// popup presents this session the nudge is suppressed; only on a genuinely quiet
+// login (nothing else wanted) does it fire. PopupQueue calls markPopupPresented()
+// (excluding the sounderLaunch id) on every presenting edge; the tracker is an
+// in-memory module flag, exactly as the real slot reads it.
+import {
+	anyPopupPresentedThisSession,
+	__resetPopupSession,
+} from "../utils/popupSession";
+
+// A sounder Probe wired like the real slot: crewless want ANDs with the
+// queue-empty gate. Low priority so it can never preempt a real dialog.
+function SounderProbe({ crewless }: { crewless: boolean }) {
+	const slot = usePopupSlot(
+		"sounderLaunch",
+		crewless && !anyPopupPresentedThisSession(),
+		90
+	);
+	reg.sounderLaunch = slot;
+	return null;
+}
+
+describe("quiet-login Sounder nudge (fallback)", () => {
+	beforeEach(() => __resetPopupSession());
+	afterEach(() => __resetPopupSession());
+
+	it("fires when NOTHING else presented this session", () => {
+		act(() => {
+			renderer = TestRenderer.create(
+				<PopupQueueProvider>
+					<SounderProbe crewless={true} />
+				</PopupQueueProvider>
+			);
+		});
+		// Empty queue: the fallback presents.
+		expect(reg.sounderLaunch.visible).toBe(true);
+		// Its own presentation must NOT count as "a popup presented" (else it would
+		// retroactively suppress itself). markPopupPresented excludes the slot id.
+		expect(anyPopupPresentedThisSession()).toBe(false);
+	});
+
+	it("never fires this session once another slot presents first", () => {
+		let setReal: React.Dispatch<React.SetStateAction<boolean>> = () => {};
+		let setCrewless: React.Dispatch<React.SetStateAction<boolean>> = () => {};
+		function Wrap() {
+			const [real, sr] = useState(false);
+			const [crewless, sc] = useState(false);
+			setReal = sr;
+			setCrewless = sc;
+			return (
+				<PopupQueueProvider>
+					<Probe id="schism" want={real} priority={10} />
+					<SounderProbe crewless={crewless} />
+				</PopupQueueProvider>
+			);
+		}
+		act(() => {
+			renderer = TestRenderer.create(<Wrap />);
+		});
+
+		// A real dialog presents first — the session flag latches.
+		act(() => setReal(true));
+		expectOnlyVisible("schism");
+		expect(anyPopupPresentedThisSession()).toBe(true);
+
+		// The crewless condition only becomes known afterward. The nudge's want
+		// ANDs with the (now true) presented-flag's negation, so it stays false —
+		// it never fires this session even after the real dialog is dismissed.
+		act(() => setCrewless(true));
+		expect(reg.sounderLaunch.visible).toBe(false);
+
+		release("schism");
+		act(() => {
+			jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS * 2);
+		});
+		expect(reg.sounderLaunch.visible).toBe(false);
+	});
+});

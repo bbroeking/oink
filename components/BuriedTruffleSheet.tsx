@@ -15,6 +15,12 @@ const POT_CAP = 50; // a buried pot can never hold more than 50 snouts
 
 interface Props {
 	open: boolean;
+	// Queue-slotted (id 'truffleSheet', pri 5). `open` is the MOUNT gate and
+	// must stay true through the POPUP_TEARDOWN_MS beat so this native Modal
+	// stays mounted while its dismissal runs (PopupQueue "keep it mounted"
+	// contract); `visible` drives the native Modal's visible so release() hides
+	// it the same frame. Defaults to `open` if omitted.
+	visible?: boolean;
 	onClose: () => void;
 	status: TruffleStatus | null;
 	onChanged?: () => void; // top-up landed — re-fetch status (sheet stays open)
@@ -31,7 +37,7 @@ function ago(iso: string): string {
 	return `${Math.floor(h / 24)}d ago`;
 }
 
-export function BuriedTruffleSheet({ open, onClose, status, onChanged }: Props) {
+export function BuriedTruffleSheet({ open, visible, onClose, status, onChanged }: Props) {
 	const screenH = useRef(Dimensions.get("window").height).current;
 	const anim = useRef(new Animated.Value(0)).current;
 	const [topUpStake, setTopUpStake] = useState(10);
@@ -105,7 +111,7 @@ export function BuriedTruffleSheet({ open, onClose, status, onChanged }: Props) 
 	};
 
 	return (
-		<Modal visible transparent animationType="none" onRequestClose={onClose}>
+		<Modal visible={visible ?? open} transparent animationType="none" onRequestClose={onClose}>
 			<Animated.View style={[styles.backdrop, { opacity: anim }]}>
 				<Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 			</Animated.View>

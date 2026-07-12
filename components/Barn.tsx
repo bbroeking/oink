@@ -24,7 +24,7 @@ import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
 import { Icon } from "./ui/Icon";
 import { Glyph, glyphSource, type GlyphName } from "./ui/Glyph";
-import { usePopupSlot } from "./ui/PopupQueue";
+import { usePopupSlot, POPUP_TEARDOWN_MS } from "./ui/PopupQueue";
 import { ceremonyShownThisSession } from "@/utils/ceremonyGate";
 import { Sticker, Tape } from "./ui/Sticker";
 import { WHIMSY, FONTS, SPACE, PAGE_PAD, SHADOW_SM } from "@/constants/theme";
@@ -898,19 +898,30 @@ export default function Barn() {
 				windowSize={luckyPig.windowSize}
 				doublePercent={luckyPig.doublePercent}
 				onDismiss={() => {
-					luckyPig.onBurstDismiss();
+					// Two-phase (PopupQueue TIMING CONTRACT): release() hides the
+					// native modal this frame, then clear the backing want
+					// (luckyModalOpen, via onBurstDismiss) a POPUP_TEARDOWN_MS beat
+					// later so the slot stays wanting through the native teardown.
 					luckyPigSlot.release();
+					setTimeout(() => luckyPig.onBurstDismiss(), POPUP_TEARDOWN_MS);
 				}}
 			/>
 
+			{/* Queue-slotted: `open` is the MOUNT gate (local state, kept true
+			    through the teardown beat so the native modal stays mounted while
+			    it dismisses); `visible` is slot-driven so release() hides it this
+			    frame. Clearing `open` in the same commit as release() unmounted the
+			    native <Modal> at t=0 of its own dismissal, and a queued successor
+			    then presented into that half-torn modal (the iOS invisible-modal
+			    wedge, #50152). Two-phase per the PopupQueue TIMING CONTRACT. */}
 			<ConfirmDialog
-				open={sixSevenSlot.visible}
+				open={sixSevenDialog}
+				visible={sixSevenSlot.visible}
 				title="6 7!"
 				body="You've crossed 67 tickles. Wanna celebrate with a six-seven?"
 				confirmLabel="Six seven!"
 				cancelLabel="Skip"
 				onCancel={() => {
-					setSixSevenDialog(false);
 					// Remember WHICH milestone was celebrated (the trigger effect
 					// compares seen_67_at against the current counter) — the old
 					// seen_67="1" write never matched, re-arming this every boot.
@@ -919,31 +930,34 @@ export default function Barn() {
 						String(sixSevenPromptedRef.current ?? stats.counter)
 					);
 					sixSevenSlot.release();
+					setTimeout(() => setSixSevenDialog(false), POPUP_TEARDOWN_MS);
 				}}
 				onConfirm={() => {
-					setSixSevenDialog(false);
 					AsyncStorage.setItem(
 						"seen_67_at",
 						String(sixSevenPromptedRef.current ?? stats.counter)
 					);
 					setSixSevenTick((t) => t + 1);
 					sixSevenSlot.release();
+					setTimeout(() => setSixSevenDialog(false), POPUP_TEARDOWN_MS);
 				}}
 			/>
 
 			<LuckyTitleUnlockModal
 				title={luckyTitleSlot.visible ? luckyPig.unlockedTitle : null}
 				onDismiss={() => {
-					luckyPig.dismissUnlockedTitle();
+					// Two-phase: release() first, clear the want (unlockedTitle)
+					// a teardown beat later (PopupQueue TIMING CONTRACT).
 					luckyTitleSlot.release();
+					setTimeout(() => luckyPig.dismissUnlockedTitle(), POPUP_TEARDOWN_MS);
 				}}
 				onEquip={async (id) => {
 					try {
 						await rpc("equip_title", { target_title_id: id });
 						showToast("Title equipped", "Visible on your account + leaderboard.");
 					} catch {}
-					luckyPig.dismissUnlockedTitle();
 					luckyTitleSlot.release();
+					setTimeout(() => luckyPig.dismissUnlockedTitle(), POPUP_TEARDOWN_MS);
 				}}
 			/>
 
@@ -953,8 +967,10 @@ export default function Barn() {
 			<ReleaseNotesModal
 				visible={releaseNotesSlot.visible}
 				onClose={() => {
-					setReleaseNotesOpen(false);
+					// Two-phase: release() first, clear the want a teardown beat
+					// later (PopupQueue TIMING CONTRACT).
 					releaseNotesSlot.release();
+					setTimeout(() => setReleaseNotesOpen(false), POPUP_TEARDOWN_MS);
 				}}
 			/>
 
@@ -968,10 +984,14 @@ export default function Barn() {
 			/>
 
 			<BuriedTruffleSheet
-				open={truffleSlot.visible}
+				open={truffleSheetOpen}
+				visible={truffleSlot.visible}
 				onClose={() => {
-					setTruffleSheetOpen(false);
+					// Two-phase: release() hides the native modal this frame,
+					// `open` (the mount gate) clears a teardown beat later so the
+					// modal stays mounted while it dismisses (PopupQueue contract).
 					truffleSlot.release();
+					setTimeout(() => setTruffleSheetOpen(false), POPUP_TEARDOWN_MS);
 				}}
 				status={truffle.status}
 				onChanged={() => truffle.refresh()}

@@ -36,6 +36,15 @@ import {
 
 interface Props {
 	open: boolean;
+	// PopupQueue consumers only: decouples the NATIVE modal's `visible` from
+	// `open` (the mount gate). When this dialog is queue-slotted, `open` must
+	// stay true through the POPUP_TEARDOWN_MS beat so the modal stays MOUNTED
+	// while its native dismissal runs (PopupQueue TIMING CONTRACT: "keep it
+	// mounted"), but `visible` must drop to false the same frame release() is
+	// called. Pass `visible={slot.visible}` + a teardown-deferred `open` clear.
+	// Direct-tap callers omit it: `visible` defaults to `open`, so mount ==
+	// visible and nothing changes for them.
+	visible?: boolean;
 	title: string;
 	body?: string;
 	confirmLabel: string;
@@ -52,6 +61,7 @@ interface Props {
 
 export function ConfirmDialog({
 	open,
+	visible,
 	title,
 	body,
 	confirmLabel,
@@ -63,8 +73,17 @@ export function ConfirmDialog({
 	busy,
 }: Props) {
 	if (!open) return null;
+	// visible defaults to open (direct-tap callers). Queue consumers pass a
+	// slot-driven visible so release() hides the native modal a beat before
+	// `open` unmounts it.
+	const nativeVisible = visible ?? open;
 	return (
-		<Modal visible transparent animationType="fade" onRequestClose={onCancel}>
+		<Modal
+			visible={nativeVisible}
+			transparent
+			animationType="fade"
+			onRequestClose={onCancel}
+		>
 			<Pressable style={styles.backdrop} onPress={onCancel}>
 				<Pressable style={styles.cardWrap} onPress={() => {}}>
 					<Sticker

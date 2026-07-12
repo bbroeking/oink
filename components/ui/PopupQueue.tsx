@@ -74,6 +74,7 @@ import {
 	useState,
 	type ReactNode,
 } from "react";
+import { markPopupPresented } from "@/utils/popupSession";
 
 // See the timing contract above for how these two relate. The gap is the quiet
 // window after ANY hide (release, drop-of-presented, preemption) before the
@@ -139,6 +140,19 @@ export function PopupQueueProvider({ children }: { children: ReactNode }) {
 	// The single writer: every machine transition goes through here so the
 	// ref mirror (read by callbacks/timers) can never lag the render state.
 	const write = useCallback((next: Machine) => {
+		// Session-level "a popup presented this login" signal for the quiet-login
+		// Sounder nudge. Fire on the EDGE into presenting a given id (idle→present
+		// or draining→present), never on re-renders that keep the same presentedId.
+		// markPopupPresented() itself excludes the sounderLaunch slot, so the
+		// nudge's own presentation never suppresses it.
+		const prev = machineRef.current;
+		if (
+			next.phase === "presenting" &&
+			next.presentedId &&
+			!(prev.phase === "presenting" && prev.presentedId === next.presentedId)
+		) {
+			markPopupPresented(next.presentedId);
+		}
 		machineRef.current = next;
 		setMachine(next);
 	}, []);

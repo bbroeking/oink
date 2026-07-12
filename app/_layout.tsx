@@ -91,6 +91,11 @@ import {
 	markCeremonyShown,
 	ceremonyShownThisSession,
 } from "@/utils/ceremonyGate";
+import {
+	anyPopupPresentedThisSession,
+	sounderNudgeFiredThisSession,
+	markSounderNudgeFired,
+} from "@/utils/popupSession";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
 // without a project still works.
@@ -107,6 +112,14 @@ if (SENTRY_DSN && !__DEV__) {
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 SplashScreen.preventAutoHideAsync();
+
+// How long the quiet-login Sounder nudge waits after its crew check before
+// arming its want — long enough for the sibling popup polls (schism/finale/
+// rituals/achievements/recap/intro) to land and present, so the
+// anyPopupPresentedThisSession() AND-gate reflects a settled queue. A generous
+// window: the nudge is the lowest-priority fallback, so a little extra quiet
+// before it appears is fine.
+const SOUNDER_NUDGE_SETTLE_MS = 1500;
 
 function RootLayoutInner() {
 	const colorScheme = useColorScheme();
@@ -176,7 +189,24 @@ function RootLayoutInner() {
 		40
 	);
 	const allegianceSlot = usePopupSlot("allegiance", showAllegiance, 70);
-	const sounderSlot = usePopupSlot("sounderLaunch", sounderPrompt, 35);
+	// Quiet-login Sounder nudge — the FALLBACK popup: "show them something about
+	// joining a Sounder if no other dialog is going to show up" (founder, 2026-07).
+	// LOW priority (90) so it can never preempt a real dialog, and its want ANDs
+	// with anyPopupPresentedThisSession()'s negation so it's suppressed the moment
+	// anything else presents this session. Fires at most once per SESSION (the
+	// popupSession latch) — the old AsyncStorage daily cap is gone; the queue-empty
+	// condition is the real limiter (see utils/popupSession.ts). markSounderNudge-
+	// Fired() latches on present so it never re-arms mid-session.
+	const sounderSlot = usePopupSlot(
+		"sounderLaunch",
+		sounderPrompt &&
+			!anyPopupPresentedThisSession() &&
+			!sounderNudgeFiredThisSession(),
+		90
+	);
+	useEffect(() => {
+		if (sounderSlot.visible) markSounderNudgeFired();
+	}, [sounderSlot.visible]);
 	// The flip-day ceremony chain is recap (seasonEnd, pri 25 in season.tsx) →
 	// intro (pri 27): slotting the intro just ABOVE the recap guarantees it can
 	// never co-present over the recap on the season-flip login.
@@ -303,9 +333,17 @@ function RootLayoutInner() {
 		check();
 	}, [authChecked]);
 
-	// Sounder launch nudge — only when the feature is live (the `coop_dig`
-	// server flag) AND the player has no crew. Re-surfaces ≤ once per UTC day
-	// until they create/join a Sounder, then the noCrew gate stops it for good.
+	// Sounder launch nudge — the quiet-login FALLBACK. Fires only when the feature
+	// is live (the `coop_dig` server flag) AND the player has no crew. Unlike the
+	// other launch popups it carries no persistent frequency stamp: the want is
+	// gated (at the slot) on nothing-else-having-presented-this-session, which is
+	// both the UX rule ("fill the quiet, never compete") and the frequency ceiling.
+	// A short settle delay after the crew check lets the higher-priority popup polls
+	// (schism / finale / rituals / achievements / recap / hunger intro) land and
+	// present first, so "no other dialog is going to show" is actually knowable by
+	// the time we arm the want. If one of them presented in that window,
+	// anyPopupPresentedThisSession() is already true and the slot's want stays
+	// false; if the queue is genuinely empty, the low-priority (90) nudge presents.
 	useEffect(() => {
 		if (!authChecked || !coopDig) return;
 		let cancelled = false;
@@ -314,9 +352,19 @@ function RootLayoutInner() {
 			if (cancelled || !ures.user) return;
 			const crew = await fetchCrewState();
 			if (cancelled || crew.crew) return;
-			const today = new Date().toISOString().slice(0, 10);
-			const last = await AsyncStorage.getItem("sounder_prompt_last");
-			if (cancelled || last === today) return;
+			// Settle beat: give the sibling popup polls a chance to arrive + present
+			// before we arm. Mirrors how the slot's gating waits for authChecked —
+			// the AND with anyPopupPresentedThisSession() is only meaningful once the
+			// other sources have had a tick to declare their wants.
+			await new Promise((r) => setTimeout(r, SOUNDER_NUDGE_SETTLE_MS));
+			if (cancelled) return;
+			// If anything already presented in the settle window, don't even arm —
+			// the slot's want would evaluate false anyway, but skipping the state
+			// set keeps the module-flag read authoritative without relying on a
+			// re-render to drop a queued want.
+			if (anyPopupPresentedThisSession() || sounderNudgeFiredThisSession()) {
+				return;
+			}
 			setSounderPrompt(true);
 		})();
 		return () => {
@@ -848,13 +896,15 @@ function RootLayoutInner() {
 				<SounderLaunchModal
 					visible={sounderSlot.visible}
 					onCreate={() => {
-						AsyncStorage.setItem("sounder_prompt_last", new Date().toISOString().slice(0, 10));
+						// No persistent daily stamp anymore — the session latch
+						// (markSounderNudgeFired on present) + the queue-empty gate
+						// are the frequency ceiling. Two-phase dismiss per the
+						// PopupQueue TIMING CONTRACT.
 						sounderSlot.release();
 						setTimeout(() => setSounderPrompt(false), POPUP_TEARDOWN_MS);
 						router.push("/(tabs)/friends?seg=sounder");
 					}}
 					onDismiss={() => {
-						AsyncStorage.setItem("sounder_prompt_last", new Date().toISOString().slice(0, 10));
 						sounderSlot.release();
 						setTimeout(() => setSounderPrompt(false), POPUP_TEARDOWN_MS);
 					}}
