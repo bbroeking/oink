@@ -22,6 +22,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { rpc, rpcAction } from "@/utils/rpc";
+import { lifetimeTickles } from "@/utils/tickles";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Icon } from "./ui/Icon";
 import { Sticker } from "./ui/Sticker";
@@ -243,17 +244,23 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		rpc<TradeRow[]>("my_tickle_trades").then((data) => {
 			setAskState(deriveAskState(targetUserId, data));
 		});
-		// Lifetime tickle count for the TICKLES stat column. Profiles
-		// is readable for visible fields; a failure leaves the column
-		// blank rather than blocking the sheet.
+		// Lifetime tickle count for the TICKLES stat column. All-time =
+		// archived-seasons base + live-season tickles (migration 20260737); the
+		// base is absent pre-push, in which case lifetime falls back to the live
+		// count. Profiles is readable for visible fields; a failure leaves the
+		// column blank rather than blocking the sheet.
 		supabase
 			.from("profiles")
-			.select("tickles_earned")
+			.select("tickles_earned, tickles_lifetime_base")
 			.eq("id", targetUserId)
 			.maybeSingle()
 			.then(({ data }) => {
-				const n = (data as { tickles_earned?: number } | null)?.tickles_earned;
-				setTargetTickles(typeof n === "number" ? n : null);
+				const row = data as
+					| { tickles_earned?: number; tickles_lifetime_base?: number }
+					| null;
+				setTargetTickles(
+					row ? lifetimeTickles(row.tickles_lifetime_base, row.tickles_earned) : null
+				);
 			});
 	}, [targetUserId]);
 

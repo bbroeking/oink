@@ -33,6 +33,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
+import { lifetimeTickles } from "@/utils/tickles";
 import { PigStage, type EquippedItem } from "./ui/PigStage";
 import { Shovel } from "./ui/Shovel";
 import { Glyph, IconText, glyphSource } from "./ui/Glyph";
@@ -107,11 +108,13 @@ const rowToEquip = (r: ProfileEquipRow): EquipSet => ({
 interface BarnProfileRow extends ProfileEquipRow {
 	username: string | null;
 	tickles_earned: number | null;
+	tickles_lifetime_base: number | null;
 	active_background_id: string | null;
 }
 
 interface MyProfileRow extends ProfileEquipRow {
 	tickles_earned: number | null;
+	tickles_lifetime_base: number | null;
 }
 
 // "2h 15m" / "12m" until you can visit a different barn.
@@ -210,7 +213,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		(async () => {
 			const { data } = await supabase
 				.from("profiles")
-				.select(`username, tickles_earned, active_background_id, ${EQUIP_SELECT}`)
+				.select(`username, tickles_earned, tickles_lifetime_base, active_background_id, ${EQUIP_SELECT}`)
 				.eq("id", targetUserId)
 				// Dynamic select string → declare the row type through the
 				// builder so .data lands as BarnProfileRow | null, no cast.
@@ -227,13 +230,15 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				active_background_id: d.active_background_id ?? null,
 			});
 			setHostEquip(rowToEquip(d));
-			setFriendHearts(d.tickles_earned ?? 0); // live base for the HOST tally
+			// All-time lifetime = archived base + live-season tickles (20260737);
+			// base is null pre-push, so this falls back to the live count.
+			setFriendHearts(lifetimeTickles(d.tickles_lifetime_base, d.tickles_earned)); // HOST tally base
 
 			const { data: ures } = await supabase.auth.getUser();
 			if (ures.user) {
 				const { data: me } = await supabase
 					.from("profiles")
-					.select(`tickles_earned, ${EQUIP_SELECT}`)
+					.select(`tickles_earned, tickles_lifetime_base, ${EQUIP_SELECT}`)
 					.eq("id", ures.user.id)
 					// Dynamic select string → declare the row type through the
 					// builder so .data lands as MyProfileRow | null, no cast.
@@ -242,7 +247,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				if (!cancelled && me) {
 					const m = me;
 					setMyEquip(rowToEquip(m));
-					setYouHearts(m.tickles_earned ?? 0); // live base for the YOU tally
+					setYouHearts(lifetimeTickles(m.tickles_lifetime_base, m.tickles_earned)); // YOU tally base
 				}
 			}
 

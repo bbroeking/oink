@@ -19,6 +19,7 @@ import { router, type Href } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
+import { lifetimeTickles } from "@/utils/tickles";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Card, Button, SectionHeader } from "./ui";
@@ -168,6 +169,10 @@ export function Account({ session }: { session: Session }) {
 		}, [])
 	);
 	const [ticklesEarned, setTicklesEarned] = useState<number>(0);
+	// All-time tickles across archived seasons (migration 20260737). Displayed
+	// lifetime = this base + the live-season tickles_earned. 0 until the column
+	// lands (feature-dark), so lifetime simply shows the live count pre-push.
+	const [ticklesLifetimeBase, setTicklesLifetimeBase] = useState<number>(0);
 	// Snouts balance + current season tier — feed the 3-column stats
 	// row inside the identity card (LIFETIME TICKLES · SNOUTS · SEASON).
 	const [snouts, setSnouts] = useState<number>(0);
@@ -222,7 +227,7 @@ export function Account({ session }: { session: Session }) {
 			supabase
 				.from("profiles")
 				.select(
-					"username, discriminator, tickles_earned, counter, active_hat_id, is_vip, referred_by, active_title:titles!profiles_active_title_id_fkey(name, placement)"
+					"username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, referred_by, active_title:titles!profiles_active_title_id_fkey(name, placement)"
 				)
 				.eq("id", session.user.id)
 				.single()
@@ -231,6 +236,7 @@ export function Account({ session }: { session: Session }) {
 						username?: string | null;
 						discriminator?: string | null;
 						tickles_earned?: number;
+						tickles_lifetime_base?: number;
 						counter?: number;
 						active_hat_id?: string | null;
 						is_vip?: boolean;
@@ -247,7 +253,7 @@ export function Account({ session }: { session: Session }) {
 					if (error) {
 						const fallback = await supabase
 							.from("profiles")
-							.select("username, discriminator, tickles_earned, counter, active_hat_id, is_vip, referred_by")
+							.select("username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, referred_by")
 							.eq("id", session.user.id)
 							.single();
 						row = fallback.data;
@@ -255,6 +261,7 @@ export function Account({ session }: { session: Session }) {
 					setUsername(row?.username ?? null);
 					setDiscriminator(row?.discriminator ?? null);
 					setTicklesEarned(row?.tickles_earned ?? 0);
+					setTicklesLifetimeBase(row?.tickles_lifetime_base ?? 0);
 					setSnouts(row?.counter ?? 0);
 					setActiveHat(row?.active_hat_id ?? null);
 					setIsVip(row?.is_vip ?? false);
@@ -474,7 +481,10 @@ export function Account({ session }: { session: Session }) {
 								<View style={styles.lifetimeStatsRow}>
 									<LifetimeStat
 										label="LIFETIME TICKLES"
-										value={ticklesEarned.toLocaleString()}
+										value={lifetimeTickles(
+											ticklesLifetimeBase,
+											ticklesEarned
+										).toLocaleString()}
 									/>
 									<View style={styles.lifetimeStatDivider} />
 									<LifetimeStat label="SNOUTS" value={snouts.toLocaleString()} />
