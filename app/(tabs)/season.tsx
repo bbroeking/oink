@@ -24,7 +24,7 @@ import {
 } from "../../utils/iap";
 import { Sticker } from "../../components/ui/Sticker";
 import { EmptyState, LoadingBeat } from "../../components/ui/EmptyState";
-import { usePopupSlot } from "../../components/ui/PopupQueue";
+import { usePopupSlot, POPUP_TEARDOWN_MS } from "../../components/ui/PopupQueue";
 import { markCeremonyShown } from "../../utils/ceremonyGate";
 import { Icon } from "../../components/ui/Icon";
 import {
@@ -1915,10 +1915,25 @@ export default function SeasonScreen() {
 					visible={seasonEndSlot.visible || recapOpen || devReward != null}
 					reward={devReward ?? seasonEnd.reward!}
 					onDone={() => {
-						setRecapOpen(false);
-						setDevReward(null);
-						seasonEnd.dismiss();
+						// Two-phase dismiss, per the PopupQueue contract (see
+						// components/ui/PopupQueue.tsx TIMING CONTRACT): release()
+						// FIRST so the native modal hides this frame, then clear the
+						// backing want (seasonEnd.show, via dismiss()) a
+						// POPUP_TEARDOWN_MS beat LATER. Clearing seasonEnd.show in the
+						// same commit as release() dropped the slot's `want` while the
+						// native dismissal was still in flight — on the season-flip
+						// login the hungerIntro (pri 27) then presented into that
+						// in-progress teardown and came up invisible, wedging every
+						// touch on the tab (the "scroll breaks sometimes after the
+						// waiting dialog" report). recapOpen / devReward are the
+						// manual + dev bypasses (no queue want to hold), so they can
+						// clear on the same beat without a slot to violate.
 						seasonEndSlot.release();
+						setTimeout(() => {
+							setRecapOpen(false);
+							setDevReward(null);
+							seasonEnd.dismiss();
+						}, POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}
