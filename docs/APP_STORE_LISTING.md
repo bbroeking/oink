@@ -208,3 +208,22 @@ disclosure, live Terms/Privacy). **Three code blockers before a 1.2 IAP build**
 Then the dashboard work in `docs/revenuecat-asc-setup.md` (RC offering + paywall,
 ASC subscription group + products + review screenshot, webhook deploy).
 ```
+
+## v1.2 — What's New (Season 1: The Great Hunger)
+
+Something enormous crept into the valley — and it ate every last tickle.
+
+- SEASON 1 BEGINS: band into a Sounder, sneak into the Truffle Patch while he
+  gorges, and dig the valley's joy back — together.
+- THE DIG, DEEPER: richer boards than one dig can clear. Read the mounds,
+  choose what you chase, and what gets away comes back gilded.
+- THE BURROW BOOK: twelve strange relics are buried out there. First catches
+  light their page.
+- THE DIG-OFF: every Sounder races every Sounder — see the whole field, your
+  herd pinned on top.
+- GOLDEN TICKETS: scan a QR from the herd to claim gifts — starting with the
+  Release Party Crown.
+- A pile of polish: new sounds in the dig, a cozier season story, and your
+  founder rewards waiting at the door.
+
+You were here before the gates opened. The bog remembers.

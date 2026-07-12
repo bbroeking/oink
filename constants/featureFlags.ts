@@ -15,7 +15,7 @@
 // war crew (Sounder Mud Fights). This flag now refers to the *referral
 // downline* surfaces specifically; the referral feature is effectively
 // backend-only while these stay hidden.
-export const SOUNDER_VISIBLE = false;
+export const SOUNDER_VISIBLE = true; // opened with Season 1 (2026-07-11) — the referral downline page is public
 
 // Season 1 co-op dig (Sounder crews + the Truffle Patch feeding) visibility is
 // a server flag, not a compile-time constant — the crew card on the Friends hub
