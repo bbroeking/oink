@@ -4,8 +4,10 @@
 //   • the SEASON board (cumulative finds — the headline, default);
 //   • THIS WEEK's beat (finds per digging snout, sub-quorum crews grayed at the
 //     bottom exactly as the tab treats them).
-// My own Sounder rides in a sticky sun card pinned above the list so scrolling
-// never hides where I stand — and my row also highlights in place when reached.
+// My own Sounder highlights IN PLACE (rowMine) whenever its row is in the
+// revealed slice; a sticky sun card appears above the list ONLY when it isn't —
+// paging hasn't reached my rank, or I'm sub-quorum / find-less. Never both, so
+// the pin never duplicates the #1 row (pinNeeded in utils/dig.ts owns the rule).
 //
 // Route/file is technical (race-standings); all player-facing copy says "Dig-Off"
 // / "Sounder" / "snout". Feature-dark (RPC unpushed) → useRace reports null → a
@@ -33,6 +35,7 @@ import {
 	allWeeklyRows,
 	fetchRaceCrewDetail,
 	perSnoutLabel,
+	pinNeeded,
 } from "@/utils/dig";
 import { SeasonRow, CrewLedger, ordinal, seasonRowKey } from "@/components/season1/RaceSection";
 import { FONTS, RADII, SHADOW_SM, SPACE, TYPE, WHIMSY, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
@@ -179,6 +182,10 @@ function StandingsBody({
 	const visible = allRows.slice(0, shown);
 	const hasMore = shown < total;
 
+	// Pin my Sounder above the list ONLY when my row isn't in the revealed slice —
+	// otherwise it duplicates the in-place rowMine highlight (the tab's grammar).
+	const showPin = pinNeeded(allRows, shown, myCrewId);
+
 	const renderRow = useCallback(
 		({ item }: { item: SeasonStandingsRow | StandingsRow }) => {
 			const crewId = "crew_id" in item ? item.crew_id : null;
@@ -200,20 +207,24 @@ function StandingsBody({
 
 	return (
 		<Shell>
-			<View style={styles.toggle}>
-				<SegmentPill
-					label="season"
-					active={board === "season"}
-					onPress={() => onSwitchBoard("season")}
-				/>
-				<SegmentPill
-					label="this week"
-					active={board === "weekly"}
-					onPress={() => onSwitchBoard("weekly")}
-				/>
+			<View style={styles.toggleWrap}>
+				<Sticker color="paper" rotate={0} radius={RADII.xxl} style={styles.toggle}>
+					<SegmentPill
+						label="season"
+						active={board === "season"}
+						onPress={() => onSwitchBoard("season")}
+					/>
+					<SegmentPill
+						label="this week"
+						active={board === "weekly"}
+						onPress={() => onSwitchBoard("weekly")}
+					/>
+				</Sticker>
 			</View>
 
-			<MySounderCard state={state} board={board} myCrewId={myCrewId} />
+			{showPin && (
+				<MySounderCard state={state} board={board} myCrewId={myCrewId} />
+			)}
 
 			<FlatList
 				data={visible}
@@ -270,7 +281,9 @@ function SegmentPill({
 }
 
 // The sticky MY-SOUNDER card — a sun Sticker pinned above the list, so scrolling
-// never loses where I stand. One line: rank · crew · score, or the right nudge.
+// never loses where I stand. Only mounts when my row is out of sight (pinNeeded),
+// so the caller has already guaranteed I have a crew — the branches here cover
+// ranked (rank · crew · score) vs the warm no-finds / sub-quorum nudges.
 function MySounderCard({
 	state,
 	board,
@@ -284,7 +297,8 @@ function MySounderCard({
 	if (board === "season") {
 		const ms = state.mineSeason;
 		if (!ms) {
-			line = "join a Sounder to run the race";
+			// A crew with no season find yet — warm nudge, never "join a Sounder".
+			line = "no finds yet — dig to take your place";
 		} else {
 			const name =
 				state.season.find((s) => s.crew_id === myCrewId)?.name ??
@@ -296,7 +310,7 @@ function MySounderCard({
 	} else {
 		const mine = state.mine;
 		if (!mine) {
-			line = "join a Sounder to run the race";
+			line = "dig this week for Monday's spoils";
 		} else if (mine.rank != null) {
 			const name =
 				state.ranked.find((s) => s.crew_id === mine.crew_id)?.name ??
@@ -370,23 +384,22 @@ function WeeklyRow({
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
 	loadingWrap: { marginTop: SPACE.xl, alignItems: "center" },
-	// The two-segment board toggle.
-	toggle: {
-		flexDirection: "row",
-		gap: SPACE.xs,
-		paddingHorizontal: PAGE_PAD,
-		paddingBottom: SPACE.sm,
-	},
+	// The two-segment board toggle — a single paper Sticker holding two compact
+	// pills, matching the Leaderboard's segmented treatment (sun active fill, ink
+	// border only on the active pill). One shared visual language, not a new one.
+	toggleWrap: { paddingHorizontal: PAGE_PAD, paddingBottom: SPACE.md },
+	toggle: { flexDirection: "row", padding: SPACE.xs, gap: SPACE.xs },
 	segBtn: {
 		flex: 1,
 		paddingVertical: SPACE.sm,
 		borderRadius: RADII.xl,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
 		alignItems: "center",
 	},
-	segBtnActive: { backgroundColor: WHIMSY.sun },
+	segBtnActive: {
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+	},
 	segText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
 	segTextActive: { fontFamily: FONTS.whimsy, color: WHIMSY.ink },
 	// The sticky my-Sounder card — above the FlatList, never scrolls away.

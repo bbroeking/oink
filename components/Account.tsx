@@ -28,7 +28,7 @@ import { PigAvatar } from "./ui/PigAvatar";
 import type { TitlePlacement } from "@/constants/title_types";
 import { Sticker, Tape } from "./ui/Sticker";
 import Constants from "expo-constants";
-import { COLORS, FONTS, KICKER_PILL, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW, SPACE, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW, SPACE, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
 import {
 	IAP_ENABLED,
 	initIAP,
@@ -507,47 +507,6 @@ export function Account({ session }: { session: Session }) {
 						<Text style={achievementStyles.chev}>›</Text>
 					</Pressable>
 
-					{/* Your Sounder (referral). Hidden behind SOUNDER_VISIBLE.
-				    Friends moved to the
-					    dedicated Friends tab in the Season-0 social
-					    redesign. */}
-					{SOUNDER_VISIBLE && sounder && (
-						<Sticker color="cream" rotate={-0.6} radius={14} style={sounderStyles.card}>
-							<View style={sounderStyles.headerRow}>
-								<Text style={sounderStyles.kicker}>★ your sounder</Text>
-								<Pressable onPress={() => router.push("/sounder")}>
-									<Text style={sounderStyles.link}>leaderboard →</Text>
-								</Pressable>
-							</View>
-							<View style={sounderStyles.countRow}>
-								<Text style={sounderStyles.bigCount}>
-									{sounder.engaged_count}
-								</Text>
-								<View style={{ flex: 1, marginLeft: 12 }}>
-									<Text style={sounderStyles.countLabel}>
-										{sounder.engaged_count === 1 ? "pig in your sounder" : "pigs in your sounder"}
-									</Text>
-									{!!sounder.rank && (
-										<Text style={sounderStyles.rankLine}>
-											rank #{sounder.rank}
-										</Text>
-									)}
-								</View>
-							</View>
-							{sounder.next_title && (
-								<Text style={sounderStyles.progressLine}>
-									{sounder.next_threshold! - sounder.engaged_count} more to unlock{" "}
-									<Text style={sounderStyles.nextTitle}>{sounder.next_title}</Text>
-								</Text>
-							)}
-							{!sounder.next_title && (
-								<Text style={sounderStyles.progressLine}>
-									You've unlocked every sounder title. Maintain the herd!
-								</Text>
-							)}
-						</Sticker>
-					)}
-
 					{/* Slop Club membership card — perks, Join CTA (→ RevenueCat
 					    hosted paywall for plan/price), fine-print. */}
 					{IAP_ENABLED && (
@@ -745,6 +704,44 @@ export function Account({ session }: { session: Session }) {
 								goal={referral.next_milestone_at ?? 3}
 								capped={referral.next_milestone_at == null}
 							/>
+
+							{/* Recruiter downline strip — folds in the former
+							    standalone "Your Sounder" card. One quiet strip
+							    (not a nested card, banned by the taste lens):
+							    the downline count recopied WITHOUT the "sounder"
+							    word (that word is now the war crew), the next
+							    earned-title line (title NAMES stay as-is), and
+							    the leaderboard link (→ /sounder, same
+							    destination as before). Kept behind SOUNDER_VISIBLE
+							    via the my_sounder fetch so it can be dark-toggled;
+							    only renders once that fetch lands. */}
+							{SOUNDER_VISIBLE && sounder && (
+								<View style={referralStyles.downlineStrip}>
+									<View style={referralStyles.downlineTextCol}>
+										<Text style={referralStyles.downlineCount}>
+											{sounder.engaged_count}{" "}
+											{sounder.engaged_count === 1
+												? "friend brought to the bog"
+												: "friends brought to the bog"}
+										</Text>
+										{sounder.next_title && (
+											<Text style={referralStyles.downlineNext}>
+												{sounder.next_threshold! - sounder.engaged_count} more to
+												unlock{" "}
+												<Text style={referralStyles.downlineNextTitle}>
+													{sounder.next_title}
+												</Text>
+											</Text>
+										)}
+									</View>
+									<Pressable
+										onPress={() => router.push("/sounder")}
+										hitSlop={6}
+									>
+										<Text style={referralStyles.downlineLink}>leaderboard →</Text>
+									</Pressable>
+								</View>
+							)}
 							{/* Slop Club granted at a referral milestone — show its
 							    live window while it's active. */}
 							{referral.slop_club_grant_until &&
@@ -1400,59 +1397,6 @@ const styles = StyleSheet.create({
 	},
 });
 
-const sounderStyles = StyleSheet.create({
-	card: {
-		paddingHorizontal: 16,
-		paddingVertical: 14,
-	},
-	headerRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		marginBottom: 8,
-	},
-	kicker: { ...KICKER_PILL, letterSpacing: 1.4 },
-	link: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
-	countRow: {
-		flexDirection: "row",
-		alignItems: "center",
-	},
-	bigCount: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 44,
-		color: WHIMSY.ink,
-		minWidth: 60,
-		textAlign: "center",
-	},
-	countLabel: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.ink,
-	},
-	rankLine: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginTop: 2,
-	},
-	progressLine: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.ink,
-		marginTop: 10,
-	},
-	nextTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
-		color: WHIMSY.accent,
-	},
-});
-
 const achievementStyles = StyleSheet.create({
 	row: {
 		flexDirection: "row",
@@ -1809,5 +1753,44 @@ const referralStyles = StyleSheet.create({
 		fontSize: 13,
 		color: WHIMSY.accent,
 		letterSpacing: 0.3,
+	},
+	// Recruiter downline strip (folded-in "Your Sounder" content). A quiet
+	// dashed-top-divided row — count + next-title on the left, leaderboard
+	// link on the right. Reuses the card's own type tokens (bodyExtra count,
+	// hand next-line, accent link) so it reads as part of the card, not a
+	// card-in-card.
+	downlineStrip: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: 12,
+		marginBottom: 12,
+		paddingTop: 10,
+		borderTopWidth: 1.5,
+		borderTopColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	downlineTextCol: { flex: 1, minWidth: 0 },
+	downlineCount: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.ink,
+	},
+	downlineNext: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		marginTop: 3,
+	},
+	downlineNextTitle: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 12,
+		color: WHIMSY.accent,
+	},
+	downlineLink: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		textDecorationLine: "underline",
 	},
 });

@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-12T00:00:00Z",
+  "title": "Design System: Tickle the Pig",
+  "extensions": {
+    "colorMeta": {
+      "ink": { "role": "neutral", "displayName": "Scrapbook Ink", "canonical": "#2a1f15" },
+      "paper": { "role": "primary", "displayName": "Warm Cream Paper", "canonical": "#fffaf0" },
+      "cream": { "role": "primary", "displayName": "Cream", "canonical": "#fbeee2" },
+      "accent": { "role": "primary", "displayName": "Rust Accent", "canonical": "#c25a3f" },
+      "rose": { "role": "secondary", "displayName": "Storybook Rose", "canonical": "#ffd6dc" },
+      "sky": { "role": "secondary", "displayName": "Storybook Sky", "canonical": "#c8e3f0" },
+      "sage": { "role": "secondary", "displayName": "Storybook Sage", "canonical": "#c9dec1" },
+      "sun": { "role": "secondary", "displayName": "Storybook Sun", "canonical": "#ffd87a" },
+      "lilac": { "role": "secondary", "displayName": "Storybook Lilac", "canonical": "#d6c8f0" },
+      "peach": { "role": "secondary", "displayName": "Storybook Peach", "canonical": "#ffc8a8" },
+      "bark": { "role": "tertiary", "displayName": "Storyteller Bark", "canonical": "#3a2c1e" },
+      "angel": { "role": "tertiary", "displayName": "Angel Lilac", "canonical": "#a89bff" },
+      "goblin": { "role": "tertiary", "displayName": "Goblin Gold", "canonical": "#d4a437" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Caprasimo whimsy titles — the largest headline moments." },
+      "pageTitle": { "displayName": "Page Title", "purpose": "Top-of-screen headers (PageHeader)." },
+      "sectionTitle": { "displayName": "Section Title", "purpose": "In-screen section headers (SectionHeader)." },
+      "body": { "displayName": "Body", "purpose": "Nunito Bold primary reading text." },
+      "kicker": { "displayName": "Kicker", "purpose": "PatrickHand rust line above a title." },
+      "kickerPill": { "displayName": "Kicker Pill", "purpose": "Tracked-caps band above a heavier header." }
+    },
+    "shadows": [
+      { "name": "sticker-shadow", "value": "4px 4px 0 0 #2a1f15", "purpose": "Primary tier — cards, panels, modals. The paper-cutout lift, zero blur." },
+      { "name": "small-shadow", "value": "2px 2px 0 0 #2a1f15", "purpose": "Lighter companion — chips, buttons, list rows. Zero blur." }
+    ],
+    "motion": [
+      { "name": "hand-wound-spring", "value": "spring (Reanimated 3, native-driven, slight overshoot)", "purpose": "Tab-bar sway, heart floats, chain-tug, reveal pop-ins." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Sticker",
+      "kind": "card",
+      "refersTo": "sticker",
+      "description": "The signature primitive — nearly every surface. Ink-outlined pastel paper, hand-drawn tilt, hard zero-blur shadow.",
+      "html": "<div class=\"ds-sticker\">A pinned scrap of paper</div>",
+      "css": ".ds-sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; padding: 16px; transform: rotate(-0.6deg); box-shadow: 4px 4px 0 0 #2a1f15; font-family: 'Nunito', sans-serif; color: #2a1f15; }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Gradient CTA wrapped in the signature ink outline + small hard shadow, so it reads as a hand-drawn button not a flat pill.",
+      "html": "<button class=\"ds-btn-primary\">Tickle</button>",
+      "css": ".ds-btn-primary { background: linear-gradient(#F0B8C8, #E8A7B9); color: #2a1f15; border: 2px solid #2a1f15; border-radius: 22px; height: 44px; padding: 0 18px; font-family: 'Fredoka', sans-serif; font-weight: 700; box-shadow: 2px 2px 0 0 #2a1f15; transition: transform 0.12s; } .ds-btn-primary:hover { transform: translateY(-1px); } .ds-btn-primary:active { transform: translateY(1px); box-shadow: 1px 1px 0 0 #2a1f15; }"
+    },
+    {
+      "name": "Locked Button",
+      "kind": "button",
+      "refersTo": "button-locked",
+      "description": "The 'asleep' button — a disabled control that keeps its full chrome. Muted fill, muted text, NO opacity crush.",
+      "html": "<button class=\"ds-btn-locked\" disabled>Resting</button>",
+      "css": ".ds-btn-locked { background: #f4efe7; color: #9a9a9a; border: 2px solid #2a1f15; border-radius: 22px; height: 44px; padding: 0 18px; font-family: 'Fredoka', sans-serif; font-weight: 700; }"
+    },
+    {
+      "name": "Kicker",
+      "kind": "custom",
+      "refersTo": "kicker-pill",
+      "description": "The rust hand-drawn line above a section title. The one accent, never a fill.",
+      "html": "<span class=\"ds-kicker\">★ welcome</span>",
+      "css": ".ds-kicker { font-family: 'Patrick Hand', cursive; font-size: 13px; letter-spacing: 0.4px; color: #c25a3f; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Paper-Craft Scrapbook",
+    "overview": "Tickle the Pig looks like a storybook someone who cares assembled by hand: ink-outlined stickers pinned with tape onto warm cream paper, each card tilted a degree or two off-square, throwing a hard offset shadow as if lit by a single desk lamp. The whimsy IS the design, not decoration bolted onto a neutral shell. This system explicitly rejects the SaaS-dashboard playbook; slop here is governance erosion — the intentional tokens silently bypassed — not a generic look. The system shows feelings rather than stating them: a pig's mood is its sprite, a streak is a garden that grows, and the world responds now.",
+    "keyCharacteristics": [
+      "Ink-outlined paper stickers on warm cream, every card tilted and hard-shadowed",
+      "One palette (WHIMSY): muted storybook pastels, rust accent, dark bark for storyteller callouts",
+      "Four fonts, each with a job: Caprasimo, Nunito, Fredoka, PatrickHand",
+      "Two hard shadow tiers, zero blur",
+      "Springy, hand-wound motion; feelings shown as sprites and growth, never numbers",
+      "No emoji, ever — hand-drawn Glyph or SVG Icon only"
+    ],
+    "rules": [
+      { "name": "The One Palette Rule", "body": "All color comes from WHIMSY. If a value isn't a token, use an existing token or add one — never inline a raw hex past the token layer.", "section": "colors" },
+      { "name": "The One Accent Rule", "body": "Rust (#c25a3f) is a kicker color, never a fill. The moment it becomes a button or card background, it stops being the accent.", "section": "colors" },
+      { "name": "The Compose-From-Roles Rule", "body": "Text is built from TYPE role styles, not raw sizes, with color applied per use. A bare fontSize in new code is a smell.", "section": "typography" },
+      { "name": "The Feelings-Aren't-Numbers Rule", "body": "Numbers are allowed for progression only. Anything emotional is shown, never numbered: mood is a sprite, a streak is a garden.", "section": "typography" },
+      { "name": "The Two-Tiers-No-Blur Rule", "body": "Sticker contexts use only STICKER_SHADOW (4,4) or SHADOW_SM (2,2), both zero-blur, ink-colored. A blurred shadow belongs to a different app.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do reach for tokens: WHIMSY, FONTS, TYPE, RADII, SPACE, STICKER_SHADOW/SHADOW_SM. constants/theme.ts is the single source of truth.",
+      "Do put every surface on a Sticker — 2px ink border, hand-drawn tilt, a hard zero-blur shadow.",
+      "Do compose text from TYPE roles with a color applied per use; keep the 18px canonical page padding.",
+      "Do show feelings as sprites and growth — mood is Rosie's sprite, a streak is the garden.",
+      "Do make the world respond now — animate the claim on tap, vanish the cleansed curse immediately.",
+      "Do keep every screen cream/paper and crown every stack screen with PageHeader."
+    ],
+    "donts": [
+      "Don't treat this like a SaaS dashboard — a borderless, perfectly-aligned, soft-shadow card is slop here.",
+      "Don't inline a raw hex, font size, radius, or pad past the token layer. That governance erosion is the slop.",
+      "Don't add a third shadow tier or a blurred shadow in a sticker context.",
+      "Don't use a meter, number, or label for anything emotional.",
+      "Don't ever put an emoji character in a render — use Glyph or Icon.",
+      "Don't wrap a screen in black (#1A1A1A) — it breaks the warm cream continuity.",
+      "Don't dissolve a disabled control's outline under an opacity crush — mute the fill, keep the shape."
+    ]
+  }
+}

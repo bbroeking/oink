@@ -1,6 +1,10 @@
-// The Sounder leaderboard — top recruiters across the app. Reachable
-// from Account's "Your sounder" card. Mirrors the regular leaderboard's
-// visual language so it feels native.
+// The recruiter leaderboard — top referrers across the app. Reachable
+// from the "Refer friends" card's downline strip on the Me page. Mirrors
+// the regular leaderboard's visual language so it feels native.
+//
+// Header is titled "Your Recruits" (kicker "refer friends"), NOT "The
+// Sounder" — the player-facing word "Sounder" was reclaimed for the war
+// crew, so the referral downline surface can't wear it.
 import React, { useCallback, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";
 import {
@@ -61,8 +65,8 @@ export default function SounderScreen() {
 			<View style={styles.bg}>
 				<SafeAreaView style={{ flex: 1 }}>
 					<PageHeader
-						kicker="top recruiters"
-						title="The Sounder"
+						kicker="refer friends"
+						title="Your Recruits"
 						onBack={() => router.back()}
 					/>
 
@@ -71,11 +75,11 @@ export default function SounderScreen() {
 						contentContainerStyle={styles.list}
 						showsVerticalScrollIndicator={false}
 					>
-						{loading && <LoadingBeat label="gathering the sounder" />}
+						{loading && <LoadingBeat label="gathering your recruits" />}
 						{!loading && rows.length === 0 && (
 							<EmptyState
 								glyph="friends"
-								title="The Sounder's empty"
+								title="No recruits yet"
 								sub="Be the first to bring a friend in."
 							/>
 						)}
@@ -88,7 +92,7 @@ export default function SounderScreen() {
 								border={2.5}
 								style={styles.champ}
 							>
-								<Text style={styles.champKicker}>★ sounder sire ★</Text>
+								<Text style={styles.champKicker}>★ top recruiter ★</Text>
 								<View style={styles.champRow}>
 									<View style={{ flex: 1, minWidth: 0 }}>
 										<Text

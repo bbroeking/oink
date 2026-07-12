@@ -20,6 +20,7 @@ import {
 	parseRaceCrewDetail,
 	parseRaceStandings,
 	perSnoutLabel,
+	pinNeeded,
 	raceCycle,
 	standingsRows,
 	standingsRowsSeason,
@@ -346,6 +347,52 @@ describe("allWeeklyRows — the full weekly field", () => {
 	it("empty input → []", () => {
 		const empty = buildStandings({ ranked: [], unranked: [] } as Partial<RaceStandings>);
 		expect(allWeeklyRows(empty, "c1")).toEqual([]);
+	});
+});
+
+describe("pinNeeded — the sticky my-Sounder pin rule", () => {
+	const rows = allSeasonRows(SEASON, "c4"); // my crew is c4 (rank 4)
+
+	it("no pin when crewless", () => {
+		expect(pinNeeded(allSeasonRows(SEASON, null), 25, null)).toBe(false);
+	});
+
+	it("no pin when my row is within the revealed slice (highlight in place)", () => {
+		// c4 is at index 3 — a first page of 25 reveals it.
+		expect(pinNeeded(rows, 25, "c4")).toBe(false);
+	});
+
+	it("pins when paging hasn't reached my row yet", () => {
+		// Only 3 rows shown; c4 sits at index 3 (rank 4) → still out of sight.
+		expect(pinNeeded(rows, 3, "c4")).toBe(true);
+	});
+
+	it("reveals exactly my row at the slice boundary → no pin", () => {
+		// shown=4 reveals indices 0..3, so c4 (index 3) is just in sight.
+		expect(pinNeeded(rows, 4, "c4")).toBe(false);
+		expect(pinNeeded(rows, 3, "c4")).toBe(true);
+	});
+
+	it("pins when my crew has no row in the field at all (crewless-but-id / sub-quorum)", () => {
+		// myCrewId set but absent from the rows → nothing to highlight → pin.
+		expect(pinNeeded(rows, 999, "cX")).toBe(true);
+	});
+
+	it("ignores separator rows when scanning the slice", () => {
+		const withSep = [
+			{ kind: "separator" as const },
+			{ kind: "ranked" as const, crew_id: "c4" },
+		];
+		expect(pinNeeded(withSep, 2, "c4")).toBe(false);
+		// Separator counts toward `shown` but never satisfies the match itself.
+		expect(pinNeeded(withSep, 1, "c4")).toBe(true);
+	});
+
+	it("weekly: pins an unranked (sub-quorum) crew until its grayed row is revealed", () => {
+		const weekly = allWeeklyRows(buildStandings(), "u2"); // 7 ranked + [u1,u2]
+		// u2 is the last row (index 8) — a short slice leaves it out of sight.
+		expect(pinNeeded(weekly, 5, "u2")).toBe(true);
+		expect(pinNeeded(weekly, 9, "u2")).toBe(false);
 	});
 });
 

@@ -611,3 +611,25 @@ export function allWeeklyRows(
 	);
 	return [...ranked, ...unranked];
 }
+
+// ── The sticky my-Sounder pin rule ─────────────────────────────────────────────
+// The full-field page pins my crew in its own sticky card ONLY when my row isn't
+// in the currently-revealed slice. When paging has reached my row, it highlights
+// in place (rowMine) and the pin is redundant — exactly the pinned-row grammar
+// standingsRows/standingsRowsSeason use on the tab (highlight-in-place vs pin).
+// Pure so it can be unit-tested off the already-derived flat rows + the shown
+// count. Crewless → no pin (there's nothing to point at).
+export function pinNeeded(
+	rows: Array<{ kind: string; crew_id?: string; highlighted?: boolean }>,
+	shown: number,
+	myCrewId: string | null
+): boolean {
+	if (!myCrewId) return false;
+	// Is my crew's row within the revealed slice? Match on crew_id (dense ranks
+	// tie, so never rank-match) across the shown rows only.
+	const revealed = rows.slice(0, Math.max(0, shown));
+	const mineVisible = revealed.some(
+		(r) => r.kind !== "separator" && r.crew_id === myCrewId
+	);
+	return !mineVisible;
+}
