@@ -279,6 +279,24 @@ export function Account({ session }: { session: Session }) {
 			: username
 		: null;
 
+	// Whether to show the "Got a code from a friend?" apply box. Mirrors the
+	// FULL server eligibility gate in redeem_referral_code, not just the
+	// already-redeemed check — otherwise an old/active account (e.g. the
+	// founder) whose referred_by is null still sees a box that can only ever
+	// fail with too_old / too_active. Server rules:
+	//   • referred_by IS NULL            → hasRedeemed === false
+	//   • account < 24h old              → too_old otherwise
+	//   • tickles_earned < 5             → too_active otherwise
+	// hasRedeemed === null means the profile fetch hasn't resolved yet — hide
+	// (no flash for redeemed/ineligible users); the in-session redeem success
+	// flips hasRedeemed → true, which also hides it.
+	const accountCreatedMs = Date.parse(session.user.created_at ?? "");
+	const accountUnder24h =
+		Number.isFinite(accountCreatedMs) &&
+		Date.now() - accountCreatedMs < 24 * 60 * 60 * 1000;
+	const canRedeemCode =
+		hasRedeemed === false && accountUnder24h && ticklesEarned < 5;
+
 	// Copies the player's handle (username#discriminator) to the
 	// clipboard. The referral-link flow was cut — a handle a friend
 	// types into Friends → Add is robust where a GitHub-Pages deep
@@ -792,10 +810,13 @@ export function Account({ session }: { session: Session }) {
 							</Text>
 
 							{/* Have a code? — redeem a friend's code right here.
-							    Hidden once redeemed; eligibility (new players
-							    only) is the server's call and surfaces as
-							    friendly copy on a refused attempt. */}
-							{hasRedeemed === false && (
+							    Shown only to accounts the server would actually
+							    let redeem: never-redeemed AND < 24h old AND
+							    < 5 tickles (canRedeemCode mirrors the server
+							    gate). An old/active account never sees a box it
+							    can't use; a genuinely-eligible new player still
+							    gets specific refusal copy on any edge case. */}
+							{canRedeemCode && (
 								<View style={referralStyles.haveWrap}>
 									<View style={referralStyles.divider} />
 									<Text style={referralStyles.haveLabel}>

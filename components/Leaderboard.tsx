@@ -287,6 +287,14 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 					// false, so eq(false) covers every row.
 					.eq("hide_from_leaderboard", false)
 					.order("tickles_earned", { ascending: false })
+					// Unique tiebreaker so contiguous .range() pages never
+					// overlap: tickles_earned alone is not unique (a fresh
+					// board has everyone tied at 0), and Postgres orders tied
+					// rows nondeterministically — so the row at a page boundary
+					// could land in BOTH the first and second range() query,
+					// yielding the same id twice → a duplicate React key. id
+					// (the PK) makes the total order stable across pages.
+					.order("id", { ascending: true })
 					.range(from, from + count - 1)
 					// Dynamic select string → PostgREST infers a parser-error
 					// row shape; declare our known row type through the builder
@@ -421,7 +429,15 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				return;
 			}
 			const next = await fetchGlobalPage(from, want);
-			setLeaderboard((prev) => [...prev, ...next]);
+			// Dedupe by id, keeping the already-shown row: even with the stable
+			// id tiebreaker, a row's tickles_earned can change between the
+			// first-page fetch and this one (someone tickles mid-scroll),
+			// shifting a boundary row into this page's range — appending it
+			// blindly would collide on key={item.id}. Guard at the source.
+			setLeaderboard((prev) => {
+				const seen = new Set(prev.map((r) => r.id));
+				return [...prev, ...next.filter((r) => !seen.has(r.id))];
+			});
 			setHasMore(
 				next.length === want && from + next.length < LEADERBOARD_MAX_ROWS
 			);
