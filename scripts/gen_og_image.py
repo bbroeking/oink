@@ -15,7 +15,9 @@ import math
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PIG = os.path.join(ROOT, "assets/images/pig.png")
+# Rosie — the landing page's own art. NOT assets/images/pig.png: that's the
+# retired pre-Rosie pig that used to headline this card (deprecated 2026-07-13).
+PIG = os.path.join(ROOT, "landing/rosie.png")
 OUT = os.path.join(ROOT, "landing/og.png")
 
 # Whimsy palette (constants/theme.ts)
