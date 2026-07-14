@@ -21,6 +21,7 @@ import {
 	inviteToCrew as inviteRpc,
 	acceptInvite as acceptRpc,
 	declineInvite as declineRpc,
+	cancelInvite as cancelRpc,
 	joinCrew as joinRpc,
 	leaveCrew as leaveRpc,
 } from "@/utils/crews";
@@ -39,11 +40,12 @@ export interface UseCrew {
 	crew: CrewState;
 	loading: boolean;
 	refresh: () => Promise<void>;
-	create: (name: string) => Promise<RpcResult<{ crew_id: string }>>;
+	create: () => Promise<RpcResult<{ crew_id: string; name: string }>>;
 	rename: (name: string) => Promise<RpcResult<{}>>;
 	invite: (userId: string) => Promise<RpcResult<{}>>;
 	accept: (inviteId: string) => Promise<RpcResult<{ crew_id: string }>>;
 	decline: (inviteId: string) => Promise<RpcResult<{}>>;
+	cancel: (inviteId: string) => Promise<RpcResult<{}>>;
 	join: (crewId: string) => Promise<RpcResult<{ crew_id: string }>>;
 	leave: () => Promise<RpcResult<{}>>;
 }
@@ -116,8 +118,9 @@ export function useCrew(enabled = true): UseCrew {
 	}, [enabled, crewId, refresh]);
 
 	const create = useCallback(
-		async (name: string) => {
-			const r = await createCrewRpc(name);
+		async () => {
+			// No name argument — the server names the Sounder at birth.
+			const r = await createCrewRpc();
 			await refresh();
 			return r;
 		},
@@ -163,6 +166,18 @@ export function useCrew(enabled = true): UseCrew {
 		[refresh]
 	);
 
+	const cancel = useCallback(
+		async (inviteId: string) => {
+			// Optimistic: drop the outgoing invite so the ghost row + its reserved
+			// seat resolve immediately.
+			setCrew((c) => ({ ...c, invitesOut: c.invitesOut.filter((i) => i.id !== inviteId) }));
+			const r = await cancelRpc(inviteId);
+			if (!r.ok) await refresh();
+			return r;
+		},
+		[refresh]
+	);
+
 	const join = useCallback(
 		async (crewId: string) => {
 			const r = await joinRpc(crewId);
@@ -178,7 +193,7 @@ export function useCrew(enabled = true): UseCrew {
 		return r;
 	}, [refresh]);
 
-	return { crew, loading, refresh, create, rename, invite, accept, decline, join, leave };
+	return { crew, loading, refresh, create, rename, invite, accept, decline, cancel, join, leave };
 }
 
 // Open Sounders the caller could join right now (find_joinable_crews).

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
+import { rpcAction } from "@/utils/rpc";
 import {
 	FRIEND_CAP_LIMIT,
 	getFriendIds,
@@ -26,10 +27,11 @@ import { type UseCrew } from "@/hooks/useCrew";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
 import { BarnVisitModal } from "./BarnVisitModal";
-import { FONTS, RADII, SHADOW_SM, SPACE, TAB_SAFE, WHIMSY } from "@/constants/theme";
+import { FONTS, KICKER_PILL, PAGE_PAD, RADII, SHADOW_SM, SPACE, TAB_SAFE, TYPE, WHIMSY } from "@/constants/theme";
 import { AlignmentBadge } from "./ui/AlignmentBadge";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Icon } from "./ui/Icon";
+import { Glyph } from "./ui/Glyph";
 
 // PostgREST returns 1:1 joins either as an object or a length-1
 // array. Flatten so consumers can read .name directly.
@@ -64,6 +66,65 @@ export default function Friends({
 	// unlike UserSheet's inline overlay, nothing here is already modal).
 	const [visiting, setVisiting] = useState<{ id: string; name: string } | null>(null);
 
+	// Shared barn-visit budget for the whole window: 3 distinct barns per 3h.
+	// It's window-global (target-independent in barn_visit_status), so we read
+	// it ONCE per list load — not per row — and use it to gate every visit
+	// button. null until fetched → treat as available (don't gate on unknown).
+	const [visitsLeft, setVisitsLeft] = useState<number | null>(null);
+	// visits_refresh_at is still fetched (it's part of the status envelope) but
+	// no longer drives any copy: the day-rhythm ruling retired the "resets in Xh"
+	// countdown from this surface. Kept so the fetch shape stays intact and a
+	// future non-countdown use can read it without re-plumbing.
+	const [visitsRefreshAt, setVisitsRefreshAt] = useState<string | null>(null);
+	const noVisitsLeft = visitsLeft === 0;
+
+	// The caller's pinned friends (friend_favorites). Direct table read under
+	// RLS — fail-soft to empty if the migration is dark (pre-push) so the list
+	// still renders, just unsorted-by-favorite. Optimistic on toggle.
+	const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+	// Pin / unpin a friend. Optimistic: flip the local set first so the star
+	// snaps + the row re-sorts immediately (the world responds now), then
+	// insert/delete; revert the local flip if the write fails.
+	const toggleFavorite = useCallback(
+		async (friendId: string) => {
+			const wasFav = favorites.has(friendId);
+			setFavorites((prev) => {
+				const next = new Set(prev);
+				if (wasFav) next.delete(friendId);
+				else next.add(friendId);
+				return next;
+			});
+			const { error } = wasFav
+				? await supabase
+						.from("friend_favorites")
+						.delete()
+						.eq("user_id", userId)
+						.eq("friend_id", friendId)
+				: await supabase
+						.from("friend_favorites")
+						.insert({ user_id: userId, friend_id: friendId });
+			if (error) {
+				// Revert the optimistic flip — the pin didn't stick.
+				setFavorites((prev) => {
+					const next = new Set(prev);
+					if (wasFav) next.add(friendId);
+					else next.delete(friendId);
+					return next;
+				});
+			}
+		},
+		[favorites, userId]
+	);
+
+	// Per-friend (pairwise) barn lock: the set of friend ids you've already
+	// tickled out this 24h window. barn_pair_locks returns the SAME pairwise
+	// lock the arrival modal computes, so a locked row disables its visit door
+	// instead of letting the player tap into the "Tickled!" dead-end. Empty
+	// until fetched, and stays empty if the RPC is dark (migration unpushed) →
+	// fail soft to today's behavior (no per-row gating).
+	const [pairLocked, setPairLocked] = useState<Set<string>>(new Set());
+
 	const load = useCallback(async () => {
 		// Friends — via friend_ids RPC (returns the accepted set).
 		// The server enforces a 100-friend cap (see the friend_cap
@@ -75,7 +136,7 @@ export default function Friends({
 		const ids = (await getFriendIds()) ?? [];
 		const capped = ids.slice(0, FRIEND_CAP_LIMIT);
 		if (capped.length > 0) {
-			const [{ data }, friendCrews] = await Promise.all([
+			const [{ data }, friendCrews, favRes] = await Promise.all([
 				supabase
 					.from("profiles")
 					.select(
@@ -83,12 +144,72 @@ export default function Friends({
 					)
 					.in("id", capped),
 				fetchFriendsCrews(),
+				// Pinned set — one owner-only select. Fail-soft to empty (a dark
+				// migration / RLS miss just leaves the list unsorted-by-favorite).
+				supabase
+					.from("friend_favorites")
+					.select("friend_id")
+					.eq("user_id", userId),
 			]);
-			setFriends((data as Profile[]) ?? []);
+			const list = (data as Profile[]) ?? [];
+			setFriends(list);
 			setCrewNames(new Map(friendCrews.map((fc) => [fc.friend_id, fc.crew_name])));
+			setFavorites(
+				favRes.error
+					? new Set()
+					: new Set(
+							((favRes.data as { friend_id: string }[] | null) ?? []).map(
+								(r) => r.friend_id
+							)
+						)
+			);
+
+			// Read the shared visit budget once. barn_visit_status's
+			// visits_left / visits_refresh_at are window-global (they count
+			// distinct barns opened this 3h window, not this pair), so any
+			// friend's id returns the same budget — we just need a non-self
+			// target to satisfy the RPC. Gates every row's visit button.
+			const probe = list[0];
+			if (probe) {
+				// Two reads in parallel: the window-global budget (one probe id,
+				// any non-self target returns the same visits_left → the global
+				// gate) and the per-pair locks for every visible friend (the
+				// per-row gate). Both fail soft — a dark migration leaves the
+				// state at its permissive default (null budget / empty lock set).
+				const [st, locks] = await Promise.all([
+					rpcAction<{
+						visits_left?: number | null;
+						visits_refresh_at?: string | null;
+					}>("barn_visit_status", { p_target: probe.id }),
+					rpcAction<{
+						pairs?: { target_id: string; locked: boolean }[];
+					}>("barn_pair_locks", { p_targets: list.map((p) => p.id) }),
+				]);
+				if (st.ok) {
+					setVisitsLeft(st.visits_left ?? null);
+					setVisitsRefreshAt(st.visits_refresh_at ?? null);
+				}
+				setPairLocked(
+					locks.ok
+						? new Set(
+								(locks.pairs ?? [])
+									.filter((p) => p.locked)
+									.map((p) => p.target_id)
+							)
+						: new Set()
+				);
+			} else {
+				setVisitsLeft(null);
+				setVisitsRefreshAt(null);
+				setPairLocked(new Set());
+			}
 		} else {
 			setFriends([]);
 			setCrewNames(new Map());
+			setVisitsLeft(null);
+			setVisitsRefreshAt(null);
+			setPairLocked(new Set());
+			setFavorites(new Set());
 		}
 	}, [userId]);
 
@@ -147,6 +268,10 @@ export default function Friends({
 					<FriendsList
 						friends={friends}
 						crewNames={crewNames}
+						visitsSpent={noVisitsLeft}
+						pairLocked={pairLocked}
+						favorites={favorites}
+						onToggleFavorite={toggleFavorite}
 						onPick={setSelectedUserId}
 						onVisit={(f) =>
 							setVisiting({ id: f.id, name: f.username ?? "friend" })
@@ -176,7 +301,13 @@ export default function Friends({
 					<BarnVisitModal
 						targetUserId={visiting.id}
 						targetName={visiting.name}
-						onClose={() => setVisiting(null)}
+						onClose={() => {
+							setVisiting(null);
+							// Returning from a visit may have just tickled this
+							// friend out — reload so the row's pair-lock (and the
+							// window-global budget) reflects the fresh state.
+							load();
+						}}
 					/>
 				</Modal>
 			)}
@@ -238,11 +369,27 @@ function InitialAvatar({ name }: { name: string | null | undefined }) {
 function FriendsList({
 	friends,
 	crewNames,
+	visitsSpent,
+	pairLocked,
+	favorites,
+	onToggleFavorite,
 	onPick,
 	onVisit,
 }: {
 	friends: Profile[];
 	crewNames: Map<string, string>;
+	// You've spent your window-global barn budget → every row's visit button
+	// dims + disables, with a single day-rhythm hint above the list (never per
+	// row, and never a countdown). This is the GLOBAL "tickled out" state.
+	visitsSpent: boolean;
+	// Friend ids you've already tickled today (per-pair 24h lock). These rows
+	// dim + disable their visit door individually with a "tickled today" tag —
+	// the PER-PAIR state. Composes with visitsSpent, but the global gate wins
+	// (uniform dim + header hint, no per-row tags — avoid tag spam).
+	pairLocked: Set<string>;
+	// The caller's pinned friends — sorted to the top, star lit sun-gold.
+	favorites: Set<string>;
+	onToggleFavorite: (friendId: string) => void;
 	onPick: (id: string) => void;
 	onVisit: (friend: Profile) => void;
 }) {
@@ -257,13 +404,29 @@ function FriendsList({
 			</Sticker>
 		);
 	}
-	// Sort alphabetically so the list reads predictably.
-	const sorted = [...friends].sort((a, b) =>
-		(a.username ?? "").localeCompare(b.username ?? "")
-	);
+	// Favorites first (alphabetical within), then everyone else alphabetically —
+	// the existing predictable order, just with pinned friends floated up.
+	const sorted = [...friends].sort((a, b) => {
+		const fa = favorites.has(a.id) ? 0 : 1;
+		const fb = favorites.has(b.id) ? 0 : 1;
+		if (fa !== fb) return fa - fb;
+		return (a.username ?? "").localeCompare(b.username ?? "");
+	});
 	const atCap = sorted.length >= FRIEND_CAP_LIMIT;
 	return (
 	  <>
+		{/* Global "tickled out" — you've spent your whole barn budget. One
+		    day-rhythm hint above the list (no countdown, no reset time — the
+		    charter never punishes the hours between). Every visit button below
+		    dims + disables to match; no per-row tags in this state. */}
+		{visitsSpent && (
+			<View style={styles.visitsSpentHint}>
+				<Icon name="tabBarn" size={14} color={WHIMSY.accent} />
+				<Text style={styles.visitsSpentText}>
+					all tickled out — your snout needs a rest
+				</Text>
+			</View>
+		)}
 		{/* rotate 0: on a tall list even a fraction of a degree shears the
 		    bottom corners sideways out of the scroll clip — tilt is for
 		    small stickers only. */}
@@ -272,6 +435,16 @@ function FriendsList({
 				const last = i === sorted.length - 1;
 				const wears = hatName(f);
 				const crewName = crewNames.get(f.id);
+				// This pair is tickled today (per-pair 24h lock). Compose with
+				// the global gate: the row's door disables if EITHER is spent.
+				const pairSpent = pairLocked.has(f.id);
+				const rowSpent = visitsSpent || pairSpent;
+				// Show the compact per-row "tickled today" tag only when it's
+				// THIS pair's lock and the global gate is NOT spent — when the
+				// global hint is up it speaks for the whole list, so tags down
+				// every row would just be spam (global wins).
+				const showPairHint = pairSpent && !visitsSpent;
+				const isFav = favorites.has(f.id);
 				return (
 					<Pressable
 						key={f.id}
@@ -303,7 +476,7 @@ function FriendsList({
 								</Text>
 							) : (
 							<View style={styles.rowMetaLine}>
-								<Text style={styles.rowHeart}>♥</Text>
+								<Glyph name="heart" size={12} />
 								<Text style={styles.rowMeta}>
 									{(f.tickles_earned ?? 0).toLocaleString()}
 								</Text>
@@ -327,19 +500,67 @@ function FriendsList({
 								</Text>
 							)}
 						</View>
+						{/* Favorite star — pins this friend to the top. Its own
+						    Pressable (a sibling to the row's profile-door press), so
+						    tapping the star toggles the pin without opening the sheet.
+						    Sun-gold + filled when pinned; muted outline when not. */}
+						<Pressable
+							onPress={() => onToggleFavorite(f.id)}
+							hitSlop={10}
+							accessibilityRole="button"
+							accessibilityLabel={
+								isFav
+									? `Unpin ${f.username ?? "friend"} from the top`
+									: `Pin ${f.username ?? "friend"} to the top`
+							}
+							style={({ pressed }) => [
+								styles.rowFavBtn,
+								pressed && styles.rowFavBtnPressed,
+							]}
+						>
+							<Icon
+								name="star"
+								size={18}
+								filled={isFav}
+								color={isFav ? WHIMSY.ink : WHIMSY.muteSoft}
+								strokeWidth={2}
+							/>
+						</Pressable>
+						{/* Per-pair "tickled today" — you've already visited this
+						    friend's barn today (implicitly: it returns tomorrow).
+						    Short (the row is small), and suppressed when the global
+						    hint is already up. */}
+						{showPairHint && (
+							<Text
+								style={styles.rowTickledOut}
+								accessibilityLabel={`You've tickled ${f.username ?? "this friend"}'s barn today — come back tomorrow.`}
+							>
+								tickled today
+							</Text>
+						)}
 						{/* Visit their Barn — a one-tap door on the row itself so
 						    visiting never depends on opening the profile sheet
 						    first. Every row here is a friend (the server's
 						    are_friends gate always passes); the modal handles
-						    napping/resting itself. */}
+						    napping/resting itself. Disabled when the global budget
+						    is spent OR this pair is tickled out. */}
 						<Pressable
 							onPress={() => onVisit(f)}
+							disabled={rowSpent}
 							hitSlop={8}
 							accessibilityRole="button"
-							accessibilityLabel={`Visit ${f.username ?? "friend"}'s barn`}
+							accessibilityState={{ disabled: rowSpent }}
+							accessibilityLabel={
+								visitsSpent
+									? "All tickled out — your snout needs a rest"
+									: pairSpent
+										? `You've tickled ${f.username ?? "friend"}'s barn today — come back tomorrow.`
+										: `Visit ${f.username ?? "friend"}'s barn`
+							}
 							style={({ pressed }) => [
 								styles.rowVisitBtn,
-								pressed && styles.rowVisitBtnPressed,
+								rowSpent && styles.rowVisitBtnSpent,
+								pressed && !rowSpent && styles.rowVisitBtnPressed,
 							]}
 						>
 							<Icon name="tabBarn" size={18} color={WHIMSY.ink} />
@@ -572,7 +793,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 
 // ── Styles ────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-	wrap: { flex: 1, marginTop: 16, paddingHorizontal: 14 },
+	wrap: { flex: 1, marginTop: 16, paddingHorizontal: PAGE_PAD },
 	scroll: { flex: 1 },
 	scrollContent: { paddingBottom: TAB_SAFE },
 	// "Your Sounder" banner pinned above the friends list.
@@ -596,7 +817,7 @@ const styles = StyleSheet.create({
 		color: WHIMSY.accent,
 		letterSpacing: 0.4,
 	},
-	sounderName: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
+	sounderName: { ...TYPE.cardTitle, color: WHIMSY.ink },
 	sounderView: { fontFamily: FONTS.display, fontSize: 13, color: WHIMSY.ink },
 	tabsRow: {
 		flexDirection: "row",
@@ -645,7 +866,7 @@ const styles = StyleSheet.create({
 	avatarCircle: {
 		width: 40,
 		height: 40,
-		borderRadius: 20,
+		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
@@ -668,8 +889,7 @@ const styles = StyleSheet.create({
 		flexShrink: 1,
 	},
 	rowDisc: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
+		...TYPE.label,
 		color: WHIMSY.mute,
 	},
 	// PigAvatar wrapper — a small ink-bordered tile so the sprite
@@ -678,7 +898,7 @@ const styles = StyleSheet.create({
 	rowPigWrap: {
 		width: 40,
 		height: 40,
-		borderRadius: 20,
+		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.cream,
@@ -687,8 +907,7 @@ const styles = StyleSheet.create({
 		overflow: "hidden",
 	},
 	rowWearsText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
+		...TYPE.label,
 		color: WHIMSY.mute,
 		marginTop: 4,
 	},
@@ -703,11 +922,6 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: 6,
 		marginTop: 4,
-	},
-	rowHeart: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 12,
-		color: WHIMSY.roseDeep,
 	},
 	rowMeta: {
 		fontFamily: FONTS.hand,
@@ -726,12 +940,22 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		paddingLeft: 8,
 	},
+	// Favorite star — a small tap target beside the visit door. No chip chrome
+	// (the star itself IS the affordance); a light press dim matches the house
+	// pressed-feedback pattern without competing with the sun visit circle.
+	rowFavBtn: {
+		width: 30,
+		height: 30,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	rowFavBtnPressed: { opacity: 0.55 },
 	// Per-row barn door — small sun circle so "visit" reads as the row's
 	// action while the row itself stays the profile door.
 	rowVisitBtn: {
 		width: 34,
 		height: 34,
-		borderRadius: 17,
+		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.sun,
@@ -740,13 +964,41 @@ const styles = StyleSheet.create({
 		marginLeft: 8,
 	},
 	rowVisitBtnPressed: { backgroundColor: WHIMSY.cream2 },
+	// Out-of-visits: keep the button's shape (the taste standard's "a button,
+	// asleep" — mute the fill, never dissolve the outline), just muted + dimmed.
+	rowVisitBtnSpent: { backgroundColor: WHIMSY.cream2, opacity: 0.55 },
+	// Per-row "tickled out" tag — compact, muted, sits just left of the dimmed
+	// visit door so the row reads its own pairwise lock at a glance.
+	rowTickledOut: {
+		fontFamily: FONTS.hand,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		marginLeft: SPACE.xs,
+	},
+	// One-time "out of visits" hint above the list.
+	visitsSpentHint: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: SPACE.xs,
+		marginBottom: SPACE.md,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.sm,
+		backgroundColor: WHIMSY.slopBand,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.lg,
+		...SHADOW_SM,
+	},
+	visitsSpentText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.ink,
+	},
 	// Add panel — paper sticker with magnifier + input.
 	searchCard: { paddingVertical: 12, paddingHorizontal: 14 },
 	kickerSmall: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
-		letterSpacing: 1.4,
-		color: WHIMSY.mute,
+		...KICKER_PILL,
 		marginBottom: 8,
 	},
 	searchInputRow: {

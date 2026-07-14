@@ -31,6 +31,7 @@ import {
 	MODAL_BACKDROP_BG,
 	STICKER_SHADOW,
 	WHIMSY,
+	RADII,
 } from "@/constants/theme";
 
 interface Props {
@@ -78,7 +79,7 @@ export function AlignmentExplainerModal({ onDismiss, s1 = false }: Props) {
 					<Sticker
 						color="paper"
 						rotate={-1.2}
-						radius={20}
+						radius={RADII.xxl}
 						border={3}
 						style={[styles.card, STICKER_SHADOW]}
 					>

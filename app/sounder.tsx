@@ -20,7 +20,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { rpc } from "@/utils/rpc";
 import { Sticker } from "../components/ui/Sticker";
 import { EmptyState, LoadingBeat } from "../components/ui/EmptyState";
-import { FONTS, ROW_TILTS, WHIMSY } from "@/constants/theme";
+import { FONTS, PAGE_PAD, RADII, ROW_TILTS, SPACE, TYPE, WHIMSY } from "@/constants/theme";
 import { SOUNDER_VISIBLE } from "@/constants/featureFlags";
 
 interface SounderRow {
@@ -88,7 +88,7 @@ export default function SounderScreen() {
 							<Sticker
 								color="rose"
 								rotate={-1.5}
-								radius={18}
+								radius={RADII.xl}
 								border={2.5}
 								style={styles.champ}
 							>
@@ -123,7 +123,7 @@ export default function SounderScreen() {
 								key={r.user_id}
 								color={r.is_self ? "rose" : "paper"}
 								rotate={ROW_TILTS[i % ROW_TILTS.length]}
-								radius={10}
+								radius={RADII.sm}
 								style={styles.row}
 							>
 								<Text style={styles.rowRank}>#{r.rank}</Text>
@@ -154,13 +154,11 @@ export default function SounderScreen() {
 
 const styles = StyleSheet.create({
 	bg: { flex: 1, backgroundColor: WHIMSY.cream },
-	list: { padding: 18, gap: 10 },
-	champ: { paddingHorizontal: 18, paddingVertical: 16, marginBottom: 4 },
+	list: { padding: PAGE_PAD, gap: SPACE.sm },
+	champ: { paddingHorizontal: PAGE_PAD, paddingVertical: SPACE.lg, marginBottom: 4 },
 	champKicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
+		...TYPE.kickerPill,
 		color: WHIMSY.accent,
-		letterSpacing: 1.6,
 		marginBottom: 6,
 	},
 	champRow: { flexDirection: "row", alignItems: "center" },
@@ -194,7 +192,7 @@ const styles = StyleSheet.create({
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
-		paddingVertical: 10,
+		paddingVertical: SPACE.sm,
 		paddingHorizontal: 14,
 		gap: 6,
 	},

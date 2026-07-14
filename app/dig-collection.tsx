@@ -184,7 +184,6 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 	},
 	name: {
-		...TYPE.kicker,
 		fontFamily: FONTS.whimsy,
 		fontSize: 12,
 		color: WHIMSY.ink,
@@ -196,7 +195,6 @@ const styles = StyleSheet.create({
 		color: WHIMSY.muteSoft,
 	},
 	story: {
-		...TYPE.hand,
 		fontFamily: FONTS.hand,
 		fontSize: 11,
 		color: WHIMSY.mute,
@@ -204,7 +202,6 @@ const styles = StyleSheet.create({
 		marginTop: 2,
 	},
 	count: {
-		...TYPE.kicker,
 		fontFamily: FONTS.hand,
 		fontSize: 11,
 		color: WHIMSY.accent,

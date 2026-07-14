@@ -15,7 +15,7 @@
 // Active-effects state is now owned by useActiveEffects in Barn,
 // not routed through this hook.
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { log } from "@/utils/log";
@@ -54,6 +54,11 @@ export interface Stats {
 	activeFlag: EquipSlot | null;
 	currentTier: number;
 	totalTiers: number;
+	// Server-side "already saw the 6 7 egg" stamp — null until first sight.
+	// null (or missing, pre-migration) means the celebration is still armed;
+	// any timestamp suppresses it across devices. Barn AND's this with its
+	// AsyncStorage fast-path.
+	seen67At: string | null;
 }
 
 const INITIAL_STATS: Stats = {
@@ -76,6 +81,7 @@ const INITIAL_STATS: Stats = {
 	activeFlag: null,
 	currentTier: 1,
 	totalTiers: 30,
+	seen67At: null,
 };
 
 export interface UseHomeStatsOptions {
@@ -90,6 +96,12 @@ export interface UseHomeStats {
 	stats: Stats;
 	statsLoaded: boolean;
 	refresh: () => Promise<void>;
+	// Optimistic slot patch — apply a locally-known change (e.g. an equip that
+	// just succeeded server-side) to the stats immediately, before the refetch
+	// round-trips. Refresh reconciles after. Currently used by the allegiance
+	// flow so the newly-picked flag mounts on the very first paint instead of
+	// waiting for the meta blob to land.
+	applyOptimistic: (patch: Partial<Stats>) => void;
 }
 
 type SlotBlob = {
@@ -101,6 +113,17 @@ function toSlot(id: string | null, meta: SlotBlob): EquipSlot | null {
 	return id
 		? { id, category: meta?.category ?? null, emoji: meta?.emoji ?? null }
 		: null;
+}
+
+// Cross-tree nudge — the login-popup Hog Cup picker lives in _layout, far
+// from any mounted Barn's hook state, so a chosen flag there never reached
+// the Barn until an unrelated refresh. Module-level listeners let that path
+// push the same optimistic patch + refetch every mounted instance gets from
+// the Barn's own picker. (A Set, not a context: _layout renders above the
+// tab tree and must not re-render it.)
+const homeStatsListeners = new Set<(patch?: Partial<Stats>) => void>();
+export function bumpHomeStats(patch?: Partial<Stats>) {
+	homeStatsListeners.forEach((l) => l(patch));
 }
 
 export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
@@ -147,6 +170,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				cap: number;
 				next_regen_seconds: number | null;
 				regen_seconds?: number;
+				seen_67_at?: string | null;
 				current_tier: number;
 				total_tiers: number;
 			}>("home_stats");
@@ -174,6 +198,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 					activeFlag: toSlot(r.active_flag_id ?? null, r.active_flag ?? null),
 					currentTier: r.current_tier,
 					totalTiers: r.total_tiers,
+					seen67At: r.seen_67_at ?? null,
 				});
 				setStatsLoaded(true);
 				return;
@@ -189,7 +214,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				supabase
 					.from("profiles")
 					.select(
-						"counter, tickles_earned, happiness, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, alignment_score"
+						"counter, tickles_earned, happiness, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, alignment_score, seen_67_at"
 					)
 					.eq("id", user.id)
 					.single(),
@@ -220,6 +245,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				active_tickle_particle_id?: string | null;
 				active_flag_id?: string | null;
 				alignment_score?: number | null;
+				seen_67_at?: string | null;
 			} | null;
 
 			onAlignmentLoadedRef.current?.(alignmentLabel(prof?.alignment_score ?? 0));
@@ -274,6 +300,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				activeFlag: slotFromId(prof?.active_flag_id ?? null),
 				currentTier: season?.current_tier ?? 1,
 				totalTiers: season?.season?.total_tiers ?? 30,
+				seen67At: prof?.seen_67_at ?? null,
 			});
 			setStatsLoaded(true);
 		} catch (error) {
@@ -281,5 +308,24 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 		}
 	}, []);
 
-	return { stats, statsLoaded, refresh };
+	// Optimistic patch — merge a locally-known change into stats now so the UI
+	// reflects it before the refetch lands. The next refresh() overwrites the
+	// whole object, reconciling against the server.
+	const applyOptimistic = useCallback((patch: Partial<Stats>) => {
+		setStats((prev) => ({ ...prev, ...patch }));
+	}, []);
+
+	// Subscribe to cross-tree bumps (see homeStatsListeners above).
+	useEffect(() => {
+		const listener = (patch?: Partial<Stats>) => {
+			if (patch) applyOptimistic(patch);
+			void refresh();
+		};
+		homeStatsListeners.add(listener);
+		return () => {
+			homeStatsListeners.delete(listener);
+		};
+	}, [applyOptimistic, refresh]);
+
+	return { stats, statsLoaded, refresh, applyOptimistic };
 }

@@ -228,6 +228,36 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			},
 		],
 	},
+
+	// ── 1.3 — the Sounder update. Ships with build 147. ─────────────
+	{
+		version: "1.10.0",
+		date: "2026-07-14",
+		availableFrom: "2026-07-14",
+		headline: "Find your herd",
+		items: [
+			{
+				title: "A path to your Sounder",
+				body: "The season page now walks you in — taste a dig, slip into an open Sounder or found your own, and dig your first feeding with the herd.",
+			},
+			{
+				title: "Name yourself, any time",
+				body: "Tap the pencil on your scrapbook to change your name. First one's free — after that it costs snouts, so make it count.",
+			},
+			{
+				title: "Favorites up front",
+				body: "Star your favorite friends and they'll hold the top of your list. And when your snout needs a rest, the barn says so plainly — no countdown clocks.",
+			},
+			{
+				title: "Leaving leaves a mark",
+				body: "A digger who trots on keeps their finds with the crew they dug for — the ledger remembers, softly. The only thing you forfeit is Monday's spoils.",
+			},
+			{
+				title: "A hundred hats, redrawn",
+				body: "Nearly every worn thing in the closet got redrawn to sit true on Rosie — same character, better fit.",
+			},
+		],
+	},
 ];
 
 // The newest release whose availableFrom date has arrived. Future

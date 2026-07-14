@@ -24,6 +24,7 @@ import {
 	SPACE,
 	STICKER_SHADOW,
 	WHIMSY,
+	RADII,
 } from "@/constants/theme";
 
 export type SeasonInfoTopic = "story" | "spoils";
@@ -61,7 +62,7 @@ export function SeasonInfoModal({
 				<Sticker
 					color="paper"
 					rotate={-0.8}
-					radius={20}
+					radius={RADII.xxl}
 					border={3}
 					style={[styles.card, STICKER_SHADOW]}
 				>

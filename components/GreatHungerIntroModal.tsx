@@ -96,7 +96,7 @@ function TaleCard({ onDone }: { onDone: (action: "rally" | "skip") => void }) {
 			<Sticker
 				color="paper"
 				rotate={-0.8}
-				radius={20}
+				radius={RADII.xxl}
 				border={3}
 				style={[styles.card, STICKER_SHADOW]}
 			>

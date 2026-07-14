@@ -184,14 +184,13 @@ const styles = StyleSheet.create({
 		paddingHorizontal: SPACE.md,
 		paddingVertical: SPACE.xs + 2,
 	},
-	creditLevel: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.ink },
+	creditLevel: { ...TYPE.label, color: WHIMSY.ink },
 	creditNum: {
 		flex: 1,
-		fontFamily: FONTS.whimsy,
-		fontSize: 15,
+		...TYPE.numeral,
 		color: WHIMSY.ink,
 		textAlign: "right",
 	},
-	creditLabel: { fontFamily: FONTS.hand, fontSize: 11, color: WHIMSY.mute },
-	creditNext: { fontFamily: FONTS.hand, fontSize: 11, color: WHIMSY.mute },
+	creditLabel: { ...TYPE.kicker, color: WHIMSY.mute },
+	creditNext: { ...TYPE.kicker, color: WHIMSY.mute },
 });

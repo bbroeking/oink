@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { Sticker } from "./ui/Sticker";
-import { FONTS, KICKER_PILL, WHIMSY } from "@/constants/theme";
+import { FONTS, KICKER_PILL, RADII, SPACE, WHIMSY } from "@/constants/theme";
 import type { TitleRow } from "@/constants/title_types";
 
 interface RawRow {
@@ -77,7 +77,7 @@ export function TitlesSection({ userId, activeTitleId, onChange, onTitlesLoaded 
 		return (
 			<View style={styles.wrap}>
 				<Text style={styles.kicker}>★ titles</Text>
-				<Sticker color="paper" rotate={-0.4} radius={14} style={styles.empty}>
+				<Sticker color="paper" rotate={-0.4} radius={RADII.lg} style={styles.empty}>
 					<Text style={styles.emptyText}>
 						Earn titles by climbing the snout season pass.
 					</Text>
@@ -97,7 +97,11 @@ export function TitlesSection({ userId, activeTitleId, onChange, onTitlesLoaded 
 							key={t.id}
 							onPress={() => setActive(active ? null : t.id)}
 							disabled={busy}
-							style={[styles.chip, active && styles.chipActive]}
+							style={({ pressed }) => [
+								styles.chip,
+								active && styles.chipActive,
+								pressed && { opacity: 0.7 },
+							]}
 						>
 							<Text style={[styles.chipText, active && styles.chipTextActive]}>
 								{t.name}
@@ -117,7 +121,7 @@ export function TitlesSection({ userId, activeTitleId, onChange, onTitlesLoaded 
 			{activeTitleId && (
 				<Pressable
 					onPress={() => setActive(null)}
-					style={styles.unequipLink}
+					style={({ pressed }) => [styles.unequipLink, pressed && { opacity: 0.7 }]}
 					hitSlop={14}
 				>
 					<Text style={styles.unequipText}>Unequip title</Text>
@@ -128,8 +132,8 @@ export function TitlesSection({ userId, activeTitleId, onChange, onTitlesLoaded 
 }
 
 const styles = StyleSheet.create({
-	wrap: { marginTop: 16 },
-	kicker: { ...KICKER_PILL, marginBottom: 8 },
+	wrap: { marginTop: SPACE.lg },
+	kicker: { ...KICKER_PILL, marginBottom: SPACE.sm },
 	empty: {
 		paddingHorizontal: 14,
 		paddingVertical: 14,
@@ -143,12 +147,12 @@ const styles = StyleSheet.create({
 	chipsWrap: {
 		flexDirection: "row",
 		flexWrap: "wrap",
-		gap: 8,
+		gap: SPACE.sm,
 	},
 	chip: {
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: 14,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.sm,
+		borderRadius: RADII.lg,
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
@@ -177,7 +181,7 @@ const styles = StyleSheet.create({
 	},
 	unequipLink: {
 		alignSelf: "center",
-		marginTop: 10,
+		marginTop: SPACE.sm,
 	},
 	unequipText: {
 		fontFamily: FONTS.hand,

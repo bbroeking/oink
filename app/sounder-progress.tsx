@@ -16,7 +16,8 @@ import { Stack, router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Sticker } from "../components/ui/Sticker";
 import { Icon } from "../components/ui/Icon";
-import { FONTS, WHIMSY, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
+import { EmptyState } from "../components/ui/EmptyState";
+import { FONTS, KICKER_PILL, RADII, SPACE, WHIMSY, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
 import {
 	myReferralSummary,
 	REFERRAL_LADDER,
@@ -177,9 +178,11 @@ export default function SounderProgressScreen() {
 						</Sticker>
 
 						{pending.length === 0 && completed === 0 && (
-							<Text style={styles.empty}>
-								Share your code from the Me tab to start your sounder.
-							</Text>
+							<EmptyState
+								glyph="friends"
+								title="No sounder yet"
+								sub="Share your code from the Me tab to start your sounder."
+							/>
 						)}
 					</ScrollView>
 				</SafeAreaView>
@@ -193,14 +196,10 @@ const styles = StyleSheet.create({
 	statsLine: { fontSize: 13 },
 	statsStrong: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
 	statsMute: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.mute },
-	content: { paddingHorizontal: PAGE_PAD, paddingTop: 8, paddingBottom: TAB_SAFE, gap: 14 },
-	card: { padding: 16 },
+	content: { paddingHorizontal: PAGE_PAD, paddingTop: SPACE.sm, paddingBottom: TAB_SAFE, gap: 14 },
+	card: { padding: SPACE.lg },
 	cardKicker: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
-		color: WHIMSY.mute,
-		letterSpacing: 1.4,
-		textTransform: "uppercase",
+		...KICKER_PILL,
 		marginBottom: 4,
 	},
 	cardSub: {
@@ -208,9 +207,9 @@ const styles = StyleSheet.create({
 		fontSize: 13,
 		color: WHIMSY.mute,
 		lineHeight: 17,
-		marginBottom: 12,
+		marginBottom: SPACE.md,
 	},
-	friendList: { gap: 12 },
+	friendList: { gap: SPACE.md },
 	friendRow: { gap: 5 },
 	friendTop: {
 		flexDirection: "row",
@@ -249,14 +248,14 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: 11,
 		padding: 10,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.paper,
 		opacity: 0.55,
 	},
 	rungEarned: { opacity: 1, backgroundColor: WHIMSY.paper },
-	rungNext: { opacity: 1, backgroundColor: WHIMSY.cream2, borderWidth: 2.5 },
+	rungNext: { opacity: 1, backgroundColor: WHIMSY.cream2, borderWidth: 2 },
 	rungBadge: {
 		width: 30,
 		height: 30,
@@ -272,13 +271,4 @@ const styles = StyleSheet.create({
 	rungReward: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
 	rungLocked: { color: WHIMSY.mute },
 	rungMeta: { fontFamily: FONTS.hand, fontSize: 11, color: WHIMSY.mute, marginTop: 1 },
-	empty: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		marginTop: 30,
-		paddingHorizontal: 20,
-		lineHeight: 20,
-	},
 });

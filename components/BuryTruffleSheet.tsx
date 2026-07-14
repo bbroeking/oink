@@ -9,7 +9,7 @@ import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Glyph, IconText } from "./ui/Glyph";
-import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
+import { WHIMSY, SHADOW_SM, MODAL_BACKDROP_BG, RADII, SPACE, TYPE, PAGE_PAD } from "@/constants/theme";
 
 const STAKES = [10, 20, 50];
 
@@ -55,6 +55,16 @@ export function BuryTruffleSheet({ open, onClose, onBuried, onResynced }: Props)
 			onClose();
 		} else if (r.reason === "too_poor") {
 			setNote(`Need ${stake} snouts to bury this truffle.`);
+		} else if (r.reason === "reclaim_cooldown") {
+			// Host dug up their own truffle — 12h settle before the next bury
+			// (server-enforced; see 20260738400000_truffle_reclaim_cooldown).
+			const nextAt = Date.parse((r as { next_at?: string }).next_at ?? "");
+			const hours = Number.isFinite(nextAt)
+				? Math.max(1, Math.ceil((nextAt - Date.now()) / 3.6e6))
+				: 12;
+			setNote(
+				`You dug this spot up yourself — the patch needs ${hours}h to settle before another bury.`
+			);
 		} else {
 			// Transient network / SQL failure — keep the sheet open + retryable.
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
@@ -124,53 +134,53 @@ export function BuryTruffleSheet({ open, onClose, onBuried, onResynced }: Props)
 const INK = WHIMSY.ink;
 const sticker = SHADOW_SM;
 const styles = StyleSheet.create({
-	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(20,16,28,0.5)" },
-	sheetWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 14, paddingBottom: 28 },
+	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: MODAL_BACKDROP_BG },
+	sheetWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: SPACE.md + 2, paddingBottom: SPACE.xl + 4 },
 	sheet: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 22,
-		padding: 18,
-		paddingTop: 10,
+		borderRadius: RADII.xxl,
+		padding: PAGE_PAD,
+		paddingTop: SPACE.md - 2,
 		...sticker,
 	},
-	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: 12 },
-	kicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
-	titleRow: { marginBottom: 10 },
-	title: { fontFamily: FONTS.whimsy, fontSize: 24, color: INK },
+	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: SPACE.md },
+	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
+	titleRow: { marginBottom: SPACE.sm + 2 },
+	title: { ...TYPE.pageTitle, color: INK },
 
-	blurb: { fontFamily: FONTS.hand, fontSize: 15, lineHeight: 20, color: WHIMSY.mute, marginBottom: 14 },
+	blurb: { ...TYPE.body, color: WHIMSY.mute, marginBottom: SPACE.lg - 2 },
 
-	label: { fontFamily: FONTS.bodyExtra, fontSize: 12, letterSpacing: 0.6, color: WHIMSY.mute, marginBottom: 8 },
-	stakes: { flexDirection: "row", gap: 10 },
+	label: { ...TYPE.label, letterSpacing: 0.6, color: WHIMSY.mute, marginBottom: SPACE.sm },
+	stakes: { flexDirection: "row", gap: SPACE.md },
 	chip: {
 		flex: 1,
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
-		gap: 5,
-		paddingVertical: 10,
-		borderRadius: 14,
+		gap: SPACE.xs + 1,
+		paddingVertical: SPACE.sm + 2,
+		borderRadius: RADII.lg,
 		borderWidth: 2,
 		borderColor: INK,
 		backgroundColor: WHIMSY.cream,
 	},
 	chipOn: { backgroundColor: WHIMSY.sun },
-	chipText: { fontFamily: FONTS.whimsy, fontSize: 17, color: WHIMSY.mute },
+	chipText: { ...TYPE.numeral, color: WHIMSY.mute },
 	chipTextOn: { color: INK },
 
-	note: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.accent, textAlign: "center", marginTop: 12 },
+	note: { ...TYPE.hand, color: WHIMSY.accent, textAlign: "center", marginTop: SPACE.md },
 
 	buryBtn: {
-		marginTop: 18,
+		marginTop: SPACE.lg + 2,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 14,
-		paddingVertical: 13,
+		borderRadius: RADII.lg,
+		paddingVertical: SPACE.md + 1,
 		alignItems: "center",
 		...sticker,
 	},
-	buryText: { fontFamily: FONTS.whimsy, fontSize: 17, color: INK },
+	buryText: { ...TYPE.numeral, color: INK },
 });

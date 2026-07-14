@@ -16,7 +16,8 @@ import { Button } from "./ui";
 import { rpc, rpcAction } from "@/utils/rpc";
 import { showPurchaseToast } from "./PurchaseToast";
 import { HAT_IMAGES, HatRow, RARITY_COLORS } from "@/constants/hats";
-import { FONTS, MODAL_BACKDROP_BG, RARITY_BG_SOLID, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { FONTS, MODAL_BACKDROP_BG, RARITY_BG_SOLID, WHIMSY, STICKER_SHADOW, RADII } from "@/constants/theme";
+import { Icon } from "./ui/Icon";
 
 // Tickle-particle preview — loops the same burst the Barn would
 // fire on a tap (per-particle dx / rise / scale / tilt / duration
@@ -219,13 +220,13 @@ export function ItemPreviewModal({
 	return (
 		<Modal visible={!!item} animationType="fade" transparent onRequestClose={onClose}>
 			<View style={styles.backdrop}>
-				<Sticker color="paper" rotate={-0.5} radius={20} style={styles.sheet}>
+				<Sticker color="paper" rotate={-0.5} radius={RADII.xxl} style={styles.sheet}>
 					<Pressable
 						onPress={onClose}
 						style={styles.closeBtn}
 						hitSlop={12}
 					>
-						<Text style={styles.closeText}>✕</Text>
+						<Icon name="x" size={20} color={WHIMSY.ink} strokeWidth={2.4} />
 					</Pressable>
 
 					{/* Big preview. Two modes:
@@ -429,19 +430,14 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 18,
-	},
-	closeText: {
-		fontSize: 20,
-		lineHeight: 22,
-		color: WHIMSY.ink,
+		borderRadius: RADII.xl,
 	},
 	previewCard: {
 		width: "100%",
 		// Taller than wide + pig anchored to the bottom, so tall items (hats)
 		// have headroom above and don't clip at the card's top edge.
 		aspectRatio: 0.85,
-		borderRadius: 18,
+		borderRadius: RADII.xl,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		overflow: "hidden",

@@ -32,3 +32,10 @@ export const SOUNDER_VISIBLE = true; // opened with Season 1 (2026-07-11) — th
 // this to true restores both buy buttons (Account membership card + the
 // season pass PremiumLockedBanner).
 export const PURCHASES_LIVE = false;
+
+// Spotlight coach-marks (components/ui/Spotlight.tsx) — the dim-the-screen /
+// cut-a-hole onboarding nudge. Ships DARK: gated to __DEV__ while the primitive
+// and its per-step wiring bake. Flip to `true` (or a server flag) to light it for
+// everyone once the copy + targets are signed off. The first wired case is the
+// Season-tab "join a Sounder" step; see hooks/useJoinSpotlight.ts.
+export const SPOTLIGHT_ENABLED = __DEV__;

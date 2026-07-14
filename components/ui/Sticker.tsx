@@ -5,6 +5,8 @@ import { WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 type StickerColor =
 	| "paper"
 	| "cream"
+	| "cream2"
+	| "bark"
 	| "rose"
 	| "roseDeep"
 	| "sky"
@@ -27,6 +29,8 @@ interface Props {
 const COLOR_MAP: Record<StickerColor, string> = {
 	paper: WHIMSY.paper,
 	cream: WHIMSY.cream,
+	cream2: WHIMSY.cream2,
+	bark: WHIMSY.bark,
 	rose: WHIMSY.rose,
 	roseDeep: WHIMSY.roseDeep,
 	sky: WHIMSY.sky,

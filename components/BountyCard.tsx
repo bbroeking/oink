@@ -10,6 +10,7 @@ import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Icon, type IconName } from "./ui/Icon";
+import { Glyph, type GlyphName } from "./ui/Glyph";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
@@ -42,11 +43,13 @@ interface Props {
 
 // Best-effort visual per bounty type. The schema doesn't expose an
 // icon field; derive from the bounty code so each card has an
-// anchor in the icon well. Returns either an Icon name (for the
-// glyphs that have SVG equivalents) or a typographic character
-// (★ ✦ ♥ ☁ — print characters, not Unicode emojis).
+// anchor in the icon well. Returns an Icon name (SVG equivalents), a
+// hand-drawn Glyph (the semantic ♥ love-count mark routes to art per
+// the dingbat ruling), or a sanctioned typographic flourish (★ ✦ ☁ —
+// print characters, not Unicode emojis).
 type BountyVisual =
 	| { kind: "icon"; name: IconName }
+	| { kind: "glyph"; name: GlyphName }
 	| { kind: "char"; text: string };
 
 function bountyVisual(code: string): BountyVisual {
@@ -58,7 +61,7 @@ function bountyVisual(code: string): BountyVisual {
 	if (c.includes("curse") || c.includes("itch"))
 		return { kind: "char", text: "☁" };
 	if (c.includes("tickle") || c.includes("tap"))
-		return { kind: "char", text: "♥" };
+		return { kind: "glyph", name: "heart" };
 	if (c.includes("friend") || c.includes("sounder"))
 		return { kind: "icon", name: "pig" };
 	if (c.includes("shop") || c.includes("buy") || c.includes("equip"))
@@ -133,6 +136,8 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 						const v = bountyVisual(bounty.code);
 						return v.kind === "icon" ? (
 							<Icon name={v.name} size={26} color={WHIMSY.ink} filled />
+						) : v.kind === "glyph" ? (
+							<Glyph name={v.name} size={26} />
 						) : (
 							<Text style={styles.iconGlyph}>{v.text}</Text>
 						);
@@ -212,7 +217,7 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 				{/* State-aware CTA at the right */}
 				{bounty.claimed ? (
 					<View style={[styles.cta, styles.ctaClaimed]}>
-						<Text style={styles.ctaClaimedText}>✓</Text>
+						<Icon name="check" size={18} color={WHIMSY.ink} strokeWidth={2.5} />
 					</View>
 				) : ready ? (
 					<Pressable
@@ -389,7 +394,6 @@ const styles = StyleSheet.create({
 	ctaReady: { backgroundColor: WHIMSY.sun },
 	ctaReadyText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.ink },
 	ctaClaimed: { backgroundColor: WHIMSY.sage, shadowOpacity: 0, elevation: 0 },
-	ctaClaimedText: { fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.ink },
 	ctaProgress: {
 		backgroundColor: "transparent",
 		borderColor: WHIMSY.muteSoft,

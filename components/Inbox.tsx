@@ -22,10 +22,12 @@ import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { ActiveEffects } from "./ActiveEffects";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { FONTS, WHIMSY, STICKER_SHADOW, SHADOW_SM, RADII, TAB_SAFE, SPACE } from "@/constants/theme";
 import type { TradeRow } from "@/constants/trade_types";
 import { SectionHeader } from "./ui/SectionHeader";
 import { Sticker } from "./ui/Sticker";
+import { Icon } from "./ui/Icon";
+import { Glyph } from "./ui/Glyph";
 import { EmptyState, LoadingBeat } from "./ui/EmptyState";
 import { FRIEND_CAP_LIMIT } from "@/utils/friendships";
 
@@ -566,7 +568,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 							<Pressable
 								onPress={() => acceptFriend(r)}
 								disabled={busy === r.requester_id}
-								style={styles.primaryBtn}
+								style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.7 }]}
 							>
 								<Text style={styles.primaryBtnText}>
 									{busy === r.requester_id ? "…" : "Accept"}
@@ -576,9 +578,9 @@ export function Inbox({ userId, onActionableCount }: Props) {
 								onPress={() => declineFriend(r)}
 								disabled={busy === r.requester_id}
 								hitSlop={6}
-								style={styles.declineGhost}
+								style={({ pressed }) => [styles.declineGhost, pressed && { opacity: 0.7 }]}
 							>
-								<Text style={styles.declineGhostText}>✕</Text>
+								<Icon name="x" size={14} color={WHIMSY.mute} strokeWidth={2} />
 							</Pressable>
 						</View>
 					))}
@@ -699,16 +701,17 @@ export function Inbox({ userId, onActionableCount }: Props) {
 											: p.kind === "blessed"
 												? styles.passiveBubbleBlessed
 												: styles.passiveBubbleCursed;
+							// ♥ is semantic (love-count) → the heart Glyph. ★ ✦ ☁ +
+							// are decorative print glyphs and stay as Text (dingbat
+							// ruling 2026-07-13).
 							const glyph =
-								p.kind === "answered"
-									? "♥"
-									: p.kind === "gifted"
-										? "★"
-										: p.kind === "friended"
-											? "+"
-											: p.kind === "blessed"
-												? "✦"
-												: "☁";
+								p.kind === "gifted"
+									? "★"
+									: p.kind === "friended"
+										? "+"
+										: p.kind === "blessed"
+											? "✦"
+											: "☁";
 							const glyphStyle =
 								p.kind === "cursed"
 									? styles.passiveBubbleGlyphInverted
@@ -722,7 +725,11 @@ export function Inbox({ userId, onActionableCount }: Props) {
 									]}
 								>
 									<View style={[styles.passiveBubble, bubbleStyle]}>
-										<Text style={glyphStyle}>{glyph}</Text>
+										{p.kind === "answered" ? (
+											<Glyph name="heart" size={16} />
+										) : (
+											<Text style={glyphStyle}>{glyph}</Text>
+										)}
 									</View>
 									<Text style={styles.passiveText}>{p.text}</Text>
 									{!!relTime(p.at) && (
@@ -753,7 +760,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 
 const styles = StyleSheet.create({
 	scroll: { flex: 1 },
-	content: { paddingHorizontal: 14, paddingBottom: 110 },
+	content: { paddingHorizontal: 14, paddingBottom: TAB_SAFE + SPACE.xl },
 	center: { flex: 1, alignItems: "center", justifyContent: "center" },
 	feedback: {
 		fontFamily: FONTS.hand,
@@ -761,14 +768,6 @@ const styles = StyleSheet.create({
 		color: WHIMSY.accent,
 		textAlign: "center",
 		paddingVertical: 8,
-	},
-	emptyText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		lineHeight: 21,
-		paddingVertical: 28,
 	},
 	// Wrap SectionHeaders so they get the same vertical breathing room
 	// the old band labels did.
@@ -785,11 +784,6 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.muteSoft,
 		alignItems: "center",
 		justifyContent: "center",
-	},
-	declineGhostText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 14,
-		color: WHIMSY.mute,
 	},
 	// Wraps Out-to-market + Recent rows in a single flat sticker.
 	// Padding 0 inside (rows manage their own horizontal padding) so
@@ -891,11 +885,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 14,
 		paddingVertical: 12,
 		marginBottom: 8,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 3, height: 3 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 3,
+		...STICKER_SHADOW,
 	},
 	penHeader: {
 		flexDirection: "row",
@@ -911,17 +901,13 @@ const styles = StyleSheet.create({
 		flex: 1,
 		paddingVertical: 9,
 		alignItems: "center",
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 	},
 	penBtnPrimary: {
 		backgroundColor: WHIMSY.lilacDeep,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 2, height: 2 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
+		...SHADOW_SM,
 	},
 	penBtnPrimaryText: {
 		fontFamily: FONTS.bodyExtra,

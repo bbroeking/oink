@@ -24,7 +24,7 @@ import {
 import { AppleAuth } from "./AppleAuth";
 import { Sticker } from "./ui/Sticker";
 import { supabase } from "../utils/supabase";
-import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW, PAGE_PAD } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW, PAGE_PAD, RADII } from "@/constants/theme";
 
 export default function SupaAuth() {
 	const [showEmail, setShowEmail] = useState(false);
@@ -92,7 +92,7 @@ export default function SupaAuth() {
 						<Sticker
 							color="paper"
 							rotate={-0.8}
-							radius={20}
+							radius={RADII.xxl}
 							style={[styles.card, STICKER_SHADOW]}
 						>
 							<AppleAuth />

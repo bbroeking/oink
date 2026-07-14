@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		gap: SPACE.xs + 1,
 		backgroundColor: WHIMSY.paper,
-		borderWidth: 2.5,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		borderRadius: RADII.lg,
 		paddingTop: SPACE.md,

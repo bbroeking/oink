@@ -28,7 +28,17 @@ import {
 	EXCHANGE_TIER_LABEL,
 } from "@/constants/dig";
 import { restockWhisper } from "@/utils/truffleExchange";
-import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
+import {
+	WHIMSY,
+	FONTS,
+	SHADOW_SM,
+	MODAL_BACKDROP_BG,
+	RADII,
+	SPACE,
+	TYPE,
+	PAGE_PAD,
+	RARITY_BG_SOLID,
+} from "@/constants/theme";
 import { useTruffles } from "@/hooks/useTruffles";
 
 // Batch-7 dressing slots (docs/great-hunger-art-manifest.md → exchange/).
@@ -110,6 +120,7 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 							<View style={styles.shelf}>
 								{truffles.items.map((item) => {
 									const rarityColor = RARITY_COLORS[item.rarity as Rarity] ?? WHIMSY.muteSoft;
+									const thumbFill = RARITY_BG_SOLID[item.rarity] ?? WHIMSY.cream;
 									const tier = RARITY_TO_TIER[item.rarity] ?? "muddy";
 									const img = HAT_IMAGES[item.id];
 									const isConfirming = confirming === item.id;
@@ -122,7 +133,7 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 											<Text style={[styles.tierTag, { color: rarityColor }]}>
 												{EXCHANGE_TIER_LABEL[tier]}
 											</Text>
-											<View style={[styles.thumbWrap, { backgroundColor: rarityColor + "22" }]}>
+											<View style={[styles.thumbWrap, { backgroundColor: thumbFill }]}>
 												{img ? <Image source={img} style={styles.thumb} resizeMode="contain" /> : null}
 											</View>
 											<Text style={styles.name} numberOfLines={1}>
@@ -137,7 +148,11 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 												<Pressable
 													disabled={busy}
 													onPress={() => onRedeem(item.id, item.price)}
-													style={[styles.buyBtn, styles.confirmBtn]}
+													style={({ pressed }) => [
+														styles.buyBtn,
+														styles.confirmBtn,
+														pressed && { opacity: 0.85 },
+													]}
 												>
 													<Text style={styles.buyText}>
 														{busy ? "Trading…" : `Trade ${item.price}?`}
@@ -150,7 +165,11 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 														setNote(null);
 														setConfirming(item.id);
 													}}
-													style={[styles.buyBtn, !canAfford && styles.buyBtnOff]}
+													style={({ pressed }) => [
+														styles.buyBtn,
+														!canAfford && styles.buyBtnOff,
+														pressed && { opacity: 0.85 },
+													]}
 												>
 													{HAT_IMAGES.golden_truffle ? (
 														<Image
@@ -174,7 +193,10 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 					{note ? <Text style={styles.note}>{note}</Text> : null}
 					<Text style={styles.footnote}>Earned at the feedings, never bought.</Text>
 
-					<Pressable onPress={onClose} style={styles.doneBtn}>
+					<Pressable
+						onPress={onClose}
+						style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.85 }]}
+					>
 						<Text style={styles.doneText}>Done</Text>
 					</Pressable>
 				</View>
@@ -185,98 +207,98 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 
 const INK = WHIMSY.ink;
 const styles = StyleSheet.create({
-	backdrop: { flex: 1, backgroundColor: "rgba(20,16,28,0.5)", justifyContent: "flex-end", padding: 14, paddingBottom: 28 },
+	backdrop: { flex: 1, backgroundColor: MODAL_BACKDROP_BG, justifyContent: "flex-end", padding: SPACE.md + 2, paddingBottom: SPACE.xl + 4 },
 	sheet: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 22,
-		padding: 18,
-		paddingTop: 10,
+		borderRadius: RADII.xxl,
+		padding: PAGE_PAD,
+		paddingTop: SPACE.md - 2,
 		...SHADOW_SM,
 	},
-	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: 12 },
-	kicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
-	title: { fontFamily: FONTS.whimsy, fontSize: 24, color: INK },
+	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: SPACE.md },
+	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
+	title: { ...TYPE.pageTitle, color: INK },
 
-	pouchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10, marginBottom: 12 },
+	pouchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: SPACE.sm + 2, marginBottom: SPACE.md },
 	pouchChip: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 6,
+		gap: SPACE.xs + 2,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 14,
-		paddingHorizontal: 12,
-		paddingVertical: 5,
+		borderRadius: RADII.lg,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.xs + 1,
 		...SHADOW_SM,
 	},
 	pouchImg: { width: 22, height: 22 },
-	pouchCount: { fontFamily: FONTS.whimsy, fontSize: 16, color: INK },
-	restock: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.mute },
+	pouchCount: { ...TYPE.numeral, color: INK },
+	restock: { ...TYPE.kicker, color: WHIMSY.mute },
 
 	closed: {
 		backgroundColor: WHIMSY.cream2,
 		borderWidth: 1.5,
 		borderColor: INK,
-		borderRadius: 14,
-		padding: 16,
-		marginBottom: 6,
+		borderRadius: RADII.lg,
+		padding: SPACE.lg,
+		marginBottom: SPACE.xs + 2,
 		transform: [{ rotate: "-0.6deg" }],
 	},
-	closedTitle: { fontFamily: FONTS.whimsy, fontSize: 17, color: INK },
-	closedSub: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute, marginTop: 4, lineHeight: 20 },
+	closedTitle: { ...TYPE.cardTitle, color: INK },
+	closedSub: { ...TYPE.hand, color: WHIMSY.mute, marginTop: SPACE.xs },
 
-	shelf: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between" },
+	shelf: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.md, justifyContent: "space-between" },
 	card: {
 		width: "48%",
 		borderWidth: 2,
-		borderRadius: 14,
+		borderRadius: RADII.lg,
 		backgroundColor: WHIMSY.cream,
-		padding: 8,
-		paddingBottom: 10,
+		padding: SPACE.sm,
+		paddingBottom: SPACE.sm + 2,
 		alignItems: "center",
 	},
 	cardOwned: { opacity: 0.75 },
-	tierTag: { fontFamily: FONTS.bodyExtra, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", alignSelf: "flex-start" },
-	thumbWrap: { width: "100%", aspectRatio: 1.35, alignItems: "center", justifyContent: "center", borderRadius: 8, marginTop: 4 },
+	tierTag: { ...TYPE.kickerPill, letterSpacing: 1.2, alignSelf: "flex-start" },
+	thumbWrap: { width: "100%", aspectRatio: 1.35, alignItems: "center", justifyContent: "center", borderRadius: RADII.sm, marginTop: SPACE.xs },
 	thumb: { width: "70%", height: "82%" },
-	name: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: INK, marginTop: 6, textAlign: "center" },
+	name: { ...TYPE.label, letterSpacing: 0.2, color: INK, marginTop: SPACE.xs + 2, textAlign: "center" },
 
-	ownedBadge: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
-	ownedText: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
+	ownedBadge: { flexDirection: "row", alignItems: "center", gap: SPACE.xs, marginTop: SPACE.xs + 2 },
+	ownedText: { ...TYPE.label, fontFamily: FONTS.hand, letterSpacing: 0, color: WHIMSY.mute },
 
 	buyBtn: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 5,
-		marginTop: 6,
+		gap: SPACE.xs + 1,
+		marginTop: SPACE.xs + 2,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 1.5,
 		borderColor: INK,
-		borderRadius: 10,
-		paddingHorizontal: 12,
-		paddingVertical: 4,
+		borderRadius: RADII.md,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.xs,
 	},
 	buyBtnOff: { backgroundColor: WHIMSY.cream2, opacity: 0.7 },
 	confirmBtn: { backgroundColor: WHIMSY.roseDeep },
 	priceImg: { width: 16, height: 16 },
-	buyText: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
+	buyText: { ...TYPE.numeral, fontSize: 14, color: INK },
 	buyTextOff: { color: WHIMSY.mute },
 
-	note: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.accent, textAlign: "center", marginTop: 10 },
-	footnote: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.muteSoft, textAlign: "center", marginTop: 8 },
+	note: { ...TYPE.kicker, color: WHIMSY.accent, textAlign: "center", marginTop: SPACE.sm + 2 },
+	footnote: { ...TYPE.label, fontFamily: FONTS.hand, letterSpacing: 0, color: WHIMSY.muteSoft, textAlign: "center", marginTop: SPACE.sm },
 
 	doneBtn: {
-		marginTop: 12,
+		marginTop: SPACE.md,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 14,
-		paddingVertical: 12,
+		borderRadius: RADII.lg,
+		paddingVertical: SPACE.md,
 		alignItems: "center",
 		...SHADOW_SM,
 	},
-	doneText: { fontFamily: FONTS.whimsy, fontSize: 16, color: INK },
+	doneText: { ...TYPE.numeral, color: INK },
 });

@@ -14,7 +14,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { SnoutCoin } from "./ui/SnoutCoin";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { Icon } from "./ui/Icon";
+import { COLORS, FONTS, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 
 export interface PurchaseToastOpts {
 	type: "success" | "fail";
@@ -102,10 +103,14 @@ export function PurchaseToastHost() {
 				<View
 					style={[
 						styles.iconCircle,
-						{ backgroundColor: isSuccess ? "#5a8338" : WHIMSY.accent },
+						{ backgroundColor: isSuccess ? COLORS.successText : WHIMSY.accent },
 					]}
 				>
-					<Text style={styles.iconGlyph}>{isSuccess ? "✓" : "!"}</Text>
+					{isSuccess ? (
+						<Icon name="check" size={16} color={WHIMSY.paper} strokeWidth={2.6} />
+					) : (
+						<Text style={styles.iconGlyph}>!</Text>
+					)}
 				</View>
 				<View style={{ flex: 1, minWidth: 0 }}>
 					<Text style={styles.title} numberOfLines={1}>
@@ -147,11 +152,7 @@ const styles = StyleSheet.create({
 		borderRadius: 14,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 3, height: 3 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 4,
+		...STICKER_SHADOW,
 	},
 	iconCircle: {
 		width: 32,

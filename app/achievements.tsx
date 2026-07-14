@@ -34,6 +34,7 @@ import { EmptyState, LoadingBeat } from "../components/ui/EmptyState";
 import { SnoutCoin } from "../components/ui/SnoutCoin";
 import { HAT_IMAGES } from "@/constants/hats";
 import { achievementIcon } from "@/constants/emojiArt";
+import { Icon } from "../components/ui/Icon";
 import {
 	FONTS,
 	WHIMSY,
@@ -181,7 +182,11 @@ export default function AchievementsScreen() {
 								<Pressable
 									key={c.key}
 									onPress={() => setFilter(c.key)}
-									style={[styles.chip, active && styles.chipActive]}
+									style={({ pressed }) => [
+										styles.chip,
+										active && styles.chipActive,
+										pressed && { opacity: 0.7 },
+									]}
 								>
 									<Text
 										style={[
@@ -351,7 +356,7 @@ function AchievementCard({
 			    acknowledgment that this one's been wrapped up. */}
 			{row.claimed && row.viewed_at && (
 				<View style={styles.doneTick}>
-					<Text style={styles.doneTickText}>✓</Text>
+					<Icon name="check" size={14} color={WHIMSY.mute} strokeWidth={2.4} />
 				</View>
 			)}
 		</View>
@@ -386,8 +391,8 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		paddingHorizontal: 14,
-		paddingVertical: 7,
-		borderRadius: 999,
+		paddingVertical: SPACE.sm,
+		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
@@ -411,7 +416,7 @@ const styles = StyleSheet.create({
 	},
 	chipBadgeText: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		color: WHIMSY.paper,
 	},
 	grid: { padding: PAGE_PAD, gap: SPACE.md, paddingBottom: TAB_SAFE },
@@ -482,7 +487,7 @@ const styles = StyleSheet.create({
 	},
 	categoryTag: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		letterSpacing: 1,
 		color: WHIMSY.mute,
 	},
@@ -497,7 +502,7 @@ const styles = StyleSheet.create({
 		height: 12,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.cream2,
 		overflow: "hidden",
 		marginTop: SPACE.xs,
@@ -543,7 +548,7 @@ const styles = StyleSheet.create({
 	claimBtn: {
 		paddingHorizontal: 18,
 		paddingVertical: 9,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.sun,
@@ -559,10 +564,5 @@ const styles = StyleSheet.create({
 		bottom: 8,
 		right: 10,
 		opacity: 0.5,
-	},
-	doneTickText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 14,
-		color: WHIMSY.mute,
 	},
 });

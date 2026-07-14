@@ -489,8 +489,8 @@ describe("parseRaceCrewDetail — the per-crew member ledger", () => {
 			crew_id: "c1",
 			name: "Alpha",
 			members: [
-				{ user_id: "u1", username: "Rosie", finds: 12, season_finds: 40 },
-				{ user_id: "u2", username: "Pib", finds: 5, season_finds: 22 },
+				{ user_id: "u1", username: "Rosie", departed: false, finds: 12, season_finds: 40 },
+				{ user_id: "u2", username: "Pib", departed: false, finds: 5, season_finds: 22 },
 			],
 		});
 	});
@@ -515,6 +515,7 @@ describe("parseRaceCrewDetail — the per-crew member ledger", () => {
 		expect(d?.members[0]).toEqual({
 			user_id: "u1",
 			username: "a pig",
+			departed: false,
 			finds: 0,
 			season_finds: 0,
 		});

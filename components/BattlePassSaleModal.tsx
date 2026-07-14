@@ -1,3 +1,10 @@
+// DORMANT (2026-07-13). The standalone paid Season-Pass upsell. Its wiring in
+// season.tsx (handleBuySeasonPass + the sale-modal render) was removed because it
+// was unreachable — the premium track now unlocks via Slop Club membership
+// (season.tsx's handleUnlockPremium → the Slop Club paywall), not a separate
+// one-off pass purchase. This component is intentionally KEPT, unmounted, pending
+// the paid-pass decision: if a standalone pass ever ships, re-wire it here rather
+// than rebuilding the modal. No live caller today.
 import React from "react";
 import {
 	Modal,
@@ -9,7 +16,9 @@ import {
 	Linking,
 } from "react-native";
 import { Sticker, Tape } from "./ui/Sticker";
-import { FONTS, KICKER_TEXT, MODAL_BACKDROP_BG, WHIMSY } from "@/constants/theme";
+import { Button } from "./ui/Button";
+import { Icon } from "./ui/Icon";
+import { FONTS, KICKER_TEXT, MODAL_BACKDROP_BG, WHIMSY, RADII } from "@/constants/theme";
 import { restorePurchases } from "../utils/iap";
 
 interface Props {
@@ -66,13 +75,13 @@ export function BattlePassSaleModal({
 						height={20}
 						style={styles.tapeTop}
 					/>
-					<Sticker color="paper" rotate={-0.6} radius={20} style={styles.sheet}>
+					<Sticker color="paper" rotate={-0.6} radius={RADII.xxl} style={styles.sheet}>
 						<Pressable
 							onPress={onClose}
 							style={styles.closeBtn}
 							accessibilityLabel="Close"
 						>
-							<Text style={styles.closeText}>✕</Text>
+							<Icon name="x" size={22} color={WHIMSY.ink} strokeWidth={2.4} />
 						</Pressable>
 
 						<ScrollView
@@ -86,7 +95,7 @@ export function BattlePassSaleModal({
 								Pass opens 30 extra rewards along the way.
 							</Text>
 
-							<Sticker color="rose" rotate={-1.2} radius={16} style={styles.tierCard}>
+							<Sticker color="rose" rotate={-1.2} radius={RADII.lg} style={styles.tierCard}>
 								<View style={styles.tierTop}>
 									<View style={{ flex: 1 }}>
 										<Text style={styles.tierName}>Season Pass</Text>
@@ -104,15 +113,16 @@ export function BattlePassSaleModal({
 										</View>
 									))}
 								</View>
-								<Pressable
+								<Button
+									variant="gold"
+									size="md"
+									full
 									disabled={busy}
 									onPress={onUnlock}
-									style={[styles.buyBtn, busy && { opacity: 0.6 }]}
+									style={{ marginTop: 12 }}
 								>
-									<Text style={styles.buyBtnText}>
-										Unlock the Season Pass · {price}
-									</Text>
-								</Pressable>
+									Unlock the Season Pass · {price}
+								</Button>
 							</Sticker>
 
 							<View style={styles.footer}>
@@ -164,7 +174,6 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		zIndex: 3,
 	},
-	closeText: { fontSize: 22, color: WHIMSY.ink },
 	body: { padding: 18, paddingTop: 22 },
 	kicker: { ...KICKER_TEXT, marginBottom: 4 },
 	title: {
@@ -211,16 +220,6 @@ const styles = StyleSheet.create({
 		lineHeight: 18,
 		flex: 1,
 	},
-	buyBtn: {
-		marginTop: 12,
-		paddingVertical: 11,
-		borderRadius: 14,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
-		alignItems: "center",
-	},
-	buyBtnText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	footer: { alignItems: "center", marginTop: 8, gap: 6 },
 	restoreLink: {
 		fontFamily: FONTS.hand,

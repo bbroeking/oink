@@ -31,6 +31,7 @@ import {
 	MODAL_BACKDROP_BG,
 	STICKER_SHADOW,
 	WHIMSY,
+	RADII,
 } from "@/constants/theme";
 
 export interface UnlockedAchievement {
@@ -149,7 +150,7 @@ export function AchievementUnlockModal({ achievement, visible, onDismiss }: Prop
 						{ opacity: cardOpacity, transform: [{ scale: cardScale }] },
 					]}
 				>
-					<Sticker color="sun" rotate={-1.4} radius={20} style={styles.sticker}>
+					<Sticker color="sun" rotate={-1.4} radius={RADII.xxl} style={styles.sticker}>
 						<Text style={styles.kicker}>★ achievement unlocked ★</Text>
 
 						<View style={styles.iconBubble}>

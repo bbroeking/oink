@@ -89,8 +89,12 @@ export function AllegianceModal({ visible, onSkip, onChosen, currentFlagId }: Pr
 						</View>
 					) : (
 						<>
-							<Pressable onPress={onSkip} style={styles.closeBtn} hitSlop={12}>
-								<Text style={styles.closeText}>✕</Text>
+							<Pressable
+								onPress={onSkip}
+								style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
+								hitSlop={12}
+							>
+								<Icon name="x" size={20} color={WHIMSY.ink} strokeWidth={2.5} />
 							</Pressable>
 
 							<Text style={styles.kicker}>the hog cup</Text>
@@ -192,7 +196,6 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		zIndex: 30,
 	},
-	closeText: { fontSize: 22, color: WHIMSY.ink },
 	kicker: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 11,
@@ -255,5 +258,4 @@ const styles = StyleSheet.create({
 		textDecorationLine: "underline",
 	},
 	doneWrap: { alignItems: "center", gap: 10, paddingVertical: 8 },
-	doneEmoji: { fontSize: 52 },
 });

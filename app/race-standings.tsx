@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
 	rowScoreNum: { fontFamily: FONTS.whimsy, fontSize: 22, color: WHIMSY.ink },
 	rowScoreCap: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 9,
+		fontSize: 11,
 		letterSpacing: 0.8,
 		textTransform: "uppercase",
 		color: WHIMSY.mute,

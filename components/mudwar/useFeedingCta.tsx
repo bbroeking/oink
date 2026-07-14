@@ -20,7 +20,14 @@ import {
 	phaseClosesCountdown,
 } from "@/utils/rooting";
 import { TrufflePatch } from "./TrufflePatch";
-import { FONTS, WHIMSY, SPACE, MODAL_BACKDROP_BG } from "@/constants/theme";
+import {
+	FONTS,
+	WHIMSY,
+	SPACE,
+	RADII,
+	SHADOW_SM,
+	MODAL_BACKDROP_BG,
+} from "@/constants/theme";
 
 export interface FeedingCta {
 	/** True once the caller has rooted this feeding window. */
@@ -39,8 +46,13 @@ export interface FeedingCta {
 	note: string | null;
 	/** Open the Truffle Patch dig for this feeding. */
 	start: () => Promise<void>;
-	/** DEV-ONLY: open a practice dig any time (fresh board each open, mints
-	 *  nothing, ignores the phase gate). Undefined in release builds. */
+	/**
+	 * Open a PRACTICE dig — a fresh board that mints nothing (the onboarding
+	 * "taste"). Crewless players use this to try the dig before joining; the
+	 * season-tab onboarding card calls it directly. Ignores the phase gate.
+	 */
+	openPractice: () => void;
+	/** DEV-ONLY alias of openPractice for testing outside onboarding. */
 	startPractice?: () => void;
 	/** The dig modal — render it once beside whatever trigger you show. */
 	modal: ReactNode;
@@ -74,7 +86,7 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 				r.reason === "already_rooted"
 					? "You rooted this feeding — he gorges again soon."
 					: r.reason === "no_crew"
-					? "Join a Sounder to dig at the feeding."
+					? "join a Sounder to dig for keeps — or try a practice dig first."
 					: r.reason === "patch_closed"
 					? `He's guarding the patch — it opens in ${nextOpenCountdown()}.`
 					: "The patch is being stubborn — try again."
@@ -90,8 +102,17 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 				<View style={styles.modalBody}>
 					{/* Leave without submitting — the session keeps its seed
 					    server-side, so coming back this feeding resumes the
-					    same board. */}
-					<Pressable onPress={clear} style={styles.dismissRow} hitSlop={8}>
+					    same board. Rendered as a paper sticker-chip (not bare
+					    underlined text) so the safe-to-leave affordance is
+					    unmissable; the explainer says the board is kept. */}
+					<Pressable
+						onPress={clear}
+						style={({ pressed }) => [
+							styles.dismissChip,
+							pressed && { opacity: 0.7 },
+						]}
+						hitSlop={8}
+					>
 						<Text style={styles.dismissText}>leave it for now ›</Text>
 					</Pressable>
 					{session && (
@@ -103,6 +124,7 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 								return r.ok ? r.outcome : null;
 							}}
 							onClose={clear}
+							phaseOpen={clock.phaseOpen}
 						/>
 					)}
 				</View>
@@ -117,6 +139,11 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 		countdown,
 		note,
 		start,
+		// The onboarding "taste": crewless players can practice-dig before joining.
+		openPractice: () => {
+			Haptics.selectionAsync().catch(() => {});
+			openPractice();
+		},
 		// Dev escape hatch for testing the dig outside the 4h open band.
 		startPractice: __DEV__ ? () => openPractice() : undefined,
 		modal,
@@ -131,11 +158,22 @@ const styles = StyleSheet.create({
 		padding: SPACE.lg,
 	},
 	modalBody: { width: "100%" },
-	dismissRow: { alignSelf: "flex-end", marginBottom: SPACE.xs, paddingHorizontal: 4 },
+	// A paper sticker-chip in the same corner — ink border + hard offset shadow,
+	// so "you can safely leave" reads as a real, tappable control.
+	dismissChip: {
+		alignSelf: "flex-end",
+		marginBottom: SPACE.sm,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.sm,
+		paddingHorizontal: SPACE.sm,
+		paddingVertical: 4,
+		...SHADOW_SM,
+	},
 	dismissText: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
-		color: WHIMSY.paper,
-		textDecorationLine: "underline",
+		color: WHIMSY.ink,
 	},
 });

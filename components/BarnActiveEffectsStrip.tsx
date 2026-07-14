@@ -32,10 +32,11 @@ export function BarnActiveEffectsStrip() {
 					<Pressable
 						key={`${e.source}-${e.kind}-${i}`}
 						onPress={() => setSheetOpen(true)}
-						style={[
+						style={({ pressed }) => [
 							styles.chip,
 							blessed ? styles.chipBless : styles.chipCurse,
 							{ transform: [{ rotate: i % 2 === 0 ? "-0.8deg" : "0.8deg" }] },
+							pressed && { opacity: 0.7 },
 						]}
 					>
 						<RitualIconWell
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
 	},
 	meta: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		color: WHIMSY.ink,
 		flex: 1,
 	},

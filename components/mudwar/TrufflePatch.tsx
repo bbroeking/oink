@@ -33,6 +33,8 @@ import {
 	Pressable,
 	Animated,
 	PanResponder,
+	Modal,
+	ScrollView,
 	type DimensionValue,
 } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -60,12 +62,18 @@ import {
 	Find,
 } from "@/utils/rooting";
 import { preload, play, startAmbience, stopAmbience } from "@/utils/sound";
+import {
+	scheduleOpenReminder,
+	type OpenReminderResult,
+} from "@/utils/pushNotifications";
+import { nextOpenCountdown } from "@/utils/rooting";
 import { RootingOutcome, RootingSession } from "@/hooks/useRooting";
 import { ReclaimSlam, ReclaimSlamHandle } from "./ReclaimSlam";
 import { HAT_IMAGES } from "@/constants/hats";
 import { UNIQUE_BY_ID, UNIQUE_IMAGES } from "@/constants/uniques";
 import { router } from "expo-router";
 import { Glyph } from "@/components/ui/Glyph";
+import { Icon } from "@/components/ui/Icon";
 import {
 	FONTS,
 	WHIMSY,
@@ -74,6 +82,7 @@ import {
 	TYPE,
 	STICKER_SHADOW,
 	SHADOW_SM,
+	MODAL_BACKDROP_BG,
 } from "@/constants/theme";
 
 // ── Art slots ────────────────────────────────────────────────────────────────
@@ -124,6 +133,11 @@ const CRACK_SPECS: CrackSpec[][] = Array.from({ length: TOTAL }, (_, i) => {
 // content width, hit-test inset, overlay offsets) and styles.board.borderWidth
 // read the SAME const so they can never drift and re-introduce the wrap bug.
 const BOARD_BORDER = 2;
+
+// The explainer's two-phase-teardown beat — the native Modal drops `visible`
+// then stays mounted this long so its fade-out finishes before unmount (same
+// contract as PopupQueue's POPUP_TEARDOWN_MS).
+const HELP_TEARDOWN_MS = 260;
 
 // Warm, named list for the echo callouts ("Jen", "Jen and Marco", "Jen, Marco
 // and 2 more") — the Connect payoff is felt through actual crewmate names.
@@ -184,6 +198,11 @@ interface Props {
 		missed: ClaimableFind[]
 	) => Promise<RootingOutcome | null>;
 	onClose: () => void;
+	// Whether the feeding window is currently OPEN — drives the real-dig
+	// end-card's "oink me when it opens" notify chip (only offered when the
+	// next dig is a wait, i.e. the window is guarded/closed). Practice digs
+	// never show it. Defaults to true (a dev/practice open has no phase gate).
+	phaseOpen?: boolean;
 }
 
 interface EndState {
@@ -192,7 +211,7 @@ interface EndState {
 	finds: Find[];
 }
 
-export function TrufflePatch({ session, onSubmit, onClose }: Props) {
+export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: Props) {
 	const board = useMemo(
 		() => generateBoard(session.seed, session.uniqueId),
 		[session.seed, session.uniqueId]
@@ -240,6 +259,12 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 	} | null>(null);
 	const [end, setEnd] = useState<EndState | null>(null);
 	const [submitting, setSubmitting] = useState(false);
+	// The "how the dig works" explainer. Two-phase teardown: `helpOpen` is the
+	// native Modal's visible flag, `helpMounted` is the mount gate — on close we
+	// drop visible first, then unmount a teardown beat later so the native
+	// dismissal animation runs before the tree unmounts (the wedge-class contract).
+	const [helpOpen, setHelpOpen] = useState(false);
+	const [helpMounted, setHelpMounted] = useState(false);
 
 	const layersRef = useRef(layers);
 	const stirRef = useRef(0);
@@ -459,9 +484,9 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 				collectedRef.current.has("truffle_l") &&
 				collectedRef.current.has("truffle_d");
 			if (bothTruffles) {
-				finish("Clean and quiet — he never noticed.");
+				finish("clean and quiet — the Hungerer never noticed.");
 			} else if (stirRef.current >= stirBudget) {
-				finish("He stirred — you trotted off with your armful.");
+				finish("the Hungerer stirred — you trotted off with everything you'd gathered.");
 			}
 		},
 		[board, collect, finish, stirBudget]
@@ -682,15 +707,42 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 		(f) => f === "truffle_l" || f === "truffle_d"
 	).length;
 
+	// Explainer open/close — mount then show; on close drop visible and unmount a
+	// teardown beat later (matches the app's two-phase dialog teardown so the
+	// native Modal never unmounts mid-dismissal).
+	const openHelp = useCallback(() => {
+		Haptics.selectionAsync().catch(() => {});
+		setHelpMounted(true);
+		setHelpOpen(true);
+	}, []);
+	const closeHelp = useCallback(() => {
+		setHelpOpen(false);
+		setTimeout(() => setHelpMounted(false), HELP_TEARDOWN_MS);
+	}, []);
+
 	return (
 		<View style={styles.wrap}>
 			{/* Header */}
-			<Text style={styles.kicker}>THE TRUFFLE PATCH</Text>
-			<Text style={styles.title}>He's gorging — dig quick, dig quiet.</Text>
+			<View style={styles.headerRow}>
+				<View style={styles.headerText}>
+					<Text style={styles.kicker}>THE TRUFFLE PATCH</Text>
+					<Text style={styles.title}>
+						the Hungerer's gorging — dig quick, dig quiet.
+					</Text>
+				</View>
+				<Pressable
+					onPress={openHelp}
+					hitSlop={10}
+					style={styles.helpBtn}
+					accessibilityLabel="how the dig works"
+				>
+					<Icon name="scroll" size={20} color={WHIMSY.ink} />
+				</Pressable>
+			</View>
 			{session.practice && (
 				<View style={styles.practice}>
 					<Text style={styles.practiceText}>
-						practice patch — the real patch opens soon
+						practice dig — nothing banks, all the fun
 					</Text>
 				</View>
 			)}
@@ -888,6 +940,7 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 					<RevealChip
 						beat={revealBeat}
 						tile={tile}
+						boardW={boardW.current}
 						anim={revealBeatAnim}
 						uniqueDef={uniqueDef}
 					/>
@@ -927,11 +980,102 @@ export function TrufflePatch({ session, onSubmit, onClose }: Props) {
 
 			{/* End card */}
 			{end && (
-				<EndCard end={end} submitting={submitting} onClose={onClose} />
+				<EndCard
+					end={end}
+					submitting={submitting}
+					onClose={onClose}
+					phaseOpen={phaseOpen}
+				/>
 			)}
 
 			{/* Reclaim slam overlay — golden joy-motes from the Hunger to your pouch. */}
 			<ReclaimSlam ref={slamRef} />
+
+			{/* "How the dig works" explainer — goal, actions, scoring, in-voice. */}
+			{helpMounted && (
+				<DigHelpModal visible={helpOpen} coop={session.coop} onClose={closeHelp} />
+			)}
+		</View>
+	);
+}
+
+// ── The "how the dig works" explainer ────────────────────────────────────────
+// A small scrollable card that spells out the goal + the scoring the reveal
+// chips and meter only hint at. Sectioned, 1–2 lines each, storybook voice.
+// Two-phase teardown lives with the caller (helpMounted / helpOpen split).
+function DigHelpModal({
+	visible,
+	coop,
+	onClose,
+}: {
+	visible: boolean;
+	coop: boolean;
+	onClose: () => void;
+}) {
+	return (
+		<Modal
+			visible={visible}
+			transparent
+			animationType="fade"
+			onRequestClose={onClose}
+		>
+			<Pressable style={styles.helpBackdrop} onPress={onClose}>
+				<Pressable style={styles.helpCardWrap} onPress={() => {}}>
+					<View style={styles.helpCard}>
+						<Text style={styles.helpKicker}>THE TRUFFLE PATCH</Text>
+						<Text style={styles.helpTitle}>how the dig works</Text>
+						<ScrollView
+							style={styles.helpScroll}
+							contentContainerStyle={styles.helpScrollBody}
+							showsVerticalScrollIndicator={false}
+						>
+							<HelpSection heading="the goal">
+								two truffles are buried in the mud. find both before the Hungerer
+								fully stirs and lifts his snout.
+							</HelpSection>
+							<HelpSection heading="how to dig">
+								rub (tap) clears a little mud and stirs him a little. shove (press
+								and hold) clears more but wakes him faster. his attention is your
+								only clock.
+							</HelpSection>
+							<HelpSection heading="what you find">
+								every find calms his attention. the first truffle you dig mints a
+								Golden Truffle; more truffles and tickle-motes still count. junk
+								counts too, stones do nothing, and rare relics go to your Burrow
+								Book.
+							</HelpSection>
+							{coop && (
+								<HelpSection heading="digging together">
+									a crewmate already dug this feeding, so he's more distracted —
+									you dig deeper before he wakes.
+								</HelpSection>
+							)}
+							<HelpSection heading="leaving">
+								leave anytime. the patch keeps your board until the feeding window
+								closes — nothing is lost by walking away.
+							</HelpSection>
+						</ScrollView>
+						<Pressable onPress={onClose} style={styles.helpBtnClose} hitSlop={8}>
+							<Text style={styles.helpBtnCloseText}>got it</Text>
+						</Pressable>
+					</View>
+				</Pressable>
+			</Pressable>
+		</Modal>
+	);
+}
+
+function HelpSection({
+	heading,
+	children,
+}: {
+	heading: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<View style={styles.helpSection}>
+			<Text style={styles.helpSectionHead}>{heading}</Text>
+			<Text style={styles.helpSectionBody}>{children}</Text>
 		</View>
 	);
 }
@@ -944,67 +1088,112 @@ function EndCard({
 	end,
 	submitting,
 	onClose,
+	phaseOpen,
 }: {
 	end: EndState;
 	submitting: boolean;
 	onClose: () => void;
+	phaseOpen: boolean;
 }) {
 	const outcome = end.outcome;
 	const dug = end.finds.filter(
 		(f) => f === "truffle_l" || f === "truffle_d"
 	).length;
+	const practice = !!outcome?.practice;
+	// What a REAL dig of this armful would have minted (the economy mints the
+	// first truffle of the dig). `outcome.truffles` already carries that count
+	// in practice mode, so the "you'd have kept N" line stays truthful.
+	const wouldKeep = outcome?.truffles ?? 0;
 	return (
 		<View style={styles.endCard}>
 			<Text style={styles.endTitle}>{end.line}</Text>
 			{outcome ? (
 				<View style={styles.endLines}>
-					{dug > 0 && (
+					{/* PRACTICE: no real mint happened — instead show what a real dig
+					    WOULD have banked, so the value of joining is concrete. */}
+					{practice ? (
 						<>
-							<EndLine
-								icon={
-									<Image
-										source={PATCH_ART.truffle}
-										style={styles.endIconImg}
-										resizeMode="contain"
-									/>
-								}
-							>
-								{dug} of 2 truffles dug — +{outcome.truffles} golden{" "}
-								{outcome.truffles === 1 ? "truffle" : "truffles"} minted
+							{wouldKeep > 0 && (
+								<EndLine
+									icon={
+										<Image
+											source={PATCH_ART.truffle}
+											style={styles.endIconImg}
+											resizeMode="contain"
+										/>
+									}
+								>
+									you'd have kept {wouldKeep} Golden{" "}
+									{wouldKeep === 1 ? "Truffle" : "Truffles"} — a Sounder digs for
+									keeps.
+								</EndLine>
+							)}
+							{outcome.snoutGift != null && outcome.snoutGift > 0 && (
+								<EndLine
+									icon={
+										<Image
+											source={PATCH_ART.truffle}
+											style={styles.endIconImg}
+											resizeMode="contain"
+										/>
+									}
+								>
+									one Golden Truffle to start your pouch — a gift.
+								</EndLine>
+							)}
+							<Text style={styles.endPractice}>
+								(practice — nothing banked yet)
+							</Text>
+						</>
+					) : (
+						<>
+							{dug > 0 && (
+								<>
+									<EndLine
+										icon={
+											<Image
+												source={PATCH_ART.truffle}
+												style={styles.endIconImg}
+												resizeMode="contain"
+											/>
+										}
+									>
+										{dug} of 2 truffles dug — +{outcome.truffles} golden{" "}
+										{outcome.truffles === 1 ? "truffle" : "truffles"} minted
+									</EndLine>
+									{dug > outcome.truffles && (
+										<Text style={styles.endHint}>
+											(first of the dig mints; the rest still feed the meter)
+										</Text>
+									)}
+								</>
+							)}
+							<EndLine icon={<Glyph name="heart" size={15} />}>
+								Joy reclaimed: +{outcome.credited}
 							</EndLine>
-							{dug > outcome.truffles && (
-								<Text style={styles.endHint}>
-									(first of the dig mints; the rest still feed the meter)
+							{outcome.uniqueFound && (
+								<UniqueEndLine found={outcome.uniqueFound} />
+							)}
+							{outcome.carryCaught && (
+								<EndLine icon={<Glyph name="sparkle" size={15} />}>
+									{carryCaughtLine(outcome.carryCaught.gild)}
+								</EndLine>
+							)}
+							{outcome.carryNext && (
+								<Text style={styles.carryNext}>{CARRY_NEXT_LINE}</Text>
+							)}
+							{outcome.echoNames && outcome.echoNames.length > 0 && (
+								<Text style={styles.gild}>
+									Your truffle gilded — {joinNames(outcome.echoNames)} dug with
+									you.
 								</Text>
 							)}
+							{outcome.milestone && (
+								<EndLine icon={<Glyph name="star" size={15} />}>
+									A milestone fell — the whole barnyard weakens the Hungerer.
+								</EndLine>
+							)}
 						</>
-					)}
-					<EndLine icon={<Glyph name="heart" size={15} />}>
-						Joy reclaimed: +{outcome.credited}
-					</EndLine>
-					{outcome.uniqueFound && <UniqueEndLine found={outcome.uniqueFound} />}
-					{outcome.carryCaught && (
-						<EndLine icon={<Glyph name="sparkle" size={15} />}>
-							{carryCaughtLine(outcome.carryCaught.gild)}
-						</EndLine>
-					)}
-					{outcome.carryNext && (
-						<Text style={styles.carryNext}>{CARRY_NEXT_LINE}</Text>
-					)}
-					{outcome.echoNames && outcome.echoNames.length > 0 && (
-						<Text style={styles.gild}>
-							Your truffle gilded — {joinNames(outcome.echoNames)} dug with you.
-						</Text>
-					)}
-					{outcome.milestone && (
-						<EndLine icon={<Glyph name="star" size={15} />}>
-							A milestone fell — the whole barnyard weakens the Hungerer.
-						</EndLine>
-					)}
-					{outcome.practice && (
-						<Text style={styles.endPractice}>
-							(practice — nothing banked yet)
-						</Text>
 					)}
 				</View>
 			) : (
@@ -1012,12 +1201,72 @@ function EndCard({
 					Couldn't bank that dig — the patch will remember your armful.
 				</Text>
 			)}
+			{/* The retention hinge: after a REAL dig, if the next window is a wait,
+			    offer one local oink at the next open (highest-intent moment). */}
+			{!practice && !phaseOpen && <NotifyChip />}
 			<Pressable onPress={onClose} style={styles.endBtn} hitSlop={8}>
 				<Text style={styles.endBtnText}>
 					{submitting ? "Trotting home…" : "Back to the season"}
 				</Text>
 			</Pressable>
 		</View>
+	);
+}
+
+// ── "oink me when it opens" — the notify opt-in chip ─────────────────────────
+// A small paper sticker-chip that schedules ONE local push at the next feeding
+// window open. Confirmed state reads "we'll oink you ›"; a permission decline
+// falls to a soft note (no nag, no error). Reuses the shared schedule helper so
+// the season-tab onboarding card can offer the exact same opt-in.
+function NotifyChip() {
+	const [state, setState] = useState<"idle" | "busy" | OpenReminderResult>(
+		"idle"
+	);
+	const onPress = useCallback(async () => {
+		if (state === "busy" || state === "scheduled") return;
+		Haptics.selectionAsync().catch(() => {});
+		setState("busy");
+		const r = await scheduleOpenReminder();
+		setState(r);
+	}, [state]);
+
+	if (state === "scheduled") {
+		return (
+			<View style={styles.notifyDone}>
+				<Glyph name="heart" size={13} />
+				<Text style={styles.notifyDoneText}>
+					we'll oink you when the patch opens ›
+				</Text>
+			</View>
+		);
+	}
+	if (state === "denied") {
+		return (
+			<Text style={styles.notifyNote}>
+				no oinks without notifications on — the patch opens in{" "}
+				{nextOpenCountdown()}.
+			</Text>
+		);
+	}
+	if (state === "unavailable") {
+		return (
+			<Text style={styles.notifyNote}>
+				the patch opens in {nextOpenCountdown()}.
+			</Text>
+		);
+	}
+	return (
+		<Pressable
+			onPress={onPress}
+			style={({ pressed }) => [styles.notifyChip, pressed && { opacity: 0.7 }]}
+			hitSlop={8}
+			disabled={state === "busy"}
+		>
+			<Glyph name="sparkle" size={13} />
+			<Text style={styles.notifyChipText}>
+				{state === "busy" ? "setting a reminder…" : "oink me when it opens"}
+			</Text>
+		</Pressable>
 	);
 }
 
@@ -1075,11 +1324,13 @@ function UniqueEndLine({
 function RevealChip({
 	beat,
 	tile,
+	boardW,
 	anim,
 	uniqueDef,
 }: {
 	beat: { id: number; kind: Find; idx: number };
 	tile: number;
+	boardW: number;
 	anim: Animated.Value;
 	uniqueDef: { id: string; name: string } | null;
 }) {
@@ -1124,20 +1375,42 @@ function RevealChip({
 			/>
 		) : null;
 	const label = isUnique ? `${uniqueDef.name}!` : REVEAL_LABELS[beat.kind];
+	// Clip fix: a chip on an edge tile (or a long relic name like "The Milk
+	// Tooth!") used to spill past boardArea's overflow:hidden and get chopped.
+	// The chip is center-anchored on its tile center, capped at ~60% of the
+	// board width, and its center clamped so the whole capped chip stays inside
+	// the board bounds — near-edge reveals slide inward instead of clipping.
+	const maxW = Math.max(tile, boardW * 0.6);
+	const half = maxW / 2;
+	const tileCenterX = BOARD_BORDER + c * tile + tile / 2;
+	const centerX = Math.min(
+		Math.max(tileCenterX, BOARD_BORDER + half),
+		boardW - BOARD_BORDER - half
+	);
 	return (
 		<Animated.View
 			pointerEvents="none"
 			style={[
 				styles.revealChipWrap,
 				// boardArea coords: the board's content box starts BOARD_BORDER in.
-				{ left: BOARD_BORDER + c * tile, top: BOARD_BORDER + r * tile, width: tile },
+				// width:0 + alignItems:center anchors the chip on `centerX`.
+				{ left: centerX, top: BOARD_BORDER + r * tile },
 			]}
 		>
 			<Animated.View
-				style={[styles.revealChip, { opacity, transform: [{ translateY }, { scale }] }]}
+				style={[
+					styles.revealChip,
+					{ maxWidth: maxW, opacity, transform: [{ translateY }, { scale }] },
+				]}
 			>
 				{icon}
-				<Text style={styles.revealChipText}>{label}</Text>
+				<Text
+					style={styles.revealChipText}
+					numberOfLines={1}
+					ellipsizeMode="tail"
+				>
+					{label}
+				</Text>
 			</Animated.View>
 		</Animated.View>
 	);
@@ -1357,6 +1630,24 @@ const styles = StyleSheet.create({
 		padding: SPACE.lg,
 		...STICKER_SHADOW,
 	},
+	headerRow: {
+		flexDirection: "row",
+		alignItems: "flex-start",
+		gap: SPACE.sm,
+	},
+	headerText: { flex: 1 },
+	// The explainer affordance — a small paper sticker-chip so the "how it works"
+	// scroll reads as a tappable control beside the title, not a stray glyph.
+	helpBtn: {
+		marginTop: 2,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.sm,
+		paddingHorizontal: 6,
+		paddingVertical: 5,
+		...SHADOW_SM,
+	},
 	kicker: {
 		...TYPE.kickerPill,
 		color: WHIMSY.mute,
@@ -1551,9 +1842,12 @@ const styles = StyleSheet.create({
 		marginTop: SPACE.sm,
 	},
 
-	// Reveal chip — named pop-in over the tile.
+	// Reveal chip — named pop-in over the tile. width:0 + alignItems:center makes
+	// the chip center on the wrap's `left` (the clamped tile-center), so a capped
+	// chip never spills past the board's overflow:hidden clip.
 	revealChipWrap: {
 		position: "absolute",
+		width: 0,
 		alignItems: "center",
 	},
 	revealChip: {
@@ -1568,7 +1862,9 @@ const styles = StyleSheet.create({
 		paddingVertical: 2,
 		...SHADOW_SM,
 	},
-	revealChipText: { ...TYPE.kicker, fontSize: 12, color: WHIMSY.ink },
+	// flexShrink lets a long relic name ellipsize inside the chip's maxWidth
+	// instead of forcing the chip wider than the board.
+	revealChipText: { ...TYPE.kicker, fontSize: 12, color: WHIMSY.ink, flexShrink: 1 },
 	revealIconImg: { width: 14, height: 14 },
 
 	pouchRow: {
@@ -1618,8 +1914,7 @@ const styles = StyleSheet.create({
 		gap: 6,
 	},
 	endLineText: {
-		...TYPE.body,
-		fontSize: 13,
+		...TYPE.bodySm,
 		color: WHIMSY.ink,
 		textAlign: "center",
 	},
@@ -1667,4 +1962,84 @@ const styles = StyleSheet.create({
 		...SHADOW_SM,
 	},
 	endBtnText: { ...TYPE.cardTitle, fontSize: 15, color: WHIMSY.ink },
+
+	// ── The "oink me when it opens" notify opt-in ────────────────────────────
+	// A tappable paper sticker-chip in the sun tone (the game's "reminder/gift"
+	// accent — same family as the free-rub chip) so the opt-in reads as a warm
+	// offer, not an alert.
+	notifyChip: {
+		flexDirection: "row",
+		alignItems: "center",
+		alignSelf: "center",
+		gap: 5,
+		marginTop: SPACE.md,
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.sm,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: 5,
+		...SHADOW_SM,
+	},
+	notifyChipText: { ...TYPE.hand, fontSize: 13, color: WHIMSY.ink },
+	// The confirmed state — quieter (no fill), same warm hand voice.
+	notifyDone: {
+		flexDirection: "row",
+		alignItems: "center",
+		alignSelf: "center",
+		gap: 5,
+		marginTop: SPACE.md,
+	},
+	notifyDoneText: { ...TYPE.hand, fontSize: 13, color: WHIMSY.accent },
+	// The soft decline/unavailable note — a gentle line, never an error.
+	notifyNote: {
+		...TYPE.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: SPACE.md,
+	},
+
+	// ── The "how the dig works" explainer ────────────────────────────────
+	helpBackdrop: {
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: MODAL_BACKDROP_BG,
+		padding: SPACE.lg,
+	},
+	helpCardWrap: { width: "100%", maxWidth: 360 },
+	helpCard: {
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.xl,
+		padding: SPACE.lg,
+		...STICKER_SHADOW,
+	},
+	helpKicker: { ...TYPE.kickerPill, color: WHIMSY.mute },
+	helpTitle: {
+		...TYPE.cardTitle,
+		color: WHIMSY.ink,
+		marginTop: 2,
+		marginBottom: SPACE.sm,
+	},
+	// Cap the height so a small screen scrolls the sections instead of overflowing.
+	helpScroll: { maxHeight: 340 },
+	helpScrollBody: { gap: SPACE.md, paddingBottom: SPACE.xs },
+	helpSection: { gap: 2 },
+	helpSectionHead: { ...TYPE.kicker, color: WHIMSY.accent },
+	helpSectionBody: { ...TYPE.hand, color: WHIMSY.ink },
+	helpBtnClose: {
+		marginTop: SPACE.md,
+		alignSelf: "center",
+		backgroundColor: WHIMSY.lilac,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.md,
+		paddingHorizontal: SPACE.lg,
+		paddingVertical: SPACE.sm,
+		...SHADOW_SM,
+	},
+	helpBtnCloseText: { ...TYPE.cardTitle, fontSize: 15, color: WHIMSY.ink },
 });

@@ -10,6 +10,9 @@ import {
 	Alert,
 	Linking,
 	Share,
+	Modal,
+	KeyboardAvoidingView,
+	Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
@@ -22,14 +25,15 @@ import { rpc } from "@/utils/rpc";
 import { lifetimeTickles } from "@/utils/tickles";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
-import { Card, Button, SectionHeader } from "./ui";
+import { Button, SectionHeader } from "./ui";
+import { LoadingBeat } from "./ui/EmptyState";
 import { Icon, type IconName } from "./ui/Icon";
 import { Image } from "react-native";
 import { PigAvatar } from "./ui/PigAvatar";
 import type { TitlePlacement } from "@/constants/title_types";
 import { Sticker, Tape } from "./ui/Sticker";
 import Constants from "expo-constants";
-import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW, SPACE, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW, SPACE, RADII, PAGE_PAD, TAB_SAFE, MODAL_BACKDROP_BG } from "@/constants/theme";
 import {
 	IAP_ENABLED,
 	initIAP,
@@ -56,11 +60,31 @@ import {
 	type ReferralFriend,
 } from "@/utils/referrals";
 import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications";
+import { isUsernameAllowed } from "@/constants/bannedWords";
+
+// Aggregate counts from me_lifetime_stats() — the social tallies the "long
+// story" sheet lists beneath the scalar lifetime figures.
+type LifetimeAgg = {
+	barn_visits_made: number;
+	barn_visits_hosted: number;
+	truffles_buried: number;
+	friend_mound_digs: number;
+	blessings_sent: number;
+	curses_sent: number;
+	trades_fulfilled: number;
+};
 
 export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
 	const [discriminator, setDiscriminator] = useState<string | null>(null);
 	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+	// Paid username rename — pencil next to the handle opens this dialog.
+	// First rename is free; then 1,000, then 10,000 snouts (server-priced
+	// off renames_used; the client mirrors it for the cost line).
+	const [renameOpen, setRenameOpen] = useState(false);
+	const [renameInput, setRenameInput] = useState("");
+	const [renameBusy, setRenameBusy] = useState(false);
+	const [renameError, setRenameError] = useState<string | null>(null);
 	// Account-deletion confirm — required for App Store 5.1.1(v).
 	// On confirm: delete_my_account RPC cascades through every public
 	// table via ON DELETE CASCADE, then we sign out so the auth
@@ -173,13 +197,38 @@ export function Account({ session }: { session: Session }) {
 	// lifetime = this base + the live-season tickles_earned. 0 until the column
 	// lands (feature-dark), so lifetime simply shows the live count pre-push.
 	const [ticklesLifetimeBase, setTicklesLifetimeBase] = useState<number>(0);
-	// Snouts balance + current season tier — feed the 3-column stats
-	// row inside the identity card (LIFETIME TICKLES · SNOUTS · SEASON).
+	// Snouts balance — feeds the 3-column stats row inside the identity
+	// card (LIFETIME TICKLES · SNOUTS · JOINED).
 	const [snouts, setSnouts] = useState<number>(0);
-	const [currentTier, setCurrentTier] = useState<number | null>(null);
+	// How many times this account has renamed already — drives the rename
+	// cost ladder (0 → free, 1 → 1,000, 2+ → 10,000 snouts).
+	const [renamesUsed, setRenamesUsed] = useState<number>(0);
 	const [activeHat, setActiveHat] = useState<string | null>(null);
 	const [isVip, setIsVip] = useState<boolean>(false);
 	const [busy, setBusy] = useState<boolean>(false);
+	// Lifetime scalars for "the long story" dashboard — read straight off the
+	// caller's own profiles row alongside the rest of the identity fetch.
+	const [activeDays, setActiveDays] = useState<number>(0);
+	const [warWins, setWarWins] = useState<number>(0);
+	const [ticklesWasted, setTicklesWasted] = useState<number>(0);
+	const [referralsCompleted, setReferralsCompleted] = useState<number>(0);
+	// "The long story" — lifetime dashboard detail sheet. The card shows three
+	// top-level lifetime figures always; the sheet opens the full ledger and
+	// lazily pulls the aggregate counts (me_lifetime_stats) only on first open.
+	const [longStoryOpen, setLongStoryOpen] = useState(false);
+	const [lifetimeAgg, setLifetimeAgg] = useState<LifetimeAgg | null>(null);
+	const [lifetimeAggBusy, setLifetimeAggBusy] = useState(false);
+	const openLongStory = () => {
+		setLongStoryOpen(true);
+		// Lazy: fetch the aggregate counts once, the first time the sheet opens.
+		if (lifetimeAgg || lifetimeAggBusy) return;
+		setLifetimeAggBusy(true);
+		rpc<LifetimeAgg & { ok?: boolean }>("me_lifetime_stats")
+			.then((r) => {
+				if (r?.ok) setLifetimeAgg(r);
+			})
+			.finally(() => setLifetimeAggBusy(false));
+	};
 	// Slop Club monthly snout stipend — manual claim from the membership card.
 	const [stipendStatus, setStipendStatus] = useState<StipendStatus | null>(null);
 	const [stipendBusy, setStipendBusy] = useState(false);
@@ -227,7 +276,7 @@ export function Account({ session }: { session: Session }) {
 			supabase
 				.from("profiles")
 				.select(
-					"username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, referred_by, active_title:titles!profiles_active_title_id_fkey(name, placement)"
+					"username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, referred_by, distinct_active_days, war_wins, tickles_wasted_total, referrals_completed, active_title:titles!profiles_active_title_id_fkey(name, placement)"
 				)
 				.eq("id", session.user.id)
 				.single()
@@ -238,9 +287,14 @@ export function Account({ session }: { session: Session }) {
 						tickles_earned?: number;
 						tickles_lifetime_base?: number;
 						counter?: number;
+						renames_used?: number;
 						active_hat_id?: string | null;
 						is_vip?: boolean;
 						referred_by?: string | null;
+						distinct_active_days?: number;
+						war_wins?: number;
+						tickles_wasted_total?: number;
+						referrals_completed?: number;
 						active_title?:
 							| { name: string; placement: TitlePlacement }
 							| { name: string; placement: TitlePlacement }[]
@@ -253,7 +307,7 @@ export function Account({ session }: { session: Session }) {
 					if (error) {
 						const fallback = await supabase
 							.from("profiles")
-							.select("username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, referred_by")
+							.select("username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, referred_by, distinct_active_days, war_wins, tickles_wasted_total, referrals_completed")
 							.eq("id", session.user.id)
 							.single();
 						row = fallback.data;
@@ -265,18 +319,31 @@ export function Account({ session }: { session: Session }) {
 					setSnouts(row?.counter ?? 0);
 					setActiveHat(row?.active_hat_id ?? null);
 					setIsVip(row?.is_vip ?? false);
+					setActiveDays(row?.distinct_active_days ?? 0);
+					setWarWins(row?.war_wins ?? 0);
+					setTicklesWasted(row?.tickles_wasted_total ?? 0);
+					setReferralsCompleted(row?.referrals_completed ?? 0);
 					setHasRedeemed(!!row?.referred_by);
 					const t = Array.isArray(row?.active_title)
 						? row?.active_title[0]
 						: row?.active_title;
 					setActiveTitle(t ?? null);
 				});
-			// Pull current_tier alongside so the SEASON column reads
-			// "T8" rather than collapsing to "—". Best-effort: a failure
-			// just leaves the column blank.
-			rpc<{ current_tier?: number }>("season_state").then((s) => {
-				if (typeof s?.current_tier === "number") setCurrentTier(s.current_tier);
-			});
+			// renames_used ships with the (not-yet-pushed) rename migration —
+			// fetched separately so a missing column can't 400 the main
+			// profile select and zero out the whole page. Fails soft to 0.
+			supabase
+				.from("profiles")
+				.select("renames_used")
+				.eq("id", session.user.id)
+				.single()
+				.then(({ data, error }) => {
+					if (!error) {
+						setRenamesUsed(
+							(data as { renames_used?: number } | null)?.renames_used ?? 0
+						);
+					}
+				});
 		}, [session.user.id])
 	);
 
@@ -303,6 +370,78 @@ export function Account({ session }: { session: Session }) {
 		Date.now() - accountCreatedMs < 24 * 60 * 60 * 1000;
 	const canRedeemCode =
 		hasRedeemed === false && accountUnder24h && ticklesEarned < 5;
+
+	// Short "Jun 2026"-style join date for the identity card's JOINED stat.
+	// Falls back to a dash if created_at didn't parse.
+	const joinedLabel = Number.isFinite(accountCreatedMs)
+		? new Date(accountCreatedMs).toLocaleDateString(undefined, {
+				month: "short",
+				year: "numeric",
+			})
+		: "—";
+
+	// Cost of the NEXT rename, mirroring the server ladder in
+	// rename_username: first free, second 1,000, third+ 10,000 snouts.
+	const renameCost = renamesUsed === 0 ? 0 : renamesUsed === 1 ? 1000 : 10000;
+	const renameCostCopy =
+		renameCost === 0 ? "First rename is free." : `${renameCost.toLocaleString()} snouts.`;
+
+	const openRename = () => {
+		setRenameInput(username ?? "");
+		setRenameError(null);
+		setRenameOpen(true);
+	};
+
+	const handleRename = async () => {
+		if (renameBusy) return;
+		const next = renameInput.trim();
+		if (next.length < 3 || next.length > 24) {
+			setRenameError("Names are 3–24 characters.");
+			return;
+		}
+		if (next === username) {
+			setRenameError("That's already your name.");
+			return;
+		}
+		// Client-side moderation pre-check saves a round trip; the DB
+		// trigger is authoritative (same pattern as UsernameSetup).
+		const allowed = isUsernameAllowed(next);
+		if (!allowed.ok) {
+			setRenameError("That name won't fly in the barn — pick a different one.");
+			return;
+		}
+		setRenameBusy(true);
+		setRenameError(null);
+		const r = await rpc<
+			| { ok: true; remaining: number; cost: number; next_cost: number }
+			| { ok: false; reason: string; cost?: number }
+		>("rename_username", { p_name: next });
+		setRenameBusy(false);
+		if (r?.ok) {
+			setUsername(next);
+			setSnouts(r.remaining);
+			setRenamesUsed((n) => n + 1);
+			setRenameOpen(false);
+			showPurchaseToast({
+				type: "success",
+				title: "New name!",
+				text: `You're ${next} now.`,
+			});
+			return;
+		}
+		const reason = r && "reason" in r ? r.reason : undefined;
+		setRenameError(
+			reason === "name_taken"
+				? "That name is taken — try another."
+				: reason === "not_allowed"
+					? "That name won't fly in the barn — pick a different one."
+					: reason === "not_enough_snouts"
+						? "Not enough snouts for this rename."
+						: reason === "bad_name"
+							? "Names are 3–24 characters."
+							: "Couldn't rename. Try again."
+		);
+	};
 
 	// Copies the player's handle (username#discriminator) to the
 	// clipboard. The referral-link flow was cut — a handle a friend
@@ -461,40 +600,60 @@ export function Account({ session }: { session: Session }) {
 									</View>
 									<View style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
 										<Text style={styles.codeLabel}>your code</Text>
-										<Text style={styles.codeValue}>
-											{activeTitle
-												? activeTitle.placement === "pre"
-													? `${activeTitle.name} ${username}`
-													: `${username} ${activeTitle.name}`
-												: username}
-										</Text>
+										<View style={styles.codeNameRow}>
+											<Text style={styles.codeValue} numberOfLines={1}>
+												{activeTitle
+													? activeTitle.placement === "pre"
+														? `${activeTitle.name} ${username}`
+														: `${username} ${activeTitle.name}`
+													: username}
+											</Text>
+											<Pressable
+												onPress={openRename}
+												hitSlop={8}
+												style={styles.renamePencil}
+												accessibilityLabel="Change your name"
+											>
+												<Icon
+													name="edit"
+													size={15}
+													color={WHIMSY.ink}
+													strokeWidth={2.2}
+												/>
+											</Pressable>
+										</View>
 										{!!handle && discriminator && (
 											<Text style={styles.codeHandle}>{handle}</Text>
 										)}
+										<View
+											style={[
+												styles.memberChip,
+												isVip ? styles.memberChipVip : styles.memberChipFree,
+											]}
+										>
+											<Text style={styles.memberChipText}>
+												{isVip ? "SLOP CLUB" : "FREE RANGE"}
+											</Text>
+										</View>
 									</View>
 								</View>
 
-								{/* Lifetime stats — 3-col band inside the identity
-								    card. Divided by 1px ink-mute verticals + a
-								    dashed top border. Matches the design's StatPiece
-								    cluster (LIFETIME TICKLES · SNOUTS · SEASON). */}
+								{/* Identity-card band — 3-col cluster inside the card.
+								    Divided by 1px ink-mute verticals + a dashed top
+								    border. THIS SEASON's live tally leads (the number
+								    the Board is racing on right now); lifetime lives in
+								    the "long story" dashboard below. */}
 								<View style={styles.lifetimeStatsRow}>
 									<LifetimeStat
-										label="LIFETIME TICKLES"
-										value={lifetimeTickles(
-											ticklesLifetimeBase,
-											ticklesEarned
-										).toLocaleString()}
+										label="SEASON TICKLES"
+										value={ticklesEarned.toLocaleString()}
 									/>
 									<View style={styles.lifetimeStatDivider} />
 									<LifetimeStat label="SNOUTS" value={snouts.toLocaleString()} />
 									<View style={styles.lifetimeStatDivider} />
-									<LifetimeStat
-										label="SEASON"
-										value={currentTier == null ? "—" : `T${currentTier}`}
-									/>
+									<LifetimeStat label="JOINED" value={joinedLabel} />
 								</View>
-								<Pressable onPress={handleCopyCode} style={styles.shareBtn}>
+								<Pressable onPress={handleCopyCode} style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.7 }]}>
 									<Icon
 										name={copied ? "check" : "copy"}
 										size={16}
@@ -509,12 +668,50 @@ export function Account({ session }: { session: Session }) {
 						</View>
 					)}
 
+					{/* The long story — lifetime dashboard. Three top-level
+					    lifetime figures on a tappable sticker; tap opens the
+					    full ledger sheet (every all-time count). Sits under the
+					    identity card so "who you are now" reads first, "all
+					    you've done" second. */}
+					<View style={longStoryStyles.wrap}>
+						<Text style={longStoryStyles.kicker}>★ the long story</Text>
+						<Pressable onPress={openLongStory}>
+							<Sticker
+								color="cream2"
+								rotate={-0.4}
+								radius={16}
+								style={longStoryStyles.card}
+							>
+								<View style={longStoryStyles.statsRow}>
+									<LifetimeStat
+										label="LIFETIME TICKLES"
+										value={lifetimeTickles(
+											ticklesLifetimeBase,
+											ticklesEarned
+										).toLocaleString()}
+									/>
+									<View style={styles.lifetimeStatDivider} />
+									<LifetimeStat
+										label="ACTIVE DAYS"
+										value={activeDays.toLocaleString()}
+									/>
+									<View style={styles.lifetimeStatDivider} />
+									<LifetimeStat
+										label="WAR WINS"
+										value={warWins.toLocaleString()}
+									/>
+								</View>
+								<Text style={longStoryStyles.seeAll}>see it all ›</Text>
+							</Sticker>
+						</Pressable>
+					</View>
+
 					{/* Achievements entry — single-line tappable row that
 					    routes to the full grid. Sits above Sounder so it's
 					    discoverable as the primary "see your progress" surface. */}
 					<Pressable
 						onPress={() => router.push("/achievements")}
-						style={achievementStyles.row}
+						style={({ pressed }) => [achievementStyles.row, pressed && { opacity: 0.7 }]}
 					>
 						<View style={achievementStyles.iconBubble}>
 							<Icon name="trophy" size={22} color={WHIMSY.ink} filled />
@@ -708,7 +905,7 @@ export function Account({ session }: { session: Session }) {
 								<Text style={referralStyles.codeValue}>{referral.code}</Text>
 								<Pressable
 									onPress={handleCopyReferralCode}
-									style={referralStyles.copyBtn}
+									style={({ pressed }) => [referralStyles.copyBtn, pressed && { opacity: 0.7 }]}
 								>
 									<Icon
 										name={referralCodeCopied ? "check" : "copy"}
@@ -723,7 +920,7 @@ export function Account({ session }: { session: Session }) {
 							</View>
 							<Pressable
 								onPress={handleShareReferral}
-								style={referralStyles.shareBtn}
+								style={({ pressed }) => [referralStyles.shareBtn, pressed && { opacity: 0.7 }]}
 							>
 								<Text style={referralStyles.shareBtnText}>Share invite</Text>
 							</Pressable>
@@ -765,6 +962,7 @@ export function Account({ session }: { session: Session }) {
 									<Pressable
 										onPress={() => router.push("/sounder")}
 										hitSlop={6}
+										style={({ pressed }) => pressed && { opacity: 0.7 }}
 									>
 										<Text style={referralStyles.downlineLink}>leaderboard →</Text>
 									</Pressable>
@@ -802,7 +1000,7 @@ export function Account({ session }: { session: Session }) {
 								referral.referrals_pending > 0) && (
 								<Pressable
 									onPress={() => router.push("/sounder-progress" as Href)}
-									style={referralStyles.seeMore}
+									style={({ pressed }) => [referralStyles.seeMore, pressed && { opacity: 0.7 }]}
 									hitSlop={6}
 								>
 									<Text style={referralStyles.seeMoreText}>
@@ -956,6 +1154,190 @@ export function Account({ session }: { session: Session }) {
 					setDeleteOpen(false);
 				}}
 			/>
+
+			{/* Paid rename dialog — same paper-sticker treatment as
+			    ConfirmDialog, with a UsernameSetup-styled input and the
+			    cost line up top. Direct-tap (not PopupQueue-slotted), so
+			    visible tracks open. */}
+			<Modal
+				visible={renameOpen}
+				transparent
+				animationType="fade"
+				onRequestClose={() => !renameBusy && setRenameOpen(false)}
+			>
+				<KeyboardAvoidingView
+					style={renameStyles.flex}
+					behavior={Platform.OS === "ios" ? "padding" : undefined}
+				>
+					<Pressable
+						style={renameStyles.backdrop}
+						onPress={() => !renameBusy && setRenameOpen(false)}
+					>
+						<Pressable style={renameStyles.cardWrap} onPress={() => {}}>
+							<Sticker
+								color="paper"
+								rotate={-0.8}
+								radius={18}
+								style={[renameStyles.card, STICKER_SHADOW]}
+							>
+								<Text style={renameStyles.title}>Change your name</Text>
+								<Text style={renameStyles.cost}>{renameCostCopy}</Text>
+								<TextInput
+									style={[
+										renameStyles.input,
+										!!renameError && renameStyles.inputError,
+									]}
+									placeholder="3–24 characters"
+									placeholderTextColor={WHIMSY.mute}
+									value={renameInput}
+									onChangeText={(t) => {
+										setRenameInput(t);
+										if (renameError) setRenameError(null);
+									}}
+									autoCapitalize="none"
+									autoCorrect={false}
+									maxLength={24}
+									editable={!renameBusy}
+								/>
+								{renameError && (
+									<Text style={renameStyles.error}>{renameError}</Text>
+								)}
+								<View style={renameStyles.btnRow}>
+									<Pressable
+										onPress={() => setRenameOpen(false)}
+										disabled={renameBusy}
+										style={({ pressed }) => [
+											renameStyles.btn,
+											renameStyles.btnGhost,
+											pressed && { opacity: 0.7 },
+										]}
+									>
+										<Text style={renameStyles.btnGhostText}>Cancel</Text>
+									</Pressable>
+									<Pressable
+										onPress={handleRename}
+										disabled={renameBusy}
+										style={({ pressed }) => [
+											renameStyles.btn,
+											renameStyles.btnConfirm,
+											(pressed || renameBusy) && { opacity: 0.7 },
+										]}
+									>
+										<Text style={renameStyles.btnConfirmText}>
+											{renameBusy ? "…" : "Save"}
+										</Text>
+									</Pressable>
+								</View>
+							</Sticker>
+						</Pressable>
+					</Pressable>
+				</KeyboardAvoidingView>
+			</Modal>
+
+			{/* The long story — full lifetime ledger. Same paper-sticker modal
+			    treatment as the rename dialog; a scrollable "label · value"
+			    ledger. The scalar rows read straight from the identity fetch;
+			    the aggregate counts hydrate lazily from me_lifetime_stats on
+			    first open (LoadingBeat until they land). */}
+			<Modal
+				visible={longStoryOpen}
+				transparent
+				animationType="fade"
+				onRequestClose={() => setLongStoryOpen(false)}
+			>
+				<Pressable
+					style={longStoryStyles.backdrop}
+					onPress={() => setLongStoryOpen(false)}
+				>
+					<Pressable style={longStoryStyles.sheetWrap} onPress={() => {}}>
+						<Sticker
+							color="paper"
+							rotate={-0.6}
+							radius={RADII.xxl}
+							style={[longStoryStyles.sheet, STICKER_SHADOW]}
+						>
+							<Text style={longStoryStyles.sheetKicker}>★ the long story</Text>
+							<Text style={longStoryStyles.sheetTitle}>all you've done</Text>
+							<ScrollView
+								style={longStoryStyles.ledgerScroll}
+								contentContainerStyle={longStoryStyles.ledger}
+								showsVerticalScrollIndicator={false}
+							>
+								<LedgerRow
+									label="lifetime tickles"
+									value={lifetimeTickles(
+										ticklesLifetimeBase,
+										ticklesEarned
+									).toLocaleString()}
+								/>
+								<LedgerRow
+									label="tickles wasted"
+									value={ticklesWasted.toLocaleString()}
+								/>
+								<LedgerRow label="active days" value={activeDays.toLocaleString()} />
+								<LedgerRow label="war wins" value={warWins.toLocaleString()} />
+								<LedgerRow
+									label="referrals completed"
+									value={referralsCompleted.toLocaleString()}
+								/>
+								<LedgerRow label="snouts" value={snouts.toLocaleString()} />
+								<LedgerRow label="joined" value={joinedLabel} />
+								<LedgerRow
+									label="membership"
+									value={isVip ? "slop club" : "free range"}
+								/>
+
+								<View style={longStoryStyles.ledgerDivider} />
+
+								{lifetimeAgg ? (
+									<>
+										<LedgerRow
+											label="barn visits made"
+											value={lifetimeAgg.barn_visits_made.toLocaleString()}
+										/>
+										<LedgerRow
+											label="barn visits hosted"
+											value={lifetimeAgg.barn_visits_hosted.toLocaleString()}
+										/>
+										<LedgerRow
+											label="truffles buried"
+											value={lifetimeAgg.truffles_buried.toLocaleString()}
+										/>
+										<LedgerRow
+											label="friend-mound digs"
+											value={lifetimeAgg.friend_mound_digs.toLocaleString()}
+										/>
+										<LedgerRow
+											label="blessings sent"
+											value={lifetimeAgg.blessings_sent.toLocaleString()}
+										/>
+										<LedgerRow
+											label="curses sent"
+											value={lifetimeAgg.curses_sent.toLocaleString()}
+										/>
+										<LedgerRow
+											label="trades fulfilled"
+											value={lifetimeAgg.trades_fulfilled.toLocaleString()}
+											last
+										/>
+									</>
+								) : (
+									<LoadingBeat label="tallying it up" />
+								)}
+							</ScrollView>
+							<Pressable
+								onPress={() => setLongStoryOpen(false)}
+								style={({ pressed }) => [
+									longStoryStyles.closeBtn,
+									pressed && { opacity: 0.7 },
+								]}
+							>
+								<Text style={longStoryStyles.closeBtnText}>Close</Text>
+							</Pressable>
+						</Sticker>
+					</Pressable>
+				</Pressable>
+			</Modal>
 		</View>
 	);
 }
@@ -1104,7 +1486,10 @@ function ReferralMilestoneRow({
 					Friends invited: {completed} / {capped ? completed : goal}
 				</Text>
 				{capped && (
-					<Text style={referralStyles.milestoneBadge}>✓ Rewards earned</Text>
+					<View style={referralStyles.milestoneBadgeRow}>
+						<Icon name="check" size={11} color={WHIMSY.accent} strokeWidth={2.4} />
+						<Text style={referralStyles.milestoneBadge}>Rewards earned</Text>
+					</View>
 				)}
 			</View>
 			<View style={referralStyles.barTrack}>
@@ -1120,6 +1505,25 @@ function ReferralMilestoneRow({
 					{goal - completed} more for {reward}
 				</Text>
 			)}
+		</View>
+	);
+}
+
+// One "label · value" line in the long-story ledger sheet. Dashed bottom
+// divider unless it's the last row (mirrors the SettingRow treatment).
+function LedgerRow({
+	label,
+	value,
+	last,
+}: {
+	label: string;
+	value: string;
+	last?: boolean;
+}) {
+	return (
+		<View style={[longStoryStyles.ledgerRow, !last && longStoryStyles.ledgerRowDivider]}>
+			<Text style={longStoryStyles.ledgerLabel}>{label}</Text>
+			<Text style={longStoryStyles.ledgerValue}>{value}</Text>
 		</View>
 	);
 }
@@ -1187,12 +1591,31 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.hand,
 		color: WHIMSY.mute,
 	},
+	codeNameRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+		marginTop: 2,
+	},
 	codeValue: {
+		flexShrink: 1,
 		fontSize: 24,
 		fontFamily: FONTS.whimsy,
 		color: WHIMSY.ink,
 		lineHeight: 26,
-		marginTop: 2,
+	},
+	// Pencil affordance next to the name — small ink-outline well, sits
+	// flush to the right of the username so the rename entry is discoverable
+	// without competing with the name itself.
+	renamePencil: {
+		width: 28,
+		height: 28,
+		borderRadius: RADII.lg,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
 	},
 	codeHandle: {
 		fontFamily: FONTS.hand,
@@ -1200,6 +1623,25 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		letterSpacing: 0.4,
 		marginTop: 2,
+	},
+	// Membership chip under the handle — gold sticker for Slop Club members,
+	// quiet paper chip for free-range pigs. Status, not a sales pitch.
+	memberChip: {
+		alignSelf: "flex-start",
+		marginTop: SPACE.xs,
+		paddingHorizontal: SPACE.sm,
+		paddingVertical: 1,
+		borderRadius: RADII.pill,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+	},
+	memberChipVip: { backgroundColor: WHIMSY.slopGold },
+	memberChipFree: { backgroundColor: WHIMSY.paper },
+	memberChipText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 11,
+		color: WHIMSY.ink,
+		letterSpacing: 0.6,
 	},
 	// 3-col lifetime-stats band inside the identity card. Dashed top
 	// border separates it from the avatar/handle. Inner 1px ink-mute
@@ -1245,7 +1687,7 @@ const styles = StyleSheet.create({
 		gap: 8,
 		marginTop: 14,
 		paddingVertical: 9,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.sun,
@@ -1265,7 +1707,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		paddingVertical: 9,
 		marginTop: 12,
 		marginBottom: 4,
@@ -1288,7 +1730,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		paddingHorizontal: 10,
 		paddingVertical: 3,
 		zIndex: 2,
@@ -1349,7 +1791,7 @@ const styles = StyleSheet.create({
 	},
 	slopBtn: {
 		paddingVertical: 12,
-		borderRadius: 14,
+		borderRadius: RADII.lg,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
@@ -1414,7 +1856,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		marginTop: 18,
 		paddingVertical: 10,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
@@ -1436,7 +1878,7 @@ const achievementStyles = StyleSheet.create({
 		paddingHorizontal: 14,
 		paddingVertical: 14,
 		backgroundColor: WHIMSY.paper,
-		borderRadius: 14,
+		borderRadius: RADII.lg,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		...STICKER_SHADOW,
@@ -1550,7 +1992,7 @@ const referralStyles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		paddingHorizontal: 12,
 		paddingVertical: 8,
 		fontFamily: FONTS.bodyExtra,
@@ -1562,7 +2004,7 @@ const referralStyles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		paddingHorizontal: 16,
 		paddingVertical: 9,
 	},
@@ -1571,7 +2013,7 @@ const referralStyles = StyleSheet.create({
 	entryError: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
-		color: "#c0504d",
+		color: WHIMSY.accent,
 		marginTop: 6,
 	},
 	pendingRow: {
@@ -1588,7 +2030,7 @@ const referralStyles = StyleSheet.create({
 	pendingNote: {
 		flex: 1,
 		fontFamily: FONTS.hand,
-		fontSize: 12.5,
+		fontSize: 13,
 		color: WHIMSY.ink,
 	},
 	successRow: {
@@ -1631,7 +2073,7 @@ const referralStyles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		paddingLeft: 12,
 		paddingRight: 6,
 		paddingVertical: 6,
@@ -1648,10 +2090,10 @@ const referralStyles = StyleSheet.create({
 	copyBtn: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 6,
-		paddingVertical: 8,
-		paddingHorizontal: 12,
-		borderRadius: 10,
+		gap: SPACE.xs + 2,
+		paddingVertical: SPACE.sm,
+		paddingHorizontal: SPACE.md,
+		borderRadius: RADII.md,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.sun,
@@ -1663,7 +2105,7 @@ const referralStyles = StyleSheet.create({
 	},
 	shareBtn: {
 		paddingVertical: 12,
-		borderRadius: 14,
+		borderRadius: RADII.lg,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
@@ -1688,6 +2130,11 @@ const referralStyles = StyleSheet.create({
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
 		color: WHIMSY.ink,
+	},
+	milestoneBadgeRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 3,
 	},
 	milestoneBadge: {
 		fontFamily: FONTS.bodyExtra,
@@ -1726,7 +2173,7 @@ const referralStyles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		paddingHorizontal: 10,
 		paddingVertical: 4,
 		marginTop: 10,
@@ -1825,3 +2272,160 @@ const referralStyles = StyleSheet.create({
 		textDecorationLine: "underline",
 	},
 });
+
+// Paid-rename dialog — paper-sticker modal styled to match ConfirmDialog,
+// with a UsernameSetup-styled input. Cost line sits under the title.
+const renameStyles = StyleSheet.create({
+	flex: { flex: 1 },
+	backdrop: {
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: MODAL_BACKDROP_BG,
+		padding: 28,
+	},
+	cardWrap: { width: "100%", maxWidth: 340 },
+	card: { paddingHorizontal: 22, paddingVertical: 20 },
+	title: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 20,
+		color: WHIMSY.ink,
+		textAlign: "center",
+	},
+	cost: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 4,
+		marginBottom: 14,
+	},
+	input: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 16,
+		color: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.md,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+	},
+	inputError: { borderColor: WHIMSY.accent },
+	error: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		marginTop: 8,
+	},
+	btnRow: {
+		flexDirection: "row",
+		gap: 10,
+		alignSelf: "stretch",
+		marginTop: 18,
+	},
+	btn: {
+		flex: 1,
+		paddingHorizontal: 14,
+		paddingVertical: 11,
+		borderRadius: RADII.md,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	btnGhost: { backgroundColor: "transparent", borderColor: WHIMSY.muteSoft },
+	btnGhostText: { fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.mute },
+	btnConfirm: { backgroundColor: WHIMSY.lilac },
+	btnConfirmText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+});
+
+// "The long story" — lifetime dashboard card + its detail-sheet ledger.
+// Card sits under the identity card; the sheet reuses the paper-sticker
+// modal treatment (backdrop + centered sticker) shared with the rename dialog.
+const longStoryStyles = StyleSheet.create({
+	wrap: {},
+	kicker: {
+		...KICKER_TEXT,
+		marginBottom: 8,
+	},
+	card: { padding: 16 },
+	statsRow: {
+		flexDirection: "row",
+		alignItems: "stretch",
+	},
+	seeAll: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		letterSpacing: 0.3,
+		textAlign: "center",
+		marginTop: 14,
+		paddingTop: 12,
+		borderTopWidth: 1.5,
+		borderTopColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	// Detail sheet — paper-sticker modal, centered like the rename dialog.
+	backdrop: {
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: MODAL_BACKDROP_BG,
+		padding: 24,
+	},
+	sheetWrap: { width: "100%", maxWidth: 360 },
+	sheet: { paddingHorizontal: 22, paddingVertical: 20 },
+	sheetKicker: { ...KICKER_TEXT, marginBottom: 4 },
+	sheetTitle: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 24,
+		color: WHIMSY.ink,
+		marginBottom: 12,
+	},
+	// Cap the ledger height so a long list scrolls inside the sheet rather
+	// than pushing the Close button off a short screen.
+	ledgerScroll: { maxHeight: 380 },
+	ledger: {},
+	ledgerRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: 12,
+		paddingVertical: 11,
+	},
+	ledgerRowDivider: {
+		borderBottomWidth: 1.5,
+		borderBottomColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	ledgerLabel: {
+		flex: 1,
+		minWidth: 0,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 14,
+		color: WHIMSY.ink,
+	},
+	ledgerValue: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 17,
+		color: WHIMSY.ink,
+	},
+	// Dashed rule between the scalar figures and the aggregate social counts.
+	ledgerDivider: {
+		height: 1.5,
+		backgroundColor: WHIMSY.muteSoft,
+		marginVertical: 8,
+	},
+	closeBtn: {
+		marginTop: 16,
+		paddingVertical: 11,
+		borderRadius: RADII.md,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		alignItems: "center",
+	},
+	closeBtnText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+});
+

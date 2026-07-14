@@ -12,6 +12,7 @@
 import React from "react";
 import { View, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import type { AlignmentLabel } from "@/utils/alignment";
+import { WHIMSY } from "@/constants/theme";
 
 interface Props {
 	alignment: AlignmentLabel;
@@ -116,6 +117,10 @@ function CoinPile({
 const styles = StyleSheet.create({
 	fill: { ...StyleSheet.absoluteFillObject, zIndex: 1 },
 	tint: { ...StyleSheet.absoluteFillObject },
+	// Sanctioned scene-wash exception: these alignment/effect washes and the
+	// cloud puff below are bespoke low-opacity gold/green/white tints tuned to
+	// sit over the painted Barn, NOT WHIMSY surface hues — they don't map to a
+	// palette token, so they stay as raw rgba on purpose (not token leak).
 	angelTint: { backgroundColor: "rgba(249,209,76,0.07)" },
 	goblinTint: { backgroundColor: "rgba(123,162,102,0.10)" },
 	// Effect washes — stronger than the ambient alignment tints so an
@@ -140,7 +145,7 @@ const styles = StyleSheet.create({
 		width: 30,
 		height: 30,
 		borderRadius: 15,
-		backgroundColor: "#D9A441",
+		backgroundColor: WHIMSY.goblin,
 		borderWidth: 2,
 		borderColor: "rgba(59,42,30,0.3)",
 	},

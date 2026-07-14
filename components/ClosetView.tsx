@@ -32,7 +32,9 @@ import {
 	slotForCategory,
 	type EquipSlotKey,
 } from "@/constants/slots";
-import { FONTS, STICKER_SHADOW, WHIMSY } from "@/constants/theme";
+import { FONTS, STICKER_SHADOW, SHADOW_SM, WHIMSY, RADII, SPACE, TYPE, RARITY_BG_SOLID, RARITY_STRIPE } from "@/constants/theme";
+import { Icon } from "./ui/Icon";
+import { Glyph } from "./ui/Glyph";
 import { Dimensions } from "react-native";
 
 // Explicit tile geometry. Yoga (this RN vintage) refuses to treat
@@ -84,16 +86,9 @@ const CAT_LABEL: Record<string, string> = {
 	background: "Backgrounds", flag: "Flags", tickle_particle: "Tickle Effects",
 };
 
-// Per-rarity swatch fill + stripe colors, carried over from the design (RBG/ROUT).
-const RARITY_FILL: Record<string, string> = {
-	common: "#f4ebe0", uncommon: "#d4e8d4", rare: "#c8dde9",
-	epic: "#d6c8f0", legendary: "#ffd87a",
-};
-const RARITY_STRIPE: Record<string, string> = {
-	common: WHIMSY.muteSoft, uncommon: "#7ba868", rare: "#5a8bc5",
-	epic: WHIMSY.lilacDeep, legendary: "#c99b23",
-};
-const fill = (r: string | undefined) => RARITY_FILL[r ?? "common"] ?? RARITY_FILL.common;
+// Per-rarity swatch fill + stripe — the light panel (RARITY_BG_SOLID) and the
+// saturated marker (RARITY_STRIPE) from the shared rarity tokens (theme.ts).
+const fill = (r: string | undefined) => RARITY_BG_SOLID[r ?? "common"] ?? RARITY_BG_SOLID.common;
 const stripe = (r: string | undefined) => RARITY_STRIPE[r ?? "common"] ?? RARITY_STRIPE.common;
 
 // Paper-doll: a signature WHIMSY tint per equip slot, painted behind the slot's
@@ -228,7 +223,7 @@ export function ClosetView({
 			<Pressable
 				key={s}
 				onPress={() => scrollToCategory(s)}
-				style={styles.slotChip}
+				style={({ pressed }) => [styles.slotChip, pressed && { opacity: 0.7 }]}
 			>
 				{equippedId && it ? (
 					<Pressable
@@ -236,7 +231,7 @@ export function ClosetView({
 						style={styles.slotRemove}
 						hitSlop={{ top: 6, right: 6, bottom: 18, left: 18 }}
 					>
-						<Text style={styles.slotRemoveText}>✕</Text>
+						<Icon name="x" size={10} color={WHIMSY.ink} strokeWidth={2.6} />
 					</Pressable>
 				) : null}
 				<View style={[styles.slotThumb, { backgroundColor: SLOT_TINT[s] ?? WHIMSY.cream2 }]}>
@@ -306,7 +301,7 @@ export function ClosetView({
 
 				{/* Title chip — the pig's nameplate; tapping scrolls to Titles. */}
 				{userId != null && (
-					<Pressable onPress={scrollToTitles} style={styles.titleChip}>
+					<Pressable onPress={scrollToTitles} style={({ pressed }) => [styles.titleChip, pressed && { opacity: 0.7 }]}>
 						<Text style={styles.titleChipKicker}>title</Text>
 						<Text
 							style={[
@@ -353,7 +348,11 @@ export function ClosetView({
 											Haptics.selectionAsync().catch(() => {});
 											onEquip(active ? null : item.id, item.category);
 										}}
-										style={[styles.itemCard, active && styles.itemCardActive]}
+										style={({ pressed }) => [
+											styles.itemCard,
+											active && styles.itemCardActive,
+											pressed && { opacity: 0.7 },
+										]}
 									>
 										<View style={[styles.itemStripe, { backgroundColor: stripe(item.rarity) }]} />
 										<View style={[styles.itemThumb, { backgroundColor: fill(item.rarity) }]}>
@@ -365,12 +364,12 @@ export function ClosetView({
 												return thumbSrc ? (
 													<Image source={thumbSrc} style={styles.itemThumbImg} resizeMode="contain" />
 												) : (
-													<Text style={styles.itemEmoji}>✦</Text>
+													<Glyph name="sparkle" size={40} style={{ opacity: 0.85 }} />
 												);
 											})()}
 											{active && (
 												<View style={styles.check}>
-													<Text style={styles.checkText}>✓</Text>
+													<Icon name="check" size={11} color={WHIMSY.paper} strokeWidth={2.8} />
 												</View>
 											)}
 										</View>
@@ -413,7 +412,7 @@ export function ClosetView({
 const COLS = 3;
 const styles = StyleSheet.create({
 	root: { flex: 1 },
-	content: { paddingHorizontal: 16, paddingTop: 6 },
+	content: { paddingHorizontal: SPACE.lg, paddingTop: 6 },
 	header: {
 		position: "relative",
 		alignItems: "center",
@@ -427,7 +426,7 @@ const styles = StyleSheet.create({
 		color: WHIMSY.accent,
 		textTransform: "lowercase",
 	},
-	title: { fontFamily: FONTS.whimsy, fontSize: 30, color: WHIMSY.ink, marginTop: 2 },
+	title: { ...TYPE.pageTitle, color: WHIMSY.ink, marginTop: 2 },
 	coinPill: {
 		position: "absolute",
 		right: 0,
@@ -438,7 +437,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		paddingHorizontal: 11,
 		paddingVertical: 5,
 	},
@@ -447,10 +446,10 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.cream,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 18,
+		borderRadius: RADII.xl,
 		padding: 14,
 		alignItems: "center",
-		gap: 10,
+		gap: SPACE.sm,
 		...STICKER_SHADOW,
 	},
 	// Paper-doll: flex columns flank Rosie so she stays centred no matter how many
@@ -462,7 +461,7 @@ const styles = StyleSheet.create({
 	},
 	slotCol: {
 		flex: 1,
-		gap: 8,
+		gap: SPACE.sm,
 		alignItems: "center",
 		justifyContent: "center",
 	},
@@ -513,16 +512,15 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 14,
+		borderRadius: RADII.lg,
 		paddingVertical: 6,
 		position: "relative",
-		...STICKER_SHADOW,
-		shadowOffset: { width: 2, height: 2 },
+		...SHADOW_SM,
 	},
 	slotThumb: {
 		width: 40,
 		height: 40,
-		borderRadius: 10,
+		borderRadius: RADII.sm,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
@@ -534,7 +532,7 @@ const styles = StyleSheet.create({
 	slotPlus: { fontSize: 22, color: WHIMSY.mute },
 	slotLabel: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		letterSpacing: 0.6,
 		color: WHIMSY.mute,
 		textTransform: "uppercase",
@@ -558,12 +556,6 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	slotRemoveText: {
-		fontSize: 10,
-		fontWeight: "900",
-		color: WHIMSY.ink,
-		lineHeight: 12,
-	},
 	// Nameplate pill under the pig. minHeight 44 keeps it a full-size
 	// tap target without hitSlop.
 	titleChip: {
@@ -575,7 +567,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		paddingVertical: 5,
 		paddingHorizontal: 16,
 	},
@@ -597,19 +589,19 @@ const styles = StyleSheet.create({
 		borderWidth: 1.5,
 		borderColor: WHIMSY.mute,
 		borderStyle: "dashed",
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		backgroundColor: WHIMSY.cream,
 		paddingVertical: 9,
 		paddingHorizontal: 14,
-		marginVertical: 12,
+		marginVertical: SPACE.md,
 	},
 	hintText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.ink },
 	section: { marginBottom: 18 },
 	sectionHead: {
 		flexDirection: "row",
 		alignItems: "baseline",
-		gap: 8,
-		marginBottom: 10,
+		gap: SPACE.sm,
+		marginBottom: SPACE.sm,
 	},
 	sectionTitle: { fontFamily: FONTS.whimsy, fontSize: 20, color: WHIMSY.ink },
 	sectionCount: {
@@ -625,13 +617,9 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 14,
+		borderRadius: RADII.lg,
 		overflow: "hidden",
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 2, height: 2 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
+		...SHADOW_SM,
 	},
 	itemCardActive: { borderColor: WHIMSY.lilacDeep },
 	itemStripe: { height: 4, width: "100%" },
@@ -653,7 +641,6 @@ const styles = StyleSheet.create({
 		width: THUMB_ART,
 		height: THUMB_ART,
 	},
-	itemEmoji: { fontSize: 40 },
 	itemFoot: {
 		borderTopWidth: 2,
 		borderTopColor: WHIMSY.ink,
@@ -682,5 +669,4 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	checkText: { color: WHIMSY.paper, fontSize: 11, fontWeight: "900" },
 });

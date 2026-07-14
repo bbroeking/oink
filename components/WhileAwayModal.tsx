@@ -8,11 +8,12 @@ import {
 	Modal,
 	View,
 	Text,
-	Pressable,
 	ScrollView,
 	StyleSheet,
 } from "react-native";
 import { Sticker } from "./ui/Sticker";
+import { Button } from "./ui/Button";
+import { Glyph } from "./ui/Glyph";
 import { RitualIconWell } from "./ui/RitualIconWell";
 import {
 	BLESSING_META,
@@ -25,7 +26,9 @@ import {
 	KICKER_TEXT,
 	MODAL_BACKDROP_BG,
 	STICKER_SHADOW,
+	TYPE,
 	WHIMSY,
+	RADII,
 } from "@/constants/theme";
 
 // Discriminated union — blessings + curses + trades + system
@@ -89,7 +92,7 @@ export function WhileAwayModal({
 				<Sticker
 					color="paper"
 					rotate={-1}
-					radius={20}
+					radius={RADII.xxl}
 					style={[styles.sheet, STICKER_SHADOW]}
 				>
 					<Text style={styles.kicker}>★ while you were away</Text>
@@ -121,7 +124,7 @@ export function WhileAwayModal({
 								return (
 									<View key={i} style={[styles.row, styles.rowTrade]}>
 										<View style={styles.tradeGlyphWell}>
-											<Text style={styles.tradeGlyph}>♥</Text>
+											<Glyph name="heart" size={18} />
 										</View>
 										<View style={{ flex: 1, minWidth: 0 }}>
 											<Text style={styles.rowName} numberOfLines={1}>
@@ -166,15 +169,15 @@ export function WhileAwayModal({
 						})}
 					</ScrollView>
 
-					<Pressable
+					<Button
+						variant="purple"
+						size="md"
+						full
 						onPress={onDismiss}
-						style={({ pressed }) => [
-							styles.btn,
-							pressed && { opacity: 0.7 },
-						]}
+						style={{ marginTop: 6 }}
 					>
-						<Text style={styles.btnText}>Got it</Text>
-					</Pressable>
+						Got it
+					</Button>
 					<Text style={styles.foot}>
 						See the full activity in the Friends tab.
 					</Text>
@@ -194,8 +197,7 @@ const styles = StyleSheet.create({
 	sheet: { padding: 20 },
 	kicker: { ...KICKER_TEXT, fontSize: 11, marginBottom: 4 },
 	headline: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 24,
+		...TYPE.pageTitle,
 		color: WHIMSY.ink,
 		marginBottom: 14,
 	},
@@ -210,7 +212,7 @@ const styles = StyleSheet.create({
 		marginBottom: 8,
 	},
 	rowBless: { backgroundColor: WHIMSY.sun, borderColor: WHIMSY.ink },
-	rowCurse: { backgroundColor: "#D5E4C9", borderColor: WHIMSY.ink },
+	rowCurse: { backgroundColor: WHIMSY.sage, borderColor: WHIMSY.ink },
 	rowTrade: { backgroundColor: WHIMSY.rose, borderColor: WHIMSY.ink },
 	// 40pt to match the bless/curse RitualIconWell so all four row
 	// kinds share one left-column height.
@@ -224,7 +226,6 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	tradeGlyph: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.roseDeep },
 	// System announcement row — cream (paper-toned) so it reads as
 	// "from the barn" rather than from any specific friend or kind.
 	rowSystem: { backgroundColor: WHIMSY.cream, borderColor: WHIMSY.ink },
@@ -246,16 +247,6 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		marginTop: 1,
 	},
-	btn: {
-		backgroundColor: WHIMSY.lilac,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: 14,
-		paddingVertical: 12,
-		alignItems: "center",
-		marginTop: 6,
-	},
-	btnText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
 	foot: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,

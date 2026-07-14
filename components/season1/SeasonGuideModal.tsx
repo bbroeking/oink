@@ -17,11 +17,11 @@ import {
 	Pressable,
 	ScrollView,
 	StyleSheet,
-	Alert,
 } from "react-native";
 import { Sticker } from "../ui/Sticker";
 import { Glyph, type GlyphName } from "../ui/Glyph";
 import { Button } from "../ui/Button";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { CREW_CAP_WORD } from "@/constants/crews";
 import {
 	useHungerMeter,
@@ -45,7 +45,7 @@ const STEPS: { g: GlyphName; title: string; line: string }[] = [
 	{
 		g: "friends",
 		title: "Join a Sounder",
-		line: `${CREW_CAP_WORD} snouts, one banner. Slip into an open Sounder or tap a + slot to rally friends — the dig needs a herd.`,
+		line: `${CREW_CAP_WORD} snouts, one banner. Slip into an open Sounder, answer a friend's invite, or found your own — the dig needs a herd.`,
 	},
 	{
 		g: "gem",
@@ -65,7 +65,7 @@ const STEPS: { g: GlyphName; title: string; line: string }[] = [
 	{
 		g: "ogre",
 		title: "Starve the Hungerer",
-		line: "Every truffle the herd digs back drains him, level by level, until the whole valley starves him and takes its joy home.",
+		line: "Every truffle the herd digs back drains him, level by level, until the whole valley starves him to Famished and every digger with ten finds takes his crown.",
 	},
 ];
 
@@ -94,6 +94,8 @@ export function SeasonGuideModal({
 	const [renameText, setRenameText] = useState(crewName ?? "");
 	const [renameBusy, setRenameBusy] = useState(false);
 	const [renameNote, setRenameNote] = useState<string | null>(null);
+	// Two-tap leave confirm — an in-world ConfirmDialog, not a native Alert.
+	const [leaveConfirm, setLeaveConfirm] = useState(false);
 
 	const openRename = () => {
 		setRenameText(crewName ?? "");
@@ -115,26 +117,25 @@ export function SeasonGuideModal({
 		}
 	};
 
-	const confirmLeave = () => {
-		Alert.alert(
-			"Leave your Sounder?",
-			"You'll stop digging with this herd. You can join another any time.",
-			[
-				{ text: "Stay", style: "cancel" },
-				{
-					text: "Leave",
-					style: "destructive",
-					onPress: () => {
-						onLeave?.();
-						onDismiss();
-					},
-				},
-			]
-		);
+	const confirmLeave = () => setLeaveConfirm(true);
+	const doLeave = () => {
+		setLeaveConfirm(false);
+		onLeave?.();
+		onDismiss();
 	};
 
 	return (
 		<Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+			<ConfirmDialog
+				open={leaveConfirm}
+				title="Leave your Sounder?"
+				body="You'll stop digging with this herd. You can join another any time."
+				confirmLabel="Leave"
+				cancelLabel="Stay"
+				destructive
+				onConfirm={doLeave}
+				onCancel={() => setLeaveConfirm(false)}
+			/>
 			<View style={styles.backdrop}>
 				<Sticker
 					color="paper"
@@ -212,7 +213,7 @@ export function SeasonGuideModal({
 								</Button>
 							</View>
 						) : (
-							<Pressable onPress={openRename} hitSlop={8} style={styles.renameLinkRow}>
+							<Pressable onPress={openRename} hitSlop={8} style={({ pressed }) => [styles.renameLinkRow, pressed && { opacity: 0.6 }]}>
 								<Text style={styles.renameLink}>rename your Sounder ›</Text>
 							</Pressable>
 						))}
@@ -220,7 +221,7 @@ export function SeasonGuideModal({
 						<Text style={styles.renameNote}>{renameNote}</Text>
 					)}
 					{onLeave && (
-						<Pressable onPress={confirmLeave} hitSlop={8} style={styles.leaveRow}>
+						<Pressable onPress={confirmLeave} hitSlop={8} style={({ pressed }) => [styles.leaveRow, pressed && { opacity: 0.6 }]}>
 							<Text style={styles.leaveLink}>leave your Sounder ›</Text>
 						</Pressable>
 					)}
@@ -246,8 +247,7 @@ const styles = StyleSheet.create({
 	},
 	kicker: { ...KICKER_TEXT, textAlign: "center", marginBottom: 4 },
 	headline: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 24,
+		...TYPE.pageTitle,
 		color: WHIMSY.ink,
 		textAlign: "center",
 		marginBottom: SPACE.md,
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
 	stepGlyph: {
 		width: 36,
 		height: 36,
-		borderRadius: 18,
+		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.cream,
@@ -271,8 +271,8 @@ const styles = StyleSheet.create({
 	},
 	stepText: { flex: 1, minWidth: 0 },
 	stepTitle: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 14.5,
+		...TYPE.label,
+		fontSize: 14,
 		color: WHIMSY.ink,
 		marginBottom: 1,
 	},
@@ -299,14 +299,8 @@ const styles = StyleSheet.create({
 		borderWidth: 2,
 		backgroundColor: WHIMSY.sun,
 	},
-	ladderLevel: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		width: 38,
-	},
-	ladderName: { flex: 1, fontFamily: FONTS.bodyExtra, fontSize: 13.5, color: WHIMSY.ink },
-	ladderCredit: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.mute },
+	ladderName: { flex: 1, ...TYPE.label, color: WHIMSY.ink },
+	ladderCredit: { ...TYPE.hand, fontFamily: FONTS.whimsy, lineHeight: undefined, color: WHIMSY.mute },
 	ladderHereText: { color: WHIMSY.ink },
 	ladderFoot: {
 		...TYPE.hand,

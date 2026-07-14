@@ -13,8 +13,7 @@
 // starts at the roster.
 
 import { useCallback, useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
-import { router } from "expo-router";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { Sticker } from "../ui/Sticker";
@@ -24,6 +23,7 @@ import { LoadingBeat } from "../ui/EmptyState";
 import { CrewPortrait } from "../CrewRow";
 import { JoinableSounders } from "../JoinableSounders";
 import { useFeedingCta } from "../mudwar/useFeedingCta";
+import { NotifyChip, BurrowBookLink } from "./GuardedCtaExtras";
 import { useRosterHats } from "@/hooks/useRosterHats";
 import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
 import {
@@ -34,8 +34,17 @@ import {
 	type RaceCrewDetail,
 } from "@/utils/dig";
 import { CREW_CAP_WORD } from "@/constants/crews";
-import { randomCrewName } from "@/utils/crewNames";
+import { RACE_TRUFFLE_TABLE, STIR_BUDGET } from "@/constants/dig";
 import { FONTS, RADII, SHADOW_SM, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+
+// The full-Sounder dig budget — a crewmate who's dug this feeding lets you dig
+// deeper (TrufflePatch's coop budget = STIR_BUDGET * 1.25, a quarter deeper).
+// The join pitch now says "a quarter deeper" rather than raw stir counts; this
+// derived depth-gain feeds that copy's percentage so the wording can't silently
+// drift from the real coop budget. Rounded to a clean "%" for the sentence.
+const COOP_DEPTH_GAIN_PCT = Math.round(
+	((Math.round(STIR_BUDGET * 1.25) - STIR_BUDGET) / STIR_BUDGET) * 100
+);
 
 const AVATAR = 44;
 
@@ -173,27 +182,35 @@ function CrewedHome({
 				) : cta.noCrew ? null : cta.phaseOpen ? (
 					<>
 						<Button size="md" variant="primary" full onPress={cta.start}>
-							Root the patch
+							Dig for truffles
 						</Button>
+						{/* The dig verb leads; "root the patch" rides under it as the
+						    small storybook whisper (inverted roles). */}
+						<Text style={styles.digSub}>root the patch</Text>
 						<Text style={styles.cooldownLine}>the patch closes in {cta.countdown}</Text>
 					</>
 				) : (
-					<Button size="md" variant="locked" full disabled>
-						he's guarding — opens in {cta.countdown}
-					</Button>
+					<>
+						<Button size="md" variant="locked" full disabled>
+							he's guarding — opens in {cta.countdown}
+						</Button>
+						{/* Guarded, nothing to dig — offer the same "oink me" opt-in the
+						    onboarding first_dig branch gives, so a retained player isn't
+						    left at a dead disabled button. */}
+						<NotifyChip />
+					</>
 				)}
 				{!!cta.note && <Text style={styles.note}>{cta.note}</Text>}
 				{/* Dev escape hatch: play the dig any time (fresh practice board,
 				    mints nothing) — the phase gate makes on-device testing painful. */}
 				{__DEV__ && cta.startPractice && (
-					<Pressable onPress={cta.startPractice} hitSlop={6}>
+					<Pressable onPress={cta.startPractice} hitSlop={6} style={({ pressed }) => pressed && { opacity: 0.65 }}>
 						<Text style={styles.burrowLink}>dev · practice dig ›</Text>
 					</Pressable>
 				)}
-				{/* The relic shelf — the dig's collection page (Part D). */}
-				<Pressable onPress={() => router.push("/dig-collection")} hitSlop={6}>
-					<Text style={styles.burrowLink}>the Burrow Book ›</Text>
-				</Pressable>
+				{/* The relic shelf — the dig's collection page (Part D). A real
+				    bordered secondary affordance, not a bare afterthought link. */}
+				<BurrowBookLink />
 			</View>
 			{cta.modal}
 
@@ -222,6 +239,30 @@ function CrewedHome({
 // Ported wholesale from the retired SounderSteps' join step; the season's first
 // verb is joining, so invites + the open-Sounder list lead and founding is the
 // demoted fallback.
+// The three concrete Sounder benefits, in the ladder-of-value order: dig deeper
+// → milestones pay everyone → the weekly dig-off pays truffles. Every number is
+// derived, never typed inline.
+function SounderBenefits() {
+	// A percentage is a felt benefit with no unit to learn — unlike the old raw
+	// "25 stirs, not 20". COOP_DEPTH_GAIN_PCT derives straight from STIR_BUDGET *
+	// 1.25 (currently 25%) so this copy can never drift from the real coop budget.
+	const lines = [
+		`dig deeper together — a full Sounder digs ${COOP_DEPTH_GAIN_PCT}% deeper`,
+		"herd milestones pay everyone — titles + snout purses",
+		`weekly dig-off pays Golden Truffles — ${RACE_TRUFFLE_TABLE[1]} each for 1st`,
+	];
+	return (
+		<View style={styles.benefits}>
+			{lines.map((line) => (
+				<View key={line} style={styles.benefitRow}>
+					<Glyph name="gem" size={16} />
+					<Text style={styles.benefitText}>{line}</Text>
+				</View>
+			))}
+		</View>
+	);
+}
+
 function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
 	const invites = crewHook.crew.invitesIn;
 	const joinable = useJoinableCrews();
@@ -240,6 +281,18 @@ function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
 					: `${CREW_CAP_WORD} snouts, one banner. Slip into an open Sounder — you'll dig the feedings together.`}
 			</Text>
 
+			{/* Sell the Sounder with its real benefits, not flavor — the three
+			    concrete lines a crewless player never sees today. The depth-gain %
+			    derives from the dig constants; truffles from RACE_TRUFFLE_TABLE. */}
+			<SounderBenefits />
+			{/* The word itself, taught as a gift (Animal Crossing's Blathers
+			    pattern): "sounder" is the REAL collective noun for wild pigs —
+			    one quiet flavor line turns the obscurity into charm. */}
+			<Text style={styles.doorGloss}>
+				a "sounder" is the true old word for a herd of wild pigs — now
+				it's what you call your friends.
+			</Text>
+
 			{invites.map((inv) => (
 				<View key={inv.id} style={styles.inviteRow}>
 					<Glyph name="friends" size={18} />
@@ -248,12 +301,12 @@ function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
 					</Text>
 					<Pressable
 						onPress={() => crewHook.accept(inv.id)}
-						style={styles.joinBtn}
+						style={({ pressed }) => [styles.joinBtn, pressed && { opacity: 0.7 }]}
 						hitSlop={6}
 					>
 						<Text style={styles.joinBtnText}>Join</Text>
 					</Pressable>
-					<Pressable onPress={() => crewHook.decline(inv.id)} hitSlop={8}>
+					<Pressable onPress={() => crewHook.decline(inv.id)} hitSlop={8} style={({ pressed }) => pressed && { opacity: 0.65 }}>
 						<Text style={styles.declineText}>decline</Text>
 					</Pressable>
 				</View>
@@ -268,7 +321,7 @@ function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
 			{showFoundForm ? (
 				<FoundForm crewHook={crewHook} topGap={!nothingToJoin} />
 			) : (
-				<Pressable onPress={() => setFounding(true)} hitSlop={8}>
+				<Pressable onPress={() => setFounding(true)} hitSlop={8} style={({ pressed }) => pressed && { opacity: 0.65 }}>
 					<Text style={styles.foundLink}>or found your own ›</Text>
 				</Pressable>
 			)}
@@ -277,18 +330,16 @@ function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
 }
 
 function FoundForm({ crewHook, topGap }: { crewHook: UseCrew; topGap: boolean }) {
-	// Seed with a playful default so a new leader always has a name in hand;
-	// the reroll link below drops in a fresh one.
-	const [name, setName] = useState(randomCrewName);
+	// No name to type — the server names your Sounder for you at birth; the
+	// leader renames it later. Founding is a single tap.
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
 
 	const found = async () => {
-		const trimmed = name.trim();
-		if (!trimmed || busy) return;
+		if (busy) return;
 		setBusy(true);
 		setNote(null);
-		const r = await crewHook.create(trimmed);
+		const r = await crewHook.create();
 		setBusy(false);
 		if (r.ok) {
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -296,27 +347,17 @@ function FoundForm({ crewHook, topGap }: { crewHook: UseCrew; topGap: boolean })
 			setNote(
 				r.reason === "already_in_crew"
 					? "You're already in a Sounder."
-					: "That name didn't stick — try another, short and snappy."
+					: "Couldn't raise the banner — give it another tap."
 			);
 		}
 	};
 
 	return (
 		<View style={topGap ? { marginTop: SPACE.md } : undefined}>
-			<TextInput
-				value={name}
-				onChangeText={setName}
-				placeholder="The Truffle Hunters"
-				placeholderTextColor={WHIMSY.muteSoft}
-				maxLength={24}
-				style={styles.nameInput}
-				returnKeyType="done"
-				onSubmitEditing={found}
-			/>
-			<Pressable onPress={() => setName(randomCrewName())} hitSlop={8}>
-				<Text style={styles.rerollLink}>another name ›</Text>
-			</Pressable>
-			<Button size="md" variant="primary" full onPress={found} disabled={busy || !name.trim()}>
+			<Text style={styles.foundBlurb}>
+				We'll name your Sounder for you — you can rename it once the herd's in.
+			</Text>
+			<Button size="md" variant="primary" full onPress={found} disabled={busy}>
 				{busy ? "Founding…" : "Found it"}
 			</Button>
 			{!!note && <Text style={styles.note}>{note}</Text>}
@@ -347,7 +388,7 @@ const styles = StyleSheet.create({
 		left: 0,
 		right: 0,
 		bottom: 0,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.sun,
 	},
 	sparkle: { position: "absolute", top: -2, right: -2 },
@@ -368,6 +409,14 @@ const styles = StyleSheet.create({
 	// Play / cooldown.
 	playRow: { marginBottom: SPACE.sm },
 	cooldownLine: { ...TYPE.hand, fontFamily: FONTS.hand, color: WHIMSY.mute },
+	// The "root the patch" whisper subtitle under the "Dig for truffles" verb.
+	digSub: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.accent,
+		textAlign: "center",
+		marginTop: SPACE.xs,
+	},
 	note: {
 		...TYPE.hand,
 		fontFamily: FONTS.hand,
@@ -387,7 +436,7 @@ const styles = StyleSheet.create({
 	milestone: { marginBottom: SPACE.xs },
 	track: {
 		height: 8,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.cream2,
@@ -404,11 +453,30 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		marginBottom: SPACE.xs,
 	},
+	doorGloss: {
+		...TYPE.hand,
+		color: WHIMSY.mute,
+		marginTop: SPACE.sm,
+		marginBottom: SPACE.xs,
+	},
 	doorSub: {
 		...TYPE.bodySm,
 		fontFamily: FONTS.body,
 		color: WHIMSY.mute,
-		marginBottom: SPACE.md,
+		marginBottom: SPACE.sm,
+	},
+	// The three concrete benefit lines under the join-door pitch.
+	benefits: { gap: SPACE.xs, marginBottom: SPACE.md },
+	benefitRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
+	},
+	benefitText: {
+		flex: 1,
+		...TYPE.bodySm,
+		fontFamily: FONTS.bodyExtra,
+		color: WHIMSY.ink,
 	},
 	inviteRow: {
 		flexDirection: "row",
@@ -441,16 +509,11 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textDecorationLine: "underline",
 	},
-	nameInput: {
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.cream,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: 10,
+	// One-line reassurance above the "Found it" button (we name it for you).
+	foundBlurb: {
+		...TYPE.body,
 		fontFamily: FONTS.body,
-		fontSize: 15,
-		color: WHIMSY.ink,
+		color: WHIMSY.mute,
 		marginBottom: SPACE.sm,
 	},
 	foundLink: {
@@ -459,17 +522,6 @@ const styles = StyleSheet.create({
 		color: WHIMSY.accent,
 		textAlign: "center",
 		marginTop: SPACE.md,
-		textDecorationLine: "underline",
-	},
-	// Reroll affordance under the name input — same hand-font accent as
-	// foundLink but left-aligned and tight to the field.
-	rerollLink: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textAlign: "left",
-		marginTop: SPACE.xs,
-		marginBottom: SPACE.sm,
 		textDecorationLine: "underline",
 	},
 });

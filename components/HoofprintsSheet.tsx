@@ -26,14 +26,18 @@ import {
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { RitualIconWell } from "./ui/RitualIconWell";
+import { SectionHeader } from "./ui/SectionHeader";
+import { EmptyState } from "./ui/EmptyState";
 import { CleanseModal } from "./CleanseModal";
 import { useActiveEffectsContext } from "../hooks/ActiveEffectsProvider";
 import { effectMeta, formatLeft, type Effect } from "../utils/activeEffects";
 import {
 	FONTS,
-	KICKER_TEXT,
 	MODAL_BACKDROP_BG,
+	RADII,
+	SPACE,
 	STICKER_SHADOW,
+	TYPE,
 	WHIMSY,
 } from "@/constants/theme";
 
@@ -95,13 +99,14 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 						style={[styles.sheet, STICKER_SHADOW]}
 					>
 						<View style={styles.grabber} />
-						<Text style={styles.kicker}>★ left by the sounder</Text>
-						<Text style={styles.title}>Hoofprints on you</Text>
+						<SectionHeader kicker="left by the sounder" title="Hoofprints on you" />
 
 						{total === 0 && (
-							<Text style={styles.emptyText}>
-								Nothing on your snout right now.
-							</Text>
+							<EmptyState
+								glyph="pigface"
+								title="Nothing on your snout right now."
+								sub="Blessings and curses left by your sounder show up here."
+							/>
 						)}
 
 						{blessings.length > 0 && (
@@ -218,24 +223,11 @@ const styles = StyleSheet.create({
 		height: 4,
 		borderRadius: 2,
 		backgroundColor: WHIMSY.muteSoft,
-		marginBottom: 12,
-	},
-	kicker: {
-		...KICKER_TEXT,
-		marginBottom: 4,
-	},
-	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 24,
-		color: WHIMSY.ink,
-		marginBottom: 16,
+		marginBottom: SPACE.md,
 	},
 	sectionLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
-		letterSpacing: 1.6,
-		textTransform: "uppercase",
-		marginBottom: 8,
+		...TYPE.kickerPill,
+		marginBottom: SPACE.sm,
 	},
 	sectionBless: {
 		color: WHIMSY.lilacDeep,
@@ -247,66 +239,56 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
-		marginTop: 16,
-		marginBottom: 8,
+		marginTop: SPACE.lg,
+		marginBottom: SPACE.sm,
 	},
 	cleansePill: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 6,
+		gap: SPACE.xs + 2,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 999,
-		paddingHorizontal: 12,
-		paddingVertical: 6,
+		borderRadius: RADII.pill,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.xs + 2,
 	},
 	cleansePillText: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
+		...TYPE.label,
 		color: WHIMSY.ink,
 	},
 	card: {
-		padding: 12,
+		padding: SPACE.md,
 	},
 	cardRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 12,
+		gap: SPACE.md,
 	},
 	cardName: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 17,
+		...TYPE.cardTitle,
 		color: WHIMSY.ink,
 	},
 	cardBlurb: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
+		...TYPE.bodySm,
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},
 	cardFrom: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
+		...TYPE.kickerPill,
+		letterSpacing: 0.3,
+		textTransform: "none",
 		color: WHIMSY.mute,
-		marginTop: 6,
+		marginTop: SPACE.xs + 2,
 	},
 	cardFromBold: {
 		color: WHIMSY.ink,
 		fontFamily: FONTS.bodyBlack,
 	},
-	emptyText: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		paddingVertical: 18,
-	},
 	footer: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
+		...TYPE.kicker,
 		color: WHIMSY.mute,
 		textAlign: "center",
-		marginTop: 18,
+		marginTop: SPACE.lg + 2,
 	},
 });

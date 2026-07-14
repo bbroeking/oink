@@ -26,6 +26,7 @@ import {
 	MODAL_BACKDROP_BG,
 	STICKER_SHADOW,
 	WHIMSY,
+	RADII,
 } from "@/constants/theme";
 
 export type SchismSide = "angel" | "goblin";
@@ -175,7 +176,7 @@ export function AlignmentSchismModal({
 					<Sticker
 						color={side === "angel" ? "sun" : "paper"}
 						rotate={-1.2}
-						radius={20}
+						radius={RADII.xxl}
 						border={3}
 						style={[styles.card, STICKER_SHADOW]}
 					>

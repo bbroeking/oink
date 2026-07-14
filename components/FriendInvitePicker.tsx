@@ -27,6 +27,7 @@ import { EmptyState, LoadingBeat } from "./ui/EmptyState";
 import type { UseCrew } from "@/hooks/useCrew";
 import { fetchFriendsCrews, type FriendCrew } from "@/utils/crews";
 import { getFriendIds, FRIEND_CAP_LIMIT, type Profile } from "@/utils/friendships";
+import { CREW_CAP } from "@/constants/crews";
 import { SPACE } from "@/constants/theme";
 
 function inviteError(reason?: string): string {
@@ -85,7 +86,16 @@ export function FriendInvitePicker({
 	}, [visible]);
 
 	const myCrewId = crewHook.crew.crew?.id ?? null;
-	const waitingIds = new Set(crewHook.crew.invitesOut.map((i) => i.invitee_id));
+	// invitee_id → the outgoing invite's row id, so a "waiting" row can take the
+	// ask back (and free its reserved seat).
+	const waitingInviteByFriend = new Map(
+		crewHook.crew.invitesOut.map((i) => [i.invitee_id, i.id])
+	);
+	// Members + pending-out invites fill the roster (server's combined cap), so
+	// once they hit CREW_CAP every remaining Invite is dead — disable them with a
+	// quiet "full" hint rather than let the server bounce each ask.
+	const seatsFull =
+		crewHook.crew.members.length + crewHook.crew.invitesOut.length >= CREW_CAP;
 
 	const invite = async (friendId: string) => {
 		if (busyId) return;
@@ -98,6 +108,15 @@ export function FriendInvitePicker({
 		} else {
 			setNote(inviteError(r.reason));
 		}
+	};
+
+	const cancel = async (inviteId: string) => {
+		if (busyId) return;
+		setBusyId(inviteId);
+		setNote(null);
+		const r = await crewHook.cancel(inviteId);
+		setBusyId(null);
+		if (!r.ok) setNote("Couldn't take that ask back — try again.");
 	};
 
 	return (
@@ -120,20 +139,31 @@ export function FriendInvitePicker({
 					{friends.map((f, idx) => {
 						const fc = crewsByFriend.get(f.id);
 						const crewmate = !!fc && fc.crew_id === myCrewId;
-						const waiting = waitingIds.has(f.id);
+						const waitingInvite = waitingInviteByFriend.get(f.id);
+						const waiting = waitingInvite != null;
 						const sub = crewmate
 							? "rides with you"
 							: fc
 								? `in ${fc.crew_name}`
 								: waiting
 									? "waiting on your last ask…"
-									: "no crew yet — free to ride";
+									: seatsFull
+										? "the banner's full"
+										: "no crew yet — free to ride";
 						const right = crewmate ? (
 							<RowStatus>crewmate</RowStatus>
 						) : fc ? (
 							<RowStatus>taken</RowStatus>
 						) : waiting ? (
-							<RowStatus>waiting…</RowStatus>
+							// The ask is out — offer to take it back (frees the seat).
+							<HandLink
+								onPress={() => cancel(waitingInvite)}
+								textStyle={busyId === waitingInvite ? styles.dim : undefined}
+							>
+								take it back
+							</HandLink>
+						) : seatsFull ? (
+							<RowStatus>sounder full</RowStatus>
 						) : (
 							<SunPill onPress={() => invite(f.id)} disabled={busyId !== null}>
 								{busyId === f.id ? "Inviting…" : "Invite"}
@@ -169,6 +199,7 @@ export function FriendInvitePicker({
 
 const styles = StyleSheet.create({
 	list: { maxHeight: 380 },
+	dim: { opacity: 0.5 },
 	note: { textAlign: "center", marginTop: SPACE.sm },
 	done: { alignSelf: "center", marginTop: SPACE.md, paddingHorizontal: SPACE.lg },
 });

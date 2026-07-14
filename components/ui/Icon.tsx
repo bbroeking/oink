@@ -77,6 +77,7 @@ const VECTOR_ICON_MAP: Partial<Record<IconName, {
 	trophy:    { family: "mci",     name: "trophy" },
 	ghost:     { family: "mci",     name: "ghost" },
 	gear:      { family: "feather", name: "settings" },
+	edit:      { family: "feather", name: "edit-2" },
 	refresh:   { family: "feather", name: "refresh-ccw" },
 	exit:      { family: "feather", name: "log-out" },
 	handshake: { family: "mci",     name: "handshake" },

@@ -29,6 +29,7 @@ import * as Haptics from "expo-haptics";
 import { Glyph } from "./ui/Glyph";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Sticker } from "./ui/Sticker";
+import { Button } from "./ui/Button";
 import {
 	usePopupSlot,
 	POPUP_TEARDOWN_MS,
@@ -39,6 +40,7 @@ import {
 	KICKER_TEXT,
 	MODAL_BACKDROP_BG,
 	RARITY_BG_SOLID,
+	RADII,
 	STICKER_SHADOW,
 	WHIMSY,
 } from "@/constants/theme";
@@ -165,7 +167,7 @@ export function MysteryHatReveal({
 			onRequestClose={phase === "open" ? handleDone : handleOpen}
 		>
 			<View style={styles.backdrop}>
-				<Sticker color="lilac" rotate={-1.8} radius={20} style={styles.card}>
+				<Sticker color="lilac" rotate={-1.8} radius={RADII.xxl} style={styles.card}>
 					<Text style={styles.kicker}>★ mystery hat box ★</Text>
 
 					{phase === "box" ? (
@@ -237,15 +239,14 @@ export function MysteryHatReveal({
 								</>
 							)}
 
-							<Pressable
+							<Button
+								variant="dark"
+								size="md"
 								onPress={handleDone}
-								style={({ pressed }) => [
-									styles.doneBtn,
-									pressed && { opacity: 0.7 },
-								]}
+								style={{ marginTop: 12 }}
 							>
-								<Text style={styles.doneText}>Oink!</Text>
-							</Pressable>
+								Oink!
+							</Button>
 						</>
 					)}
 				</Sticker>
@@ -284,7 +285,7 @@ const styles = StyleSheet.create({
 	hero: {
 		width: 160,
 		height: 160,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
@@ -309,7 +310,7 @@ const styles = StyleSheet.create({
 		marginTop: 8,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		paddingHorizontal: 14,
 		paddingVertical: 3,
 	},
@@ -328,18 +329,5 @@ const styles = StyleSheet.create({
 		lineHeight: 22,
 		marginTop: 8,
 		marginBottom: 4,
-	},
-	doneBtn: {
-		marginTop: 12,
-		paddingHorizontal: 28,
-		paddingVertical: 11,
-		borderRadius: 14,
-		backgroundColor: WHIMSY.ink,
-	},
-	doneText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
-		color: WHIMSY.paper,
-		letterSpacing: 0.4,
 	},
 });

@@ -12,11 +12,12 @@ import { getFriendIds } from "@/utils/friendships";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { log } from "../utils/log";
 import { Icon } from "./ui/Icon";
+import { Glyph, IconText } from "./ui/Glyph";
 import { PigAvatar } from "./ui/PigAvatar";
-import { Sticker } from "./ui/Sticker";
+import { Sticker, Tape } from "./ui/Sticker";
 import { ListRowSkeleton } from "./ui/Skeleton";
 import { UserSheet } from "./UserSheet";
-import { FONTS, KICKER_TEXT, SHADOW_SM, TAB_SAFE, WHIMSY } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, SHADOW_SM, TAB_SAFE, TYPE, WHIMSY } from "@/constants/theme";
 
 // Page size + hard upper bound for the global leaderboard. 25 lands
 // just over a single phone screen so each "Load more" is a deliberate
@@ -107,7 +108,7 @@ function ChampionPoster({
 				{/* Rose tape pinning the poster — small decorative pin in
 				    the top-left so the champion poster reads as "tacked up"
 				    on the leaderboard wall. */}
-				<View style={styles.champTape} />
+				<Tape color="roseDeep" rotate={-12} width={48} height={12} style={styles.champTape} />
 				{/* Lifetime tickles_earned drives the sort, so the #1 slot
 				    is the all-time leader — calling them 'today's
 				    champion' would imply a daily reset the schema
@@ -134,10 +135,12 @@ function ChampionPoster({
 						    the count when a hat existed, hiding the
 						    one number the leaderboard actually
 						    competes on. */}
-						<Text style={styles.champScore} numberOfLines={1}>
-							♥ {champ.tickles_earned.toLocaleString()}
-							{champ.active_hat?.name ? `  ·  wears ${champ.active_hat.name}` : ""}
-						</Text>
+						<IconText left={<Glyph name="heart" size={14} />} gap={5}>
+							<Text style={styles.champScore} numberOfLines={1}>
+								{champ.tickles_earned.toLocaleString()}
+								{champ.active_hat?.name ? `  ·  wears ${champ.active_hat.name}` : ""}
+							</Text>
+						</IconText>
 					</View>
 					{/* Crown — the de-facto leader glyph. Replaces the old
 					    rotated "1" badge so the role reads instantly. */}
@@ -224,9 +227,11 @@ function ClippingRow({
 								: `${score}`
 							: player.tickles_earned.toLocaleString()}
 					</Text>
-					<Text style={styles.rowScoreUnit}>
-						{showAlignment ? "align" : "♥"}
-					</Text>
+					{showAlignment ? (
+						<Text style={styles.rowScoreUnit}>align</Text>
+					) : (
+						<Glyph name="heart" size={12} style={{ marginTop: 2 }} />
+					)}
 				</View>
 		</Pressable>
 	);
@@ -704,13 +709,6 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		top: -6,
 		left: 14,
-		width: 48,
-		height: 12,
-		backgroundColor: WHIMSY.roseDeep,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		transform: [{ rotate: "-12deg" }],
-		opacity: 0.92,
 	},
 	champOver: {
 		fontFamily: FONTS.hand,
@@ -727,10 +725,9 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		padding: 2,
 	},
-	champName: { fontFamily: FONTS.whimsy, fontSize: 22, color: WHIMSY.ink },
+	champName: { ...TYPE.sectionTitle, color: WHIMSY.ink },
 	champScore: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
+		...TYPE.hand,
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},
@@ -760,8 +757,8 @@ const styles = StyleSheet.create({
 	alignSectionText: {
 		...KICKER_TEXT,
 	},
-	alignSectionGenerous: { color: "#C99B23" }, // matches Barn blessing countdown
-	alignSectionGreedy:   { color: "#5E7E49" }, // matches Barn curse countdown
+	alignSectionGenerous: { color: WHIMSY.bless },      // Barn blessing countdown (shared token)
+	alignSectionGreedy:   { color: WHIMSY.curseGreen }, // Barn curse countdown (shared token)
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -793,16 +790,14 @@ const styles = StyleSheet.create({
 	rowName: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink, flexShrink: 1 },
 	flagChip: { width: 22, height: 16, alignSelf: "center" },
 	rowDisc: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
+		...TYPE.label,
 		color: WHIMSY.mute,
 	},
 	rowYouTag: { fontFamily: FONTS.hand, color: WHIMSY.accent },
 	// Second-line under the name — "wears <hat>", falls back to
 	// the active title when no hat is equipped.
 	rowSub: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 11,
+		...TYPE.label,
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},
@@ -816,8 +811,7 @@ const styles = StyleSheet.create({
 	},
 	rowScore: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	rowScoreUnit: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		...TYPE.label,
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},

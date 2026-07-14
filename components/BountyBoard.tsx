@@ -9,22 +9,23 @@ import { BountyCard, type WeeklyBounty } from "./BountyCard";
 import { ROW_TILTS } from "@/constants/theme";
 import { SectionHeader } from "./ui/SectionHeader";
 
-// Approximate the next Monday 00:00 local — most weekly bounties roll
-// over on Mondays. Worst case the label is off by a day; still better
-// than "resets weekly" which gives no urgency.
+// Count down to the server's actual rollover: bounty weeks key off
+// date_trunc('week', now() AT TIME ZONE 'UTC'), i.e. Monday 00:00 UTC —
+// NOT local midnight (local was hours late for US players).
 function resetsIn(): string {
 	const now = new Date();
-	const dow = now.getDay(); // 0=Sun
-	const daysToMon = (8 - dow) % 7 || 7;
-	if (daysToMon === 1) {
-		// less than 24h — show hours
-		const next = new Date(now);
-		next.setDate(now.getDate() + 1);
-		next.setHours(0, 0, 0, 0);
-		const hours = Math.max(1, Math.round((next.getTime() - now.getTime()) / 3.6e6));
+	const dowUtc = now.getUTCDay(); // 0=Sun
+	const daysToMon = (8 - dowUtc) % 7 || 7;
+	const next = Date.UTC(
+		now.getUTCFullYear(),
+		now.getUTCMonth(),
+		now.getUTCDate() + daysToMon
+	);
+	const hours = Math.max(1, Math.round((next - now.getTime()) / 3.6e6));
+	if (hours <= 24) {
 		return `resets in ${hours}h`;
 	}
-	return `resets in ${daysToMon}d`;
+	return `resets in ${Math.ceil(hours / 24)}d`;
 }
 
 export function BountyBoard() {

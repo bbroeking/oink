@@ -7,7 +7,7 @@ import { View, Text, Pressable, Animated, Easing, StyleSheet } from "react-nativ
 import * as Haptics from "expo-haptics";
 import { Shovel } from "./ui/Shovel";
 import { SnoutCoin } from "./ui/SnoutCoin";
-import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
+import { WHIMSY, FONTS, SHADOW_SM, RADII } from "@/constants/theme";
 
 interface Props {
 	buried: boolean;
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
 	btn: {
 		width: SIZE,
 		height: SIZE,
-		borderRadius: 14,
+		borderRadius: RADII.lg,
 		backgroundColor: WHIMSY.cream,
 		borderWidth: 2,
 		borderColor: INK,
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		...SHADOW_SM,
 	},
-	pulse: { position: "absolute", width: SIZE + 8, height: SIZE + 8, borderRadius: 16, borderWidth: 3, borderColor: WHIMSY.sun },
+	pulse: { position: "absolute", width: SIZE + 8, height: SIZE + 8, borderRadius: RADII.lg, borderWidth: 3, borderColor: WHIMSY.sun },
 	// Snout-count badge tucked on the bottom-right when a truffle is buried.
 	badge: {
 		position: "absolute",
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
 		gap: 2,
 		paddingHorizontal: 5,
 		paddingVertical: 1,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: INK,

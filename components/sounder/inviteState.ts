@@ -24,14 +24,18 @@ export function isInviteStale(
 	return size != null && size >= cap;
 }
 
-// The seat-count subline for an inviting crew ("one seat left…"), or undefined
-// when the count is unknown or the crew is already full.
+// The seat-count subline for a crew ("one seat left…"), or undefined when the
+// count is unknown or the crew is already full. A pending outgoing invite
+// reserves a seat, so `pendingCount` (default 0) counts against the vacancy —
+// members + pending-out fill the roster, matching the server's combined-seat
+// cap (open slots = cap - members - pendingOut).
 export function seatsLine(
 	memberCount: number | undefined,
+	pendingCount: number = 0,
 	cap: number = CREW_CAP
 ): string | undefined {
 	if (memberCount == null) return undefined;
-	const seats = cap - memberCount;
+	const seats = cap - memberCount - pendingCount;
 	if (seats === 1) return "one seat left at the trough";
 	if (seats > 1) return `room for ${SEAT_WORDS[seats] ?? String(seats)} more snouts`;
 	return undefined;

@@ -21,7 +21,6 @@ import { useEffect, useState } from "react";
 import {
 	View,
 	Text,
-	TextInput,
 	Image,
 	Pressable,
 	StyleSheet,
@@ -92,9 +91,8 @@ export function SounderCard({
 	crewHook: UseCrew;
 	onShowBoard?: () => void;
 }) {
-	const { crew, loading, create, accept, decline, leave } = crewHook;
+	const { crew, loading, create, accept, decline, cancel, leave } = crewHook;
 	const joinable = useJoinableCrews(!crew.crew);
-	const [name, setName] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
 	const [pickerOpen, setPickerOpen] = useState(false);
@@ -129,7 +127,11 @@ export function SounderCard({
 	const inCrew = !!crew.crew;
 	const isLeader = !!me && crew.crew?.leader_id === me;
 	const memberCount = crew.members.length;
-	const openSlots = Math.max(0, CREW_CAP - memberCount);
+	// A pending outgoing invite reserves a seat (matches the server's combined
+	// cap), so an open slot is only truly open once the ask is answered or taken
+	// back: open = cap - members - pendingOut.
+	const pendingOut = crew.invitesOut.length;
+	const openSlots = Math.max(0, CREW_CAP - memberCount - pendingOut);
 	// crew_state omits avatar fields; pull each member's equipped hat so the
 	// roster renders the same PigAvatar look the Leaderboard shows.
 	const rosterHats = useRosterHats(crew.members.map((m) => m.user_id));
@@ -164,6 +166,15 @@ export function SounderCard({
 		}
 	}
 
+	async function onCancel(inviteId: string) {
+		setNote(null);
+		const r = await cancel(inviteId);
+		if (!r.ok) {
+			setNote("Couldn't take that ask back — try again.");
+			await crewHook.refresh();
+		}
+	}
+
 	async function onKick(userId: string) {
 		if (kickArmedId !== userId) {
 			setKickArmedId(userId);
@@ -182,10 +193,10 @@ export function SounderCard({
 		if (busy) return;
 		setBusy(true);
 		setNote(null);
-		const r = await create(name.trim());
+		// No name — the server names the Sounder for you at birth.
+		const r = await create();
 		setBusy(false);
 		if (!r.ok) setNote(createError(r.reason));
-		else setName("");
 	}
 
 	if (loading && !crew.crew && crew.invitesIn.length === 0) {
@@ -197,22 +208,10 @@ export function SounderCard({
 	const foundForm = (leading: boolean) => (
 		<View style={!leading && styles.sectGap}>
 			{leading && <CrewSectionKicker plain>nobody's asked you in yet</CrewSectionKicker>}
-			<Text style={styles.fieldLabel}>name your Sounder</Text>
-			<TextInput
-				style={styles.field}
-				placeholder="The First Furrow"
-				placeholderTextColor={WHIMSY.muteSoft}
-				value={name}
-				onChangeText={setName}
-				maxLength={24}
-			/>
 			<Pressable
 				onPress={onCreate}
-				disabled={busy || name.trim().length < 1}
-				style={[
-					styles.foundBtn,
-					(busy || name.trim().length < 1) && styles.foundBtnDim,
-				]}
+				disabled={busy}
+				style={[styles.foundBtn, busy && styles.foundBtnDim]}
 			>
 				<FlagIcon size={20} />
 				<Text style={styles.foundBtnText}>
@@ -220,7 +219,7 @@ export function SounderCard({
 				</Text>
 			</Pressable>
 			<Text style={styles.foundCopy}>
-				raise the first banner and the{"\n"}herd fills in behind you.
+				raise the first banner — we'll name your{"\n"}Sounder for you, and the herd fills in behind.
 			</Text>
 		</View>
 	);
@@ -327,6 +326,10 @@ export function SounderCard({
 					{Array.from({ length: CREW_CAP }).map((_, i) =>
 						i < memberCount ? (
 							<View key={i} style={styles.pip} />
+						) : i < memberCount + pendingOut ? (
+							// A reserved seat — an outgoing ask is out. Dashed sun ring,
+							// no "+": it's spoken for until answered or taken back.
+							<View key={i} style={styles.pipPending} />
 						) : (
 							<Pressable
 								key={i}
@@ -398,7 +401,7 @@ export function SounderCard({
 							left={<CrewPortrait size={40} ghost />}
 							title={i.invitee_name ?? "Someone"}
 							sub="waiting on your last ask…"
-							right={<RowStatus>waiting…</RowStatus>}
+							right={<HandLink onPress={() => onCancel(i.id)}>take it back</HandLink>}
 						/>
 					))}
 				</View>
@@ -551,18 +554,6 @@ const styles = StyleSheet.create({
 	sectGap: { marginTop: SPACE.lg },
 	staleNote: { marginLeft: CREW_ROW_INDENT, marginTop: 2 },
 	foundLink: { alignSelf: "center", marginTop: SPACE.lg },
-	fieldLabel: { ...TYPE.hand, color: WHIMSY.mute, marginBottom: SPACE.sm },
-	field: {
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.lg,
-		backgroundColor: WHIMSY.cream,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.md,
-		...TYPE.body,
-		fontFamily: FONTS.bodyExtra,
-		color: WHIMSY.ink,
-	},
 	foundBtn: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -616,6 +607,18 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.muteSoft,
 		alignItems: "center",
 		justifyContent: "center",
+	},
+	// Reserved: an ask is out. A dashed SUN ring — half-lit toward filled, so a
+	// pending seat reads as "spoken for", not "open".
+	pipPending: {
+		width: 26,
+		height: 26,
+		borderRadius: 13,
+		borderWidth: 2.5,
+		borderStyle: "dashed",
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.sun,
+		opacity: 0.5,
 	},
 	slotHint: { ...TYPE.kicker, color: WHIMSY.mute, marginTop: SPACE.sm },
 	crownLink: { marginTop: SPACE.xs + 1 },

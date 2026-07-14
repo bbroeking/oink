@@ -22,6 +22,7 @@ import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { Sticker } from "../ui/Sticker";
+import { Glyph } from "../ui/Glyph";
 import { LoadingBeat } from "../ui/EmptyState";
 import { ReclaimSlam, ReclaimSlamHandle } from "../mudwar/ReclaimSlam";
 import { useRace } from "@/hooks/useRace";
@@ -140,6 +141,12 @@ export function RaceSection({
 	return (
 		<View style={styles.wrap}>
 			<Text style={styles.kicker}>★ the dig-off</Text>
+			{/* The payout promise, up front — the reward is stated before the
+			    board, not discovered after. Number from RACE_TRUFFLE_TABLE. */}
+			<Text style={styles.promise}>
+				top Sounders split Golden Truffles every Monday — {RACE_TRUFFLE_TABLE[1]}{" "}
+				each for 1st
+			</Text>
 			<StandingsCard state={state} myCrewId={myCrewId} crewSize={crewSize} />
 			{last && <LastRaceLine last={last} />}
 		</View>
@@ -205,9 +212,12 @@ function StandingsCard({
 	return (
 		<Sticker color="paper" rotate={-0.4} radius={RADII.lg} style={styles.card}>
 			{empty ? (
-				<Text style={styles.emptyLine}>
-					the patch is quiet — first finds take the lead
-				</Text>
+				<View style={styles.emptyBeat}>
+					<Glyph name="zzz" size={28} style={{ opacity: 0.85, marginBottom: SPACE.xs }} />
+					<Text style={styles.emptyLine}>
+						the patch is quiet — first finds take the lead
+					</Text>
+				</View>
 			) : (
 				<View style={styles.rows}>
 					{rows.map((r, i) => {
@@ -238,7 +248,7 @@ function StandingsCard({
 						})
 					}
 					hitSlop={8}
-					style={styles.fullFieldLink}
+					style={({ pressed }) => [styles.fullFieldLink, pressed && { opacity: 0.6 }]}
 				>
 					<Text style={styles.fullFieldText}>see the full field ›</Text>
 				</Pressable>
@@ -267,12 +277,20 @@ export function CrewLedger({ entry }: { entry: RaceCrewDetail | "dark" | undefin
 	return (
 		<View style={styles.ledger}>
 			{entry.members.map((mem) => (
-				<View key={mem.user_id} style={styles.ledgerRow}>
+				// A departed digger's finds stayed with the crew (no clawback —
+				// the charter's no-shame rule) but the row reads historical:
+				// dimmed, server-sorted last, "trotted on" in the caption.
+				<View
+					key={mem.user_id}
+					style={[styles.ledgerRow, mem.departed && { opacity: 0.55 }]}
+				>
 					<Text style={styles.ledgerName} numberOfLines={1}>
 						{mem.username}
 					</Text>
 					<Text style={styles.ledgerCount}>
-						{mem.finds} this week · {mem.season_finds} season
+						{mem.departed
+							? `${mem.finds} this week · trotted on`
+							: `${mem.finds} this week · ${mem.season_finds} season`}
 					</Text>
 				</View>
 			))}
@@ -336,7 +354,7 @@ export function SeasonRow({
 function SpoilsStrip() {
 	return (
 		<View style={styles.spoils}>
-			<Text style={styles.spoilsKicker}>★ this week's spoils</Text>
+			<Text style={styles.spoilsKicker}>★ this week's rewards</Text>
 			<View style={styles.spoilsRow}>
 				<Image
 					source={HAT_IMAGES.golden_truffle}
@@ -368,24 +386,41 @@ function WeeklyBeat({
 }) {
 	const mine = state.mine;
 	let line: string;
+	// Sub-quorum — the weekly ranking needs two distinct diggers. When the crew is
+	// solo there's a dead end unless we route them to invite a second snout; the
+	// "invite ›" affordance below appears only in that case.
+	const subQuorumSolo = !!mine && mine.rank == null && crewSize < 2;
 	if (mine && mine.rank != null) {
 		const ofN = Math.max(state.ranked.length, mine.rank);
 		line = `this week: ${ordinal(mine.rank)} of ${ofN}`;
 	} else if (mine) {
-		// Sub-quorum — the weekly ranking needs two distinct diggers. Nudge for a
-		// second crewmate when the crew is solo, or for a second snout to dig when
-		// the crew already has members who haven't dug this week.
+		// A solo crew needs a second SNOUT (routed to the invite surface); a crew
+		// that already has members just needs one of them to dig.
 		line =
 			crewSize < 2
-				? "spoils need two diggers — invite a second snout"
-				: "spoils need two diggers — one more snout must dig";
+				? "rewards need two diggers"
+				: "rewards need two diggers — one more snout must dig";
 	} else {
-		line = "dig this week for Monday's spoils";
+		line = "dig this week for Monday's rewards";
 	}
 	return (
-		<Text style={styles.weeklyLine}>
-			{line} · {countdown}
-		</Text>
+		<View style={styles.weeklyBeatRow}>
+			<Text style={styles.weeklyLine}>
+				{line} · {countdown}
+			</Text>
+			{subQuorumSolo && (
+				<Pressable
+					onPress={() => router.push("/(tabs)/friends?seg=sounder")}
+					hitSlop={8}
+					accessibilityRole="button"
+					accessibilityLabel="Invite a second snout to your Sounder"
+					style={({ pressed }) => [styles.inviteRow, pressed && { opacity: 0.6 }]}
+				>
+					<Glyph name="friends" size={14} />
+					<Text style={styles.inviteLink}>invite a second snout ›</Text>
+				</Pressable>
+			)}
+		</View>
 	);
 }
 
@@ -474,7 +509,7 @@ function Ceremony({
 						<Text style={styles.ceremonyCosmeticName}>{cosmeticName(cosmetic)}</Text>
 					</View>
 				)}
-				<Pressable onPress={dismiss} hitSlop={8} style={styles.ceremonyBtn}>
+				<Pressable onPress={dismiss} hitSlop={8} style={({ pressed }) => [styles.ceremonyBtn, pressed && { opacity: 0.7 }]}>
 					<Text style={styles.ceremonyBtnText}>trot home</Text>
 				</Pressable>
 				<ReclaimSlam ref={slamRef} />
@@ -489,6 +524,12 @@ const styles = StyleSheet.create({
 	kicker: {
 		...TYPE.kicker,
 		color: WHIMSY.accent,
+	},
+	// The payout-promise line under the dig-off kicker — stated before the board.
+	promise: {
+		...TYPE.bodySm,
+		fontFamily: FONTS.bodyExtra,
+		color: WHIMSY.ink,
 	},
 	card: {
 		paddingHorizontal: SPACE.lg,
@@ -513,11 +554,21 @@ const styles = StyleSheet.create({
 		borderTopColor: WHIMSY.muteSoft,
 		borderStyle: "dashed",
 	},
+	weeklyBeatRow: { alignItems: "center", gap: SPACE.xs },
 	weeklyLine: {
 		...TYPE.bodySm,
 		fontFamily: FONTS.bodyExtra,
 		color: WHIMSY.ink,
 		textAlign: "center",
+	},
+	// The sub-quorum "invite a second snout ›" affordance — a gem-less friends-
+	// glyph row routing to the Sounder surface, so a solo digger isn't dead-ended.
+	inviteRow: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
+	inviteLink: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.accent,
+		textDecorationLine: "underline",
 	},
 	// This week's spoils strip.
 	spoils: { alignItems: "center", gap: 2 },
@@ -580,8 +631,7 @@ const styles = StyleSheet.create({
 		textAlign: "right",
 	},
 	rowRank: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 16,
+		...TYPE.numeral,
 		color: WHIMSY.ink,
 		width: 34,
 	},
@@ -590,12 +640,13 @@ const styles = StyleSheet.create({
 	rowSub: { ...TYPE.kicker, fontFamily: FONTS.hand, color: WHIMSY.mute },
 	// Cumulative-finds column — big whimsy number over a tiny "finds" caption.
 	rowFindsCol: { alignItems: "flex-end", minWidth: 44 },
-	rowFindsNum: { fontFamily: FONTS.whimsy, fontSize: 22, color: WHIMSY.ink },
+	rowFindsNum: { ...TYPE.sectionTitle, color: WHIMSY.ink },
+	// The "finds" caption under the big count — bumped 9→10 off the legibility
+	// floor via the tracked-pill kicker role.
 	rowFindsCap: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 9,
+		...TYPE.kickerPill,
+		fontSize: 10,
 		letterSpacing: 0.8,
-		textTransform: "uppercase",
 		color: WHIMSY.mute,
 		marginTop: -2,
 	},
@@ -606,12 +657,15 @@ const styles = StyleSheet.create({
 		color: WHIMSY.muteSoft,
 		letterSpacing: 2,
 	},
+	emptyBeat: {
+		alignItems: "center",
+		paddingVertical: SPACE.sm,
+	},
 	emptyLine: {
 		...TYPE.hand,
 		fontFamily: FONTS.hand,
 		color: WHIMSY.mute,
 		textAlign: "center",
-		paddingVertical: SPACE.sm,
 	},
 	// Last-race line.
 	lastRow: {
@@ -666,7 +720,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		paddingHorizontal: SPACE.lg,
 		paddingVertical: SPACE.xs + 2,
 		...SHADOW_SM,

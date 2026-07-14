@@ -26,6 +26,25 @@ export const WHIMSY = {
 	// Alignment tints — Goblins vs Angels.
 	angel: "#a89bff",
 	goblin: "#d4a437",
+	// Slop Club gold — the members-only identity hue. `slopGold` is the badge /
+	// ribbon fill (the crown-and-lock gold); `slopBand` is the soft band tint
+	// behind the members header row (subtle, not an ad). Tokenized so the shop's
+	// gold stops leaking as inline #F5C44A / #FFE7AD across cards + band header.
+	slopGold: "#F5C44A",
+	slopBand: "#FFE7AD",
+	// Blessing / curse pair — the two-sided "alignment countdown" hue used on
+	// the Barn effect cards, the leaderboard alignment section, and the
+	// while-away recap. `bless` is the gold a blessing counts down in (= the
+	// generous/angel side); `curseGreen` is the muddy sage a curse counts down
+	// in (the greedy/goblin side). Five files hand-mixed this pair off-palette
+	// (#C99B23 / #5E7E49 / #7BA266 / #D5E4C9 / #5b8a4a); tokenized once so
+	// "matches Barn" is matched by token, not by copy-paste. (2026-07-12)
+	bless: "#C99B23",
+	curseGreen: "#5E7E49",
+	// Boost flame — the warm ember a "boost" reward burns in on the pass track's
+	// tier stones. A single sanctioned orange, tokenized before reuse so the
+	// flame glyph can't drift back into an inline `#F58F4A`. (2026-07-13)
+	flame: "#F58F4A",
 };
 
 // Hard sticker drop shadow (offset 4,4 / radius 0 / opacity 1).
@@ -107,29 +126,16 @@ export const RADII = {
 	lg: 14,
 	xl: 18,
 	xxl: 22,
-};
-
-export const SHADOWS = {
-	card: {
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.06,
-		shadowRadius: 10,
-		elevation: 2,
-	},
-	pillFloat: {
-		shadowColor: "#000",
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.15,
-		shadowRadius: 10,
-		elevation: 4,
-	},
+	// Fully-rounded pill / capsule — the `borderRadius: 999` idiom reinvented
+	// inline across cleanse pills, corner tags, and toggles. One name for it.
+	pill: 999,
 };
 
 // Small hard shadow for interactive chips / buttons / list rows (offset 2,2).
 // The lighter companion to STICKER_SHADOW (4,4) — the ONLY two shadow tiers
-// per the June 2026 UI audit. Soft SHADOWS.card is retired from sticker
-// contexts in favour of these two.
+// per the June 2026 UI audit. The retired soft `SHADOWS.card`/`pillFloat`
+// export (with the dead legacy `Card`) was deleted here so no new surface can
+// import a soft-shadow slop template.
 export const SHADOW_SM = {
 	shadowColor: WHIMSY.ink,
 	shadowOffset: { width: 2, height: 2 },
@@ -206,4 +212,17 @@ export const RARITY_BG_SOLID: Record<string, string> = {
 	rare:      RARITY_GRADIENT.rare[0],
 	epic:      RARITY_GRADIENT.epic[0],
 	legendary: RARITY_GRADIENT.legendary[0],
+};
+
+// Saturated per-rarity accent — the color DOT in the shop legend and the
+// STRIPE down the side of a closet card. The companion to RARITY_BG_SOLID
+// (the light fill): fill is the tinted panel behind the item, stripe is the
+// bold rarity marker on top of it. Consolidates the two divergent hand-rolled
+// maps (shop SHOP_RARITY_DOT + closet RARITY_STRIPE) that had drifted apart.
+export const RARITY_STRIPE: Record<string, string> = {
+	common:    "#cdbfae",
+	uncommon:  "#7ba868",
+	rare:      "#5a8bc5",
+	epic:      WHIMSY.lilacDeep,
+	legendary: WHIMSY.goblin,
 };

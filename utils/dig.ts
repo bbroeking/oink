@@ -297,6 +297,8 @@ export async function fetchRaceStandings(): Promise<RaceStandings | null> {
 export interface CrewMemberLine {
 	user_id: string;
 	username: string;
+	/** No longer in the crew — their finds stayed, the row reads historical. */
+	departed: boolean;
 	/** Finds this weekly cycle. */
 	finds: number;
 	/** Cumulative finds across the season. */
@@ -317,6 +319,7 @@ function parseCrewMemberLine(v: unknown): CrewMemberLine | null {
 	return {
 		user_id,
 		username: str(s.username, "a pig"),
+		departed: s.departed === true, // absent pre-push → current member
 		finds: nonneg(s.finds),
 		season_finds: nonneg(s.season_finds),
 	};

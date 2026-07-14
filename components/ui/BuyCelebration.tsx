@@ -46,6 +46,12 @@ export const BuyCelebration = forwardRef<BuyCelebrationHandle>(
 			(a: { x: number; y: number; tier?: "common" | "premium" }) => {
 				const tier = a.tier ?? "common";
 				const count = tier === "premium" ? 10 : 7;
+				// Decorative confetti glyphs — sanctioned as print-glyph text
+				// per the dingbat ruling (2026-07-13): ✦/★ are flourish
+				// typography, and ♥ rides here as animated confetti, not the
+				// static semantic love-count mark the ruling targets. These
+				// animate as Animated.Text; swapping one image glyph in among
+				// them would fracture the burst, so the whole palette stays text.
 				const palette =
 					tier === "premium"
 						? ["★", "✦", "♥"]

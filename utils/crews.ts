@@ -126,8 +126,11 @@ export async function fetchMemberHats(
 
 // ── Action wrappers (rpcAction<T>) ───────────────────────────────────────────
 
-export function createCrew(name: string): Promise<RpcResult<{ crew_id: string }>> {
-	return rpcAction<{ crew_id: string }>("create_crew", { p_name: name });
+// Founding takes no name — the server assigns a random one at birth
+// (create_crew ignores p_name; see 20260738600000). We still send p_name: null
+// to satisfy the RPC signature. The leader renames later via renameCrew.
+export function createCrew(): Promise<RpcResult<{ crew_id: string; name: string }>> {
+	return rpcAction<{ crew_id: string; name: string }>("create_crew", { p_name: null });
 }
 // Leader-only rename. Server envelope: { ok:true } | { ok:false, reason:
 // 'bad_name'|'not_leader'|'unauthenticated' }. Degrades gracefully (r.ok false)
@@ -143,6 +146,12 @@ export function acceptInvite(inviteId: string): Promise<RpcResult<{ crew_id: str
 }
 export function declineInvite(inviteId: string): Promise<RpcResult<{}>> {
 	return rpcAction("decline_crew_invite", { p_invite: inviteId });
+}
+// Take back an OUTGOING pending invite (frees the reserved seat). Any crew
+// member may cancel. Envelope: { ok:true } | { ok:false, reason:
+// 'not_authed'|'not_found'|'not_pending'|'not_your_crew' }.
+export function cancelInvite(inviteId: string): Promise<RpcResult<{}>> {
+	return rpcAction("cancel_crew_invite", { p_invite: inviteId });
 }
 export function leaveCrew(): Promise<RpcResult<{}>> {
 	return rpcAction("leave_crew");

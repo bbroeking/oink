@@ -134,10 +134,12 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginTop: SPACE.xs,
 	},
+	// Bumped off the 9px floor to 10 — the rarity caption stays a quiet tracked
+	// kicker but clears the squint-small legibility floor.
 	itemRarity: {
 		...TYPE.kickerPill,
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 9,
+		fontSize: 10,
 		color: WHIMSY.mute,
 		marginTop: 1,
 	},
@@ -167,7 +169,7 @@ const styles = StyleSheet.create({
 	titleChip: {
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		backgroundColor: WHIMSY.paper,
 		paddingHorizontal: SPACE.md,
 		paddingVertical: 5,

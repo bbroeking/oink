@@ -20,7 +20,7 @@ import { RitualIconWell } from "./ui/RitualIconWell";
 import { CleanseModal } from "./CleanseModal";
 import { useActiveEffectsContext } from "../hooks/ActiveEffectsProvider";
 import { effectMeta } from "../utils/activeEffects";
-import { FONTS, KICKER_TEXT, WHIMSY, ROW_TILTS } from "@/constants/theme";
+import { FONTS, WHIMSY, ROW_TILTS, RADII, SPACE } from "@/constants/theme";
 import { SectionHeader } from "./ui/SectionHeader";
 
 export function ActiveEffects() {
@@ -47,7 +47,7 @@ export function ActiveEffects() {
 						key={`${e.source}-${e.kind}-${i}`}
 						color="paper"
 						rotate={ROW_TILTS[i % ROW_TILTS.length]}
-						radius={10}
+						radius={RADII.md}
 						style={[
 							styles.row,
 							blessed ? styles.rowBless : styles.rowCurse,
@@ -143,26 +143,20 @@ export function ActiveEffects() {
 }
 
 const styles = StyleSheet.create({
-	band: {
-		...KICKER_TEXT,
-		fontSize: 11,
-		marginTop: 4,
-		marginBottom: 8,
-	},
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 10,
-		paddingHorizontal: 12,
-		paddingTop: 16,
-		paddingBottom: 12,
+		paddingHorizontal: SPACE.md,
+		paddingTop: SPACE.lg,
+		paddingBottom: SPACE.md,
 		marginBottom: 10,
 		// Slight overflow allowance for the corner pill so it can hang
 		// above the top border without being clipped.
 		overflow: "visible",
 	},
 	rowBless: { borderColor: WHIMSY.sun, borderWidth: 2, backgroundColor: WHIMSY.lilac },
-	rowCurse: { borderColor: "#7BA266", borderWidth: 2, backgroundColor: WHIMSY.cream },
+	rowCurse: { borderColor: WHIMSY.curseGreen, borderWidth: 2, backgroundColor: WHIMSY.cream },
 	// Floating tag — hangs off the top-left of each effect card so the
 	// card's nature (Blessing / Curse) reads before any other parsing.
 	cornerPill: {
@@ -171,7 +165,7 @@ const styles = StyleSheet.create({
 		left: 14,
 		paddingHorizontal: 10,
 		paddingVertical: 2,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		shadowColor: WHIMSY.ink,
@@ -198,8 +192,8 @@ const styles = StyleSheet.create({
 		marginTop: 1,
 	},
 	countdown: { fontFamily: FONTS.whimsy, fontSize: 12 },
-	cdBless: { color: "#C99B23" },
-	cdCurse: { color: "#5E7E49" },
+	cdBless: { color: WHIMSY.bless },
+	cdCurse: { color: WHIMSY.curseGreen },
 	// Right column for each effect card — stacks the countdown above
 	// the (curse-only) inline Cleanse pill.
 	rowRight: {
@@ -215,7 +209,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		paddingVertical: 6,
 		paddingHorizontal: 10,
 	},
@@ -223,13 +217,6 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 11,
 		color: WHIMSY.ink,
-	},
-	sub: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		marginTop: -4,
-		marginBottom: 8,
 	},
 	senderRow: {
 		flexDirection: "row",

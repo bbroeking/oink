@@ -31,7 +31,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import { Sticker } from "./ui/Sticker";
-import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, RADII, TYPE, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
 import {
 	PENDING_REFERRAL_CODE_KEY,
 	REFERRAL_CODE_PATTERN,
@@ -157,7 +157,10 @@ export function ReferralCodeEntry({ onDone }: Props) {
 						<Text style={styles.heroBody}>+50 snouts in your barn.</Text>
 					</View>
 					<View style={styles.cardWrap}>
-						<Pressable onPress={finish} style={styles.btn}>
+						<Pressable
+							onPress={finish}
+							style={({ pressed }) => [styles.btn, pressed && { opacity: 0.7 }]}
+						>
 							<Text style={styles.btnText}>Continue</Text>
 						</Pressable>
 					</View>
@@ -192,7 +195,7 @@ export function ReferralCodeEntry({ onDone }: Props) {
 						<Sticker
 							color="paper"
 							rotate={-0.6}
-							radius={20}
+							radius={RADII.xxl}
 							style={[styles.card, STICKER_SHADOW]}
 						>
 							<Pressable
@@ -286,8 +289,7 @@ const styles = StyleSheet.create({
 	},
 	kicker: { ...KICKER_TEXT, marginBottom: 6 },
 	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 24,
+		...TYPE.sectionTitle,
 		color: WHIMSY.ink,
 		textAlign: "center",
 		paddingHorizontal: 12,
@@ -322,7 +324,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		paddingHorizontal: 14,
 		paddingVertical: 12,
 		marginBottom: 10,
@@ -357,7 +359,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.lilac,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
+		borderRadius: RADII.md,
 		paddingVertical: 13,
 		alignItems: "center",
 	},

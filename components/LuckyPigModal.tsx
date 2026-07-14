@@ -26,6 +26,7 @@ import {
 	MODAL_BACKDROP_BG,
 	STICKER_SHADOW,
 	WHIMSY,
+	RADII,
 } from "@/constants/theme";
 
 // ── Lucky burst: 3 stacked animated layers ─────────────────────────
@@ -438,7 +439,7 @@ export function LuckyPigModal({
 						{ opacity: cardOpacity, transform: [{ scale: cardScale }] },
 					]}
 				>
-					<Sticker color="sun" rotate={-2.5} radius={20} style={styles.sticker}>
+					<Sticker color="sun" rotate={-2.5} radius={RADII.xxl} style={styles.sticker}>
 						<Text style={styles.kicker}>★ lucky pig! ★</Text>
 						<View style={styles.heroWrap}>
 							{/* Animated burst: phased enter → sustain → outro

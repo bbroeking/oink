@@ -27,7 +27,7 @@ import { Glyph, glyphSource, type GlyphName } from "./ui/Glyph";
 import { usePopupSlot, POPUP_TEARDOWN_MS } from "./ui/PopupQueue";
 import { ceremonyShownThisSession } from "@/utils/ceremonyGate";
 import { Sticker, Tape } from "./ui/Sticker";
-import { WHIMSY, FONTS, SPACE, PAGE_PAD, SHADOW_SM } from "@/constants/theme";
+import { WHIMSY, FONTS, SPACE, PAGE_PAD, SHADOW_SM, RADII, COLORS } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
 import { AllegianceModal } from "./AllegianceModal";
@@ -38,6 +38,7 @@ import { ensurePushPermission } from "../utils/pushNotifications";
 import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 import { BarnOverlay } from "./ui/BarnOverlay";
 import { BarnActiveEffectsStrip } from "./BarnActiveEffectsStrip";
+import { BarnSounderChip } from "./BarnSounderChip";
 import {
 	alignmentLabel,
 	alignmentDisplay,
@@ -234,7 +235,7 @@ function PaperTicket({
 				height={16}
 				style={styles.tape}
 			/>
-			<Sticker color="paper" rotate={rotate} radius={10} style={styles.ticket}>
+			<Sticker color="paper" rotate={rotate} radius={RADII.md} style={styles.ticket}>
 				<View style={styles.ticketInner}>
 					<View style={styles.coin}>
 						<Glyph name={chipGlyph} size={20} />
@@ -352,6 +353,7 @@ export default function Barn() {
 		stats,
 		statsLoaded,
 		refresh: fetchStats,
+		applyOptimistic,
 	} = useHomeStats({
 		onAlignmentLoaded: setAlignment,
 	});
@@ -456,17 +458,33 @@ export default function Barn() {
 		const c = stats.counter;
 		// Six-seven fires at every count that ENDS in 67 (67, 167, 267, 1167…).
 		// "Ends in" is the rule: 6700/6701 contain 67 but the digits after it
-		// kill the joke. Once per milestone — seen_67_at remembers the last
-		// value celebrated so sitting at 167 across launches doesn't re-prompt.
+		// kill the joke. Once per milestone — seen_67_at (AsyncStorage) remembers
+		// the last value celebrated so sitting at 167 across launches doesn't
+		// re-prompt. profiles.seen_67_at (server) is the durable, cross-device
+		// authority: once ANY six-seven has been seen on this account, the egg is
+		// suppressed everywhere, so a reinstall / new device never re-fires it.
 		if (c < 67 || c % 100 !== 67) return;
 		if (sixSevenPromptedRef.current === c) return;
+		// Server already recorded a sighting for this account — never re-fire.
+		if (stats.seen67At != null) return;
 		sixSevenPromptedRef.current = c;
 		(async () => {
+			// AsyncStorage fast-path: skips a re-prompt in the same session /
+			// device without waiting on the server stamp to land.
 			const seen = await AsyncStorage.getItem("seen_67_at");
 			if (seen != null && Number(seen) === c) return;
 			setSixSevenDialog(true);
 		})();
-	}, [stats.counter]);
+	}, [stats.counter, stats.seen67At]);
+
+	// Record the six-seven as seen on this account. Optimistically patch the
+	// local seen67At so the trigger effect can't re-arm before the refetch
+	// lands, then fire-and-forget the server stamp (idempotent, mark_67_seen
+	// only writes if still null). Called from both dialog exits.
+	const markSixSevenSeen = useCallback(() => {
+		applyOptimistic({ seen67At: new Date().toISOString() });
+		void rpc("mark_67_seen");
+	}, [applyOptimistic]);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -697,7 +715,7 @@ export default function Barn() {
 					<Svg viewBox="0 0 64 56" width={64} height={56}>
 						<Polygon
 							points="32,4 4,22 4,52 60,52 60,22"
-							fill="#c44848"
+							fill={COLORS.barn}
 							stroke={WHIMSY.ink}
 							strokeWidth={2}
 						/>
@@ -750,8 +768,16 @@ export default function Barn() {
 					visible
 					currentFlagId={stats.activeFlag?.id ?? null}
 					onSkip={() => setAllegianceOpen(false)}
-					onChosen={() => {
+					onChosen={(flagId) => {
 						setAllegianceOpen(false);
+						// Optimistically mount the newly-picked flag NOW. The
+						// choose_allegiance RPC already succeeded, so the flag id is
+						// known; without this the flag doesn't render until a later
+						// refresh when the home_stats meta blob is null on the racing
+						// first refetch. The fetchStats() below reconciles.
+						applyOptimistic({
+							activeFlag: { id: flagId, category: "flag", emoji: null },
+						});
 						fetchStats();
 					}}
 				/>
@@ -809,6 +835,13 @@ export default function Barn() {
 						/>
 					</View>
 				)}
+
+				{/* Crewless-player nudge — a quiet bark chip inviting a solo
+				    player into a Sounder while the Great Hunger is live. Rides
+				    the in-flow column here (below the truffle, above the pig) so
+				    it never covers Rosie; it self-hides once they join. The
+				    persistent fallback to the once-per-session launch modal. */}
+				<BarnSounderChip />
 
 				{/* Alignment placard removed — the hanging Pilgrim/
 				    Generous/Greedy sign that used to live up here
@@ -929,6 +962,7 @@ export default function Barn() {
 						"seen_67_at",
 						String(sixSevenPromptedRef.current ?? stats.counter)
 					);
+					markSixSevenSeen();
 					sixSevenSlot.release();
 					setTimeout(() => setSixSevenDialog(false), POPUP_TEARDOWN_MS);
 				}}
@@ -937,6 +971,7 @@ export default function Barn() {
 						"seen_67_at",
 						String(sixSevenPromptedRef.current ?? stats.counter)
 					);
+					markSixSevenSeen();
 					setSixSevenTick((t) => t + 1);
 					sixSevenSlot.release();
 					setTimeout(() => setSixSevenDialog(false), POPUP_TEARDOWN_MS);
@@ -1026,7 +1061,7 @@ const styles = StyleSheet.create({
 	// noise once the pig was the only thing on screen.
 	ticketWrap: {
 		position: "relative",
-		paddingTop: 12,
+		paddingTop: SPACE.md,
 		flex: 1,
 	},
 	tape: {
@@ -1037,7 +1072,7 @@ const styles = StyleSheet.create({
 	},
 	ticket: {
 		paddingHorizontal: 14,
-		paddingVertical: 12,
+		paddingVertical: SPACE.md,
 		minWidth: 168,
 	},
 	ticketInner: {
@@ -1063,12 +1098,15 @@ const styles = StyleSheet.create({
 	},
 	ticketLabel: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		color: WHIMSY.ink,
 		lineHeight: 12,
-		marginTop: 4,
+		marginTop: SPACE.xs,
 		letterSpacing: 1.4,
 	},
+	// Ticket-numeral role: a bespoke big-value + small-unit pairing tuned for the
+	// stat tickets (30/17). Sits between TYPE.display(32) and pageTitle(26); no
+	// TYPE role matches cleanly, so the sizes stay explicit on purpose here.
 	ticketValue: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 30,
@@ -1150,7 +1188,6 @@ const styles = StyleSheet.create({
 		width: 76,
 		height: 60,
 	},
-	barnFlagEmptyGlyph: { fontSize: 20 },
 	barnFlagEmptyText: {
 		fontFamily: FONTS.hand,
 		fontSize: 9,
@@ -1164,8 +1201,11 @@ const styles = StyleSheet.create({
 	// background gets us close.
 	generousPuff: {
 		position: "absolute",
+		// Sanctioned scene-wash: a translucent pure-white cloud tuned to sit over
+		// the painted Barn (same exception family as BarnOverlay's washes). Not a
+		// WHIMSY surface hue, so it stays raw rgba on purpose — not token leak.
 		backgroundColor: "rgba(255,255,255,0.45)",
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		zIndex: 1,
 	},
 	generousPuffL: {
@@ -1195,15 +1235,15 @@ const styles = StyleSheet.create({
 		transform: [{ rotate: "-1.5deg" }],
 	},
 	sign: {
-		paddingHorizontal: 18,
-		paddingVertical: 12,
+		paddingHorizontal: PAGE_PAD,
+		paddingVertical: SPACE.md,
 		minWidth: "78%",
 		zIndex: 1,
 	},
 	signInner: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 12,
+		gap: SPACE.md,
 	},
 	signLabel: {
 		fontFamily: FONTS.hand,
@@ -1311,7 +1351,7 @@ devAlign: {
 	toastInner: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 12,
+		gap: SPACE.md,
 	},
 	toastIcon: {
 		width: 32,
@@ -1349,9 +1389,9 @@ devAlign: {
 		alignSelf: "center",
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 4,
+		gap: SPACE.xs,
 		backgroundColor: WHIMSY.sun,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		paddingHorizontal: 10,
 		paddingVertical: 3,
 		borderWidth: 1.5,

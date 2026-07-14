@@ -64,7 +64,10 @@ import {
 	type UnlockedAchievement,
 } from "@/components/AchievementUnlockModal";
 import { AllegianceModal } from "@/components/AllegianceModal";
+import { bumpHomeStats } from "@/hooks/useHomeStats";
 import { SounderLaunchModal } from "@/components/SounderLaunchModal";
+import type { SounderStep } from "@/hooks/useSounderPath";
+import { PRACTICED_KEY } from "@/utils/sounderPath";
 import { GreatHungerIntroModal } from "@/components/GreatHungerIntroModal";
 import {
 	FeatureFlagsProvider,
@@ -166,6 +169,11 @@ function RootLayoutInner() {
 	// "Start a Sounder!" launch nudge: shown when the feature is live + the
 	// player has no crew, ≤ once/day until they create/join one.
 	const [sounderPrompt, setSounderPrompt] = useState(false);
+	// The onboarding step this crewless nudge should speak to — "taste" (hasn't
+	// practiced) or "join" (has). Resolved when the nudge arms (below) from the
+	// practiced flag, so the modal's CTA reflects the real next move. Crewed steps
+	// never reach the nudge (it's gated on no-crew), so only these two matter here.
+	const [sounderStep, setSounderStep] = useState<SounderStep>("join");
 	// The Great Hunger (Season 1) intro cinematic. The tale must tell itself on
 	// the MAIN page at login (not only on the Season tab), so the FIRST-VIEW
 	// auto-present is owned here at root — same gating as the old
@@ -365,6 +373,10 @@ function RootLayoutInner() {
 			if (anyPopupPresentedThisSession() || sounderNudgeFiredThisSession()) {
 				return;
 			}
+			// Speak to the real next move: "taste" until they've practiced, else
+			// "join". (Crewed steps can't reach here — the nudge is no-crew gated.)
+			const practiced = await AsyncStorage.getItem(PRACTICED_KEY);
+			setSounderStep(practiced ? "join" : "taste");
 			setSounderPrompt(true);
 		})();
 		return () => {
@@ -886,7 +898,15 @@ function RootLayoutInner() {
 						allegianceSlot.release();
 						setTimeout(() => setShowAllegiance(false), POPUP_TEARDOWN_MS);
 					}}
-					onChosen={() => {
+					onChosen={(flagId) => {
+						// This picker lives above the tab tree — the Barn's
+						// useHomeStats instance can't see the choice. Push the
+						// same optimistic mount the Barn's own picker applies
+						// (the reconciling refetch races a null meta blob, so
+						// the patch, not the refetch, is what paints the flag).
+						bumpHomeStats({
+							activeFlag: { id: flagId, category: "flag", emoji: null },
+						});
 						allegianceSlot.release();
 						setTimeout(() => setShowAllegiance(false), POPUP_TEARDOWN_MS);
 					}}
@@ -895,6 +915,7 @@ function RootLayoutInner() {
 			{sounderPrompt && (
 				<SounderLaunchModal
 					visible={sounderSlot.visible}
+					step={sounderStep}
 					onCreate={() => {
 						// No persistent daily stamp anymore — the session latch
 						// (markSounderNudgeFired on present) + the queue-empty gate
@@ -902,7 +923,13 @@ function RootLayoutInner() {
 						// PopupQueue TIMING CONTRACT.
 						sounderSlot.release();
 						setTimeout(() => setSounderPrompt(false), POPUP_TEARDOWN_MS);
-						router.push("/(tabs)/friends?seg=sounder");
+						// taste → the season tab (where the practice dig lives); join →
+						// the Sounder segment where the join/create form is.
+						router.push(
+							sounderStep === "taste"
+								? "/(tabs)/season"
+								: "/(tabs)/friends?seg=sounder"
+						);
 					}}
 					onDismiss={() => {
 						sounderSlot.release();

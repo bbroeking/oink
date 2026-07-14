@@ -14,7 +14,6 @@ import {
 	Text,
 	StyleSheet,
 	Pressable,
-	ActivityIndicator,
 	Animated,
 	Easing,
 	Dimensions,
@@ -22,9 +21,9 @@ import {
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { rpc, rpcAction } from "@/utils/rpc";
-import { lifetimeTickles } from "@/utils/tickles";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Icon } from "./ui/Icon";
+import { Glyph, IconText } from "./ui/Glyph";
 import { Sticker } from "./ui/Sticker";
 import { BarnVisitModal } from "./BarnVisitModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
@@ -32,6 +31,7 @@ import { RitualPicker } from "./RitualPicker";
 import { useCrew } from "@/hooks/useCrew";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { AlignmentBar } from "./ui/AlignmentBar";
+import { LoadingBeat } from "./ui/EmptyState";
 import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
 import type { TradeRow } from "@/constants/trade_types";
@@ -42,7 +42,11 @@ import {
 	KICKER_PILL,
 	KICKER_TEXT,
 	MODAL_BACKDROP_BG,
+	RADII,
+	SPACE,
 	STICKER_SHADOW,
+	SHADOW_SM,
+	TYPE,
 	WHIMSY,
 } from "@/constants/theme";
 import {
@@ -178,10 +182,12 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// The Ask row is state-aware: a pending trade or a 24h pair
 	// cooldown blocks a new request. Derived from my_tickle_trades.
 	const [askState, setAskState] = useState<AskState>({ kind: "ready" });
-	// Lifetime tickles for the TICKLES stat column. Not part of
+	// THIS-SEASON tickles for the TICKLES stat column. Not part of
 	// public_user_stats yet — fetched directly from profiles in
 	// parallel so the design's 3-column stats row has the value it
-	// needs without expanding the RPC's return shape.
+	// needs without expanding the RPC's return shape. Season-only
+	// (tickles_earned) by product call: a friend's sheet reads the
+	// live race, not the all-time ledger (that stays on your own Me tab).
 	const [targetTickles, setTargetTickles] = useState<number | null>(null);
 	const [curseStatus, setCurseStatus] = useState<{
 		cursed: boolean;
@@ -244,23 +250,19 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		rpc<TradeRow[]>("my_tickle_trades").then((data) => {
 			setAskState(deriveAskState(targetUserId, data));
 		});
-		// Lifetime tickle count for the TICKLES stat column. All-time =
-		// archived-seasons base + live-season tickles (migration 20260737); the
-		// base is absent pre-push, in which case lifetime falls back to the live
-		// count. Profiles is readable for visible fields; a failure leaves the
-		// column blank rather than blocking the sheet.
+		// This-season tickle count for the TICKLES stat column (tickles_earned,
+		// the live-season tally the Board is racing on). A friend's sheet shows
+		// the current-season figure, not the all-time lifetime — that lives on
+		// your own Me tab. Profiles is readable for visible fields; a failure
+		// leaves the column blank rather than blocking the sheet.
 		supabase
 			.from("profiles")
-			.select("tickles_earned, tickles_lifetime_base")
+			.select("tickles_earned")
 			.eq("id", targetUserId)
 			.maybeSingle()
 			.then(({ data }) => {
-				const row = data as
-					| { tickles_earned?: number; tickles_lifetime_base?: number }
-					| null;
-				setTargetTickles(
-					row ? lifetimeTickles(row.tickles_lifetime_base, row.tickles_earned) : null
-				);
+				const row = data as { tickles_earned?: number } | null;
+				setTargetTickles(row ? (row.tickles_earned ?? 0) : null);
 			});
 	}, [targetUserId]);
 
@@ -445,12 +447,12 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 						<Sticker
 							color="paper"
 							rotate={-0.6}
-							radius={20}
+							radius={RADII.xxl}
 							style={[styles.sheet, STICKER_SHADOW]}
 						>
 							{loading || !stats ? (
 								<View style={styles.loadingWrap}>
-									<ActivityIndicator color={WHIMSY.ink} />
+									<LoadingBeat label="peeking in" />
 								</View>
 							) : (
 								<>
@@ -489,6 +491,9 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 										</View>
 									)}
 
+									{/* This season's numbers — a friend's sheet reads the
+									    live race, not the all-time ledger. */}
+									<Text style={styles.seasonKicker}>★ this season</Text>
 									<View style={styles.statsRow}>
 										<StatCol
 											label="GIVEN"
@@ -642,6 +647,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 										<Pressable
 											onPress={() => setReportOpen(true)}
 											hitSlop={8}
+											style={({ pressed }) => pressed && { opacity: 0.7 }}
 										>
 											<Text style={styles.moderationLink}>Report</Text>
 										</Pressable>
@@ -649,6 +655,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 										<Pressable
 											onPress={() => setBlockOpen(true)}
 											hitSlop={8}
+											style={({ pressed }) => pressed && { opacity: 0.7 }}
 										>
 											<Text style={styles.moderationLink}>Block</Text>
 										</Pressable>
@@ -712,9 +719,15 @@ function StatCol({
 	return (
 		<View style={styles.statCol}>
 			<Text style={styles.statLabel}>{label}</Text>
-			<Text style={[styles.statValue, { color: WHIMSY.ink }]}>
-				{value == null ? "—" : `${value.toLocaleString()} ♥`}
-			</Text>
+			{value == null ? (
+				<Text style={[styles.statValue, { color: WHIMSY.ink }]}>—</Text>
+			) : (
+				<IconText right={<Glyph name="heart" size={16} />} gap={4}>
+					<Text style={[styles.statValue, { color: WHIMSY.ink }]}>
+						{value.toLocaleString()}
+					</Text>
+				</IconText>
+			)}
 			{tier ? (
 				<View style={[styles.tierChip, { backgroundColor: color }]}>
 					<Text style={styles.tierChipText}>{tier}</Text>
@@ -843,9 +856,15 @@ function AskRow({
 					(pressed || busy) && { opacity: 0.7 },
 				]}
 			>
-				<Text style={[styles.actionText, styles.actionTextPrimary]}>
-					{busy ? "…" : `Ask for ${amount} ♥`}
-				</Text>
+				{busy ? (
+					<Text style={[styles.actionText, styles.actionTextPrimary]}>…</Text>
+				) : (
+					<IconText right={<Glyph name="heart" size={15} />} gap={5}>
+						<Text style={[styles.actionText, styles.actionTextPrimary]}>
+							Ask for {amount}
+						</Text>
+					</IconText>
+				)}
 			</Pressable>
 		</View>
 	);
@@ -905,6 +924,9 @@ const styles = StyleSheet.create({
 		marginTop: 2,
 	},
 	alignBarWrap: { marginBottom: 14 },
+	// "★ this season" kicker over the friend's stat cluster — names the
+	// window so GIVEN/RECEIVED/TICKLES read as the live-season race.
+	seasonKicker: { ...KICKER_TEXT, fontSize: 10, marginBottom: 6 },
 	statsRow: {
 		flexDirection: "row",
 		alignItems: "stretch",
@@ -969,11 +991,7 @@ const styles = StyleSheet.create({
 	},
 	askPillActive: {
 		backgroundColor: WHIMSY.lilacDeep,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 2, height: 2 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
+		...SHADOW_SM,
 	},
 	askPillText: {
 		fontFamily: FONTS.whimsy,
@@ -1066,11 +1084,7 @@ const styles = StyleSheet.create({
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		padding: 4,
-		shadowColor: WHIMSY.ink,
-		shadowOffset: { width: 2, height: 2 },
-		shadowOpacity: 1,
-		shadowRadius: 0,
-		elevation: 2,
+		...SHADOW_SM,
 	},
 	actionTab: {
 		flex: 1,
@@ -1105,10 +1119,10 @@ const styles = StyleSheet.create({
 		...STICKER_SHADOW,
 		alignSelf: "stretch",
 		backgroundColor: WHIMSY.sky,
-		borderWidth: 2.5,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 16,
-		paddingVertical: 15,
+		borderRadius: RADII.lg,
+		paddingVertical: SPACE.lg,
 		alignItems: "center",
 		marginBottom: 12,
 	},
@@ -1118,7 +1132,7 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		gap: 9,
 	},
-	visitBtnText: { fontFamily: FONTS.whimsy, fontSize: 19, color: WHIMSY.ink },
+	visitBtnText: { ...TYPE.cardTitle, color: WHIMSY.ink },
 	// Disabled Visit button — muted fill + ink, reads as "can't right now".
 	visitBtnDisabled: {
 		backgroundColor: WHIMSY.cream2,

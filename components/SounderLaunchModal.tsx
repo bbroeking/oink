@@ -7,7 +7,21 @@ import { useEffect, useRef } from "react";
 import { View, Text, Image, Pressable, Modal, Animated, StyleSheet, Dimensions } from "react-native";
 import * as Haptics from "expo-haptics";
 import { HAT_IMAGES } from "@/constants/hats";
-import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
+import { Icon } from "./ui/Icon";
+import { Glyph } from "./ui/Glyph";
+import { Button } from "./ui/Button";
+import { Sticker } from "./ui/Sticker";
+import { RACE_TRUFFLE_TABLE, STIR_BUDGET } from "@/constants/dig";
+import { WHIMSY, FONTS, RADII, SPACE, TYPE, MODAL_BACKDROP_BG } from "@/constants/theme";
+import type { SounderStep } from "@/hooks/useSounderPath";
+
+// The full-Sounder depth gain — TrufflePatch's coop budget (STIR_BUDGET * 1.25)
+// is a quarter deeper than solo. The pitch says "digs {N}% deeper" (a felt
+// benefit, no "stirs" unit to learn); this derives that percent from the real
+// budget so the copy can't drift.
+const COOP_DEPTH_GAIN_PCT = Math.round(
+	((Math.round(STIR_BUDGET * 1.25) - STIR_BUDGET) / STIR_BUDGET) * 100
+);
 
 const HUNGERER = require("../assets/images/hunger/great_hungerer_chip.png");
 
@@ -19,9 +33,30 @@ interface Props {
 	visible: boolean;
 	onCreate: () => void;
 	onDismiss: () => void;
+	/**
+	 * The current onboarding step — drives the body CTA so the once-per-session
+	 * modal reflects the player's real next move (try a dig / join / first dig)
+	 * instead of always saying "Join a Sounder". Omitted → the join CTA (the
+	 * modal's original behavior).
+	 */
+	step?: SounderStep | null;
 }
 
-export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
+// The primary CTA label per step. taste → the toy before the ask; join → the
+// social ask; first_dig → close the loop. hook/done/null fall back to "Join a
+// Sounder" (the modal only shows to crewless players in practice).
+function ctaLabel(step: Props["step"]): string {
+	switch (step) {
+		case "taste":
+			return "Try a dig";
+		case "first_dig":
+			return "Dig your first feeding";
+		default:
+			return "Join a Sounder";
+	}
+}
+
+export function SounderLaunchModal({ visible, onCreate, onDismiss, step }: Props) {
 	const anim = useRef(new Animated.Value(0)).current;
 
 	useEffect(() => {
@@ -40,14 +75,14 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
 			<View style={styles.backdrop}>
 				<Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
 				<Animated.View style={[styles.animWrap, { opacity: anim, transform: [{ scale }] }]}>
-					<View style={styles.card}>
+					<Sticker color="paper" rotate={-0.8} radius={RADII.xxl} style={styles.card}>
 					<Pressable
 						onPress={onDismiss}
 						hitSlop={10}
-						style={styles.closeBtn}
+						style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
 						accessibilityLabel="Close"
 					>
-						<Text style={styles.closeText}>✕</Text>
+						<Icon name="x" size={18} color={WHIMSY.mute} strokeWidth={2.5} />
 					</Pressable>
 					{/* The debut art: the Great Hungerer looming, a golden truffle
 					    pried loose toward the herd. */}
@@ -76,20 +111,38 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
 					<Text style={styles.title}>The Great Hunger is here!</Text>
 					<Text style={styles.body}>
 						Join a <Text style={styles.bodyStrong}>Sounder</Text> and dig at the
-						Hungerer's feedings. The <Text style={styles.bodyStrong}>truffles are
-						yours</Text> — and every find starves him a little more.
+						Hungerer's feedings — the truffles are yours to keep.
 					</Text>
+					{/* The three concrete benefits — the same Glyph-row grammar
+					    SounderBenefits (the crewless join door) uses, so the launch
+					    nudge and the in-tab pitch read as one voice. Numbers derive
+					    from the dig constants + RACE_TRUFFLE_TABLE. */}
+					<View style={styles.benefits}>
+						{[
+							`dig deeper together — a full Sounder digs ${COOP_DEPTH_GAIN_PCT}% deeper`,
+							"herd milestones pay everyone — titles + snout purses",
+							`weekly dig-off pays Golden Truffles — ${RACE_TRUFFLE_TABLE[1]} each for 1st`,
+						].map((line) => (
+							<View key={line} style={styles.benefitRow}>
+								<Glyph name="gem" size={16} />
+								<Text style={styles.benefit}>{line}</Text>
+							</View>
+						))}
+					</View>
 
+					<View style={styles.primaryWrap}>
+						<Button size="md" variant="primary" full onPress={onCreate}>
+							{ctaLabel(step)}
+						</Button>
+					</View>
 					<Pressable
-						onPress={onCreate}
-						style={({ pressed }) => [styles.primary, pressed && { opacity: 0.9 }]}
+						onPress={onDismiss}
+						hitSlop={8}
+						style={({ pressed }) => [styles.later, pressed && { opacity: 0.6 }]}
 					>
-						<Text style={styles.primaryText}>Join a Sounder</Text>
-					</Pressable>
-					<Pressable onPress={onDismiss} hitSlop={8} style={styles.later}>
 						<Text style={styles.laterText}>Maybe later</Text>
 					</Pressable>
-					</View>
+					</Sticker>
 				</Animated.View>
 			</View>
 		</Modal>
@@ -98,20 +151,16 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss }: Props) {
 
 const INK = WHIMSY.ink;
 const styles = StyleSheet.create({
-	backdrop: { flex: 1, backgroundColor: "rgba(20,16,28,0.55)", alignItems: "center", justifyContent: "center", padding: 28 },
+	backdrop: { flex: 1, backgroundColor: MODAL_BACKDROP_BG, alignItems: "center", justifyContent: "center", padding: SPACE.xl + 4 },
 	// The animated layer carries ONLY opacity+scale+width — no fill/border/shadow,
-	// which iOS renders as detached offset artifacts under a transform. The static
-	// inner `card` draws the fill + border so they stay perfectly aligned.
+	// which iOS renders as detached offset artifacts under a transform. The inner
+	// `Sticker` draws the fill + ink border + hard shadow (the paper-craft card),
+	// so they stay perfectly aligned inside the transformed wrapper.
 	animWrap: { width: CARD_W },
 	card: {
 		width: "100%",
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: 22,
-		padding: 22,
+		padding: SPACE.xl - 2,
 		alignItems: "center",
-		...SHADOW_SM,
 	},
 	closeBtn: {
 		position: "absolute",
@@ -123,26 +172,21 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		zIndex: 3,
 	},
-	closeText: { fontFamily: FONTS.whimsy, fontSize: 20, color: WHIMSY.mute },
-	heroScene: { width: 110, height: 92, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+	heroScene: { width: 110, height: 92, alignItems: "center", justifyContent: "center", marginBottom: SPACE.sm },
 	hero: { width: 84, height: 84 },
 	heroSplat: { position: "absolute", right: 6, bottom: 8, width: 38, height: 38 },
-	kicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
-	title: { fontFamily: FONTS.whimsy, fontSize: 26, color: INK, textAlign: "center", marginBottom: 10 },
-	body: { fontFamily: FONTS.hand, fontSize: 16, lineHeight: 22, color: WHIMSY.mute, textAlign: "center", marginBottom: 18 },
-	bodyStrong: { fontFamily: FONTS.bodyExtra, fontSize: 15, color: INK },
+	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
+	title: { ...TYPE.pageTitle, color: INK, textAlign: "center", marginBottom: SPACE.sm + 2 },
+	body: { ...TYPE.hand, fontSize: 16, lineHeight: 22, color: WHIMSY.mute, textAlign: "center", marginBottom: SPACE.md },
+	bodyStrong: { ...TYPE.body, fontFamily: FONTS.bodyExtra, color: INK },
+	// The three concrete benefit lines — gem-glyph rows, matching SounderBenefits.
+	benefits: { alignSelf: "stretch", gap: SPACE.xs, marginBottom: SPACE.lg + 2 },
+	benefitRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
+	benefit: { flex: 1, ...TYPE.bodySm, fontFamily: FONTS.bodyExtra, color: INK },
 
-	primary: {
-		alignSelf: "stretch",
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: 14,
-		paddingVertical: 13,
-		alignItems: "center",
-		...SHADOW_SM,
-	},
-	primaryText: { fontFamily: FONTS.whimsy, fontSize: 17, color: INK },
-	later: { paddingVertical: 12, marginTop: 4 },
-	laterText: { fontFamily: FONTS.hand, fontSize: 15, color: WHIMSY.mute },
+	// The primary CTA is the shared Button primitive now; this wrap just stretches
+	// it to the card width.
+	primaryWrap: { alignSelf: "stretch" },
+	later: { paddingVertical: SPACE.md, marginTop: SPACE.xs },
+	laterText: { ...TYPE.hand, fontSize: 15, color: WHIMSY.mute },
 });

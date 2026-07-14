@@ -7,7 +7,7 @@ import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Glyph, IconText } from "./ui/Glyph";
-import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
+import { WHIMSY, FONTS, SHADOW_SM, MODAL_BACKDROP_BG, RADII, SPACE, TYPE, PAGE_PAD } from "@/constants/theme";
 import type { TruffleStatus } from "@/hooks/useBuriedTruffle";
 
 const STAKES = [10, 20, 50];
@@ -214,7 +214,7 @@ export function BuriedTruffleSheet({ open, visible, onClose, status, onChanged }
 					>
 						<Text style={[styles.reclaimText, confirmReclaim && styles.reclaimTextArmed]}>
 							{confirmReclaim
-								? `Tap again to close it · refund ${status.remaining}`
+								? `Tap again · refund ${status.remaining}, no bury for 12h`
 								: `Dig it back up · refund ${status.remaining}`}
 						</Text>
 					</Pressable>
@@ -228,92 +228,92 @@ const INK = WHIMSY.ink;
 const sticker = SHADOW_SM;
 const SCREEN_H = Dimensions.get("window").height;
 const styles = StyleSheet.create({
-	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(20,16,28,0.5)" },
-	sheetWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 14, paddingBottom: 28 },
+	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: MODAL_BACKDROP_BG },
+	sheetWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: SPACE.md + 2, paddingBottom: SPACE.xl + 4 },
 	sheet: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 22,
-		padding: 18,
-		paddingTop: 10,
+		borderRadius: RADII.xxl,
+		padding: PAGE_PAD,
+		paddingTop: SPACE.md - 2,
 		maxHeight: SCREEN_H * 0.9, // never taller than the screen
 		...sticker,
 	},
-	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: 12 },
-	titleRow: { marginBottom: 14 },
-	title: { fontFamily: FONTS.whimsy, fontSize: 24, color: INK },
+	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: SPACE.md },
+	titleRow: { marginBottom: SPACE.lg - 2 },
+	title: { ...TYPE.pageTitle, color: INK },
 
-	potRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-	potNum: { fontFamily: FONTS.whimsy, fontSize: 22, color: INK, marginLeft: 2 },
-	potCap: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.mute },
+	potRow: { flexDirection: "row", alignItems: "center", gap: SPACE.xs + 2 },
+	potNum: { ...TYPE.sectionTitle, color: INK, marginLeft: 2 },
+	potCap: { ...TYPE.bodySm, fontFamily: FONTS.bodyExtra, color: WHIMSY.mute },
 	track: {
 		height: 12,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		borderWidth: 1.5,
 		borderColor: INK,
-		backgroundColor: "rgba(42,31,21,0.1)",
-		marginTop: 8,
+		backgroundColor: WHIMSY.cream2,
+		marginTop: SPACE.sm,
 		overflow: "hidden",
 	},
-	fill: { height: "100%", backgroundColor: "#e8a82e", borderRadius: 999 },
-	sub: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute, marginTop: 10 },
+	fill: { height: "100%", backgroundColor: WHIMSY.goblin, borderRadius: RADII.pill },
+	sub: { ...TYPE.hand, color: WHIMSY.mute, marginTop: SPACE.sm + 2 },
 
-	list: { marginTop: 14, maxHeight: 150 }, // scrolls internally; keeps actions pinned
-	listInner: { gap: 8 },
-	digRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+	list: { marginTop: SPACE.lg - 2, maxHeight: 150 }, // scrolls internally; keeps actions pinned
+	listInner: { gap: SPACE.sm },
+	digRow: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
 	digName: { flex: 1, fontFamily: FONTS.bodyExtra, fontSize: 14, color: INK },
-	digWhen: { fontFamily: FONTS.body, fontSize: 12, color: WHIMSY.mute },
+	digWhen: { ...TYPE.bodySm, fontSize: 12, color: WHIMSY.mute },
 	digAmt: { flexDirection: "row", alignItems: "center", gap: 3 },
 	digAmtText: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
 
-	divider: { height: 1.5, backgroundColor: "rgba(42,31,21,0.12)", marginTop: 18, marginBottom: 14 },
-	actLabel: { fontFamily: FONTS.bodyExtra, fontSize: 12, letterSpacing: 0.6, color: WHIMSY.mute, marginBottom: 8 },
-	stakes: { flexDirection: "row", gap: 10 },
+	divider: { height: 1.5, backgroundColor: INK, opacity: 0.12, marginTop: SPACE.lg + 2, marginBottom: SPACE.lg - 2 },
+	actLabel: { ...TYPE.label, letterSpacing: 0.6, color: WHIMSY.mute, marginBottom: SPACE.sm },
+	stakes: { flexDirection: "row", gap: SPACE.md },
 	chip: {
 		flex: 1,
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
-		gap: 4,
-		paddingVertical: 9,
-		borderRadius: 12,
+		gap: SPACE.xs,
+		paddingVertical: SPACE.sm + 1,
+		borderRadius: RADII.md,
 		borderWidth: 2,
 		borderColor: INK,
 		backgroundColor: WHIMSY.cream,
 	},
 	chipOn: { backgroundColor: WHIMSY.sun },
 	chipOff: { opacity: 0.4, borderColor: WHIMSY.muteSoft }, // would exceed the 50 cap
-	chipText: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.mute },
+	chipText: { ...TYPE.numeral, color: WHIMSY.mute },
 	chipTextOn: { color: INK },
 	chipTextOff: { color: WHIMSY.muteSoft },
 
-	maxNote: { fontFamily: FONTS.hand, fontSize: 15, color: WHIMSY.mute, textAlign: "center", paddingVertical: 4 },
-	note: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.accent, textAlign: "center", marginTop: 12 },
+	maxNote: { ...TYPE.body, color: WHIMSY.mute, textAlign: "center", paddingVertical: SPACE.xs },
+	note: { ...TYPE.hand, color: WHIMSY.accent, textAlign: "center", marginTop: SPACE.md },
 
 	topUpBtn: {
-		marginTop: 14,
+		marginTop: SPACE.lg - 2,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 14,
-		paddingVertical: 12,
+		borderRadius: RADII.lg,
+		paddingVertical: SPACE.md,
 		alignItems: "center",
 		...sticker,
 	},
 	topUpBtnOff: { opacity: 0.45 },
-	topUpText: { fontFamily: FONTS.whimsy, fontSize: 16, color: INK },
+	topUpText: { ...TYPE.numeral, color: INK },
 
 	reclaimBtn: {
-		marginTop: 10,
+		marginTop: SPACE.sm + 2,
 		backgroundColor: "transparent",
 		borderWidth: 2,
 		borderColor: WHIMSY.muteSoft,
-		borderRadius: 14,
-		paddingVertical: 11,
+		borderRadius: RADII.lg,
+		paddingVertical: SPACE.sm + 3,
 		alignItems: "center",
 	},
-	reclaimText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.mute },
+	reclaimText: { ...TYPE.body, fontFamily: FONTS.whimsy, color: WHIMSY.mute },
 	// Armed (second-tap) state reads as destructive.
 	reclaimBtnArmed: { backgroundColor: WHIMSY.rose, borderColor: INK, ...sticker },
 	reclaimTextArmed: { color: WHIMSY.accent },

@@ -9,7 +9,8 @@ import { supabase } from "@/utils/supabase";
 import { Icon } from "@/components/ui/Icon";
 import { HAT_IMAGES, RARITY_COLORS, type Rarity } from "@/constants/hats";
 import { EXCHANGE_ITEM_IDS } from "@/constants/dig";
-import { WHIMSY, FONTS, SHADOW_SM } from "@/constants/theme";
+import { LoadingBeat } from "@/components/ui/EmptyState";
+import { WHIMSY, FONTS, SHADOW_SM, MODAL_BACKDROP_BG, RADII, SPACE, TYPE, PAGE_PAD, RARITY_BG_SOLID } from "@/constants/theme";
 
 interface SpoilRow {
 	id: string;
@@ -81,14 +82,15 @@ export function TruffleCatalogSheet({ open, onClose }: Props) {
 
 					<ScrollView style={styles.scroll} contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
 						{rows === null ? (
-							<Text style={styles.loading}>Loading rewards…</Text>
+							<LoadingBeat label="fetching the trophy case" glyph="sparkle" />
 						) : (
 							rows.map((r) => {
 								const color = RARITY_COLORS[r.rarity] ?? WHIMSY.muteSoft;
+								const fill = RARITY_BG_SOLID[r.rarity] ?? WHIMSY.cream;
 								const img = HAT_IMAGES[r.id];
 								return (
 									<View key={r.id} style={[styles.tile, { borderColor: color }, !r.owned && styles.tileLocked]}>
-										<View style={[styles.thumbWrap, { backgroundColor: color + "22" }]}>
+										<View style={[styles.thumbWrap, { backgroundColor: fill }]}>
 											{img ? (
 												<Image source={img} style={[styles.thumb, !r.owned && styles.thumbLocked]} resizeMode="contain" />
 											) : null}
@@ -110,7 +112,10 @@ export function TruffleCatalogSheet({ open, onClose }: Props) {
 						)}
 					</ScrollView>
 
-					<Pressable onPress={onClose} style={styles.doneBtn}>
+					<Pressable
+						onPress={onClose}
+						style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.85 }]}
+					>
 						<Text style={styles.doneText}>Done</Text>
 					</Pressable>
 				</View>
@@ -121,35 +126,34 @@ export function TruffleCatalogSheet({ open, onClose }: Props) {
 
 const INK = WHIMSY.ink;
 const SCREEN_H = Dimensions.get("window").height;
-const GAP = 10;
+const GAP = SPACE.md;
 const styles = StyleSheet.create({
-	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(20,16,28,0.5)" },
-	sheetWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 14, paddingBottom: 28 },
+	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: MODAL_BACKDROP_BG },
+	sheetWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: SPACE.md + 2, paddingBottom: SPACE.xl + 4 },
 	sheet: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 22,
-		padding: 18,
-		paddingTop: 10,
+		borderRadius: RADII.xxl,
+		padding: PAGE_PAD,
+		paddingTop: SPACE.md - 2,
 		maxHeight: SCREEN_H * 0.85,
 		...SHADOW_SM,
 	},
-	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: 12 },
-	kicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
-	title: { fontFamily: FONTS.whimsy, fontSize: 24, color: INK },
-	sub: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute, marginTop: 6, marginBottom: 12 },
-	count: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: INK },
+	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: SPACE.md },
+	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
+	title: { ...TYPE.pageTitle, color: INK },
+	sub: { ...TYPE.hand, color: WHIMSY.mute, marginTop: SPACE.xs + 2, marginBottom: SPACE.md },
+	count: { ...TYPE.bodySm, fontFamily: FONTS.bodyExtra, color: INK },
 
 	scroll: { flexGrow: 0 },
 	grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP, justifyContent: "space-between" },
-	loading: { fontFamily: FONTS.hand, fontSize: 15, color: WHIMSY.mute, padding: 20 },
 
 	tile: {
 		width: "31%",
 		borderWidth: 2,
-		borderRadius: 14,
-		paddingBottom: 6,
+		borderRadius: RADII.lg,
+		paddingBottom: SPACE.xs + 2,
 		backgroundColor: WHIMSY.cream,
 		overflow: "hidden",
 	},
@@ -157,20 +161,20 @@ const styles = StyleSheet.create({
 	thumbWrap: { width: "100%", aspectRatio: 1, alignItems: "center", justifyContent: "center" },
 	thumb: { width: "78%", height: "78%" },
 	thumbLocked: { opacity: 0.32 },
-	check: { position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: INK, alignItems: "center", justifyContent: "center" },
+	check: { position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: RADII.pill, borderWidth: 1.5, borderColor: INK, alignItems: "center", justifyContent: "center" },
 	lock: { position: "absolute", top: 4, right: 5, opacity: 0.6 },
-	name: { fontFamily: FONTS.bodyExtra, fontSize: 11, color: INK, textAlign: "center", marginTop: 4, paddingHorizontal: 3 },
-	rarity: { fontFamily: FONTS.hand, fontSize: 11, textAlign: "center", textTransform: "capitalize" },
+	name: { ...TYPE.kickerPill, fontSize: 11, letterSpacing: 0.2, textTransform: "none", color: INK, textAlign: "center", marginTop: SPACE.xs, paddingHorizontal: 3 },
+	rarity: { ...TYPE.kicker, fontSize: 11, textAlign: "center", textTransform: "capitalize" },
 
 	doneBtn: {
-		marginTop: 14,
+		marginTop: SPACE.lg - 2,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 14,
-		paddingVertical: 12,
+		borderRadius: RADII.lg,
+		paddingVertical: SPACE.md,
 		alignItems: "center",
 		...SHADOW_SM,
 	},
-	doneText: { fontFamily: FONTS.whimsy, fontSize: 16, color: INK },
+	doneText: { ...TYPE.numeral, color: INK },
 });

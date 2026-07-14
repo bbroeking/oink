@@ -22,7 +22,6 @@ import {
 	Pressable,
 	Dimensions,
 	Image,
-	ActivityIndicator,
 	StyleSheet,
 	Animated,
 	Easing,
@@ -33,13 +32,13 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
-import { lifetimeTickles } from "@/utils/tickles";
 import { PigStage, type EquippedItem } from "./ui/PigStage";
 import { Shovel } from "./ui/Shovel";
 import { Glyph, IconText, glyphSource } from "./ui/Glyph";
 import { SnoutCoin } from "./ui/SnoutCoin";
+import { LoadingBeat } from "./ui/EmptyState";
 import { HAT_IMAGES } from "@/constants/hats";
-import { FONTS, WHIMSY, SHADOW_SM } from "@/constants/theme";
+import { FONTS, WHIMSY, COLORS, SHADOW_SM, SPACE, RADII, TYPE, MODAL_BACKDROP_BG } from "@/constants/theme";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
@@ -108,13 +107,11 @@ const rowToEquip = (r: ProfileEquipRow): EquipSet => ({
 interface BarnProfileRow extends ProfileEquipRow {
 	username: string | null;
 	tickles_earned: number | null;
-	tickles_lifetime_base: number | null;
 	active_background_id: string | null;
 }
 
 interface MyProfileRow extends ProfileEquipRow {
 	tickles_earned: number | null;
-	tickles_lifetime_base: number | null;
 }
 
 // "2h 15m" / "12m" until you can visit a different barn.
@@ -133,8 +130,10 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [loading, setLoading] = useState(true);
 	const [busy, setBusy] = useState(false);
 
-	// Live lifetime tickle totals (seeded from each profile's tickles_earned),
-	// then both tick up together by one on every tap.
+	// Live season tickle totals (seeded from each profile's tickles_earned),
+	// then both tick up together by one on every tap. The Barn race is a
+	// this-season surface, so we seed the tallies from the live-season count
+	// alone — never lifetime, which would drag in stale archived seasons.
 	const [youHearts, setYouHearts] = useState(0);
 	const [friendHearts, setFriendHearts] = useState(0);
 	// Hearts shared THIS visit only — for the nap summary.
@@ -213,7 +212,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		(async () => {
 			const { data } = await supabase
 				.from("profiles")
-				.select(`username, tickles_earned, tickles_lifetime_base, active_background_id, ${EQUIP_SELECT}`)
+				.select(`username, tickles_earned, active_background_id, ${EQUIP_SELECT}`)
 				.eq("id", targetUserId)
 				// Dynamic select string → declare the row type through the
 				// builder so .data lands as BarnProfileRow | null, no cast.
@@ -230,15 +229,14 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				active_background_id: d.active_background_id ?? null,
 			});
 			setHostEquip(rowToEquip(d));
-			// All-time lifetime = archived base + live-season tickles (20260737);
-			// base is null pre-push, so this falls back to the live count.
-			setFriendHearts(lifetimeTickles(d.tickles_lifetime_base, d.tickles_earned)); // HOST tally base
+			// This-season tally: the Barn race counts THIS season's tickles only.
+			setFriendHearts(d.tickles_earned ?? 0); // HOST tally base
 
 			const { data: ures } = await supabase.auth.getUser();
 			if (ures.user) {
 				const { data: me } = await supabase
 					.from("profiles")
-					.select(`tickles_earned, tickles_lifetime_base, ${EQUIP_SELECT}`)
+					.select(`tickles_earned, ${EQUIP_SELECT}`)
 					.eq("id", ures.user.id)
 					// Dynamic select string → declare the row type through the
 					// builder so .data lands as MyProfileRow | null, no cast.
@@ -247,7 +245,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				if (!cancelled && me) {
 					const m = me;
 					setMyEquip(rowToEquip(m));
-					setYouHearts(lifetimeTickles(m.tickles_lifetime_base, m.tickles_earned)); // YOU tally base
+					setYouHearts(m.tickles_earned ?? 0); // YOU tally base
 				}
 			}
 
@@ -420,9 +418,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	// Your visit budget (display only): how many of your 3 visits remain this
 	// window. All 3 refresh together 3h after your first visit.
 	const vLeft = visitsLeft ?? visitBudget;
-	const visitsColor = vLeft > 1 ? "#62b048" : vLeft === 1 ? "#e8a82e" : "#ef7a5a";
-	// Show the reset countdown whenever a window is active (you've used ≥1).
-	const visitsFreshIn = visitsRefreshAt ? lockLabel(visitsRefreshAt) : null;
+	const visitsColor = vLeft > 1 ? COLORS.successText : vLeft === 1 ? WHIMSY.goblin : WHIMSY.accent;
 
 	// Shared squish transform entries for both pigs. Passed as an ARRAY so each
 	// pig can compose it WITH its own { scale } in one transform list — a second
@@ -473,19 +469,45 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 
 			<View style={styles.content}>
 				{loading ? (
-					<ActivityIndicator color={WHIMSY.paper} style={{ marginTop: 120 }} />
+					<LoadingBeat label="knocking on the barn door" glyph="pigface" style={{ marginTop: 120 }} />
 				) : (
 					<>
 						{/* ===== top chrome ===== */}
 						<View style={styles.chrome}>
 							<View style={styles.headerRow}>
-								<View style={{ flexShrink: 1 }}>
+								<View style={styles.headerTitleCol}>
 									<IconText left={<Glyph name="star" size={12} />} gap={4}>
 										<Text style={styles.kicker}>VISITING</Text>
 									</IconText>
 									<Text style={styles.title} numberOfLines={1}>
 										{targetName}'s Barn
 									</Text>
+									{/* Visits-left chip — gold-accent sticker under the title.
+									    Sits IN the header so the visit's headline stat reads
+									    up-front; wraps below a long title and stays balanced
+									    beside the Leave button on narrow screens. A COUNT is
+									    not a countdown: we keep "X of Y visits left" while any
+									    remain, but the zero state drops to day-rhythm language
+									    (no "resets in Xh" — the charter never punishes the
+									    hours between). */}
+									<View style={styles.visitsChip}>
+										<IconText left={<Glyph name="sparkle" size={12} />} gap={5}>
+											<Text style={styles.visitsChipText}>
+												{vLeft <= 0 ? (
+													<Text style={[styles.visitsChipNum, { color: visitsColor }]}>
+														all tickled out — your snout needs a rest
+													</Text>
+												) : (
+													<>
+														<Text style={[styles.visitsChipNum, { color: visitsColor }]}>
+															{vLeft} of {visitBudget}
+														</Text>
+														<Text> visits left</Text>
+													</>
+												)}
+											</Text>
+										</IconText>
+									</View>
 								</View>
 								<Pressable
 									onPress={() => {
@@ -535,38 +557,22 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 								</Animated.View>
 							</View>
 
-							{/* Visits remaining — a plain status line, NOT a progress
-							    bar. You don't track "how full" your visits are; you just
-							    want "2 of 3 left · resets in 2h". One tickle per friend. */}
-							<View style={styles.visitsLine}>
-								<IconText left={<Glyph name="sparkle" size={13} />} gap={6}>
-									<Text style={styles.visitsLineText}>
-										<Text style={[styles.visitsLineNum, { color: visitsColor }]}>
-											{vLeft} of {visitBudget}
-										</Text>
-										<Text> Barn visits left</Text>
-										{visitsFreshIn ? (
-											<Text style={styles.visitsLineMute}>
-												{"  ·  resets in "}
-												{visitsFreshIn}
-											</Text>
-										) : null}
-									</Text>
-								</IconText>
-
-								{/* post-tickle nudge — go spread the love to another friend */}
-								{tired && !restingOnArrival && !napOpen && (
-									<View style={styles.ticklesPop} pointerEvents="none">
+							{/* post-tickle nudge — its own little sticker BELOW the
+							    tally band (never over it), tail pointing up at the hearts
+							    it's celebrating. Go spread the love to another friend. */}
+							{tired && !restingOnArrival && !napOpen && (
+								<View style={styles.ticklesPopWrap} pointerEvents="none">
+									<View style={styles.ticklesPop}>
+										<View style={styles.ticklesPopTail} />
 										<Text style={styles.ticklesPopTitle}>Tickled!</Text>
 										<Text style={styles.ticklesPopSub}>
 											{vLeft > 0
 												? "go tickle another friend"
 												: "tap Leave when you're ready"}
 										</Text>
-										<View style={styles.ticklesPopTail} />
 									</View>
-								)}
-							</View>
+								</View>
+							)}
 						</View>
 
 						{/* ===== stage: two pigs stacked with depth — host up front
@@ -864,12 +870,16 @@ const styles = StyleSheet.create({
 	content: { flex: 1 },
 	topFade: { position: "absolute", top: 0, left: 0, right: 0, height: 190 },
 
-	chrome: { paddingHorizontal: 16, paddingTop: 56 },
-	headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-	kicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 1.2, color: "#ffe9a8" },
+	// paddingTop 56 is a status-bar safe offset (this overlay has no SafeAreaView),
+	// not an on-scale gap — kept literal.
+	chrome: { paddingHorizontal: SPACE.lg, paddingTop: 56 },
+	// Header row: title column (shrinks / wraps the chip) beside the Leave pill.
+	// alignItems flex-start so a two-line title + chip keeps Leave pinned top.
+	headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: SPACE.md },
+	headerTitleCol: { flexShrink: 1, alignItems: "flex-start" },
+	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.slopBand },
 	title: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 23,
+		...TYPE.sectionTitle,
 		color: WHIMSY.paper,
 		marginTop: 1,
 		textShadowColor: "rgba(0,0,0,0.55)",
@@ -878,29 +888,29 @@ const styles = StyleSheet.create({
 	},
 	leavePill: {
 		flexShrink: 0,
-		paddingHorizontal: 13,
-		paddingVertical: 8,
-		borderRadius: 999,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.sm,
+		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: INK,
 		backgroundColor: WHIMSY.paper,
 		...sticker,
 	},
-	leaveText: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: INK },
+	leaveText: { ...TYPE.label, color: INK },
 
 	heartCard: {
 		flexDirection: "row",
 		alignItems: "stretch",
-		marginTop: 14,
+		marginTop: SPACE.lg - 2,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 18,
+		borderRadius: RADII.xl,
 		backgroundColor: WHIMSY.paper,
 		overflow: "hidden",
 		...sticker,
 	},
 	heartDivider: { width: 2, backgroundColor: INK, opacity: 0.45 },
-	tally: { flex: 1, paddingVertical: 10, alignItems: "center", overflow: "hidden" },
+	tally: { flex: 1, paddingVertical: SPACE.sm + 2, alignItems: "center", overflow: "hidden" },
 	tallyTick: {
 		position: "absolute",
 		top: 2,
@@ -910,9 +920,9 @@ const styles = StyleSheet.create({
 		zIndex: 3,
 	},
 	tallyTickText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.roseDeep },
-	tallyRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-	tallyNum: { fontFamily: FONTS.whimsy, fontSize: 23, color: INK },
-	tallyLabel: { fontFamily: FONTS.bodyExtra, fontSize: 9.5, letterSpacing: 1, color: WHIMSY.mute, marginTop: 4 },
+	tallyRow: { flexDirection: "row", alignItems: "center", gap: SPACE.xs + 1 },
+	tallyNum: { ...TYPE.sectionTitle, color: INK },
+	tallyLabel: { ...TYPE.kickerPill, letterSpacing: 1, color: WHIMSY.mute, marginTop: SPACE.xs },
 	beatEmblem: {
 		position: "absolute",
 		left: "50%",
@@ -930,45 +940,21 @@ const styles = StyleSheet.create({
 		zIndex: 4,
 		...sticker,
 	},
-	beatHeart: { color: WHIMSY.roseDeep, fontSize: 14 },
-
-	ticklesBar: {
-		marginTop: 9,
+	// Visits-left chip — a gold-accent sticker in the header, under the title.
+	// "2 of 3 visits left · resets in 2h" — the visit's headline stat, up front.
+	visitsChip: {
+		marginTop: SPACE.sm,
+		alignSelf: "flex-start",
+		backgroundColor: WHIMSY.slopBand,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 14,
-		backgroundColor: WHIMSY.cream,
-		paddingHorizontal: 12,
-		paddingTop: 8,
-		paddingBottom: 9,
+		borderRadius: RADII.lg,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: 5,
 		...sticker,
 	},
-	// Plain "2 of 3 Barn visits left · resets in 2h" status line (no bar).
-	visitsLine: {
-		marginTop: 9,
-		alignItems: "center",
-		justifyContent: "center",
-		paddingVertical: 6,
-	},
-	visitsLineText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: INK },
-	visitsLineNum: { fontFamily: FONTS.whimsy, fontSize: 15 },
-	visitsLineMute: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.mute },
-	ticklesTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-	ticklesLabel: { fontFamily: FONTS.bodyExtra, fontSize: 11, letterSpacing: 0.6, color: INK },
-	ticklesCount: { fontFamily: FONTS.whimsy, fontSize: 16, color: INK },
-	ticklesCap: { color: WHIMSY.mute, fontSize: 12 },
-	ticklesTrack: {
-		height: 11,
-		borderRadius: 999,
-		borderWidth: 1.5,
-		borderColor: INK,
-		backgroundColor: "rgba(42,31,21,0.1)",
-		marginTop: 6,
-		overflow: "hidden",
-	},
-	ticklesFill: { height: "100%", backgroundColor: "#e8a82e", borderRadius: 999 },
-	ticklesFoot: { flexDirection: "row", justifyContent: "space-between", marginTop: 5 },
-	ticklesFootText: { fontFamily: FONTS.bodyExtra, fontSize: 9, letterSpacing: 0.4, color: WHIMSY.mute },
+	visitsChipText: { ...TYPE.label, letterSpacing: 0, color: INK },
+	visitsChipNum: { fontFamily: FONTS.whimsy, fontSize: 14 },
 
 	stage: { flex: 1, paddingBottom: 18 },
 	// The depth diorama: two pigs absolutely placed, staggered for a sense of depth.
@@ -993,31 +979,11 @@ const styles = StyleSheet.create({
 	floatLayer: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center", zIndex: 5 },
 	float: { position: "absolute", bottom: "60%", fontFamily: FONTS.whimsy },
 	pigBox: { alignItems: "center", justifyContent: "center" },
-	groundShadow: { position: "absolute", bottom: "11%", height: 13, borderRadius: 999, backgroundColor: "rgba(42,31,21,0.22)" },
-	nameTag: { marginTop: -8, borderWidth: 2, borderColor: INK, borderRadius: 999, ...sticker },
-	nameTagYou: { backgroundColor: WHIMSY.paper, paddingHorizontal: 11, paddingVertical: 2 },
-	nameTagFriend: { backgroundColor: WHIMSY.sun, paddingHorizontal: 13, paddingVertical: 3 },
+	groundShadow: { position: "absolute", bottom: "11%", height: 13, borderRadius: RADII.pill, backgroundColor: "rgba(42,31,21,0.22)" },
+	nameTag: { marginTop: -8, borderWidth: 2, borderColor: INK, borderRadius: RADII.pill, ...sticker },
+	nameTagYou: { backgroundColor: WHIMSY.paper, paddingHorizontal: SPACE.md, paddingVertical: 2 },
+	nameTagFriend: { backgroundColor: WHIMSY.sun, paddingHorizontal: SPACE.md, paddingVertical: 3 },
 	nameTagText: { fontFamily: FONTS.whimsy, fontSize: 12, color: INK, maxWidth: 130, textAlign: "center" },
-	energyWrap: { marginTop: 7, alignItems: "center", gap: 3 },
-	energyTrack: {
-		width: 104,
-		height: 9,
-		borderRadius: 999,
-		borderWidth: 1.5,
-		borderColor: INK,
-		backgroundColor: "rgba(255,255,255,0.6)",
-		overflow: "hidden",
-		...sticker,
-	},
-	energyFill: { height: "100%" },
-	energyLabel: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 9.5,
-		color: "#fff",
-		textShadowColor: "rgba(0,0,0,0.55)",
-		textShadowOffset: { width: 0, height: 1 },
-		textShadowRadius: 2,
-	},
 
 	// Dig spot — a planted shovel near the pigs' feet (low-left, off the host).
 	digSpot: { position: "absolute", left: "8%", bottom: "9%", alignItems: "center", zIndex: 6 },
@@ -1031,15 +997,17 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.sun,
 	},
 	digSparkle: { position: "absolute", top: -10, left: "60%", zIndex: 2 },
-	dirtMound: { width: 52, height: 15, borderRadius: 999, backgroundColor: "#8a5a36", borderWidth: 2, borderColor: INK, marginTop: -11 },
+	// Dug-earth mound — a decorative soil prop; the brown reads as dirt (no
+	// WHIMSY brown fits between paper and the near-black `bark`).
+	dirtMound: { width: 52, height: 15, borderRadius: RADII.pill, backgroundColor: "#8a5a36", borderWidth: 2, borderColor: INK, marginTop: -11 },
 	digPill: {
-		marginTop: 5,
+		marginTop: SPACE.xs + 1,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 999,
-		paddingHorizontal: 14,
-		paddingVertical: 5,
+		borderRadius: RADII.pill,
+		paddingHorizontal: SPACE.lg - 2,
+		paddingVertical: SPACE.xs + 1,
 		...sticker,
 	},
 	digPillText: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
@@ -1052,9 +1020,9 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 999,
-		paddingHorizontal: 12,
-		paddingVertical: 5,
+		borderRadius: RADII.pill,
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.xs + 1,
 		...sticker,
 	},
 	truffleFoundRow: { flexDirection: "row", alignItems: "center", gap: 5 },
@@ -1067,101 +1035,70 @@ const styles = StyleSheet.create({
 		alignSelf: "center",
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 10,
+		gap: SPACE.md - 2,
 		maxWidth: "88%",
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 16,
-		paddingHorizontal: 14,
-		paddingVertical: 10,
+		borderRadius: RADII.lg,
+		paddingHorizontal: SPACE.lg - 2,
+		paddingVertical: SPACE.sm + 2,
 		zIndex: 7,
 		...sticker,
 	},
 	forageTruffle: { width: 38, height: 38 },
 	forageTextWrap: { flexShrink: 1 },
-	forageKicker: { fontFamily: FONTS.hand, fontSize: 11, letterSpacing: 1, color: WHIMSY.accent },
+	forageKicker: { ...TYPE.kicker, fontSize: 11, letterSpacing: 1, color: WHIMSY.accent },
 	forageTitle: { fontFamily: FONTS.whimsy, fontSize: 15, color: INK, marginTop: 1 },
-	forageSub: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, marginTop: 1 },
+	forageSub: { ...TYPE.hand, fontSize: 12, color: WHIMSY.mute, marginTop: 1 },
 
-	// Out-of-tickles callout — anchored just above the YOUR TICKLES bar.
+	// Post-tickle callout — sits in normal flow BELOW the tally band with its
+	// own breathing room, so it never covers the hearts. Centered under the band.
+	ticklesPopWrap: { marginTop: SPACE.md, alignItems: "center" },
 	ticklesPop: {
-		position: "absolute",
-		bottom: "100%",
-		marginBottom: 8,
 		alignSelf: "center",
 		backgroundColor: WHIMSY.rose,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 12,
-		paddingHorizontal: 14,
-		paddingVertical: 7,
+		borderRadius: RADII.md,
+		paddingHorizontal: SPACE.lg,
+		paddingVertical: SPACE.sm,
 		alignItems: "center",
-		zIndex: 30,
 		...sticker,
 	},
 	ticklesPopTitle: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
-	ticklesPopSub: { fontFamily: FONTS.hand, fontSize: 11.5, color: WHIMSY.mute, marginTop: 1 },
+	ticklesPopSub: { ...TYPE.kicker, fontSize: 11, color: WHIMSY.mute, marginTop: 1 },
+	// Tail on TOP, pointing UP at the tally band it's celebrating.
 	ticklesPopTail: {
 		position: "absolute",
-		bottom: -7,
+		top: -8,
 		alignSelf: "center",
 		width: 0,
 		height: 0,
 		borderLeftWidth: 7,
 		borderRightWidth: 7,
-		borderTopWidth: 8,
+		borderBottomWidth: 8,
 		borderLeftColor: "transparent",
 		borderRightColor: "transparent",
-		borderTopColor: INK,
+		borderBottomColor: INK,
 	},
 
-	sheetScrim: { ...StyleSheet.absoluteFillObject, zIndex: 45, backgroundColor: "rgba(20,16,28,0.46)", justifyContent: "flex-end" },
-	sheet: { backgroundColor: WHIMSY.paper, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 30 },
-	sheetGrip: { width: 42, height: 5, borderRadius: 999, backgroundColor: WHIMSY.mute, opacity: 0.5, alignSelf: "center", marginBottom: 14 },
-	sheetTitle: { fontFamily: FONTS.whimsy, fontSize: 23, color: INK, textAlign: "center" },
-	sheetRow: { flexDirection: "row", gap: 13, alignItems: "flex-start", marginTop: 14 },
-	sheetIcon: {
-		width: 40,
-		height: 40,
-		borderRadius: 12,
-		borderWidth: 2,
-		borderColor: INK,
-		backgroundColor: WHIMSY.cream,
-		alignItems: "center",
-		justifyContent: "center",
-		...sticker,
-	},
-	sheetRowTitle: { fontFamily: FONTS.whimsy, fontSize: 16, color: INK },
-	sheetRowBody: { fontFamily: FONTS.body, fontSize: 12.5, lineHeight: 18, color: WHIMSY.mute, marginTop: 2 },
-	sheetBtn: {
-		marginTop: 20,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: 14,
-		paddingVertical: 12,
-		alignItems: "center",
-		...sticker,
-	},
-	sheetBtnText: { fontFamily: FONTS.whimsy, fontSize: 16, color: INK },
-
-	napScrim: { ...StyleSheet.absoluteFillObject, zIndex: 50, backgroundColor: "rgba(20,16,28,0.55)", alignItems: "center", justifyContent: "center", padding: 20 },
+	napScrim: { ...StyleSheet.absoluteFillObject, zIndex: 50, backgroundColor: MODAL_BACKDROP_BG, alignItems: "center", justifyContent: "center", padding: SPACE.xl - 4 },
 	napCard: {
 		width: "100%",
 		maxWidth: 320,
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 20,
-		padding: 22,
+		borderRadius: RADII.xl,
+		padding: SPACE.xl - 2,
 		alignItems: "center",
 		...sticker,
 	},
 	napGlyph: {},
-	napKicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 1, color: WHIMSY.accent, marginTop: 6 },
-	napTitle: { fontFamily: FONTS.whimsy, fontSize: 26, color: INK, marginTop: 2 },
-	napBody: { fontFamily: FONTS.hand, fontSize: 15, lineHeight: 22, color: WHIMSY.mute, textAlign: "center", marginTop: 8, marginBottom: 16 },
+	napKicker: { ...TYPE.kicker, letterSpacing: 1, color: WHIMSY.accent, marginTop: SPACE.xs + 2 },
+	napTitle: { ...TYPE.pageTitle, color: INK, marginTop: 2 },
+	napBody: { ...TYPE.body, lineHeight: 22, color: WHIMSY.mute, textAlign: "center", marginTop: SPACE.sm, marginBottom: SPACE.lg },
 	napStats: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -1170,15 +1107,15 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.cream,
 		borderWidth: 2,
 		borderColor: INK,
-		borderRadius: 12,
-		paddingVertical: 10,
-		marginBottom: 16,
+		borderRadius: RADII.md,
+		paddingVertical: SPACE.sm + 2,
+		marginBottom: SPACE.lg,
 	},
-	napStat: { flex: 1, alignItems: "center", paddingHorizontal: 6 },
+	napStat: { flex: 1, alignItems: "center", paddingHorizontal: SPACE.xs + 2 },
 	napStatNumRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3 },
 	napStatNum: { fontFamily: FONTS.whimsy, fontSize: 18, color: INK },
-	napStatLabel: { fontFamily: FONTS.bodyExtra, fontSize: 9, letterSpacing: 0.5, color: WHIMSY.mute, marginTop: 2, textAlign: "center" },
+	napStatLabel: { ...TYPE.kickerPill, letterSpacing: 0.5, textTransform: "none", color: WHIMSY.mute, marginTop: 2, textAlign: "center" },
 	napStatDivider: { width: 2, alignSelf: "stretch", backgroundColor: INK, opacity: 0.5 },
-	napBtn: { alignSelf: "stretch", backgroundColor: WHIMSY.sun, borderWidth: 2, borderColor: INK, borderRadius: 14, paddingVertical: 12, alignItems: "center", ...sticker },
-	napBtnText: { fontFamily: FONTS.whimsy, fontSize: 17, color: INK },
+	napBtn: { alignSelf: "stretch", backgroundColor: WHIMSY.sun, borderWidth: 2, borderColor: INK, borderRadius: RADII.lg, paddingVertical: SPACE.md, alignItems: "center", ...sticker },
+	napBtnText: { ...TYPE.numeral, fontSize: 17, color: INK },
 });

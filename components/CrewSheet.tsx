@@ -134,8 +134,8 @@ const styles = StyleSheet.create({
 	grabber: {
 		alignSelf: "center",
 		width: 44,
-		height: 5,
-		borderRadius: 3,
+		height: 4,
+		borderRadius: 2,
 		backgroundColor: WHIMSY.muteSoft,
 		marginBottom: SPACE.sm,
 	},

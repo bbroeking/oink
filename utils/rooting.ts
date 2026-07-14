@@ -19,6 +19,7 @@ import {
 	STIR_RUB,
 	STIR_SHOVE,
 } from "@/constants/dig";
+import { formatHM } from "@/utils/time";
 
 export type Find =
 	| "truffle_l"
@@ -346,11 +347,9 @@ export function feedingCountdown(nowMs: number = Date.now()): string {
 	return formatLeft(left);
 }
 
-function formatLeft(leftMs: number): string {
-	const h = Math.floor(leftMs / 3600000);
-	const m = Math.floor((leftMs % 3600000) / 60000);
-	return h > 0 ? `${h}h ${m}m` : `${Math.max(1, m)}m`;
-}
+// The patch/feeding countdowns never show "0m" (a sub-minute tail floors up
+// to "1m"), hence minMinute:1 on the shared formatHM kernel.
+const formatLeft = (leftMs: number): string => formatHM(leftMs, { minMinute: 1 });
 
 // ── Patch phases ─────────────────────────────────────────────────────────────
 // Within each 8h feeding window the patch alternates: OPEN for the first

@@ -19,7 +19,7 @@ import {
 import { supabase } from "../utils/supabase";
 import { Sticker } from "./ui/Sticker";
 import { isUsernameAllowed } from "@/constants/bannedWords";
-import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW, RADII } from "@/constants/theme";
 
 // Friendly copy for moderation rejections — shared between the
 // client-side pre-check and the server trigger's username_not_allowed
@@ -93,7 +93,7 @@ export default function UsernameSetup({ userId, onSaved }: Props) {
 						<Sticker
 							color="paper"
 							rotate={-0.6}
-							radius={20}
+							radius={RADII.xxl}
 							style={[styles.card, STICKER_SHADOW]}
 						>
 							<TextInput

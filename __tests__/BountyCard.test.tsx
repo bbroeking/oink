@@ -50,7 +50,7 @@ describe("BountyCard", () => {
 	});
 
 	// The redesigned card uses compact copy: "1/3" not "1 / 3", "Claim"
-	// not "Claim reward", and a ✓ check mark on its own when claimed.
+	// not "Claim reward", and an Icon "check" mark on its own when claimed.
 	test("in-progress shows the progress count + the … placeholder", async () => {
 		const r = await renderAct(<BountyCard bounty={base} tilt={0} />);
 		const text = textOf(r.root);
@@ -66,10 +66,12 @@ describe("BountyCard", () => {
 		act(() => r.unmount());
 	});
 
-	test("claimed shows the ✓ tag, no claim button", async () => {
+	test("claimed shows the check tag, no claim button", async () => {
 		const claimed = { ...base, progress: 3, claimed: true };
 		const r = await renderAct(<BountyCard bounty={claimed} tilt={0} />);
-		expect(textOf(r.root)).toContain("✓");
+		// The claimed tick is the Icon "check" primitive now (2026-07-13
+		// dingbat ruling: semantic ✓ renders as Icon, not a Text glyph).
+		expect(r.root.findAllByProps({ name: "check" }).length).toBeGreaterThan(0);
 		expect(
 			r.root.findAllByProps({ testID: "bounty-claim-generous_hoof" })
 		).toHaveLength(0);

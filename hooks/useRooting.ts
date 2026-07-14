@@ -15,6 +15,8 @@
 import { useCallback, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { rpcAction, RpcResult } from "@/utils/rpc";
+import { supabase } from "@/utils/supabase";
+import { markFirstRealDig } from "@/utils/sounderPath";
 import {
 	ClaimableFind,
 	claimableFinds,
@@ -79,6 +81,11 @@ export interface RootingOutcome {
 	carryCaught?: { kind: string; gild: number } | null;
 	carryNext?: { kind: string; gild: number } | null;
 	practice: boolean;
+	// "Beginner's snout": the one-time real Golden Truffle granted on the FIRST
+	// practice dig (claim_beginners_snout). >0 → show the gift line; null/0 →
+	// already claimed, migration unpushed, or not the first practice dig — the
+	// end-card just omits the line (fail-soft). Only ever set on practice digs.
+	snoutGift?: number | null;
 }
 
 type OpenPayload = {
@@ -123,7 +130,49 @@ function toCarry(
 // unpushed) rather than a gameplay refusal.
 const MISSING_RPC_REASONS = new Set(["network", "no_data"]);
 
-const dugKey = (win: number) => `rooting_done_${win}`;
+// Per-user (the sounderPath `:${uid}` convention) so an account switch on a
+// shared device can't inherit another player's dug-this-feeding state — the old
+// un-namespaced `rooting_done_${win}` leaked the demo account's dug flag into a
+// fresh signup and locked its first dig. Legacy keys are simply ignored: they
+// expire naturally when the window rolls over, and the server (open_rooting /
+// feeding_state) stays authoritative meanwhile.
+const dugKey = (uid: string, win: number) => `rooting_done_${win}:${uid}`;
+
+// The caller's user id for the mirror, or null when signed out (no mirror then —
+// real digs require auth anyway; practice contexts just skip persistence).
+async function mirrorUid(): Promise<string | null> {
+	try {
+		const { data } = await supabase.auth.getSession();
+		return data.session?.user?.id ?? null;
+	} catch {
+		return null;
+	}
+}
+
+// One-shot local flag: the first practice dig tries claim_beginners_snout()
+// exactly once per install so we never re-hit the RPC on every practice run.
+// (The server is idempotent too — this just spares the round-trip.)
+const SNOUT_TRIED_KEY = "beginners_snout_tried_v1";
+
+// Claim the one-time beginner's snout on the FIRST practice dig only. Returns
+// the number of truffles actually granted (>0), or null when it shouldn't show
+// a line (already tried locally, already claimed server-side, or the migration
+// isn't pushed yet — rpcAction reason network/no_data/unknown). Fail-soft: any
+// miss just yields null so the end-card omits the gift line.
+async function claimBeginnersSnoutOnce(): Promise<number | null> {
+	try {
+		const tried = await AsyncStorage.getItem(SNOUT_TRIED_KEY);
+		if (tried) return null;
+		await AsyncStorage.setItem(SNOUT_TRIED_KEY, "1");
+	} catch {
+		// Storage hiccup — attempt the claim anyway; the server stays idempotent.
+	}
+	const r = await rpcAction<{ granted: number; balance: number }>(
+		"claim_beginners_snout"
+	);
+	if (r.ok && typeof r.granted === "number" && r.granted > 0) return r.granted;
+	return null;
+}
 
 export function useRooting() {
 	const [session, setSession] = useState<RootingSession | null>(null);
@@ -134,14 +183,17 @@ export function useRooting() {
 	const win = windowIndex();
 
 	// "Already dug" is server-authoritative (open_rooting says already), but we
-	// mirror it in AsyncStorage so the strip renders right on cold start and in
-	// practice mode.
+	// mirror it in AsyncStorage so the strip renders right on cold start. The
+	// mirror is per-user: signed out → no uid → no mirror (dug stays false).
 	useEffect(() => {
 		let cancelled = false;
 		setDugThisWindow(false);
-		AsyncStorage.getItem(dugKey(win)).then((v) => {
+		(async () => {
+			const uid = await mirrorUid();
+			if (!uid) return;
+			const v = await AsyncStorage.getItem(dugKey(uid, win));
 			if (!cancelled && v) setDugThisWindow(true);
-		});
+		})();
 		return () => {
 			cancelled = true;
 		};
@@ -226,13 +278,27 @@ export function useRooting() {
 			).filter((f) => !caught.has(f));
 			const markDug = async () => {
 				setDugThisWindow(true);
-				await AsyncStorage.setItem(dugKey(session.windowIndex), "1");
+				// Persist the per-user cold-start mirror; signed out (no uid) → skip —
+				// the in-memory flag above still covers the live session.
+				const uid = await mirrorUid();
+				if (uid) await AsyncStorage.setItem(dugKey(uid, session.windowIndex), "1");
 			};
 			if (session.practice) {
 				const truffles = safeFinds.filter(
 					(f) => f === "truffle_l" || f === "truffle_d"
 				).length;
-				await markDug();
+				// A practice dig banks nothing and is freely replayable — it must NOT
+				// persist the real-dig cold-start mirror (rooting_done_${win}). It used
+				// to call markDug(), so a fresh player who practiced then founded a
+				// Sounder in the SAME feeding window saw the crewed card mistake that
+				// practice for a real dig ("dug this feeding — opens in …") and got
+				// locked out of their first real dig. The server never records a
+				// practice dig, so the local mirror was the only thing lying.
+				//
+				// The first practice dig mints one REAL Golden Truffle so the
+				// onboarding value screen isn't hypothetical. Fail-soft: null when
+				// already claimed / not the first practice / migration unpushed.
+				const snoutGift = await claimBeginnersSnoutOnce();
 				return {
 					ok: true,
 					outcome: {
@@ -245,6 +311,7 @@ export function useRooting() {
 						carryCaught: null,
 						carryNext: null,
 						practice: true,
+						snoutGift,
 					},
 				};
 			}
@@ -258,6 +325,14 @@ export function useRooting() {
 				return { ok: false, reason: r.reason };
 			}
 			await markDug();
+			// The onboarding funnel's FIRST_DIG → DONE boundary — stamp that this
+			// player has dug for real at least once (per-user, fail-soft). Derived,
+			// not authoritative: the step machine reads this stamp so it retires the
+			// step surfaces the moment a crewed player's first real dig lands.
+			{
+				const { data: sess } = await supabase.auth.getSession();
+				await markFirstRealDig(sess.session?.user?.id ?? null);
+			}
 			return {
 				ok: true,
 				outcome: {

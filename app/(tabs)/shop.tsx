@@ -18,6 +18,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { formatHM } from "@/utils/time";
+import { presentPaywall, OFFERING_IDS } from "../../utils/iap";
 import { Button, SectionHeader } from "../../components/ui";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
@@ -36,7 +37,7 @@ import { Glyph, IconText, type GlyphName } from "@/components/ui/Glyph";
 import { AnimatedCosmetic } from "@/components/ui/AnimatedCosmetic";
 import { cosmeticFxFor } from "@/constants/cosmeticFx";
 import { type ListRow, buildBrowseRows } from "@/constants/shopRows";
-import { COLORS, FONTS, KICKER_PILL, WHIMSY, STICKER_SHADOW, SHADOW_SM, SPACE, RADII, PAGE_PAD, TAB_SAFE } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_PILL, WHIMSY, STICKER_SHADOW, SHADOW_SM, SPACE, RADII, PAGE_PAD, TAB_SAFE, TYPE, RARITY_BG_SOLID, RARITY_STRIPE } from "@/constants/theme";
 import { ItemPreviewModal } from "../../components/ItemPreviewModal";
 import { showPurchaseToast } from "../../components/PurchaseToast";
 import {
@@ -220,21 +221,6 @@ function HatThumb({
 // chip carries the buy-state (gold = affordable, muted + lock = not yet,
 // "✓ OWNED" tag = owned). No per-card buttons — tapping opens the
 // preview/buy sheet. Uniform 2-col grid replaces the bento mosaic.
-const SHOP_RARITY_DOT: Record<string, string> = {
-	common: "#cdbfae",
-	uncommon: "#7ba868",
-	rare: "#5a8bc5",
-	epic: "#a89bff",
-	legendary: "#d4a437",
-};
-const SHOP_RARITY_TINT: Record<string, string> = {
-	common: "#f4ebe0",
-	uncommon: "#d9ead0",
-	rare: "#cfe0ec",
-	epic: "#e2daf6",
-	legendary: "#ffe7ad",
-};
-
 function RarityLegend() {
 	return (
 		<View style={shopCardStyles.legend}>
@@ -244,7 +230,7 @@ function RarityLegend() {
 						<View
 							style={[
 								shopCardStyles.legendDot,
-								{ backgroundColor: SHOP_RARITY_DOT[r] },
+								{ backgroundColor: RARITY_STRIPE[r] },
 							]}
 						/>
 						<Text style={shopCardStyles.legendLabel}>{r}</Text>
@@ -262,6 +248,7 @@ function ShopCard({
 	canAfford,
 	index,
 	locked,
+	membersOnly,
 	onPress,
 	onCenter,
 }: {
@@ -271,8 +258,12 @@ function ShopCard({
 	canAfford: boolean;
 	// Position in the grid — drives the alternating ±0.5° sticker tilt.
 	index: number;
-	// Members-only item + caller isn't a Slop Club member → gold lock badge.
+	// Members-only item + caller isn't a Slop Club member → the ribbon wears
+	// its lock glyph (it's still a gate, not just identity).
 	locked?: boolean;
+	// Members-only item, regardless of VIP status. Drives the MEMBERS ribbon —
+	// which stays for members too (it's Slop Club identity, not a lock).
+	membersOnly?: boolean;
 	onPress: () => void;
 	// Reports the card's window-space center (the buy celebration anchor).
 	onCenter?: (x: number, y: number) => void;
@@ -291,27 +282,35 @@ function ShopCard({
 			style={[
 				shopCardStyles.card,
 				{ transform: [{ rotate: index % 2 === 0 ? "-0.5deg" : "0.5deg" }] },
+				// Locked members-only card (non-VIP) reads dimmer — same opacity
+				// lane the can't-afford price chip uses, so the whole grid speaks
+				// one "muted = gated" language.
+				locked && shopCardStyles.cardLocked,
 			]}
 		>
 			<View
 				style={[
 					shopCardStyles.thumb,
-					{ backgroundColor: SHOP_RARITY_TINT[rarity] },
+					{ backgroundColor: RARITY_BG_SOLID[rarity] },
 				]}
 			>
 				<View
 					style={[
 						shopCardStyles.rdot,
-						{ backgroundColor: SHOP_RARITY_DOT[rarity] },
+						{ backgroundColor: RARITY_STRIPE[rarity] },
 					]}
 				/>
 				{owned ? (
 					<View style={shopCardStyles.ownedBadge}>
-						<Text style={shopCardStyles.ownedBadgeText}>✓</Text>
+						<Icon name="check" size={14} color={WHIMSY.ink} strokeWidth={2.6} />
 					</View>
-				) : locked ? (
-					<View style={shopCardStyles.lockBadge}>
-						<Glyph name="lock" size={14} />
+				) : membersOnly ? (
+					// MEMBERS corner ribbon — Slop Club gold, ink border, sticker
+					// shadow. Wears a lock glyph only when the item is still gated
+					// (non-VIP); for members it stays as identity, no lock.
+					<View style={shopCardStyles.membersRibbon}>
+						{locked && <Glyph name="lock" size={11} />}
+						<Text style={shopCardStyles.membersRibbonText}>MEMBERS</Text>
 					</View>
 				) : null}
 				<HatThumb item={item} fill />
@@ -321,9 +320,12 @@ function ShopCard({
 					{item.name}
 				</Text>
 				{owned ? (
-					<Text style={shopCardStyles.ownedTag}>
-						✓ {active ? "WEARING" : "OWNED"}
-					</Text>
+					<View style={shopCardStyles.ownedTagRow}>
+						<Icon name="check" size={12} color={COLORS.successText} strokeWidth={2.6} />
+						<Text style={shopCardStyles.ownedTagLabel}>
+							{active ? "WEARING" : "OWNED"}
+						</Text>
+					</View>
 				) : item.cost <= 0 ? (
 					<Text style={[shopCardStyles.ownedTag, { color: WHIMSY.mute }]}>
 						SEASON PASS
@@ -374,7 +376,7 @@ const shopCardStyles = StyleSheet.create({
 	},
 	legendLabel: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10.5,
+		fontSize: 11,
 		color: WHIMSY.mute,
 		textTransform: "uppercase",
 		letterSpacing: 0.5,
@@ -423,23 +425,35 @@ const shopCardStyles = StyleSheet.create({
 		zIndex: 2,
 		...STICKER_SHADOW,
 	},
-	ownedBadgeText: { fontSize: 14, fontFamily: FONTS.bodyExtra, color: WHIMSY.ink },
-	// Gold members-only lock — same corner as the owned check, Slop Club hue.
-	lockBadge: {
+	// MEMBERS corner ribbon — Slop Club gold chip in the same corner the owned
+	// check occupies, with the signature ink border + sticker shadow. Reads as
+	// "Slop Club" at a glance where the old small round lock was ambiguous. A
+	// lock glyph rides ahead of the label only while the item is still gated.
+	membersRibbon: {
 		position: "absolute",
 		top: SPACE.sm,
 		right: SPACE.sm,
-		width: 26,
-		height: 26,
-		borderRadius: 13,
-		backgroundColor: "#F5C44A",
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.xs,
+		backgroundColor: WHIMSY.slopGold,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center",
+		borderRadius: RADII.sm,
+		paddingHorizontal: SPACE.sm,
+		paddingVertical: SPACE.xs,
 		zIndex: 2,
-		...STICKER_SHADOW,
+		...SHADOW_SM,
 	},
+	membersRibbonText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 9,
+		letterSpacing: 1,
+		textTransform: "uppercase",
+		color: WHIMSY.ink,
+	},
+	// Locked members-only card — the muted "gated" lane shared with chipLocked.
+	cardLocked: { opacity: 0.85 },
 	// Symmetric 12px foot padding (UI audit) — was H11/T9/B11.
 	foot: { padding: SPACE.md, gap: SPACE.sm },
 	nm: { fontFamily: FONTS.displaySemi, fontSize: 15, color: WHIMSY.ink },
@@ -464,7 +478,7 @@ const shopCardStyles = StyleSheet.create({
 	// opacity. Same size as the buy chip so the grid doesn't reflow.
 	chipLocked: {
 		backgroundColor: WHIMSY.cream,
-		borderColor: "rgba(42,31,21,.34)",
+		borderColor: WHIMSY.muteSoft,
 		opacity: 0.85,
 	},
 	chipText: { fontFamily: FONTS.display, fontSize: 15, color: WHIMSY.ink },
@@ -477,8 +491,25 @@ const shopCardStyles = StyleSheet.create({
 		fontSize: 12,
 		letterSpacing: 0.5,
 		textTransform: "uppercase",
-		color: "#5b8a4a",
+		color: COLORS.successText,
 		paddingVertical: 8,
+	},
+	// Owned footer as an Icon-check + label pair, centered on the same
+	// footprint as the SEASON PASS text (the check replaces the raw ✓).
+	ownedTagRow: {
+		alignSelf: "stretch",
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 4,
+		paddingVertical: 8,
+	},
+	ownedTagLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		letterSpacing: 0.5,
+		textTransform: "uppercase",
+		color: COLORS.successText,
 	},
 	grid: {
 		flexDirection: "row",
@@ -656,6 +687,15 @@ export default function ShopScreen() {
 		setUserId(user.id);
 		setResetsIn(resetsRes ?? 0);
 	}, []);
+
+	// Join Slop Club from the members band header — the SAME RevenueCat offering
+	// components/Account.tsx and the season premium unlock present. is_vip flips
+	// server-side via the webhook; re-running load() re-reads the profile, which
+	// unlocks the members band + drops the ribbon locks.
+	const handleJoinSlopClub = useCallback(async () => {
+		const result = await presentPaywall(OFFERING_IDS.slopClub);
+		if (result.ok) await load();
+	}, [load]);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -879,6 +919,16 @@ export default function ShopScreen() {
 							<Text style={styles.bandSubtitle}>{item.subtitle}</Text>
 						) : null}
 					</View>
+					{members && item.locked ? (
+						<Button
+							variant="gold"
+							size="sm"
+							onPress={handleJoinSlopClub}
+							style={styles.bandJoinCta}
+						>
+							Join Slop Club
+						</Button>
+					) : null}
 					<Text style={styles.bandChevron}>{item.collapsed ? "▸" : "▾"}</Text>
 				</Pressable>
 			);
@@ -897,7 +947,7 @@ export default function ShopScreen() {
 					>
 						{item.title.toUpperCase()}
 					</Text>
-					<View style={[styles.sectionRule, { backgroundColor: accent + "33" }]} />
+					<View style={[styles.sectionRule, { backgroundColor: WHIMSY.muteSoft }]} />
 				</View>
 			);
 		}
@@ -915,6 +965,7 @@ export default function ShopScreen() {
 						active={isEquipped(a.id, a.category)}
 						canAfford={counter >= a.cost}
 						locked={!isVip && !!a.members_only}
+						membersOnly={!!a.members_only}
 						onPress={() => setPreviewItem(a)}
 					/>
 				</View>
@@ -927,6 +978,7 @@ export default function ShopScreen() {
 							active={isEquipped(b.id, b.category)}
 							canAfford={counter >= b.cost}
 							locked={!isVip && !!b.members_only}
+							membersOnly={!!b.members_only}
 							onPress={() => setPreviewItem(b)}
 						/>
 					) : null}
@@ -980,9 +1032,10 @@ export default function ShopScreen() {
 							<Pressable
 								key={v}
 								onPress={() => setView(v)}
-								style={[
+								style={({ pressed }) => [
 									styles.viewToggleBtn,
 									active && styles.viewToggleBtnActive,
+									pressed && { opacity: 0.7 },
 								]}
 							>
 								<Text
@@ -1233,8 +1286,7 @@ const styles = StyleSheet.create({
 		transform: [{ rotate: "2deg" }],
 	},
 	balanceText: {
-		fontSize: 17,
-		fontFamily: FONTS.whimsy,
+		...TYPE.numeral,
 		color: WHIMSY.ink,
 	},
 	viewToggle: {
@@ -1268,15 +1320,6 @@ const styles = StyleSheet.create({
 	viewToggleTextActive: {
 		fontFamily: FONTS.whimsy,
 		color: WHIMSY.ink,
-	},
-	sectionLabel: {
-		fontSize: 14,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		letterSpacing: 0.4,
-		paddingHorizontal: 18,
-		paddingTop: 14,
-		paddingBottom: 8,
 	},
 	chipsRow: {
 		// Flush with the grid: the FlatList content already insets the
@@ -1319,7 +1362,6 @@ const styles = StyleSheet.create({
 		paddingTop: SPACE.xs,
 		paddingBottom: TAB_SAFE,
 	},
-	columnWrap: { gap: SPACE.md },
 	rowWrap: {
 		flexDirection: "row",
 		// Card-to-card 12 (UI audit).
@@ -1329,13 +1371,19 @@ const styles = StyleSheet.create({
 	rowSlot: {
 		flex: 1,
 	},
+	// NOTE(ui-audit, deferred): this per-rarity in-band strip (colored dot +
+	// rarity name + rule) is NOT a clean swap onto <SectionHeader> — that
+	// primitive renders a kicker pill + whimsy title + full rule with no
+	// leading rarity dot, so unifying would drop the rarity-color semantics
+	// and change the visual weight. Pieces are token-ized in place instead;
+	// the full unify onto SectionHeader stays deferred.
 	sectionHeader: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 10,
-		paddingHorizontal: 6,
-		paddingTop: 14,
-		paddingBottom: 10,
+		gap: SPACE.sm + 2,
+		paddingHorizontal: SPACE.xs + 2,
+		paddingTop: SPACE.md + 2,
+		paddingBottom: SPACE.sm + 2,
 	},
 	sectionDot: {
 		width: 12,
@@ -1345,8 +1393,9 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 	},
 	sectionHeaderText: {
+		...TYPE.cardTitle,
 		fontSize: 14,
-		fontFamily: FONTS.whimsy,
+		lineHeight: 16,
 		color: WHIMSY.ink,
 		letterSpacing: 0.4,
 	},
@@ -1369,22 +1418,28 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		...STICKER_SHADOW,
 	},
-	bandHeaderMembers: { backgroundColor: "#FFE7AD" },
+	// Subtle Slop Club gold wash behind the members header row — the identity
+	// tint, not an ad. Token-derived (WHIMSY.slopBand) so it can't drift.
+	bandHeaderMembers: { backgroundColor: WHIMSY.slopBand },
 	bandHeaderEveryone: { backgroundColor: WHIMSY.paper },
+	// "Join Slop Club" CTA nested in the members band header (non-VIP only).
+	bandJoinCta: { marginRight: SPACE.xs },
 	bandTitle: {
+		...TYPE.cardTitle,
 		fontSize: 15,
-		fontFamily: FONTS.whimsy,
+		lineHeight: 18,
 		color: WHIMSY.ink,
 		letterSpacing: 0.4,
 	},
 	bandSubtitle: {
-		fontSize: 11,
-		fontFamily: FONTS.bodyExtra,
+		...TYPE.kickerPill,
+		letterSpacing: 0.3,
+		textTransform: "none",
 		color: WHIMSY.mute,
 		marginTop: 1,
 	},
 	bandChevron: {
-		fontSize: 16,
+		...TYPE.numeral,
 		color: WHIMSY.ink,
 		fontFamily: FONTS.bodyExtra,
 	},
@@ -1400,220 +1455,5 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		overflow: "hidden",
-	},
-	card: {
-		flex: 1,
-		backgroundColor: WHIMSY.paper,
-		borderRadius: 18,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		overflow: "hidden",
-		...STICKER_SHADOW,
-	},
-	// Wide cells (e.g. 4×1 row strip): flip to row layout so the
-	// image gets a square area on the left and the body stacks on
-	// the right. Without this, a short-but-wide cell compresses both
-	// thumb and body so neither is readable.
-	cardHoriz: {
-		flexDirection: "row",
-	},
-	cardThumbWrap: {
-		flex: 1,
-	},
-	cardThumbWrapHoriz: {
-		// In row mode, give the thumb a portrait-ish 0.75 aspect
-		// (narrower than tall) instead of a full square. That hands
-		// ~25% more width to the body so the Wear/Buy button isn't
-		// clipped to a single letter. Image still reads at this
-		// shape because it's contain-fitted within the cell.
-		aspectRatio: 0.75,
-		flex: 0,
-	},
-	cardThumb: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-		position: "relative",
-		overflow: "hidden",
-	},
-	cardBody: {
-		// Tighter padding so the small 1×1 + 2×1 cells get more
-		// content room without the visible card area growing.
-		padding: 8,
-	},
-	cardBodyHoriz: {
-		flex: 1,
-		justifyContent: "center",
-		paddingLeft: 6,
-		paddingRight: 8,
-	},
-	cardName: {
-		fontFamily: FONTS.whimsy,
-		// Dropped from 15 → 13. Pairs with the 2-line wrap +
-		// adjustsFontSizeToFit at the call site so "Sparkle Aura"
-		// and "Homestead Barn" fit cleanly in 1×1 cells without
-		// truncation.
-		fontSize: 13,
-		lineHeight: 15,
-		color: WHIMSY.ink,
-		textAlign: "center",
-		marginBottom: 4,
-	},
-	cardNameHoriz: {
-		textAlign: "left",
-	},
-	priceRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: 4,
-		marginBottom: 6,
-		minHeight: 16,
-	},
-	// (wide cells) name is left-aligned — keep the price under it,
-	// not floating centered in the column.
-	priceRowHoriz: {
-		justifyContent: "flex-start",
-	},
-	cardPrice: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 14,
-		color: WHIMSY.ink,
-	},
-	cardOwnedTag: {
-		fontSize: 11,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		letterSpacing: 0.5,
-	},
-	rarityBadge: {
-		// Top-left to match the redesign — leaves the top-right
-		// quadrant free for the premium ✦ sparkle accent in hero
-		// mosaic cells.
-		position: "absolute",
-		top: 8,
-		left: 8,
-		paddingHorizontal: 6,
-		paddingVertical: 2,
-		borderRadius: 6,
-	},
-	rarityText: {
-		fontSize: 8,
-		fontFamily: FONTS.bodyExtra,
-		color: "#fff",
-		letterSpacing: 0.5,
-	},
-	featured: {
-		marginHorizontal: 14,
-		marginBottom: 16,
-		borderRadius: 22,
-		borderWidth: 2.5,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		overflow: "hidden",
-		...STICKER_SHADOW,
-		transform: [{ rotate: "-1deg" }],
-	},
-	featuredBg: {
-		position: "absolute",
-		top: 0,
-		left: 0,
-		right: 0,
-		bottom: 0,
-		opacity: 0.5,
-	},
-	featuredRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		padding: 14,
-	},
-	featuredThumbWrap: {
-		width: 130,
-		height: 130,
-		borderRadius: 18,
-		backgroundColor: "rgba(255,255,255,0.7)",
-		alignItems: "center",
-		justifyContent: "center",
-		marginRight: 14,
-	},
-	featuredText: {
-		flex: 1,
-		minWidth: 0,
-	},
-	featuredName: {
-		fontSize: 20,
-		fontFamily: FONTS.whimsy,
-		color: WHIMSY.ink,
-		lineHeight: 22,
-	},
-	featuredDesc: {
-		fontSize: 14,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		marginTop: 2,
-		lineHeight: 17,
-	},
-	featuredCtaRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		marginTop: 10,
-		gap: 8,
-	},
-	featuredPriceWrap: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 5,
-	},
-	featuredPrice: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 20,
-		color: WHIMSY.ink,
-	},
-	empty: {
-		textAlign: "center",
-		padding: 40,
-		color: WHIMSY.mute,
-		fontFamily: FONTS.hand,
-		fontSize: 15,
-	},
-	wardrobeIntro: {
-		paddingHorizontal: 6,
-		paddingTop: 6,
-		paddingBottom: 4,
-	},
-	wardrobeTitles: {
-		paddingHorizontal: 6,
-		marginBottom: 8,
-	},
-	wardrobeIntroTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-	},
-	wardrobeIntroSub: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		marginTop: 2,
-	},
-	wardrobeEmpty: {
-		alignItems: "center",
-		paddingVertical: 36,
-		paddingHorizontal: 24,
-	},
-	wardrobeEmptyTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 22,
-		color: WHIMSY.ink,
-		marginTop: 12,
-		marginBottom: 6,
-	},
-	wardrobeEmptySub: {
-		fontFamily: FONTS.hand,
-		fontSize: 14,
-		color: WHIMSY.mute,
-		textAlign: "center",
-		lineHeight: 18,
 	},
 });
