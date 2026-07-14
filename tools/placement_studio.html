@@ -197,6 +197,9 @@ async function boot(){
   renderList(); drawAnimBar();
   $("#status").innerHTML=`${DATA.items.length} items · <b>${DATA.items.filter(i=>i.tuned).length}</b> tuned · ${DATA.items.filter(i=>!i.tuned).length} untuned`;
   buildPigMode();
+  // deep-link: /?item=<id> jumps straight to that item (regen studio hands off here)
+  const want=new URLSearchParams(location.search).get("item");
+  if(want&&DATA.items.some(i=>i.id===want)) select(want);
 }
 
 // Resolve a pig anchor at (anim, frame) — mirrors resolveAnchor in hats.ts:

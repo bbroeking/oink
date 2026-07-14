@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Regen Studio — Tickle the Pig</title>
+<style>
+  :root {
+    --bg: #1c1a17; --panel: #26231f; --card: #2e2a25; --ink: #efe9df;
+    --mute: #9a917f; --line: #3a352e; --gold: #f5c44a; --ok: #7fc47f;
+    --bad: #e07a6a; --flag: #e0a86a; --busy: #7aa7d8; --fresh: #c9a7e0;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); display: flex;
+         flex-direction: column; overflow: hidden;
+         font: 14px/1.45 -apple-system, "Segoe UI", sans-serif; }
+  header { background: var(--panel); border-bottom: 1px solid var(--line);
+           padding: 8px 14px; display: flex; gap: 10px; align-items: center; flex: none; }
+  header h1 { font-size: 14px; margin: 0 10px 0 0; letter-spacing: .05em; }
+  .tab { background: none; border: 1px solid var(--line); color: var(--mute);
+         border-radius: 999px; padding: 3px 11px; cursor: pointer; font-size: 12.5px; }
+  .tab.on { color: var(--ink); border-color: var(--gold); }
+  #qinfo { margin-left: auto; color: var(--mute); font-size: 12px; }
+  #wrap { flex: 1; display: flex; min-height: 0; }
+
+  /* ── left: item list ── */
+  #list { width: 300px; flex: none; overflow-y: auto; background: var(--panel);
+          border-right: 1px solid var(--line); }
+  .li { display: flex; align-items: center; gap: 9px; padding: 6px 10px;
+        cursor: pointer; border-bottom: 1px solid #2b2823; }
+  .li:hover { background: #2c2925; }
+  .li.sel { background: #3a342b; box-shadow: inset 3px 0 0 var(--gold); }
+  .li img { width: 40px; height: 40px; flex: none; border-radius: 6px;
+            background: conic-gradient(#3b372f 25%, #322e28 0 50%, #3b372f 0 75%, #322e28 0)
+                        0 0/10px 10px; }
+  .li .nm { flex: 1; min-width: 0; }
+  .li .nm b { display: block; font-size: 12.5px; font-weight: 600;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .li .nm span { font-size: 10.5px; color: var(--mute); text-transform: uppercase;
+                 letter-spacing: .05em; }
+  .pill { font-size: 10px; border-radius: 4px; padding: 1px 6px; flex: none; }
+  .pill.flag { background: #4a3620; color: var(--flag); }
+  .pill.staged { background: #203a4a; color: var(--busy); }
+  .pill.okd { background: #24401f; color: var(--ok); }
+  .pill.declined { background: #402420; color: var(--bad); }
+  .pill.busy { background: #203a4a; color: var(--busy); animation: pulse 1.2s infinite; }
+  .pill.error { background: #402420; color: var(--bad); }
+  @keyframes pulse { 50% { opacity: .45; } }
+
+  /* ── right: detail ── */
+  #detail { flex: 1; overflow-y: auto; padding: 14px 18px; min-width: 0; }
+  #dhead { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  #dhead h2 { margin: 0; font-size: 17px; }
+  #dhead .cat { color: var(--mute); font-size: 12px; text-transform: uppercase;
+                letter-spacing: .06em; }
+  #dhead .why { color: var(--flag); font-size: 12px; }
+  #cols { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+
+  .stagebox { flex: none; }
+  .stage { position: relative; width: 460px; height: 460px; background: #f3ece0;
+           border-radius: 12px; overflow: hidden; touch-action: none;
+           border: 1px solid var(--line); }
+  .stage img.pig { position: absolute; inset: 0; width: 100%; height: 100%;
+                   object-fit: contain; pointer-events: none; }
+  .stage img.it { position: absolute; cursor: grab; }
+  .stage img.it:active { cursor: grabbing; }
+  .dot { position: absolute; width: 12px; height: 12px; border-radius: 50%;
+         background: #fff; border: 2px solid var(--busy); transform: translate(-50%,-50%);
+         cursor: pointer; z-index: 30; }
+  .dot.on { background: var(--gold); border-color: #7a5c10; }
+  .dot .lbl { position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+              font-size: 10px; color: #444; background: #fffd; border-radius: 3px;
+              padding: 0 3px; white-space: nowrap; pointer-events: none; }
+  .stagectl { display: flex; gap: 10px; align-items: center; margin-top: 8px;
+              font-size: 12.5px; color: var(--mute); flex-wrap: wrap; }
+  .stagectl select { background: var(--bg); color: var(--ink);
+      border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+  .stagectl input[type=range] { width: 150px; }
+  .stagectl .spec { font-family: ui-monospace, monospace; font-size: 11px; }
+
+  .side { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 12px; }
+  .thumbs { display: flex; gap: 10px; flex-wrap: wrap; }
+  .cell { text-align: center; }
+  .cell .lbl { color: var(--mute); font-size: 10.5px; text-transform: uppercase;
+               letter-spacing: .07em; margin-top: 3px; }
+  .cell img { width: 132px; height: 132px; border-radius: 8px;
+              background: conic-gradient(#3b372f 25%, #322e28 0 50%, #3b372f 0 75%, #322e28 0)
+                          0 0/16px 16px; }
+  .cell.pig img { background: #f3ece0; }
+  .cell.new img { outline: 2px solid var(--busy); }
+
+  button.act, a.act { border: none; border-radius: 8px; padding: 8px 15px; cursor: pointer;
+      font-weight: 600; font-size: 13px; color: #1d1a15; text-decoration: none;
+      display: inline-block; }
+  button.act:disabled { opacity: .35; cursor: default; }
+  .okbtn { background: var(--ok); }
+  .regen { background: var(--gold); }
+  .declinebtn { background: var(--bad); }
+  .freshbtn { background: var(--fresh); }
+  .placebtn { background: var(--busy); }
+  .btnrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  #notes { width: 100%; background: var(--bg); color: var(--ink);
+           border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px;
+           font-size: 13.5px; }
+  .hint { color: var(--mute); font-size: 12px; }
+  .err { color: var(--bad); font-size: 12.5px; white-space: pre-wrap; }
+  kbd { background: var(--card); border: 1px solid var(--line); border-radius: 4px;
+        padding: 0 5px; font-size: 11px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>REGEN STUDIO</h1>
+  <button class="tab on" data-f="all">All</button>
+  <button class="tab" data-f="flagged">Flagged</button>
+  <button class="tab" data-f="staged">Staged</button>
+  <button class="tab" data-f="okd">OK'd</button>
+  <button class="tab" data-f="declined">Declined</button>
+  <button class="tab" data-f="deprecated">Deprecated</button>
+  <button class="tab" data-f="todo">To review</button>
+  <span id="qinfo"></span>
+</header>
+<div id="wrap">
+  <div id="list"></div>
+  <div id="detail"></div>
+</div>
+<script>
+// The 300-canvas is drawn ZOOMED OUT inside the stage (Z<1) so tall hats that
+// overflow the in-game canvas stay fully visible while placing. The dashed
+// square marks the real 300×300 crop the app renders.
+const CANVAS = 300, STAGE = 460, Z = 0.72;
+const K = (STAGE / CANVAS) * Z, OFF = STAGE * (1 - Z) / 2;
+const px = (v) => OFF + v * K;
+let FILTER = "all", ITEMS = [], SEL = null, REST = null, SPEC = null, DRAG = false;
+let STAGEVIEW = "old"; // which art rides the stage: "old" (live) or "new" (staged)
+let PREVV = 0;         // bumped on placement saves so on-pig previews refetch
+const curSrc = (it) => `/img/current/${it.id}.png?v=${it.curV}`;
+const prevSrc = (it) => `/img/preview/${it.id}.png?v=${it.curV}&p=${PREVV}`;
+const newSrc = (it) => `/img/staged/${it.id}.png?v=${it.newV}`;
+const newPrevSrc = (it) => `/img/staged_prev/${it.id}.png?v=${it.newV}&p=${PREVV}`;
+let busyPoll = null;
+const bust = () => "?" + Date.now();
+const $ = (s) => document.querySelector(s);
+
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("on"));
+  t.classList.add("on"); FILTER = t.dataset.f;
+  drawList();
+  const vis = visible();
+  if (!vis.some(i => i.id === SEL) && vis.length) select(vis[0].id);
+});
+
+function visible() {
+  return ITEMS.filter(it => {
+    if (FILTER === "all") return true;
+    if (FILTER === "flagged") return !!it.flagged;
+    if (FILTER === "okd") return it.status === "ok" || it.status === "approved";
+    if (FILTER === "todo") return !["ok", "approved", "declined", "deprecated"].includes(it.status);
+    return it.status === FILTER;
+  });
+}
+
+function pill(it) {
+  if (it.status === "queued" || it.status === "generating")
+    return `<span class="pill busy">${it.status}…</span>`;
+  if (it.status === "error") return `<span class="pill error">err</span>`;
+  if (it.status === "staged") return `<span class="pill staged">staged</span>`;
+  if (it.status === "approved") return `<span class="pill okd">replaced</span>`;
+  if (it.status === "ok") return `<span class="pill okd">ok</span>`;
+  if (it.status === "declined") return `<span class="pill declined">no</span>`;
+  if (it.status === "deprecated") return `<span class="pill declined">gone</span>`;
+  return it.flagged ? `<span class="pill flag">depth</span>` : "";
+}
+
+function drawList() {
+  $("#list").innerHTML = visible().map(it => `
+    <div class="li ${it.id === SEL ? "sel" : ""}" onclick="select('${it.id}')" id="li_${it.id}">
+      <img loading="lazy" src="${curSrc(it)}">
+      <div class="nm"><b>${it.name}</b><span>${it.category}</span></div>
+      ${pill(it)}
+    </div>`).join("");
+}
+
+function it_() { return ITEMS.find(i => i.id === SEL); }
+
+async function select(id) {
+  SEL = id;
+  const it = it_();
+  SPEC = it && it.spec ? JSON.parse(JSON.stringify(it.spec)) : null;
+  STAGEVIEW = it && it.status === "staged" ? "new" : "old";
+  if (!REST) REST = (await fetch("/api/anchors").then(r => r.json())).rest;
+  drawList();
+  const li = document.getElementById("li_" + id);
+  if (li) li.scrollIntoView({ block: "nearest" });
+  drawDetail();
+}
+
+function stageSprite(it) {
+  const staged = it.status === "staged";
+  if (staged && STAGEVIEW === "new") return newSrc(it);
+  return curSrc(it);
+}
+
+function setView(v) {
+  STAGEVIEW = v;
+  drawDetail();
+}
+
+function drawDetail() {
+  const it = it_();
+  if (!it) { $("#detail").innerHTML = ""; return; }
+  const staged = it.status === "staged";
+  const busy = it.status === "queued" || it.status === "generating";
+  let stageHtml = "";
+  if (it.placeable && SPEC) {
+    const w = SPEC.widthFrac * CANVAS, h = w;
+    const a = REST[SPEC.anchor];
+    const left = a.x - SPEC.pivot.x * w, top = a.y - SPEC.pivot.y * h;
+    const pigBox = `inset:auto;left:${OFF}px;top:${OFF}px;width:${CANVAS * K}px;height:${CANVAS * K}px`;
+    const crop = `<div style="position:absolute;left:${OFF}px;top:${OFF}px;width:${CANVAS * K}px;height:${CANVAS * K}px;border:1.5px dashed #b9ad97;border-radius:6px;pointer-events:none;z-index:25"></div>`;
+    const dots = Object.entries(REST).map(([n, p]) =>
+      `<div class="dot ${n === SPEC.anchor ? "on" : ""}" data-a="${n}"
+            style="left:${px(p.x)}px;top:${px(p.y)}px"><span class="lbl">${n}</span></div>`).join("");
+    const viewToggle = `
+      <div class="stagectl" style="margin:0 0 8px">
+        <button class="tab ${STAGEVIEW === "old" ? "on" : ""}" onclick="setView('old')">
+          ${it.status === "approved" ? "Live art (the new one)" : "Old art"}</button>
+        <button class="tab ${STAGEVIEW === "new" ? "on" : ""}" onclick="setView('new')"
+          ${staged ? "" : "disabled style='opacity:.35;cursor:default'"}>New art${staged ? "" : (it.status === "approved" ? " (replaced — it IS live now)" : " (none staged)")}</button>
+        <span class="hint">placement is shared — drag either view, one spec</span>
+      </div>`;
+    stageHtml = `
+      <div class="stagebox">
+        ${viewToggle}
+        <div class="stage" id="stage">
+          ${SPEC.behind ? "" : `<img class="pig" src="/img/pig.png" style="z-index:5;${pigBox}">`}
+          <img class="it" id="dragit" draggable="false" src="${stageSprite(it)}"
+               style="left:${px(left)}px;top:${px(top)}px;width:${w * K}px;height:${h * K}px;z-index:${SPEC.behind ? 2 : 10}">
+          ${SPEC.behind ? `<img class="pig" src="/img/pig.png" style="z-index:5;${pigBox}">` : ""}
+          ${crop}
+          ${dots}
+        </div>
+        <div class="stagectl">
+          <span>anchor</span>
+          <select id="anchor">${Object.keys(REST).map(n =>
+            `<option ${n === SPEC.anchor ? "selected" : ""}>${n}</option>`).join("")}</select>
+          <span>size</span>
+          <input type="range" id="wf" min="0.10" max="1.40" step="0.01" value="${SPEC.widthFrac}">
+          <label><input type="checkbox" id="behind" ${SPEC.behind ? "checked" : ""}> behind</label>
+          <span class="spec">pivot ${SPEC.pivot.x.toFixed(2)},${SPEC.pivot.y.toFixed(2)} · ×${SPEC.widthFrac.toFixed(2)}</span>
+          <button class="act placebtn" onclick="savePlacement()">Save placement</button>
+        </div>
+        <div class="hint">drag the sprite on Rosie · click a dot to change what it tracks
+          (position holds) · showing the ${STAGEVIEW === "new" && staged ? "NEW (staged)" : "OLD (live)"} art</div>
+      </div>`;
+  } else {
+    stageHtml = `
+      <div class="stagebox"><div class="stage">
+        <img class="pig" src="${stageSprite(it)}" style="object-fit:contain">
+      </div><div class="hint">${it.placeable ? "" : "full-canvas category — no placement"}</div></div>`;
+  }
+
+  $("#detail").innerHTML = `
+    <div id="dhead">
+      <h2>${it.name}</h2><span class="cat">${it.category}</span>
+      ${it.flagged ? `<span class="why">depth: ${it.flagged}</span>` : ""}
+      ${pill(it)}
+    </div>
+    <div id="cols">
+      ${stageHtml}
+      <div class="side">
+        <div class="thumbs">
+          <div class="cell"><img src="${curSrc(it)}"><div class="lbl">current</div></div>
+          <div class="cell pig"><img src="${prevSrc(it)}"><div class="lbl">on pig</div></div>
+          ${staged ? `
+          <div class="cell new"><img src="${newSrc(it)}"><div class="lbl">new</div></div>
+          <div class="cell pig new"><img src="${newPrevSrc(it)}"><div class="lbl">new · on pig</div></div>` : ""}
+        </div>
+        <div class="btnrow">
+          <button class="act okbtn" onclick="act('ok')" ${busy ? "disabled" : ""}
+            title="${staged ? "New art replaces the live sprite (old is backed up)" : "Mark the current art reviewed-good"}">
+            OK${staged ? " · use new" : ""}</button>
+          <button class="act declinebtn" onclick="act('decline')" ${staged ? "" : "disabled"}>Decline</button>
+          ${["approved", "ok", "declined"].includes(it.status) ? `
+          <button class="act" style="background:var(--mute)" onclick="act('undo')"
+            title="${it.status === "approved"
+              ? "Put the old art back live — the new art returns to staged"
+              : it.status === "declined" ? "Bring the declined candidate back to staged"
+              : "Clear the reviewed-good mark"}">Undo</button>` : ""}
+          <a class="act placebtn" style="opacity:.75" target="_blank"
+             href="http://127.0.0.1:8124/?item=${it.id}"
+             title="Full Placement Studio — animation scrubbing, pig-anchor editing">Studio ↗</a>
+          <button class="act declinebtn" style="margin-left:auto;opacity:.8"
+            onclick="deprecate()"
+            title="${it.status === "deprecated"
+              ? "Restore — remove it from the deprecation migration"
+              : "Remove from the game: adds a DELETE to the deprecation migration (applies on the next reviewed db push; FK cascades unequip wearers + clear ownership)"}">
+            ${it.status === "deprecated" ? "Restore" : "Deprecate"}</button>
+        </div>
+        <input type="text" id="notes" placeholder="what to change — sent to ImageGen with the old art"
+               value="${(it.notes || "").replace(/"/g, "&quot;")}">
+        <div class="btnrow">
+          <button class="act regen" onclick="regen('revise')" ${busy ? "disabled" : ""}
+            title="Old art + your prompt → revised image, staged for review">Redo w/ prompt</button>
+          <button class="act freshbtn" onclick="regen('fresh')" ${busy ? "disabled" : ""}
+            title="Completely new take — the model never sees the old sprite">Fresh</button>
+          <label class="hint" title="Also attach Rosie's sprite so the model judges scale + how the item sits — she is never drawn in the output">
+            <input type="checkbox" id="withpig" ${it.withPig ? "checked" : ""}> attach Rosie (anchor ref)</label>
+          <span class="hint"><kbd>↑</kbd><kbd>↓</kbd> items · <kbd>o</kbd> OK · <kbd>x</kbd> decline</span>
+        </div>
+        ${it.error ? `<div class="err">${it.error}</div>` : ""}
+        ${it.status === "approved" ? `<div class="hint">replaced — nudge placement on the left if the proportions changed</div>` : ""}
+      </div>
+    </div>`;
+  if (it.placeable && SPEC) wireStage();
+}
+
+function wireStage() {
+  const img = $("#dragit"), stage = $("#stage");
+  img.onpointerdown = (e) => {
+    DRAG = true;
+    img.setPointerCapture(e.pointerId);
+    const w = SPEC.widthFrac * CANVAS, h = w, a = REST[SPEC.anchor];
+    const startL = a.x - SPEC.pivot.x * w, startT = a.y - SPEC.pivot.y * h;
+    const sx = e.clientX, sy = e.clientY;
+    img.onpointermove = (ev) => {
+      const left = startL + (ev.clientX - sx) / K, top = startT + (ev.clientY - sy) / K;
+      SPEC.pivot.x = (a.x - left) / w;
+      SPEC.pivot.y = (a.y - top) / h;
+      img.style.left = px(left) + "px";
+      img.style.top = px(top) + "px";
+    };
+    img.onpointerup = () => { DRAG = false; img.onpointermove = null; drawDetail(); };
+  };
+  stage.querySelectorAll(".dot").forEach(d => d.onclick = () => retarget(d.dataset.a));
+  $("#anchor").onchange = (e) => retarget(e.target.value);
+  $("#wf").oninput = (e) => { SPEC.widthFrac = parseFloat(e.target.value); drawDetail(); };
+  $("#behind").onchange = (e) => { SPEC.behind = e.target.checked; drawDetail(); };
+}
+
+// Switch anchor while holding the on-screen position — only TRACKING changes.
+function retarget(name) {
+  const w = SPEC.widthFrac * CANVAS, h = w;
+  const a1 = REST[SPEC.anchor], a2 = REST[name];
+  const left = a1.x - SPEC.pivot.x * w, top = a1.y - SPEC.pivot.y * h;
+  SPEC.anchor = name;
+  SPEC.pivot.x = (a2.x - left) / w;
+  SPEC.pivot.y = (a2.y - top) / h;
+  drawDetail();
+}
+
+async function savePlacement() {
+  const r = await fetch("/api/place", { method: "POST",
+    body: JSON.stringify({ id: SEL, spec: SPEC }) }).then(r => r.json());
+  if (!r.ok) { alertErr(r.err || "save failed"); return; }
+  const it = it_();
+  if (it) it.spec = r.spec;
+  PREVV++; // server re-rendered the on-pig previews — force refetch
+  drawDetail();
+}
+
+function alertErr(msg) {
+  const it = it_();
+  if (it) { it.error = msg; drawDetail(); }
+}
+
+async function act(kind) {
+  const id = SEL, wasStaged = it_() && it_().status === "staged";
+  await fetch("/api/" + kind, { method: "POST", body: JSON.stringify({ id }) });
+  await refresh(false);
+  // triage flow: OK/decline advances to the next item needing eyes; undo stays
+  if (kind !== "undo" && (kind === "decline" || (kind === "ok" && !wasStaged))) advance();
+  else select(id); // OK'd staged art / undo: stay on the item
+  drawList();
+}
+
+function advance() {
+  const vis = visible();
+  const idx = vis.findIndex(i => i.id === SEL);
+  const next = vis[idx + 1] || vis[0];
+  if (next) select(next.id); else drawDetail();
+}
+
+async function deprecate() {
+  // Reason comes from the notes box (optional); lands as a comment in the
+  // generated removal migration. Toggle — clicking again restores.
+  const reason = $("#notes") ? $("#notes").value.trim() : "";
+  await fetch("/api/deprecate", { method: "POST",
+    body: JSON.stringify({ id: SEL, reason }) });
+  await refresh(false);
+  select(SEL);
+}
+
+async function regen(mode) {
+  const notes = $("#notes") ? $("#notes").value.trim() : "";
+  const withPig = !!($("#withpig") && $("#withpig").checked);
+  await fetch("/api/regen", { method: "POST",
+    body: JSON.stringify({ id: SEL, notes, mode, withPig }) });
+  refresh();
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  const vis = visible(), idx = vis.findIndex(i => i.id === SEL);
+  if (e.key === "ArrowDown") { e.preventDefault(); if (vis[idx + 1]) select(vis[idx + 1].id); }
+  if (e.key === "ArrowUp") { e.preventDefault(); if (vis[idx - 1]) select(vis[idx - 1].id); }
+  if (e.key === "o") act("ok");
+  if (e.key === "x") act("decline");
+});
+
+async function refresh(redrawDetail = true) {
+  const r = await fetch("/api/items").then(r => r.json());
+  const busy = r.items.some(i => i.status === "queued" || i.status === "generating");
+  $("#qinfo").textContent =
+    `${r.items.length} items · ${r.items.filter(i => i.flagged).length} flagged · ` +
+    `${r.items.filter(i => i.status === "staged").length} staged` +
+    (busy ? ` · generating (${r.queue} queued)…` : "");
+  const before = JSON.stringify(ITEMS.find(i => i.id === SEL) || null);
+  ITEMS = r.items;
+  drawList();
+  if (!SEL && ITEMS.length) return select(visible()[0]?.id || ITEMS[0].id);
+  const now = JSON.stringify(ITEMS.find(i => i.id === SEL) || null);
+  // re-render the detail only when the selected item actually changed and the
+  // user isn't mid-drag / mid-typing
+  if (redrawDetail && !DRAG && before !== now &&
+      document.activeElement.tagName !== "INPUT") {
+    const it = it_();
+    if (it && it.spec && !SPEC) SPEC = JSON.parse(JSON.stringify(it.spec));
+    drawDetail();
+  }
+  if (busy && !busyPoll) busyPoll = setInterval(() => refresh(), 2500);
+  if (!busy && busyPoll) { clearInterval(busyPoll); busyPoll = null; }
+}
+refresh();
+</script>
+</body>
+</html>

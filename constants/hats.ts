@@ -208,6 +208,12 @@ export const HAT_IMAGES: Record<string, number> = {
 	// from build 108 — grants redeemed on 107 show the fallback plate until
 	// the update lands.
 	ticket_takers_cap: require("../assets/images/hats/ticket_takers_cap.png"),
+	// Season 1 finale reward — the Hungerer's Crown, taken as a trophy when the
+	// herd starves him to Famished. Grant-only (cost 0), fired by the admin via
+	// grant_season1_finale(). Seeded in migration
+	// 20260739100000_season1_finale_reward.sql. Placement tuned in
+	// hat_rel.generated (pivot y 0.9, widthFrac 0.54).
+	hungerers_crown: require("../assets/images/hats/hungerers_crown.png"),
 };
 
 // Slop Club members-only art — AUTO-WIRED from constants/membersImages.generated
