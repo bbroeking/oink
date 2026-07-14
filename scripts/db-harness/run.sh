@@ -45,6 +45,80 @@ CHAIN=(
 	supabase/migrations/20260724000000_world_boss_brian_override.sql
 	# 20260725 makes create_crew assign a random Sounder name (ignores p_name).
 	supabase/migrations/20260725000000_random_crew_names.sql
+	# 00c prep: backfills profiles.is_test/hide_from_leaderboard + user_items +
+	# seed rows the graduation block (20260726 → 20260737) reads/writes. Must
+	# precede 20260726 (check_function_bodies validates the graduate body).
+	scripts/db-harness/00c_lifetime_tickles_prep.sql
+	# 20260726 graduates the Season-0 board (folds tickles into the lifetime base).
+	supabase/migrations/20260726000000_graduate_season0_board.sql
+	# 20260727 adds the premium-pass member cosmetics band.
+	supabase/migrations/20260727000000_premium_pass_member_cosmetics.sql
+	# 20260728 adds the Season-1 relic pool + Burrow Book: open_rooting rolls +
+	# returns unique_id, submit_rooting claims 'unique' into user_uniques. Carries
+	# open_rooting/submit_rooting VERBATIM from 20260721. Exercised by 22_uniques.
+	supabase/migrations/20260728000000_patch_uniques.sql
+	# 20260730 layers "the one that got away" carry-over (user_patch_carry +
+	# best_gild + p_missed) on top; carries the LATEST open_rooting/submit_rooting
+	# defs (unique_id key + {ok} envelope + race attribution) that 15/16/22 assert.
+	supabase/migrations/20260730000000_patch_carryover.sql
+	# 00b prep: backfills hats.name/rarity/emoji/cost/display_order/category onto
+	# the minimal stub so redeem_code()/the crown INSERT parse. Must precede 20260732.
+	scripts/db-harness/00b_redemption_prep.sql
+	# 20260732 adds redeem_code() + redemption_codes; exercised by 36_redemption.
+	supabase/migrations/20260732000000_qr_redemption.sql
+	# 20260733 seeds the grant-only Release Party Crown hat.
+	supabase/migrations/20260733000000_release_party_crown.sql
+	# 20260734 caps ticket-taker redemptions.
+	supabase/migrations/20260734000000_ticket_takers_cap.sql
+	# 20260735 adds graduate_season0_probe() — the dry-run graduation counter.
+	supabase/migrations/20260735000000_graduation_probe.sql
+	# 20260736 fixes the safeupdate footgun in the graduation path.
+	supabase/migrations/20260736000000_graduation_safeupdate_fix.sql
+	# 20260737 adds profiles.tickles_lifetime_base + folds season totals in;
+	# exercised by 50_lifetime_tickles_smoke.sql.
+	supabase/migrations/20260737000000_lifetime_tickles.sql
+	# 20260738000000 makes the invite cap count members + pending invites (a
+	# pending ask reserves a seat) + adds cancel_crew_invite. Carries
+	# invite_to_crew/accept_crew_invite (20260707) + join_crew (20260719)
+	# VERBATIM. Exercised by 23_invite_seats_smoke.sql.
+	supabase/migrations/20260738000000_sounder_invite_seats.sql
+	# 20260738100000 adds rename_username() — the paid-rename ladder; 51 smoke.
+	# (51 is self-contained: it preps its own username unique index + moderation.)
+	supabase/migrations/20260738100000_username_rename.sql
+	# 00d prep: builds a minimal public.truffles (stub lacks it) so the carried
+	# reclaim_truffle/bury_truffle bodies validate. Must precede 20260738400000.
+	scripts/db-harness/00d_truffle_prep.sql
+	# 20260738400000 adds the 12h truffle-reclaim re-bury cooldown; 52 smoke.
+	# (52 is self-contained: it re-preps its own truffle tables via IF NOT EXISTS.)
+	supabase/migrations/20260738400000_truffle_reclaim_cooldown.sql
+	# NOTE: 20260738200000 (6/7 flag), 20260738300000 (happiness precision),
+	# 20260738500000 (deprecate items), 20260738700000 (barn-tap XP nerf) are
+	# deliberately OMITTED — no smoke exercises them and no later chained migration
+	# depends on them; chaining them would only need stub bloat (profiles.happiness,
+	# home_stats deps, etc.) for zero test coverage. Add them here if a future smoke
+	# starts asserting apply_happiness/home_stats/tickle_at_barn behavior.
+	# 20260738 widens the name pools (16 adj × 12 noun); no-name founding client.
+	supabase/migrations/20260738600000_sounder_random_names.sql
+	# 20260738800000 adds me_lifetime_stats() — the Me-tab lifetime dashboard's
+	# aggregate counts; exercised by 53_me_lifetime_stats_smoke.sql.
+	supabase/migrations/20260738800000_me_lifetime_stats.sql
+	# 20260738900000 adds claim_beginners_snout() — the one-time first-practice
+	# Golden Truffle grant; exercised by 37_beginners_snout_smoke.sql.
+	supabase/migrations/20260738900000_beginners_snout.sql
+	# 20260739000000 adds barn_pair_locks() — the friends-list per-pair barn lock
+	# probe (same pairwise lock as barn_visit_status); exercised by
+	# 38_barn_pair_locks_smoke.sql. It self-stands its own barn_visits table.
+	supabase/migrations/20260739000000_barn_pair_locks.sql
+	# 20260739100000 seeds the Season-1 finale reward (Hungerer's Crown hat +
+	# "Starver of the Hunger" title) + grant_season1_finale() — grants both to
+	# every digger with >=10 Season-1 credited finds. Exercised by
+	# 39_finale_reward_smoke.sql. Needs the 20260714 war_rootings shape
+	# (credited_finds) already built above in the chain.
+	supabase/migrations/20260739100000_season1_finale_reward.sql
+	# 20260739300000 adds friend_favorites — the owner-only pin table (direct
+	# table access under RLS, no RPC); exercised by 40_friend_favorites_smoke.sql.
+	# Depends only on auth.users (stubbed) + the `authenticated` role (stubbed).
+	supabase/migrations/20260739300000_friend_favorites.sql
 )
 
 NAME="pgharness_$$"
@@ -54,7 +128,7 @@ trap 'docker rm -f "$NAME" >/dev/null 2>&1 || true' EXIT
 until docker logs "$NAME" 2>&1 | grep -q "init process complete"; do :; done
 until docker exec "$NAME" pg_isready -U postgres >/dev/null 2>&1; do :; done
 
-cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" scripts/db-harness/[123]*_smoke.sql \
+cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" scripts/db-harness/[1234]*_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 

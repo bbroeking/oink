@@ -20,7 +20,10 @@ INSERT INTO public.profiles (id, username) VALUES
 	('00000000-0000-0000-0000-00000000b001', 'milo'),
 	('00000000-0000-0000-0000-00000000b002', 'pearl'),
 	('00000000-0000-0000-0000-00000000b003', 'quinn');
-INSERT INTO auth.users (id) SELECT id FROM public.profiles;   -- war_rootings FK
+-- war_rootings FK. ON CONFLICT: the lifetime-tickles prep (00c) seeds c1/c2/c3
+-- into auth.users earlier in the chain, and this blanket profiles→users backfill
+-- would re-hit those ids; DO NOTHING keeps the backfill idempotent.
+INSERT INTO auth.users (id) SELECT id FROM public.profiles ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.crews (id, name, leader_id) VALUES
 	('00000000-0000-0000-0000-00000000c001', 'Rooters',  '00000000-0000-0000-0000-00000000a001'),
 	('00000000-0000-0000-0000-00000000c002', 'Diggers',  '00000000-0000-0000-0000-00000000b001');
