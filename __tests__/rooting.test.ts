@@ -32,12 +32,15 @@ import {
 	nextOpenAtMs,
 	phaseClosesCountdown,
 	nextOpenCountdown,
+	dugInCurrentWindow,
+	bannerDigStatus,
 } from "../utils/rooting";
 import type { Find, PatchBoard } from "../utils/rooting";
 import {
 	PATCH_COLS,
 	PATCH_OPEN_SECS,
 	PATCH_ROWS,
+	ROOTING_WINDOW_OFFSET_SECS,
 	ROOTING_WINDOW_SECS,
 	STIR_BUDGET,
 	STIR_RUB,
@@ -337,11 +340,11 @@ describe("normalizePouch — the last gate before p_finds (22P02 regression)", (
 });
 
 describe("feeding windows", () => {
-	test("windowIndex buckets by 8h epochs", () => {
-		const w0 = windowIndex(0);
-		expect(w0).toBe(0);
-		expect(windowIndex(ROOTING_WINDOW_SECS * 1000 - 1)).toBe(0);
-		expect(windowIndex(ROOTING_WINDOW_SECS * 1000)).toBe(1);
+	test("windowIndex buckets by 8h epochs off the 02:00 UTC anchor", () => {
+		const anchor = ROOTING_WINDOW_OFFSET_SECS * 1000; // 1970-01-01 02:00 UTC
+		expect(windowIndex(anchor)).toBe(0);
+		expect(windowIndex(anchor + ROOTING_WINDOW_SECS * 1000 - 1)).toBe(0);
+		expect(windowIndex(anchor + ROOTING_WINDOW_SECS * 1000)).toBe(1);
 	});
 
 	test("windowEndsAtMs is the next boundary", () => {
@@ -356,6 +359,66 @@ describe("feeding windows", () => {
 		const boundary = windowEndsAtMs(windowIndex(1_750_000_000_000));
 		expect(feedingCountdown(boundary - 2 * 3600000 - 10 * 60000)).toBe("2h 10m");
 		expect(feedingCountdown(boundary - 5 * 60000)).toBe("5m");
+	});
+});
+
+describe("dugInCurrentWindow — the dug flag expires at rollover", () => {
+	// The founder's "still dug two hours later" bug: a boolean set at dig time
+	// had nothing to un-set it. Window-keyed, the flag expires by construction.
+	const base = 1_750_000_000_000;
+
+	test("true within the window the dig landed in", () => {
+		const win = windowIndex(base);
+		expect(dugInCurrentWindow(win, base)).toBe(true);
+		// Still true at the last ms of the same window.
+		expect(dugInCurrentWindow(win, windowEndsAtMs(win) - 1)).toBe(true);
+	});
+
+	test("false the instant the window rolls over", () => {
+		const win = windowIndex(base);
+		expect(dugInCurrentWindow(win, windowEndsAtMs(win))).toBe(false);
+	});
+
+	test("null means never dug", () => {
+		expect(dugInCurrentWindow(null, base)).toBe(false);
+	});
+});
+
+describe("bannerDigStatus — phase × dug copy matrix", () => {
+	// The wrong-pairing bug: the banner's "opens in" copy rode the CTA's shared
+	// countdown, which is a CLOSES-in during the open phase. bannerDigStatus
+	// derives the words + number together from the phase, so each cell of the
+	// matrix pins its exact line.
+	const win = 50_000; // arbitrary window (offset-anchored start)
+	const winStartMs = (win * ROOTING_WINDOW_SECS + ROOTING_WINDOW_OFFSET_SECS) * 1000;
+	const openMs = winStartMs + 60_000; // 1m into open
+	const guardedMs = winStartMs + (PATCH_OPEN_SECS + 60) * 1000;
+
+	test("the fixture times sit in the phases they claim", () => {
+		expect(patchPhaseOpen(openMs)).toBe(true);
+		expect(patchPhaseOpen(guardedMs)).toBe(false);
+	});
+
+	test("open + not dug → null (the live dig button, no status line)", () => {
+		expect(bannerDigStatus(true, false, openMs)).toBeNull();
+	});
+
+	test("open + dug → countdown-free copy (a closes-in can never ride it)", () => {
+		const s = bannerDigStatus(true, true, openMs)!;
+		expect(s).toBe("dug this feeding — back next feeding ★");
+		expect(s).not.toMatch(/\d+\s*[hm]/); // no time under this copy, ever
+	});
+
+	test("guarded + dug → 'opens in' pairs with the NEXT-OPEN countdown", () => {
+		expect(bannerDigStatus(false, true, guardedMs)).toBe(
+			`dug this feeding — opens in ${nextOpenCountdown(guardedMs)}`
+		);
+	});
+
+	test("guarded + not dug → the guarding line with the next-open countdown", () => {
+		expect(bannerDigStatus(false, false, guardedMs)).toBe(
+			`he's guarding — opens in ${nextOpenCountdown(guardedMs)}`
+		);
 	});
 });
 
@@ -701,8 +764,8 @@ describe("gildedSilhouetteDepth — presence grows one layer earlier per gild", 
 describe("patch phases", () => {
 	const WINDOW_MS = ROOTING_WINDOW_SECS * 1000;
 	const OPEN_MS = PATCH_OPEN_SECS * 1000;
-	// A clean window boundary: window index 200000 starts here.
-	const start = 200000 * WINDOW_MS;
+	// A clean window boundary: window index 200000 starts here (offset-anchored).
+	const start = 200000 * WINDOW_MS + ROOTING_WINDOW_OFFSET_SECS * 1000;
 
 	test("open for the first 4h, guarded for the last 4h", () => {
 		expect(patchPhaseOpen(start)).toBe(true);
@@ -728,5 +791,37 @@ describe("patch phases", () => {
 		// 3h 45m before the patch reopens, from inside the guarded phase.
 		const g = start + WINDOW_MS - (225 * 60_000);
 		expect(nextOpenCountdown(g)).toBe("3h 45m");
+	});
+});
+
+// ── The window anchor — boundaries at 02:00 / 10:00 / 18:00 UTC ──────────────
+// Pins the founder's 2026-07-16 schedule shift in WALL-CLOCK terms, so a future
+// re-anchor has to change these deliberately: opens at 02–06 / 10–14 / 18–22
+// UTC (10pm–2am / 6–10am / 2–6pm US Eastern in summer).
+describe("window anchor — 02:00/10:00/18:00 UTC boundaries", () => {
+	const utc = (h: number, m = 0, s = 0) => Date.UTC(2026, 6, 16, h, m, s);
+
+	test("02:00:00 UTC is minute zero of an OPEN phase", () => {
+		expect(patchPhaseOpen(utc(2))).toBe(true);
+		// …and one second before it, the previous window's guarded tail.
+		expect(patchPhaseOpen(utc(1, 59, 59))).toBe(false);
+	});
+
+	test("the open half runs 02:00–06:00, the guarded half 06:00–10:00", () => {
+		expect(patchPhaseOpen(utc(5, 59, 59))).toBe(true);
+		expect(patchPhaseOpen(utc(6))).toBe(false);
+		expect(patchPhaseOpen(utc(9, 59, 59))).toBe(false);
+	});
+
+	test("10:00:00 UTC opens the NEXT window (index ticks with the boundary)", () => {
+		expect(patchPhaseOpen(utc(10))).toBe(true);
+		expect(windowIndex(utc(10))).toBe(windowIndex(utc(9, 59, 59)) + 1);
+	});
+
+	test("window end and next open land on the 10:00 UTC boundary", () => {
+		const mid = utc(2, 30); // inside the 02–10 window
+		expect(windowEndsAtMs(windowIndex(mid))).toBe(utc(10));
+		expect(nextOpenAtMs(mid)).toBe(utc(10));
+		expect(phaseClosesAtMs(mid)).toBe(utc(6));
 	});
 });

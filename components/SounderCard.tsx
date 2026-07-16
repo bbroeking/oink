@@ -91,7 +91,8 @@ export function SounderCard({
 	crewHook: UseCrew;
 	onShowBoard?: () => void;
 }) {
-	const { crew, loading, create, accept, decline, cancel, leave } = crewHook;
+	const { crew, loading, create, accept, decline, cancel, acceptRequest, declineRequest, leave } =
+		crewHook;
 	const joinable = useJoinableCrews(!crew.crew);
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
@@ -172,6 +173,20 @@ export function SounderCard({
 		if (!r.ok) {
 			setNote("Couldn't take that ask back — try again.");
 			await crewHook.refresh();
+		}
+	}
+
+	// Incoming knock: let a crewless pig in (any member may). crew_full means the
+	// door filled first — a quiet note, then the roster re-reads.
+	async function onAcceptRequest(requestId: string) {
+		setNote(null);
+		const r = await acceptRequest(requestId);
+		if (!r.ok) {
+			setNote(
+				r.reason === "crew_full"
+					? "the banner filled up first — no seat to give."
+					: "Couldn't let them in — try again."
+			);
 		}
 	}
 
@@ -402,6 +417,29 @@ export function SounderCard({
 							title={i.invitee_name ?? "Someone"}
 							sub="waiting on your last ask…"
 							right={<HandLink onPress={() => onCancel(i.id)}>take it back</HandLink>}
+						/>
+					))}
+					{/* Incoming knocks — a crewless pig asking to dig with you. Any
+					    member may open the door; matches the ghost invite rows'
+					    visual language, but these ACT (let them in / not now). */}
+					{crew.joinRequestsIn.map((req) => (
+						<CrewRow
+							key={req.id}
+							divider
+							left={<CrewPortrait size={40} />}
+							title={
+								<>
+									<Accent>{req.username ?? "A pig"}</Accent>
+									{" wants to dig with you"}
+								</>
+							}
+							sub="knocking at your banner"
+							right={
+								<>
+									<SunPill onPress={() => onAcceptRequest(req.id)}>let them in</SunPill>
+									<HandLink onPress={() => declineRequest(req.id)}>not now</HandLink>
+								</>
+							}
 						/>
 					))}
 				</View>

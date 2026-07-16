@@ -1,0 +1,53 @@
+{
+  "info": {
+    "version": 1,
+    "author": "xcode"
+  },
+  "properties": {
+    "grid-size": "large"
+  },
+  "stickers": [
+    {
+      "filename": "rosie-wave.sticker"
+    },
+    {
+      "filename": "rosie-happy.sticker"
+    },
+    {
+      "filename": "rosie-laugh.sticker"
+    },
+    {
+      "filename": "rosie-tickled.sticker"
+    },
+    {
+      "filename": "rosie-love.sticker"
+    },
+    {
+      "filename": "rosie-kiss.sticker"
+    },
+    {
+      "filename": "rosie-sad.sticker"
+    },
+    {
+      "filename": "rosie-surprise.sticker"
+    },
+    {
+      "filename": "rosie-sleepy.sticker"
+    },
+    {
+      "filename": "rosie-sleeping.sticker"
+    },
+    {
+      "filename": "rosie-eating.sticker"
+    },
+    {
+      "filename": "rosie-party.sticker"
+    },
+    {
+      "filename": "rosie-jump.sticker"
+    },
+    {
+      "filename": "rosie-king.sticker"
+    }
+  ]
+}

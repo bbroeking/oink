@@ -98,7 +98,16 @@ import {
 	anyPopupPresentedThisSession,
 	sounderNudgeFiredThisSession,
 	markSounderNudgeFired,
+	feedbackNudgeFiredThisSession,
+	markFeedbackNudgeFired,
 } from "@/utils/popupSession";
+import {
+	shouldShowFeedbackNudge,
+	readFeedbackNudgeStamps,
+	stampFeedbackNudgeShown,
+	stampFeedbackNudgeOff,
+} from "@/utils/feedbackNudge";
+import { FeedbackNudgeModal } from "@/components/FeedbackNudgeModal";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
 // without a project still works.
@@ -123,6 +132,12 @@ SplashScreen.preventAutoHideAsync();
 // window: the nudge is the lowest-priority fallback, so a little extra quiet
 // before it appears is fine.
 const SOUNDER_NUDGE_SETTLE_MS = 1500;
+
+// The feedback nudge (an even-lower-priority fallback than the Sounder nudge)
+// settles a beat LONGER, so the Sounder nudge — which arms on the same quiet
+// login — gets to land and fire first. Onboarding beats feedback: if the Sounder
+// nudge presents in this window, the feedback nudge's want stays false.
+const FEEDBACK_NUDGE_SETTLE_MS = 2200;
 
 function RootLayoutInner() {
 	const colorScheme = useColorScheme();
@@ -182,6 +197,13 @@ function RootLayoutInner() {
 	// hungerIntroUid carries the user id so the dismiss handler can stamp.
 	const [hungerIntro, setHungerIntro] = useState(false);
 	const [hungerIntroUid, setHungerIntroUid] = useState<string | null>(null);
+	// Feedback nudge — the RAREST fallback: a cozy "the bog's curious…" invite to
+	// whisper an idea, shown only on a genuinely empty login for a player with real
+	// history, at most once every 14 days (60 after they've ever whispered), never
+	// once they opt out. All gating in utils/feedbackNudge.ts; armed below. Carries
+	// the uid so the dismiss handlers can stamp the per-user cooldown/opt-out.
+	const [feedbackNudge, setFeedbackNudge] = useState(false);
+	const [feedbackNudgeUid, setFeedbackNudgeUid] = useState<string | null>(null);
 
 	// Global popup queue slots — every launch popup goes through PopupQueue so
 	// only one shows at a time (across root AND the Barn tab). Lower priority
@@ -215,6 +237,24 @@ function RootLayoutInner() {
 	useEffect(() => {
 		if (sounderSlot.visible) markSounderNudgeFired();
 	}, [sounderSlot.visible]);
+	// Feedback nudge slot — the LOWEST priority (95, below the Sounder nudge's 90)
+	// so a real dialog AND the Sounder onboarding nudge both beat it. Its want ANDs
+	// the SAME quiet-login gate the Sounder nudge uses PLUS an explicit "the Sounder
+	// nudge didn't fire" check: both fallback nudges are excluded from
+	// anyPopupPresentedThisSession(), so onboarding-wins has to be spelled out here.
+	// Fires at most once per session (the popupSession feedback latch); the 14-day
+	// AsyncStorage cooldown is the cross-session ceiling.
+	const feedbackNudgeSlot = usePopupSlot(
+		"feedbackNudge",
+		feedbackNudge &&
+			!anyPopupPresentedThisSession() &&
+			!sounderNudgeFiredThisSession() &&
+			!feedbackNudgeFiredThisSession(),
+		95
+	);
+	useEffect(() => {
+		if (feedbackNudgeSlot.visible) markFeedbackNudgeFired();
+	}, [feedbackNudgeSlot.visible]);
 	// The flip-day ceremony chain is recap (seasonEnd, pri 25 in season.tsx) →
 	// intro (pri 27): slotting the intro just ABOVE the recap guarantees it can
 	// never co-present over the recap on the season-flip login.
@@ -383,6 +423,71 @@ function RootLayoutInner() {
 			cancelled = true;
 		};
 	}, [authChecked, coopDig]);
+
+	// Feedback nudge — the RAREST quiet-login fallback, a sibling of the Sounder
+	// nudge one rung lower. Fires only when: the player has real history
+	// (distinct_active_days ≥ 3 — a brand-new player is NEVER prompted), no
+	// long-cooldown / opt-out / recently-whispered stamp blocks it (the pure
+	// shouldShowFeedbackNudge gate), AND the login is genuinely empty (nothing —
+	// including the Sounder nudge — presented in the settle window). Settles LONGER
+	// than the Sounder nudge so onboarding lands first. Fail-soft throughout: any
+	// missing field / read miss just means we don't nag. No feature flag — it's not
+	// season-scoped like the Sounder nudge; it's the always-quiet feedback door.
+	useEffect(() => {
+		if (!authChecked) return;
+		let cancelled = false;
+		(async () => {
+			const { data: ures } = await supabase.auth.getUser();
+			const me = ures?.user?.id;
+			if (cancelled || !me) return;
+			// Cheap read: one profiles field (the "real history" signal) + three
+			// per-user AsyncStorage stamps. Mirrors the Sounder nudge's one-shot read.
+			const [{ data: prof }, stamps] = await Promise.all([
+				supabase
+					.from("profiles")
+					.select("distinct_active_days")
+					.eq("id", me)
+					.maybeSingle(),
+				readFeedbackNudgeStamps(me),
+			]);
+			if (cancelled) return;
+			const activeDays =
+				(prof as { distinct_active_days?: number } | null)?.distinct_active_days ??
+				0;
+			// The pure AND-gate — the covenant made concrete (rarity + respect).
+			if (
+				!shouldShowFeedbackNudge({
+					activeDays,
+					lastStampMs: stamps.lastStampMs,
+					everSentMs: stamps.everSentMs,
+					optedOff: stamps.optedOff,
+					nowMs: Date.now(),
+				})
+			) {
+				return;
+			}
+			// Settle beat: let the sibling popup polls — crucially the Sounder nudge —
+			// arm + present first, so "no other dialog is going to show" (and "the
+			// Sounder nudge isn't taking this login") is actually knowable before we arm.
+			await new Promise((r) => setTimeout(r, FEEDBACK_NUDGE_SETTLE_MS));
+			if (cancelled) return;
+			// If anything (including the Sounder nudge) presented in the settle
+			// window, don't even arm — the slot's want would be false anyway, but
+			// skipping the state set keeps the module-flag read authoritative.
+			if (
+				anyPopupPresentedThisSession() ||
+				sounderNudgeFiredThisSession() ||
+				feedbackNudgeFiredThisSession()
+			) {
+				return;
+			}
+			setFeedbackNudgeUid(me);
+			setFeedbackNudge(true);
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [authChecked]);
 
 	// Great Hunger intro — first-view auto-present at login. Same gate the
 	// Season tab used to own: the world_boss flag (coopDig = world_boss || DEV)
@@ -934,6 +1039,34 @@ function RootLayoutInner() {
 					onDismiss={() => {
 						sounderSlot.release();
 						setTimeout(() => setSounderPrompt(false), POPUP_TEARDOWN_MS);
+					}}
+				/>
+			)}
+			{/* The rare feedback nudge — the lowest-priority fallback (95). "share a
+			    thought" routes to the Me tab with ?feedback=1, which auto-opens the
+			    same whisper dialog the settings row uses (one dialog, two doors).
+			    "not now" stamps the 14-day cooldown; "don't ask again" the opt-out.
+			    Two-phase dismiss per the PopupQueue TIMING CONTRACT. */}
+			{feedbackNudge && (
+				<FeedbackNudgeModal
+					visible={feedbackNudgeSlot.visible}
+					onShare={() => {
+						if (feedbackNudgeUid) stampFeedbackNudgeShown(feedbackNudgeUid);
+						feedbackNudgeSlot.release();
+						setTimeout(() => setFeedbackNudge(false), POPUP_TEARDOWN_MS);
+						router.push("/(tabs)/account?feedback=1");
+					}}
+					onNotNow={() => {
+						// Soft dismiss — arm the 14-day cooldown, never nag again this window.
+						if (feedbackNudgeUid) stampFeedbackNudgeShown(feedbackNudgeUid);
+						feedbackNudgeSlot.release();
+						setTimeout(() => setFeedbackNudge(false), POPUP_TEARDOWN_MS);
+					}}
+					onNever={() => {
+						// Hard opt-out — the player asked us to stop. Forever-ish.
+						if (feedbackNudgeUid) stampFeedbackNudgeOff(feedbackNudgeUid);
+						feedbackNudgeSlot.release();
+						setTimeout(() => setFeedbackNudge(false), POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}

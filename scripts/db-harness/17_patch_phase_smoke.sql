@@ -1,8 +1,9 @@
--- Patch-phase smoke (20260721): the 4h-open/4h-guarded gate on open_rooting,
--- the phase-countdown payload keys, submit surviving the guard phase within
--- its window, and the stale-session refusal after the window ends. All driven
--- through the ttp.fake_now clock at a FIXED block ('2026-07-08 00:00 UTC' —
--- every UTC midnight is an 8h-block boundary, 86400 = 3 × 28800).
+-- Patch-phase smoke (20260721 + the 20260744 window shift): the 4h-open/
+-- 4h-guarded gate on open_rooting, the phase-countdown payload keys, submit
+-- surviving the guard phase within its window, and the stale-session refusal
+-- after the window ends. All driven through the ttp.fake_now clock at a FIXED
+-- block ('2026-07-08 02:00 UTC' — windows anchor at 02/10/18 UTC since the
+-- 20260744 shift: floor((epoch - 7200)/28800)).
 \set ON_ERROR_STOP on
 
 INSERT INTO public.profiles (id, username) VALUES
@@ -21,14 +22,16 @@ DO $smoke4$
 DECLARE
 	pp1 uuid := '00000000-0000-0000-0000-00000000de40';
 	pp2 uuid := '00000000-0000-0000-0000-00000000de41';
-	b0  timestamptz := '2026-07-08 00:00+00';   -- block start (UTC midnight)
+	b0  timestamptz := '2026-07-08 02:00+00';   -- block start (02:00 UTC anchor)
 	res jsonb; seed int;
 BEGIN
-	-- ── 1. Pure phase math at the edges ──────────────────────────────────────
-	IF public.patch_phase_open('2026-07-08 03:59:59+00') IS NOT TRUE
-	   OR public.patch_phase_open('2026-07-08 04:00:00+00') IS NOT FALSE
-	   OR public.patch_phase_open('2026-07-08 07:59:59+00') IS NOT FALSE
-	   OR public.patch_phase_open('2026-07-08 08:00:00+00') IS NOT TRUE THEN
+	-- ── 1. Pure phase math at the edges (the 02/10/18 UTC anchor) ────────────
+	IF public.patch_phase_open('2026-07-08 01:59:59+00') IS NOT FALSE
+	   OR public.patch_phase_open('2026-07-08 02:00:00+00') IS NOT TRUE
+	   OR public.patch_phase_open('2026-07-08 05:59:59+00') IS NOT TRUE
+	   OR public.patch_phase_open('2026-07-08 06:00:00+00') IS NOT FALSE
+	   OR public.patch_phase_open('2026-07-08 09:59:59+00') IS NOT FALSE
+	   OR public.patch_phase_open('2026-07-08 10:00:00+00') IS NOT TRUE THEN
 		RAISE EXCEPTION 'patch_phase_open edge math wrong';
 	END IF;
 

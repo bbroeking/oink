@@ -21,6 +21,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { rpc, rpcAction } from "@/utils/rpc";
+import { pairBondWith, bondBreakdown, type PairBondWith } from "@/utils/pairBonds";
 import { PigAvatar } from "./ui/PigAvatar";
 import { Icon } from "./ui/Icon";
 import { Glyph, IconText } from "./ui/Glyph";
@@ -193,6 +194,10 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		cursed: boolean;
 		expires_at: string | null;
 	} | null>(null);
+	// The keepsake: the caller's lifetime bond with THIS friend (trades /
+	// blessings / visits). Fail-soft — an unpushed migration or any null result
+	// leaves this null, and the line renders nothing (never an error).
+	const [bond, setBond] = useState<PairBondWith | null>(null);
 
 	// Sheet animation — driven independently of the backdrop so the
 	// dim doesn't slide up with the card (the old animationType="slide"
@@ -226,6 +231,12 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		setAskState({ kind: "ready" });
 		setTargetTickles(null);
 		setVisitGate(null);
+		setBond(null);
+		// Keepsake — the caller's bond with this friend. Fail-soft: a null
+		// result (unpushed migration / refusal) leaves the line hidden.
+		pairBondWith(targetUserId).then((d) => {
+			setBond(d && (d as PairBondWith).ok ? (d as PairBondWith) : null);
+		});
 		// Can a visit to this person succeed right now? (gates the Visit button)
 		rpcAction<{
 			locked?: boolean;
@@ -515,6 +526,16 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 											color={WHIMSY.roseDeep}
 										/>
 									</View>
+
+									{/* Keepsake — the quiet lifetime bond between the two of
+									    you (trades · blessings · visits). Only shows once a
+									    bond has actually formed; hidden entirely when the
+									    RPC is missing (unpushed migration) or bond is 0. */}
+									{bond && bond.bond > 0 && (
+										<Text style={styles.keepsake}>
+											you two: {bondBreakdown(bond)}
+										</Text>
+									)}
 
 									{/* Visit their Barn — see their pig + tickle it for them (social).
 									    FRIENDS-ONLY (player decision): visiting mints snouts +
@@ -924,6 +945,15 @@ const styles = StyleSheet.create({
 		marginTop: 2,
 	},
 	alignBarWrap: { marginBottom: 14 },
+	// Keepsake line — a quiet, warm hand-script note of the two pigs' lifetime
+	// bond, sitting just under the stats cluster.
+	keepsake: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginBottom: 14,
+	},
 	// "★ this season" kicker over the friend's stat cluster — names the
 	// window so GIVEN/RECEIVED/TICKLES read as the live-season race.
 	seasonKicker: { ...KICKER_TEXT, fontSize: 10, marginBottom: 6 },

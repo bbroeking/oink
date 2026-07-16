@@ -11,7 +11,7 @@
 // Per step:
 //   taste     — "try a dig — no herd needed" launches the practice patch
 //               (openPractice via the shared feeding CTA). A calm value line
-//               under it. The practice-dig modal renders here.
+//               under it. The dig modal renders once at the owner (season.tsx).
 //   join      — framed benefits + the JoinDoor (delegated to SounderHomeCard's
 //               crewless render), plus a "replay the practice dig ›" link.
 //   first_dig — the patch is open → the dig CTA; else the countdown + an
@@ -28,8 +28,11 @@ import { Button } from "../ui/Button";
 import { Glyph } from "../ui/Glyph";
 import { SounderHomeCard } from "./SounderHomeCard";
 import { NotifyChip } from "./GuardedCtaExtras";
-import { useFeedingCta } from "../mudwar/useFeedingCta";
+import { SpotlightTarget } from "@/components/ui/Spotlight";
+import type { FeedingCta } from "../mudwar/useFeedingCta";
 import { scheduleOpenReminder } from "@/utils/pushNotifications";
+import { markRejoinDismissed } from "@/utils/sounderPath";
+import { JOIN_SPOTLIGHT_TARGET_ID } from "@/hooks/useJoinSpotlight";
 import type { SounderStep } from "@/hooks/useSounderPath";
 import type { UseCrew } from "@/hooks/useCrew";
 import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
@@ -59,25 +62,41 @@ function StepDots({ step }: { step: SounderStep }) {
 export function SounderStepCard({
 	step,
 	stalled,
+	leaver = false,
+	joinSpotlightActive = false,
 	crewHook,
 	uid,
-	onDug,
+	cta,
 	refreshKey,
 	onAdvance,
 }: {
 	step: SounderStep;
 	/** After SOUNDER_STALL_SESSIONS on this step, compress to the single line. */
 	stalled: boolean;
+	/**
+	 * On the `join` step, true when the player is here because they LEFT a Sounder
+	 * — swaps the copy for "join another" encouragement and shows a quiet dismiss.
+	 */
+	leaver?: boolean;
+	/**
+	 * Gates the join-door spotlight target's measure work — only the join
+	 * affordance (the crewless SounderHomeCard door) is wrapped, so the coach-mark
+	 * hole hugs the door, not the whole card.
+	 */
+	joinSpotlightActive?: boolean;
 	crewHook: UseCrew;
 	uid: string | null;
-	onDug?: () => void;
+	/**
+	 * The season tab's ONE shared feeding CTA — it drives BOTH the practice dig
+	 * (taste) and the real dig (first_dig), and it's the same instance every
+	 * other dig surface reads, so no card can drift from the real gate. The
+	 * owner (season.tsx) mounts the hook and renders cta.modal once.
+	 */
+	cta: FeedingCta;
 	refreshKey?: number;
 	/** Re-derive the path step (e.g. right after a practice dig closes). */
 	onAdvance?: () => void;
 }) {
-	// The shared feeding CTA drives BOTH the practice dig (taste) and the real dig
-	// (first_dig) — one plumbing, so this card can never drift from the real gate.
-	const cta = useFeedingCta(onDug);
 
 	// done / hook never render here — the tab shows the normal card (done) or the
 	// login intro owns the tale (hook).
@@ -112,7 +131,6 @@ export function SounderStepCard({
 				</Button>
 				<Text style={styles.sub}>dig for truffles</Text>
 				<StepDots step="taste" />
-				{cta.modal}
 			</Sticker>
 		);
 	}
@@ -120,14 +138,42 @@ export function SounderStepCard({
 	if (step === "join") {
 		// VALUE + JOIN folded into one card: the JoinDoor (with its three benefit
 		// lines) is the crewless SounderHomeCard render; this card frames it and
-		// keeps the "taste" reachable via a replay link.
+		// keeps the "taste" reachable via a replay link. A LEAVER lands here too —
+		// same door, warmer "find your next herd" framing + a quiet dismiss.
+		const onDismiss = () => {
+			markRejoinDismissed(uid);
+			onAdvance?.();
+		};
 		return (
 			<View>
 				<Sticker color="cream" rotate={-0.4} radius={RADII.lg} style={styles.frameCard}>
-					<Text style={styles.kicker}>that was the taste — now dig for keeps</Text>
-					<Text style={styles.body}>
-						A Sounder digs deeper and shares the spoils. Slip into one below.
-					</Text>
+					{/* Leaver-only quiet dismiss — retires the card to DONE. The
+					    first-time join card stays non-dismissible (no ✕). */}
+					{leaver && (
+						<Pressable
+							onPress={onDismiss}
+							hitSlop={12}
+							style={({ pressed }) => [styles.dismiss, pressed && { opacity: 0.5 }]}
+							accessibilityLabel="Dismiss"
+						>
+							<Glyph name="close" size={14} />
+						</Pressable>
+					)}
+					{leaver ? (
+						<>
+							<Text style={styles.kicker}>herdless again</Text>
+							<Text style={styles.body}>
+								The patch digs better with a herd. Find your next Sounder below.
+							</Text>
+						</>
+					) : (
+						<>
+							<Text style={styles.kicker}>that was the taste — now dig for keeps</Text>
+							<Text style={styles.body}>
+								A Sounder digs deeper and shares the spoils. Slip into one below.
+							</Text>
+						</>
+					)}
 					<StepDots step="join" />
 					<Pressable
 						onPress={() => cta.openPractice()}
@@ -138,20 +184,28 @@ export function SounderStepCard({
 						<Text style={styles.replayLink}>replay the practice dig ›</Text>
 					</Pressable>
 				</Sticker>
-				{/* The join door itself — invites → open Sounders → found-in-one-tap. */}
-				<SounderHomeCard
-					crewHook={crewHook}
-					uid={uid}
-					onDug={onDug}
-					refreshKey={refreshKey}
-				/>
-				{cta.modal}
+				{/* The join door itself — invites → open Sounders → found-in-one-tap.
+				    Wrapped as the spotlight target so the coach-mark hole hugs JUST
+				    the join door, not the framing sticker above. The target is
+				    self-sizing (no full-bleed style) so measureInWindow reports the
+				    door's own bounds. */}
+				<SpotlightTarget
+					id={JOIN_SPOTLIGHT_TARGET_ID}
+					active={joinSpotlightActive}
+				>
+					<SounderHomeCard
+						crewHook={crewHook}
+						uid={uid}
+						cta={cta}
+						refreshKey={refreshKey}
+					/>
+				</SpotlightTarget>
 			</View>
 		);
 	}
 
 	// first_dig — crewed, no real dig yet. Window open → the real dig CTA; else the
-	// countdown + a one-tap "oink me when it opens" opt-in.
+	// locked pill + a one-tap "oink me when it opens" opt-in.
 	return (
 		<Sticker color="paper" rotate={-0.5} radius={RADII.lg} style={styles.card}>
 			<Text style={styles.kicker}>you're in a Sounder — one thing left</Text>
@@ -166,15 +220,17 @@ export function SounderStepCard({
 				</>
 			) : (
 				<>
+					{/* No countdown on the locked label — the WindowStrip caption
+					    above owns the schedule (same de-duplication as the home
+					    card's pill). */}
 					<Button size="md" variant="locked" full disabled>
-						he's guarding — opens in {cta.countdown}
+						he's guarding
 					</Button>
 					<NotifyChip />
 				</>
 			)}
 			{!!cta.note && <Text style={styles.note}>{cta.note}</Text>}
 			<StepDots step="first_dig" />
-			{cta.modal}
 		</Sticker>
 	);
 }
@@ -187,7 +243,7 @@ function CompactStep({
 	onAdvance,
 }: {
 	step: SounderStep;
-	cta: ReturnType<typeof useFeedingCta>;
+	cta: FeedingCta;
 	onAdvance?: () => void;
 }) {
 	const line =
@@ -220,7 +276,6 @@ function CompactStep({
 					<Text style={styles.compactLine}>{line}</Text>
 				</Sticker>
 			</Pressable>
-			{cta.modal}
 		</>
 	);
 }
@@ -293,6 +348,14 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 	},
 	dotDone: { backgroundColor: WHIMSY.sage },
+	// Leaver-only quiet dismiss — a small ✕ in the frame card's top-right corner.
+	// Generous hitSlop (set on the Pressable) makes the tiny target forgiving.
+	dismiss: {
+		position: "absolute",
+		top: SPACE.sm,
+		right: SPACE.sm,
+		zIndex: 1,
+	},
 	// Join framing card's replay link.
 	replayRow: {
 		flexDirection: "row",

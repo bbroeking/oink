@@ -11,14 +11,8 @@
 //
 // All values here are safe in JS doubles: 16807 * 2147483646 ≈ 3.6e13 < 2^53.
 
-import {
-	PATCH_COLS,
-	PATCH_OPEN_SECS,
-	PATCH_ROWS,
-	ROOTING_WINDOW_SECS,
-	STIR_RUB,
-	STIR_SHOVE,
-} from "@/constants/dig";
+import { PATCH_COLS, PATCH_ROWS, STIR_RUB, STIR_SHOVE } from "@/constants/dig";
+import { feedingSchedule, type FeedingSchedule } from "@/utils/feedingConfig";
 import { formatHM } from "@/utils/time";
 
 export type Find =
@@ -332,13 +326,26 @@ export function clusterBox(indices: number[]): ClusterBox | null {
 }
 
 // ── Feeding-window math ──────────────────────────────────────────────────────
+// Windows are 8h buckets of (epoch − offset): boundaries at 02:00 / 10:00 /
+// 18:00 UTC by default (the founder's US-Eastern sweet spots — see the
+// constants' rationale). The geometry is SERVER-AUTHORITATIVE: every function
+// reads the live feedingSchedule() (utils/feedingConfig — server row, cache,
+// compiled fallback) via a defaulted param, so tests can pin a schedule
+// explicitly and production follows a server UPDATE without a binary. MUST
+// match the server's window math (migrations 20260744000000 + 20260744100000).
 
-export function windowIndex(nowMs: number = Date.now()): number {
-	return Math.floor(nowMs / 1000 / ROOTING_WINDOW_SECS);
+export function windowIndex(
+	nowMs: number = Date.now(),
+	sched: FeedingSchedule = feedingSchedule()
+): number {
+	return Math.floor((nowMs / 1000 - sched.offsetSecs) / sched.windowSecs);
 }
 
-export function windowEndsAtMs(win: number): number {
-	return (win + 1) * ROOTING_WINDOW_SECS * 1000;
+export function windowEndsAtMs(
+	win: number,
+	sched: FeedingSchedule = feedingSchedule()
+): number {
+	return ((win + 1) * sched.windowSecs + sched.offsetSecs) * 1000;
 }
 
 /** "2h 10m" until the Hunger's next gorge (end of the current feeding). */
@@ -352,24 +359,40 @@ export function feedingCountdown(nowMs: number = Date.now()): string {
 const formatLeft = (leftMs: number): string => formatHM(leftMs, { minMinute: 1 });
 
 // ── Patch phases ─────────────────────────────────────────────────────────────
-// Within each 8h feeding window the patch alternates: OPEN for the first
-// PATCH_OPEN_SECS (dig while he gorges), then GUARDED for the rest (cooldown).
+// Within each feeding window the patch alternates: OPEN for the first
+// openSecs (dig while he gorges), then GUARDED for the rest (cooldown).
 // A session opened in-phase may still submit until the window ends. MUST
-// match the server's patch_phase_open() (migration 20260721000000).
+// match the server's patch_phase_open() (migrations 20260721000000 →
+// 20260744100000 — the config-driven anchor).
 
-/** True while the patch is diggable (first 4h of the current window). */
-export function patchPhaseOpen(nowMs: number = Date.now()): boolean {
-	return (nowMs / 1000) % ROOTING_WINDOW_SECS < PATCH_OPEN_SECS;
+/** True while the patch is diggable (the open head of the current window). */
+export function patchPhaseOpen(
+	nowMs: number = Date.now(),
+	sched: FeedingSchedule = feedingSchedule()
+): boolean {
+	// epoch − offset is positive for any real date, so % never goes negative.
+	return (nowMs / 1000 - sched.offsetSecs) % sched.windowSecs < sched.openSecs;
 }
 
 /** Ms timestamp when the CURRENT open phase closes (only valid while open). */
-export function phaseClosesAtMs(nowMs: number = Date.now()): number {
-	return (windowIndex(nowMs) * ROOTING_WINDOW_SECS + PATCH_OPEN_SECS) * 1000;
+export function phaseClosesAtMs(
+	nowMs: number = Date.now(),
+	sched: FeedingSchedule = feedingSchedule()
+): number {
+	return (
+		(windowIndex(nowMs, sched) * sched.windowSecs +
+			sched.offsetSecs +
+			sched.openSecs) *
+		1000
+	);
 }
 
 /** Ms timestamp of the NEXT open phase (= the next window's start). */
-export function nextOpenAtMs(nowMs: number = Date.now()): number {
-	return windowEndsAtMs(windowIndex(nowMs));
+export function nextOpenAtMs(
+	nowMs: number = Date.now(),
+	sched: FeedingSchedule = feedingSchedule()
+): number {
+	return windowEndsAtMs(windowIndex(nowMs, sched), sched);
 }
 
 /** "1h 12m" until the current open phase closes. */
@@ -380,6 +403,46 @@ export function phaseClosesCountdown(nowMs: number = Date.now()): string {
 /** "3h 45m" until the patch next opens. */
 export function nextOpenCountdown(nowMs: number = Date.now()): string {
 	return formatLeft(Math.max(0, nextOpenAtMs(nowMs) - nowMs));
+}
+
+// ── Feeding-CTA state derivation (pure — pins the stale-dug fix) ─────────────
+//
+// THE ROLLOVER BUG (founder report): "dug this feeding — opens in 2h" was still
+// "dug" hours later. Two causes, both fixed at this seam:
+//   1. the dug flag was a plain boolean captured when the dig landed — nothing
+//      expired it when the 8h window rolled over. The fix: store the WINDOW the
+//      dig happened in and re-compare against the live clock every render, so
+//      the flag expires by construction the instant the window rolls.
+//   2. the banner paired its "opens in" copy with the CTA's one shared countdown
+//      string — which is a CLOSES-in while the phase is open. bannerDigStatus
+//      derives both the words AND the number from the phase, so the wrong
+//      pairing is unrepresentable.
+
+/** True while a dig recorded in `dugWindow` still belongs to the current feeding. */
+export function dugInCurrentWindow(
+	dugWindow: number | null,
+	nowMs: number = Date.now()
+): boolean {
+	return dugWindow !== null && dugWindow === windowIndex(nowMs);
+}
+
+/**
+ * The banner footer's status line for a phase × dug pair — or null when the
+ * state is the live "dig this feeding ›" button (open + not dug). The countdown
+ * is derived HERE from the phase: guarded states get the next-open countdown
+ * (the only honest "opens in" number); open + dug carries no number at all —
+ * a closes-in time can never ride under "opens in" copy.
+ */
+export function bannerDigStatus(
+	phaseOpen: boolean,
+	dug: boolean,
+	nowMs: number = Date.now()
+): string | null {
+	if (phaseOpen && !dug) return null; // the button state — no status line
+	if (phaseOpen) return "dug this feeding — back next feeding ★";
+	return dug
+		? `dug this feeding — opens in ${nextOpenCountdown(nowMs)}`
+		: `he's guarding — opens in ${nextOpenCountdown(nowMs)}`;
 }
 
 // Practice-mode seed (migration not applied yet): any deterministic int in

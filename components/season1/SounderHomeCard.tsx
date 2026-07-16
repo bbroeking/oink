@@ -22,7 +22,7 @@ import { Button } from "../ui/Button";
 import { LoadingBeat } from "../ui/EmptyState";
 import { CrewPortrait } from "../CrewRow";
 import { JoinableSounders } from "../JoinableSounders";
-import { useFeedingCta } from "../mudwar/useFeedingCta";
+import type { FeedingCta } from "../mudwar/useFeedingCta";
 import { NotifyChip, BurrowBookLink } from "./GuardedCtaExtras";
 import { useRosterHats } from "@/hooks/useRosterHats";
 import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
@@ -51,13 +51,18 @@ const AVATAR = 44;
 export function SounderHomeCard({
 	crewHook,
 	uid,
-	onDug,
+	cta,
 	refreshKey,
 }: {
 	crewHook: UseCrew;
 	/** The caller's own user id — lights their pig in the roster when they've dug. */
 	uid: string | null;
-	onDug?: () => void;
+	/**
+	 * The season tab's ONE shared feeding CTA (owner mounts the hook + renders
+	 * cta.modal once) — every dig surface reads the same session/dug state, so
+	 * two buttons can never disagree about this feeding.
+	 */
+	cta: FeedingCta;
 	/** Bumped after a dig so the roster's "who dug this feeding" re-reads. */
 	refreshKey?: number;
 }) {
@@ -66,7 +71,7 @@ export function SounderHomeCard({
 	if (crew.crew) {
 		return (
 			<Sticker color="paper" rotate={-0.4} radius={RADII.lg} style={styles.card}>
-				<CrewedHome crewHook={crewHook} uid={uid} onDug={onDug} refreshKey={refreshKey} />
+				<CrewedHome crewHook={crewHook} uid={uid} cta={cta} refreshKey={refreshKey} />
 			</Sticker>
 		);
 	}
@@ -95,18 +100,17 @@ export function SounderHomeCard({
 function CrewedHome({
 	crewHook,
 	uid,
-	onDug,
+	cta,
 	refreshKey,
 }: {
 	crewHook: UseCrew;
 	uid: string | null;
-	onDug?: () => void;
+	cta: FeedingCta;
 	refreshKey?: number;
 }) {
 	const { crew } = crewHook;
 	const members = crew.members;
 	const hats = useRosterHats(members.map((m) => m.user_id));
-	const cta = useFeedingCta(onDug);
 
 	// Who's dug THIS feeding — crewmates from crew_dug, plus the caller via `dug`.
 	const [feeding, setFeeding] = useState<FeedingState | null>(null);
@@ -172,12 +176,15 @@ function CrewedHome({
 				})}
 			</View>
 
-			{/* Play the open patch, or the live cooldown until it opens again.
-			    The patch alternates 4h open / 4h guarded within each feeding. */}
+			{/* Play the open patch, or the locked state until it opens again.
+			    The patch alternates 4h open / 4h guarded within each feeding.
+			    Locked labels carry NO countdown — the WindowStrip caption directly
+			    above this card owns the schedule, and stating it twice a minute
+			    apart is how the two clocks visibly disagreed. */}
 			<View style={styles.playRow}>
 				{cta.dugThisWindow ? (
 					<Button size="md" variant="locked" full disabled>
-						dug this feeding — opens in {cta.countdown}
+						dug this feeding ★
 					</Button>
 				) : cta.noCrew ? null : cta.phaseOpen ? (
 					<>
@@ -192,7 +199,7 @@ function CrewedHome({
 				) : (
 					<>
 						<Button size="md" variant="locked" full disabled>
-							he's guarding — opens in {cta.countdown}
+							he's guarding
 						</Button>
 						{/* Guarded, nothing to dig — offer the same "oink me" opt-in the
 						    onboarding first_dig branch gives, so a retained player isn't
@@ -212,7 +219,7 @@ function CrewedHome({
 				    bordered secondary affordance, not a bare afterthought link. */}
 				<BurrowBookLink />
 			</View>
-			{cta.modal}
+			{/* cta.modal renders once at the owner (season.tsx), not here. */}
 
 			{/* One quiet milestone line + thin bar. */}
 			<View style={styles.milestone}>
@@ -278,7 +285,7 @@ function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
 			<Text style={styles.doorSub}>
 				{nothingToJoin
 					? "No open Sounders right now — raise the first banner and the herd fills in behind you."
-					: `${CREW_CAP_WORD} snouts, one banner. Slip into an open Sounder — you'll dig the feedings together.`}
+					: `${CREW_CAP_WORD} snouts, one banner. Ask into an open Sounder — when the herd opens the door, you dig the feedings together.`}
 			</Text>
 
 			{/* Sell the Sounder with its real benefits, not flavor — the three
@@ -355,7 +362,7 @@ function FoundForm({ crewHook, topGap }: { crewHook: UseCrew; topGap: boolean })
 	return (
 		<View style={topGap ? { marginTop: SPACE.md } : undefined}>
 			<Text style={styles.foundBlurb}>
-				We'll name your Sounder for you — you can rename it once the herd's in.
+				We'll name your Sounder for you — a good name's already waiting.
 			</Text>
 			<Button size="md" variant="primary" full onPress={found} disabled={busy}>
 				{busy ? "Founding…" : "Found it"}

@@ -12,14 +12,16 @@
 // identical board locally from a deterministic client seed and mark the session
 // { practice: true } so the UI can badge it honestly and mint nothing.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { rpcAction, RpcResult } from "@/utils/rpc";
 import { supabase } from "@/utils/supabase";
 import { markFirstRealDig } from "@/utils/sounderPath";
+import { fetchFeedingState } from "@/utils/dig";
 import {
 	ClaimableFind,
 	claimableFinds,
+	dugInCurrentWindow,
 	generateBoard,
 	normalizePouch,
 	practiceSeed,
@@ -174,30 +176,78 @@ async function claimBeginnersSnoutOnce(): Promise<number | null> {
 	return null;
 }
 
+// Debounce floor for the feeding_state reconcile — rapid foreground/background
+// flips (or a rollover racing an AppState 'active') collapse into one RPC.
+const RECONCILE_MIN_MS = 5000;
+
 export function useRooting() {
 	const [session, setSession] = useState<RootingSession | null>(null);
-	const [dugThisWindow, setDugThisWindow] = useState(false);
+	// The WINDOW the caller's last known dig landed in, or null — never a plain
+	// boolean. `dugThisWindow` below re-compares it against the live window every
+	// render, so the flag EXPIRES by construction the instant the 8h window rolls
+	// over (the founder's "still dug two hours later" bug: a boolean set at dig
+	// time had nothing to un-set it across the rollover).
+	const [dugWindow, setDugWindow] = useState<number | null>(null);
 	// The caller has no Sounder — digging is crew-gated, so the UI shows the
 	// "join a Sounder to dig" prompt rather than an error.
 	const [noCrew, setNoCrew] = useState(false);
 	const win = windowIndex();
+	const dugThisWindow = dugInCurrentWindow(dugWindow);
 
 	// "Already dug" is server-authoritative (open_rooting says already), but we
 	// mirror it in AsyncStorage so the strip renders right on cold start. The
 	// mirror is per-user: signed out → no uid → no mirror (dug stays false).
+	// Re-reads when the window rolls (the new window's key won't exist yet).
 	useEffect(() => {
 		let cancelled = false;
-		setDugThisWindow(false);
 		(async () => {
 			const uid = await mirrorUid();
 			if (!uid) return;
 			const v = await AsyncStorage.getItem(dugKey(uid, win));
-			if (!cancelled && v) setDugThisWindow(true);
+			if (!cancelled && v) setDugWindow(win);
 		})();
 		return () => {
 			cancelled = true;
 		};
 	}, [win]);
+
+	// Server reconciliation — one cheap feeding_state() read that makes the
+	// server's "did I dig this window" (keyed by ITS window_index, the same
+	// offset-anchored floor((epoch - 7200)/28800) the client mirrors)
+	// authoritative over local state.
+	// Fired on window rollover and app foreground (useFeedingCta's AppState
+	// listener). Fail-soft: a missing RPC / transport error keeps local state;
+	// debounced so rapid fg/bg flips don't spam the poll.
+	const lastReconcileRef = useRef(0);
+	const reconcile = useCallback(async () => {
+		const now = Date.now();
+		if (now - lastReconcileRef.current < RECONCILE_MIN_MS) return;
+		lastReconcileRef.current = now;
+		try {
+			const fs = await fetchFeedingState();
+			if (!fs) return; // migration unpushed / transport hiccup — keep local
+			if (fs.dug) {
+				setDugWindow(fs.window_index);
+				const uid = await mirrorUid();
+				if (uid) await AsyncStorage.setItem(dugKey(uid, fs.window_index), "1");
+			} else {
+				// Server says NOT dug for its window — retire a matching local claim
+				// (and its cold-start mirror) so a stale flag can't outlive the truth.
+				setDugWindow((prev) => (prev === fs.window_index ? null : prev));
+				const uid = await mirrorUid();
+				if (uid) await AsyncStorage.removeItem(dugKey(uid, fs.window_index));
+			}
+		} catch {
+			// fail-soft — reconciliation is a best-effort truth sync, never a gate.
+		}
+	}, []);
+
+	// Rollover (and mount) reconcile: the derived flag above already flips the
+	// UI the moment `win` advances; this re-syncs with the server in the
+	// background (also heals a dig made on another device).
+	useEffect(() => {
+		reconcile();
+	}, [win, reconcile]);
 
 	const open = useCallback(async (): Promise<
 		RpcResult<{ session: RootingSession }>
@@ -220,7 +270,10 @@ export function useRooting() {
 				carry: toCarry(r.carry),
 			};
 			setSession(s);
-			if (r.already) setDugThisWindow(true);
+			// Capture the SERVER's window index, not the client clock — the two
+			// should agree (same offset-anchored floor((epoch - 7200)/28800)), but
+			// the server's is the one the one-dig-per-feeding rule is keyed by.
+			if (r.already) setDugWindow(r.window_index);
 			return { ok: true, session: s };
 		}
 		if (r.reason === "no_crew") {
@@ -228,7 +281,9 @@ export function useRooting() {
 			return { ok: false, reason: r.reason };
 		}
 		if (r.reason === "already_rooted") {
-			setDugThisWindow(true);
+			// The refusal is by definition about the current window (no payload to
+			// read a server index from).
+			setDugWindow(win);
 			return { ok: false, reason: r.reason };
 		}
 		if (MISSING_RPC_REASONS.has(r.reason)) {
@@ -277,9 +332,11 @@ export function useRooting() {
 				normalizePouch(missed as unknown as Parameters<typeof normalizePouch>[0])
 			).filter((f) => !caught.has(f));
 			const markDug = async () => {
-				setDugThisWindow(true);
+				// Keyed by the session's SERVER-issued window index — the dug flag
+				// then expires on its own at rollover (dugInCurrentWindow).
+				setDugWindow(session.windowIndex);
 				// Persist the per-user cold-start mirror; signed out (no uid) → skip —
-				// the in-memory flag above still covers the live session.
+				// the in-memory window above still covers the live session.
 				const uid = await mirrorUid();
 				if (uid) await AsyncStorage.setItem(dugKey(uid, session.windowIndex), "1");
 			};
@@ -375,5 +432,5 @@ export function useRooting() {
 		return s;
 	}, [win]);
 
-	return { session, dugThisWindow, noCrew, open, openPractice, submit, clear };
+	return { session, dugThisWindow, noCrew, open, openPractice, submit, clear, reconcile };
 }

@@ -229,7 +229,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 		],
 	},
 
-	// ── 1.3 — the Sounder update. Ships with build 147. ─────────────
+	// ── 1.3 — the Sounder update. Ships with build 149. ─────────────
 	{
 		version: "1.10.0",
 		date: "2026-07-14",
@@ -241,8 +241,16 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 				body: "The season page now walks you in — taste a dig, slip into an open Sounder or found your own, and dig your first feeding with the herd.",
 			},
 			{
+				title: "The banner calls the dig",
+				body: "When the patch is open, the Great Hunger banner says so — one tap and you're digging. Guarded? It counts down to the next feeding.",
+			},
+			{
+				title: "A dig worth reading",
+				body: "The end of a dig now settles up properly — what you found, what it carried, what waits in the dirt. No more squinting at the fine print.",
+			},
+			{
 				title: "Name yourself, any time",
-				body: "Tap the pencil on your scrapbook to change your name. First one's free — after that it costs snouts, so make it count.",
+				body: "Change your name from the settings on your scrapbook page. First one's free — after that it costs snouts, so make it count.",
 			},
 			{
 				title: "Favorites up front",
@@ -255,6 +263,10 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			{
 				title: "A hundred hats, redrawn",
 				body: "Nearly every worn thing in the closet got redrawn to sit true on Rosie — same character, better fit.",
+			},
+			{
+				title: "New feeding hours",
+				body: "The Hungerer gorges on a new clock — the patch now opens with your morning coffee, your ride home, and the last hour before bed.",
 			},
 		],
 	},

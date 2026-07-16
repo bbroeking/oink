@@ -8,10 +8,25 @@
 
 // ── Truffle Patch (the 8h feeding-window dig heartbeat) — client mirror. ──────
 // The board PRNG/parity contract lives in utils/rooting.ts.
+//
+// SCHEDULE NOTE: the three window-geometry constants below are the compiled
+// FALLBACK DEFAULTS. The live values are SERVER-AUTHORITATIVE — the
+// app_settings.feeding_schedule row (migration 20260744100000), fetched and
+// clamped by utils/feedingConfig.ts — so a future schedule change is one
+// server UPDATE, never a binary. Keep these in sync with the seeded row
+// anyway: they're what a fresh install ticks on before its first fetch.
 export const ROOTING_WINDOW_SECS = 28800; // 8h feedings — 3 per day
+// The window anchor: boundaries sit at 02:00 / 10:00 / 18:00 UTC (epoch minus
+// this offset, bucketed by 8h). Founder call 2026-07-16 — the US-Eastern sweet
+// spots: the 10–14 UTC open catches the 6–10am commute, 18–22 UTC the 2–6pm
+// homecoming, 02–06 UTC the 10pm–2am wind-down; the 8–10pm ET block was
+// explicitly traded away. Anchored to UTC, so the schedule slides an hour
+// across US DST changes — accepted. MUST match the server's window math —
+// migration 20260744000000.
+export const ROOTING_WINDOW_OFFSET_SECS = 7200; // +2h — windows at 02/10/18 UTC
 // The patch is OPEN for the first 4h of each window (dig while he gorges),
 // then GUARDED for the remaining 4h (cooldown). MUST match the server's
-// patch_phase_open() — migration 20260721000000.
+// patch_phase_open() — migrations 20260721000000 + 20260744000000.
 export const PATCH_OPEN_SECS = 14400;
 export const STIR_BUDGET = 20;  // a session ends (gracefully) at full stir
 export const STIR_RUB = 1;      // quiet scratch

@@ -119,6 +119,35 @@ CHAIN=(
 	# table access under RLS, no RPC); exercised by 40_friend_favorites_smoke.sql.
 	# Depends only on auth.users (stubbed) + the `authenticated` role (stubbed).
 	supabase/migrations/20260739300000_friend_favorites.sql
+	# 20260742000000 makes open Sounders knock-to-join: a crewless pig files a
+	# crew_join_requests row (request_to_join), any member accepts/declines. Carries
+	# join_crew (20260738000000) — repurposed into request semantics — + crew_state
+	# (20260714000000) VERBATIM + two new join_requests arrays. Exercised by
+	# 41_join_requests_smoke.sql.
+	supabase/migrations/20260742000000_join_requests.sql
+	# 00e prep: builds minimal public.tickle_trades + public.barn_visits (the stub
+	# has neither) so 20260743's AFTER triggers + backfill apply. Must precede it.
+	scripts/db-harness/00e_pair_bonds_prep.sql
+	# 20260743000000 adds pair_bonds — the friendship-bond ledger (trades +
+	# blessings + visits), its fail-soft maintenance triggers, the one-time
+	# backfill, and pair_leaderboard/pair_bond_with. Exercised by 42_pair_bonds_smoke.
+	supabase/migrations/20260743000000_pair_bonds.sql
+	# 20260744000000 shifts the feeding-window anchor +2h (boundaries at 02/10/18
+	# UTC): carries patch_phase_open/feeding_state/open_rooting/submit_rooting
+	# with offset-aware window math. The 15/16/22 smokes compute their pinned
+	# block starts offset-aware; 17 asserts the new anchor edges.
+	supabase/migrations/20260744000000_window_shift.sql
+	# 20260744100000 makes the schedule SERVER-AUTHORITATIVE: app_settings +
+	# app_setting()/_feeding_sched(), and re-carries the four window functions to
+	# read the config row (one UPDATE = a schedule shift, no binary). Exercised
+	# by 10_feeding_flip_smoke (legacy seed + release-day flip rehearsal) and
+	# 43_feeding_schedule_smoke; 15/16/17/22 run against the FLIPPED row.
+	supabase/migrations/20260744100000_feeding_schedule_config.sql
+	# 20260745000000 adds the Den — player feedback: submit_feedback (in-app),
+	# submit_feedback_web (anon, honeypot + hourly cap), feedback_dump/mark
+	# (secret-gated founder archive). RPC-only feedback table (zero-policy RLS).
+	# Needs app_settings (20260744100000, above). Exercised by 54_feedback_den_smoke.
+	supabase/migrations/20260745000000_feedback_den.sql
 )
 
 NAME="pgharness_$$"
@@ -128,7 +157,9 @@ trap 'docker rm -f "$NAME" >/dev/null 2>&1 || true' EXIT
 until docker logs "$NAME" 2>&1 | grep -q "init process complete"; do :; done
 until docker exec "$NAME" pg_isready -U postgres >/dev/null 2>&1; do :; done
 
-cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" scripts/db-harness/[1234]*_smoke.sql \
+cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
+		scripts/db-harness/[1234]*_smoke.sql \
+		scripts/db-harness/54_feedback_den_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 

@@ -18,11 +18,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
-import { router, type Href } from "expo-router";
+import { router, useLocalSearchParams, type Href } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { lifetimeTickles } from "@/utils/tickles";
+import { submitFeedback, type FeedbackKind } from "@/utils/feedback";
+import { stampFeedbackEverSent } from "@/utils/feedbackNudge";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Button, SectionHeader } from "./ui";
@@ -78,13 +80,22 @@ export function Account({ session }: { session: Session }) {
 	const [username, setUsername] = useState<string | null>(null);
 	const [discriminator, setDiscriminator] = useState<string | null>(null);
 	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
-	// Paid username rename — pencil next to the handle opens this dialog.
+	// Paid username rename — the "Change your name" settings row opens this dialog.
 	// First rename is free; then 1,000, then 10,000 snouts (server-priced
 	// off renames_used; the client mirrors it for the cost line).
 	const [renameOpen, setRenameOpen] = useState(false);
 	const [renameInput, setRenameInput] = useState("");
 	const [renameBusy, setRenameBusy] = useState(false);
 	const [renameError, setRenameError] = useState<string | null>(null);
+	// "Send an idea to the den" — a cozy whisper dialog. kind picker + a
+	// multiline note; on success the body swaps to a one-beat confirmation
+	// (feedbackSent) that auto-dismisses. feedbackError carries a refusal line.
+	const [feedbackOpen, setFeedbackOpen] = useState(false);
+	const [feedbackKind, setFeedbackKind] = useState<FeedbackKind>("idea");
+	const [feedbackInput, setFeedbackInput] = useState("");
+	const [feedbackBusy, setFeedbackBusy] = useState(false);
+	const [feedbackError, setFeedbackError] = useState<string | null>(null);
+	const [feedbackSent, setFeedbackSent] = useState(false);
 	// Account-deletion confirm — required for App Store 5.1.1(v).
 	// On confirm: delete_my_account RPC cascades through every public
 	// table via ON DELETE CASCADE, then we sign out so the auth
@@ -443,6 +454,60 @@ export function Account({ session }: { session: Session }) {
 		);
 	};
 
+	// "Send an idea to the den" — opens the whisper dialog fresh each time.
+	const openFeedback = () => {
+		setFeedbackKind("idea");
+		setFeedbackInput("");
+		setFeedbackError(null);
+		setFeedbackSent(false);
+		setFeedbackOpen(true);
+	};
+
+	// Deep-link auto-open: the rare feedback nudge (FeedbackNudgeModal, armed in
+	// app/_layout.tsx) routes here with ?feedback=1 to land the player straight in
+	// the whisper dialog — one dialog, two entry points, no duplicated flow. We
+	// clear the param immediately so a back-nav / re-focus can't re-trigger it.
+	const { feedback: feedbackParam } = useLocalSearchParams<{ feedback?: string }>();
+	useFocusEffect(
+		useCallback(() => {
+			if (feedbackParam === "1") {
+				openFeedback();
+				router.setParams({ feedback: undefined });
+			}
+			// eslint-disable-next-line react-hooks/exhaustive-deps
+		}, [feedbackParam])
+	);
+
+	const handleFeedback = async () => {
+		if (feedbackBusy) return;
+		const body = feedbackInput.trim();
+		if (body.length < 3) {
+			setFeedbackError("the whisper got lost — try again?");
+			return;
+		}
+		setFeedbackBusy(true);
+		setFeedbackError(null);
+		const r = await submitFeedback(feedbackKind, body);
+		setFeedbackBusy(false);
+		if (r.ok) {
+			// Someone who whispers doesn't need the occasional feedback nudge —
+			// stamp the local "ever sent" flag so the nudge backs off hard (60d).
+			// Fail-soft: a missed stamp only means the nudge could still arm later.
+			stampFeedbackEverSent(session.user.id);
+			// Swap the body for the one-beat confirmation, then auto-dismiss.
+			setFeedbackSent(true);
+			setTimeout(() => setFeedbackOpen(false), 1500);
+			return;
+		}
+		// 'resting' = the day's ears are full; anything else (including a
+		// feature-dark miss when the migration is unpushed) is a lost whisper.
+		setFeedbackError(
+			r.reason === "resting"
+				? "the den's ears are full for today — come whisper tomorrow."
+				: "the whisper got lost — try again?"
+		);
+	};
+
 	// Copies the player's handle (username#discriminator) to the
 	// clipboard. The referral-link flow was cut — a handle a friend
 	// types into Friends → Add is robust where a GitHub-Pages deep
@@ -608,19 +673,6 @@ export function Account({ session }: { session: Session }) {
 														: `${username} ${activeTitle.name}`
 													: username}
 											</Text>
-											<Pressable
-												onPress={openRename}
-												hitSlop={8}
-												style={styles.renamePencil}
-												accessibilityLabel="Change your name"
-											>
-												<Icon
-													name="edit"
-													size={15}
-													color={WHIMSY.ink}
-													strokeWidth={2.2}
-												/>
-											</Pressable>
 										</View>
 										{!!handle && discriminator && (
 											<Text style={styles.codeHandle}>{handle}</Text>
@@ -1093,6 +1145,16 @@ export function Account({ session }: { session: Session }) {
 							style={settingsStyles.card}
 						>
 							<SettingRow
+								icon="edit"
+								label="Change your name"
+								onPress={openRename}
+							/>
+							<SettingRow
+								icon="bell"
+								label="Send an idea to the den"
+								onPress={openFeedback}
+							/>
+							<SettingRow
 								icon="scroll"
 								label="What's new"
 								onPress={() => setReleaseNotesOpen(true)}
@@ -1228,6 +1290,131 @@ export function Account({ session }: { session: Session }) {
 										</Text>
 									</Pressable>
 								</View>
+							</Sticker>
+						</Pressable>
+					</Pressable>
+				</KeyboardAvoidingView>
+			</Modal>
+
+			{/* "Send an idea to the den" — the whisper dialog. Same paper-sticker
+			    treatment as the rename dialog: a 3-way kind picker (chips), a
+			    multiline note, and a "whisper it" button. On success the body
+			    swaps to a one-beat confirmation that auto-dismisses. */}
+			<Modal
+				visible={feedbackOpen}
+				transparent
+				animationType="fade"
+				onRequestClose={() => !feedbackBusy && setFeedbackOpen(false)}
+			>
+				<KeyboardAvoidingView
+					style={feedbackStyles.flex}
+					behavior={Platform.OS === "ios" ? "padding" : undefined}
+				>
+					<Pressable
+						style={feedbackStyles.backdrop}
+						onPress={() => !feedbackBusy && setFeedbackOpen(false)}
+					>
+						<Pressable style={feedbackStyles.cardWrap} onPress={() => {}}>
+							<Sticker
+								color="paper"
+								rotate={-0.8}
+								radius={18}
+								style={[feedbackStyles.card, STICKER_SHADOW]}
+							>
+								{feedbackSent ? (
+									// One-beat confirmation — auto-dismisses (~1.5s) or a tap.
+									<Pressable onPress={() => setFeedbackOpen(false)}>
+										<Text style={feedbackStyles.sentText}>
+											the bog heard you. thank you for the whisper.
+										</Text>
+									</Pressable>
+								) : (
+									<>
+										<Text style={feedbackStyles.title}>
+											send an idea to the den
+										</Text>
+										<View style={feedbackStyles.chipRow}>
+											{(
+												[
+													["idea", "an idea"],
+													["bug", "something's broken"],
+													["love", "a love note"],
+												] as [FeedbackKind, string][]
+											).map(([k, label]) => {
+												const on = feedbackKind === k;
+												return (
+													<Pressable
+														key={k}
+														onPress={() => setFeedbackKind(k)}
+														disabled={feedbackBusy}
+														style={[
+															feedbackStyles.chip,
+															on && feedbackStyles.chipOn,
+														]}
+													>
+														<Text
+															style={[
+																feedbackStyles.chipText,
+																on && feedbackStyles.chipTextOn,
+															]}
+														>
+															{label}
+														</Text>
+													</Pressable>
+												);
+											})}
+										</View>
+										<TextInput
+											style={[
+												feedbackStyles.input,
+												!!feedbackError && feedbackStyles.inputError,
+											]}
+											placeholder="what should the bog know?"
+											placeholderTextColor={WHIMSY.mute}
+											value={feedbackInput}
+											onChangeText={(t) => {
+												setFeedbackInput(t);
+												if (feedbackError) setFeedbackError(null);
+											}}
+											multiline
+											maxLength={1000}
+											editable={!feedbackBusy}
+										/>
+										{feedbackError && (
+											<Text style={feedbackStyles.error}>
+												{feedbackError}
+											</Text>
+										)}
+										<View style={feedbackStyles.btnRow}>
+											<Pressable
+												onPress={() => setFeedbackOpen(false)}
+												disabled={feedbackBusy}
+												style={({ pressed }) => [
+													feedbackStyles.btn,
+													feedbackStyles.btnGhost,
+													pressed && { opacity: 0.7 },
+												]}
+											>
+												<Text style={feedbackStyles.btnGhostText}>
+													Cancel
+												</Text>
+											</Pressable>
+											<Pressable
+												onPress={handleFeedback}
+												disabled={feedbackBusy}
+												style={({ pressed }) => [
+													feedbackStyles.btn,
+													feedbackStyles.btnConfirm,
+													(pressed || feedbackBusy) && { opacity: 0.7 },
+												]}
+											>
+												<Text style={feedbackStyles.btnConfirmText}>
+													{feedbackBusy ? "…" : "whisper it"}
+												</Text>
+											</Pressable>
+										</View>
+									</>
+								)}
 							</Sticker>
 						</Pressable>
 					</Pressable>
@@ -1603,19 +1790,6 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		color: WHIMSY.ink,
 		lineHeight: 26,
-	},
-	// Pencil affordance next to the name — small ink-outline well, sits
-	// flush to the right of the username so the rename entry is discoverable
-	// without competing with the name itself.
-	renamePencil: {
-		width: 28,
-		height: 28,
-		borderRadius: RADII.lg,
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
 	},
 	codeHandle: {
 		fontFamily: FONTS.hand,
@@ -2317,6 +2491,94 @@ const renameStyles = StyleSheet.create({
 		fontSize: 13,
 		color: WHIMSY.accent,
 		marginTop: 8,
+	},
+	btnRow: {
+		flexDirection: "row",
+		gap: 10,
+		alignSelf: "stretch",
+		marginTop: 18,
+	},
+	btn: {
+		flex: 1,
+		paddingHorizontal: 14,
+		paddingVertical: 11,
+		borderRadius: RADII.md,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	btnGhost: { backgroundColor: "transparent", borderColor: WHIMSY.muteSoft },
+	btnGhostText: { fontFamily: FONTS.bodyExtra, fontSize: 14, color: WHIMSY.mute },
+	btnConfirm: { backgroundColor: WHIMSY.lilac },
+	btnConfirmText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+});
+
+// The Den whisper dialog — same paper-sticker modal treatment as the rename
+// dialog, plus a chip-row kind picker and a taller multiline note.
+const feedbackStyles = StyleSheet.create({
+	flex: { flex: 1 },
+	backdrop: {
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: MODAL_BACKDROP_BG,
+		padding: 28,
+	},
+	cardWrap: { width: "100%", maxWidth: 340 },
+	card: { paddingHorizontal: 22, paddingVertical: 20 },
+	title: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 20,
+		color: WHIMSY.ink,
+		textAlign: "center",
+		marginBottom: 14,
+	},
+	chipRow: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: 8,
+		justifyContent: "center",
+		marginBottom: 14,
+	},
+	chip: {
+		paddingHorizontal: 12,
+		paddingVertical: 7,
+		borderRadius: RADII.md,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.muteSoft,
+		backgroundColor: "transparent",
+	},
+	chipOn: { borderColor: WHIMSY.ink, backgroundColor: WHIMSY.lilac },
+	chipText: { fontFamily: FONTS.bodyExtra, fontSize: 13, color: WHIMSY.mute },
+	chipTextOn: { color: WHIMSY.ink },
+	input: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 16,
+		color: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.md,
+		paddingHorizontal: 14,
+		paddingVertical: 12,
+		minHeight: 88,
+		textAlignVertical: "top",
+	},
+	inputError: { borderColor: WHIMSY.accent },
+	error: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		marginTop: 8,
+	},
+	sentText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 18,
+		color: WHIMSY.ink,
+		textAlign: "center",
+		lineHeight: 26,
+		paddingVertical: 12,
 	},
 	btnRow: {
 		flexDirection: "row",

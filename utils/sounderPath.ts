@@ -36,3 +36,38 @@ export async function markFirstRealDig(uid: string | null): Promise<void> {
 		// no-op — a missed stamp is self-healing on the next real dig.
 	}
 }
+
+// LEAVER boundary: this player was IN a Sounder and left it. Per-user. Stamped
+// from useCrew.leave()'s success path so the step machine can put a herdless
+// leaver back on the `join` step with "find your next Sounder" encouragement
+// instead of silently retiring to DONE.
+export const sounderLeftKey = (uid: string) => `sounder_left:${uid}`;
+
+// Stamp "this player has left a Sounder at least once." Fail-soft: a missed
+// stamp just means the leaver nudge doesn't show this session — never throws
+// into the leave path.
+export async function markSounderLeft(uid: string | null): Promise<void> {
+	if (!uid) return;
+	try {
+		await AsyncStorage.setItem(sounderLeftKey(uid), "1");
+	} catch {
+		// no-op — a missed stamp is self-healing on the next leave.
+	}
+}
+
+// LEAVER-NUDGE-DISMISSED boundary: the player quietly dismissed the "join
+// another" encouragement, so the step card retires (reads DONE) even though the
+// `sounder_left` stamp is still set. Per-user. Cleared whenever the player is
+// next observed IN a crew, so leaving again re-arms the nudge.
+export const rejoinDismissedKey = (uid: string) => `rejoin_nudge_dismissed:${uid}`;
+
+// Stamp "the leaver dismissed the rejoin nudge." Fail-soft: a missed stamp just
+// means the nudge lingers one more session — never throws into the dismiss tap.
+export async function markRejoinDismissed(uid: string | null): Promise<void> {
+	if (!uid) return;
+	try {
+		await AsyncStorage.setItem(rejoinDismissedKey(uid), "1");
+	} catch {
+		// no-op — a missed stamp is self-healing on the next dismiss.
+	}
+}

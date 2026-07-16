@@ -75,7 +75,7 @@ BEGIN
 	-- block so la's open/submit in §3 always lands in the OPEN phase and in
 	-- the same window/cycle as the unpinned reads (race_current_cycle → now()).
 	PERFORM set_config('ttp.fake_now',
-		(to_timestamp(floor(extract(epoch FROM now()) / 28800) * 28800)
+		(to_timestamp(floor((extract(epoch FROM now()) - 7200) / 28800) * 28800 + 7200)
 		 + interval '1 hour')::text, true);
 
 	-- ── 1. Cycle math: weekly, Monday 00:00 UTC anchored, always 7 days ──────

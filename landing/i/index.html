@@ -380,18 +380,18 @@
       </div>
     </div>
 
-    <!-- Defaults to the public TestFlight beta. The script below auto-
-         upgrades this button to the App Store the moment the listing goes
-         live (Apple lookup id 6740339848) — no redeploy needed. -->
-    <a class="join-btn" id="join" href="https://testflight.apple.com/join/5dDhSNN9">
-      Join the beta <span class="ja">→</span>
+    <!-- The app is live — hard link to the canonical listing (the /us/ +
+         slug form; the bare /app/id… form stopped redirecting reliably,
+         and the old TestFlight default was a dead end post-launch). -->
+    <a class="join-btn" id="join" href="https://apps.apple.com/us/app/tickle-the-pig/id6740339848">
+      Download on the App Store <span class="ja">→</span>
     </a>
 
     <div class="steps" id="steps">
       <strong>How to join the herd:</strong>
       <ol>
         <li>Tap your code above to copy it.</li>
-        <li>Join the beta + install the app.</li>
+        <li>Install the app from the App Store.</li>
         <li>When the app asks for a code, paste it in.</li>
       </ol>
     </div>
@@ -463,37 +463,6 @@
     });
   })();
 
-  /* ---------- App Store cutover (auto) ----------
-     The Join button defaults to the TestFlight beta (in the HTML). The app's
-     App Store listing isn't public yet, so a hard link would 404. Instead we
-     ask Apple's lookup API (JSONP — CORS-safe) whether the app is live; the
-     moment it is, we upgrade the button to the App Store with no redeploy. */
-  (function () {
-    var APPSTORE_ID = '6740339848';
-    var APPSTORE_URL = 'https://apps.apple.com/app/id' + APPSTORE_ID;
-    var joinBtn = document.getElementById('join');
-    if (!joinBtn) return;
-    var cb = '__ttpStoreCheck';
-    var s;
-    window[cb] = function (data) {
-      try {
-        if (data && data.resultCount > 0) {
-          joinBtn.setAttribute('href', APPSTORE_URL);
-          joinBtn.innerHTML = 'Download on the App Store <span class="ja">→</span>';
-          var steps = document.getElementById('steps');
-          var li = steps && steps.querySelector('ol li:nth-child(2)');
-          if (li) li.innerHTML = 'Install the app from the App Store.';
-        }
-      } catch (e) {}
-      if (s && s.parentNode) s.parentNode.removeChild(s);
-      try { delete window[cb]; } catch (e) { window[cb] = undefined; }
-    };
-    s = document.createElement('script');
-    s.src = 'https://itunes.apple.com/lookup?id=' + APPSTORE_ID + '&callback=' + cb;
-    s.onerror = function () { if (s && s.parentNode) s.parentNode.removeChild(s); };
-    document.head.appendChild(s);
-  })();
-
   /* ---------- referral (herd) code ---------- */
   // Pull the code out of the path: /i/ROSIE-K3T9  (also tolerate ?code=).
   // Matches the format the app emits + validates (REFERRAL_CODE_PATTERN
@@ -561,7 +530,7 @@
     // Welcome them in rather than telling them they're missing something.
     // Hide the redeem steps (they reference a code that doesn't exist).
     document.getElementById('headline').textContent = 'Come tickle a pig with us.';
-    codeBlock.innerHTML = '<p class="no-code">Came in without a friend\'s code? No worries — join the beta and start tickling. (Herd codes get the inviter +50 snouts; nothing\'s lost if you don\'t have one.)</p>';
+    codeBlock.innerHTML = '<p class="no-code">Came in without a friend\'s code? No worries — get the app and start tickling. (Herd codes get the inviter +50 snouts; nothing\'s lost if you don\'t have one.)</p>';
     var steps = document.getElementById('steps');
     if (steps) steps.style.display = 'none';
   }

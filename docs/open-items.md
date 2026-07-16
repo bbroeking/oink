@@ -16,7 +16,7 @@ it goes live:
    Then rebuild + ship.
 2. **App Store link cutover — AUTO, nothing to do.** `landing/index.html` +
    `docs/index.html` already self-upgrade their Join/CTA buttons from TestFlight to
-   `apps.apple.com/app/id6740339848` via a JSONP check against Apple's lookup API
+   `apps.apple.com/us/app/tickle-the-pig/id6740339848` (canonical link, hard-coded since 2026-07-15 — the JSONP cutover was removed post-launch)
    the moment the listing publishes. (A session cron, job `7a6c0910`, is also
    watching it every 2h.)
 3. **Verify** the install-from-link path on a fresh device once live (link →

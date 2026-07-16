@@ -11,7 +11,7 @@
 // loss (gift-not-guilt).
 
 import { ReactNode, useEffect, useState } from "react";
-import { View, Text, Pressable, Modal, StyleSheet } from "react-native";
+import { AppState, View, Text, Pressable, Modal, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useRooting } from "@/hooks/useRooting";
 import {
@@ -19,6 +19,10 @@ import {
 	patchPhaseOpen,
 	phaseClosesCountdown,
 } from "@/utils/rooting";
+import {
+	hydrateFeedingScheduleCache,
+	refreshFeedingSchedule,
+} from "@/utils/feedingConfig";
 import { TrufflePatch } from "./TrufflePatch";
 import {
 	FONTS,
@@ -37,9 +41,13 @@ export interface FeedingCta {
 	/** True while the patch is diggable (first 4h of the window); GUARDED after. */
 	phaseOpen: boolean;
 	/**
-	 * The live line for the current state:
-	 *  open + not dug → time until the patch closes;
-	 *  otherwise      → time until the patch next opens.
+	 * The live countdown for the current PHASE (never the dug state):
+	 *  open    → time until the patch closes;
+	 *  guarded → time until the patch next opens.
+	 * PAIRING RULE: never print this under "opens in" copy while the phase is
+	 * open — it's a closes-in then (the founder's wrong-number bug). The banner
+	 * footer reads bannerDigStatus (utils/rooting), which derives the words and
+	 * the number together from the phase.
 	 */
 	countdown: string;
 	/** A gentle inline note after a failed open (already rooted / no crew / retry). */
@@ -67,8 +75,16 @@ function ctaClock() {
 }
 
 export function useFeedingCta(onDug?: () => void): FeedingCta {
-	const { session, dugThisWindow, noCrew, open, openPractice, submit, clear } =
-		useRooting();
+	const {
+		session,
+		dugThisWindow,
+		noCrew,
+		open,
+		openPractice,
+		submit,
+		clear,
+		reconcile,
+	} = useRooting();
 	const [note, setNote] = useState<string | null>(null);
 	const [clock, setClock] = useState(ctaClock);
 
@@ -76,6 +92,51 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 		const t = setInterval(() => setClock(ctaClock()), 15000);
 		return () => clearInterval(t);
 	}, []);
+
+	// Server-authoritative schedule sync: cache-hydrate then fetch on mount
+	// (the founder's "schedule changes propagate without a binary"). A confirmed
+	// CHANGE re-derives the clock this frame and reconciles the dug state — a
+	// re-anchor detaches window ids exactly like the 20260744 shift did, and
+	// reconcile() heals the flag against the server. Both fail-soft.
+	useEffect(() => {
+		let alive = true;
+		(async () => {
+			await hydrateFeedingScheduleCache();
+			if (!alive) return;
+			setClock(ctaClock()); // cached schedule may differ from compiled defaults
+			const changed = await refreshFeedingSchedule();
+			if (!alive || !changed) return;
+			setClock(ctaClock());
+			reconcile();
+		})().catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, [reconcile]);
+
+	// Foreground heal — useFocusEffect never fires on background → active, so a
+	// player who backgrounds on "opens in 2h" and returns hours later would sit
+	// on a stale clock until the next 15s tick and a stale dug flag until a
+	// navigation. On 'active': re-derive the clock THIS frame, fire the
+	// fail-soft server reconcile (debounced inside useRooting, so rapid fg/bg
+	// flips cost at most one feeding_state read), and re-check the server
+	// schedule (its own debounce) — a remote shift lands on the next foreground.
+	useEffect(() => {
+		const sub = AppState.addEventListener("change", (s) => {
+			if (s !== "active") return;
+			setClock(ctaClock());
+			reconcile();
+			refreshFeedingSchedule()
+				.then((changed) => {
+					if (changed) {
+						setClock(ctaClock());
+						reconcile();
+					}
+				})
+				.catch(() => {});
+		});
+		return () => sub.remove();
+	}, [reconcile]);
 
 	const start = async () => {
 		setNote(null);

@@ -96,6 +96,18 @@ Fixing it means **enforcing the taste that already exists**, not imposing a new 
 
 ## Decision log
 
+- **2026-07-16 — The shop item preview is a product shot; living surfaces stay alive.** The preview
+  pig animated its idle loop while the equipped item stayed pinned to frame 0's anchor (PigStage
+  resolves anchors at `pigFrameIdx=0` but never fed SpritePig a `frameIdx`) — the item visibly
+  detached from the moving pig. Ruling: in the **shop item preview** the pig FREEZES at the rest
+  frame — the exact pose the placement studio tunes anchors against — so the cosmetic reads
+  pixel-perfect; mood does not display there (CONTEXT.md's Mood entry carries the carve-out).
+  The **Closet and visit screens are living mood surfaces** — they get the Barn's frame-sync
+  treatment (`pigFrameIdx` + `onPigFrame`) so the pig keeps breathing and the item rides along.
+  Rule going forward: a surface either syncs anchors to the live frame or freezes at rest —
+  a moving pig with a pinned item is never acceptable. Serves **craft / the sticker language**
+  (cosmetics are the product; they must sit on the pig exactly).
+
 - **2026-06-26 — Adopted this Taste Standard.** Codifies TTP's paper-craft DNA as an enforceable
   craft lens beside the `SKILL.md` product lens. Reframes "eliminate AI slop": TTP's slop is
   *governance erosion* (tokens bypassed), not generic-SaaS look. Serves the **"craft is part of

@@ -19,20 +19,26 @@
 // sounderLaunch slot itself is EXCLUDED (it presenting can't be the thing that
 // suppresses it). The sounder slot's `want` reads anyPopupPresentedThisSession().
 
-// The id the fallback nudge presents under — its own presentation must never
-// count as "another popup presented this session".
+// The ids the fallback nudges present under — their own presentation must never
+// count as "another popup presented this session". The feedback nudge is a
+// SIBLING of the Sounder nudge (same fill-the-quiet mechanism, lower priority);
+// both are excluded so neither retroactively suppresses itself.
 export const SOUNDER_LAUNCH_SLOT_ID = "sounderLaunch";
+export const FEEDBACK_NUDGE_SLOT_ID = "feedbackNudge";
 
 let anyPresented = false;
 // Session latch: the nudge fires at most once per app session even if the queue
 // later empties again (e.g. the player dismisses everything). Once armed-and-
 // fired, it stays suppressed until the next cold launch.
 let sounderNudgeFired = false;
+// The feedback nudge's own once-per-session latch (mirrors the Sounder one).
+let feedbackNudgeFired = false;
 
-/** PopupQueue calls this on every presenting transition. The sounderLaunch slot
- *  is excluded so its own presentation doesn't retroactively suppress it. */
+/** PopupQueue calls this on every presenting transition. The fallback-nudge
+ *  slots are excluded so their own presentation doesn't retroactively suppress
+ *  them (or each other's queue-empty gate). */
 export function markPopupPresented(id: string): void {
-	if (id === SOUNDER_LAUNCH_SLOT_ID) return;
+	if (id === SOUNDER_LAUNCH_SLOT_ID || id === FEEDBACK_NUDGE_SLOT_ID) return;
 	anyPresented = true;
 }
 
@@ -51,8 +57,19 @@ export function markSounderNudgeFired(): void {
 	sounderNudgeFired = true;
 }
 
+/** True once the feedback nudge has fired this session (fire-at-most-once latch). */
+export function feedbackNudgeFiredThisSession(): boolean {
+	return feedbackNudgeFired;
+}
+
+/** Call when the feedback nudge PRESENTS — latches it off for the rest of the session. */
+export function markFeedbackNudgeFired(): void {
+	feedbackNudgeFired = true;
+}
+
 /** Test-only: reset the in-memory session state between cases. */
 export function __resetPopupSession(): void {
 	anyPresented = false;
 	sounderNudgeFired = false;
+	feedbackNudgeFired = false;
 }

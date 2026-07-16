@@ -174,6 +174,7 @@ export function HandLink({
 	onPress,
 	accent = false,
 	underline = true,
+	disabled = false,
 	style,
 	textStyle,
 }: {
@@ -181,11 +182,17 @@ export function HandLink({
 	onPress: () => void;
 	accent?: boolean;
 	underline?: boolean;
+	disabled?: boolean;
 	style?: StyleProp<ViewStyle>;
 	textStyle?: StyleProp<TextStyle>;
 }) {
 	return (
-		<Pressable onPress={onPress} hitSlop={8} style={style}>
+		<Pressable
+			onPress={onPress}
+			disabled={disabled}
+			hitSlop={8}
+			style={({ pressed }) => [style, (disabled || pressed) && styles.linkDim]}
+		>
 			<Text
 				style={[
 					styles.link,
@@ -304,6 +311,7 @@ const styles = StyleSheet.create({
 	statusAccent: { color: WHIMSY.accent },
 	link: { ...TYPE.kicker, color: WHIMSY.mute, textDecorationLine: "underline" },
 	linkPlain: { textDecorationLine: "none" },
+	linkDim: { opacity: 0.6 },
 	linkAccent: { color: WHIMSY.accent },
 	note: { ...TYPE.kicker, color: WHIMSY.accent },
 	kickRow: {

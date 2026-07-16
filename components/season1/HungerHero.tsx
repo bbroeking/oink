@@ -24,6 +24,9 @@ import {
 } from "react-native";
 import { GreatHungerMeter } from "../GreatHungerMeter";
 import { Sticker } from "../ui/Sticker";
+import { Button } from "../ui/Button";
+import { bannerDigStatus } from "@/utils/rooting";
+import type { FeedingCta } from "../mudwar/useFeedingCta";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -53,6 +56,7 @@ export function HungerHero({
 	refreshKey,
 	open: openProp,
 	onOpenChange,
+	cta,
 }: {
 	refreshKey?: number;
 	// Optional controlled-open — lets another surface (the YOUR TAKE tickle
@@ -60,6 +64,10 @@ export function HungerHero({
 	// the banner owns its own open state as before (backward-compatible).
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
+	// The season tab's ONE shared feeding CTA — the same instance the Sounder
+	// cards consume, so the banner's dig button can never disagree with theirs.
+	// The owner renders cta.modal once; omitted → no CTA row (banner only).
+	cta?: FeedingCta;
 }) {
 	const meter = useHungerMeter(refreshKey);
 	const [openInternal, setOpenInternal] = useState(false);
@@ -71,19 +79,24 @@ export function HungerHero({
 
 	return (
 		<>
-			{/* Compressed value banner — vignette thumb + stage + loop line. Taps
-			    open the full hero art + ladder. */}
-			<Pressable
-				onPress={() => setOpen(true)}
-				accessibilityRole="button"
-				accessibilityLabel="See the Hungerer and the season ladder"
-				style={({ pressed }) => pressed && { opacity: 0.85 }}
+			{/* Compressed value banner — one sticker, two rows. Row 1 (the header:
+			    vignette thumb + stage + loop line) is its own Pressable that opens
+			    the full hero art + ladder; row 2 is the dig call, INSIDE the same
+			    sticker so it reads as the banner's own footer, never a detached
+			    pill floating below. The header Pressable stays a sibling of the
+			    CTA (not its parent) so the dig tap digs and a header tap still
+			    opens the sheet. */}
+			<Sticker
+				color="paper"
+				rotate={-0.5}
+				radius={RADII.lg}
+				style={styles.banner}
 			>
-				<Sticker
-					color="paper"
-					rotate={-0.5}
-					radius={RADII.lg}
-					style={styles.banner}
+				<Pressable
+					onPress={() => setOpen(true)}
+					accessibilityRole="button"
+					accessibilityLabel="See the Hungerer and the season ladder"
+					style={({ pressed }) => [styles.headerRow, pressed && { opacity: 0.85 }]}
 				>
 					<View style={styles.thumbWrap}>
 						<Image source={CHIP} style={styles.thumb} resizeMode="contain" />
@@ -95,8 +108,32 @@ export function HungerHero({
 						<Text style={styles.loop}>{LOOP_LINE}</Text>
 					</View>
 					<Text style={styles.chevron}>›</Text>
-				</Sticker>
-			</Pressable>
+				</Pressable>
+
+				{/* The dig call footer, for crewed players only. Open + not dug →
+				    the real primary button; guarded or already dug → a quiet hand
+				    status line (the call stays always-visible, it just stops
+				    impersonating a button — the founder's dead-pill note). The
+				    line comes from bannerDigStatus, which derives the words AND
+				    the countdown together from the PHASE — never from
+				    cta.countdown, whose open-phase value is a closes-in (the
+				    founder's "opens in 2h, still dug later" wrong-number bug).
+				    Crewless players see nothing here (noCrew) — the join door
+				    owns their funnel. The owner renders the shared cta.modal
+				    beside the Sounder card, not here. */}
+				{cta && !cta.noCrew &&
+					(cta.phaseOpen && !cta.dugThisWindow ? (
+						<View style={styles.ctaRow}>
+							<Button size="md" variant="primary" full onPress={cta.start}>
+								dig this feeding ›
+							</Button>
+						</View>
+					) : (
+						<Text style={styles.ctaStatus}>
+							{bannerDigStatus(cta.phaseOpen, cta.dugThisWindow)}
+						</Text>
+					))}
+			</Sticker>
 
 			<HungerHeroSheet
 				visible={open}
@@ -219,13 +256,15 @@ function HungerHeroSheet({
 }
 
 const styles = StyleSheet.create({
-	// The compressed banner.
+	// The compressed banner — a column: header row, then the dig-call footer.
 	banner: {
+		paddingHorizontal: SPACE.md,
+		paddingVertical: SPACE.sm,
+	},
+	headerRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.md,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.sm,
 	},
 	thumbWrap: {
 		width: 52,
@@ -256,6 +295,18 @@ const styles = StyleSheet.create({
 		fontSize: 22,
 		color: WHIMSY.mute,
 		marginLeft: SPACE.xs,
+	},
+
+	// The dig-call footer inside the banner — a small gap off the header row.
+	ctaRow: { marginTop: SPACE.sm },
+	// The guarded/dug status line — hand voice, quiet, centered: always-visible
+	// schedule without the dead disabled-button read.
+	ctaStatus: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: SPACE.sm,
 	},
 
 	// The sheet.

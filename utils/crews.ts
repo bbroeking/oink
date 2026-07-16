@@ -39,11 +39,31 @@ export interface InviteOut {
 	invitee_name: string | null;
 }
 
+// A knock ON the caller's crew — a crewless pig asking to dig with the herd.
+// Shown to every current member (any member may let them in / turn them away).
+export interface JoinRequestIn {
+	id: string;
+	requester_id: string;
+	username: string | null;
+}
+
+// A knock the caller (crewless) has out on an open Sounder, awaiting an answer.
+export interface JoinRequestOut {
+	id: string;
+	crew_id: string;
+	crew_name: string;
+}
+
 export interface CrewState {
 	crew: Crew | null;
 	members: CrewMember[];
 	invitesIn: InviteIn[];
 	invitesOut: InviteOut[];
+	// Knock-to-join: incoming asks on the caller's crew (crewed), the caller's
+	// own outgoing asks (crewless). crew_state() carries these; default [] when
+	// the field is missing (so the client ships before the migration is pushed).
+	joinRequestsIn: JoinRequestIn[];
+	joinRequestsOut: JoinRequestOut[];
 	// Herd milestones: cumulative credited finds for the whole Sounder + which
 	// milestone thresholds it has already claimed (server-granted, idempotent).
 	// crew_state() now carries these; default 0/[] when the caller has no crew.
@@ -77,6 +97,8 @@ const EMPTY_CREW_STATE: CrewState = {
 	members: [],
 	invitesIn: [],
 	invitesOut: [],
+	joinRequestsIn: [],
+	joinRequestsOut: [],
 	lifetime_finds: 0,
 	milestones_claimed: [],
 };
@@ -88,12 +110,21 @@ const EMPTY_CREW_STATE: CrewState = {
 // 4 — the spread never lifted the nested values). The defensive coercers live in
 // utils/jsonb.ts so the "never trust the wire" rules stay in one place.
 export async function fetchCrewState(): Promise<CrewState> {
-	const s = await rpc<Partial<CrewState>>("crew_state");
+	// The wire uses snake_case for the two join-request arrays (the RPC nests
+	// them as join_requests_in / join_requests_out) while the flat CrewState is
+	// camelCase — map them here, fail-soft to [] so the client is safe against an
+	// older server that predates the migration.
+	const s = await rpc<Partial<CrewState> & {
+		join_requests_in?: JoinRequestIn[];
+		join_requests_out?: JoinRequestOut[];
+	}>("crew_state");
 	if (!s) return EMPTY_CREW_STATE;
 	const nested = (s.crew ?? null) as Record<string, unknown> | null;
 	return {
 		...EMPTY_CREW_STATE,
 		...s,
+		joinRequestsIn: Array.isArray(s.join_requests_in) ? s.join_requests_in : [],
+		joinRequestsOut: Array.isArray(s.join_requests_out) ? s.join_requests_out : [],
 		lifetime_finds: nonneg(nested?.lifetime_finds ?? s.lifetime_finds),
 		milestones_claimed: coerceIntArray(
 			nested?.milestones_claimed ?? s.milestones_claimed
@@ -128,15 +159,10 @@ export async function fetchMemberHats(
 
 // Founding takes no name — the server assigns a random one at birth
 // (create_crew ignores p_name; see 20260738600000). We still send p_name: null
-// to satisfy the RPC signature. The leader renames later via renameCrew.
+// to satisfy the RPC signature. (Sounder renaming is retired on the client for
+// now — the server rename_crew RPC stays, just unwired.)
 export function createCrew(): Promise<RpcResult<{ crew_id: string; name: string }>> {
 	return rpcAction<{ crew_id: string; name: string }>("create_crew", { p_name: null });
-}
-// Leader-only rename. Server envelope: { ok:true } | { ok:false, reason:
-// 'bad_name'|'not_leader'|'unauthenticated' }. Degrades gracefully (r.ok false)
-// when the migration isn't pushed yet.
-export function renameCrew(name: string): Promise<RpcResult<{}>> {
-	return rpcAction<{}>("rename_crew", { p_name: name });
 }
 export function inviteToCrew(inviteeId: string): Promise<RpcResult<{}>> {
 	return rpcAction("invite_to_crew", { p_invitee: inviteeId });
@@ -156,8 +182,25 @@ export function cancelInvite(inviteId: string): Promise<RpcResult<{}>> {
 export function leaveCrew(): Promise<RpcResult<{}>> {
 	return rpcAction("leave_crew");
 }
-export function joinCrew(crewId: string): Promise<RpcResult<{ crew_id: string }>> {
-	return rpcAction<{ crew_id: string }>("join_crew", { p_crew: crewId });
+// Knock on an open Sounder — you ASK to join, a member answers (you don't force
+// your way in). Envelope: { ok:true } | { ok:false, reason:
+// 'unauthenticated'|'already_in_crew'|'not_found'|'crew_full'|'already_asked'|
+// 'too_many_asks' }.
+export function requestToJoin(crewId: string): Promise<RpcResult<{}>> {
+	return rpcAction("request_to_join", { p_crew: crewId });
+}
+// Take back your OWN outgoing knock (only the requester may).
+export function cancelJoinRequest(requestId: string): Promise<RpcResult<{}>> {
+	return rpcAction("cancel_join_request", { p_request: requestId });
+}
+// Let a knocker in — any member of the request's crew may accept. On success the
+// roster grows; { ok:false, reason:'crew_full' } means the door filled first.
+export function acceptJoinRequest(requestId: string): Promise<RpcResult<{ crew_id: string }>> {
+	return rpcAction<{ crew_id: string }>("accept_join_request", { p_request: requestId });
+}
+// A quiet no — any member turns a knock away (the requester isn't told).
+export function declineJoinRequest(requestId: string): Promise<RpcResult<{}>> {
+	return rpcAction("decline_join_request", { p_request: requestId });
 }
 export function transferCrewLeadership(newLeaderId: string): Promise<RpcResult<{}>> {
 	return rpcAction("transfer_crew_leadership", { p_new_leader: newLeaderId });

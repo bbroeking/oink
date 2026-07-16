@@ -48,7 +48,7 @@ BEGIN
 	-- block: guaranteed OPEN phase, same window/cycle as real now() (so
 	-- feeding_state, which reads the real clock, still agrees).
 	PERFORM set_config('ttp.fake_now',
-		(to_timestamp(floor(extract(epoch FROM now()) / 28800) * 28800)
+		(to_timestamp(floor((extract(epoch FROM now()) - 7200) / 28800) * 28800 + 7200)
 		 + interval '1 hour')::text, true);
 
 	-- ── rosie: first digger of the window ──────────────────────────────────

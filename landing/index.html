@@ -8,7 +8,7 @@
 <!-- Open Graph so the link looks good when shared in iMessage / social.
      Absolute URLs are required — relative paths don't resolve in scrapers. -->
 <meta property="og:title" content="Come tickle a pig with me" />
-<meta property="og:description" content="Your friend's code is inside. Join the Tickle the Pig beta." />
+<meta property="og:description" content="Your friend's code is inside. Get Tickle the Pig on the App Store." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://ticklethepig.com" />
 <meta property="og:image" content="https://ticklethepig.com/og.png" />
@@ -18,7 +18,7 @@
 <meta property="og:image:alt" content="Rosie — a cheerful pink pig — Tickle the Pig" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Come tickle a pig with me" />
-<meta name="twitter:description" content="Your friend's code is inside. Join the Tickle the Pig beta." />
+<meta name="twitter:description" content="Your friend's code is inside. Get Tickle the Pig on the App Store." />
 <meta name="twitter:image" content="https://ticklethepig.com/og.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -447,18 +447,18 @@
         </div>
       </div>
 
-      <!-- Defaults to the public TestFlight beta. The script below auto-
-           upgrades this button to the App Store the moment the listing goes
-           live (Apple lookup id 6740339848) — no redeploy needed. -->
-      <a class="join-btn" id="join" href="https://testflight.apple.com/join/5dDhSNN9">
-        Join the beta <span class="ja">→</span>
+      <!-- The app is live — hard link to the canonical listing (the /us/ +
+           slug form; the bare /app/id… form stopped redirecting reliably,
+           and the old TestFlight default was a dead end post-launch). -->
+      <a class="join-btn" id="join" href="https://apps.apple.com/us/app/tickle-the-pig/id6740339848">
+        Download on the App Store <span class="ja">→</span>
       </a>
 
       <div class="steps" id="steps">
         <strong>How to redeem:</strong>
         <ol>
           <li>Tap <em>Copy</em> above.</li>
-          <li>Join the beta + install the app.</li>
+          <li>Install the app from the App Store.</li>
           <li>When the app asks for a code, paste it in.</li>
         </ol>
       </div>
@@ -531,37 +531,6 @@
     });
   })();
 
-  /* ---------- App Store cutover (auto) ----------
-     The Join button defaults to the TestFlight beta (in the HTML). The app's
-     App Store listing isn't public yet, so a hard link would 404. Instead we
-     ask Apple's lookup API (JSONP — CORS-safe) whether the app is live; the
-     moment it is, we upgrade the button to the App Store with no redeploy. */
-  (function () {
-    var APPSTORE_ID = '6740339848';
-    var APPSTORE_URL = 'https://apps.apple.com/app/id' + APPSTORE_ID;
-    var joinBtn = document.getElementById('join');
-    if (!joinBtn) return;
-    var cb = '__ttpStoreCheck';
-    var s;
-    window[cb] = function (data) {
-      try {
-        if (data && data.resultCount > 0) {
-          joinBtn.setAttribute('href', APPSTORE_URL);
-          joinBtn.innerHTML = 'Download on the App Store <span class="ja">→</span>';
-          var steps = document.getElementById('steps');
-          var li = steps && steps.querySelector('ol li:nth-child(2)');
-          if (li) li.innerHTML = 'Install the app from the App Store.';
-        }
-      } catch (e) {}
-      if (s && s.parentNode) s.parentNode.removeChild(s);
-      try { delete window[cb]; } catch (e) { window[cb] = undefined; }
-    };
-    s = document.createElement('script');
-    s.src = 'https://itunes.apple.com/lookup?id=' + APPSTORE_ID + '&callback=' + cb;
-    s.onerror = function () { if (s && s.parentNode) s.parentNode.removeChild(s); };
-    document.head.appendChild(s);
-  })();
-
   /* ---------- referral code ---------- */
   // Pull the code out of the path: /r/ROSIE-K3T9  (also tolerate ?code=).
   // Matches the format the app emits + validates (REFERRAL_CODE_PATTERN
@@ -597,7 +566,7 @@
     // that doesn't exist in this state. The Join button stays visible
     // so they can install regardless — the in-app onboarding will
     // present an optional code field with a Skip option.
-    codeBlock.innerHTML = '<p class="no-code">Came in without a friend\'s code? No worries — join the beta and start tickling. (Friend codes get the inviter +50 snouts; nothing\'s lost if you don\'t have one.)</p>';
+    codeBlock.innerHTML = '<p class="no-code">Came in without a friend\'s code? No worries — get the app and start tickling. (Friend codes get the inviter +50 snouts; nothing\'s lost if you don\'t have one.)</p>';
     var steps = document.getElementById('steps');
     if (steps) steps.style.display = 'none';
   }

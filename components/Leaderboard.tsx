@@ -9,6 +9,12 @@ import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { getFriendIds } from "@/utils/friendships";
+import {
+	pairLeaderboard,
+	bondBreakdown,
+	type PairBondRow,
+	type PairLeaderboard,
+} from "@/utils/pairBonds";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { log } from "../utils/log";
 import { Icon } from "./ui/Icon";
@@ -26,7 +32,7 @@ import { FONTS, KICKER_TEXT, SHADOW_SM, TAB_SAFE, TYPE, WHIMSY } from "@/constan
 const LEADERBOARD_PAGE_SIZE = 25;
 const LEADERBOARD_MAX_ROWS = 100;
 
-type Scope = "global" | "friends" | "alignment";
+type Scope = "global" | "friends" | "pairs" | "alignment";
 // The scopes a host can open the board on (alignment is season-0 internal).
 export type BoardScope = Exclude<Scope, "alignment">;
 
@@ -237,6 +243,93 @@ function ClippingRow({
 	);
 }
 
+// "{nameA} × {nameB}" — the pair's two pigs joined by a small cross. Anonymous
+// fallback matches the rest of the board.
+function pairTitle(row: PairBondRow): string {
+	return `${row.name_a ?? "Anonymous"} × ${row.name_b ?? "Anonymous"}`;
+}
+
+// Champion pair — the strongest bond in the bog gets the poster treatment,
+// mirroring ChampionPoster's sun sticker + rose tape so #1 reads instantly.
+function PairChampionPoster({ champ }: { champ: PairBondRow }) {
+	return (
+		<View style={styles.champWrap}>
+			<Sticker color="sun" rotate={-1.5} radius={18} border={2.5} style={styles.champ}>
+				<Tape color="roseDeep" rotate={-12} width={48} height={12} style={styles.champTape} />
+				<Text style={styles.champOver}>★ the strongest pair in the bog ★</Text>
+				<View style={styles.champBody}>
+					<View style={{ flex: 1, minWidth: 0 }}>
+						<Text
+							style={styles.champName}
+							numberOfLines={1}
+							adjustsFontSizeToFit
+							minimumFontScale={0.55}
+						>
+							{pairTitle(champ)}
+						</Text>
+						{/* Breakdown sub-line — the three bond acts that add up to the
+						    total, dropping any zero component. */}
+						<Text style={styles.pairChampSub} numberOfLines={1}>
+							{bondBreakdown(champ)}
+						</Text>
+					</View>
+					{/* Total bond, right-aligned — ONE number, the sum. */}
+					<View style={styles.rowScoreCol}>
+						<Text style={styles.champBond} numberOfLines={1}>
+							{champ.bond.toLocaleString()}
+						</Text>
+						<Text style={styles.rowScoreUnit}>bond</Text>
+					</View>
+				</View>
+			</Sticker>
+		</View>
+	);
+}
+
+// One ranked pair row. isYou → the caller is in the pair; the row lights rose
+// (matching the self-highlight grammar used for the you-row elsewhere).
+function PairRow({
+	row,
+	last,
+	isYou,
+}: {
+	row: PairBondRow;
+	last?: boolean;
+	isYou?: boolean;
+}) {
+	return (
+		<View
+			style={[
+				styles.row,
+				isYou && styles.pairRowYou,
+				!last && styles.rowDivider,
+			]}
+		>
+			<Text style={styles.rowRank}>#{row.rank}</Text>
+			<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
+				<Text
+					style={styles.rowName}
+					numberOfLines={1}
+					adjustsFontSizeToFit
+					minimumFontScale={0.6}
+				>
+					{pairTitle(row)}
+					{isYou && <Text style={styles.rowYouTag}> (you)</Text>}
+				</Text>
+				<Text style={styles.rowSub} numberOfLines={1}>
+					{bondBreakdown(row)}
+				</Text>
+			</View>
+			<View style={styles.rowScoreCol}>
+				<Text style={styles.rowScore} numberOfLines={1}>
+					{row.bond.toLocaleString()}
+				</Text>
+				<Text style={styles.rowScoreUnit}>bond</Text>
+			</View>
+		</View>
+	);
+}
+
 // `initialScope` lets a host open the board on a specific tab (the Sounder
 // card's "standings live in the Board" note lands on the Sounders scope).
 export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
@@ -252,15 +345,21 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 	// Alignment isn't a thing in Season 1 — the greedy/generous board
 	// retires with Judgement Day, so its scope tab hides once s1 is live.
 	const s1 = useFeatureFlag("world_boss") || __DEV__;
-	// S1 swaps the alignment board for the Sounder rankings.
+	// S1 swaps the alignment board for the strongest-pairs board — the bond
+	// between two specific pigs, made visible and ranked.
 	const scopes: Scope[] = s1
-		? ["global", "friends"]
+		? ["global", "friends", "pairs"]
 		: ["global", "friends", "alignment"];
 	// Paginated load-more state for the global scope. Friends scope is
 	// already bounded by the 100-friend cap; alignment is RPC-served
 	// with a fixed per_side, so neither needs pagination.
 	const [loadingMore, setLoadingMore] = useState(false);
 	const [hasMore, setHasMore] = useState(false);
+	// Strongest-pairs scope — the ranked pair board + the caller's own best
+	// pair (the "you" row) when it falls outside the top slice. RPC-served,
+	// so no pagination; the top slice is bounded server-side.
+	const [pairs, setPairs] = useState<PairBondRow[]>([]);
+	const [youPair, setYouPair] = useState<PairBondRow | null>(null);
 
 	// Fetches `count` rows starting at `from` from profiles, ordered
 	// by tickles_earned desc. Falls back to the no-titles select if
@@ -325,6 +424,17 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				data: { user },
 			} = await supabase.auth.getUser();
 			setMyId(user?.id ?? null);
+
+			if (scope === "pairs") {
+				// Strongest pairs — RPC-served, both usernames + breakdown + the
+				// you-row baked in. Fail-soft: a null result (unpushed migration)
+				// leaves the board empty rather than throwing.
+				const res = await pairLeaderboard(25);
+				const ok = res && (res as PairLeaderboard).ok;
+				setPairs(ok ? (res as PairLeaderboard).pairs : []);
+				setYouPair(ok ? (res as PairLeaderboard).you : null);
+				return;
+			}
 
 			if (scope === "alignment") {
 				const rows = await rpc<
@@ -480,7 +590,9 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 											? "globe"
 											: s === "friends"
 												? "friends"
-												: "star"
+												: s === "pairs"
+													? "handshake"
+													: "star"
 									}
 									size={14}
 									filled={active}
@@ -494,7 +606,9 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 										? "Global"
 										: s === "friends"
 											? "Friends"
-											: "Alignment"}
+											: s === "pairs"
+												? "Pairs"
+												: "Alignment"}
 								</Text>
 							</Pressable>
 						);
@@ -525,6 +639,60 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 						</Pressable>
 					</Sticker>
 				</View>
+			) : scope === "pairs" ? (
+				// Strongest pairs — the bond between two specific pigs, ranked.
+				// Champion pair poster on top, then a flat sticker of ranked
+				// rows, then the caller's own best pair pinned below when it
+				// falls outside the top slice.
+				pairs.length === 0 ? (
+					<View style={styles.emptyWrap}>
+						<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
+							<Text style={styles.emptyText}>
+								no bonds yet. trade, bless, and visit a friend to build one.
+							</Text>
+						</Sticker>
+					</View>
+				) : (
+					<ScrollView
+						style={styles.list}
+						contentContainerStyle={styles.listContent}
+					>
+						<PairChampionPoster champ={pairs[0]} />
+						{pairs.length > 1 && (
+							<Sticker
+								color="paper"
+								rotate={-0.3}
+								radius={14}
+								style={styles.listSticker}
+							>
+								{pairs.slice(1).map((row, i, arr) => (
+									<PairRow
+										key={`${row.user_a}-${row.user_b}`}
+										row={row}
+										isYou={row.is_self}
+										last={i === arr.length - 1}
+									/>
+								))}
+							</Sticker>
+						)}
+						{/* The caller's own best pair, pinned below when it sits
+						    outside the returned top slice — so you always see
+						    where your strongest bond lands. */}
+						{youPair && (
+							<>
+								<Text style={styles.youPairLabel}>★ your strongest pair</Text>
+								<Sticker
+									color="rose"
+									rotate={0.4}
+									radius={14}
+									style={styles.listSticker}
+								>
+									<PairRow row={youPair} isYou last />
+								</Sticker>
+							</>
+						)}
+					</ScrollView>
+				)
 			) : leaderboard.length === 0 ? (
 				// Empty state on a paper Sticker so it matches the Friends
 				// segment's empty card instead of reading as bare text.
@@ -731,6 +899,10 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		marginTop: 2,
 	},
+	// Pair champion — bond breakdown sub-line + the big bond number, matching
+	// the ranked-row score treatment so the number reads as ONE thing.
+	pairChampSub: { ...TYPE.hand, color: WHIMSY.mute, marginTop: 2 },
+	champBond: { fontFamily: FONTS.whimsy, fontSize: 20, color: WHIMSY.ink },
 	// Crown moved off Text-emoji onto <Icon name="crown" /> as part of
 	// the no-emoji sweep — no inline style needed; Icon takes size +
 	// color directly.
@@ -768,6 +940,19 @@ const styles = StyleSheet.create({
 	},
 	rowYouHighlight: {
 		backgroundColor: WHIMSY.cream,
+	},
+	// A pair row the caller is in — rose wash matching the you-row self-highlight
+	// grammar used elsewhere (referral card, pinned you-pair sticker).
+	pairRowYou: {
+		backgroundColor: WHIMSY.rose,
+	},
+	// Kicker over the pinned "your strongest pair" sticker.
+	youPairLabel: {
+		...KICKER_TEXT,
+		marginTop: 16,
+		marginBottom: 2,
+		paddingHorizontal: 4,
+		color: WHIMSY.accent,
 	},
 	rowDivider: {
 		borderBottomWidth: 1.5,

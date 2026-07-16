@@ -12,6 +12,10 @@
 //            practice dig, so "practiced" == "snout tried" — one event).
 //   join   — practiced, no crew. Folds the plan's VALUE + JOIN into one card
 //            (benefits + join door). Evidence: practiced stamp present, no crew.
+//            Also re-entered by a LEAVER: someone who was in a Sounder and left
+//            (`sounder_left:{uid}` present) lands back here — with the `leaver`
+//            flag set for encouragement copy — until they dismiss the nudge
+//            (`rejoin_nudge_dismissed:{uid}`), after which this card retires to DONE.
 //   first_dig — crewed, no real dig yet. Evidence: crew present,
 //            `first_real_dig_done:{uid}` absent (useRooting stamps it on the first
 //            real submit).
@@ -31,9 +35,45 @@ import {
 	introSeenKey,
 	PRACTICED_KEY,
 	firstRealDigKey,
+	sounderLeftKey,
+	rejoinDismissedKey,
 } from "@/utils/sounderPath";
 
 export type SounderStep = "hook" | "taste" | "join" | "first_dig" | "done";
+
+// The evidence the step is derived from — all booleans (each is "stamp present").
+export interface SounderEvidence {
+	introSeen: boolean;
+	practiced: boolean;
+	firstDig: boolean;
+	hasCrew: boolean;
+	/** `sounder_left:{uid}` present — the player has left a Sounder at least once. */
+	left: boolean;
+	/** `rejoin_nudge_dismissed:{uid}` present — the leaver dismissed the nudge. */
+	rejoinDismissed: boolean;
+}
+
+// The PURE boundary logic, split out so it's unit-testable without the hook's
+// focus/AsyncStorage/RPC plumbing. Checked in terminal-state-dominant order: crew
+// + real dig is DONE no matter the earlier stamps; then crewed-but-no-real-dig;
+// then the crewless taste/join ladder. A LEAVER (practiced + crewless + has-left)
+// lands back on `join` with `leaver:true` until they dismiss the nudge, after
+// which the card retires to DONE. A re-joiner flows through the crewed branches.
+export function deriveSounderStep(e: SounderEvidence): {
+	step: SounderStep;
+	leaver: boolean;
+} {
+	if (e.hasCrew) {
+		return { step: e.firstDig ? "done" : "first_dig", leaver: false };
+	}
+	if (!e.introSeen) return { step: "hook", leaver: false };
+	if (!e.practiced) return { step: "taste", leaver: false };
+	if (e.left) {
+		if (e.rejoinDismissed) return { step: "done", leaver: false };
+		return { step: "join", leaver: true };
+	}
+	return { step: "join", leaver: false };
+}
 
 export interface SounderPath {
 	/** The derived step, or null until the first read lands (no flash pre-confirm). */
@@ -46,6 +86,12 @@ export interface SounderPath {
 	sessionsOnStep: number;
 	/** True once sessionsOnStep crosses SOUNDER_STALL_SESSIONS — show the compact line. */
 	stalled: boolean;
+	/**
+	 * True only on the `join` step reached BECAUSE the player left a Sounder (and
+	 * hasn't dismissed the rejoin nudge). Swaps the join card's copy for
+	 * leaver-specific encouragement + a quiet dismiss control. False everywhere else.
+	 */
+	leaver: boolean;
 	/** Re-read the step (e.g. after a dig / join). */
 	refresh: () => void;
 }
@@ -92,37 +138,44 @@ async function bumpSessionCounter(step: SounderStep): Promise<number> {
 export function useSounderPath(enabled = true): SounderPath {
 	const [step, setStep] = useState<SounderStep | null>(null);
 	const [sessionsOnStep, setSessionsOnStep] = useState(1);
+	const [leaver, setLeaver] = useState(false);
 
 	const derive = useCallback(async () => {
 		const uid = await readUid();
 		if (!uid) {
 			setStep(null);
+			setLeaver(false);
 			return;
 		}
 		// The evidence, read in parallel — the crew RPC is the only network hop.
-		const [introSeen, practiced, firstDig, crewState] = await Promise.all([
-			AsyncStorage.getItem(introSeenKey(uid)),
-			AsyncStorage.getItem(PRACTICED_KEY),
-			AsyncStorage.getItem(firstRealDigKey(uid)),
-			fetchCrewState(),
-		]);
+		const [introSeen, practiced, firstDig, left, rejoinDismissed, crewState] =
+			await Promise.all([
+				AsyncStorage.getItem(introSeenKey(uid)),
+				AsyncStorage.getItem(PRACTICED_KEY),
+				AsyncStorage.getItem(firstRealDigKey(uid)),
+				AsyncStorage.getItem(sounderLeftKey(uid)),
+				AsyncStorage.getItem(rejoinDismissedKey(uid)),
+				fetchCrewState(),
+			]);
 		const hasCrew = !!crewState.crew;
 
-		// Boundaries, checked in terminal-state-dominant order: crew + real dig is
-		// DONE no matter the earlier stamps; then crewed-but-no-real-dig; then the
-		// crewless taste/join ladder.
-		let next: SounderStep;
-		if (hasCrew) {
-			next = firstDig ? "done" : "first_dig";
-		} else if (!introSeen) {
-			next = "hook";
-		} else if (!practiced) {
-			next = "taste";
-		} else {
-			next = "join";
+		// Back in a herd — clear the dismissed stamp so leaving AGAIN later re-arms
+		// the nudge. Fire-and-forget; a miss just lingers a session.
+		if (hasCrew && rejoinDismissed) {
+			AsyncStorage.removeItem(rejoinDismissedKey(uid)).catch(() => {});
 		}
 
+		const { step: next, leaver: isLeaver } = deriveSounderStep({
+			introSeen: !!introSeen,
+			practiced: !!practiced,
+			firstDig: !!firstDig,
+			hasCrew,
+			left: !!left,
+			rejoinDismissed: !!rejoinDismissed,
+		});
+
 		setStep(next);
+		setLeaver(isLeaver);
 		// Count this session on the resolved step (skip DONE — nothing to stall on).
 		if (next === "done") {
 			setSessionsOnStep(1);
@@ -136,7 +189,10 @@ export function useSounderPath(enabled = true): SounderPath {
 			if (!enabled) return;
 			let cancelled = false;
 			derive().catch(() => {
-				if (!cancelled) setStep(null);
+				if (!cancelled) {
+					setStep(null);
+					setLeaver(false);
+				}
 			});
 			return () => {
 				cancelled = true;
@@ -148,6 +204,7 @@ export function useSounderPath(enabled = true): SounderPath {
 		step,
 		sessionsOnStep,
 		stalled: sessionsOnStep >= SOUNDER_STALL_SESSIONS,
+		leaver,
 		refresh: () => {
 			derive().catch(() => {});
 		},

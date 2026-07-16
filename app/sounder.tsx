@@ -107,12 +107,15 @@ export default function SounderScreen() {
 											)}
 										</Text>
 										<Text style={styles.champCount}>
-											{champ.engaged_count}{" "}
 											{champ.engaged_count === 1 ? "pig" : "pigs"} brought in
 										</Text>
 									</View>
+									{/* The big number is the COUNT (the board's one metric),
+									    matching the rows' right-hand numbers — rank is already
+									    told by the kicker. It briefly showed rank ("1") here,
+									    which read as a count in the count position. */}
 									<View style={styles.bigOne}>
-										<Text style={styles.bigOneText}>1</Text>
+										<Text style={styles.bigOneText}>{champ.engaged_count}</Text>
 									</View>
 								</View>
 							</Sticker>

@@ -8,9 +8,11 @@
 //
 // SAME SOURCE OF TRUTH as the dig CTA: the split (PATCH_OPEN_SECS /
 // ROOTING_WINDOW_SECS) and phase math come from constants/dig.ts + utils/rooting
-// — the same functions useFeedingCta reads — so the strip can never drift from
-// the button. Renders for crewed AND crewless players: the crewless see the
-// rhythm too, because the rhythm is what sells the loop.
+// — the same functions useFeedingCta reads. And when the caller passes its
+// shared FeedingCta (the season tab does), the caption reads the CTA's OWN
+// phase + countdown strings, so the two can't even tick a minute apart.
+// Renders for crewed AND crewless players: the crewless see the rhythm too,
+// because the rhythm is what sells the loop.
 
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
@@ -19,19 +21,33 @@ import {
 	phaseClosesCountdown,
 	nextOpenCountdown,
 } from "@/utils/rooting";
-import { PATCH_OPEN_SECS, ROOTING_WINDOW_SECS } from "@/constants/dig";
+import { feedingSchedule, type FeedingSchedule } from "@/utils/feedingConfig";
+import type { FeedingCta } from "../mudwar/useFeedingCta";
 import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
 
-// The open half's share of the whole window — the fill of the "open" segment.
-const OPEN_FRAC = PATCH_OPEN_SECS / ROOTING_WINDOW_SECS;
-
-// The "now" marker's position across the whole 8h window, 0..1.
-function nowFrac(nowMs: number = Date.now()): number {
-	const intoWindow = (nowMs / 1000) % ROOTING_WINDOW_SECS;
-	return Math.max(0, Math.min(1, intoWindow / ROOTING_WINDOW_SECS));
+// The "now" marker's position across the whole window, 0..1. Reads the live
+// server-driven schedule (utils/feedingConfig — same math as utils/rooting's
+// windowIndex), so the pin can't drift off the true boundary, even across a
+// remote schedule shift.
+function nowFrac(
+	nowMs: number = Date.now(),
+	sched: FeedingSchedule = feedingSchedule()
+): number {
+	const intoWindow = (nowMs / 1000 - sched.offsetSecs) % sched.windowSecs;
+	return Math.max(0, Math.min(1, intoWindow / sched.windowSecs));
 }
 
-export function WindowStrip() {
+export function WindowStrip({
+	cta,
+}: {
+	/**
+	 * When provided (the season tab passes its ONE shared feeding CTA), the
+	 * caption's phase + countdown read from cta.phaseOpen / cta.countdown, so the
+	 * strip and every dig button share one clock and can never disagree by a
+	 * ticked minute. Omitted (any other call site) → the standalone computation.
+	 */
+	cta?: FeedingCta;
+}) {
 	// Re-derive on a slow tick so the marker + phase line stay live without a
 	// per-frame cost (matches useFeedingCta's 15s clock cadence).
 	const [tick, setTick] = useState(0);
@@ -40,9 +56,18 @@ export function WindowStrip() {
 		return () => clearInterval(t);
 	}, []);
 
-	const open = patchPhaseOpen();
+	const open = cta ? cta.phaseOpen : patchPhaseOpen();
+	// The open half's share of the window — derived per render from the live
+	// schedule so the bar's split follows a remote geometry change too.
+	const openFrac = feedingSchedule().openSecs / feedingSchedule().windowSecs;
+	// The now-marker keeps its own window math (bar geometry is position, not
+	// countdown) — only the caption line shares the CTA's clock.
 	const marker = nowFrac();
-	const countdown = open ? phaseClosesCountdown() : nextOpenCountdown();
+	const countdown = cta
+		? cta.countdown
+		: open
+			? phaseClosesCountdown()
+			: nextOpenCountdown();
 	const line = open
 		? `the patch is open — closes in ${countdown}`
 		: `he's guarding — opens in ${countdown}`;
@@ -61,7 +86,7 @@ export function WindowStrip() {
 					<View
 						style={[
 							styles.segOpen,
-							{ flex: OPEN_FRAC },
+							{ flex: openFrac },
 							!open && styles.segIdle,
 						]}
 					>
@@ -70,7 +95,7 @@ export function WindowStrip() {
 					<View
 						style={[
 							styles.segGuarded,
-							{ flex: 1 - OPEN_FRAC },
+							{ flex: 1 - openFrac },
 							open && styles.segIdle,
 						]}
 					>

@@ -134,6 +134,11 @@ const CRACK_SPECS: CrackSpec[][] = Array.from({ length: TOTAL }, (_, i) => {
 // read the SAME const so they can never drift and re-introduce the wrap bug.
 const BOARD_BORDER = 2;
 
+// The ONE truffle-reveal overhang: a dug-up truffle sprite fills its cluster's
+// bounding span and spills a uniform 12% beyond it (never per-tile-arbitrary).
+// One rule applied everywhere a truffle surfaces on the board.
+const TRUFFLE_OVERHANG = 1.12;
+
 // The explainer's two-phase-teardown beat — the native Modal drops `visible`
 // then stays mounted this long so its fade-out finishes before unmount (same
 // contract as PopupQueue's POPUP_TEARDOWN_MS).
@@ -957,26 +962,35 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 				<DirtFlecks ref={fleckRef} />
 			</View>
 
-			{/* Whisper + pouch */}
-			{whisper && <Text style={styles.whisper}>{whisper}</Text>}
-			<View style={styles.pouchRow}>
-				<PouchChip
-					icon={
-						<Image
-							source={PATCH_ART.truffle}
-							style={styles.chipIconImg}
-							resizeMode="contain"
+			{/* Whisper + running tally — the LIVE state during the dig. Once the
+			    end card shows it becomes the honest receipt, so these hide (they'd
+			    only duplicate it a beat later). Zero-value chips never render —
+			    "0 motes freed" is noise, not a tally. */}
+			{!end && (
+				<>
+					{whisper && <Text style={styles.whisper}>{whisper}</Text>}
+					<View style={styles.pouchRow}>
+						<PouchChip
+							icon={
+								<Image
+									source={PATCH_ART.truffle}
+									style={styles.chipIconImg}
+									resizeMode="contain"
+								/>
+							}
+							label="pouch"
+							count={truffleCount}
 						/>
-					}
-					label="pouch"
-					count={truffleCount}
-				/>
-				<PouchChip
-					icon={<Glyph name="sparkle" size={16} />}
-					label="motes freed"
-					count={collected.includes("shimmer") ? 1 : 0}
-				/>
-			</View>
+						{collected.includes("shimmer") && (
+							<PouchChip
+								icon={<Glyph name="sparkle" size={16} />}
+								label="motes freed"
+								count={1}
+							/>
+						)}
+					</View>
+				</>
+			)}
 
 			{/* End card */}
 			{end && (
@@ -1148,28 +1162,26 @@ function EndCard({
 					) : (
 						<>
 							{dug > 0 && (
-								<>
-									<EndLine
-										icon={
-											<Image
-												source={PATCH_ART.truffle}
-												style={styles.endIconImg}
-												resizeMode="contain"
-											/>
-										}
-									>
-										{dug} of 2 truffles dug — +{outcome.truffles} golden{" "}
-										{outcome.truffles === 1 ? "truffle" : "truffles"} minted
-									</EndLine>
-									{dug > outcome.truffles && (
-										<Text style={styles.endHint}>
-											(first of the dig mints; the rest still feed the meter)
-										</Text>
-									)}
-								</>
+								<EndLine
+									icon={
+										<Image
+											source={PATCH_ART.truffle}
+											style={styles.endIconImg}
+											resizeMode="contain"
+										/>
+									}
+									sub={
+										dug > outcome.truffles
+											? `${dug} of 2 dug — the first mints, the rest still feed the meter`
+											: `${dug} of 2 dug`
+									}
+								>
+									+{outcome.truffles} golden{" "}
+									{outcome.truffles === 1 ? "truffle" : "truffles"} minted
+								</EndLine>
 							)}
 							<EndLine icon={<Glyph name="heart" size={15} />}>
-								Joy reclaimed: +{outcome.credited}
+								+{outcome.credited} joy reclaimed
 							</EndLine>
 							{outcome.uniqueFound && (
 								<UniqueEndLine found={outcome.uniqueFound} />
@@ -1180,13 +1192,17 @@ function EndCard({
 								</EndLine>
 							)}
 							{outcome.carryNext && (
-								<Text style={styles.carryNext}>{CARRY_NEXT_LINE}</Text>
+								<EndLine icon={<Glyph name="sparkle" size={15} />} accent>
+									{CARRY_NEXT_LINE}
+								</EndLine>
 							)}
 							{outcome.echoNames && outcome.echoNames.length > 0 && (
-								<Text style={styles.gild}>
-									Your truffle gilded — {joinNames(outcome.echoNames)} dug with
-									you.
-								</Text>
+								<EndLine
+									icon={<Glyph name="heart" size={15} />}
+									accent
+								>
+									your truffle gilded — {joinNames(outcome.echoNames)} dug with you.
+								</EndLine>
 							)}
 							{outcome.milestone && (
 								<EndLine icon={<Glyph name="star" size={15} />}>
@@ -1270,17 +1286,32 @@ function NotifyChip() {
 	);
 }
 
+// A single receipt row: a fixed-width icon column on the left, then the outcome
+// line, with an optional quieter subline beneath it (e.g. the first-mint rule).
+// Left-aligned so every row's icon and text stack in the same two columns —
+// the eye scans one ledger, not a centered prose block.
 function EndLine({
 	icon,
 	children,
+	sub,
+	accent,
 }: {
 	icon: React.ReactNode;
 	children: React.ReactNode;
+	sub?: React.ReactNode;
+	// A warm-accent line (the Connect/carry payoff beats) — the row's headline
+	// text takes the accent hand voice instead of plain ink.
+	accent?: boolean;
 }) {
 	return (
 		<View style={styles.endLine}>
-			{icon}
-			<Text style={styles.endLineText}>{children}</Text>
+			<View style={styles.endIconCol}>{icon}</View>
+			<View style={styles.endLineTextCol}>
+				<Text style={[styles.endLineText, accent && styles.endLineAccent]}>
+					{children}
+				</Text>
+				{sub != null && <Text style={styles.endSub}>{sub}</Text>}
+			</View>
 		</View>
 	);
 }
@@ -1294,28 +1325,35 @@ function UniqueEndLine({
 }) {
 	const def = UNIQUE_BY_ID[found.id];
 	const name = def?.name ?? "a relic";
-	const suffix = found.new
-		? " — new entry in the Burrow Book"
-		: ` — found again (×${found.found_count})`;
+	const sub = found.new
+		? "new entry in the Burrow Book"
+		: `found again (×${found.found_count})`;
+	// Its OWN tappable sticker row: the relic art sits in the same icon column as
+	// the other receipt lines, the name reads as the headline, the Burrow-Book
+	// note as the subline, and a chevron on the right says "tap to open" — no
+	// underlined link wrapping across two centered lines with an orphaned icon.
 	return (
 		<Pressable
 			onPress={() => router.push("/dig-collection")}
-			style={styles.endLine}
+			style={({ pressed }) => [styles.discoveryRow, pressed && { opacity: 0.8 }]}
 			hitSlop={6}
 		>
-			{UNIQUE_IMAGES[found.id] ? (
-				<Image
-					source={UNIQUE_IMAGES[found.id]}
-					style={styles.endIconImg}
-					resizeMode="contain"
-				/>
-			) : (
-				<Glyph name="star" size={15} />
-			)}
-			<Text style={[styles.endLineText, styles.uniqueLine]}>
-				{name}
-				{suffix} ›
-			</Text>
+			<View style={styles.endIconCol}>
+				{UNIQUE_IMAGES[found.id] ? (
+					<Image
+						source={UNIQUE_IMAGES[found.id]}
+						style={styles.endIconImg}
+						resizeMode="contain"
+					/>
+				) : (
+					<Glyph name="star" size={15} />
+				)}
+			</View>
+			<View style={styles.endLineTextCol}>
+				<Text style={[styles.endLineText, styles.discoveryName]}>{name}</Text>
+				<Text style={styles.endSub}>{sub}</Text>
+			</View>
+			<Icon name="arrowRight" size={16} color={WHIMSY.accent} />
 		</Pressable>
 	);
 }
@@ -1430,9 +1468,12 @@ function BigTruffle({
 	tile: number;
 	anim: Animated.Value;
 }) {
-	// One dug-up sprite sized to the tile — side = tile * 1.15, clamped to a max
-	// of tile * 1.25 so it reads big but no longer sprawls over neighbor tiles.
-	const side = Math.min(tile * 1.15, tile * 1.25);
+	// ONE sizing rule for every dug-up truffle: the sprite fills its cluster's
+	// own bounding span (box.cols × box.rows in tiles) plus a uniform 12% overhang,
+	// centered on the cluster centroid. A 1-tile find reads ≈1.12× its cell; a
+	// 2-tile cluster ≈2.24× — either way the sprite stays inside its own footprint
+	// plus the same small margin, so reveals never bleed unevenly over neighbors.
+	const side = Math.max(box.cols, box.rows) * tile * TRUFFLE_OVERHANG;
 	const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
 	return (
 		<Animated.View
@@ -1906,50 +1947,65 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		textAlign: "center",
 	},
-	endLines: { alignSelf: "stretch", marginTop: SPACE.sm, gap: SPACE.xs },
+	// The receipt: left-aligned ledger rows, each with a shared icon column so
+	// every line's mark and text align in the same two columns (was a centered
+	// prose stack that read flat).
+	endLines: { alignSelf: "stretch", marginTop: SPACE.md, gap: SPACE.sm },
 	endLine: {
 		flexDirection: "row",
+		alignItems: "flex-start",
+		gap: SPACE.sm,
+	},
+	// Fixed-width icon column — every row's mark lands on the same left edge.
+	endIconCol: {
+		width: 20,
 		alignItems: "center",
 		justifyContent: "center",
-		gap: 6,
+		marginTop: 1,
 	},
+	endLineTextCol: { flex: 1 },
 	endLineText: {
 		...TYPE.bodySm,
 		color: WHIMSY.ink,
-		textAlign: "center",
 	},
-	endIconImg: { width: 16, height: 16 },
-	endHint: {
+	// The warm-accent payoff rows (the carry / echo Connect beats).
+	endLineAccent: { color: WHIMSY.accent, fontFamily: FONTS.bodyExtra },
+	// The quieter subline beneath a row's headline (the first-mint rule, the
+	// "N of 2 dug" tally, the Burrow-Book note).
+	endSub: {
 		...TYPE.hand,
 		fontSize: 12,
 		color: WHIMSY.mute,
-		textAlign: "center",
+		marginTop: 1,
 	},
+	endIconImg: { width: 16, height: 16 },
 	endPractice: {
 		...TYPE.hand,
 		fontSize: 12,
 		color: WHIMSY.mute,
-		textAlign: "center",
+		marginTop: SPACE.xs,
 	},
-	// The named echo gild — the Connect payoff, warm accent hand-text.
-	gild: {
-		...TYPE.hand,
-		fontSize: 13,
-		color: WHIMSY.accent,
-		textAlign: "center",
+	// The Burrow-Book discovery — its OWN tappable sticker row: paper surface,
+	// ink border, small hard shadow, the relic art in the same icon column as the
+	// ledger, its name as the headline, a chevron on the right (was an underlined
+	// link wrapping across two centered lines with an orphaned icon).
+	discoveryRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
+		marginTop: SPACE.xs,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.sm,
+		paddingVertical: SPACE.sm,
+		paddingHorizontal: SPACE.sm,
+		...SHADOW_SM,
 	},
-	// "The One That Got Away" re-buried line — warm hand-text, same voice as gild.
-	carryNext: {
-		...TYPE.hand,
-		fontSize: 13,
+	discoveryName: {
+		...TYPE.cardTitle,
+		fontSize: 15,
 		color: WHIMSY.accent,
-		textAlign: "center",
-	},
-	// The relic end-card line — accent-tinted + underlined to read as a tap into
-	// the Burrow Book.
-	uniqueLine: {
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
 	},
 	endBtn: {
 		marginTop: SPACE.md,

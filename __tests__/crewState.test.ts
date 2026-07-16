@@ -82,7 +82,69 @@ describe("fetchCrewState — nested milestone hoist", () => {
 		expect(s.members).toEqual([]);
 		expect(s.invitesIn).toEqual([]);
 		expect(s.invitesOut).toEqual([]);
+		expect(s.joinRequestsIn).toEqual([]);
+		expect(s.joinRequestsOut).toEqual([]);
 		expect(s.lifetime_finds).toBe(0);
 		expect(s.milestones_claimed).toEqual([]);
+	});
+});
+
+describe("fetchCrewState — knock-to-join arrays", () => {
+	it("maps snake_case join_requests_in/out onto the camelCase CrewState", async () => {
+		mockRpc.mockResolvedValue({
+			crew: { id: "c1", name: "Alpha", leader_id: "u1", is_bot: false },
+			members: [],
+			invitesIn: [],
+			invitesOut: [],
+			join_requests_in: [{ id: "r1", requester_id: "u9", username: "askerA" }],
+			join_requests_out: [],
+		});
+		const s = await fetchCrewState();
+		expect(s.joinRequestsIn).toEqual([
+			{ id: "r1", requester_id: "u9", username: "askerA" },
+		]);
+		expect(s.joinRequestsOut).toEqual([]);
+	});
+
+	it("surfaces the crewless caller's outgoing asks", async () => {
+		mockRpc.mockResolvedValue({
+			crew: null,
+			members: [],
+			invitesIn: [],
+			invitesOut: [],
+			join_requests_in: [],
+			join_requests_out: [{ id: "r2", crew_id: "c7", crew_name: "The Rooters" }],
+		});
+		const s = await fetchCrewState();
+		expect(s.joinRequestsOut).toEqual([
+			{ id: "r2", crew_id: "c7", crew_name: "The Rooters" },
+		]);
+		expect(s.joinRequestsIn).toEqual([]);
+	});
+
+	it("defaults to [] when the server predates the migration (missing fields)", async () => {
+		mockRpc.mockResolvedValue({
+			crew: null,
+			members: [],
+			invitesIn: [],
+			invitesOut: [],
+		});
+		const s = await fetchCrewState();
+		expect(s.joinRequestsIn).toEqual([]);
+		expect(s.joinRequestsOut).toEqual([]);
+	});
+
+	it("coerces a non-array join_requests field to []", async () => {
+		mockRpc.mockResolvedValue({
+			crew: null,
+			members: [],
+			invitesIn: [],
+			invitesOut: [],
+			join_requests_in: "nope",
+			join_requests_out: null,
+		});
+		const s = await fetchCrewState();
+		expect(s.joinRequestsIn).toEqual([]);
+		expect(s.joinRequestsOut).toEqual([]);
 	});
 });

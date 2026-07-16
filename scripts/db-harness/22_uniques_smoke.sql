@@ -50,7 +50,7 @@ DECLARE
 BEGIN
 	-- Pin the clock 1h into the current 8h block → guaranteed OPEN phase.
 	PERFORM set_config('ttp.fake_now',
-		(to_timestamp(floor(extract(epoch FROM now()) / 28800) * 28800)
+		(to_timestamp(floor((extract(epoch FROM now()) - 7200) / 28800) * 28800 + 7200)
 		 + interval '1 hour')::text, true);
 
 	-- ── 1. open_rooting returns unique_id; find a relic board + a plain board ──
@@ -137,7 +137,7 @@ BEGIN
 	<<dupe>>
 	FOR g IN 1..500 LOOP
 		PERFORM set_config('ttp.fake_now',
-			(to_timestamp(floor(extract(epoch FROM now()) / 28800) * 28800)
+			(to_timestamp(floor((extract(epoch FROM now()) - 7200) / 28800) * 28800 + 7200)
 			 + interval '1 hour' + (g * interval '8 hours'))::text, true);
 		PERFORM set_config('smoke.uid', relic_uid::text, true);
 		res := public.open_rooting();

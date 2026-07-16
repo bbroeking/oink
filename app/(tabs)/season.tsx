@@ -42,11 +42,11 @@ import { HungerHero } from "../../components/season1/HungerHero";
 import { WindowStrip } from "../../components/season1/WindowStrip";
 import { SounderHomeCard } from "../../components/season1/SounderHomeCard";
 import { SounderStepCard } from "../../components/season1/SounderStepCard";
+import { useFeedingCta } from "../../components/mudwar/useFeedingCta";
 import { YourTakeStrip, type NextReward } from "../../components/season1/YourTakeStrip";
 import { useSounderPath } from "../../hooks/useSounderPath";
 import {
 	SpotlightProvider,
-	SpotlightTarget,
 	SpotlightOverlay,
 } from "../../components/ui/Spotlight";
 import {
@@ -492,41 +492,6 @@ const collapseStyles = StyleSheet.create({
 	},
 });
 
-// The warm ending beat — the last thing the season scroll shows. Instead of
-// closing on a wall of locked tiers, it teases the next reward waiting up the
-// track (or, once every reward is claimed, a quiet season-promise line). No new
-// concepts: it reuses the already-derived nextReward.
-function SeasonEndBeat({ nextReward }: { nextReward: NextReward | null }) {
-	const line = nextReward
-		? nextReward.ready
-			? `${nextReward.display_label} is ready — claim it up the track ›`
-			: `${nextReward.xpAway} XP more and ${nextReward.display_label} is yours`
-		: "every reward claimed — the herd digs on, and he starves ★";
-	return (
-		<Sticker color="cream" rotate={-0.5} radius={RADII.lg} style={endBeatStyles.wrap}>
-			<Glyph name="gem" size={20} />
-			<Text style={endBeatStyles.line}>{line}</Text>
-		</Sticker>
-	);
-}
-
-const endBeatStyles = StyleSheet.create({
-	wrap: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		paddingHorizontal: SPACE.lg,
-		paddingVertical: SPACE.md,
-		marginTop: SPACE.md,
-	},
-	line: {
-		flex: 1,
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.ink,
-	},
-});
-
 // 2-segment Free / Premium toggle above the pass list. Both segments
 // are always tappable — viewing a locked premium track is the point.
 // Active segment: sun fill + ink outline + whimsy font; inactive: paper.
@@ -610,24 +575,35 @@ function PremiumLockedBanner({ onUnlock }: { onUnlock: () => void }) {
 	);
 }
 
-// The multi-claim shortcut — a sun-yellow sticker bar above the pass track when
-// two or more tiers are ready to claim. One tap sweeps them all; the row itself
-// is the affordance (no separate CTA), sinking into its hard shadow when pressed.
+// The ready-claim shortcut — a sun-yellow sticker bar above the pass track
+// whenever ANY tier is ready to claim (the founder's note: a ready reward
+// announced only at the page bottom is a ready reward nobody sees). One ready
+// tier names its reward ("25 tickles is ready — claim ›"); two or more sweep
+// in one tap. The row itself is the affordance (no separate CTA), sinking into
+// its hard shadow when pressed.
 function ClaimAllBar({
 	count,
+	label,
 	busy,
 	onPress,
 }: {
 	count: number;
+	/** The single ready tier's display label (count === 1 only) — names the reward. */
+	label?: string;
 	busy: boolean;
 	onPress: () => void;
 }) {
+	const single = count === 1;
 	return (
 		<Pressable
 			onPress={busy ? undefined : onPress}
 			disabled={busy}
 			accessibilityRole="button"
-			accessibilityLabel={`Claim all ${count} ready rewards`}
+			accessibilityLabel={
+				single
+					? `Claim ${label ?? "your ready reward"}`
+					: `Claim all ${count} ready rewards`
+			}
 			style={({ pressed }) => [
 				claimAllStyles.bar,
 				pressed && !busy && claimAllStyles.barPressed,
@@ -636,9 +612,11 @@ function ClaimAllBar({
 		>
 			<Glyph name="gift" size={18} />
 			<Text style={claimAllStyles.text}>
-				{count} rewards ready
+				{single ? `${label ?? "a reward"} is ready` : `${count} rewards ready`}
 			</Text>
-			<Text style={claimAllStyles.cta}>{busy ? "claiming…" : "claim all ›"}</Text>
+			<Text style={claimAllStyles.cta}>
+				{busy ? "claiming…" : single ? "claim ›" : "claim all ›"}
+			</Text>
 		</Pressable>
 	);
 }
@@ -969,7 +947,8 @@ export default function SeasonScreen() {
 	const sounderPath = useSounderPath(s1);
 	// The "join a Sounder" coach-mark gate — lights once, on the `join` step, when
 	// the master flag is on (SPOTLIGHT_ENABLED, __DEV__ for now so it ships dark).
-	// It targets the join step card below via a SpotlightTarget wrap.
+	// The step card nests the SpotlightTarget around just its join door; we only
+	// pass `joinSpotlight.show` down as the active gate.
 	const joinSpotlight = useJoinSpotlight(sounderPath.step);
 	// Bumped after every real dig submit — the patch modal never blurs this
 	// screen, so the meter / herd presence / milestones need an explicit tick
@@ -982,6 +961,13 @@ export default function SeasonScreen() {
 		// onboarding card retires this frame instead of on the next focus.
 		sounderPath.refresh();
 	}, [crewHook.refresh, sounderPath.refresh]);
+	// The tab's ONE feeding CTA — every dig surface (the HungerHero banner, the
+	// SounderHomeCard play row, the onboarding step card) reads THIS instance, and
+	// its modal renders exactly once below the cards. Two independent hooks each
+	// held their own dugThisWindow, so digging via one left the other's button
+	// lying until window rollover (the stale-dig-button class, fixed twice on
+	// 2026-07-12) — one instance makes disagreement impossible.
+	const feedingCta = useFeedingCta(handleDug);
 	// Leaving your Sounder now lives in the season-guide dialog's footer.
 	const handleLeave = useCallback(() => {
 		crewHook.leave().catch(() => {});
@@ -1524,10 +1510,14 @@ export default function SeasonScreen() {
 							{/* The value banner — the compressed hero. Its full art +
 							    hunger ladder open in a sheet on tap. Controlled-open so
 							    the YOUR TAKE tickle cell can open this same sheet. */}
+							{/* The banner's dig CTA only exists for crewed players — gate on
+							    the real crew read here (cta.noCrew is lazy: it only flips
+							    after a refused open, so it can't gate the initial render). */}
 							<HungerHero
 								refreshKey={digTick}
 								open={heroOpen}
 								onOpenChange={setHeroOpen}
+								cta={crewHook.crew.crew ? feedingCta : undefined}
 							/>
 
 							<View style={{ marginTop: 8 }}>
@@ -1548,8 +1538,10 @@ export default function SeasonScreen() {
 							</View>
 							{/* The feeding rhythm — the 8h open/guarded timeline with a
 							    "now" marker, above the dig CTA. Renders for crewed AND
-							    crewless: the rhythm sells the loop even before you join. */}
-							<WindowStrip />
+							    crewless: the rhythm sells the loop even before you join.
+							    Fed the shared CTA so its caption and every dig button
+							    tick the same clock. */}
+							<WindowStrip cta={feedingCta} />
 
 							{/* The "do this now" slot. Pre-DONE, the onboarding step card
 							    IS the primary (taste → join → first dig); it retires
@@ -1560,32 +1552,33 @@ export default function SeasonScreen() {
 							    dismissal flag, decides — nobody who finished is nagged,
 							    nobody who hasn't is left without a next move. */}
 							{sounderPath.step && sounderPath.step !== "done" && sounderPath.step !== "hook" ? (
-								// On the `join` step, wrap the step card as the spotlight
-								// target so the coach-mark can cut a hole around the join
-								// affordance. The target only measures while the spotlight
-								// wants to show (active), so it's free otherwise.
-								<SpotlightTarget
-									id={JOIN_SPOTLIGHT_TARGET_ID}
-									active={joinSpotlight.show}
-								>
-									<SounderStepCard
-										step={sounderPath.step}
-										stalled={sounderPath.stalled}
-										crewHook={crewHook}
-										uid={uid}
-										onDug={handleDug}
-										refreshKey={digTick}
-										onAdvance={sounderPath.refresh}
-									/>
-								</SpotlightTarget>
+								// The spotlight target is now nested INSIDE the step card,
+								// wrapping just the join door (not the whole card), so the
+								// coach-mark hole hugs the join affordance. We only pass the
+								// "should show" flag down; the card owns the target wrap.
+								<SounderStepCard
+									step={sounderPath.step}
+									stalled={sounderPath.stalled}
+									leaver={sounderPath.leaver}
+									joinSpotlightActive={joinSpotlight.show}
+									crewHook={crewHook}
+									uid={uid}
+									cta={feedingCta}
+									refreshKey={digTick}
+									onAdvance={sounderPath.refresh}
+								/>
 							) : (
 								<SounderHomeCard
 									crewHook={crewHook}
 									uid={uid}
-									onDug={handleDug}
+									cta={feedingCta}
 									refreshKey={digTick}
 								/>
 							)}
+							{/* The shared dig modal — mounted ONCE for every trigger above
+							    (banner CTA, play row, step card); one session state means
+							    it can never double-present. */}
+							{feedingCta.modal}
 
 							{/* YOUR TAKE (Q3 — "what do I get?"). The personal value
 							    strip: pass tier + next-reward art, the Golden Truffle
@@ -1737,12 +1730,21 @@ export default function SeasonScreen() {
 					{hasPremiumTrack && passTrack === "premium" && !premium && (
 						<PremiumLockedBanner onUnlock={handleUnlockPremium} />
 					)}
-					{/* Multi-claim shortcut — when two or more tiers wait, one tap
-					    claims them all and ends on a single summary beat (instead of
-					    tap→dialog→dismiss, N times). A single ready tier keeps the
-					    per-row Claim button only. */}
-					{readyTiers.length >= 2 && (
-						<ClaimAllBar count={readyTiers.length} busy={busy} onPress={handleClaimAll} />
+					{/* Ready-claim shortcut — surfaces at the TOP of the track whenever
+					    anything is claimable. One ready tier names its reward; two or
+					    more sweep in one tap and end on a single summary beat (instead
+					    of tap→dialog→dismiss, N times). */}
+					{readyTiers.length >= 1 && (
+						<ClaimAllBar
+							count={readyTiers.length}
+							label={
+								readyTiers.length === 1
+									? tiersByNumber[readyTiers[0]]?.[shownTrack]?.display_label
+									: undefined
+							}
+							busy={busy}
+							onPress={handleClaimAll}
+						/>
 					)}
 					<VerticalListPassTrack
 						totalTiers={season.total_tiers}
@@ -1753,14 +1755,6 @@ export default function SeasonScreen() {
 						track={hasPremiumTrack ? passTrack : "free"}
 						premiumUnlocked={premium}
 					/>
-
-					{/* End the scroll on a warm beat, not a lock wall — a small
-					    in-voice sticker that teases the next reward (or, at max, a
-					    quiet season-promise line). Season 1 only; Season 0 ends on
-					    the Alignment placard below. */}
-					{s1 && (
-						<SeasonEndBeat nextReward={nextReward} />
-					)}
 
 					{/* Alignment placard — SEASON 0 ONLY. Alignment isn't a thing
 					    in Season 1 (the mechanics still hum server-side, but the
@@ -1886,13 +1880,7 @@ export default function SeasonScreen() {
 				<SeasonGuideModal
 					visible={guideOpen && !introOpen}
 					onDismiss={dismissGuide}
-						onLeave={crewHook.crew.crew ? handleLeave : undefined}
-						onRename={
-							crewHook.crew.crew && crewHook.crew.crew.leader_id === uid
-								? crewHook.rename
-								: undefined
-						}
-						crewName={crewHook.crew.crew?.name}
+					onLeave={crewHook.crew.crew ? handleLeave : undefined}
 				/>
 			)}
 

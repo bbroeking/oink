@@ -80,3 +80,28 @@ export function joinError(reason?: string): string {
 			return "Couldn't join — try another Sounder.";
 	}
 }
+
+// Knocking on an open Sounder (request_to_join) failure copy — an open Sounder
+// isn't walk-in; you ASK and a member answers.
+export function askError(reason?: string): string {
+	switch (reason) {
+		case "crew_full":
+			return "Just filled up — the herd moves fast.";
+		case "already_in_crew":
+			return "You're already in a Sounder.";
+		case "already_asked":
+			return "You've already knocked here — wait for an answer.";
+		case "too_many_asks":
+			return ASK_LIMIT_HINT;
+		default:
+			return "Couldn't send that ask — try another Sounder.";
+	}
+}
+
+// How many doors a crewless pig may knock on at once (mirrors the server cap).
+export const MAX_OPEN_ASKS = 3;
+
+// Shown once the caller has MAX_OPEN_ASKS knocks out — the remaining ask buttons
+// go quiet and this explains why, in the game's voice.
+export const ASK_LIMIT_HINT =
+	"three doors knocked — wait for an answer, or take one back.";

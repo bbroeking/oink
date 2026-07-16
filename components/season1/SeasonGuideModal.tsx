@@ -13,7 +13,6 @@ import {
 	Modal,
 	View,
 	Text,
-	TextInput,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -45,7 +44,7 @@ const STEPS: { g: GlyphName; title: string; line: string }[] = [
 	{
 		g: "friends",
 		title: "Join a Sounder",
-		line: `${CREW_CAP_WORD} snouts, one banner. Slip into an open Sounder, answer a friend's invite, or found your own — the dig needs a herd.`,
+		line: `${CREW_CAP_WORD} snouts, one banner. Ask into an open Sounder, answer a friend's invite, or found your own — the dig needs a herd.`,
 	},
 	{
 		g: "gem",
@@ -73,49 +72,17 @@ export function SeasonGuideModal({
 	visible,
 	onDismiss,
 	onLeave,
-	onRename,
-	crewName,
 }: {
 	visible: boolean;
 	onDismiss: () => void;
 	/** When set (caller is in a Sounder), a quiet leave action shows in the
 	    footer with a two-tap Alert confirm. */
 	onLeave?: () => void;
-	/** When set (caller LEADS the Sounder), a quiet rename affordance shows in
-	    the footer. Resolves { ok } so we can hold the row open on failure. */
-	onRename?: (name: string) => Promise<{ ok: boolean }>;
-	/** Current Sounder name — prefills the rename input. */
-	crewName?: string;
 }) {
 	const meter = useHungerMeter();
 
-	// Inline rename row (leader only) — collapsed until the link is tapped.
-	const [renaming, setRenaming] = useState(false);
-	const [renameText, setRenameText] = useState(crewName ?? "");
-	const [renameBusy, setRenameBusy] = useState(false);
-	const [renameNote, setRenameNote] = useState<string | null>(null);
 	// Two-tap leave confirm — an in-world ConfirmDialog, not a native Alert.
 	const [leaveConfirm, setLeaveConfirm] = useState(false);
-
-	const openRename = () => {
-		setRenameText(crewName ?? "");
-		setRenameNote(null);
-		setRenaming(true);
-	};
-
-	const saveRename = async () => {
-		const trimmed = renameText.trim();
-		if (!trimmed || renameBusy || !onRename) return;
-		setRenameBusy(true);
-		setRenameNote(null);
-		const r = await onRename(trimmed);
-		setRenameBusy(false);
-		if (r.ok) {
-			setRenaming(false);
-		} else {
-			setRenameNote("that name didn't stick — try another, short and snappy");
-		}
-	};
 
 	const confirmLeave = () => setLeaveConfirm(true);
 	const doLeave = () => {
@@ -189,37 +156,6 @@ export function SeasonGuideModal({
 					<Button size="md" variant="primary" full onPress={onDismiss}>
 						To the patch
 					</Button>
-					{onRename &&
-						(renaming ? (
-							<View style={styles.renameRow}>
-								<TextInput
-									value={renameText}
-									onChangeText={setRenameText}
-									maxLength={24}
-									placeholder="name your Sounder"
-									placeholderTextColor={WHIMSY.muteSoft}
-									style={styles.renameInput}
-									returnKeyType="done"
-									onSubmitEditing={saveRename}
-									autoFocus
-								/>
-								<Button
-									size="sm"
-									variant="primary"
-									onPress={saveRename}
-									disabled={renameBusy || !renameText.trim()}
-								>
-									{renameBusy ? "…" : "Save"}
-								</Button>
-							</View>
-						) : (
-							<Pressable onPress={openRename} hitSlop={8} style={({ pressed }) => [styles.renameLinkRow, pressed && { opacity: 0.6 }]}>
-								<Text style={styles.renameLink}>rename your Sounder ›</Text>
-							</Pressable>
-						))}
-					{onRename && renaming && !!renameNote && (
-						<Text style={styles.renameNote}>{renameNote}</Text>
-					)}
 					{onLeave && (
 						<Pressable onPress={confirmLeave} hitSlop={8} style={({ pressed }) => [styles.leaveRow, pressed && { opacity: 0.6 }]}>
 							<Text style={styles.leaveLink}>leave your Sounder ›</Text>
@@ -315,39 +251,5 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.hand,
 		color: WHIMSY.mute,
 		textDecorationLine: "underline",
-	},
-	// Leader-only rename affordance — the collapsed link matches leaveLink;
-	// the expanded row pairs a name field with a small Save button.
-	renameLinkRow: { alignSelf: "center", marginTop: SPACE.sm, paddingVertical: 4 },
-	renameLink: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.mute,
-		textDecorationLine: "underline",
-	},
-	renameRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.sm,
-		marginTop: SPACE.sm,
-	},
-	renameInput: {
-		flex: 1,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		backgroundColor: WHIMSY.cream,
-		paddingHorizontal: SPACE.md,
-		paddingVertical: 8,
-		fontFamily: FONTS.body,
-		fontSize: 15,
-		color: WHIMSY.ink,
-	},
-	renameNote: {
-		...TYPE.hand,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textAlign: "center",
-		marginTop: SPACE.xs,
 	},
 });

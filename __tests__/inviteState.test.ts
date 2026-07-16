@@ -10,6 +10,9 @@ import {
 	createError,
 	acceptInviteResult,
 	joinError,
+	askError,
+	ASK_LIMIT_HINT,
+	MAX_OPEN_ASKS,
 } from "../components/sounder/inviteState";
 import { CREW_CAP } from "../constants/crews";
 
@@ -107,5 +110,23 @@ describe("joinError", () => {
 	});
 	it("falls back for an unknown reason", () => {
 		expect(joinError(undefined)).toBe("Couldn't join — try another Sounder.");
+	});
+});
+
+// ── askError (knock-to-join) ─────────────────────────────────────────────────
+
+describe("askError", () => {
+	it("distinguishes the knock-specific refusals", () => {
+		expect(askError("crew_full")).toMatch(/filled up/i);
+		expect(askError("already_in_crew")).toMatch(/already in a Sounder/i);
+		expect(askError("already_asked")).toMatch(/already knocked/i);
+		expect(askError("too_many_asks")).toBe(ASK_LIMIT_HINT);
+	});
+	it("falls back for an unknown reason", () => {
+		expect(askError(undefined)).toBe("Couldn't send that ask — try another Sounder.");
+	});
+	it("caps open asks at three", () => {
+		expect(MAX_OPEN_ASKS).toBe(3);
+		expect(ASK_LIMIT_HINT).toMatch(/three doors knocked/i);
 	});
 });
