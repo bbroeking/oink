@@ -704,10 +704,22 @@ export default function ShopScreen() {
 	);
 
 	useEffect(() => {
-		if (resetsIn <= 0) return;
+		if (resetsIn <= 0) {
+			// Countdown parked at 0 — the shop rolled over UTC midnight while
+			// this screen stayed open. Refetch today's shop + reseed the timer
+			// instead of freezing on yesterday's items. The 2s delay guards
+			// against a tight reload loop if the server is still reporting 0
+			// right at the boundary (clock skew): worst case we gently re-poll
+			// every 2s until it ticks past midnight, then resetsIn goes
+			// positive and this settles back into the 1s countdown.
+			const t = setTimeout(() => {
+				void load();
+			}, 2000);
+			return () => clearTimeout(t);
+		}
 		const t = setInterval(() => setResetsIn((s) => Math.max(0, s - 1)), 1000);
 		return () => clearInterval(t);
-	}, [resetsIn]);
+	}, [resetsIn, load]);
 
 	const handleBuy = async (hat: HatRow) => {
 		if (busyId) return;

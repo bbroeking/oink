@@ -2000,7 +2000,7 @@ function ClaimRewardDialog({
 					<View style={rewardStyles.actions}>
 						{isWearable && (
 							<Button size="md" variant="primary" onPress={onShow}>
-								Show in wardrobe
+								Show in closet
 							</Button>
 						)}
 						<Pressable

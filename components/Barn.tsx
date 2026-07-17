@@ -646,7 +646,11 @@ export default function Barn() {
 			} = await supabase.auth.getUser();
 			if (!user) throw new Error("User not logged in");
 
-			const res = await rpc("update_profile_and_item_count", {
+			const res = await rpc<{
+				balance: number;
+				lucky_won: number | null;
+				global_counter: number;
+			}>("update_profile_and_item_count", {
 				uid: user.id,
 			});
 			// rpc() returns null when the server errored (already logged to
@@ -655,6 +659,17 @@ export default function Barn() {
 			if (res == null) {
 				showToast("That tickle didn't take", "Try again in a moment.");
 				return;
+			}
+
+			// Daily lucky number: the server rolls a shared counter and, when
+			// this tickle lands on today's lucky number, pays +5 tickles
+			// (counter + 5, RPC-side). Distinct from the client-rolled Lucky
+			// Pig burst — this is the once-a-day herd-wide jackpot. Celebrate it.
+			if (res.lucky_won != null) {
+				showToast(
+					"You hit today's lucky number!",
+					`Lucky #${res.lucky_won} — +5 tickles land in your bank.`
+				);
 			}
 
 			// If this tickle landed inside the lucky window AND rolled
@@ -835,7 +850,12 @@ export default function Barn() {
 					<PaperTicket
 						label="READY TO TICKLE"
 						value={`${stats.itemCount}`}
-						subValue={`/ ${stats.cap}`}
+						// Over-cap banks (trough/event grants) show e.g. 28 — pairing
+						// it with "/ 25" reads as an impossible fraction. Say "banked"
+						// instead so the surplus reads as a bonus, not a bug.
+						subValue={
+							stats.itemCount > stats.cap ? "banked" : `/ ${stats.cap}`
+						}
 						tapeColor="rose"
 						rotate={2.5}
 						chipGlyph="sparkle"
