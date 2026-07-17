@@ -29,6 +29,7 @@ import { Sticker } from "./ui/Sticker";
 import { BarnVisitModal } from "./BarnVisitModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { RitualPicker } from "./RitualPicker";
+import { useUnmanagedModalHold } from "./ui/PopupQueue";
 import { useCrew } from "@/hooks/useCrew";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { AlignmentBar } from "./ui/AlignmentBar";
@@ -146,6 +147,14 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	const isCrewmate =
 		!!targetUserId &&
 		myCrewState.members.some((m) => m.user_id === targetUserId);
+	// This sheet is a native Modal outside the popup queue, and it nests its own
+	// Block/Report ConfirmDialogs + BarnVisitModal (kept nested on purpose — iOS
+	// presentation ordering). Hold the queue while it's up so a foreground poll
+	// (schism/finale/achievements on AppState "active") can't present a queued
+	// popup over it — the #50152 wedge (issue #4). The outer hold covers the
+	// nested modals too; closing (targetUserId → null) lifts it, so a queued
+	// achievement re-admits after the handoff gap.
+	useUnmanagedModalHold(!!targetUserId);
 	// Alignment isn't a thing in Season 1 — its bar retires with S0.
 	const s1 = useFeatureFlag("world_boss") || __DEV__;
 	const [stats, setStats] = useState<UserStats | null>(null);

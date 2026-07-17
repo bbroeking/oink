@@ -24,7 +24,7 @@
 | # | Spec | Source | Status |
 |---|------|--------|--------|
 | 01 | Shop preview freeze + Closet/Visit frame sync | new bug (founder) | done (2026-07-16, 586 tests green) |
-| 02 | Popup queue cluster: BuriedTruffleSheet null-block + unenrolled sheets | GH #3 + #4 | pending |
+| 02 | Popup queue cluster: BuriedTruffleSheet null-block + unenrolled sheets | GH #3 + #4 | done (2026-07-16, 589 tests green) |
 | 03 | Offline soft-locks: home_stats retry + saddling-up timeout | GH #5 | pending |
 | 04 | Trough nudges: supersede + tap-through | GH #10 | pending |
 | 05 | Reinstall flow: silent first-session popups + veteran storybook re-run | GH #11 | pending |

@@ -29,6 +29,7 @@ import { RitualIconWell } from "./ui/RitualIconWell";
 import { SectionHeader } from "./ui/SectionHeader";
 import { EmptyState } from "./ui/EmptyState";
 import { CleanseModal } from "./CleanseModal";
+import { useUnmanagedModalHold } from "./ui/PopupQueue";
 import { useActiveEffectsContext } from "../hooks/ActiveEffectsProvider";
 import { effectMeta, formatLeft, type Effect } from "../utils/activeEffects";
 import {
@@ -51,6 +52,14 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 	// drives the sheet animation below; it no longer gates the data fetch.
 	const { blessings, curses, cleanse } = useActiveEffectsContext();
 	const [cleanseOpen, setCleanseOpen] = useState(false);
+
+	// This native Modal lives outside the popup queue (it's opened from the
+	// active-effects chip, not arbitrated as a slot). Hold the queue while it's
+	// open so a foreground poll (schism/finale/achievements re-firing on AppState
+	// "active") can't present a queued popup OVER it — the #50152 wedge (issue #4).
+	// The hold drains anything already presented and blocks admission; closing
+	// lifts it, so queued popups re-admit after the handoff gap.
+	useUnmanagedModalHold(open);
 
 	// Sheet animation. One Animated.Value drives backdrop opacity AND
 	// sheet translateY in lockstep, so the dim doesn't slide with the

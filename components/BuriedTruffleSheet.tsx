@@ -44,6 +44,9 @@ export function BuriedTruffleSheet({ open, visible, onClose, status, onChanged }
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
 	const [confirmReclaim, setConfirmReclaim] = useState(false);
+	// Fires onClose exactly once per open-session so the two-phase teardown
+	// below isn't re-triggered every render while `open` lingers through the beat.
+	const closingRef = useRef(false);
 
 	useEffect(() => {
 		if (!open) return;
@@ -52,6 +55,25 @@ export function BuriedTruffleSheet({ open, visible, onClose, status, onChanged }
 		anim.setValue(0);
 		Animated.timing(anim, { toValue: 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
 	}, [open, anim]);
+
+	// The slot (id 'truffleSheet', pri 5 — highest in the app) may never sit
+	// PRESENTED while this sheet renders null: that wedges the queue and silently
+	// suppresses every other popup for the session (issue #3). If we're open but
+	// there's nothing buried to show — reclaimed / fully dug elsewhere, or a
+	// fail-soft truffle_status fetch (useBuriedTruffle → buried:false on RPC
+	// failure) — close quietly through the normal onClose so the slot releases.
+	// onClose is two-phase (release() now, clears `open` a POPUP_TEARDOWN_MS beat
+	// later); we DON'T cut `open` here same-frame. The ref latches it to one fire.
+	useEffect(() => {
+		if (!open) {
+			closingRef.current = false;
+			return;
+		}
+		if (!status?.buried && !closingRef.current) {
+			closingRef.current = true;
+			onClose();
+		}
+	}, [open, status?.buried, onClose]);
 
 	if (!open || !status?.buried) return null;
 

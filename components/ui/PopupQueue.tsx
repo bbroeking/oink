@@ -279,6 +279,18 @@ export function usePopupHold(active: boolean) {
 	}, [ctx, active]);
 }
 
+// One-liner for an UNMANAGED native Modal — a sheet rendered outside the queue
+// (UserSheet, HoofprintsSheet, and the other ~10 tab sheets) that still can't
+// coexist with a queued popup on iOS (the #50152 invisible-modal wedge). While
+// `open`, the queue admits nothing and drains anything presented — exactly the
+// mutual exclusion we want — and on close the hold lifts so queued popups
+// re-admit after the handoff gap. Mechanically a usePopupHold; named for intent
+// so future unmanaged sheets adopt the latch in one line instead of being
+// converted to slots.
+export function useUnmanagedModalHold(open: boolean) {
+	usePopupHold(open);
+}
+
 export function usePopupSlot(id: string, want: boolean, priority = 100) {
 	const ctx = useContext(PopupCtx);
 
