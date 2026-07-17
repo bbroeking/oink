@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>09 — text-grid share</title>
+<style>
+  :root{
+    --ink:#2a1f15;--paper:#fffaf0;--cream:#fbeee2;--cream2:#f6e6d4;--rose:#ffd6dc;
+    --rose-deep:#f8a8b3;--sky:#c8e3f0;--sage:#c9dec1;--sun:#ffd87a;--lilac:#d6c8f0;
+    --lilac-deep:#a89bff;--peach:#ffc8a8;--accent:#c25a3f;--mute:rgba(40,30,20,.6);
+    --display:ui-rounded,"SF Pro Rounded","Fredoka","Nunito",system-ui,sans-serif;
+    --body:"Nunito",ui-rounded,-apple-system,system-ui,sans-serif;
+    --hand:"Bradley Hand","Patrick Hand","Comic Sans MS",cursive;
+    --imsg:#0b93f6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(circle at 12% 8%,rgba(255,214,220,.4),transparent 34%),radial-gradient(circle at 90% 92%,rgba(214,200,240,.32),transparent 40%),var(--paper);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;padding:26px 18px 80px;overflow-x:hidden}
+  .top{max-width:900px;margin:0 auto 8px}
+  a.back{font-family:var(--hand);font-size:15px;color:var(--accent);text-decoration:none;border-bottom:1.5px solid var(--rose-deep)}
+  .kicker{font-family:var(--hand);font-size:15px;color:var(--accent);margin:18px 0 2px}
+  h1{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.3px}
+  .lede{font-size:14px;line-height:1.5;color:#4a3b2c;max-width:660px;margin-top:8px}
+  .stage{max-width:900px;margin:26px auto 0;display:flex;flex-wrap:wrap;gap:34px 44px;justify-content:center;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center;gap:12px;width:340px;max-width:100%}
+  .caplabel{font-family:var(--display);font-weight:800;font-size:14px;padding:5px 14px;border:2.5px solid var(--ink);border-radius:999px;box-shadow:2px 2px 0 var(--ink);background:var(--sage)}
+  .frame{width:330px;max-width:100%;border:3px solid var(--ink);border-radius:36px;background:var(--cream);box-shadow:8px 8px 0 var(--ink);padding:14px 12px 20px;position:relative}
+  .notch{width:96px;height:7px;background:var(--ink);border-radius:99px;margin:2px auto 12px;opacity:.85}
+  /* receipt */
+  .receipt{background:#fffdf7;border:2.5px solid var(--ink);border-radius:16px;box-shadow:4px 4px 0 var(--ink);padding:15px 15px 17px;transform:rotate(-.4deg);position:relative}
+  .receipt::before,.receipt::after{content:"";position:absolute;left:0;right:0;height:9px;background:radial-gradient(circle at 6px -1px,transparent 6px,#fffdf7 6px);background-size:16px 9px}
+  .receipt::before{top:-9px;transform:scaleY(-1)}
+  .receipt::after{bottom:-9px}
+  .rk{font-family:var(--display);font-weight:800;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mute);text-align:center}
+  .rtitle{font-family:var(--display);font-weight:800;font-size:19px;text-align:center;margin:2px 0 4px}
+  .rfeed{font-family:var(--hand);font-size:13px;color:var(--accent);text-align:center;margin-bottom:10px}
+  .rrule{border-top:2px dashed var(--ink);opacity:.35;margin:8px 0}
+  .lrow{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:5px 0}
+  .lrow .lbl{display:flex;align-items:center;gap:8px}
+  .lrow .dot{width:16px;height:16px;border:2px solid var(--ink);border-radius:5px}
+  .lrow .val{font-family:var(--display);font-weight:800}
+  .d-mud{background:#cdbfae}.d-shroom{background:#e0b98f}.d-spark{background:var(--sun)}.d-gold{background:var(--slop,#F5C44A)}
+  .rtot{display:flex;justify-content:space-between;font-family:var(--display);font-weight:800;font-size:15px;margin-top:6px}
+  .sharebtn{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;font-family:var(--display);font-weight:800;font-size:15px;padding:11px;border:2.5px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);background:var(--sun);margin-top:14px}
+  .sharehint{font-family:var(--hand);font-size:12px;color:var(--mute);text-align:center;margin-top:6px}
+  /* imessage */
+  .msgframe{width:330px;max-width:100%;border:3px solid var(--ink);border-radius:36px;background:#fff;box-shadow:8px 8px 0 var(--ink);padding:14px 12px 20px}
+  .msghead{text-align:center;font-family:var(--body);font-weight:800;font-size:13px;color:var(--mute);border-bottom:1.5px solid #eee;padding-bottom:9px;margin-bottom:14px}
+  .bubblewrap{display:flex;justify-content:flex-end;padding:2px 4px 0}
+  .bubble{background:var(--imsg);color:#fff;border-radius:20px;border-bottom-right-radius:6px;padding:11px 14px;max-width:250px;font-family:-apple-system,"Nunito",system-ui,sans-serif;font-size:15px;line-height:1.35;position:relative}
+  .bubble .link{color:#dff0ff;text-decoration:underline}
+  .grid{font-size:19px;letter-spacing:2px;line-height:1.5;margin:2px 0}
+  .sent{text-align:right;font-size:11px;color:var(--mute);margin-top:5px;padding-right:6px;font-family:-apple-system,system-ui}
+  .note{width:300px;max-width:100%;font-family:var(--hand);font-size:14px;line-height:1.45;color:var(--ink);background:#fff;border:2.5px dashed var(--ink);border-radius:14px;padding:11px 13px;box-shadow:3px 3px 0 rgba(42,31,21,.14)}
+  .note b{color:var(--accent)}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="index.html">&lsaquo; back to the queue</a></div>
+  <div class="kicker">&#9733; spec 09</div>
+  <h1>text-grid share on the dig receipt</h1>
+  <p class="lede">One <b>share your dig</b> button on the honest receipt hands a compact, spoiler-light text grid to the native share sheet (with a copy fallback). The grid shows only the player's own dug tiles &mdash; a shape emoji per find class &mdash; never undug coordinates. Emoji live in the outbound message text, never in the app's chrome.</p>
+
+  <div class="stage">
+
+    <!-- receipt -->
+    <div class="col">
+      <div class="caplabel">the receipt</div>
+      <div class="frame">
+        <div class="notch"></div>
+        <div class="receipt">
+          <div class="rk">&#9733; the honest receipt</div>
+          <div class="rtitle">that was a good dig</div>
+          <div class="rfeed">feeding #402</div>
+          <div class="rrule"></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-shroom"></span>truffles unearthed</span><span class="val">2</span></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-spark"></span>sparks of luck</span><span class="val">2</span></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-gold" style="background:#F5C44A"></span>golden truffle</span><span class="val">1</span></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-mud"></span>just mud</span><span class="val">14</span></div>
+          <div class="rrule"></div>
+          <div class="rtot"><span>19 digs</span><span>4 finds</span></div>
+          <div class="sharebtn">&#9733; share your dig</div>
+          <div class="sharehint">long-press to copy instead</div>
+        </div>
+      </div>
+      <div class="note">shared <code>Button</code> primitive, tokens only &mdash; <b>added under the receipt</b>, the existing ledger is not reflowed.</div>
+    </div>
+
+    <!-- imessage -->
+    <div class="col">
+      <div class="caplabel">what your friend sees</div>
+      <div class="msgframe">
+        <div class="msghead">Maple &middot; iMessage</div>
+        <div class="bubblewrap">
+          <div class="bubble">
+            tickle the pig &middot; feeding #402
+            <div class="grid">&#x1F7EB;&#x1F7EB;&#x2728;&#x1F344;&#x1F7EB;</div>
+            <div class="grid">&#x2728;&#x1F7EB;&#x1F451;&#x1F7EB;&#x1F7EB;</div>
+            4 finds in 19 digs<br />
+            <span class="link">ticklethepig.com</span>
+          </div>
+        </div>
+        <div class="sent">Delivered</div>
+      </div>
+      <div class="note">the exact block from the spec: header line, the dug-tile grid, the <b>comparable count</b>, and the footer link &mdash; a 30-second session that's worth texting.</div>
+    </div>
+
+  </div>
+</body>
+</html>

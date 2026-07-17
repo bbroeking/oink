@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>01 — shop preview freeze</title>
+<style>
+  :root{
+    --ink:#2a1f15;--paper:#fffaf0;--cream:#fbeee2;--cream2:#f6e6d4;--rose:#ffd6dc;
+    --rose-deep:#f8a8b3;--sky:#c8e3f0;--sage:#c9dec1;--sun:#ffd87a;--lilac:#d6c8f0;
+    --lilac-deep:#a89bff;--peach:#ffc8a8;--accent:#c25a3f;--mute:rgba(40,30,20,.6);
+    --display:ui-rounded,"SF Pro Rounded","Fredoka","Nunito",system-ui,sans-serif;
+    --body:"Nunito",ui-rounded,-apple-system,system-ui,sans-serif;
+    --hand:"Bradley Hand","Patrick Hand","Comic Sans MS",cursive;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(circle at 12% 8%,rgba(255,214,220,.4),transparent 34%),radial-gradient(circle at 90% 92%,rgba(214,200,240,.32),transparent 40%),var(--paper);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;padding:26px 18px 80px;overflow-x:hidden}
+  .top{max-width:900px;margin:0 auto 8px}
+  a.back{font-family:var(--hand);font-size:15px;color:var(--accent);text-decoration:none;border-bottom:1.5px solid var(--rose-deep)}
+  .kicker{font-family:var(--hand);font-size:15px;color:var(--accent);margin:18px 0 2px}
+  h1{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.3px}
+  .lede{font-size:14px;line-height:1.5;color:#4a3b2c;max-width:640px;margin-top:8px}
+  .stage{max-width:900px;margin:26px auto 0;display:flex;flex-wrap:wrap;gap:34px 40px;justify-content:center;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center;gap:12px;width:340px;max-width:100%}
+  .caplabel{font-family:var(--display);font-weight:800;font-size:14px;padding:5px 14px;border:2.5px solid var(--ink);border-radius:999px;box-shadow:2px 2px 0 var(--ink)}
+  .caplabel.bad{background:var(--rose-deep)}
+  .caplabel.good{background:var(--sage)}
+  /* phone frame */
+  .frame{width:330px;max-width:100%;border:3px solid var(--ink);border-radius:36px;background:var(--cream);box-shadow:8px 8px 0 var(--ink);padding:14px 12px 20px;position:relative}
+  .notch{width:96px;height:7px;background:var(--ink);border-radius:99px;margin:2px auto 12px;opacity:.85}
+  /* item preview modal */
+  .modal{background:#fff;border:2.5px solid var(--ink);border-radius:22px;box-shadow:4px 4px 0 var(--ink);padding:14px 14px 16px;transform:rotate(-.5deg)}
+  .band{display:inline-flex;align-items:center;gap:6px;font-family:var(--display);font-weight:800;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink);background:var(--lilac);border:2px solid var(--ink);border-radius:999px;padding:3px 10px;box-shadow:2px 2px 0 var(--ink)}
+  .iname{font-family:var(--display);font-weight:800;font-size:20px;margin:9px 0 2px}
+  .idesc{font-family:var(--hand);font-size:14px;color:var(--mute)}
+  .pigpanel{margin:12px 0;height:196px;border:2.5px solid var(--ink);border-radius:16px;background:linear-gradient(#efe9ff,#cfc4ff);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+  .buyrow{display:flex;gap:9px;align-items:center;margin-top:4px}
+  .btn{flex:1;text-align:center;font-family:var(--display);font-weight:800;font-size:15px;padding:10px;border:2.5px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);background:var(--sun)}
+  .btn.ghost{flex:0 0 auto;background:#fff;padding:10px 14px}
+  /* motion wobble marks for the bad frame */
+  .wob{position:absolute;color:var(--lilac-deep);font-size:22px;opacity:.75;font-family:var(--body)}
+  /* margin notes */
+  .note{width:300px;max-width:100%;font-family:var(--hand);font-size:14px;line-height:1.45;color:var(--ink);background:#fff;border:2.5px dashed var(--ink);border-radius:14px;padding:11px 13px;box-shadow:3px 3px 0 rgba(42,31,21,.14)}
+  .note b{color:var(--accent)}
+  .sidecard{max-width:660px;margin:34px auto 0;background:var(--cream);border:2.5px solid var(--ink);border-radius:18px;box-shadow:5px 5px 0 var(--ink);padding:16px 18px;transform:rotate(.4deg)}
+  .sidecard h3{font-family:var(--display);font-weight:800;font-size:16px;margin-bottom:6px}
+  .sidecard p{font-size:14px;line-height:1.55;color:#4a3b2c}
+  .sidecard .hand{font-family:var(--hand);color:var(--accent)}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="index.html">&lsaquo; back to the queue</a></div>
+  <div class="kicker">&#9733; spec 01</div>
+  <h1>shop preview freeze &middot; Closet / Visit sync</h1>
+  <p class="lede">The preview pig kept playing its idle loop while the equipped item stayed pinned to frame&nbsp;0's anchor &mdash; so the hat visibly slid down the face. In the shop the pig <b>freezes</b> at the rest pose (the exact frame the placement studio tunes against); the living mood surfaces get frame-sync instead.</p>
+
+  <div class="stage">
+
+    <!-- BEFORE -->
+    <div class="col">
+      <div class="caplabel bad">before &middot; the bug</div>
+      <div class="frame">
+        <div class="notch"></div>
+        <div class="modal">
+          <span class="band">&#9670; epic</span>
+          <div class="iname">Party Hat</div>
+          <div class="idesc">a pointy little celebration</div>
+          <div class="pigpanel">
+            <span class="wob" style="left:26px;top:34px">&#8620;</span>
+            <span class="wob" style="right:26px;top:44px">&#8621;</span>
+            <svg viewBox="0 0 170 170" width="150" height="150" aria-hidden="true">
+              <!-- hat pinned to frame-0 anchor (does NOT move) -->
+              <g>
+                <path d="M85 40 L107 84 L63 84 Z" fill="#a89bff" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M63 84 Q85 92 107 84" fill="#d6c8f0" stroke="#2a1f15" stroke-width="3"/>
+                <path d="M79 60 L91 60" stroke="#ffd87a" stroke-width="4"/>
+                <circle cx="85" cy="42" r="6" fill="#ffd87a" stroke="#2a1f15" stroke-width="2.5"/>
+              </g>
+              <!-- pig lifted by the idle bounce -> head no longer under the hat -->
+              <g transform="translate(0,-18) rotate(-3 85 96)">
+                <path d="M50 58 Q38 26 66 48 Z" fill="#f8a8b3" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M120 58 Q132 26 104 48 Z" fill="#f8a8b3" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"/>
+                <ellipse cx="85" cy="96" rx="55" ry="48" fill="#ffd6dc" stroke="#2a1f15" stroke-width="3.5"/>
+                <circle cx="52" cy="108" r="9" fill="#f8a8b3" opacity=".55"/>
+                <circle cx="118" cy="108" r="9" fill="#f8a8b3" opacity=".55"/>
+                <circle cx="68" cy="86" r="5.5" fill="#2a1f15"/>
+                <circle cx="102" cy="86" r="5.5" fill="#2a1f15"/>
+                <ellipse cx="85" cy="112" rx="24" ry="17" fill="#ffc8a8" stroke="#2a1f15" stroke-width="3"/>
+                <ellipse cx="76" cy="112" rx="4" ry="7" fill="#2a1f15"/>
+                <ellipse cx="94" cy="112" rx="4" ry="7" fill="#2a1f15"/>
+              </g>
+            </svg>
+          </div>
+          <div class="buyrow"><div class="btn">Equip</div><div class="btn ghost">240</div></div>
+        </div>
+      </div>
+      <div class="note">the pig keeps <b>breathing</b>, but the hat is stuck at frame&nbsp;0 &mdash; it slides down onto the eyes every idle bounce.</div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="col">
+      <div class="caplabel good">after &middot; frozen</div>
+      <div class="frame">
+        <div class="notch"></div>
+        <div class="modal">
+          <span class="band">&#9670; epic</span>
+          <div class="iname">Party Hat</div>
+          <div class="idesc">a pointy little celebration</div>
+          <div class="pigpanel">
+            <svg viewBox="0 0 170 170" width="150" height="150" aria-hidden="true">
+              <path d="M50 58 Q38 26 66 48 Z" fill="#f8a8b3" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M120 58 Q132 26 104 48 Z" fill="#f8a8b3" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"/>
+              <ellipse cx="85" cy="96" rx="55" ry="48" fill="#ffd6dc" stroke="#2a1f15" stroke-width="3.5"/>
+              <circle cx="52" cy="108" r="9" fill="#f8a8b3" opacity=".55"/>
+              <circle cx="118" cy="108" r="9" fill="#f8a8b3" opacity=".55"/>
+              <circle cx="68" cy="86" r="5.5" fill="#2a1f15"/>
+              <circle cx="102" cy="86" r="5.5" fill="#2a1f15"/>
+              <ellipse cx="85" cy="112" rx="24" ry="17" fill="#ffc8a8" stroke="#2a1f15" stroke-width="3"/>
+              <ellipse cx="76" cy="112" rx="4" ry="7" fill="#2a1f15"/>
+              <ellipse cx="94" cy="112" rx="4" ry="7" fill="#2a1f15"/>
+              <!-- hat seated exactly between the ears -->
+              <path d="M85 22 L107 66 L63 66 Z" fill="#a89bff" stroke="#2a1f15" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M63 66 Q85 74 107 66" fill="#d6c8f0" stroke="#2a1f15" stroke-width="3"/>
+              <path d="M79 42 L91 42" stroke="#ffd87a" stroke-width="4"/>
+              <circle cx="85" cy="24" r="6" fill="#ffd87a" stroke="#2a1f15" stroke-width="2.5"/>
+            </svg>
+          </div>
+          <div class="buyrow"><div class="btn">Equip</div><div class="btn ghost">240</div></div>
+        </div>
+      </div>
+      <div class="note">pig <b>freezes here</b> at the rest pose &mdash; the hat sits pixel-perfect on the head, the way the placement studio tuned it.</div>
+    </div>
+
+  </div>
+
+  <div class="sidecard">
+    <h3>the two treatments</h3>
+    <p><span class="hand">shop preview &rarr; FREEZE.</span> A <code>pigFrozen</code> prop pins <code>SpritePig</code> to frame&nbsp;0. Mood does not display here (documented carve-out) &mdash; the cosmetic reads as a clean product shot.</p>
+    <p style="margin-top:8px"><span class="hand">Closet + Visit &rarr; SYNC.</span> These are living mood surfaces, so they get the Barn's <code>pigFrameIdx</code> + <code>onPigFrame</code> wiring: <b>the pig keeps breathing and the item rides along</b>, frame by frame. A surface either syncs to the live frame or freezes at rest &mdash; a moving pig with a pinned item is never acceptable.</p>
+  </div>
+</body>
+</html>
