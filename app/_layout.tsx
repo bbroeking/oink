@@ -814,7 +814,7 @@ function RootLayoutInner() {
 								Alert.alert(
 									"Code applied",
 									result.inviter_username
-										? `You're now in ${result.inviter_username}'s sounder. +50 snouts.`
+										? `${result.inviter_username} brought you in. +50 snouts.`
 										: "+50 snouts landed."
 								);
 							} else {

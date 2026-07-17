@@ -297,7 +297,7 @@ function JoinDoor({ crewHook }: { crewHook: UseCrew }) {
 			    one quiet flavor line turns the obscurity into charm. */}
 			<Text style={styles.doorGloss}>
 				a "sounder" is the true old word for a herd of wild pigs — now
-				it's what you call your friends.
+				it's what you call your herd.
 			</Text>
 
 			{invites.map((inv) => (

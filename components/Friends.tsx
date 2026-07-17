@@ -255,7 +255,7 @@ export default function Friends({
 					>
 						<Icon name="crown" size={20} color={WHIMSY.ink} strokeWidth={2} />
 						<View style={styles.sounderText}>
-							<Text style={styles.sounderKicker}>★ your sounder</Text>
+							<Text style={styles.sounderKicker}>★ your Sounder</Text>
 							<Text style={styles.sounderName} numberOfLines={1}>
 								{crewHook.crew.crew.name}
 							</Text>

@@ -686,7 +686,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 											    friend request lands; Ask/Curse/Visit stay
 											    friends-only. */}
 											<Text style={styles.crewmateKicker}>
-												★ rides in your sounder ★
+												★ rides in your Sounder ★
 											</Text>
 											<RitualPicker
 												mode="bless"
@@ -742,7 +742,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 				<ConfirmDialog
 					open={blockOpen}
 					title="Block this user?"
-					body={`Blocking ${stats?.username ?? "this user"} removes them from your sounder, cancels any pending trades, and prevents future interaction either way. You can unblock from their profile later.`}
+					body={`Blocking ${stats?.username ?? "this user"} removes them from your friends, cancels any pending trades, and prevents future interaction either way. You can unblock from their profile later.`}
 					confirmLabel="Block"
 					cancelLabel="Cancel"
 					destructive

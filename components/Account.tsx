@@ -169,7 +169,7 @@ export function Account({ session }: { session: Session }) {
 			showPurchaseToast({
 				type: "success",
 				title: "Code applied!",
-				text: `You're in ${r.inviter_username ?? "your friend"}'s sounder — +50 snouts.`,
+				text: `${r.inviter_username ?? "Your friend"} brought you in — +50 snouts.`,
 			});
 		} else {
 			setCodeError(referralErrorMessage(r && "reason" in r ? r.reason : undefined));
@@ -1027,7 +1027,7 @@ export function Account({ session }: { session: Session }) {
 									hitSlop={6}
 								>
 									<Text style={referralStyles.seeMoreText}>
-										Your sounder + rewards ›
+										Your recruits + rewards ›
 									</Text>
 								</Pressable>
 							)}
@@ -1090,7 +1090,7 @@ export function Account({ session }: { session: Session }) {
 							{codeInviter && (
 								<View style={referralStyles.successRow}>
 									<Text style={referralStyles.entrySuccess}>
-										You're in {codeInviter}'s sounder! +50
+										You're in — thanks to {codeInviter}! +50
 									</Text>
 									<Image
 										source={require("@/assets/images/emoji/pig.png")}

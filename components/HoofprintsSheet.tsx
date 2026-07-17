@@ -108,13 +108,13 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 						style={[styles.sheet, STICKER_SHADOW]}
 					>
 						<View style={styles.grabber} />
-						<SectionHeader kicker="left by the sounder" title="Hoofprints on you" />
+						<SectionHeader kicker="left by your friends" title="Hoofprints on you" />
 
 						{total === 0 && (
 							<EmptyState
 								glyph="pigface"
 								title="Nothing on your snout right now."
-								sub="Blessings and curses left by your sounder show up here."
+								sub="Blessings and curses left by your friends show up here."
 							/>
 						)}
 

@@ -41,7 +41,7 @@
 | 16 | The Field Guide — economy discovery journal (8 entries, no Echo) | founder grill 2026-07-17 | done (2026-07-17, 643 tests + harness green; migration 20260752000000 authored, unpushed; art TODO in reports/) |
 | 17 | Tickle breakdown sheet — how this pig earned its tickles | founder call 2026-07-17 | done (2026-07-17, 650 tests + harness green; migration 20260753000000 authored, unpushed) |
 | 18 | Notification warm-tap crash — diagnose-first + fix | founder bug 2026-07-17 | done (2026-07-17, 3 of 4 suspects confirmed + fixed; 659 tests green) |
-| 19 | Copy audit: friends vs Sounder separation | founder call 2026-07-17 | pending |
+| 19 | Copy audit: friends vs Sounder separation | founder call 2026-07-17 | done (2026-07-17, 15 strings fixed, 659 tests green; stale war-era server copy flagged in report) |
 
 Out of the loop (blocked on founder, tracked in ROADMAP.md): sticker-pack App
 ID registration, all DB pushes, ad-platform actions, demo-account re-seed.

@@ -1536,7 +1536,7 @@ export default function SeasonScreen() {
 							<View style={{ marginTop: 8 }}>
 								<SectionHeader
 									style={{ marginBottom: 0 }}
-									kicker="your sounder"
+									kicker="your Sounder"
 									title={crewHook.crew.crew?.name ?? "Join a Sounder"}
 									right={
 										<Pressable
