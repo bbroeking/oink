@@ -11,6 +11,7 @@ import {
 	Pressable,
 	Text,
 	Animated,
+	AppState,
 	DevSettings,
 } from "react-native";
 import Svg, { Polygon, Rect, Line } from "react-native-svg";
@@ -352,6 +353,7 @@ export default function Barn() {
 	const {
 		stats,
 		statsLoaded,
+		statsError,
 		refresh: fetchStats,
 		applyOptimistic,
 	} = useHomeStats({
@@ -494,6 +496,19 @@ export default function Barn() {
 			setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
 		}, [])
 	);
+
+	// Foreground refresh — re-fetch stats every time the app returns to the
+	// foreground. useFocusEffect only fires on screen navigation, so a stats
+	// fetch that failed at boot (or went stale in the background) would never
+	// recover on resume without this; that gap read as a dead canTickle until
+	// force-quit (spec 03 / issue #5). Mirrors the bounty-badge listener in
+	// (tabs)/_layout.
+	useEffect(() => {
+		const sub = AppState.addEventListener("change", (state) => {
+			if (state === "active") fetchStats();
+		});
+		return () => sub.remove();
+	}, [fetchStats]);
 
 	// Toast every alignment shift while the app is open. Server-side
 	// `shift_alignment` already fires push notifications at milestone
@@ -757,6 +772,21 @@ export default function Barn() {
 				>
 					<Icon name="plus" size={20} color={WHIMSY.ink} />
 					<Text style={styles.barnFlagEmptyText}>pick a country</Text>
+				</Pressable>
+			) : statsError ? (
+				// Boot fetch failed through its whole backoff — give the player a
+				// visible way out of the "can't tickle" soft-lock instead of a dead
+				// screen. Same paper-pennant family as the allegiance empty state.
+				<Pressable
+					onPress={() => {
+						Haptics.selectionAsync().catch(() => {});
+						fetchStats();
+					}}
+					hitSlop={8}
+					style={[styles.barnFlag, styles.barnFlagEmpty]}
+				>
+					<Icon name="refresh" size={20} color={WHIMSY.ink} />
+					<Text style={styles.barnFlagEmptyText}>lost the barn?{"\n"}tap to reload</Text>
 				</Pressable>
 			) : null}
 
