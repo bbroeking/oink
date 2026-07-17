@@ -35,9 +35,11 @@ import {
 	PanResponder,
 	Modal,
 	ScrollView,
+	Share,
 	type DimensionValue,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import * as Clipboard from "expo-clipboard";
 import {
 	PATCH_COLS,
 	PATCH_ROWS,
@@ -74,6 +76,13 @@ import { UNIQUE_BY_ID, UNIQUE_IMAGES } from "@/constants/uniques";
 import { router } from "expo-router";
 import { Glyph } from "@/components/ui/Glyph";
 import { Icon } from "@/components/ui/Icon";
+import { Button } from "@/components/ui/Button";
+import {
+	digShareData,
+	buildDigShareText,
+	bumpDigShareCount,
+	type DigShareData,
+} from "@/utils/digShare";
 import {
 	FONTS,
 	WHIMSY,
@@ -214,6 +223,10 @@ interface EndState {
 	line: string;
 	outcome: RootingOutcome | null;
 	finds: Find[];
+	// The spoiler-light text-grid share payload (wedge 5b) — derived once at
+	// finish from this dig's board + final layers, so the receipt's share button
+	// is a pure render off already-known data.
+	share: DigShareData;
 }
 
 export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: Props) {
@@ -417,9 +430,17 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 			);
 			const outcome = await onSubmit(claimables(), stirRef.current, missed);
 			setSubmitting(false);
-			setEnd({ line, outcome, finds: [...collectedRef.current] });
+			// The share grid reflects the FINAL board state (dug tiles + what they
+			// found) — computed here where board + layers + collected are all known.
+			const share = digShareData(
+				board,
+				layersRef.current,
+				collectedRef.current,
+				session.windowIndex
+			);
+			setEnd({ line, outcome, finds: [...collectedRef.current], share });
 		},
-		[onSubmit, claimables, board]
+		[onSubmit, claimables, board, session.windowIndex]
 	);
 
 	// Collect a fully-uncovered find; pops the named reveal chip at `tileIdx`.
@@ -1217,12 +1238,67 @@ function EndCard({
 					Couldn't bank that dig — the patch will remember your armful.
 				</Text>
 			)}
+			{/* Text-grid share (wedge 5b). Sits UNDER the ledger — added, not a
+			    reflow. SPEC 10 SEAM: once the "golden in N" headline lands it goes
+			    ABOVE this row (the two compose — headline stat, then share it). */}
+			<DigShareRow data={end.share} />
 			{/* The retention hinge: after a REAL dig, if the next window is a wait,
 			    offer one local oink at the next open (highest-intent moment). */}
 			{!practice && !phaseOpen && <NotifyChip />}
 			<Pressable onPress={onClose} style={styles.endBtn} hitSlop={8}>
 				<Text style={styles.endBtnText}>
 					{submitting ? "Trotting home…" : "Back to the season"}
+				</Text>
+			</Pressable>
+		</View>
+	);
+}
+
+// ── The text-grid share (wedge 5b — spec 09) ─────────────────────────────────
+// One "share your dig" CTA under the receipt that hands the spoiler-light text
+// block to the native share sheet, with long-press (or the hint's tap fallback)
+// to copy instead. EMOJI live in the outbound text only — the button chrome is
+// glyph/token, never emoji. The tap count is measured fire-and-forget + fail-
+// soft (bumpDigShareCount tolerates the RPC being unpushed).
+function DigShareRow({ data }: { data: DigShareData }) {
+	const [copied, setCopied] = useState(false);
+	const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(
+		() => () => {
+			if (copiedTimer.current) clearTimeout(copiedTimer.current);
+		},
+		[]
+	);
+
+	const onShare = useCallback(() => {
+		Haptics.selectionAsync().catch(() => {});
+		bumpDigShareCount();
+		Share.share({ message: buildDigShareText(data) }).catch(() => {});
+	}, [data]);
+
+	const onCopy = useCallback(() => {
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+		bumpDigShareCount();
+		Clipboard.setStringAsync(buildDigShareText(data)).catch(() => {});
+		setCopied(true);
+		if (copiedTimer.current) clearTimeout(copiedTimer.current);
+		copiedTimer.current = setTimeout(() => setCopied(false), 1800);
+	}, [data]);
+
+	return (
+		<View style={styles.shareRow}>
+			<Button
+				variant="gold"
+				full
+				icon={<Glyph name="sparkle" size={15} />}
+				onPress={onShare}
+				onLongPress={onCopy}
+			>
+				share your dig
+			</Button>
+			<Pressable onPress={onCopy} hitSlop={8}>
+				<Text style={styles.shareHint}>
+					{copied ? "copied to your clipboard" : "long-press to copy instead"}
 				</Text>
 			</Pressable>
 		</View>
@@ -2018,6 +2094,24 @@ const styles = StyleSheet.create({
 		...SHADOW_SM,
 	},
 	endBtnText: { ...TYPE.cardTitle, fontSize: 15, color: WHIMSY.ink },
+
+	// ── The text-grid share row (wedge 5b) ───────────────────────────────────
+	// Stretches under the ledger so the gold CTA reads as the receipt's one share
+	// action; the hand-lettered hint doubles as the tap-to-copy fallback.
+	shareRow: {
+		alignSelf: "stretch",
+		// stretch so the gold CTA fills the receipt width (the gradient variant
+		// stretches only when its Pressable wrapper is stretched by the parent).
+		alignItems: "stretch",
+		marginTop: SPACE.md,
+	},
+	shareHint: {
+		...TYPE.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: SPACE.xs,
+	},
 
 	// ── The "oink me when it opens" notify opt-in ────────────────────────────
 	// A tappable paper sticker-chip in the sun tone (the game's "reminder/gift"

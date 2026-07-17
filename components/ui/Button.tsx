@@ -23,6 +23,9 @@ interface Props {
 	full?: boolean;
 	style?: ViewStyle;
 	onPress?: () => void;
+	// Optional secondary gesture (e.g. long-press-to-copy on a share CTA). Threads
+	// to the same Pressable as onPress for both the gradient and flat variants.
+	onLongPress?: () => void;
 	disabled?: boolean;
 }
 
@@ -68,6 +71,7 @@ export function Button({
 	full,
 	style,
 	onPress,
+	onLongPress,
 	disabled,
 }: Props) {
 	const sz = SIZE_MAP[size];
@@ -113,7 +117,7 @@ export function Button({
 
 	if (gradient) {
 		return (
-			<Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => ({
+			<Pressable onPress={onPress} onLongPress={onLongPress} disabled={disabled} style={({ pressed }) => ({
 				opacity: pressed && !disabled ? 0.85 : 1,
 			})}>
 				<LinearGradient
@@ -129,7 +133,7 @@ export function Button({
 	}
 
 	return (
-		<Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [
+		<Pressable onPress={onPress} onLongPress={onLongPress} disabled={disabled} style={({ pressed }) => [
 			baseStyle,
 			{
 				backgroundColor: flat?.bg ?? "#fff",
