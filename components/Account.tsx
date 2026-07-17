@@ -692,19 +692,27 @@ export function Account({ session }: { session: Session }) {
 
 								{/* Identity-card band — 3-col cluster inside the card.
 								    Divided by 1px ink-mute verticals + a dashed top
-								    border. THIS SEASON's live tally leads (the number
-								    the Board is racing on right now); lifetime lives in
-								    the "long story" dashboard below. */}
-								<View style={styles.lifetimeStatsRow}>
-									<LifetimeStat
-										label="SEASON TICKLES"
-										value={ticklesEarned.toLocaleString()}
-									/>
-									<View style={styles.lifetimeStatDivider} />
-									<LifetimeStat label="SNOUTS" value={snouts.toLocaleString()} />
-									<View style={styles.lifetimeStatDivider} />
-									<LifetimeStat label="JOINED" value={joinedLabel} />
-								</View>
+								    border. Lifetime figures live HERE (the standalone
+								    "long story" card was folded in 2026-07-17); tapping
+								    the band opens the full long-story ledger sheet. */}
+								<Pressable onPress={openLongStory}>
+									<View style={styles.lifetimeStatsRow}>
+										<LifetimeStat
+											label="LIFETIME TICKLES"
+											value={lifetimeTickles(
+												ticklesLifetimeBase,
+												ticklesEarned
+											).toLocaleString()}
+										/>
+										<View style={styles.lifetimeStatDivider} />
+										<LifetimeStat
+											label="ACTIVE DAYS"
+											value={activeDays.toLocaleString()}
+										/>
+										<View style={styles.lifetimeStatDivider} />
+										<LifetimeStat label="JOINED" value={joinedLabel} />
+									</View>
+								</Pressable>
 								<Pressable onPress={handleCopyCode} style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.7 }]}>
 									<Icon
 										name={copied ? "check" : "copy"}
@@ -720,43 +728,6 @@ export function Account({ session }: { session: Session }) {
 						</View>
 					)}
 
-					{/* The long story — lifetime dashboard. Three top-level
-					    lifetime figures on a tappable sticker; tap opens the
-					    full ledger sheet (every all-time count). Sits under the
-					    identity card so "who you are now" reads first, "all
-					    you've done" second. */}
-					<View style={longStoryStyles.wrap}>
-						<Text style={longStoryStyles.kicker}>★ the long story</Text>
-						<Pressable onPress={openLongStory}>
-							<Sticker
-								color="cream2"
-								rotate={-0.4}
-								radius={16}
-								style={longStoryStyles.card}
-							>
-								<View style={longStoryStyles.statsRow}>
-									<LifetimeStat
-										label="LIFETIME TICKLES"
-										value={lifetimeTickles(
-											ticklesLifetimeBase,
-											ticklesEarned
-										).toLocaleString()}
-									/>
-									<View style={styles.lifetimeStatDivider} />
-									<LifetimeStat
-										label="ACTIVE DAYS"
-										value={activeDays.toLocaleString()}
-									/>
-									<View style={styles.lifetimeStatDivider} />
-									<LifetimeStat
-										label="WAR WINS"
-										value={warWins.toLocaleString()}
-									/>
-								</View>
-								<Text style={longStoryStyles.seeAll}>see it all ›</Text>
-							</Sticker>
-						</Pressable>
-					</View>
 
 					{/* Achievements entry — single-line tappable row that
 					    routes to the full grid. Sits above Sounder so it's
