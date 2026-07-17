@@ -46,6 +46,7 @@
 
 - 🔴 **Two empty test crews in prod** — "The Bristle Sniffers", "The Muddy Diggers". DB op, needs your go.
 - 🔵 **Harness glob gap** — smokes 50–53 silently skipped by the run glob; wire or fix (one-minute future task).
+- 🔵 **Stale war-era server copy** — migration-delivered announcement bodies still say "Mud Scuffle" / "the other Sounder yielded the bog" etc. from the PVP layer removed 2026-07-06; needs a migration to redefine the emitting functions (candidate spec 20). Full list in spec 19's audit report (`docs/specs/19-sounder-friends-copy.md` agent report, 2026-07-17).
 
 ## 7. Marketing & growth
 
