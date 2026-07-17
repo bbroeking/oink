@@ -17,6 +17,7 @@ import {
 	windowEndsAtMs,
 	feedingCountdown,
 	practiceSeed,
+	crewBoardSeed,
 	stirCost,
 	nearestFindDistance,
 	warmthWhisper,
@@ -429,6 +430,61 @@ describe("practiceSeed", () => {
 		expect(a).not.toBe(practiceSeed("war-abc", 101));
 		expect(a).toBeGreaterThanOrEqual(1);
 		expect(a).toBeLessThanOrEqual(2147483646);
+	});
+});
+
+// ── Seeded crew boards (wedge 5a) — client mirror of f(window, crew|user) ─────
+// The server (migration 20260748000000) keys the board seed on the caller's
+// CREW so the whole Sounder digs the IDENTICAL patch each window. crewBoardSeed
+// is the client's derivation of the SAME shape: same (window, group) → same
+// seed → same board; different crew → different board; a solo pig seeds on its
+// own id. Byte parity with hashtext is NOT required — the server seed always
+// wins when open_rooting answers (this only powers local prediction).
+describe("crewBoardSeed — seeded crew boards (window × group)", () => {
+	const crewA = "00000000-0000-0000-0000-00000000c001";
+	const crewB = "00000000-0000-0000-0000-00000000c002";
+	const solo = "00000000-0000-0000-0000-00000000a099";
+
+	test("deterministic and in Park–Miller range", () => {
+		const s = crewBoardSeed(402, crewA);
+		expect(s).toBe(crewBoardSeed(402, crewA));
+		expect(s).toBeGreaterThanOrEqual(1);
+		expect(s).toBeLessThanOrEqual(2147483646);
+	});
+
+	test("same window + same crew → identical seed → identical board", () => {
+		// The whole Sounder shares one patch this feeding.
+		const seed = crewBoardSeed(402, crewA);
+		expect(crewBoardSeed(402, crewA)).toBe(seed);
+		expect(generateBoard(crewBoardSeed(402, crewA))).toEqual(
+			generateBoard(crewBoardSeed(402, crewA))
+		);
+	});
+
+	test("different crew → different seed → different board (same window)", () => {
+		expect(crewBoardSeed(402, crewA)).not.toBe(crewBoardSeed(402, crewB));
+		expect(JSON.stringify(generateBoard(crewBoardSeed(402, crewA)))).not.toEqual(
+			JSON.stringify(generateBoard(crewBoardSeed(402, crewB)))
+		);
+	});
+
+	test("same crew, different window → different seed (boards expire each window)", () => {
+		expect(crewBoardSeed(402, crewA)).not.toBe(crewBoardSeed(403, crewA));
+	});
+
+	test("a solo/crewless pig seeds on (window, user_id) — distinct from any crew", () => {
+		const s = crewBoardSeed(402, solo);
+		expect(s).toBe(crewBoardSeed(402, solo));
+		expect(s).not.toBe(crewBoardSeed(402, crewA));
+		expect(s).toBeGreaterThanOrEqual(1);
+		expect(s).toBeLessThanOrEqual(2147483646);
+	});
+
+	test("practice stays per-warId (NOT crew-shared) — the unlock is real-dig only", () => {
+		// practiceSeed is keyed on warId+window, never a crew — two pigs practicing
+		// don't get a shared crew board, and the crew derivation is a distinct
+		// namespace from practice.
+		expect(practiceSeed("patch", 402)).not.toBe(crewBoardSeed(402, crewA));
 	});
 });
 

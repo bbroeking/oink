@@ -148,6 +148,12 @@ CHAIN=(
 	# (secret-gated founder archive). RPC-only feedback table (zero-policy RLS).
 	# Needs app_settings (20260744100000, above). Exercised by 54_feedback_den_smoke.
 	supabase/migrations/20260745000000_feedback_den.sql
+	# 20260748000000 seeds crew boards (wedge 5a): open_rooting derives the board
+	# seed from f(window, crew_id) instead of f(window, user_id), so the whole
+	# Sounder digs the identical patch each feeding. Carries open_rooting VERBATIM
+	# from 20260744100000 (the latest def; 20260746/20260747 don't touch it) with
+	# only the seed line changed. Exercised by 46_seeded_boards_smoke.sql.
+	supabase/migrations/20260748000000_seeded_crew_boards.sql
 	# 00f prep: builds item_drives + are_blocked() + system_announcements.seen_at
 	# + hats.name AHEAD of 20260746 (passed as $@) so check_function_bodies can
 	# validate the redefined nudge_trough body. Exercised by

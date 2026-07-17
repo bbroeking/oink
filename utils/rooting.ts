@@ -445,16 +445,40 @@ export function bannerDigStatus(
 		: `he's guarding — opens in ${nextOpenCountdown(nowMs)}`;
 }
 
-// Practice-mode seed (migration not applied yet): any deterministic int in
-// [1, 2147483646] — FNV-1a over war+window. Does NOT need to match hashtext.
-export function practiceSeed(warId: string, win: number): number {
-	const s = `${warId}:${win}`;
+// Deterministic client seed kernel — FNV-1a folded into the Park–Miller range
+// [1, 2147483646]. This is the CLIENT'S own derivation and does NOT need to
+// match Postgres hashtext (the server hands the authoritative seed back through
+// open_rooting; a locally-predicted board always loses to the server board —
+// see hooks/useRooting, which stores r.seed, never a local guess).
+function fnv1aSeed(s: string): number {
 	let h = 2166136261;
 	for (let i = 0; i < s.length; i++) {
 		h ^= s.charCodeAt(i);
 		h = (h * 16777619) >>> 0;
 	}
 	return (h % 2147483646) + 1;
+}
+
+// Practice-mode seed (no server row): any deterministic int in [1, 2147483646] —
+// FNV-1a over war+window. Does NOT need to match hashtext. Practice stays fully
+// per-warId (it is NEVER crew-shared) — the seeded-crew unlock is a real-dig
+// property, so practice boards are unchanged by wedge 5a.
+export function practiceSeed(warId: string, win: number): number {
+	return fnv1aSeed(`${warId}:${win}`);
+}
+
+// SEEDED CREW BOARDS (wedge 5a) — the client mirror of the server derivation
+// f(window, crew_id | user_id) (migration 20260748000000). Same shape as the
+// server: identical for every pig in the SAME (window, group), different across
+// groups, so a client that wants to PREDICT the herd's shared patch (a preview
+// before open_rooting returns, or an un-pushed server) gets a board comparable
+// in-herd. `groupId` is the crew id for a Sounder pig, or the user id for a
+// solo/crewless pig — exactly the server's COALESCE(my_crew, caller_id). Byte
+// parity with hashtext is NOT required (same posture as practiceSeed): whenever
+// the server answers, open_rooting's seed wins. The string mirrors the server's
+// `win::text || ':' || group::text` ordering.
+export function crewBoardSeed(win: number, groupId: string): number {
+	return fnv1aSeed(`${win}:${groupId}`);
 }
 
 // ── Stir accounting (pure, for tests + the component) ───────────────────────
