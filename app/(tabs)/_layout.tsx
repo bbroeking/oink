@@ -8,6 +8,7 @@ import { rpc } from "@/utils/rpc";
 import SupaAuth from "@/components/SupaAuth";
 import UsernameSetup from "@/components/UsernameSetup";
 import { Onboarding } from "@/components/Onboarding";
+import { getStorybookSeenServer, needsStorybook } from "@/utils/onboarding";
 import { ReferralCodeEntry } from "@/components/ReferralCodeEntry";
 import { HangingSignsTabBar } from "@/components/ui/HangingSignsTabBar";
 import { Button } from "@/components/ui/Button";
@@ -129,16 +130,35 @@ export default function TabLayout() {
 		};
 	}, [refetchUsername, clearUsernameRetry]);
 
+	// Storybook gate: local flag OR the server mirror satisfies it. A reinstall
+	// wipes the local `seen_onboarding` flag, so a veteran with a real account
+	// used to replay the whole storybook (issue #11) — consult the server-side
+	// mirror when the local flag is absent. Keyed on session because the server
+	// read needs an authenticated caller: on a signed-out or still-resolving
+	// boot we can't ask, so we re-run once the session lands. Fail-soft: an
+	// unknown server read leaves the storybook armed (correct for a true fresh
+	// install); a current veteran's local flag short-circuits before any read,
+	// so nobody gets re-storybooked at rollout and offline boots are unaffected.
 	useEffect(() => {
-		AsyncStorage.getItem("seen_onboarding").then((v) => {
-			setNeedsOnboarding(v !== "1");
-		});
+		let cancelled = false;
+		(async () => {
+			const localSeen = (await AsyncStorage.getItem("seen_onboarding")) === "1";
+			const serverSeen =
+				localSeen || !session ? false : await getStorybookSeenServer();
+			if (cancelled) return;
+			setNeedsOnboarding(
+				needsStorybook({ localSeen, serverSeen, hasSession: !!session })
+			);
+		})();
 		// Referral code-entry is bypassed for now — never force the step, so
 		// every user skips straight past it. (Re-enable by restoring:
 		//   hasSeenReferralStep().then((seen) => setNeedsReferralStep(!seen));
 		// and re-importing hasSeenReferralStep.)
 		setNeedsReferralStep(false);
-	}, []);
+		return () => {
+			cancelled = true;
+		};
+	}, [session]);
 
 	// Bounty-ready badge on the Season tab. Polled on mount + every
 	// foreground transition. Cheap RPC (counts rows from my_weekly_bounties),

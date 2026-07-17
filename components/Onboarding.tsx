@@ -11,6 +11,7 @@ import {
 	SafeAreaView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { markStorybookSeenServer } from "@/utils/onboarding";
 import { SpritePig, PigAnimation } from "./ui/SpritePig";
 import { Sticker } from "./ui/Sticker";
 import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
@@ -45,11 +46,20 @@ export function Onboarding({ onDone }: Props) {
 	const [page, setPage] = useState(0);
 	const scrollRef = useRef<ScrollView>(null);
 
+	// Persist storybook-seen BOTH locally and on the server. The local flag
+	// gates offline; the server mirror survives a reinstall so a veteran doesn't
+	// replay the storybook (issue #11). Both fail soft — a dropped write just
+	// means the gate leans on whichever flag did land.
+	const markSeen = () => {
+		AsyncStorage.setItem("seen_onboarding", "1").catch(() => {});
+		markStorybookSeenServer().catch(() => {});
+	};
+
 	const goNext = () => {
 		if (page < STEPS.length - 1) {
 			scrollRef.current?.scrollTo({ x: SCREEN_W * (page + 1), animated: true });
 		} else {
-			AsyncStorage.setItem("seen_onboarding", "1").catch(() => {});
+			markSeen();
 			onDone();
 		}
 	};
@@ -104,7 +114,7 @@ export function Onboarding({ onDone }: Props) {
 					{page < STEPS.length - 1 && (
 						<Pressable
 							onPress={() => {
-								AsyncStorage.setItem("seen_onboarding", "1").catch(() => {});
+								markSeen();
 								onDone();
 							}}
 						>

@@ -154,6 +154,18 @@ function RootLayoutInner() {
 		PatrickHand_400Regular,
 	});
 	const [authChecked, setAuthChecked] = useState(false);
+	// Session identity for the launch-popup polls. Root had NO onAuthStateChange,
+	// so the polls keyed on [authChecked] alone: on a reinstall getSession
+	// resolves null (authChecked flips true, every poll runs userless and no-ops),
+	// then the user signs in and the polls never re-fire — schism/finale/
+	// While-Away/achievements stay silent the whole session (issue #11). This id
+	// changes when a session appears, and the polls key on it so they re-run on
+	// sign-in. Idempotent: a warm launch resolves the same id exactly once (the
+	// INITIAL_SESSION event repeats the same value, so React bails the re-render),
+	// so already-signed-in launches still poll once, never twice. Re-armed wants
+	// still queue behind the onboarding usePopupHold (app/(tabs)/_layout.tsx) —
+	// arming only sets state; the queue holds it off the storybook.
+	const [sessionUserId, setSessionUserId] = useState<string | null>(null);
 	// Season 1 co-op dig visibility — server flag (Brian-overridden). Gates the
 	// "start a Sounder" launch nudge.
 	// Align with the Season tab's crew gate (world_boss || __DEV__). coop_dig
@@ -270,7 +282,19 @@ function RootLayoutInner() {
 	// Resolve the initial auth state before letting the splash drop, so we
 	// transition straight into either auth or the home screen — no blank flash.
 	useEffect(() => {
-		supabase.auth.getSession().finally(() => setAuthChecked(true));
+		supabase.auth
+			.getSession()
+			.then(({ data: { session } }) =>
+				setSessionUserId(session?.user?.id ?? null)
+			)
+			.finally(() => setAuthChecked(true));
+		// Re-run the launch-popup polls on sign-in (see sessionUserId above). On a
+		// reinstall the poll deps below re-fire the moment a session identity
+		// appears; on a warm launch the id resolves once, so nothing double-fires.
+		const { data: authSub } = supabase.auth.onAuthStateChange(
+			(_event, session) => setSessionUserId(session?.user?.id ?? null)
+		);
+		return () => authSub.subscription.unsubscribe();
 	}, []);
 
 	// Tag the Sentry scope with the signed-in user so crashes/errors are
@@ -299,7 +323,7 @@ function RootLayoutInner() {
 		return () => {
 			cancelled = true;
 		};
-	}, [authChecked]);
+	}, [authChecked, sessionUserId]);
 
 	// Poll check_schism_status whenever we have an authenticated user
 	// AND on every transition back to foreground. The RPC is fast (PK
@@ -331,7 +355,7 @@ function RootLayoutInner() {
 			cancelled = true;
 			sub.remove();
 		};
-	}, [authChecked]);
+	}, [authChecked, sessionUserId]);
 
 	// Poll my_finale_result the same way — surfaces the Judgement Day
 	// modal once a season has been finalized. Independent of the
@@ -356,7 +380,7 @@ function RootLayoutInner() {
 			cancelled = true;
 			sub.remove();
 		};
-	}, [authChecked]);
+	}, [authChecked, sessionUserId]);
 
 	// World Cup allegiance — offer the "pick your country" modal. Shows on each
 	// launch while the player has NOT yet chosen (profiles.allegiance_country
@@ -380,7 +404,7 @@ function RootLayoutInner() {
 			}
 		};
 		check();
-	}, [authChecked]);
+	}, [authChecked, sessionUserId]);
 
 	// Sounder launch nudge — the quiet-login FALLBACK. Fires only when the feature
 	// is live (the `coop_dig` server flag) AND the player has no crew. Unlike the
@@ -423,7 +447,7 @@ function RootLayoutInner() {
 		return () => {
 			cancelled = true;
 		};
-	}, [authChecked, coopDig]);
+	}, [authChecked, coopDig, sessionUserId]);
 
 	// Feedback nudge — the RAREST quiet-login fallback, a sibling of the Sounder
 	// nudge one rung lower. Fires only when: the player has real history
@@ -488,7 +512,7 @@ function RootLayoutInner() {
 		return () => {
 			cancelled = true;
 		};
-	}, [authChecked]);
+	}, [authChecked, sessionUserId]);
 
 	// Great Hunger intro — first-view auto-present at login. Same gate the
 	// Season tab used to own: the world_boss flag (coopDig = world_boss || DEV)
@@ -509,7 +533,7 @@ function RootLayoutInner() {
 		return () => {
 			cancelled = true;
 		};
-	}, [authChecked, coopDig]);
+	}, [authChecked, coopDig, sessionUserId]);
 
 	// "While you were away" — surface blessings + curses RECEIVED
 	// and trades ANSWERED since the last launch. Tracked client-side
@@ -694,7 +718,7 @@ function RootLayoutInner() {
 		return () => {
 			cancelled = true;
 		};
-	}, [authChecked]);
+	}, [authChecked, sessionUserId]);
 
 	// Achievement reveals — surface achievements earned but not yet
 	// seen (claimed = true, viewed_at = null). Shown one at a time;
@@ -737,7 +761,7 @@ function RootLayoutInner() {
 			cancelled = true;
 			sub.remove();
 		};
-	}, [authChecked]);
+	}, [authChecked, sessionUserId]);
 
 	// Referral deep-link handler. Universal Link
 	// `https://ticklethepig.com/i/<code>` (canonical; legacy /r/<code>
@@ -878,7 +902,7 @@ function RootLayoutInner() {
 		return () => {
 			cancelled = true;
 		};
-	}, [authChecked]);
+	}, [authChecked, sessionUserId]);
 
 	// Push tap → deep route. Payload `data.screen` drives where the
 	// tap lands:

@@ -27,7 +27,7 @@
 | 02 | Popup queue cluster: BuriedTruffleSheet null-block + unenrolled sheets | GH #3 + #4 | done (2026-07-16, 589 tests green) |
 | 03 | Offline soft-locks: home_stats retry + saddling-up timeout | GH #5 | done (2026-07-16, 596 tests green) |
 | 04 | Trough nudges: supersede + tap-through | GH #10 | done (2026-07-16, 603 tests + harness smoke green; migration 20260746000000 authored, unpushed) |
-| 05 | Reinstall flow: silent first-session popups + veteran storybook re-run | GH #11 | pending |
+| 05 | Reinstall flow: silent first-session popups + veteran storybook re-run | GH #11 | done (2026-07-16, 612 tests + harness green; migration 20260747000000 authored, unpushed) |
 | 06 | Small fixes batch: lucky_won toast, shop UTC refresh, 28/25 wording, Wardrobe→Closet | GH #12 | pending |
 | 07 | Season-1 tiebreak post-mortem — investigate → report → PAUSE | GH #28 | pending |
 | 08 | Seeded crew boards (wedge 5a) — migration authored + harness smoke | wedge Phase 1 | pending |

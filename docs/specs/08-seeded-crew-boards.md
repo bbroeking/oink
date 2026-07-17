@@ -25,8 +25,9 @@ comparable in the group chat. Solo/crewless pigs seed on (window_id, user_id)
   preserve it).
 - Boards already expire with the 8h window — no retention change.
 - Migration filename: timestamped `YYYYMMDDHHMMSS_description.sql`,
-  alphabetically AFTER 20260745000000_feedback_den.sql (the latest authored).
-  Use 20260746000000_seeded_crew_boards.sql.
+  alphabetically AFTER the latest file in supabase/migrations/ — check
+  `ls supabase/migrations | tail` first (20260746000000 is already taken by
+  the trough supersede). Use the next free 202607470… slot.
 
 ### Client parity
 
