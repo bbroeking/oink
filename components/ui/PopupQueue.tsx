@@ -291,6 +291,15 @@ export function useUnmanagedModalHold(open: boolean) {
 	usePopupHold(open);
 }
 
+// True while any popup is currently PRESENTED. Lets a caller OUTSIDE the queue
+// (the push-tap handler in app/_layout) tell whether it would be navigating the
+// Stack UNDER a live native Modal (the iOS #50152 wedge) — so it can hold/drain
+// first and only pay the handoff-gap latency when something is actually up.
+export function usePopupActive(): boolean {
+	const ctx = useContext(PopupCtx);
+	return !!ctx?.activeId;
+}
+
 export function usePopupSlot(id: string, want: boolean, priority = 100) {
 	const ctx = useContext(PopupCtx);
 

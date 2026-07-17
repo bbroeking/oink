@@ -15,7 +15,7 @@ import { PatrickHand_400Regular } from "@expo-google-fonts/patrick-hand";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Alert, AppState, LogBox, Linking } from "react-native";
 import "react-native-reanimated";
 
@@ -46,7 +46,11 @@ import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
-import { routeForScreen } from "@/utils/notificationRouting";
+import {
+	planTapRoute,
+	responseConsumeKey,
+	LAST_NOTIF_RESPONSE_KEY,
+} from "@/utils/notificationRouting";
 import { toWhileAwaySystemEvent } from "@/utils/whileAway";
 import {
 	AlignmentSchismModal,
@@ -79,7 +83,10 @@ import { PurchaseToastHost } from "@/components/PurchaseToast";
 import {
 	PopupQueueProvider,
 	usePopupSlot,
+	usePopupHold,
+	usePopupActive,
 	POPUP_TEARDOWN_MS,
+	POPUP_HANDOFF_GAP_MS,
 } from "@/components/ui/PopupQueue";
 import {
 	PENDING_REFERRAL_CODE_KEY,
@@ -905,35 +912,105 @@ function RootLayoutInner() {
 		};
 	}, [authChecked, sessionUserId]);
 
-	// Push tap → deep route. Payload `data.screen` drives where the
-	// tap lands:
-	//   'trade' / 'friends' → Friends tab (Inbox carries the event)
-	//   'achievements'      → /achievements (claim the new unlock)
-	// One listener; expo-notifications coalesces foreground +
-	// background taps.
+	// Push tap → deep route (spec-18). Payload `data.screen` drives where the
+	// tap lands (trade/friends → Friends tab, achievements → /achievements, …);
+	// routeForScreen (utils/notificationRouting) is the single source of truth so
+	// the server's push `screen` values and the client router can't drift.
+	//
+	// Three failure modes this guards (see docs/specs/18-notification-warm-tap):
+	//   1. A warm tap while a popup is presented used to router.replace UNDER the
+	//      live native Modal → the iOS #50152 wedge (frozen / "crash"). We now
+	//      raise a popup HOLD (drains whatever's up), wait the handoff gap, THEN
+	//      navigate — but only when a popup is actually presented, so a plain tap
+	//      pays no latency.
+	//   2. getLastNotificationResponseAsync() replays the last tap across
+	//      foregrounds/remounts/cold-launches → re-navigating instead of opening
+	//      neutral. A consume-once guard keyed on the response's identifier+date
+	//      (responseConsumeKey) stamps each physical tap once and skips replays.
+	//   3. A tap that lands before the <Stack> mounts (cold-start read resolving,
+	//      or a warm tap during the saddling/auth gate) throws in expo-router.
+	//      planTapRoute defers such a tap into pendingRouteRef; the flush effect
+	//      below routes it once the shell is ready.
+
+	// Router readiness mirror — the <Stack> only mounts once `loaded && authChecked`
+	// (the `return null` gate below). Refs so the async cold-start callback and
+	// the warm listener read the CURRENT value, not a stale closure.
+	const routerReadyRef = useRef(false);
+	routerReadyRef.current = loaded && authChecked;
+	const pendingRouteRef = useRef<string | null>(null);
+	// While true the queue drains anything presented and admits nothing — raised
+	// around a tap-navigation so we never push the Stack under a live Modal.
+	const [tapRoutingHold, setTapRoutingHold] = useState(false);
+	usePopupHold(tapRoutingHold);
+	const popupActiveRef = useRef(false);
+	popupActiveRef.current = usePopupActive();
+
+	const routeToPath = useCallback((path: string) => {
+		if (!popupActiveRef.current) {
+			// Nothing presented — no wedge risk, navigate immediately.
+			router.replace(path as never);
+			return;
+		}
+		// A popup is up: hold (drains it), wait the handoff gap for the native
+		// dismissal to finish, navigate, then release the hold a teardown beat
+		// later so any still-wanting slots re-admit behind us.
+		setTapRoutingHold(true);
+		setTimeout(() => {
+			router.replace(path as never);
+			setTimeout(() => setTapRoutingHold(false), POPUP_TEARDOWN_MS);
+		}, POPUP_HANDOFF_GAP_MS);
+	}, []);
+
+	const routeForTap = useCallback(
+		(screen: string | undefined) => {
+			const plan = planTapRoute(screen, routerReadyRef.current);
+			if (plan.action === "ignore") return; // unknown/absent screen — no-op
+			if (plan.action === "defer") {
+				pendingRouteRef.current = plan.path; // fire once the shell mounts
+				return;
+			}
+			routeToPath(plan.path as string);
+		},
+		[routeToPath]
+	);
+
+	// Flush a deferred tap once the router shell is up.
 	useEffect(() => {
-		const route = (screen: string | undefined) => {
-			const path = routeForScreen(screen);
-			if (path) router.replace(path as never);
-		};
+		if (loaded && authChecked && pendingRouteRef.current) {
+			const path = pendingRouteRef.current;
+			pendingRouteRef.current = null;
+			routeToPath(path);
+		}
+	}, [loaded, authChecked, routeToPath]);
+
+	useEffect(() => {
 		// Cold launch: the app was opened by TAPPING a push while terminated.
 		// addNotificationResponseReceivedListener does NOT fire for that case, so
-		// read the response that launched us and route from it once.
-		Notifications.getLastNotificationResponseAsync().then((res) => {
-			if (res) {
-				const data = res.notification.request.content.data as { screen?: string };
-				route(data?.screen);
+		// read the response that launched us — but consume-once so a persisted
+		// stale response never replays on a later (non-tap) launch.
+		Notifications.getLastNotificationResponseAsync().then(async (res) => {
+			if (!res) return;
+			const key = responseConsumeKey(res);
+			if (key) {
+				const consumed = await AsyncStorage.getItem(LAST_NOTIF_RESPONSE_KEY);
+				if (consumed === key) return; // already routed this physical tap
+				await AsyncStorage.setItem(LAST_NOTIF_RESPONSE_KEY, key);
 			}
-		});
-		// Warm/foreground taps. routeForScreen is the single source of truth for
-		// the screen→route map (utils/notificationRouting) so the server's push
-		// `screen` values and the client router can't drift.
-		const sub = Notifications.addNotificationResponseReceivedListener((res) => {
 			const data = res.notification.request.content.data as { screen?: string };
-			route(data?.screen);
+			routeForTap(data?.screen);
+		});
+		// Warm/foreground taps. Stamp the consume key too, so the SAME tap replayed
+		// by getLastNotificationResponseAsync on the next cold launch is skipped.
+		const sub = Notifications.addNotificationResponseReceivedListener((res) => {
+			const key = responseConsumeKey(res);
+			if (key) {
+				AsyncStorage.setItem(LAST_NOTIF_RESPONSE_KEY, key).catch(() => {});
+			}
+			const data = res.notification.request.content.data as { screen?: string };
+			routeForTap(data?.screen);
 		});
 		return () => sub.remove();
-	}, []);
+	}, [routeForTap]);
 
 	useEffect(() => {
 		if (loaded && authChecked) {
