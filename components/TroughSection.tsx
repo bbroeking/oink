@@ -8,6 +8,7 @@ import { useCallback, useRef, useState } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { rpc, rpcAction } from "@/utils/rpc";
+import { observeFieldGuide } from "@/utils/fieldGuide";
 import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, WHIMSY } from "@/constants/theme";
 import { SectionHeader } from "./ui";
@@ -120,6 +121,8 @@ export function TroughSection({
 			{ drive_id: d.id, snouts: amt }
 		);
 		if (r.ok) {
+			// Field Guide: your first donation meets the Trough page (fail-soft).
+			observeFieldGuide("trough");
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 			setNote((n) => ({
 				...n,

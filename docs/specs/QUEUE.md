@@ -38,7 +38,7 @@
 | 13 | Feedback UI: settings whisper row (bell) + nudge mount | 1.4 lane | done (verified built: Account.tsx:1152 bell row, FeedbackNudgeModal mounted _layout.tsx:1051, unflagged) |
 | 14 | Mud-wrap stacking: extend duration, never multiply regen | roadmap 💭 → decided | done (2026-07-16, 627 tests + harness green; migration 20260750000000 authored, unpushed; warm_tea covered too) |
 | 15 | Retire trough tickle reward + claw back this season's grants | founder call 2026-07-17 | done (2026-07-17, 627 tests + harness green; migration 20260751000000 authored, unpushed) |
-| 16 | The Field Guide — economy discovery journal (8 entries, no Echo) | founder grill 2026-07-17 | pending |
+| 16 | The Field Guide — economy discovery journal (8 entries, no Echo) | founder grill 2026-07-17 | done (2026-07-17, 643 tests + harness green; migration 20260752000000 authored, unpushed; art TODO in reports/) |
 
 Out of the loop (blocked on founder, tracked in ROADMAP.md): sticker-pack App
 ID registration, all DB pushes, ad-platform actions, demo-account re-seed.

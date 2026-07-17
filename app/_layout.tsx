@@ -109,6 +109,7 @@ import {
 	stampFeedbackNudgeOff,
 } from "@/utils/feedbackNudge";
 import { FeedbackNudgeModal } from "@/components/FeedbackNudgeModal";
+import { FieldGuideReveal } from "@/components/FieldGuideReveal";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
 // without a project still works.
@@ -1122,6 +1123,11 @@ function RootLayoutInner() {
 					}}
 				/>
 			)}
+			{/* Field Guide page reveals — the ceremony a page gets the first time
+			    the player meets its economy object. Self-driven off the module
+			    reveal queue; slotted at pri 50 (below the season ceremonies).
+			    Stays mounted; presents only when a page unlocks. */}
+			<FieldGuideReveal />
 			{/* Purchase toast — global, slides down from the top on
 			    shop buys + Slop Club join. Stays mounted; quiet until
 			    showPurchaseToast() is called from anywhere. */}

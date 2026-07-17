@@ -20,6 +20,7 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
+import { observeFieldGuide } from "@/utils/fieldGuide";
 import { claimEcho, fetchActiveEcho, type EchoState } from "@/utils/crews";
 import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
@@ -661,11 +662,17 @@ export default function Barn() {
 				return;
 			}
 
+			// Field Guide: a successful tickle is the tap that mints a snout —
+			// meet the Snouts page (fail-soft, idempotent after the first).
+			observeFieldGuide("snouts");
+
 			// Daily lucky number: the server rolls a shared counter and, when
 			// this tickle lands on today's lucky number, pays +5 tickles
 			// (counter + 5, RPC-side). Distinct from the client-rolled Lucky
 			// Pig burst — this is the once-a-day herd-wide jackpot. Celebrate it.
 			if (res.lucky_won != null) {
+				// Field Guide: first daily-lucky hit meets the Lucky Number page.
+				observeFieldGuide("lucky_number");
 				showToast(
 					"You hit today's lucky number!",
 					`Lucky #${res.lucky_won} — +5 tickles land in your bank.`

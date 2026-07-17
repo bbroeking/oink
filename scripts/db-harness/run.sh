@@ -177,6 +177,7 @@ until docker exec "$NAME" pg_isready -U postgres >/dev/null 2>&1; do :; done
 cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/[1234]*_smoke.sql \
 		scripts/db-harness/54_feedback_den_smoke.sql \
+		scripts/db-harness/55_field_guide_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 

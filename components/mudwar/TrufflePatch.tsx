@@ -69,6 +69,7 @@ import {
 	type OpenReminderResult,
 } from "@/utils/pushNotifications";
 import { nextOpenCountdown } from "@/utils/rooting";
+import { observeFieldGuide } from "@/utils/fieldGuide";
 import { RootingOutcome, RootingSession } from "@/hooks/useRooting";
 import { ReclaimSlam, ReclaimSlamHandle } from "./ReclaimSlam";
 import { HAT_IMAGES } from "@/constants/hats";
@@ -449,6 +450,17 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 				dugOrderRef.current
 			);
 			setEnd({ line, outcome, finds: [...collectedRef.current], share });
+			// Field Guide (fail-soft, idempotent): finishing a dig meets Feeding
+			// Windows; pulling a truffle mints golden, so it meets both the Truffle
+			// and Golden Truffle pages.
+			observeFieldGuide("feeding_windows");
+			if (
+				collectedRef.current.has("truffle_l") ||
+				collectedRef.current.has("truffle_d")
+			) {
+				observeFieldGuide("truffle");
+				observeFieldGuide("golden_truffle");
+			}
 		},
 		[onSubmit, claimables, board, session.windowIndex]
 	);

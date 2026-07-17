@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
+import { observeFieldGuide } from "@/utils/fieldGuide";
 import {
 	Effect,
 	fetchActiveEffects,
@@ -63,6 +64,14 @@ export function useActiveEffects(
 			if (enabled) refresh();
 		}, [enabled, refresh])
 	);
+
+	// Field Guide: a regen wrap/tea in the active-effects lane meets the
+	// Mud Wrap & Warm Tea page (fail-soft, idempotent after the first).
+	useEffect(() => {
+		if (effects.some((e) => e.kind === "mud_wrap" || e.kind === "warm_tea")) {
+			observeFieldGuide("mud_wrap");
+		}
+	}, [effects]);
 
 	useEffect(() => {
 		if (!enabled) {
