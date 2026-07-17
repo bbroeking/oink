@@ -165,6 +165,11 @@ CHAIN=(
 	# and the migration's one-shot claw-back consumes the seed. Exercised by
 	# 49_trough_retire_smoke.sql (auto-globbed by [1234]*_smoke.sql).
 	scripts/db-harness/00g_trough_retire_prep.sql
+	# 00h prep: builds truffle_digs + adds claimed_at to daily_lucky_claims /
+	# user_tier_claims AHEAD of 20260753 (spec 17, passed as $@) so
+	# check_function_bodies validates the tickle_breakdown body. Exercised by
+	# 56_tickle_breakdown_smoke.sql (explicitly appended below — 5x isn't globbed).
+	scripts/db-harness/00h_tickle_breakdown_prep.sql
 )
 
 NAME="pgharness_$$"
@@ -178,6 +183,7 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/[1234]*_smoke.sql \
 		scripts/db-harness/54_feedback_den_smoke.sql \
 		scripts/db-harness/55_field_guide_smoke.sql \
+		scripts/db-harness/56_tickle_breakdown_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 

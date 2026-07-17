@@ -39,6 +39,7 @@ import {
 import { useSeasonEnd } from "../../hooks/useSeasonEnd";
 import type { BetaReward } from "../../hooks/useSeasonEnd";
 import { HungerHero } from "../../components/season1/HungerHero";
+import { TickleBreakdownSheet } from "../../components/TickleBreakdownSheet";
 import { WindowStrip } from "../../components/season1/WindowStrip";
 import { SounderHomeCard } from "../../components/season1/SounderHomeCard";
 import { SounderStepCard } from "../../components/season1/SounderStepCard";
@@ -1019,6 +1020,9 @@ export default function SeasonScreen() {
 	// opens the SAME hero sheet (the emotional home for "tickles reclaimed")
 	// instead of minting a second one.
 	const [heroOpen, setHeroOpen] = useState(false);
+	// The tickle breakdown receipt (spec 17) — your own count decomposed. Opened
+	// from the YOUR TAKE tickle cell; the hero stays reachable from the banner.
+	const [breakdownOpen, setBreakdownOpen] = useState(false);
 	// Reward dialog: set after a successful claim_tier_reward RPC so the
 	// user gets a beat to read what they got and (for wearables) jump
 	// straight to the wardrobe to equip it.
@@ -1520,6 +1524,15 @@ export default function SeasonScreen() {
 								cta={crewHook.crew.crew ? feedingCta : undefined}
 							/>
 
+							{/* The tickle breakdown receipt for yourself (spec 17) — opened
+							    from the YOUR TAKE tickle cell. A native Modal; nothing else
+							    modal is up on the season tab, so it presents directly. */}
+							<TickleBreakdownSheet
+								userId={breakdownOpen ? uid : null}
+								fallbackTotal={ticklesEarned}
+								onClose={() => setBreakdownOpen(false)}
+							/>
+
 							<View style={{ marginTop: 8 }}>
 								<SectionHeader
 									style={{ marginBottom: 0 }}
@@ -1592,6 +1605,7 @@ export default function SeasonScreen() {
 								ticklesEarned={ticklesEarned}
 								onOpenPass={openPassSection}
 								onOpenHero={() => setHeroOpen(true)}
+								onOpenBreakdown={uid ? () => setBreakdownOpen(true) : undefined}
 							/>
 
 							{/* The dig-off — the cumulative season board (headline) + the

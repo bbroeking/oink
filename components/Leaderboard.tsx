@@ -23,6 +23,7 @@ import { PigAvatar } from "./ui/PigAvatar";
 import { Sticker, Tape } from "./ui/Sticker";
 import { ListRowSkeleton } from "./ui/Skeleton";
 import { UserSheet } from "./UserSheet";
+import { TickleBreakdownSheet } from "./TickleBreakdownSheet";
 import { FONTS, KICKER_TEXT, SHADOW_SM, TAB_SAFE, TYPE, WHIMSY } from "@/constants/theme";
 
 // Page size + hard upper bound for the global leaderboard. 25 lands
@@ -104,9 +105,13 @@ function normalize(rows: RawRow[] | null): LeaderboardEntry[] {
 function ChampionPoster({
 	champ,
 	onPress,
+	onPressScore,
 }: {
 	champ: LeaderboardEntry;
 	onPress: (userId: string) => void;
+	// Tapping the tickle count opens the breakdown receipt for this pig (spec 17)
+	// — a different target than the poster body (which opens the profile sheet).
+	onPressScore: (userId: string, total: number) => void;
 }) {
 	return (
 		<Pressable style={styles.champWrap} onPress={() => onPress(champ.id)}>
@@ -141,12 +146,22 @@ function ChampionPoster({
 						    the count when a hat existed, hiding the
 						    one number the leaderboard actually
 						    competes on. */}
-						<IconText left={<Glyph name="heart" size={14} />} gap={5}>
-							<Text style={styles.champScore} numberOfLines={1}>
-								{champ.tickles_earned.toLocaleString()}
-								{champ.active_hat?.name ? `  ·  wears ${champ.active_hat.name}` : ""}
-							</Text>
-						</IconText>
+						{/* The tickle count → the breakdown receipt (spec 17). Generous
+						    hit-slop, no layout change; the nested Pressable captures the
+						    tap so it opens the receipt, not the profile sheet. */}
+						<Pressable
+							onPress={() => onPressScore(champ.id, champ.tickles_earned)}
+							hitSlop={{ top: 6, bottom: 6, left: 6, right: 10 }}
+							accessibilityRole="button"
+							accessibilityLabel="How this pig earned its tickles"
+						>
+							<IconText left={<Glyph name="heart" size={14} />} gap={5}>
+								<Text style={styles.champScore} numberOfLines={1}>
+									{champ.tickles_earned.toLocaleString()}
+									{champ.active_hat?.name ? `  ·  wears ${champ.active_hat.name}` : ""}
+								</Text>
+							</IconText>
+						</Pressable>
 					</View>
 					{/* Crown — the de-facto leader glyph. Replaces the old
 					    rotated "1" badge so the role reads instantly. */}
@@ -163,6 +178,7 @@ function ClippingRow({
 	isYou,
 	last,
 	onPress,
+	onPressScore,
 	showAlignment = false,
 }: {
 	player: LeaderboardEntry;
@@ -172,6 +188,9 @@ function ClippingRow({
 	// dashed border so the divider only appears between rows.
 	last?: boolean;
 	onPress: (userId: string) => void;
+	// Tapping the tickle count opens the breakdown receipt (spec 17). Absent in
+	// the alignment scope (the number there is the align score, not tickles).
+	onPressScore?: (userId: string, total: number) => void;
 	showAlignment?: boolean;
 }) {
 	const score = player.alignment_score ?? 0;
@@ -223,22 +242,42 @@ function ClippingRow({
 						</Text>
 					) : null}
 				</View>
-				<View style={styles.rowScoreCol}>
-					{/* numberOfLines=1 so 5-digit scores (e.g. "100,000")
-					    stay on one line instead of wrapping the column. */}
-					<Text style={styles.rowScore} numberOfLines={1}>
-						{showAlignment
-							? score > 0
-								? `+${score}`
-								: `${score}`
-							: player.tickles_earned.toLocaleString()}
-					</Text>
-					{showAlignment ? (
-						<Text style={styles.rowScoreUnit}>align</Text>
-					) : (
+				{/* Score column. In the tickles scopes the count is a nested
+				    Pressable → the breakdown receipt (spec 17): generous hit-slop,
+				    no layout change, and it captures the tap so it opens the receipt
+				    rather than the row's profile sheet. Alignment scope stays a
+				    plain View (its number is the align score, not tickles). */}
+				{!showAlignment && onPressScore ? (
+					<Pressable
+						style={styles.rowScoreCol}
+						onPress={() => onPressScore(player.id, player.tickles_earned)}
+						hitSlop={{ top: 10, bottom: 10, left: 12, right: 8 }}
+						accessibilityRole="button"
+						accessibilityLabel="How this pig earned its tickles"
+					>
+						<Text style={styles.rowScore} numberOfLines={1}>
+							{player.tickles_earned.toLocaleString()}
+						</Text>
 						<Glyph name="heart" size={12} style={{ marginTop: 2 }} />
-					)}
-				</View>
+					</Pressable>
+				) : (
+					<View style={styles.rowScoreCol}>
+						{/* numberOfLines=1 so 5-digit scores (e.g. "100,000")
+						    stay on one line instead of wrapping the column. */}
+						<Text style={styles.rowScore} numberOfLines={1}>
+							{showAlignment
+								? score > 0
+									? `+${score}`
+									: `${score}`
+								: player.tickles_earned.toLocaleString()}
+						</Text>
+						{showAlignment ? (
+							<Text style={styles.rowScoreUnit}>align</Text>
+						) : (
+							<Glyph name="heart" size={12} style={{ marginTop: 2 }} />
+						)}
+					</View>
+				)}
 		</Pressable>
 	);
 }
@@ -342,6 +381,13 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 	const [scope, setScope] = useState<Scope>(initialScope ?? "global");
 	const [myId, setMyId] = useState<string | null>(null);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+	// The tickle breakdown receipt (spec 17) — which pig's ledger is open + its
+	// already-known total (the fail-soft display when the RPC is dark).
+	const [breakdownUser, setBreakdownUser] = useState<{ id: string; total: number } | null>(null);
+	const openBreakdown = useCallback(
+		(userId: string, total: number) => setBreakdownUser({ id: userId, total }),
+		[]
+	);
 	// Alignment isn't a thing in Season 1 — the greedy/generous board
 	// retires with Judgement Day, so its scope tab hides once s1 is live.
 	const s1 = useFeatureFlag("world_boss") || __DEV__;
@@ -792,7 +838,11 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 					contentContainerStyle={styles.listContent}
 				>
 					{champ ? (
-						<ChampionPoster champ={champ} onPress={setSelectedUserId} />
+						<ChampionPoster
+							champ={champ}
+							onPress={setSelectedUserId}
+							onPressScore={openBreakdown}
+						/>
 					) : null}
 					{rest.length > 0 && (
 						<Sticker
@@ -809,6 +859,7 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 									isYou={item.id === myId}
 									last={index === rest.length - 1}
 									onPress={setSelectedUserId}
+									onPressScore={openBreakdown}
 								/>
 							))}
 						</Sticker>
@@ -842,6 +893,12 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				targetUserId={selectedUserId}
 				onDismiss={() => setSelectedUserId(null)}
 				onFriendshipChanged={fetchLeaderboard}
+			/>
+
+			<TickleBreakdownSheet
+				userId={breakdownUser?.id ?? null}
+				fallbackTotal={breakdownUser?.total ?? null}
+				onClose={() => setBreakdownUser(null)}
 			/>
 		</View>
 	);

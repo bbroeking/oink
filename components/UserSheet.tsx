@@ -29,6 +29,7 @@ import { Sticker } from "./ui/Sticker";
 import { BarnVisitModal } from "./BarnVisitModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { RitualPicker } from "./RitualPicker";
+import { TickleBreakdownSheet } from "./TickleBreakdownSheet";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
 import { useCrew } from "@/hooks/useCrew";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
@@ -207,6 +208,29 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// blessings / visits). Fail-soft — an unpushed migration or any null result
 	// leaves this null, and the line renders nothing (never an error).
 	const [bond, setBond] = useState<PairBondWith | null>(null);
+	// The tickle breakdown receipt (spec 17). Opening it must NOT stack a second
+	// native Modal over this sheet (the #50152 wedge), so we HIDE this sheet
+	// first (breakdownPending), then present the receipt one handoff beat later
+	// (breakdownFor) — the same hide→gap→present handshake the popup queue uses.
+	const [breakdownPending, setBreakdownPending] = useState<{ id: string; total: number } | null>(null);
+	const [breakdownFor, setBreakdownFor] = useState<{ id: string; total: number } | null>(null);
+	const breakdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const openBreakdown = () => {
+		if (!stats) return;
+		const payload = { id: stats.user_id, total: targetTickles ?? 0 };
+		setBreakdownPending(payload); // hides this sheet's Modal this frame
+		if (breakdownTimer.current) clearTimeout(breakdownTimer.current);
+		breakdownTimer.current = setTimeout(() => {
+			setBreakdownPending(null);
+			setBreakdownFor(payload); // presents the receipt after the handoff gap
+		}, 320);
+	};
+	useEffect(
+		() => () => {
+			if (breakdownTimer.current) clearTimeout(breakdownTimer.current);
+		},
+		[]
+	);
 
 	// Sheet animation — driven independently of the backdrop so the
 	// dim doesn't slide up with the card (the old animationType="slide"
@@ -233,6 +257,8 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		if (!targetUserId) {
 			setStats(null);
 			setFeedback(null);
+			setBreakdownFor(null);
+			setBreakdownPending(null);
 			return;
 		}
 		setLoading(true);
@@ -439,7 +465,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	return (
 		<>
 			<Modal
-				visible
+				visible={!breakdownFor && !breakdownPending}
 				transparent
 				animationType="none"
 				onRequestClose={onDismiss}
@@ -545,6 +571,24 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 											you two: {bondBreakdown(bond)}
 										</Text>
 									)}
+
+									{/* The tickle receipt (spec 17) — a quiet door into how this
+									    pig earned its season tickles. Self and others render
+									    identically; the total is already public on the board. */}
+									<Pressable
+										onPress={openBreakdown}
+										hitSlop={8}
+										style={({ pressed }) => [
+											styles.breakdownLink,
+											pressed && { opacity: 0.7 },
+										]}
+										accessibilityRole="button"
+										accessibilityLabel="How this pig earned its tickles"
+									>
+										<Text style={styles.breakdownLinkText}>
+											how'd they earn it? ›
+										</Text>
+									</Pressable>
 
 									{/* Visit their Barn — see their pig + tickle it for them (social).
 									    FRIENDS-ONLY (player decision): visiting mints snouts +
@@ -728,6 +772,16 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 					/>
 				)}
 			</Modal>
+
+			{/* The tickle breakdown receipt — a peer native Modal, presented only
+			    after this sheet has hidden (breakdownFor set) so the two never
+			    stack. Closing it dismisses the whole flow (onDismiss) rather than
+			    re-presenting this sheet in the same commit (which would re-wedge). */}
+			<TickleBreakdownSheet
+				userId={breakdownFor?.id ?? null}
+				fallbackTotal={breakdownFor?.total ?? null}
+				onClose={onDismiss}
+			/>
 		</>
 	);
 }
@@ -962,6 +1016,15 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textAlign: "center",
 		marginBottom: 14,
+	},
+	// The quiet "how'd they earn it?" receipt door — a hand-link under the
+	// keepsake, matching the "try again ›" hand-link grammar used elsewhere.
+	breakdownLink: { alignSelf: "center", marginBottom: 14, paddingHorizontal: 4 },
+	breakdownLinkText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		textDecorationLine: "underline",
 	},
 	// "★ this season" kicker over the friend's stat cluster — names the
 	// window so GIVEN/RECEIVED/TICKLES read as the live-season race.

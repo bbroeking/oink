@@ -77,6 +77,7 @@ export function YourTakeStrip({
 	ticklesEarned,
 	onOpenPass,
 	onOpenHero,
+	onOpenBreakdown,
 }: {
 	/** The next unclaimed FREE-track (or claimable) reward, or null once every tier is claimed. */
 	nextReward: NextReward | null;
@@ -90,6 +91,10 @@ export function YourTakeStrip({
 	onOpenPass: () => void;
 	/** Open the Great Hunger hero sheet — the tickle count's emotional home. */
 	onOpenHero: () => void;
+	/** Open the tickle breakdown receipt for yourself (spec 17). When provided,
+	    the TICKLES cell opens the receipt; the hero stays reachable from the
+	    Hunger banner. Omitted → the cell falls back to the hero (unchanged). */
+	onOpenBreakdown?: () => void;
 }) {
 	// The pouch reads its own balance off the Exchange rotation, exactly like
 	// SounderCard — one cheap STABLE read, feature-dark to a 0 pouch until the
@@ -173,12 +178,17 @@ export function YourTakeStrip({
 
 				<View style={styles.divider} />
 
-				{/* 3 — TICKLES: this season's reclaimed count → the hero sheet. */}
+				{/* 3 — TICKLES: this season's reclaimed count → the breakdown receipt
+				    (spec 17), or the hero sheet when no receipt handler is wired. */}
 				<Pressable
-					onPress={onOpenHero}
+					onPress={onOpenBreakdown ?? onOpenHero}
 					style={({ pressed }) => [styles.cell, pressed && { opacity: 0.6 }]}
 					accessibilityRole="button"
-					accessibilityLabel="Your tickles reclaimed this season"
+					accessibilityLabel={
+						onOpenBreakdown
+							? "How you earned your tickles this season"
+							: "Your tickles reclaimed this season"
+					}
 				>
 					<View style={styles.tickleHead}>
 						<TickleIcon size={24} />
