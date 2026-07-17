@@ -949,9 +949,6 @@ function RootLayoutInner() {
 		<ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
 			<Stack>
 				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-				{__DEV__ && (
-					<Stack.Screen name="align" options={{ title: "Align Items" }} />
-				)}
 				<Stack.Screen name="+not-found" />
 			</Stack>
 			<StatusBar style="auto" />
