@@ -806,6 +806,9 @@ function TapPig({
 	const scale = front ? 0.66 : 0.44;
 	const box = front ? 212 : 146;
 	const shadowW = box * 0.5;
+	// Living mood surface: track the live sprite frame so equipped items ride
+	// along with the breathing pig (same wiring as SwipeElement).
+	const [pigFrameIdx, setPigFrameIdx] = useState(0);
 	return (
 		<Pressable onPress={onPress} style={slotStyle}>
 			{/* flying hearts */}
@@ -838,6 +841,8 @@ function TapPig({
 				<View pointerEvents="none" style={[styles.groundShadow, { width: shadowW, left: (box - shadowW) / 2 }]} />
 				<Animated.View style={{ transform: [{ scale }, ...squishTransform] }}>
 					<PigStage
+						pigFrameIdx={pigFrameIdx}
+						onPigFrame={setPigFrameIdx}
 						equipped={equip.hat}
 						equippedGlasses={equip.glasses}
 						equippedMask={equip.mask}

@@ -132,6 +132,9 @@ export function ClosetView({
 	// Owned title rows, fed back by TitlesSection's load — the preview
 	// chip resolves the active title's display name from here.
 	const [ownedTitles, setOwnedTitles] = useState<TitleRow[]>([]);
+	// Living mood surface: track the live sprite frame so equipped items ride
+	// along with the breathing pig (same wiring as SwipeElement).
+	const [pigFrameIdx, setPigFrameIdx] = useState(0);
 	const handleTitlesLoaded = useCallback((rows: TitleRow[]) => {
 		setOwnedTitles(rows);
 	}, []);
@@ -285,6 +288,8 @@ export function ClosetView({
 						<View style={styles.pigVisualBox}>
 							<View style={[styles.pigScaler, { transform: [{ scale }] }]}>
 								<PigStage
+									pigFrameIdx={pigFrameIdx}
+									onPigFrame={setPigFrameIdx}
 									equipped={slot("active_hat_id")}
 									equippedGlasses={slot("active_glasses_id")}
 									equippedMask={slot("active_mask_id")}

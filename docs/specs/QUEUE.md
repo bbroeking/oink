@@ -23,7 +23,7 @@
 
 | # | Spec | Source | Status |
 |---|------|--------|--------|
-| 01 | Shop preview freeze + Closet/Visit frame sync | new bug (founder) | pending |
+| 01 | Shop preview freeze + Closet/Visit frame sync | new bug (founder) | done (2026-07-16, 586 tests green) |
 | 02 | Popup queue cluster: BuriedTruffleSheet null-block + unenrolled sheets | GH #3 + #4 | pending |
 | 03 | Offline soft-locks: home_stats retry + saddling-up timeout | GH #5 | pending |
 | 04 | Trough nudges: supersede + tap-through | GH #10 | pending |

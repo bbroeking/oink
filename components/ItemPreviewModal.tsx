@@ -259,6 +259,7 @@ export function ItemPreviewModal({
 							<View style={styles.previewStage}>
 								<PigStage
 									pigAnimation="idle"
+									pigFrozen
 									equipped={stageEquipped}
 									equippedAura={stageEquippedAura}
 									equippedHeld={stageEquippedHeld}

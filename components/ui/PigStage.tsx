@@ -74,6 +74,12 @@ export interface PigStageProps {
 	// frame tracking + jump-complete handling.
 	onPigFrame?: (idx: number) => void;
 	onPigComplete?: () => void;
+	// Pin the sprite to `pigFrameIdx` (defaults to frame 0, the rest pose the
+	// placement studio tunes anchors against) instead of letting SpritePig
+	// auto-advance. The shop preview freezes so a pinned item never rides a
+	// moving pig; living mood surfaces (Barn/Closet/Visit) leave this false and
+	// sync pigFrameIdx via onPigFrame so the item tracks the breathing pig.
+	pigFrozen?: boolean;
 
 	// Equipment slots. `equipped` is the Head slot (hat / bow); glasses, mask,
 	// and neck are now their own anchor-based slots and render together.
@@ -272,6 +278,7 @@ export function PigStage({
 	pigFrameIdx = 0,
 	onPigFrame,
 	onPigComplete,
+	pigFrozen = false,
 	equipped,
 	equippedGlasses,
 	equippedMask,
@@ -381,6 +388,7 @@ export function PigStage({
 					onFrame={onPigFrame}
 					onComplete={onPigComplete}
 					customFrames={main?.prebaked ?? undefined}
+					frameIdx={pigFrozen ? pigFrameIdx : undefined}
 				/>
 			</View>
 			{showMainOverlay && !mainIsBehind && (
