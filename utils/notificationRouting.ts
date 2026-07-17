@@ -32,6 +32,8 @@ export function routeForScreen(screen: string | null | undefined): string | null
 			return "/account";
 		case "season":
 			return "/season"; // bounties (and the season pass) live here
+		case "trough":
+			return "/shop"; // Troughs (item drives) live on the Shop tab
 		default:
 			return null;
 	}

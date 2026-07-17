@@ -47,6 +47,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { routeForScreen } from "@/utils/notificationRouting";
+import { toWhileAwaySystemEvent } from "@/utils/whileAway";
 import {
 	AlignmentSchismModal,
 	type SchismSide,
@@ -603,6 +604,7 @@ function RootLayoutInner() {
 				announcement_id?: number;
 				title?: string;
 				body?: string;
+				data?: unknown; // carries drive_id for trough-nudge tap-through
 			};
 			const all: Norm[] = [
 				...(await ritualSide("blessings")).map<Norm>((r) => ({
@@ -629,6 +631,7 @@ function RootLayoutInner() {
 					announcement_id: r.id,
 					title: r.title,
 					body: r.body,
+					data: r.data,
 				})),
 			];
 
@@ -669,12 +672,16 @@ function RootLayoutInner() {
 			setRituals(
 				all.map<WhileAwayEvent>((r) => {
 					if (r.source === "system") {
-						return {
-							source: "system",
-							announcementId: r.announcement_id ?? 0,
+						// toWhileAwaySystemEvent threads the deep-link route
+						// (drive_id → Shop tab for trough nudges); rows with no
+						// destination come back with route: null (non-pressable).
+						return toWhileAwaySystemEvent({
+							id: r.announcement_id ?? 0,
+							kind: r.kind ?? "",
 							title: r.title ?? "",
 							body: r.body ?? "",
-						};
+							data: r.data,
+						});
 					}
 					const from = r.actor_id ? byId.get(r.actor_id) ?? null : null;
 					if (r.source === "trade_fulfilled") {
@@ -957,6 +964,10 @@ function RootLayoutInner() {
 				<WhileAwayModal
 					visible={ritualsSlot.visible}
 					events={rituals}
+					// Deep-link a trough-nudge row to its drive. The row calls
+					// onDismiss() first (normal dismiss path — marks the batch
+					// seen + persists the away marker), so here we only route.
+					onNavigate={(route) => router.replace(route as never)}
 					onDismiss={() => {
 						// Server-side mark-seen for any system announcements
 						// in the batch. Fire-and-forget; if the network is

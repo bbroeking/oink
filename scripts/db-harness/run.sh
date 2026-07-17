@@ -148,6 +148,11 @@ CHAIN=(
 	# (secret-gated founder archive). RPC-only feedback table (zero-policy RLS).
 	# Needs app_settings (20260744100000, above). Exercised by 54_feedback_den_smoke.
 	supabase/migrations/20260745000000_feedback_den.sql
+	# 00f prep: builds item_drives + are_blocked() + system_announcements.seen_at
+	# + hats.name AHEAD of 20260746 (passed as $@) so check_function_bodies can
+	# validate the redefined nudge_trough body. Exercised by
+	# 44_trough_nudge_supersede_smoke.sql (auto-globbed by [1234]*_smoke.sql).
+	scripts/db-harness/00f_trough_nudge_prep.sql
 )
 
 NAME="pgharness_$$"

@@ -24,6 +24,10 @@ describe("routeForScreen — push deep-link map", () => {
 		expect(routeForScreen("account")).toBe("/account");
 	});
 
+	test("trough routes to the Shop tab (where item drives live)", () => {
+		expect(routeForScreen("trough")).toBe("/shop");
+	});
+
 	test("unknown / missing screen → null (no navigation)", () => {
 		expect(routeForScreen("nonsense")).toBeNull();
 		expect(routeForScreen(undefined)).toBeNull();
