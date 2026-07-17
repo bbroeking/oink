@@ -53,18 +53,37 @@ export interface DigShareData {
 	digs: number;
 	/** Claimed sweet finds — the "finds" stat (== count of shaped grid cells). */
 	finds: number;
+	/**
+	 * The dig at which the GOLDEN was claimed — the receipt headline's Wordle
+	 * number (spec 10, wedge 5c). TEMPORAL, not board-order: N is the 1-based
+	 * position, in the order the player actually cleared tiles (`dugOrder`), of
+	 * the dig that completed the first-claimed truffle's cluster — "it took me
+	 * N digs". Two crewmates digging the same seeded board in different orders
+	 * get different Ns; N is always ≤ `digs` so the headline and the share
+	 * block's "{finds} finds in {digs} digs" stay in agreement. `null` when no
+	 * truffle was claimed (no golden minted → the receipt shows no headline; we
+	 * never invent a consolation stat).
+	 */
+	goldenInDigs: number | null;
 }
 
 /**
- * Reduce a finished dig (its board, the FINAL layer depths, and the finds the
- * player actually claimed) into the spoiler-light share data. Pure + read-only
- * over the parity-locked board — it never mutates board contents.
+ * Reduce a finished dig (its board, the FINAL layer depths, the finds the
+ * player actually claimed, and the TEMPORAL dig order) into the spoiler-light
+ * share data. Pure + read-only over the parity-locked board — it never mutates
+ * board contents.
+ *
+ * `dugOrder` is the tile indices in the order the player actually cleared
+ * them (the caller records this live, dig by dig). The grid/counts come from
+ * the final `layers`; only `goldenInDigs` reads the order — it's a brag about
+ * TIME ("it took me N digs"), so board order would be dishonest.
  */
 export function digShareData(
 	board: PatchBoard,
 	layers: number[],
 	collected: Iterable<Find>,
-	feedingNumber: number
+	feedingNumber: number,
+	dugOrder: readonly number[]
 ): DigShareData {
 	const claimed = new Set<Find>(collected);
 	const gotL = claimed.has("truffle_l");
@@ -103,7 +122,34 @@ export function digShareData(
 	// the grid can never disagree.
 	const finds = cells.reduce((n, c) => (c === "mud" ? n : n + 1), 0);
 
-	return { feedingNumber, cells, digs, finds };
+	// ── goldenInDigs (spec 10) — the temporal brag ─────────────────────────────
+	// The golden is the FIRST truffle the dig CLAIMS (the one the economy mints).
+	// A multi-tile truffle claims only when its whole cluster completes, so a
+	// cluster's dig ordinal is the position in `dugOrder` of its LAST tile to
+	// clear; the golden is the claimed truffle whose completion came earliest.
+	// Same tiles dug in a different order → a different (honest) N.
+	const ordinalOf = new Map<number, number>();
+	dugOrder.forEach((tileIdx, at) => {
+		if (!ordinalOf.has(tileIdx)) ordinalOf.set(tileIdx, at + 1);
+	});
+	const completionOrdinal = (cluster: readonly number[]): number | null => {
+		if (cluster.length === 0) return null;
+		let last = 0;
+		for (const t of cluster) {
+			const at = ordinalOf.get(t);
+			if (at == null) return null; // a cluster tile never dug — not a claim
+			if (at > last) last = at;
+		}
+		return last;
+	};
+	let goldenInDigs: number | null = null;
+	if (gotL) goldenInDigs = completionOrdinal(board.truffleL);
+	if (gotD) {
+		const d = completionOrdinal(board.truffleD);
+		if (d != null && (goldenInDigs == null || d < goldenInDigs)) goldenInDigs = d;
+	}
+
+	return { feedingNumber, cells, digs, finds, goldenInDigs };
 }
 
 /**

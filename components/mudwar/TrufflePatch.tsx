@@ -285,6 +285,13 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 	const [helpMounted, setHelpMounted] = useState(false);
 
 	const layersRef = useRef(layers);
+	// The TEMPORAL dig ledger (spec 10): tile indices in the order they actually
+	// cleared, appended live as each action lands. digShareData reads it to place
+	// "found the golden in N digs" at the player's real Nth dig — board order
+	// would let a lucky layout lie about how long the golden took. Tiles cleared
+	// by one action's splash are appended in ascending index order (a stable,
+	// deterministic tiebreak inside a single simultaneous action).
+	const dugOrderRef = useRef<number[]>([]);
 	const stirRef = useRef(0);
 	const collectedRef = useRef<Set<Find>>(new Set());
 	const justCollectedRef = useRef<Find | null>(null);
@@ -432,11 +439,14 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 			setSubmitting(false);
 			// The share grid reflects the FINAL board state (dug tiles + what they
 			// found) — computed here where board + layers + collected are all known.
+			// dugOrderRef carries the TEMPORAL dig sequence for the "golden in N
+			// digs" headline (spec 10) — N is the player's real Nth dig.
 			const share = digShareData(
 				board,
 				layersRef.current,
 				collectedRef.current,
-				session.windowIndex
+				session.windowIndex,
+				dugOrderRef.current
 			);
 			setEnd({ line, outcome, finds: [...collectedRef.current], share });
 		},
@@ -567,9 +577,11 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 				setFreeReady(false);
 			}
 
-			// Pop-in newly uncovered tiles + kick up a few dirt flecks at the tile.
+			// Pop-in newly uncovered tiles + kick up a few dirt flecks at the tile;
+			// each newly-cleared tile is also appended to the temporal dig ledger.
 			for (let i = 0; i < next.length; i++) {
 				if (before[i] > 0 && next[i] <= 0) {
+					dugOrderRef.current.push(i);
 					Animated.spring(revealAnims[i], {
 						toValue: 1,
 						useNativeDriver: true,
@@ -1238,9 +1250,14 @@ function EndCard({
 					Couldn't bank that dig — the patch will remember your armful.
 				</Text>
 			)}
-			{/* Text-grid share (wedge 5b). Sits UNDER the ledger — added, not a
-			    reflow. SPEC 10 SEAM: once the "golden in N" headline lands it goes
-			    ABOVE this row (the two compose — headline stat, then share it). */}
+			{/* The Wordle-number headline (wedge 5c) + the text-grid share (5b) sit
+			    UNDER the ledger — added, not a reflow. They compose: the golden's
+			    "found in N digs" brag, then the button to share that very dig. The
+			    headline only shows when a golden was minted (goldenInDigs != null);
+			    no golden → no consolation stat, the ledger stands on its own. */}
+			{end.share.goldenInDigs != null && (
+				<GoldenHeadline n={end.share.goldenInDigs} />
+			)}
 			<DigShareRow data={end.share} />
 			{/* The retention hinge: after a REAL dig, if the next window is a wait,
 			    offer one local oink at the next open (highest-intent moment). */}
@@ -1250,6 +1267,25 @@ function EndCard({
 					{submitting ? "Trotting home…" : "Back to the season"}
 				</Text>
 			</Pressable>
+		</View>
+	);
+}
+
+// ── The "found the golden in N digs" headline (wedge 5c — spec 10) ───────────
+// The receipt's one braggable, comparable number: how many digs it actually
+// TOOK to claim the golden. Storybook voice (lowercase, hand-lettered lead in
+// the receipt's accent), the number itself in the whimsy display face so it
+// reads as the headline stat. N is derived by digShare.ts from the session's
+// live-recorded temporal dig order (dugOrderRef) — the player's real Nth dig,
+// never board order — and is always ≤ the share block's "M digs", so the two
+// stay in agreement. Only rendered when a golden was minted — no golden means
+// no headline at all.
+function GoldenHeadline({ n }: { n: number }) {
+	return (
+		<View style={styles.goldenHeadline}>
+			<Text style={styles.goldenLead}>found the golden in</Text>
+			<Text style={styles.goldenNum}>{n}</Text>
+			<Text style={styles.goldenUnit}>{n === 1 ? "dig" : "digs"}</Text>
 		</View>
 	);
 }
@@ -2094,6 +2130,26 @@ const styles = StyleSheet.create({
 		...SHADOW_SM,
 	},
 	endBtnText: { ...TYPE.cardTitle, fontSize: 15, color: WHIMSY.ink },
+
+	// ── The "found the golden in N" headline (wedge 5c) ──────────────────────
+	// A sun-toned sticker panel — the game's reward/gold tone — so the receipt's
+	// one braggable number reads as the headline. Lead + unit in the receipt's
+	// hand voice, the numeral in the whimsy display face (the largest type role).
+	goldenHeadline: {
+		alignSelf: "stretch",
+		alignItems: "center",
+		marginTop: SPACE.md,
+		backgroundColor: WHIMSY.sun,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.lg,
+		paddingVertical: SPACE.sm,
+		paddingHorizontal: SPACE.md,
+		...SHADOW_SM,
+	},
+	goldenLead: { ...TYPE.hand, color: WHIMSY.accent },
+	goldenNum: { ...TYPE.display, color: WHIMSY.ink },
+	goldenUnit: { ...TYPE.cardTitle, color: WHIMSY.ink },
 
 	// ── The text-grid share row (wedge 5b) ───────────────────────────────────
 	// Stretches under the ledger so the gold CTA reads as the receipt's one share
