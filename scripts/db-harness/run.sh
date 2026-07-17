@@ -159,6 +159,12 @@ CHAIN=(
 	# validate the redefined nudge_trough body. Exercised by
 	# 44_trough_nudge_supersede_smoke.sql (auto-globbed by [1234]*_smoke.sql).
 	scripts/db-harness/00f_trough_nudge_prep.sql
+	# 00g prep: builds item_drive_donations + the item_drives reward columns AND
+	# seeds the claw-back fixture AHEAD of 20260751 (spec 15, passed as $@) so
+	# check_function_bodies validates the redefined donate_to_drive/claim_drive_reward
+	# and the migration's one-shot claw-back consumes the seed. Exercised by
+	# 49_trough_retire_smoke.sql (auto-globbed by [1234]*_smoke.sql).
+	scripts/db-harness/00g_trough_retire_prep.sql
 )
 
 NAME="pgharness_$$"

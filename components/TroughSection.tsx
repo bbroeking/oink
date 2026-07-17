@@ -1,9 +1,9 @@
 // The Trough — friend-funded item drives, surfaced as a section in the Shop.
-// Lists open Troughs from your Sounder (my_drives), lets you chip in snouts
-// (10 snouts → 1 tickle, paid straight to snouts + tickles-earned/leaderboard
-// when the drive funds — NOT the tap bank; see 20260628), and claim rewards from
-// drives that funded. The card spells out what's being unlocked, who's chipped
-// in, what you've put in, and what you get back (tickles when it lands + XP now).
+// Lists open Troughs from your Sounder (my_drives) and lets you chip in snouts
+// toward a friend's item. The tickle reward for donating is RETIRED (spec 15):
+// chipping in unlocks the item for the opener + earns you XP, but pays no
+// tickles/leaderboard score. A funded drive shows a celebratory receipt — no
+// claim step — and the client never calls the retired claim_drive_reward RPC.
 import { useCallback, useRef, useState } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
@@ -29,17 +29,15 @@ interface Drive {
 	donor_count: number;
 	my_contribution: number;
 }
+// A funded drive the caller donated to. The tickle reward is retired
+// (spec 15), so this is now a celebratory receipt only — no claim.
 interface Claimable {
 	donation_id: string;
 	drive_id: string;
-	tickle_reward: number;
 	item_id: string;
 	item_name: string | null;
 }
 
-// Snouts → tickles: 10 to 1, rounding down. Mirrors donate_to_drive's
-// floor(snouts/10). Paid out only when the drive funds.
-const TICKLES_PER = (snouts: number) => Math.floor(snouts / 10);
 const PRESETS = [10, 25, 50];
 
 function hoursLeft(iso: string): string {
@@ -126,7 +124,7 @@ export function TroughSection({
 			setNote((n) => ({
 				...n,
 				[d.id]: r.funded
-					? "Funded! Claim your reward below."
+					? "Funded! You landed it for them."
 					: "Chipped in! Thanks",
 			}));
 		} else {
@@ -164,15 +162,6 @@ export function TroughSection({
 		setBusy(null);
 	};
 
-	const claim = async (c: Claimable) => {
-		if (busy) return;
-		setBusy(c.donation_id);
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-		await rpc("claim_drive_reward", { donation_id: c.donation_id });
-		await load();
-		setBusy(null);
-	};
-
 	if (drives.length === 0 && claimable.length === 0) return null;
 
 	return (
@@ -185,24 +174,17 @@ export function TroughSection({
 				<Text style={styles.explainerBody}>
 					Open a drive for any shop item you want, and your Sounder pitches in
 					snouts. When it fills, you get the item — and everyone who chipped in
-					gets snouts & leaderboard score back, plus XP for helping.
+					earns XP for helping the herd land it.
 				</Text>
 			</View>
 
+			{/* Funded-drive receipts — celebratory, no claim step (reward retired). */}
 			{claimable.map((c) => (
 				<View key={c.donation_id} style={styles.claimCard}>
+					<Glyph name="pigface" size={16} />
 					<Text style={styles.claimText}>
-						You helped land the {c.item_name ?? c.item_id} — claim{" "}
-						+{c.tickle_reward} snouts & score
+						You helped land the {c.item_name ?? c.item_id} — the herd came through!
 					</Text>
-					<Pressable
-						onPress={() => claim(c)}
-						style={({ pressed }) => [styles.claimBtn, pressed && { opacity: 0.7 }]}
-					>
-						<Text style={styles.claimBtnText}>
-							{busy === c.donation_id ? "…" : "Claim"}
-						</Text>
-					</Pressable>
 				</View>
 			))}
 
@@ -213,12 +195,12 @@ export function TroughSection({
 				const sel = amounts[d.id] ?? 25;
 				const amt = Math.min(sel, gap);
 				const canAfford = amt > 0 && amt <= balance;
-				const tickles = TICKLES_PER(amt);
 				const open = !d.is_mine && gap > 0;
 
-				// Reward caption: tickles (when it lands) + XP (now, first/day).
+				// Reward caption: XP (now, first/day) + the item lands for a friend.
+				// Tickle payout for donating is retired (spec 15).
 				const rewardBits: string[] = [];
-				if (tickles > 0) rewardBits.push(`+${tickles} snouts & score when it fills`);
+				rewardBits.push("helps your Sounder land it");
 				if (!donatedToday) rewardBits.push("+5 XP now");
 
 				return (
@@ -492,13 +474,4 @@ const styles = StyleSheet.create({
 		marginBottom: 10,
 	},
 	claimText: { flex: 1, fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.ink },
-	claimBtn: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: 10,
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-	},
-	claimBtnText: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
 });
