@@ -36,7 +36,7 @@
 | 11 | Pair Keepsakes + Strongest Pairs UI | 1.4 lane | done (verified built 2026-07-16: keepsake line UserSheet.tsx:530, board Leaderboard.tsx:254+; the FLAMES layer is Phase 2, not queued — Hearth Archive rejected, streak model stands) |
 | 12 | Feeding-clock client gaps | 1.4 lane | done (verified built: utils/feedingConfig.ts server-authoritative w/ fallback; remaining work is the release-day server UPDATE, an ops action) |
 | 13 | Feedback UI: settings whisper row (bell) + nudge mount | 1.4 lane | done (verified built: Account.tsx:1152 bell row, FeedbackNudgeModal mounted _layout.tsx:1051, unflagged) |
-| 14 | Mud-wrap stacking: extend duration, never multiply regen | roadmap 💭 → decided | pending |
+| 14 | Mud-wrap stacking: extend duration, never multiply regen | roadmap 💭 → decided | done (2026-07-16, 627 tests + harness green; migration 20260750000000 authored, unpushed; warm_tea covered too) |
 
 Out of the loop (blocked on founder, tracked in ROADMAP.md): sticker-pack App
 ID registration, all DB pushes, ad-platform actions, demo-account re-seed.
