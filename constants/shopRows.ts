@@ -37,7 +37,10 @@ export const RARITY_LABELS: Record<string, string> = {
 };
 
 // Group items into rarity sections (legendary → common), two cards per row.
-export function buildRowsByRarity(items: HatRow[]): ListRow[] {
+// `keyPrefix` namespaces the row keys per band — the Collectibles list renders
+// TWO rarity runs (members + everyone) in one FlatList, and unprefixed keys
+// collide (`h-legendary` twice → React duplicate-key warning + dropped rows).
+export function buildRowsByRarity(items: HatRow[], keyPrefix = ""): ListRow[] {
 	const groups: Record<string, HatRow[]> = {};
 	for (const i of items) {
 		const r = i.rarity ?? "common";
@@ -49,14 +52,14 @@ export function buildRowsByRarity(items: HatRow[]): ListRow[] {
 		if (!arr?.length) continue;
 		rows.push({
 			type: "header",
-			key: `h-${r}`,
+			key: `h-${keyPrefix}${r}`,
 			title: RARITY_LABELS[r],
 			rarity: r,
 		});
 		for (let i = 0; i < arr.length; i += 2) {
 			rows.push({
 				type: "row",
-				key: `r-${r}-${i}`,
+				key: `r-${keyPrefix}${r}-${i}`,
 				items: arr.slice(i, i + 2),
 			});
 		}
@@ -89,7 +92,7 @@ export function buildBrowseRows(
 			collapsed: collapsed.members,
 			locked: !isVip,
 		});
-		if (!collapsed.members) rows.push(...buildRowsByRarity(members));
+		if (!collapsed.members) rows.push(...buildRowsByRarity(members, "m-"));
 	}
 	if (regular.length) {
 		if (members.length) {
@@ -101,7 +104,7 @@ export function buildBrowseRows(
 				collapsed: collapsed.everyone,
 				locked: false,
 			});
-			if (!collapsed.everyone) rows.push(...buildRowsByRarity(regular));
+			if (!collapsed.everyone) rows.push(...buildRowsByRarity(regular, "e-"));
 		} else {
 			rows.push(...buildRowsByRarity(regular));
 		}

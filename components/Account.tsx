@@ -29,6 +29,7 @@ import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Button, SectionHeader } from "./ui";
 import { LoadingBeat } from "./ui/EmptyState";
+import { Glyph } from "./ui/Glyph";
 import { Icon, type IconName } from "./ui/Icon";
 import { Image } from "react-native";
 import { PigAvatar } from "./ui/PigAvatar";
@@ -519,15 +520,16 @@ export function Account({ session }: { session: Session }) {
 		setTimeout(() => setCopied(false), 1800);
 	};
 
-	// Listen for entitlement changes from RC (e.g., webhook flips after sandbox renewal)
+	// Listen for entitlement changes from RC (e.g., webhook flips after sandbox
+	// renewal). UI-optimistic only: the durable is_vip flip is the RevenueCat
+	// webhook (supabase/functions/revenuecat-webhook) — dev_set_vip was revoked
+	// from authenticated in the 20260537-39 lockdowns, so calling it here only
+	// produced a permission-denied error log.
 	useFocusEffect(
 		useCallback(() => {
-			const unsub = onCustomerInfoUpdate(async (info) => {
+			const unsub = onCustomerInfoUpdate((info) => {
 				const pro = !!info.entitlements.active["tickle_the_pig_pro"];
-				if (pro && !isVip) {
-					setIsVip(true);
-					await rpc("dev_set_vip", { target: true });
-				}
+				if (pro && !isVip) setIsVip(true);
 			});
 			return unsub;
 		}, [isVip])
@@ -831,6 +833,14 @@ export function Account({ session }: { session: Session }) {
 									}
 									label="Bigger tickle bank"
 									detail="Hold 50 tickles, up from 25"
+								/>
+								{/* 2× regen is a live server perk (regen_secs_for reads
+								    is_vip) that the pitch never advertised. Sticker-heart
+								    glyph until a dedicated perk art lands via the studio. */}
+								<SlopPerk
+									node={<Glyph name="heart" size={44} />}
+									label="Tickles refill twice as fast"
+									detail="Your bank regenerates at 2× speed"
 								/>
 								<SlopPerk
 									node={

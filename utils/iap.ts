@@ -13,9 +13,13 @@
 //         scoping is handled server-side by grant_season_pass.)
 //   4. RevenueCat dashboard: https://app.revenuecat.com
 //      - Create iOS app, paste the App-Specific Shared Secret from ASC
-//      - Map both products to entitlement `tickle_the_pig_pro`
-//      - Create an Offering (default) with both packages
-//      - Configure a Paywall on the offering (RevenueCat dashboard → Paywalls)
+//      - Map ONLY the subscriptions (monthly/yearly) to entitlement
+//        `tickle_the_pig_pro`. Do NOT attach `season_pass` — the one-time
+//        pass unlocks the premium *track* via grant_season_pass (webhook),
+//        not the membership; mapping it would gift pass buyers full
+//        Slop Club. (docs/revenuecat-asc-setup.md, "Note on season_pass".)
+//      - Offerings: `slop_club` (monthly+yearly) and `season_pass`
+//      - Configure a Paywall per offering (RevenueCat dashboard → Paywalls)
 //   5. Replace REVENUECAT_IOS_API_KEY below if needed
 //
 // In dev, sandbox testers handle purchases (App Store Connect > Users
