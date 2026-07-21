@@ -40,6 +40,7 @@ import { useSeasonEnd } from "../../hooks/useSeasonEnd";
 import type { BetaReward } from "../../hooks/useSeasonEnd";
 import { HungerHero } from "../../components/season1/HungerHero";
 import { TickleBreakdownSheet } from "../../components/TickleBreakdownSheet";
+import { BountyBoard } from "../../components/BountyBoard";
 import { WindowStrip } from "../../components/season1/WindowStrip";
 import { SounderHomeCard } from "../../components/season1/SounderHomeCard";
 import { SounderStepCard } from "../../components/season1/SounderStepCard";
@@ -1508,7 +1509,8 @@ export default function SeasonScreen() {
 					    "do this now" slot — the window strip's feeding rhythm above the
 					    dig CTA / join door; then the pass section; then the dig-off. The
 					    story + earnables shelf live in the header-icon modals, off the
-					    scroll. BountyBoard leaves the tab while it's feature-dark. ── */}
+					    scroll. The weekly BountyBoard sits above the pass section
+				    (self-hiding when there are no active bounties). ── */}
 					{s1 && (
 						<>
 							{/* The value banner — the compressed hero. Its full art +
@@ -1620,6 +1622,14 @@ export default function SeasonScreen() {
 							)}
 						</>
 					)}
+
+					{/* Weekly bounty board — fetches my_weekly_bounties on focus
+					    and renders one card per active bounty. Self-gates: renders
+					    nothing when the player has no active bounties this week, so
+					    it's safe above the pass for every season. The Season tab's
+					    hanging-sign badge (bounty_ready_count in _layout) points here
+					    when a bounty is claimable. */}
+					<BountyBoard />
 
 					{/* Section header for the pass — the list gap (SPACE.sm) owns
 					    the seam above; no extra margin so the sections sit tight. */}

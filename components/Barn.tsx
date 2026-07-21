@@ -41,6 +41,7 @@ import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 import { BarnOverlay } from "./ui/BarnOverlay";
 import { BarnActiveEffectsStrip } from "./BarnActiveEffectsStrip";
 import { BarnSounderChip } from "./BarnSounderChip";
+import { BarnBountyChip } from "./BarnBountyChip";
 import {
 	alignmentLabel,
 	alignmentDisplay,
@@ -899,6 +900,15 @@ export default function Barn() {
 				    it never covers Rosie; it self-hides once they join. The
 				    persistent fallback to the once-per-session launch modal. */}
 				<BarnSounderChip />
+
+				{/* Weekly-bounty home entry point — a quiet chip that appears only
+				    when the player has a claimable bounty (count > 0), routing to the
+				    Season tab where the BountyBoard section lives. Self-gates to
+				    nothing when there's nothing ready; rides the same in-flow column
+				    as the Sounder chip so it never floats over Rosie. The board was
+				    restored as a Season-tab section (not its own tab); this is the
+				    surface that keeps it from being forgotten. */}
+				<BarnBountyChip />
 
 				{/* Alignment placard removed — the hanging Pilgrim/
 				    Generous/Greedy sign that used to live up here
