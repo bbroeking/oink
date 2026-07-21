@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Soften every aura's hard outer border. The aura art is opaque out to ~85% of
-its radius, so when PigStage clips the (widened) aura to the 300 card it cuts
-straight through solid pixels → a hard rectangular border at the card edge. This
-bakes a RADIAL alpha FALLOFF into each aura PNG (full in the centre where the
-glow sits behind Rosie, smoothly fading to transparent toward the edge) so the
-halo dissolves instead of getting a visible cut line.
+its radius, and PigStage renders the (widened) aura UNCLIPPED (auraLayer,
+overflow visible) — without a falloff the square art edge shows as a hard box
+spilling onto neighbouring cards. This bakes a RADIAL alpha FALLOFF into each
+aura PNG (full in the centre where the glow sits behind Rosie, smoothly fading
+to transparent toward the edge) so the halo dissolves instead of ending in a
+visible edge.
 
 One-shot + reversible: originals are copied to tmp/aura-orig/ first. NOT part of
 any pipeline (re-running would double-fade), so run it deliberately.

@@ -91,3 +91,43 @@ can stay — they're not user-facing.
   game-breaking).
 - **`is_vip` column**: recommend keeping the name (rebrand UI only).
   Confirm you're OK with the internal name staying.
+
+---
+
+## Addendum — where the build actually landed (2026-07-20)
+
+The implementation deliberately diverged from the spec above in four
+places; this section ratifies them (SKILL.md decision log, 2026-07-20).
+
+1. **Slop Club INCLUDES the season pass.** Migration `20260686`
+   reversed Phase 2: `season_state()` returns
+   `premium_unlocked OR is_vip`, and `claim_tier_reward()` honors
+   `is_vip` — a member never buys the pass separately. The premium
+   banner sells the **subscription**, not the one-time pass.
+2. **The standalone Season Pass product is DORMANT.** The `season_pass`
+   consumable + offering exist in ASC/RevenueCat and are
+   review-approved, but no UI presents it
+   (`docs/appstore/iap-review-notes.md`). `BattlePassSaleModal` was
+   unwired, not repurposed. When it does get a surface:
+   - **RevenueCat rule:** `season_pass` maps to NO entitlement — only
+     `monthly`/`yearly` grant `tickle_the_pig_pro`. Mapping the pass
+     would gift buyers the whole membership.
+   - **Grant path:** the `revenuecat-webhook` handles
+     `NON_RENEWING_PURCHASE`/`REFUND` of `season_pass` by writing
+     `user_season_progress.premium_unlocked` directly for the active
+     season (service-role; `grant_season_pass()` reads `auth.uid()`
+     and can't be called from a webhook). Client-side `grant_season_pass`
+     stays revoked from `authenticated` (dev-grant lockdown).
+3. **No `season_passes` table.** The entitlement is
+   `user_season_progress.premium_unlocked` (per-user, per-season) — no
+   separate provenance table; purchase provenance lives in RevenueCat.
+   `has_season_pass()` exists server-side but the client reads
+   `season_state().premium_unlocked` (which folds in `is_vip`).
+4. **The stipend is a manual claim, not on-launch.** The membership
+   card on the scrapbook page shows "Claim 250 snouts" once a month
+   (`claim_slop_stipend`, idempotent per UTC month) with a
+   claimed-state + next-date line. Chosen over the silent launch grant:
+   a small monthly ritual on the membership surface.
+
+Shipped prices: Slop Club **$2.99/mo · $24.99/yr**, Season Pass
+**$4.99** (see `utils/iap.ts` / ASC).

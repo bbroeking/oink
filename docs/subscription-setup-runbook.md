@@ -1,5 +1,18 @@
 # Subscription Setup — Runbook
 
+> **⚠️ SUPERSEDED (2026-07-20).** This runbook is the pre-rebrand
+> "Tickle the Pig Pro" checklist and its boxes are stale — the storefront
+> went LIVE 2026-07-17 under the **Slop Club** branding. Verified state:
+> ASC products (`monthly`/`yearly`/`season_pass`) staged with the 1.3
+> review (`docs/appstore/iap-review-notes.md`), RevenueCat app + `appl_`
+> key wired (`eas.json`), `revenuecat-webhook` edge function **deployed
+> ACTIVE v3** with `RC_WEBHOOK_AUTH_HEADER` set 2026-07-18 (checked via
+> `supabase functions list` / `secrets list`), sandbox purchases
+> completing (`constants/featureFlags.ts` → `PURCHASES_LIVE`).
+> The **current** setup doc is `docs/revenuecat-asc-setup.md`; product
+> copy below (prices, leaderboard star) predates the redesign — don't
+> paste it anywhere.
+
 The do-this-now checklist for turning on "Tickle the Pig Pro".
 Design rationale lives in `subscriptions-spec.md`; this file is the
 step-by-step. Check boxes as you go.

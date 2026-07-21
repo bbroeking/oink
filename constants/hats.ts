@@ -552,8 +552,9 @@ export const CATEGORY_OVERLAYS: Record<string, HatOverlay> = {
 	held:       { bottom: 34,  left: 235, width: 80,  height: 76  },
 	// Aura sits in a WIDER area around the pig — the glow box is bigger than the
 	// 300 card and centered, so the halo radiates well past the pig body. PigStage
-	// clips it to the stage (auraClip) so the bigger glow can't spill onto
-	// neighbouring cards. Background stays exactly the 300 canvas (opaque page).
+	// renders it UNCLIPPED (auraLayer, overflow visible); the radial alpha falloff
+	// baked into the art (scripts/soften_aura_edges.py) is what keeps the overflow
+	// faint on neighbours. Background stays exactly the 300 canvas (opaque page).
 	aura:       { bottom: -105, left: -105, width: 510, height: 510 },
 	background: { bottom: 0,   left: 0,   width: 300, height: 300 },
 	// Country flag — a tilted sticker tucked into the bottom-right corner
