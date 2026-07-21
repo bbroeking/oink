@@ -24,6 +24,7 @@ import {
 	GestureHandlerRootView,
 } from "react-native-gesture-handler";
 import {
+	runOnJS,
 	useDerivedValue,
 	useFrameCallback,
 	useSharedValue,
@@ -43,6 +44,12 @@ const WORLD_W = 432;
 const WORLD_H = 910;
 const FENCE_INSET = 46;
 const PIG = 96; // on-screen pig box (pt); frames are square 256s
+// The seesaw station (P2b/c) — pivot point in world coords, a seat at each
+// plank end. Both seats full -> every client runs the same sine ride
+// anchored to the later sitter's `since` (zero extra network traffic).
+const SEESAW = { x: 216, y: 640 };
+const SEAT_DX = 54;
+const SEESAW_TAP_R = 55;
 const SPEED = 170; // walk speed, pt/s
 const FRAME_MS = 125; // 8 fps walk cycle
 
@@ -80,7 +87,7 @@ export default function LoungeScreen() {
 
 	// P2a — realtime peers. Presence + 10 Hz pos broadcast while walking;
 	// remote pigs animate off their movedAt recency (see ticker below).
-	const { peers, sendPos, sendEmote } = useLoungePeers(
+	const { peers, sendPos, sendEmote, setStation } = useLoungePeers(
 		me?.uid ?? null,
 		me?.username ?? "a pig",
 		{ x: WORLD_W / 2, y: WORLD_H / 2 }
@@ -137,6 +144,14 @@ export default function LoungeScreen() {
 		null
 	);
 
+	const seesawBase = useImage(require("../assets/images/lounge/seesaw_base.png"));
+	const seesawPlank = useImage(require("../assets/images/lounge/seesaw_plank.png"));
+	const [myStation, setMyStation] = useState<{
+		slot: number;
+		since: number;
+	} | null>(null);
+	const pendingSeat = useRef<number | null>(null);
+
 	// Pig position (feet point) + walk target, all on the UI thread.
 	const px = useSharedValue(WORLD_W / 2);
 	const py = useSharedValue(WORLD_H / 2);
@@ -148,6 +163,10 @@ export default function LoungeScreen() {
 	// last facing at rest.
 	const dir = useSharedValue(0);
 	const resting = useSharedValue(1);
+	// 0 empty · 1 left only · 2 right only · 3 both (ride!)
+	const seatMode = useSharedValue(0);
+	const rideSince = useSharedValue(0);
+	const seesawRot = useSharedValue(0);
 
 	useFrameCallback((info) => {
 		"worklet";
@@ -170,6 +189,15 @@ export default function LoungeScreen() {
 			walkClock.value += dtMs;
 			frame.value = Math.floor(walkClock.value / (FRAME_MS * 3)) % 4;
 		}
+		// Seesaw plank: deterministic on every client — pure f(now, since).
+		seesawRot.value =
+			seatMode.value === 3
+				? Math.sin((Date.now() - rideSince.value) / 450) * 0.2
+				: seatMode.value === 1
+				? -0.16
+				: seatMode.value === 2
+				? 0.16
+				: 0;
 	});
 
 	// Camera: keep the pig centered until the world edge clamps the view.
@@ -185,16 +213,43 @@ export default function LoungeScreen() {
 	]);
 
 	// Screen tap → world-space walk target, clamped inside the field.
-	const tap = Gesture.Tap().onEnd((e) => {
-		"worklet";
+	// Station logic runs on JS (it needs peers state): tapping near the
+	// seesaw walks to a free seat; anywhere else stands up + walks.
+	const handleTap = (wx: number, wy: number) => {
+		const nearSeesaw =
+			Math.hypot(wx - SEESAW.x, wy - SEESAW.y) < SEESAW_TAP_R;
+		if (nearSeesaw) {
+			const taken = new Set(
+				peers
+					.filter((pr) => pr.station?.id === "seesaw")
+					.map((pr) => pr.station!.slot)
+			);
+			if (myStation) taken.add(myStation.slot);
+			const slot = !taken.has(0) ? 0 : !taken.has(1) ? 1 : null;
+			if (slot !== null) {
+				pendingSeat.current = slot;
+				tx.value = SEESAW.x + (slot === 0 ? -SEAT_DX : SEAT_DX);
+				ty.value = SEESAW.y - 6;
+				return;
+			}
+		}
+		if (myStation) {
+			setMyStation(null);
+			setStation(null);
+			pendingSeat.current = null;
+		}
 		tx.value = Math.min(
-			Math.max(e.x + camX.value, FENCE_INSET + PIG / 2),
+			Math.max(wx, FENCE_INSET + PIG / 2),
 			WORLD_W - FENCE_INSET - PIG / 2
 		);
 		ty.value = Math.min(
-			Math.max(e.y + camY.value, FENCE_INSET + PIG),
+			Math.max(wy, FENCE_INSET + PIG),
 			WORLD_H - FENCE_INSET
 		);
+	};
+	const tap = Gesture.Tap().onEnd((e) => {
+		"worklet";
+		runOnJS(handleTap)(e.x + camX.value, e.y + camY.value);
 	});
 
 	// Frame swap via per-(direction,frame) opacity — 16 stacked images, one
@@ -227,6 +282,9 @@ export default function LoungeScreen() {
 		[w0, w1, w2, w3],
 	];
 
+	const plankTransform = useDerivedValue(() => [
+		{ rotate: seesawRot.value },
+	]);
 	const pigX = useDerivedValue(() => px.value - PIG / 2);
 	const pigY = useDerivedValue(() => py.value - PIG);
 	const bubbleX = useDerivedValue(() => px.value - 14);
@@ -248,6 +306,20 @@ export default function LoungeScreen() {
 				lastSent.current = { x, y };
 				sendPos(x, y, dir.value);
 			}
+			// Seat arrival → claim it via presence.
+			if (pendingSeat.current !== null) {
+				const sx = SEESAW.x + (pendingSeat.current === 0 ? -SEAT_DX : SEAT_DX);
+				if (Math.hypot(x - sx, y - (SEESAW.y - 6)) < 7) {
+					const st = {
+						id: "seesaw",
+						slot: pendingSeat.current,
+						since: Date.now(),
+					};
+					setMyStation({ slot: st.slot, since: st.since });
+					setStation(st);
+					pendingSeat.current = null;
+				}
+			}
 		}, 100);
 		const tick = setInterval(() => setRemoteTick((t) => t + 1), FRAME_MS);
 		return () => {
@@ -257,6 +329,34 @@ export default function LoungeScreen() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [me]);
 	const now = Date.now();
+	// Mirror seesaw occupancy into UI-thread values for the plank worklet.
+	useEffect(() => {
+		const sitters = peers
+			.filter((pr) => pr.station?.id === "seesaw")
+			.map((pr) => pr.station!);
+		if (myStation) sitters.push({ id: "seesaw", ...myStation });
+		// Conflict rule (spec): earliest `since` keeps a double-claimed seat;
+		// the loser quietly stands up and the seat shows one pig everywhere.
+		if (myStation) {
+			const rival = peers.find(
+				(pr) =>
+					pr.station?.id === "seesaw" &&
+					pr.station.slot === myStation.slot &&
+					pr.station.since < myStation.since
+			);
+			if (rival) {
+				setMyStation(null);
+				setStation(null);
+			}
+		}
+		const left = sitters.some((st) => st.slot === 0);
+		const right = sitters.some((st) => st.slot === 1);
+		seatMode.value = left && right ? 3 : left ? 1 : right ? 2 : 0;
+		rideSince.value = sitters.length
+			? Math.max(...sitters.map((st) => st.since))
+			: 0;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [peers, myStation]);
 
 	return (
 		<GestureHandlerRootView style={styles.root}>
@@ -275,7 +375,32 @@ export default function LoungeScreen() {
 									fit="fill"
 								/>
 							)}
-							{/* Remote pigs — plain props re-rendered at ~10 Hz; walk
+							{/* Seesaw — base, then the plank rotating around the pivot.
+						    Drawn under the pigs so riders sit on top. */}
+						{seesawBase && (
+							<SkiaImage
+								image={seesawBase}
+								x={SEESAW.x - 26}
+								y={SEESAW.y - 42}
+								width={52}
+								height={41}
+							/>
+						)}
+						{seesawPlank && (
+							<Group
+								origin={{ x: SEESAW.x, y: SEESAW.y - 34 }}
+								transform={plankTransform}
+							>
+								<SkiaImage
+									image={seesawPlank}
+									x={SEESAW.x - 75}
+									y={SEESAW.y - 52}
+									width={150}
+									height={37}
+								/>
+							</Group>
+						)}
+						{/* Remote pigs — plain props re-rendered at ~10 Hz; walk
 						    frames advance while their last pos event is fresh. */}
 						{peers.map((peer) => {
 							const moving = now - peer.movedAt < 250;

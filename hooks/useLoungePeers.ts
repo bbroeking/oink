@@ -17,6 +17,9 @@ export interface LoungePeer {
 	dir: number; // 0=S 1=N 2=E 3=W
 	movedAt: number; // Date.now() of last pos event — drives walk anim
 	emote?: { i: number; at: number }; // active emote bubble (index + Date.now)
+	// Station seat claim (P2b) — carried in presence so it self-heals on
+	// disconnect. since = Date.now() of sitting (earliest wins conflicts).
+	station?: { id: string; slot: number; since: number } | null;
 }
 
 export interface LoungeRoom {
@@ -24,6 +27,8 @@ export interface LoungeRoom {
 	// Publish my position (throttle at the call site).
 	sendPos: (x: number, y: number, dir: number) => void;
 	sendEmote: (i: number) => void;
+	// Re-track presence with a station claim (or null to stand up).
+	setStation: (st: { id: string; slot: number; since: number } | null) => void;
 }
 
 const SHARD = "lounge:1"; // shard picker lands with P2-final
@@ -50,12 +55,18 @@ export function useLoungePeers(
 		const flush = () => setPeers(Array.from(peersRef.current.values()));
 
 		chan.on("presence", { event: "sync" }, () => {
-			const state = chan.presenceState<{ username: string }>();
+			const state = chan.presenceState<{
+				username: string;
+				station?: { id: string; slot: number; since: number } | null;
+			}>();
 			const seen = new Set<string>();
 			for (const key of Object.keys(state)) {
 				if (key === uid) continue;
 				seen.add(key);
 				const existing = peersRef.current.get(key);
+				if (existing) {
+					existing.station = state[key][0]?.station ?? null;
+				}
 				if (!existing) {
 					peersRef.current.set(key, {
 						key,
@@ -65,6 +76,7 @@ export function useLoungePeers(
 						y: spawn.y,
 						dir: 0,
 						movedAt: 0,
+						station: state[key][0]?.station ?? null,
 					});
 				}
 			}
@@ -134,11 +146,19 @@ export function useLoungePeers(
 			.catch(() => {});
 	};
 
+	const setStation = (
+		st: { id: string; slot: number; since: number } | null
+	) => {
+		const chan = chanRef.current;
+		if (!chan) return;
+		chan.track({ username, station: st }).catch(() => {});
+	};
+
 	const sendEmote = (i: number) => {
 		chanRef.current
 			?.send({ type: "broadcast", event: "emote", payload: { key: uid, i } })
 			.catch(() => {});
 	};
 
-	return { peers, sendPos, sendEmote };
+	return { peers, sendPos, sendEmote, setStation };
 }
