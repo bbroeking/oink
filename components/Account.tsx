@@ -29,7 +29,6 @@ import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { Button, SectionHeader } from "./ui";
 import { LoadingBeat } from "./ui/EmptyState";
-import { Glyph } from "./ui/Glyph";
 import { Icon, type IconName } from "./ui/Icon";
 import { Image } from "react-native";
 import { PigAvatar } from "./ui/PigAvatar";
@@ -49,8 +48,6 @@ import {
 } from "../utils/iap";
 import { PURCHASES_LIVE, SOUNDER_VISIBLE } from "@/constants/featureFlags";
 import { showPurchaseToast } from "./PurchaseToast";
-import { SnoutCoin } from "./ui/SnoutCoin";
-import { useStipend, type StipendStatus } from "@/hooks/useStipend";
 import {
 	myReferralSummary,
 	shareMessageForCode,
@@ -240,37 +237,6 @@ export function Account({ session }: { session: Session }) {
 				if (r?.ok) setLifetimeAgg(r);
 			})
 			.finally(() => setLifetimeAggBusy(false));
-	};
-	// Slop Club monthly snout stipend — manual claim from the membership card.
-	const [stipendStatus, setStipendStatus] = useState<StipendStatus | null>(null);
-	const [stipendBusy, setStipendBusy] = useState(false);
-	const stipend = useStipend({
-		onClaimed: (granted) => {
-			setSnouts((s) => s + granted);
-			showPurchaseToast({
-				type: "success",
-				title: "Slop Club",
-				text: `+${granted} snouts — your monthly stipend`,
-			});
-		},
-	});
-	useFocusEffect(
-		useCallback(() => {
-			let cancelled = false;
-			stipend.status().then((s) => {
-				if (!cancelled) setStipendStatus(s);
-			});
-			return () => {
-				cancelled = true;
-			};
-		}, [stipend])
-	);
-	const handleClaimStipend = async () => {
-		if (stipendBusy) return;
-		setStipendBusy(true);
-		await stipend.claim(); // onClaimed handles the toast + snout bump
-		setStipendBusy(false);
-		stipend.status().then(setStipendStatus);
 	};
 	// Show the user's currently equipped title alongside their code so
 	// they can confirm at-a-glance that their title is wired up. Manage
@@ -781,43 +747,6 @@ export function Account({ session }: { session: Session }) {
 									: "The good life for swine of standing."}
 							</Text>
 
-							{/* Monthly stipend claim — members claim 250 snouts once a
-							    month (resets on the 1st). */}
-							{isVip && stipendStatus?.isMember && (
-								stipendStatus.claimedThisMonth ? (
-									<View style={styles.stipendDone}>
-										<Icon name="check" size={13} color={WHIMSY.ink} strokeWidth={2.4} />
-										<Text style={styles.stipendDoneText}>
-											Stipend claimed —{" "}
-											{stipendStatus.nextAt
-												? `next on ${new Date(
-														stipendStatus.nextAt
-													).toLocaleDateString(undefined, {
-														month: "short",
-														day: "numeric",
-													})}`
-												: "next on the 1st"}
-										</Text>
-									</View>
-								) : (
-									<Pressable
-										onPress={handleClaimStipend}
-										disabled={stipendBusy}
-										style={({ pressed }) => [
-											styles.stipendBtn,
-											(pressed || stipendBusy) && { opacity: 0.7 },
-										]}
-									>
-										<SnoutCoin size={16} />
-										<Text style={styles.stipendBtnText}>
-											{stipendBusy
-												? "Claiming…"
-												: `Claim ${stipendStatus.amount} snouts`}
-										</Text>
-									</Pressable>
-								)
-							)}
-
 							{/* Perks — shown in BOTH states. For members the icon
 							    wells light up gold (active) so the card celebrates
 							    membership instead of sitting empty; for prospects
@@ -833,25 +762,6 @@ export function Account({ session }: { session: Session }) {
 									}
 									label="Bigger tickle bank"
 									detail="Hold 50 tickles, up from 25"
-								/>
-								{/* 2× regen is a live server perk (regen_secs_for reads
-								    is_vip) that the pitch never advertised. Sticker-heart
-								    glyph until a dedicated perk art lands via the studio. */}
-								<SlopPerk
-									node={<Glyph name="heart" size={44} />}
-									label="Tickles refill twice as fast"
-									detail="Your bank regenerates at 2× speed"
-								/>
-								<SlopPerk
-									node={
-										<Image
-											source={require("@/assets/images/perks/stipend.png")}
-											style={styles.perkArtImg}
-											resizeMode="contain"
-										/>
-									}
-									label="Monthly snout stipend"
-									detail="250 snouts on the 1st, every month"
 								/>
 								<SlopPerk
 									node={
@@ -1854,30 +1764,6 @@ const styles = StyleSheet.create({
 	},
 	// ── Slop Club membership card ──────────────────────────────────
 	slopWrap: { padding: 18 },
-	stipendBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: 7,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingVertical: 9,
-		marginTop: 12,
-		marginBottom: 4,
-	},
-	stipendBtnText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
-	stipendDone: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: 6,
-		marginTop: 12,
-		marginBottom: 4,
-		paddingVertical: 6,
-	},
-	stipendDoneText: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.mute },
 	slopMemberBadge: {
 		position: "absolute",
 		top: 12,
