@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tickle the Pig — Report a Bug or Idea</title>
+<meta name="robots" content="index,follow" />
+<link rel="icon" href="/rosie.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#2a1f15; --paper:#fffaf0; --rose:#c0566a; --mute:#9a8c7a; --line:#ece0cc; }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; color:var(--ink);
+    background:
+      radial-gradient(circle at 12% 6%, rgba(255,214,220,.35), transparent 32%),
+      radial-gradient(circle at 90% 96%, rgba(214,200,240,.30), transparent 34%),
+      var(--paper);
+    font-family:"Archivo",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    line-height:1.65;
+  }
+  .wrap { max-width:720px; margin:0 auto; padding:8px 22px 80px; }
+  header.site { display:flex; align-items:center; gap:10px; padding:20px 0 16px; border-bottom:2px solid var(--line); margin-bottom:26px; }
+  header.site img { width:34px; height:34px; border-radius:50%; }
+  header.site a.brand { font-weight:800; font-size:19px; color:var(--ink); text-decoration:none; letter-spacing:-.01em; }
+  h1 { font-size:30px; font-weight:800; line-height:1.2; margin:6px 0 14px; letter-spacing:-.015em; }
+  p { font-size:15.5px; margin:10px 0; }
+  a { color:var(--rose); }
+  strong { font-weight:700; }
+  footer.site { margin-top:52px; padding-top:18px; border-top:2px solid var(--line); font-size:14px; color:var(--mute); display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
+  footer.site a { color:var(--mute); text-decoration:none; }
+  footer.site a:hover { color:var(--ink); }
+
+  /* ── report form ─────────────────────────────────────────────── */
+  form.report { margin:24px 0 0; }
+  fieldset.kinds { border:0; margin:0 0 22px; padding:0; }
+  legend { font-size:15px; font-weight:700; padding:0; margin:0 0 10px; }
+  .kind-grid { display:flex; flex-wrap:wrap; gap:10px; }
+  .kind {
+    flex:1 1 180px; cursor:pointer;
+    border:2px solid var(--line); border-radius:14px;
+    background:#fff; padding:14px 16px;
+    transition:border-color .12s ease, background .12s ease, transform .06s ease;
+  }
+  .kind:hover { border-color:#d9c8ab; }
+  .kind input { position:absolute; opacity:0; width:0; height:0; }
+  .kind .k-title { font-weight:700; font-size:15.5px; display:block; }
+  .kind .k-sub { font-size:13px; color:var(--mute); display:block; margin-top:2px; }
+  .kind:has(input:checked) { border-color:var(--rose); background:#fff4f5; }
+  .kind:has(input:focus-visible) { outline:2px solid var(--rose); outline-offset:2px; }
+
+  label.field { display:block; font-size:15px; font-weight:700; margin:0 0 6px; }
+  .field-wrap { margin-bottom:18px; }
+  textarea, input.name {
+    width:100%; font-family:inherit; font-size:15.5px; color:var(--ink);
+    background:#fff; border:2px solid var(--line); border-radius:14px;
+    padding:12px 14px; line-height:1.55; resize:vertical;
+  }
+  textarea { min-height:150px; }
+  textarea:focus, input.name:focus { outline:none; border-color:var(--rose); }
+  .counter { font-size:13px; color:var(--mute); text-align:right; margin:5px 2px 0; }
+  .counter.over { color:var(--rose); }
+
+  /* honeypot — off-screen but focusable by dumb bots */
+  .gate { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
+
+  button.submit {
+    appearance:none; cursor:pointer; font-family:inherit;
+    font-size:16px; font-weight:800; color:#fff;
+    background:var(--rose); border:0; border-radius:14px;
+    padding:14px 22px; width:100%; letter-spacing:.01em;
+    transition:opacity .12s ease, transform .06s ease;
+  }
+  button.submit:hover { opacity:.92; }
+  button.submit:active { transform:translateY(1px); }
+  button.submit:disabled { opacity:.55; cursor:default; }
+
+  .note { font-size:14px; margin-top:12px; min-height:20px; }
+  .note.err { color:var(--rose); font-weight:600; }
+  .note.ok { color:#5A8338; font-weight:600; }
+
+  .done {
+    border:2px solid var(--line); border-radius:16px; background:#fff;
+    padding:26px 22px; text-align:center;
+  }
+  .done h2 { font-size:21px; font-weight:800; margin:0 0 8px; }
+  .done p { color:var(--mute); margin:6px 0 0; }
+  .done .again { margin-top:16px; }
+  .done .again a { color:var(--rose); text-decoration:none; font-weight:700; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="site"><img src="/rosie.png" alt="Rosie the pig" /><a class="brand" href="/">Tickle the Pig</a></header>
+<h1>Report a bug or share an idea</h1>
+
+<p>Found something broken, thought of something better, or just want to say hi? Whisper it here and it drops straight into the Den — the founder reads every one. No account needed.</p>
+
+<form class="report" id="report-form" novalidate>
+  <fieldset class="kinds">
+    <legend>What kind of whisper is this?</legend>
+    <div class="kind-grid">
+      <label class="kind">
+        <input type="radio" name="kind" value="bug" required />
+        <span class="k-title">Something's broken</span>
+        <span class="k-sub">A bug, a glitch, a thing that won't behave.</span>
+      </label>
+      <label class="kind">
+        <input type="radio" name="kind" value="idea" />
+        <span class="k-title">An idea</span>
+        <span class="k-sub">Something you wish the game did.</span>
+      </label>
+      <label class="kind">
+        <input type="radio" name="kind" value="love" />
+        <span class="k-title">A love note</span>
+        <span class="k-sub">A kind word for the bog. We keep these.</span>
+      </label>
+    </div>
+  </fieldset>
+
+  <div class="field-wrap">
+    <label class="field" for="body">Your message</label>
+    <textarea id="body" name="body" maxlength="1000" minlength="3"
+      placeholder="What should the bog know?" required></textarea>
+    <div class="counter" id="counter">0 / 1000</div>
+  </div>
+
+  <div class="field-wrap">
+    <label class="field" for="name">Your name <span style="font-weight:400;color:var(--mute)">(optional)</span></label>
+    <input class="name" id="name" name="name" type="text" maxlength="24"
+      placeholder="a passing pig" autocomplete="off" />
+  </div>
+
+  <!-- Honeypot: humans never see or fill this; a filled value marks a bot. -->
+  <div class="gate" aria-hidden="true">
+    <label for="website">Leave this field empty</label>
+    <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+  </div>
+
+  <button type="submit" class="submit" id="submit-btn">Send it to the Den</button>
+  <p class="note" id="note" role="status" aria-live="polite"></p>
+</form>
+
+<div class="done" id="done" style="display:none">
+  <h2>Folded into the Den — thank you</h2>
+  <p>The founder reads every whisper. This one landed.</p>
+  <p class="again"><a id="again">Send another ›</a></p>
+</div>
+
+<footer class="site">
+  <a href="/">Home</a>
+  <a href="/privacy">Privacy</a>
+  <a href="/terms">Terms</a>
+  <span>© 2026 Brian Broeking</span>
+</footer>
+</div>
+
+<script>
+(function () {
+  var SUPABASE_URL = "https://wbcnhvvakptoinwkulmn.supabase.co";
+  var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndiY25odnZha3B0b2lud2t1bG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU4NzQ4NDAsImV4cCI6MjA1MTQ1MDg0MH0.tFthqZOKZaBVd5NYhNbF5LHTGpm5hClfLl8F5QESv9o";
+
+  var form = document.getElementById("report-form");
+  var body = document.getElementById("body");
+  var counter = document.getElementById("counter");
+  var note = document.getElementById("note");
+  var btn = document.getElementById("submit-btn");
+  var doneEl = document.getElementById("done");
+  var again = document.getElementById("again");
+
+  function updateCounter() {
+    var n = body.value.length;
+    counter.textContent = n + " / 1000";
+    counter.classList.toggle("over", n > 1000);
+  }
+  body.addEventListener("input", function () {
+    updateCounter();
+    if (note.textContent) { note.textContent = ""; note.className = "note"; }
+  });
+  updateCounter();
+
+  function setNote(msg, kind) {
+    note.textContent = msg;
+    note.className = "note" + (kind ? " " + kind : "");
+  }
+
+  var REASONS = {
+    bad_kind: "Pick what kind of whisper this is first.",
+    too_short: "Just a touch more — at least a few characters.",
+    too_long: "That's a long one — keep it under 1000 characters.",
+    resting: "The Den is napping — try again in a little bit."
+  };
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    var kindEl = form.querySelector('input[name="kind"]:checked');
+    var text = body.value.trim();
+    var name = document.getElementById("name").value.trim();
+    var honey = document.getElementById("website").value;
+
+    if (!kindEl) { setNote("Pick what kind of whisper this is first.", "err"); return; }
+    if (text.length < 3) { setNote("Just a touch more — at least a few characters.", "err"); return; }
+    if (text.length > 1000) { setNote("That's a long one — keep it under 1000 characters.", "err"); return; }
+
+    btn.disabled = true;
+    setNote("Sending…", "");
+
+    fetch(SUPABASE_URL + "/rest/v1/rpc/submit_feedback_web", {
+      method: "POST",
+      headers: {
+        "apikey": ANON_KEY,
+        "Authorization": "Bearer " + ANON_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        p_kind: kindEl.value,
+        p_body: text,
+        p_name: name,
+        p_honey: honey
+      })
+    })
+    .then(function (r) { return r.json().catch(function () { return null; }); })
+    .then(function (data) {
+      btn.disabled = false;
+      if (data && data.ok === true) {
+        form.style.display = "none";
+        doneEl.style.display = "block";
+        return;
+      }
+      var reason = data && data.reason;
+      setNote(REASONS[reason] || "Something hiccuped — please try again in a moment.", "err");
+    })
+    .catch(function () {
+      btn.disabled = false;
+      setNote("Couldn't reach the bog — check your connection and try again.", "err");
+    });
+  });
+
+  again.addEventListener("click", function () {
+    form.reset();
+    updateCounter();
+    setNote("", "");
+    doneEl.style.display = "none";
+    form.style.display = "block";
+    body.focus();
+  });
+})();
+</script>
+</body>
+</html>

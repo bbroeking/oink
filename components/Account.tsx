@@ -1075,6 +1075,30 @@ export function Account({ session }: { session: Session }) {
 								last
 							/>
 						</Sticker>
+						{/* Report a bug / idea — a quiet door out to the web report
+						    page (ticklethepig.com/report.html). Sits below the
+						    Settings card, above the version footer: a settings-row-
+						    like affordance, not a banner. The in-app "Send an idea
+						    to the den" whisper (in Settings above) stays the primary
+						    path; this is the always-there web door that also works
+						    for anyone sharing the page. */}
+						<Pressable
+							onPress={() =>
+								Linking.openURL("https://ticklethepig.com/report.html")
+							}
+							style={({ pressed }) => [
+								reportStyles.row,
+								pressed && { opacity: 0.65 },
+							]}
+						>
+							<View style={reportStyles.iconWrap}>
+								<Icon name="bell" size={18} color={WHIMSY.mute} />
+							</View>
+							<Text style={reportStyles.label}>
+								Found a bug or have an idea? Report it
+							</Text>
+							<Text style={reportStyles.chev}>›</Text>
+						</Pressable>
 						<Text style={settingsStyles.footer}>
 							★ tickle the pig · v{Constants.expoConfig?.version ?? "1.0.0"} ★
 						</Text>
@@ -2012,6 +2036,37 @@ const settingsStyles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textAlign: "center",
 		marginTop: 22,
+	},
+});
+
+// The quiet "report a bug / idea" row beneath the Settings card. Mirrors the
+// SettingRow geometry (icon well + flex label + chevron) but in the softer
+// hand font + muted ink so it reads as a subtle link-out to the web report
+// page, not a second card of settings.
+const reportStyles = StyleSheet.create({
+	row: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.md,
+		paddingHorizontal: SPACE.lg,
+		paddingVertical: SPACE.md,
+		marginTop: SPACE.md,
+	},
+	iconWrap: {
+		width: 26,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	label: {
+		flex: 1,
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.mute,
+	},
+	chev: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.mute,
 	},
 });
 

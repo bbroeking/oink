@@ -9,7 +9,7 @@
 // the N/E/W strips are sliced. Realtime presence (P2) and emotes (P3) layer
 // onto the same shared-value state.
 import React, { useEffect, useRef, useState } from "react";
-import { Dimensions, Pressable, StyleSheet, View } from "react-native";
+import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import {
 	Canvas,
 	Group,
@@ -34,7 +34,7 @@ import { supabase } from "@/utils/supabase";
 import { useLoungePeers } from "@/hooks/useLoungePeers";
 import { Icon } from "@/components/ui/Icon";
 import { Glyph, glyphSource, type GlyphName } from "@/components/ui/Glyph";
-import { WHIMSY } from "@/constants/theme";
+import { FONTS, WHIMSY } from "@/constants/theme";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 // lounge_farm.png native size drawn at 1:2 (432×910 pt world) — generated
@@ -130,12 +130,17 @@ export default function LoungeScreen() {
 	];
 
 	// Emotes (P3) — one-shot broadcast; bubble floats over the pig ~1.8s.
-	const EMOTES: GlyphName[] = ["heart", "sparkles", "coffee"];
+	const EMOTES: GlyphName[] = ["heart", "sparkles", "coffee", "party", "zzz"];
 	const emoteImgs = [
 		useImage(glyphSource("heart")),
 		useImage(glyphSource("sparkles")),
 		useImage(glyphSource("coffee")),
+		useImage(glyphSource("party")),
+		useImage(glyphSource("zzz")),
 	];
+	// Bottom-right blow-out menu: closed = one round button, open = the
+	// emote column above it.
+	const [emotesOpen, setEmotesOpen] = useState(false);
 	const tagFont = useFont(
 		require("../assets/fonts/SpaceMono-Regular.ttf"),
 		11
@@ -163,6 +168,8 @@ export default function LoungeScreen() {
 	// last facing at rest.
 	const dir = useSharedValue(0);
 	const resting = useSharedValue(1);
+	// My seat slot for the ride offset (-1 standing, 0 left, 1 right).
+	const mySlot = useSharedValue(-1);
 	// 0 empty · 1 left only · 2 right only · 3 both (ride!)
 	const seatMode = useSharedValue(0);
 	const rideSince = useSharedValue(0);
@@ -215,28 +222,32 @@ export default function LoungeScreen() {
 	// Screen tap → world-space walk target, clamped inside the field.
 	// Station logic runs on JS (it needs peers state): tapping near the
 	// seesaw walks to a free seat; anywhere else stands up + walks.
+	const boardSeesaw = () => {
+		const taken = new Set(
+			peers
+				.filter((pr) => pr.station?.id === "seesaw")
+				.map((pr) => pr.station!.slot)
+		);
+		if (myStation) taken.add(myStation.slot);
+		const slot = !taken.has(0) ? 0 : !taken.has(1) ? 1 : null;
+		if (slot === null) return;
+		pendingSeat.current = slot;
+		tx.value = SEESAW.x + (slot === 0 ? -SEAT_DX : SEAT_DX);
+		ty.value = SEESAW.y - 6;
+	};
+
 	const handleTap = (wx: number, wy: number) => {
 		const nearSeesaw =
 			Math.hypot(wx - SEESAW.x, wy - SEESAW.y) < SEESAW_TAP_R;
 		if (nearSeesaw) {
-			const taken = new Set(
-				peers
-					.filter((pr) => pr.station?.id === "seesaw")
-					.map((pr) => pr.station!.slot)
-			);
-			if (myStation) taken.add(myStation.slot);
-			const slot = !taken.has(0) ? 0 : !taken.has(1) ? 1 : null;
-			if (slot !== null) {
-				pendingSeat.current = slot;
-				tx.value = SEESAW.x + (slot === 0 ? -SEAT_DX : SEAT_DX);
-				ty.value = SEESAW.y - 6;
-				return;
-			}
+			boardSeesaw();
+			return;
 		}
 		if (myStation) {
 			setMyStation(null);
 			setStation(null);
 			pendingSeat.current = null;
+			mySlot.value = -1;
 		}
 		tx.value = Math.min(
 			Math.max(wx, FENCE_INSET + PIG / 2),
@@ -286,7 +297,28 @@ export default function LoungeScreen() {
 		{ rotate: seesawRot.value },
 	]);
 	const pigX = useDerivedValue(() => px.value - PIG / 2);
-	const pigY = useDerivedValue(() => py.value - PIG);
+	// Seated pigs RIDE the plank: the seat's vertical travel is the plank
+	// end's arc, sin(rot) * (signed seat arm).
+	const pigY = useDerivedValue(
+		() =>
+			py.value -
+			PIG +
+			(mySlot.value >= 0
+				? Math.sin(seesawRot.value) *
+				  (mySlot.value === 0 ? -SEAT_DX : SEAT_DX)
+				: 0)
+	);
+	const myName = me?.username ?? "";
+	const tagX = useDerivedValue(() => px.value - myName.length * 3.3);
+	const tagY = useDerivedValue(
+		() =>
+			py.value +
+			14 +
+			(mySlot.value >= 0
+				? Math.sin(seesawRot.value) *
+				  (mySlot.value === 0 ? -SEAT_DX : SEAT_DX)
+				: 0)
+	);
 	const bubbleX = useDerivedValue(() => px.value - 14);
 	const bubbleY = useDerivedValue(() => py.value - PIG - 34);
 
@@ -318,6 +350,10 @@ export default function LoungeScreen() {
 					setMyStation({ slot: st.slot, since: st.since });
 					setStation(st);
 					pendingSeat.current = null;
+					// Sit SIDEWAYS: left seat faces east (toward the pivot),
+					// right seat faces west.
+					dir.value = st.slot === 0 ? 2 : 3;
+					mySlot.value = st.slot;
 				}
 			}
 		}, 100);
@@ -347,6 +383,7 @@ export default function LoungeScreen() {
 			if (rival) {
 				setMyStation(null);
 				setStation(null);
+				mySlot.value = -1;
 			}
 		}
 		const left = sitters.some((st) => st.slot === 0);
@@ -403,9 +440,44 @@ export default function LoungeScreen() {
 						{/* Remote pigs — plain props re-rendered at ~10 Hz; walk
 						    frames advance while their last pos event is fresh. */}
 						{peers.map((peer) => {
-							const moving = now - peer.movedAt < 250;
+							const seated = peer.station?.id === "seesaw";
+							const moving = !seated && now - peer.movedAt < 250;
+							// Seated: sideways profile facing the pivot, riding
+							// the plank end (same deterministic rotation the
+							// worklet uses — pure f(now, since)).
+							let rideDy = 0;
+							let drawDir = peer.dir;
+							let px2 = peer.x;
+							let py2 = peer.y;
+							if (seated) {
+								const slot = peer.station!.slot;
+								drawDir = slot === 0 ? 2 : 3;
+								px2 = SEESAW.x + (slot === 0 ? -SEAT_DX : SEAT_DX);
+								py2 = SEESAW.y - 6;
+								const sitters = peers
+									.filter((pr) => pr.station?.id === "seesaw")
+									.map((pr) => pr.station!);
+								if (myStation)
+									sitters.push({ id: "seesaw", ...myStation });
+								const both =
+									sitters.some((st) => st.slot === 0) &&
+									sitters.some((st) => st.slot === 1);
+								const rot = both
+									? Math.sin(
+											(now -
+												Math.max(
+													...sitters.map((st) => st.since)
+												)) /
+												450
+									  ) * 0.2
+									: slot === 0
+									? -0.16
+									: 0.16;
+								rideDy =
+									Math.sin(rot) * (slot === 0 ? -SEAT_DX : SEAT_DX);
+							}
 							const img =
-								dirImgs[peer.dir]?.[moving ? remoteTick % 4 : 0];
+								dirImgs[drawDir]?.[moving ? remoteTick % 4 : 0];
 							if (!img) return null;
 							const emoteFresh =
 								peer.emote && now - peer.emote.at < 1800;
@@ -416,8 +488,8 @@ export default function LoungeScreen() {
 								<Group key={peer.key}>
 									<SkiaImage
 										image={img}
-										x={peer.x - PIG / 2}
-										y={peer.y - PIG}
+										x={px2 - PIG / 2}
+										y={py2 - PIG + rideDy}
 										width={PIG}
 										height={PIG}
 									/>
@@ -425,16 +497,16 @@ export default function LoungeScreen() {
 										<SkiaText
 											text={peer.username}
 											font={tagFont}
-											x={peer.x - peer.username.length * 3.3}
-											y={peer.y + 14}
+											x={px2 - peer.username.length * 3.3}
+											y={py2 + 14 + rideDy}
 											color="#4a3325"
 										/>
 									)}
 									{eimg && (
 										<SkiaImage
 											image={eimg}
-											x={peer.x - 14}
-											y={peer.y - PIG - 34}
+											x={px2 - 14}
+											y={py2 - PIG - 34 + rideDy}
 											width={28}
 											height={28}
 										/>
@@ -476,24 +548,50 @@ export default function LoungeScreen() {
 					</Canvas>
 				</GestureDetector>
 			)}
-			{/* Emote bar — one-shot bubbles, broadcast to the room. */}
+			{/* Board-the-seesaw button — bottom-left, hides while seated. */}
+			{allowed && !myStation && (
+				<Pressable
+					onPress={boardSeesaw}
+					style={({ pressed }) => [
+						styles.boardBtn,
+						pressed && { opacity: 0.85 },
+					]}
+				>
+					<Text style={styles.boardBtnText}>hop on the seesaw ›</Text>
+				</Pressable>
+			)}
+
+			{/* Emote blow-out — bottom-right FAB; tap to expand the column,
+			    pick one, it broadcasts and the menu folds shut. */}
 			{allowed && (
-				<View style={styles.emoteBar}>
-					{EMOTES.map((g, i) => (
-						<Pressable
-							key={g}
-							onPress={() => {
-								setMyEmote({ i, at: Date.now() });
-								sendEmote(i);
-							}}
-							style={({ pressed }) => [
-								styles.emoteBtn,
-								pressed && { opacity: 0.8 },
-							]}
-						>
-							<Glyph name={g} size={22} />
-						</Pressable>
-					))}
+				<View style={styles.emoteWrap} pointerEvents="box-none">
+					{emotesOpen &&
+						EMOTES.map((g, i) => (
+							<Pressable
+								key={g}
+								onPress={() => {
+									setMyEmote({ i, at: Date.now() });
+									sendEmote(i);
+									setEmotesOpen(false);
+								}}
+								style={({ pressed }) => [
+									styles.emoteBtn,
+									pressed && { opacity: 0.8 },
+								]}
+							>
+								<Glyph name={g} size={22} />
+							</Pressable>
+						))}
+					<Pressable
+						onPress={() => setEmotesOpen((o) => !o)}
+						style={({ pressed }) => [
+							styles.emoteFab,
+							emotesOpen && styles.emoteFabOpen,
+							pressed && { opacity: 0.85 },
+						]}
+					>
+						<Glyph name={emotesOpen ? "close" : "party"} size={24} />
+					</Pressable>
 				</View>
 			)}
 
@@ -512,12 +610,39 @@ export default function LoungeScreen() {
 const styles = StyleSheet.create({
 	root: { flex: 1, backgroundColor: "#9ec27a" },
 	canvas: { flex: 1 },
-	emoteBar: {
+	emoteWrap: {
 		position: "absolute",
 		bottom: 42,
-		alignSelf: "center",
-		flexDirection: "row",
-		gap: 14,
+		right: 18,
+		alignItems: "center",
+		gap: 10,
+	},
+	emoteFab: {
+		width: 54,
+		height: 54,
+		borderRadius: 27,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	emoteFabOpen: { backgroundColor: WHIMSY.sun },
+	boardBtn: {
+		position: "absolute",
+		bottom: 48,
+		left: 18,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 18,
+		paddingVertical: 9,
+		paddingHorizontal: 14,
+	},
+	boardBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 13,
+		color: WHIMSY.ink,
 	},
 	emoteBtn: {
 		width: 46,
