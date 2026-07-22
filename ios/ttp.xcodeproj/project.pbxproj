@@ -14,20 +14,12 @@
 		6A07C225A162422B9B1877D0 /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038E0B07CFE04701AF91225A /* noop-file.swift */; };
 		901DF7E6061944D69FB41046 /* Stickers.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D4B88371DEBF4880980717E2 /* Stickers.xcassets */; };
 		96905EF65AED1B983A6B3ABC /* libPods-ttp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 58EEBF8E8E6FB1BC6CAF49B5 /* libPods-ttp.a */; };
-		A1C71F0F1E324A419BC848C6 /* TTPStickers.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = D16ABA098B054C4688833BDF /* TTPStickers.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		D39FB765C93C1ED5AF270AD7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1420A3B27876572A5B7EE2D6 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		279019289A9E4975AAAAC921 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 8E2F27C0CF68493D96DAB4FE;
-			remoteInfo = TTPStickers;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,7 +29,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				A1C71F0F1E324A419BC848C6 /* TTPStickers.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -200,7 +191,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				5431F57C2D4C49E695D10FF1 /* PBXTargetDependency */,
 			);
 			name = ttp;
 			productName = ttp;
@@ -446,11 +436,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		5431F57C2D4C49E695D10FF1 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 8E2F27C0CF68493D96DAB4FE /* TTPStickers */;
-			targetProxy = 279019289A9E4975AAAAC921 /* PBXContainerItemProxy */;
-		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
