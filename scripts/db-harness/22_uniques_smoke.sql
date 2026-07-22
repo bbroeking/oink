@@ -1,8 +1,8 @@
 -- Functional smoke for the patch-uniques claim path (20260728000000):
 -- open_rooting rolls + returns unique_id; submit_rooting accepts the 'unique'
 -- token ONLY on a board that carries a relic (grants a user_uniques row,
--- new=true, found_count=1, and credits it toward the meter drain); a repeat
--- catch bumps found_count with new=false; the 'unique' token on a relic-less
+-- new=true, found_count=1, and credits it toward the meter drain); later rolls
+-- exclude unlocked relics and return NULL once the Book is complete; the 'unique' token on a relic-less
 -- board refuses bad_finds PRE-WRITE; and RLS keeps a pig's Burrow Book private.
 --
 -- Determinism note: the relic roll is random() < 0.4 (per-board), so instead of
@@ -131,10 +131,10 @@ BEGIN
 	IF book_count <> 1 THEN
 		RAISE EXCEPTION 'Book found_count should be 1 after first catch, got %', book_count; END IF;
 
-	-- ── 4. Dupe catch: a second board with the SAME relic bumps found_count ────
-	-- Advance the clock to the NEXT 8h block (new window) so relic_uid can open a
-	-- fresh board, and roll until that board carries the SAME relic again.
-	<<dupe>>
+	-- ── 4. Later rolls exclude already-unlocked relics ─────────────────
+	-- Advance through fresh windows until this pig gets another relic board. Its
+	-- relic must differ from the Book entry already unlocked above.
+	<<next_relic>>
 	FOR g IN 1..500 LOOP
 		PERFORM set_config('ttp.fake_now',
 			(to_timestamp(floor((extract(epoch FROM now()) - 7200) / 28800) * 28800 + 7200)
@@ -142,34 +142,48 @@ BEGIN
 		PERFORM set_config('smoke.uid', relic_uid::text, true);
 		res := public.open_rooting();
 		IF NOT (res->>'ok')::boolean THEN
-			RAISE EXCEPTION 'dupe-window open should succeed: %', res; END IF;
-		IF res->>'unique_id' = the_relic THEN
+			RAISE EXCEPTION 'later-window open should succeed: %', res; END IF;
+		IF res->>'unique_id' IS NOT NULL THEN
+			IF res->>'unique_id' = the_relic THEN
+				RAISE EXCEPTION 'owned relic % was not removed from the roll pool', the_relic;
+			END IF;
 			SELECT wr.seed INTO seed FROM public.war_rootings wr
 				WHERE wr.user_id = relic_uid AND wr.submitted_at IS NULL
 				ORDER BY wr.window_index DESC LIMIT 1;
 			res := public.submit_rooting(ARRAY['truffle_l', 'unique'], 4);
 			IF NOT (res->>'ok')::boolean THEN
-				RAISE EXCEPTION 'dupe unique claim should succeed: %', res; END IF;
-			IF (res#>>'{unique_found,new}')::boolean THEN
-				RAISE EXCEPTION 'dupe catch should be new=false: %', res; END IF;
-			IF (res#>>'{unique_found,found_count}')::int <> 2 THEN
-				RAISE EXCEPTION 'dupe catch found_count should be 2: %', res; END IF;
-			EXIT dupe;
+				RAISE EXCEPTION 'next unique claim should succeed: %', res; END IF;
+			IF NOT (res#>>'{unique_found,new}')::boolean THEN
+				RAISE EXCEPTION 'next eligible relic should be new=true: %', res; END IF;
+			IF (res#>>'{unique_found,found_count}')::int <> 1 THEN
+				RAISE EXCEPTION 'next eligible relic found_count should be 1: %', res; END IF;
+			EXIT next_relic;
 		END IF;
 		IF g = 500 THEN
-			RAISE EXCEPTION 'could not re-roll the same relic in 500 windows'; END IF;
+			RAISE EXCEPTION 'could not roll a second relic board in 500 windows'; END IF;
 	END LOOP;
-	-- Still ONE Book row for this (pig, relic) — the dupe upserted, not duplicated.
+	-- The original entry remains a single catch; it was never rolled again.
 	SELECT count(*) INTO book_count FROM public.user_uniques
-		WHERE user_id = relic_uid AND unique_id = the_relic;
+		WHERE user_id = relic_uid AND unique_id = the_relic AND found_count = 1;
 	IF book_count <> 1 THEN
-		RAISE EXCEPTION 'dupe must upsert one row, found % rows', book_count; END IF;
+		RAISE EXCEPTION 'original relic should remain at found_count 1'; END IF;
+
+	-- Fill a fixture pig's Book directly, then the weighted helper must return
+	-- NULL: a complete collection has no eligible relic pool. Remove those
+	-- fixture rows afterward so the RLS assertions below stay focused.
+	INSERT INTO public.user_uniques (user_id, unique_id, found_count, first_found_at)
+		SELECT plain_uid, p.unique_id, 1, now()
+		FROM public.unique_pool() p
+		ON CONFLICT (user_id, unique_id) DO NOTHING;
+	IF public.roll_unique(plain_uid) IS NOT NULL THEN
+		RAISE EXCEPTION 'complete Book should have no eligible relic roll'; END IF;
+	DELETE FROM public.user_uniques WHERE user_id = plain_uid;
 
 	-- Stash the pigs for the RLS check (runs outside this superuser block).
 	PERFORM set_config('smoke.relic_uid', relic_uid::text, false);
 	PERFORM set_config('smoke.other_uid', other_uid::text, false);
 
-	RAISE NOTICE 'uniques smoke: relic=% claimed by %, dupe bumped, plain refused', the_relic, relic_uid;
+	RAISE NOTICE 'uniques smoke: relic=% claimed by %, excluded later, complete Book NULL', the_relic, relic_uid;
 END
 $smoke5$;
 
@@ -178,10 +192,10 @@ $smoke5$;
 -- non-superuser `authenticated` role (the grant target) with row_security on.
 SET row_security = on;
 SET ROLE authenticated;
--- As the relic owner: sees exactly the one Book row.
+-- As the relic owner: sees exactly the two newly unlocked Book rows.
 SELECT set_config('smoke.uid', current_setting('smoke.relic_uid'), false);
 SELECT 'chk uniques rls owner sees own' AS chk,
-	(SELECT count(*) FROM public.user_uniques) = 1 AS pass;
+	(SELECT count(*) FROM public.user_uniques) = 2 AS pass;
 -- As another pig: sees ZERO of the owner's rows.
 SELECT set_config('smoke.uid', current_setting('smoke.other_uid'), false);
 SELECT 'chk uniques rls other sees none' AS chk,
@@ -201,8 +215,8 @@ BEGIN
 	PERFORM set_config('smoke.uid', current_setting('smoke.other_uid'), true);
 	SELECT count(*) INTO other_seen FROM public.user_uniques;
 	RESET ROLE;
-	IF owner_seen <> 1 THEN RAISE EXCEPTION 'RLS: owner should see 1 Book row, saw %', owner_seen; END IF;
+	IF owner_seen <> 2 THEN RAISE EXCEPTION 'RLS: owner should see 2 Book rows, saw %', owner_seen; END IF;
 	IF other_seen <> 0 THEN RAISE EXCEPTION 'RLS: other pig leaked % Book rows', other_seen; END IF;
-	RAISE NOTICE 'uniques RLS: owner sees 1, other sees 0';
+	RAISE NOTICE 'uniques RLS: owner sees 2, other sees 0';
 END
 $rls$;

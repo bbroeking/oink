@@ -15,7 +15,7 @@
 -- without re-including the engagement-gate block at the bottom.
 
 BEGIN;
-SELECT plan(15);
+SELECT plan(16);
 
 -- ── Fixture setup ────────────────────────────────────────────────
 -- Two auth.users: one inviter, one invitee. The handle_new_user
@@ -132,21 +132,18 @@ SELECT ok(
 
 -- ── Cross the engagement gate ────────────────────────────────────
 -- Bypass the tickle-bank regen math by writing directly to the
--- profile + active-days columns. The gate reads from profiles, so
+-- profile columns. The gate reads from profiles, so
 -- this is a faithful simulation of the threshold-crossing tickle.
 --
--- Strategy: set invitee to (tickles_earned = 99, distinct_active_days
--- = 3, last_active_date = today - 1 day) so the next call to
--- update_profile_and_item_count bumps tickles_earned to 100 AND
--- triggers the active-day bump (yesterday→today), crossing both
--- conditions on a single tickle.
+-- Set active days to zero and keep last_active_date on today: the next
+-- tickle reaches 100 without satisfying the retired three-day rule.
 
 DO $$
 BEGIN
-    UPDATE public.profiles
-        SET tickles_earned       = 99,
-            distinct_active_days = 2,   -- next tickle bumps to 3
-            last_active_date     = CURRENT_DATE - interval '1 day'
+	UPDATE public.profiles
+		SET tickles_earned       = 99,
+		    distinct_active_days = 0,
+		    last_active_date     = CURRENT_DATE
         WHERE id = '00000000-0000-0000-0000-000000000002';
 
     -- The tickle-bank machinery needs a non-zero item_count to do the
@@ -159,23 +156,19 @@ BEGIN
 END
 $$;
 
--- Snapshot inviter state pre-gate.
-SELECT cmp_ok(
-    (SELECT counter FROM public.profiles WHERE id = '00000000-0000-0000-0000-000000000001'),
-    '>=',
-    0,
-    'inviter pre-gate counter is queryable'
-);
-
 -- Fire the tickle as the invitee.
 DO $$
 DECLARE
     pre_inviter_snouts bigint;
     post_inviter_snouts bigint;
+    pre_inviter_tickles int;
+    post_inviter_tickles int;
     post_completed_count int;
 BEGIN
     SELECT counter INTO pre_inviter_snouts FROM public.profiles
         WHERE id = '00000000-0000-0000-0000-000000000001';
+    SELECT item_count INTO pre_inviter_tickles FROM public.user_items
+        WHERE user_id = '00000000-0000-0000-0000-000000000001';
 
     PERFORM set_config(
         'request.jwt.claims',
@@ -188,11 +181,19 @@ BEGIN
     SELECT counter, referrals_completed
         INTO post_inviter_snouts, post_completed_count
         FROM public.profiles WHERE id = '00000000-0000-0000-0000-000000000001';
+    SELECT item_count INTO post_inviter_tickles FROM public.user_items
+        WHERE user_id = '00000000-0000-0000-0000-000000000001';
 
     PERFORM is(
         post_inviter_snouts - pre_inviter_snouts,
-        100::bigint,
-        'inviter counter went up by exactly 100 (engagement gate fired)'
+        0::bigint,
+        'completion does not pay inviter snouts'
+    );
+
+    PERFORM is(
+        post_inviter_tickles - pre_inviter_tickles,
+        100,
+        'completion pays inviter exactly 100 banked tickles'
     );
 
     PERFORM is(
@@ -219,9 +220,9 @@ SELECT cmp_ok(
 
 SELECT cmp_ok(
     (SELECT distinct_active_days FROM public.profiles WHERE id = '00000000-0000-0000-0000-000000000002'),
-    '>=',
+    '<',
     3,
-    'invitee distinct_active_days is at or above the threshold'
+    'referral completes without three distinct active days'
 );
 
 -- ── Idempotency: gate must NOT fire twice ────────────────────────
@@ -229,11 +230,11 @@ SELECT cmp_ok(
 
 DO $$
 DECLARE
-    pre_inviter_snouts bigint;
-    post_inviter_snouts bigint;
+    pre_inviter_tickles int;
+    post_inviter_tickles int;
 BEGIN
-    SELECT counter INTO pre_inviter_snouts FROM public.profiles
-        WHERE id = '00000000-0000-0000-0000-000000000001';
+    SELECT item_count INTO pre_inviter_tickles FROM public.user_items
+        WHERE user_id = '00000000-0000-0000-0000-000000000001';
 
     -- Refill the invitee's bank for one more tickle.
     UPDATE public.user_items
@@ -249,16 +250,13 @@ BEGIN
 
     PERFORM public.update_profile_and_item_count('00000000-0000-0000-0000-000000000002'::uuid);
 
-    SELECT counter INTO post_inviter_snouts FROM public.profiles
-        WHERE id = '00000000-0000-0000-0000-000000000001';
+    SELECT item_count INTO post_inviter_tickles FROM public.user_items
+        WHERE user_id = '00000000-0000-0000-0000-000000000001';
 
-    -- Gate should NOT have fired again — inviter counter only changes
-    -- by the +5 from a lucky tickle (if landed), never by +100 again.
-    PERFORM cmp_ok(
-        post_inviter_snouts - pre_inviter_snouts,
-        '<',
-        100::bigint,
-        'inviter did NOT get another +100 — gate is idempotent'
+    PERFORM is(
+        post_inviter_tickles - pre_inviter_tickles,
+        0,
+        'inviter did not get another 100 tickles — gate is idempotent'
     );
 END
 $$;

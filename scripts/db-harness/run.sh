@@ -154,6 +154,13 @@ CHAIN=(
 	# from 20260744100000 (the latest def; 20260746/20260747 don't touch it) with
 	# only the seed line changed. Exercised by 46_seeded_boards_smoke.sql.
 	supabase/migrations/20260748000000_seeded_crew_boards.sql
+	# 20260770000000 restricts weighted relic rolls to Burrow Book entries the
+	# caller has not unlocked; a complete Book rolls NULL. It also repairs legacy
+	# open-board/carry duplicates. Exercised by 22_uniques_smoke.sql.
+	supabase/migrations/20260770000000_unowned_patch_uniques.sql
+	# 20260771000000 adds the Burrow Book archaeology ladder, rare-set award,
+	# named heirloom awards, and full-set title. Exercised by 57 smoke below.
+	supabase/migrations/20260771000000_relic_achievements.sql
 	# 00f prep: builds item_drives + are_blocked() + system_announcements.seen_at
 	# + hats.name AHEAD of 20260746 (passed as $@) so check_function_bodies can
 	# validate the redefined nudge_trough body. Exercised by
@@ -184,6 +191,7 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/54_feedback_den_smoke.sql \
 		scripts/db-harness/55_field_guide_smoke.sql \
 		scripts/db-harness/56_tickle_breakdown_smoke.sql \
+		scripts/db-harness/57_relic_achievements_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 
