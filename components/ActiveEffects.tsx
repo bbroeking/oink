@@ -36,7 +36,7 @@ export function ActiveEffects() {
 	return (
 		<View>
 			<SectionHeader
-				kicker="left by the sounder"
+				kicker="left by your friends"
 				title="Hoofprints on you"
 				ruleWidth={132}
 			/>

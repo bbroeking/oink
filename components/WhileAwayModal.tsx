@@ -10,10 +10,12 @@ import {
 	Text,
 	ScrollView,
 	StyleSheet,
+	Pressable,
 } from "react-native";
 import { Sticker } from "./ui/Sticker";
 import { Button } from "./ui/Button";
 import { Glyph } from "./ui/Glyph";
+import { Icon } from "./ui/Icon";
 import { RitualIconWell } from "./ui/RitualIconWell";
 import {
 	BLESSING_META,
@@ -40,12 +42,23 @@ export type WhileAwayEvent =
 	| { source: "blessing"; kind: string; from: string | null }
 	| { source: "curse"; kind: string; from: string | null }
 	| { source: "trade_fulfilled"; amount: number; from: string | null }
-	| { source: "system"; announcementId: number; title: string; body: string };
+	| {
+			source: "system";
+			announcementId: number;
+			title: string;
+			body: string;
+			// Deep-link target for a tap-through, or null when the announcement
+			// has no destination (e.g. an admin note) — such rows stay
+			// non-pressable so there's no dead affordance. Set by
+			// systemAnnouncementRoute() in utils/whileAway.
+			route?: string | null;
+	  };
 
 export function WhileAwayModal({
 	visible,
 	events,
 	onDismiss,
+	onNavigate,
 }: {
 	// Driven by the popup-queue slot in _layout. The native Modal must
 	// animate out on visible=false BEFORE the parent unmounts it, or the
@@ -54,6 +67,10 @@ export function WhileAwayModal({
 	visible: boolean;
 	events: WhileAwayEvent[];
 	onDismiss: () => void;
+	// Tap-through for a system row that carries a deep-link `route`. The row
+	// dismisses (normal path — persists the away marker + marks seen) THEN
+	// navigates. Rows without a route stay non-pressable.
+	onNavigate?: (route: string) => void;
 }) {
 	const blessings = events.filter((e) => e.source === "blessing").length;
 	const curses = events.filter((e) => e.source === "curse").length;
@@ -104,8 +121,10 @@ export function WhileAwayModal({
 					>
 						{events.map((e, i) => {
 							if (e.source === "system") {
-								return (
-									<View key={i} style={[styles.row, styles.rowSystem]}>
+								const route = e.route ?? null;
+								const tappable = !!route && !!onNavigate;
+								const inner = (
+									<>
 										<View style={styles.systemGlyphWell}>
 											<Text style={styles.systemGlyph}>★</Text>
 										</View>
@@ -117,6 +136,35 @@ export function WhileAwayModal({
 												{e.body}
 											</Text>
 										</View>
+										{tappable && (
+											<Icon name="arrowRight" size={18} color={WHIMSY.ink} />
+										)}
+									</>
+								);
+								if (tappable) {
+									return (
+										<Pressable
+											key={i}
+											style={({ pressed }) => [
+												styles.row,
+												styles.rowSystem,
+												pressed && styles.rowPressed,
+											]}
+											onPress={() => {
+												// Dismiss via the normal path (persists the
+												// away marker + marks the batch seen), THEN
+												// deep-link to the drive.
+												onDismiss();
+												onNavigate!(route!);
+											}}
+										>
+											{inner}
+										</Pressable>
+									);
+								}
+								return (
+									<View key={i} style={[styles.row, styles.rowSystem]}>
+										{inner}
 									</View>
 								);
 							}
@@ -229,6 +277,8 @@ const styles = StyleSheet.create({
 	// System announcement row — cream (paper-toned) so it reads as
 	// "from the barn" rather than from any specific friend or kind.
 	rowSystem: { backgroundColor: WHIMSY.cream, borderColor: WHIMSY.ink },
+	// Press feedback for a tappable (deep-linking) system row.
+	rowPressed: { opacity: 0.7 },
 	systemGlyphWell: {
 		width: 40,
 		height: 40,

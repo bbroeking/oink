@@ -163,14 +163,14 @@ export function SounderStepCard({
 						<>
 							<Text style={styles.kicker}>herdless again</Text>
 							<Text style={styles.body}>
-								The patch digs better with a herd. Find your next Sounder below.
+								Join another Sounder to share milestones and earn co-op dig bonuses.
 							</Text>
 						</>
 					) : (
 						<>
 							<Text style={styles.kicker}>that was the taste — now dig for keeps</Text>
 							<Text style={styles.body}>
-								A Sounder digs deeper and shares the spoils. Slip into one below.
+								Dig after a crewmate for up to 5 more rubs. Sounders also share the spoils.
 							</Text>
 						</>
 					)}

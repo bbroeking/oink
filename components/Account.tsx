@@ -27,15 +27,17 @@ import { submitFeedback, type FeedbackKind } from "@/utils/feedback";
 import { stampFeedbackEverSent } from "@/utils/feedbackNudge";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
+import { useUnmanagedModalHold } from "./ui/PopupQueue";
 import { Button, SectionHeader } from "./ui";
 import { LoadingBeat } from "./ui/EmptyState";
 import { Icon, type IconName } from "./ui/Icon";
 import { Image } from "react-native";
-import { PigAvatar } from "./ui/PigAvatar";
+import { PrestigeAvatar } from "./ui/PrestigeAvatar";
+import { ProfileIdentity } from "./ui/ProfileIdentity";
 import type { TitlePlacement } from "@/constants/title_types";
 import { Sticker, Tape } from "./ui/Sticker";
 import Constants from "expo-constants";
-import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, STICKER_SHADOW, SPACE, RADII, PAGE_PAD, TAB_SAFE, MODAL_BACKDROP_BG } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, TYPE, WHIMSY, STICKER_SHADOW, SPACE, RADII, PAGE_PAD, TAB_SAFE, MODAL_BACKDROP_BG } from "@/constants/theme";
 import {
 	IAP_ENABLED,
 	initIAP,
@@ -48,8 +50,6 @@ import {
 } from "../utils/iap";
 import { PURCHASES_LIVE, SOUNDER_VISIBLE } from "@/constants/featureFlags";
 import { showPurchaseToast } from "./PurchaseToast";
-import { SnoutCoin } from "./ui/SnoutCoin";
-import { useStipend, type StipendStatus } from "@/hooks/useStipend";
 import {
 	myReferralSummary,
 	shareMessageForCode,
@@ -63,6 +63,7 @@ import {
 } from "@/utils/referrals";
 import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications";
 import { isUsernameAllowed } from "@/constants/bannedWords";
+import { wallowRankLabel, wallowRegenPercent } from "@/utils/wallow";
 
 // Aggregate counts from me_lifetime_stats() — the social tallies the "long
 // story" sheet lists beneath the scalar lifetime figures.
@@ -103,7 +104,9 @@ export function Account({ session }: { session: Session }) {
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 	const [copied, setCopied] = useState(false);
-	const [sounder, setSounder] = useState<{
+	// Legacy `my_sounder` RPC, now used only for recruiter/referral standing.
+	// "Sounder" is reserved in player-facing copy for the four-pig crew.
+	const [recruiterStats, setRecruiterStats] = useState<{
 		engaged_count: number;
 		signup_count: number;
 		rank: number | null;
@@ -129,6 +132,9 @@ export function Account({ session }: { session: Session }) {
 	// have been earned (auto-granted) but not yet acknowledged on the screen
 	// (server: claimed && viewed_at IS NULL). Refreshed on focus.
 	const [unclaimedAchv, setUnclaimedAchv] = useState(0);
+	const [wallowCount, setWallowCount] = useState(0);
+	const [wallowRegenSeconds, setWallowRegenSeconds] = useState<number | null>(null);
+	const [devWallowPreview, setDevWallowPreview] = useState(false);
 
 	// A deep-linked code stashed before sign-in (PENDING_REFERRAL_CODE_KEY)
 	// pre-fills the input — finally consuming the stranded stash.
@@ -169,7 +175,7 @@ export function Account({ session }: { session: Session }) {
 			showPurchaseToast({
 				type: "success",
 				title: "Code applied!",
-				text: `You're in ${r.inviter_username ?? "your friend"}'s sounder — +50 snouts.`,
+				text: `${r.inviter_username ?? "Your friend"} brought you in — +50 snouts.`,
 			});
 		} else {
 			setCodeError(referralErrorMessage(r && "reason" in r ? r.reason : undefined));
@@ -187,18 +193,18 @@ export function Account({ session }: { session: Session }) {
 	);
 	useFocusEffect(
 		useCallback(() => {
-			// Sounder UI is hidden behind a feature flag — skip the
-			// fetch entirely while it's off; nothing renders anyway.
+			// The legacy recruiter leaderboard is hidden behind this feature
+			// flag. Its RPC still uses the old `sounder` name internally.
 			if (!SOUNDER_VISIBLE) return;
 			rpc<
 				| { ok: false; reason?: string }
-				| ({ ok: true } & NonNullable<typeof sounder>)
+				| ({ ok: true } & NonNullable<typeof recruiterStats>)
 			>("my_sounder").then((r) => {
 				// my_sounder RPC returns jsonb: { ok: false, reason } when
 				// unauthenticated, otherwise { ok: true, ...sounder fields }.
 				if (r?.ok) {
 					const { ok: _ok, ...stats } = r;
-					setSounder(stats);
+					setRecruiterStats(stats);
 				}
 			});
 		}, [])
@@ -216,6 +222,7 @@ export function Account({ session }: { session: Session }) {
 	const [renamesUsed, setRenamesUsed] = useState<number>(0);
 	const [activeHat, setActiveHat] = useState<string | null>(null);
 	const [isVip, setIsVip] = useState<boolean>(false);
+	const [vipUntil, setVipUntil] = useState<string | null>(null);
 	const [busy, setBusy] = useState<boolean>(false);
 	// Lifetime scalars for "the long story" dashboard — read straight off the
 	// caller's own profiles row alongside the rest of the identity fetch.
@@ -227,6 +234,15 @@ export function Account({ session }: { session: Session }) {
 	// top-level lifetime figures always; the sheet opens the full ledger and
 	// lazily pulls the aggregate counts (me_lifetime_stats) only on first open.
 	const [longStoryOpen, setLongStoryOpen] = useState(false);
+	// The Me tab's sheets/dialogs are all unmanaged native Modals (direct-tap,
+	// outside the popup queue): the release notes, delete-account confirm, paid
+	// rename, feedback whisper, and the long-story ledger. Hold the queue while any
+	// is open so a foreground poll can't present a queued popup over it — the
+	// #50152 wedge (issue #4). ReleaseNotesModal is also queue-slotted in the Barn;
+	// this holds only for its Me-tab (plain-state) open.
+	useUnmanagedModalHold(
+		releaseNotesOpen || deleteOpen || renameOpen || feedbackOpen || longStoryOpen
+	);
 	const [lifetimeAgg, setLifetimeAgg] = useState<LifetimeAgg | null>(null);
 	const [lifetimeAggBusy, setLifetimeAggBusy] = useState(false);
 	const openLongStory = () => {
@@ -239,37 +255,6 @@ export function Account({ session }: { session: Session }) {
 				if (r?.ok) setLifetimeAgg(r);
 			})
 			.finally(() => setLifetimeAggBusy(false));
-	};
-	// Slop Club monthly snout stipend — manual claim from the membership card.
-	const [stipendStatus, setStipendStatus] = useState<StipendStatus | null>(null);
-	const [stipendBusy, setStipendBusy] = useState(false);
-	const stipend = useStipend({
-		onClaimed: (granted) => {
-			setSnouts((s) => s + granted);
-			showPurchaseToast({
-				type: "success",
-				title: "Slop Club",
-				text: `+${granted} snouts — your monthly stipend`,
-			});
-		},
-	});
-	useFocusEffect(
-		useCallback(() => {
-			let cancelled = false;
-			stipend.status().then((s) => {
-				if (!cancelled) setStipendStatus(s);
-			});
-			return () => {
-				cancelled = true;
-			};
-		}, [stipend])
-	);
-	const handleClaimStipend = async () => {
-		if (stipendBusy) return;
-		setStipendBusy(true);
-		await stipend.claim(); // onClaimed handles the toast + snout bump
-		setStipendBusy(false);
-		stipend.status().then(setStipendStatus);
 	};
 	// Show the user's currently equipped title alongside their code so
 	// they can confirm at-a-glance that their title is wired up. Manage
@@ -287,7 +272,7 @@ export function Account({ session }: { session: Session }) {
 			supabase
 				.from("profiles")
 				.select(
-					"username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, referred_by, distinct_active_days, war_wins, tickles_wasted_total, referrals_completed, active_title:titles!profiles_active_title_id_fkey(name, placement)"
+					"username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, vip_until, referred_by, distinct_active_days, war_wins, tickles_wasted_total, referrals_completed, active_title:titles!profiles_active_title_id_fkey(name, placement)"
 				)
 				.eq("id", session.user.id)
 				.single()
@@ -301,6 +286,7 @@ export function Account({ session }: { session: Session }) {
 						renames_used?: number;
 						active_hat_id?: string | null;
 						is_vip?: boolean;
+						vip_until?: string | null;
 						referred_by?: string | null;
 						distinct_active_days?: number;
 						war_wins?: number;
@@ -318,7 +304,7 @@ export function Account({ session }: { session: Session }) {
 					if (error) {
 						const fallback = await supabase
 							.from("profiles")
-							.select("username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, referred_by, distinct_active_days, war_wins, tickles_wasted_total, referrals_completed")
+							.select("username, discriminator, tickles_earned, tickles_lifetime_base, counter, active_hat_id, is_vip, vip_until, referred_by, distinct_active_days, war_wins, tickles_wasted_total, referrals_completed")
 							.eq("id", session.user.id)
 							.single();
 						row = fallback.data;
@@ -330,6 +316,7 @@ export function Account({ session }: { session: Session }) {
 					setSnouts(row?.counter ?? 0);
 					setActiveHat(row?.active_hat_id ?? null);
 					setIsVip(row?.is_vip ?? false);
+					setVipUntil(row?.vip_until ?? null);
 					setActiveDays(row?.distinct_active_days ?? 0);
 					setWarWins(row?.war_wins ?? 0);
 					setTicklesWasted(row?.tickles_wasted_total ?? 0);
@@ -355,6 +342,21 @@ export function Account({ session }: { session: Session }) {
 						);
 					}
 				});
+			// Isolated fail-soft reads: the Wallow migration is intentionally not
+			// pushed yet, so a missing column/function must not break Account.
+			supabase
+				.from("profiles")
+				.select("wallow_count")
+				.eq("id", session.user.id)
+				.single()
+				.then(({ data, error }) => {
+					if (!error) setWallowCount((data as { wallow_count?: number } | null)?.wallow_count ?? 0);
+				});
+			rpc<{ wallow_regen_seconds?: number }>("season_state").then((state) => {
+				if (typeof state?.wallow_regen_seconds === "number") {
+					setWallowRegenSeconds(state.wallow_regen_seconds);
+				}
+			});
 		}, [session.user.id])
 	);
 
@@ -381,6 +383,21 @@ export function Account({ session }: { session: Session }) {
 		Date.now() - accountCreatedMs < 24 * 60 * 60 * 1000;
 	const canRedeemCode =
 		hasRedeemed === false && accountUnder24h && ticklesEarned < 5;
+	const referralGrantUntil = referral?.slop_club_grant_until
+		? new Date(referral.slop_club_grant_until)
+		: null;
+	const hasActiveReferralGrant =
+		referralGrantUntil != null && referralGrantUntil.getTime() > Date.now();
+	const hasActiveSubscription =
+		vipUntil != null && new Date(vipUntil).getTime() > Date.now();
+	const hasReferralOnlySlopClub =
+		isVip && hasActiveReferralGrant && !hasActiveSubscription;
+	const referralGrantDateLabel = hasActiveReferralGrant
+		? referralGrantUntil.toLocaleDateString(undefined, {
+				month: "short",
+				day: "numeric",
+			})
+		: null;
 
 	// Short "Jun 2026"-style join date for the identity card's JOINED stat.
 	// Falls back to a dash if created_at didn't parse.
@@ -396,6 +413,10 @@ export function Account({ session }: { session: Session }) {
 	const renameCost = renamesUsed === 0 ? 0 : renamesUsed === 1 ? 1000 : 10000;
 	const renameCostCopy =
 		renameCost === 0 ? "First rename is free." : `${renameCost.toLocaleString()} snouts.`;
+	const visibleWallowCount = __DEV__ && devWallowPreview ? 5 : wallowCount;
+	const visibleRegenSeconds = __DEV__ && devWallowPreview
+		? 1800
+		: wallowRegenSeconds ?? Math.round(3600 * (1 - wallowRegenPercent(visibleWallowCount) / 100));
 
 	const openRename = () => {
 		setRenameInput(username ?? "");
@@ -519,15 +540,16 @@ export function Account({ session }: { session: Session }) {
 		setTimeout(() => setCopied(false), 1800);
 	};
 
-	// Listen for entitlement changes from RC (e.g., webhook flips after sandbox renewal)
+	// Listen for entitlement changes from RC (e.g., webhook flips after sandbox
+	// renewal). UI-optimistic only: the durable is_vip flip is the RevenueCat
+	// webhook (supabase/functions/revenuecat-webhook) — dev_set_vip was revoked
+	// from authenticated in the 20260537-39 lockdowns, so calling it here only
+	// produced a permission-denied error log.
 	useFocusEffect(
 		useCallback(() => {
-			const unsub = onCustomerInfoUpdate(async (info) => {
+			const unsub = onCustomerInfoUpdate((info) => {
 				const pro = !!info.entitlements.active["tickle_the_pig_pro"];
-				if (pro && !isVip) {
-					setIsVip(true);
-					await rpc("dev_set_vip", { target: true });
-				}
+				if (pro && !isVip) setIsVip(true);
 			});
 			return unsub;
 		}, [isVip])
@@ -656,24 +678,18 @@ export function Account({ session }: { session: Session }) {
 							/>
 							<Sticker color="rose" rotate={-1} radius={18} style={styles.codeCard}>
 								<View style={styles.codeRow}>
-									<View style={styles.codeAvatar}>
-										{/* Me rows render bare pigs by founder call
-										    2026-07-11 — the scrapbook flowers charm was
-										    removed; the avatar shows only the pig's own
-										    equipped cosmetic (activeHat) if any. */}
-										<PigAvatar size={56} hatId={activeHat} />
-									</View>
+									<PrestigeAvatar
+										size={visibleWallowCount > 0 ? 76 : 56}
+										hatId={activeHat}
+										prestigeLevel={visibleWallowCount}
+									/>
 									<View style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
 										<Text style={styles.codeLabel}>your code</Text>
-										<View style={styles.codeNameRow}>
-											<Text style={styles.codeValue} numberOfLines={1}>
-												{activeTitle
-													? activeTitle.placement === "pre"
-														? `${activeTitle.name} ${username}`
-														: `${username} ${activeTitle.name}`
-													: username}
-											</Text>
-										</View>
+										<ProfileIdentity
+											username={username}
+											title={activeTitle}
+											variant="profile"
+										/>
 										{!!handle && discriminator && (
 											<Text style={styles.codeHandle}>{handle}</Text>
 										)}
@@ -692,19 +708,27 @@ export function Account({ session }: { session: Session }) {
 
 								{/* Identity-card band — 3-col cluster inside the card.
 								    Divided by 1px ink-mute verticals + a dashed top
-								    border. THIS SEASON's live tally leads (the number
-								    the Board is racing on right now); lifetime lives in
-								    the "long story" dashboard below. */}
-								<View style={styles.lifetimeStatsRow}>
-									<LifetimeStat
-										label="SEASON TICKLES"
-										value={ticklesEarned.toLocaleString()}
-									/>
-									<View style={styles.lifetimeStatDivider} />
-									<LifetimeStat label="SNOUTS" value={snouts.toLocaleString()} />
-									<View style={styles.lifetimeStatDivider} />
-									<LifetimeStat label="JOINED" value={joinedLabel} />
-								</View>
+								    border. Lifetime figures live HERE (the standalone
+								    "long story" card was folded in 2026-07-17); tapping
+								    the band opens the full long-story ledger sheet. */}
+								<Pressable onPress={openLongStory}>
+									<View style={styles.lifetimeStatsRow}>
+										<LifetimeStat
+											label="LIFETIME TICKLES"
+											value={lifetimeTickles(
+												ticklesLifetimeBase,
+												ticklesEarned
+											).toLocaleString()}
+										/>
+										<View style={styles.lifetimeStatDivider} />
+										<LifetimeStat
+											label="ACTIVE DAYS"
+											value={activeDays.toLocaleString()}
+										/>
+										<View style={styles.lifetimeStatDivider} />
+										<LifetimeStat label="JOINED" value={joinedLabel} />
+									</View>
+								</Pressable>
 								<Pressable onPress={handleCopyCode} style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.7 }]}>
 									<Icon
 										name={copied ? "check" : "copy"}
@@ -720,43 +744,13 @@ export function Account({ session }: { session: Session }) {
 						</View>
 					)}
 
-					{/* The long story — lifetime dashboard. Three top-level
-					    lifetime figures on a tappable sticker; tap opens the
-					    full ledger sheet (every all-time count). Sits under the
-					    identity card so "who you are now" reads first, "all
-					    you've done" second. */}
-					<View style={longStoryStyles.wrap}>
-						<Text style={longStoryStyles.kicker}>★ the long story</Text>
-						<Pressable onPress={openLongStory}>
-							<Sticker
-								color="cream2"
-								rotate={-0.4}
-								radius={16}
-								style={longStoryStyles.card}
-							>
-								<View style={longStoryStyles.statsRow}>
-									<LifetimeStat
-										label="LIFETIME TICKLES"
-										value={lifetimeTickles(
-											ticklesLifetimeBase,
-											ticklesEarned
-										).toLocaleString()}
-									/>
-									<View style={styles.lifetimeStatDivider} />
-									<LifetimeStat
-										label="ACTIVE DAYS"
-										value={activeDays.toLocaleString()}
-									/>
-									<View style={styles.lifetimeStatDivider} />
-									<LifetimeStat
-										label="WAR WINS"
-										value={warWins.toLocaleString()}
-									/>
-								</View>
-								<Text style={longStoryStyles.seeAll}>see it all ›</Text>
-							</Sticker>
-						</Pressable>
-					</View>
+					<WallowWall
+						count={visibleWallowCount}
+						regenSeconds={visibleRegenSeconds}
+						previewing={__DEV__ && devWallowPreview}
+						onTogglePreview={__DEV__ ? () => setDevWallowPreview((shown) => !shown) : undefined}
+					/>
+
 
 					{/* Achievements entry — single-line tappable row that
 					    routes to the full grid. Sits above Sounder so it's
@@ -796,54 +790,19 @@ export function Account({ session }: { session: Session }) {
 							{/* Member badge — shown once joined */}
 							{isVip && (
 								<View style={styles.slopMemberBadge}>
-									<Text style={styles.slopMemberBadgeText}>★ MEMBER</Text>
+									<Text style={styles.slopMemberBadgeText}>★ ACTIVE</Text>
 								</View>
 							)}
 
 							<Text style={styles.slopKicker}>★ membership ★</Text>
 							<Text style={styles.slopTitle}>Slop Club</Text>
 							<Text style={styles.slopTagline}>
-								{isVip
-									? "You're in — these perks are active:"
+								{hasReferralOnlySlopClub
+									? `Your referral reward keeps every perk active through ${referralGrantDateLabel}.`
+									: isVip
+									? "Your membership is active — these perks are yours:"
 									: "The good life for swine of standing."}
 							</Text>
-
-							{/* Monthly stipend claim — members claim 250 snouts once a
-							    month (resets on the 1st). */}
-							{isVip && stipendStatus?.isMember && (
-								stipendStatus.claimedThisMonth ? (
-									<View style={styles.stipendDone}>
-										<Icon name="check" size={13} color={WHIMSY.ink} strokeWidth={2.4} />
-										<Text style={styles.stipendDoneText}>
-											Stipend claimed —{" "}
-											{stipendStatus.nextAt
-												? `next on ${new Date(
-														stipendStatus.nextAt
-													).toLocaleDateString(undefined, {
-														month: "short",
-														day: "numeric",
-													})}`
-												: "next on the 1st"}
-										</Text>
-									</View>
-								) : (
-									<Pressable
-										onPress={handleClaimStipend}
-										disabled={stipendBusy}
-										style={({ pressed }) => [
-											styles.stipendBtn,
-											(pressed || stipendBusy) && { opacity: 0.7 },
-										]}
-									>
-										<SnoutCoin size={16} />
-										<Text style={styles.stipendBtnText}>
-											{stipendBusy
-												? "Claiming…"
-												: `Claim ${stipendStatus.amount} snouts`}
-										</Text>
-									</Pressable>
-								)
-							)}
 
 							{/* Perks — shown in BOTH states. For members the icon
 							    wells light up gold (active) so the card celebrates
@@ -864,17 +823,6 @@ export function Account({ session }: { session: Session }) {
 								<SlopPerk
 									node={
 										<Image
-											source={require("@/assets/images/perks/stipend.png")}
-											style={styles.perkArtImg}
-											resizeMode="contain"
-										/>
-									}
-									label="Monthly snout stipend"
-									detail="250 snouts on the 1st, every month"
-								/>
-								<SlopPerk
-									node={
-										<Image
 											source={require("@/assets/images/perks/members_drops.png")}
 											style={styles.perkArtImg}
 											resizeMode="contain"
@@ -885,14 +833,14 @@ export function Account({ session }: { session: Session }) {
 								/>
 							</View>
 
-							{isVip ? (
+							{isVip && !hasReferralOnlySlopClub ? (
 								<Pressable
 									onPress={handleManage}
 									style={[styles.slopBtn, { backgroundColor: WHIMSY.paper }]}
 								>
 									<Text style={styles.slopBtnText}>Manage subscription</Text>
 								</Pressable>
-							) : (
+							) : !isVip ? (
 								<Pressable
 									onPress={PURCHASES_LIVE ? handleUnlockPro : undefined}
 									disabled={busy || !PURCHASES_LIVE}
@@ -911,6 +859,10 @@ export function Account({ session }: { session: Session }) {
 											: "Join the Slop Club"}
 									</Text>
 								</Pressable>
+							) : (
+								<Text style={styles.slopGrantFinePrint}>
+									No subscription needed. You won’t be charged.
+								</Text>
 							)}
 
 							{!isVip && PURCHASES_LIVE && (
@@ -951,8 +903,12 @@ export function Account({ session }: { session: Session }) {
 							radius={16}
 							style={referralStyles.card}
 						>
-							<Text style={referralStyles.kicker}>★ refer friends ★</Text>
-							<Text style={referralStyles.label}>Your code:</Text>
+							<Text style={referralStyles.kicker}>★ referrals ★</Text>
+							<Text style={referralStyles.title}>Invite new pigs</Text>
+							<Text style={referralStyles.intro}>
+								Share your code with a new player. When they join and play, you both earn rewards.
+							</Text>
+							<Text style={referralStyles.label}>Your invite code</Text>
 							<View style={referralStyles.codePill}>
 								<Text style={referralStyles.codeValue}>{referral.code}</Text>
 								<Pressable
@@ -974,7 +930,7 @@ export function Account({ session }: { session: Session }) {
 								onPress={handleShareReferral}
 								style={({ pressed }) => [referralStyles.shareBtn, pressed && { opacity: 0.7 }]}
 							>
-								<Text style={referralStyles.shareBtnText}>Share invite</Text>
+								<Text style={referralStyles.shareBtnText}>Share your code</Text>
 							</Pressable>
 							<ReferralMilestoneRow
 								completed={referral.referrals_completed}
@@ -982,31 +938,22 @@ export function Account({ session }: { session: Session }) {
 								capped={referral.next_milestone_at == null}
 							/>
 
-							{/* Recruiter downline strip — folds in the former
-							    standalone "Your Sounder" card. One quiet strip
-							    (not a nested card, banned by the taste lens):
-							    the downline count recopied WITHOUT the "sounder"
-							    word (that word is now the war crew), the next
-							    earned-title line (title NAMES stay as-is), and
-							    the leaderboard link (→ /sounder, same
-							    destination as before). Kept behind SOUNDER_VISIBLE
-							    via the my_sounder fetch so it can be dark-toggled;
-							    only renders once that fetch lands. */}
-							{SOUNDER_VISIBLE && sounder && (
+							{/* Recruiter standing. The backing RPC/route keep their
+							    legacy names, but player-facing language stays firmly
+							    in the referral model; Sounder means the four-pig crew. */}
+							{SOUNDER_VISIBLE && recruiterStats && (
 								<View style={referralStyles.downlineStrip}>
 									<View style={referralStyles.downlineTextCol}>
 										<Text style={referralStyles.downlineCount}>
-											{sounder.engaged_count}{" "}
-											{sounder.engaged_count === 1
-												? "friend brought to the bog"
-												: "friends brought to the bog"}
+											{recruiterStats.engaged_count} completed{" "}
+											{recruiterStats.engaged_count === 1 ? "referral" : "referrals"}
 										</Text>
-										{sounder.next_title && (
+										{recruiterStats.next_title && (
 											<Text style={referralStyles.downlineNext}>
-												{sounder.next_threshold! - sounder.engaged_count} more to
+												{recruiterStats.next_threshold! - recruiterStats.engaged_count} more to
 												unlock{" "}
 												<Text style={referralStyles.downlineNextTitle}>
-													{sounder.next_title}
+													{recruiterStats.next_title}
 												</Text>
 											</Text>
 										)}
@@ -1016,38 +963,23 @@ export function Account({ session }: { session: Session }) {
 										hitSlop={6}
 										style={({ pressed }) => pressed && { opacity: 0.7 }}
 									>
-										<Text style={referralStyles.downlineLink}>leaderboard →</Text>
+										<Text style={referralStyles.downlineLink}>referral board →</Text>
 									</Pressable>
 								</View>
 							)}
-							{/* Slop Club granted at a referral milestone — show its
-							    live window while it's active. */}
-							{referral.slop_club_grant_until &&
-								new Date(referral.slop_club_grant_until).getTime() >
-									Date.now() && (
-									<Text style={referralStyles.grantNote}>
-										★ Slop Club active — until{" "}
-										{new Date(
-											referral.slop_club_grant_until
-										).toLocaleDateString(undefined, {
-											month: "short",
-											day: "numeric",
-										})}
-									</Text>
-								)}
-
-							{/* Recent referred friends + how close each is to counting
-							    (100 tickles · 3 active days). Replaces the bare
+							{/* Recent referrals + how close each is to counting
+							    (100 tickles). Replaces the bare
 							    "{N} on the way" aggregate. */}
 							{(referral.recent_friends ?? []).length > 0 && (
 								<View style={referralStyles.friendList}>
+									<Text style={referralStyles.subsectionLabel}>Recent referrals</Text>
 									{(referral.recent_friends ?? []).slice(0, 3).map((f, i) => (
 										<ReferralFriendRow key={(f.username ?? "pig") + i} friend={f} />
 									))}
 								</View>
 							)}
 
-							{/* Into the full sounder + the reward ladder. */}
+							{/* Full referral progress + reward ladder. */}
 							{(referral.referrals_completed > 0 ||
 								referral.referrals_pending > 0) && (
 								<Pressable
@@ -1056,17 +988,14 @@ export function Account({ session }: { session: Session }) {
 									hitSlop={6}
 								>
 									<Text style={referralStyles.seeMoreText}>
-										Your sounder + rewards ›
+										Referral details + rewards ›
 									</Text>
 								</Pressable>
 							)}
 
-							<Text style={referralStyles.fine}>
-								Each completed referral: +100 ★
-							</Text>
+							<Text style={referralStyles.fine}>Each completed referral earns you 100 tickles.</Text>
 							<Text style={referralStyles.finePrint}>
-								Your friend has to play a bit before the credit lands —
-								keeps it fair.
+								A referral counts as soon as the new player reaches 100 tickles.
 							</Text>
 
 							{/* Have a code? — redeem a friend's code right here.
@@ -1119,7 +1048,7 @@ export function Account({ session }: { session: Session }) {
 							{codeInviter && (
 								<View style={referralStyles.successRow}>
 									<Text style={referralStyles.entrySuccess}>
-										You're in {codeInviter}'s sounder! +50
+										You're in — thanks to {codeInviter}! +50
 									</Text>
 									<Image
 										source={require("@/assets/images/emoji/pig.png")}
@@ -1184,6 +1113,30 @@ export function Account({ session }: { session: Session }) {
 								last
 							/>
 						</Sticker>
+						{/* Report a bug / idea — a quiet door out to the web report
+						    page (ticklethepig.com/report.html). Sits below the
+						    Settings card, above the version footer: a settings-row-
+						    like affordance, not a banner. The in-app "Send an idea
+						    to the den" whisper (in Settings above) stays the primary
+						    path; this is the always-there web door that also works
+						    for anyone sharing the page. */}
+						<Pressable
+							onPress={() =>
+								Linking.openURL("https://ticklethepig.com/report.html")
+							}
+							style={({ pressed }) => [
+								reportStyles.row,
+								pressed && { opacity: 0.65 },
+							]}
+						>
+							<View style={reportStyles.iconWrap}>
+								<Icon name="bell" size={18} color={WHIMSY.mute} />
+							</View>
+							<Text style={reportStyles.label}>
+								Found a bug or have an idea? Report it
+							</Text>
+							<Text style={reportStyles.chev}>›</Text>
+						</Pressable>
 						<Text style={settingsStyles.footer}>
 							★ tickle the pig · v{Constants.expoConfig?.version ?? "1.0.0"} ★
 						</Text>
@@ -1610,7 +1563,7 @@ function SettingRow({
 }
 
 // Milestone progress row for the "Refer friends" card. Renders the
-// "Friends invited: N / 3" line + a fill bar + a "Hat earned" badge
+// "Completed referrals: N / 3" line + a fill bar + a "Rewards earned" badge
 // once capped. Pure presentational — caller computes completed / goal
 // from my_referral_summary.
 // One recent referred friend on the Account card: name + progress toward
@@ -1618,7 +1571,6 @@ function SettingRow({
 function ReferralFriendRow({ friend }: { friend: ReferralFriend }) {
 	const done = !!friend.completed;
 	const tRatio = Math.max(0, Math.min(1, friend.tickles / 100));
-	const dRatio = Math.max(0, Math.min(1, friend.active_days / 3));
 	return (
 		<View style={referralStyles.friendRow}>
 			<View style={referralStyles.friendTop}>
@@ -1632,7 +1584,7 @@ function ReferralFriendRow({ friend }: { friend: ReferralFriend }) {
 					</View>
 				) : (
 					<Text style={referralStyles.friendProg}>
-						{friend.tickles}/100 · {friend.active_days}/3
+						{friend.tickles}/100 tickles
 					</Text>
 				)}
 			</View>
@@ -1641,11 +1593,6 @@ function ReferralFriendRow({ friend }: { friend: ReferralFriend }) {
 					<View style={referralStyles.friendBarTrack}>
 						<View
 							style={[referralStyles.friendBarFill, { width: `${tRatio * 100}%` }]}
-						/>
-					</View>
-					<View style={referralStyles.friendBarTrack}>
-						<View
-							style={[referralStyles.friendBarFill, { width: `${dRatio * 100}%` }]}
 						/>
 					</View>
 				</View>
@@ -1670,7 +1617,7 @@ function ReferralMilestoneRow({
 		<View style={referralStyles.milestoneWrap}>
 			<View style={referralStyles.milestoneHeader}>
 				<Text style={referralStyles.milestoneLabel}>
-					Friends invited: {completed} / {capped ? completed : goal}
+					Completed referrals: {completed} / {capped ? completed : goal}
 				</Text>
 				{capped && (
 					<View style={referralStyles.milestoneBadgeRow}>
@@ -1711,6 +1658,79 @@ function LedgerRow({
 		<View style={[longStoryStyles.ledgerRow, !last && longStoryStyles.ledgerRowDivider]}>
 			<Text style={longStoryStyles.ledgerLabel}>{label}</Text>
 			<Text style={longStoryStyles.ledgerValue}>{value}</Text>
+		</View>
+	);
+}
+
+const WALLOW_DECAL_COLORS = [WHIMSY.sun, WHIMSY.flame, WHIMSY.roseDeep, WHIMSY.accent, WHIMSY.bark];
+
+function formatRegenInterval(seconds: number): string {
+	const safe = Math.max(60, Math.round(seconds));
+	if (safe % 3600 === 0) return `${safe / 3600}h`;
+	if (safe >= 3600) return `${Math.floor(safe / 3600)}h ${Math.round((safe % 3600) / 60)}m`;
+	return `${Math.round(safe / 60)}m`;
+}
+
+function WallowWall({
+	count,
+	regenSeconds,
+	previewing,
+	onTogglePreview,
+}: {
+	count: number;
+	regenSeconds: number;
+	previewing: boolean;
+	onTogglePreview?: () => void;
+}) {
+	const rank = Math.max(0, Math.floor(count));
+	const regenPercent = wallowRegenPercent(rank);
+	return (
+		<View style={wallowWallStyles.wrap}>
+			<View style={wallowWallStyles.headingRow}>
+				<View style={{ flex: 1 }}>
+					<Text style={wallowWallStyles.kicker}>★ your prestige</Text>
+					<Text style={wallowWallStyles.title}>Wall of Tiers</Text>
+				</View>
+				{onTogglePreview && (
+					<Pressable onPress={onTogglePreview} style={({ pressed }) => [wallowWallStyles.previewBtn, previewing && wallowWallStyles.previewBtnOn, pressed && { opacity: 0.7 }]}>
+						<Icon name="flame" size={14} color={WHIMSY.ink} filled />
+						<Text style={wallowWallStyles.previewText}>{previewing ? "W5 preview" : "Preview W5"}</Text>
+					</Pressable>
+				)}
+			</View>
+			<Sticker color="paper" rotate={0.4} radius={16} style={wallowWallStyles.card}>
+				<Text style={wallowWallStyles.intro}>
+					Every Wallow leaves a hotter mark. Power tops out at Rank 2; the wall keeps growing.
+				</Text>
+				<View style={wallowWallStyles.decalRow}>
+					{WALLOW_DECAL_COLORS.map((color, index) => {
+						const decalRank = index + 1;
+						const earned = rank >= decalRank;
+						const dark = earned && decalRank >= 4;
+						return (
+							<View key={decalRank} style={wallowWallStyles.decalSlot}>
+								<View style={[wallowWallStyles.decalBurst, { backgroundColor: earned ? color : WHIMSY.cream2 }, decalRank % 2 === 0 && { transform: [{ rotate: "8deg" }] }]}>
+									<View style={[wallowWallStyles.decalCore, dark && { backgroundColor: WHIMSY.bark }]}>
+										<Icon name={earned ? (decalRank === 5 ? "crown" : "flame") : "lock"} size={earned ? 16 : 14} color={dark ? WHIMSY.sun : earned ? WHIMSY.ink : WHIMSY.muteSoft} filled={earned} />
+										<Text style={[wallowWallStyles.decalRank, dark && { color: WHIMSY.paper }]}>W{decalRank}</Text>
+									</View>
+								</View>
+							</View>
+						);
+					})}
+				</View>
+				{rank > 5 && <Text style={wallowWallStyles.beyond}>+{rank - 5} marks beyond the wall</Text>}
+				<View style={wallowWallStyles.powerBand}>
+					<View style={{ flex: 1, minWidth: 0 }}>
+						<Text style={wallowWallStyles.rankLabel}>{wallowRankLabel(rank)}</Text>
+						<Text style={wallowWallStyles.regenLead}>{regenPercent > 0 ? `${regenPercent}% faster regeneration` : "Base regeneration"}</Text>
+					</View>
+					<View style={wallowWallStyles.intervalBlock}>
+						<Text style={wallowWallStyles.intervalValue}>1 / {formatRegenInterval(regenSeconds)}</Text>
+						<Text style={wallowWallStyles.intervalLabel}>CURRENT TICKLE RATE</Text>
+					</View>
+				</View>
+			</Sticker>
 		</View>
 	);
 }
@@ -1873,30 +1893,6 @@ const styles = StyleSheet.create({
 	},
 	// ── Slop Club membership card ──────────────────────────────────
 	slopWrap: { padding: 18 },
-	stipendBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: 7,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingVertical: 9,
-		marginTop: 12,
-		marginBottom: 4,
-	},
-	stipendBtnText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
-	stipendDone: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: 6,
-		marginTop: 12,
-		marginBottom: 4,
-		paddingVertical: 6,
-	},
-	stipendDoneText: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.mute },
 	slopMemberBadge: {
 		position: "absolute",
 		top: 12,
@@ -2003,6 +1999,13 @@ const styles = StyleSheet.create({
 		opacity: 0.55,
 		textAlign: "center",
 		marginTop: 10,
+	},
+	slopGrantFinePrint: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.ink,
+		textAlign: "center",
+		marginTop: 14,
 	},
 	restoreLink: {
 		alignItems: "center",
@@ -2148,6 +2151,37 @@ const settingsStyles = StyleSheet.create({
 	},
 });
 
+// The quiet "report a bug / idea" row beneath the Settings card. Mirrors the
+// SettingRow geometry (icon well + flex label + chevron) but in the softer
+// hand font + muted ink so it reads as a subtle link-out to the web report
+// page, not a second card of settings.
+const reportStyles = StyleSheet.create({
+	row: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.md,
+		paddingHorizontal: SPACE.lg,
+		paddingVertical: SPACE.md,
+		marginTop: SPACE.md,
+	},
+	iconWrap: {
+		width: 26,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	label: {
+		flex: 1,
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.mute,
+	},
+	chev: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.mute,
+	},
+});
+
 // "Refer friends" card — code + Copy + Share + milestone progress.
 // Sits between the Slop Club card and Settings on the Account screen.
 const referralStyles = StyleSheet.create({
@@ -2224,7 +2258,21 @@ const referralStyles = StyleSheet.create({
 	},
 	kicker: {
 		...KICKER_TEXT,
-		marginBottom: 8,
+		marginBottom: 4,
+	},
+	title: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 20,
+		lineHeight: 24,
+		color: WHIMSY.ink,
+	},
+	intro: {
+		fontFamily: FONTS.body,
+		fontSize: 13,
+		lineHeight: 18,
+		color: WHIMSY.mute,
+		marginTop: 4,
+		marginBottom: 14,
 	},
 	label: {
 		fontFamily: FONTS.hand,
@@ -2339,21 +2387,6 @@ const referralStyles = StyleSheet.create({
 		color: WHIMSY.ink,
 		marginTop: 4,
 	},
-	// Live banner for an active referral-granted free month of Slop Club.
-	grantNote: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
-		color: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.pill,
-		paddingHorizontal: 10,
-		paddingVertical: 4,
-		marginTop: 10,
-		alignSelf: "flex-start",
-		overflow: "hidden",
-	},
 	finePrint: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
@@ -2362,6 +2395,12 @@ const referralStyles = StyleSheet.create({
 	},
 	// Recent referred-friends list (per-friend progress).
 	friendList: { marginTop: 12, gap: 9 },
+	subsectionLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		color: WHIMSY.mute,
+		letterSpacing: 0.3,
+	},
 	friendRow: { gap: 5 },
 	friendTop: {
 		flexDirection: "row",
@@ -2406,7 +2445,7 @@ const referralStyles = StyleSheet.create({
 		color: WHIMSY.accent,
 		letterSpacing: 0.3,
 	},
-	// Recruiter downline strip (folded-in "Your Sounder" content). A quiet
+	// Recruiter-standing strip. A quiet
 	// dashed-top-divided row — count + next-title on the left, leaderboard
 	// link on the right. Reuses the card's own type tokens (bodyExtra count,
 	// hand next-line, accent link) so it reads as part of the card, not a
@@ -2602,6 +2641,30 @@ const feedbackStyles = StyleSheet.create({
 	btnConfirmText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 });
 
+const wallowWallStyles = StyleSheet.create({
+	wrap: { gap: SPACE.sm },
+	headingRow: { flexDirection: "row", alignItems: "flex-end", gap: SPACE.sm },
+	kicker: { ...KICKER_TEXT, marginBottom: 1 },
+	title: { ...TYPE.sectionTitle, color: WHIMSY.ink },
+	previewBtn: { flexDirection: "row", alignItems: "center", gap: SPACE.xs, paddingHorizontal: SPACE.sm, paddingVertical: 6, borderRadius: RADII.pill, borderWidth: 1.5, borderColor: WHIMSY.ink, backgroundColor: WHIMSY.paper },
+	previewBtnOn: { backgroundColor: WHIMSY.sun },
+	previewText: { ...TYPE.label, color: WHIMSY.ink },
+	card: { padding: SPACE.lg, overflow: "hidden" },
+	intro: { ...TYPE.hand, color: WHIMSY.mute, marginBottom: SPACE.md },
+	decalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 5 },
+	decalSlot: { flex: 1, alignItems: "center" },
+	decalBurst: { width: 52, height: 52, borderRadius: RADII.md, borderWidth: 2, borderColor: WHIMSY.ink, padding: 4, alignItems: "center", justifyContent: "center" },
+	decalCore: { width: 40, height: 40, borderRadius: RADII.pill, borderWidth: 1.5, borderColor: WHIMSY.ink, backgroundColor: WHIMSY.paper, alignItems: "center", justifyContent: "center" },
+	decalRank: { fontFamily: FONTS.whimsy, fontSize: 9, lineHeight: 10, color: WHIMSY.ink },
+	beyond: { ...TYPE.hand, color: WHIMSY.accent, textAlign: "center", marginTop: 6 },
+	powerBand: { flexDirection: "row", alignItems: "center", gap: SPACE.md, marginTop: SPACE.lg, paddingTop: SPACE.md, borderTopWidth: 1.5, borderTopColor: WHIMSY.muteSoft, borderStyle: "dashed" },
+	rankLabel: { ...TYPE.cardTitle, fontSize: 16, lineHeight: 19, color: WHIMSY.ink },
+	regenLead: { ...TYPE.bodySm, color: WHIMSY.accent, marginTop: 2 },
+	intervalBlock: { width: 112, alignItems: "flex-end" },
+	intervalValue: { ...TYPE.numeral, color: WHIMSY.ink },
+	intervalLabel: { ...TYPE.kickerPill, color: WHIMSY.mute, fontSize: 7, letterSpacing: 1 },
+});
+
 // "The long story" — lifetime dashboard card + its detail-sheet ledger.
 // Card sits under the identity card; the sheet reuses the paper-sticker
 // modal treatment (backdrop + centered sticker) shared with the rename dialog.
@@ -2690,4 +2753,3 @@ const longStoryStyles = StyleSheet.create({
 	},
 	closeBtnText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 });
-

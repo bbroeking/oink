@@ -26,6 +26,7 @@ import { GreatHungerMeter } from "../GreatHungerMeter";
 import { Sticker } from "../ui/Sticker";
 import { Button } from "../ui/Button";
 import { bannerDigStatus } from "@/utils/rooting";
+import { useUnmanagedModalHold } from "../ui/PopupQueue";
 import type { FeedingCta } from "../mudwar/useFeedingCta";
 import {
 	FONTS,
@@ -154,6 +155,10 @@ function HungerHeroSheet({
 	onClose: () => void;
 	refreshKey?: number;
 }) {
+	// Unmanaged native Modal (the hero sheet, one tap off the season tab, outside
+	// the popup queue): hold the queue while visible so a foreground poll can't
+	// present a queued popup over it — the #50152 wedge (issue #4).
+	useUnmanagedModalHold(visible);
 	const meter = useHungerMeter(refreshKey);
 	// Within-stage drain — the current segment fills live toward the next stage
 	// (the six segments together read as one power bar for the boss).

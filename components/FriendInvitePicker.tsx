@@ -163,7 +163,7 @@ export function FriendInvitePicker({
 								take it back
 							</HandLink>
 						) : seatsFull ? (
-							<RowStatus>sounder full</RowStatus>
+							<RowStatus>Sounder full</RowStatus>
 						) : (
 							<SunPill onPress={() => invite(f.id)} disabled={busyId !== null}>
 								{busyId === f.id ? "Inviting…" : "Invite"}

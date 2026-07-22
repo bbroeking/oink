@@ -307,6 +307,25 @@ test("truffleSheet(5) preempts releaseNotes(45) via drain; releaseNotes returns 
 	expectOnlyVisible("releaseNotes");
 });
 
+test("truffleSheet(5) closing when it has nothing to show releases the wedge (#3)", () => {
+	// Regression for #3: BuriedTruffleSheet at pri 5 (the highest in the app) used
+	// to sit PRESENTED while it rendered null (truffleSheetOpen stuck true but
+	// status not buried — including a fail-soft truffle_status fetch), so the slot
+	// won every contest and silently suppressed every other popup for the session.
+	// The fix makes the sheet close itself (via the normal two-phase onClose) the
+	// moment it would render null; the pri-5 slot must then drain and hand off.
+	mount({
+		truffleSheet: { want: true, priority: 5 },
+		releaseNotes: { want: true, priority: 45 },
+	});
+	expectOnlyVisible("truffleSheet"); // pri 5 wins the initial contest
+
+	// Nothing buried to show → the sheet closes (release now, want clears a beat
+	// later). The queue must not stay wedged on the vanished modal.
+	dismissTwoPhase("truffleSheet");
+	expectOnlyVisible("releaseNotes"); // the previously-suppressed popup finally shows
+});
+
 test("release from a non-presented slot is a no-op (no spurious drain)", () => {
 	mount({
 		releaseNotes: { want: true, priority: 45 },
@@ -373,6 +392,72 @@ describe("usePopupHold (pre-shell gate)", () => {
 		expect(reg.rituals.visible).toBe(false); // still held
 		act(() => setHoldActive(false));
 		expect(reg.rituals.visible).toBe(true); // want persisted, re-presents
+	});
+});
+
+// ── useUnmanagedModalHold — the latch for native Modals outside the queue ──
+// UserSheet + HoofprintsSheet (and the other tab sheets) render native Modals the
+// queue can't see. Without a latch, a foreground poll (schism/finale/achievements
+// re-firing on AppState "active") can present a queued popup OVER them — the
+// #50152 wedge, outside the queue's control (#4). The hold gives them the queue's
+// mutual exclusion: while open, nothing admits and anything presented drains; on
+// close the hold lifts and queued popups re-admit.
+import { useUnmanagedModalHold } from "../components/ui/PopupQueue";
+
+let setSheetOpen: React.Dispatch<React.SetStateAction<boolean>> = () => {};
+
+function UnmanagedSheetProbe({ initialOpen }: { initialOpen: boolean }) {
+	const [open, set] = useState(initialOpen);
+	setSheetOpen = set;
+	useUnmanagedModalHold(open);
+	return null;
+}
+
+describe("useUnmanagedModalHold (unmanaged native Modal latch)", () => {
+	it("blocks admission while open, admits the queued popup after the sheet closes", () => {
+		act(() => {
+			renderer = TestRenderer.create(
+				<PopupQueueProvider>
+					<UnmanagedSheetProbe initialOpen={true} />
+					<Probe id="achievements" want={true} priority={40} />
+				</PopupQueueProvider>
+			);
+		});
+		// Sheet open from mount (a UserSheet is up): the queued achievement can
+		// never present over it, no matter how many gaps elapse.
+		act(() => {
+			jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS * 3);
+		});
+		expect(reg.achievements.visible).toBe(false);
+		// Sheet closes (UserSheet dismissed): the hold lifts and the still-wanting
+		// achievement admits — the spec's "queued achievement fires after closing".
+		act(() => setSheetOpen(false));
+		expect(reg.achievements.visible).toBe(true);
+	});
+
+	it("drains a popup that presented before the sheet opened, re-presents after close", () => {
+		act(() => {
+			renderer = TestRenderer.create(
+				<PopupQueueProvider>
+					<UnmanagedSheetProbe initialOpen={false} />
+					<Probe id="finale" want={true} priority={20} />
+				</PopupQueueProvider>
+			);
+		});
+		expect(reg.finale.visible).toBe(true); // presents on the empty queue
+
+		// A foreground poll's popup is up when the user opens a sheet over it: the
+		// hold engages and drains the presented popup, restoring single-modal safety.
+		act(() => setSheetOpen(true));
+		expect(reg.finale.visible).toBe(false);
+		act(() => {
+			jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS + 50);
+		});
+		expect(reg.finale.visible).toBe(false); // still held while the sheet is open
+
+		// Sheet closes: the still-wanting popup re-presents.
+		act(() => setSheetOpen(false));
+		expect(reg.finale.visible).toBe(true);
 	});
 });
 

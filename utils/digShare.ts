@@ -1,0 +1,200 @@
+// Dig-receipt text-grid share (wedge 5b — docs/wedge-plan.md §Phase 1, spec 09).
+//
+// Turns a finished dig into the compact, spoiler-light text block the player
+// hands to the native share sheet (or copies), e.g.
+//
+//   tickle the pig · feeding #402
+//   🟫🟫✨🍄🟫
+//   ✨🟫👑🟫🟫
+//   4 finds in 19 digs
+//   ticklethepig.com
+//
+// EMOJI LIVE HERE ONLY: this is outbound MESSAGE content, not app chrome — the
+// UI emoji ban (CLAUDE.md + taste standard) still stands everywhere else. The
+// pure builders below take the dig's board + final layer depths + claimed finds
+// and never touch React/Share, so they unit-test as plain data → text.
+//
+// SPOILER-LIGHT CONTRACT: the grid shows ONLY the player's own DUG tiles —
+// undug tiles are omitted entirely (never a coordinate of undug board content),
+// and only the sweet finds carry a shape (truffle/shimmer/relic); stones, junk
+// and plain mud all read as 🟫 so nothing about the buried layout leaks. Truffle
+// CLUSTERS collapse to a single 🍄 (a multi-tile truffle is one find, as the
+// receipt counts it), so the grid's find-emoji count equals the "N finds" stat.
+
+import { PATCH_COLS } from "@/constants/dig";
+import { clusterAnchor } from "@/utils/rooting";
+import type { Find, PatchBoard } from "@/utils/rooting";
+
+// The grid's shape vocabulary: the three sweet finds + mud (the catch-all for
+// every dug-but-dull tile — empty mud, stones, junk, and truffle pieces the
+// player scratched but never claimed).
+export type ShareCell = "truffle" | "shimmer" | "unique" | "mud";
+
+const SHARE_EMOJI: Record<ShareCell, string> = {
+	truffle: "🍄",
+	shimmer: "✨",
+	unique: "👑",
+	mud: "🟫",
+};
+
+// Compact texty row width for the shared grid — matches the founder-approved
+// mock (a 5-wide block reads cleanly in a message bubble), NOT the board's
+// 6-wide geometry: the grid is a spoiler-light sequence of dug tiles, not a
+// board map, so it needn't echo PATCH_COLS.
+const GRID_COLS = 5;
+
+const SHARE_FOOTER_URL = "ticklethepig.com";
+
+export interface DigShareData {
+	/** The feeding/window number (session.windowIndex) — comparable across a herd. */
+	feedingNumber: number;
+	/** The dug-tile grid cells, row-major, clusters collapsed, undug omitted. */
+	cells: ShareCell[];
+	/** Dug tiles (layers[i] <= 0) — the "digs" stat. */
+	digs: number;
+	/** Claimed sweet finds — the "finds" stat (== count of shaped grid cells). */
+	finds: number;
+	/**
+	 * The dig at which the GOLDEN was claimed — the receipt headline's Wordle
+	 * number (spec 10, wedge 5c). TEMPORAL, not board-order: N is the 1-based
+	 * position, in the order the player actually cleared tiles (`dugOrder`), of
+	 * the dig that completed the first-claimed truffle's cluster — "it took me
+	 * N digs". Two crewmates digging the same seeded board in different orders
+	 * get different Ns; N is always ≤ `digs` so the headline and the share
+	 * block's "{finds} finds in {digs} digs" stay in agreement. `null` when no
+	 * truffle was claimed (no golden minted → the receipt shows no headline; we
+	 * never invent a consolation stat).
+	 */
+	goldenInDigs: number | null;
+}
+
+/**
+ * Reduce a finished dig (its board, the FINAL layer depths, the finds the
+ * player actually claimed, and the TEMPORAL dig order) into the spoiler-light
+ * share data. Pure + read-only over the parity-locked board — it never mutates
+ * board contents.
+ *
+ * `dugOrder` is the tile indices in the order the player actually cleared
+ * them (the caller records this live, dig by dig). The grid/counts come from
+ * the final `layers`; only `goldenInDigs` reads the order — it's a brag about
+ * TIME ("it took me N digs"), so board order would be dishonest.
+ */
+export function digShareData(
+	board: PatchBoard,
+	layers: number[],
+	collected: Iterable<Find>,
+	feedingNumber: number,
+	dugOrder: readonly number[]
+): DigShareData {
+	const claimed = new Set<Find>(collected);
+	const gotL = claimed.has("truffle_l");
+	const gotD = claimed.has("truffle_d");
+	// Cluster collapse: emit the single 🍄 at the cluster's FIRST (lowest-index)
+	// tile; its other tiles are dropped so a multi-tile truffle reads as one find.
+	const inL = new Set(board.truffleL);
+	const inD = new Set(board.truffleD);
+	// The single anchor a claimed cluster collapses to (its lowest tile index) —
+	// clusterAnchor (utils/rooting) names this collapse-representative concept.
+	const firstL = clusterAnchor(board.truffleL);
+	const firstD = clusterAnchor(board.truffleD);
+
+	const cells: ShareCell[] = [];
+	let digs = 0;
+	for (let i = 0; i < layers.length; i++) {
+		if (layers[i] > 0) continue; // undug — omitted (spoiler-light)
+		digs++;
+		if (inL.has(i)) {
+			if (gotL && i === firstL) cells.push("truffle");
+			else if (!gotL) cells.push("mud"); // scratched but never claimed → mud
+			// claimed but a non-first cluster tile → collapsed away (no cell)
+			continue;
+		}
+		if (inD.has(i)) {
+			if (gotD && i === firstD) cells.push("truffle");
+			else if (!gotD) cells.push("mud");
+			continue;
+		}
+		const cell = board.cells[i];
+		if (cell?.kind === "shimmer" && claimed.has("shimmer")) cells.push("shimmer");
+		else if (cell?.kind === "unique" && claimed.has("unique")) cells.push("unique");
+		else cells.push("mud"); // empty mud, stone, junk, or an unclaimed single find
+	}
+
+	// The "finds" stat IS the shaped-cell count — each claimed sweet find yields
+	// exactly one shape (a cluster collapses to one 🍄), so the brag number and
+	// the grid can never disagree.
+	const finds = cells.reduce((n, c) => (c === "mud" ? n : n + 1), 0);
+
+	// ── goldenInDigs (spec 10) — the temporal brag ─────────────────────────────
+	// The golden is the FIRST truffle the dig CLAIMS (the one the economy mints).
+	// A multi-tile truffle claims only when its whole cluster completes, so a
+	// cluster's dig ordinal is the position in `dugOrder` of its LAST tile to
+	// clear; the golden is the claimed truffle whose completion came earliest.
+	// Same tiles dug in a different order → a different (honest) N.
+	const ordinalOf = new Map<number, number>();
+	dugOrder.forEach((tileIdx, at) => {
+		if (!ordinalOf.has(tileIdx)) ordinalOf.set(tileIdx, at + 1);
+	});
+	const completionOrdinal = (cluster: readonly number[]): number | null => {
+		if (cluster.length === 0) return null;
+		let last = 0;
+		for (const t of cluster) {
+			const at = ordinalOf.get(t);
+			if (at == null) return null; // a cluster tile never dug — not a claim
+			if (at > last) last = at;
+		}
+		return last;
+	};
+	let goldenInDigs: number | null = null;
+	if (gotL) goldenInDigs = completionOrdinal(board.truffleL);
+	if (gotD) {
+		const d = completionOrdinal(board.truffleD);
+		if (d != null && (goldenInDigs == null || d < goldenInDigs)) goldenInDigs = d;
+	}
+
+	return { feedingNumber, cells, digs, finds, goldenInDigs };
+}
+
+/**
+ * The outbound text block — header · grid · comparable count · footer link.
+ * Pure: data in, string out. The unit-tested core of the share.
+ */
+export function buildDigShareText(data: DigShareData): string {
+	const rows: string[] = [];
+	for (let i = 0; i < data.cells.length; i += GRID_COLS) {
+		rows.push(
+			data.cells
+				.slice(i, i + GRID_COLS)
+				.map((c) => SHARE_EMOJI[c])
+				.join("")
+		);
+	}
+	const findWord = data.finds === 1 ? "find" : "finds";
+	const digWord = data.digs === 1 ? "dig" : "digs";
+	return [
+		`tickle the pig · feeding #${data.feedingNumber}`,
+		rows.join("\n"),
+		`${data.finds} ${findWord} in ${data.digs} ${digWord}`,
+		SHARE_FOOTER_URL,
+	]
+		.filter((line) => line.length > 0) // a dig with zero dug tiles has no grid
+		.join("\n");
+}
+
+// ── Measurement (fire-and-forget, fail-soft) ─────────────────────────────────
+// Count share-affordance taps. No analytics lane exists in the app, so this is
+// the sanctioned fallback: a fail-soft RPC counter behind an AUTHORED-but-
+// UNPUSHED migration (20260749000000_dig_share_count). rpc() maps the missing
+// function (PGRST202, migration not yet pushed) to null — a warn breadcrumb, no
+// error — so the share works fully offline / against today's prod. Never awaited
+// by the UI; a rejected promise is swallowed here too. rpc() is LAZY-required so
+// this file's pure text builders don't drag the supabase/AsyncStorage import
+// chain into unit tests (or any other pure consumer).
+export function bumpDigShareCount(): void {
+	try {
+		const { rpc } = require("@/utils/rpc") as typeof import("@/utils/rpc");
+		void rpc("bump_dig_share_count").catch(() => {});
+	} catch {
+		// fail-soft — measurement must never block or break the share.
+	}
+}

@@ -1,21 +1,21 @@
 # Referrals — debug + verification
 
-Companion to `docs/referrals.md` (the spec). This doc is the on-call playbook for the recurring complaint: *"my friend used my code and I never got my +100 snouts."*
+Companion to `docs/referrals.md` (the spec). This doc is the on-call playbook for the recurring complaint: *"my referral reached 100 tickles and I never got my reward."*
 
 The referral flow has **two distinct credit events** that often get conflated:
 
 | Event | When | Reward | Where defined |
 |---|---|---|---|
 | **Redemption** | Invitee enters a valid code in onboarding | Invitee +50 snouts | `redeem_referral_code` RPC |
-| **Engagement gate** | Invitee crosses both **lifetime tickles ≥ 100** AND **distinct active days ≥ 3** | Inviter +100 snouts + milestone | Inline block at the bottom of `update_profile_and_item_count` |
+| **Engagement gate** | Invitee reaches **100 lifetime tickles** | Inviter +100 tickles + milestone | `complete_referral_if_eligible` called by `update_profile_and_item_count` |
 
-The first one is immediate. **The second one is on a delay measured in days, by design.** Most "didn't credit" reports are reports about a player who hasn't crossed the second threshold yet.
+The first one is immediate. The second lands on the tickle that brings the referred player to 100.
 
 ---
 
 ## Diagnostic flow
 
-When someone reports "I didn't get my +100 snouts for the friend I invited," walk these checks in order:
+When someone reports "I didn't get my 100 tickles for the player I invited," walk these checks in order:
 
 ### Step 1 — Identify the invitee
 
@@ -31,7 +31,7 @@ Paste `scripts/diagnose-referral.sql` into Supabase Studio's SQL editor, substit
 | `referred_by_username` | The reporter's username (the inviter). **If NULL: redemption never happened.** |
 | `referral_redeemed_at` | A timestamp. **If NULL alongside non-NULL `referred_by`: something is very wrong.** |
 | `tickles_earned` | ≥ 100 for the gate to be eligible. Below 100 = invitee hasn't played enough. |
-| `distinct_active_days` | ≥ 3 for the gate to be eligible. Below 3 = invitee hasn't played on enough distinct days. |
+| `distinct_active_days` | Informational only; it no longer controls referral completion. |
 | `last_active_date` | A recent date. NULL = invitee has never tickled since referrals migration deployed. |
 | `referral_completed_at` | **A timestamp = gate fired successfully** (inviter was credited). NULL = gate hasn't fired. |
 | `inviter_completed_count` | The inviter's `referrals_completed` count. Should match the count of distinct invitees whose `referral_completed_at` is non-null. |
@@ -41,10 +41,9 @@ Paste `scripts/diagnose-referral.sql` into Supabase Studio's SQL editor, substit
 | Symptom | Likely cause | Resolution |
 |---|---|---|
 | `referred_by` is NULL | Invitee never successfully redeemed | Confirm with the invitee — did they actually enter the code? `redeem_referral_code` rejects on `too_old` (>24h after signup) and `too_active` (>5 tickles before redemption). |
-| `tickles_earned < 100` | Invitee hasn't played enough yet | Tell the inviter to be patient — gate fires automatically on the invitee's 100th tickle on day 3+. |
-| `distinct_active_days < 3` | Invitee hasn't played on enough distinct UTC days | Same as above. **Note:** active days are bumped *only* by tickling — trade claims and season-pass claims do not count. |
+| `tickles_earned < 100` | Invitee hasn't played enough yet | Gate fires automatically on the invitee's 100th lifetime tickle. |
 | All thresholds met, `referral_completed_at` IS NULL | **Real bug.** Gate should have fired but didn't | See "When the gate fails to fire despite thresholds met" below. |
-| Inviter says they haven't seen the snouts but `referral_completed_at` IS NOT NULL | Credit fired on backend but UI didn't refresh, or push failed to deliver | Check inviter's `counter` value. If it includes the +100, the credit landed; the push or UI surface is the issue. |
+| Inviter says they haven't seen the tickles but `referral_completed_at` IS NOT NULL | Credit fired on backend but UI didn't refresh, or push failed to deliver | Check the inviter's `user_items.item_count`. The payout can sit above the normal bank cap. |
 
 ---
 
@@ -52,15 +51,15 @@ Paste `scripts/diagnose-referral.sql` into Supabase Studio's SQL editor, substit
 
 This is the only path that requires actual debugging. Possible causes:
 
-1. **The function definition in production doesn't include the engagement-gate block.** A future migration may have redefined `update_profile_and_item_count` without re-including it (the function is a single-file replace, and the engagement gate is an inline block at the bottom, not a separate function — easy to miss when copy-pasting). Verify with:
+1. **The tickle function no longer calls the completion helper.** Verify with:
    ```sql
    SELECT pg_get_functiondef('public.update_profile_and_item_count'::regproc);
    ```
-   The output must contain the comment `-- ── Referral engagement gate ───`. If it doesn't, the gate was dropped.
+   The output must call `complete_referral_if_eligible(uid)`. If it doesn't, the gate was dropped.
 
 2. **A race condition at the threshold-crossing tickle.** Possible but unlikely — the function runs in a single transaction with `FOR UPDATE` on `user_items`, so the row state should be consistent within the call. If suspect, look at the invitee's most recent tickle timestamp + the inviter's `counter` history.
 
-3. **The migration was applied but the backfill UPDATE for existing users didn't run.** Specifically, if any existing user already had `referred_by` set from the older Sounder system (`20260520020000_sounder.sql`) AND has `referral_completed_at` IS NULL AND already crosses the thresholds, the gate should fire on their next tickle. If it doesn't, dig into the function definition (see #1).
+3. **The migration's backfill did not complete.** Pending referred players already at 100 tickles should be completed during migration. If one remains, inspect the helper and its migration logs.
 
 ---
 
@@ -82,10 +81,11 @@ psql "postgres://postgres:postgres@127.0.0.1:54322/postgres"
 #    a. Create two auth.users (inviter + invitee).
 #    b. Their profiles + referral_code get auto-created via the handle_new_user trigger.
 #    c. Call redeem_referral_code as the invitee.
-#    d. Manually bump invitee.tickles_earned to 99 and distinct_active_days to 2.
+#    d. Manually bump invitee.tickles_earned to 99; active days may remain below 3.
 #    e. SET role authenticated; SET request.jwt.claims TO '...' to impersonate the invitee.
 #    f. Call update_profile_and_item_count(<invitee_uid>).
-#    g. Verify referral_completed_at is now set and inviter.counter went up by 100.
+#    g. Verify referral_completed_at is set, inviter.item_count rose by 100,
+#       and inviter.counter did not change.
 ```
 
 The pgTAP test does all of this in a transaction with `ROLLBACK` at the end, so nothing persists.
@@ -127,7 +127,7 @@ These tests run without a database — they mock `supabase.rpc`. Fast, run in CI
 Add a new pgTAP test (in `supabase/tests/01_referrals_gate.sql` or a new file) when:
 - A new threshold or condition is added to the engagement gate (e.g. "must also have alignment != neutral")
 - A new milestone is added (e.g. 5-referral Slop Club trial — currently deferred per spec §1)
-- The reward amount changes (currently +100 snouts / Messenger Hat at 3)
+- The reward amount changes (currently +100 tickles / Messenger Hat at 3)
 - A new redemption guard is added (e.g. IP cap — currently deferred per spec §72)
 
 Add a new Jest test when:
@@ -139,9 +139,7 @@ Add a new Jest test when:
 
 ## Heads-up
 
-- **The engagement gate fires lazily.** It runs on the invitee's NEXT tickle after both thresholds are met. There's no cron, no trigger. If the invitee crosses the thresholds at 11:50 PM and then doesn't touch the app for two days, the inviter doesn't get credited until that next tickle. This is intentional — it means there's no background job that can silently fail — but it can confuse users who expect immediate credit.
-- **Active days bump only via tickling.** Trade claims, season-pass claims, and title rewards bump `tickles_earned` but NOT `distinct_active_days`. A whale who claims 200 tickles from a trade on their first day still has `distinct_active_days = 1`. They need to come back on 2 more separate UTC days and tickle for the gate to fire.
-- **`distinct_active_days` is a UTC concept.** A player who tickles at 11:50 PM Eastern (3:50 AM UTC next day) and again at 8:00 AM Eastern (12:00 PM UTC same day) has logged TWO distinct UTC days for a single human session. This generally over-credits (good for retention; never under-credits).
+- **The engagement gate fires on a tickle.** `update_profile_and_item_count` increments lifetime tickles, then calls the idempotent completion helper. The migration also backfills referrals already at 100 that were waiting only on the retired day gate.
 - **The Messenger Hat milestone only fires when `referrals_completed = 3` exactly.** If for any reason the count jumps from 2 to 4 (which shouldn't happen but is conceptually possible), the milestone is missed. Worth a sanity check in the diagnostic query.
 - **Self-referral check uses `inviter_id = caller_id`** — straightforward. Multi-account farming via two devices is not blocked by the schema; it's blocked socially (you'd need a fresh phone signup + manual code entry within the 24h window + < 5 tickles).
 - **Push notification to the inviter is fire-and-forget** — wrapped in a `BEGIN ... EXCEPTION WHEN OTHERS THEN NULL END;` block. The credit is still written even if the push fails. Don't infer "no push received" = "credit didn't fire."

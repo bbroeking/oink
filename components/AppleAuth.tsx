@@ -5,7 +5,9 @@ import { log } from "../utils/log";
 
 export function AppleAuth() {
 	if (Platform.OS !== "ios") {
-		return <>{/* Android sign-in is handled elsewhere. */}</>;
+		// Android sign-in is Google (see GoogleAuth). Return null — never an
+		// empty frame — so no stray pill can render off-platform.
+		return null;
 	}
 	return (
 		<AppleAuthentication.AppleAuthenticationButton

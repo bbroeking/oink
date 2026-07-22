@@ -7,7 +7,9 @@
 
 import { rpc, rpcAction, RpcResult } from "./rpc";
 import { supabase } from "./supabase";
+import { log } from "./log";
 import { nonneg, coerceIntArray } from "./jsonb";
+import type { TitlePlacement } from "@/constants/title_types";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -147,12 +149,64 @@ export async function fetchMemberHats(
 	userIds: string[]
 ): Promise<Map<string, string | null>> {
 	if (userIds.length === 0) return new Map();
-	const { data } = await supabase
+	// This read reaches past the rpc() seam, so its failure won't self-report —
+	// route it through log.error the same way rpc() does (→ Sentry), then fall
+	// back to an empty map (crew surfaces render the neutral avatar) as before.
+	const { data, error } = await supabase
 		.from("profiles")
 		.select("id, active_hat_id")
 		.in("id", userIds);
+	if (error) log.error("[crews:fetchMemberHats]", error.message);
 	const rows = (data as { id: string; active_hat_id: string | null }[] | null) ?? [];
 	return new Map(rows.map((r) => [r.id, r.active_hat_id]));
+}
+
+export interface RosterProfile {
+	hatId: string | null;
+	wallowCount: number;
+	title: { name: string; placement: TitlePlacement } | null;
+}
+
+export async function fetchMemberProfiles(
+	userIds: string[]
+): Promise<Map<string, RosterProfile>> {
+	if (userIds.length === 0) return new Map();
+	const rich = await supabase
+		.from("profiles")
+		.select("id, active_hat_id, wallow_count, active_title:titles!profiles_active_title_id_fkey(name, placement)")
+		.in("id", userIds);
+	type Row = {
+		id: string;
+		active_hat_id: string | null;
+		wallow_count?: number | null;
+		active_title?:
+			| { name: string; placement: TitlePlacement }
+			| { name: string; placement: TitlePlacement }[]
+			| null;
+	};
+	let rows = (rich.data as Row[] | null) ?? [];
+	if (rich.error) {
+		const fallback = await supabase
+			.from("profiles")
+			.select("id, active_hat_id")
+			.in("id", userIds);
+		rows = (fallback.data as Row[] | null) ?? [];
+	}
+	return new Map(
+		rows.map((row) => {
+			const joined = Array.isArray(row.active_title)
+				? row.active_title[0] ?? null
+				: row.active_title ?? null;
+			return [
+				row.id,
+				{
+					hatId: row.active_hat_id,
+					wallowCount: row.wallow_count ?? 0,
+					title: joined,
+				},
+			];
+		})
+	);
 }
 
 // ── Action wrappers (rpcAction<T>) ───────────────────────────────────────────

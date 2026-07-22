@@ -11,6 +11,12 @@
 // In-memory ONLY — this resets on every app restart (no AsyncStorage). A player
 // who force-quits and relaunches the same day gets the housekeeping then. The
 // gate exists purely to keep ONE launch session from over-stacking.
+//
+// WHICH SLOTS STAMP THIS GATE is recorded once, next to the priority table, as
+// CEREMONY_SLOT_IDS in constants/popupPriorities.ts (seasonEnd, hungerIntro).
+// The actual markCeremonyShown() call lives at each ceremony slot's
+// `if (slot.visible) markCeremonyShown()` effect (app/(tabs)/season.tsx for the
+// recap, app/_layout.tsx for the hunger intro). Keep those in sync with the set.
 
 let ceremonyShown = false;
 

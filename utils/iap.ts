@@ -6,16 +6,20 @@
 //   3. Create products in App Store Connect:
 //      a) The "Slop Club" membership — yearly + monthly Auto-Renewable
 //         subscriptions in one Subscription Group:
-//           - yearly  ($29.99/yr)
-//           - monthly ($3.99/mo)
+//           - yearly  ($24.99/yr)
+//           - monthly ($2.99/mo)
 //      b) The Season Pass — a Consumable, $4.99. (Consumable, NOT
 //         non-consumable: it's re-bought every season. The per-season
 //         scoping is handled server-side by grant_season_pass.)
 //   4. RevenueCat dashboard: https://app.revenuecat.com
 //      - Create iOS app, paste the App-Specific Shared Secret from ASC
-//      - Map both products to entitlement `tickle_the_pig_pro`
-//      - Create an Offering (default) with both packages
-//      - Configure a Paywall on the offering (RevenueCat dashboard → Paywalls)
+//      - Map ONLY the subscriptions (monthly/yearly) to entitlement
+//        `tickle_the_pig_pro`. Do NOT attach `season_pass` — the one-time
+//        pass unlocks the premium *track* via grant_season_pass (webhook),
+//        not the membership; mapping it would gift pass buyers full
+//        Slop Club. (docs/revenuecat-asc-setup.md, "Note on season_pass".)
+//      - Offerings: `slop_club` (monthly+yearly) and `season_pass`
+//      - Configure a Paywall per offering (RevenueCat dashboard → Paywalls)
 //   5. Replace REVENUECAT_IOS_API_KEY below if needed
 //
 // In dev, sandbox testers handle purchases (App Store Connect > Users
@@ -49,8 +53,6 @@ import { log } from "./log";
 // or the eventual production launch. Kept env-driven (not a hardcoded `true`)
 // so monetization can be demoed without committing it live before the
 // subscription redesign (regen pay-to-win removal, perks) lands.
-export const IAP_ENABLED = process.env.EXPO_PUBLIC_IAP_ENABLED === "true";
-
 // Public iOS API key — find at: https://app.revenuecat.com/projects/<project>/apps/<app>
 //
 // Override at build time by setting EXPO_PUBLIC_REVENUECAT_IOS_KEY in your env
@@ -59,6 +61,18 @@ export const IAP_ENABLED = process.env.EXPO_PUBLIC_IAP_ENABLED === "true";
 const REVENUECAT_IOS_API_KEY =
 	process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ??
 	"test_HbqMbZIVgDwzJBpsgudluPEOSNb";
+
+// Android is a separate RevenueCat app backed by Google Play. Do not fall
+// back to the iOS/Test Store key: if the Android key has not been configured,
+// the noop adapter hides purchase surfaces and keeps the rest of the game
+// fully usable.
+const REVENUECAT_ANDROID_API_KEY =
+	process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
+
+export const IAP_ENABLED =
+	process.env.EXPO_PUBLIC_IAP_ENABLED === "true" &&
+	(Platform.OS === "ios" ||
+		(Platform.OS === "android" && !!REVENUECAT_ANDROID_API_KEY));
 
 // Entitlement identifier for the membership — MUST match the exact ID
 // in the RevenueCat dashboard. The user-facing name is "Slop Club";
@@ -157,14 +171,15 @@ const realIAP: IAP = (() => {
 				}
 				return;
 			}
-			if (Platform.OS !== "ios") {
-				// Android: also configure if you ship an Android app — uses a separate Google API key
-				return;
-			}
+			const apiKey =
+				Platform.OS === "ios"
+					? REVENUECAT_IOS_API_KEY
+					: REVENUECAT_ANDROID_API_KEY;
+			if (!apiKey) return;
 			if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
 			try {
 				await Purchases.configure({
-					apiKey: REVENUECAT_IOS_API_KEY,
+					apiKey,
 					appUserID: userId,
 				});
 				initialized = true;

@@ -35,6 +35,7 @@ import {
 	POPUP_TEARDOWN_MS,
 } from "./ui/PopupQueue";
 import { HAT_IMAGES, RARITY_COLORS } from "@/constants/hats";
+import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -65,7 +66,11 @@ export function MysteryHatReveal({
 	reveal: MysteryBoxRevealPayload | null;
 	onDone: () => void;
 }) {
-	const slot = usePopupSlot("mysteryHat", reveal != null, 48);
+	const slot = usePopupSlot(
+		"mysteryHat",
+		reveal != null,
+		POPUP_PRIORITIES.mysteryHat
+	);
 	// 'box' = closed-box beat, waiting for the tap; 'open' = hat shown.
 	const [phase, setPhase] = useState<"box" | "open">("box");
 	const chime = useAudioPlayer(revealSound);

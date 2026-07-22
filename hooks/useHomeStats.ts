@@ -20,6 +20,7 @@ import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { log } from "@/utils/log";
 import { alignmentLabel, type AlignmentLabel } from "@/utils/alignment";
+import { HOME_STATS_BACKOFF_MS, retryDelayMs } from "@/utils/bootRetry";
 // One equipped cosmetic slot. Identical to (and fed straight into)
 // PigStage's render contract, so re-use that single declaration rather
 // than maintaining a parallel copy. Re-exported under the EquipSlot name
@@ -95,6 +96,10 @@ export interface UseHomeStatsOptions {
 export interface UseHomeStats {
 	stats: Stats;
 	statsLoaded: boolean;
+	// True once the boot fetch + its whole backoff schedule have failed
+	// without ever loading. The Barn's retry affordance reads this so it
+	// shows only on a genuine failure, not during the normal load beat.
+	statsError: boolean;
 	refresh: () => Promise<void>;
 	// Optimistic slot patch — apply a locally-known change (e.g. an equip that
 	// just succeeded server-side) to the stats immediately, before the refetch
@@ -129,6 +134,7 @@ export function bumpHomeStats(patch?: Partial<Stats>) {
 export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 	const [stats, setStats] = useState<Stats>(INITIAL_STATS);
 	const [statsLoaded, setStatsLoaded] = useState(false);
+	const [statsError, setStatsError] = useState(false);
 
 	// Stash the callback in a ref so refresh's identity stays stable
 	// across renders; the consumer (Barn) re-passes the setter each
@@ -137,7 +143,25 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 	const onAlignmentLoadedRef = useRef(opts.onAlignmentLoaded);
 	onAlignmentLoadedRef.current = opts.onAlignmentLoaded;
 
-	const refresh = useCallback(async () => {
+	// Backoff-retry bookkeeping for a failed boot fetch. Without this a
+	// transient network blip at launch left statsLoaded false / itemCount 0,
+	// which the Barn reads as "Out of tickles!" until a force-quit — the
+	// offline soft-lock (spec 03 / issue #5).
+	const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const retryAttemptRef = useRef(0);
+	const mountedRef = useRef(true);
+	const scheduleRetryRef = useRef<() => void>(() => {});
+
+	const clearRetry = useCallback(() => {
+		if (retryTimerRef.current != null) {
+			clearTimeout(retryTimerRef.current);
+			retryTimerRef.current = null;
+		}
+	}, []);
+
+	// One fetch attempt. Returns true on success (stats hydrated), false on
+	// any failure so the caller can decide whether to schedule a retry.
+	const doFetch = useCallback(async (): Promise<boolean> => {
 		try {
 			// Single round trip via home_stats() RPC — was 3-4 sequential
 			// queries (profiles + tickle_info + season_state + hats join).
@@ -201,7 +225,8 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 					seen67At: r.seen_67_at ?? null,
 				});
 				setStatsLoaded(true);
-				return;
+				setStatsError(false);
+				return true;
 			}
 
 			// Fallback: original multi-query path (dev parity pre-migration).
@@ -303,10 +328,54 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				seen67At: prof?.seen_67_at ?? null,
 			});
 			setStatsLoaded(true);
+			setStatsError(false);
+			return true;
 		} catch (error) {
 			log.error("Error fetching stats:", error);
+			return false;
 		}
 	}, []);
+
+	// Schedule the next backoff retry, or — once the schedule is exhausted —
+	// surface the visible retry affordance (statsError). No-op if stats have
+	// meanwhile loaded or the hook unmounted.
+	const scheduleRetry = useCallback(() => {
+		if (!mountedRef.current) return;
+		const delay = retryDelayMs(retryAttemptRef.current, HOME_STATS_BACKOFF_MS);
+		if (delay == null) {
+			setStatsError(true);
+			return;
+		}
+		retryAttemptRef.current += 1;
+		clearRetry();
+		retryTimerRef.current = setTimeout(async () => {
+			retryTimerRef.current = null;
+			if (!mountedRef.current) return;
+			const ok = await doFetch();
+			if (!ok) scheduleRetryRef.current();
+		}, delay);
+	}, [doFetch, clearRetry]);
+	scheduleRetryRef.current = scheduleRetry;
+
+	// Public refresh — a fresh trigger (boot focus, mutation resync, cross-tree
+	// bump). Resets the backoff so each new trigger gets the full retry budget,
+	// then kicks off the schedule on failure.
+	const refresh = useCallback(async () => {
+		retryAttemptRef.current = 0;
+		setStatsError(false);
+		clearRetry();
+		const ok = await doFetch();
+		if (!ok) scheduleRetry();
+	}, [doFetch, scheduleRetry, clearRetry]);
+
+	// Cancel any pending retry on unmount.
+	useEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+			clearRetry();
+		};
+	}, [clearRetry]);
 
 	// Optimistic patch — merge a locally-known change into stats now so the UI
 	// reflects it before the refetch lands. The next refresh() overwrites the
@@ -327,5 +396,5 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 		};
 	}, [applyOptimistic, refresh]);
 
-	return { stats, statsLoaded, refresh, applyOptimistic };
+	return { stats, statsLoaded, statsError, refresh, applyOptimistic };
 }

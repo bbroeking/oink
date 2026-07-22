@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>10 — found the golden in N digs</title>
+<style>
+  :root{
+    --ink:#2a1f15;--paper:#fffaf0;--cream:#fbeee2;--cream2:#f6e6d4;--rose:#ffd6dc;
+    --rose-deep:#f8a8b3;--sky:#c8e3f0;--sage:#c9dec1;--sun:#ffd87a;--lilac:#d6c8f0;
+    --lilac-deep:#a89bff;--peach:#ffc8a8;--accent:#c25a3f;--mute:rgba(40,30,20,.6);--gold:#F5C44A;--gold-deep:#C99B23;
+    --display:ui-rounded,"SF Pro Rounded","Fredoka","Nunito",system-ui,sans-serif;
+    --body:"Nunito",ui-rounded,-apple-system,system-ui,sans-serif;
+    --hand:"Bradley Hand","Patrick Hand","Comic Sans MS",cursive;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(circle at 12% 8%,rgba(255,214,220,.4),transparent 34%),radial-gradient(circle at 90% 92%,rgba(214,200,240,.32),transparent 40%),var(--paper);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;padding:26px 18px 80px;overflow-x:hidden}
+  .top{max-width:900px;margin:0 auto 8px}
+  a.back{font-family:var(--hand);font-size:15px;color:var(--accent);text-decoration:none;border-bottom:1.5px solid var(--rose-deep)}
+  .kicker{font-family:var(--hand);font-size:15px;color:var(--accent);margin:18px 0 2px}
+  h1{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.3px}
+  .lede{font-size:14px;line-height:1.5;color:#4a3b2c;max-width:660px;margin-top:8px}
+  .stage{max-width:900px;margin:26px auto 0;display:flex;flex-wrap:wrap;gap:34px 44px;justify-content:center;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center;gap:12px;width:360px;max-width:100%}
+  .caplabel{font-family:var(--display);font-weight:800;font-size:14px;padding:5px 14px;border:2.5px solid var(--ink);border-radius:999px;box-shadow:2px 2px 0 var(--ink);background:var(--sun)}
+  .caplabel.quiet{background:var(--cream2)}
+  .frame{width:340px;max-width:100%;border:3px solid var(--ink);border-radius:36px;background:var(--cream);box-shadow:8px 8px 0 var(--ink);padding:14px 12px 20px;position:relative}
+  .notch{width:96px;height:7px;background:var(--ink);border-radius:99px;margin:2px auto 12px;opacity:.85}
+  .receipt{background:#fffdf7;border:2.5px solid var(--ink);border-radius:16px;box-shadow:4px 4px 0 var(--ink);padding:15px 15px 17px;transform:rotate(-.4deg);position:relative}
+  .receipt::before,.receipt::after{content:"";position:absolute;left:0;right:0;height:9px;background:radial-gradient(circle at 6px -1px,transparent 6px,#fffdf7 6px);background-size:16px 9px}
+  .receipt::before{top:-9px;transform:scaleY(-1)}
+  .receipt::after{bottom:-9px}
+  .rk{font-family:var(--display);font-weight:800;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mute);text-align:center}
+  /* THE headline */
+  .headline{margin:8px 0 6px;text-align:center;background:linear-gradient(#fff3d0,#ffe08a);border:2.5px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);padding:12px 10px 13px}
+  .headline .lead{font-family:var(--hand);font-size:15px;color:var(--gold-deep)}
+  .headline .big{font-family:var(--display);font-weight:800;font-size:15px;line-height:1.1;margin-top:2px}
+  .headline .num{font-family:var(--display);font-weight:800;font-size:42px;color:var(--ink);display:block;line-height:1;margin:3px 0}
+  .rfeed{font-family:var(--hand);font-size:13px;color:var(--accent);text-align:center;margin:8px 0 6px}
+  .rrule{border-top:2px dashed var(--ink);opacity:.35;margin:8px 0}
+  .lrow{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:5px 0}
+  .lrow .lbl{display:flex;align-items:center;gap:8px}
+  .lrow .dot{width:16px;height:16px;border:2px solid var(--ink);border-radius:5px}
+  .lrow .val{font-family:var(--display);font-weight:800}
+  .d-mud{background:#cdbfae}.d-shroom{background:#e0b98f}.d-spark{background:var(--sun)}.d-gold{background:var(--gold)}
+  .rtot{display:flex;justify-content:space-between;font-family:var(--display);font-weight:800;font-size:15px;margin-top:6px}
+  .sharebtn{display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--display);font-weight:800;font-size:15px;padding:11px;border:2.5px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);background:var(--sun);margin-top:13px}
+  .stackbadge{font-family:var(--hand);font-size:12px;color:var(--mute);text-align:center;margin-top:6px}
+  .note{width:320px;max-width:100%;font-family:var(--hand);font-size:14px;line-height:1.45;color:var(--ink);background:#fff;border:2.5px dashed var(--ink);border-radius:14px;padding:11px 13px;box-shadow:3px 3px 0 rgba(42,31,21,.14)}
+  .note b{color:var(--accent)}
+  .connector{font-family:var(--hand);font-size:13px;color:var(--accent);text-align:center}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="index.html">&lsaquo; back to the queue</a></div>
+  <div class="kicker">&#9733; spec 10</div>
+  <h1>&ldquo;found the golden in N digs&rdquo; headline</h1>
+  <p class="lede">The receipt's headline becomes the game's Wordle number: one compact, comparable, braggable stat &mdash; the dig count at which the golden truffle surfaced. It sits <b>above the ledger</b>, and spec 09's share button composes <b>directly beneath it</b> &mdash; both derive from the same dig-sequence source.</p>
+
+  <div class="stage">
+
+    <!-- golden found -->
+    <div class="col">
+      <div class="caplabel">golden found</div>
+      <div class="frame">
+        <div class="notch"></div>
+        <div class="receipt">
+          <div class="rk">&#9733; the honest receipt</div>
+          <div class="headline">
+            <div class="lead">found the golden in</div>
+            <span class="num">14</span>
+            <div class="big">digs</div>
+          </div>
+          <div class="rfeed">feeding #402</div>
+          <div class="rrule"></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-shroom"></span>truffles unearthed</span><span class="val">2</span></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-spark"></span>sparks of luck</span><span class="val">2</span></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-gold"></span>golden truffle</span><span class="val">1</span></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-mud"></span>just mud</span><span class="val">14</span></div>
+          <div class="rrule"></div>
+          <div class="rtot"><span>19 digs</span><span>4 finds</span></div>
+          <div class="sharebtn">&#9733; share your dig</div>
+          <div class="stackbadge">&darr; spec 09's button, placed under the headline stat</div>
+        </div>
+      </div>
+      <div class="note">the headline number and 09's <b>&ldquo;4 finds in 19 digs&rdquo;</b> pull from one shared helper &mdash; they can never disagree. Whimsy voice, <code>FONTS.whimsy</code> numeral treatment, tokens only.</div>
+    </div>
+
+    <!-- no golden -->
+    <div class="col">
+      <div class="caplabel quiet">no golden this session</div>
+      <div class="frame">
+        <div class="notch"></div>
+        <div class="receipt">
+          <div class="rk">&#9733; the honest receipt</div>
+          <div class="rfeed" style="margin-top:8px">feeding #402</div>
+          <div class="rrule"></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-shroom"></span>truffles unearthed</span><span class="val">3</span></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-spark"></span>sparks of luck</span><span class="val">1</span></div>
+          <div class="lrow"><span class="lbl"><span class="dot d-mud"></span>just mud</span><span class="val">16</span></div>
+          <div class="rrule"></div>
+          <div class="rtot"><span>20 digs</span><span>4 finds</span></div>
+          <div class="sharebtn">&#9733; share your dig</div>
+        </div>
+      </div>
+      <div class="note">no golden means <b>no headline change</b> &mdash; we don't invent a consolation stat. The existing receipt stands, and 09's share still works.</div>
+    </div>
+
+  </div>
+</body>
+</html>

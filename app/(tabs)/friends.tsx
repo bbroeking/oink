@@ -53,7 +53,7 @@ const SEGMENT_HEADERS: Record<Segment, { kicker: string; title: string }> = {
 	board: { kicker: "who's on top", title: "The Board" },
 	inbox: { kicker: "word from the bog", title: "Inbox" },
 	friends: { kicker: "your drove", title: "Friends" },
-	sounder: { kicker: "friends", title: "Your Sounder" },
+	sounder: { kicker: "your herd", title: "Your Sounder" },
 };
 
 const SEGMENT_KEYS: Segment[] = ["board", "inbox", "friends", "sounder"];

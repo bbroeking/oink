@@ -9,7 +9,7 @@
 
 import { View, Text, Image, ScrollView, StyleSheet } from "react-native";
 import { Sticker } from "../ui/Sticker";
-import { HAT_IMAGES } from "@/constants/hats";
+import { cosmeticImage } from "@/utils/rewardArt";
 import {
 	FONTS,
 	RADII,
@@ -42,6 +42,7 @@ const HERD_TITLES = [
 ];
 
 export function SpoilsShowcase() {
+	const truffleArt = cosmeticImage("golden_truffle");
 	return (
 		<View>
 			{/* The shelf */}
@@ -50,8 +51,9 @@ export function SpoilsShowcase() {
 				showsHorizontalScrollIndicator={false}
 				contentContainerStyle={styles.shelf}
 			>
-				{FEATURED.map((f, i) =>
-					HAT_IMAGES[f.id] ? (
+				{FEATURED.map((f, i) => {
+					const art = cosmeticImage(f.id);
+					return art ? (
 						<View
 							key={f.id}
 							style={[
@@ -61,7 +63,7 @@ export function SpoilsShowcase() {
 							]}
 						>
 							<Image
-								source={HAT_IMAGES[f.id]}
+								source={art}
 								style={styles.itemArt}
 								resizeMode="contain"
 							/>
@@ -70,15 +72,15 @@ export function SpoilsShowcase() {
 							</Text>
 							<Text style={styles.itemRarity}>{f.rarity}</Text>
 						</View>
-					) : null
-				)}
+					) : null;
+				})}
 			</ScrollView>
 
 			{/* Golden Truffles + the Exchange */}
 			<Sticker color="cream" rotate={0.6} radius={RADII.lg} style={styles.truffleCard}>
-				{HAT_IMAGES.golden_truffle && (
+				{truffleArt && (
 					<Image
-						source={HAT_IMAGES.golden_truffle}
+						source={truffleArt}
 						style={styles.truffleArt}
 						resizeMode="contain"
 					/>

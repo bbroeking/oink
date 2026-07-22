@@ -19,7 +19,7 @@ import { log } from "./log";
 function isTransientNetworkError(error: { message?: string; name?: string } | null): boolean {
 	if (!error) return false;
 	if (error.name === "TypeError") return true;
-	return /network request failed|failed to fetch|fetch failed|network error/i.test(
+	return /network request failed|failed to fetch|fetch failed|network error|request timed out/i.test(
 		error.message ?? ""
 	);
 }

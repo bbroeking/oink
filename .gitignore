@@ -63,3 +63,7 @@ docs/mudwar-rhythm-design.pdf
 
 # Art-pass scratch staging (generated strips/scenes; outputs land in assets/)
 tmp/
+
+# build artifacts + personal agent config
+*.aab
+.claude/settings.local.json

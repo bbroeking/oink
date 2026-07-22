@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 import { HAT_IMAGES, RARITY_COLORS, type Rarity } from "@/constants/hats";
 import { EXCHANGE_ITEM_IDS } from "@/constants/dig";
 import { LoadingBeat } from "@/components/ui/EmptyState";
+import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
 import { WHIMSY, FONTS, SHADOW_SM, MODAL_BACKDROP_BG, RADII, SPACE, TYPE, PAGE_PAD, RARITY_BG_SOLID } from "@/constants/theme";
 
 interface SpoilRow {
@@ -27,6 +28,10 @@ interface Props {
 }
 
 export function TruffleCatalogSheet({ open, onClose }: Props) {
+	// Unmanaged native Modal (direct-tap from SounderCard, outside the popup
+	// queue): hold the queue while open so a foreground poll can't present a
+	// queued popup over it — the #50152 wedge (issue #4).
+	useUnmanagedModalHold(open);
 	const screenH = useRef(Dimensions.get("window").height).current;
 	const anim = useRef(new Animated.Value(0)).current;
 	const [rows, setRows] = useState<SpoilRow[] | null>(null);

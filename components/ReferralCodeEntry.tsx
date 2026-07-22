@@ -151,8 +151,8 @@ export function ReferralCodeEntry({ onDone }: Props) {
 						<Text style={styles.kicker}>★ you're in ★</Text>
 						<Text style={styles.title}>
 							{status.inviterName
-								? `Welcome to ${status.inviterName}'s sounder!`
-								: "Welcome to the sounder!"}
+								? `${status.inviterName} brought you in!`
+								: "You're in — welcome!"}
 						</Text>
 						<Text style={styles.heroBody}>+50 snouts in your barn.</Text>
 					</View>

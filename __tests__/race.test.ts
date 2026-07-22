@@ -1,14 +1,16 @@
-// Pure-logic tests for the global-race helpers (utils/dig): the score label,
+// Pure-logic tests for the global-race helpers (utils/race): the score label,
 // the cycle math (weekly Monday 00:00 UTC anchor, 7-day cycle, key format), the
 // pinned-row standings selectors (weekly + cumulative season), and the defensive
 // jsonb parser. The server owns the authoritative shape (migration 20260719000000);
 // these are mirrors.
 
-// utils/dig imports the rpc → supabase chain (AsyncStorage native module); stub
+// utils/race imports the rpc → supabase chain (AsyncStorage native module); stub
 // it the same way the milestoneProgress / hungerMeter tests do — these tests
 // only touch the pure helpers + parsers.
 jest.mock("../utils/supabase", () => ({ supabase: { rpc: jest.fn() } }));
-jest.mock("../utils/log", () => ({ log: { error: jest.fn(), warn: jest.fn() } }));
+jest.mock("../utils/log", () => ({
+	log: { error: jest.fn(), warn: jest.fn() },
+}));
 
 import {
 	RaceStandings,
@@ -18,13 +20,14 @@ import {
 	cycleEndWeekday,
 	formatRaceCountdown,
 	parseRaceCrewDetail,
+	parseRaceHistory,
 	parseRaceStandings,
 	perSnoutLabel,
 	pinNeeded,
 	raceCycle,
 	standingsRows,
 	standingsRowsSeason,
-} from "../utils/dig";
+} from "../utils/race";
 
 // A UTC timestamp for a given Y-M-D H (month is 1-based here for readability).
 const utc = (y: number, m: number, d: number, h = 0) =>
@@ -88,7 +91,9 @@ describe("formatRaceCountdown", () => {
 	const now = 1_000_000_000_000;
 	it("shows whole hours while more than an hour remains", () => {
 		expect(formatRaceCountdown(now + 7 * 3600_000, now)).toBe("7h");
-		expect(formatRaceCountdown(now + 23 * 3600_000 + 59 * 60_000, now)).toBe("23h");
+		expect(formatRaceCountdown(now + 23 * 3600_000 + 59 * 60_000, now)).toBe(
+			"23h",
+		);
 	});
 	it("drops to minutes under an hour", () => {
 		expect(formatRaceCountdown(now + 45 * 60_000, now)).toBe("45m");
@@ -99,14 +104,21 @@ describe("formatRaceCountdown", () => {
 		expect(formatRaceCountdown(now - 5000, now)).toBe("any moment");
 	});
 	it("accepts ISO strings and returns '' for null/garbage", () => {
-		expect(formatRaceCountdown(new Date(now + 3600_000).toISOString(), now)).toBe("1h");
+		expect(
+			formatRaceCountdown(new Date(now + 3600_000).toISOString(), now),
+		).toBe("1h");
 		expect(formatRaceCountdown(null, now)).toBe("");
 		expect(formatRaceCountdown("not-a-date", now)).toBe("");
 	});
 });
 
 // ── Standings fixtures ────────────────────────────────────────────────────────
-const rankedRow = (rank: number, crew_id: string, name: string, avg: number) => ({
+const rankedRow = (
+	rank: number,
+	crew_id: string,
+	name: string,
+	avg: number,
+) => ({
 	rank,
 	crew_id,
 	name,
@@ -136,7 +148,10 @@ function buildStandings(over: Partial<RaceStandings> = {}): RaceStandings {
 			rankedRow(6, "c6", "Foxtrot", 4),
 			rankedRow(7, "c7", "Golf", 3),
 		],
-		unranked: [unrankedRow("u1", "Quiet Herd", 2), unrankedRow("u2", "Lone Snout", 1)],
+		unranked: [
+			unrankedRow("u1", "Quiet Herd", 2),
+			unrankedRow("u2", "Lone Snout", 1),
+		],
 		mine: null,
 		last: null,
 		...over,
@@ -147,11 +162,15 @@ describe("standingsRows — the pinned-row selector", () => {
 	it("crewless: top `visible` ranked rows, none highlighted, no pin", () => {
 		const v = standingsRows(buildStandings(), null, 5);
 		expect(v.rows).toHaveLength(5);
-		expect(v.rows.every((r) => r.kind === "ranked" && !r.highlighted)).toBe(true);
+		expect(v.rows.every((r) => r.kind === "ranked" && !r.highlighted)).toBe(
+			true,
+		);
 		expect(v.rows.some((r) => r.kind === "separator")).toBe(false);
 		// Unranked still surfaced (grayed section), never highlighted for crewless.
 		expect(v.unranked).toHaveLength(2);
-		expect(v.unranked.every((r) => r.kind === "unranked" && !r.highlighted)).toBe(true);
+		expect(
+			v.unranked.every((r) => r.kind === "unranked" && !r.highlighted),
+		).toBe(true);
 	});
 
 	it("my crew ranked WITHIN the top: highlighted in place, no separator", () => {
@@ -163,7 +182,13 @@ describe("standingsRows — the pinned-row selector", () => {
 	});
 
 	it("my crew ranked BELOW the top: separator + pinned true-rank row appended", () => {
-		const v = standingsRows(buildStandings({ mine: { crew_id: "c7", rank: 7, avg: 3, diggers: 3, total_finds: 70 } }), "c7", 5);
+		const v = standingsRows(
+			buildStandings({
+				mine: { crew_id: "c7", rank: 7, avg: 3, diggers: 3, total_finds: 70 },
+			}),
+			"c7",
+			5,
+		);
 		// 5 visible + separator + pinned mine = 7 items.
 		expect(v.rows).toHaveLength(7);
 		expect(v.rows[5].kind).toBe("separator");
@@ -190,18 +215,30 @@ describe("standingsRows — the pinned-row selector", () => {
 
 	it("my crew UNRANKED (sub-quorum): highlighted in the grayed section, no pin", () => {
 		const v = standingsRows(
-			buildStandings({ mine: { crew_id: "u2", rank: null, avg: 1, diggers: 1, total_finds: 4 } }),
+			buildStandings({
+				mine: { crew_id: "u2", rank: null, avg: 1, diggers: 1, total_finds: 4 },
+			}),
 			"u2",
-			5
+			5,
 		);
 		expect(v.rows.some((r) => r.kind === "separator")).toBe(false);
-		expect(v.rows.every((r) => !(r.kind === "ranked" && r.highlighted))).toBe(true);
-		const mineUnranked = v.unranked.find((r) => r.kind === "unranked" && r.crew_id === "u2");
-		expect(mineUnranked && mineUnranked.kind === "unranked" && mineUnranked.highlighted).toBe(true);
+		expect(v.rows.every((r) => !(r.kind === "ranked" && r.highlighted))).toBe(
+			true,
+		);
+		const mineUnranked = v.unranked.find(
+			(r) => r.kind === "unranked" && r.crew_id === "u2",
+		);
+		expect(
+			mineUnranked &&
+				mineUnranked.kind === "unranked" &&
+				mineUnranked.highlighted,
+		).toBe(true);
 	});
 
 	it("fewer ranked than `visible`: shows them all, no separator", () => {
-		const s = buildStandings({ ranked: [rankedRow(1, "c1", "Solo", 5)] } as Partial<RaceStandings>);
+		const s = buildStandings({
+			ranked: [rankedRow(1, "c1", "Solo", 5)],
+		} as Partial<RaceStandings>);
 		const v = standingsRows(s, "c9", 5);
 		expect(v.rows).toHaveLength(1);
 		expect(v.rows.some((r) => r.kind === "separator")).toBe(false);
@@ -216,7 +253,9 @@ describe("standingsRows — the pinned-row selector", () => {
 			],
 		} as Partial<RaceStandings>);
 		const v = standingsRows(s, null, 5);
-		expect(v.rows.map((r) => (r.kind === "ranked" ? r.rank : -1))).toEqual([1, 2, 3]);
+		expect(v.rows.map((r) => (r.kind === "ranked" ? r.rank : -1))).toEqual([
+			1, 2, 3,
+		]);
 	});
 });
 
@@ -225,8 +264,15 @@ const seasonRow = (
 	rank: number,
 	crew_id: string,
 	name: string,
-	total_finds: number
-): SeasonStanding => ({ rank, crew_id, name, total_finds, diggers: 3, roster_size: 4 });
+	total_finds: number,
+): SeasonStanding => ({
+	rank,
+	crew_id,
+	name,
+	total_finds,
+	diggers: 3,
+	roster_size: 4,
+});
 
 const SEASON: SeasonStanding[] = [
 	seasonRow(1, "c1", "Alpha", 900),
@@ -247,7 +293,12 @@ describe("standingsRowsSeason — the cumulative board selector", () => {
 	});
 
 	it("my crew WITHIN the top: highlighted in place, no separator", () => {
-		const rows = standingsRowsSeason(SEASON, { rank: 2, total_finds: 800 }, "c2", 5);
+		const rows = standingsRowsSeason(
+			SEASON,
+			{ rank: 2, total_finds: 800 },
+			"c2",
+			5,
+		);
 		expect(rows).toHaveLength(5);
 		const mine = rows.find((r) => r.kind === "ranked" && r.crew_id === "c2");
 		expect(mine && mine.kind === "ranked" && mine.highlighted).toBe(true);
@@ -255,7 +306,12 @@ describe("standingsRowsSeason — the cumulative board selector", () => {
 	});
 
 	it("my crew BELOW the top: separator + pinned true-rank row appended", () => {
-		const rows = standingsRowsSeason(SEASON, { rank: 7, total_finds: 300 }, "c7", 5);
+		const rows = standingsRowsSeason(
+			SEASON,
+			{ rank: 7, total_finds: 300 },
+			"c7",
+			5,
+		);
 		expect(rows).toHaveLength(7); // 5 visible + separator + pinned
 		expect(rows[5].kind).toBe("separator");
 		const pin = rows[6];
@@ -266,7 +322,12 @@ describe("standingsRowsSeason — the cumulative board selector", () => {
 	});
 
 	it("pins from `mineSeason` when my row was truncated out of the array", () => {
-		const rows = standingsRowsSeason(SEASON, { rank: 21, total_finds: 42 }, "cX", 5);
+		const rows = standingsRowsSeason(
+			SEASON,
+			{ rank: 21, total_finds: 42 },
+			"cX",
+			5,
+		);
 		const sepIdx = rows.findIndex((r) => r.kind === "separator");
 		expect(sepIdx).toBeGreaterThanOrEqual(0);
 		const pin = rows[sepIdx + 1];
@@ -283,7 +344,12 @@ describe("standingsRowsSeason — the cumulative board selector", () => {
 	});
 
 	it("fewer rows than `visible`: shows them all, no separator", () => {
-		const rows = standingsRowsSeason([seasonRow(1, "c1", "Solo", 5)], null, "c9", 5);
+		const rows = standingsRowsSeason(
+			[seasonRow(1, "c1", "Solo", 5)],
+			null,
+			"c9",
+			5,
+		);
 		expect(rows).toHaveLength(1);
 		expect(rows.some((r) => r.kind === "separator")).toBe(false);
 	});
@@ -297,7 +363,7 @@ describe("allSeasonRows — the full cumulative field", () => {
 		expect(rows.every((r) => r.kind === "ranked")).toBe(true);
 		expect(rows.some((r) => r.kind === "separator")).toBe(false);
 		expect(rows.map((r) => (r.kind === "ranked" ? r.crew_id : ""))).toEqual(
-			SEASON.map((s) => s.crew_id)
+			SEASON.map((s) => s.crew_id),
 		);
 	});
 
@@ -341,11 +407,16 @@ describe("allWeeklyRows — the full weekly field", () => {
 
 	it("highlights nothing when crewless", () => {
 		const rows = allWeeklyRows(buildStandings(), null);
-		expect(rows.some((r) => r.kind !== "separator" && r.highlighted)).toBe(false);
+		expect(rows.some((r) => r.kind !== "separator" && r.highlighted)).toBe(
+			false,
+		);
 	});
 
 	it("empty input → []", () => {
-		const empty = buildStandings({ ranked: [], unranked: [] } as Partial<RaceStandings>);
+		const empty = buildStandings({
+			ranked: [],
+			unranked: [],
+		} as Partial<RaceStandings>);
 		expect(allWeeklyRows(empty, "c1")).toEqual([]);
 	});
 });
@@ -411,8 +482,21 @@ describe("parseRaceStandings — defensive jsonb", () => {
 	it("parses the cumulative season board + my season line", () => {
 		const s = parseRaceStandings({
 			season: [
-				{ rank: "1", crew_id: "c1", name: "Alpha", total_finds: "900", diggers: "3", roster_size: "4" },
-				{ rank: 2, crew_id: "c2", total_finds: 800, diggers: 2, roster_size: 3 },
+				{
+					rank: "1",
+					crew_id: "c1",
+					name: "Alpha",
+					total_finds: "900",
+					diggers: "3",
+					roster_size: "4",
+				},
+				{
+					rank: 2,
+					crew_id: "c2",
+					total_finds: 800,
+					diggers: 2,
+					roster_size: 3,
+				},
 			],
 			mine_season: { rank: "2", total_finds: "800" },
 		});
@@ -429,16 +513,34 @@ describe("parseRaceStandings — defensive jsonb", () => {
 	});
 
 	it("drops an empty mine_season (no rank, no finds)", () => {
-		expect(parseRaceStandings({ mine_season: { rank: 0, total_finds: 0 } }).mineSeason).toBeNull();
+		expect(
+			parseRaceStandings({ mine_season: { rank: 0, total_finds: 0 } })
+				.mineSeason,
+		).toBeNull();
 		expect(parseRaceStandings({ mine_season: null }).mineSeason).toBeNull();
 	});
 	it("coerces loose numeric fields + fills name defaults", () => {
 		const s = parseRaceStandings({
 			cycle: { key: "20260706", starts_at: "a", ends_at: "b" },
-			ranked: [{ rank: "2", crew_id: "c1", avg: "8.5", diggers: "3", total_finds: "24", roster_size: "4" }],
+			ranked: [
+				{
+					rank: "2",
+					crew_id: "c1",
+					avg: "8.5",
+					diggers: "3",
+					total_finds: "24",
+					roster_size: "4",
+				},
+			],
 			unranked: [{ crew_id: "u1" }],
 			mine: { crew_id: "c1", rank: "2", avg: 8.5, diggers: 3, total_finds: 24 },
-			last: { cycle_key: "20260702", rank: 3, of: 12, truffles_paid: 4, cosmetic_hat_id: "mud_derby_bg" },
+			last: {
+				cycle_key: "20260702",
+				rank: 3,
+				of: 12,
+				truffles_paid: 4,
+				cosmetic_hat_id: "mud_derby_bg",
+			},
 		});
 		expect(s.ranked[0]).toEqual({
 			rank: 2,
@@ -450,17 +552,26 @@ describe("parseRaceStandings — defensive jsonb", () => {
 			roster_size: 4,
 		});
 		expect(s.unranked[0].name).toBe("a Sounder");
-		expect(s.mine).toEqual({ crew_id: "c1", rank: 2, avg: 8.5, diggers: 3, total_finds: 24 });
+		expect(s.mine).toEqual({
+			crew_id: "c1",
+			rank: 2,
+			avg: 8.5,
+			diggers: 3,
+			total_finds: 24,
+		});
 		expect(s.last).toEqual({
 			cycle_key: "20260702",
 			rank: 3,
 			of: 12,
 			truffles_paid: 4,
+			tickles_paid: 0,
 			cosmetic_hat_id: "mud_derby_bg",
 		});
 	});
 	it("treats a null/zero `mine.rank` as unranked (rank null)", () => {
-		const s = parseRaceStandings({ mine: { crew_id: "c1", rank: null, avg: 1, diggers: 1, total_finds: 2 } });
+		const s = parseRaceStandings({
+			mine: { crew_id: "c1", rank: null, avg: 1, diggers: 1, total_finds: 2 },
+		});
 		expect(s.mine && s.mine.rank).toBeNull();
 	});
 	it("drops a `mine` with no crew_id and a `last` with no cycle_key", () => {
@@ -468,8 +579,43 @@ describe("parseRaceStandings — defensive jsonb", () => {
 		expect(parseRaceStandings({ last: { rank: 3, of: 12 } }).last).toBeNull();
 	});
 	it("defaults a missing cosmetic to null", () => {
-		const s = parseRaceStandings({ last: { cycle_key: "20260702", rank: 1, of: 8, truffles_paid: 6 } });
+		const s = parseRaceStandings({
+			last: { cycle_key: "20260702", rank: 1, of: 8, truffles_paid: 6 },
+		});
 		expect(s.last && s.last.cosmetic_hat_id).toBeNull();
+	});
+});
+
+describe("parseRaceHistory — settled weekly tables", () => {
+	it("parses newest-first weekly rows and keeps sub-quorum Sounders visible", () => {
+		const weeks = parseRaceHistory([
+			{
+				cycle: {
+					key: "20260713",
+					starts_at: "2026-07-13T00:00:00Z",
+					ends_at: "2026-07-20T00:00:00Z",
+				},
+				ranked: [rankedRow(1, "c1", "Alpha", 9)],
+				unranked: [unrankedRow("u1", "Lone Snout", 3)],
+			},
+		]);
+		expect(weeks).toHaveLength(1);
+		expect(weeks[0].cycle.key).toBe("20260713");
+		expect(weeks[0].ranked[0].name).toBe("Alpha");
+		expect(weeks[0].unranked[0].name).toBe("Lone Snout");
+	});
+
+	it("drops malformed weeks and safely defaults missing row arrays", () => {
+		expect(parseRaceHistory(null)).toEqual([]);
+		expect(
+			parseRaceHistory([{ cycle: {} }, { cycle: { key: "20260706" } }]),
+		).toEqual([
+			{
+				cycle: { key: "20260706", starts_at: "", ends_at: "" },
+				ranked: [],
+				unranked: [],
+			},
+		]);
 	});
 });
 
@@ -489,8 +635,20 @@ describe("parseRaceCrewDetail — the per-crew member ledger", () => {
 			crew_id: "c1",
 			name: "Alpha",
 			members: [
-				{ user_id: "u1", username: "Rosie", departed: false, finds: 12, season_finds: 40 },
-				{ user_id: "u2", username: "Pib", departed: false, finds: 5, season_finds: 22 },
+				{
+					user_id: "u1",
+					username: "Rosie",
+					departed: false,
+					finds: 12,
+					season_finds: 40,
+				},
+				{
+					user_id: "u2",
+					username: "Pib",
+					departed: false,
+					finds: 5,
+					season_finds: 22,
+				},
 			],
 		});
 	});
@@ -523,7 +681,12 @@ describe("parseRaceCrewDetail — the per-crew member ledger", () => {
 
 	it("defaults a missing name/cycle_key and an absent members array", () => {
 		const d = parseRaceCrewDetail({ crew_id: "c1" });
-		expect(d).toEqual({ cycle_key: "", crew_id: "c1", name: "a Sounder", members: [] });
+		expect(d).toEqual({
+			cycle_key: "",
+			crew_id: "c1",
+			name: "a Sounder",
+			members: [],
+		});
 	});
 
 	it("returns null for an unknown crew (no crew_id), null, or garbage", () => {

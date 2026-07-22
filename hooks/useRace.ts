@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { RaceStandings, fetchRaceStandings } from "@/utils/dig";
+import { RaceStandings, fetchRaceStandings } from "@/utils/race";
 import { ensurePushPermission } from "@/utils/pushNotifications";
 
 // How often to refetch during the closing hour of a cycle (the standings +

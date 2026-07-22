@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>04 — trough nudge supersede + tap-through</title>
+<style>
+  :root{
+    --ink:#2a1f15;--paper:#fffaf0;--cream:#fbeee2;--cream2:#f6e6d4;--rose:#ffd6dc;
+    --rose-deep:#f8a8b3;--sky:#c8e3f0;--sage:#c9dec1;--sun:#ffd87a;--lilac:#d6c8f0;
+    --lilac-deep:#a89bff;--peach:#ffc8a8;--accent:#c25a3f;--mute:rgba(40,30,20,.6);
+    --display:ui-rounded,"SF Pro Rounded","Fredoka","Nunito",system-ui,sans-serif;
+    --body:"Nunito",ui-rounded,-apple-system,system-ui,sans-serif;
+    --hand:"Bradley Hand","Patrick Hand","Comic Sans MS",cursive;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(circle at 12% 8%,rgba(255,214,220,.4),transparent 34%),radial-gradient(circle at 90% 92%,rgba(214,200,240,.32),transparent 40%),var(--paper);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;padding:26px 18px 80px;overflow-x:hidden}
+  .top{max-width:900px;margin:0 auto 8px}
+  a.back{font-family:var(--hand);font-size:15px;color:var(--accent);text-decoration:none;border-bottom:1.5px solid var(--rose-deep)}
+  .kicker{font-family:var(--hand);font-size:15px;color:var(--accent);margin:18px 0 2px}
+  h1{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.3px}
+  .lede{font-size:14px;line-height:1.5;color:#4a3b2c;max-width:640px;margin-top:8px}
+  .stage{max-width:900px;margin:26px auto 0;display:flex;flex-wrap:wrap;gap:34px 40px;justify-content:center;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center;gap:12px;width:340px;max-width:100%}
+  .caplabel{font-family:var(--display);font-weight:800;font-size:14px;padding:5px 14px;border:2.5px solid var(--ink);border-radius:999px;box-shadow:2px 2px 0 var(--ink)}
+  .caplabel.bad{background:var(--rose-deep)}
+  .caplabel.good{background:var(--sage)}
+  .frame{width:330px;max-width:100%;border:3px solid var(--ink);border-radius:36px;background:var(--cream);box-shadow:8px 8px 0 var(--ink);padding:14px 12px 20px;position:relative}
+  .notch{width:96px;height:7px;background:var(--ink);border-radius:99px;margin:2px auto 12px;opacity:.85}
+  .modal{background:#fff;border:2.5px solid var(--ink);border-radius:22px;box-shadow:4px 4px 0 var(--ink);padding:15px 14px 16px;transform:rotate(-.4deg)}
+  .mtitle{font-family:var(--display);font-weight:800;font-size:18px;text-align:center}
+  .mkick{font-family:var(--hand);font-size:13px;color:var(--accent);text-align:center;margin-bottom:12px}
+  .rule{height:2px;background:var(--ink);opacity:.22;border-radius:1px;margin:4px 0 12px}
+  /* event rows */
+  .ev{display:flex;align-items:center;gap:11px;border:2.5px solid var(--ink);border-radius:14px;padding:11px 12px;margin-bottom:9px;box-shadow:2px 2px 0 var(--ink);background:#fff}
+  .ev .ic{flex:none;width:34px;height:34px;border:2px solid var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--sage)}
+  .ev .ic.trough{background:var(--sun)}
+  .ev .tx{flex:1;min-width:0}
+  .ev .tx b{font-family:var(--display);font-weight:800;font-size:14px}
+  .ev .tx span{display:block;font-family:var(--hand);font-size:13px;color:var(--mute)}
+  .ev .chev{flex:none;font-family:var(--body);font-size:22px;font-weight:700;color:var(--accent)}
+  .ev.dupe{opacity:.5;transform:scale(.985)}
+  .ev.tap{background:linear-gradient(#fff,#fff7e6);border-color:var(--ink)}
+  .cross{position:relative}
+  .cross::after{content:"";position:absolute;inset:0;border-radius:14px;background:repeating-linear-gradient(-8deg,transparent 0 14px,rgba(194,90,63,.28) 14px 16px)}
+  .tapcap{font-family:var(--hand);font-size:14px;color:var(--accent);text-align:center;margin-top:2px}
+  .dismiss{margin-top:12px;text-align:center;font-family:var(--display);font-weight:800;font-size:15px;padding:10px;border:2.5px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);background:var(--sun)}
+  .note{width:300px;max-width:100%;font-family:var(--hand);font-size:14px;line-height:1.45;color:var(--ink);background:#fff;border:2.5px dashed var(--ink);border-radius:14px;padding:11px 13px;box-shadow:3px 3px 0 rgba(42,31,21,.14)}
+  .note b{color:var(--accent)}
+  /* leaf icon */
+  svg.leaf,svg.horn{width:20px;height:20px}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="index.html">&lsaquo; back to the queue</a></div>
+  <div class="kicker">&#9733; spec 04</div>
+  <h1>trough nudges &middot; supersede + tap-through</h1>
+  <p class="lede">Two halves: the server INSERTed a fresh nudge per accepted friend with only a 6h cooldown, so identical unseen nudges piled up in the While-Away list; and the card had no route, so it was a dead affordance. Now one nudge <b>supersedes</b> the rest, and the survivor <b>taps through to the drive</b>.</p>
+
+  <div class="stage">
+
+    <!-- BEFORE -->
+    <div class="col">
+      <div class="caplabel bad">before &middot; stacked &amp; dead</div>
+      <div class="frame">
+        <div class="notch"></div>
+        <div class="modal">
+          <div class="mtitle">while you were away</div>
+          <div class="mkick">a lot happened at the trough</div>
+          <div class="rule"></div>
+
+          <div class="ev cross dupe"><div class="ic trough"><svg class="horn" viewBox="0 0 24 24"><path d="M4 9h12l3 3-3 3H4z" fill="#c25a3f" stroke="#2a1f15" stroke-width="1.6" stroke-linejoin="round"/></svg></div><div class="tx"><b>Your herd nudged the trough</b><span>Maple's drive needs a top-up</span></div></div>
+          <div class="ev cross dupe"><div class="ic trough"><svg class="horn" viewBox="0 0 24 24"><path d="M4 9h12l3 3-3 3H4z" fill="#c25a3f" stroke="#2a1f15" stroke-width="1.6" stroke-linejoin="round"/></svg></div><div class="tx"><b>Your herd nudged the trough</b><span>Maple's drive needs a top-up</span></div></div>
+          <div class="ev trough"><div class="ic trough"><svg class="horn" viewBox="0 0 24 24"><path d="M4 9h12l3 3-3 3H4z" fill="#c25a3f" stroke="#2a1f15" stroke-width="1.6" stroke-linejoin="round"/></svg></div><div class="tx"><b>Your herd nudged the trough</b><span>Maple's drive needs a top-up</span></div></div>
+          <div class="ev"><div class="ic"><svg class="leaf" viewBox="0 0 24 24"><path d="M12 3C7 6 5 11 8 17c5 2 9-1 10-8-3 1-5 3-6 6" fill="#c9dec1" stroke="#2a1f15" stroke-width="1.5" stroke-linejoin="round"/></svg></div><div class="tx"><b>Your garden grew a sprig</b><span>+1 while you slept</span></div></div>
+
+          <div class="dismiss">tuck it away</div>
+        </div>
+      </div>
+      <div class="note">three identical unseen nudges drip through the LIMIT&nbsp;20 feed &mdash; and <b>none of them go anywhere</b> when tapped.</div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="col">
+      <div class="caplabel good">after &middot; one, tappable</div>
+      <div class="frame">
+        <div class="notch"></div>
+        <div class="modal">
+          <div class="mtitle">while you were away</div>
+          <div class="mkick">a lot happened at the trough</div>
+          <div class="rule"></div>
+
+          <div class="ev tap trough"><div class="ic trough"><svg class="horn" viewBox="0 0 24 24"><path d="M4 9h12l3 3-3 3H4z" fill="#c25a3f" stroke="#2a1f15" stroke-width="1.6" stroke-linejoin="round"/></svg></div><div class="tx"><b>Your herd nudged the trough</b><span>Maple's drive needs a top-up</span></div><div class="chev">&rsaquo;</div></div>
+          <div class="tapcap">&#9733; taps through to the drive</div>
+
+          <div class="ev" style="margin-top:11px"><div class="ic"><svg class="leaf" viewBox="0 0 24 24"><path d="M12 3C7 6 5 11 8 17c5 2 9-1 10-8-3 1-5 3-6 6" fill="#c9dec1" stroke="#2a1f15" stroke-width="1.5" stroke-linejoin="round"/></svg></div><div class="tx"><b>Your garden grew a sprig</b><span>+1 while you slept</span></div></div>
+
+          <div class="dismiss">tuck it away</div>
+        </div>
+      </div>
+      <div class="note">the newest nudge <b>supersedes</b> the unseen dupes server-side; the survivor wears a chevron and routes to Maple's drive (dismiss still persists <code>away_seen_v1</code>).</div>
+    </div>
+
+  </div>
+</body>
+</html>

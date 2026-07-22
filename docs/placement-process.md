@@ -18,7 +18,8 @@ defaults for members items). `resolveSlot` (in `components/ui/PigStage.tsx`) use
 the RelSpec whenever one exists; an item's pivot point lands on its pig anchor,
 sized to `widthFrac × 300`. The **legacy** `HAT_OVERLAYS` path (absolute
 `bottom/left/width/height`) now only serves the handful of items that don't yet
-have a RelSpec — see "Legacy" below.
+have a RelSpec — including an aura until it is deliberately tuned — see
+"Legacy" below.
 
 ---
 
@@ -34,7 +35,8 @@ have a RelSpec — see "Legacy" below.
 2. **Pick the item** in the left rail. Every item is listed automatically
    (incl. all members cosmetics). Filter chip **Untuned** shows exactly the items
    relying on a category-default or legacy placement. Status dot: green = hand
-   tuned, gold = members category-default, grey = none.
+   tuned, gold = members category-default, grey = none. Use **Auras** to pull up
+   the aura-only placement queue.
 
 3. **Tune** in the right panel:
    - **Pivot** — drag the red marker on the item thumbnail (the attach point on
@@ -42,7 +44,8 @@ have a RelSpec — see "Legacy" below.
    - **Anchor** — click a blue dot on the pig (head, eyes, hand_r, …).
    - **Width** — slider (`widthFrac`, the item's width as a fraction of the
      300px canvas).
-   - **Render behind** — for items that sit behind the pig.
+   - **Render behind** — for items that sit behind the pig (on by default for
+     auras).
    The on-pig preview updates live and matches the app exactly.
 
 4. **It autosaves** to `constants/hat_rel.generated.ts` (full rebuild, sorted).
@@ -61,12 +64,12 @@ aren't directly editable.
 ## Legacy `HAT_OVERLAYS` (being retired)
 
 `scripts/compute_overlays.py` generates `constants/hat_overlays.generated.ts`,
-but now **only for items without a RelSpec** (full-canvas aura/background and
+but now **only for items without a RelSpec** (fixed-canvas backgrounds and
 tickle_particle are skipped; any item with a RelSpec is skipped because RelSpec
-wins in `resolveSlot`). So that file is the shrinking legacy backlog — tune each
-item in the studio and it gains a RelSpec and drops out of the file on the next
-`compute_overlays.py` run. `tophat` keeps a manual entry in `constants/hats.ts`
-until it's tuned.
+wins in `resolveSlot`). Untuned auras keep their category fallback; tuning one
+gives it a RelSpec. This file is the shrinking legacy backlog — tune each item
+in the studio and it drops out on the next `compute_overlays.py` run. `tophat`
+keeps a manual entry in `constants/hats.ts` until it's tuned.
 
 ```bash
 python3 scripts/compute_overlays.py   # regenerate after tuning legacy items

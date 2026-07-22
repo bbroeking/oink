@@ -148,6 +148,35 @@ CHAIN=(
 	# (secret-gated founder archive). RPC-only feedback table (zero-policy RLS).
 	# Needs app_settings (20260744100000, above). Exercised by 54_feedback_den_smoke.
 	supabase/migrations/20260745000000_feedback_den.sql
+	# 20260748000000 seeds crew boards (wedge 5a): open_rooting derives the board
+	# seed from f(window, crew_id) instead of f(window, user_id), so the whole
+	# Sounder digs the identical patch each feeding. Carries open_rooting VERBATIM
+	# from 20260744100000 (the latest def; 20260746/20260747 don't touch it) with
+	# only the seed line changed. Exercised by 46_seeded_boards_smoke.sql.
+	supabase/migrations/20260748000000_seeded_crew_boards.sql
+	# 20260770000000 restricts weighted relic rolls to Burrow Book entries the
+	# caller has not unlocked; a complete Book rolls NULL. It also repairs legacy
+	# open-board/carry duplicates. Exercised by 22_uniques_smoke.sql.
+	supabase/migrations/20260770000000_unowned_patch_uniques.sql
+	# 20260771000000 adds the Burrow Book archaeology ladder, rare-set award,
+	# named heirloom awards, and full-set title. Exercised by 57 smoke below.
+	supabase/migrations/20260771000000_relic_achievements.sql
+	# 00f prep: builds item_drives + are_blocked() + system_announcements.seen_at
+	# + hats.name AHEAD of 20260746 (passed as $@) so check_function_bodies can
+	# validate the redefined nudge_trough body. Exercised by
+	# 44_trough_nudge_supersede_smoke.sql (auto-globbed by [1234]*_smoke.sql).
+	scripts/db-harness/00f_trough_nudge_prep.sql
+	# 00g prep: builds item_drive_donations + the item_drives reward columns AND
+	# seeds the claw-back fixture AHEAD of 20260751 (spec 15, passed as $@) so
+	# check_function_bodies validates the redefined donate_to_drive/claim_drive_reward
+	# and the migration's one-shot claw-back consumes the seed. Exercised by
+	# 49_trough_retire_smoke.sql (auto-globbed by [1234]*_smoke.sql).
+	scripts/db-harness/00g_trough_retire_prep.sql
+	# 00h prep: builds truffle_digs + adds claimed_at to daily_lucky_claims /
+	# user_tier_claims AHEAD of 20260753 (spec 17, passed as $@) so
+	# check_function_bodies validates the tickle_breakdown body. Exercised by
+	# 56_tickle_breakdown_smoke.sql (explicitly appended below — 5x isn't globbed).
+	scripts/db-harness/00h_tickle_breakdown_prep.sql
 )
 
 NAME="pgharness_$$"
@@ -160,6 +189,9 @@ until docker exec "$NAME" pg_isready -U postgres >/dev/null 2>&1; do :; done
 cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/[1234]*_smoke.sql \
 		scripts/db-harness/54_feedback_den_smoke.sql \
+		scripts/db-harness/55_field_guide_smoke.sql \
+		scripts/db-harness/56_tickle_breakdown_smoke.sql \
+		scripts/db-harness/57_relic_achievements_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 

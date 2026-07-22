@@ -4,11 +4,13 @@
 // between the splash art and the gameplay character.
 //
 // Layout: cream backdrop, Rosie hero portrait scaled to ~72% width
-// upper-center, then a paper-sticker card with the title + Apple
+// upper-center, then a paper-sticker card with the title + a platform
 // sign-in button + an "Use email instead" link that expands a
-// hidden email/password form. The email path is primarily for the
-// App Store reviewer demo account but is available to anyone who
-// taps the link.
+// hidden email/password form. The platform split: iOS gets Apple
+// Sign-In, Android gets "Continue with Google" — never both, so the
+// off-platform provider's empty frame can't render. The email path is
+// primarily for the App Store reviewer demo account but is available
+// to anyone who taps the link.
 import React, { useState } from "react";
 import {
 	StyleSheet,
@@ -22,6 +24,7 @@ import {
 	Platform,
 } from "react-native";
 import { AppleAuth } from "./AppleAuth";
+import { GoogleAuth } from "./GoogleAuth";
 import { Sticker } from "./ui/Sticker";
 import { supabase } from "../utils/supabase";
 import { FONTS, KICKER_TEXT, WHIMSY, STICKER_SHADOW, PAGE_PAD, RADII } from "@/constants/theme";
@@ -95,23 +98,33 @@ export default function SupaAuth() {
 							radius={RADII.xxl}
 							style={[styles.card, STICKER_SHADOW]}
 						>
-							<AppleAuth />
+							{Platform.OS === "ios" ? (
+								<AppleAuth />
+							) : (
+								<GoogleAuth onError={setError} />
+							)}
 
 							{/* Email auth path — collapsed by default. Mainly here
 							    so the App Store reviewer demo account works
-							    (Apple Sign-In creates a fresh empty account per
-							    reviewer, which doesn't show off the social
-							    loop). Anyone can use this who'd rather not
-							    use Apple Sign-In. */}
-							<Pressable
-								onPress={() => setShowEmail((v) => !v)}
-								style={styles.emailToggle}
-								hitSlop={8}
-							>
-								<Text style={styles.emailToggleText}>
-									{showEmail ? "← use Apple Sign-In" : "or use email"}
-								</Text>
-							</Pressable>
+							    (Apple Sign-In / Google each create a fresh empty
+							    account per reviewer, which doesn't show off the
+							    social loop). Anyone can use this who'd rather not
+							    use the platform provider. */}
+							{!showEmail && (
+								<Pressable
+									onPress={() => setShowEmail(true)}
+									style={styles.emailToggle}
+									hitSlop={8}
+								>
+									<Text style={styles.emailToggleText}>or use email</Text>
+								</Pressable>
+							)}
+
+							{/* Provider-level note (e.g. a Google failure) needs to
+							    show even while the email form is collapsed. */}
+							{error && !showEmail && (
+								<Text style={styles.noteText}>{error}</Text>
+							)}
 
 							{showEmail && (
 								<View style={styles.emailForm}>
@@ -267,6 +280,13 @@ const styles = StyleSheet.create({
 		fontSize: 12,
 		color: WHIMSY.accent,
 		marginBottom: 6,
+	},
+	noteText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		textAlign: "center",
+		marginTop: 8,
 	},
 	signInBtn: {
 		backgroundColor: WHIMSY.lilac,

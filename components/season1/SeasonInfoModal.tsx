@@ -17,6 +17,7 @@ import { Sticker } from "../ui/Sticker";
 import { Button } from "../ui/Button";
 import { SeasonStory } from "./SeasonStory";
 import { SpoilsShowcase } from "./SpoilsShowcase";
+import { useUnmanagedModalHold } from "../ui/PopupQueue";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -43,6 +44,11 @@ export function SeasonInfoModal({
 	topic: SeasonInfoTopic | null;
 	onDismiss: () => void;
 }) {
+	// Unmanaged native Modal (season-tab reference sheet, outside the popup queue):
+	// hold the queue while open so a foreground poll can't present a queued popup
+	// over it — the #50152 wedge (issue #4). Keyed on `topic != null` (the modal
+	// stays mounted with visible={false} when topic is null).
+	useUnmanagedModalHold(topic != null);
 	const copy = topic ? COPY[topic] : null;
 	// Cap the scroll region to a fraction of the screen so the whole card —
 	// title above, dismiss button below — always fits within the centered

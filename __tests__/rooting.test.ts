@@ -17,7 +17,12 @@ import {
 	windowEndsAtMs,
 	feedingCountdown,
 	practiceSeed,
+	crewBoardSeed,
 	stirCost,
+	applySplash,
+	clusterRevealed,
+	clusterTouched,
+	clusterAnchor,
 	nearestFindDistance,
 	warmthWhisper,
 	revealedSweetCell,
@@ -34,6 +39,7 @@ import {
 	nextOpenCountdown,
 	dugInCurrentWindow,
 	bannerDigStatus,
+	feedingPhaseView,
 } from "../utils/rooting";
 import type { Find, PatchBoard } from "../utils/rooting";
 import {
@@ -422,6 +428,50 @@ describe("bannerDigStatus — phase × dug copy matrix", () => {
 	});
 });
 
+// ── The one phase view both the CTA + the banner read ────────────────────────
+// feedingPhaseView pairs the phase with its OWN honest countdown (open →
+// closes-in, guarded → opens-in). Both surfaces read it, so a wrong pairing is
+// unrepresentable and the two can never show a different phase or number.
+describe("feedingPhaseView — the shared Feeding clock", () => {
+	const WINDOW_MS = ROOTING_WINDOW_SECS * 1000;
+	const OPEN_MS = PATCH_OPEN_SECS * 1000;
+	const start = 300000 * WINDOW_MS + ROOTING_WINDOW_OFFSET_SECS * 1000;
+	const openMid = start + 60_000; // 1m into open
+	const guardedMid = start + OPEN_MS + 60_000; // 1m into guarded
+
+	test("open phase → open:true, countdown is the closes-in number", () => {
+		expect(feedingPhaseView(openMid)).toEqual({
+			open: true,
+			countdown: phaseClosesCountdown(openMid),
+		});
+	});
+
+	test("guarded phase → open:false, countdown is the opens-in number", () => {
+		expect(feedingPhaseView(guardedMid)).toEqual({
+			open: false,
+			countdown: nextOpenCountdown(guardedMid),
+		});
+	});
+
+	test("bannerDigStatus reads the SAME view — its guarded number is the view's", () => {
+		// Both the banner (guarded lines) and the phase view derive from one place,
+		// so the number in the banner equals the number the CTA would show.
+		const view = feedingPhaseView(guardedMid);
+		expect(bannerDigStatus(false, true, guardedMid)).toBe(
+			`dug this feeding — opens in ${view.countdown}`
+		);
+		expect(bannerDigStatus(false, false, guardedMid)).toBe(
+			`he's guarding — opens in ${view.countdown}`
+		);
+	});
+
+	test("open + dug still carries no number (a closes-in can't ride 'opens in')", () => {
+		const s = bannerDigStatus(true, true, openMid)!;
+		expect(s).toBe("dug this feeding — back next feeding ★");
+		expect(s).not.toMatch(/\d+\s*[hm]/);
+	});
+});
+
 describe("practiceSeed", () => {
 	test("deterministic and in Park–Miller range", () => {
 		const a = practiceSeed("war-abc", 100);
@@ -432,11 +482,182 @@ describe("practiceSeed", () => {
 	});
 });
 
+// ── Seeded crew boards (wedge 5a) — client mirror of f(window, crew|user) ─────
+// The server (migration 20260748000000) keys the board seed on the caller's
+// CREW so the whole Sounder digs the IDENTICAL patch each window. crewBoardSeed
+// is the client's derivation of the SAME shape: same (window, group) → same
+// seed → same board; different crew → different board; a solo pig seeds on its
+// own id. Byte parity with hashtext is NOT required — the server seed always
+// wins when open_rooting answers (this only powers local prediction).
+describe("crewBoardSeed — seeded crew boards (window × group)", () => {
+	const crewA = "00000000-0000-0000-0000-00000000c001";
+	const crewB = "00000000-0000-0000-0000-00000000c002";
+	const solo = "00000000-0000-0000-0000-00000000a099";
+
+	test("deterministic and in Park–Miller range", () => {
+		const s = crewBoardSeed(402, crewA);
+		expect(s).toBe(crewBoardSeed(402, crewA));
+		expect(s).toBeGreaterThanOrEqual(1);
+		expect(s).toBeLessThanOrEqual(2147483646);
+	});
+
+	test("same window + same crew → identical seed → identical board", () => {
+		// The whole Sounder shares one patch this feeding.
+		const seed = crewBoardSeed(402, crewA);
+		expect(crewBoardSeed(402, crewA)).toBe(seed);
+		expect(generateBoard(crewBoardSeed(402, crewA))).toEqual(
+			generateBoard(crewBoardSeed(402, crewA))
+		);
+	});
+
+	test("different crew → different seed → different board (same window)", () => {
+		expect(crewBoardSeed(402, crewA)).not.toBe(crewBoardSeed(402, crewB));
+		expect(JSON.stringify(generateBoard(crewBoardSeed(402, crewA)))).not.toEqual(
+			JSON.stringify(generateBoard(crewBoardSeed(402, crewB)))
+		);
+	});
+
+	test("same crew, different window → different seed (boards expire each window)", () => {
+		expect(crewBoardSeed(402, crewA)).not.toBe(crewBoardSeed(403, crewA));
+	});
+
+	test("a solo/crewless pig seeds on (window, user_id) — distinct from any crew", () => {
+		const s = crewBoardSeed(402, solo);
+		expect(s).toBe(crewBoardSeed(402, solo));
+		expect(s).not.toBe(crewBoardSeed(402, crewA));
+		expect(s).toBeGreaterThanOrEqual(1);
+		expect(s).toBeLessThanOrEqual(2147483646);
+	});
+
+	test("practice stays per-warId (NOT crew-shared) — the unlock is real-dig only", () => {
+		// practiceSeed is keyed on warId+window, never a crew — two pigs practicing
+		// don't get a shared crew board, and the crew derivation is a distinct
+		// namespace from practice.
+		expect(practiceSeed("patch", 402)).not.toBe(crewBoardSeed(402, crewA));
+	});
+});
+
 describe("stir accounting", () => {
 	test("rub is quiet, shove is loud", () => {
 		expect(stirCost("rub")).toBe(STIR_RUB);
 		expect(stirCost("shove")).toBe(STIR_SHOVE);
 		expect(STIR_SHOVE).toBeGreaterThan(STIR_RUB);
+	});
+});
+
+// ── The splash kernel — the ONE dig-physics both the component + the sim use ──
+// A rub takes −1 off the target and −0.5 off each orthogonal neighbour; a shove
+// takes −2 / −1. Diagonals are never touched, depth clamps at 0, edge tiles just
+// have fewer neighbours. Pins the real physics the tuning sim + the live dig both
+// call, so the two can never drift.
+describe("applySplash — the shared dig kernel", () => {
+	const flat = (v: number) => new Array(PATCH_ROWS * PATCH_COLS).fill(v);
+	const at = (r: number, c: number) => r * PATCH_COLS + c;
+
+	test("rub: −1 target, −0.5 orthogonal neighbours, diagonals untouched", () => {
+		const layers = flat(3);
+		const center = at(2, 2); // interior tile: four orthogonal neighbours
+		applySplash(layers, center, "rub");
+		expect(layers[center]).toBe(2); // 3 − 1
+		expect(layers[at(1, 2)]).toBe(2.5); // up
+		expect(layers[at(3, 2)]).toBe(2.5); // down
+		expect(layers[at(2, 1)]).toBe(2.5); // left
+		expect(layers[at(2, 3)]).toBe(2.5); // right
+		expect(layers[at(1, 1)]).toBe(3); // diagonal — never touched
+		expect(layers[at(3, 3)]).toBe(3);
+	});
+
+	test("shove: −2 target, −1 orthogonal neighbours", () => {
+		const layers = flat(3);
+		const center = at(2, 2);
+		applySplash(layers, center, "shove");
+		expect(layers[center]).toBe(1); // 3 − 2
+		expect(layers[at(1, 2)]).toBe(2); // 3 − 1
+		expect(layers[at(2, 3)]).toBe(2);
+		expect(layers[at(1, 1)]).toBe(3); // diagonal untouched
+	});
+
+	test("depth clamps at 0 (can't un-bury mud)", () => {
+		const layers = flat(0.5);
+		const center = at(2, 2);
+		applySplash(layers, center, "shove");
+		expect(layers[center]).toBe(0); // max(0, 0.5 − 2)
+		expect(layers[at(1, 2)]).toBe(0); // max(0, 0.5 − 1)
+	});
+
+	test("edge/corner tiles only splash in-board neighbours", () => {
+		const corner = flat(3);
+		applySplash(corner, at(0, 0), "rub"); // top-left corner: right + down only
+		expect(corner[at(0, 0)]).toBe(2);
+		expect(corner[at(0, 1)]).toBe(2.5); // right
+		expect(corner[at(1, 0)]).toBe(2.5); // down
+		// No wrap-around: the last col of row -1 / prev row is never hit.
+		const edge = flat(3);
+		applySplash(edge, at(2, 0), "rub"); // left edge: up, down, right (no left)
+		expect(edge[at(2, 0)]).toBe(2);
+		expect(edge[at(1, 0)]).toBe(2.5);
+		expect(edge[at(3, 0)]).toBe(2.5);
+		expect(edge[at(2, 1)]).toBe(2.5);
+		expect(edge[at(2, PATCH_COLS - 1)]).toBe(3); // NOT the row's last col
+	});
+
+	test("out-of-board idx is a no-op", () => {
+		const layers = flat(3);
+		applySplash(layers, -1, "rub");
+		applySplash(layers, PATCH_ROWS * PATCH_COLS, "shove");
+		expect(layers.every((d) => d === 3)).toBe(true);
+	});
+
+	test("matches the component's legacy neighbour splash exactly (rub)", () => {
+		// The pre-refactor inline splash: target −1, each in-board orthogonal
+		// neighbour −0.5. Recompute it independently and assert kernel parity.
+		const idx = at(2, 3);
+		const kernel = flat(3);
+		applySplash(kernel, idx, "rub");
+		const legacy = flat(3);
+		const splash = (i: number, amt: number) => {
+			if (i >= 0 && i < legacy.length) legacy[i] = Math.max(0, legacy[i] - amt);
+		};
+		const r = Math.floor(idx / PATCH_COLS);
+		const c = idx % PATCH_COLS;
+		splash(idx, 1);
+		if (r > 0) splash(idx - PATCH_COLS, 0.5);
+		if (r < PATCH_ROWS - 1) splash(idx + PATCH_COLS, 0.5);
+		if (c > 0) splash(idx - 1, 0.5);
+		if (c < PATCH_COLS - 1) splash(idx + 1, 0.5);
+		expect(kernel).toEqual(legacy);
+	});
+});
+
+describe("cluster queries — clusterRevealed / clusterTouched / clusterAnchor", () => {
+	const N = PATCH_ROWS * PATCH_COLS;
+	test("clusterRevealed: true only when EVERY cell is cleared", () => {
+		const cluster = [3, 4, 10];
+		const layers = new Array(N).fill(2);
+		expect(clusterRevealed(cluster, layers)).toBe(false);
+		layers[3] = 0;
+		layers[4] = 0;
+		expect(clusterRevealed(cluster, layers)).toBe(false); // 10 still buried
+		layers[10] = 0;
+		expect(clusterRevealed(cluster, layers)).toBe(true);
+	});
+	test("clusterRevealed: an empty cluster is never revealed", () => {
+		expect(clusterRevealed([], new Array(N).fill(0))).toBe(false);
+	});
+	test("clusterTouched: true when AT LEAST ONE cell is cleared", () => {
+		const cluster = [3, 4, 10];
+		const layers = new Array(N).fill(2);
+		expect(clusterTouched(cluster, layers)).toBe(false);
+		layers[4] = 0;
+		expect(clusterTouched(cluster, layers)).toBe(true);
+	});
+	test("clusterTouched: an empty cluster is never touched", () => {
+		expect(clusterTouched([], new Array(N).fill(0))).toBe(false);
+	});
+	test("clusterAnchor: the lowest index (collapse representative), -1 when empty", () => {
+		expect(clusterAnchor([7, 2, 5])).toBe(2);
+		expect(clusterAnchor([9])).toBe(9);
+		expect(clusterAnchor([])).toBe(-1);
 	});
 });
 

@@ -55,6 +55,22 @@ describe("buildBrowseRows — members band", () => {
 		expect(flat).toContain("beanie"); // everyone band still expanded
 	});
 
+	it("gives every row a unique key when both bands share a rarity", () => {
+		// Regression: members + everyone each held a legendary item, and both
+		// bands emitted `h-legendary` / `r-legendary-0` — React duplicate-key
+		// error in the Collectibles FlatList (rows can be dropped).
+		const rows = buildBrowseRows(
+			[
+				item("crown", { members_only: true, rarity: "legendary" }),
+				item("tophat", { rarity: "legendary" }),
+			],
+			OPEN,
+			true,
+		);
+		const keys = rows.map((r) => r.key);
+		expect(new Set(keys).size).toBe(keys.length);
+	});
+
 	it("degrades to a plain rarity list (no band banners) when there are no members items", () => {
 		const rows = buildBrowseRows([item("beanie"), item("tophat")], OPEN, false);
 		expect(rows.some((r) => r.type === "section")).toBe(false);

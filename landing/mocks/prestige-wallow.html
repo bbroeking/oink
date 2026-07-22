@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>the Wallow &middot; prestige directions</title>
+<style>
+  :root{
+    --ink:#2a1f15;--paper:#fffaf0;--cream:#fbeee2;--cream2:#f6e6d4;--rose:#ffd6dc;
+    --rose-deep:#f8a8b3;--sky:#c8e3f0;--sage:#c9dec1;--sun:#ffd87a;--lilac:#d6c8f0;
+    --lilac-deep:#a89bff;--peach:#ffc8a8;--accent:#c25a3f;--mute:rgba(40,30,20,.6);
+    --mute-soft:rgba(40,30,20,.4);--bark:#3a2c1e;--bark-text:#fff3e2;
+    --gold:#F5C44A;--gold-deep:#C99B23;--silver:#BFC4CC;--bronze:#C68A5C;
+    /* the mud ramp — deepens per wallow */
+    --mud1:#b8804e;--mud2:#8a5730;--mud3:#6f4a2a;--mud5:#4f3b23;
+    --display:ui-rounded,"SF Pro Rounded","Fredoka","Nunito",system-ui,sans-serif;
+    --body:"Nunito",ui-rounded,-apple-system,system-ui,sans-serif;
+    --hand:"Bradley Hand","Patrick Hand","Comic Sans MS",cursive;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:radial-gradient(circle at 10% 6%,rgba(255,214,220,.4),transparent 32%),
+      radial-gradient(circle at 92% 96%,rgba(214,200,240,.3),transparent 40%),var(--paper);
+    color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;
+    padding:28px 18px 90px;overflow-x:hidden;
+  }
+  /* ---------- header ---------- */
+  .head{max-width:1000px;margin:0 auto}
+  .kicker{font-family:var(--hand);font-size:15px;color:var(--accent);margin-bottom:2px}
+  h1{font-family:var(--display);font-weight:800;font-size:32px;letter-spacing:-.4px}
+  .premise{font-size:14.5px;line-height:1.55;color:#4a3b2c;max-width:680px;margin-top:10px}
+  .premise b{color:var(--accent)}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:16px;
+    background:var(--cream);border:2px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);
+    padding:11px 14px}
+  .legend .lg{display:inline-flex;align-items:center;gap:6px;font-family:var(--body);font-size:11.5px;font-weight:700}
+  .sw{width:15px;height:15px;border:1.5px solid var(--ink);border-radius:4px}
+  .legend .note{font-family:var(--hand);font-size:12.5px;color:var(--mute);flex-basis:100%;margin-top:2px}
+  .mudramp{display:inline-flex;gap:2px}
+  .mudramp span{width:11px;height:15px;border:1.5px solid var(--ink);border-radius:3px}
+
+  /* ---------- variant section ---------- */
+  .vhead{max-width:1000px;margin:56px auto 0;text-align:center}
+  .rule{max-width:1000px;margin:44px auto 0;border-top:2px dashed var(--mute-soft)}
+  .vnum{font-family:var(--hand);color:var(--accent);font-size:14px}
+  .vhead h2{font-family:var(--display);font-weight:800;font-size:24px;margin-top:2px}
+  .vphil{font-family:var(--hand);font-size:14.5px;color:#4a3b2c;margin-top:5px;max-width:620px;
+    margin-left:auto;margin-right:auto;line-height:1.4}
+  .stage{max-width:1000px;margin:24px auto 0;display:flex;flex-wrap:wrap;gap:30px 40px;
+    justify-content:center;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center;gap:10px;width:322px;max-width:100%}
+  .caplabel{font-family:var(--display);font-weight:800;font-size:12.5px;padding:4px 13px;
+    border:2px solid var(--ink);border-radius:999px;box-shadow:2px 2px 0 var(--ink);background:var(--paper)}
+  .caplabel.brd{background:var(--sky)} .caplabel.trk{background:var(--sun)}
+
+  /* ---------- phone frame ---------- */
+  .frame{width:312px;max-width:100%;border:3px solid var(--ink);border-radius:34px;background:var(--cream);
+    box-shadow:8px 8px 0 var(--ink);padding:12px 10px 18px;position:relative}
+  .notch{width:88px;height:6px;background:var(--ink);border-radius:99px;margin:2px auto 12px;opacity:.85}
+
+  /* ---------- leaderboard ---------- */
+  .lb{background:var(--paper);border:2.5px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);
+    padding:4px 0;transform:rotate(-.4deg);overflow:hidden}
+  /* champion poster */
+  .champ{padding:14px 12px 12px;position:relative;border-bottom:2px solid var(--mute-soft)}
+  .champ .over{font-family:var(--hand);font-size:12px;color:var(--accent);letter-spacing:.4px;margin-bottom:6px}
+  .champ .body{display:flex;align-items:center;gap:12px}
+  .champ .cn{font-family:var(--display);font-weight:800;font-size:19px;line-height:1.05}
+  .champ .cs{font-family:var(--hand);font-size:12.5px;color:var(--mute);margin-top:3px}
+  .crown{margin-left:auto;font-size:22px}
+  /* ranked row */
+  .row{display:flex;align-items:center;gap:9px;padding:10px 12px;position:relative}
+  .row+.row,.champ+.row{border-top:1.5px dashed var(--mute-soft)}
+  .row.you{background:var(--cream)}
+  .rk{width:22px;text-align:center;font-family:var(--display);font-weight:800;font-size:14px;flex:0 0 auto}
+  .nm{flex:1;min-width:0}
+  .nmline{display:flex;align-items:baseline;gap:5px}
+  .name{font-family:var(--display);font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis}
+  .disc{font-family:var(--body);font-size:10px;font-weight:800;color:var(--mute);letter-spacing:.3px}
+  .youtag{font-family:var(--hand);color:var(--accent);font-weight:400}
+  .sub{font-family:var(--body);font-size:10.5px;font-weight:800;color:var(--mute);letter-spacing:.2px;
+    margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .flag{width:19px;height:13px;border:1.2px solid var(--ink);border-radius:2px;background:var(--sky);flex:0 0 auto}
+  .sc{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;flex:0 0 auto}
+  .scn{font-family:var(--display);font-weight:800;font-size:14px}
+  .hrt{width:12px;height:12px;margin-top:1px}
+
+  /* pig avatar + mud ring */
+  .pig{width:32px;height:32px;flex:0 0 auto;display:block}
+  .ring{display:inline-flex;padding:2.5px;border-radius:999px;flex:0 0 auto}
+  .ring .pig{width:30px;height:30px}
+  .ring.w0{padding:0} .ring.w0 .pig{width:32px;height:32px}
+  .ring.w1{background:var(--mud1);border:2px solid var(--ink)}
+  .ring.w2{background:var(--mud2);border:2px solid var(--ink)}
+  .ring.w5{border:2px solid var(--ink);
+    background:radial-gradient(circle at 28% 26%,var(--gold) 0 1.4px,transparent 2px),
+      radial-gradient(circle at 70% 60%,var(--gold) 0 1.4px,transparent 2px),
+      radial-gradient(circle at 48% 82%,var(--gold) 0 1px,transparent 1.6px),var(--mud5)}
+  .ring.big{padding:3.5px}.ring.big .pig{width:52px;height:52px}
+
+  /* nameplate materials (variant 3) */
+  .plate{display:inline-block;padding:1px 8px;border:1.5px solid var(--ink);border-radius:6px;
+    font-family:var(--display);font-weight:800;font-size:14px;position:relative;box-shadow:1px 1px 0 var(--ink)}
+  .plate.paper{background:var(--paper)}
+  .plate.bronze{background:linear-gradient(160deg,#e0a877,#b3733f);color:#3a2413}
+  .plate.silver{background:linear-gradient(160deg,#eef1f5,#c3c8d0)}
+  .plate.gold{background:linear-gradient(160deg,#ffe9a8,var(--gold));border-color:var(--gold-deep)}
+  .notchn{position:absolute;top:-7px;right:-8px;font-size:8.5px;background:var(--ink);color:var(--paper);
+    border-radius:999px;padding:0 4px;font-family:var(--display);font-weight:800;line-height:1.5}
+
+  /* mud-gradient title text (variant 4) */
+  .mudtext{background:linear-gradient(95deg,#8a5730,#c68a5c 45%,#5a4326);-webkit-background-clip:text;
+    background-clip:text;color:transparent;font-family:var(--display);font-weight:800}
+
+  /* lap-dot cluster (variant 5 board) */
+  .dots{display:inline-flex;gap:2px;align-items:center;margin-left:5px;vertical-align:middle}
+  .dots i{width:5px;height:5px;border-radius:999px;display:inline-block}
+  .d1{background:var(--mud1)}.d2{background:var(--mud2)}.d3{background:var(--mud3)}
+  .d4{background:#5f4227}.d5{background:var(--mud5)}
+
+  /* ---------- season track ---------- */
+  .track{background:transparent;padding:2px 2px}
+  .tierup{background:var(--sun);border:2px solid var(--ink);border-radius:12px;padding:7px 10px;
+    font-family:var(--display);font-weight:800;font-size:12px;text-align:center;box-shadow:2px 2px 0 var(--ink);
+    transform:rotate(-.6deg);margin-bottom:14px}
+  .tier{display:flex;gap:9px;align-items:stretch}
+  .spine{width:46px;display:flex;flex-direction:column;align-items:center;flex:0 0 auto}
+  .node{width:40px;height:40px;border-radius:999px;border:2.5px solid var(--ink);display:flex;
+    align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:14px;
+    box-shadow:2px 2px 0 var(--ink);background:var(--paper);flex:0 0 auto}
+  .node.claimed{background:var(--sage)}
+  .node.cap{background:var(--sun);width:46px;height:46px;font-size:12px;line-height:1}
+  .conn{flex:1;width:0;border-left:2px dashed var(--mute-soft);margin:3px 0}
+  .tcard{flex:1;min-width:0;border:2.5px solid var(--ink);border-radius:14px;background:var(--paper);
+    box-shadow:3px 3px 0 var(--ink);padding:9px 11px;margin-bottom:12px}
+  .tlabel{font-family:var(--display);font-weight:800;font-size:10.5px;letter-spacing:1px;color:var(--mute)}
+  .tcard h4{font-family:var(--display);font-weight:800;font-size:16px;margin:2px 0 3px}
+  .tcard p{font-family:var(--hand);font-size:12px;color:var(--mute);line-height:1.4}
+  .capcard{background:var(--cream);border-color:var(--ink)}
+  .wallowbtn{display:inline-block;margin-top:8px;font-family:var(--display);font-weight:800;font-size:12.5px;
+    padding:7px 14px;border:2.5px solid var(--ink);border-radius:12px;box-shadow:2px 2px 0 var(--ink);background:var(--sun)}
+  .capfoot{display:flex;align-items:center;gap:10px;margin-top:9px}
+
+  /* roman pips (variant 4 track) */
+  .pips{display:flex;gap:3px;margin-top:6px;align-items:center}
+  .pips i{width:4px;height:12px;border-radius:2px;background:var(--mud3);border:1px solid var(--ink)}
+  .pips .rn{font-family:var(--display);font-weight:800;font-size:13px;margin-left:5px;color:var(--mud2)}
+
+  /* trophy shelf (variant 5 track) */
+  .shelf{margin-top:8px;background:var(--bark);border:2.5px solid var(--ink);border-radius:12px;
+    padding:11px 10px 8px;box-shadow:2px 2px 0 var(--ink)}
+  .shelfrow{display:flex;gap:8px;justify-content:center;align-items:flex-end}
+  .medal{width:26px;height:26px;border-radius:999px;border:2px solid var(--ink)}
+  .m1{background:var(--mud1)}.m2{background:var(--mud2)}.m3{background:var(--mud3)}
+  .m4{background:#5f4227}
+  .m5{background:radial-gradient(circle at 30% 28%,var(--gold) 0 1.4px,transparent 2px),
+    radial-gradient(circle at 68% 62%,var(--gold) 0 1.4px,transparent 2px),var(--mud5)}
+  .ledge{height:5px;background:#241a10;border-radius:2px;margin-top:6px}
+  .shelfcap{font-family:var(--hand);font-size:11px;color:var(--bark-text);text-align:center;margin-top:6px}
+
+  /* per-wallow banner wash (variant 2) */
+  .bn5{background:linear-gradient(90deg,var(--mud5),rgba(79,59,35,.35))}
+  .bn2{background:linear-gradient(90deg,var(--mud2),rgba(138,87,48,.28))}
+  .bn1{background:linear-gradient(90deg,var(--mud1),rgba(184,128,78,.25))}
+  .bn2 .name,.bn5 .name{color:var(--paper)} .bn2 .sub,.bn5 .sub{color:rgba(255,250,240,.85)}
+  .bn2 .rk,.bn5 .rk,.bn2 .scn,.bn5 .scn{color:var(--paper)}
+  .youbanner{background:linear-gradient(90deg,var(--mud2),var(--cream))}
+
+  /* ---------- pros/cons + cost ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:6px;max-width:680px;margin:18px auto 0;justify-content:center}
+  .chip{font-family:var(--body);font-size:12px;font-weight:800;padding:4px 11px;border:2px solid var(--ink);
+    border-radius:999px;box-shadow:1.5px 1.5px 0 var(--ink)}
+  .chip.pro{background:var(--sage)}.chip.pro::before{content:"+ "}
+  .chip.con{background:var(--rose)}.chip.con::before{content:"\2212  "}
+  .cost{font-family:var(--hand);font-size:13.5px;color:var(--accent);text-align:center;margin:13px auto 0;max-width:660px;line-height:1.4}
+  .cost b{color:var(--ink)}
+
+  /* ---------- comparison table ---------- */
+  .cmpwrap{max-width:1000px;margin:60px auto 0;overflow-x:auto}
+  .cmphead{text-align:center;margin-bottom:14px}
+  .cmphead .k{font-family:var(--hand);color:var(--accent);font-size:14px}
+  .cmphead h2{font-family:var(--display);font-weight:800;font-size:23px;margin-top:2px}
+  table.cmp{border-collapse:separate;border-spacing:0;width:100%;min-width:760px;
+    border:2.5px solid var(--ink);border-radius:14px;overflow:hidden;background:var(--paper)}
+  table.cmp th,table.cmp td{border-right:1.5px solid var(--mute-soft);border-bottom:1.5px solid var(--mute-soft);
+    padding:9px 10px;font-size:11.5px;line-height:1.3;text-align:left;vertical-align:top}
+  table.cmp th:last-child,table.cmp td:last-child{border-right:0}
+  table.cmp tr:last-child td{border-bottom:0}
+  table.cmp thead th{background:var(--cream2);font-family:var(--display);font-weight:800;font-size:12px;text-align:center}
+  table.cmp thead th:first-child{text-align:left;background:var(--ink);color:var(--paper)}
+  table.cmp tbody th{font-family:var(--display);font-weight:800;font-size:11.5px;background:var(--cream);white-space:nowrap}
+  td.win{background:var(--sun);font-weight:800}
+  td.win::before{content:"\2605 ";color:var(--accent)}
+  .tally{max-width:1000px;margin:14px auto 0;font-family:var(--hand);font-size:14px;color:#4a3b2c;text-align:center;line-height:1.5}
+  .tally b{color:var(--accent);font-family:var(--display);font-weight:800}
+  footer{max-width:1000px;margin:40px auto 0;font-family:var(--hand);font-size:12.5px;color:var(--mute);text-align:center}
+
+  @media (max-width:520px){h1{font-size:26px}.vhead h2{font-size:21px}}
+</style>
+</head>
+<body>
+
+<!-- shared shapes: one pig face + one heart, reused everywhere via <use> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="pig" viewBox="0 0 40 40">
+    <path d="M12 12 Q9 4 17 10 Z" fill="#f8a8b3" stroke="#2a1f15" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M28 12 Q31 4 23 10 Z" fill="#f8a8b3" stroke="#2a1f15" stroke-width="2" stroke-linejoin="round"/>
+    <ellipse cx="20" cy="22" rx="13" ry="11" fill="#ffd6dc" stroke="#2a1f15" stroke-width="2.2"/>
+    <circle cx="11" cy="25" r="2.4" fill="#f8a8b3" opacity=".55"/>
+    <circle cx="29" cy="25" r="2.4" fill="#f8a8b3" opacity=".55"/>
+    <circle cx="16" cy="20" r="1.4" fill="#2a1f15"/>
+    <circle cx="24" cy="20" r="1.4" fill="#2a1f15"/>
+    <ellipse cx="20" cy="26" rx="5.5" ry="3.8" fill="#ffc8a8" stroke="#2a1f15" stroke-width="2"/>
+    <ellipse cx="18" cy="26" rx="0.9" ry="1.6" fill="#2a1f15"/>
+    <ellipse cx="22" cy="26" rx="0.9" ry="1.6" fill="#2a1f15"/>
+  </symbol>
+  <symbol id="heart" viewBox="0 0 24 24">
+    <path d="M12 21 C4 14 3.5 8.5 7.5 6.2 C10 4.8 12 7 12 8.2 C12 7 14 4.8 16.5 6.2 C20.5 8.5 20 14 12 21 Z"
+      fill="#f8a8b3" stroke="#2a1f15" stroke-width="1.5" stroke-linejoin="round"/>
+  </symbol>
+</svg>
+
+<!-- ============ HEADER ============ -->
+<div class="head">
+  <div class="kicker">&#9733; prestige direction study</div>
+  <h1>the Wallow &middot; five ways to wear the mud</h1>
+  <p class="premise">At the top of the season pass &mdash; <b>tier 30</b> &mdash; a pig may <b>Wallow</b>: reset the
+    climb back to tier 1 and run the whole season again, keeping every hat, title, friend, and tickle already earned.
+    Each Wallow leaves a permanent, visible mark of standing &mdash; the only open question is <b>where that mark hangs</b>.</p>
+  <div class="legend">
+    <span class="lg"><span class="sw" style="background:#2a1f15"></span>ink</span>
+    <span class="lg"><span class="sw" style="background:#fffaf0"></span>paper</span>
+    <span class="lg"><span class="sw" style="background:#fbeee2"></span>cream (you-row)</span>
+    <span class="lg"><span class="sw" style="background:#ffd87a"></span>sun</span>
+    <span class="lg"><span class="sw" style="background:#ffd6dc"></span>rose</span>
+    <span class="lg"><span class="sw" style="background:#c9dec1"></span>sage</span>
+    <span class="lg"><span class="sw" style="background:#c8e3f0"></span>sky</span>
+    <span class="lg"><span class="sw" style="background:#c25a3f"></span>accent</span>
+    <span class="lg">the mud ramp&nbsp;
+      <span class="mudramp"><span style="background:#b8804e"></span><span style="background:#8a5730"></span>
+      <span style="background:#6f4a2a"></span><span style="background:#4f3b23"></span></span>
+      &nbsp;&times;1&rarr;&times;5</span>
+    <span class="note">fonts here approximate the game's real set &mdash; Caprasimo (whimsy titles / numbers), Patrick Hand
+      (kickers), Fredoka + Nunito (display / body). Pig faces are CSS/SVG shapes. No emoji anywhere &mdash; marks are drawn or &#9733;/&#9679;/&#10022;.</span>
+  </div>
+</div>
+
+<!-- ============ 1 · MUD RING ============ -->
+<div class="vhead">
+  <div class="vnum">&#9733; direction 01 &middot; the quiet standing</div>
+  <h2>Mud Ring</h2>
+  <p class="vphil">the standing is a rim of mud around the pig's face on every board row &mdash; it deepens per wallow, and you feel it before you read it.</p>
+</div>
+<div class="stage">
+  <!-- board -->
+  <div class="col">
+    <div class="caplabel brd">the board</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="lb">
+        <div class="champ">
+          <div class="over">&#9733; champion of the season</div>
+          <div class="body">
+            <span class="ring w5 big"><svg class="pig"><use href="#pig"/></svg></span>
+            <div><div class="cn">Sir Oinks-a-lot</div><div class="cs">wears Party Hat &middot; wallowed &times;5</div></div>
+            <span class="crown">&#9819;</span>
+          </div>
+        </div>
+        <div class="row">
+          <span class="rk">#2</span><span class="ring w2"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Muddlestein</span><span class="disc">#0421</span></div>
+            <div class="sub">wears Monocle &middot; wallowed &times;2</div></div>
+          <div class="sc"><span class="scn">96,210</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row">
+          <span class="rk">#3</span><span class="ring w1"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Bramblebottom</span><span class="disc">#1180</span></div>
+            <div class="sub">the Wallower &middot; wallowed &times;1</div></div>
+          <div class="sc"><span class="scn">71,800</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row you">
+          <span class="rk">#4</span><span class="ring w2"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Pigglesworth</span><span class="youtag">(you)</span><span class="disc">#0007</span></div>
+            <div class="sub">wears Straw Hat &middot; wallowed &times;2</div></div>
+          <div class="sc"><span class="scn">54,300</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row">
+          <span class="rk">#5</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Trufflewick</span><span class="disc">#3390</span></div>
+            <div class="sub">wears Bowtie</div></div>
+          <div class="sc"><span class="scn">41,050</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- track -->
+  <div class="col">
+    <div class="caplabel trk">the season track</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="track">
+        <div class="tierup">&#9733; tier 30 &mdash; the mud is warm</div>
+        <div class="tier"><div class="spine"><span class="node claimed">29</span><span class="conn"></span></div>
+          <div class="tcard"><div class="tlabel">TIER 29 &middot; claimed</div><h4>golden trough</h4>
+            <p>tucked away.</p></div></div>
+        <div class="tier"><div class="spine"><span class="node cap">30</span></div>
+          <div class="tcard capcard"><div class="tlabel">TIER 30 &middot; the cap</div><h4>the Wallow</h4>
+            <p>reset the climb &middot; keep everything you've earned.</p>
+            <div class="capfoot">
+              <span class="ring w2" style="border-width:2px"><svg class="pig"><use href="#pig"/></svg></span>
+              <span class="wallowbtn">Wallow again</span>
+            </div>
+            <p style="margin-top:7px">your ring goes umber &mdash; wallow&nbsp;&times;3.</p>
+          </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="chips">
+  <span class="chip pro">reads at a glance</span><span class="chip pro">no new row geometry</span><span class="chip pro">pure CSS tint ramp</span>
+  <span class="chip con">ring competes with the flag chip</span><span class="chip con">&times;4+ tints blur together</span><span class="chip con">mud tones risk colorblind read</span>
+</div>
+<p class="cost"><b>cost</b> &mdash; art: none. code: one ring-wrapper around the avatar + a four-stop tint ramp. the lightest thing on this page to ship.</p>
+
+<div class="rule"></div>
+
+<!-- ============ 2 · ROW BANNER ============ -->
+<div class="vhead">
+  <div class="vnum">&#9733; direction 02 &middot; the loud standing</div>
+  <h2>Row Banner</h2>
+  <p class="vphil">the founder's first instinct &mdash; a full-width mud wash behind your whole leaderboard row. shown honestly, including the smear when five sit together.</p>
+</div>
+<div class="stage">
+  <div class="col">
+    <div class="caplabel brd">the board</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="lb">
+        <div class="champ bn5">
+          <div class="over" style="color:var(--paper)">&#9733; champion of the season</div>
+          <div class="body">
+            <span class="ring w0 big"><svg class="pig"><use href="#pig"/></svg></span>
+            <div><div class="cn" style="color:var(--paper)">Sir Oinks-a-lot</div>
+              <div class="cs" style="color:rgba(255,250,240,.85)">wears Party Hat</div></div>
+            <span class="crown">&#9819;</span>
+          </div>
+        </div>
+        <div class="row bn2">
+          <span class="rk">#2</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Muddlestein</span><span class="disc" style="color:rgba(255,250,240,.7)">#0421</span></div>
+            <div class="sub">wears Monocle</div></div>
+          <div class="sc"><span class="scn">96,210</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row bn1">
+          <span class="rk" style="color:var(--paper)">#3</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name" style="color:var(--paper)">Bramblebottom</span><span class="disc" style="color:rgba(255,250,240,.7)">#1180</span></div>
+            <div class="sub" style="color:rgba(255,250,240,.85)">the Wallower</div></div>
+          <div class="sc"><span class="scn" style="color:var(--paper)">71,800</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row you youbanner">
+          <span class="rk">#4</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Pigglesworth</span><span class="youtag">(you)</span><span class="disc">#0007</span></div>
+            <div class="sub">wears Straw Hat</div></div>
+          <div class="sc"><span class="scn">54,300</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row">
+          <span class="rk">#5</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Trufflewick</span><span class="disc">#3390</span></div>
+            <div class="sub">wears Bowtie</div></div>
+          <div class="sc"><span class="scn">41,050</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="caplabel trk">the season track</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="track">
+        <div class="tierup">&#9733; tier 30 &mdash; the mud is warm</div>
+        <div class="tier"><div class="spine"><span class="node claimed">29</span><span class="conn"></span></div>
+          <div class="tcard"><div class="tlabel">TIER 29 &middot; claimed</div><h4>golden trough</h4><p>tucked away.</p></div></div>
+        <div class="tier"><div class="spine"><span class="node cap">30</span></div>
+          <div class="tcard capcard bn2" style="border-color:var(--ink)">
+            <div class="tlabel" style="color:rgba(255,250,240,.85)">TIER 30 &middot; the cap</div>
+            <h4 style="color:var(--paper)">the Wallow</h4>
+            <p style="color:rgba(255,250,240,.85)">reset the climb &middot; keep everything you've earned.</p>
+            <span class="wallowbtn">Wallow again</span>
+            <p style="margin-top:8px;color:rgba(255,250,240,.85)">your banner deepens toward bog.</p>
+          </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="chips">
+  <span class="chip pro">unmissable standing</span><span class="chip pro">one banner = instant identity</span><span class="chip pro">feels like a trophy sash</span>
+  <span class="chip con">five banners = a rainbow smear</span><span class="chip con">eats the cream you-row highlight</span><span class="chip con">worst readability at 32px &middot; arms-race magnet</span>
+</div>
+<p class="cost"><b>cost</b> &mdash; art: none, but each per-wallow palette needs hand-tuning for legibility. code: a row-background override + a fix for the you-row z-order collision. cheap to build, <b>expensive to read</b>.</p>
+
+<div class="rule"></div>
+
+<!-- ============ 3 · NAMEPLATE MATERIAL ============ -->
+<div class="vhead">
+  <div class="vnum">&#9733; direction 03 &middot; the craftsmanship</div>
+  <h2>Nameplate Material</h2>
+  <p class="vphil">the name rides a little paper nameplate; prestige upgrades the material &mdash; paper &rarr; bronze &rarr; silver-leaf &rarr; gold-leaf. the lap count lives in a tiny corner notch.</p>
+</div>
+<div class="stage">
+  <div class="col">
+    <div class="caplabel brd">the board</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="lb">
+        <div class="champ">
+          <div class="over">&#9733; champion of the season</div>
+          <div class="body">
+            <span class="ring w0 big"><svg class="pig"><use href="#pig"/></svg></span>
+            <div><div class="cn"><span class="plate gold">Sir Oinks-a-lot<span class="notchn">&times;5</span></span></div>
+              <div class="cs">wears Party Hat</div></div>
+            <span class="crown">&#9819;</span>
+          </div>
+        </div>
+        <div class="row">
+          <span class="rk">#2</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="plate silver">Muddlestein<span class="notchn">&times;2</span></span></div>
+            <div class="sub">wears Monocle</div></div>
+          <div class="sc"><span class="scn">96,210</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row">
+          <span class="rk">#3</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="plate bronze">Bramblebottom<span class="notchn">&times;1</span></span></div>
+            <div class="sub">the Wallower</div></div>
+          <div class="sc"><span class="scn">71,800</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row you">
+          <span class="rk">#4</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="plate silver">Pigglesworth<span class="notchn">&times;2</span></span><span class="youtag">(you)</span></div>
+            <div class="sub">wears Straw Hat</div></div>
+          <div class="sc"><span class="scn">54,300</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row">
+          <span class="rk">#5</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="plate paper">Trufflewick</span><span class="disc">#3390</span></div>
+            <div class="sub">wears Bowtie</div></div>
+          <div class="sc"><span class="scn">41,050</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="caplabel trk">the season track</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="track">
+        <div class="tierup">&#9733; tier 30 &mdash; the mud is warm</div>
+        <div class="tier"><div class="spine"><span class="node claimed">29</span><span class="conn"></span></div>
+          <div class="tcard"><div class="tlabel">TIER 29 &middot; claimed</div><h4>golden trough</h4><p>tucked away.</p></div></div>
+        <div class="tier"><div class="spine"><span class="node cap">30</span></div>
+          <div class="tcard capcard silver" style="color:var(--ink)">
+            <div class="tlabel">TIER 30 &middot; the cap &mdash; silver-leaf</div>
+            <h4>the Wallow</h4>
+            <p style="color:rgba(40,30,20,.7)">the cap card is forged from <b>your current material</b> &mdash; wallow again and it turns to gold-leaf.</p>
+            <span class="wallowbtn" style="background:var(--paper)">Wallow again</span>
+          </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="chips">
+  <span class="chip pro">reads as earned craftsmanship</span><span class="chip pro">material tiers scale forever</span><span class="chip pro">cap card doubles as the reward</span>
+  <span class="chip con">plate crowds the 32px row</span><span class="chip con">metallic gradients fight the paper look</span><span class="chip con">corner-notch number is tiny</span>
+</div>
+<p class="cost"><b>cost</b> &mdash; art: none (CSS metals), but the gradients need care so silver/gold don't read cheap. code: a nameplate chip + a material ramp + a corner notch. medium weight.</p>
+
+<div class="rule"></div>
+
+<!-- ============ 4 · TITLE LANE ============ -->
+<div class="vhead">
+  <div class="vnum">&#9733; direction 04 &middot; the zero-new-chrome</div>
+  <h2>Title Lane</h2>
+  <p class="vphil">no new geometry at all. wallow fuses with the titles system already shipping &mdash; the lap becomes a title, rendered in mud-gradient text in the row's existing title slot.</p>
+</div>
+<div class="stage">
+  <div class="col">
+    <div class="caplabel brd">the board</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="lb">
+        <div class="champ">
+          <div class="over">&#9733; champion of the season</div>
+          <div class="body">
+            <span class="ring w0 big"><svg class="pig"><use href="#pig"/></svg></span>
+            <div><div class="cn"><span class="mudtext">Bog-Deep V</span> Sir Oinks-a-lot</div>
+              <div class="cs">wears Party Hat</div></div>
+            <span class="crown">&#9819;</span>
+          </div>
+        </div>
+        <div class="row">
+          <span class="rk">#2</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name"><span class="mudtext">Old Mud II</span> Muddlestein</span><span class="disc">#0421</span></div>
+            <div class="sub">wears Monocle</div></div>
+          <div class="sc"><span class="scn">96,210</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row">
+          <span class="rk">#3</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name"><span class="mudtext">the Wallower</span> Bramblebottom</span><span class="disc">#1180</span></div>
+            <div class="sub">first lap done</div></div>
+          <div class="sc"><span class="scn">71,800</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row you">
+          <span class="rk">#4</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name"><span class="mudtext">Old Mud II</span> Pigglesworth</span><span class="youtag">(you)</span></div>
+            <div class="sub">wears Straw Hat</div></div>
+          <div class="sc"><span class="scn">54,300</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row">
+          <span class="rk">#5</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Champion Trufflewick</span><span class="disc">#3390</span></div>
+            <div class="sub">wears Bowtie</div></div>
+          <div class="sc"><span class="scn">41,050</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="caplabel trk">the season track</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="track">
+        <div class="tierup">&#9733; tier 30 &mdash; the mud is warm</div>
+        <div class="tier"><div class="spine"><span class="node claimed">29</span><span class="conn"></span></div>
+          <div class="tcard"><div class="tlabel">TIER 29 &middot; claimed</div><h4>golden trough</h4><p>tucked away.</p></div></div>
+        <div class="tier"><div class="spine">
+            <span class="node cap">30</span>
+            <div class="pips"><i></i><i></i><i></i><i></i><i></i><span class="rn">V</span></div>
+          </div>
+          <div class="tcard capcard"><div class="tlabel">TIER 30 &middot; the cap</div><h4>the Wallow</h4>
+            <p>reset the climb &middot; keep everything you've earned.</p>
+            <span class="wallowbtn">Wallow again</span>
+            <p style="margin-top:8px">the lap pips under the head tick to <b>VI</b> &mdash; you unlock the next mud title.</p>
+          </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="chips">
+  <span class="chip pro">zero new chrome</span><span class="chip pro">rides the titles system we ship</span><span class="chip pro">names extend infinitely</span>
+  <span class="chip con">gradient text softens at 32px</span><span class="chip con">competes with earned titles</span><span class="chip con">invisible to non-readers</span>
+</div>
+<p class="cost"><b>cost</b> &mdash; art: none. code: a title-source join (wallow &rarr; title table) + a text-gradient treatment on the title slot. no new components at all.</p>
+
+<div class="rule"></div>
+
+<!-- ============ 5 · TRACK TROPHY ============ -->
+<div class="vhead">
+  <div class="vnum">&#9733; direction 05 &middot; the private trophy</div>
+  <h2>Track Trophy</h2>
+  <p class="vphil">the standing lives on your own pass track, not the board. the track head becomes a shelf of mud medallions &mdash; one per wallow, tap to name the lap. the board keeps only a tiny dot-cluster.</p>
+</div>
+<div class="stage">
+  <div class="col">
+    <div class="caplabel brd">the board</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="lb">
+        <div class="champ">
+          <div class="over">&#9733; champion of the season</div>
+          <div class="body">
+            <span class="ring w0 big"><svg class="pig"><use href="#pig"/></svg></span>
+            <div><div class="cn">Sir Oinks-a-lot
+                <span class="dots"><i class="d1"></i><i class="d2"></i><i class="d3"></i><i class="d4"></i><i class="d5"></i></span></div>
+              <div class="cs">wears Party Hat</div></div>
+            <span class="crown">&#9819;</span>
+          </div>
+        </div>
+        <div class="row">
+          <span class="rk">#2</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Muddlestein</span>
+              <span class="dots"><i class="d1"></i><i class="d2"></i></span><span class="disc">#0421</span></div>
+            <div class="sub">wears Monocle</div></div>
+          <div class="sc"><span class="scn">96,210</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row">
+          <span class="rk">#3</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Bramblebottom</span>
+              <span class="dots"><i class="d1"></i></span><span class="disc">#1180</span></div>
+            <div class="sub">the Wallower</div></div>
+          <div class="sc"><span class="scn">71,800</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row you">
+          <span class="rk">#4</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Pigglesworth</span><span class="youtag">(you)</span>
+              <span class="dots"><i class="d1"></i><i class="d2"></i></span></div>
+            <div class="sub">wears Straw Hat</div></div>
+          <div class="sc"><span class="scn">54,300</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+        <div class="row">
+          <span class="rk">#5</span><span class="ring w0"><svg class="pig"><use href="#pig"/></svg></span>
+          <div class="nm"><div class="nmline"><span class="name">Trufflewick</span><span class="disc">#3390</span></div>
+            <div class="sub">wears Bowtie</div></div>
+          <div class="sc"><span class="scn">41,050</span><svg class="hrt"><use href="#heart"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="caplabel trk">the season track</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="track">
+        <div class="tierup">&#9733; tier 30 &mdash; the mud is warm</div>
+        <div class="tier"><div class="spine"><span class="node claimed">29</span><span class="conn"></span></div>
+          <div class="tcard"><div class="tlabel">TIER 29 &middot; claimed</div><h4>golden trough</h4><p>tucked away.</p></div></div>
+        <div class="tier"><div class="spine"><span class="node cap">30</span></div>
+          <div class="tcard capcard"><div class="tlabel">TIER 30 &middot; your wallow shelf</div><h4>the Wallow</h4>
+            <p>reset the climb &middot; keep everything. every lap earns a medallion &mdash; they hang here, on your own track.</p>
+            <div class="shelf">
+              <div class="shelfrow">
+                <span class="medal m1"></span><span class="medal m2"></span><span class="medal m3"></span>
+                <span class="medal m4"></span><span class="medal m5"></span>
+              </div>
+              <div class="ledge"></div>
+              <div class="shelfcap">tap a medallion &mdash; &ldquo;lap V &middot; bog-deep&rdquo;</div>
+            </div>
+            <span class="wallowbtn" style="margin-top:9px">Wallow again</span>
+          </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="chips">
+  <span class="chip pro">lowest arms-race risk</span><span class="chip pro">the board stays clean</span><span class="chip pro">a private shelf you visit</span>
+  <span class="chip con">nearly invisible to others</span><span class="chip con">the flex is hidden away</span><span class="chip con">dot-cluster needs counting</span>
+</div>
+<p class="cost"><b>cost</b> &mdash; art: none (CSS medallions). code: a shelf component on the track head + a dot-cluster after the row name. medium weight, most of it on the track.</p>
+
+<!-- ============ COMPARISON TABLE ============ -->
+<div class="cmpwrap">
+  <div class="cmphead">
+    <div class="k">&#9733; let the table speak</div>
+    <h2>five directions, one glance</h2>
+  </div>
+  <table class="cmp">
+    <thead>
+      <tr><th>&nbsp;</th><th>Mud Ring</th><th>Row Banner</th><th>Nameplate</th><th>Title Lane</th><th>Track Trophy</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>readability at 32px</th>
+        <td class="win">crisp rim, no clutter</td>
+        <td>muddy rainbow smear</td>
+        <td>plate crowds the row</td>
+        <td>gradient text softens</td>
+        <td>clean, but count the dots</td>
+      </tr>
+      <tr>
+        <th>art budget</th>
+        <td>CSS tint only</td>
+        <td>per-wallow palettes</td>
+        <td>metal gradients to tune</td>
+        <td class="win">none &mdash; text only</td>
+        <td>CSS medallions</td>
+      </tr>
+      <tr>
+        <th>arms-race risk</th>
+        <td>low &mdash; quiet ramp</td>
+        <td>high &mdash; a public banner</td>
+        <td>medium</td>
+        <td>low&ndash;medium</td>
+        <td class="win">lowest &mdash; it's private</td>
+      </tr>
+      <tr>
+        <th>ships without art</th>
+        <td class="win">yes, cleanly</td>
+        <td>yes</td>
+        <td>yes, if metals read true</td>
+        <td>yes</td>
+        <td>yes</td>
+      </tr>
+      <tr>
+        <th>where the trophy hangs</th>
+        <td class="win">on the pig, always seen</td>
+        <td>behind the whole row</td>
+        <td>under the name</td>
+        <td>in the title slot</td>
+        <td>on your own pass shelf</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<p class="tally">&#9733; tally &mdash; <b>Mud Ring 3</b> &middot; Title Lane 1 &middot; Track Trophy 1 &middot; Row Banner 0 &middot; Nameplate 0.
+  &nbsp;the table lands on <b>Mud Ring</b>.</p>
+
+<footer>the Wallow &middot; prestige direction study &mdash; a static mock for the pick. not shipped chrome.</footer>
+
+</body>
+</html>

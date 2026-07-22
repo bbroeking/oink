@@ -13,8 +13,6 @@ import {
 import Svg, { Path as SvgPath } from "react-native-svg";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
-import { supabase } from "../../utils/supabase";
-import { rpc } from "@/utils/rpc";
 import {
 	IAP_ENABLED,
 	presentPaywall,
@@ -22,8 +20,9 @@ import {
 } from "../../utils/iap";
 import { Sticker } from "../../components/ui/Sticker";
 import { EmptyState, LoadingBeat } from "../../components/ui/EmptyState";
-import { usePopupSlot, POPUP_TEARDOWN_MS } from "../../components/ui/PopupQueue";
+import { usePopupSlot, useUnmanagedModalHold, POPUP_TEARDOWN_MS } from "../../components/ui/PopupQueue";
 import { markCeremonyShown } from "../../utils/ceremonyGate";
+import { POPUP_PRIORITIES } from "../../constants/popupPriorities";
 import { Icon } from "../../components/ui/Icon";
 import {
 	MysteryHatReveal,
@@ -39,11 +38,13 @@ import {
 import { useSeasonEnd } from "../../hooks/useSeasonEnd";
 import type { BetaReward } from "../../hooks/useSeasonEnd";
 import { HungerHero } from "../../components/season1/HungerHero";
+import { TickleBreakdownSheet } from "../../components/TickleBreakdownSheet";
+import { BountyBoard } from "../../components/BountyBoard";
 import { WindowStrip } from "../../components/season1/WindowStrip";
 import { SounderHomeCard } from "../../components/season1/SounderHomeCard";
 import { SounderStepCard } from "../../components/season1/SounderStepCard";
 import { useFeedingCta } from "../../components/mudwar/useFeedingCta";
-import { YourTakeStrip, type NextReward } from "../../components/season1/YourTakeStrip";
+import { YourTakeStrip } from "../../components/season1/YourTakeStrip";
 import { useSounderPath } from "../../hooks/useSounderPath";
 import {
 	SpotlightProvider,
@@ -70,8 +71,17 @@ import {
 	type TierUpBannerHandle,
 } from "../../components/ui/TierUpBanner";
 import { HAT_IMAGES, HIDDEN_CATEGORIES } from "@/constants/hats";
+import { resolveRewardArt, rewardItemId, WEARABLE_REWARD_TYPES } from "@/utils/rewardArt";
+import { useSeason } from "../../hooks/useSeason";
+import * as seasonPass from "@/utils/seasonPass";
+import type { TierRow, TierState } from "@/utils/seasonPass";
 import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW, SHADOW_SM, PAGE_PAD, TAB_SAFE, RADII, SPACE, TYPE } from "@/constants/theme";
 import { daysUntilJudgement } from "@/utils/season";
+import { formatDurationCompact } from "@/utils/duration";
+import {
+	WALLOW_MAX_POWER_LEVEL,
+	WALLOW_REGEN_STEP_PCT,
+} from "@/utils/wallow";
 import { Button, SectionHeader } from "../../components/ui";
 import { PURCHASES_LIVE } from "../../constants/featureFlags";
 import { useAudioPlayer } from "expo-audio";
@@ -79,97 +89,116 @@ import * as Haptics from "expo-haptics";
 
 const claimSound = require("../../assets/sounds/claim.mp3");
 
-interface SeasonRow {
-	id: string;
-	name: string;
-	starts_at: string;
-	ends_at: string;
-	total_tiers: number;
-	xp_per_tier: number;
-	premium_price_cents: number;
-	premium_plus_price_cents: number;
-}
+// SeasonRow / RewardValue / TierRow / ClaimRow / SeasonState now live in
+// utils/seasonPass (the pure derivation module); NextReward + TierState too.
 
-// reward_value shape varies per reward_type — Supabase jsonb.
-// Legacy seeds used category-specific keys (bg_id, aura_id, cape_id);
-// the 20260514020000 migration normalized those to hat_id but the
-// type still accepts the legacy keys for un-migrated rows.
-type RewardValue = {
-	hat_id?: string;
-	bg_id?: string;
-	aura_id?: string;
-	cape_id?: string;
-	count?: number;
-	amount?: number;
-	title?: string;
-} | null;
-
-interface TierRow {
-	tier: number;
-	track: "free" | "premium";
-	reward_type: string;
-	reward_value: RewardValue;
-	display_label: string;
-}
-
-interface ClaimRow {
-	tier: number;
-	track: "free" | "premium";
-}
-
-interface SeasonState {
-	active: boolean;
-	season?: SeasonRow;
-	tiers?: TierRow[];
-	xp?: number;
-	current_tier?: number;
-	premium_unlocked?: boolean;
-	claims?: ClaimRow[];
+function WallowCard({
+	count,
+	ready,
+	powerLevel,
+	regenPercent,
+	nextRegenPercent,
+	regenSeconds,
+	nextRegenSeconds,
+	busy,
+	onWallow,
+}: {
+	count: number;
+	ready: boolean;
+	powerLevel: number;
+	regenPercent: number;
+	nextRegenPercent: number;
+	regenSeconds: number;
+	nextRegenSeconds: number;
+	busy: boolean;
+	onWallow: () => void;
+}) {
+	return (
+		<Sticker color="cream" rotate={-0.5} radius={RADII.xl} style={wallowStyles.card}>
+			<View style={wallowStyles.topline}>
+				<View style={wallowStyles.mark}>
+					<Glyph name="flame" size={26} />
+				</View>
+				<View style={wallowStyles.copy}>
+					<Text style={wallowStyles.kicker}>★ THE MUD IS WARM</Text>
+					<Text style={wallowStyles.title}>Wallow Rank {count + 1}</Text>
+					<Text style={wallowStyles.body}>
+						{powerLevel >= WALLOW_MAX_POWER_LEVEL
+							? "Begin another sparse reward path and raise your public rank. Your regeneration is already at full blaze."
+							: `Keep everything, begin a new reward path, and jump to ${nextRegenPercent}% faster regeneration.`}
+					</Text>
+				</View>
+			</View>
+			<View style={wallowStyles.rateCompare}>
+				<View style={wallowStyles.rateStat}>
+					<Text style={wallowStyles.rateKicker}>NOW · RANK {count}</Text>
+					<Text style={wallowStyles.rateValue}>1 tickle / {formatDurationCompact(regenSeconds)}</Text>
+					<Text style={wallowStyles.rateSub}>{regenPercent}% faster</Text>
+				</View>
+				<Glyph name="arrowRight" size={18} />
+				<View style={[wallowStyles.rateStat, wallowStyles.rateStatNext]}>
+					<Text style={wallowStyles.rateKicker}>AFTER · RANK {count + 1}</Text>
+					<Text style={wallowStyles.rateValue}>1 tickle / {formatDurationCompact(nextRegenSeconds)}</Text>
+					<Text style={wallowStyles.rateSub}>{nextRegenPercent}% faster</Text>
+				</View>
+			</View>
+			<View style={wallowStyles.powerRow}>
+				{Array.from({ length: WALLOW_MAX_POWER_LEVEL }, (_, i) => (
+					<View key={i} style={[wallowStyles.powerPip, i < powerLevel && wallowStyles.powerPipOn]} />
+				))}
+				<Text style={wallowStyles.standing}>{powerLevel}/{WALLOW_MAX_POWER_LEVEL} power ranks</Text>
+			</View>
+			<Button full disabled={!ready || busy} onPress={onWallow}>
+				{busy ? "wallowing…" : ready ? count > 0 ? "Raise my Wallow rank" : "Wallow" : "Fill the last XP to Wallow"}
+			</Button>
+		</Sticker>
+	);
 }
 
 function StoneThumb({ reward, locked }: { reward: TierRow; locked: boolean }) {
-	const { reward_type: type, reward_value: val } = reward;
+	// Shape resolution lives in utils/rewardArt (the single owner); StoneThumb
+	// maps each kind to its own stone-sized glyph/art.
+	const art = resolveRewardArt(reward);
 
-	// Any hats-table item (hat/background/aura/cape/scarf/etc.) resolves
-	// to an actual image when hat_id is set. The 20260514020000 migration
-	// normalized legacy bg_id/aura_id/cape_id keys to hat_id, but fall
-	// back to those anyway for forward-compat with un-migrated rows.
-	const itemId =
-		val?.hat_id ?? val?.bg_id ?? val?.aura_id ?? val?.cape_id ?? null;
-	const hatItemTypes = new Set([
-		"hat", "background", "aura", "cape", "scarf",
-		"mask", "necklace", "glasses", "bow", "held",
-	]);
-
-	let inner: React.ReactNode = (
-		<Icon name="star" size={20} color={WHIMSY.muteSoft} />
-	);
-	if (type === "tickles") {
-		inner = <TickleIcon size={26} />;
-	} else if (hatItemTypes.has(type) && itemId && HAT_IMAGES[itemId]) {
-		inner = (
-			<Image
-				source={HAT_IMAGES[itemId]}
-				style={{ width: 32, height: 32 }}
-				resizeMode="contain"
-			/>
-		);
-	} else if (type === "title") {
-		inner = <Text style={styles.titleGlyph}>"</Text>;
-	} else if (type === "boost") {
-		inner = <Icon name="flame" size={22} filled color={WHIMSY.flame} strokeWidth={1.5} />;
-	} else if (type === "background") {
-		// Reachable only by a legacy background/aura/cape row that carries NO
-		// resolvable art (no hat_id + no HAT_IMAGES entry) — the hatItemTypes
-		// branch above wins whenever art exists. Kept as the art-less fallback
-		// glyph for those un-migrated rows, not shadowed dead code.
-		inner = <Icon name="globe" size={22} color={WHIMSY.ink} strokeWidth={1.6} />;
-	} else if (type === "aura") {
-		inner = <Icon name="premium" size={22} color={WHIMSY.bless} strokeWidth={1.6} />;
-	} else if (type === "cape") {
-		inner = <Icon name="star" size={22} color={WHIMSY.ink} strokeWidth={1.6} />;
-	} else if (type === "mystery_box" || type === "cap_increase" || type === "pig_skin") {
-		inner = <Icon name="star" size={22} filled color={WHIMSY.bless} strokeWidth={1.6} />;
+	let inner: React.ReactNode;
+	switch (art.kind) {
+		case "tickles":
+			inner = <TickleIcon size={26} />;
+			break;
+		case "snouts":
+			inner = <Glyph name="pigface" size={26} />;
+			break;
+		case "goldenTruffle":
+			inner = (
+				<Image source={art.source} style={{ width: 34, height: 34 }} resizeMode="contain" />
+			);
+			break;
+		case "image":
+			inner = (
+				<Image source={art.source} style={{ width: 32, height: 32 }} resizeMode="contain" />
+			);
+			break;
+		case "title":
+			inner = <Text style={styles.titleGlyph}>"</Text>;
+			break;
+		case "boost":
+			inner = <Icon name="flame" size={22} filled color={WHIMSY.flame} strokeWidth={1.5} />;
+			break;
+		case "legacyBackground":
+			inner = <Icon name="globe" size={22} color={WHIMSY.ink} strokeWidth={1.6} />;
+			break;
+		case "legacyAura":
+			inner = <Icon name="premium" size={22} color={WHIMSY.bless} strokeWidth={1.6} />;
+			break;
+		case "legacyCape":
+			inner = <Icon name="star" size={22} color={WHIMSY.ink} strokeWidth={1.6} />;
+			break;
+		case "special":
+			inner = <Icon name="star" size={22} filled color={WHIMSY.bless} strokeWidth={1.6} />;
+			break;
+		default:
+			inner = <Icon name="star" size={20} color={WHIMSY.muteSoft} />;
+			break;
 	}
 
 	return (
@@ -192,24 +221,7 @@ function StoneThumb({ reward, locked }: { reward: TierRow; locked: boolean }) {
 // A dashed vertical connector runs between consecutive nodes;
 // stops above the first row and below the last so the line reads
 // as the spine of the season.
-
-type TierState = "claimed" | "ready" | "locked";
-
-function tierStatsFor(
-	totalTiers: number,
-	currentTier: number,
-	claimedSet: Set<string>
-): { claimed: number; ready: number; locked: number } {
-	let claimed = 0,
-		ready = 0,
-		locked = 0;
-	for (let t = 1; t <= totalTiers; t++) {
-		if (claimedSet.has(`${t}:free`)) claimed++;
-		else if (t <= currentTier) ready++;
-		else locked++;
-	}
-	return { claimed, ready, locked };
-}
+// TierState + tierStatsFor now live in utils/seasonPass.
 
 function StatsPills({
 	stats,
@@ -242,6 +254,7 @@ function VLTierRow({
 	state,
 	reward,
 	premium,
+	tierLabel = "TIER",
 	isFirst,
 	isLast,
 	onClaim,
@@ -250,6 +263,7 @@ function VLTierRow({
 	state: TierState;
 	reward: TierRow | undefined;
 	premium?: boolean;
+	tierLabel?: string;
 	isFirst: boolean;
 	isLast: boolean;
 	onClaim: () => void;
@@ -316,7 +330,7 @@ function VLTierRow({
 			>
 				<View style={vlStyles.cardHeader}>
 					<View style={vlStyles.cardHeaderLeft}>
-						<Text style={vlStyles.tierCap}>TIER {tier}</Text>
+						<Text style={vlStyles.tierCap}>{tierLabel} {tier}</Text>
 						{premium && (
 							<View
 								style={vlStyles.clubCrest}
@@ -380,6 +394,8 @@ function VerticalListPassTrack({
 	onClaim,
 	track,
 	premiumUnlocked,
+	sparse = false,
+	tierLabel = "TIER",
 }: {
 	totalTiers: number;
 	currentTier: number;
@@ -388,14 +404,18 @@ function VerticalListPassTrack({
 	onClaim: (tier: number, track: "free" | "premium") => void;
 	track: "free" | "premium";
 	premiumUnlocked: boolean;
+	sparse?: boolean;
+	tierLabel?: string;
 }) {
 	// Premium track under glass — every row locked, no claim, no VIP
 	// pill (the whole track is premium). Otherwise the normal per-tier
 	// stats (free track, or an unlocked premium track).
 	const premiumLocked = track === "premium" && !premiumUnlocked;
+	const rewardTiers = Array.from({ length: totalTiers }, (_, i) => i + 1)
+		.filter((t) => !!tiersByNumber[t]?.[track]);
 	const stats = premiumLocked
-		? { claimed: 0, ready: 0, locked: totalTiers }
-		: tierStatsFor(totalTiers, currentTier, claimedSet);
+		? { claimed: 0, ready: 0, locked: rewardTiers.length }
+		: seasonPass.tierStatsFor(rewardTiers, currentTier, claimedSet, track);
 
 	const stateFor = (t: number): TierState =>
 		premiumLocked
@@ -414,7 +434,7 @@ function VerticalListPassTrack({
 	// session (the tab stays mounted).
 	const [expanded, setExpanded] = useState(false);
 
-	const tiers = Array.from({ length: totalTiers }, (_, i) => i + 1);
+	const tiers = rewardTiers;
 
 	// The next reward above the current tier — the lowest locked tier that
 	// actually carries a reward on this track.
@@ -427,8 +447,8 @@ function VerticalListPassTrack({
 		stateFor(t) === "ready" || // every claimable tier
 		t === nextRewardTier; // the next milestone above current
 
-	const visibleTiers = expanded ? tiers : tiers.filter(alwaysShown);
-	const hiddenCount = totalTiers - visibleTiers.length;
+	const visibleTiers = sparse || expanded ? tiers : tiers.filter(alwaysShown);
+	const hiddenCount = tiers.length - visibleTiers.length;
 
 	return (
 		<View>
@@ -447,6 +467,7 @@ function VerticalListPassTrack({
 							state={stateFor(t)}
 							reward={reward}
 							premium={hasVipReward}
+							tierLabel={tierLabel}
 							isFirst={i === 0}
 							isLast={i === visibleTiers.length - 1}
 							onClaim={() => onClaim(t, track)}
@@ -926,8 +947,27 @@ const passBannerStyles = StyleSheet.create({
 });
 
 export default function SeasonScreen() {
-	const [state, setState] = useState<SeasonState | null>(null);
-	const [busy, setBusy] = useState(false);
+	// Season state, the derived pass math, and the claim/wallow actions over the
+	// existing RPCs all live in useSeason. This screen keeps the rendering, the
+	// dialog copy + summary-text building, the sounds/haptics, and the tier-up
+	// celebration; it calls load() (the hook's refresh) at the original beats.
+	const {
+		state,
+		busy,
+		uid,
+		alignmentScore,
+		ticklesEarned,
+		refresh: load,
+		prestigeMode,
+		claimedSet,
+		tiersByNumber,
+		wallowClaimedSet,
+		wallowTiersByNumber,
+		nextReward,
+		claim,
+		claimAll,
+		wallow,
+	} = useSeason();
 	// Season-1 mode — the world_boss server flag (seeded by the held
 	// 20260704200000 migration) with the __DEV__ escape hatch so the local
 	// test account lives in the new season before the flag flips for anyone
@@ -938,7 +978,6 @@ export default function SeasonScreen() {
 	// FIRST visit to the Season-1 tab (AsyncStorage stamp, per-user) and
 	// re-opens any time from the hero's "Hear the tale again" chip.
 	const [introOpen, setIntroOpen] = useState(false);
-	const [uid, setUid] = useState<string | null>(null);
 	// Sounder state drives the walkthrough stepper (join → dig).
 	const crewHook = useCrew(s1);
 	// The onboarding funnel step — DERIVED from server/client state (never stored),
@@ -979,10 +1018,15 @@ export default function SeasonScreen() {
 	const seasonEnd = useSeasonEnd();
 	// Route the AUTO season-end recap through the global popup queue so it never
 	// co-presents with another native Modal (sounder nudge, finale verdict, etc.)
-	// — iOS renders two native Modals stacked/clipped. Priority 25 sits just after
-	// the finale verdict (20) and before the sounder nudge (35): verdict → recap →
-	// nudge. Manual re-open (recapOpen) and the __DEV__ preview bypass the queue.
-	const seasonEndSlot = usePopupSlot("seasonEnd", seasonEnd.show, 25);
+	// — iOS renders two native Modals stacked/clipped. Priority (seasonEnd, 25 —
+	// see constants/popupPriorities.ts) sits just after the finale verdict (20) and
+	// ahead of the quiet-fill nudges: verdict → recap → nudge. Manual re-open
+	// (recapOpen) and the __DEV__ preview bypass the queue.
+	const seasonEndSlot = usePopupSlot(
+		"seasonEnd",
+		seasonEnd.show,
+		POPUP_PRIORITIES.seasonEnd
+	);
 	// When the recap PRESENTS (auto path), latch the session ceremony gate so the
 	// achievements carousel + release notes hold for next login — flip-day
 	// stacking ceiling (SKILL.md 2026-07-11). Only the queued auto-reveal counts
@@ -1007,18 +1051,17 @@ export default function SeasonScreen() {
 	const [infoTopic, setInfoTopic] = useState<SeasonInfoTopic | null>(null);
 	// "How to earn XP" — the pass header's star button.
 	const [xpHelpOpen, setXpHelpOpen] = useState(false);
-	// Alignment placard moved here from the Me tab — the player's
-	// greedy↔generous score + its blessing/curse/regen modifiers.
-	const [alignmentScore, setAlignmentScore] = useState(0);
+	// Alignment placard moved here from the Me tab — the player's greedy↔generous
+	// score + its blessing/curse/regen modifiers. alignmentScore + ticklesEarned
+	// (this season's reclaimed count) ride the season fetch in useSeason.
 	const [alignmentExplainerOpen, setAlignmentExplainerOpen] = useState(false);
-	// This season's tickles reclaimed — the caller's own profiles.tickles_earned,
-	// read alongside alignment_score (same profile select, no extra round-trip).
-	// null until the profile lands so the YOUR TAKE tickle cell shows a quiet dash.
-	const [ticklesEarned, setTicklesEarned] = useState<number | null>(null);
 	// Controlled-open for the compressed HungerHero — the YOUR TAKE tickle cell
 	// opens the SAME hero sheet (the emotional home for "tickles reclaimed")
 	// instead of minting a second one.
 	const [heroOpen, setHeroOpen] = useState(false);
+	// The tickle breakdown receipt (spec 17) — your own count decomposed. Opened
+	// from the YOUR TAKE tickle cell; the hero stays reachable from the banner.
+	const [breakdownOpen, setBreakdownOpen] = useState(false);
 	// Reward dialog: set after a successful claim_tier_reward RPC so the
 	// user gets a beat to read what they got and (for wearables) jump
 	// straight to the wardrobe to equip it.
@@ -1042,6 +1085,26 @@ export default function SeasonScreen() {
 	// stacked-modal footgun), so the unboxing follows the summary, never beside it.
 	const pendingMysteryRef = useRef<MysteryBoxRevealPayload | null>(null);
 
+	// The season tab's direct-tap native Modals live outside the popup queue, so
+	// hold the queue while any is open — a foreground poll (schism/finale/
+	// achievements on AppState "active") must not present a queued popup over one
+	// (the #50152 wedge, issue #4). This covers the inline claim dialogs + the
+	// XP-help sheet, the Great Hunger intro's REPLAY path (introOpen — the launch
+	// path is queue-slotted in app/_layout.tsx and must NOT be held here), and the
+	// season-end recap's manual/dev bypass (recapOpen / devReward — the slot path,
+	// seasonEndSlot.visible, is excluded so we never drain our own presenting
+	// slot). The self-holding sheets (guide/info/explainer/hero, TickleBreakdown,
+	// mystery reveal) manage their own hold or slot and are intentionally omitted.
+	useUnmanagedModalHold(
+		introOpen ||
+			recapOpen ||
+			devReward != null ||
+			claimedReward != null ||
+			claimNotice != null ||
+			claimAllSummary != null ||
+			xpHelpOpen
+	);
+
 	// Tier-up celebration: fires the banner + fanfare whenever
 	// season_state's current_tier increases between loads. Initial
 	// mount records the starting tier without firing (don't celebrate
@@ -1054,32 +1117,8 @@ export default function SeasonScreen() {
 	const passSectionY = useRef(0);
 	const claimPlayer = useAudioPlayer(claimSound);
 
-	const load = useCallback(async () => {
-		const data = await rpc<SeasonState>("season_state");
-		if (data) setState(data);
-		// Alignment placard reads the player's score directly off the
-		// profile (season_state doesn't carry it). getSession is cached,
-		// so this adds no network round-trip beyond the profile select.
-		const { data: sess } = await supabase.auth.getSession();
-		const uid = sess.session?.user?.id;
-		setUid(uid ?? null);
-		if (uid) {
-			const { data: prof } = await supabase
-				.from("profiles")
-				.select("alignment_score, tickles_earned")
-				.eq("id", uid)
-				.single();
-			const p = prof as { alignment_score?: number; tickles_earned?: number } | null;
-			setAlignmentScore(p?.alignment_score ?? 0);
-			setTicklesEarned(p?.tickles_earned ?? 0);
-		}
-	}, []);
-
-	useFocusEffect(
-		useCallback(() => {
-			load();
-		}, [load])
-	);
+	// The season_state fetch + the profile read + focus refresh now live in
+	// useSeason (load === its refresh).
 
 	// Unlock the premium battle-pass track via Slop Club membership. The
 	// premium pass is a Slop Club perk, not a separate consumable — so we
@@ -1136,74 +1175,13 @@ export default function SeasonScreen() {
 		lastSeenTier.current = t;
 	}, [state?.current_tier]);
 
-	const claimedSet = useMemo(() => {
-		const s = new Set<string>();
-		(state?.claims ?? []).forEach((c) => s.add(`${c.tier}:${c.track}`));
-		return s;
-	}, [state?.claims]);
+	// claimedSet / tiersByNumber / wallowClaimedSet / wallowTiersByNumber /
+	// prestigeMode / nextReward are derived in useSeason (memoized calls into
+	// utils/seasonPass) and destructured above. The claim RPC round-trip lives in
+	// the hook too (claim / claimAll).
 
-	const tiersByNumber = useMemo(() => {
-		const map: Record<number, { free?: TierRow; premium?: TierRow }> = {};
-		(state?.tiers ?? []).forEach((t) => {
-			if (!map[t.tier]) map[t.tier] = {};
-			map[t.tier][t.track] = t;
-		});
-		return map;
-	}, [state?.tiers]);
-
-	// YOUR TAKE — the next unclaimed reward for the strip's pass cell. Picks the
-	// lowest tier whose reward on the SHOWN track is still unclaimed; the shown
-	// track is premium only for members, so a non-premium player is never shown
-	// a reward they can't claim (falls back to the free next). READY when the
-	// tier is already reached (0 XP away); otherwise XP-away = the cumulative XP
-	// to reach that tier minus what's earned.
-	const nextReward = useMemo<NextReward | null>(() => {
-		if (!state?.active || !state.season) return null;
-		const total = state.season.total_tiers;
-		const xpPer = state.season.xp_per_tier || 1;
-		const xp = state.xp ?? 0;
-		const curTier = state.current_tier ?? 1;
-		const track: "free" | "premium" = state.premium_unlocked ? "premium" : "free";
-		for (let t = 1; t <= total; t++) {
-			const reward = tiersByNumber[t]?.[track] ?? tiersByNumber[t]?.free;
-			if (!reward) continue;
-			// A tier's premium reward is gated for non-members — skip it so the
-			// strip never advertises something un-claimable, and fall to free.
-			const shown =
-				track === "premium" && tiersByNumber[t]?.premium
-					? tiersByNumber[t].premium!
-					: tiersByNumber[t]?.free ?? reward;
-			if (claimedSet.has(`${t}:${shown.track}`)) continue;
-			const ready = t <= curTier;
-			const xpAway = ready ? 0 : Math.max(0, (t - 1) * xpPer - xp);
-			return {
-				reward_type: shown.reward_type,
-				reward_value: shown.reward_value,
-				display_label: shown.display_label,
-				ready,
-				xpAway,
-			};
-		}
-		return null;
-	}, [state?.active, state?.season, state?.xp, state?.current_tier, state?.premium_unlocked, tiersByNumber, claimedSet]);
-
-	// One claim RPC round-trip. Returns the raw response (or null on transport
-	// failure) so both the single-claim path (which shows dialogs) and the
-	// claim-all path (which accumulates a summary) can share the same call —
-	// neither re-implements the RPC shape.
-	type ClaimResp =
-		| ({ ok: boolean; reason?: string; current_tier?: number } & MysteryBoxRevealPayload)
-		| null;
-	const claimOne = async (
-		tier: number,
-		track: "free" | "premium"
-	): Promise<ClaimResp> =>
-		rpc<{ ok: boolean; reason?: string; current_tier?: number } & MysteryBoxRevealPayload>(
-			"claim_tier_reward",
-			{ target_tier: tier, target_track: track }
-		);
-
-	// Success flourish shared by single + claim-all — chime + haptic.
+	// Success flourish shared by single + claim-all — chime + haptic. Stays in the
+	// screen: the audio player + haptics are view concerns.
 	const claimFlourish = () => {
 		try {
 			claimPlayer.seekTo(0);
@@ -1212,25 +1190,43 @@ export default function SeasonScreen() {
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 	};
 
-	const handleClaim = async (tier: number, track: "free" | "premium") => {
-		if (busy) return;
-		setBusy(true);
-		const r = await claimOne(tier, track);
-		setBusy(false);
-		if (!r) {
-			setClaimNotice({ title: "Couldn't claim", body: "Give it another tap in a moment." });
+	const handleWallow = async () => {
+		const r = await wallow();
+		if (!r) return;
+		if (!r.ok) {
+			const body =
+				r.reason === "claim_rewards_first"
+					? "Claim the rewards waiting on your pass first — they come with you."
+					: r.reason === "not_ready"
+						? "The mud needs a little more XP before you can Wallow."
+						: "The Wallow didn't settle. Give it another tap in a moment.";
+			setClaimNotice({ title: "Not quite yet", body });
 			return;
 		}
+		claimFlourish();
+		setClaimAllSummary({
+			title: `Wallow Rank ${r.wallow_count}`,
+			body: `Your aura burns brighter. Tickles now regenerate ${r.regen_percent}% faster — one every ${formatDurationCompact(r.regen_seconds)} at your current effects.`,
+		});
+		await load();
+	};
+
+	const handleClaim = async (tier: number, track: "free" | "premium") => {
+		const r = await claim(tier, track);
+		if (!r) return;
 		if (!r.ok) {
 			// In-world notice, not a system Alert — and a per-reason title so
-			// "already claimed" doesn't wear a wrong "Locked" hat.
-			const reason = r.reason ?? "";
+			// "already claimed" doesn't wear a wrong "Locked" hat. A transport miss
+			// arrives as reason "network" (not in the maps) → the same "Couldn't
+			// claim / give it another tap" fallback the raw-null path always showed.
+			const reason = r.reason;
 			const bodyMap: Record<string, string> = {
 				tier_locked: `Reach tier ${tier} first — you're at ${r.current_tier}.`,
 				premium_locked: "Join the Slop Club to claim the premium track.",
 				already_claimed: "You've already claimed this one.",
 				no_active_season: "No season is running right now.",
 				no_reward: "There's nothing to claim here.",
+				truffle_cap: "Your Golden Truffle pouch is full. Spend one at the Exchange, then come back.",
 			};
 			const titleMap: Record<string, string> = {
 				tier_locked: "Not yet",
@@ -1238,6 +1234,7 @@ export default function SeasonScreen() {
 				already_claimed: "Already yours",
 				no_active_season: "No season",
 				no_reward: "Nothing here",
+				truffle_cap: "Pouch full",
 			};
 			setClaimNotice({
 				title: titleMap[reason] ?? "Couldn't claim",
@@ -1257,33 +1254,32 @@ export default function SeasonScreen() {
 		if (r.granted_hat_id || r.fallback_snouts) {
 			setMysteryReveal(r);
 		} else {
-			const claimedRow = tiersByNumber[tier]?.[track];
+			const claimedRow = (prestigeMode ? wallowTiersByNumber : tiersByNumber)[tier]?.[track];
 			if (claimedRow) setClaimedReward(claimedRow);
 		}
 		load();
 	};
 
-	// The tiers that are READY to claim on the shown track — reached (t ≤ current)
-	// and not yet claimed and carrying a reward. The same predicate the track uses
-	// per-row, lifted so the "claim all ›" affordance can appear when ≥2 wait.
-	const shownTrack: "free" | "premium" = useMemo(() => {
-		const hasPremium = (state?.tiers ?? []).some((r) => r.track === "premium");
-		return hasPremium ? passTrack : "free";
-	}, [state?.tiers, passTrack]);
-	const readyTiers = useMemo(() => {
-		const cur = state?.current_tier ?? 1;
-		const total = state?.season?.total_tiers ?? 0;
-		// Premium track under glass for non-members — nothing is claimable there.
-		if (shownTrack === "premium" && !state?.premium_unlocked) return [];
-		const out: number[] = [];
-		for (let t = 1; t <= total; t++) {
-			if (t > cur) continue;
-			if (claimedSet.has(`${t}:${shownTrack}`)) continue;
-			if (!tiersByNumber[t]?.[shownTrack]) continue;
-			out.push(t);
-		}
-		return out;
-	}, [state?.current_tier, state?.season?.total_tiers, state?.premium_unlocked, shownTrack, claimedSet, tiersByNumber]);
+	// The shown track + the tiers READY to claim on it. Both depend on passTrack
+	// (which tab the player is browsing — view state), so they stay in the screen,
+	// composed from useSeason's state + the pure seasonPass selectors. readyTiers
+	// powers the "claim all ›" affordance and the sweep.
+	const shownTrack: "free" | "premium" = useMemo(
+		() => seasonPass.shownTrack(state, passTrack, prestigeMode),
+		[state, passTrack, prestigeMode]
+	);
+	const readyTiers = useMemo(
+		() =>
+			seasonPass.readyTiers(state, {
+				prestige: prestigeMode,
+				shownTrack,
+				tiersByNumber,
+				claimedSet,
+				wallowTiersByNumber,
+				wallowClaimedSet,
+			}),
+		[state, prestigeMode, shownTrack, tiersByNumber, claimedSet, wallowTiersByNumber, wallowClaimedSet]
+	);
 
 	// Claim every READY tier on the shown track in one tap. Claims sequentially
 	// (the RPC is per-tier), respects the single busy guard, and ends on ONE
@@ -1292,38 +1288,13 @@ export default function SeasonScreen() {
 	// (they carry a per-claim grant that deserves its unboxing), but their name is
 	// folded into the tally too.
 	const handleClaimAll = async () => {
-		if (busy) return;
-		const targets = [...readyTiers];
-		if (targets.length === 0) return;
-		setBusy(true);
-		let tickles = 0;
-		const items: string[] = [];
-		let lastMystery: MysteryBoxRevealPayload | null = null;
-		let failed = 0;
-		for (const t of targets) {
-			const row = tiersByNumber[t]?.[shownTrack];
-			const r = await claimOne(t, shownTrack);
-			if (!r || !r.ok) {
-				failed++;
-				continue;
-			}
-			if (r.granted_hat_id || r.fallback_snouts) {
-				lastMystery = r;
-			}
-			if (row) {
-				if (row.reward_type === "tickles") {
-					tickles += row.reward_value?.amount ?? row.reward_value?.count ?? 0;
-				} else {
-					items.push(row.display_label);
-				}
-			}
-		}
-		setBusy(false);
+		const tally = await claimAll(readyTiers, shownTrack);
+		if (!tally) return;
 		claimFlourish();
 		await load();
 		// Fold the tally into one line. Tickles read as a single "X tickles" clause;
 		// each named item is listed (capped so the beat stays a glance).
-		const claimedCount = targets.length - failed;
+		const { claimedCount, failed, tickles, items, lastMystery } = tally;
 		const parts: string[] = [];
 		if (tickles > 0) parts.push(`${tickles.toLocaleString("en-US")} tickles`);
 		const NAMED_CAP = 3;
@@ -1379,6 +1350,8 @@ export default function SeasonScreen() {
 	// Show the Free/Premium tabs only when the season actually seeds
 	// premium rewards; otherwise the free list stands alone (today's UI).
 	const hasPremiumTrack = (state.tiers ?? []).some((r) => r.track === "premium");
+	const activeTiersByNumber = prestigeMode ? wallowTiersByNumber : tiersByNumber;
+	const activeClaimedSet = prestigeMode ? wallowClaimedSet : claimedSet;
 
 	// YOUR TAKE strip → pass cell. READY? scroll to the pass so the claim button
 	// is on screen (the strip is a glance, the claim lives on the track). Not
@@ -1504,7 +1477,8 @@ export default function SeasonScreen() {
 					    "do this now" slot — the window strip's feeding rhythm above the
 					    dig CTA / join door; then the pass section; then the dig-off. The
 					    story + earnables shelf live in the header-icon modals, off the
-					    scroll. BountyBoard leaves the tab while it's feature-dark. ── */}
+					    scroll. The weekly BountyBoard sits above the pass section
+				    (self-hiding when there are no active bounties). ── */}
 					{s1 && (
 						<>
 							{/* The value banner — the compressed hero. Its full art +
@@ -1520,10 +1494,19 @@ export default function SeasonScreen() {
 								cta={crewHook.crew.crew ? feedingCta : undefined}
 							/>
 
+							{/* The tickle breakdown receipt for yourself (spec 17) — opened
+							    from the YOUR TAKE tickle cell. A native Modal; nothing else
+							    modal is up on the season tab, so it presents directly. */}
+							<TickleBreakdownSheet
+								userId={breakdownOpen ? uid : null}
+								fallbackTotal={ticklesEarned}
+								onClose={() => setBreakdownOpen(false)}
+							/>
+
 							<View style={{ marginTop: 8 }}>
 								<SectionHeader
 									style={{ marginBottom: 0 }}
-									kicker="your sounder"
+									kicker="your Sounder"
 									title={crewHook.crew.crew?.name ?? "Join a Sounder"}
 									right={
 										<Pressable
@@ -1592,6 +1575,7 @@ export default function SeasonScreen() {
 								ticklesEarned={ticklesEarned}
 								onOpenPass={openPassSection}
 								onOpenHero={() => setHeroOpen(true)}
+								onOpenBreakdown={uid ? () => setBreakdownOpen(true) : undefined}
 							/>
 
 							{/* The dig-off — the cumulative season board (headline) + the
@@ -1607,6 +1591,14 @@ export default function SeasonScreen() {
 						</>
 					)}
 
+					{/* Weekly bounty board — fetches my_weekly_bounties on focus
+					    and renders one card per active bounty. Self-gates: renders
+					    nothing when the player has no active bounties this week, so
+					    it's safe above the pass for every season. The Season tab's
+					    hanging-sign badge (bounty_ready_count in _layout) points here
+					    when a bounty is claimable. */}
+					<BountyBoard />
+
 					{/* Section header for the pass — the list gap (SPACE.sm) owns
 					    the seam above; no extra margin so the sections sit tight. */}
 					<View
@@ -1615,13 +1607,15 @@ export default function SeasonScreen() {
 						}}
 					>
 						<SectionHeader
-							kicker="season pass"
-							title={`Tier ${tier}/${season.total_tiers}`}
+							kicker={prestigeMode ? "prestige path" : "season pass"}
+							title={prestigeMode
+								? `Wallow Rank ${state.wallow_count ?? 0} · Tier ${tier}/${season.total_tiers}`
+								: `Tier ${tier}/${season.total_tiers}`}
 							right={(() => {
 								// Show the VIP marker + a CTA whenever the caller isn't a
 								// member. When IAP is live it's the real "Unlock"; when IAP
 								// is off (TestFlight) it's a disabled "Coming Soon".
-								const showVip = !premium;
+								const showVip = !premium && !prestigeMode;
 								// The recap icon only earns its place when there's
 								// actually a Founding Herd grant to look back on.
 								const showRecap = seasonEnd.reward != null;
@@ -1681,7 +1675,9 @@ export default function SeasonScreen() {
 					{/* Promise-before-ask: the XP chain in one line under the pass
 					    header (the full "how to earn XP" modal stays for detail). */}
 					<Text style={passProgressStyles.subtitle}>
-						earn XP by digging, tickling, and visiting
+						{prestigeMode
+							? `Rank ${state.wallow_count ?? 0} · ${state.wallow_regen_percent ?? 0}% faster · 1 tickle / ${formatDurationCompact(state.wallow_regen_seconds ?? 3600)} · five rewards`
+							: "earn XP by burying, digging, tickling, and visiting"}
 					</Text>
 
 					{/* XP progress toward the next tier. The pass-track stones
@@ -1705,12 +1701,29 @@ export default function SeasonScreen() {
 								</View>
 								<Text style={passProgressStyles.label}>
 									{atMax
-										? "Max tier reached ★"
+									? prestigeMode ? "Ready to raise your Wallow rank ★" : "Max tier reached ★"
 										: `${into} / ${xpPer} XP to Tier ${tier + 1}`}
 								</Text>
 							</View>
 						);
 					})()}
+
+					{/* Prestige converts the activity routes that already award pass XP
+					    (burying, social digs, Golden Truffle Patch digs) into permanent,
+					    visibly escalating regeneration power. */}
+					{state.can_wallow !== undefined && tier >= season.total_tiers && (
+						<WallowCard
+							count={state.wallow_count ?? 0}
+							ready={state.can_wallow ?? false}
+							powerLevel={state.wallow_power_level ?? 0}
+							regenPercent={state.wallow_regen_percent ?? 0}
+							nextRegenPercent={state.wallow_next_regen_percent ?? WALLOW_REGEN_STEP_PCT}
+							regenSeconds={state.wallow_regen_seconds ?? 3600}
+							nextRegenSeconds={state.wallow_next_regen_seconds ?? 2700}
+							busy={busy}
+							onWallow={handleWallow}
+						/>
+					)}
 
 					{/* "How to earn XP" lives in the header-star modal (XPHowToModal). */}
 
@@ -1720,14 +1733,14 @@ export default function SeasonScreen() {
 					    display-only stats pills above. Replaces the
 					    snake; matches the design's bottom-of-screen
 					    reference. */}
-					{hasPremiumTrack && (
+					{hasPremiumTrack && !prestigeMode && (
 						<PassTrackTabs
 							track={passTrack}
 							onChange={setPassTrack}
 							premiumUnlocked={premium}
 						/>
 					)}
-					{hasPremiumTrack && passTrack === "premium" && !premium && (
+					{hasPremiumTrack && !prestigeMode && passTrack === "premium" && !premium && (
 						<PremiumLockedBanner onUnlock={handleUnlockPremium} />
 					)}
 					{/* Ready-claim shortcut — surfaces at the TOP of the track whenever
@@ -1739,7 +1752,7 @@ export default function SeasonScreen() {
 							count={readyTiers.length}
 							label={
 								readyTiers.length === 1
-									? tiersByNumber[readyTiers[0]]?.[shownTrack]?.display_label
+									? activeTiersByNumber[readyTiers[0]]?.[shownTrack]?.display_label
 									: undefined
 							}
 							busy={busy}
@@ -1749,11 +1762,13 @@ export default function SeasonScreen() {
 					<VerticalListPassTrack
 						totalTiers={season.total_tiers}
 						currentTier={tier}
-						tiersByNumber={tiersByNumber}
-						claimedSet={claimedSet}
+						tiersByNumber={activeTiersByNumber}
+						claimedSet={activeClaimedSet}
 						onClaim={handleClaim}
-						track={hasPremiumTrack ? passTrack : "free"}
+						track={prestigeMode ? "free" : hasPremiumTrack ? passTrack : "free"}
 						premiumUnlocked={premium}
+						sparse={prestigeMode}
+						tierLabel={prestigeMode ? "WALLOW TIER" : "TIER"}
 					/>
 
 					{/* Alignment placard — SEASON 0 ONLY. Alignment isn't a thing
@@ -1891,7 +1906,7 @@ export default function SeasonScreen() {
 			    "maybe later" skip stamps it seen. */}
 			<SpotlightOverlay
 				activeId={joinSpotlight.show ? JOIN_SPOTLIGHT_TARGET_ID : null}
-				caption="your herd digs deeper — slip into a Sounder ›"
+				caption="join a Sounder — dig after a crewmate for up to 5 more rubs ›"
 				onTargetPress={joinSpotlight.dismiss}
 				onDismiss={joinSpotlight.dismiss}
 			/>
@@ -1957,16 +1972,13 @@ function ClaimRewardDialog({
 }) {
 	if (!reward) return null;
 	const { reward_type: type, reward_value: val, display_label } = reward;
-	const itemId =
-		val?.hat_id ?? val?.bg_id ?? val?.aura_id ?? val?.cape_id ?? null;
+	const itemId = rewardItemId(val);
 	// Wearables route to the wardrobe; tickle/title/boost/etc. show a
-	// close-only dialog since there's nothing to equip.
-	const wearableTypes = new Set([
-		"hat", "background", "aura", "cape", "scarf",
-		"mask", "necklace", "glasses", "bow", "held",
-	]);
+	// close-only dialog since there's nothing to equip. The id-coalesce +
+	// wearable set are the shared rewardArt primitives; the preview below keeps
+	// its own hero-sized rendering.
 	const isWearable =
-		wearableTypes.has(type) && !!itemId && !HIDDEN_CATEGORIES.has(type);
+		WEARABLE_REWARD_TYPES.has(type) && !!itemId && !HIDDEN_CATEGORIES.has(type);
 
 	const preview =
 		itemId && HAT_IMAGES[itemId] ? (
@@ -1978,6 +1990,12 @@ function ClaimRewardDialog({
 		) : type === "tickles" ? (
 			<View style={rewardStyles.heroFallback}>
 				<TickleIcon size={64} />
+			</View>
+		) : type === "golden_truffle" && HAT_IMAGES.golden_truffle ? (
+			<Image source={HAT_IMAGES.golden_truffle} style={rewardStyles.heroImage} resizeMode="contain" />
+		) : type === "snouts" ? (
+			<View style={rewardStyles.heroFallback}>
+				<Glyph name="pigface" size={64} />
 			</View>
 		) : (
 			<View style={rewardStyles.heroFallback}>
@@ -2000,7 +2018,7 @@ function ClaimRewardDialog({
 					<View style={rewardStyles.actions}>
 						{isWearable && (
 							<Button size="md" variant="primary" onPress={onShow}>
-								Show in wardrobe
+								Show in closet
 							</Button>
 						)}
 						<Pressable
@@ -2166,6 +2184,71 @@ const passProgressStyles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textAlign: "center",
 		marginTop: 3,
+	},
+});
+
+const wallowStyles = StyleSheet.create({
+	card: {
+		padding: SPACE.md + 2,
+		marginTop: SPACE.md,
+		marginBottom: SPACE.sm,
+		gap: SPACE.md,
+	},
+	topline: {
+		flexDirection: "row",
+		alignItems: "flex-start",
+		gap: SPACE.md,
+	},
+	mark: {
+		width: 48,
+		height: 48,
+		borderRadius: RADII.pill,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.sun,
+		alignItems: "center",
+		justifyContent: "center",
+		...SHADOW_SM,
+	},
+	copy: { flex: 1, minWidth: 0 },
+	kicker: { ...TYPE.kicker, color: WHIMSY.accent, letterSpacing: 1 },
+	title: { ...TYPE.sectionTitle, color: WHIMSY.ink, marginTop: 1 },
+	body: { ...TYPE.hand, color: WHIMSY.mute, marginTop: SPACE.xs },
+	rateCompare: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
+	},
+	rateStat: {
+		flex: 1,
+		minWidth: 0,
+		padding: SPACE.sm,
+		borderRadius: RADII.md,
+		backgroundColor: WHIMSY.paper,
+	},
+	rateStatNext: { backgroundColor: WHIMSY.sun },
+	rateKicker: { ...TYPE.kickerPill, color: WHIMSY.mute },
+	rateValue: { ...TYPE.numeral, color: WHIMSY.ink, marginTop: 2 },
+	rateSub: { ...TYPE.label, color: WHIMSY.accent, marginTop: 1 },
+	powerRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: SPACE.xs,
+	},
+	powerPip: {
+		width: 9,
+		height: 18,
+		borderRadius: RADII.pill,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+	},
+	powerPipOn: { backgroundColor: WHIMSY.sun },
+	standing: {
+		...TYPE.label,
+		color: WHIMSY.mute,
+		marginLeft: SPACE.xs,
 	},
 });
 
@@ -2342,10 +2425,11 @@ function XPHowToModal({
 }) {
 	const ROWS: { g: GlyphName; label: string; xp: string }[] = [
 		{ g: "pigface", label: "Tickle your pig", xp: "+3" },
-		{ g: "barn", label: "Visit a friend's barn", xp: "+5" },
+		{ g: "barn", label: "Tickle at a friend's barn", xp: "+2 / tap" },
+		{ g: "gem", label: "Dig the Truffle Patch", xp: "+20 / feeding" },
+		{ g: "sparkles", label: "Dig a friend's buried pot", xp: "+3 / day" },
+		{ g: "gift", label: "Bury snouts for visitors", xp: "+1 / 10 snouts" },
 		{ g: "sparkles", label: "Send a blessing", xp: "+5 / day" },
-		{ g: "gem", label: "Dig a truffle", xp: "+3 / day" },
-		{ g: "gift", label: "Bury a truffle", xp: "+5 / day" },
 		{ g: "ogre", label: "Send a curse", xp: "+2 / day" },
 	];
 	return (
@@ -2367,7 +2451,9 @@ function XPHowToModal({
 							<Text style={xpHowTo.xp}>{r.xp}</Text>
 						</View>
 					))}
-					<Text style={xpHowTo.foot}>{xpPer} XP = 1 tier</Text>
+					<Text style={xpHowTo.foot}>
+						{xpPer} XP = 1 tier · each Wallow makes tickles regenerate {WALLOW_REGEN_STEP_PCT}% faster
+					</Text>
 					<Button size="md" variant="primary" full onPress={onDismiss}>
 						Back to the season
 					</Button>

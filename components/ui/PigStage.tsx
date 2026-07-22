@@ -10,7 +10,15 @@
 // through both surfaces from one component.
 
 import React from "react";
-import { View, Image, Text, StyleSheet, Animated, Easing } from "react-native";
+import {
+	View,
+	Image,
+	Text,
+	StyleSheet,
+	Animated,
+	Easing,
+	AccessibilityInfo,
+} from "react-native";
 import { categoryIcon } from "../../constants/emojiArt";
 import {
 	HAT_IMAGES,
@@ -74,6 +82,12 @@ export interface PigStageProps {
 	// frame tracking + jump-complete handling.
 	onPigFrame?: (idx: number) => void;
 	onPigComplete?: () => void;
+	// Pin the sprite to `pigFrameIdx` (defaults to frame 0, the rest pose the
+	// placement studio tunes anchors against) instead of letting SpritePig
+	// auto-advance. The shop preview freezes so a pinned item never rides a
+	// moving pig; living mood surfaces (Barn/Closet/Visit) leave this false and
+	// sync pigFrameIdx via onPigFrame so the item tracks the breathing pig.
+	pigFrozen?: boolean;
 
 	// Equipment slots. `equipped` is the Head slot (hat / bow); glasses, mask,
 	// and neck are now their own anchor-based slots and render together.
@@ -92,6 +106,20 @@ export interface PigStageProps {
 	// Suppress accessory rendering (used by SwipeElement during the
 	// random-reaction beats where the pig hides what it's holding).
 	hideAccessory?: boolean;
+
+	// Dye Vat (member perk, client-only prototype). Map of itemId → tint hex.
+	// A worn cosmetic whose id is in this map renders flat-tinted to the member
+	// palette. Omit / empty in every ordinary context, so there's zero effect
+	// on the default render.
+	tints?: Record<string, string>;
+
+	// Earned prestige power. Separate from the cosmetic aura slot: a Wallow aura
+	// is gameplay standing and must remain visible regardless of what is equipped.
+	// Rendering caps at five increasingly intense stages with the regen bonus.
+	prestigeLevel?: number;
+	// Dev prototype control for previewing the Slop Club Rosie wash in memory.
+	// Ordinary callers omit this and keep the global skin-store behavior.
+	skinTintOverride?: string | null;
 }
 
 // Compute the per-frame, per-anchor overlay for one equipped item.
@@ -120,8 +148,11 @@ export function resolveSlot(
 	// rel spec, size + position it so its pivot point lands on the
 	// resolved pig anchor for the current frame.
 	const relSpec = relOverrides[itemId] || HAT_REL[itemId];
-	const isFullCanvasCat = category === "background" || category === "aura";
-	if (relSpec && imageSrc && !isFullCanvasCat) {
+	// Backgrounds always own the full stage. Auras may use a RelSpec so each
+	// aura can be sized/positioned in the Placement Studio; an untuned aura
+	// still falls through to the legacy category-sized box below.
+	const isFixedCanvasCat = category === "background";
+	if (relSpec && imageSrc && !isFixedCanvasCat) {
 		const anchorName: AnchorName =
 			relSpec.anchor ??
 			(category ? CATEGORY_ANCHORS[category] : undefined) ??
@@ -150,7 +181,7 @@ export function resolveSlot(
 	// /item-anchor tool fall back here.
 	const rawBase = prebaked
 		? null
-		: isFullCanvasCat
+		: category === "background" || category === "aura"
 			? (category && CATEGORY_OVERLAYS[category]) || DEFAULT_HAT_OVERLAY
 			: HAT_OVERLAYS[itemId] ||
 				(category && CATEGORY_OVERLAYS[category]) ||
@@ -198,6 +229,7 @@ function ItemOverlay({
 	zIndex = 5,
 	spin,
 	pulse,
+	tint,
 }: {
 	overlay: HatOverlay;
 	imageSrc: number | null;
@@ -207,6 +239,9 @@ function ItemOverlay({
 	// breathes out→in→out. An aura gets one or the other (chosen in PigStage).
 	spin?: Animated.AnimatedInterpolation<string>;
 	pulse?: Animated.AnimatedInterpolation<number>;
+	// Dye Vat: a member palette hex. When set, flat-tints the sticker via RN's
+	// Image tintColor (honest prototype — recolors the whole silhouette).
+	tint?: string;
 }) {
 	const { rotate, ...box } = overlay;
 	// No item PNG → fall back to the category icon art (auras/necklaces
@@ -229,13 +264,13 @@ function ItemOverlay({
 				animTransform.length ? (
 					<Animated.Image
 						source={placeholderSrc}
-						style={[styles.fillImage, { transform: animTransform }]}
+						style={[styles.fillImage, tint ? { tintColor: tint } : null, { transform: animTransform }]}
 						resizeMode="contain"
 					/>
 				) : (
 					<Image
 						source={placeholderSrc}
-						style={styles.fillImage}
+						style={[styles.fillImage, tint ? { tintColor: tint } : null]}
 						resizeMode="contain"
 					/>
 				)
@@ -272,6 +307,7 @@ export function PigStage({
 	pigFrameIdx = 0,
 	onPigFrame,
 	onPigComplete,
+	pigFrozen = false,
 	equipped,
 	equippedGlasses,
 	equippedMask,
@@ -281,7 +317,16 @@ export function PigStage({
 	equippedFlag,
 	relOverrides = {},
 	hideAccessory = false,
+	tints = {},
+	prestigeLevel = 0,
+	skinTintOverride,
 }: PigStageProps) {
+	// Regeneration power caps at rank two, but the earned aura keeps evolving
+	// through five visual stages so later ranks still look more legendary.
+	const prestigeVisualStage = Math.min(5, Math.max(0, Math.floor(prestigeLevel)));
+	// Dye Vat: resolve a worn item's chosen member palette (or undefined). Auras,
+	// backgrounds and flags are intentionally not dyeable.
+	const tintFor = (id: string | undefined) => (id ? tints[id] : undefined);
 	const main = resolveSlot(equipped, pigAnimation, pigFrameIdx, relOverrides);
 	const glassesSlot = resolveSlot(equippedGlasses, pigAnimation, pigFrameIdx, relOverrides);
 	const maskSlot = resolveSlot(equippedMask, pigAnimation, pigFrameIdx, relOverrides);
@@ -301,11 +346,17 @@ export function PigStage({
 	// around Rosie; everything else — soft glows, elemental, particle clouds —
 	// gently breathes out→in→out (a spinning flame/mist looks wrong). Native-driven
 	// (cheap); the loops only run while an aura is equipped.
-	const hasAura = !!auraSlot?.overlay;
+	const hasAura = !!auraSlot?.overlay || prestigeVisualStage > 0;
+	const [reduceMotion, setReduceMotion] = React.useState(false);
 	const auraSpinRaw = React.useRef(new Animated.Value(0)).current;
 	const auraPulseRaw = React.useRef(new Animated.Value(0)).current;
 	React.useEffect(() => {
-		if (!hasAura) return;
+		AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => {});
+		const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
+		return () => sub.remove();
+	}, []);
+	React.useEffect(() => {
+		if (!hasAura || reduceMotion) return;
 		const spin = Animated.loop(
 			Animated.timing(auraSpinRaw, {
 				toValue: 1,
@@ -336,7 +387,7 @@ export function PigStage({
 			spin.stop();
 			pulse.stop();
 		};
-	}, [auraSpinRaw, auraPulseRaw, hasAura]);
+	}, [auraSpinRaw, auraPulseRaw, hasAura, reduceMotion]);
 	const auraSpin = auraSpinRaw.interpolate({
 		inputRange: [0, 1],
 		outputRange: ["0deg", "360deg"],
@@ -350,6 +401,39 @@ export function PigStage({
 
 	return (
 		<View style={styles.stage}>
+			{prestigeVisualStage > 0 && (
+				<View style={styles.prestigeAuraLayer} pointerEvents="none">
+					<Animated.Image
+						source={HAT_IMAGES.gold_aura}
+						resizeMode="contain"
+						style={[
+							styles.prestigeAuraImage,
+							{
+								opacity: 0.18 + prestigeVisualStage * 0.1,
+								transform: [
+									{ rotate: prestigeVisualStage >= 4 && !reduceMotion ? auraSpin : "0deg" },
+									{ scale: Animated.multiply(auraPulse, 0.82 + prestigeVisualStage * 0.045) },
+								],
+							},
+						]}
+					/>
+					{prestigeVisualStage >= 2 && (
+						<Animated.Image
+							source={HAT_IMAGES.fire_aura}
+							resizeMode="contain"
+							style={[
+								styles.prestigeAuraImage,
+								{
+									opacity: 0.14 + (prestigeVisualStage - 1) * 0.1,
+									transform: [
+										{ scale: Animated.multiply(auraPulse, 0.78 + prestigeVisualStage * 0.05) },
+									],
+								},
+							]}
+						/>
+					)}
+				</View>
+			)}
 			{auraSlot?.overlay && (
 				// Aura overflows the stage (no clip) so a pulsing halo can breathe
 				// past the card edge without a hard box showing. The baked radial
@@ -372,6 +456,7 @@ export function PigStage({
 					imageSrc={main?.imageSrc ?? null}
 					category={mainCategory}
 					zIndex={3}
+					tint={tintFor(main?.itemId)}
 				/>
 			)}
 			<View style={[styles.pigWrap, { zIndex: 5 }]}>
@@ -381,6 +466,8 @@ export function PigStage({
 					onFrame={onPigFrame}
 					onComplete={onPigComplete}
 					customFrames={main?.prebaked ?? undefined}
+					frameIdx={pigFrozen ? pigFrameIdx : undefined}
+					skinTintOverride={skinTintOverride}
 				/>
 			</View>
 			{showMainOverlay && !mainIsBehind && (
@@ -389,6 +476,7 @@ export function PigStage({
 					imageSrc={main?.imageSrc ?? null}
 					category={mainCategory}
 					zIndex={10}
+					tint={tintFor(main?.itemId)}
 				/>
 			)}
 			{neckSlot?.overlay && !hideAccessory && (
@@ -397,6 +485,7 @@ export function PigStage({
 					imageSrc={neckSlot.imageSrc}
 					category={neckSlot.category}
 					zIndex={8}
+					tint={tintFor(neckSlot.itemId)}
 				/>
 			)}
 			{maskSlot?.overlay && !hideAccessory && (
@@ -405,6 +494,7 @@ export function PigStage({
 					imageSrc={maskSlot.imageSrc}
 					category={maskSlot.category}
 					zIndex={9}
+					tint={tintFor(maskSlot.itemId)}
 				/>
 			)}
 			{glassesSlot?.overlay && !hideAccessory && (
@@ -413,6 +503,7 @@ export function PigStage({
 					imageSrc={glassesSlot.imageSrc}
 					category={glassesSlot.category}
 					zIndex={10}
+					tint={tintFor(glassesSlot.itemId)}
 				/>
 			)}
 			{heldSlot?.overlay && !hideAccessory && (
@@ -421,6 +512,7 @@ export function PigStage({
 					imageSrc={heldSlot.imageSrc}
 					category={heldSlot.category}
 					zIndex={11}
+					tint={tintFor(heldSlot.itemId)}
 				/>
 			)}
 			{flagSlot?.overlay && !hideAccessory && (
@@ -461,6 +553,22 @@ const styles = StyleSheet.create({
 		height: PIG_CANVAS,
 		overflow: "visible",
 		zIndex: 2,
+	},
+	prestigeAuraLayer: {
+		position: "absolute",
+		left: -15,
+		top: -15,
+		width: PIG_CANVAS + 30,
+		height: PIG_CANVAS + 30,
+		overflow: "visible",
+		zIndex: 1,
+	},
+	prestigeAuraImage: {
+		position: "absolute",
+		left: 0,
+		top: 0,
+		width: "100%",
+		height: "100%",
 	},
 	overlayBox: {
 		position: "absolute",

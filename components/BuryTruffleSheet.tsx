@@ -3,29 +3,42 @@
 // reads on ANY equipped background, unlike the old inline band. Opened from the
 // truffle spot by the pig's feet. On a successful bury it fires onBuried (the
 // parent plays the mound's dig animation + refreshes) and closes itself.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { View, Text, Pressable, Modal, Animated, Easing, StyleSheet, Dimensions } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Glyph, IconText } from "./ui/Glyph";
 import { WHIMSY, SHADOW_SM, MODAL_BACKDROP_BG, RADII, SPACE, TYPE, PAGE_PAD } from "@/constants/theme";
+import { maxBuryStake, MIN_STAKE } from "@/utils/burySnouts";
+import { usePotStake } from "@/hooks/usePotStake";
+import { useUnmanagedModalHold } from "./ui/PopupQueue";
 
-const STAKES = [10, 20, 50];
+// The two fixed chips; the third chip is "Max" (fills to the 50-snout pot cap,
+// bounded by the host's balance — resolved live in maxBuryStake).
+const FIXED_STAKES = [10, 20];
 
 interface Props {
 	open: boolean;
+	balance: number; // live snout balance (profiles.counter) — bounds the "Max" chip
 	onClose: () => void;
 	onBuried: () => void; // fired after a fresh successful bury (parent animates + refreshes)
 	onResynced?: () => void; // a truffle was already down — just resync, no celebration
 }
 
-export function BuryTruffleSheet({ open, onClose, onBuried, onResynced }: Props) {
+export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced }: Props) {
+	// Unmanaged native Modal (direct-tap, outside the popup queue): hold the queue
+	// while open so a foreground poll (schism/finale/achievements on AppState
+	// "active") can't present a queued popup over it — the #50152 wedge (issue #4).
+	useUnmanagedModalHold(open);
 	const screenH = useRef(Dimensions.get("window").height).current;
 	const anim = useRef(new Animated.Value(0)).current;
-	const [stake, setStake] = useState(20);
-	const [busy, setBusy] = useState(false);
-	const [note, setNote] = useState<string | null>(null);
+	// A chip is either a fixed amount or "max" (resolves to a concrete number
+	// against the live balance) — the confirm button always restates the number.
+	// The shared stake machine: floor = server min, ceiling = live balance, Max
+	// fills to the pot cap bounded by balance (maxBuryStake).
+	const { sel, select, busy, setBusy, note, setNote, stake, maxOk, canSubmit: canBury } =
+		usePotStake({ defaultSel: 20, maxStake: maxBuryStake(balance), floor: MIN_STAKE, ceiling: balance });
 
 	useEffect(() => {
 		if (!open) return;
@@ -55,6 +68,11 @@ export function BuryTruffleSheet({ open, onClose, onBuried, onResynced }: Props)
 			onClose();
 		} else if (r.reason === "too_poor") {
 			setNote(`Need ${stake} snouts to bury this truffle.`);
+		} else if (r.reason === "bad_amount") {
+			// A new client can outrun the server: the range-relaxing migration
+			// isn't pushed yet, so a Max amount off the old {10,20,50} whitelist
+			// bounces. Nudge back to a set stake — ship order stays harmless.
+			setNote("Couldn't bury that amount — pick a set stake for now.");
 		} else if (r.reason === "reclaim_cooldown") {
 			// Host dug up their own truffle — 12h settle before the next bury
 			// (server-enforced; see 20260738400000_truffle_reclaim_cooldown).
@@ -96,30 +114,39 @@ export function BuryTruffleSheet({ open, onClose, onBuried, onResynced }: Props)
 
 					<Text style={styles.label}>Stake</Text>
 					<View style={styles.stakes}>
-						{STAKES.map((s) => {
-							const on = s === stake;
+						{FIXED_STAKES.map((s) => {
+							const on = sel === s;
+							const tooPoor = balance < s; // can't afford this chip
 							return (
 								<Pressable
 									key={s}
-									onPress={() => {
-										setStake(s);
-										setNote(null); // drop any stale "need N snouts" note
-									}}
-									style={[styles.chip, on && styles.chipOn]}
+									disabled={tooPoor}
+									onPress={() => select(s)} // select clears any stale "need N snouts" note
+									style={[styles.chip, on && styles.chipOn, tooPoor && styles.chipOff]}
 								>
 									<SnoutCoin size={16} />
-									<Text style={[styles.chipText, on && styles.chipTextOn]}>{s}</Text>
+									<Text style={[styles.chipText, on && styles.chipTextOn, tooPoor && styles.chipTextOff]}>{s}</Text>
 								</Pressable>
 							);
 						})}
+						{/* Max — fills to the 50-snout pot cap, bounded by balance; dims
+						    below the server min stake. */}
+						<Pressable
+							disabled={!maxOk}
+							onPress={() => select("max")}
+							style={[styles.chip, sel === "max" && styles.chipOn, !maxOk && styles.chipOff]}
+						>
+							<SnoutCoin size={16} />
+							<Text style={[styles.chipText, sel === "max" && styles.chipTextOn, !maxOk && styles.chipTextOff]}>Max</Text>
+						</Pressable>
 					</View>
 
 					{note && <Text style={styles.note}>{note}</Text>}
 
 					<Pressable
 						onPress={bury}
-						disabled={busy}
-						style={({ pressed }) => [styles.buryBtn, pressed && { opacity: 0.9 }]}
+						disabled={busy || !canBury}
+						style={({ pressed }) => [styles.buryBtn, !canBury && styles.buryBtnOff, pressed && { opacity: 0.9 }]}
 					>
 						<Text style={styles.buryText}>
 							{busy ? "burying…" : `Bury for visitors · ${stake} snouts`}
@@ -167,8 +194,10 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.cream,
 	},
 	chipOn: { backgroundColor: WHIMSY.sun },
+	chipOff: { opacity: 0.4, borderColor: WHIMSY.muteSoft }, // unaffordable / below min
 	chipText: { ...TYPE.numeral, color: WHIMSY.mute },
 	chipTextOn: { color: INK },
+	chipTextOff: { color: WHIMSY.muteSoft },
 
 	note: { ...TYPE.hand, color: WHIMSY.accent, textAlign: "center", marginTop: SPACE.md },
 
@@ -182,5 +211,6 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		...sticker,
 	},
+	buryBtnOff: { opacity: 0.45 }, // no valid stake selected (too poor / below min)
 	buryText: { ...TYPE.numeral, color: INK },
 });

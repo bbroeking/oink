@@ -20,53 +20,42 @@ import { useState } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { Sticker } from "../ui/Sticker";
 import { Icon } from "../ui/Icon";
+import { Glyph } from "../ui/Glyph";
 import { TickleIcon } from "../ui/SnoutCoin";
 import { HAT_IMAGES } from "@/constants/hats";
+import { resolveRewardArt } from "@/utils/rewardArt";
 import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
 import { useTruffles } from "@/hooks/useTruffles";
 import { TruffleExchangeSheet } from "../mudwar/TruffleExchangeSheet";
+// The next-reward preview shape lives in utils/seasonPass (the single owner of
+// the season-pass types); re-exported so existing importers of NextReward from
+// this component keep working.
+import type { NextReward } from "@/utils/seasonPass";
+export type { NextReward };
 
-// The shape season.tsx passes down for the next-reward preview. Mirrors the
-// TierRow fields StoneThumb reads — kept structural so the strip needn't import
-// season.tsx's private TierRow type.
-export interface NextReward {
-	reward_type: string;
-	reward_value: {
-		hat_id?: string;
-		bg_id?: string;
-		aura_id?: string;
-		cape_id?: string;
-	} | null;
-	display_label: string;
-	/** true when the tier is already reached — the reward is claimable now. */
-	ready: boolean;
-	/** XP still to earn before the reward unlocks (0 when ready). */
-	xpAway: number;
-}
-
-// Reward-art resolver — the SAME rules as season.tsx's StoneThumb, so the
-// strip's preview art matches the pass-track stones exactly. Wearables resolve
-// to their HAT_IMAGES sprite; tickles to the coin; everything else to a star.
-const HAT_ITEM_TYPES = new Set([
-	"hat", "background", "aura", "cape", "scarf",
-	"mask", "necklace", "glasses", "bow", "held",
-]);
-
+// Reward-art preview — resolution lives in the shared utils/rewardArt resolver,
+// so the strip's picture can never drift from the pass-track stones. Wearables
+// resolve to their HAT_IMAGES sprite; tickles to the coin; everything else the
+// resolver draws with a fancier glyph collapses here to the strip's single star.
 function RewardArt({ reward, size }: { reward: NextReward; size: number }) {
-	const { reward_type: type, reward_value: val } = reward;
-	const itemId = val?.hat_id ?? val?.bg_id ?? val?.aura_id ?? val?.cape_id ?? null;
-
-	if (type === "tickles") return <TickleIcon size={size} />;
-	if (HAT_ITEM_TYPES.has(type) && itemId && HAT_IMAGES[itemId]) {
-		return (
-			<Image
-				source={HAT_IMAGES[itemId]}
-				style={{ width: size, height: size }}
-				resizeMode="contain"
-			/>
-		);
+	const art = resolveRewardArt(reward);
+	switch (art.kind) {
+		case "tickles":
+			return <TickleIcon size={size} />;
+		case "snouts":
+			return <Glyph name="pigface" size={size} />;
+		case "goldenTruffle":
+		case "image":
+			return (
+				<Image
+					source={art.source}
+					style={{ width: size, height: size }}
+					resizeMode="contain"
+				/>
+			);
+		default:
+			return <Icon name="star" size={Math.round(size * 0.7)} filled color={WHIMSY.bless} strokeWidth={1.6} />;
 	}
-	return <Icon name="star" size={Math.round(size * 0.7)} filled color={WHIMSY.bless} strokeWidth={1.6} />;
 }
 
 export function YourTakeStrip({
@@ -77,6 +66,7 @@ export function YourTakeStrip({
 	ticklesEarned,
 	onOpenPass,
 	onOpenHero,
+	onOpenBreakdown,
 }: {
 	/** The next unclaimed FREE-track (or claimable) reward, or null once every tier is claimed. */
 	nextReward: NextReward | null;
@@ -90,6 +80,10 @@ export function YourTakeStrip({
 	onOpenPass: () => void;
 	/** Open the Great Hunger hero sheet — the tickle count's emotional home. */
 	onOpenHero: () => void;
+	/** Open the tickle breakdown receipt for yourself (spec 17). When provided,
+	    the TICKLES cell opens the receipt; the hero stays reachable from the
+	    Hunger banner. Omitted → the cell falls back to the hero (unchanged). */
+	onOpenBreakdown?: () => void;
 }) {
 	// The pouch reads its own balance off the Exchange rotation, exactly like
 	// SounderCard — one cheap STABLE read, feature-dark to a 0 pouch until the
@@ -173,12 +167,17 @@ export function YourTakeStrip({
 
 				<View style={styles.divider} />
 
-				{/* 3 — TICKLES: this season's reclaimed count → the hero sheet. */}
+				{/* 3 — TICKLES: this season's reclaimed count → the breakdown receipt
+				    (spec 17), or the hero sheet when no receipt handler is wired. */}
 				<Pressable
-					onPress={onOpenHero}
+					onPress={onOpenBreakdown ?? onOpenHero}
 					style={({ pressed }) => [styles.cell, pressed && { opacity: 0.6 }]}
 					accessibilityRole="button"
-					accessibilityLabel="Your tickles reclaimed this season"
+					accessibilityLabel={
+						onOpenBreakdown
+							? "How you earned your tickles this season"
+							: "Your tickles reclaimed this season"
+					}
 				>
 					<View style={styles.tickleHead}>
 						<TickleIcon size={24} />

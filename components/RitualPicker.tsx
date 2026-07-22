@@ -19,7 +19,7 @@ import { rpcAction } from "@/utils/rpc";
 import { RitualIconWell } from "./ui/RitualIconWell";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { dailyRitual, type RitualMode } from "../utils/rituals";
-import { formatHM } from "../utils/time";
+import { formatHM } from "../utils/duration";
 import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
 
 // Rituals reset at UTC midnight (the daily cap keys on the UTC date). "7h 23m"

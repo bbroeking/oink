@@ -13,7 +13,7 @@
 
 import { PATCH_COLS, PATCH_ROWS, STIR_RUB, STIR_SHOVE } from "@/constants/dig";
 import { feedingSchedule, type FeedingSchedule } from "@/utils/feedingConfig";
-import { formatHM } from "@/utils/time";
+import { formatHM } from "@/utils/duration";
 
 export type Find =
 	| "truffle_l"
@@ -405,6 +405,27 @@ export function nextOpenCountdown(nowMs: number = Date.now()): string {
 	return formatLeft(Math.max(0, nextOpenAtMs(nowMs) - nowMs));
 }
 
+/**
+ * The one phase view every Feeding-clock consumer reads — the phase PAIRED with
+ * its own honest countdown, so a wrong pairing is unrepresentable. `countdown`
+ * is the phase's own number: OPEN → time until it CLOSES; GUARDED → time until
+ * it next OPENS. The CTA renders this number directly; the banner reads the same
+ * view (its guarded "opens in" line IS this guarded countdown), so the two
+ * surfaces can never disagree on the phase or the number. Pure; nowMs pins it.
+ */
+export interface FeedingPhaseView {
+	open: boolean;
+	countdown: string;
+}
+
+export function feedingPhaseView(nowMs: number = Date.now()): FeedingPhaseView {
+	const open = patchPhaseOpen(nowMs);
+	return {
+		open,
+		countdown: open ? phaseClosesCountdown(nowMs) : nextOpenCountdown(nowMs),
+	};
+}
+
 // ── Feeding-CTA state derivation (pure — pins the stale-dug fix) ─────────────
 //
 // THE ROLLOVER BUG (founder report): "dug this feeding — opens in 2h" was still
@@ -428,9 +449,10 @@ export function dugInCurrentWindow(
 
 /**
  * The banner footer's status line for a phase × dug pair — or null when the
- * state is the live "dig this feeding ›" button (open + not dug). The countdown
- * is derived HERE from the phase: guarded states get the next-open countdown
- * (the only honest "opens in" number); open + dug carries no number at all —
+ * state is the live "dig this feeding ›" button (open + not dug). A thin
+ * projection of feedingPhaseView + the dug flag: the guarded "opens in" number
+ * is the SHARED phase view's guarded countdown (the only honest "opens in"), so
+ * it can never disagree with the CTA; open + dug carries no number at all —
  * a closes-in time can never ride under "opens in" copy.
  */
 export function bannerDigStatus(
@@ -440,21 +462,112 @@ export function bannerDigStatus(
 ): string | null {
 	if (phaseOpen && !dug) return null; // the button state — no status line
 	if (phaseOpen) return "dug this feeding — back next feeding ★";
+	// Guarded: read the opens-in number off the shared view (identical to the
+	// CTA's countdown while guarded), so both surfaces show the same number.
+	const opensIn = feedingPhaseView(nowMs).countdown;
 	return dug
-		? `dug this feeding — opens in ${nextOpenCountdown(nowMs)}`
-		: `he's guarding — opens in ${nextOpenCountdown(nowMs)}`;
+		? `dug this feeding — opens in ${opensIn}`
+		: `he's guarding — opens in ${opensIn}`;
 }
 
-// Practice-mode seed (migration not applied yet): any deterministic int in
-// [1, 2147483646] — FNV-1a over war+window. Does NOT need to match hashtext.
-export function practiceSeed(warId: string, win: number): number {
-	const s = `${warId}:${win}`;
+// Deterministic client seed kernel — FNV-1a folded into the Park–Miller range
+// [1, 2147483646]. This is the CLIENT'S own derivation and does NOT need to
+// match Postgres hashtext (the server hands the authoritative seed back through
+// open_rooting; a locally-predicted board always loses to the server board —
+// see hooks/useRooting, which stores r.seed, never a local guess).
+function fnv1aSeed(s: string): number {
 	let h = 2166136261;
 	for (let i = 0; i < s.length; i++) {
 		h ^= s.charCodeAt(i);
 		h = (h * 16777619) >>> 0;
 	}
 	return (h % 2147483646) + 1;
+}
+
+// Practice-mode seed (no server row): any deterministic int in [1, 2147483646] —
+// FNV-1a over war+window. Does NOT need to match hashtext. Practice stays fully
+// per-warId (it is NEVER crew-shared) — the seeded-crew unlock is a real-dig
+// property, so practice boards are unchanged by wedge 5a.
+export function practiceSeed(warId: string, win: number): number {
+	return fnv1aSeed(`${warId}:${win}`);
+}
+
+// SEEDED CREW BOARDS (wedge 5a) — the client mirror of the server derivation
+// f(window, crew_id | user_id) (migration 20260748000000). Same shape as the
+// server: identical for every pig in the SAME (window, group), different across
+// groups, so a client that wants to PREDICT the herd's shared patch (a preview
+// before open_rooting returns, or an un-pushed server) gets a board comparable
+// in-herd. `groupId` is the crew id for a Sounder pig, or the user id for a
+// solo/crewless pig — exactly the server's COALESCE(my_crew, caller_id). Byte
+// parity with hashtext is NOT required (same posture as practiceSeed): whenever
+// the server answers, open_rooting's seed wins. The string mirrors the server's
+// `win::text || ':' || group::text` ordering.
+export function crewBoardSeed(win: number, groupId: string): number {
+	return fnv1aSeed(`${win}:${groupId}`);
+}
+
+// ── Dig physics — the splash kernel + cluster queries ───────────────────────
+//
+// ONE splash kernel owns the dig math so the live component and the depth-tuning
+// simulation can never drift apart. A dig takes depth off the target tile and
+// HALF as much off each orthogonal neighbour (edge tiles simply have fewer
+// neighbours). The two dig kinds differ only in force:
+//   rub   — quiet: −1 target, −0.5 orthogonal neighbours;
+//   shove — loud:  −2 target, −1   orthogonal neighbours.
+// Depth is clamped at 0 (you can't un-bury mud). Mutates `layers` IN PLACE —
+// callers pass a fresh copy when they need the before-state (the component
+// diffs before/after to pop newly-cleared tiles). This is the SAME physics
+// simulateGreedyClear probes for clearability, so the tuning test pins the real
+// kernel, not a copy of it.
+const SPLASH: Record<"rub" | "shove", { target: number; neighbor: number }> = {
+	rub: { target: 1, neighbor: 0.5 },
+	shove: { target: 2, neighbor: 1 },
+};
+
+export function applySplash(
+	layers: number[],
+	idx: number,
+	kind: "rub" | "shove"
+): void {
+	if (idx < 0 || idx >= layers.length) return;
+	const { target, neighbor } = SPLASH[kind];
+	const dig = (i: number, amt: number) => {
+		if (i >= 0 && i < layers.length) layers[i] = Math.max(0, layers[i] - amt);
+	};
+	const r = Math.floor(idx / PATCH_COLS);
+	const c = idx % PATCH_COLS;
+	dig(idx, target);
+	if (r > 0) dig(idx - PATCH_COLS, neighbor);
+	if (r < PATCH_ROWS - 1) dig(idx + PATCH_COLS, neighbor);
+	if (c > 0) dig(idx - 1, neighbor);
+	if (c < PATCH_COLS - 1) dig(idx + 1, neighbor);
+}
+
+// ── Cluster state queries (READ-ONLY over the parity-locked board + depths) ──
+//
+// A "find" is one or more tiles: a truffle is a 2–3-tile CLUSTER (board.truffleL
+// / board.truffleD), the shimmer/unique/junk are single cells. These name the
+// two cluster states every reader kept re-deriving from the raw index arrays, so
+// the component, the miss-carry query and the tests all ask the same question.
+
+/** True when every cell of a (non-empty) cluster is cleared — the completion
+ *  test that fires a truffle collect. An empty cluster is never "revealed". */
+export function clusterRevealed(cluster: number[], layers: number[]): boolean {
+	return cluster.length > 0 && cluster.every((i) => layers[i] <= 0);
+}
+
+/** True when AT LEAST ONE cell of a cluster is cleared — the partial-reveal test
+ *  that marks a find as "the one that got away" when it never fully lands. */
+export function clusterTouched(cluster: number[], layers: number[]): boolean {
+	return cluster.some((i) => layers[i] <= 0);
+}
+
+/** The collapse representative of a cluster: its lowest tile index (row-major),
+ *  or -1 when empty. A multi-tile truffle collapses to this single anchor for the
+ *  spoiler-light share grid, so a cluster reads as ONE find. Companion to
+ *  clusterBox (which gives the render centroid). */
+export function clusterAnchor(cluster: number[]): number {
+	return cluster.length === 0 ? -1 : Math.min(...cluster);
 }
 
 // ── Stir accounting (pure, for tests + the component) ───────────────────────
@@ -579,25 +692,19 @@ export function partiallyRevealedFinds(
 	const got = new Set<Find>(collected);
 	const out: ClaimableFind[] = [];
 	const seen = new Set<ClaimableFind>();
-	// Truffle clusters: partial = any cluster cell cleared, cluster not collected.
-	const clusters: [ClaimableFind, number[]][] = [
+	// Every carry-eligible find as (kind, its tiles): the two truffle clusters and
+	// the unique treated as a single-cell "cluster". Partial = any cell cleared
+	// (clusterTouched), the find never collected. Order-stable, deduped.
+	const carriers: [ClaimableFind, number[]][] = [
 		["truffle_l", board.truffleL],
 		["truffle_d", board.truffleD],
+		["unique", board.unique ? [board.unique.idx] : []],
 	];
-	for (const [kind, cluster] of clusters) {
-		if (cluster.length === 0 || got.has(kind) || seen.has(kind)) continue;
-		if (cluster.some((i) => layers[i] <= 0)) {
+	for (const [kind, cells] of carriers) {
+		if (cells.length === 0 || got.has(kind) || seen.has(kind)) continue;
+		if (clusterTouched(cells, layers)) {
 			seen.add(kind);
 			out.push(kind);
-		}
-	}
-	// The unique relic: a single cell — partial reveal here means the cell was
-	// cleared but the relic never collected (walked away mid-dig).
-	if (board.unique && !got.has("unique") && !seen.has("unique")) {
-		const idx = board.unique.idx;
-		if (layers[idx] <= 0) {
-			seen.add("unique");
-			out.push("unique");
 		}
 	}
 	return out;
@@ -616,12 +723,12 @@ export function gildedSilhouetteDepth(gild: number | null | undefined): number {
 
 // ── Board clearability simulation (pure — pins the depth tuning) ─────────────
 //
-// A greedy digger that always RUBS the highest-remaining-depth tile (a rub takes
-// 1 depth off the target + 0.5 off each orthogonal neighbor, matching the
-// component's splash) until the stir budget is spent. Returns the fraction of
-// total mud depth cleared. This is the "is a board ~60–70% clearable, not ~100%"
-// probe the tuning test asserts against — so a future depth change can't silently
-// make boards fully clearable again.
+// A greedy digger that always RUBS the highest-remaining-depth tile until the
+// stir budget is spent, then reports the fraction of total mud depth cleared.
+// It rubs through the SHARED applySplash kernel — the exact physics the live
+// component digs with — so this "is a board ~60–70% clearable, not ~100%" probe
+// pins the real dig math, and a future depth change can't silently make boards
+// fully clearable again.
 export function simulateGreedyClear(
 	seed: number,
 	stirBudget: number,
@@ -629,9 +736,6 @@ export function simulateGreedyClear(
 ): number {
 	const layers = generateBoard(seed).layers.map((d) => d); // fresh copy
 	const total = layers.reduce((a, d) => a + d, 0);
-	const splash = (i: number, amt: number) => {
-		if (i >= 0 && i < layers.length) layers[i] = Math.max(0, layers[i] - amt);
-	};
 	let spent = 0;
 	while (spent + rubCost <= stirBudget) {
 		// Pick the deepest still-buried tile (ties broken by lowest index).
@@ -644,13 +748,7 @@ export function simulateGreedyClear(
 			}
 		}
 		if (best < 0) break; // board fully cleared before budget ran out
-		const r = Math.floor(best / PATCH_COLS);
-		const c = best % PATCH_COLS;
-		splash(best, 1);
-		if (r > 0) splash(best - PATCH_COLS, 0.5);
-		if (r < PATCH_ROWS - 1) splash(best + PATCH_COLS, 0.5);
-		if (c > 0) splash(best - 1, 0.5);
-		if (c < PATCH_COLS - 1) splash(best + 1, 0.5);
+		applySplash(layers, best, "rub");
 		spent += rubCost;
 	}
 	const remaining = layers.reduce((a, d) => a + d, 0);

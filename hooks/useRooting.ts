@@ -12,7 +12,7 @@
 // identical board locally from a deterministic client seed and mark the session
 // { practice: true } so the UI can badge it honestly and mint nothing.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { rpcAction, RpcResult } from "@/utils/rpc";
 import { supabase } from "@/utils/supabase";
@@ -21,13 +21,19 @@ import { fetchFeedingState } from "@/utils/dig";
 import {
 	ClaimableFind,
 	claimableFinds,
-	dugInCurrentWindow,
 	generateBoard,
 	normalizePouch,
 	practiceSeed,
 	windowIndex,
 	windowEndsAtMs,
 } from "@/utils/rooting";
+import {
+	digSessionReducer,
+	initialDigSessionState,
+	isDugThisWindow,
+	dugMirrorKey,
+	shouldReconcile,
+} from "@/utils/digSession";
 // A crewmate who has already dug this feeding — the feeding-state read module
 // owns this shape; re-exported here so existing `import { CrewDug } from
 // "@/hooks/useRooting"` call sites (if any) keep resolving.
@@ -70,9 +76,18 @@ export interface RootingOutcome {
 	// per-dig "Joy reclaimed" number, distinct from the global `drain` total.
 	credited: number;
 	truffles: number;
-	// A crewmate dug this feeding too (echo_names non-empty).
+	// You minted an extra "echo" truffle because a crewmate dug earlier this
+	// feeding. Server-authoritative (`r.echo` = the function's my_echo) when the
+	// migration is pushed; falls back to echo_names being non-empty for an
+	// un-pushed server. Note echo can be TRUE with an empty echoNames — the +1
+	// only needs a crewmate to have SUBMITTED, while echoNames lists only those
+	// who also MINTED — so the receipt copy handles the names-empty case.
 	echo: boolean;
 	echoNames?: string[];
+	// A blessing rode with this dig and minted +1 (blessed_dig). Server-
+	// authoritative (`r.blessed`) when pushed; falls back to the session's
+	// open-time blessing so the line still shows against an un-pushed server.
+	blessed: boolean;
 	milestone?: { threshold: number; title_id: string } | null;
 	// The unique relic this dig surfaced (null unless one was carried + claimed).
 	// `new` lights a fresh Burrow Book entry; else it's a dupe with found_count.
@@ -108,6 +123,11 @@ type SubmitPayload = {
 	credited: string[];
 	truffles: number;
 	echo_names: string[];
+	// Added by 20260755000000_receipt_mint_breakdown — the function's own
+	// my_echo / blessed flags, so the receipt can account for every minted
+	// truffle. Optional here: an un-pushed server simply omits them (fail-soft).
+	echo?: boolean;
+	blessed?: boolean;
 	drain_total: number;
 	milestone: { threshold: number; title_id: string } | null;
 	unique_found?: { id: string; new: boolean; found_count: number } | null;
@@ -132,13 +152,9 @@ function toCarry(
 // unpushed) rather than a gameplay refusal.
 const MISSING_RPC_REASONS = new Set(["network", "no_data"]);
 
-// Per-user (the sounderPath `:${uid}` convention) so an account switch on a
-// shared device can't inherit another player's dug-this-feeding state — the old
-// un-namespaced `rooting_done_${win}` leaked the demo account's dug flag into a
-// fresh signup and locked its first dig. Legacy keys are simply ignored: they
-// expire naturally when the window rolls over, and the server (open_rooting /
-// feeding_state) stays authoritative meanwhile.
-const dugKey = (uid: string, win: number) => `rooting_done_${win}:${uid}`;
+// The per-user cold-start mirror key (dugMirrorKey) and the reconcile debounce
+// (RECONCILE_MIN_MS / shouldReconcile) now live in utils/digSession alongside the
+// state machine they serve.
 
 // The caller's user id for the mirror, or null when signed out (no mirror then —
 // real digs require auth anyway; practice contexts just skip persistence).
@@ -176,23 +192,17 @@ async function claimBeginnersSnoutOnce(): Promise<number | null> {
 	return null;
 }
 
-// Debounce floor for the feeding_state reconcile — rapid foreground/background
-// flips (or a rollover racing an AppState 'active') collapse into one RPC.
-const RECONCILE_MIN_MS = 5000;
-
 export function useRooting() {
-	const [session, setSession] = useState<RootingSession | null>(null);
-	// The WINDOW the caller's last known dig landed in, or null — never a plain
-	// boolean. `dugThisWindow` below re-compares it against the live window every
-	// render, so the flag EXPIRES by construction the instant the 8h window rolls
-	// over (the founder's "still dug two hours later" bug: a boolean set at dig
-	// time had nothing to un-set it across the rollover).
-	const [dugWindow, setDugWindow] = useState<number | null>(null);
-	// The caller has no Sounder — digging is crew-gated, so the UI shows the
-	// "join a Sounder to dig" prompt rather than an error.
-	const [noCrew, setNoCrew] = useState(false);
+	// The dig-session state machine — every transition lives in the pure
+	// digSessionReducer (utils/digSession); this hook is its React/AsyncStorage/RPC
+	// adapter. `session`, `dugWindow` and `noCrew` all read off the reducer state.
+	const [state, dispatch] = useReducer(digSessionReducer, initialDigSessionState);
+	const { session, noCrew } = state;
 	const win = windowIndex();
-	const dugThisWindow = dugInCurrentWindow(dugWindow);
+	// Derived + expiring: isDugThisWindow re-compares the recorded dug WINDOW
+	// against the live clock, so the flag clears itself the instant the 8h window
+	// rolls over (the founder's "still dug two hours later" bug).
+	const dugThisWindow = isDugThisWindow(state);
 
 	// "Already dug" is server-authoritative (open_rooting says already), but we
 	// mirror it in AsyncStorage so the strip renders right on cold start. The
@@ -203,8 +213,8 @@ export function useRooting() {
 		(async () => {
 			const uid = await mirrorUid();
 			if (!uid) return;
-			const v = await AsyncStorage.getItem(dugKey(uid, win));
-			if (!cancelled && v) setDugWindow(win);
+			const v = await AsyncStorage.getItem(dugMirrorKey(uid, win));
+			if (!cancelled && v) dispatch({ type: "mirror_hydrated", window: win });
 		})();
 		return () => {
 			cancelled = true;
@@ -221,21 +231,21 @@ export function useRooting() {
 	const lastReconcileRef = useRef(0);
 	const reconcile = useCallback(async () => {
 		const now = Date.now();
-		if (now - lastReconcileRef.current < RECONCILE_MIN_MS) return;
+		if (!shouldReconcile(lastReconcileRef.current, now)) return;
 		lastReconcileRef.current = now;
 		try {
 			const fs = await fetchFeedingState();
 			if (!fs) return; // migration unpushed / transport hiccup — keep local
-			if (fs.dug) {
-				setDugWindow(fs.window_index);
-				const uid = await mirrorUid();
-				if (uid) await AsyncStorage.setItem(dugKey(uid, fs.window_index), "1");
-			} else {
-				// Server says NOT dug for its window — retire a matching local claim
-				// (and its cold-start mirror) so a stale flag can't outlive the truth.
-				setDugWindow((prev) => (prev === fs.window_index ? null : prev));
-				const uid = await mirrorUid();
-				if (uid) await AsyncStorage.removeItem(dugKey(uid, fs.window_index));
+			// The reducer owns the reconcile DECISION (adopt a dug window / retire a
+			// matching stale claim); the hook mirrors that decision into AsyncStorage.
+			dispatch({ type: "reconciled", dug: fs.dug, window: fs.window_index });
+			const uid = await mirrorUid();
+			if (uid) {
+				if (fs.dug) {
+					await AsyncStorage.setItem(dugMirrorKey(uid, fs.window_index), "1");
+				} else {
+					await AsyncStorage.removeItem(dugMirrorKey(uid, fs.window_index));
+				}
 			}
 		} catch {
 			// fail-soft — reconciliation is a best-effort truth sync, never a gate.
@@ -254,7 +264,6 @@ export function useRooting() {
 	> => {
 		const r = await rpcAction<OpenPayload>("open_rooting");
 		if (r.ok) {
-			setNoCrew(false);
 			const s: RootingSession = {
 				seed: r.seed,
 				windowIndex: r.window_index,
@@ -269,25 +278,23 @@ export function useRooting() {
 				uniqueId: r.unique_id ?? null,
 				carry: toCarry(r.carry),
 			};
-			setSession(s);
-			// Capture the SERVER's window index, not the client clock — the two
-			// should agree (same offset-anchored floor((epoch - 7200)/28800)), but
-			// the server's is the one the one-dig-per-feeding rule is keyed by.
-			if (r.already) setDugWindow(r.window_index);
+			// A real server success clears the crewless flag; alreadyDug captures the
+			// SERVER's window index (not the client clock) for the one-dig-per-feeding
+			// rule the two should agree on.
+			dispatch({ type: "opened", session: s, alreadyDug: r.already, clearNoCrew: true });
 			return { ok: true, session: s };
 		}
 		if (r.reason === "no_crew") {
-			setNoCrew(true);
+			dispatch({ type: "open_no_crew" });
 			return { ok: false, reason: r.reason };
 		}
 		if (r.reason === "already_rooted") {
-			// The refusal is by definition about the current window (no payload to
-			// read a server index from).
-			setDugWindow(win);
+			dispatch({ type: "open_already_rooted", window: win });
 			return { ok: false, reason: r.reason };
 		}
 		if (MISSING_RPC_REASONS.has(r.reason)) {
-			// Practice patch — identical board, nothing minted.
+			// Practice patch — identical board, nothing minted. Leaves noCrew as-is
+			// (a crewless player practicing is still crewless).
 			const s: RootingSession = {
 				seed: practiceSeed("patch", win),
 				windowIndex: win,
@@ -299,7 +306,7 @@ export function useRooting() {
 				uniqueId: null, // no uniques in practice
 				carry: null, // no carry-over in practice
 			};
-			setSession(s);
+			dispatch({ type: "opened", session: s });
 			return { ok: true, session: s };
 		}
 		return { ok: false, reason: r.reason };
@@ -332,13 +339,14 @@ export function useRooting() {
 				normalizePouch(missed as unknown as Parameters<typeof normalizePouch>[0])
 			).filter((f) => !caught.has(f));
 			const markDug = async () => {
-				// Keyed by the session's SERVER-issued window index — the dug flag
-				// then expires on its own at rollover (dugInCurrentWindow).
-				setDugWindow(session.windowIndex);
+				// Route through the reducer's single lockout gate — a real submit records
+				// the session's SERVER-issued window (the flag then expires on its own at
+				// rollover, isDugThisWindow).
+				dispatch({ type: "submit_landed", practice: false });
 				// Persist the per-user cold-start mirror; signed out (no uid) → skip —
 				// the in-memory window above still covers the live session.
 				const uid = await mirrorUid();
-				if (uid) await AsyncStorage.setItem(dugKey(uid, session.windowIndex), "1");
+				if (uid) await AsyncStorage.setItem(dugMirrorKey(uid, session.windowIndex), "1");
 			};
 			if (session.practice) {
 				const truffles = safeFinds.filter(
@@ -356,6 +364,10 @@ export function useRooting() {
 				// onboarding value screen isn't hypothetical. Fail-soft: null when
 				// already claimed / not the first practice / migration unpushed.
 				const snoutGift = await claimBeginnersSnoutOnce();
+				// Route the practice submit through the SAME lockout gate as a real one —
+				// the reducer refuses to record the dug flag for practice, so the gate
+				// can't be bypassed (the crewed-card lockout incident). No-op by design.
+				dispatch({ type: "submit_landed", practice: true });
 				return {
 					ok: true,
 					outcome: {
@@ -363,6 +375,7 @@ export function useRooting() {
 						credited: truffles,
 						truffles: truffles > 0 ? 1 : 0,
 						echo: false,
+						blessed: false,
 						milestone: null,
 						uniqueFound: null, // no uniques banked in practice
 						carryCaught: null,
@@ -396,7 +409,10 @@ export function useRooting() {
 					drain: r.drain_total,
 					credited: r.credited?.length ?? 0,
 					truffles: r.truffles,
-					echo: (r.echo_names?.length ?? 0) > 0,
+					// Server-authoritative echo/blessed when the mint-breakdown
+					// migration is pushed; fail-soft to the old signals otherwise.
+					echo: r.echo ?? (r.echo_names?.length ?? 0) > 0,
+					blessed: r.blessed ?? session.blessed,
 					echoNames: r.echo_names,
 					milestone: r.milestone,
 					uniqueFound: r.unique_found ?? null,
@@ -409,7 +425,7 @@ export function useRooting() {
 		[session]
 	);
 
-	const clear = useCallback(() => setSession(null), []);
+	const clear = useCallback(() => dispatch({ type: "cleared" }), []);
 
 	// DEV-ONLY practice opener: dig any time, ignoring the 4h-open/4h-guarded
 	// phase gate and the one-dig-per-feeding rule. Seeded off the current
@@ -428,7 +444,7 @@ export function useRooting() {
 			uniqueId: null,
 			carry: null,
 		};
-		setSession(s);
+		dispatch({ type: "opened", session: s });
 		return s;
 	}, [win]);
 

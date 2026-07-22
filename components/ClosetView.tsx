@@ -7,7 +7,7 @@
 // it off. Tiles carry a rarity stripe + tinted swatch and a clear lilac "ON" state.
 // A title chip under the pig + a TitlesSection at the bottom make the Closet the
 // canonical place to equip titles (the Shop's Titles tab stays for buying).
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	View,
 	Text,
@@ -17,7 +17,9 @@ import {
 	StyleSheet,
 	LayoutChangeEvent,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
+import { usePigSkinTint, setPigSkin } from "@/utils/pigSkin";
 import { PigStage } from "./ui/PigStage";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { TitlesSection } from "./TitlesSection";
@@ -58,7 +60,23 @@ interface Props {
 	userId: string | null;
 	activeTitleId: string | null;
 	onTitleChange: (next: string | null) => void;
+	// Slop Club membership (read from profiles.is_vip in shop.tsx). Gates the
+	// two member perk prototypes (Dye Vat + Slop Club Rosie); false hides both.
+	isVip?: boolean;
 }
+
+// Dye Vat (member perk, CLIENT-ONLY PROTOTYPE). Cozy member-exclusive palettes,
+// each a real theme token so the swatches stay on-brand. The chosen hex flat-
+// tints the equipped worn cosmetic on the live pig preview (RN Image tintColor).
+const DYE_KEY = "dye_vat_v0";
+const DYE_PALETTES: { key: string; name: string; color: string }[] = [
+	{ key: "rose_gold", name: "rose gold", color: WHIMSY.roseDeep },
+	{ key: "bog_moss", name: "bog moss", color: WHIMSY.curseGreen },
+	{ key: "cream_gold", name: "cream & gold", color: WHIMSY.sun },
+	{ key: "deep_plum", name: "deep plum", color: WHIMSY.lilacDeep },
+	{ key: "gilded", name: "gilded", color: WHIMSY.slopGold },
+];
+const DYE_COLOR = Object.fromEntries(DYE_PALETTES.map((p) => [p.key, p.color]));
 
 // Owned items hidden from the closet until art ships (orphans with no
 // HAT_IMAGES entry render a wrong category fallback — e.g. tiny_umbrella shows
@@ -78,12 +96,12 @@ const HIDDEN_CLOSET_IDS = new Set<string>([
 // Category sections, in order, with player-facing headings.
 const CAT_ORDER = [
 	"hat", "bow", "glasses", "mask", "scarf", "necklace",
-	"held", "aura", "background", "flag", "tickle_particle",
+	"held", "aura", "background", "tickle_particle",
 ];
 const CAT_LABEL: Record<string, string> = {
 	hat: "Hats", bow: "Bows", glasses: "Glasses", mask: "Masks",
 	scarf: "Scarves", necklace: "Necklaces", held: "Held", aura: "Auras",
-	background: "Backgrounds", flag: "Flags", tickle_particle: "Tickle Effects",
+	background: "Backgrounds", tickle_particle: "Tickle Effects",
 };
 
 // Per-rarity swatch fill + stripe — the light panel (RARITY_BG_SOLID) and the
@@ -101,7 +119,6 @@ const SLOT_TINT: Record<string, string> = {
 	tickle: WHIMSY.lilac,
 	aura: WHIMSY.peach,
 	background: WHIMSY.cream2,
-	flag: WHIMSY.sky,
 };
 
 // Rosie's preview footprint in the paper-doll. Smaller than the old 200 so the
@@ -124,6 +141,7 @@ export function ClosetView({
 	userId,
 	activeTitleId,
 	onTitleChange,
+	isVip = false,
 }: Props) {
 	const scrollRef = useRef<ScrollView>(null);
 	// Y position of each category section, for slot-chip → scroll-to.
@@ -132,9 +150,68 @@ export function ClosetView({
 	// Owned title rows, fed back by TitlesSection's load — the preview
 	// chip resolves the active title's display name from here.
 	const [ownedTitles, setOwnedTitles] = useState<TitleRow[]>([]);
+	// Living mood surface: track the live sprite frame so equipped items ride
+	// along with the breathing pig (same wiring as SwipeElement).
+	const [pigFrameIdx, setPigFrameIdx] = useState(0);
 	const handleTitlesLoaded = useCallback((rows: TitleRow[]) => {
 		setOwnedTitles(rows);
 	}, []);
+
+	// Dye Vat state (member perk prototype). Per-cosmetic palette choice, keyed
+	// by itemId → palette key, persisted in AsyncStorage so a dye survives
+	// reloads. Loaded once on mount.
+	const [dyeChoices, setDyeChoices] = useState<Record<string, string>>({});
+	useEffect(() => {
+		let alive = true;
+		AsyncStorage.getItem(DYE_KEY)
+			.then((raw) => {
+				if (!alive || !raw) return;
+				try {
+					const parsed = JSON.parse(raw);
+					if (parsed && typeof parsed === "object") setDyeChoices(parsed);
+				} catch {
+					// ignore corrupt prototype state
+				}
+			})
+			.catch(() => {});
+		return () => {
+			alive = false;
+		};
+	}, []);
+
+	// The Dye Vat recolors the currently-equipped worn cosmetic — the Head slot
+	// (hat / bow), the closet's headline item. Pick a palette to tint it; the
+	// choice is remembered per item id.
+	const dyeTargetId = activeIds["active_hat_id"] ?? null;
+	const dyeTarget = dyeTargetId
+		? allItems.find((i) => i.id === dyeTargetId) ?? null
+		: null;
+	const setDye = useCallback(
+		(paletteKey: string | null) => {
+			if (!dyeTargetId) return;
+			Haptics.selectionAsync().catch(() => {});
+			setDyeChoices((prev) => {
+				const next = { ...prev };
+				if (paletteKey == null) delete next[dyeTargetId];
+				else next[dyeTargetId] = paletteKey;
+				AsyncStorage.setItem(DYE_KEY, JSON.stringify(next)).catch(() => {});
+				return next;
+			});
+		},
+		[dyeTargetId],
+	);
+
+	// itemId → tint hex, handed to the preview PigStage (only worn items with a
+	// stored palette tint; everything else renders normally).
+	const dyeTints: Record<string, string> = {};
+	Object.entries(dyeChoices).forEach(([id, key]) => {
+		const c = DYE_COLOR[key];
+		if (c) dyeTints[id] = c;
+	});
+
+	// Slop Club Rosie skin (member perk prototype). Reads/writes the shared
+	// AsyncStorage-backed flag; the wash renders wherever SpritePig draws Rosie.
+	const skinOn = usePigSkinTint() != null;
 
 	const byId = useRef<Map<string, HatRow>>(new Map());
 	byId.current = new Map(allItems.map((i) => [i.id, i]));
@@ -171,9 +248,11 @@ export function ClosetView({
 		? ownedTitles.find((t) => t.id === activeTitleId)?.name ?? "…"
 		: null;
 
-	// Owned items grouped by category. Art-less orphans (HIDDEN_CLOSET_IDS) are
-	// filtered out so they don't render a wrong fallback thumbnail.
-	const visibleOwned = ownedItems.filter((i) => !HIDDEN_CLOSET_IDS.has(i.id));
+	// Owned items grouped by category. Art-less orphans and retired World Cup
+	// flags stay out of the closet.
+	const visibleOwned = ownedItems.filter(
+		(i) => i.category !== "flag" && !HIDDEN_CLOSET_IDS.has(i.id)
+	);
 	const groups: Record<string, HatRow[]> = {};
 	visibleOwned.forEach((i) => {
 		const c = i.category ?? "hat";
@@ -193,10 +272,8 @@ export function ClosetView({
 
 	// Paper-doll arrangement: every equip slot is a chip split into two columns
 	// that flank Rosie left + right.
-	// Flag is no longer a closet slot chip — the country flag is picked from the
-	// Barn (home) bottom-left corner. Background takes its place in the flanking
-	// set (no more wide tray beneath the pig); SLOT_ORDER runs …aura,
-	// background, so with flag dropped, background lands in flag's old spot.
+	// Retired flags never enter visibleOwned, but keep this compatibility filter
+	// until the legacy flag slot is removed from the shared slot schema.
 	const flankSlots = visibleSlots.filter((s) => s !== "flag");
 
 	// The equipped background, rendered as the scene inside the preview window —
@@ -272,7 +349,7 @@ export function ClosetView({
 					<View style={styles.slotCol}>{leftSlots.map((s) => renderSlot(s))}</View>
 					{/* Scene window: the equipped background fills a rounded window with
 					    Rosie composited in front and a margin of scene around her so the
-					    hat, aura + flag all read. Clipped (overflow hidden) — the aura's
+					    hat and aura read. Clipped (overflow hidden) — the aura's
 					    baked radial falloff keeps that clip soft, no hard box. */}
 					<View style={styles.pigWindow}>
 						{bgPreviewSrc && (
@@ -285,13 +362,15 @@ export function ClosetView({
 						<View style={styles.pigVisualBox}>
 							<View style={[styles.pigScaler, { transform: [{ scale }] }]}>
 								<PigStage
+									pigFrameIdx={pigFrameIdx}
+									onPigFrame={setPigFrameIdx}
 									equipped={slot("active_hat_id")}
 									equippedGlasses={slot("active_glasses_id")}
 									equippedMask={slot("active_mask_id")}
 									equippedNeck={slot("active_neck_id")}
 									equippedAura={slot("active_aura_id")}
 									equippedHeld={slot("active_held_id")}
-									equippedFlag={slot("active_flag_id")}
+									tints={dyeTints}
 								/>
 							</View>
 						</View>
@@ -315,6 +394,97 @@ export function ClosetView({
 					</Pressable>
 				)}
 			</View>
+
+			{/* Member perks (Slop Club). Gated on is_vip — both are hidden for
+			    non-members. CLIENT-ONLY PROTOTYPES: state lives in AsyncStorage,
+			    no server, no new art (flat tint / gold wash only). */}
+			{isVip && (
+				<View style={styles.memberCard}>
+					<View style={styles.memberBand}>
+						<Glyph name="crown" size={16} />
+						<Text style={styles.memberBandText}>SLOP CLUB PERKS</Text>
+						<View style={styles.protoTag}>
+							<Text style={styles.protoTagText}>PROTOTYPE</Text>
+						</View>
+					</View>
+
+					{/* 1. The Dye Vat — recolor the equipped hat into a member palette. */}
+					<View style={styles.perkBlock}>
+						<Text style={styles.perkTitle}>The Dye Vat</Text>
+						<Text style={styles.perkSub}>
+							{dyeTarget
+								? `Dip “${dyeTarget.name}” in a member palette.`
+								: "Wear a hat, then pick a palette to dye it."}
+						</Text>
+						<View style={styles.swatchRow}>
+							{/* Natural (clear) swatch. */}
+							<Pressable
+								onPress={() => setDye(null)}
+								disabled={!dyeTargetId}
+								style={({ pressed }) => [
+									styles.swatch,
+									styles.swatchNatural,
+									dyeTargetId != null && dyeChoices[dyeTargetId] == null && styles.swatchOn,
+									(!dyeTargetId || pressed) && { opacity: 0.6 },
+								]}
+							>
+								<Text style={styles.swatchNaturalMark}>—</Text>
+							</Pressable>
+							{DYE_PALETTES.map((p) => {
+								const on = dyeTargetId != null && dyeChoices[dyeTargetId] === p.key;
+								return (
+									<Pressable
+										key={p.key}
+										onPress={() => setDye(p.key)}
+										disabled={!dyeTargetId}
+										style={({ pressed }) => [
+											styles.swatch,
+											{ backgroundColor: p.color },
+											on && styles.swatchOn,
+											(!dyeTargetId || pressed) && { opacity: 0.6 },
+										]}
+									>
+										{on && (
+											<View style={styles.swatchCheck}>
+												<Icon name="check" size={10} color={WHIMSY.paper} strokeWidth={2.8} />
+											</View>
+										)}
+									</Pressable>
+								);
+							})}
+						</View>
+						{dyeTargetId != null && dyeChoices[dyeTargetId] != null && (
+							<Text style={styles.perkFoot}>
+								{DYE_PALETTES.find((p) => p.key === dyeChoices[dyeTargetId!])?.name} — dyed. Watch Rosie above.
+							</Text>
+						)}
+					</View>
+
+					{/* 2. Slop Club Rosie — a member-only gold wash on Rosie herself. */}
+					<View style={[styles.perkBlock, styles.perkBlockLast]}>
+						<Text style={styles.perkTitle}>Slop Club Rosie</Text>
+						<Text style={styles.perkSub}>
+							Gild Rosie in Slop Club gold — everywhere she appears.
+						</Text>
+						<Pressable
+							onPress={() => setPigSkin(!skinOn)}
+							style={({ pressed }) => [
+								styles.skinToggle,
+								skinOn && styles.skinToggleOn,
+								pressed && { opacity: 0.8 },
+							]}
+						>
+							<Glyph name="premium" size={18} />
+							<Text style={[styles.skinToggleText, skinOn && styles.skinToggleTextOn]}>
+								{skinOn ? "Gilded — tap to undo" : "Turn on the gold skin"}
+							</Text>
+							<View style={[styles.skinKnobTrack, skinOn && styles.skinKnobTrackOn]}>
+								<View style={[styles.skinKnob, skinOn && styles.skinKnobOn]} />
+							</View>
+						</Pressable>
+					</View>
+				</View>
+			)}
 
 			<View style={styles.hint}>
 				<Text style={styles.hintText}>
@@ -595,6 +765,133 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 14,
 		marginVertical: SPACE.md,
 	},
+	// Slop Club member perks card — the members-band gold idiom (slopGold band
+	// on a paper sticker card), matching the shop's members lane.
+	memberCard: {
+		marginTop: SPACE.md,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.xl,
+		overflow: "hidden",
+		...STICKER_SHADOW,
+	},
+	memberBand: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
+		backgroundColor: WHIMSY.slopBand,
+		borderBottomWidth: 2,
+		borderBottomColor: WHIMSY.ink,
+		paddingHorizontal: 14,
+		paddingVertical: 9,
+	},
+	memberBandText: {
+		flex: 1,
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 12,
+		letterSpacing: 1.4,
+		color: WHIMSY.ink,
+	},
+	protoTag: {
+		backgroundColor: WHIMSY.ink,
+		borderRadius: RADII.pill,
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+	},
+	protoTagText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 9,
+		letterSpacing: 0.8,
+		color: WHIMSY.paper,
+	},
+	perkBlock: {
+		paddingHorizontal: 14,
+		paddingTop: SPACE.md,
+		paddingBottom: SPACE.md,
+		borderBottomWidth: 2,
+		borderBottomColor: WHIMSY.cream2,
+	},
+	perkBlockLast: { borderBottomWidth: 0 },
+	perkTitle: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
+	perkSub: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.mute,
+		marginTop: 2,
+		marginBottom: SPACE.sm,
+	},
+	perkFoot: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		marginTop: SPACE.sm,
+	},
+	swatchRow: { flexDirection: "row", flexWrap: "wrap", gap: SPACE.sm },
+	swatch: {
+		width: 40,
+		height: 40,
+		borderRadius: RADII.pill,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+		...SHADOW_SM,
+	},
+	swatchNatural: { backgroundColor: WHIMSY.paper },
+	swatchNaturalMark: { fontFamily: FONTS.body, fontSize: 18, color: WHIMSY.mute },
+	swatchOn: { borderColor: WHIMSY.lilacDeep, borderWidth: 3 },
+	swatchCheck: {
+		width: 20,
+		height: 20,
+		borderRadius: 10,
+		backgroundColor: WHIMSY.lilacDeep,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	skinToggle: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
+		backgroundColor: WHIMSY.cream,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: RADII.lg,
+		paddingHorizontal: 12,
+		paddingVertical: 10,
+		...SHADOW_SM,
+	},
+	skinToggleOn: { backgroundColor: WHIMSY.slopBand },
+	skinToggleText: {
+		flex: 1,
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+	},
+	skinToggleTextOn: { color: WHIMSY.ink },
+	skinKnobTrack: {
+		width: 44,
+		height: 26,
+		borderRadius: RADII.pill,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream2,
+		justifyContent: "center",
+		paddingHorizontal: 2,
+	},
+	skinKnobTrackOn: { backgroundColor: WHIMSY.slopGold },
+	skinKnob: {
+		width: 18,
+		height: 18,
+		borderRadius: 9,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		alignSelf: "flex-start",
+	},
+	skinKnobOn: { alignSelf: "flex-end" },
 	hintText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.ink },
 	section: { marginBottom: 18 },
 	sectionHead: {

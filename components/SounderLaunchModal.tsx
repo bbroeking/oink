@@ -11,17 +11,9 @@ import { Icon } from "./ui/Icon";
 import { Glyph } from "./ui/Glyph";
 import { Button } from "./ui/Button";
 import { Sticker } from "./ui/Sticker";
-import { RACE_TRUFFLE_TABLE, STIR_BUDGET } from "@/constants/dig";
+import { RACE_TRUFFLE_TABLE } from "@/constants/dig";
 import { WHIMSY, FONTS, RADII, SPACE, TYPE, MODAL_BACKDROP_BG } from "@/constants/theme";
 import type { SounderStep } from "@/hooks/useSounderPath";
-
-// The full-Sounder depth gain — TrufflePatch's coop budget (STIR_BUDGET * 1.25)
-// is a quarter deeper than solo. The pitch says "digs {N}% deeper" (a felt
-// benefit, no "stirs" unit to learn); this derives that percent from the real
-// budget so the copy can't drift.
-const COOP_DEPTH_GAIN_PCT = Math.round(
-	((Math.round(STIR_BUDGET * 1.25) - STIR_BUDGET) / STIR_BUDGET) * 100
-);
 
 const HUNGERER = require("../assets/images/hunger/great_hungerer_chip.png");
 
@@ -119,7 +111,7 @@ export function SounderLaunchModal({ visible, onCreate, onDismiss, step }: Props
 					    from the dig constants + RACE_TRUFFLE_TABLE. */}
 					<View style={styles.benefits}>
 						{[
-							`dig deeper together — a full Sounder digs ${COOP_DEPTH_GAIN_PCT}% deeper`,
+							"dig after a crewmate — get up to 5 more rubs",
 							"herd milestones pay everyone — titles + snout purses",
 							`weekly dig-off pays Golden Truffles — ${RACE_TRUFFLE_TABLE[1]} each for 1st`,
 						].map((line) => (

@@ -45,7 +45,7 @@ The core social loop, and Season 1's moral engine.
 
 - Each player has an invite link (`docs/invite.html` landing →
   `app/invite.tsx` deep link).
-- A successful referral earns **both** users 100 snouts.
+- Redeeming a referral code gives the new player **50 snouts**; completion at 100 lifetime tickles gives the inviter **100 tickles**.
 - Referral leaderboard with milestone titles (Ambassador, Drove
   Captain, Crown Hog).
 - `attribute_referral` fires once per referee, idempotent on retry.

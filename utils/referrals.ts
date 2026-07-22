@@ -35,11 +35,10 @@ export const PENDING_REFERRAL_CODE_KEY = "pending_referral_code";
 // Caller's referral state for the Account "Refer friends" card.
 // Shape mirrors the server-side jsonb returned by my_referral_summary.
 // One invited friend's progress toward counting as a completed referral.
-// `tickles` and `active_days` are server-capped at the gate (100 / 3).
+// `tickles` is server-capped at the 100-tickle completion gate.
 export interface ReferralFriend {
 	username: string | null;
 	tickles: number;
-	active_days: number;
 	completed?: boolean; // present on recent_friends
 	redeemed_at: string | null;
 }

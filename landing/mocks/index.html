@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>workflow cleanup — the implement queue</title>
+<style>
+  :root {
+    --ink: #2a1f15;
+    --paper: #fffaf0;
+    --cream: #fbeee2;
+    --cream2: #f6e6d4;
+    --rose: #ffd6dc;
+    --rose-deep: #f8a8b3;
+    --sky: #c8e3f0;
+    --sage: #c9dec1;
+    --sun: #ffd87a;
+    --lilac: #d6c8f0;
+    --lilac-deep: #a89bff;
+    --peach: #ffc8a8;
+    --accent: #c25a3f;
+    --mute: rgba(40,30,20,0.6);
+    --bark: #3a2c1e;
+    --bark-text: #fff3e2;
+    --sage-deep: #7ba868;
+    --display: ui-rounded, "SF Pro Rounded", "Fredoka", "Nunito", system-ui, sans-serif;
+    --body: "Nunito", ui-rounded, -apple-system, system-ui, sans-serif;
+    --hand: "Bradley Hand", "Patrick Hand", "Comic Sans MS", cursive;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(circle at 10% 8%, rgba(255,214,220,.40), transparent 34%),
+      radial-gradient(circle at 92% 90%, rgba(214,200,240,.34), transparent 38%),
+      var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    -webkit-font-smoothing: antialiased;
+    padding: 40px 18px 90px;
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+  .wrap { max-width: 760px; width: 100%; }
+
+  /* ---- header ---- */
+  header { position: relative; margin-bottom: 22px; }
+  .kicker {
+    font-family: var(--hand);
+    font-size: 15px;
+    letter-spacing: .5px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 34px;
+    line-height: 1.02;
+    letter-spacing: -.3px;
+  }
+  .rule { height: 3px; width: 84px; background: var(--ink); opacity: .28; border-radius: 2px; margin: 12px 0 16px; }
+  .intro {
+    border: 2.5px dashed var(--ink);
+    border-radius: 16px;
+    background: #fff;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 4px 4px 0 rgba(42,31,21,.14);
+    transform: rotate(-.35deg);
+  }
+  .intro b { color: var(--accent); }
+  .intro ul { list-style: none; margin: 8px 0 0; display: grid; gap: 5px; }
+  .intro li { padding-left: 16px; position: relative; color: var(--mute); }
+  .intro li::before { content: "\2605"; position: absolute; left: 0; color: var(--rose-deep); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
+  .chip {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: .3px;
+    padding: 4px 11px;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .chip.pending { background: var(--sun); }
+  .chip.built { background: var(--sage); }
+
+  /* ---- queue list ---- */
+  .list { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
+  .card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 46px 1fr;
+    gap: 14px;
+    background: #fff;
+    border: 2.5px solid var(--ink);
+    border-radius: 18px;
+    padding: 15px 16px 16px;
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+  .card:nth-child(odd) { transform: rotate(-.5deg); }
+  .card:nth-child(even) { transform: rotate(.45deg); }
+  .card.built {
+    background: var(--cream);
+    box-shadow: 3px 3px 0 rgba(42,31,21,.22);
+    border-style: dashed;
+    opacity: .96;
+  }
+  .num {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 22px;
+    width: 46px; height: 46px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    background: var(--sky);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .card:nth-child(3n) .num { background: var(--rose); }
+  .card:nth-child(3n+1) .num { background: var(--lilac); }
+  .card:nth-child(3n+2) .num { background: var(--sage); }
+  .card.built .num { background: var(--cream2); box-shadow: none; }
+  .body { min-width: 0; }
+  .titlerow { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 10px; }
+  .title { font-family: var(--display); font-weight: 800; font-size: 17px; line-height: 1.15; }
+  .src {
+    font-family: var(--hand);
+    font-size: 13.5px;
+    color: var(--accent);
+  }
+  .card.built .src { color: var(--mute); }
+  .chiprow { margin: 8px 0 2px; }
+  .summary { font-size: 13.5px; line-height: 1.5; color: #4a3b2c; margin-top: 8px; }
+  .verified { font-size: 12.5px; line-height: 1.45; color: var(--mute); margin-top: 8px; font-style: italic; }
+  .links { margin-top: 11px; display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+  a.mock {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 12.5px;
+    text-decoration: none;
+    color: var(--ink);
+    background: var(--sun);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 5px 13px 5px 12px;
+    box-shadow: 2px 2px 0 var(--ink);
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: transform .08s ease;
+  }
+  a.mock:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--ink); }
+  a.mock .arr { font-family: var(--body); }
+  a.spec {
+    font-family: var(--hand);
+    font-size: 13.5px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1.5px solid var(--rose-deep);
+  }
+  a.spec:hover { color: var(--ink); }
+  .behavioral {
+    font-size: 12px;
+    color: var(--mute);
+    font-style: italic;
+  }
+  footer {
+    margin-top: 34px;
+    text-align: center;
+    font-family: var(--hand);
+    font-size: 14px;
+    color: var(--mute);
+  }
+  @media (max-width: 480px) {
+    h1 { font-size: 28px; }
+    .card { grid-template-columns: 40px 1fr; gap: 11px; padding: 13px 13px 14px; }
+    .num { width: 40px; height: 40px; font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">&#9733; workflow cleanup</div>
+    <h1>the implement queue</h1>
+    <div class="rule"></div>
+    <div class="intro">
+      Fourteen specs, grilled + decided with the founder on 2026-07-16, in
+      <b>stability-first</b> order: the tiny loop-validating fix, then the June bug
+      backlog (cheap context, cleans the base), then wedge-plan Phase 1, then the
+      rest of the 1.4 lane.
+      <ul>
+        <li>One <b>fresh-context Opus agent per spec</b> — its prompt is the spec file plus CLAUDE.md.</li>
+        <li>One commit per completed spec; everything lands on <b>workflow-cleanup</b>. No pushes, no merges.</li>
+        <li>Migrations are <b>authored only, never pushed</b> — listed in the commit body, flipped on founder go.</li>
+      </ul>
+    </div>
+    <div class="legend">
+      <span class="chip pending">pending</span>
+      <span class="chip built">done &middot; verified built</span>
+    </div>
+  </header>
+
+  <div class="list">
+
+    <!-- 01 -->
+    <div class="card">
+      <div class="num">01</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Shop preview freeze + Closet/Visit frame sync</span>
+          <span class="src">new bug &middot; founder</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">The shop's item preview lets the pig keep animating while the equipped item stays pinned to frame 0 &mdash; so hats visibly slide off the head. Freeze the preview pig at its rest pose, and give the Closet and Visit screens the Barn's frame-sync so they keep breathing with the item riding along.</div>
+        <div class="links"><a class="mock" href="01-shop-preview.html">see the mock <span class="arr">&rsaquo;</span></a></div>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div class="card">
+      <div class="num">02</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Popup queue cluster: null-block + unmanaged sheets</span>
+          <span class="src">GH #3 + #4</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">Two popup-queue bugs share one architecture: a BuriedTruffleSheet that sits presented while rendering null &mdash; jamming every other popup for the session &mdash; and unmanaged sheets the queue can present over. Kill the sheet's want when it would render null, and add a hold so unmanaged modals block admission.</div>
+        <div class="links"><span class="behavioral">behavioral &mdash; see spec:</span> <a class="spec" href="../../docs/specs/02-popup-queue-cluster.md">02-popup-queue-cluster.md</a></div>
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div class="card">
+      <div class="num">03</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Offline soft-locks: home_stats retry + saddling-up timeout</span>
+          <span class="src">GH #5</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">When home_stats fails on boot, canTickle is stuck at zero tickles until a screen refocus, and the "saddling up" gate can hang forever offline. Add retry-with-backoff, a foreground refresh, and cozy retry affordances &mdash; never advancing a named pig to the rename screen.</div>
+        <div class="links"><span class="behavioral">behavioral &mdash; see spec:</span> <a class="spec" href="../../docs/specs/03-offline-softlocks.md">03-offline-softlocks.md</a></div>
+      </div>
+    </div>
+
+    <!-- 04 -->
+    <div class="card">
+      <div class="num">04</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Trough nudges: supersede + tap-through</span>
+          <span class="src">GH #10</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">Trough nudges pile up unsuperseded in the While-Away list, and the card can't be tapped anywhere. Supersede unseen nudges server-side so only the latest survives, and make the card tap through to the drive it's about.</div>
+        <div class="links"><a class="mock" href="04-trough-nudge.html">see the mock <span class="arr">&rsaquo;</span></a></div>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div class="card">
+      <div class="num">05</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Reinstall flow: silent first-session popups + veteran storybook re-run</span>
+          <span class="src">GH #11</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">On reinstall, root launch popups stay silent all session (the effects run before sign-in and never re-run) and veterans replay the whole storybook. Re-run the popup effects on sign-in and persist onboarding-seen server-side, both queued safely behind the onboarding hold.</div>
+        <div class="links"><span class="behavioral">behavioral &mdash; see spec:</span> <a class="spec" href="../../docs/specs/05-reinstall-flow.md">05-reinstall-flow.md</a></div>
+      </div>
+    </div>
+
+    <!-- 06 -->
+    <div class="card">
+      <div class="num">06</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Small fixes batch</span>
+          <span class="src">GH #12</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">Four one-pointers: the daily lucky_won toast the client never reads, the shop countdown that freezes at 0 instead of refetching, the "28/25" over-cap pill wording, and the last "Wardrobe"&rarr;"Closet" strings. All client-side, no migrations.</div>
+        <div class="links"><a class="mock" href="06-small-fixes.html">see the mock <span class="arr">&rsaquo;</span></a></div>
+      </div>
+    </div>
+
+    <!-- 07 -->
+    <div class="card">
+      <div class="num">07</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Season-1 tiebreak post-mortem</span>
+          <span class="src">GH #28</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">A read-only investigation: verify what actually ran in prod on Jul 13 against the repo's tiebreak fix, then write a report and comment on #28 &mdash; no prod writes. This spec produces a report and then <b>PAUSES</b> for the founder's call.</div>
+        <div class="links"><span class="behavioral">behavioral &middot; report-and-pause &mdash; see spec:</span> <a class="spec" href="../../docs/specs/07-tiebreak-postmortem.md">07-tiebreak-postmortem.md</a></div>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div class="card">
+      <div class="num">08</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Seeded crew boards</span>
+          <span class="src">wedge 5a &middot; Phase 1</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">Board generation becomes deterministic per (feeding window, crew) so a whole Sounder digs the identical patch and can compare in the group chat; solo pigs keep their (window, user) seed. An authored migration plus client PRNG parity and a harness smoke &mdash; never pushed.</div>
+        <div class="links"><span class="behavioral">behavioral &mdash; see spec:</span> <a class="spec" href="../../docs/specs/08-seeded-crew-boards.md">08-seeded-crew-boards.md</a></div>
+      </div>
+    </div>
+
+    <!-- 09 -->
+    <div class="card">
+      <div class="num">09</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Text-grid share on the dig receipt</span>
+          <span class="src">wedge 5b &middot; Phase 1</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">A "share your dig" button on the receipt that emits a compact Wordle-style text grid to the native share sheet, with a copy fallback. Spoiler-light: only the player's own dug tiles, each mapped to a shape emoji per find class.</div>
+        <div class="links"><a class="mock" href="09-text-grid-share.html">see the mock <span class="arr">&rsaquo;</span></a></div>
+      </div>
+    </div>
+
+    <!-- 10 -->
+    <div class="card">
+      <div class="num">10</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">"Found the golden in N digs" receipt headline</span>
+          <span class="src">wedge 5c &middot; Phase 1</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">The receipt headline becomes the game's braggable number &mdash; "found the golden in N digs" &mdash; derived from the same dig-sequence source as spec 09's share block. No golden this session means no headline change; the two features are designed to compose on one receipt.</div>
+        <div class="links"><a class="mock" href="10-golden-in-n.html">see the mock <span class="arr">&rsaquo;</span></a></div>
+      </div>
+    </div>
+
+    <!-- 11 built -->
+    <div class="card built">
+      <div class="num">11</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Pair Keepsakes + Strongest Pairs UI</span>
+          <span class="src">1.4 lane</span>
+        </div>
+        <div class="chiprow"><span class="chip built">done &middot; verified built</span></div>
+        <div class="verified">Verified built 2026-07-16: keepsake line at UserSheet.tsx:530, board at Leaderboard.tsx:254+. The FLAMES layer is Phase 2, not queued &mdash; Hearth Archive rejected, the streak model stands.</div>
+      </div>
+    </div>
+
+    <!-- 12 built -->
+    <div class="card built">
+      <div class="num">12</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Feeding-clock client gaps</span>
+          <span class="src">1.4 lane</span>
+        </div>
+        <div class="chiprow"><span class="chip built">done &middot; verified built</span></div>
+        <div class="verified">Verified built: utils/feedingConfig.ts is server-authoritative with a compiled fallback. The only remaining work is the release-day server UPDATE &mdash; an ops action, not a code change.</div>
+      </div>
+    </div>
+
+    <!-- 13 built -->
+    <div class="card built">
+      <div class="num">13</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Feedback UI: settings whisper row + nudge mount</span>
+          <span class="src">1.4 lane</span>
+        </div>
+        <div class="chiprow"><span class="chip built">done &middot; verified built</span></div>
+        <div class="verified">Verified built: the settings whisper row (bell) lives at Account.tsx:1152, and FeedbackNudgeModal is mounted unflagged at _layout.tsx:1051.</div>
+      </div>
+    </div>
+
+    <!-- 14 -->
+    <div class="card">
+      <div class="num">14</div>
+      <div class="body">
+        <div class="titlerow">
+          <span class="title">Mud-wrap stacking: extend duration, never multiply regen</span>
+          <span class="src">roadmap &rarr; decided</span>
+        </div>
+        <div class="chiprow"><span class="chip pending">pending</span></div>
+        <div class="summary">Re-casting mud-wrap on an already-wrapped pig should extend the effect's expiry additively, never compound the regen multiplier, capped at a sane ceiling (~12h). An authored migration carrying the latest function def plus a harness smoke &mdash; never pushed.</div>
+        <div class="links"><span class="behavioral">behavioral &mdash; see spec:</span> <a class="spec" href="../../docs/specs/14-mudwrap-stacking.md">14-mudwrap-stacking.md</a></div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>&#9733; stability first &middot; one agent per spec &middot; migrations authored, never pushed</footer>
+</div>
+</body>
+</html>

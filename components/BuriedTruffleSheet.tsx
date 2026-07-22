@@ -8,13 +8,17 @@ import { rpcAction } from "@/utils/rpc";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Glyph, IconText } from "./ui/Glyph";
 import { WHIMSY, FONTS, SHADOW_SM, MODAL_BACKDROP_BG, RADII, SPACE, TYPE, PAGE_PAD } from "@/constants/theme";
+import { maxTopUp, POT_CAP } from "@/utils/burySnouts";
+import { usePotStake } from "@/hooks/usePotStake";
 import type { TruffleStatus } from "@/hooks/useBuriedTruffle";
 
-const STAKES = [10, 20, 50];
-const POT_CAP = 50; // a buried pot can never hold more than 50 snouts
+// The two fixed chips; the third chip is "Max" (tops the pot to the 50-snout
+// cap, bounded by the host's balance — resolved live in maxTopUp).
+const FIXED_STAKES = [10, 20];
 
 interface Props {
 	open: boolean;
+	balance: number; // live snout balance (profiles.counter) — bounds the "Max" chip
 	// Queue-slotted (id 'truffleSheet', pri 5). `open` is the MOUNT gate and
 	// must stay true through the POPUP_TEARDOWN_MS beat so this native Modal
 	// stays mounted while its dismissal runs (PopupQueue "keep it mounted"
@@ -37,13 +41,25 @@ function ago(iso: string): string {
 	return `${Math.floor(h / 24)}d ago`;
 }
 
-export function BuriedTruffleSheet({ open, visible, onClose, status, onChanged }: Props) {
+export function BuriedTruffleSheet({ open, balance, visible, onClose, status, onChanged }: Props) {
 	const screenH = useRef(Dimensions.get("window").height).current;
 	const anim = useRef(new Animated.Value(0)).current;
-	const [topUpStake, setTopUpStake] = useState(10);
-	const [busy, setBusy] = useState(false);
-	const [note, setNote] = useState<string | null>(null);
 	const [confirmReclaim, setConfirmReclaim] = useState(false);
+	// Fires onClose exactly once per open-session so the two-phase teardown
+	// below isn't re-triggered every render while `open` lingers through the beat.
+	const closingRef = useRef(false);
+
+	// A chip is either a fixed amount or "max" (resolves to a concrete number
+	// against balance + headroom) — the top-up button always restates the number.
+	// Computed null-safe so the shared stake hook can be called unconditionally
+	// (before the not-buried early return); the values below are unused when the
+	// sheet renders null. floor = 1 (any positive top-up), ceiling = whatever
+	// fits both the pot's headroom and the live balance, Max = maxTopUp.
+	const remaining = status?.buried ? status.remaining : 0;
+	const headroom = POT_CAP - remaining; // how many more snouts fit (cap 50)
+	const maxTop = maxTopUp(balance, remaining); // Max = min(balance, headroom)
+	const { sel, select, busy, setBusy, note, setNote, stake: topUpStake, maxOk, canSubmit: canTopUp } =
+		usePotStake({ defaultSel: 10, maxStake: maxTop, floor: 1, ceiling: Math.min(headroom, balance) });
 
 	useEffect(() => {
 		if (!open) return;
@@ -53,11 +69,29 @@ export function BuriedTruffleSheet({ open, visible, onClose, status, onChanged }
 		Animated.timing(anim, { toValue: 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
 	}, [open, anim]);
 
+	// The slot (id 'truffleSheet', pri 5 — highest in the app) may never sit
+	// PRESENTED while this sheet renders null: that wedges the queue and silently
+	// suppresses every other popup for the session (issue #3). If we're open but
+	// there's nothing buried to show — reclaimed / fully dug elsewhere, or a
+	// fail-soft truffle_status fetch (useBuriedTruffle → buried:false on RPC
+	// failure) — close quietly through the normal onClose so the slot releases.
+	// onClose is two-phase (release() now, clears `open` a POPUP_TEARDOWN_MS beat
+	// later); we DON'T cut `open` here same-frame. The ref latches it to one fire.
+	useEffect(() => {
+		if (!open) {
+			closingRef.current = false;
+			return;
+		}
+		if (!status?.buried && !closingRef.current) {
+			closingRef.current = true;
+			onClose();
+		}
+	}, [open, status?.buried, onClose]);
+
 	if (!open || !status?.buried) return null;
 
 	const pct = status.total > 0 ? Math.max(0, Math.min(1, status.remaining / status.total)) : 0;
 	const dugTotal = status.total - status.remaining;
-	const headroom = POT_CAP - status.remaining; // how many more snouts fit (cap 50)
 	const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [screenH, 0] });
 
 	const topUp = async () => {
@@ -75,6 +109,11 @@ export function BuriedTruffleSheet({ open, visible, onClose, status, onChanged }
 			setNote(`Need ${topUpStake} snouts to top up.`);
 		} else if (r.reason === "max_reached") {
 			setNote(`The pot maxes out at ${POT_CAP} snouts.`);
+		} else if (r.reason === "bad_amount") {
+			// A new client can outrun the server: the range-relaxing migration
+			// isn't pushed yet, so a Max amount off the old {10,20,50} whitelist
+			// bounces. Nudge back to a set stake — ship order stays harmless.
+			setNote("Couldn't add that amount — pick a set stake for now.");
 		} else if (r.reason === "none") {
 			// Truffle was reclaimed / fully dug elsewhere — nothing charged. Resync + close.
 			onChanged?.();
@@ -158,22 +197,21 @@ export function BuriedTruffleSheet({ open, visible, onClose, status, onChanged }
 
 					{/* Top up — add more snouts to the pot, capped at 50 */}
 					<View style={styles.divider} />
-					{headroom < STAKES[0] ? (
+					{headroom < 1 ? (
 						<Text style={styles.maxNote}>Pot's at the {POT_CAP}-snout max.</Text>
 					) : (
 						<>
 							<Text style={styles.actLabel}>Add to the pot · up to {POT_CAP}</Text>
 							<View style={styles.stakes}>
-								{STAKES.map((s) => {
-									const on = s === topUpStake;
-									const tooMuch = s > headroom; // would push the pot past 50
+								{FIXED_STAKES.map((s) => {
+									const on = sel === s;
+									const tooMuch = s > headroom || s > balance; // past the cap, or can't afford
 									return (
 										<Pressable
 											key={s}
 											disabled={tooMuch}
 											onPress={() => {
-												setTopUpStake(s);
-												setNote(null);
+												select(s); // select clears any stale note
 												setConfirmReclaim(false); // disarm a pending reclaim
 											}}
 											style={[styles.chip, on && styles.chipOn, tooMuch && styles.chipOff]}
@@ -183,14 +221,27 @@ export function BuriedTruffleSheet({ open, visible, onClose, status, onChanged }
 										</Pressable>
 									);
 								})}
+								{/* Max — tops the pot to exactly 50, bounded by balance; dims
+								    when there's nothing to add. */}
+								<Pressable
+									disabled={!maxOk}
+									onPress={() => {
+										select("max");
+										setConfirmReclaim(false);
+									}}
+									style={[styles.chip, sel === "max" && styles.chipOn, !maxOk && styles.chipOff]}
+								>
+									<SnoutCoin size={14} />
+									<Text style={[styles.chipText, sel === "max" && styles.chipTextOn, !maxOk && styles.chipTextOff]}>Max</Text>
+								</Pressable>
 							</View>
 
 							<Pressable
 								onPress={topUp}
-								disabled={busy || topUpStake > headroom}
+								disabled={busy || !canTopUp}
 								style={({ pressed }) => [
 									styles.topUpBtn,
-									topUpStake > headroom && styles.topUpBtnOff,
+									!canTopUp && styles.topUpBtnOff,
 									pressed && { opacity: 0.9 },
 								]}
 							>

@@ -3,7 +3,7 @@
 // pose reads at ~the same size as idle (sprite + items scale together).
 // Tune in the Placement Studio (Items mode -> Pose -> Scale).
 export const ANIM_SCALE: Record<string, number> = {
-	idle: 1,
+	idle: 0.6,
 	walk: 1,
 	jump: 1.015,
 	happy: 0.979,

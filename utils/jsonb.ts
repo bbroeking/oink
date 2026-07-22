@@ -5,7 +5,7 @@
 // a number where a string is expected. These helpers turn any such value into a
 // safe, well-typed default so the UI can read a malformed field without ever
 // crashing. They are the single home for that "never trust the wire" coercion —
-// utils/dig.ts (race + feeding parsing) and utils/crews.ts (crew_state hoisting)
+// utils/race.ts (race parsing) and utils/crews.ts (crew_state hoisting)
 // both import from here so the rules can't drift between call sites.
 
 /** Any value → a finite number, falling back to `dflt` (default 0). */

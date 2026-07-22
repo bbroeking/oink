@@ -8,7 +8,7 @@
 //
 // Dressing art routes through EXCHANGE_ART so Batch-7 art (banner/shelf)
 // drops in with zero code changes.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	View,
 	Text,
@@ -40,6 +40,8 @@ import {
 	RARITY_BG_SOLID,
 } from "@/constants/theme";
 import { useTruffles } from "@/hooks/useTruffles";
+import { observeFieldGuide } from "@/utils/fieldGuide";
+import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
 
 // Batch-7 dressing slots (docs/great-hunger-art-manifest.md → exchange/).
 const EXCHANGE_ART: { banner: ImageSourcePropType | null; shelf: ImageSourcePropType | null } = {
@@ -54,10 +56,19 @@ interface Props {
 }
 
 export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
+	// Unmanaged native Modal (direct-tap, outside the popup queue): hold the queue
+	// while open so a foreground poll can't present a queued popup over it — the
+	// #50152 wedge (issue #4).
+	useUnmanagedModalHold(open);
 	const screenH = Dimensions.get("window").height;
 	const [confirming, setConfirming] = useState<string | null>(null);
 	const [note, setNote] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
+
+	// Field Guide: opening the Exchange meets its page (fail-soft, idempotent).
+	useEffect(() => {
+		if (open) observeFieldGuide("exchange");
+	}, [open]);
 
 	if (!open) return null;
 

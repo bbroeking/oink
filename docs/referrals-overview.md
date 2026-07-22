@@ -14,7 +14,7 @@ The canonical explanation. Start here, then follow the links into the focused do
 
 ## The one-paragraph version
 
-Every player gets a permanent share code (`ROSIE-K3T9`) at signup. They share it as a link (`https://ticklethepig.com/r/ROSIE-K3T9`) or as plain text. A *new* player who enters that code during onboarding gets **+50 snouts immediately**, and is permanently attributed to the inviter. The inviter gets **nothing yet** — their **+100 snouts** (and a Messenger Hat on their 3rd) only land once the new player *proves they're real*: 100 lifetime tickles across 3 distinct days. That delayed, engagement-gated payout is the anti-farming design — you can't get paid for inviting bots.
+Every player gets a permanent share code (`ROSIE-K3T9`) at signup. A *new* player who enters that code gets **50 snouts immediately** and is permanently attributed to the inviter. The inviter gets nothing yet; their **100 tickles** and any milestone reward land when the new player reaches 100 lifetime tickles.
 
 ---
 
@@ -29,7 +29,7 @@ Every player gets a permanent share code (`ROSIE-K3T9`) at signup. They share it
 │   redeem_referral_code() → +50 to invitee, attribution recorded   │
 ├─────────────────────────────────────────────────────────────────┤
 │ LAYER 3 — REWARD GATE    "invitee proves they're real"           │
-│   100 tickles + 3 active days → +100 to inviter, milestone, push  │
+│   100 lifetime tickles → 100 tickles to inviter, milestone, push │
 ├─────────────────────────────────────────────────────────────────┤
 │ LAYER 4 — FEEDBACK       "both sides see it happened"            │
 │   invitee: 'you're in' screen  ·  inviter: celebration (spec'd)   │
@@ -85,9 +85,7 @@ After they install and first-launch the app, the onboarding step reads the clipb
 On success it sets `referred_by = inviter`, `referral_redeemed_at = now()`, and **+50 snouts** to the invitee. The invitee sees the "★ you're in ★" screen (`ReferralCodeEntry`). **The inviter still gets nothing at this point.**
 
 ### 5. The invitee plays (Layer 3 accrues)
-Every tickle runs **`update_profile_and_item_count`**, which (among regen/lucky/battle-pass logic) bumps `tickles_earned` and — once per UTC calendar day — `distinct_active_days`. These two counters are the engagement gate's inputs.
-
-> Important: `distinct_active_days` is bumped **only** by tickling, not by trade claims or season-pass claims (those bump `tickles_earned` but not active-days). So the gate genuinely requires returning to tickle across multiple days.
+Every tickle runs **`update_profile_and_item_count`**, which bumps `tickles_earned` among the rest of the tickle transaction. The referral helper checks that one lifetime counter.
 
 ### 6. The engagement gate fires (Layer 3)
 Still inside `update_profile_and_item_count`, after the tickle is counted, a block checks the caller:
@@ -95,18 +93,17 @@ Still inside `update_profile_and_item_count`, after the tickle is counted, a blo
 ```
 IF  referred_by IS NOT NULL          -- they were referred
 AND referral_completed_at IS NULL    -- haven't paid the inviter yet
-AND tickles_earned        >= 100     -- engagement threshold 1
-AND distinct_active_days  >= 3        -- engagement threshold 2
+AND tickles_earned        >= 100     -- the one engagement threshold
 THEN
     invitee.referral_completed_at = now()
-    inviter.counter             += 100        -- the +100 payout
+    grant_tickles(inviter, 100)               -- spendable, over-cap-safe
     inviter.referrals_completed += 1
     IF inviter.referrals_completed == 3 THEN
         grant Messenger Hat to inviter         -- one-shot milestone
     send push to inviter ("Your friend made it! +100")
 ```
 
-This is **lazy** — there's no cron. It fires on the invitee's *next tickle* after both thresholds are met. No background job means nothing can silently fail, but it also means the payout lands on a tickle, not at the exact midnight the counter crossed.
+The helper runs immediately after each tickle is counted, so the payout lands on the tickle that reaches 100. The migration backfills already-qualified referrals that were waiting only on the old day gate.
 
 ### 7. Feedback (Layer 4)
 - **Invitee** gets strong, immediate feedback: the "you're in" screen at redemption.
@@ -126,7 +123,7 @@ All on `public.profiles`:
 | `referral_completed_at` | When this player crossed the engagement gate (inviter got paid) | `update_profile_and_item_count` gate |
 | `referrals_completed` | How many of *my* invitees have completed | gate (incremented on the inviter) |
 | `tickles_earned` | Lifetime tickle count (gate input 1) | every tickle + trades/claims |
-| `distinct_active_days` | Distinct UTC days tickled (gate input 2) | tickle handler, once/UTC-day |
+| `distinct_active_days` | Distinct UTC days tickled (used elsewhere; not a referral gate) | tickle handler, once/UTC-day |
 | `last_active_date` | Last UTC date tickled (drives the active-day bump) | tickle handler |
 | `referral_completion_ack_at` | *(Layer 4, spec'd)* last time inviter saw their completions | `ack_referral_completions` |
 
@@ -152,7 +149,7 @@ Client mirror lives in `utils/referrals.ts`: the code regex, the typed RPC wrapp
 | Event | Who | Reward | When |
 |---|---|---|---|
 | Redemption | Invitee | +50 snouts | Immediately on entering a valid code |
-| Completion | Inviter | +100 snouts | When invitee hits 100 tickles + 3 active days |
+| Completion | Inviter | 100 tickles | When invitee hits 100 lifetime tickles |
 | 3rd completion | Inviter | Messenger Hat | On the inviter's 3rd completed referral |
 
 Asymmetric and inviter-heavy on purpose: the small immediate invitee bonus is the hook; the larger delayed inviter bonus rewards bringing in players who *actually play*.
@@ -163,8 +160,7 @@ Asymmetric and inviter-heavy on purpose: the small immediate invitee bonus is th
 
 - **Self-referral blocked** (`inviter_id != caller_id`).
 - **Redemption window**: account < 24h old AND < 5 tickles. You can't farm by redeeming on established/throwaway accounts after the fact.
-- **Engagement gate**: 100 tickles is many hours of real play (tickle regen physically caps the rate), across 3 distinct UTC days. A bot farm can't cheaply manufacture completions.
-- **Active-day counter** bumps at most once per UTC day, and only via tickling.
+- **Engagement gate**: 100 lifetime tickles is the single qualification mark.
 - **Milestones are one-shot** (the Hat is granted once at exactly 3, not every multiple).
 
 ---

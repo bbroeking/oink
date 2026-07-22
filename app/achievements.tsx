@@ -29,10 +29,7 @@ import { Stack, router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { rpc } from "@/utils/rpc";
-import { Sticker } from "../components/ui/Sticker";
 import { EmptyState, LoadingBeat } from "../components/ui/EmptyState";
-import { SnoutCoin } from "../components/ui/SnoutCoin";
-import { HAT_IMAGES } from "@/constants/hats";
 import { achievementIcon } from "@/constants/emojiArt";
 import { Icon } from "../components/ui/Icon";
 import {
@@ -91,6 +88,13 @@ const CATEGORY_LABEL: Record<string, string> = {
 	social:   "SOCIAL",
 	the_dig:  "THE DIG",
 };
+
+function catalogName(id: string): string {
+	return id
+		.split("_")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
+}
 
 export default function AchievementsScreen() {
 	const [rows, setRows] = useState<AchievementRow[]>([]);
@@ -251,15 +255,14 @@ function AchievementCard({
 }) {
 	const pct = Math.min(100, Math.round((row.progress / row.threshold) * 100));
 	const ready = row.claimed && !row.viewed_at;
-	const itemImage = row.reward_item_id ? HAT_IMAGES[row.reward_item_id] : null;
 	const categoryTag = CATEGORY_LABEL[row.display_category] ?? "";
 
 	// Reward summary line under the progress bar: lead with title,
 	// fall back to hat, then snouts-only. Mirrors the design's
 	// "reward · Title: X" line.
 	const rewardLabel = (() => {
-		if (row.reward_title_id) return `reward · Title: ${row.name}`;
-		if (row.reward_item_id) return `reward · Item: ${row.reward_item_id.replace(/_/g, " ")}`;
+		if (row.reward_title_id) return `reward · Title: ${catalogName(row.reward_title_id)}`;
+		if (row.reward_item_id) return `reward · Item: ${catalogName(row.reward_item_id)}`;
 		if (row.reward_snouts > 0) return `reward · +${row.reward_snouts} snouts`;
 		return "";
 	})();
@@ -306,13 +309,14 @@ function AchievementCard({
 						</Text>
 					)}
 
-					{/* Ready state: progress bar is replaced by the
-					    "earned · +N snouts" badge text + gold Claim
-					    button on the right. */}
+					{/* Ready state: progress bar is replaced by an earned
+					    summary + gold Claim button on the right. */}
 					{ready ? (
 						<View style={styles.readyRow}>
 							<Text style={styles.earnedText}>
-								earned · +{row.reward_snouts} snouts
+								{row.reward_snouts > 0
+									? `earned · +${row.reward_snouts} snouts`
+									: "earned · keepsake unlocked"}
 							</Text>
 							<Pressable
 								testID={`achievement-claim-${row.id}`}

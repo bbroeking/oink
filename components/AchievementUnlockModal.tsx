@@ -126,6 +126,11 @@ export function AchievementUnlockModal({ achievement, visible, onDismiss }: Prop
 	const itemImage = achievement.reward_item_id
 		? HAT_IMAGES[achievement.reward_item_id]
 		: null;
+	const hasReward = !!(
+		achievement.reward_item_id ||
+		achievement.reward_title_id ||
+		achievement.reward_snouts > 0
+	);
 
 	const rewardTranslateY = rewardSlide.interpolate({
 		inputRange: [0, 1],
@@ -167,7 +172,17 @@ export function AchievementUnlockModal({ achievement, visible, onDismiss }: Prop
 							<Text style={styles.desc}>{achievement.description}</Text>
 						)}
 
-						{!revealed ? (
+						{!hasReward ? (
+							<Pressable
+								onPress={handleClose}
+								style={({ pressed }) => [
+									styles.revealBtn,
+									pressed && { opacity: 0.7 },
+								]}
+							>
+								<Text style={styles.revealBtnText}>Keep it</Text>
+							</Pressable>
+						) : !revealed ? (
 							<Pressable
 								onPress={handleReveal}
 								style={({ pressed }) => [

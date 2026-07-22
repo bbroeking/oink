@@ -1,13 +1,15 @@
 // The Trough — friend-funded item drives, surfaced as a section in the Shop.
-// Lists open Troughs from your Sounder (my_drives), lets you chip in snouts
-// (10 snouts → 1 tickle, paid straight to snouts + tickles-earned/leaderboard
-// when the drive funds — NOT the tap bank; see 20260628), and claim rewards from
-// drives that funded. The card spells out what's being unlocked, who's chipped
-// in, what you've put in, and what you get back (tickles when it lands + XP now).
+// Lists open Troughs from your Sounder (my_drives) and lets you chip in snouts
+// toward a friend's item. The tickle reward for donating is RETIRED (spec 15):
+// chipping in unlocks the item for the opener + earns you XP, but pays no
+// tickles/leaderboard score. A funded drive shows a celebratory receipt — no
+// claim step — and the client never calls the retired claim_drive_reward RPC.
 import { useCallback, useRef, useState } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { rpc, rpcAction } from "@/utils/rpc";
+import { observeFieldGuide } from "@/utils/fieldGuide";
+import { remainingMs } from "@/utils/duration";
 import { HAT_IMAGES } from "@/constants/hats";
 import { FONTS, WHIMSY } from "@/constants/theme";
 import { SectionHeader } from "./ui";
@@ -29,21 +31,19 @@ interface Drive {
 	donor_count: number;
 	my_contribution: number;
 }
+// A funded drive the caller donated to. The tickle reward is retired
+// (spec 15), so this is now a celebratory receipt only — no claim.
 interface Claimable {
 	donation_id: string;
 	drive_id: string;
-	tickle_reward: number;
 	item_id: string;
 	item_name: string | null;
 }
 
-// Snouts → tickles: 10 to 1, rounding down. Mirrors donate_to_drive's
-// floor(snouts/10). Paid out only when the drive funds.
-const TICKLES_PER = (snouts: number) => Math.floor(snouts / 10);
 const PRESETS = [10, 25, 50];
 
 function hoursLeft(iso: string): string {
-	const ms = new Date(iso).getTime() - Date.now();
+	const ms = remainingMs(iso);
 	if (ms <= 0) return "closing";
 	const h = Math.floor(ms / 3_600_000);
 	const m = Math.floor((ms % 3_600_000) / 60_000);
@@ -56,6 +56,8 @@ function donateError(reason: string | undefined, have?: number): string {
 			return `Not enough snouts — you have ${have ?? 0}.`;
 		case "donate_cooldown":
 			return "You've chipped into this Trough recently — once per 12h per Trough.";
+		case "donor_cap":
+			return "You've filled your quarter — leave room for the rest of the sounder.";
 		case "already_funded":
 			return "Already funded!";
 		case "drive_closed":
@@ -69,12 +71,17 @@ function donateError(reason: string | undefined, have?: number): string {
 
 export function TroughSection({
 	onBalance,
+	onEmptyChange,
 }: {
 	// Reports every fresh server balance up to the host screen (the
 	// Shop header chip). my_drives re-runs after each chip-in/claim, so
 	// wiring this makes the chip update the moment snouts move instead
 	// of waiting for the next focus refetch.
 	onBalance?: (balance: number) => void;
+	// Reports whether there are zero open/funded drives, so a host segment
+	// can show its own empty state (this component renders null when empty).
+	// Derived from the my_drives load already run — no extra fetch.
+	onEmptyChange?: (empty: boolean) => void;
 } = {}) {
 	const [drives, setDrives] = useState<Drive[]>([]);
 	const [claimable, setClaimable] = useState<Claimable[]>([]);
@@ -88,6 +95,8 @@ export function TroughSection({
 	// a fresh closure each render (it feeds a useFocusEffect).
 	const onBalanceRef = useRef(onBalance);
 	onBalanceRef.current = onBalance;
+	const onEmptyChangeRef = useRef(onEmptyChange);
+	onEmptyChangeRef.current = onEmptyChange;
 
 	const load = useCallback(async () => {
 		const r = await rpc<{
@@ -98,11 +107,16 @@ export function TroughSection({
 			claimable: Claimable[];
 		}>("my_drives");
 		if (r?.ok) {
-			setDrives(r.drives ?? []);
-			setClaimable(r.claimable ?? []);
+			const nextDrives = r.drives ?? [];
+			const nextClaimable = r.claimable ?? [];
+			setDrives(nextDrives);
+			setClaimable(nextClaimable);
 			setBalance(r.balance ?? 0);
 			setDonatedToday(!!r.donated_today);
 			if (typeof r.balance === "number") onBalanceRef.current?.(r.balance);
+			onEmptyChangeRef.current?.(
+				nextDrives.length === 0 && nextClaimable.length === 0
+			);
 		}
 	}, []);
 
@@ -122,11 +136,13 @@ export function TroughSection({
 			{ drive_id: d.id, snouts: amt }
 		);
 		if (r.ok) {
+			// Field Guide: your first donation meets the Trough page (fail-soft).
+			observeFieldGuide("trough");
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 			setNote((n) => ({
 				...n,
 				[d.id]: r.funded
-					? "Funded! Claim your reward below."
+					? "Funded! You landed it for them."
 					: "Chipped in! Thanks",
 			}));
 		} else {
@@ -164,15 +180,6 @@ export function TroughSection({
 		setBusy(null);
 	};
 
-	const claim = async (c: Claimable) => {
-		if (busy) return;
-		setBusy(c.donation_id);
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-		await rpc("claim_drive_reward", { donation_id: c.donation_id });
-		await load();
-		setBusy(null);
-	};
-
 	if (drives.length === 0 && claimable.length === 0) return null;
 
 	return (
@@ -185,40 +192,43 @@ export function TroughSection({
 				<Text style={styles.explainerBody}>
 					Open a drive for any shop item you want, and your Sounder pitches in
 					snouts. When it fills, you get the item — and everyone who chipped in
-					gets snouts & leaderboard score back, plus XP for helping.
+					earns XP for helping the herd land it.
 				</Text>
 			</View>
 
+			{/* Funded-drive receipts — celebratory, no claim step (reward retired). */}
 			{claimable.map((c) => (
 				<View key={c.donation_id} style={styles.claimCard}>
+					<Glyph name="pigface" size={16} />
 					<Text style={styles.claimText}>
-						You helped land the {c.item_name ?? c.item_id} — claim{" "}
-						+{c.tickle_reward} snouts & score
+						You helped land the {c.item_name ?? c.item_id} — the herd came through!
 					</Text>
-					<Pressable
-						onPress={() => claim(c)}
-						style={({ pressed }) => [styles.claimBtn, pressed && { opacity: 0.7 }]}
-					>
-						<Text style={styles.claimBtnText}>
-							{busy === c.donation_id ? "…" : "Claim"}
-						</Text>
-					</Pressable>
 				</View>
 			))}
 
 			{drives.map((d) => {
 				const gap = d.target - d.raised;
 				const pct = Math.min(1, d.raised / d.target);
-				const maxAmt = Math.min(gap, balance);
+				// Quarter cap (founder 2026-07-20): no pig funds more than 25%
+				// of a Trough, cumulative. Fold the donor's remaining headroom
+				// into every chip amount so the UI never offers — or labels a
+				// button with — more than the server will actually take. Data's
+				// already at hand (my_contribution, target); no extra fetch.
+				const cap = Math.ceil(d.target * 0.25);
+				const headroom = Math.max(0, cap - d.my_contribution);
+				const effGap = Math.min(gap, headroom);
+				const maxAmt = Math.min(effGap, balance);
 				const sel = amounts[d.id] ?? 25;
-				const amt = Math.min(sel, gap);
+				const amt = Math.min(sel, effGap);
 				const canAfford = amt > 0 && amt <= balance;
-				const tickles = TICKLES_PER(amt);
-				const open = !d.is_mine && gap > 0;
+				// Chip UI hides once you've filled your quarter (headroom 0),
+				// even while the drive still has a gap for others to close.
+				const open = !d.is_mine && gap > 0 && headroom > 0;
 
-				// Reward caption: tickles (when it lands) + XP (now, first/day).
+				// Reward caption: XP (now, first/day) + the item lands for a friend.
+				// Tickle payout for donating is retired (spec 15).
 				const rewardBits: string[] = [];
-				if (tickles > 0) rewardBits.push(`+${tickles} snouts & score when it fills`);
+				rewardBits.push("helps your Sounder land it");
 				if (!donatedToday) rewardBits.push("+5 XP now");
 
 				return (
@@ -282,7 +292,7 @@ export function TroughSection({
 								</View>
 								<View style={styles.presetRow}>
 									{PRESETS.map((p) => {
-										const v = Math.min(p, gap);
+										const v = Math.min(p, effGap);
 										const on = amt === v;
 										const afford = v <= balance && v > 0;
 										return (
@@ -492,13 +502,4 @@ const styles = StyleSheet.create({
 		marginBottom: 10,
 	},
 	claimText: { flex: 1, fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.ink },
-	claimBtn: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: 10,
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-	},
-	claimBtnText: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
 });

@@ -75,6 +75,7 @@ import {
 	type ReactNode,
 } from "react";
 import { markPopupPresented } from "@/utils/popupSession";
+import { QUIET_FILL_SLOT_IDS } from "@/constants/popupPriorities";
 
 // See the timing contract above for how these two relate. The gap is the quiet
 // window after ANY hide (release, drop-of-presented, preemption) before the
@@ -143,12 +144,16 @@ export function PopupQueueProvider({ children }: { children: ReactNode }) {
 		// Session-level "a popup presented this login" signal for the quiet-login
 		// Sounder nudge. Fire on the EDGE into presenting a given id (idle→present
 		// or draining→present), never on re-renders that keep the same presentedId.
-		// markPopupPresented() itself excludes the sounderLaunch slot, so the
-		// nudge's own presentation never suppresses it.
+		// The arbiter is the single point that decides what counts as "a popup
+		// presented", so the quiet-fill exclusion lives HERE: the fallback nudges
+		// (QUIET_FILL_SLOT_IDS — see constants/popupPriorities.ts) must not have
+		// their OWN presentation latch the session signal, or they'd retroactively
+		// suppress themselves. Everything else latches it (utils/popupSession.ts).
 		const prev = machineRef.current;
 		if (
 			next.phase === "presenting" &&
 			next.presentedId &&
+			!QUIET_FILL_SLOT_IDS.has(next.presentedId) &&
 			!(prev.phase === "presenting" && prev.presentedId === next.presentedId)
 		) {
 			markPopupPresented(next.presentedId);
@@ -277,6 +282,27 @@ export function usePopupHold(active: boolean) {
 		ctx.hold();
 		return () => ctx.unhold();
 	}, [ctx, active]);
+}
+
+// One-liner for an UNMANAGED native Modal — a sheet rendered outside the queue
+// (UserSheet, HoofprintsSheet, and the other ~10 tab sheets) that still can't
+// coexist with a queued popup on iOS (the #50152 invisible-modal wedge). While
+// `open`, the queue admits nothing and drains anything presented — exactly the
+// mutual exclusion we want — and on close the hold lifts so queued popups
+// re-admit after the handoff gap. Mechanically a usePopupHold; named for intent
+// so future unmanaged sheets adopt the latch in one line instead of being
+// converted to slots.
+export function useUnmanagedModalHold(open: boolean) {
+	usePopupHold(open);
+}
+
+// True while any popup is currently PRESENTED. Lets a caller OUTSIDE the queue
+// (the push-tap handler in app/_layout) tell whether it would be navigating the
+// Stack UNDER a live native Modal (the iOS #50152 wedge) — so it can hold/drain
+// first and only pay the handoff-gap latency when something is actually up.
+export function usePopupActive(): boolean {
+	const ctx = useContext(PopupCtx);
+	return !!ctx?.activeId;
 }
 
 export function usePopupSlot(id: string, want: boolean, priority = 100) {

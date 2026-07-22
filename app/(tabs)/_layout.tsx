@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, AppState, Image, Text, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session } from "@supabase/supabase-js";
@@ -8,12 +8,19 @@ import { rpc } from "@/utils/rpc";
 import SupaAuth from "@/components/SupaAuth";
 import UsernameSetup from "@/components/UsernameSetup";
 import { Onboarding } from "@/components/Onboarding";
+import { getStorybookSeenServer, needsStorybook } from "@/utils/onboarding";
 import { ReferralCodeEntry } from "@/components/ReferralCodeEntry";
 import { HangingSignsTabBar } from "@/components/ui/HangingSignsTabBar";
+import { Button } from "@/components/ui/Button";
 import { ActiveEffectsProvider } from "@/hooks/ActiveEffectsProvider";
-import { WHIMSY, KICKER_TEXT } from "@/constants/theme";
+import { WHIMSY, KICKER_TEXT, TYPE } from "@/constants/theme";
 import { initIAP } from "@/utils/iap";
 import { usePopupHold } from "@/components/ui/PopupQueue";
+import {
+	USERNAME_BACKOFF_MS,
+	retryDelayMs,
+	resolveUsernameFetch,
+} from "@/utils/bootRetry";
 
 export default function TabLayout() {
 	const [session, setSession] = useState<Session | null>(null);
@@ -56,30 +63,102 @@ export default function TabLayout() {
 		});
 	}, []);
 
+	// The "saddling up" gate spins while username === undefined. An offline
+	// boot used to hang that spinner forever (the profile fetch threw, nothing
+	// caught it). Retry with a modest backoff, and once it's exhausted flip
+	// usernameError so the gate offers a manual retry instead (spec 03 / issue
+	// #5). CRITICAL: a failed fetch must NEVER setUsername(null) — that would
+	// route a named pig to UsernameSetup. resolveUsernameFetch keeps the
+	// undefined-on-error / null-only-on-success invariant.
+	const [usernameError, setUsernameError] = useState(false);
+	const usernameAttemptRef = useRef(0);
+	const usernameTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const refetchUsernameRef = useRef<() => void>(() => {});
+
+	const clearUsernameRetry = useCallback(() => {
+		if (usernameTimerRef.current != null) {
+			clearTimeout(usernameTimerRef.current);
+			usernameTimerRef.current = null;
+		}
+	}, []);
+
 	const refetchUsername = useCallback(async () => {
 		if (!session) return;
-		const { data } = await supabase
-			.from("profiles")
-			.select("username")
-			.eq("id", session.user.id)
-			.single();
-		setUsername(data?.username ?? null);
-	}, [session]);
+		setUsernameError(false);
+		try {
+			const { data, error } = await supabase
+				.from("profiles")
+				.select("username")
+				.eq("id", session.user.id)
+				.single();
+			const resolved = resolveUsernameFetch({ data, error });
+			if (resolved === undefined) {
+				// Fetch failed — fall through to the retry path; never treat this
+				// as "no username".
+				throw error ?? new Error("username fetch failed");
+			}
+			usernameAttemptRef.current = 0;
+			clearUsernameRetry();
+			setUsername(resolved);
+		} catch {
+			const delay = retryDelayMs(usernameAttemptRef.current, USERNAME_BACKOFF_MS);
+			if (delay == null) {
+				setUsernameError(true);
+				return;
+			}
+			usernameAttemptRef.current += 1;
+			clearUsernameRetry();
+			usernameTimerRef.current = setTimeout(() => {
+				usernameTimerRef.current = null;
+				refetchUsernameRef.current();
+			}, delay);
+		}
+	}, [session, clearUsernameRetry]);
+	refetchUsernameRef.current = refetchUsername;
 
-	useEffect(() => {
+	// Manual retry from the gate affordance — reset the backoff so the button
+	// gets a full fresh round of attempts, not a single already-exhausted try.
+	const retryUsername = useCallback(() => {
+		usernameAttemptRef.current = 0;
 		refetchUsername();
 	}, [refetchUsername]);
 
 	useEffect(() => {
-		AsyncStorage.getItem("seen_onboarding").then((v) => {
-			setNeedsOnboarding(v !== "1");
-		});
+		refetchUsername();
+		return () => {
+			clearUsernameRetry();
+		};
+	}, [refetchUsername, clearUsernameRetry]);
+
+	// Storybook gate: local flag OR the server mirror satisfies it. A reinstall
+	// wipes the local `seen_onboarding` flag, so a veteran with a real account
+	// used to replay the whole storybook (issue #11) — consult the server-side
+	// mirror when the local flag is absent. Keyed on session because the server
+	// read needs an authenticated caller: on a signed-out or still-resolving
+	// boot we can't ask, so we re-run once the session lands. Fail-soft: an
+	// unknown server read leaves the storybook armed (correct for a true fresh
+	// install); a current veteran's local flag short-circuits before any read,
+	// so nobody gets re-storybooked at rollout and offline boots are unaffected.
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			const localSeen = (await AsyncStorage.getItem("seen_onboarding")) === "1";
+			const serverSeen =
+				localSeen || !session ? false : await getStorybookSeenServer();
+			if (cancelled) return;
+			setNeedsOnboarding(
+				needsStorybook({ localSeen, serverSeen, hasSession: !!session })
+			);
+		})();
 		// Referral code-entry is bypassed for now — never force the step, so
 		// every user skips straight past it. (Re-enable by restoring:
 		//   hasSeenReferralStep().then((seen) => setNeedsReferralStep(!seen));
 		// and re-importing hasSeenReferralStep.)
 		setNeedsReferralStep(false);
-	}, []);
+		return () => {
+			cancelled = true;
+		};
+	}, [session]);
 
 	// Bounty-ready badge on the Season tab. Polled on mount + every
 	// foreground transition. Cheap RPC (counts rows from my_weekly_bounties),
@@ -121,7 +200,11 @@ export default function TabLayout() {
 	if (username === undefined) {
 		// Profile lookup in flight — show Rosie on a cream backdrop
 		// so the loading beat reads as a continuation of the splash
-		// (was a bare black screen, which felt like a crash).
+		// (was a bare black screen, which felt like a crash). If the
+		// fetch keeps failing (offline boot), swap the endless spinner
+		// for a retry button so the gate can't hang forever. The popup
+		// hold stays engaged the whole time (username is still
+		// undefined) so no launch modal leaks over this screen.
 		return (
 			<View
 				style={{
@@ -130,6 +213,7 @@ export default function TabLayout() {
 					alignItems: "center",
 					justifyContent: "center",
 					gap: 14,
+					paddingHorizontal: 32,
 				}}
 			>
 				<Image
@@ -137,8 +221,27 @@ export default function TabLayout() {
 					style={{ width: 200, height: 207 }}
 					resizeMode="contain"
 				/>
-				<Text style={KICKER_TEXT}>★ saddling up ★</Text>
-				<ActivityIndicator color={WHIMSY.ink} />
+				{usernameError ? (
+					<>
+						<Text style={KICKER_TEXT}>★ the barn's being shy ★</Text>
+						<Text
+							style={[
+								TYPE.hand,
+								{ color: WHIMSY.mute, textAlign: "center", marginBottom: 4 },
+							]}
+						>
+							Couldn't reach the farm. Give it another nudge.
+						</Text>
+						<Button variant="primary" onPress={retryUsername}>
+							Try again
+						</Button>
+					</>
+				) : (
+					<>
+						<Text style={KICKER_TEXT}>★ saddling up ★</Text>
+						<ActivityIndicator color={WHIMSY.ink} />
+					</>
+				)}
 			</View>
 		);
 	}

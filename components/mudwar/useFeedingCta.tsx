@@ -14,16 +14,13 @@ import { ReactNode, useEffect, useState } from "react";
 import { AppState, View, Text, Pressable, Modal, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useRooting } from "@/hooks/useRooting";
-import {
-	nextOpenCountdown,
-	patchPhaseOpen,
-	phaseClosesCountdown,
-} from "@/utils/rooting";
+import { feedingPhaseView, nextOpenCountdown } from "@/utils/rooting";
 import {
 	hydrateFeedingScheduleCache,
 	refreshFeedingSchedule,
 } from "@/utils/feedingConfig";
 import { TrufflePatch } from "./TrufflePatch";
+import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
 import {
 	FONTS,
 	WHIMSY,
@@ -66,12 +63,12 @@ export interface FeedingCta {
 	modal: ReactNode;
 }
 
+// The CTA's clock is the shared feedingPhaseView projected onto this hook's
+// field names — the SAME phase→countdown pairing bannerDigStatus reads, so the
+// banner and the CTA can never show a different phase or number.
 function ctaClock() {
-	const open = patchPhaseOpen();
-	return {
-		phaseOpen: open,
-		countdown: open ? phaseClosesCountdown() : nextOpenCountdown(),
-	};
+	const { open, countdown } = feedingPhaseView();
+	return { phaseOpen: open, countdown };
 }
 
 export function useFeedingCta(onDug?: () => void): FeedingCta {
@@ -85,6 +82,11 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 		clear,
 		reconcile,
 	} = useRooting();
+	// The dig experience is an unmanaged native Modal (visible={!!session}, below):
+	// hold the popup queue while a dig session is open so a foreground poll can't
+	// present a queued popup over the patch — the #50152 wedge (issue #4). Covers
+	// the nested TrufflePatch + DigHelpModal too.
+	useUnmanagedModalHold(!!session);
 	const [note, setNote] = useState<string | null>(null);
 	const [clock, setClock] = useState(ctaClock);
 
@@ -182,7 +184,11 @@ export function useFeedingCta(onDug?: () => void): FeedingCta {
 							onSubmit={async (finds, actions, missed) => {
 								const r = await submit(finds, actions, missed);
 								if (r.ok && r.outcome && !r.outcome.practice) onDug?.();
-								return r.ok ? r.outcome : null;
+								// Pass the refusal reason through so the end card can say
+								// WHY nothing banked (already_rooted, no_open_rooting, …).
+								return r.ok
+									? { outcome: r.outcome }
+									: { outcome: null, failReason: r.reason };
 							}}
 							onClose={clear}
 							phaseOpen={clock.phaseOpen}

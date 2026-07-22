@@ -12,6 +12,21 @@ lived for one day — its plumbing survives, its shape retires).
 > with presence, dig CTA + cooldown, milestone line, guide dialog). Migration
 > `20260720000000_weekly_race_season_board.sql`.
 
+> **Amended 2026-07-21:** the full Dig-Off page opens on **This Week**, followed
+> by **Past Weeks** as the settled archive and **Season** as the cumulative view.
+> Past Weeks opens on last week and steps backward/forward through every weekly
+> table retained in the season-scoped `race_digs` ledger, including ranked and
+> sub-quorum Sounders. Each archived row keeps its final weekly rank but shows
+> the Sounder's **total finds for that week**, not its per-snout rate: the live
+> board explains placement; the archive remembers what the herd dug. History is
+> fetched lazily through `race_history()` so the
+> compact season-tab card never pays for the archive. Migration
+> `20260768000000_race_weekly_history.sql`.
+> Every lens has a **Per snout / Overall** display switch. It remembers the
+> useful default per lens (This Week = Per snout; Past Weeks + Season = Overall)
+> and changes the score column only; official ranks stay anchored to the rule
+> that awarded them (weekly ranks per snout, season ranks by total finds).
+
 ## The sentence
 
 **"Every find counts forever — and every Monday, the week's best diggers take spoils."**
@@ -50,7 +65,16 @@ Lives on the season tab where the skirmish card was. Top ranks visible;
 the visible rows, otherwise anchored below a separator with its true rank
 ("… #14 Sonder"). Grayed unranked section beneath; race countdown; last-race
 line ("Last race: 3rd of 12 — +4 truffles each") doubling as the herd's
-history. The Board grows no new scope — the race lives here only.
+latest result. The full-field page carries three lenses: **This Week** (default),
+**Past Weeks** (the full settled table for
+each prior week in this season, displaying weekly total finds beside the final
+rank), then **Season** (cumulative finds). Per snout / Overall swaps the visible
+score without rewriting official placement. Historical rows do not open the live member
+ledger; that ledger cannot honestly reconstruct a past roster yet. The Board
+grows no new scope — the race lives here only. The full-field page follows the
+paper-ledger reference in `Dig-Off Leaderboard.html`: a hanging title plaque,
+framed period selector, metric switch inside the leaderboard header, circular
+podium-colored rank stamps, and one bordered standings surface.
 
 ## Notifications
 
