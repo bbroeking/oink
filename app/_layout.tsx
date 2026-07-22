@@ -68,8 +68,6 @@ import {
 	AchievementUnlockModal,
 	type UnlockedAchievement,
 } from "@/components/AchievementUnlockModal";
-import { AllegianceModal } from "@/components/AllegianceModal";
-import { bumpHomeStats } from "@/hooks/useHomeStats";
 import { SounderLaunchModal } from "@/components/SounderLaunchModal";
 import type { SounderStep } from "@/hooks/useSounderPath";
 import { PRACTICED_KEY } from "@/utils/sounderPath";
@@ -109,6 +107,7 @@ import {
 	feedbackNudgeFiredThisSession,
 	markFeedbackNudgeFired,
 } from "@/utils/popupSession";
+import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
 import {
 	shouldShowFeedbackNudge,
 	readFeedbackNudgeStamps,
@@ -199,9 +198,6 @@ function RootLayoutInner() {
 	const pendingAwaySeenRef = useRef<string | null>(null);
 	// Earned-but-unseen achievements, shown one reveal at a time.
 	const [achievements, setAchievements] = useState<UnlockedAchievement[]>([]);
-	// World Cup allegiance pick — shown once when the player hasn't chosen a
-	// country yet and hasn't locally dismissed the prompt.
-	const [showAllegiance, setShowAllegiance] = useState(false);
 	// "Start a Sounder!" launch nudge: shown when the feature is live + the
 	// player has no crew, ≤ once/day until they create/join one.
 	const [sounderPrompt, setSounderPrompt] = useState(false);
@@ -229,17 +225,20 @@ function RootLayoutInner() {
 	// Global popup queue slots — every launch popup goes through PopupQueue so
 	// only one shows at a time (across root AND the Barn tab). Lower priority
 	// number shows first when several are pending.
-	const schismSlot = usePopupSlot("schism", !!schism, 10);
-	const finaleSlot = usePopupSlot("finale", !!finale, 20);
-	const ritualsSlot = usePopupSlot("rituals", !!rituals, 30);
+	const schismSlot = usePopupSlot("schism", !!schism, POPUP_PRIORITIES.schism);
+	const finaleSlot = usePopupSlot("finale", !!finale, POPUP_PRIORITIES.finale);
+	const ritualsSlot = usePopupSlot(
+		"rituals",
+		!!rituals,
+		POPUP_PRIORITIES.rituals
+	);
 	// Suppressed for the session if a ceremony (recap / hungerIntro) fired —
 	// the carousel surfaces next login instead (flip-day stacking ceiling).
 	const achievementsSlot = usePopupSlot(
 		"achievements",
 		achievements.length > 0 && !ceremonyShownThisSession(),
-		40
+		POPUP_PRIORITIES.achievements
 	);
-	const allegianceSlot = usePopupSlot("allegiance", showAllegiance, 70);
 	// Quiet-login Sounder nudge — the FALLBACK popup: "show them something about
 	// joining a Sounder if no other dialog is going to show up" (founder, 2026-07).
 	// LOW priority (90) so it can never preempt a real dialog, and its want ANDs
@@ -253,7 +252,7 @@ function RootLayoutInner() {
 		sounderPrompt &&
 			!anyPopupPresentedThisSession() &&
 			!sounderNudgeFiredThisSession(),
-		90
+		POPUP_PRIORITIES.sounderLaunch
 	);
 	useEffect(() => {
 		if (sounderSlot.visible) markSounderNudgeFired();
@@ -271,7 +270,7 @@ function RootLayoutInner() {
 			!anyPopupPresentedThisSession() &&
 			!sounderNudgeFiredThisSession() &&
 			!feedbackNudgeFiredThisSession(),
-		95
+		POPUP_PRIORITIES.feedbackNudge
 	);
 	useEffect(() => {
 		if (feedbackNudgeSlot.visible) markFeedbackNudgeFired();
@@ -279,7 +278,11 @@ function RootLayoutInner() {
 	// The flip-day ceremony chain is recap (seasonEnd, pri 25 in season.tsx) →
 	// intro (pri 27): slotting the intro just ABOVE the recap guarantees it can
 	// never co-present over the recap on the season-flip login.
-	const hungerIntroSlot = usePopupSlot("hungerIntro", hungerIntro, 27);
+	const hungerIntroSlot = usePopupSlot(
+		"hungerIntro",
+		hungerIntro,
+		POPUP_PRIORITIES.hungerIntro
+	);
 	// The moment a ceremony PRESENTS (not on dismiss), latch the session gate so
 	// the achievements carousel + release notes hold their `want` for next login
 	// (flip-day stacking ceiling — SKILL.md 2026-07-11).
@@ -388,30 +391,6 @@ function RootLayoutInner() {
 			cancelled = true;
 			sub.remove();
 		};
-	}, [authChecked, sessionUserId]);
-
-	// World Cup allegiance — offer the "pick your country" modal. Shows on each
-	// launch while the player has NOT yet chosen (profiles.allegiance_country
-	// IS NULL), so the invite keeps surfacing for the rest of the tournament.
-	// "Maybe later" only hides it for the current session (in-memory) — no
-	// persistent dismiss — and it stops for good once they pick.
-	useEffect(() => {
-		if (!authChecked) return;
-		let cancelled = false;
-		const check = async () => {
-			const { data: ures } = await supabase.auth.getUser();
-			if (cancelled || !ures.user) return;
-			const { data } = await supabase
-				.from("profiles")
-				.select("allegiance_country")
-				.eq("id", ures.user.id)
-				.maybeSingle();
-			if (cancelled) return;
-			if (data && !(data as { allegiance_country?: string | null }).allegiance_country) {
-				setShowAllegiance(true);
-			}
-		};
-		check();
 	}, [authChecked, sessionUserId]);
 
 	// Sounder launch nudge — the quiet-login FALLBACK. Fires only when the feature
@@ -984,32 +963,45 @@ function RootLayoutInner() {
 	}, [loaded, authChecked, routeToPath]);
 
 	useEffect(() => {
-		// Cold launch: the app was opened by TAPPING a push while terminated.
-		// addNotificationResponseReceivedListener does NOT fire for that case, so
-		// read the response that launched us — but consume-once so a persisted
-		// stale response never replays on a later (non-tap) launch.
-		Notifications.getLastNotificationResponseAsync().then(async (res) => {
-			if (!res) return;
-			const key = responseConsumeKey(res);
-			if (key) {
-				const consumed = await AsyncStorage.getItem(LAST_NOTIF_RESPONSE_KEY);
-				if (consumed === key) return; // already routed this physical tap
-				await AsyncStorage.setItem(LAST_NOTIF_RESPONSE_KEY, key);
-			}
-			const data = res.notification.request.content.data as { screen?: string };
-			routeForTap(data?.screen);
-		});
-		// Warm/foreground taps. Stamp the consume key too, so the SAME tap replayed
-		// by getLastNotificationResponseAsync on the next cold launch is skipped.
-		const sub = Notifications.addNotificationResponseReceivedListener((res) => {
-			const key = responseConsumeKey(res);
-			if (key) {
-				AsyncStorage.setItem(LAST_NOTIF_RESPONSE_KEY, key).catch(() => {});
-			}
-			const data = res.notification.request.content.data as { screen?: string };
-			routeForTap(data?.screen);
-		});
-		return () => sub.remove();
+		// The notifications native module may be absent on a build without it
+		// linked (the Android dev build before FCM is wired throws expo's
+		// "not available on web / linked all the native dependencies" error).
+		// Guard both entry points so the whole root layout doesn't crash on
+		// mount — tap-routing is simply inert until a build with notifications
+		// ships. Mirrors the try/catch posture in utils/pushNotifications.ts.
+		let sub: { remove: () => void } | undefined;
+		try {
+			// Cold launch: the app was opened by TAPPING a push while terminated.
+			// addNotificationResponseReceivedListener does NOT fire for that case, so
+			// read the response that launched us — but consume-once so a persisted
+			// stale response never replays on a later (non-tap) launch.
+			Notifications.getLastNotificationResponseAsync()
+				.then(async (res) => {
+					if (!res) return;
+					const key = responseConsumeKey(res);
+					if (key) {
+						const consumed = await AsyncStorage.getItem(LAST_NOTIF_RESPONSE_KEY);
+						if (consumed === key) return; // already routed this physical tap
+						await AsyncStorage.setItem(LAST_NOTIF_RESPONSE_KEY, key);
+					}
+					const data = res.notification.request.content.data as { screen?: string };
+					routeForTap(data?.screen);
+				})
+				.catch(() => {});
+			// Warm/foreground taps. Stamp the consume key too, so the SAME tap replayed
+			// by getLastNotificationResponseAsync on the next cold launch is skipped.
+			sub = Notifications.addNotificationResponseReceivedListener((res) => {
+				const key = responseConsumeKey(res);
+				if (key) {
+					AsyncStorage.setItem(LAST_NOTIF_RESPONSE_KEY, key).catch(() => {});
+				}
+				const data = res.notification.request.content.data as { screen?: string };
+				routeForTap(data?.screen);
+			});
+		} catch {
+			// Native notifications module unavailable this build — stay inert.
+		}
+		return () => sub?.remove();
 	}, [routeForTap]);
 
 	useEffect(() => {
@@ -1103,27 +1095,6 @@ function RootLayoutInner() {
 							() => setAchievements((q) => q.slice(1)),
 							POPUP_TEARDOWN_MS
 						);
-					}}
-				/>
-			)}
-			{showAllegiance && (
-				<AllegianceModal
-					visible={allegianceSlot.visible}
-					onSkip={() => {
-						allegianceSlot.release();
-						setTimeout(() => setShowAllegiance(false), POPUP_TEARDOWN_MS);
-					}}
-					onChosen={(flagId) => {
-						// This picker lives above the tab tree — the Barn's
-						// useHomeStats instance can't see the choice. Push the
-						// same optimistic mount the Barn's own picker applies
-						// (the reconciling refetch races a null meta blob, so
-						// the patch, not the refetch, is what paints the flag).
-						bumpHomeStats({
-							activeFlag: { id: flagId, category: "flag", emoji: null },
-						});
-						allegianceSlot.release();
-						setTimeout(() => setShowAllegiance(false), POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}

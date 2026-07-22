@@ -8,9 +8,10 @@
 // (joins/leaves). Membership is enforced server-side by RLS + the cap
 // trigger; the client just reflects state.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "@/utils/supabase";
+import { usePostgresChanges } from "./usePostgresChanges";
 import {
 	CrewState,
 	JoinableCrew,
@@ -78,78 +79,54 @@ export function useCrew(enabled = true): UseCrew {
 
 	const crewId = crew.crew?.id ?? null;
 
-	useEffect(() => {
-		if (!enabled) {
-			setCrew(EMPTY);
-			return;
-		}
-		let cancelled = false;
-		let channelKey: string | null = null;
-		(async () => {
-			const {
-				data: { user },
-			} = await supabase.auth.getUser();
-			if (cancelled || !user) return;
-			channelKey = `realtime:crew:${user.id}:${crewId ?? "none"}`;
-			let ch = supabase.channel(channelKey).on(
-				"postgres_changes",
+	// Realtime: incoming crew_invites (scoped to me) always; then the
+	// spec set branches on crewId — a member watches the roster + incoming
+	// knocks on their crew, a crewless caller watches their OWN outgoing
+	// knocks resolve. crewId is a keyPart AND a dep, so the channel rebuilds
+	// when the caller joins/leaves. Lifecycle owned by usePostgresChanges.
+	usePostgresChanges({
+		topic: "crew",
+		enabled,
+		keyParts: [crewId],
+		onDisabled: () => setCrew(EMPTY),
+		specs: (uid) => {
+			const specs = [
 				{
-					event: "*",
-					schema: "public",
+					event: "*" as const,
 					table: "crew_invites",
-					filter: `invitee_id=eq.${user.id}`,
+					filter: `invitee_id=eq.${uid}`,
+					callback: () => refresh(),
 				},
-				() => refresh()
-			);
+			];
 			if (crewId) {
-				ch = ch.on(
-					"postgres_changes",
-					{
-						event: "*",
-						schema: "public",
-						table: "crew_members",
-						filter: `crew_id=eq.${crewId}`,
-					},
-					() => refresh()
-				);
+				specs.push({
+					event: "*" as const,
+					table: "crew_members",
+					filter: `crew_id=eq.${crewId}`,
+					callback: () => refresh(),
+				});
 				// Incoming knocks on the caller's crew — a fresh ask appears (and a
 				// withdrawn one clears) without a manual refresh.
-				ch = ch.on(
-					"postgres_changes",
-					{
-						event: "*",
-						schema: "public",
-						table: "crew_join_requests",
-						filter: `crew_id=eq.${crewId}`,
-					},
-					() => refresh()
-				);
+				specs.push({
+					event: "*" as const,
+					table: "crew_join_requests",
+					filter: `crew_id=eq.${crewId}`,
+					callback: () => refresh(),
+				});
 			} else {
 				// Crewless: the caller's OWN outgoing knocks — when a member accepts or
 				// declines, the "asked — waiting" state resolves on its own.
-				ch = ch.on(
-					"postgres_changes",
-					{
-						event: "*",
-						schema: "public",
-						table: "crew_join_requests",
-						filter: `requester_id=eq.${user.id}`,
-					},
-					() => refresh()
-				);
+				specs.push({
+					event: "*" as const,
+					table: "crew_join_requests",
+					filter: `requester_id=eq.${uid}`,
+					callback: () => refresh(),
+				});
 			}
-			ch.subscribe();
-		})();
-		return () => {
-			cancelled = true;
-			if (channelKey) {
-				supabase
-					.getChannels()
-					.filter((c) => c.topic === channelKey)
-					.forEach((c) => supabase.removeChannel(c));
-			}
-		};
-	}, [enabled, crewId, refresh]);
+			return specs;
+		},
+		deps: [enabled, crewId, refresh],
+	});
 
 	const create = useCallback(
 		async () => {

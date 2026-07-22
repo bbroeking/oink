@@ -27,9 +27,10 @@ import { type UseCrew } from "@/hooks/useCrew";
 import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
 import { BarnVisitModal } from "./BarnVisitModal";
+import { useUnmanagedModalHold } from "./ui/PopupQueue";
 import { FONTS, KICKER_PILL, PAGE_PAD, RADII, SHADOW_SM, SPACE, TAB_SAFE, TYPE, WHIMSY } from "@/constants/theme";
 import { AlignmentBadge } from "./ui/AlignmentBadge";
-import { PigAvatar } from "./ui/PigAvatar";
+import { PrestigeAvatar } from "./ui/PrestigeAvatar";
 import { Icon } from "./ui/Icon";
 import { Glyph } from "./ui/Glyph";
 
@@ -65,6 +66,11 @@ export default function Friends({
 	// The row's barn button jumps straight into the visit (its own Modal —
 	// unlike UserSheet's inline overlay, nothing here is already modal).
 	const [visiting, setVisiting] = useState<{ id: string; name: string } | null>(null);
+	// The barn-visit overlay is wrapped in this screen's own unmanaged native Modal
+	// (see below) — hold the popup queue while visiting so a foreground poll can't
+	// present a queued popup over it — the #50152 wedge (issue #4). (The UserSheet
+	// path to BarnVisitModal is covered by UserSheet's own hold.)
+	useUnmanagedModalHold(!!visiting);
 
 	// Shared barn-visit budget for the whole window: 3 distinct barns per 3h.
 	// It's window-global (target-independent in barn_visit_status), so we read
@@ -136,13 +142,18 @@ export default function Friends({
 		const ids = (await getFriendIds()) ?? [];
 		const capped = ids.slice(0, FRIEND_CAP_LIMIT);
 		if (capped.length > 0) {
-			const [{ data }, friendCrews, favRes] = await Promise.all([
-				supabase
-					.from("profiles")
-					.select(
-						"id, username, tickles_earned, discriminator, alignment_score, active_hat_id, active_hat:hats!profiles_active_hat_id_fkey(name)"
-					)
-					.in("id", capped),
+			const [profileRes, friendCrews, favRes] = await Promise.all([
+				(async () => {
+					const rich = await supabase
+						.from("profiles")
+						.select("id, username, tickles_earned, discriminator, alignment_score, active_hat_id, wallow_count, active_hat:hats!profiles_active_hat_id_fkey(name)")
+						.in("id", capped);
+					if (!rich.error) return rich;
+					return supabase
+						.from("profiles")
+						.select("id, username, tickles_earned, discriminator, alignment_score, active_hat_id, active_hat:hats!profiles_active_hat_id_fkey(name)")
+						.in("id", capped);
+				})(),
 				fetchFriendsCrews(),
 				// Pinned set — one owner-only select. Fail-soft to empty (a dark
 				// migration / RLS miss just leaves the list unsorted-by-favorite).
@@ -151,7 +162,7 @@ export default function Friends({
 					.select("friend_id")
 					.eq("user_id", userId),
 			]);
-			const list = (data as Profile[]) ?? [];
+			const list = (profileRes.data as Profile[]) ?? [];
 			setFriends(list);
 			setCrewNames(new Map(friendCrews.map((fc) => [fc.friend_id, fc.crew_name])));
 			setFavorites(
@@ -456,7 +467,11 @@ function FriendsList({
 						    the pig sprite, so the sounder reads what
 						    each friend is currently wearing at a glance. */}
 						<View style={styles.rowPigWrap}>
-							<PigAvatar size={36} hatId={f.active_hat_id ?? null} />
+							<PrestigeAvatar
+								size={(f.wallow_count ?? 0) > 0 ? 48 : 36}
+								hatId={f.active_hat_id ?? null}
+								prestigeLevel={f.wallow_count}
+							/>
 						</View>
 						<View style={{ flex: 1, minWidth: 0 }}>
 							<View style={styles.rowNameLine}>
@@ -784,7 +799,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 				<Text style={styles.referralFooter}>
 					★ share your code from{" "}
 					<Text style={styles.referralFooterBold}>Account</Text>
-					{" "}for +100 snouts
+						{" "}for 100 tickles
 				</Text>
 			)}
 		</View>

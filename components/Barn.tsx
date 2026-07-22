@@ -3,7 +3,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import {
 	View,
-	Image,
 	StyleSheet,
 	Dimensions,
 	Platform,
@@ -28,11 +27,11 @@ import { Icon } from "./ui/Icon";
 import { Glyph, glyphSource, type GlyphName } from "./ui/Glyph";
 import { usePopupSlot, POPUP_TEARDOWN_MS } from "./ui/PopupQueue";
 import { ceremonyShownThisSession } from "@/utils/ceremonyGate";
+import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
 import { Sticker, Tape } from "./ui/Sticker";
 import { WHIMSY, FONTS, SPACE, PAGE_PAD, SHADOW_SM, RADII, COLORS } from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
-import { AllegianceModal } from "./AllegianceModal";
 import { LuckyPigModal } from "./LuckyPigModal";
 import { LuckyTitleUnlockModal } from "./LuckyTitleUnlockModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
@@ -42,6 +41,7 @@ import { BarnOverlay } from "./ui/BarnOverlay";
 import { BarnActiveEffectsStrip } from "./BarnActiveEffectsStrip";
 import { BarnSounderChip } from "./BarnSounderChip";
 import { BarnBountyChip } from "./BarnBountyChip";
+import { BarnLoungeChip, BarnMemberReactions } from "./BarnMemberPerks";
 import {
 	alignmentLabel,
 	alignmentDisplay,
@@ -49,6 +49,8 @@ import {
 } from "@/utils/alignment";
 import { useHomeStats } from "@/hooks/useHomeStats";
 import { moodAnimation } from "@/utils/happiness";
+import { formatClockMS } from "@/utils/duration";
+import { wallowRegenPercent } from "@/utils/wallow";
 import { TruffleButton } from "./TruffleButton";
 import { BuryTruffleSheet } from "./BuryTruffleSheet";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
@@ -199,13 +201,6 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 );
 HeartFloats.displayName = "HeartFloats";
 
-function formatCountdown(totalSeconds: number): string {
-	const m = Math.floor(totalSeconds / 60);
-	const s = totalSeconds % 60;
-	if (m === 0) return `${s}s`;
-	return `${m}m ${s.toString().padStart(2, "0")}s`;
-}
-
 function PaperTicket({
 	label,
 	value,
@@ -315,6 +310,29 @@ export default function Barn() {
 	// in checkAlignment() below (on every focus).
 	const [alignment, setAlignment] = useState<AlignmentLabel>("neutral");
 
+	// Slop Club member perks (CLIENT-ONLY PROTOTYPE). is_vip is read off
+	// the same profile fetch checkAlignment already runs (no new round-trip);
+	// barnScene ("default" | "lounge") is a purely local, AsyncStorage-backed
+	// choice — no server, no migration. When a member picks the lounge we
+	// swap the Barn background to the members-only scene; every other path
+	// renders byte-identically to before.
+	const [isVip, setIsVip] = useState(false);
+	const [wallowCount, setWallowCount] = useState(0);
+	const [barnScene, setBarnScene] = useState<"default" | "lounge">("default");
+	useEffect(() => {
+		AsyncStorage.getItem("barn_scene_v0").then((v) => {
+			if (v === "lounge") setBarnScene("lounge");
+		});
+	}, []);
+	const lounged = isVip && barnScene === "lounge";
+	const toggleScene = useCallback(() => {
+		setBarnScene((prev) => {
+			const next = prev === "lounge" ? "default" : "lounge";
+			AsyncStorage.setItem("barn_scene_v0", next).catch(() => {});
+			return next;
+		});
+	}, []);
+
 	// Active daily-ritual effects — drive the overlay + the tap loop.
 	// Shared via ActiveEffectsProvider (one instance for the whole tab
 	// subtree), so a cleanse from the Hoofprints sheet or Inbox clears the
@@ -361,10 +379,6 @@ export default function Barn() {
 	} = useHomeStats({
 		onAlignmentLoaded: setAlignment,
 	});
-
-	// Country-allegiance picker, opened from the bottom-left Barn flag
-	// (or the "pick a country" pennant when no allegiance yet).
-	const [allegianceOpen, setAllegianceOpen] = useState(false);
 
 	// Release-notes auto-show: fires once on Barn mount per app launch
 	// when the user hasn't seen the latest version yet.
@@ -445,18 +459,34 @@ export default function Barn() {
 	// Home-screen popups route through the global PopupQueue so they show one at
 	// a time — in concert with the root launch modals, never overlapping. Lower
 	// priority shows first; truffle sheet is user-tapped so it jumps the line.
-	const truffleSlot = usePopupSlot("truffleSheet", truffleSheetOpen, 5);
+	const truffleSlot = usePopupSlot(
+		"truffleSheet",
+		truffleSheetOpen,
+		POPUP_PRIORITIES.truffleSheet
+	);
 	// Suppressed for the session if a ceremony (season-end recap / Great Hunger
 	// intro) fired this login — the notes surface next login instead (flip-day
 	// stacking ceiling, SKILL.md 2026-07-11).
 	const releaseNotesSlot = usePopupSlot(
 		"releaseNotes",
 		releaseNotesOpen && !ceremonyShownThisSession(),
-		45
+		POPUP_PRIORITIES.releaseNotes
 	);
-	const luckyTitleSlot = usePopupSlot("luckyTitle", !!luckyPig.unlockedTitle, 50);
-	const luckyPigSlot = usePopupSlot("luckyPig", luckyPig.luckyModalOpen, 55);
-	const sixSevenSlot = usePopupSlot("sixSeven", sixSevenDialog, 60);
+	const luckyTitleSlot = usePopupSlot(
+		"luckyTitle",
+		!!luckyPig.unlockedTitle,
+		POPUP_PRIORITIES.luckyTitle
+	);
+	const luckyPigSlot = usePopupSlot(
+		"luckyPig",
+		luckyPig.luckyModalOpen,
+		POPUP_PRIORITIES.luckyPig
+	);
+	const sixSevenSlot = usePopupSlot(
+		"sixSeven",
+		sixSevenDialog,
+		POPUP_PRIORITIES.sixSeven
+	);
 
 	useEffect(() => {
 		const c = stats.counter;
@@ -520,13 +550,33 @@ export default function Barn() {
 		const { data: ures } = await supabase.auth.getUser();
 		const uid = ures?.user?.id;
 		if (!uid) return;
-		const { data } = await supabase
+		const withWallow = await supabase
 			.from("profiles")
-			.select("alignment_score")
+			.select("alignment_score, is_vip, wallow_count")
 			.eq("id", uid)
 			.single();
-		const score =
-			(data as { alignment_score?: number } | null)?.alignment_score ?? 0;
+		let prof = withWallow.data as {
+			alignment_score?: number;
+			is_vip?: boolean | null;
+			wallow_count?: number | null;
+		} | null;
+		// Client and migration can ship in either order. On a pre-Wallow server,
+		// retry today's projection so alignment/member state still hydrates and the
+		// earned aura simply stays dark.
+		if (withWallow.error) {
+			const legacy = await supabase
+				.from("profiles")
+				.select("alignment_score, is_vip")
+				.eq("id", uid)
+				.single();
+			prof = legacy.data as typeof prof;
+		}
+		// Slop Club gate for the member perks — piggybacks this existing
+		// focus fetch rather than adding a round-trip. Non-members never
+		// see the lounge chip or the reaction row.
+		setIsVip(!!prof?.is_vip);
+		setWallowCount(prof?.wallow_count ?? 0);
+		const score = prof?.alignment_score ?? 0;
 		// Hydrate the alignment state — drives BarnOverlay theming. The
 		// home_stats RPC primary path doesn't surface alignment_score, so
 		// this fetch is the only place the label gets updated in prod;
@@ -563,7 +613,7 @@ export default function Barn() {
 			showToast(
 				"Out of tickles!",
 				next != null
-					? `Next tickle in ${formatCountdown(next)} · max ${stats.cap}`
+					? `Next in ${formatClockMS(next)} · +1 every ${formatClockMS(stats.regenSeconds ?? 3600)} · max ${stats.cap}`
 					: `Wait for regen or buy more soon.`
 			);
 			return;
@@ -728,16 +778,19 @@ export default function Barn() {
 		// blessings (warm_tea), curses (sluggish_snout), alignment,
 		// happiness. Pre-20260643 servers omit it — fall back to the hour.
 		const rate = stats.regenSeconds
-			? `+1 every ${formatCountdown(stats.regenSeconds)}`
+			? `+1 every ${formatClockMS(stats.regenSeconds)}`
 			: "+1 every hour";
+		const prestige = wallowRegenPercent(wallowCount);
 		showToast(
-			"Next tickle",
-			`In ${formatCountdown(Math.max(1, remaining))} · ${rate}, max ${stats.cap}`
+			prestige > 0 ? `Aura power · ${prestige}% faster` : "Next tickle",
+			`In ${formatClockMS(Math.max(1, remaining))} · ${rate}, max ${stats.cap}`
 		);
 	};
 
 	return (
-		<PageBackground bgId={stats.activeBackground?.id ?? null}>
+		<PageBackground
+			bgId={lounged ? "slop_club_lounge_bg" : stats.activeBackground?.id ?? null}
+		>
 			<BarnOverlay
 				alignment={alignment}
 				blessed={effects.blessed}
@@ -748,7 +801,7 @@ export default function Barn() {
 			    the painted scene. Decorative — only visible when there's
 			    no cosmetic background equipped (since PageBackground
 			    paints over the area when it is). Behind everything else. */}
-			{!stats.activeBackground && (
+			{!stats.activeBackground && !lounged && (
 				<View pointerEvents="none" style={styles.barnSilhouette}>
 					<Svg viewBox="0 0 64 56" width={64} height={56}>
 						<Polygon
@@ -764,77 +817,24 @@ export default function Barn() {
 				</View>
 			)}
 
-			{/* Country flag — pinned to the bottom-left of the whole Barn
-			    page. THE allegiance surface (the shop card is gone):
-			    tapping it reopens the country picker, and switching is
-			    allowed any time (server 20260640). No allegiance yet →
-			    a little "pick a country" pennant in the same spot. */}
-			{stats.activeFlag?.id && HAT_IMAGES[stats.activeFlag.id] ? (
-				<Pressable
-					onPress={() => {
-						Haptics.selectionAsync().catch(() => {});
-						setAllegianceOpen(true);
-					}}
-					hitSlop={8}
-					style={styles.barnFlag}
-				>
-					<Image
-						source={HAT_IMAGES[stats.activeFlag.id]}
-						style={styles.barnFlagImg}
-						resizeMode="contain"
-					/>
-				</Pressable>
-			) : statsLoaded ? (
-				<Pressable
-					onPress={() => {
-						Haptics.selectionAsync().catch(() => {});
-						setAllegianceOpen(true);
-					}}
-					hitSlop={8}
-					style={[styles.barnFlag, styles.barnFlagEmpty]}
-				>
-					<Icon name="plus" size={20} color={WHIMSY.ink} />
-					<Text style={styles.barnFlagEmptyText}>pick a country</Text>
-				</Pressable>
-			) : statsError ? (
+			{/* If the boot fetch exhausts its backoff, keep a visible recovery
+			    affordance in the old corner slot. */}
+			{statsError && !statsLoaded ? (
 				// Boot fetch failed through its whole backoff — give the player a
 				// visible way out of the "can't tickle" soft-lock instead of a dead
-				// screen. Same paper-pennant family as the allegiance empty state.
+				// screen.
 				<Pressable
 					onPress={() => {
 						Haptics.selectionAsync().catch(() => {});
 						fetchStats();
 					}}
 					hitSlop={8}
-					style={[styles.barnFlag, styles.barnFlagEmpty]}
+					style={styles.barnRecovery}
 				>
 					<Icon name="refresh" size={20} color={WHIMSY.ink} />
-					<Text style={styles.barnFlagEmptyText}>lost the barn?{"\n"}tap to reload</Text>
+					<Text style={styles.barnRecoveryText}>lost the barn?{"\n"}tap to reload</Text>
 				</Pressable>
 			) : null}
-
-			{/* User-initiated allegiance picker (Barn flag tap) — outside
-			    the popup queue on purpose: the queue serializes LAUNCH
-			    popups; direct-tap modals own the screen immediately. */}
-			{allegianceOpen && (
-				<AllegianceModal
-					visible
-					currentFlagId={stats.activeFlag?.id ?? null}
-					onSkip={() => setAllegianceOpen(false)}
-					onChosen={(flagId) => {
-						setAllegianceOpen(false);
-						// Optimistically mount the newly-picked flag NOW. The
-						// choose_allegiance RPC already succeeded, so the flag id is
-						// known; without this the flag doesn't render until a later
-						// refresh when the home_stats meta blob is null on the racing
-						// first refetch. The fetchStats() below reconciles.
-						applyOptimistic({
-							activeFlag: { id: flagId, category: "flag", emoji: null },
-						});
-						fetchStats();
-					}}
-				/>
-			)}
 
 			{/* Generous radial puffs — two soft white clouds that fade
 			    in at the top-left/right when alignment crosses into
@@ -871,7 +871,9 @@ export default function Barn() {
 						ribbon={
 							luckyPig.luckyTicklesLeft > 0
 								? `Lucky pig · ${luckyPig.luckyTicklesLeft} left`
-								: undefined
+								: wallowCount > 0
+									? `Wallow Rank ${wallowCount} · +1 / ${formatClockMS(stats.regenSeconds ?? 3600)}`
+									: undefined
 						}
 					/>
 				</View>
@@ -910,6 +912,17 @@ export default function Barn() {
 				    surface that keeps it from being forgotten. */}
 				<BarnBountyChip />
 
+				{/* Slop Club member perks (CLIENT-ONLY PROTOTYPE) — a lounge-scene
+				    toggle and a cozy reaction row, both gated on is_vip so
+				    non-members never see them. In-flow chips (no absolute chrome
+				    over Rosie); the reaction burst overlay is pointerEvents="none". */}
+				{isVip && (
+					<>
+						<BarnLoungeChip active={lounged} onToggle={toggleScene} />
+						<BarnMemberReactions />
+					</>
+				)}
+
 				{/* Alignment placard removed — the hanging Pilgrim/
 				    Generous/Greedy sign that used to live up here
 				    was redundant with the Account alignment story
@@ -933,9 +946,7 @@ export default function Barn() {
 							equippedAura={stats.activeAura}
 							equippedBackground={stats.activeBackground}
 							equippedHeld={stats.activeHeld}
-							// Flag is NOT drawn on the pig — it lives only in the
-							// bottom-left Barn overlay (styles.barnFlag) to avoid
-							// showing the same flag twice on the home screen.
+							prestigeLevel={wallowCount}
 						/>
 						{/* Floating ♥/✦ particles drift up from above the pig on
 						    every successful tickle. Absolute-fills the swipe
@@ -1076,10 +1087,11 @@ export default function Barn() {
 				}}
 			/>
 
-			{/* Bury dialogue — direct-tap modal (like the allegiance picker), so
+			{/* Bury dialogue — direct-tap modal, so
 			    it stays out of the launch popup queue and owns the screen on tap. */}
 			<BuryTruffleSheet
 				open={buryOpen}
+				balance={stats.counter}
 				onClose={() => setBuryOpen(false)}
 				onBuried={() => truffle.refresh()}
 				onResynced={() => truffle.refresh()}
@@ -1087,6 +1099,7 @@ export default function Barn() {
 
 			<BuriedTruffleSheet
 				open={truffleSheetOpen}
+				balance={stats.counter}
 				visible={truffleSlot.visible}
 				onClose={() => {
 					// Two-phase: release() hides the native modal this frame,
@@ -1233,29 +1246,22 @@ const styles = StyleSheet.create({
 		opacity: 0.45,
 		zIndex: 0,
 	},
-	// Equipped country flag, bottom-left corner of the Barn page.
-	barnFlag: {
+	// Boot-fetch recovery chip, bottom-left corner of the Barn page.
+	barnRecovery: {
 		position: "absolute",
 		bottom: 40,
 		left: 18,
-		width: 72,
+		width: 76,
 		height: 60,
 		zIndex: 6,
-	},
-	barnFlagImg: { width: "100%", height: "100%" },
-	// "No allegiance yet" pennant — same slot as the flag, paper chip
-	// so it reads against any background.
-	barnFlagEmpty: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		borderRadius: 12,
 		alignItems: "center",
 		justifyContent: "center",
-		width: 76,
-		height: 60,
 	},
-	barnFlagEmptyText: {
+	barnRecoveryText: {
 		fontFamily: FONTS.hand,
 		fontSize: 9,
 		color: WHIMSY.ink,

@@ -18,6 +18,7 @@ import { showPurchaseToast } from "./PurchaseToast";
 import { HAT_IMAGES, HatRow, RARITY_COLORS } from "@/constants/hats";
 import { FONTS, MODAL_BACKDROP_BG, RARITY_BG_SOLID, WHIMSY, STICKER_SHADOW, RADII } from "@/constants/theme";
 import { Icon } from "./ui/Icon";
+import { useUnmanagedModalHold } from "./ui/PopupQueue";
 
 // Tickle-particle preview — loops the same burst the Barn would
 // fire on a tap (per-particle dx / rise / scale / tilt / duration
@@ -188,6 +189,11 @@ export function ItemPreviewModal({
 	// SCALE the whole stage down to fit instead of letting overflow:hidden
 	// clip the pig's ears/sides ("can't see the full pig").
 	const [cardSide, setCardSide] = useState(0);
+	// Unmanaged native Modal (direct-tap from the shop, outside the popup queue):
+	// hold the queue while an item is previewed so a foreground poll can't present
+	// a queued popup over it — the #50152 wedge (issue #4). Keyed on `!!item` (the
+	// modal stays mounted with visible={false} when item is null).
+	useUnmanagedModalHold(!!item);
 	if (!item) return null;
 	const stageScale = cardSide > 0 ? Math.min(1, (cardSide - 12) / 300) : 1;
 	const rarity = item.rarity ?? "common";

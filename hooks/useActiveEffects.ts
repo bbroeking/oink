@@ -14,8 +14,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
+import { usePostgresChanges } from "./usePostgresChanges";
 import { observeFieldGuide } from "@/utils/fieldGuide";
 import {
 	Effect,
@@ -73,64 +73,35 @@ export function useActiveEffects(
 		}
 	}, [effects]);
 
-	useEffect(() => {
-		if (!enabled) {
-			setEffects([]);
-			return;
-		}
-		let cancelled = false;
-		let channelKey: string | null = null;
-		(async () => {
-			const { data: { user } } = await supabase.auth.getUser();
-			if (cancelled || !user) return;
-			channelKey = `realtime:active-effects:${user.id}`;
-			const ch = supabase
-				.channel(channelKey)
-				.on(
-					"postgres_changes",
-					{
-						event: "INSERT",
-						schema: "public",
-						table: "blessings",
-						filter: `receiver_id=eq.${user.id}`,
-					},
-					() => refresh()
-				)
-				.on(
-					"postgres_changes",
-					{
-						event: "INSERT",
-						schema: "public",
-						table: "curses",
-						filter: `receiver_id=eq.${user.id}`,
-					},
-					() => refresh()
-				)
-				.on(
-					"postgres_changes",
-					{
-						event: "UPDATE",
-						schema: "public",
-						table: "curses",
-						filter: `receiver_id=eq.${user.id}`,
-					},
-					() => refresh()
-				)
-				.subscribe();
-			return () => {
-				supabase.removeChannel(ch);
-			};
-		})();
-		return () => {
-			cancelled = true;
-			if (channelKey) {
-				supabase
-					.getChannels()
-					.filter((c) => c.topic === channelKey)
-					.forEach((c) => supabase.removeChannel(c));
-			}
-		};
-	}, [enabled, refresh]);
+	// Realtime: INSERT on blessings/curses (effects appearing) + UPDATE on
+	// curses (cleanse path), scoped to receiver_id (belt-and-braces atop
+	// RLS). Lifecycle owned by usePostgresChanges; uid resolves from auth.
+	usePostgresChanges({
+		topic: "active-effects",
+		enabled,
+		onDisabled: () => setEffects([]),
+		specs: (uid) => [
+			{
+				event: "INSERT",
+				table: "blessings",
+				filter: `receiver_id=eq.${uid}`,
+				callback: () => refresh(),
+			},
+			{
+				event: "INSERT",
+				table: "curses",
+				filter: `receiver_id=eq.${uid}`,
+				callback: () => refresh(),
+			},
+			{
+				event: "UPDATE",
+				table: "curses",
+				filter: `receiver_id=eq.${uid}`,
+				callback: () => refresh(),
+			},
+		],
+		deps: [enabled, refresh],
+	});
 
 	const cleanse = useCallback(async (): Promise<CleanseResult> => {
 		// Optimistic: drop curse rows immediately so chips/cards

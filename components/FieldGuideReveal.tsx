@@ -34,10 +34,11 @@ import {
 	type FieldGuidePageId,
 } from "@/utils/fieldGuide";
 import {
+	ensureFieldGuideNumbersFresh,
 	fieldGuideNumbers,
-	refreshFieldGuideNumbers,
 } from "@/utils/fieldGuideConfig";
 import { FIELD_GUIDE_ENTRIES } from "@/constants/fieldGuide";
+import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -57,7 +58,11 @@ export function FieldGuideReveal() {
 	const [pageId, setPageId] = useState<FieldGuidePageId | null>(() =>
 		peekPendingReveal()
 	);
-	const slot = usePopupSlot("fieldGuide", pageId != null, 50);
+	const slot = usePopupSlot(
+		"fieldGuide",
+		pageId != null,
+		POPUP_PRIORITIES.fieldGuide
+	);
 	const pop = useRef(new Animated.Value(0)).current;
 	const teardown = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -73,7 +78,7 @@ export function FieldGuideReveal() {
 
 	// Freshen the config numbers so the printed value line is never stale.
 	useEffect(() => {
-		if (slot.visible) refreshFieldGuideNumbers().catch(() => {});
+		if (slot.visible) ensureFieldGuideNumbersFresh();
 	}, [slot.visible]);
 
 	// Pop-in when presented; reset when not (a re-present replays the beat).

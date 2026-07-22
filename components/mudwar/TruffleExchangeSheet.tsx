@@ -41,6 +41,7 @@ import {
 } from "@/constants/theme";
 import { useTruffles } from "@/hooks/useTruffles";
 import { observeFieldGuide } from "@/utils/fieldGuide";
+import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
 
 // Batch-7 dressing slots (docs/great-hunger-art-manifest.md → exchange/).
 const EXCHANGE_ART: { banner: ImageSourcePropType | null; shelf: ImageSourcePropType | null } = {
@@ -55,6 +56,10 @@ interface Props {
 }
 
 export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
+	// Unmanaged native Modal (direct-tap, outside the popup queue): hold the queue
+	// while open so a foreground poll can't present a queued popup over it — the
+	// #50152 wedge (issue #4).
+	useUnmanagedModalHold(open);
 	const screenH = Dimensions.get("window").height;
 	const [confirming, setConfirming] = useState<string | null>(null);
 	const [note, setNote] = useState<string | null>(null);

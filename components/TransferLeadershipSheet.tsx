@@ -12,14 +12,14 @@ import {
 	AccentNote,
 	CrewPortrait,
 	CrewRow,
-	DiscText,
 	RowStatus,
 	SunPill,
 	theCrew,
 } from "./CrewRow";
 import { transferCrewLeadership } from "@/utils/crews";
 import type { UseCrew } from "@/hooks/useCrew";
-import { useRosterHats } from "@/hooks/useRosterHats";
+import { useRosterProfiles } from "@/hooks/useRosterHats";
+import { ProfileIdentity } from "./ui/ProfileIdentity";
 import { SPACE, TYPE, WHIMSY } from "@/constants/theme";
 
 export function TransferLeadershipSheet({
@@ -38,7 +38,7 @@ export function TransferLeadershipSheet({
 	const leader = crewHook.crew.members.find((m) => m.role === "leader") ?? null;
 	const riders = crewHook.crew.members.filter((m) => m.role !== "leader");
 	// Match the Leaderboard/roster PigAvatar look — crew_state carries no hat.
-	const rosterHats = useRosterHats(crewHook.crew.members.map((m) => m.user_id));
+	const rosterProfiles = useRosterProfiles(crewHook.crew.members.map((m) => m.user_id));
 
 	const crownThem = async (userId: string) => {
 		if (busyId) return;
@@ -68,12 +68,9 @@ export function TransferLeadershipSheet({
 		>
 			{leader && (
 				<CrewRow
-					left={<CrewPortrait crowned hatId={rosterHats.get(leader.user_id) ?? null} />}
-					title={
-						<>
-							{leader.username ?? "Pig"} <DiscText>you</DiscText>
-						</>
-					}
+					left={<CrewPortrait crowned hatId={rosterProfiles.get(leader.user_id)?.hatId ?? null} prestigeLevel={rosterProfiles.get(leader.user_id)?.wallowCount ?? 0} />}
+					title={leader.username ?? "Pig"}
+					titleNode={<ProfileIdentity username={leader.username} title={rosterProfiles.get(leader.user_id)?.title} suffix="you" />}
 					sub="wearing the crown now"
 					right={<RowStatus accent>leader</RowStatus>}
 				/>
@@ -82,8 +79,9 @@ export function TransferLeadershipSheet({
 				<CrewRow
 					key={m.user_id}
 					divider
-					left={<CrewPortrait hatId={rosterHats.get(m.user_id) ?? null} />}
+					left={<CrewPortrait hatId={rosterProfiles.get(m.user_id)?.hatId ?? null} prestigeLevel={rosterProfiles.get(m.user_id)?.wallowCount ?? 0} />}
 					title={m.username ?? "Pig"}
+					titleNode={<ProfileIdentity username={m.username} title={rosterProfiles.get(m.user_id)?.title} />}
 					sub="rides with you"
 					right={
 						<SunPill onPress={() => crownThem(m.user_id)} disabled={busyId !== null}>

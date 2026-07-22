@@ -21,17 +21,24 @@
 // candidate (window > 0, 0 < open ≤ window, 0 ≤ offset < window) and rejects
 // the rest.
 //
-// DEPENDENCY NOTE: AsyncStorage + the rpc chain are require()d lazily inside
-// the async paths, so importing this module (and utils/rooting, which reads
+// This module is now a thin DECLARATION over utils/configCell — the shared
+// "server-tuned config with compiled fallback" lifecycle (cache + debounce +
+// change-detection). This cell opts into BOTH the AsyncStorage cache and the
+// fetch debounce; the shape below is exactly the byte-for-byte behavior the
+// hand-rolled version had. The build-151 "config over constants" contract and
+// the lazy-require dependency note now live on the primitive.
+//
+// DEPENDENCY NOTE: the rpc chain + AsyncStorage are require()d lazily inside the
+// cell's async paths, so importing this module (and utils/rooting, which reads
 // feedingSchedule() in every window function) stays pure — no native modules,
-// no supabase client, nothing for a test to mock unless it exercises the
-// fetch/cache paths themselves.
+// nothing for a test to mock unless it exercises the fetch/cache paths.
 
 import {
 	PATCH_OPEN_SECS,
 	ROOTING_WINDOW_OFFSET_SECS,
 	ROOTING_WINDOW_SECS,
 } from "@/constants/dig";
+import { createConfigCell } from "@/utils/configCell";
 
 export interface FeedingSchedule {
 	/** Full window length, seconds (compiled default 28800 — 8h). */
@@ -58,14 +65,6 @@ const CACHE_KEY = "feeding_schedule_cache_v1";
 // a mount racing an AppState 'active') collapse into one RPC.
 const FETCH_MIN_MS = 5000;
 
-let current: FeedingSchedule = DEFAULT_FEEDING_SCHEDULE;
-let lastFetchAt = 0;
-
-/** The live schedule every window function reads (module-level, no context). */
-export function feedingSchedule(): FeedingSchedule {
-	return current;
-}
-
 // Coerce a server/cache field to a positive-ish integer, or NaN.
 function intField(v: unknown): number {
 	const n = typeof v === "number" ? v : NaN;
@@ -89,19 +88,23 @@ export function sanitizeFeedingSchedule(raw: unknown): FeedingSchedule | null {
 	return { windowSecs, openSecs, offsetSecs };
 }
 
+const cell = createConfigCell<FeedingSchedule>({
+	key: "feeding_schedule",
+	fallback: DEFAULT_FEEDING_SCHEDULE,
+	sanitize: sanitizeFeedingSchedule,
+	cacheKey: CACHE_KEY,
+	minRefreshMs: FETCH_MIN_MS,
+});
+
+/** The live schedule every window function reads (module-level, no context). */
+export const feedingSchedule: () => FeedingSchedule = cell.read;
+
 /**
  * Install an (already sanitized) schedule. Returns true when the values
  * actually moved — the caller uses that to trigger the clock re-derive.
  * Exported as the test seam for override-propagation coverage.
  */
-export function applyFeedingSchedule(next: FeedingSchedule): boolean {
-	const changed =
-		next.windowSecs !== current.windowSecs ||
-		next.openSecs !== current.openSecs ||
-		next.offsetSecs !== current.offsetSecs;
-	if (changed) current = next;
-	return changed;
-}
+export const applyFeedingSchedule: (next: FeedingSchedule) => boolean = cell.apply;
 
 /**
  * Hydrate from the AsyncStorage cache — the last server values this install
@@ -109,18 +112,7 @@ export function applyFeedingSchedule(next: FeedingSchedule): boolean {
  * useFeedingCta's mount (before the network refresh), so a relaunch between
  * fetches still ticks the rolled-out clock.
  */
-export async function hydrateFeedingScheduleCache(): Promise<void> {
-	try {
-		const AsyncStorage =
-			require("@react-native-async-storage/async-storage").default;
-		const raw = await AsyncStorage.getItem(CACHE_KEY);
-		if (!raw) return;
-		const sane = sanitizeFeedingSchedule(JSON.parse(raw));
-		if (sane) applyFeedingSchedule(sane);
-	} catch {
-		// no-op — the compiled defaults (or a prior apply) stand.
-	}
-}
+export const hydrateFeedingScheduleCache: () => Promise<void> = cell.hydrate;
 
 /**
  * Fetch the server schedule (app_setting RPC) and install it. Resolves true
@@ -128,35 +120,7 @@ export async function hydrateFeedingScheduleCache(): Promise<void> {
  * dug state). Fail-soft + debounced: offline / unpushed migration / bad row /
  * a fetch within FETCH_MIN_MS of the last all resolve false, silently.
  */
-export async function refreshFeedingSchedule(): Promise<boolean> {
-	const now = Date.now();
-	if (now - lastFetchAt < FETCH_MIN_MS) return false;
-	lastFetchAt = now;
-	try {
-		const { rpc } = require("@/utils/rpc") as typeof import("@/utils/rpc");
-		const raw = await rpc<Record<string, unknown>>("app_setting", {
-			p_key: "feeding_schedule",
-		});
-		if (!raw) return false; // rpc missing / null row — keep what we have
-		const sane = sanitizeFeedingSchedule(raw);
-		if (!sane) return false;
-		const changed = applyFeedingSchedule(sane);
-		// Persist the accepted row for the next cold start (fail-soft).
-		try {
-			const AsyncStorage =
-				require("@react-native-async-storage/async-storage").default;
-			await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(raw));
-		} catch {
-			// a missed cache write just means one extra fetch next launch.
-		}
-		return changed;
-	} catch {
-		return false;
-	}
-}
+export const refreshFeedingSchedule: () => Promise<boolean> = cell.refresh;
 
 /** Test seam: back to the compiled defaults + a cleared fetch debounce. */
-export function resetFeedingScheduleForTests(): void {
-	current = DEFAULT_FEEDING_SCHEDULE;
-	lastFetchAt = 0;
-}
+export const resetFeedingScheduleForTests: () => void = cell.resetForTests;

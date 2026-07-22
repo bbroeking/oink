@@ -28,6 +28,7 @@ import {
 	useDerivedValue,
 	useFrameCallback,
 	useSharedValue,
+	withTiming,
 } from "react-native-reanimated";
 import { Stack, router } from "expo-router";
 import { supabase } from "@/utils/supabase";
@@ -52,6 +53,19 @@ const SEAT_DX = 54;
 const SEESAW_TAP_R = 55;
 const SPEED = 170; // walk speed, pt/s
 const FRAME_MS = 125; // 8 fps walk cycle
+const SIT_MS = 320;
+
+type SeesawStation = { id: "seesaw"; slot: number; since: number };
+
+function seesawRotation(stations: SeesawStation[], now: number) {
+	const left = stations.some((station) => station.slot === 0);
+	const right = stations.some((station) => station.slot === 1);
+	if (left && right) {
+		const rideSince = Math.max(...stations.map((station) => station.since));
+		return Math.sin((now - rideSince) / 450) * 0.2;
+	}
+	return left ? -0.16 : right ? 0.16 : 0;
+}
 
 export default function LoungeScreen() {
 	// Member gate — same source of truth as the Barn chip (profiles.is_vip).
@@ -128,6 +142,12 @@ export default function LoungeScreen() {
 		useImage(require("../assets/images/sprites/rosie/lounge/idle_s_3.png")),
 		useImage(require("../assets/images/sprites/rosie/lounge/idle_s_4.png")),
 	];
+	const sitE = useImage(
+		require("../assets/images/sprites/rosie/lounge/sit_e.png")
+	);
+	const sitW = useImage(
+		require("../assets/images/sprites/rosie/lounge/sit_w.png")
+	);
 
 	// Emotes (P3) — one-shot broadcast; bubble floats over the pig ~1.8s.
 	const EMOTES: GlyphName[] = ["heart", "sparkles", "coffee", "party", "zzz"];
@@ -156,6 +176,10 @@ export default function LoungeScreen() {
 		since: number;
 	} | null>(null);
 	const pendingSeat = useRef<number | null>(null);
+	// Local-only sparring partner for testing the two-rider motion without
+	// waiting for another member to join this shard. It never enters Presence.
+	const [practiceRiderEnabled, setPracticeRiderEnabled] = useState(true);
+	const practiceSince = useRef(Date.now());
 
 	// Pig position (feet point) + walk target, all on the UI thread.
 	const px = useSharedValue(WORLD_W / 2);
@@ -170,6 +194,9 @@ export default function LoungeScreen() {
 	const resting = useSharedValue(1);
 	// My seat slot for the ride offset (-1 standing, 0 left, 1 right).
 	const mySlot = useSharedValue(-1);
+	// Crossfades the final sideways walking frame into the dedicated seated
+	// pose, with a small hop so boarding reads as an action rather than a snap.
+	const seatProgress = useSharedValue(0);
 	// 0 empty · 1 left only · 2 right only · 3 both (ride!)
 	const seatMode = useSharedValue(0);
 	const rideSince = useSharedValue(0);
@@ -229,6 +256,7 @@ export default function LoungeScreen() {
 				.map((pr) => pr.station!.slot)
 		);
 		if (myStation) taken.add(myStation.slot);
+		if (practiceSlot !== null) taken.add(practiceSlot);
 		const slot = !taken.has(0) ? 0 : !taken.has(1) ? 1 : null;
 		if (slot === null) return;
 		pendingSeat.current = slot;
@@ -248,6 +276,7 @@ export default function LoungeScreen() {
 			setStation(null);
 			pendingSeat.current = null;
 			mySlot.value = -1;
+			seatProgress.value = 0;
 		}
 		tx.value = Math.min(
 			Math.max(wx, FENCE_INSET + PIG / 2),
@@ -265,27 +294,30 @@ export default function LoungeScreen() {
 
 	// Frame swap via per-(direction,frame) opacity — 16 stacked images, one
 	// visible. (Deliberately avoids animating the `image` prop itself.)
-	const s0 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 0 ? 1 : 0));
-	const s1 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 1 ? 1 : 0));
-	const s2 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 2 ? 1 : 0));
-	const s3 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 3 ? 1 : 0));
-	const i0 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 0 ? 1 : 0));
-	const i1 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 1 ? 1 : 0));
-	const i2 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 2 ? 1 : 0));
-	const i3 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 3 ? 1 : 0));
+	const standingOpacity = useDerivedValue(() =>
+		mySlot.value >= 0 ? 1 - seatProgress.value : 1
+	);
+	const s0 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 0 ? standingOpacity.value : 0));
+	const s1 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 1 ? standingOpacity.value : 0));
+	const s2 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 2 ? standingOpacity.value : 0));
+	const s3 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 3 ? standingOpacity.value : 0));
+	const i0 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 0 ? standingOpacity.value : 0));
+	const i1 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 1 ? standingOpacity.value : 0));
+	const i2 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 2 ? standingOpacity.value : 0));
+	const i3 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 3 ? standingOpacity.value : 0));
 	const idleOpacities = [i0, i1, i2, i3];
-	const n0 = useDerivedValue(() => (dir.value === 1 && frame.value === 0 ? 1 : 0));
-	const n1 = useDerivedValue(() => (dir.value === 1 && frame.value === 1 ? 1 : 0));
-	const n2 = useDerivedValue(() => (dir.value === 1 && frame.value === 2 ? 1 : 0));
-	const n3 = useDerivedValue(() => (dir.value === 1 && frame.value === 3 ? 1 : 0));
-	const e0 = useDerivedValue(() => (dir.value === 2 && frame.value === 0 ? 1 : 0));
-	const e1 = useDerivedValue(() => (dir.value === 2 && frame.value === 1 ? 1 : 0));
-	const e2 = useDerivedValue(() => (dir.value === 2 && frame.value === 2 ? 1 : 0));
-	const e3 = useDerivedValue(() => (dir.value === 2 && frame.value === 3 ? 1 : 0));
-	const w0 = useDerivedValue(() => (dir.value === 3 && frame.value === 0 ? 1 : 0));
-	const w1 = useDerivedValue(() => (dir.value === 3 && frame.value === 1 ? 1 : 0));
-	const w2 = useDerivedValue(() => (dir.value === 3 && frame.value === 2 ? 1 : 0));
-	const w3 = useDerivedValue(() => (dir.value === 3 && frame.value === 3 ? 1 : 0));
+	const n0 = useDerivedValue(() => (dir.value === 1 && frame.value === 0 ? standingOpacity.value : 0));
+	const n1 = useDerivedValue(() => (dir.value === 1 && frame.value === 1 ? standingOpacity.value : 0));
+	const n2 = useDerivedValue(() => (dir.value === 1 && frame.value === 2 ? standingOpacity.value : 0));
+	const n3 = useDerivedValue(() => (dir.value === 1 && frame.value === 3 ? standingOpacity.value : 0));
+	const e0 = useDerivedValue(() => (dir.value === 2 && frame.value === 0 ? standingOpacity.value : 0));
+	const e1 = useDerivedValue(() => (dir.value === 2 && frame.value === 1 ? standingOpacity.value : 0));
+	const e2 = useDerivedValue(() => (dir.value === 2 && frame.value === 2 ? standingOpacity.value : 0));
+	const e3 = useDerivedValue(() => (dir.value === 2 && frame.value === 3 ? standingOpacity.value : 0));
+	const w0 = useDerivedValue(() => (dir.value === 3 && frame.value === 0 ? standingOpacity.value : 0));
+	const w1 = useDerivedValue(() => (dir.value === 3 && frame.value === 1 ? standingOpacity.value : 0));
+	const w2 = useDerivedValue(() => (dir.value === 3 && frame.value === 2 ? standingOpacity.value : 0));
+	const w3 = useDerivedValue(() => (dir.value === 3 && frame.value === 3 ? standingOpacity.value : 0));
 	const opacities = [
 		[s0, s1, s2, s3],
 		[n0, n1, n2, n3],
@@ -296,6 +328,12 @@ export default function LoungeScreen() {
 	const plankTransform = useDerivedValue(() => [
 		{ rotate: seesawRot.value },
 	]);
+	const sitEOpacity = useDerivedValue(() =>
+		mySlot.value === 0 ? seatProgress.value : 0
+	);
+	const sitWOpacity = useDerivedValue(() =>
+		mySlot.value === 1 ? seatProgress.value : 0
+	);
 	const pigX = useDerivedValue(() => px.value - PIG / 2);
 	// Seated pigs RIDE the plank: the seat's vertical travel is the plank
 	// end's arc, sin(rot) * (signed seat arm).
@@ -305,7 +343,8 @@ export default function LoungeScreen() {
 			PIG +
 			(mySlot.value >= 0
 				? Math.sin(seesawRot.value) *
-				  (mySlot.value === 0 ? -SEAT_DX : SEAT_DX)
+						(mySlot.value === 0 ? -SEAT_DX : SEAT_DX) -
+					Math.sin(seatProgress.value * Math.PI) * 8
 				: 0)
 	);
 	const myName = me?.username ?? "";
@@ -354,6 +393,8 @@ export default function LoungeScreen() {
 					// right seat faces west.
 					dir.value = st.slot === 0 ? 2 : 3;
 					mySlot.value = st.slot;
+					seatProgress.value = 0;
+					seatProgress.value = withTiming(1, { duration: SIT_MS });
 				}
 			}
 		}, 100);
@@ -365,12 +406,30 @@ export default function LoungeScreen() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [me]);
 	const now = Date.now();
+	const realTakenSlots = new Set(
+		peers
+			.filter((peer) => peer.station?.id === "seesaw")
+			.map((peer) => peer.station!.slot)
+	);
+	if (myStation) realTakenSlots.add(myStation.slot);
+	const preferredPracticeSlot = myStation ? 1 - myStation.slot : 1;
+	const practiceSlot =
+		practiceRiderEnabled && !realTakenSlots.has(preferredPracticeSlot)
+			? preferredPracticeSlot
+			: null;
 	// Mirror seesaw occupancy into UI-thread values for the plank worklet.
 	useEffect(() => {
-		const sitters = peers
+		const sitters: SeesawStation[] = peers
 			.filter((pr) => pr.station?.id === "seesaw")
-			.map((pr) => pr.station!);
+			.map((pr) => pr.station as SeesawStation);
 		if (myStation) sitters.push({ id: "seesaw", ...myStation });
+		if (practiceSlot !== null) {
+			sitters.push({
+				id: "seesaw",
+				slot: practiceSlot,
+				since: practiceSince.current,
+			});
+		}
 		// Conflict rule (spec): earliest `since` keeps a double-claimed seat;
 		// the loser quietly stands up and the seat shows one pig everywhere.
 		if (myStation) {
@@ -384,6 +443,7 @@ export default function LoungeScreen() {
 				setMyStation(null);
 				setStation(null);
 				mySlot.value = -1;
+				seatProgress.value = 0;
 			}
 		}
 		const left = sitters.some((st) => st.slot === 0);
@@ -393,7 +453,20 @@ export default function LoungeScreen() {
 			? Math.max(...sitters.map((st) => st.since))
 			: 0;
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [peers, myStation]);
+	}, [peers, myStation, practiceSlot]);
+
+	const visibleSitters: SeesawStation[] = peers
+		.filter((peer) => peer.station?.id === "seesaw")
+		.map((peer) => peer.station as SeesawStation);
+	if (myStation) visibleSitters.push({ id: "seesaw", ...myStation });
+	if (practiceSlot !== null) {
+		visibleSitters.push({
+			id: "seesaw",
+			slot: practiceSlot,
+			since: practiceSince.current,
+		});
+	}
+	const visibleSeesawRotation = seesawRotation(visibleSitters, now);
 
 	return (
 		<GestureHandlerRootView style={styles.root}>
@@ -454,30 +527,15 @@ export default function LoungeScreen() {
 								drawDir = slot === 0 ? 2 : 3;
 								px2 = SEESAW.x + (slot === 0 ? -SEAT_DX : SEAT_DX);
 								py2 = SEESAW.y - 6;
-								const sitters = peers
-									.filter((pr) => pr.station?.id === "seesaw")
-									.map((pr) => pr.station!);
-								if (myStation)
-									sitters.push({ id: "seesaw", ...myStation });
-								const both =
-									sitters.some((st) => st.slot === 0) &&
-									sitters.some((st) => st.slot === 1);
-								const rot = both
-									? Math.sin(
-											(now -
-												Math.max(
-													...sitters.map((st) => st.since)
-												)) /
-												450
-									  ) * 0.2
-									: slot === 0
-									? -0.16
-									: 0.16;
 								rideDy =
-									Math.sin(rot) * (slot === 0 ? -SEAT_DX : SEAT_DX);
+									Math.sin(visibleSeesawRotation) *
+									(slot === 0 ? -SEAT_DX : SEAT_DX);
 							}
-							const img =
-								dirImgs[drawDir]?.[moving ? remoteTick % 4 : 0];
+							const img = seated
+								? peer.station!.slot === 0
+									? sitE
+									: sitW
+								: dirImgs[drawDir]?.[moving ? remoteTick % 4 : 0];
 							if (!img) return null;
 							const emoteFresh =
 								peer.emote && now - peer.emote.at < 1800;
@@ -514,6 +572,46 @@ export default function LoungeScreen() {
 								</Group>
 							);
 						})}
+						{practiceSlot !== null &&
+							(practiceSlot === 0 ? sitE : sitW) && (
+								<Group>
+									<SkiaImage
+										image={practiceSlot === 0 ? sitE! : sitW!}
+										x={
+											SEESAW.x +
+											(practiceSlot === 0 ? -SEAT_DX : SEAT_DX) -
+											PIG / 2
+										}
+										y={
+											SEESAW.y -
+											6 -
+											PIG +
+											Math.sin(visibleSeesawRotation) *
+												(practiceSlot === 0 ? -SEAT_DX : SEAT_DX)
+										}
+										width={PIG}
+										height={PIG}
+									/>
+									{tagFont && (
+										<SkiaText
+											text="Practice Pig"
+											font={tagFont}
+											x={
+												SEESAW.x +
+												(practiceSlot === 0 ? -SEAT_DX : SEAT_DX) -
+												39
+											}
+											y={
+												SEESAW.y +
+												8 +
+												Math.sin(visibleSeesawRotation) *
+													(practiceSlot === 0 ? -SEAT_DX : SEAT_DX)
+											}
+											color="#4a3325"
+										/>
+									)}
+								</Group>
+							)}
 						{idleImgs.map(
 							(img, i) =>
 								img && (
@@ -544,7 +642,27 @@ export default function LoungeScreen() {
 										)
 								)
 							)}
-						</Group>
+						{sitE && (
+							<SkiaImage
+								image={sitE}
+								x={pigX}
+								y={pigY}
+								width={PIG}
+								height={PIG}
+								opacity={sitEOpacity}
+							/>
+						)}
+						{sitW && (
+							<SkiaImage
+								image={sitW}
+								x={pigX}
+								y={pigY}
+								width={PIG}
+								height={PIG}
+								opacity={sitWOpacity}
+							/>
+						)}
+					</Group>
 					</Canvas>
 				</GestureDetector>
 			)}
@@ -558,6 +676,40 @@ export default function LoungeScreen() {
 					]}
 				>
 					<Text style={styles.boardBtnText}>hop on the seesaw ›</Text>
+				</Pressable>
+			)}
+			{allowed && (
+				<Pressable
+					onPress={() => {
+						practiceSince.current = Date.now();
+						setPracticeRiderEnabled((enabled) => !enabled);
+					}}
+					style={({ pressed }) => [
+						styles.practiceBtn,
+						practiceRiderEnabled && styles.practiceBtnOn,
+						pressed && { opacity: 0.85 },
+					]}
+					accessibilityRole="button"
+					accessibilityLabel={`${
+						practiceRiderEnabled ? "Remove" : "Add"
+					} the practice seesaw rider`}
+				>
+					<Text style={styles.practiceBtnText}>
+						practice pig {practiceRiderEnabled ? "on" : "off"}
+					</Text>
+				</Pressable>
+			)}
+			{allowed && __DEV__ && (
+				<Pressable
+					onPress={() => router.push("/member-perks-prototype" as never)}
+					style={({ pressed }) => [
+						styles.perkLabBtn,
+						pressed && { opacity: 0.85 },
+					]}
+					accessibilityRole="button"
+					accessibilityLabel="Open the Slop Club perk lab"
+				>
+					<Text style={styles.perkLabBtnText}>perk lab</Text>
 				</Pressable>
 			)}
 
@@ -643,6 +795,41 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
 		color: WHIMSY.ink,
+	},
+	practiceBtn: {
+		position: "absolute",
+		bottom: 94,
+		left: 18,
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 16,
+		paddingVertical: 7,
+		paddingHorizontal: 12,
+	},
+	practiceBtnOn: { backgroundColor: WHIMSY.sun },
+	practiceBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.ink,
+	},
+	perkLabBtn: {
+		position: "absolute",
+		top: 58,
+		left: 18,
+		backgroundColor: WHIMSY.bark,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		borderRadius: 16,
+		paddingVertical: 7,
+		paddingHorizontal: 12,
+	},
+	perkLabBtnText: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.sun,
+		textTransform: "uppercase",
+		letterSpacing: 1.1,
 	},
 	emoteBtn: {
 		width: 46,

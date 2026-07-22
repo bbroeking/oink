@@ -1,6 +1,6 @@
-// Your Sounder — the full referral page (reached via "Your sounder + rewards"
-// on the Me tab). Shows every invited friend still on the way with their
-// progress toward counting (100 tickles · 3 active days), and the full reward
+// Referral Rewards — the full referral page reached from the Me tab. Shows
+// every invited player still on the way with progress toward 100 tickles and
+// the full reward
 // ladder (3 → 1000) with earned / next / locked states. Data: my_referral_summary.
 import React, { useCallback, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -10,7 +10,6 @@ import {
 	StyleSheet,
 	ScrollView,
 	SafeAreaView,
-	Pressable,
 } from "react-native";
 import { Stack, router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -28,7 +27,6 @@ import {
 function FriendProgress({ friend }: { friend: ReferralFriend }) {
 	const done = !!friend.completed;
 	const tRatio = Math.max(0, Math.min(1, friend.tickles / 100));
-	const dRatio = Math.max(0, Math.min(1, friend.active_days / 3));
 	return (
 		<View style={styles.friendRow}>
 			<View style={styles.friendTop}>
@@ -42,7 +40,7 @@ function FriendProgress({ friend }: { friend: ReferralFriend }) {
 					</View>
 				) : (
 					<Text style={styles.friendProg}>
-						{friend.tickles}/100 tickles · {friend.active_days}/3 days
+							{friend.tickles}/100 tickles
 					</Text>
 				)}
 			</View>
@@ -50,9 +48,6 @@ function FriendProgress({ friend }: { friend: ReferralFriend }) {
 				<View style={styles.friendBars}>
 					<View style={styles.barTrack}>
 						<View style={[styles.barFill, { width: `${tRatio * 100}%` }]} />
-					</View>
-					<View style={styles.barTrack}>
-						<View style={[styles.barFill, { width: `${dRatio * 100}%` }]} />
 					</View>
 				</View>
 			)}
@@ -86,8 +81,8 @@ export default function SounderProgressScreen() {
 			<View style={styles.bg}>
 				<SafeAreaView style={{ flex: 1 }}>
 					<PageHeader
-						kicker="your sounder"
-						title="Your Sounder"
+							kicker="referrals"
+							title="Referral Rewards"
 						onBack={() => router.back()}
 						below={
 							<Text style={styles.statsLine}>
@@ -110,8 +105,7 @@ export default function SounderProgressScreen() {
 							<Sticker color="rose" rotate={-0.5} radius={16} style={styles.card}>
 								<Text style={styles.cardKicker}>★ on the way</Text>
 								<Text style={styles.cardSub}>
-									A friend counts once they hit 100 tickles AND play on 3
-									separate days.
+									A referral counts as soon as the new player reaches 100 tickles.
 								</Text>
 								<View style={styles.friendList}>
 									{pending.map((f, i) => (
@@ -124,7 +118,7 @@ export default function SounderProgressScreen() {
 						<Sticker color="cream" rotate={0.4} radius={16} style={styles.card}>
 							<Text style={styles.cardKicker}>★ reward ladder</Text>
 							<Text style={styles.cardSub}>
-								Every completed referral also pays +100 snouts.
+									Every completed referral also pays 100 tickles.
 							</Text>
 							<View style={styles.ladder}>
 								{REFERRAL_LADDER.map((rung) => {
@@ -178,10 +172,10 @@ export default function SounderProgressScreen() {
 						</Sticker>
 
 						{pending.length === 0 && completed === 0 && (
-							<EmptyState
-								glyph="friends"
-								title="No sounder yet"
-								sub="Share your code from the Me tab to start your sounder."
+								<EmptyState
+									glyph="friends"
+									title="No referrals yet"
+									sub="Share your code from the Me tab to invite a new player."
 							/>
 						)}
 					</ScrollView>

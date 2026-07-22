@@ -13,14 +13,15 @@ import {
 	useWindowDimensions,
 	type LayoutChangeEvent,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../utils/supabase";
 import { rpc } from "@/utils/rpc";
-import { formatHM } from "@/utils/time";
+import { useShopCatalog } from "@/hooks/useShopCatalog";
+import { equipCosmetic } from "@/utils/cosmetics";
+import { formatCountdownHM } from "@/utils/duration";
 import { presentPaywall, OFFERING_IDS } from "../../utils/iap";
 import { Button, SectionHeader } from "../../components/ui";
-import { EmptyState } from "../../components/ui/EmptyState";
+import { EmptyState, LoadingBeat } from "../../components/ui/EmptyState";
 import { SnoutCoin } from "../../components/ui/SnoutCoin";
 import { ClosetView } from "../../components/ClosetView";
 import { TroughSection } from "../../components/TroughSection";
@@ -28,9 +29,8 @@ import {
 	HAT_IMAGES,
 	HatRow,
 	RARITY_COLORS,
-	HIDDEN_CATEGORIES,
 } from "@/constants/hats";
-import { SLOT_COLUMN, slotForCategory, columnForCategory } from "@/constants/slots";
+import { columnForCategory } from "@/constants/slots";
 import { categoryIcon } from "@/constants/emojiArt";
 import { Icon } from "@/components/ui/Icon";
 import { Glyph, IconText, type GlyphName } from "@/components/ui/Glyph";
@@ -143,10 +143,6 @@ function buildRowsByCategory(items: HatRow[]): ListRow[] {
 		}
 	}
 	return rows;
-}
-
-function formatCountdown(secs: number): string {
-	return formatHM(secs * 1000);
 }
 
 function HatThumb({
@@ -358,7 +354,10 @@ const shopCardStyles = StyleSheet.create({
 	legend: {
 		flexDirection: "row",
 		flexWrap: "wrap",
-		columnGap: SPACE.md,
+		alignItems: "center",
+		// Tight chip-to-chip gaps so the five rarities flow across 1–2 lines
+		// instead of stacking one-per-row.
+		columnGap: SPACE.sm,
 		rowGap: SPACE.sm,
 		// Flush with the grid: the parent scroll content already insets
 		// PAGE-grid's 12, so the legend carries no extra horizontal pad.
@@ -522,35 +521,45 @@ const shopCardStyles = StyleSheet.create({
 });
 
 export default function ShopScreen() {
-	const [daily, setDaily] = useState<HatRow[]>([]);
-	const [allItems, setAllItems] = useState<HatRow[]>([]);
-	const [owned, setOwned] = useState<Set<string>>(new Set());
-	// Multi-slot equipment: hat, aura, and background each have their own
-	// column on profiles. Equipping an aura clears the aura slot only,
-	// leaving any hat/background equipped intact. See migration
-	// 20260514000000_aura_background_slots.sql for the schema.
-	// Keyed by profiles column (active_hat_id, active_glasses_id, …).
-	const [activeIds, setActiveIds] = useState<Record<string, string | null>>({});
+	// Catalog data lifecycle (fetch + derived state + reset countdown) lives in
+	// useShopCatalog; the screen owns only rendering, modals, and the purchase /
+	// equip flows. Optimistic setters (setCounter/setOwned/patchActiveIds/
+	// setActiveTitleId) let a buy or equip reflect before the refetch lands.
+	const {
+		loading,
+		daily,
+		allItems,
+		owned,
+		activeIds,
+		counter,
+		isVip,
+		userId,
+		activeTitleId,
+		resetsIn,
+		ownedItems,
+		dailyIds,
+		refresh,
+		setCounter,
+		setOwned,
+		setActiveTitleId,
+		patchActiveIds,
+	} = useShopCatalog();
 	const isEquipped = (id: string, category: string | null | undefined) => {
 		return activeIds[columnForCategory(category)] === id;
 	};
-	const [counter, setCounter] = useState<number>(0);
-	// The current user's display name, used as the sample handle in
-	// the TitleRow live-preview ("Halo Bearer <you>" / "<you> Drove
-	// Captain"). Falls back to "you" if the fetch hasn't returned.
-	const [myUsername, setMyUsername] = useState<string>("you");
 	const [busyId, setBusyId] = useState<string | null>(null);
 	const [previewItem, setPreviewItem] = useState<HatRow | null>(null);
-	const [resetsIn, setResetsIn] = useState<number>(0);
-	const [view, setView] = useState<"daily" | "browse" | "wardrobe">("daily");
+	const [view, setView] = useState<"daily" | "browse" | "wardrobe" | "trough">("daily");
 	const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-	// Slop Club membership — drives the lock badge + members section CTA in
-	// the Collectibles catalog (the buy itself is server-gated by buy_hat).
-	const [isVip, setIsVip] = useState<boolean>(false);
 	// Collapse state for the two Collectibles bands (members shown first).
 	const [collapsed, setCollapsed] = useState<{ members: boolean; everyone: boolean }>(
 		{ members: false, everyone: false }
 	);
+	// Trough segment emptiness — TroughSection renders null when there are no
+	// open/funded drives, so it reports its empty status up here (no new fetch;
+	// it's derived from the my_drives load it already runs) and the segment
+	// shows a cozy empty state instead of a blank body.
+	const [troughEmpty, setTroughEmpty] = useState<boolean>(false);
 
 	// Deep-link target: navigation from elsewhere (e.g. the battle-pass
 	// reward dialog) can pass `?view=wardrobe` to jump straight there.
@@ -560,7 +569,7 @@ export default function ShopScreen() {
 	useEffect(() => {
 		if (
 			params.view === "wardrobe" || params.view === "browse" ||
-			params.view === "daily"
+			params.view === "daily" || params.view === "trough"
 		) {
 			setView(params.view);
 			router.setParams({ view: undefined });
@@ -568,10 +577,8 @@ export default function ShopScreen() {
 	}, [params.view]);
 	// Title EQUIP UI renders inside ClosetView (the Closet view). Titles are
 	// earned-only now (see 20260677) — there is no shop buy path. activeTitleId
-	// is sourced from profiles.active_title_id (20260511); userId is captured
-	// separately so the Closet can load the player's owned titles.
-	const [userId, setUserId] = useState<string | null>(null);
-	const [activeTitleId, setActiveTitleId] = useState<string | null>(null);
+	// + userId are sourced from the profile by useShopCatalog; the Closet reads
+	// them (and pushes title changes back through setActiveTitleId).
 
 	// Imperative handle for the on-screen "ka-ching" particle burst.
 	// Fired from handleBuy on the tile that was just purchased.
@@ -584,142 +591,14 @@ export default function ShopScreen() {
 	const deniedPlayer = useAudioPlayer(deniedSound);
 	const equipPlayer = useAudioPlayer(equipSound);
 
-	const load = useCallback(async () => {
-		const {
-			data: { user },
-		} = await supabase.auth.getUser();
-		if (!user) return;
-
-		// Shape of the profiles row selected below. `active_title_id` is
-		// optional because the fallback query (run when that column isn't
-		// deployed yet) omits it.
-		type ProfileRow = {
-			username: string | null;
-			counter: number | null;
-			is_vip?: boolean | null;
-			active_hat_id: string | null;
-			active_glasses_id: string | null;
-			active_mask_id: string | null;
-			active_neck_id: string | null;
-			active_aura_id: string | null;
-			active_background_id: string | null;
-			active_held_id: string | null;
-			active_tickle_particle_id?: string | null;
-			active_flag_id: string | null;
-			active_title_id?: string | null;
-		};
-		const [dailyRes, allRes, ownedRes, profRes, resetsRes] = await Promise.all([
-			rpc<HatRow[]>("daily_shop"),
-			// pass_exclusive lands in 20260675. On a pre-migration server the
-			// unknown column 400s the whole select — retry without it so Browse
-			// still loads (server daily_shop/buy_hat gate pass items regardless;
-			// the cost>0 filter hides them client-side until the column exists).
-			supabase
-				.from("hats")
-				.select("id, name, cost, display_order, emoji, image_path, category, rarity, description, pass_exclusive, members_only")
-				.order("display_order")
-				.then(async (res) => {
-					if (res.error) {
-						return supabase
-							.from("hats")
-							.select("id, name, cost, display_order, emoji, image_path, category, rarity, description")
-							.order("display_order");
-					}
-					return res;
-				}),
-			supabase.from("user_hats").select("hat_id").eq("user_id", user.id),
-			// active_title_id depends on the 20260511 migration. If the
-			// column isn't deployed yet the select errors — retry without
-			// it so the shop still loads.
-			supabase
-				.from("profiles")
-				.select("username, counter, is_vip, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, active_title_id")
-				.eq("id", user.id)
-				.single()
-				.then(async (res) => {
-					if (res.error) {
-						return supabase
-							.from("profiles")
-							.select("username, counter, is_vip, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id")
-							.eq("id", user.id)
-							.single();
-					}
-					return res;
-				}),
-			rpc<number>("shop_resets_in_seconds"),
-		]);
-		const filterPlaceable = (rows: HatRow[]) =>
-			rows.filter(
-				(r) => !r.category || !HIDDEN_CATEGORIES.has(r.category)
-			);
-		const ownedSet = new Set(
-			((ownedRes.data ?? []) as { hat_id: string }[]).map((r) => r.hat_id)
-		);
-		setDaily(filterPlaceable(dailyRes ?? []));
-		// Cost-0 items are season-pass exclusives — not for sale. Only surface
-		// them if the player already OWNS them (claimed via the pass); otherwise
-		// they leak into the browseable shop (which players noticed).
-		setAllItems(
-			filterPlaceable((allRes.data as HatRow[]) ?? []).filter(
-				(r) => (r.cost > 0 && !r.pass_exclusive) || ownedSet.has(r.id)
-			)
-		);
-		setOwned(ownedSet);
-		const prof = (profRes.data as ProfileRow | null) ?? null;
-		setCounter(prof?.counter ?? 0);
-		setMyUsername(prof?.username ?? "you");
-		setIsVip(!!prof?.is_vip);
-		{
-			const pr = prof ?? ({} as Partial<ProfileRow>);
-			setActiveIds({
-				active_hat_id: pr.active_hat_id ?? null,
-				active_glasses_id: pr.active_glasses_id ?? null,
-				active_mask_id: pr.active_mask_id ?? null,
-				active_neck_id: pr.active_neck_id ?? null,
-				active_aura_id: pr.active_aura_id ?? null,
-				active_background_id: pr.active_background_id ?? null,
-				active_held_id: pr.active_held_id ?? null,
-				active_tickle_particle_id: pr.active_tickle_particle_id ?? null,
-				active_flag_id: pr.active_flag_id ?? null,
-			});
-		}
-		setActiveTitleId(prof?.active_title_id ?? null);
-		setUserId(user.id);
-		setResetsIn(resetsRes ?? 0);
-	}, []);
-
 	// Join Slop Club from the members band header — the SAME RevenueCat offering
 	// components/Account.tsx and the season premium unlock present. is_vip flips
-	// server-side via the webhook; re-running load() re-reads the profile, which
-	// unlocks the members band + drops the ribbon locks.
+	// server-side via the webhook; re-running the catalog fetch re-reads the
+	// profile, which unlocks the members band + drops the ribbon locks.
 	const handleJoinSlopClub = useCallback(async () => {
 		const result = await presentPaywall(OFFERING_IDS.slopClub);
-		if (result.ok) await load();
-	}, [load]);
-
-	useFocusEffect(
-		useCallback(() => {
-			load();
-		}, [load])
-	);
-
-	useEffect(() => {
-		if (resetsIn <= 0) {
-			// Countdown parked at 0 — the shop rolled over UTC midnight while
-			// this screen stayed open. Refetch today's shop + reseed the timer
-			// instead of freezing on yesterday's items. The 2s delay guards
-			// against a tight reload loop if the server is still reporting 0
-			// right at the boundary (clock skew): worst case we gently re-poll
-			// every 2s until it ticks past midnight, then resetsIn goes
-			// positive and this settles back into the 1s countdown.
-			const t = setTimeout(() => {
-				void load();
-			}, 2000);
-			return () => clearTimeout(t);
-		}
-		const t = setInterval(() => setResetsIn((s) => Math.max(0, s - 1)), 1000);
-		return () => clearInterval(t);
-	}, [resetsIn, load]);
+		if (result.ok) await refresh();
+	}, [refresh]);
 
 	const handleBuy = async (hat: HatRow) => {
 		if (busyId) return;
@@ -786,8 +665,8 @@ export default function ShopScreen() {
 			return;
 		}
 		// Buy succeeded — snap the balance chip IMMEDIATELY (buy_hat
-		// returns the post-spend counter as `remaining`); load() below
-		// still reconciles owned/daily, but the spend must never wait
+		// returns the post-spend counter as `remaining`); the refresh()
+		// below still reconciles owned/daily, but the spend must never wait
 		// on that round trip to show.
 		setCounter((c) => r.remaining ?? Math.max(0, c - hat.cost));
 		setOwned((prev) => new Set(prev).add(hat.id));
@@ -814,13 +693,14 @@ export default function ShopScreen() {
 		// BuyCelebration already plays the success haptic + sound; skip
 		// the duplicate Haptics.notificationAsync below to avoid stacking
 		// two haptics on top of each other.
-		load();
+		refresh();
 	};
 
-	// Equip routes by category: aura → active_aura_id, background →
-	// active_background_id, held → active_held_id, everything else →
-	// active_hat_id. Passing `null` for itemId unequips just the
-	// matching slot, leaving the other columns intact.
+	// Equip a cosmetic (or unequip when itemId is null). The routing +
+	// face-slot exclusivity rule and the profiles write live in
+	// utils/cosmetics (equipCosmetic); the screen keeps the equip haptic +
+	// SFX and patches activeIds optimistically from the returned column patch
+	// (same ordering as before: write, then patch).
 	const handleEquip = async (
 		itemId: string | null,
 		category: string | null | undefined
@@ -834,22 +714,9 @@ export default function ShopScreen() {
 			equipPlayer.seekTo(0);
 			equipPlayer.play();
 		} catch {}
-		// Category-precise column (glasses + masks share the Face CHIP but
-		// keep separate columns — columnForCategory routes correctly).
-		const column = columnForCategory(category);
-		const update: Record<string, string | null> = { [column]: itemId };
-		// Face exclusivity: the merged chip shows one face item at a time,
-		// so equipping glasses clears any mask and vice versa. Unequips
-		// (itemId null) leave the sibling alone.
-		if (itemId) {
-			if (category === "glasses") update.active_mask_id = null;
-			if (category === "mask") update.active_glasses_id = null;
-		}
-		await supabase.from("profiles").update(update).eq("id", user.id);
-		setActiveIds((prev) => ({ ...prev, ...update }));
+		const update = await equipCosmetic(user.id, itemId, category);
+		patchActiveIds(update);
 	};
-
-	const dailyIds = useMemo(() => new Set(daily.map((d) => d.id)), [daily]);
 
 	// Redesigned Today grid: numeric 2-col tile width (12px scroll padding
 	// ×2, SPACE.md gap — never %-size grid children; Yoga-quirk discipline).
@@ -876,11 +743,6 @@ export default function ShopScreen() {
 	const browseRows = useMemo<ListRow[]>(
 		() => buildBrowseRows(browseItems, collapsed, isVip),
 		[browseItems, collapsed, isVip]
-	);
-
-	const ownedItems = useMemo(
-		() => allItems.filter((i) => owned.has(i.id)),
-		[allItems, owned]
 	);
 
 	const wardrobeRows = useMemo(
@@ -1034,12 +896,13 @@ export default function ShopScreen() {
 				</View>
 
 				<View style={styles.viewToggle}>
-					{(["daily", "browse", "wardrobe"] as const).map((v) => {
+					{(["daily", "browse", "wardrobe", "trough"] as const).map((v) => {
 						const active = v === view;
 						const label =
 							v === "daily" ? "Today"
 								: v === "browse" ? "Collectibles"
-								: "Closet";
+								: v === "wardrobe" ? "Closet"
+								: "Trough";
 						return (
 							<Pressable
 								key={v}
@@ -1078,15 +941,23 @@ export default function ShopScreen() {
 						<SectionHeader
 							kicker="today's drop"
 							title="Today's Drop"
-							right={`resets in ${formatCountdown(resetsIn)}`}
+							right={`resets in ${formatCountdownHM(resetsIn)}`}
 						/>
 						<RarityLegend />
 						{daily.length === 0 ? (
-							<EmptyState
-								glyph="zzz"
-								title="All sold out for today"
-								sub="A fresh drop arrives at sunrise."
-							/>
+							loading ? (
+								// Still fetching today's drop — a loading shop must
+								// never read as sold-out. Show the cozy loading beat
+								// until the fetch completes and the result is
+								// genuinely empty.
+								<LoadingBeat glyph="tophat" label="stocking the shelves" />
+							) : (
+								<EmptyState
+									glyph="zzz"
+									title="All sold out for today"
+									sub="A fresh drop arrives at sunrise."
+								/>
+							)
 						) : (
 							<>
 								{/* Uniform 2-col grid of all 8 daily items — bento mosaic
@@ -1109,9 +980,6 @@ export default function ShopScreen() {
 										</View>
 									))}
 								</View>
-								<TroughSection
-									onBalance={(b) => setCounter(b)}
-								/>
 							</>
 						)}
 					</ScrollView>
@@ -1197,7 +1065,7 @@ export default function ShopScreen() {
 							<EmptyState glyph="search" title="Nothing in this band yet" />
 						}
 					/>
-				) : (
+				) : view === "wardrobe" ? (
 					<ClosetView
 						ownedItems={ownedItems}
 						allItems={allItems}
@@ -1208,7 +1076,35 @@ export default function ShopScreen() {
 						userId={userId}
 						activeTitleId={activeTitleId}
 						onTitleChange={setActiveTitleId}
+						isVip={isVip}
 					/>
+				) : (
+					// Trough segment — friend-funded item drives get their own
+					// folder so players reach them in one tap, no scrolling past
+					// the daily grid. TroughSection loads its own data (my_drives)
+					// and renders null when there are no open/funded drives, so
+					// this segment shows the cozy empty state in that case.
+					<ScrollView
+						key="trough"
+						style={styles.dailyScroll}
+						contentContainerStyle={styles.dailyScrollContent}
+						showsVerticalScrollIndicator={false}
+					>
+						{/* TroughSection brings its own "Group drives" header +
+						    explainer and renders null when there are no drives —
+						    so the empty state stands alone in that case. */}
+						{troughEmpty && (
+							<EmptyState
+								glyph="pigface"
+								title="No drives running yet"
+								sub="Open a Trough on any shop item, and your Sounder chips in snouts to help you land it."
+							/>
+						)}
+						<TroughSection
+							onBalance={(b) => setCounter(b)}
+							onEmptyChange={setTroughEmpty}
+						/>
+					</ScrollView>
 				)}
 			</SafeAreaView>
 

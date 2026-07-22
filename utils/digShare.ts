@@ -22,6 +22,7 @@
 // receipt counts it), so the grid's find-emoji count equals the "N finds" stat.
 
 import { PATCH_COLS } from "@/constants/dig";
+import { clusterAnchor } from "@/utils/rooting";
 import type { Find, PatchBoard } from "@/utils/rooting";
 
 // The grid's shape vocabulary: the three sweet finds + mud (the catch-all for
@@ -92,8 +93,10 @@ export function digShareData(
 	// tile; its other tiles are dropped so a multi-tile truffle reads as one find.
 	const inL = new Set(board.truffleL);
 	const inD = new Set(board.truffleD);
-	const firstL = board.truffleL.length ? Math.min(...board.truffleL) : -1;
-	const firstD = board.truffleD.length ? Math.min(...board.truffleD) : -1;
+	// The single anchor a claimed cluster collapses to (its lowest tile index) —
+	// clusterAnchor (utils/rooting) names this collapse-representative concept.
+	const firstL = clusterAnchor(board.truffleL);
+	const firstD = clusterAnchor(board.truffleD);
 
 	const cells: ShareCell[] = [];
 	let digs = 0;

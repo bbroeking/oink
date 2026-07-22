@@ -51,6 +51,8 @@ import {
 import {
 	generateBoard,
 	claimableFinds,
+	applySplash,
+	clusterRevealed,
 	nearestFindDistance,
 	warmthWhisper,
 	revealedSweetCell,
@@ -77,7 +79,6 @@ import { UNIQUE_BY_ID, UNIQUE_IMAGES } from "@/constants/uniques";
 import { router } from "expo-router";
 import { Glyph } from "@/components/ui/Glyph";
 import { Icon } from "@/components/ui/Icon";
-import { Button } from "@/components/ui/Button";
 import {
 	digShareData,
 	buildDigShareText,
@@ -144,10 +145,10 @@ const CRACK_SPECS: CrackSpec[][] = Array.from({ length: TOTAL }, (_, i) => {
 // read the SAME const so they can never drift and re-introduce the wrap bug.
 const BOARD_BORDER = 2;
 
-// The ONE truffle-reveal overhang: a dug-up truffle sprite fills its cluster's
-// bounding span and spills a uniform 12% beyond it (never per-tile-arbitrary).
-// One rule applied everywhere a truffle surfaces on the board.
-const TRUFFLE_OVERHANG = 1.12;
+// A claimed cluster becomes one prize sprite, but never a board-covering one.
+// Both buried shapes span two tiles; 1.6 tiles keeps the payoff prominent while
+// leaving neighboring finds and the named reveal chip legible.
+const TRUFFLE_REVEAL_TILES = 1.6;
 
 // The explainer's two-phase-teardown beat — the native Modal drops `visible`
 // then stays mounted this long so its fade-out finishes before unmount (same
@@ -194,24 +195,56 @@ const FREE_RUB_LINE = "your snout knows the way — a free rub.";
 
 // "The One That Got Away" copy. The session-opening whisper (a carry exists),
 // and the two end-card lines (the carried find caught, or a new miss re-buried).
-const CARRY_OPEN_LINE = "he reburied the one you almost had…";
-function carryCaughtLine(gild: number): string {
-	return `the one that got away — caught. +${gild} joy`;
+// Each is kind-aware: a carried relic reads "relic", a carried truffle "truffle"
+// (the slot only ever holds truffle_l/truffle_d/unique), and self-explanatory —
+// "gilded" is retired here so it never blurs with the crew echo bonus.
+function carryNoun(kind: string): string {
+	return kind === "unique" ? "relic" : "truffle";
 }
-const CARRY_NEXT_LINE = "he reburied it — it comes back shinier.";
+function carryOpenLine(kind: string): string {
+	return `he reburied the ${carryNoun(kind)} you almost had — look for the gleam.`;
+}
+function carryCaughtLine(kind: string, gild: number): string {
+	return `the ${carryNoun(kind)} you left half-dug last feeding — caught this time. its shine paid +${gild} extra joy.`;
+}
+function carryNextLine(kind: string, gild: number): string {
+	return `he reburied the ${carryNoun(kind)} you left half-dug. next feeding it peeks out sooner — and pays +${gild} extra joy when you catch it.`;
+}
 
 // A truffle is buried as a multi-tile cluster (Pokémon-fossil style) — this
 // whisper sets the expectation that a peeked cell is PART of a bigger find, so
 // clearing the whole cluster (not a single cell) is what claims it.
 const PARTIAL_TRUFFLE_LINE = "part of a big one — clear the rest of it!";
 
+// The honest bank-failure line. The server refuses a submit for knowable
+// reasons — say the real one instead of a generic shrug. Anything transport-
+// shaped (network / no_data / unknown) keeps the armful-remembered promise,
+// which is true: the open rooting row survives for a retry within the window.
+function failLine(reason?: string): string {
+	switch (reason) {
+		case "already_rooted":
+			return "you'd already dug this feeding — nothing new to bank. back next feeding.";
+		case "no_open_rooting":
+			return "the patch didn't recognize this dig — nothing banked. it opens fresh next feeding.";
+		case "patch_closed":
+			return "the feeding closed before you trotted home — nothing banked this time.";
+		case "no_crew":
+			return "the dig is Sounder-gated — join a Sounder and the patch will bank your digs.";
+		default:
+			return "couldn't bank that dig — the patch will remember your armful.";
+	}
+}
+
 interface Props {
 	session: RootingSession;
+	// Resolves with the banked outcome, or null plus the server's refusal
+	// reason (already_rooted, no_open_rooting, …) so the end card can say
+	// WHY nothing banked instead of a generic shrug.
 	onSubmit: (
 		finds: ClaimableFind[],
 		actions: number,
 		missed: ClaimableFind[]
-	) => Promise<RootingOutcome | null>;
+	) => Promise<{ outcome: RootingOutcome | null; failReason?: string }>;
 	onClose: () => void;
 	// Whether the feeding window is currently OPEN — drives the real-dig
 	// end-card's "oink me when it opens" notify chip (only offered when the
@@ -223,6 +256,9 @@ interface Props {
 interface EndState {
 	line: string;
 	outcome: RootingOutcome | null;
+	// Server refusal reason when outcome is null — drives the honest
+	// failure line (an account switch mid-dig lands here as no_open_rooting).
+	failReason?: string;
 	finds: Find[];
 	// The spoiler-light text-grid share payload (wedge 5b) — derived once at
 	// finish from this dig's board + final layers, so the receipt's share button
@@ -284,6 +320,11 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 	// dismissal animation runs before the tree unmounts (the wedge-class contract).
 	const [helpOpen, setHelpOpen] = useState(false);
 	const [helpMounted, setHelpMounted] = useState(false);
+	// Once the dig ends the board + his-attention meter are corpses — the receipt
+	// below is the whole story now. We fold them so the payoff rides above the
+	// fold; `patchOpen` is the "peek at the patch" toggle for the board only (the
+	// meter's story is finished, so it never comes back). Default collapsed.
+	const [patchOpen, setPatchOpen] = useState(false);
 
 	const layersRef = useRef(layers);
 	// The TEMPORAL dig ledger (spec 10): tile indices in the order they actually
@@ -409,7 +450,7 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 	// the warm whisper that he re-buried the one they almost had. The first dig
 	// action overwrites it with the live warm/cold hint.
 	useEffect(() => {
-		if (session.carry) setWhisper(CARRY_OPEN_LINE);
+		if (session.carry) setWhisper(carryOpenLine(session.carry.kind));
 	}, [session.carry]);
 
 	const claimables = useCallback(
@@ -436,7 +477,8 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 				layersRef.current,
 				collectedRef.current
 			);
-			const outcome = await onSubmit(claimables(), stirRef.current, missed);
+			const res = await onSubmit(claimables(), stirRef.current, missed);
+			const outcome = res.outcome;
 			setSubmitting(false);
 			// The share grid reflects the FINAL board state (dug tiles + what they
 			// found) — computed here where board + layers + collected are all known.
@@ -449,7 +491,13 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 				session.windowIndex,
 				dugOrderRef.current
 			);
-			setEnd({ line, outcome, finds: [...collectedRef.current], share });
+			setEnd({
+				line,
+				outcome,
+				failReason: res.failReason,
+				finds: [...collectedRef.current],
+				share,
+			});
 			// Field Guide (fail-soft, idempotent): finishing a dig meets Feeding
 			// Windows; pulling a truffle mints golden, so it meets both the Truffle
 			// and Golden Truffle pages.
@@ -518,10 +566,11 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 
 	const afterReveal = useCallback(
 		(next: number[]) => {
-			// Cluster completion + single-cell finds.
+			// Cluster completion + single-cell finds. clusterRevealed (utils/rooting)
+			// owns the "every cell of this cluster is cleared" test.
 			const revealed = (idx: number) => next[idx] <= 0;
-			if (board.truffleL.every(revealed)) collect("truffle_l", board.truffleL[0]);
-			if (board.truffleD.every(revealed)) collect("truffle_d", board.truffleD[0]);
+			if (clusterRevealed(board.truffleL, next)) collect("truffle_l", board.truffleL[0]);
+			if (clusterRevealed(board.truffleD, next)) collect("truffle_d", board.truffleD[0]);
 			for (let i = 0; i < next.length; i++) {
 				const cell = board.cells[i];
 				if (!cell || cell.kind === "truffle_l" || cell.kind === "truffle_d")
@@ -552,25 +601,16 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 
 			const before = layersRef.current;
 			const next = [...before];
-			const splash = (i: number, amt: number) => {
-				if (i >= 0 && i < next.length) next[i] = Math.max(0, next[i] - amt);
-			};
+			// Dig math lives in the shared applySplash kernel (utils/rooting) — the
+			// SAME physics simulateGreedyClear pins. We diff before/after below to pop
+			// newly-cleared tiles, so we splash a fresh copy. r/c feed the fleck burst.
+			applySplash(next, idx, kind);
 			const r = Math.floor(idx / PATCH_COLS);
 			const c = idx % PATCH_COLS;
-			const neighbors = [
-				r > 0 ? idx - PATCH_COLS : -1,
-				r < PATCH_ROWS - 1 ? idx + PATCH_COLS : -1,
-				c > 0 ? idx - 1 : -1,
-				c < PATCH_COLS - 1 ? idx + 1 : -1,
-			];
 			if (kind === "rub") {
-				splash(idx, 1);
-				for (const n of neighbors) if (n >= 0) splash(n, 0.5);
 				Haptics.selectionAsync().catch(() => {});
 				play("scrape"); // quiet scratch through the mud
 			} else {
-				splash(idx, 2);
-				for (const n of neighbors) if (n >= 0) splash(n, 1);
 				Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 				play("creak"); // the loud snout-shove
 			}
@@ -751,7 +791,7 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 		stirFrac < 0.5 ? "calm" : stirFrac < 0.85 ? "stirring" : "he's lifting his snout";
 	const hungerWobble = stirFrac >= 0.85 ? "-3.5deg" : stirFrac >= 0.5 ? "-2deg" : "0deg";
 	// Named co-op presence — the crewmates who already dug this feeding, so the
-	// stir chip reads "Jen dug this feeding — dig deeper" instead of a bare flag.
+	// Name the concrete co-op benefit instead of the vague "dig deeper" promise.
 	const coopNames = joinNames(session.crewDug.map((c) => c.display_name));
 	const truffleCount = collected.filter(
 		(f) => f === "truffle_l" || f === "truffle_d"
@@ -797,7 +837,10 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 				</View>
 			)}
 
-			{/* The Hunger vignette + stir meter */}
+			{/* The Hunger vignette + stir meter — the live tension of the dig. It
+			    goes dead the instant the session ends, so it drops entirely once
+			    the end card is up (unlike the board, it never comes back). */}
+			{!end && (
 			<View style={styles.vigRow}>
 				<View style={styles.stirCol}>
 					<View style={styles.stirLabelRow}>
@@ -805,9 +848,9 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 						<Text style={styles.stirStage}>{stage}</Text>
 					</View>
 					{coopNames ? (
-						<Text style={styles.depthChip}>{coopNames} dug this feeding — dig deeper</Text>
+						<Text style={styles.depthChip}>{coopNames} dug this feeding — up to 5 more rubs</Text>
 					) : session.coop ? (
-						<Text style={styles.depthChip}>a crewmate dug this feeding — dig deeper</Text>
+						<Text style={styles.depthChip}>a crewmate dug this feeding — up to 5 more rubs</Text>
 					) : null}
 					{session.blessed && (
 						<Text style={styles.depthChip}>blessed — luckier digs</Text>
@@ -846,8 +889,32 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 					resizeMode="contain"
 				/>
 			</View>
+			)}
 
-			{/* The board (+ non-clipped overlay for reveal chips / dirt flecks) */}
+			{/* peek-at-the-patch toggle — with the end card up, the board is a
+			    corpse, so it hides behind this one quiet control and the receipt
+			    leads. Tapping it re-opens the board (board only; the meter is gone
+			    for good). Rendered where the chrome was, above the receipt. */}
+			{end && (
+				<Pressable
+					onPress={() => setPatchOpen((v) => !v)}
+					hitSlop={8}
+					style={({ pressed }) => [styles.patchToggle, pressed && { opacity: 0.6 }]}
+					accessibilityRole="button"
+					accessibilityLabel={patchOpen ? "Tuck the patch away" : "Peek at the patch"}
+					accessibilityState={{ expanded: patchOpen }}
+				>
+					<Text style={styles.patchToggleText}>
+						{patchOpen ? "tuck the patch away ‹" : "peek at the patch ›"}
+					</Text>
+				</Pressable>
+			)}
+
+			{/* The board (+ non-clipped overlay for reveal chips / dirt flecks).
+			    Always shown mid-dig; once the dig ends it only shows when the
+			    player peeks (patchOpen). Collapsing it after `end` is safe — end
+			    mounts only after the final action's reveal has resolved. */}
+			{(!end || patchOpen) && (
 			<View style={styles.boardArea}>
 				<View
 					style={styles.board}
@@ -985,7 +1052,17 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 						))}
 				</View>
 
-				{/* Named reveal chip — pops in at the tile the instant a find surfaces */}
+				{/* Flecks sit over the mud but under prizes and their nameplate. */}
+				<DirtFlecks ref={fleckRef} />
+				{/* One big dug-up truffle per claimed cluster — the sprite that says
+				    "you unearthed ONE find", replacing the per-cell chunks. */}
+				{tile > 0 && collected.includes("truffle_l") && truffleLBox && (
+					<BigTruffle box={truffleLBox} tile={tile} anim={bigTruffleAnim.truffle_l} />
+				)}
+				{tile > 0 && collected.includes("truffle_d") && truffleDBox && (
+					<BigTruffle box={truffleDBox} tile={tile} anim={bigTruffleAnim.truffle_d} />
+				)}
+				{/* Render the nameplate last so prize art never covers what was found. */}
 				{revealBeat && tile > 0 && (
 					<RevealChip
 						beat={revealBeat}
@@ -995,17 +1072,8 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 						uniqueDef={uniqueDef}
 					/>
 				)}
-				{/* One big dug-up truffle per claimed cluster — the sprite that says
-				    "you unearthed ONE find", replacing the per-cell chunks. */}
-				{tile > 0 && collected.includes("truffle_l") && truffleLBox && (
-					<BigTruffle box={truffleLBox} tile={tile} anim={bigTruffleAnim.truffle_l} />
-				)}
-				{tile > 0 && collected.includes("truffle_d") && truffleDBox && (
-					<BigTruffle box={truffleDBox} tile={tile} anim={bigTruffleAnim.truffle_d} />
-				)}
-				{/* Dirt flecks kicked up as you rub — light, native-driven, self-cleaning */}
-				<DirtFlecks ref={fleckRef} />
 			</View>
+			)}
 
 			{/* Whisper + running tally — the LIVE state during the dig. Once the
 			    end card shows it becomes the honest receipt, so these hide (they'd
@@ -1014,26 +1082,30 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 			{!end && (
 				<>
 					{whisper && <Text style={styles.whisper}>{whisper}</Text>}
-					<View style={styles.pouchRow}>
-						<PouchChip
-							icon={
-								<Image
-									source={PATCH_ART.truffle}
-									style={styles.chipIconImg}
-									resizeMode="contain"
+					{(truffleCount > 0 || collected.includes("shimmer")) && (
+						<View style={styles.pouchRow}>
+							{truffleCount > 0 && (
+								<PouchChip
+									icon={
+										<Image
+											source={PATCH_ART.truffle}
+											style={styles.chipIconImg}
+											resizeMode="contain"
+										/>
+									}
+									label="pouch"
+									count={truffleCount}
 								/>
-							}
-							label="pouch"
-							count={truffleCount}
-						/>
-						{collected.includes("shimmer") && (
-							<PouchChip
-								icon={<Glyph name="sparkle" size={16} />}
-								label="motes freed"
-								count={1}
-							/>
-						)}
-					</View>
+							)}
+							{collected.includes("shimmer") && (
+								<PouchChip
+									icon={<Glyph name="sparkle" size={16} />}
+									label="motes freed"
+									count={1}
+								/>
+							)}
+						</View>
+					)}
 				</>
 			)}
 
@@ -1044,6 +1116,7 @@ export function TrufflePatch({ session, onSubmit, onClose, phaseOpen = true }: P
 					submitting={submitting}
 					onClose={onClose}
 					phaseOpen={phaseOpen}
+					blessed={end.outcome?.blessed ?? session.blessed}
 				/>
 			)}
 
@@ -1106,7 +1179,7 @@ function DigHelpModal({
 							{coop && (
 								<HelpSection heading="digging together">
 									a crewmate already dug this feeding, so he's more distracted —
-									you dig deeper before he wakes.
+									you can rub up to 5 more times before he wakes.
 								</HelpSection>
 							)}
 							<HelpSection heading="leaving">
@@ -1148,11 +1221,17 @@ function EndCard({
 	submitting,
 	onClose,
 	phaseOpen,
+	blessed,
 }: {
 	end: EndState;
 	submitting: boolean;
 	onClose: () => void;
 	phaseOpen: boolean;
+	// Whether a blessing rode with this dig — drives the "+1 blessed truffle"
+	// line. Server-authoritative when the migration is pushed (outcome.blessed),
+	// falling back to the session's open-time blessing so the line still shows
+	// against an un-pushed server.
+	blessed: boolean;
 }) {
 	const outcome = end.outcome;
 	const dug = end.finds.filter(
@@ -1215,38 +1294,71 @@ function EndCard({
 											resizeMode="contain"
 										/>
 									}
+									// Reconcile dug vs minted: the board buries 2, but crew
+									// echo + a blessing can mint MORE than you dug, and the
+									// first-truffle rule can mint FEWER. Say which happened so
+									// the pouch number never reads as a mismatch.
 									sub={
-										dug > outcome.truffles
-											? `${dug} of 2 dug — the first mints, the rest still feed the meter`
-											: `${dug} of 2 dug`
+										dug < outcome.truffles
+											? `you dug ${dug} of the board's 2 — the extras are named below`
+											: dug > outcome.truffles
+												? "you dug 2 of 2 — the first fills your pouch, the second feeds the meter"
+												: `you dug ${dug} of the board's 2`
 									}
 								>
 									+{outcome.truffles} golden{" "}
-									{outcome.truffles === 1 ? "truffle" : "truffles"} minted
+									{outcome.truffles === 1 ? "truffle" : "truffles"} to your
+									pouch
 								</EndLine>
 							)}
 							<EndLine icon={<Glyph name="heart" size={15} />}>
-								+{outcome.credited} joy reclaimed
+								+{outcome.credited} {outcome.credited === 1 ? "find" : "finds"} against the Hungerer
 							</EndLine>
 							{outcome.uniqueFound && (
 								<UniqueEndLine found={outcome.uniqueFound} />
 							)}
 							{outcome.carryCaught && (
 								<EndLine icon={<Glyph name="sparkle" size={15} />}>
-									{carryCaughtLine(outcome.carryCaught.gild)}
+									{carryCaughtLine(
+										outcome.carryCaught.kind,
+										outcome.carryCaught.gild
+									)}
 								</EndLine>
 							)}
 							{outcome.carryNext && (
 								<EndLine icon={<Glyph name="sparkle" size={15} />} accent>
-									{CARRY_NEXT_LINE}
+									{carryNextLine(
+										outcome.carryNext.kind,
+										outcome.carryNext.gild
+									)}
 								</EndLine>
 							)}
-							{outcome.echoNames && outcome.echoNames.length > 0 && (
-								<EndLine
-									icon={<Glyph name="heart" size={15} />}
-									accent
-								>
-									your truffle gilded — {joinNames(outcome.echoNames)} dug with you.
+							{/* Crew echo. Only a truffle you MINTED earns the +1 (echo), so the
+							    minted-bonus line gates on dug > 0. When you dug nothing but a
+							    crewmate did, the line turns into an invitation instead of a
+							    payoff. The names-empty branch covers a server +1 whose crewmate
+							    submitted-but-minted-nothing (echo true, echo_names empty). */}
+							{dug > 0 && outcome.echo ? (
+								<EndLine icon={<Glyph name="heart" size={15} />} accent>
+									{outcome.echoNames && outcome.echoNames.length > 0
+										? `dug together: ${joinNames(
+												outcome.echoNames
+										  )} dug this feeding — +1 golden truffle minted.`
+										: "a crewmate dug this feeding — +1 golden truffle minted."}
+								</EndLine>
+							) : dug === 0 &&
+							  outcome.echoNames &&
+							  outcome.echoNames.length > 0 ? (
+								<EndLine icon={<Glyph name="heart" size={15} />} accent>
+									{joinNames(outcome.echoNames)} dug this feeding too — dig a
+									truffle next time and the crew mints you an extra.
+								</EndLine>
+							) : null}
+							{/* Blessing +1 — invisible before this; now its own line so the
+							    minted count above is fully accounted for. */}
+							{blessed && dug > 0 && (
+								<EndLine icon={<Glyph name="sparkle" size={15} />} accent>
+									a blessing rode with you — +1 golden truffle.
 								</EndLine>
 							)}
 							{outcome.milestone && (
@@ -1258,57 +1370,59 @@ function EndCard({
 					)}
 				</View>
 			) : (
-				<Text style={styles.endLineText}>
-					Couldn't bank that dig — the patch will remember your armful.
-				</Text>
+				<Text style={styles.endLineText}>{failLine(end.failReason)}</Text>
 			)}
-			{/* The Wordle-number headline (wedge 5c) + the text-grid share (5b) sit
-			    UNDER the ledger — added, not a reflow. They compose: the golden's
-			    "found in N digs" brag, then the button to share that very dig. The
-			    headline only shows when a golden was minted (goldenInDigs != null);
-			    no golden → no consolation stat, the ledger stands on its own. */}
-			{end.share.goldenInDigs != null && (
-				<GoldenHeadline n={end.share.goldenInDigs} />
+			{/* One gold banner carries both the receipt's braggable stat and its
+			    share action (wedges 5b + 5c, merged): "found the golden in N digs"
+			    with a compact "✧ share it" affordance in the same row — no separate
+			    headline, button, or caption stacking below the ledger. With no
+			    golden minted the banner is just the share affordance. The banner is
+			    a brag about a BANKED dig, so it only renders when the server took
+			    the armful — a failed bank must not offer "found the golden" while
+			    the line above it says nothing landed. */}
+			{outcome != null && (
+				<GoldShareBanner data={end.share} goldenInDigs={end.share.goldenInDigs} />
 			)}
-			<DigShareRow data={end.share} />
 			{/* The retention hinge: after a REAL dig, if the next window is a wait,
 			    offer one local oink at the next open (highest-intent moment). */}
 			{!practice && !phaseOpen && <NotifyChip />}
-			<Pressable onPress={onClose} style={styles.endBtn} hitSlop={8}>
+			<Pressable
+				onPress={onClose}
+				style={({ pressed }) => [styles.endBtn, pressed && styles.endBtnPressed]}
+				accessibilityRole="button"
+				accessibilityLabel="Back to the season"
+			>
 				<Text style={styles.endBtnText}>
-					{submitting ? "Trotting home…" : "Back to the season"}
+					{submitting ? "Trotting home…" : "Back to the season ›"}
 				</Text>
 			</Pressable>
 		</View>
 	);
 }
 
-// ── The "found the golden in N digs" headline (wedge 5c — spec 10) ───────────
-// The receipt's one braggable, comparable number: how many digs it actually
-// TOOK to claim the golden. Storybook voice (lowercase, hand-lettered lead in
-// the receipt's accent), the number itself in the whimsy display face so it
-// reads as the headline stat. N is derived by digShare.ts from the session's
-// live-recorded temporal dig order (dugOrderRef) — the player's real Nth dig,
-// never board order — and is always ≤ the share block's "M digs", so the two
-// stay in agreement. Only rendered when a golden was minted — no golden means
-// no headline at all.
-function GoldenHeadline({ n }: { n: number }) {
-	return (
-		<View style={styles.goldenHeadline}>
-			<Text style={styles.goldenLead}>found the golden in</Text>
-			<Text style={styles.goldenNum}>{n}</Text>
-			<Text style={styles.goldenUnit}>{n === 1 ? "dig" : "digs"}</Text>
-		</View>
-	);
-}
-
-// ── The text-grid share (wedge 5b — spec 09) ─────────────────────────────────
-// One "share your dig" CTA under the receipt that hands the spoiler-light text
-// block to the native share sheet, with long-press (or the hint's tap fallback)
-// to copy instead. EMOJI live in the outbound text only — the button chrome is
-// glyph/token, never emoji. The tap count is measured fire-and-forget + fail-
-// soft (bumpDigShareCount tolerates the RPC being unpushed).
-function DigShareRow({ data }: { data: DigShareData }) {
+// ── The gold share banner (wedges 5b + 5c, merged — specs 09 / 10) ───────────
+// ONE gold sticker that carries the receipt's braggable stat AND its share
+// action in a single row, instead of stacking a headline + a full-width button
+// + a caption below the ledger (the corpse the founder called out). With a
+// golden minted it reads "found the golden in N digs" — the hand-lettered lead
+// in the receipt's accent voice, "N digs" in the whimsy display face so the
+// number is the headline stat. N comes from digShare.ts's live temporal dig
+// order (the player's real Nth dig, always ≤ the share grid's "M digs"). On the
+// right, a compact "✧ share it" affordance (Glyph sparkle + text, not a second
+// button): tap hands the spoiler-light text grid to the native share sheet,
+// long-press copies it instead (the affordance flips to "copied" as feedback —
+// the old standalone caption is gone). Analytics + haptics are preserved from
+// the retired DigShareRow; the tap count is fire-and-forget + fail-soft
+// (bumpDigShareCount tolerates the RPC being unpushed). No golden → the whole
+// banner is just the "✧ share your dig" affordance, same single row. EMOJI live
+// in the outbound text only — the chrome is glyph/token, never emoji.
+function GoldShareBanner({
+	data,
+	goldenInDigs,
+}: {
+	data: DigShareData;
+	goldenInDigs: number | null;
+}) {
 	const [copied, setCopied] = useState(false);
 	const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	useEffect(
@@ -1333,23 +1447,35 @@ function DigShareRow({ data }: { data: DigShareData }) {
 		copiedTimer.current = setTimeout(() => setCopied(false), 1800);
 	}, [data]);
 
+	const hasGolden = goldenInDigs != null;
 	return (
-		<View style={styles.shareRow}>
-			<Button
-				variant="gold"
-				full
-				icon={<Glyph name="sparkle" size={15} />}
-				onPress={onShare}
-				onLongPress={onCopy}
-			>
-				share your dig
-			</Button>
-			<Pressable onPress={onCopy} hitSlop={8}>
-				<Text style={styles.shareHint}>
-					{copied ? "copied to your clipboard" : "long-press to copy instead"}
+		<Pressable
+			onPress={onShare}
+			onLongPress={onCopy}
+			hitSlop={6}
+			accessibilityRole="button"
+			accessibilityLabel="share your dig"
+			style={({ pressed }) => [
+				styles.goldBanner,
+				{ justifyContent: hasGolden ? "space-between" : "center" },
+				pressed && { opacity: 0.9 },
+			]}
+		>
+			{hasGolden && (
+				<Text style={styles.goldBannerStat} numberOfLines={1}>
+					<Text style={styles.goldBannerLead}>found the golden in </Text>
+					<Text style={styles.goldBannerNum}>
+						{goldenInDigs} {goldenInDigs === 1 ? "dig" : "digs"}
+					</Text>
 				</Text>
-			</Pressable>
-		</View>
+			)}
+			<View style={styles.goldBannerShare}>
+				<Glyph name="sparkle" size={15} />
+				<Text style={styles.goldBannerShareText}>
+					{copied ? "copied" : hasGolden ? "share it" : "share your dig"}
+				</Text>
+			</View>
+		</Pressable>
 	);
 }
 
@@ -1592,12 +1718,9 @@ function BigTruffle({
 	tile: number;
 	anim: Animated.Value;
 }) {
-	// ONE sizing rule for every dug-up truffle: the sprite fills its cluster's
-	// own bounding span (box.cols × box.rows in tiles) plus a uniform 12% overhang,
-	// centered on the cluster centroid. A 1-tile find reads ≈1.12× its cell; a
-	// 2-tile cluster ≈2.24× — either way the sprite stays inside its own footprint
-	// plus the same small margin, so reveals never bleed unevenly over neighbors.
-	const side = Math.max(box.cols, box.rows) * tile * TRUFFLE_OVERHANG;
+	// The old bounding-box rule grew the L-shaped prize to 2.24 tiles wide and
+	// obscured nearby finds. Keep one consistent, capped prize scale instead.
+	const side = tile * TRUFFLE_REVEAL_TILES;
 	const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
 	return (
 		<Animated.View
@@ -1719,7 +1842,7 @@ interface Fleck {
 	size: number;
 	anim: Animated.Value;
 }
-const DirtFlecks = forwardRef<DirtFlecksHandle, {}>(function DirtFlecks(_props, ref) {
+const DirtFlecks = forwardRef<DirtFlecksHandle, object>(function DirtFlecks(_props, ref) {
 	const [flecks, setFlecks] = useState<Fleck[]>([]);
 	const nextId = useRef(0);
 	const burst = useCallback((x: number, y: number) => {
@@ -1968,6 +2091,7 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		alignItems: "center",
 		justifyContent: "center",
+		zIndex: 1,
 		...SHADOW_SM,
 	},
 	bigTruffleImg: { width: "100%", height: "100%" },
@@ -2014,6 +2138,7 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		width: 0,
 		alignItems: "center",
+		zIndex: 2,
 	},
 	revealChip: {
 		flexDirection: "row",
@@ -2132,24 +2257,27 @@ const styles = StyleSheet.create({
 		color: WHIMSY.accent,
 	},
 	endBtn: {
-		marginTop: SPACE.md,
-		backgroundColor: WHIMSY.roseDeep,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.md,
-		paddingHorizontal: SPACE.lg,
-		paddingVertical: SPACE.sm,
-		...SHADOW_SM,
-	},
-	endBtnText: { ...TYPE.cardTitle, fontSize: 15, color: WHIMSY.ink },
-
-	// ── The "found the golden in N" headline (wedge 5c) ──────────────────────
-	// A sun-toned sticker panel — the game's reward/gold tone — so the receipt's
-	// one braggable number reads as the headline. Lead + unit in the receipt's
-	// hand voice, the numeral in the whimsy display face (the largest type role).
-	goldenHeadline: {
-		alignSelf: "stretch",
+		alignSelf: "center",
+		minHeight: 44,
+		marginTop: SPACE.sm,
+		paddingHorizontal: SPACE.md,
 		alignItems: "center",
+		justifyContent: "center",
+	},
+	endBtnPressed: { opacity: 0.55 },
+	endBtnText: { ...TYPE.label, color: WHIMSY.accent },
+
+	// ── The gold share banner (wedges 5b + 5c, merged) ───────────────────────
+	// A sun-toned sticker panel — the game's reward/gold tone — that holds the
+	// braggable stat and the share affordance on ONE row, so the payoff is a
+	// single compact control rather than a headline + button + caption stack.
+	// space-between when a golden was minted (stat left, "share it" right); the
+	// caller centers it when it's the share affordance alone.
+	goldBanner: {
+		alignSelf: "stretch",
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
 		marginTop: SPACE.md,
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
@@ -2159,27 +2287,31 @@ const styles = StyleSheet.create({
 		paddingHorizontal: SPACE.md,
 		...SHADOW_SM,
 	},
-	goldenLead: { ...TYPE.hand, color: WHIMSY.accent },
-	goldenNum: { ...TYPE.display, color: WHIMSY.ink },
-	goldenUnit: { ...TYPE.cardTitle, color: WHIMSY.ink },
+	// The stat reads as one inline line; flexShrink lets it cede room to the
+	// share affordance instead of shoving it off the row.
+	goldBannerStat: { flexShrink: 1 },
+	goldBannerLead: { ...TYPE.hand, color: WHIMSY.accent },
+	// The braggable number in the whimsy display face, tuned down from the full
+	// display role so it headlines the stat without busting the compact banner.
+	goldBannerNum: { ...TYPE.display, fontSize: 22, lineHeight: 24, color: WHIMSY.ink },
+	// The compact "✧ share it" affordance — glyph + tracked label, not a button.
+	goldBannerShare: { flexDirection: "row", alignItems: "center", gap: 5 },
+	goldBannerShareText: { ...TYPE.label, color: WHIMSY.ink },
 
-	// ── The text-grid share row (wedge 5b) ───────────────────────────────────
-	// Stretches under the ledger so the gold CTA reads as the receipt's one share
-	// action; the hand-lettered hint doubles as the tap-to-copy fallback.
-	shareRow: {
-		alignSelf: "stretch",
-		// stretch so the gold CTA fills the receipt width (the gradient variant
-		// stretches only when its Pressable wrapper is stretched by the parent).
-		alignItems: "stretch",
-		marginTop: SPACE.md,
-	},
-	shareHint: {
-		...TYPE.hand,
-		fontSize: 12,
-		color: WHIMSY.mute,
-		textAlign: "center",
+	// ── The peek-at-the-patch toggle (end-state board fold) ──────────────────
+	// A quiet, centered text control that stands in for the folded board once the
+	// dig ends — muted ink in the tracked label voice so it reads as a gentle
+	// "there's more if you want it," never a loud CTA competing with the receipt.
+	patchToggle: {
+		alignSelf: "center",
 		marginTop: SPACE.xs,
+		marginBottom: SPACE.sm,
+		minHeight: 44,
+		paddingHorizontal: SPACE.md,
+		alignItems: "center",
+		justifyContent: "center",
 	},
+	patchToggleText: { ...TYPE.label, color: WHIMSY.mute },
 
 	// ── The "oink me when it opens" notify opt-in ────────────────────────────
 	// A tappable paper sticker-chip in the sun tone (the game's "reminder/gift"

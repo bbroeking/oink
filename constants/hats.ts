@@ -135,6 +135,9 @@ export const HAT_IMAGES: Record<string, number> = {
 	slop_bucket: require("../assets/images/hats/slop_bucket.png"),
 	mud_shovel: require("../assets/images/hats/mud_shovel.png"),
 	mud_pie: require("../assets/images/hats/mud_pie.png"),
+	// 2026 Hog Cup champions' reward — grant-only held trophy for players flying
+	// Spain's flag at closeout. Seeded by the World Cup closeout migration.
+	golden_hog_cup: require("../assets/images/hats/golden_hog_cup.png"),
 	golden_truffle: require("../assets/images/hats/golden_truffle.png"),
 	crew_pennant: require("../assets/images/hats/crew_pennant.png"),
 	mud_splatter_aura: require("../assets/images/hats/mud_splatter_aura.png"),
@@ -223,9 +226,8 @@ export const HAT_IMAGES: Record<string, number> = {
 // collision-checked).
 Object.assign(HAT_IMAGES, MEMBERS_IMAGES);
 
-// World Cup flag cosmetics (ids `flag_<slug>`) — merged in from the generated
-// require() map so the shop, preview, and pig render resolve them by id like
-// any other item.
+// Retired from current UI, but kept wired as real cosmetics so the preserved
+// World Cup picker/event code can return later without rebuilding its catalog.
 for (const [slug, src] of Object.entries(WORLD_CUP_FLAG_IMAGES)) {
 	HAT_IMAGES[`flag_${slug}`] = src;
 }

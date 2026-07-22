@@ -25,13 +25,12 @@ import {
 	Animated,
 	Easing,
 	Dimensions,
+	type ImageSourcePropType,
 } from "react-native";
 import { Sticker } from "./ui/Sticker";
-import { Glyph } from "./ui/Glyph";
 import { SectionHeader } from "./ui/SectionHeader";
 import { LoadingBeat } from "./ui/EmptyState";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
-import { HAT_IMAGES } from "@/constants/hats";
 import {
 	fetchTickleBreakdown,
 	tickleBreakdownRows,
@@ -60,29 +59,29 @@ interface Props {
 	onClose: () => void;
 }
 
-// The icon column per lane — Glyph/Icon art, never emoji. The dig lane wears the
-// same Golden Truffle sprite the patch mints, so the receipt reads as the game's.
+// Receipt-specific art keeps every lane at the same optical scale. These are
+// separate from the general Glyph set because this six-icon family was drawn
+// together for this compact ledger and should stay visually coherent here.
+const RECEIPT_ICONS: Record<TickleLane, ImageSourcePropType> = {
+	home_taps: require("../assets/images/glyphs/receipt/home.png"),
+	visit_taps: require("../assets/images/glyphs/receipt/friends.png"),
+	dig_finds: require("../assets/images/glyphs/receipt/truffle.png"),
+	pass_tiers: require("../assets/images/glyphs/receipt/pass.png"),
+	trades: require("../assets/images/glyphs/receipt/trades.png"),
+	lucky: require("../assets/images/glyphs/receipt/lucky.png"),
+};
+
+const RECEIPT_HEART = require("../assets/images/glyphs/receipt/heart.png");
+
 function LaneIcon({ lane }: { lane: TickleLane }) {
-	switch (lane) {
-		case "home_taps":
-			return <Glyph name="pinch" size={22} />;
-		case "visit_taps":
-			return <Glyph name="friends" size={22} />;
-		case "dig_finds":
-			return (
-				<Image
-					source={HAT_IMAGES.golden_truffle}
-					style={styles.truffleIcon}
-					resizeMode="contain"
-				/>
-			);
-		case "pass_tiers":
-			return <Glyph name="premium" size={22} />;
-		case "trades":
-			return <Glyph name="handshake" size={22} />;
-		case "lucky":
-			return <Glyph name="sparkle" size={22} />;
-	}
+	return (
+		<Image
+			source={RECEIPT_ICONS[lane]}
+			style={styles.receiptIcon}
+			resizeMode="contain"
+			accessible={false}
+		/>
+	);
 }
 
 // One receipt line — icon column + whimsy label + the real number, right-aligned.
@@ -228,7 +227,12 @@ function TotalRow({ total }: { total: number }) {
 	return (
 		<View style={styles.totalRow}>
 			<View style={styles.iconCol}>
-				<Glyph name="heart" size={20} />
+				<Image
+					source={RECEIPT_HEART}
+					style={styles.totalIcon}
+					resizeMode="contain"
+					accessible={false}
+				/>
 			</View>
 			<Text style={styles.totalLabel}>tickles this season</Text>
 			<Text style={styles.totalValue}>{total.toLocaleString("en-US")}</Text>
@@ -269,10 +273,13 @@ const styles = StyleSheet.create({
 		gap: SPACE.md,
 	},
 	iconCol: {
-		width: 30,
+		width: 32,
+		height: 28,
 		alignItems: "center",
+		justifyContent: "center",
 	},
-	truffleIcon: { width: 22, height: 22 },
+	receiptIcon: { width: 26, height: 26 },
+	totalIcon: { width: 24, height: 24 },
 	rowLabel: {
 		...TYPE.body,
 		color: WHIMSY.ink,

@@ -35,6 +35,14 @@ export const ACHIEVEMENT_ICON: Record<string, number> = {
 	greedy_t2: require("../assets/images/emoji/achv/trough-sniffer.png"),
 	greedy_t3: require("../assets/images/emoji/achv/bottomless.png"),
 	greedy_t4: require("../assets/images/emoji/achv/glutton-king.png"),
+	// Collection achievements reuse the actual objects they honor, so their
+	// ceremony reads as part of the Burrow Book rather than a generic trophy.
+	muddy_trowel: require("../assets/images/hats/garden_trowel_held.png"),
+	field_archaeologist: require("../assets/images/hats/garden_trowel_held.png"),
+	rare_relics: require("../assets/images/uniques/music_box_heart.png"),
+	first_truffle_heirloom: require("../assets/images/uniques/first_truffle.png"),
+	thin_portrait_heirloom: require("../assets/images/uniques/thin_portrait.png"),
+	burrow_book_complete: require("../assets/images/uniques/tiny_crown.png"),
 };
 
 export function achievementIcon(id: string | null | undefined): number {

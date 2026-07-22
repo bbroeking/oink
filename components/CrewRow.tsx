@@ -16,7 +16,7 @@ import {
 	type ViewStyle,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { PigAvatar } from "./ui/PigAvatar";
+import { PrestigeAvatar } from "./ui/PrestigeAvatar";
 import { Glyph, type GlyphName } from "./ui/Glyph";
 import { FONTS, RADII, SHADOW_SM, SPACE, TYPE, WHIMSY } from "@/constants/theme";
 
@@ -38,16 +38,19 @@ export function theCrew(name: string): string {
 export function CrewPortrait({
 	size = PORTRAIT_SIZE,
 	hatId = null,
+	prestigeLevel = 0,
 	glyph,
 	crowned = false,
 	ghost = false,
 }: {
 	size?: number;
 	hatId?: string | null;
+	prestigeLevel?: number | null;
 	glyph?: GlyphName;
 	crowned?: boolean;
 	ghost?: boolean;
 }) {
+	const prestige = Math.max(0, prestigeLevel ?? 0);
 	if (ghost) {
 		return (
 			<View
@@ -60,12 +63,20 @@ export function CrewPortrait({
 	}
 	return (
 		<View
-			style={[styles.portrait, { width: size, height: size, borderRadius: size / 2 }]}
+			style={[
+				styles.portrait,
+				{ width: size, height: size, borderRadius: size / 2 },
+				prestige > 0 && styles.portraitPrestige,
+			]}
 		>
 			{glyph ? (
 				<Glyph name={glyph} size={size * 0.55} />
 			) : (
-				<PigAvatar size={size - 5} hatId={hatId} />
+				<PrestigeAvatar
+					size={prestige > 0 ? size + 8 : size - 5}
+					hatId={hatId}
+					prestigeLevel={prestige}
+				/>
 			)}
 			{crowned && (
 				<Glyph name="crown" size={size * 0.5} style={styles.portraitCrown} />
@@ -78,6 +89,7 @@ export function CrewPortrait({
 export function CrewRow({
 	left,
 	title,
+	titleNode,
 	sub,
 	right,
 	divider = false,
@@ -87,6 +99,8 @@ export function CrewRow({
 	left: ReactNode;
 	/** String or rich <Text> spans (accent names); wrapped in the name style. */
 	title: ReactNode;
+	/** Fully laid-out identity block; bypasses the legacy single Text wrapper. */
+	titleNode?: ReactNode;
 	sub?: string;
 	right?: ReactNode;
 	/** Dashed rule above — pass for every row after a section's first. */
@@ -104,9 +118,11 @@ export function CrewRow({
 			>
 				{left}
 				<View style={styles.rowBody}>
-					<Text style={styles.rowName} numberOfLines={2}>
-						{title}
-					</Text>
+					{titleNode ?? (
+						<Text style={styles.rowName} numberOfLines={2}>
+							{title}
+						</Text>
+					)}
 					{!!sub && (
 						<Text style={styles.rowSub} numberOfLines={1}>
 							{sub}
@@ -270,6 +286,12 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		...SHADOW_SM,
+	},
+	portraitPrestige: {
+		backgroundColor: "transparent",
+		borderColor: "transparent",
+		shadowOpacity: 0,
+		elevation: 0,
 	},
 	portraitGhost: {
 		borderWidth: 2,

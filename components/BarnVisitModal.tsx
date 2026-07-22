@@ -32,6 +32,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
+import { remainingMs } from "@/utils/duration";
 import { PigStage, type EquippedItem } from "./ui/PigStage";
 import { Shovel } from "./ui/Shovel";
 import { Glyph, IconText, glyphSource } from "./ui/Glyph";
@@ -117,7 +118,7 @@ interface MyProfileRow extends ProfileEquipRow {
 // "2h 15m" / "12m" until you can visit a different barn.
 function lockLabel(nextAtIso: string | null): string {
 	if (!nextAtIso) return "3h";
-	const ms = new Date(nextAtIso).getTime() - Date.now();
+	const ms = remainingMs(nextAtIso);
 	if (ms <= 0) return "now";
 	const mins = Math.ceil(ms / 60000);
 	const h = Math.floor(mins / 60);

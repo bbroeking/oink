@@ -12,6 +12,7 @@ import { SnoutCoin } from "./ui/SnoutCoin";
 import { Icon, type IconName } from "./ui/Icon";
 import { Glyph, type GlyphName } from "./ui/Glyph";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
+import { useUnmanagedModalHold } from "./ui/PopupQueue";
 import { FONTS, WHIMSY } from "@/constants/theme";
 
 export interface WeeklyBounty {
@@ -81,6 +82,10 @@ export function BountyCard({ bounty, tilt, onClaimed }: Props) {
 	// rerolled bounties hide the option entirely.
 	const canReroll = !bounty.claimed && !ready && !bounty.rerolled;
 	const [confirmOpen, setConfirmOpen] = useState(false);
+	// The reroll ConfirmDialog is an unmanaged native Modal (direct-tap, outside
+	// the popup queue): hold the queue while it's open so a foreground poll can't
+	// present a queued popup over it — the #50152 wedge (issue #4).
+	useUnmanagedModalHold(confirmOpen);
 
 	const doReroll = async () => {
 		setConfirmOpen(false);

@@ -75,6 +75,7 @@ import {
 	type ReactNode,
 } from "react";
 import { markPopupPresented } from "@/utils/popupSession";
+import { QUIET_FILL_SLOT_IDS } from "@/constants/popupPriorities";
 
 // See the timing contract above for how these two relate. The gap is the quiet
 // window after ANY hide (release, drop-of-presented, preemption) before the
@@ -143,12 +144,16 @@ export function PopupQueueProvider({ children }: { children: ReactNode }) {
 		// Session-level "a popup presented this login" signal for the quiet-login
 		// Sounder nudge. Fire on the EDGE into presenting a given id (idle→present
 		// or draining→present), never on re-renders that keep the same presentedId.
-		// markPopupPresented() itself excludes the sounderLaunch slot, so the
-		// nudge's own presentation never suppresses it.
+		// The arbiter is the single point that decides what counts as "a popup
+		// presented", so the quiet-fill exclusion lives HERE: the fallback nudges
+		// (QUIET_FILL_SLOT_IDS — see constants/popupPriorities.ts) must not have
+		// their OWN presentation latch the session signal, or they'd retroactively
+		// suppress themselves. Everything else latches it (utils/popupSession.ts).
 		const prev = machineRef.current;
 		if (
 			next.phase === "presenting" &&
 			next.presentedId &&
+			!QUIET_FILL_SLOT_IDS.has(next.presentedId) &&
 			!(prev.phase === "presenting" && prev.presentedId === next.presentedId)
 		) {
 			markPopupPresented(next.presentedId);

@@ -14,7 +14,9 @@ import path from "path";
 
 const ROOT = path.join(__dirname, "..");
 const MIGRATIONS = path.join(ROOT, "supabase", "migrations");
-const SHOP_TSX = path.join(ROOT, "app", "(tabs)", "shop.tsx");
+// The Browse-grid cost>0 / pass_exclusive filter lives in the catalog fetch
+// hook (extracted from shop.tsx's inline load — candidate C10).
+const CATALOG_HOOK = path.join(ROOT, "hooks", "useShopCatalog.ts");
 const WAR_COSMETICS = "20260650000000_mud_war_cosmetics.sql";
 
 const sqlFiles = () =>
@@ -35,7 +37,7 @@ describe("cost-0 items never leak into the shop", () => {
 	});
 
 	it("the Browse grid hides unowned cost-0 items", () => {
-		const tsx = fs.readFileSync(SHOP_TSX, "utf8");
+		const tsx = fs.readFileSync(CATALOG_HOOK, "utf8");
 		// `(r.cost > 0 && !r.pass_exclusive) || ownedSet.has(r.id)` — the cost
 		// guard may now be ANDed with the pass-exclusive guard, so match loosely.
 		expect(tsx).toMatch(/cost\s*>\s*0[\s\S]{0,60}ownedSet\.has/);
@@ -85,6 +87,6 @@ describe("battle-pass rewards can never enter the shop (all seasons)", () => {
 	});
 
 	it("the Browse grid also hides unowned pass_exclusive items", () => {
-		expect(fs.readFileSync(SHOP_TSX, "utf8")).toMatch(/!\s*r\.pass_exclusive/);
+		expect(fs.readFileSync(CATALOG_HOOK, "utf8")).toMatch(/!\s*r\.pass_exclusive/);
 	});
 });

@@ -22,7 +22,8 @@ import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { rpc, rpcAction } from "@/utils/rpc";
 import { pairBondWith, bondBreakdown, type PairBondWith } from "@/utils/pairBonds";
-import { PigAvatar } from "./ui/PigAvatar";
+import { PrestigeAvatar } from "./ui/PrestigeAvatar";
+import { ProfileIdentity } from "./ui/ProfileIdentity";
 import { Icon } from "./ui/Icon";
 import { Glyph, IconText } from "./ui/Glyph";
 import { Sticker } from "./ui/Sticker";
@@ -39,7 +40,7 @@ import type { RitualMode } from "../utils/rituals";
 import { type AlignmentLabel } from "@/utils/alignment";
 import type { TradeRow } from "@/constants/trade_types";
 import type { TitlePlacement } from "@/constants/title_types";
-import { formatHM } from "@/utils/time";
+import { formatHM } from "@/utils/duration";
 import {
 	FONTS,
 	KICKER_PILL,
@@ -200,6 +201,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 	// (tickles_earned) by product call: a friend's sheet reads the
 	// live race, not the all-time ledger (that stays on your own Me tab).
 	const [targetTickles, setTargetTickles] = useState<number | null>(null);
+	const [targetWallowCount, setTargetWallowCount] = useState(0);
 	const [curseStatus, setCurseStatus] = useState<{
 		cursed: boolean;
 		expires_at: string | null;
@@ -222,6 +224,7 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		if (breakdownTimer.current) clearTimeout(breakdownTimer.current);
 		breakdownTimer.current = setTimeout(() => {
 			setBreakdownPending(null);
+			setTargetWallowCount(0);
 			setBreakdownFor(payload); // presents the receipt after the handoff gap
 		}, 320);
 	};
@@ -303,12 +306,21 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		// leaves the column blank rather than blocking the sheet.
 		supabase
 			.from("profiles")
-			.select("tickles_earned")
+			.select("tickles_earned, wallow_count")
 			.eq("id", targetUserId)
 			.maybeSingle()
-			.then(({ data }) => {
-				const row = data as { tickles_earned?: number } | null;
+			.then(async ({ data, error }) => {
+				let row = data as { tickles_earned?: number; wallow_count?: number } | null;
+				if (error) {
+					const fallback = await supabase
+						.from("profiles")
+						.select("tickles_earned")
+						.eq("id", targetUserId)
+						.maybeSingle();
+					row = fallback.data as { tickles_earned?: number } | null;
+				}
 				setTargetTickles(row ? (row.tickles_earned ?? 0) : null);
+				setTargetWallowCount(row?.wallow_count ?? 0);
 			});
 	}, [targetUserId]);
 
@@ -513,18 +525,22 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 									    treatment on the other screens. */}
 									<Text style={styles.sheetKicker}>★ profile</Text>
 									<View style={styles.header}>
-										<View style={styles.avatarBubble}>
-											<PigAvatar size={56} hatId={stats.active_hat_id} />
-										</View>
+										<PrestigeAvatar
+											size={targetWallowCount > 0 ? 76 : 56}
+											hatId={stats.active_hat_id}
+											prestigeLevel={targetWallowCount}
+										/>
 										<View style={{ flex: 1, minWidth: 0 }}>
-											<Text style={styles.name} numberOfLines={1}>
-												{formatHandle(stats)}
-											</Text>
-											{stats.active_title_name && (
-												<Text style={styles.titleSub}>
-													"{stats.active_title_name}"
-												</Text>
-											)}
+											<ProfileIdentity
+												username={stats.username}
+												title={
+													stats.active_title_name && stats.active_title_placement
+														? { name: stats.active_title_name, placement: stats.active_title_placement }
+														: null
+												}
+												discriminator={stats.discriminator}
+												variant="profile"
+											/>
 										</View>
 									</View>
 

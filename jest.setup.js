@@ -7,6 +7,14 @@
 // mock renders a Text node carrying the icon's name so assertions
 // like `findByProps({ name: 'crown' })` still resolve.
 
+// AsyncStorage's native module isn't linked in the renderer-only test env.
+// Use the package's official in-memory jest mock so any module that imports
+// AsyncStorage (e.g. utils/pigSkin via the pig render path) works out of the
+// box. Individual test files that jest.mock the module themselves still win.
+jest.mock("@react-native-async-storage/async-storage", () =>
+	require("@react-native-async-storage/async-storage/jest/async-storage-mock")
+);
+
 jest.mock("@expo/vector-icons", () => {
 	const React = require("react");
 	const { Text } = require("react-native");

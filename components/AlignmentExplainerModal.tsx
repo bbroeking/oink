@@ -33,6 +33,7 @@ import {
 	WHIMSY,
 	RADII,
 } from "@/constants/theme";
+import { useUnmanagedModalHold } from "./ui/PopupQueue";
 
 interface Props {
 	onDismiss: () => void;
@@ -49,6 +50,10 @@ const ZONES = [
 ];
 
 export function AlignmentExplainerModal({ onDismiss, s1 = false }: Props) {
+	// Unmanaged native Modal (direct-tap from the season tab, mounted only while
+	// open): hold the queue for the component's whole lifetime so a foreground
+	// poll can't present a queued popup over it — the #50152 wedge (issue #4).
+	useUnmanagedModalHold(true);
 	const scale = useRef(new Animated.Value(0)).current;
 	const opacity = useRef(new Animated.Value(0)).current;
 

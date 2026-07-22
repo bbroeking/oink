@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import {
 	NOTIFICATION_SCREENS,
 	routeForScreen,
@@ -5,11 +7,50 @@ import {
 	planTapRoute,
 } from "../utils/notificationRouting";
 
+// Read the REAL server contract instead of trusting a hand-kept list: scan the
+// migrations for the `screen` literals the push payloads actually emit. The
+// server sets them via `jsonb_build_object(... 'screen', '<x>' ...)`, so every
+// emit is a `'screen', '<value>'` pair. (The old test guarded a maintained
+// NOTIFICATION_SCREENS array that itself drifted from the server — a `shop`
+// push had no route for builds. This closes that loop at the source.)
+function serverEmittedScreens(): string[] {
+	const dir = path.join(__dirname, "..", "supabase", "migrations");
+	const files = fs.readdirSync(dir).filter((f) => f.endsWith(".sql"));
+	const re = /'screen'\s*,\s*'([a-z_]+)'/g;
+	const found = new Set<string>();
+	for (const f of files) {
+		const sql = fs.readFileSync(path.join(dir, f), "utf8");
+		let m: RegExpExecArray | null;
+		while ((m = re.exec(sql)) !== null) found.add(m[1]);
+	}
+	return [...found].sort();
+}
+
 describe("routeForScreen — push deep-link map", () => {
-	test("every server-sent screen resolves to a route (no dead deep-links)", () => {
-		for (const s of NOTIFICATION_SCREENS) {
+	const emitted = serverEmittedScreens();
+
+	test("the migrations actually emit screens (extraction isn't silently empty)", () => {
+		// A guard on the guard: if the regex or path breaks, the loop below would
+		// vacuously pass. Anchor on the screens we know the server sends today.
+		expect(emitted).toEqual(
+			expect.arrayContaining(["account", "achievements", "friends", "season", "shop", "trade"])
+		);
+	});
+
+	test("every server-emitted screen resolves to a route (no dead deep-links)", () => {
+		for (const s of emitted) {
 			expect(routeForScreen(s)).not.toBeNull();
 		}
+	});
+
+	test("every server-emitted screen is in the accepted-screen set", () => {
+		for (const s of emitted) {
+			expect(NOTIFICATION_SCREENS).toContain(s);
+		}
+	});
+
+	test("shop routes to the Shop tab (was falling through to null)", () => {
+		expect(routeForScreen("shop")).toBe("/shop");
 	});
 
 	test("trade and friends both land on the Friends tab (Inbox)", () => {

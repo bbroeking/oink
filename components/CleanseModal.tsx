@@ -17,6 +17,7 @@ import { SnoutCoin } from "./ui/SnoutCoin";
 import { CURSE_META, type CurseKind } from "../utils/rituals";
 import { type Effect } from "../utils/activeEffects";
 import { type CleanseResult } from "../hooks/useActiveEffects";
+import { useUnmanagedModalHold } from "./ui/PopupQueue";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -34,6 +35,12 @@ interface Props {
 }
 
 export function CleanseModal({ curses, onDismiss, onConfirm }: Props) {
+	// Unmanaged native Modal (mounted only while open, from HoofprintsSheet or the
+	// Inbox's ActiveEffects strip): hold the queue for its lifetime so a foreground
+	// poll can't present a queued popup over it — the #50152 wedge (issue #4).
+	// (The HoofprintsSheet parent already holds; this refcounts harmlessly and also
+	// covers the ActiveEffects path, which has no outer hold.)
+	useUnmanagedModalHold(true);
 	const [busy, setBusy] = useState(false);
 	const [feedback, setFeedback] = useState<string | null>(null);
 

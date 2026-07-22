@@ -6,37 +6,45 @@
 // NOWHERE because the router had branches for trade/friends/achievements/
 // account but none for season.)
 
-// Exactly the `screen` values the server emits in push payloads. Keep in sync
-// with the `jsonb_build_object(... 'screen', '<x>' ...)` calls in the migrations
-// (rg "'screen'," supabase/migrations); the test guards that they all resolve.
-export const NOTIFICATION_SCREENS = [
-	"trade",
-	"friends",
-	"achievements",
-	"account",
-	"season",
-] as const;
+// THE screen→route table — the one source of truth. Every `screen` value the
+// server may put in a push payload (the `jsonb_build_object(... 'screen', '<x>'
+// ...)` calls in supabase/migrations/*) must have a key here, or a real push
+// deep-links NOWHERE (it falls through routeForScreen → null). The guard test
+// (__tests__/notificationRouting.test.ts) scans the migrations for the screens
+// the server actually emits and asserts each one is present here, so this table
+// and the server can't silently drift. (A `season` bounty-ready push, then a
+// `shop` finale-reward push, each used to dead-end because the router grew a
+// branch per screen by hand and missed one.)
+//
+// Paths match the convention the layout already uses when it hands the result
+// to router.replace (bare tab-relative paths, e.g. "/season", not "/(tabs)/…").
+const NOTIFICATION_ROUTES = {
+	trade: "/friends", // the Inbox on the Friends tab carries the event
+	friends: "/friends", // (trade + friends both land on the Friends Inbox)
+	achievements: "/achievements",
+	account: "/account",
+	season: "/season", // bounties (and the season pass) live here
+	shop: "/shop", // finale/world-cup reward grants open the Shop (wardrobe)
+	// Reserved alias, NOT emitted by the server today: kept so a future
+	// trough (item-drive) push routes to the Shop tab without another edit.
+	// utils/whileAway.ts also resolves "trough" through here on purpose.
+	trough: "/shop",
+} as const;
 
-export type NotificationScreen = (typeof NOTIFICATION_SCREENS)[number];
+// Every screen the router accepts (table keys). Includes the reserved `trough`
+// alias, so this is a superset of what the server emits — the guard test owns
+// the "server ⊆ table" direction by reading the migrations directly.
+export const NOTIFICATION_SCREENS = Object.keys(
+	NOTIFICATION_ROUTES
+) as (keyof typeof NOTIFICATION_ROUTES)[];
+
+export type NotificationScreen = keyof typeof NOTIFICATION_ROUTES;
 
 // → in-app route, or null when there's nothing to navigate to (unknown/absent
-// screen). Paths match the convention the layout already uses (router.replace).
+// screen). A plain table lookup so adding a screen means adding one table entry.
 export function routeForScreen(screen: string | null | undefined): string | null {
-	switch (screen) {
-		case "trade":
-		case "friends":
-			return "/friends"; // the Inbox on the Friends tab carries the event
-		case "achievements":
-			return "/achievements";
-		case "account":
-			return "/account";
-		case "season":
-			return "/season"; // bounties (and the season pass) live here
-		case "trough":
-			return "/shop"; // Troughs (item drives) live on the Shop tab
-		default:
-			return null;
-	}
+	if (screen == null) return null;
+	return (NOTIFICATION_ROUTES as Record<string, string>)[screen] ?? null;
 }
 
 // AsyncStorage key for the consume-once guard below. Persistent (not module

@@ -30,6 +30,7 @@ import {
 	TYPE,
 	WHIMSY,
 } from "@/constants/theme";
+import { useUnmanagedModalHold } from "./ui/PopupQueue";
 
 export function CrewSheet({
 	visible,
@@ -44,6 +45,12 @@ export function CrewSheet({
 	sub?: string;
 	children: ReactNode;
 }) {
+	// Unmanaged native Modal chrome (FriendInvitePicker / TransferLeadershipSheet
+	// slide up through it, outside the popup queue): hold the queue while `visible`
+	// so a foreground poll can't present a queued popup over it — the #50152 wedge
+	// (issue #4). Keyed on `visible`, not the exit-tween `mounted`, so the hold
+	// lifts as the sheet dismisses.
+	useUnmanagedModalHold(visible);
 	// Captured once — the sheet is portrait-only, so no rotation reads.
 	const screenH = useRef(Dimensions.get("window").height).current;
 	// 0 = fully dismissed (scrim clear, panel below the screen), 1 = open.

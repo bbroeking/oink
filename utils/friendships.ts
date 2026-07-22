@@ -34,6 +34,7 @@ export interface Profile {
 	discriminator?: string | null;
 	alignment_score?: number | null;
 	active_hat_id?: string | null;
+	wallow_count?: number | null;
 	// Joined-through name of the equipped hat — only present when the
 	// Friends-list join query fills it. PostgREST returns 1:1 joins
 	// as either an object or a length-1 array.

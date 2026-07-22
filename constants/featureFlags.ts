@@ -26,12 +26,14 @@ export const SOUNDER_VISIBLE = true; // opened with Season 1 (2026-07-11) — th
 //   import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 //   const coopDig = useFeatureFlag("coop_dig");
 
-// Slop Club / premium-pass PURCHASE CTAs are "Coming soon…" until the
-// storefront goes live. The paywall wiring
-// (RevenueCat handleUnlockPro / presentPaywall) stays intact — flipping
-// this to true restores both buy buttons (Account membership card + the
-// season pass PremiumLockedBanner).
-export const PURCHASES_LIVE = false;
+// Slop Club / premium-pass PURCHASE CTAs. Flipped live 2026-07-17: the
+// storefront is real — RevenueCat App Store app + appl_ key wired,
+// ASC products (monthly/yearly/season_pass) staged to ride the 1.3
+// review, revenuecat-webhook deployed as the authoritative is_vip flip.
+// Buy buttons render on the Account membership card + the season pass
+// PremiumLockedBanner. Purchases complete in sandbox/TestFlight now and
+// in production once App Review approves the IAPs with the version.
+export const PURCHASES_LIVE = true;
 
 // Spotlight coach-marks (components/ui/Spotlight.tsx) — the dim-the-screen /
 // cut-a-hole onboarding nudge. Lit for everyone as of 1.3 (build 149): the

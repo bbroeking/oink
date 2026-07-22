@@ -2,104 +2,112 @@
 // the outer chrome (SafeAreaView + tab title), so this component is
 // just the scope toggle + the ranked list + UserSheet.
 import { useState, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Text, Image } from "react-native";
-import { HAT_IMAGES } from "@/constants/hats";
-import type { TitlePlacement } from "@/constants/title_types";
-import { useFocusEffect } from "@react-navigation/native";
-import { supabase } from "../utils/supabase";
-import { rpc } from "@/utils/rpc";
-import { getFriendIds } from "@/utils/friendships";
+import { View, StyleSheet, ScrollView, Pressable, Text } from "react-native";
+import { bondBreakdown, type PairBondRow } from "@/utils/pairBonds";
 import {
-	pairLeaderboard,
-	bondBreakdown,
-	type PairBondRow,
-	type PairLeaderboard,
-} from "@/utils/pairBonds";
+	useLeaderboard,
+	LEADERBOARD_MAX_ROWS,
+	type LeaderboardEntry,
+	type Scope,
+	type BoardScope,
+} from "@/hooks/useLeaderboard";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
-import { log } from "../utils/log";
 import { Icon } from "./ui/Icon";
 import { Glyph, IconText } from "./ui/Glyph";
-import { PigAvatar } from "./ui/PigAvatar";
+import { PrestigeAvatar } from "./ui/PrestigeAvatar";
+import { ProfileIdentity } from "./ui/ProfileIdentity";
 import { Sticker, Tape } from "./ui/Sticker";
 import { ListRowSkeleton } from "./ui/Skeleton";
 import { UserSheet } from "./UserSheet";
 import { TickleBreakdownSheet } from "./TickleBreakdownSheet";
-import { FONTS, KICKER_TEXT, SHADOW_SM, TAB_SAFE, TYPE, WHIMSY } from "@/constants/theme";
+import {
+	FONTS,
+	KICKER_TEXT,
+	SHADOW_SM,
+	TAB_SAFE,
+	TYPE,
+	WHIMSY,
+} from "@/constants/theme";
 
-// Page size + hard upper bound for the global leaderboard. 25 lands
-// just over a single phone screen so each "Load more" is a deliberate
-// reach; 100 is the highest rank that's still meaningful to the
-// average player (the long tail past rank 100 is competitive noise).
-const LEADERBOARD_PAGE_SIZE = 25;
-const LEADERBOARD_MAX_ROWS = 100;
+// The Board's fetch/pagination now lives in hooks/useLeaderboard.ts, which owns
+// the row types (LeaderboardEntry), the scope union, and the page-size/cap
+// constants. BoardScope is re-exported so app/(tabs)/friends.tsx keeps importing
+// it from this component.
+export type { BoardScope };
 
-type Scope = "global" | "friends" | "pairs" | "alignment";
-// The scopes a host can open the board on (alignment is season-0 internal).
-export type BoardScope = Exclude<Scope, "alignment">;
-
-interface ActiveTitle {
-	id: string;
-	name: string;
-	placement: TitlePlacement;
+function wallowStanding(count?: number | null): string {
+	const n = Math.max(0, count ?? 0);
+	return `Wallow Rank ${n}`;
 }
 
-interface ActiveHat {
-	name: string;
-}
+const DEV_WALLOW_PREVIEW: LeaderboardEntry[] = [
+	{
+		id: "wallow-preview-5",
+		username: "Rosie",
+		tickles_earned: 4821,
+		active_hat_id: null,
+		active_hat: null,
+		active_title: { id: "preview-pre", name: "Blazing", placement: "pre" },
+		wallow_count: 5,
+	},
+	{
+		id: "wallow-preview-2",
+		username: "Golden Snout",
+		tickles_earned: 3910,
+		active_hat_id: null,
+		active_hat: null,
+		active_title: { id: "preview-post", name: "the Rooted", placement: "post" },
+		wallow_count: 2,
+	},
+	{
+		id: "wallow-preview-1",
+		username: "Kindled Pig",
+		tickles_earned: 2875,
+		active_hat_id: null,
+		active_hat: null,
+		active_title: null,
+		wallow_count: 1,
+	},
+	{
+		id: "wallow-preview-0",
+		username: "Unwallowed Pig",
+		tickles_earned: 2110,
+		active_hat_id: null,
+		active_hat: null,
+		active_title: null,
+		wallow_count: 0,
+	},
+];
 
-interface LeaderboardEntry {
-	id: string;
-	username: string | null;
-	discriminator?: string | null;
-	tickles_earned: number;
-	active_hat_id: string | null;
-	// Equipped country flag (World Cup) — rendered as a small chip by the name.
-	active_flag_id?: string | null;
-	// Name of the equipped hat (joined through the active_hat_id FK).
-	// Drives the "wears X" second line on each ranked row. Null when
-	// no hat is equipped or when the hats join falls back.
-	active_hat: ActiveHat | null;
-	active_title: ActiveTitle | null;
-	alignment_score?: number | null;
-	// Alignment-scope only: which half of the leaderboard this row
-	// belongs to (Generous top vs Greedy top) + the within-side rank.
-	// alignment_leaderboard RPC returns both; we used to throw them
-	// away and renumber every row 1..N, which made Greedy #1 read
-	// like "rank 11 overall" — confusing because it ranks across
-	// two independent boards.
-	align_side?: "generous" | "greedy" | null;
-	align_side_rank?: number | null;
-}
-
-function formatDisplayName(
-	username: string | null,
-	title: ActiveTitle | null
-): string {
-	const name = username ?? "Anonymous";
-	if (!title) return name;
-	return title.placement === "post"
-		? `${name} ${title.name}`
-		: `${title.name} ${name}`;
-}
-
-// PostgREST returns 1:1 joins either as a single object or as a
-// length-1 array depending on the relationship's cardinality
-// metadata; normalize so the UI can read .active_title?.name /
-// .active_hat?.name directly.
-type RawRow = Omit<LeaderboardEntry, "active_title" | "active_hat"> & {
-	active_title?: ActiveTitle[] | ActiveTitle | null;
-	active_hat?: ActiveHat[] | ActiveHat | null;
-};
-function normalize(rows: RawRow[] | null): LeaderboardEntry[] {
-	return (rows ?? []).map((r) => ({
-		...r,
-		active_hat: Array.isArray(r.active_hat)
-			? (r.active_hat[0] ?? null)
-			: (r.active_hat ?? null),
-		active_title: Array.isArray(r.active_title)
-			? (r.active_title[0] ?? null)
-			: (r.active_title ?? null),
-	}));
+function DevWallowPreview() {
+	const [champ, ...rows] = DEV_WALLOW_PREVIEW;
+	const noop = () => {};
+	return (
+		<ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+			<Text style={styles.previewNote}>
+				Production leaderboard treatment · ranks 0, 1, 2, and 5
+			</Text>
+			<ChampionPoster champ={champ} onPress={noop} onPressScore={noop} />
+			<Sticker
+				color="paper"
+				rotate={-0.3}
+				radius={14}
+				style={styles.listSticker}
+			>
+				{rows.map((player, index) => (
+					<ClippingRow
+						key={player.id}
+						player={player}
+						rank={index + 2}
+						isYou={false}
+						last={index === rows.length - 1}
+						onPress={noop}
+						onPressScore={noop}
+					/>
+				))}
+			</Sticker>
+		</ScrollView>
+	);
 }
 
 function ChampionPoster({
@@ -115,29 +123,40 @@ function ChampionPoster({
 }) {
 	return (
 		<Pressable style={styles.champWrap} onPress={() => onPress(champ.id)}>
-			<Sticker color="sun" rotate={-1.5} radius={18} border={2.5} style={styles.champ}>
+			<Sticker
+				color="sun"
+				rotate={-1.5}
+				radius={18}
+				border={2.5}
+				style={styles.champ}
+			>
 				{/* Rose tape pinning the poster — small decorative pin in
 				    the top-left so the champion poster reads as "tacked up"
 				    on the leaderboard wall. */}
-				<Tape color="roseDeep" rotate={-12} width={48} height={12} style={styles.champTape} />
+				<Tape
+					color="roseDeep"
+					rotate={-12}
+					width={48}
+					height={12}
+					style={styles.champTape}
+				/>
 				{/* Lifetime tickles_earned drives the sort, so the #1 slot
 				    is the all-time leader — calling them 'today's
 				    champion' would imply a daily reset the schema
 				    doesn't have. Restored the accurate label. */}
 				<Text style={styles.champOver}>★ all-time leader ★</Text>
 				<View style={styles.champBody}>
-					<View style={styles.champAvatarWrap}>
-						<PigAvatar size={64} hatId={champ.active_hat_id} />
-					</View>
+					<PrestigeAvatar
+						size={(champ.wallow_count ?? 0) > 0 ? 84 : 64}
+						hatId={champ.active_hat_id}
+						prestigeLevel={champ.wallow_count}
+					/>
 					<View style={{ flex: 1, minWidth: 0 }}>
-						<Text
-							style={styles.champName}
-							numberOfLines={1}
-							adjustsFontSizeToFit
-							minimumFontScale={0.55}
-						>
-							{formatDisplayName(champ.username, champ.active_title)}
-						</Text>
+						<ProfileIdentity
+							username={champ.username}
+							title={champ.active_title}
+							variant="hero"
+						/>
 						{/* Second line — tickles count is always present
 						    (it's what earned them the leader spot), the
 						    "wears X" reads alongside when a hat is
@@ -158,10 +177,17 @@ function ChampionPoster({
 							<IconText left={<Glyph name="heart" size={14} />} gap={5}>
 								<Text style={styles.champScore} numberOfLines={1}>
 									{champ.tickles_earned.toLocaleString()}
-									{champ.active_hat?.name ? `  ·  wears ${champ.active_hat.name}` : ""}
+									{champ.active_hat?.name
+										? `  ·  wears ${champ.active_hat.name}`
+										: ""}
 								</Text>
 							</IconText>
 						</Pressable>
+						{(champ.wallow_count ?? 0) > 0 && (
+							<Text style={styles.champPrestige} numberOfLines={1}>
+								{wallowStanding(champ.wallow_count)}
+							</Text>
+						)}
 					</View>
 					{/* Crown — the de-facto leader glyph. Replaces the old
 					    rotated "1" badge so the role reads instantly. */}
@@ -203,81 +229,70 @@ function ClippingRow({
 				!last && styles.rowDivider,
 			]}
 		>
-				<Text style={styles.rowRank}>#{rank}</Text>
-				<PigAvatar size={32} hatId={player.active_hat_id} />
-				<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
-					<View style={styles.rowNameLine}>
-						<Text
-							style={styles.rowName}
-							numberOfLines={1}
-							adjustsFontSizeToFit
-							minimumFontScale={0.6}
-						>
-							{formatDisplayName(player.username, player.active_title)}
-							{isYou && <Text style={styles.rowYouTag}> (you)</Text>}
-						</Text>
-						{player.active_flag_id && HAT_IMAGES[player.active_flag_id] ? (
-							<Image
-								source={HAT_IMAGES[player.active_flag_id]}
-								style={styles.flagChip}
-								resizeMode="contain"
-							/>
-						) : null}
-						{player.discriminator && (
-							<Text style={styles.rowDisc}>#{player.discriminator}</Text>
-						)}
-					</View>
-					{/* Second line — what the pig is wearing, falling
+			<Text style={styles.rowRank}>#{rank}</Text>
+			<PrestigeAvatar
+				size={(player.wallow_count ?? 0) > 0 ? 46 : 32}
+				hatId={player.active_hat_id}
+				prestigeLevel={player.wallow_count}
+			/>
+			<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
+				<ProfileIdentity
+					username={player.username}
+					title={player.active_title}
+					discriminator={player.discriminator}
+					suffix={isYou ? "(you)" : null}
+				/>
+				{/* Second line — what the pig is wearing, falling
 					    back to the active title when nothing is
 					    equipped. PigAvatar already shows the hat as a
 					    sprite; the text labels the item so the row
 					    reads even at a glance. */}
-					{player.active_hat?.name ? (
-						<Text style={styles.rowSub} numberOfLines={1}>
-							wears {player.active_hat.name}
-						</Text>
-					) : player.active_title?.name ? (
-						<Text style={styles.rowSub} numberOfLines={1}>
-							{player.active_title.name}
-						</Text>
-					) : null}
-				</View>
-				{/* Score column. In the tickles scopes the count is a nested
+				{(player.wallow_count ?? 0) > 0 ? (
+					<Text style={styles.rowSub} numberOfLines={1}>
+						{wallowStanding(player.wallow_count)}
+					</Text>
+				) : player.active_hat?.name ? (
+					<Text style={styles.rowSub} numberOfLines={1}>
+						wears {player.active_hat.name}
+					</Text>
+				) : null}
+			</View>
+			{/* Score column. In the tickles scopes the count is a nested
 				    Pressable → the breakdown receipt (spec 17): generous hit-slop,
 				    no layout change, and it captures the tap so it opens the receipt
 				    rather than the row's profile sheet. Alignment scope stays a
 				    plain View (its number is the align score, not tickles). */}
-				{!showAlignment && onPressScore ? (
-					<Pressable
-						style={styles.rowScoreCol}
-						onPress={() => onPressScore(player.id, player.tickles_earned)}
-						hitSlop={{ top: 10, bottom: 10, left: 12, right: 8 }}
-						accessibilityRole="button"
-						accessibilityLabel="How this pig earned its tickles"
-					>
-						<Text style={styles.rowScore} numberOfLines={1}>
-							{player.tickles_earned.toLocaleString()}
-						</Text>
-						<Glyph name="heart" size={12} style={{ marginTop: 2 }} />
-					</Pressable>
-				) : (
-					<View style={styles.rowScoreCol}>
-						{/* numberOfLines=1 so 5-digit scores (e.g. "100,000")
+			{!showAlignment && onPressScore ? (
+				<Pressable
+					style={styles.rowScoreCol}
+					onPress={() => onPressScore(player.id, player.tickles_earned)}
+					hitSlop={{ top: 10, bottom: 10, left: 12, right: 8 }}
+					accessibilityRole="button"
+					accessibilityLabel="How this pig earned its tickles"
+				>
+					<Text style={styles.rowScore} numberOfLines={1}>
+						{player.tickles_earned.toLocaleString()}
+					</Text>
+					<Glyph name="heart" size={12} style={{ marginTop: 2 }} />
+				</Pressable>
+			) : (
+				<View style={styles.rowScoreCol}>
+					{/* numberOfLines=1 so 5-digit scores (e.g. "100,000")
 						    stay on one line instead of wrapping the column. */}
-						<Text style={styles.rowScore} numberOfLines={1}>
-							{showAlignment
-								? score > 0
-									? `+${score}`
-									: `${score}`
-								: player.tickles_earned.toLocaleString()}
-						</Text>
-						{showAlignment ? (
-							<Text style={styles.rowScoreUnit}>align</Text>
-						) : (
-							<Glyph name="heart" size={12} style={{ marginTop: 2 }} />
-						)}
-					</View>
-				)}
+					<Text style={styles.rowScore} numberOfLines={1}>
+						{showAlignment
+							? score > 0
+								? `+${score}`
+								: `${score}`
+							: player.tickles_earned.toLocaleString()}
+					</Text>
+					{showAlignment ? (
+						<Text style={styles.rowScoreUnit}>align</Text>
+					) : (
+						<Glyph name="heart" size={12} style={{ marginTop: 2 }} />
+					)}
+				</View>
+			)}
 		</Pressable>
 	);
 }
@@ -293,8 +308,20 @@ function pairTitle(row: PairBondRow): string {
 function PairChampionPoster({ champ }: { champ: PairBondRow }) {
 	return (
 		<View style={styles.champWrap}>
-			<Sticker color="sun" rotate={-1.5} radius={18} border={2.5} style={styles.champ}>
-				<Tape color="roseDeep" rotate={-12} width={48} height={12} style={styles.champTape} />
+			<Sticker
+				color="sun"
+				rotate={-1.5}
+				radius={18}
+				border={2.5}
+				style={styles.champ}
+			>
+				<Tape
+					color="roseDeep"
+					rotate={-12}
+					width={48}
+					height={12}
+					style={styles.champTape}
+				/>
 				<Text style={styles.champOver}>★ the strongest pair in the bog ★</Text>
 				<View style={styles.champBody}>
 					<View style={{ flex: 1, minWidth: 0 }}>
@@ -372,21 +399,18 @@ function PairRow({
 // `initialScope` lets a host open the board on a specific tab (the Sounder
 // card's "standings live in the Board" note lands on the Sounders scope).
 export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
-	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-	const [loading, setLoading] = useState(true);
-	// A failed fetch (both the titles-join select AND its no-titles retry
-	// threw) surfaces as a cozy error card with a retry, instead of silently
-	// rendering an empty board. A later successful fetch clears it.
-	const [error, setError] = useState(false);
+	const [showWallowPreview, setShowWallowPreview] = useState(false);
 	const [scope, setScope] = useState<Scope>(initialScope ?? "global");
-	const [myId, setMyId] = useState<string | null>(null);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 	// The tickle breakdown receipt (spec 17) — which pig's ledger is open + its
 	// already-known total (the fail-soft display when the RPC is dark).
-	const [breakdownUser, setBreakdownUser] = useState<{ id: string; total: number } | null>(null);
+	const [breakdownUser, setBreakdownUser] = useState<{
+		id: string;
+		total: number;
+	} | null>(null);
 	const openBreakdown = useCallback(
 		(userId: string, total: number) => setBreakdownUser({ id: userId, total }),
-		[]
+		[],
 	);
 	// Alignment isn't a thing in Season 1 — the greedy/generous board
 	// retires with Judgement Day, so its scope tab hides once s1 is live.
@@ -396,224 +420,22 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 	const scopes: Scope[] = s1
 		? ["global", "friends", "pairs"]
 		: ["global", "friends", "alignment"];
-	// Paginated load-more state for the global scope. Friends scope is
-	// already bounded by the 100-friend cap; alignment is RPC-served
-	// with a fixed per_side, so neither needs pagination.
-	const [loadingMore, setLoadingMore] = useState(false);
-	const [hasMore, setHasMore] = useState(false);
-	// Strongest-pairs scope — the ranked pair board + the caller's own best
-	// pair (the "you" row) when it falls outside the top slice. RPC-served,
-	// so no pagination; the top slice is bounded server-side.
-	const [pairs, setPairs] = useState<PairBondRow[]>([]);
-	const [youPair, setYouPair] = useState<PairBondRow | null>(null);
 
-	// Fetches `count` rows starting at `from` from profiles, ordered
-	// by tickles_earned desc. Falls back to the no-titles select if
-	// the active_title join 400s (pre-titles-migration installs).
-	const fetchGlobalPage = useCallback(
-		async (from: number, count: number): Promise<LeaderboardEntry[]> => {
-			// active_hat join lights up the "wears X" second-line on
-			// each ranked row. The titles join is independent; if the
-			// titles migration isn't deployed, retry without titles
-			// but keep the hat join (its migration is much older).
-			const SELECT_WITH_TITLES =
-				"id, username, discriminator, tickles_earned, active_hat_id, active_flag_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
-			const SELECT_BASIC =
-				"id, username, discriminator, tickles_earned, active_hat_id, active_flag_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
-			// is_test filter only fires on the global scope — friends
-			// list intentionally shows any account you've friended,
-			// test or not. The 'or' wrap handles legacy rows where
-			// the column is missing (pre-20260548 migration), which
-			// PostgREST treats as NULL ≠ true → row included.
-			const run = async (select: string) =>
-				supabase
-					.from("profiles")
-					.select(select)
-					.not("username", "is", null)
-					.neq("username", "")
-					.or("is_test.is.null,is_test.eq.false")
-					// Hidden accounts (demo reviewer, junk usernames) never
-					// appear on the global board. Column is NOT NULL DEFAULT
-					// false, so eq(false) covers every row.
-					.eq("hide_from_leaderboard", false)
-					.order("tickles_earned", { ascending: false })
-					// Unique tiebreaker so contiguous .range() pages never
-					// overlap: tickles_earned alone is not unique (a fresh
-					// board has everyone tied at 0), and Postgres orders tied
-					// rows nondeterministically — so the row at a page boundary
-					// could land in BOTH the first and second range() query,
-					// yielding the same id twice → a duplicate React key. id
-					// (the PK) makes the total order stable across pages.
-					.order("id", { ascending: true })
-					.range(from, from + count - 1)
-					// Dynamic select string → PostgREST infers a parser-error
-					// row shape; declare our known row type through the builder
-					// so .data lands as RawRow[] without an escape-hatch cast.
-					.returns<RawRow[]>();
-			let result = await run(SELECT_WITH_TITLES);
-			if (result.error) {
-				log.error("Leaderboard titles join failed, retrying without:", result.error);
-				result = await run(SELECT_BASIC);
-				if (result.error) throw result.error;
-			}
-			return normalize(result.data);
-		},
-		[]
-	);
-
-	const fetchLeaderboard = useCallback(async () => {
-		setLoading(true);
-		setHasMore(false);
-		setError(false);
-		try {
-			const {
-				data: { user },
-			} = await supabase.auth.getUser();
-			setMyId(user?.id ?? null);
-
-			if (scope === "pairs") {
-				// Strongest pairs — RPC-served, both usernames + breakdown + the
-				// you-row baked in. Fail-soft: a null result (unpushed migration)
-				// leaves the board empty rather than throwing.
-				const res = await pairLeaderboard(25);
-				const ok = res && (res as PairLeaderboard).ok;
-				setPairs(ok ? (res as PairLeaderboard).pairs : []);
-				setYouPair(ok ? (res as PairLeaderboard).you : null);
-				return;
-			}
-
-			if (scope === "alignment") {
-				const rows = await rpc<
-					{
-						user_id: string;
-						username: string | null;
-						active_hat_id: string | null;
-						active_flag_id: string | null;
-						alignment_score: number;
-						side: "generous" | "greedy";
-						side_rank: number;
-					}[]
-				>("alignment_leaderboard", {
-					per_side: 25,
-				});
-				const mapped: LeaderboardEntry[] = (rows ?? []).map((r) => ({
-					id: r.user_id,
-					username: r.username,
-					tickles_earned: 0,
-					active_hat_id: r.active_hat_id,
-					active_flag_id: r.active_flag_id ?? null,
-					// alignment_leaderboard RPC doesn't carry the hat
-					// name; the "wears X" line falls back to nothing in
-					// this scope. Acceptable — the alignment view leads
-					// with the score, hats are secondary signal there.
-					active_hat: null,
-					active_title: null,
-					alignment_score: r.alignment_score,
-					align_side: r.side,
-					align_side_rank: r.side_rank,
-				}));
-				setLeaderboard(mapped);
-				return;
-			}
-
-			if (scope === "friends") {
-				// Bounded by the 100-friend cap — fetch once, no pagination.
-				const friends = await getFriendIds();
-				const friendIds = [
-					...(friends ?? []),
-					...(user ? [user.id] : []),
-				];
-				if (friendIds.length === 0) {
-					setLeaderboard([]);
-					return;
-				}
-				const SELECT_BASIC =
-					"id, username, discriminator, tickles_earned, active_hat_id, active_flag_id, alignment_score, active_hat:hats!profiles_active_hat_id_fkey(name)";
-				const SELECT_WITH_TITLES =
-					"id, username, discriminator, tickles_earned, active_hat_id, active_flag_id, alignment_score, active_title:titles!profiles_active_title_id_fkey(id, name, placement), active_hat:hats!profiles_active_hat_id_fkey(name)";
-				// The titles join 400s when the titles migration isn't
-				// deployed; retry without it. Untyped intermediate so
-				// both selects can land in the same variable.
-				const runFriends = async (sel: string) =>
-					supabase
-						.from("profiles")
-						.select(sel)
-						.in("id", friendIds)
-						.not("username", "is", null)
-						.neq("username", "")
-						.order("tickles_earned", { ascending: false })
-						// Dynamic select string → PostgREST infers a parser-error
-						// row shape; declare our known row type through the builder
-						// (matches the global path) instead of casting .data.
-						.returns<RawRow[]>();
-				let result = await runFriends(SELECT_WITH_TITLES);
-				if (result.error) {
-					result = await runFriends(SELECT_BASIC);
-					if (result.error) throw result.error;
-				}
-				setLeaderboard(normalize(result.data));
-				return;
-			}
-
-			// Global scope — paginated. Pull the first page (PAGE_SIZE +
-			// 1 so the champion poster doesn't eat a slot from the rest
-			// list) and seed hasMore on whether the page came back full.
-			const firstPage = await fetchGlobalPage(0, LEADERBOARD_PAGE_SIZE);
-			setLeaderboard(firstPage);
-			setHasMore(
-				firstPage.length === LEADERBOARD_PAGE_SIZE &&
-					firstPage.length < LEADERBOARD_MAX_ROWS
-			);
-
-			rpc("mark_all_pass_events_seen").then(() => {});
-		} catch (err) {
-			log.error("Error fetching leaderboard:", err);
-			// Both the titles-join select and its no-titles retry threw — the
-			// Board couldn't load. Surface a retry instead of an empty list.
-			setError(true);
-		} finally {
-			setLoading(false);
-		}
-	}, [scope, fetchGlobalPage]);
-
-	const loadMore = useCallback(async () => {
-		if (loadingMore || !hasMore) return;
-		setLoadingMore(true);
-		try {
-			const from = leaderboard.length;
-			const want = Math.min(
-				LEADERBOARD_PAGE_SIZE,
-				LEADERBOARD_MAX_ROWS - from
-			);
-			if (want <= 0) {
-				setHasMore(false);
-				return;
-			}
-			const next = await fetchGlobalPage(from, want);
-			// Dedupe by id, keeping the already-shown row: even with the stable
-			// id tiebreaker, a row's tickles_earned can change between the
-			// first-page fetch and this one (someone tickles mid-scroll),
-			// shifting a boundary row into this page's range — appending it
-			// blindly would collide on key={item.id}. Guard at the source.
-			setLeaderboard((prev) => {
-				const seen = new Set(prev.map((r) => r.id));
-				return [...prev, ...next.filter((r) => !seen.has(r.id))];
-			});
-			setHasMore(
-				next.length === want && from + next.length < LEADERBOARD_MAX_ROWS
-			);
-		} catch (error) {
-			log.error("Error loading more leaderboard rows:", error);
-		} finally {
-			setLoadingMore(false);
-		}
-	}, [loadingMore, hasMore, leaderboard.length, fetchGlobalPage]);
-
-	useFocusEffect(
-		useCallback(() => {
-			fetchLeaderboard();
-		}, [fetchLeaderboard])
-	);
+	// All server reads + cursor pagination live in the hook (fetches on focus +
+	// on refresh()). `fetchLeaderboard` is the refresh alias the retry button and
+	// UserSheet's onFriendshipChanged call; `leaderboard` is the ranked list.
+	const {
+		rows: leaderboard,
+		pairs,
+		youPair,
+		myId,
+		loading,
+		loadingMore,
+		hasMore,
+		error,
+		refresh: fetchLeaderboard,
+		loadMore,
+	} = useLeaderboard(scope);
 
 	const champ = leaderboard[0];
 	const rest = leaderboard.slice(1);
@@ -661,8 +483,29 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 					})}
 				</Sticker>
 			</View>
+			{__DEV__ && (
+				<Pressable
+					onPress={() => setShowWallowPreview((shown) => !shown)}
+					style={({ pressed }) => [
+						styles.previewToggle,
+						showWallowPreview && styles.previewToggleOn,
+						pressed && { opacity: 0.75 },
+					]}
+					accessibilityRole="button"
+					accessibilityState={{ selected: showWallowPreview }}
+				>
+					<Glyph name="flame" size={16} />
+					<Text style={styles.previewToggleText}>
+						{showWallowPreview
+							? "Showing Wallow ranks"
+							: "Preview Wallow ranks"}
+					</Text>
+				</Pressable>
+			)}
 
-			{loading ? (
+			{showWallowPreview ? (
+				<DevWallowPreview />
+			) : loading ? (
 				<View style={styles.listContent}>
 					{Array.from({ length: 6 }).map((_, i) => (
 						<ListRowSkeleton key={i} />
@@ -672,7 +515,12 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				// Fetch failed (both selects threw) — a cozy card with a
 				// hand-link retry, so the Board never renders silently empty.
 				<View style={styles.emptyWrap}>
-					<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
+					<Sticker
+						color="paper"
+						rotate={-0.5}
+						radius={12}
+						style={styles.emptyCard}
+					>
 						<Text style={styles.emptyText}>
 							the Board is being shy — give it another nudge.
 						</Text>
@@ -692,7 +540,12 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				// falls outside the top slice.
 				pairs.length === 0 ? (
 					<View style={styles.emptyWrap}>
-						<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
+						<Sticker
+							color="paper"
+							rotate={-0.5}
+							radius={12}
+							style={styles.emptyCard}
+						>
 							<Text style={styles.emptyText}>
 								no bonds yet. trade, bless, and visit a friend to build one.
 							</Text>
@@ -743,7 +596,12 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				// Empty state on a paper Sticker so it matches the Friends
 				// segment's empty card instead of reading as bare text.
 				<View style={styles.emptyWrap}>
-					<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
+					<Sticker
+						color="paper"
+						rotate={-0.5}
+						radius={12}
+						style={styles.emptyCard}
+					>
 						<Text style={styles.emptyText}>
 							{scope === "friends"
 								? "No friends yet. Add some on the Friends segment."
@@ -766,14 +624,21 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 					contentContainerStyle={styles.listContent}
 				>
 					{(() => {
-						const generous = leaderboard.filter((r) => r.align_side === "generous");
+						const generous = leaderboard.filter(
+							(r) => r.align_side === "generous",
+						);
 						const greedy = leaderboard.filter((r) => r.align_side === "greedy");
 						return (
 							<>
 								{generous.length > 0 && (
 									<>
 										<View style={styles.alignSectionHeader}>
-											<Text style={[styles.alignSectionText, styles.alignSectionGenerous]}>
+											<Text
+												style={[
+													styles.alignSectionText,
+													styles.alignSectionGenerous,
+												]}
+											>
 												GENEROUS · top {generous.length}
 											</Text>
 										</View>
@@ -799,8 +664,15 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 								)}
 								{greedy.length > 0 && (
 									<>
-										<View style={[styles.alignSectionHeader, { marginTop: 16 }]}>
-											<Text style={[styles.alignSectionText, styles.alignSectionGreedy]}>
+										<View
+											style={[styles.alignSectionHeader, { marginTop: 16 }]}
+										>
+											<Text
+												style={[
+													styles.alignSectionText,
+													styles.alignSectionGreedy,
+												]}
+											>
 												GREEDY · top {greedy.length}
 											</Text>
 										</View>
@@ -924,6 +796,28 @@ const styles = StyleSheet.create({
 	},
 	toggleText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
 	toggleTextActive: { fontFamily: FONTS.whimsy, color: WHIMSY.ink },
+	previewToggle: {
+		alignSelf: "center",
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 7,
+		marginTop: 8,
+		paddingHorizontal: 12,
+		paddingVertical: 7,
+		borderRadius: 18,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+	},
+	previewToggleOn: { backgroundColor: WHIMSY.sun },
+	previewToggleText: { ...TYPE.label, color: WHIMSY.ink },
+	previewNote: {
+		...TYPE.hand,
+		color: WHIMSY.mute,
+		textAlign: "center",
+		marginTop: 8,
+		marginBottom: 2,
+	},
 	champWrap: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 },
 	// Poster padding aligned to the ranked-row horizontal padding (14) so
 	// the champion card and the rows below share one left edge.
@@ -943,18 +837,16 @@ const styles = StyleSheet.create({
 		marginBottom: 8,
 	},
 	champBody: { flexDirection: "row", alignItems: "center", gap: 14 },
-	champAvatarWrap: {
-		borderRadius: 32,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
-		padding: 2,
-	},
 	champName: { ...TYPE.sectionTitle, color: WHIMSY.ink },
 	champScore: {
 		...TYPE.hand,
 		color: WHIMSY.mute,
 		marginTop: 2,
+	},
+	champPrestige: {
+		...TYPE.label,
+		color: WHIMSY.accent,
+		marginTop: 3,
 	},
 	// Pair champion — bond breakdown sub-line + the big bond number, matching
 	// the ranked-row score treatment so the number reads as ONE thing.
@@ -964,7 +856,11 @@ const styles = StyleSheet.create({
 	// the no-emoji sweep — no inline style needed; Icon takes size +
 	// color directly.
 	list: { flex: 1 },
-	listContent: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: TAB_SAFE },
+	listContent: {
+		paddingHorizontal: 14,
+		paddingTop: 4,
+		paddingBottom: TAB_SAFE,
+	},
 	// Single sticker wrapping every ranked row — replaces per-row
 	// tilted stickers so the leaderboard reads as one cohesive card.
 	listSticker: {
@@ -986,8 +882,8 @@ const styles = StyleSheet.create({
 	alignSectionText: {
 		...KICKER_TEXT,
 	},
-	alignSectionGenerous: { color: WHIMSY.bless },      // Barn blessing countdown (shared token)
-	alignSectionGreedy:   { color: WHIMSY.curseGreen }, // Barn curse countdown (shared token)
+	alignSectionGenerous: { color: WHIMSY.bless }, // Barn blessing countdown (shared token)
+	alignSectionGreedy: { color: WHIMSY.curseGreen }, // Barn curse countdown (shared token)
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -1029,8 +925,12 @@ const styles = StyleSheet.create({
 		alignItems: "baseline",
 		gap: 6,
 	},
-	rowName: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink, flexShrink: 1 },
-	flagChip: { width: 22, height: 16, alignSelf: "center" },
+	rowName: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+		flexShrink: 1,
+	},
 	rowDisc: {
 		...TYPE.label,
 		color: WHIMSY.mute,

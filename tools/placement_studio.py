@@ -15,7 +15,7 @@ PigStage.resolveSlot math, and persists with the safe rebuild-all strategy:
 
   python3 tools/placement_studio.py   # http://127.0.0.1:8124/
 """
-import http.server, json, os, re, socketserver, posixpath, time
+import http.server, json, os, re, socketserver, posixpath, subprocess, time
 from urllib.parse import urlparse, unquote
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -277,6 +277,22 @@ def safe_asset(rel):
     return full if os.path.isfile(full) else None
 
 
+def unlock_brian_auras():
+    """Grant every current aura to the Brian test profile (idempotent)."""
+    result = subprocess.run(
+        ["node", os.path.join(ROOT, "scripts", "unlock-auras-for-user.mjs"), "Brian"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if result.returncode:
+        detail = (result.stderr or result.stdout or "unlock failed").strip().splitlines()[-1]
+        raise RuntimeError(detail)
+    return json.loads(result.stdout.strip().splitlines()[-1])
+
+
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -357,6 +373,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                                 "ts": prev.get("ts") or int(time.time())}
                 write_rejections(rej)
                 self._json(200, {"ok": True, "count": len(rej)})
+            elif path == "/api/unlock-brian-auras":
+                self._json(200, unlock_brian_auras())
             else:
                 self._json(404, {"error": "not found"})
         except Exception as exc:  # noqa: BLE001

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Image, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import { usePigSkinTint, PIG_SKIN_WASH } from "@/utils/pigSkin";
 
 const FRAMES: Record<string, number> = {
 	idle_1: require("../../assets/images/sprites/rosie/idle_1.png"),
@@ -93,6 +94,10 @@ interface Props {
 	// internal interval. Used by the alignment screen's frame stepper so
 	// we can pause an animation and inspect anchor placement frame-by-frame.
 	frameIdx?: number;
+	// Prototype-only escape hatch: render a supplied wash without mutating the
+	// app-wide AsyncStorage-backed Slop Club skin setting. `undefined` keeps the
+	// normal global behavior; `null` explicitly disables the wash.
+	skinTintOverride?: string | null;
 }
 
 export function SpritePig({
@@ -103,6 +108,7 @@ export function SpritePig({
 	onFrame,
 	customFrames,
 	frameIdx,
+	skinTintOverride,
 }: Props) {
 	const [internalIdx, setInternalIdx] = useState(0);
 	const idx = frameIdx ?? internalIdx;
@@ -164,6 +170,14 @@ export function SpritePig({
 	// during the loop → no decode/flash; never two poses on screen → no ghost.
 	// fadeDuration={0} disables Android's default image fade-in.
 	const safeIdx = Math.min(idx, activeFrames.length - 1);
+	// Slop Club Rosie (member skin, client-only prototype). When the member has
+	// the skin on, wash a low-opacity gold-tinted copy of the visible frame over
+	// Rosie so she reads as the gilded "club" variant everywhere she renders. Off
+	// (default / non-members) this is null → nothing extra mounts → the render is
+	// byte-identical. pointerEvents="none" so the wash never eats a tap.
+	const storedSkinTint = usePigSkinTint();
+	const skinTint =
+		skinTintOverride === undefined ? storedSkinTint : skinTintOverride;
 	return (
 		<View style={[{ width: size, height: size }, style]}>
 			{activeFrames.map((f, i) => (
@@ -175,6 +189,16 @@ export function SpritePig({
 					fadeDuration={0}
 				/>
 			))}
+			{skinTint && (
+				<View style={styles.fill} pointerEvents="none">
+					<Image
+						source={FRAMES[activeFrames[safeIdx]]}
+						style={[styles.fill, { tintColor: skinTint, opacity: PIG_SKIN_WASH }]}
+						resizeMode="contain"
+						fadeDuration={0}
+					/>
+				</View>
+			)}
 		</View>
 	);
 }

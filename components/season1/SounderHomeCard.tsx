@@ -24,27 +24,18 @@ import { CrewPortrait } from "../CrewRow";
 import { JoinableSounders } from "../JoinableSounders";
 import type { FeedingCta } from "../mudwar/useFeedingCta";
 import { NotifyChip, BurrowBookLink } from "./GuardedCtaExtras";
-import { useRosterHats } from "@/hooks/useRosterHats";
+import { useRosterProfiles } from "@/hooks/useRosterHats";
+import { ProfileIdentity } from "../ui/ProfileIdentity";
 import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
 import {
 	fetchFeedingState,
-	fetchRaceCrewDetail,
 	milestoneProgress,
 	type FeedingState,
-	type RaceCrewDetail,
 } from "@/utils/dig";
+import { fetchRaceCrewDetail, type RaceCrewDetail } from "@/utils/race";
 import { CREW_CAP_WORD } from "@/constants/crews";
-import { RACE_TRUFFLE_TABLE, STIR_BUDGET } from "@/constants/dig";
+import { RACE_TRUFFLE_TABLE } from "@/constants/dig";
 import { FONTS, RADII, SHADOW_SM, SPACE, TYPE, WHIMSY } from "@/constants/theme";
-
-// The full-Sounder dig budget — a crewmate who's dug this feeding lets you dig
-// deeper (TrufflePatch's coop budget = STIR_BUDGET * 1.25, a quarter deeper).
-// The join pitch now says "a quarter deeper" rather than raw stir counts; this
-// derived depth-gain feeds that copy's percentage so the wording can't silently
-// drift from the real coop budget. Rounded to a clean "%" for the sentence.
-const COOP_DEPTH_GAIN_PCT = Math.round(
-	((Math.round(STIR_BUDGET * 1.25) - STIR_BUDGET) / STIR_BUDGET) * 100
-);
 
 const AVATAR = 44;
 
@@ -110,7 +101,7 @@ function CrewedHome({
 }) {
 	const { crew } = crewHook;
 	const members = crew.members;
-	const hats = useRosterHats(members.map((m) => m.user_id));
+	const profiles = useRosterProfiles(members.map((m) => m.user_id));
 
 	// Who's dug THIS feeding — crewmates from crew_dug, plus the caller via `dug`.
 	const [feeding, setFeeding] = useState<FeedingState | null>(null);
@@ -159,12 +150,23 @@ function CrewedHome({
 						<View key={mem.user_id} style={styles.memberCol}>
 							<View style={styles.avatarWrap}>
 								{isLit && <View style={styles.litRing} />}
-								<CrewPortrait size={AVATAR} hatId={hats.get(mem.user_id) ?? null} />
+								<CrewPortrait
+									size={AVATAR}
+									hatId={profiles.get(mem.user_id)?.hatId ?? null}
+									prestigeLevel={
+										__DEV__ && mem.user_id === uid
+											? 5
+											: profiles.get(mem.user_id)?.wallowCount ?? 0
+									}
+								/>
 								{isLit && <Glyph name="sparkle" size={16} style={styles.sparkle} />}
 							</View>
-							<Text style={styles.memberName} numberOfLines={1}>
-								{mem.username ?? "a pig"}
-							</Text>
+							<ProfileIdentity
+								username={mem.username ?? "a pig"}
+								title={profiles.get(mem.user_id)?.title}
+								align="center"
+								nameStyle={styles.memberName}
+							/>
 							{detail != null && (
 								<Text style={styles.memberFinds} numberOfLines={1}>
 									{finds.get(mem.user_id) ?? 0}
@@ -250,11 +252,8 @@ function CrewedHome({
 // → milestones pay everyone → the weekly dig-off pays truffles. Every number is
 // derived, never typed inline.
 function SounderBenefits() {
-	// A percentage is a felt benefit with no unit to learn — unlike the old raw
-	// "25 stirs, not 20". COOP_DEPTH_GAIN_PCT derives straight from STIR_BUDGET *
-	// 1.25 (currently 25%) so this copy can never drift from the real coop budget.
 	const lines = [
-		`dig deeper together — a full Sounder digs ${COOP_DEPTH_GAIN_PCT}% deeper`,
+		"dig after a crewmate — get up to 5 more rubs",
 		"herd milestones pay everyone — titles + snout purses",
 		`weekly dig-off pays Golden Truffles — ${RACE_TRUFFLE_TABLE[1]} each for 1st`,
 	];

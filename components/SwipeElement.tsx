@@ -51,6 +51,7 @@ interface SwipeElementProps {
 	equippedFlag?: EquippedItem | null;
 	canTickle?: boolean;
 	playSixSeven?: number; // increment to re-trigger
+	prestigeLevel?: number;
 }
 
 const sixSevenSound = require("../assets/sounds/sixseven.m4a");
@@ -69,6 +70,7 @@ export default function SwipeElement({
 	equippedFlag,
 	canTickle = true,
 	playSixSeven,
+	prestigeLevel = 0,
 }: SwipeElementProps) {
 	const sixSevenPlayer = useAudioPlayer(sixSevenSound);
 	const scale = useRef(new Animated.Value(1)).current;
@@ -347,6 +349,7 @@ export default function SwipeElement({
 						equippedHeld={equippedHeld}
 						equippedFlag={equippedFlag}
 						relOverrides={relOverrides}
+						prestigeLevel={prestigeLevel}
 					/>
 				</Animated.View>
 			</Pressable>
@@ -419,4 +422,3 @@ const styles = StyleSheet.create({
 		textShadowRadius: 0,
 	},
 });
-

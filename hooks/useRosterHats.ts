@@ -6,7 +6,7 @@
 // re-fetched only when the roster's id set changes.
 
 import { useEffect, useState } from "react";
-import { fetchMemberHats } from "@/utils/crews";
+import { fetchMemberHats, fetchMemberProfiles, type RosterProfile } from "@/utils/crews";
 
 export function useRosterHats(userIds: string[]): Map<string, string | null> {
 	const [hats, setHats] = useState<Map<string, string | null>>(new Map());
@@ -30,4 +30,26 @@ export function useRosterHats(userIds: string[]): Map<string, string | null> {
 	}, [key]);
 
 	return hats;
+}
+
+export function useRosterProfiles(userIds: string[]): Map<string, RosterProfile> {
+	const [profiles, setProfiles] = useState<Map<string, RosterProfile>>(new Map());
+	const key = [...userIds].sort().join(",");
+
+	useEffect(() => {
+		if (userIds.length === 0) {
+			setProfiles(new Map());
+			return;
+		}
+		let cancelled = false;
+		fetchMemberProfiles(userIds).then((next) => {
+			if (!cancelled) setProfiles(next);
+		});
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [key]);
+
+	return profiles;
 }

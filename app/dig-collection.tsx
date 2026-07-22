@@ -37,8 +37,8 @@ import {
 	type FieldGuidePageId,
 } from "@/utils/fieldGuide";
 import {
+	ensureFieldGuideNumbersFresh,
 	fieldGuideNumbers,
-	refreshFieldGuideNumbers,
 } from "@/utils/fieldGuideConfig";
 import {
 	FONTS,
@@ -68,7 +68,7 @@ export default function DigCollectionScreen() {
 		// then reconcile with the server. All fail-soft.
 		(async () => {
 			await hydrateFieldGuideCache();
-			refreshFieldGuideNumbers().catch(() => {});
+			ensureFieldGuideNumbersFresh();
 			const pages = await fetchFieldGuideUnlocks();
 			if (!cancelled) setGuide(new Set(pages));
 		})();

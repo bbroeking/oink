@@ -21,6 +21,7 @@ import { Sticker } from "../ui/Sticker";
 import { Glyph, type GlyphName } from "../ui/Glyph";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { useUnmanagedModalHold } from "../ui/PopupQueue";
 import { CREW_CAP_WORD } from "@/constants/crews";
 import {
 	useHungerMeter,
@@ -79,6 +80,11 @@ export function SeasonGuideModal({
 	    footer with a two-tap Alert confirm. */
 	onLeave?: () => void;
 }) {
+	// Unmanaged native Modal (season-tab guide, outside the popup queue): hold the
+	// queue while visible so a foreground poll can't present a queued popup over it
+	// — the #50152 wedge (issue #4). The hold also covers the nested leave-confirm
+	// ConfirmDialog.
+	useUnmanagedModalHold(visible);
 	const meter = useHungerMeter();
 
 	// Two-tap leave confirm — an in-world ConfirmDialog, not a native Alert.

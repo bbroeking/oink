@@ -43,7 +43,6 @@ import {
 	CrewRow,
 	CrewSectionKicker,
 	CREW_ROW_INDENT,
-	DiscText,
 	FlagIcon,
 	HandLink,
 	RowStatus,
@@ -59,7 +58,8 @@ import { TruffleExchangeSheet } from "./mudwar/TruffleExchangeSheet";
 import { useTruffles } from "@/hooks/useTruffles";
 import { HAT_IMAGES } from "@/constants/hats";
 import { useJoinableCrews, type UseCrew } from "@/hooks/useCrew";
-import { useRosterHats } from "@/hooks/useRosterHats";
+import { useRosterProfiles } from "@/hooks/useRosterHats";
+import { ProfileIdentity } from "./ui/ProfileIdentity";
 import { milestoneProgress } from "@/utils/dig";
 import { CREW_CAP } from "@/constants/crews";
 import {
@@ -135,7 +135,7 @@ export function SounderCard({
 	const openSlots = Math.max(0, CREW_CAP - memberCount - pendingOut);
 	// crew_state omits avatar fields; pull each member's equipped hat so the
 	// roster renders the same PigAvatar look the Leaderboard shows.
-	const rosterHats = useRosterHats(crew.members.map((m) => m.user_id));
+	const rosterProfiles = useRosterProfiles(crew.members.map((m) => m.user_id));
 
 	const inviteCrewKey = crew.invitesIn.map((i) => i.crew_id).join(",");
 	useEffect(() => {
@@ -385,12 +385,24 @@ export function SounderCard({
 						<CrewRow
 							key={m.user_id}
 							divider={i > 0}
-							left={<CrewPortrait size={40} hatId={rosterHats.get(m.user_id) ?? null} />}
-							title={
-								<>
-									{m.username ?? "Pig"}
-									{m.user_id === me ? <DiscText> you</DiscText> : null}
-								</>
+							left={
+								<CrewPortrait
+									size={40}
+									hatId={rosterProfiles.get(m.user_id)?.hatId ?? null}
+									prestigeLevel={
+										__DEV__ && m.user_id === me
+											? 5
+											: rosterProfiles.get(m.user_id)?.wallowCount ?? 0
+									}
+								/>
+							}
+							title={m.username ?? "Pig"}
+							titleNode={
+								<ProfileIdentity
+									username={m.username}
+									title={rosterProfiles.get(m.user_id)?.title}
+									suffix={m.user_id === me ? "you" : null}
+								/>
 							}
 							sub={m.role === "leader" ? "wearing the crown now" : "rides with you"}
 							right={

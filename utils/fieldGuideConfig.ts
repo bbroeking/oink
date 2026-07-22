@@ -12,11 +12,20 @@
 // number today (documented per field). A future rebalance = one UPDATE to the
 // app_settings.field_guide_numbers row; clients follow on their next fetch.
 //
-// DEPENDENCY NOTE: the rpc chain is require()d lazily inside refresh() so
-// importing this module stays pure (mirrors feedingConfig).
+// Like feedingConfig, this is now a thin DECLARATION over utils/configCell (the
+// shared server-config lifecycle; build-151 "config over constants" contract).
+// UNLIKE feedingConfig, this cell opts into NEITHER the AsyncStorage cache NOR
+// the fetch debounce — matching today's behavior (every mount/reveal fetches, no
+// cold-start cache). Both are ONE-LINE opt-ins on the createConfigCell spec
+// (`cacheKey` / `minRefreshMs`) the day a value line needs them; they are left
+// off deliberately, not by omission.
+//
+// DEPENDENCY NOTE: the rpc chain is require()d lazily inside the cell's refresh
+// path so importing this module stays pure (mirrors feedingConfig).
 
 import { EXCHANGE_PRICES } from "@/constants/dig";
 import { feedingSchedule } from "@/utils/feedingConfig";
+import { createConfigCell } from "@/utils/configCell";
 
 export interface FieldGuideNumbers {
 	/** Regen-wrap base duration per wrap, hours (mud_wrap / warm_tea). */
@@ -48,13 +57,6 @@ export const DEFAULT_FIELD_GUIDE_NUMBERS: FieldGuideNumbers = Object.freeze({
 	troughSeedPct: 10,
 });
 
-let current: FieldGuideNumbers = DEFAULT_FIELD_GUIDE_NUMBERS;
-
-/** The live numbers the value lines read (module-level, no context). */
-export function fieldGuideNumbers(): FieldGuideNumbers {
-	return current;
-}
-
 function posInt(v: unknown, fallback: number): number {
 	const n = typeof v === "number" ? Math.floor(v) : NaN;
 	return Number.isFinite(n) && n > 0 ? n : fallback;
@@ -64,7 +66,9 @@ function posInt(v: unknown, fallback: number): number {
  * Clamp-validate a server row (the app_settings.field_guide_numbers shape,
  * snake_case) against the compiled defaults — any missing/out-of-bounds field
  * keeps its default, so a partial or malformed row can never blank a value line.
- * Exported as the test seam.
+ * NEVER null (unlike sanitizeFeedingSchedule): a per-field fallback always yields
+ * a complete set, so the cell's change-detection compares a full object every
+ * time. Exported as the test seam.
  */
 export function sanitizeFieldGuideNumbers(raw: unknown): FieldGuideNumbers {
 	if (raw == null || typeof raw !== "object") return DEFAULT_FIELD_GUIDE_NUMBERS;
@@ -80,36 +84,37 @@ export function sanitizeFieldGuideNumbers(raw: unknown): FieldGuideNumbers {
 	};
 }
 
+const cell = createConfigCell<FieldGuideNumbers>({
+	key: "field_guide_numbers",
+	fallback: DEFAULT_FIELD_GUIDE_NUMBERS,
+	sanitize: sanitizeFieldGuideNumbers, // never null — always a complete set
+	// No cacheKey / minRefreshMs: cache-less + un-debounced, matching today.
+});
+
+/** The live numbers the value lines read (module-level, no context). */
+export const fieldGuideNumbers: () => FieldGuideNumbers = cell.read;
+
 /** Install a sanitized set. Returns whether anything moved. Test seam. */
-export function applyFieldGuideNumbers(next: FieldGuideNumbers): boolean {
-	const changed =
-		next.wrapBaseHours !== current.wrapBaseHours ||
-		next.wrapCeilingHours !== current.wrapCeilingHours ||
-		next.luckyDailyCount !== current.luckyDailyCount ||
-		next.luckyPayout !== current.luckyPayout ||
-		next.exchangeMinPrice !== current.exchangeMinPrice ||
-		next.troughSeedPct !== current.troughSeedPct;
-	if (changed) current = next;
-	return changed;
-}
+export const applyFieldGuideNumbers: (next: FieldGuideNumbers) => boolean =
+	cell.apply;
 
 /**
  * Fetch the server numbers (app_setting RPC) and install them. Fail-soft: a
  * missing RPC / null row / offline keeps the compiled fallback. Called on the
  * shelf mount and before a reveal presents, so a printed number is never stale.
  */
-export async function refreshFieldGuideNumbers(): Promise<boolean> {
-	try {
-		const { rpc } = require("@/utils/rpc") as typeof import("@/utils/rpc");
-		const raw = await rpc<Record<string, unknown>>("app_setting", {
-			p_key: "field_guide_numbers",
-		});
-		if (!raw) return false; // rpc missing / null row — keep the fallback
-		return applyFieldGuideNumbers(sanitizeFieldGuideNumbers(raw));
-	} catch {
-		return false;
-	}
-}
+export const refreshFieldGuideNumbers: () => Promise<boolean> = cell.refresh;
+
+/**
+ * Freshen-and-forget: kick a fail-soft refresh and return now. The season-tab
+ * shelf mount and the reveal-present beat call this — they only need the numbers
+ * up to date for the next paint, not the changed signal.
+ */
+export const ensureFieldGuideNumbersFresh: () => FieldGuideNumbers =
+	cell.ensureFresh;
+
+/** Test seam: back to the compiled defaults. */
+export const resetFieldGuideNumbersForTests: () => void = cell.resetForTests;
 
 /**
  * Entry #8's value line — COMPUTED live from feedingSchedule() so a window
@@ -125,9 +130,4 @@ export function feedingWindowsLine(): string {
 		? `${openHours}h`
 		: `${openHours.toFixed(1)}h`;
 	return `${perDay} feedings a day — each open only its first ${openLabel}.`;
-}
-
-/** Test seam: back to the compiled defaults. */
-export function resetFieldGuideNumbersForTests(): void {
-	current = DEFAULT_FIELD_GUIDE_NUMBERS;
 }

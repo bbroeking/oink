@@ -15,16 +15,13 @@
 // persistent stamp. In-memory ONLY (like ceremonyGate) — it resets on every app
 // restart, and the queue-empty AND-gate is the actual frequency ceiling.
 //
-// PopupQueue calls markPopupPresented(id) on every presenting transition; the
-// sounderLaunch slot itself is EXCLUDED (it presenting can't be the thing that
-// suppresses it). The sounder slot's `want` reads anyPopupPresentedThisSession().
-
-// The ids the fallback nudges present under — their own presentation must never
-// count as "another popup presented this session". The feedback nudge is a
-// SIBLING of the Sounder nudge (same fill-the-quiet mechanism, lower priority);
-// both are excluded so neither retroactively suppresses itself.
-export const SOUNDER_LAUNCH_SLOT_ID = "sounderLaunch";
-export const FEEDBACK_NUDGE_SLOT_ID = "feedbackNudge";
+// PopupQueue calls markPopupPresented(id) on every presenting transition. The
+// quiet-fill fallback nudges (sounderLaunch, feedbackNudge) are EXCLUDED by the
+// arbiter BEFORE it calls in — the exclusion set + its rationale now live beside
+// the priorities in constants/popupPriorities.ts (QUIET_FILL_SLOT_IDS), so the
+// "which slots are quiet fill" policy sits next to their (lowest) numbers. This
+// module just owns the latch; it trusts the arbiter to filter. The sounder
+// slot's `want` reads anyPopupPresentedThisSession().
 
 let anyPresented = false;
 // Session latch: the nudge fires at most once per app session even if the queue
@@ -34,11 +31,12 @@ let sounderNudgeFired = false;
 // The feedback nudge's own once-per-session latch (mirrors the Sounder one).
 let feedbackNudgeFired = false;
 
-/** PopupQueue calls this on every presenting transition. The fallback-nudge
- *  slots are excluded so their own presentation doesn't retroactively suppress
- *  them (or each other's queue-empty gate). */
-export function markPopupPresented(id: string): void {
-	if (id === SOUNDER_LAUNCH_SLOT_ID || id === FEEDBACK_NUDGE_SLOT_ID) return;
+/** PopupQueue calls this on every presenting transition — but only for slots
+ *  that count toward "a popup presented this session". The arbiter filters out
+ *  the quiet-fill fallback nudges (QUIET_FILL_SLOT_IDS) before calling, so their
+ *  own presentation can't retroactively suppress them; this latch is
+ *  unconditional. `id` is accepted for symmetry / future policy but unused. */
+export function markPopupPresented(_id: string): void {
 	anyPresented = true;
 }
 
