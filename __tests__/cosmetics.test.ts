@@ -1,10 +1,23 @@
 // Locks the pure equip rule (utils/cosmetics computeEquip): column routing per
 // category, the Face-slot exclusivity invariant in BOTH directions (glasses
 // clears mask, mask clears glasses), and that non-face categories never touch a
-// sibling column. The equip write itself (equipCosmetic) is a thin supabase
-// effect over this rule and isn't exercised here.
+// sibling column. Also covers the equipCosmetic effect wrapper's server-first /
+// legacy-fallback dispatch (issue #35): rpc-success uses the server's patch,
+// rpc-null falls back to computeEquip + the direct profiles write, and a server
+// refusal returns an empty no-op patch.
 
-import { computeEquip } from "../utils/cosmetics";
+// Mocked at the module boundary (same style as feedingConfig.test.ts).
+const mockRpc = jest.fn();
+jest.mock("../utils/rpc", () => ({ rpc: (...a: unknown[]) => mockRpc(...a) }));
+
+const mockEq = jest.fn();
+const mockUpdate = jest.fn((..._a: unknown[]) => ({ eq: mockEq }));
+const mockFrom = jest.fn((..._a: unknown[]) => ({ update: mockUpdate }));
+jest.mock("../utils/supabase", () => ({
+	supabase: { from: (...a: unknown[]) => mockFrom(...a) },
+}));
+
+import { computeEquip, equipCosmetic } from "../utils/cosmetics";
 
 const EMPTY: Record<string, string | null> = {};
 
@@ -95,5 +108,60 @@ describe("computeEquip — non-face categories never touch a sibling", () => {
 		const current = { active_mask_id: "fox" };
 		computeEquip("glasses", "shades", current);
 		expect(current).toEqual({ active_mask_id: "fox" });
+	});
+});
+
+describe("equipCosmetic — server-first dispatch (issue #35)", () => {
+	const USER = "user-1";
+
+	beforeEach(() => {
+		mockRpc.mockReset();
+		mockEq.mockReset().mockResolvedValue({ error: null });
+		mockUpdate.mockClear();
+		mockFrom.mockClear();
+	});
+
+	it("calls equip_cosmetic with the item id + category and returns the server's patch", async () => {
+		mockRpc.mockResolvedValue({ ok: true, update: { active_hat_id: "tophat" } });
+		const patch = await equipCosmetic(USER, "tophat", "hat");
+		expect(mockRpc).toHaveBeenCalledWith("equip_cosmetic", {
+			p_item_id: "tophat",
+			p_category: "hat",
+		});
+		// Server's patch is returned verbatim — the client trusts the server answer.
+		expect(patch).toEqual({ active_hat_id: "tophat" });
+		// No legacy direct write on the happy path.
+		expect(mockFrom).not.toHaveBeenCalled();
+	});
+
+	it("passes p_category null for an unequip (item id null)", async () => {
+		mockRpc.mockResolvedValue({ ok: true, update: { active_mask_id: null } });
+		const patch = await equipCosmetic(USER, null, "mask");
+		expect(mockRpc).toHaveBeenCalledWith("equip_cosmetic", {
+			p_item_id: null,
+			p_category: "mask",
+		});
+		expect(patch).toEqual({ active_mask_id: null });
+	});
+
+	it("falls back to computeEquip + the direct profiles write when rpc returns null", async () => {
+		mockRpc.mockResolvedValue(null); // undeployed function / transport blip
+		const patch = await equipCosmetic(USER, "shades", "glasses");
+		// The legacy write path runs: profiles.update(computeEquip patch).eq(id, user).
+		expect(mockFrom).toHaveBeenCalledWith("profiles");
+		expect(mockUpdate).toHaveBeenCalledWith({
+			active_glasses_id: "shades",
+			active_mask_id: null,
+		});
+		expect(mockEq).toHaveBeenCalledWith("id", USER);
+		// And it returns the same computeEquip patch that was written.
+		expect(patch).toEqual({ active_glasses_id: "shades", active_mask_id: null });
+	});
+
+	it("returns an empty no-op patch (and skips the direct write) on a server refusal", async () => {
+		mockRpc.mockResolvedValue({ ok: false, reason: "not_owned" });
+		const patch = await equipCosmetic(USER, "unowned_hat", "hat");
+		expect(patch).toEqual({});
+		expect(mockFrom).not.toHaveBeenCalled();
 	});
 });
