@@ -18,10 +18,10 @@ friends (landing page → App Store → manual code entry).
 
 | # | Decision |
 |---|---|
-| 1 | **Asymmetric reward, inviter-heavy.** Invitee +50 snouts immediate on redemption. Inviter +100 snouts per *completed* referral, plus milestone at 3 invites = Messenger Hat. 5-invite Slop Club trial **deferred** to the SC public launch. |
+| 1 | **Asymmetric reward, inviter-heavy.** Invitee +50 snouts immediate on redemption. Inviter +100 tickles per *completed* referral, plus milestone rewards beginning at 3 invites. |
 | 2 | **One persistent code per user**, format `ROSIE-K3T9` (display name + 4 random alphanumeric chars). Generated at signup, never changes. Shared freely. |
 | 3 | **Redemption window is signup only.** New users see a "got a friend's code?" step in onboarding. After first launch there is **no in-app way to redeem** — gates alt-account farming. Self-referral blocked server-side. |
-| 4 | **Engagement gate before inviter is credited.** Inviter rewards (+100 snouts + milestone count) fire only when the invitee crosses BOTH: lifetime tickles ≥ **100** AND distinct active days ≥ **3**. Invitee +50 snouts remain immediate. |
+| 4 | **One-mark engagement gate.** Inviter rewards (+100 tickles + milestone count) fire when the invitee reaches **100 lifetime tickles**. Invitee +50 snouts remain immediate. |
 | 5 | **Universal Link for installed users; static landing page for uninstalled.** `https://ticklethepig.com/r/<code>` → app if installed (code pre-fills onboarding); else Safari renders a page with the code prominently shown + an App Store badge + a Copy button. No SDK. No deferred-deep-link attribution. |
 | 6 | **Account screen card** is the single share surface ("Refer friends" card with code + Copy + Share). Same shelf as the Slop Club card. No dedicated referral screen. |
 | 7 | **Ships in the next TestFlight build** as one bundle. New build, new changelog under `docs/builds/`. |
@@ -46,19 +46,17 @@ friends (landing page → App Store → manual code entry).
                               ▼
               ┌──────────────────────────────┐
               │ Invitee plays the game…      │
-              │ tickle count climbs,         │
-              │ active-day counter ticks     │
+              │ tickle count climbs          │
               └──────────────┬───────────────┘
                              ▼
        ┌──────────────────────────────────────────────┐
        │ Engagement gate met                          │
-       │  AND  tickles_earned     ≥ 100               │
-       │  AND  distinct_active_days ≥ 3               │
+       │  tickles_earned ≥ 100                        │
        └──────────────┬───────────────────────────────┘
                       ▼
        ┌──────────────────────────────────────────────┐
        │ Inviter credit (fires once, atomically)      │
-       │  • Inviter: +100 snouts                      │
+       │  • Inviter: +100 tickles                     │
        │  • Inviter.referrals_completed += 1          │
        │  • Invitee.referral_completed_at = now()     │
        │  • Milestone check:                          │
@@ -73,7 +71,6 @@ friends (landing page → App Store → manual code entry).
 - Self-referral blocked (`inviter_id != invitee_id`).
 - Redemption gated on account age < 24h AND tickles < 5.
 - Engagement gate requires real elapsed play (tickle regen physically caps the speed of the lifetime counter; 100 tickles ≈ many hours).
-- Active-day counter is bumped at most once per UTC calendar day.
 - Milestones are one-shot per inviter (3-invite hat granted once, not on every multiple of 3).
 - Per-IP soft cap on redemptions (10/day, server-side) — deferred until we see real abuse signals.
 
@@ -148,39 +145,19 @@ On success:
 
 On any check failure, return the specific `reason` for client-side messaging — never throw.
 
-### Engagement gate — inside `increment_tickle_count`
+### Engagement gate — called by `update_profile_and_item_count`
 
-Wherever the existing tickle-increment SQL lives (`increment_tickle_count` or similar), append:
+After the tickle increments `tickles_earned`, call the idempotent helper:
 
 ```sql
--- Bump active-day counter once per calendar day.
-IF NEW.last_active_date IS DISTINCT FROM CURRENT_DATE THEN
-    NEW.distinct_active_days := COALESCE(OLD.distinct_active_days, 0) + 1;
-    NEW.last_active_date := CURRENT_DATE;
-END IF;
+PERFORM public.complete_referral_if_eligible(uid);
 
--- Fire the referral completion ONCE, atomically.
-IF NEW.referred_by IS NOT NULL
-   AND NEW.referral_completed_at IS NULL
-   AND NEW.tickles_earned >= 100
-   AND NEW.distinct_active_days >= 3
-THEN
-    NEW.referral_completed_at := now();
-    -- Credit the inviter
-    UPDATE public.profiles
-       SET snouts = snouts + 100,
-           referrals_completed = referrals_completed + 1
-     WHERE id = NEW.referred_by;
-    -- Milestone: grant Messenger Hat on the 3rd completed referral
-    UPDATE public.profile_items
-       SET hats = hats || '{"messenger"}'::text[]
-     WHERE user_id = NEW.referred_by
-       AND NOT (hats @> '{"messenger"}');
-    -- (Push notification fires from a trigger on the inviter row.)
-END IF;
+-- The helper atomically guards referral_completed_at, requires
+-- tickles_earned >= 100, grants the inviter 100 spendable tickles through
+-- grant_tickles(), increments referrals_completed, and applies milestones.
 ```
 
-Implementation detail: the actual location may be in a trigger function or an RPC body — the spec doesn't dictate where, only that the check runs atomically with the tickle update.
+The helper owns completion, payout, milestones, announcement, and push. Its guarded update makes repeated calls safe.
 
 ### `my_referral_summary()` — RPC
 
@@ -365,7 +342,7 @@ Milestone progress is computed off `my_referral_summary().referrals_completed`. 
 
 ### Phase 4 — Notifications + monitoring
 
-- Push notification to inviter when their referral completes ("Your friend Rosie made it! +100"). Hooks into the existing `send_push_to_user` RPC; trigger fires from the gate completion path.
+- Push notification to inviter when their referral completes ("Your referral Rosie made it! 100 tickles"). Hooks into the existing `send_push_to_user` RPC; the completion helper sends it after the gate fires.
 - Optional: client-side WhileAwayModal entry for when the inviter opens the app after their friend crosses the gate (analogous to bless/curse arrival).
 - Light analytics on the landing page: page view + Copy button click + App Store click. (No SDK; basic server log parsing is fine.)
 
@@ -374,7 +351,7 @@ Milestone progress is computed off `my_referral_summary().referrals_completed`. 
 - New build (`docs/builds/YYYY-MM-DD-build-N.md` changelog written *before* the build).
 - Local build via `eas build --local` (per project memory).
 - Upload via Transporter (per project memory).
-- Monitor: do TestFlight redemptions complete? Are people hitting 100 tickles + 3 active days, or is the gate too tight?
+- Monitor: do TestFlight redemptions complete when the referred player reaches 100 tickles?
 
 ---
 
@@ -385,12 +362,11 @@ Milestone progress is computed off `my_referral_summary().referrals_completed`. 
   - `referralErrorMessage(reason)` — every reason maps to a non-empty user-facing string.
   - Clipboard regex: matches `ROSIE-K3T9`, rejects `rosie-k3t9`, `ROSIE-K3T`, `ROSIE-K3T9X`, `random-text`.
 - **Unit-test the gate logic** via SQL or a thin wrapper:
-  - At 99 tickles + 3 days → no completion.
-  - At 100 tickles + 2 days → no completion.
-  - At 100 tickles + 3 days → completion fires once.
-  - At 200 tickles + 5 days (second tickle in same day) → completion doesn't refire.
+  - At 99 tickles → no completion.
+  - At 100 tickles with fewer than 3 active days → completion fires once.
+  - At 101 tickles → completion doesn't refire.
 - **Manual smoke** in TestFlight:
-  - Two accounts, one device. Account A creates, gets code. Account B (different test email) signs up, enters code in onboarding, sees +50 snouts. Play to 100 tickles + 3 days. Account A receives +100 + Messenger Hat + push.
+  - Two accounts, one device. Account A creates, gets code. Account B (different test email) signs up, enters code in onboarding, sees +50 snouts. Play to 100 tickles. Account A receives 100 tickles, any earned milestone reward, and a push.
   - Open `https://ticklethepig.com/r/ROSIE-K3T9` in Safari on a device WITHOUT TTP installed — verify landing page renders. Install from App Store from the badge link. Verify clipboard pre-fill (after copy on landing page).
   - Open the same URL on a device WITH TTP installed (and signed in) — verify the deep-link handler surfaces the right confirm.
 

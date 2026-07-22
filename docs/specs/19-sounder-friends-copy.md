@@ -33,7 +33,7 @@ components/CrewRow.tsx, components/UserSheet.tsx, app/sounder.tsx,
 app/(tabs)/friends.tsx, components/season1/* (SounderHomeCard,
 SounderStepCard, SeasonGuideModal), onboarding copy, invite/referral copy
 (the referral program is FRIEND-adjacent but lands the invitee in your
-world — read carefully which concept each line means; the "+100 snouts"
+world — read carefully which concept each line means; the "100 tickles"
 referral copy says "sounder" in places where the mechanic is actually the
 friends/referral lane).
 

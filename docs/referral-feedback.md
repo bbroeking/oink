@@ -105,8 +105,8 @@ Already returns `referrals_pending`. The Account card just needs to render it (s
 
 Mirrors `LuckyPigModal` structure. Props: the `completions` array + `total_completed`.
 
-- **Single completion, non-milestone:** Happy Rosie + "★ {name} made it! ★" + "Your friend joined the sounder for real. +100 snouts." + Continue.
-- **Single completion, milestone (3rd):** Bigger celebration + Messenger Hat art + "{name} made it — and that's 3! You earned the Messenger Hat." + "+100 snouts AND a new hat."
+- **Single completion, non-milestone:** Happy Rosie + "★ {name} made it! ★" + "Your referral reached 100. You earned 100 tickles." + Continue.
+- **Single completion, milestone (3rd):** Bigger celebration + Messenger Hat art + "{name} made it — and that's 3! You earned the Messenger Hat." + "100 tickles AND a new hat."
 - **Multiple completions:** "★ 2 friends made it! ★" + names listed ("Mei and Theo") + "+200 snouts." If one of them was the milestone, append the Hat callout.
 - On dismiss: call `ack_referral_completions(maxCompletedAt)`.
 

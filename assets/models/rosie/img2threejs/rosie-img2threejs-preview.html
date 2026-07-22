@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rosie img2threejs procedural preview</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three.module.js"
+        }
+      }
+    </script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #eef0f4;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      #stage {
+        width: 100vw;
+        height: 100vh;
+      }
+
+      .hud {
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+        max-width: 390px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: rgb(255 255 255 / 0.82);
+        color: #202027;
+        box-shadow: 0 10px 28px rgb(0 0 0 / 0.14);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .hud strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+    <div class="hud">
+      <strong>Rosie procedural img2threejs pass</strong>
+      Separate pivots for legs, head, ears, and tail. Drag to orbit. Space toggles walk.
+    </div>
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "./vendor/OrbitControls.js";
+      import { createRosieImg2ThreejsModel } from "./createRosieImg2ThreejsModel.js";
+
+      const canvas = document.querySelector("#stage");
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xeef0f4);
+
+      const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+      camera.position.set(0.2, 1.1, 4.6);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0.05, 0.35, 0);
+      controls.enableDamping = true;
+
+      const hemi = new THREE.HemisphereLight(0xffffff, 0xa7a0a0, 2.1);
+      scene.add(hemi);
+
+      const key = new THREE.DirectionalLight(0xffffff, 2.6);
+      key.position.set(-2.8, 4.2, 3.5);
+      key.castShadow = true;
+      key.shadow.mapSize.set(2048, 2048);
+      scene.add(key);
+
+      const rim = new THREE.DirectionalLight(0xffdce2, 1.2);
+      rim.position.set(3, 2.4, -2.2);
+      scene.add(rim);
+
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(12, 12),
+        new THREE.ShadowMaterial({ color: 0x9a9a9a, opacity: 0.22 }),
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -0.52;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      const grid = new THREE.GridHelper(12, 24, 0xb9bdc4, 0xd4d7dd);
+      grid.position.y = -0.515;
+      scene.add(grid);
+
+      const rosie = createRosieImg2ThreejsModel({ scale: 1.35 });
+      scene.add(rosie);
+
+      let walking = true;
+      window.addEventListener("keydown", (event) => {
+        if (event.code === "Space") walking = !walking;
+      });
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+      window.addEventListener("resize", resize);
+      resize();
+
+      const clock = new THREE.Clock();
+      function frame() {
+        const time = clock.getElapsedTime();
+        if (walking) rosie.userData.animateWalk(time);
+        controls.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(frame);
+      }
+      frame();
+    </script>
+  </body>
+</html>

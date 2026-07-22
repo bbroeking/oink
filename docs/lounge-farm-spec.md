@@ -176,7 +176,10 @@ deterministic animation: plank sin-rotates ±12° anchored to the second
 sitter's sinceMs, riders offset on the plank ends, haptics for the two
 riders on each bounce. Zero extra network traffic. One rider → plank
 tilts their way and rests (a standing invitation). Art: static base +
-plank sprite rotated in Skia; seated pigs reuse idle_s frames.
+plank sprite rotated in Skia; dedicated inward-facing seated sprites
+crossfade from the final walking frame with a small boarding hop. A
+toggleable, local-only Practice Pig reserves the opposite seat for solo
+motion testing and never enters Realtime Presence.
 
 Build order: P2a peers visible → P2b bench/station framework → P2c
 seesaw.
