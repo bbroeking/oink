@@ -6,8 +6,6 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Rosie Stickers</string>
-	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -22,10 +20,12 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSExtension</key>
 	<dict>
+		<!-- Code-less sticker pack: no CFBundleExecutable, no
+		     NSExtensionPrincipalClass. Declaring either makes Xcode expect
+		     (and link) an executable for a target with no sources — the
+		     "Multiple commands produce …TTPStickers" archive failure. -->
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.message-payload-provider</string>
-		<key>NSExtensionPrincipalClass</key>
-		<string>StickerBrowserViewController</string>
 	</dict>
 </dict>
 </plist>
