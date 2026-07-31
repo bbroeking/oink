@@ -125,6 +125,8 @@ CHAIN=(
 	# 20260801000000 opens leader recruiting beyond friends and ranks the default
 	# candidate board by all-time truffle finds dug; exercised by 41 smoke.
 	supabase/migrations/20260801000000_sounder_invite_any_player.sql
+	# 20260801010000 closes default PUBLIC/anon EXECUTE on the new definers.
+	supabase/migrations/20260801010000_sounder_invite_security_grants.sql
 )
 
 NAME="pgharness_$$"

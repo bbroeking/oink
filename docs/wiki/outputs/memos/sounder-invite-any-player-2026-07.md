@@ -65,6 +65,9 @@ worth a conscious nod. If you'd rather *block* poaching a leader-with-members
     truffle finds dug or username prefix; returns the lifetime count, annotates
     `in_crew` / `crew_name` (poach) + `already_invited`, and excludes self,
     blocked, and `hide_from_leaderboard` players.
+- **`supabase/migrations/20260801010000_sounder_invite_security_grants.sql`** —
+  explicitly revokes default/anonymous execution on the new security-definer
+  functions while retaining authenticated access to the user-facing RPCs.
 - **`utils/crews.ts`** — `InviteCandidate` type + `fetchInviteCandidates`.
 - **`components/PlayerInvitePicker.tsx`** — the leader recruiting sheet (search +
   leaderboard list; poach / free / pending / full row states). Reuses `useCrew`'s
