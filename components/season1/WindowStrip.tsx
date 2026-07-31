@@ -1,35 +1,25 @@
-// The feeding-window strip — the 8h dig rhythm made visible. The single biggest
+// The feeding-window strip — the dig rhythm made visible. The single biggest
 // dig-confusion fix: the patch's open/guarded cadence used to live only in prose.
 //
-// The strip is one 8h feeding window: an OPEN half (first 4h — dig while he
-// gorges) and a GUARDED half (next 4h — he digests, the patch is shut). A "now"
-// marker rides the true position, and the line beneath states which phase we're
-// in + the countdown it already computes.
+// The strip is the CURRENT local-time window: an OPEN span (dig while he gorges)
+// then a GUARDED span (he digests, the patch is shut). Windows are non-uniform
+// (see constants/dig.ts), so the fill reflects THIS window's own open/gorge
+// split. A "now" marker rides the true position, and the line beneath states
+// which phase we're in + the countdown it already computes.
 //
-// SAME SOURCE OF TRUTH as the dig CTA: the split (PATCH_OPEN_SECS /
-// ROOTING_WINDOW_SECS) and phase math come from constants/dig.ts + utils/rooting
-// — the same functions useFeedingCta reads — so the strip can never drift from
-// the button. Renders for crewed AND crewless players: the crewless see the
-// rhythm too, because the rhythm is what sells the loop.
+// SAME SOURCE OF TRUTH as the dig CTA: patchWindowShape + the phase math come
+// from utils/rooting — the same functions useFeedingCta reads — so the strip can
+// never drift from the button. Renders for crewed AND crewless players: the
+// crewless see the rhythm too, because the rhythm is what sells the loop.
 
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
-	patchPhaseOpen,
+	patchWindowShape,
 	phaseClosesCountdown,
 	nextOpenCountdown,
 } from "@/utils/rooting";
-import { PATCH_OPEN_SECS, ROOTING_WINDOW_SECS } from "@/constants/dig";
 import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
-
-// The open half's share of the whole window — the fill of the "open" segment.
-const OPEN_FRAC = PATCH_OPEN_SECS / ROOTING_WINDOW_SECS;
-
-// The "now" marker's position across the whole 8h window, 0..1.
-function nowFrac(nowMs: number = Date.now()): number {
-	const intoWindow = (nowMs / 1000) % ROOTING_WINDOW_SECS;
-	return Math.max(0, Math.min(1, intoWindow / ROOTING_WINDOW_SECS));
-}
 
 export function WindowStrip() {
 	// Re-derive on a slow tick so the marker + phase line stay live without a
@@ -40,8 +30,9 @@ export function WindowStrip() {
 		return () => clearInterval(t);
 	}, []);
 
-	const open = patchPhaseOpen();
-	const marker = nowFrac();
+	// The current bucket's open/gorge split + "now" marker (non-uniform windows,
+	// so the fill reflects THIS window's own length — not a fixed 4h/8h).
+	const { open, openFrac: OPEN_FRAC, marker } = patchWindowShape();
 	const countdown = open ? phaseClosesCountdown() : nextOpenCountdown();
 	const line = open
 		? `the patch is open — closes in ${countdown}`
@@ -51,7 +42,7 @@ export function WindowStrip() {
 		<View style={styles.wrap}>
 			<View style={styles.kickerRow}>
 				<Text style={styles.kicker}>the feeding rhythm</Text>
-				<Text style={styles.eightHour}>every 8h</Text>
+				<Text style={styles.eightHour}>your local hours</Text>
 			</View>
 
 			<View style={styles.timelineRow}>

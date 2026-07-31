@@ -12,10 +12,13 @@
 // All values here are safe in JS doubles: 16807 * 2147483646 ≈ 3.6e13 < 2^53.
 
 import {
+	DIG_BUCKET_OPEN_MINS,
+	DIG_BUCKET_STARTS,
+	DIG_DAY_ANCHOR_MIN,
+	DIG_DAY_MIN,
+	DIG_WINDOWS_PER_DAY,
 	PATCH_COLS,
-	PATCH_OPEN_SECS,
 	PATCH_ROWS,
-	ROOTING_WINDOW_SECS,
 	STIR_RUB,
 	STIR_SHOVE,
 } from "@/constants/dig";
@@ -331,19 +334,88 @@ export function clusterBox(indices: number[]): ClusterBox | null {
 	};
 }
 
-// ── Feeding-window math ──────────────────────────────────────────────────────
+// ── Feeding-window math — the LOCAL-time "commuter" schedule ─────────────────
+// The patch runs on the player's PHONE-LOCAL clock. The day is anchored at 6am
+// local and tiled into DIG_WINDOWS_PER_DAY non-uniform buckets (constants/dig.ts);
+// each is OPEN for a span at its start, then gorges until the next bucket. All of
+// this MUST mirror the server helpers in migration
+// 20260740000000_dig_schedule_commuter_local.sql — the arithmetic is kept
+// integer-identical so a client-computed window index equals the server's.
 
-export function windowIndex(nowMs: number = Date.now()): number {
-	return Math.floor(nowMs / 1000 / ROOTING_WINDOW_SECS);
+/** Minutes to ADD to a UTC instant to reach the device's local wall clock (DST-
+ *  aware for that instant). East of UTC is positive. Mirrors the p_utc_offset_
+ *  minutes the client passes to open_rooting/submit_rooting. */
+export function localOffsetMin(nowMs: number = Date.now()): number {
+	return -new Date(nowMs).getTimezoneOffset();
 }
 
-export function windowEndsAtMs(win: number): number {
-	return (win + 1) * ROOTING_WINDOW_SECS * 1000;
+interface DigClock {
+	digDay: number; // whole dig-days since the epoch's 6am-local anchor
+	bucket: number; // 0..DIG_WINDOWS_PER_DAY-1 — which window of the day
+	m: number; // minutes since this dig-day's 6am anchor, 0..DIG_DAY_MIN-1
+	baseMs: number; // UTC ms of this dig-day's 6am-local anchor
+	open: boolean; // is the patch diggable right now
 }
 
-/** "2h 10m" until the Hunger's next gorge (end of the current feeding). */
-export function feedingCountdown(nowMs: number = Date.now()): string {
-	const left = Math.max(0, windowEndsAtMs(windowIndex(nowMs)) - nowMs);
+// The full local-clock decomposition for an instant — the one place the schedule
+// math lives; every exported helper reads from here so they can't drift.
+function digClock(
+	nowMs: number,
+	offMin: number = localOffsetMin(nowMs)
+): DigClock {
+	const epochMin = Math.floor(nowMs / 60000);
+	const adj = epochMin + offMin - DIG_DAY_ANCHOR_MIN; // minutes since a 6am anchor
+	const digDay = Math.floor(adj / DIG_DAY_MIN);
+	const m = adj - digDay * DIG_DAY_MIN; // 0..DIG_DAY_MIN-1
+	let bucket = 0;
+	for (let i = DIG_BUCKET_STARTS.length - 1; i >= 0; i--) {
+		if (m >= DIG_BUCKET_STARTS[i]) {
+			bucket = i;
+			break;
+		}
+	}
+	const open = m < DIG_BUCKET_STARTS[bucket] + DIG_BUCKET_OPEN_MINS[bucket];
+	const baseMs = (digDay * DIG_DAY_MIN + DIG_DAY_ANCHOR_MIN - offMin) * 60000;
+	return { digDay, bucket, m, baseMs, open };
+}
+
+// The minute (from the 6am anchor) at which the NEXT window opens after `m` —
+// the next bucket start, wrapping to the next day's first bucket (DIG_DAY_MIN).
+function nextOpenMod(m: number): number {
+	for (const s of DIG_BUCKET_STARTS) if (s > m) return s;
+	return DIG_DAY_MIN;
+}
+
+export function windowIndex(
+	nowMs: number = Date.now(),
+	offMin: number = localOffsetMin(nowMs)
+): number {
+	const c = digClock(nowMs, offMin);
+	return c.digDay * DIG_WINDOWS_PER_DAY + c.bucket;
+}
+
+/** UTC ms at which the given window (bucket) ends = the next bucket's start. */
+export function windowEndsAtMs(
+	win: number,
+	offMin: number = localOffsetMin(Date.now())
+): number {
+	const digDay = Math.floor(win / DIG_WINDOWS_PER_DAY);
+	const bucket = ((win % DIG_WINDOWS_PER_DAY) + DIG_WINDOWS_PER_DAY) %
+		DIG_WINDOWS_PER_DAY;
+	const endMod =
+		bucket < DIG_BUCKET_STARTS.length - 1
+			? DIG_BUCKET_STARTS[bucket + 1]
+			: DIG_DAY_MIN;
+	const baseMs = (digDay * DIG_DAY_MIN + DIG_DAY_ANCHOR_MIN - offMin) * 60000;
+	return baseMs + endMod * 60000;
+}
+
+/** "2h 10m" until the Hunger's next gorge (end of the current feeding window). */
+export function feedingCountdown(
+	nowMs: number = Date.now(),
+	offMin: number = localOffsetMin(nowMs)
+): string {
+	const left = Math.max(0, windowEndsAtMs(windowIndex(nowMs, offMin), offMin) - nowMs);
 	return formatLeft(left);
 }
 
@@ -352,34 +424,73 @@ export function feedingCountdown(nowMs: number = Date.now()): string {
 const formatLeft = (leftMs: number): string => formatHM(leftMs, { minMinute: 1 });
 
 // ── Patch phases ─────────────────────────────────────────────────────────────
-// Within each 8h feeding window the patch alternates: OPEN for the first
-// PATCH_OPEN_SECS (dig while he gorges), then GUARDED for the rest (cooldown).
-// A session opened in-phase may still submit until the window ends. MUST
-// match the server's patch_phase_open() (migration 20260721000000).
+// Within each bucket the patch is OPEN for its opening span (dig while he
+// gorges), then GUARDED until the next bucket opens. A session opened in-phase
+// may still submit until the bucket ends. MUST match the server's
+// patch_phase_open(timestamptz, int) (migration 20260740000000).
 
-/** True while the patch is diggable (first 4h of the current window). */
-export function patchPhaseOpen(nowMs: number = Date.now()): boolean {
-	return (nowMs / 1000) % ROOTING_WINDOW_SECS < PATCH_OPEN_SECS;
+/** True while the patch is diggable (inside the current bucket's open span). */
+export function patchPhaseOpen(
+	nowMs: number = Date.now(),
+	offMin: number = localOffsetMin(nowMs)
+): boolean {
+	return digClock(nowMs, offMin).open;
 }
 
 /** Ms timestamp when the CURRENT open phase closes (only valid while open). */
-export function phaseClosesAtMs(nowMs: number = Date.now()): number {
-	return (windowIndex(nowMs) * ROOTING_WINDOW_SECS + PATCH_OPEN_SECS) * 1000;
+export function phaseClosesAtMs(
+	nowMs: number = Date.now(),
+	offMin: number = localOffsetMin(nowMs)
+): number {
+	const c = digClock(nowMs, offMin);
+	const closeMod =
+		DIG_BUCKET_STARTS[c.bucket] + DIG_BUCKET_OPEN_MINS[c.bucket];
+	return c.baseMs + closeMod * 60000;
 }
 
-/** Ms timestamp of the NEXT open phase (= the next window's start). */
-export function nextOpenAtMs(nowMs: number = Date.now()): number {
-	return windowEndsAtMs(windowIndex(nowMs));
+/** Ms timestamp of the NEXT open phase (= the next bucket's start). */
+export function nextOpenAtMs(
+	nowMs: number = Date.now(),
+	offMin: number = localOffsetMin(nowMs)
+): number {
+	const c = digClock(nowMs, offMin);
+	return c.baseMs + nextOpenMod(c.m) * 60000;
 }
 
 /** "1h 12m" until the current open phase closes. */
-export function phaseClosesCountdown(nowMs: number = Date.now()): string {
-	return formatLeft(Math.max(0, phaseClosesAtMs(nowMs) - nowMs));
+export function phaseClosesCountdown(
+	nowMs: number = Date.now(),
+	offMin: number = localOffsetMin(nowMs)
+): string {
+	return formatLeft(Math.max(0, phaseClosesAtMs(nowMs, offMin) - nowMs));
 }
 
 /** "3h 45m" until the patch next opens. */
-export function nextOpenCountdown(nowMs: number = Date.now()): string {
-	return formatLeft(Math.max(0, nextOpenAtMs(nowMs) - nowMs));
+export function nextOpenCountdown(
+	nowMs: number = Date.now(),
+	offMin: number = localOffsetMin(nowMs)
+): string {
+	return formatLeft(Math.max(0, nextOpenAtMs(nowMs, offMin) - nowMs));
+}
+
+/** The current bucket's open/gorge split + "now" marker, both as 0..1 fractions
+ *  of the bucket's total length — pure display math for the feeding strip. */
+export function patchWindowShape(
+	nowMs: number = Date.now(),
+	offMin: number = localOffsetMin(nowMs)
+): { open: boolean; openFrac: number; marker: number } {
+	const c = digClock(nowMs, offMin);
+	const start = DIG_BUCKET_STARTS[c.bucket];
+	const end =
+		c.bucket < DIG_BUCKET_STARTS.length - 1
+			? DIG_BUCKET_STARTS[c.bucket + 1]
+			: DIG_DAY_MIN;
+	const len = end - start;
+	return {
+		open: c.open,
+		openFrac: DIG_BUCKET_OPEN_MINS[c.bucket] / len,
+		marker: Math.max(0, Math.min(1, (c.m - start) / len)),
+	};
 }
 
 // Practice-mode seed (migration not applied yet): any deterministic int in

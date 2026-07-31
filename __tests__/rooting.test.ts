@@ -36,9 +36,7 @@ import {
 import type { Find, PatchBoard } from "../utils/rooting";
 import {
 	PATCH_COLS,
-	PATCH_OPEN_SECS,
 	PATCH_ROWS,
-	ROOTING_WINDOW_SECS,
 	STIR_BUDGET,
 	STIR_RUB,
 	STIR_SHOVE,
@@ -336,26 +334,34 @@ describe("normalizePouch — the last gate before p_finds (22P02 regression)", (
 	});
 });
 
-describe("feeding windows", () => {
-	test("windowIndex buckets by 8h epochs", () => {
-		const w0 = windowIndex(0);
-		expect(w0).toBe(0);
-		expect(windowIndex(ROOTING_WINDOW_SECS * 1000 - 1)).toBe(0);
-		expect(windowIndex(ROOTING_WINDOW_SECS * 1000)).toBe(1);
+describe("feeding windows (local commuter schedule)", () => {
+	// All timing tests pin the UTC offset to 0 so the "local" clock == UTC and the
+	// math is machine-timezone-independent. With off=0 the dig-day anchors at
+	// 6:00 UTC; `anchor` below is the 6am (m=0) instant of dig-day 20000.
+	const OFF = 0;
+	const MIN = 60_000;
+	const anchor = (20000 * 1440 + 360) * MIN; // 6:00am local, bucket 0 start
+
+	test("windowIndex = digDay*4 + bucket, bucketed on the local day", () => {
+		expect(windowIndex(anchor, OFF)).toBe(80000); // 20000*4 + 0
+		expect(windowIndex(anchor + 359 * MIN, OFF)).toBe(80000); // still morning
+		expect(windowIndex(anchor + 360 * MIN, OFF)).toBe(80001); // lunch (m=360)
+		expect(windowIndex(anchor + 660 * MIN, OFF)).toBe(80002); // evening
+		expect(windowIndex(anchor + 900 * MIN, OFF)).toBe(80003); // wind-down
+		expect(windowIndex(anchor + 1440 * MIN, OFF)).toBe(80004); // next day, morning
 	});
 
-	test("windowEndsAtMs is the next boundary", () => {
-		const now = 1_750_000_000_000;
-		const win = windowIndex(now);
-		const end = windowEndsAtMs(win);
-		expect(end).toBeGreaterThan(now);
-		expect(end - now).toBeLessThanOrEqual(ROOTING_WINDOW_SECS * 1000);
+	test("windowEndsAtMs is the next bucket start", () => {
+		const win = windowIndex(anchor, OFF); // morning
+		const end = windowEndsAtMs(win, OFF);
+		// Morning (open 4h) gorges to noon → the bucket ends 6h after its 6am start.
+		expect(end - anchor).toBe(360 * MIN);
 	});
 
-	test("feedingCountdown formats h/m", () => {
-		const boundary = windowEndsAtMs(windowIndex(1_750_000_000_000));
-		expect(feedingCountdown(boundary - 2 * 3600000 - 10 * 60000)).toBe("2h 10m");
-		expect(feedingCountdown(boundary - 5 * 60000)).toBe("5m");
+	test("feedingCountdown counts down to the current bucket's end", () => {
+		const boundary = windowEndsAtMs(windowIndex(anchor, OFF), OFF);
+		expect(feedingCountdown(boundary - 2 * 3600000 - 10 * MIN, OFF)).toBe("2h 10m");
+		expect(feedingCountdown(boundary - 5 * MIN, OFF)).toBe("5m");
 	});
 });
 
@@ -698,35 +704,49 @@ describe("gildedSilhouetteDepth — presence grows one layer earlier per gild", 
 });
 
 // ── Patch phases (4h open / 4h guarded within each 8h window) ────────────────
-describe("patch phases", () => {
-	const WINDOW_MS = ROOTING_WINDOW_SECS * 1000;
-	const OPEN_MS = PATCH_OPEN_SECS * 1000;
-	// A clean window boundary: window index 200000 starts here.
-	const start = 200000 * WINDOW_MS;
+describe("patch phases (local commuter schedule)", () => {
+	const OFF = 0;
+	const MIN = 60_000;
+	// 6:00am (m=0) of dig-day 20000 with the UTC offset pinned to 0.
+	const start = (20000 * 1440 + 360) * MIN;
+	// Minutes since 6am → an absolute instant on this dig-day.
+	const at = (m: number) => start + m * MIN;
 
-	test("open for the first 4h, guarded for the last 4h", () => {
-		expect(patchPhaseOpen(start)).toBe(true);
-		expect(patchPhaseOpen(start + OPEN_MS - 1)).toBe(true);
-		expect(patchPhaseOpen(start + OPEN_MS)).toBe(false);
-		expect(patchPhaseOpen(start + WINDOW_MS - 1)).toBe(false);
-		// The next window opens again at its boundary.
-		expect(patchPhaseOpen(start + WINDOW_MS)).toBe(true);
+	test("open only inside each bucket's open span", () => {
+		// Morning 6–10a: open [0,240), gorge [240,360).
+		expect(patchPhaseOpen(at(0), OFF)).toBe(true);
+		expect(patchPhaseOpen(at(239), OFF)).toBe(true);
+		expect(patchPhaseOpen(at(240), OFF)).toBe(false);
+		expect(patchPhaseOpen(at(359), OFF)).toBe(false);
+		// Lunch 12–2p: open [360,480).
+		expect(patchPhaseOpen(at(360), OFF)).toBe(true);
+		expect(patchPhaseOpen(at(480), OFF)).toBe(false);
+		// Evening 5–8p: open [660,840).
+		expect(patchPhaseOpen(at(660), OFF)).toBe(true);
+		expect(patchPhaseOpen(at(839), OFF)).toBe(true);
+		expect(patchPhaseOpen(at(840), OFF)).toBe(false);
+		// Wind-down 9–11p: open [900,1020).
+		expect(patchPhaseOpen(at(900), OFF)).toBe(true);
+		expect(patchPhaseOpen(at(1020), OFF)).toBe(false);
+		// Overnight gorge (11p→6a) stays shut, then the next day's morning opens.
+		expect(patchPhaseOpen(at(1300), OFF)).toBe(false);
+		expect(patchPhaseOpen(at(1440), OFF)).toBe(true);
 	});
 
-	test("phase close and next-open timestamps are window-aligned", () => {
-		const mid = start + 60_000; // 1 minute into the open phase
-		expect(phaseClosesAtMs(mid)).toBe(start + OPEN_MS);
-		expect(nextOpenAtMs(mid)).toBe(start + WINDOW_MS);
-		const guarded = start + OPEN_MS + 60_000; // 1 minute into guarded
-		expect(nextOpenAtMs(guarded)).toBe(start + WINDOW_MS);
+	test("phase close + next-open timestamps land on the bucket's spans", () => {
+		const mid = at(1); // 1 min into the morning open span
+		expect(phaseClosesAtMs(mid, OFF)).toBe(at(240)); // closes at 10am
+		expect(nextOpenAtMs(mid, OFF)).toBe(at(360)); // next opens at noon
+		const guarded = at(241); // 1 min into the morning gorge
+		expect(nextOpenAtMs(guarded, OFF)).toBe(at(360));
+		// From inside the overnight gorge, the next open is the NEXT day's 6am.
+		expect(nextOpenAtMs(at(1100), OFF)).toBe(at(1440));
 	});
 
-	test("countdowns format like the feeding countdown", () => {
-		// 1h 30m before the phase closes.
-		const t = start + OPEN_MS - (90 * 60_000);
-		expect(phaseClosesCountdown(t)).toBe("1h 30m");
-		// 3h 45m before the patch reopens, from inside the guarded phase.
-		const g = start + WINDOW_MS - (225 * 60_000);
-		expect(nextOpenCountdown(g)).toBe("3h 45m");
+	test("countdowns format h/m", () => {
+		// 1h 30m before the morning span closes (at m=240).
+		expect(phaseClosesCountdown(at(240 - 90), OFF)).toBe("1h 30m");
+		// 3h 45m before the patch reopens at next 6am (m=1440), from overnight.
+		expect(nextOpenCountdown(at(1440 - 225), OFF)).toBe("3h 45m");
 	});
 });

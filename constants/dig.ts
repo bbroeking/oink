@@ -6,13 +6,31 @@
 // no shared module constants, so the server inlines them in each RPC). If you
 // change a value here, change it there too.
 
-// ── Truffle Patch (the 8h feeding-window dig heartbeat) — client mirror. ──────
+// ── Truffle Patch — the LOCAL-time "commuter" feeding schedule — client mirror. ─
 // The board PRNG/parity contract lives in utils/rooting.ts.
-export const ROOTING_WINDOW_SECS = 28800; // 8h feedings — 3 per day
-// The patch is OPEN for the first 4h of each window (dig while he gorges),
-// then GUARDED for the remaining 4h (cooldown). MUST match the server's
-// patch_phase_open() — migration 20260721000000.
-export const PATCH_OPEN_SECS = 14400;
+//
+// The patch runs on the player's PHONE-LOCAL clock (not UTC), so everyone gets
+// the same friendly hours wherever they are. The day is anchored at 6:00am local
+// and tiled into four non-uniform windows ("buckets"). Each bucket is OPEN
+// (diggable) for a span at its START, then GORGES (guarded) until the next bucket
+// — so the long overnight stretch (11pm→6am) is one big sleep-time gorge:
+//
+//   morning    6:00–10:00a  (open 4h)   then gorge to 12:00p
+//   lunch     12:00– 2:00p  (open 2h)   then gorge to  5:00p
+//   evening    5:00– 8:00p  (open 3h)   then gorge to  9:00p
+//   wind-down  9:00–11:00p  (open 2h)   then OVERNIGHT gorge to 6:00a
+//
+// A window index is `digDay * DIG_WINDOWS_PER_DAY + bucket` — one dig per bucket
+// (up to 4/day). These values MUST match the server's schedule helpers in
+// migration 20260740000000_dig_schedule_commuter_local.sql. If you change one,
+// change both.
+export const DIG_DAY_ANCHOR_MIN = 360;   // 6:00am local — where the dig-day starts
+export const DIG_DAY_MIN = 1440;         // minutes in a day
+// Each bucket's START (minutes from the 6am anchor) and its OPEN duration (min).
+// Bucket b is open while (m - START[b]) < OPEN[b]; guarded until START[b+1].
+export const DIG_BUCKET_STARTS = [0, 360, 660, 900] as const;    // 6a, 12p, 5p, 9p
+export const DIG_BUCKET_OPEN_MINS = [240, 120, 180, 120] as const; // 4h, 2h, 3h, 2h
+export const DIG_WINDOWS_PER_DAY = DIG_BUCKET_STARTS.length;        // 4
 export const STIR_BUDGET = 20;  // a session ends (gracefully) at full stir
 export const STIR_RUB = 1;      // quiet scratch
 export const STIR_SHOVE = 3;    // loud scoop
