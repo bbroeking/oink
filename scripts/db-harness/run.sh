@@ -122,9 +122,9 @@ CHAIN=(
 	# The production schema already has are_blocked(); the minimal harness does
 	# not, so provide its no-block fixture before applying the recruiting RPCs.
 	scripts/db-harness/00e_sounder_invite_any_player_prep.sql
-	# 20260741000000 opens leader recruiting beyond friends and ranks the default
+	# 20260801000000 opens leader recruiting beyond friends and ranks the default
 	# candidate board by all-time truffle finds dug; exercised by 41 smoke.
-	supabase/migrations/20260741000000_sounder_invite_any_player.sql
+	supabase/migrations/20260801000000_sounder_invite_any_player.sql
 )
 
 NAME="pgharness_$$"

@@ -1,4 +1,4 @@
--- Functional smoke for leader recruiting discovery (20260741000000):
+-- Functional smoke for leader recruiting discovery (20260801000000):
 -- the default candidate board ranks by truffles actually claimed in submitted
 -- digs, not by profiles.tickles_earned or Golden Truffle currency events.
 \set ON_ERROR_STOP on

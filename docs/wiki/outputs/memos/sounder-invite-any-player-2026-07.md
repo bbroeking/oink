@@ -3,7 +3,7 @@
 **Status:** proposal, pending founder approval (Brian).
 **Author:** Cash. **Date:** 2026-07-30.
 **Code:** branch `feat/sounder-invite-any-player` — migration
-`20260741000000_sounder_invite_any_player.sql` + client. No `db:push` run (gated
+`20260801000000_sounder_invite_any_player.sql` + client. No `db:push` run (gated
 on your go). Separate from PR #52 (dig schedule).
 
 ---
@@ -53,8 +53,8 @@ worth a conscious nod. If you'd rather *block* poaching a leader-with-members
 
 ## What's in the PR
 
-- **`supabase/migrations/20260741000000_sounder_invite_any_player.sql`** (sorts
-  after `20260739300000_friend_favorites`):
+- **`supabase/migrations/20260801000000_sounder_invite_any_player.sql`** (sorts
+  after the production `20260799000000` boundary):
   - `crew_invites.updated_at` + touch trigger (for the cooldown).
   - `invite_to_crew` — carried verbatim from `20260738000000`; deltas: leader may
     invite non-friends; `are_blocked` refusal; 24h `recently_declined` refusal;
@@ -81,7 +81,7 @@ worth a conscious nod. If you'd rather *block* poaching a leader-with-members
 ## Rollout
 
 1. Approve the direction (esp. the leader-poach consequence above).
-2. `db:push` `20260741000000`.
+2. `db:push` `20260801000000`.
 3. Client ships in the next build.
 
 _Note: `invite_to_crew` gains new refusal reasons (`blocked`, `recently_declined`)

@@ -1,5 +1,6 @@
 -- ════════════════════════════════════════════════════════════════════════
 -- SOUNDER — invite ANY player (leaderboard recruiting + poaching).
+-- Migration version 20260801000000 (after the production 20260799 boundary).
 --
 -- PROPOSAL (pending founder approval — see docs/wiki/outputs/memos/
 -- sounder-invite-any-player-2026-07.md). Today a leader can only invite
