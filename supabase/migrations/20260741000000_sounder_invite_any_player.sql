@@ -12,7 +12,7 @@
 --      REQUEST: the invitee chooses to ACCEPT & SWITCH (leave their current
 --      Sounder, join yours) or DECLINE & STAY. Nothing happens without consent.
 --   3. Discovery is a new leader-gated read, sounder_invite_candidates: the top
---      players by tickles (leaderboard) + a username search.
+--      players by all-time truffle finds dug + a username search.
 --
 -- GUARDRAILS (the ask is unsolicited now, so):
 --   * are_blocked — never invite across a block, even as leader.
@@ -192,9 +192,11 @@ END;
 $function$;
 
 -- ── 4. sounder_invite_candidates — the leader's recruiting picker source ─────
--- Leader-gated read: with no search, the TOP players by tickles (the leaderboard,
--- honoring hide_from_leaderboard); with a search, a username prefix match. Each
--- row is annotated so the picker can render state:
+-- Leader-gated read: with no search, the TOP players by all-time truffles
+-- actually dug (claimed truffle_l / truffle_d finds in submitted rootings,
+-- excluding currency bonuses, prizes, gifts, and spends), while honoring
+-- hide_from_leaderboard; with a search, a username prefix match. Each row is
+-- annotated so the picker can render state:
 --   in_crew        — already rides a Sounder (a poach) + which one (crew_name).
 --   already_invited — this Sounder has a pending ask out to them ("waiting…").
 -- Excludes the caller, blocked users, and hidden-from-leaderboard players.
@@ -204,7 +206,7 @@ RETURNS TABLE (
 	id             uuid,
 	username       text,
 	discriminator  text,
-	tickles_earned int,
+	truffles_dug   int,
 	in_crew        boolean,
 	crew_name      text,
 	already_invited boolean
@@ -222,13 +224,22 @@ BEGIN
 	IF my_crew IS NULL THEN RETURN; END IF;
 
 	RETURN QUERY
-		SELECT p.id, p.username, p.discriminator, p.tickles_earned,
+		SELECT p.id, p.username, p.discriminator,
+			COALESCE(td.truffles_dug, 0) AS truffles_dug,
 			(cm.crew_id IS NOT NULL) AS in_crew,
 			oc.name AS crew_name,
 			EXISTS (SELECT 1 FROM public.crew_invites ci
 				WHERE ci.crew_id = my_crew AND ci.invitee_id = p.id AND ci.status = 'pending')
 				AS already_invited
 		FROM public.profiles p
+		LEFT JOIN (
+			SELECT wr.user_id, COUNT(*)::int AS truffles_dug
+			FROM public.war_rootings wr
+			CROSS JOIN LATERAL unnest(COALESCE(wr.finds, ARRAY[]::text[])) AS dug(kind)
+			WHERE wr.submitted_at IS NOT NULL
+			  AND dug.kind IN ('truffle_l', 'truffle_d')
+			GROUP BY wr.user_id
+		) td ON td.user_id = p.id
 		LEFT JOIN public.crew_members cm ON cm.user_id = p.id
 		LEFT JOIN public.crews oc ON oc.id = cm.crew_id AND oc.is_bot = false
 		WHERE p.id <> caller_id
@@ -238,7 +249,7 @@ BEGIN
 		  -- Don't surface members of the caller's OWN Sounder (nothing to do).
 		  AND (cm.crew_id IS NULL OR cm.crew_id <> my_crew)
 		  AND (q = '' OR p.username ILIKE q || '%')
-		ORDER BY p.tickles_earned DESC NULLS LAST, p.username, p.id
+		ORDER BY COALESCE(td.truffles_dug, 0) DESC, p.username, p.id
 		LIMIT lim;
 END;
 $function$;

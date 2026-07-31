@@ -97,7 +97,7 @@ export function SounderCard({
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
 	const [pickerOpen, setPickerOpen] = useState(false);
-	// Leader-only recruiting picker (top diggers + username search; can poach).
+	// Leader-only recruiting picker (all-time truffle diggers + search; can poach).
 	const [playerPickerOpen, setPlayerPickerOpen] = useState(false);
 	const [crownOpen, setCrownOpen] = useState(false);
 	// Golden Truffle economy doors — the rewards catalog + the Truffle Exchange.
@@ -415,7 +415,7 @@ export function SounderCard({
 						<Text style={styles.inviteCtaText}>Call a snout to your banner</Text>
 					</Pressable>
 				)}
-				{/* Leaders reach beyond friends: the top diggers + username search
+				{/* Leaders reach beyond friends: all-time truffle diggers + username search
 				    (can poach a rider from another Sounder — they choose to switch). */}
 				{openSlots > 0 && isLeader && (
 					<Pressable onPress={() => setPlayerPickerOpen(true)} style={styles.inviteCta}>

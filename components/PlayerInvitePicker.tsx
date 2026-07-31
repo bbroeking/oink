@@ -1,6 +1,6 @@
 // Player invite picker — a LEADER-only bottom sheet for recruiting beyond the
 // friends list. It opens on the "Recruit any snout" CTA and shows, by default,
-// the top diggers (the leaderboard, via sounder_invite_candidates); a search box
+// the all-time truffle diggers (via sounder_invite_candidates); a search box
 // filters to any username. Unlike FriendInvitePicker it can reach STRANGERS and
 // players already in another Sounder (a POACH) — the ask is still just a request:
 // the invitee accepts & switches, or declines & stays.
@@ -123,7 +123,7 @@ export function PlayerInvitePicker({
 			visible={visible}
 			onDismiss={onDismiss}
 			title="Recruit any snout"
-			sub="tap a top digger, or search a name — an invite is theirs to accept"
+			sub="ranked by all-time truffles dug — or search a name"
 		>
 			<TextInput
 				value={search}
@@ -148,13 +148,16 @@ export function PlayerInvitePicker({
 					{rows.map((p, idx) => {
 						const waitingInvite = waitingInviteByPlayer.get(p.id);
 						const waiting = waitingInvite != null;
+						const dug = `${p.truffles_dug.toLocaleString()} ${
+							p.truffles_dug === 1 ? "truffle" : "truffles"
+						} dug all-time`;
 						const sub = waiting
-							? "waiting on your last ask…"
+							? `${dug} • waiting on your last ask…`
 							: p.in_crew
-								? `in ${p.crew_name ?? "another Sounder"} — invite to switch`
+								? `${dug} • in ${p.crew_name ?? "another Sounder"} — invite to switch`
 								: seatsFull
-									? "the banner's full"
-									: "no crew yet — free to ride";
+									? `${dug} • the banner's full`
+									: `${dug} • no crew yet — free to ride`;
 						const right = waiting ? (
 							<HandLink
 								onPress={() => cancel(waitingInvite)}

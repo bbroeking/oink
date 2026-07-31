@@ -21,7 +21,9 @@ recruiting up:
    current Sounder, joins yours) or **declines & stays**. Nothing happens without
    their consent.
 3. **Discovery** — a new leader-gated read `sounder_invite_candidates`: default
-   is the **top diggers** (leaderboard by tickles), plus a **username search**.
+   is the **top diggers** ranked by **all-time truffles actually dug** (claimed
+   truffle finds in submitted digs, not currency bonuses or prizes), plus a
+   **username search**.
 
 ## Guardrails (the ask is unsolicited now)
 
@@ -59,9 +61,10 @@ worth a conscious nod. If you'd rather *block* poaching a leader-with-members
     **removed** the `invitee_in_crew` refusal (poaching allowed).
   - `accept_crew_invite` — carried verbatim; deltas: **removed** `already_in_crew`
     refusal; capacity-check-first; leave-old-Sounder-then-join switch.
-  - `sounder_invite_candidates(p_search, p_limit)` — leader-gated; top-by-tickles
-    or username prefix; annotates `in_crew` / `crew_name` (poach) + `already_invited`;
-    excludes self, blocked, and `hide_from_leaderboard` players.
+  - `sounder_invite_candidates(p_search, p_limit)` — leader-gated; top-by-all-time
+    truffle finds dug or username prefix; returns the lifetime count, annotates
+    `in_crew` / `crew_name` (poach) + `already_invited`, and excludes self,
+    blocked, and `hide_from_leaderboard` players.
 - **`utils/crews.ts`** — `InviteCandidate` type + `fetchInviteCandidates`.
 - **`components/PlayerInvitePicker.tsx`** — the leader recruiting sheet (search +
   leaderboard list; poach / free / pending / full row states). Reuses `useCrew`'s
