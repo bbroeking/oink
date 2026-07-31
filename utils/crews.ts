@@ -69,6 +69,19 @@ export interface FriendCrew {
 	memberCount: number;
 }
 
+// A recruiting target for the leader's player picker (sounder_invite_candidates):
+// the top players by tickles + username search. `inCrew` marks a POACH (they
+// already ride `crewName`); `alreadyInvited` marks a pending ask from this Sounder.
+export interface InviteCandidate {
+	id: string;
+	username: string | null;
+	discriminator: string | null;
+	tickles_earned: number;
+	in_crew: boolean;
+	crew_name: string | null;
+	already_invited: boolean;
+}
+
 // ── Query wrappers (rpc<T>) ──────────────────────────────────────────────────
 // Each always resolves to a usable rest-state value (null/empty on error).
 
@@ -107,6 +120,21 @@ export async function fetchJoinable(): Promise<JoinableCrew[]> {
 
 export async function fetchFriendsCrews(): Promise<FriendCrew[]> {
 	return (await rpc<FriendCrew[]>("friends_crews")) ?? [];
+}
+
+// Leader recruiting picker source: top players by tickles (empty search) or a
+// username-prefix match. Returns [] for non-leaders or an un-migrated server, so
+// the picker degrades to empty rather than throwing.
+export async function fetchInviteCandidates(
+	search: string,
+	limit = 50
+): Promise<InviteCandidate[]> {
+	return (
+		(await rpc<InviteCandidate[]>("sounder_invite_candidates", {
+			p_search: search,
+			p_limit: limit,
+		})) ?? []
+	);
 }
 
 // crew_state's member payload carries no avatar fields, so this fills that gap:
