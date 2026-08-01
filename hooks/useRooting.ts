@@ -202,7 +202,11 @@ export function useRooting() {
 	const open = useCallback(async (): Promise<
 		RpcResult<{ session: RootingSession }>
 	> => {
-		const r = await rpcAction<OpenPayload>("open_rooting");
+		// The patch runs on the player's LOCAL clock; the server derives the window
+		// + open/guard phase from this UTC offset (minutes to add to reach local).
+		const r = await rpcAction<OpenPayload>("open_rooting", {
+			p_utc_offset_minutes: -new Date().getTimezoneOffset(),
+		});
 		if (r.ok) {
 			setNoCrew(false);
 			const s: RootingSession = {
@@ -319,6 +323,9 @@ export function useRooting() {
 				p_finds: safeFinds,
 				p_actions: actions,
 				p_missed: safeMissed,
+				// Same local offset as open_rooting — the row's window index is derived
+				// from local time, so submit must resolve to the SAME window.
+				p_utc_offset_minutes: -new Date().getTimezoneOffset(),
 			});
 			if (!r.ok) {
 				if (r.reason === "already_rooted") await markDug();
