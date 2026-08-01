@@ -9,6 +9,16 @@
 // PENDING_REFERRAL_CODE_KEY in utils/referrals.ts).
 export const PENDING_REDEMPTION_CODE_KEY = "pending_redemption_code";
 
+// Canonical public listing used by install-oriented trading cards. Keeping this
+// beside the scanner parser prevents print assets and in-app behavior from
+// drifting to different App Store URLs.
+export const TICKLE_THE_PIG_APP_STORE_URL =
+	"https://apps.apple.com/us/app/tickle-the-pig/id6740339848";
+
+export type TradingCardPayload =
+	| { kind: "redemption"; code: string }
+	| { kind: "app_store"; url: typeof TICKLE_THE_PIG_APP_STORE_URL };
+
 // Display format: PIG-XXXX-XXXX over the mint alphabet (Crockford base32 minus
 // 0/1/I/L/O/U — i.e. 2-9 and A-Z without I/L/O/U). The server stores the
 // NORMALIZED form (UPPER, no dashes); this regex validates the dashed display
@@ -66,6 +76,45 @@ export function parseRedemptionPayload(input: string | null | undefined): string
 	return code || null;
 }
 
+// Classify QR bodies before the shop scanner acts. App Store cards open the
+// listing; Golden Tickets continue through the server-authoritative redemption
+// path. Only the canonical Tickle the Pig listing is accepted as an App Store
+// action, so an arbitrary apps.apple.com QR cannot bounce a player elsewhere.
+export function parseTradingCardPayload(
+	input: string | null | undefined
+): TradingCardPayload | null {
+	if (!input) return null;
+	const trimmed = input.trim();
+	if (!trimmed) return null;
+
+	try {
+		const parsed = new URL(trimmed);
+		const canonical = new URL(TICKLE_THE_PIG_APP_STORE_URL);
+		if (
+			parsed.protocol === canonical.protocol &&
+			parsed.host === canonical.host &&
+			parsed.pathname.replace(/\/+$/, "") === canonical.pathname
+		) {
+			return { kind: "app_store", url: TICKLE_THE_PIG_APP_STORE_URL };
+		}
+
+		// Scanner URLs must explicitly be redemption links. This keeps an
+		// unrelated URL from being stripped into a plausible-looking bare code.
+		const hostPath = `/${parsed.host}${parsed.pathname}`;
+		const match = hostPath.match(/\/redeem\/([^/?#]+)\/?$/i);
+		if (!match) return null;
+		const code = normalizeRedemptionCode(match[1]);
+		return /^PIG[2-9A-HJKMNP-TV-Z]{8}$/.test(code)
+			? { kind: "redemption", code }
+			: null;
+	} catch {
+		const code = normalizeRedemptionCode(trimmed);
+		return /^PIG[2-9A-HJKMNP-TV-Z]{8}$/.test(code)
+			? { kind: "redemption", code }
+			: null;
+	}
+}
+
 // Turns a redeem_code refusal reason into player-facing copy (spec §2.5).
 // "Golden Ticket" / "code" is the chosen player word; no emoji.
 export function redemptionErrorMessage(reason: string | undefined): string {
@@ -84,6 +133,8 @@ export function redemptionErrorMessage(reason: string | undefined): string {
 			return "Something's off with this code — try another.";
 		case "pouch_full":
 			return "Your pouch is bursting — spend a little, then come back for this.";
+		case "item_sold_out":
+			return "All ten copies have found a pig.";
 		case "network":
 		case "no_data":
 		default:

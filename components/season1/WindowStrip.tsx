@@ -1,8 +1,8 @@
-// The feeding-window strip — the 8h dig rhythm made visible. The single biggest
+// The feeding-window strip — the commuter dig rhythm made visible. The single biggest
 // dig-confusion fix: the patch's open/guarded cadence used to live only in prose.
 //
-// The strip is one 8h feeding window: an OPEN half (first 4h — dig while he
-// gorges) and a GUARDED half (next 4h — he digests, the patch is shut). A "now"
+// The strip is the current commuter window: an OPEN head (dig while he
+// gorges) and a GUARDED tail (he digests, the patch is shut). A "now"
 // marker rides the true position, and the line beneath states which phase we're
 // in + the countdown it already computes.
 //
@@ -17,25 +17,13 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
-	patchPhaseOpen,
 	phaseClosesCountdown,
 	nextOpenCountdown,
+	patchCtaLabel,
+	patchWindowShape,
 } from "@/utils/rooting";
-import { feedingSchedule, type FeedingSchedule } from "@/utils/feedingConfig";
 import type { FeedingCta } from "../mudwar/useFeedingCta";
 import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
-
-// The "now" marker's position across the whole window, 0..1. Reads the live
-// server-driven schedule (utils/feedingConfig — same math as utils/rooting's
-// windowIndex), so the pin can't drift off the true boundary, even across a
-// remote schedule shift.
-function nowFrac(
-	nowMs: number = Date.now(),
-	sched: FeedingSchedule = feedingSchedule()
-): number {
-	const intoWindow = (nowMs / 1000 - sched.offsetSecs) % sched.windowSecs;
-	return Math.max(0, Math.min(1, intoWindow / sched.windowSecs));
-}
 
 export function WindowStrip({
 	cta,
@@ -50,38 +38,37 @@ export function WindowStrip({
 }) {
 	// Re-derive on a slow tick so the marker + phase line stay live without a
 	// per-frame cost (matches useFeedingCta's 15s clock cadence).
-	const [tick, setTick] = useState(0);
+	const [, setTick] = useState(0);
 	useEffect(() => {
 		const t = setInterval(() => setTick((n) => n + 1), 15000);
 		return () => clearInterval(t);
 	}, []);
 
-	const open = cta ? cta.phaseOpen : patchPhaseOpen();
-	// The open half's share of the window — derived per render from the live
-	// schedule so the bar's split follows a remote geometry change too.
-	const openFrac = feedingSchedule().openSecs / feedingSchedule().windowSecs;
+	const shape = patchWindowShape();
+	const open = cta ? cta.phaseOpen : shape.open;
+	const openFrac = shape.openFrac;
 	// The now-marker keeps its own window math (bar geometry is position, not
 	// countdown) — only the caption line shares the CTA's clock.
-	const marker = nowFrac();
+	const marker = shape.marker;
 	const countdown = cta
 		? cta.countdown
 		: open
 			? phaseClosesCountdown()
 			: nextOpenCountdown();
 	const line = open
-		? `the patch is open — closes in ${countdown}`
-		: `he's guarding — opens in ${countdown}`;
+		? `${patchCtaLabel(true, countdown)} — closes in ${countdown}`
+		: patchCtaLabel(false, countdown);
 
 	return (
 		<View style={styles.wrap}>
 			<View style={styles.kickerRow}>
 				<Text style={styles.kicker}>the feeding rhythm</Text>
-				<Text style={styles.eightHour}>every 8h</Text>
+				<Text style={styles.eightHour}>4 times daily</Text>
 			</View>
 
 			<View style={styles.timelineRow}>
 				{/* The two phase segments — open (sun) then guarded (dim, hatched
-				    by a dashed inner rule). Their widths are the true 4h/4h split. */}
+				    by a dashed inner rule). Widths match the current bucket. */}
 				<View style={styles.bar}>
 					<View
 						style={[
@@ -170,7 +157,7 @@ const styles = StyleSheet.create({
 	// still fits the 22px bar; 9px uppercase read as squint-small.
 	segLabel: {
 		...TYPE.kickerPill,
-		fontSize: 10,
+		fontSize: 11,
 		letterSpacing: 0.8,
 		color: WHIMSY.ink,
 	},

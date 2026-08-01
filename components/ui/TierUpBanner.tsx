@@ -15,6 +15,10 @@ import {
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import { FONTS, WHIMSY } from "@/constants/theme";
+import {
+	MOTION_DURATION,
+	useMotionPolicy,
+} from "@/hooks/useMotionPolicy";
 
 const tierUpSound = require("../../assets/sounds/tier_up.mp3");
 
@@ -34,12 +38,15 @@ export const TierUpBanner = forwardRef<TierUpBannerHandle>(
 		const [tier, setTier] = useState<number | null>(null);
 		const slide = useRef(new Animated.Value(0)).current;
 		const sparkle = useRef(new Animated.Value(0)).current;
+		const reducedOpacity = useRef(new Animated.Value(0)).current;
+		const motionPolicy = useMotionPolicy();
 
 		const fire = useCallback(
 			(toTier: number) => {
 				setTier(toTier);
 				slide.setValue(0);
 				sparkle.setValue(0);
+				reducedOpacity.setValue(0);
 
 				try {
 					player.seekTo(0);
@@ -49,36 +56,55 @@ export const TierUpBanner = forwardRef<TierUpBannerHandle>(
 					Haptics.NotificationFeedbackType.Success
 				).catch(() => {});
 
-				Animated.sequence([
-					// Slide in + sparkle burst in parallel
-					Animated.parallel([
-						Animated.spring(slide, {
-							toValue: 1,
-							friction: 7,
-							tension: 80,
-							useNativeDriver: true,
-						}),
-						Animated.timing(sparkle, {
-							toValue: 1,
-							duration: 1400,
-							easing: Easing.out(Easing.cubic),
-							useNativeDriver: true,
-						}),
-					]),
-					// Hold
-					Animated.delay(1500),
-					// Slide out
-					Animated.timing(slide, {
-						toValue: 0,
-						duration: 400,
-						easing: Easing.in(Easing.cubic),
-						useNativeDriver: true,
-					}),
-				]).start(() => {
+				const animation = motionPolicy.reduceMotion
+					? Animated.sequence([
+							Animated.timing(reducedOpacity, {
+								toValue: 1,
+								duration: MOTION_DURATION.crossfade,
+								useNativeDriver: true,
+							}),
+							Animated.delay(1500),
+							Animated.timing(reducedOpacity, {
+								toValue: 0,
+								duration: MOTION_DURATION.crossfade,
+								useNativeDriver: true,
+							}),
+						])
+					: Animated.sequence([
+							// Slide in + sparkle burst in parallel
+							Animated.parallel([
+								Animated.spring(slide, {
+									toValue: 1,
+									friction: 7,
+									tension: 80,
+									useNativeDriver: true,
+								}),
+								Animated.timing(sparkle, {
+									toValue: 1,
+									duration: 1400,
+									easing: Easing.out(Easing.cubic),
+									useNativeDriver: true,
+								}),
+							]),
+							Animated.delay(1500),
+							Animated.timing(slide, {
+								toValue: 0,
+								duration: 400,
+								easing: Easing.in(Easing.cubic),
+								useNativeDriver: true,
+							}),
+						]);
+				animation.start(() => {
 					setTier(null);
 				});
 			},
-			[player, slide, sparkle]
+			[
+				player,
+				slide,
+				sparkle,
+				reducedOpacity,
+				motionPolicy.reduceMotion,
+			]
 		);
 
 		useImperativeHandle(ref, () => ({ fire }), [fire]);
@@ -144,13 +170,17 @@ export const TierUpBanner = forwardRef<TierUpBannerHandle>(
 				<Animated.View
 					style={[
 						styles.banner,
-						{
-							opacity: bannerOpacity,
-							transform: [{ translateY }],
-						},
+						motionPolicy.reduceMotion
+							? { opacity: reducedOpacity }
+							: {
+									opacity: bannerOpacity,
+									transform: [{ translateY }],
+								},
 					]}
 				>
-					<View style={styles.sparkleField}>{sparkles}</View>
+					{motionPolicy.allowDecorativeMotion && (
+						<View style={styles.sparkleField}>{sparkles}</View>
+					)}
 					<Text style={styles.kicker}>SNOUT SEASON</Text>
 					<Text style={styles.headline}>Tier {tier} Unlocked!</Text>
 					<Text style={styles.sub}>New reward waiting below ↓</Text>

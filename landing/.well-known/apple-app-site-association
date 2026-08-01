@@ -4,7 +4,7 @@
     "details": [
       {
         "appID": "Z8F75879GQ.com.broeking.ttp",
-        "paths": ["/i/*", "/r/*"]
+        "paths": ["/i/*", "/r/*", "/redeem/*"]
       }
     ]
   }

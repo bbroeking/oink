@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
 		padding: 12,
 		marginTop: 10,
 	},
-	kicker: { ...KICKER_TEXT, fontSize: 10, marginBottom: 8 },
+	kicker: { ...KICKER_TEXT, fontSize: 11, marginBottom: 8 },
 	ritualRow: {
 		flexDirection: "row",
 		alignItems: "center",

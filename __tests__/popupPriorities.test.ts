@@ -1,9 +1,9 @@
 // Guards the popup precedence registry (constants/popupPriorities.ts) — the
 // single table that defines global popup ordering. Two invariants:
 //
-//  1. Priorities are UNIQUE except the one documented, deliberate 50/50
-//     collision (fieldGuide vs luckyTitle). A NEW accidental collision must
-//     fail here — a silent duplicate would make two popups' relative order
+//  1. Priorities are UNIQUE except any explicitly documented collision. A NEW
+//     accidental collision must fail here — a silent duplicate would make
+//     two popups' relative order
 //     depend on arrival timing instead of the intended precedence.
 //  2. The registry and the real usePopupSlot(id, …, priority) call sites agree:
 //     every registry id is actually wired to a slot in source, every slot's id
@@ -16,7 +16,6 @@ import path from "path";
 import {
 	POPUP_PRIORITIES,
 	KNOWN_PRIORITY_COLLISIONS,
-	QUIET_FILL_SLOT_IDS,
 	CEREMONY_SLOT_IDS,
 	type PopupSlotId,
 } from "../constants/popupPriorities";
@@ -28,7 +27,6 @@ const SLOT_SOURCE_FILES = [
 	"app/(tabs)/season.tsx",
 	"components/Barn.tsx",
 	"components/MysteryHatReveal.tsx",
-	"components/FieldGuideReveal.tsx",
 ];
 
 const ROOT = path.join(__dirname, "..");
@@ -76,6 +74,10 @@ function callSitesIn(file: string): CallSite[] {
 			}
 		}
 		args.push(inner.slice(a));
+		// A formatter may leave a trailing comma after the final argument,
+		// which produces one empty split entry. It does not change the call's
+		// final argument and should not make this source-level guard fail.
+		while (args.length > 0 && args[args.length - 1].trim() === "") args.pop();
 		if (args.length < 3) continue;
 		const idMatch = args[0].match(/^\s*"([^"]+)"\s*$/);
 		if (!idMatch) continue;
@@ -102,7 +104,6 @@ describe("popup priority registry", () => {
 			.filter((ids) => ids.length > 1)
 			.map((ids) => [...ids].sort());
 		const known = KNOWN_PRIORITY_COLLISIONS.map((c) => [...c].sort());
-		// The ONLY tolerated duplicate is the fieldGuide/luckyTitle 50/50 pair.
 		expect(collisions).toEqual(known);
 	});
 
@@ -113,8 +114,8 @@ describe("popup priority registry", () => {
 		}
 	});
 
-	test("quiet-fill and ceremony sets reference real registry slots", () => {
-		for (const id of [...QUIET_FILL_SLOT_IDS, ...CEREMONY_SLOT_IDS]) {
+	test("ceremony set references real registry slots", () => {
+		for (const id of CEREMONY_SLOT_IDS) {
 			expect(POPUP_PRIORITIES).toHaveProperty(id);
 		}
 	});
@@ -125,7 +126,7 @@ describe("popup priority registry", () => {
 		// checks below would pass vacuously. Anchor on ids we know ship today.
 		const ids = callSites.map((s) => s.id);
 		expect(ids).toEqual(
-			expect.arrayContaining(["schism", "truffleSheet", "seasonEnd", "fieldGuide"])
+			expect.arrayContaining(["schism", "truffleSheet", "seasonEnd", "luckyPig"])
 		);
 	});
 

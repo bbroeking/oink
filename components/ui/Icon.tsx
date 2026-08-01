@@ -48,6 +48,7 @@ export type IconName =
 	| "clock"
 	| "edit"
 	| "copy"
+	| "chevronDown"
 	// ── Vector-icons-backed entries (delegated to MCI / Feather). ──
 	// Added during the no-emoji sweep so call sites stay
 	// <Icon name="crown" /> and we keep one consumer surface.
@@ -84,6 +85,7 @@ const VECTOR_ICON_MAP: Partial<Record<IconName, {
 	pig:       { family: "mci",     name: "pig" },
 	target:    { family: "feather", name: "target" },
 	scroll:    { family: "mci",     name: "script-text-outline" },
+	chevronDown: { family: "feather", name: "chevron-down" },
 };
 
 interface Props {

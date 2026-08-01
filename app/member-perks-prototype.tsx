@@ -14,7 +14,7 @@ import {
 	Text,
 	View,
 } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Redirect, Stack, router, useLocalSearchParams } from "expo-router";
 import { PigStage } from "@/components/ui/PigStage";
 import { Glyph, type GlyphName } from "@/components/ui/Glyph";
 import { Icon } from "@/components/ui/Icon";
@@ -306,7 +306,7 @@ function PrototypeSwitcher({ current }: { current: VariantKey }) {
 	);
 }
 
-export default function MemberPerksPrototype() {
+export function MemberPerksPrototypeLab() {
 	const params = useLocalSearchParams<{ variant?: string }>();
 	const variant: VariantKey = params.variant === "B" || params.variant === "C" ? params.variant : "A";
 	const [paletteKey, setPaletteKey] = useState("natural");
@@ -338,7 +338,6 @@ export default function MemberPerksPrototype() {
 		bursts,
 	}), [paletteKey, gilded, lastReaction, reactionCount, bursts]);
 
-	if (!__DEV__) return null;
 	return (
 		<SafeAreaView style={styles.root}>
 			<Stack.Screen options={{ headerShown: false }} />
@@ -351,6 +350,11 @@ export default function MemberPerksPrototype() {
 			<PrototypeSwitcher current={variant} />
 		</SafeAreaView>
 	);
+}
+
+export default function MemberPerksPrototype() {
+	if (!__DEV__) return <Redirect href="/(tabs)/shop" />;
+	return <MemberPerksPrototypeLab />;
 }
 
 const styles = StyleSheet.create({

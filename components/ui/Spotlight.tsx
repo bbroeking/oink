@@ -36,7 +36,6 @@ import {
 	type ReactNode,
 } from "react";
 import {
-	AccessibilityInfo,
 	Dimensions,
 	Modal,
 	Pressable,
@@ -59,6 +58,7 @@ import Animated, {
 	withTiming,
 } from "react-native-reanimated";
 import { FONTS, RADII, SPACE, STICKER_SHADOW, TYPE, WHIMSY } from "@/constants/theme";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 
 // A measured target rect in WINDOW coordinates (measureInWindow: page-absolute,
 // the same space the responder event's pageX/pageY live in — so the hit-test and
@@ -216,23 +216,7 @@ export function SpotlightOverlay({
 	holeRadius = RADII.lg,
 }: SpotlightOverlayProps) {
 	const { get, version } = useRegistry();
-	const [reduceMotion, setReduceMotion] = useState(false);
-
-	// Respect the OS reduced-motion switch: no halo breathe, no caption wiggle.
-	useEffect(() => {
-		let alive = true;
-		AccessibilityInfo.isReduceMotionEnabled()
-			.then((on) => alive && setReduceMotion(on))
-			.catch(() => {});
-		const sub = AccessibilityInfo.addEventListener(
-			"reduceMotionChanged",
-			(on) => alive && setReduceMotion(on)
-		);
-		return () => {
-			alive = false;
-			sub?.remove?.();
-		};
-	}, []);
+	const { reduceMotion } = useMotionPolicy();
 
 	// Re-read the active rect whenever the registry version ticks (remeasure) or
 	// the active id changes. `version` is intentionally in the dep list.

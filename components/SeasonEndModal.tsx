@@ -49,6 +49,10 @@ import {
 	type BetaTier,
 } from "@/utils/betaRewards";
 import type { BetaReward } from "@/hooks/useSeasonEnd";
+import {
+	MOTION_DURATION,
+	useMotionPolicy,
+} from "@/hooks/useMotionPolicy";
 
 // Rosie herself (her real sprite frame) — NOT the legacy soft-shaded
 // assets/images/pig.png, which reads as a different pig entirely.
@@ -125,6 +129,7 @@ export function SeasonEndModal({
 	onDone: () => void;
 }) {
 	const insets = useSafeAreaInsets();
+	const motionPolicy = useMotionPolicy();
 	const [beat, setBeat] = useState(0);
 	// The founder's gift is a two-stage moment on the "earned" beat: the
 	// wrapped box waits, the primary button opens it (chips burst in), and only
@@ -174,8 +179,12 @@ export function SeasonEndModal({
 			<View style={styles.root}>
 				<Animated.View
 					key={B.key}
-					entering={FadeIn.duration(500)}
-					exiting={FadeOut.duration(220)}
+					entering={FadeIn.duration(
+						motionPolicy.duration(500, MOTION_DURATION.crossfade)
+					)}
+					exiting={FadeOut.duration(
+						motionPolicy.duration(220, MOTION_DURATION.crossfade)
+					)}
 					style={StyleSheet.absoluteFill}
 				>
 					<ImageBackground source={B.bg} style={styles.scene} resizeMode="cover">
@@ -211,7 +220,11 @@ export function SeasonEndModal({
 				>
 					<Animated.View
 						key={`c-${B.key}`}
-						entering={FadeIn.duration(420).delay(120)}
+						entering={
+							motionPolicy.reduceMotion
+								? FadeIn.duration(MOTION_DURATION.crossfade)
+								: FadeIn.duration(420).delay(120)
+						}
 						style={styles.card}
 					>
 						<Text style={styles.kicker}>{"★ "}{B.kicker}</Text>
@@ -253,10 +266,14 @@ function BetaGiftReveal({
 	const chipAnims = useRef(chips.map(() => new RNAnimated.Value(0))).current;
 	const snout = useRef(new RNAnimated.Value(0)).current;
 	const [snoutShown, setSnoutShown] = useState(0);
+	const motionPolicy = useMotionPolicy();
 
 	// Idle "tap me" wobble while the gift is still wrapped.
 	useEffect(() => {
-		if (opened) return;
+		if (opened || !motionPolicy.allowDecorativeMotion) {
+			wobble.setValue(0);
+			return;
+		}
 		const loop = RNAnimated.loop(
 			RNAnimated.sequence([
 				RNAnimated.timing(wobble, {
@@ -282,7 +299,7 @@ function BetaGiftReveal({
 		);
 		loop.start();
 		return () => loop.stop();
-	}, [opened, wobble]);
+	}, [opened, wobble, motionPolicy.allowDecorativeMotion]);
 
 	// Burst open: chips pop in staggered, each with a haptic; snouts count up.
 	useEffect(() => {
@@ -291,6 +308,16 @@ function BetaGiftReveal({
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
 			() => {}
 		);
+		if (motionPolicy.reduceMotion) {
+			chips.forEach((chip, index) => {
+				chipAnims[index].setValue(1);
+				if (chip.kind === "snouts" && typeof chip.amount === "number") {
+					snout.setValue(chip.amount);
+					setSnoutShown(chip.amount);
+				}
+			});
+			return;
+		}
 		chips.forEach((chip, i) => {
 			timers.push(
 				setTimeout(() => {
@@ -322,7 +349,7 @@ function BetaGiftReveal({
 		return () => timers.forEach(clearTimeout);
 		// chipAnims/snout are stable refs; chips is stable per reward.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [opened]);
+	}, [opened, motionPolicy.reduceMotion]);
 
 	if (!opened) {
 		const rotate = wobble.interpolate({

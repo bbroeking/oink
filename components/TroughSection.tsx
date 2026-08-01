@@ -1,44 +1,21 @@
 // The Trough — friend-funded item drives, surfaced as a section in the Shop.
 // Lists open Troughs from your Sounder (my_drives) and lets you chip in snouts
-// toward a friend's item. The tickle reward for donating is RETIRED (spec 15):
-// chipping in unlocks the item for the opener + earns you XP, but pays no
-// tickles/leaderboard score. A funded drive shows a celebratory receipt — no
-// claim step — and the client never calls the retired claim_drive_reward RPC.
-import { useCallback, useRef, useState } from "react";
+// toward a friend's item. Rewards credit immediately at donation time; funded
+// drives show a receipt, never a manual claim button.
+import { useEffect, useState } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { rpc, rpcAction } from "@/utils/rpc";
+import { rpcAction } from "@/utils/rpc";
+import {
+	type TroughDrive as Drive,
+	type TroughReceipt,
+} from "@/hooks/useTroughDrives";
 import { observeFieldGuide } from "@/utils/fieldGuide";
 import { remainingMs } from "@/utils/duration";
 import { HAT_IMAGES } from "@/constants/hats";
-import { FONTS, WHIMSY } from "@/constants/theme";
-import { SectionHeader } from "./ui";
+import { RADII, SHADOW_SM, SPACE, TYPE, WHIMSY } from "@/constants/theme";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Glyph } from "./ui/Glyph";
 import * as Haptics from "expo-haptics";
-
-interface Drive {
-	id: string;
-	item_id: string;
-	item_name: string | null;
-	opener_id: string;
-	opener_name: string | null;
-	target: number;
-	raised: number;
-	status: string;
-	closes_at: string;
-	is_mine: boolean;
-	donor_count: number;
-	my_contribution: number;
-}
-// A funded drive the caller donated to. The tickle reward is retired
-// (spec 15), so this is now a celebratory receipt only — no claim.
-interface Claimable {
-	donation_id: string;
-	drive_id: string;
-	item_id: string;
-	item_name: string | null;
-}
 
 const PRESETS = [10, 25, 50];
 
@@ -70,61 +47,35 @@ function donateError(reason: string | undefined, have?: number): string {
 }
 
 export function TroughSection({
+	data,
 	onBalance,
-	onEmptyChange,
 }: {
-	// Reports every fresh server balance up to the host screen (the
-	// Shop header chip). my_drives re-runs after each chip-in/claim, so
-	// wiring this makes the chip update the moment snouts move instead
-	// of waiting for the next focus refetch.
+	data: {
+		drives: Drive[];
+		claimable: TroughReceipt[];
+		balance: number;
+		donatedToday: boolean;
+		loaded: boolean;
+		refresh: () => Promise<unknown>;
+	};
 	onBalance?: (balance: number) => void;
-	// Reports whether there are zero open/funded drives, so a host segment
-	// can show its own empty state (this component renders null when empty).
-	// Derived from the my_drives load already run — no extra fetch.
-	onEmptyChange?: (empty: boolean) => void;
-} = {}) {
-	const [drives, setDrives] = useState<Drive[]>([]);
-	const [claimable, setClaimable] = useState<Claimable[]>([]);
-	const [balance, setBalance] = useState(0);
-	const [donatedToday, setDonatedToday] = useState(false);
+}) {
+	const {
+		drives,
+		claimable,
+		balance,
+		donatedToday,
+		loaded,
+		refresh: load,
+	} = data;
 	const [amounts, setAmounts] = useState<Record<string, number>>({});
 	const [busy, setBusy] = useState<string | null>(null);
 	const [note, setNote] = useState<Record<string, string>>({});
 
-	// Ref so load()'s identity stays stable even if the parent passes
-	// a fresh closure each render (it feeds a useFocusEffect).
-	const onBalanceRef = useRef(onBalance);
-	onBalanceRef.current = onBalance;
-	const onEmptyChangeRef = useRef(onEmptyChange);
-	onEmptyChangeRef.current = onEmptyChange;
-
-	const load = useCallback(async () => {
-		const r = await rpc<{
-			ok?: boolean;
-			balance?: number;
-			donated_today?: boolean;
-			drives: Drive[];
-			claimable: Claimable[];
-		}>("my_drives");
-		if (r?.ok) {
-			const nextDrives = r.drives ?? [];
-			const nextClaimable = r.claimable ?? [];
-			setDrives(nextDrives);
-			setClaimable(nextClaimable);
-			setBalance(r.balance ?? 0);
-			setDonatedToday(!!r.donated_today);
-			if (typeof r.balance === "number") onBalanceRef.current?.(r.balance);
-			onEmptyChangeRef.current?.(
-				nextDrives.length === 0 && nextClaimable.length === 0
-			);
-		}
-	}, []);
-
-	useFocusEffect(
-		useCallback(() => {
-			load();
-		}, [load])
-	);
+	useEffect(() => {
+		if (!loaded) return;
+		onBalance?.(balance);
+	}, [balance, loaded, onBalance]);
 
 	const donate = async (d: Drive, amt: number) => {
 		if (busy || amt <= 0) return;
@@ -184,15 +135,11 @@ export function TroughSection({
 
 	return (
 		<View style={styles.wrap}>
-			<SectionHeader kicker="the trough" title="Group drives" ruleWidth={110} />
-
-			{/* how it works — so the mechanic isn't a mystery */}
 			<View style={styles.explainer}>
 				<Text style={styles.explainerTitle}>How the Trough works</Text>
 				<Text style={styles.explainerBody}>
-					Open a drive for any shop item you want, and your Sounder pitches in
-					snouts. When it fills, you get the item — and everyone who chipped in
-					earns XP for helping the herd land it.
+					Your Sounder pitches in snouts. When a Trough fills, the item lands
+					with the friend who opened it.
 				</Text>
 			</View>
 
@@ -225,11 +172,12 @@ export function TroughSection({
 				// even while the drive still has a gap for others to close.
 				const open = !d.is_mine && gap > 0 && headroom > 0;
 
-				// Reward caption: XP (now, first/day) + the item lands for a friend.
-				// Tickle payout for donating is retired (spec 15).
+				// Reward caption: XP (first donation/day) + the small immediate
+				// tickle thank-you configured by the current server function.
 				const rewardBits: string[] = [];
 				rewardBits.push("helps your Sounder land it");
 				if (!donatedToday) rewardBits.push("+5 XP now");
+				if (amt >= 100) rewardBits.push(`+${Math.floor(amt / 100)} tickle now`);
 
 				return (
 					<View key={d.id} style={styles.card}>
@@ -373,48 +321,39 @@ export function TroughSection({
 }
 
 const styles = StyleSheet.create({
-	wrap: { marginTop: 8 },
+	wrap: { gap: SPACE.md },
 	explainer: {
-		backgroundColor: WHIMSY.cream,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		padding: 10,
-		marginBottom: 10,
+		gap: SPACE.xs,
+		paddingBottom: SPACE.sm,
 	},
 	explainerTitle: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 13,
+		...TYPE.cardTitle,
 		color: WHIMSY.ink,
-		marginBottom: 3,
 	},
 	explainerBody: {
-		fontFamily: FONTS.hand,
-		fontSize: 12.5,
+		...TYPE.bodySm,
 		color: WHIMSY.mute,
-		lineHeight: 17,
 	},
 	card: {
+		gap: SPACE.sm,
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 16,
-		padding: 12,
-		marginBottom: 10,
+		borderRadius: RADII.lg,
+		padding: SPACE.md,
+		...SHADOW_SM,
 	},
-	cardTop: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 },
+	cardTop: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
 	itemImg: { width: 44, height: 44 },
-	cardTitle: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
+	cardTitle: { ...TYPE.cardTitle, color: WHIMSY.ink },
 	unlocking: {
-		fontFamily: FONTS.bodyExtra,
-		fontSize: 12,
+		...TYPE.label,
 		color: WHIMSY.accent,
-		marginTop: 1,
 	},
-	cardSub: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute, marginTop: 1 },
+	cardSub: { ...TYPE.kicker, color: WHIMSY.mute },
 	track: {
 		height: 14,
-		borderRadius: 999,
+		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.cream2,
@@ -425,81 +364,76 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
-		marginTop: 4,
 	},
-	raised: { fontFamily: FONTS.bodyExtra, fontSize: 11, color: WHIMSY.mute },
-	toGo: { fontFamily: FONTS.bodyExtra, fontSize: 11, color: WHIMSY.ink },
-	socialRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 7 },
-	social: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.ink },
+	raised: { ...TYPE.label, color: WHIMSY.mute },
+	toGo: { ...TYPE.label, color: WHIMSY.ink },
+	socialRow: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
+	social: { ...TYPE.kicker, flex: 1, color: WHIMSY.ink },
 	amountHeader: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
-		marginTop: 12,
-		marginBottom: 6,
+		marginTop: SPACE.xs,
 	},
-	amountLabel: { fontFamily: FONTS.bodyExtra, fontSize: 11, color: WHIMSY.mute },
-	balanceTag: { flexDirection: "row", alignItems: "center", gap: 4 },
-	balanceText: { fontFamily: FONTS.bodyExtra, fontSize: 12, color: WHIMSY.ink },
-	presetRow: { flexDirection: "row", gap: 7, marginBottom: 9 },
+	amountLabel: { ...TYPE.label, color: WHIMSY.mute },
+	balanceTag: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
+	balanceText: { ...TYPE.label, color: WHIMSY.ink },
+	presetRow: { flexDirection: "row", gap: SPACE.sm },
 	preset: {
 		flex: 1,
-		paddingVertical: 7,
-		borderRadius: 10,
+		minHeight: 44,
+		justifyContent: "center",
+		borderRadius: RADII.md,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.cream,
 		alignItems: "center",
 	},
 	presetOn: { backgroundColor: WHIMSY.sun },
-	presetText: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.mute },
+	presetText: { ...TYPE.label, color: WHIMSY.mute },
 	presetTextOn: { color: WHIMSY.ink },
 	donateBtn: {
+		minHeight: 44,
+		justifyContent: "center",
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		paddingVertical: 10,
+		borderRadius: RADII.md,
 		alignItems: "center",
 	},
-	donateBtnText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+	donateBtnText: { ...TYPE.label, color: WHIMSY.ink },
 	nudgeBtn: {
+		minHeight: 44,
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
-		gap: 6,
-		marginTop: 10,
+		gap: SPACE.sm,
 		backgroundColor: WHIMSY.lilac,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 12,
-		paddingVertical: 9,
+		borderRadius: RADII.md,
+		paddingHorizontal: SPACE.sm,
 	},
-	nudgeBtnText: { fontFamily: FONTS.whimsy, fontSize: 14, color: WHIMSY.ink },
+	nudgeBtnText: { ...TYPE.label, color: WHIMSY.ink, textAlign: "center" },
 	reward: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
+		...TYPE.kicker,
 		color: WHIMSY.ink,
 		textAlign: "center",
-		marginTop: 6,
 	},
 	note: {
-		fontFamily: FONTS.hand,
-		fontSize: 12,
+		...TYPE.kicker,
 		color: WHIMSY.mute,
 		textAlign: "center",
-		marginTop: 8,
 	},
 	claimCard: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 8,
+		gap: SPACE.sm,
 		backgroundColor: WHIMSY.sage,
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
-		borderRadius: 14,
-		padding: 10,
-		marginBottom: 10,
+		borderRadius: RADII.lg,
+		padding: SPACE.md,
 	},
-	claimText: { flex: 1, fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.ink },
+	claimText: { ...TYPE.bodySm, flex: 1, color: WHIMSY.ink },
 });

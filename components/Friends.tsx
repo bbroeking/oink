@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	StyleSheet,
 	View,
@@ -7,7 +7,8 @@ import {
 	Pressable,
 	ActivityIndicator,
 	ScrollView,
-	Modal,
+	FlatList,
+	Modal
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../utils/supabase";
@@ -18,7 +19,7 @@ import {
 	getSuggestedUsers,
 	searchUsers,
 	sendFriendRequest,
-	type Profile,
+	type Profile
 } from "@/utils/friendships";
 import { ensurePushPermission } from "../utils/pushNotifications";
 import { fetchFriendsCrews } from "@/utils/crews";
@@ -28,11 +29,22 @@ import { Sticker } from "./ui/Sticker";
 import { UserSheet } from "./UserSheet";
 import { BarnVisitModal } from "./BarnVisitModal";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
-import { FONTS, KICKER_PILL, PAGE_PAD, RADII, SHADOW_SM, SPACE, TAB_SAFE, TYPE, WHIMSY } from "@/constants/theme";
+import {
+	FONTS,
+	KICKER_PILL,
+	PAGE_PAD,
+	RADII,
+	SHADOW_SM,
+	SPACE,
+	TAB_SAFE,
+	TYPE,
+	WHIMSY
+} from "@/constants/theme";
 import { AlignmentBadge } from "./ui/AlignmentBadge";
 import { PrestigeAvatar } from "./ui/PrestigeAvatar";
 import { Icon } from "./ui/Icon";
 import { Glyph } from "./ui/Glyph";
+import { PorchRoundLaunchCard } from "./PorchRoundLaunchCard";
 
 // PostgREST returns 1:1 joins either as an object or a length-1
 // array. Flatten so consumers can read .name directly.
@@ -48,7 +60,7 @@ type Tab = "friends" | "add";
 export default function Friends({
 	userId,
 	crewHook,
-	onViewSounder,
+	onViewSounder
 }: {
 	userId: string;
 	crewHook?: UseCrew;
@@ -77,12 +89,8 @@ export default function Friends({
 	// it ONCE per list load — not per row — and use it to gate every visit
 	// button. null until fetched → treat as available (don't gate on unknown).
 	const [visitsLeft, setVisitsLeft] = useState<number | null>(null);
-	// visits_refresh_at is still fetched (it's part of the status envelope) but
-	// no longer drives any copy: the day-rhythm ruling retired the "resets in Xh"
-	// countdown from this surface. Kept so the fetch shape stays intact and a
-	// future non-countdown use can read it without re-plumbing.
-	const [visitsRefreshAt, setVisitsRefreshAt] = useState<string | null>(null);
 	const noVisitsLeft = visitsLeft === 0;
+	const [porchRefreshKey, setPorchRefreshKey] = useState(0);
 
 	// The caller's pinned friends (friend_favorites). Direct table read under
 	// RLS — fail-soft to empty if the migration is dark (pre-push) so the list
@@ -107,9 +115,7 @@ export default function Friends({
 						.delete()
 						.eq("user_id", userId)
 						.eq("friend_id", friendId)
-				: await supabase
-						.from("friend_favorites")
-						.insert({ user_id: userId, friend_id: friendId });
+				: await supabase.from("friend_favorites").insert({ user_id: userId, friend_id: friendId });
 			if (error) {
 				// Revert the optimistic flip — the pin didn't stick.
 				setFavorites((prev) => {
@@ -146,21 +152,22 @@ export default function Friends({
 				(async () => {
 					const rich = await supabase
 						.from("profiles")
-						.select("id, username, tickles_earned, discriminator, alignment_score, active_hat_id, wallow_count, active_hat:hats!profiles_active_hat_id_fkey(name)")
+						.select(
+							"id, username, tickles_earned, discriminator, alignment_score, active_hat_id, wallow_count, active_hat:hats!profiles_active_hat_id_fkey(name)"
+						)
 						.in("id", capped);
 					if (!rich.error) return rich;
 					return supabase
 						.from("profiles")
-						.select("id, username, tickles_earned, discriminator, alignment_score, active_hat_id, active_hat:hats!profiles_active_hat_id_fkey(name)")
+						.select(
+							"id, username, tickles_earned, discriminator, alignment_score, active_hat_id, active_hat:hats!profiles_active_hat_id_fkey(name)"
+						)
 						.in("id", capped);
 				})(),
 				fetchFriendsCrews(),
 				// Pinned set — one owner-only select. Fail-soft to empty (a dark
 				// migration / RLS miss just leaves the list unsorted-by-favorite).
-				supabase
-					.from("friend_favorites")
-					.select("friend_id")
-					.eq("user_id", userId),
+				supabase.from("friend_favorites").select("friend_id").eq("user_id", userId)
 			]);
 			const list = (profileRes.data as Profile[]) ?? [];
 			setFriends(list);
@@ -168,11 +175,7 @@ export default function Friends({
 			setFavorites(
 				favRes.error
 					? new Set()
-					: new Set(
-							((favRes.data as { friend_id: string }[] | null) ?? []).map(
-								(r) => r.friend_id
-							)
-						)
+					: new Set(((favRes.data as { friend_id: string }[] | null) ?? []).map((r) => r.friend_id))
 			);
 
 			// Read the shared visit budget once. barn_visit_status's
@@ -194,31 +197,24 @@ export default function Friends({
 					}>("barn_visit_status", { p_target: probe.id }),
 					rpcAction<{
 						pairs?: { target_id: string; locked: boolean }[];
-					}>("barn_pair_locks", { p_targets: list.map((p) => p.id) }),
+					}>("barn_pair_locks", { p_targets: list.map((p) => p.id) })
 				]);
 				if (st.ok) {
 					setVisitsLeft(st.visits_left ?? null);
-					setVisitsRefreshAt(st.visits_refresh_at ?? null);
 				}
 				setPairLocked(
 					locks.ok
-						? new Set(
-								(locks.pairs ?? [])
-									.filter((p) => p.locked)
-									.map((p) => p.target_id)
-							)
+						? new Set((locks.pairs ?? []).filter((p) => p.locked).map((p) => p.target_id))
 						: new Set()
 				);
 			} else {
 				setVisitsLeft(null);
-				setVisitsRefreshAt(null);
 				setPairLocked(new Set());
 			}
 		} else {
 			setFriends([]);
 			setCrewNames(new Map());
 			setVisitsLeft(null);
-			setVisitsRefreshAt(null);
 			setPairLocked(new Set());
 			setFavorites(new Set());
 		}
@@ -240,24 +236,28 @@ export default function Friends({
 			    per-segment kicker, title, AND title rule; anything here
 			    doubles it. */}
 			<View style={styles.tabsRow}>
-				<TabBtn label={`Friends · ${friends.length}`} active={tab === "friends"} onPress={() => setTab("friends")} />
+				<TabBtn
+					label={`Friends · ${friends.length}`}
+					active={tab === "friends"}
+					onPress={() => setTab("friends")}
+				/>
 				<TabBtn label="Add" active={tab === "add"} onPress={() => setTab("add")} />
 			</View>
 
-			{/* Scrollable list area — at 100-friend cap the sticker
-			    would otherwise overflow off the bottom of the screen
-			    with no way to reach the lower rows. paddingBottom on
-			    the contentContainer keeps the last row clear of the
-			    hanging-signs tab bar. */}
-			<ScrollView
-				style={styles.scroll}
-				contentContainerStyle={styles.scrollContent}
-				showsVerticalScrollIndicator={false}
-			>
-				{/* Your own Sounder — pinned to the top of the friends list so the
-				    hub shows the herd you ride with, not just the people you follow.
-				    Taps through to the Sounder segment. Only when you're in a crew. */}
-				{tab === "friends" && crewHook?.crew.crew && (
+			{tab === "friends" ? (
+				<FriendsList
+					friends={friends}
+					crewNames={crewNames}
+					visitsSpent={noVisitsLeft}
+					pairLocked={pairLocked}
+					favorites={favorites}
+					onToggleFavorite={toggleFavorite}
+					onPick={setSelectedUserId}
+					onVisit={(f) => setVisiting({ id: f.id, name: f.username ?? "friend" })}
+					header={
+						<>
+						<PorchRoundLaunchCard refreshKey={porchRefreshKey} />
+						{crewHook?.crew.crew ? (
 					<Pressable
 						onPress={onViewSounder}
 						accessibilityRole="button"
@@ -273,25 +273,19 @@ export default function Friends({
 						</View>
 						<Text style={styles.sounderView}>View ›</Text>
 					</Pressable>
-				)}
-
-				{tab === "friends" && (
-					<FriendsList
-						friends={friends}
-						crewNames={crewNames}
-						visitsSpent={noVisitsLeft}
-						pairLocked={pairLocked}
-						favorites={favorites}
-						onToggleFavorite={toggleFavorite}
-						onPick={setSelectedUserId}
-						onVisit={(f) =>
-							setVisiting({ id: f.id, name: f.username ?? "friend" })
+						) : null}
+						</>
 						}
 					/>
-				)}
-
-				{tab === "add" && <AddFriend userId={userId} onSent={load} />}
+			) : (
+				<ScrollView
+					style={styles.scroll}
+					contentContainerStyle={styles.scrollContent}
+					showsVerticalScrollIndicator={false}
+				>
+					<AddFriend userId={userId} onSent={load} />
 			</ScrollView>
+			)}
 
 			<UserSheet
 				targetUserId={selectedUserId}
@@ -304,11 +298,7 @@ export default function Friends({
 			    so from this non-modal screen it needs its own Modal to cover
 			    the tab bar. */}
 			{visiting && (
-				<Modal
-					visible
-					animationType="slide"
-					onRequestClose={() => setVisiting(null)}
-				>
+				<Modal visible animationType="slide" onRequestClose={() => setVisiting(null)}>
 					<BarnVisitModal
 						targetUserId={visiting.id}
 						targetName={visiting.name}
@@ -318,6 +308,7 @@ export default function Friends({
 							// friend out — reload so the row's pair-lock (and the
 							// window-global budget) reflects the fresh state.
 							load();
+							setPorchRefreshKey((key) => key + 1);
 						}}
 					/>
 				</Modal>
@@ -330,20 +321,15 @@ export default function Friends({
 function TabBtn({
 	label,
 	active,
-	onPress,
+	onPress
 }: {
 	label: string;
 	active: boolean;
 	onPress: () => void;
 }) {
 	return (
-		<Pressable
-			onPress={onPress}
-			style={[styles.tabBtn, active && styles.tabBtnActive]}
-		>
-			<Text style={[styles.tabBtnText, active && styles.tabBtnTextActive]}>
-				{label}
-			</Text>
+		<Pressable onPress={onPress} style={[styles.tabBtn, active && styles.tabBtnActive]}>
+			<Text style={[styles.tabBtnText, active && styles.tabBtnTextActive]}>{label}</Text>
 		</Pressable>
 	);
 }
@@ -359,7 +345,7 @@ const AVATAR_TINTS = [
 	WHIMSY.sky,
 	WHIMSY.sage,
 	WHIMSY.lilac,
-	WHIMSY.peach,
+	WHIMSY.peach
 ] as const;
 function tintFor(name: string | null | undefined): string {
 	if (!name) return WHIMSY.cream;
@@ -386,6 +372,7 @@ function FriendsList({
 	onToggleFavorite,
 	onPick,
 	onVisit,
+	header
 }: {
 	friends: Profile[];
 	crewNames: Map<string, string>;
@@ -403,46 +390,65 @@ function FriendsList({
 	onToggleFavorite: (friendId: string) => void;
 	onPick: (id: string) => void;
 	onVisit: (friend: Profile) => void;
+	header?: React.ReactNode;
 }) {
 	// Alignment isn't a thing in Season 1 — the badge retires with S0.
 	const s1 = useFeatureFlag("world_boss") || __DEV__;
+	const sorted = useMemo(
+		() =>
+			[...friends].sort((a, b) => {
+				const fa = favorites.has(a.id) ? 0 : 1;
+				const fb = favorites.has(b.id) ? 0 : 1;
+				if (fa !== fb) return fa - fb;
+				return (a.username ?? "").localeCompare(b.username ?? "");
+			}),
+		[favorites, friends]
+	);
 	if (friends.length === 0) {
 		return (
+			<View style={styles.scroll}>
+				{header}
 			<Sticker color="paper" rotate={-0.5} radius={12} style={styles.empty}>
 				<Text style={styles.emptyText}>
 					No friends yet. Tap “Add” to send your first request.
 				</Text>
 			</Sticker>
+			</View>
 		);
 	}
 	// Favorites first (alphabetical within), then everyone else alphabetically —
 	// the existing predictable order, just with pinned friends floated up.
-	const sorted = [...friends].sort((a, b) => {
-		const fa = favorites.has(a.id) ? 0 : 1;
-		const fb = favorites.has(b.id) ? 0 : 1;
-		if (fa !== fb) return fa - fb;
-		return (a.username ?? "").localeCompare(b.username ?? "");
-	});
 	const atCap = sorted.length >= FRIEND_CAP_LIMIT;
 	return (
+		<FlatList
+			style={styles.scroll}
+			contentContainerStyle={styles.scrollContent}
+			data={sorted}
+			keyExtractor={(friend) => friend.id}
+			initialNumToRender={10}
+			maxToRenderPerBatch={8}
+			windowSize={7}
+			removeClippedSubviews
+			showsVerticalScrollIndicator={false}
+			ListHeaderComponent={
 	  <>
-		{/* Global "tickled out" — you've spent your whole barn budget. One
-		    day-rhythm hint above the list (no countdown, no reset time — the
-		    charter never punishes the hours between). Every visit button below
-		    dims + disables to match; no per-row tags in this state. */}
+					{header}
 		{visitsSpent && (
 			<View style={styles.visitsSpentHint}>
 				<Icon name="tabBarn" size={14} color={WHIMSY.accent} />
-				<Text style={styles.visitsSpentText}>
-					all tickled out — your snout needs a rest
-				</Text>
+							<Text style={styles.visitsSpentText}>all tickled out — your snout needs a rest</Text>
 			</View>
 		)}
-		{/* rotate 0: on a tall list even a fraction of a degree shears the
-		    bottom corners sideways out of the scroll clip — tilt is for
-		    small stickers only. */}
-		<Sticker color="paper" rotate={0} radius={14} style={styles.listSticker}>
-			{sorted.map((f, i) => {
+				</>
+			}
+			ListFooterComponent={
+				atCap ? (
+					<Text style={styles.atCapFooter}>
+						★ you're at the {FRIEND_CAP_LIMIT}-friend cap · remove someone to add new friends
+					</Text>
+				) : null
+			}
+			renderItem={({ item: f, index: i }) => {
 				const last = i === sorted.length - 1;
 				const wears = hatName(f);
 				const crewName = crewNames.get(f.id);
@@ -458,9 +464,14 @@ function FriendsList({
 				const isFav = favorites.has(f.id);
 				return (
 					<Pressable
-						key={f.id}
 						onPress={() => onPick(f.id)}
-						style={[styles.flatRow, !last && styles.flatRowDivider]}
+						style={[
+							styles.flatRow,
+							styles.virtualFriendRow,
+							i === 0 && styles.virtualFriendRowFirst,
+							last && styles.virtualFriendRowLast,
+							!last && styles.flatRowDivider
+						]}
 					>
 						{/* PigAvatar instead of the initial circle — the
 						    equipped hat shows up as an inline icon on
@@ -478,9 +489,7 @@ function FriendsList({
 								<Text style={styles.rowName} numberOfLines={1}>
 									{f.username ?? "—"}
 								</Text>
-								{!!f.discriminator && (
-									<Text style={styles.rowDisc}>#{f.discriminator}</Text>
-								)}
+								{!!f.discriminator && <Text style={styles.rowDisc}>#{f.discriminator}</Text>}
 							</View>
 							{/* Second line — "wears X" when a hat is equipped.
 							    Falls back to the ♥ + alignment meta so naked
@@ -492,17 +501,11 @@ function FriendsList({
 							) : (
 							<View style={styles.rowMetaLine}>
 								<Glyph name="heart" size={12} />
-								<Text style={styles.rowMeta}>
-									{(f.tickles_earned ?? 0).toLocaleString()}
-								</Text>
+									<Text style={styles.rowMeta}>{(f.tickles_earned ?? 0).toLocaleString()}</Text>
 								{!s1 && typeof f.alignment_score === "number" && (
 									<>
 										<View style={styles.rowMetaDot} />
-										<AlignmentBadge
-											score={f.alignment_score}
-											size="sm"
-											compact
-										/>
+											<AlignmentBadge score={f.alignment_score} size="sm" compact />
 									</>
 								)}
 							</View>
@@ -528,10 +531,7 @@ function FriendsList({
 									? `Unpin ${f.username ?? "friend"} from the top`
 									: `Pin ${f.username ?? "friend"} to the top`
 							}
-							style={({ pressed }) => [
-								styles.rowFavBtn,
-								pressed && styles.rowFavBtnPressed,
-							]}
+							style={({ pressed }) => [styles.rowFavBtn, pressed && styles.rowFavBtnPressed]}
 						>
 							<Icon
 								name="star"
@@ -575,7 +575,7 @@ function FriendsList({
 							style={({ pressed }) => [
 								styles.rowVisitBtn,
 								rowSpent && styles.rowVisitBtnSpent,
-								pressed && !rowSpent && styles.rowVisitBtnPressed,
+								pressed && !rowSpent && styles.rowVisitBtnPressed
 							]}
 						>
 							<Icon name="tabBarn" size={18} color={WHIMSY.ink} />
@@ -583,18 +583,8 @@ function FriendsList({
 						<Text style={styles.rowChevron}>›</Text>
 					</Pressable>
 				);
-			})}
-		</Sticker>
-		{/* At-cap notice — surfaces the 100-friend ceiling once it's
-		    actually reached. Doesn't render in the (overwhelmingly
-		    common) under-cap case, so it never clutters the list. */}
-		{atCap && (
-			<Text style={styles.atCapFooter}>
-				★ you're at the {FRIEND_CAP_LIMIT}-friend cap · remove someone
-				to add new friends
-			</Text>
-		)}
-	  </>
+			}}
+		/>
 	);
 }
 
@@ -642,10 +632,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 		if (sending) return;
 		setSending(target.id);
 		setFeedback("");
-		const r = await sendFriendRequest(
-			target.username,
-			target.discriminator ?? null
-		);
+		const r = await sendFriendRequest(target.username, target.discriminator ?? null);
 		setSending(null);
 		if (!r?.ok) {
 			const reason = r?.reason;
@@ -707,20 +694,13 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 					{results.map((p, i) => {
 						const last = i === results.length - 1;
 						return (
-							<View
-								key={p.id}
-								style={[styles.flatRow, !last && styles.flatRowDivider]}
-							>
+							<View key={p.id} style={[styles.flatRow, !last && styles.flatRowDivider]}>
 								<InitialAvatar name={p.username} />
 								<View style={{ flex: 1, minWidth: 0 }}>
 									<Text style={styles.rowName} numberOfLines={1}>
 										{p.username}
 									</Text>
-									{!!p.discriminator && (
-										<Text style={styles.rowDisc}>
-											#{p.discriminator}
-										</Text>
-									)}
+									{!!p.discriminator && <Text style={styles.rowDisc}>#{p.discriminator}</Text>}
 								</View>
 								<Pressable
 									onPress={() => send(p)}
@@ -728,12 +708,10 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 									style={({ pressed }) => [
 										styles.actionBtn,
 										styles.actionAccept,
-										pressed && { opacity: 0.7 },
+										pressed && { opacity: 0.7 }
 									]}
 								>
-									<Text style={styles.actionAcceptText}>
-										{sending === p.id ? "…" : "Add"}
-									</Text>
+									<Text style={styles.actionAcceptText}>{sending === p.id ? "…" : "Add"}</Text>
 								</Pressable>
 							</View>
 						);
@@ -743,8 +721,8 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 
 			{!searching && query.length >= 1 && results.length === 0 && (
 				<Text style={styles.emptyText}>
-					No users found. Discriminators (#1234) are auto-assigned;
-					ask your friend to share their code from their Account page.
+					No users found. Discriminators (#1234) are auto-assigned; ask your friend to share their
+					code from their Account page.
 				</Text>
 			)}
 
@@ -758,10 +736,7 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 						{suggestions.map((p, i) => {
 							const last = i === suggestions.length - 1;
 							return (
-								<View
-									key={p.id}
-									style={[styles.flatRow, !last && styles.flatRowDivider]}
-								>
+								<View key={p.id} style={[styles.flatRow, !last && styles.flatRowDivider]}>
 									<InitialAvatar name={p.username} />
 									<View style={{ flex: 1, minWidth: 0 }}>
 										<Text style={styles.rowName} numberOfLines={1}>
@@ -777,12 +752,10 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 										style={({ pressed }) => [
 											styles.actionBtn,
 											styles.actionAccept,
-											pressed && { opacity: 0.7 },
+											pressed && { opacity: 0.7 }
 										]}
 									>
-										<Text style={styles.actionAcceptText}>
-											{sending === p.id ? "…" : "Add"}
-										</Text>
+										<Text style={styles.actionAcceptText}>{sending === p.id ? "…" : "Add"}</Text>
 									</Pressable>
 								</View>
 							);
@@ -797,9 +770,8 @@ function AddFriend({ userId, onSent }: { userId: string; onSent: () => void }) {
 			    nudge. */}
 			{query.length === 0 && (
 				<Text style={styles.referralFooter}>
-					★ share your code from{" "}
-					<Text style={styles.referralFooterBold}>Account</Text>
-						{" "}for 100 tickles
+					★ share your code from <Text style={styles.referralFooterBold}>Account</Text> for 100
+					tickles
 				</Text>
 			)}
 		</View>
@@ -823,14 +795,14 @@ const styles = StyleSheet.create({
 		paddingVertical: SPACE.sm,
 		paddingHorizontal: SPACE.md,
 		marginBottom: SPACE.md,
-		...SHADOW_SM,
+		...SHADOW_SM
 	},
 	sounderText: { flex: 1 },
 	sounderKicker: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
 		color: WHIMSY.accent,
-		letterSpacing: 0.4,
+		letterSpacing: 0.4
 	},
 	sounderName: { ...TYPE.cardTitle, color: WHIMSY.ink },
 	sounderView: { fontFamily: FONTS.display, fontSize: 13, color: WHIMSY.ink },
@@ -840,23 +812,23 @@ const styles = StyleSheet.create({
 		borderRadius: 12,
 		padding: 4,
 		marginBottom: 12,
-		gap: 4,
+		gap: 4
 	},
 	tabBtn: {
 		flex: 1,
 		paddingVertical: 8,
 		paddingHorizontal: 6,
 		borderRadius: 8,
-		alignItems: "center",
+		alignItems: "center"
 	},
 	tabBtnActive: {
-		backgroundColor: WHIMSY.lilac,
+		backgroundColor: WHIMSY.lilac
 	},
 	tabBtnText: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 13,
 		color: WHIMSY.mute,
-		letterSpacing: 0.4,
+		letterSpacing: 0.4
 	},
 	tabBtnTextActive: { color: WHIMSY.ink },
 	list: { gap: 8 },
@@ -864,17 +836,34 @@ const styles = StyleSheet.create({
 	// dashed bottom borders. From the redesign's single-card scrapbook
 	// pattern.
 	listSticker: { paddingHorizontal: 0, paddingVertical: 4 },
+	virtualFriendRow: {
+		backgroundColor: WHIMSY.paper,
+		borderLeftWidth: 2,
+		borderRightWidth: 2,
+		borderColor: WHIMSY.ink
+	},
+	virtualFriendRowFirst: {
+		borderTopWidth: 2,
+		borderTopLeftRadius: RADII.lg,
+		borderTopRightRadius: RADII.lg
+	},
+	virtualFriendRowLast: {
+		borderBottomWidth: 2,
+		borderBottomLeftRadius: RADII.lg,
+		borderBottomRightRadius: RADII.lg,
+		marginBottom: SPACE.sm
+	},
 	flatRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		paddingHorizontal: 14,
 		paddingVertical: 12,
-		gap: 12,
+		gap: 12
 	},
 	flatRowDivider: {
 		borderBottomWidth: 1.5,
 		borderBottomColor: WHIMSY.muteSoft,
-		borderStyle: "dashed",
+		borderStyle: "dashed"
 	},
 	// Initial-circle avatar — colored disc with the first letter, used
 	// in Friends + Add suggestions.
@@ -885,27 +874,27 @@ const styles = StyleSheet.create({
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
-		justifyContent: "center",
+		justifyContent: "center"
 	},
 	avatarInitial: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 18,
-		color: WHIMSY.ink,
+		color: WHIMSY.ink
 	},
 	rowNameLine: {
 		flexDirection: "row",
 		alignItems: "baseline",
-		gap: 6,
+		gap: 6
 	},
 	rowName: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
 		color: WHIMSY.ink,
-		flexShrink: 1,
+		flexShrink: 1
 	},
 	rowDisc: {
 		...TYPE.label,
-		color: WHIMSY.mute,
+		color: WHIMSY.mute
 	},
 	// PigAvatar wrapper — a small ink-bordered tile so the sprite
 	// reads as an avatar slot inside the flat row rather than a
@@ -919,41 +908,41 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.cream,
 		alignItems: "center",
 		justifyContent: "center",
-		overflow: "hidden",
+		overflow: "hidden"
 	},
 	rowWearsText: {
 		...TYPE.label,
 		color: WHIMSY.mute,
-		marginTop: 4,
+		marginTop: 4
 	},
 	rowCrewText: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
 		color: WHIMSY.accent,
-		marginTop: 2,
+		marginTop: 2
 	},
 	rowMetaLine: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 6,
-		marginTop: 4,
+		marginTop: 4
 	},
 	rowMeta: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
-		color: WHIMSY.mute,
+		color: WHIMSY.mute
 	},
 	rowMetaDot: {
 		width: 3,
 		height: 3,
 		borderRadius: 2,
-		backgroundColor: WHIMSY.muteSoft,
+		backgroundColor: WHIMSY.muteSoft
 	},
 	rowChevron: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 22,
 		color: WHIMSY.mute,
-		paddingLeft: 8,
+		paddingLeft: 8
 	},
 	// Favorite star — a small tap target beside the visit door. No chip chrome
 	// (the star itself IS the affordance); a light press dim matches the house
@@ -962,7 +951,7 @@ const styles = StyleSheet.create({
 		width: 30,
 		height: 30,
 		alignItems: "center",
-		justifyContent: "center",
+		justifyContent: "center"
 	},
 	rowFavBtnPressed: { opacity: 0.55 },
 	// Per-row barn door — small sun circle so "visit" reads as the row's
@@ -976,7 +965,7 @@ const styles = StyleSheet.create({
 		backgroundColor: WHIMSY.sun,
 		alignItems: "center",
 		justifyContent: "center",
-		marginLeft: 8,
+		marginLeft: 8
 	},
 	rowVisitBtnPressed: { backgroundColor: WHIMSY.cream2 },
 	// Out-of-visits: keep the button's shape (the taste standard's "a button,
@@ -988,7 +977,7 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.hand,
 		fontSize: 11,
 		color: WHIMSY.mute,
-		marginLeft: SPACE.xs,
+		marginLeft: SPACE.xs
 	},
 	// One-time "out of visits" hint above the list.
 	visitsSpentHint: {
@@ -1003,18 +992,18 @@ const styles = StyleSheet.create({
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		borderRadius: RADII.lg,
-		...SHADOW_SM,
+		...SHADOW_SM
 	},
 	visitsSpentText: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
-		color: WHIMSY.ink,
+		color: WHIMSY.ink
 	},
 	// Add panel — paper sticker with magnifier + input.
 	searchCard: { paddingVertical: 12, paddingHorizontal: 14 },
 	kickerSmall: {
 		...KICKER_PILL,
-		marginBottom: 8,
+		marginBottom: 8
 	},
 	searchInputRow: {
 		flexDirection: "row",
@@ -1025,84 +1014,84 @@ const styles = StyleSheet.create({
 		borderRadius: 12,
 		backgroundColor: WHIMSY.cream,
 		paddingHorizontal: 12,
-		paddingVertical: 8,
+		paddingVertical: 8
 	},
 	inputFlat: {
 		flex: 1,
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 14,
 		color: WHIMSY.ink,
-		paddingVertical: 0,
+		paddingVertical: 0
 	},
 	referralFooter: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.mute,
 		textAlign: "center",
-		marginTop: 16,
+		marginTop: 16
 	},
 	atCapFooter: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.accent,
 		textAlign: "center",
-		marginTop: 14,
+		marginTop: 14
 	},
 	referralFooterBold: {
 		fontFamily: FONTS.bodyBlack,
-		color: WHIMSY.ink,
+		color: WHIMSY.ink
 	},
 	actionBtn: {
 		paddingHorizontal: 14,
 		paddingVertical: 7,
 		borderRadius: 12,
-		borderWidth: 1.5,
+		borderWidth: 1.5
 	},
 	actionAccept: {
 		backgroundColor: WHIMSY.lilac,
-		borderColor: WHIMSY.ink,
+		borderColor: WHIMSY.ink
 	},
 	actionAcceptText: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 13,
-		color: WHIMSY.ink,
+		color: WHIMSY.ink
 	},
 	actionCancel: {
 		backgroundColor: "transparent",
-		borderColor: WHIMSY.mute,
+		borderColor: WHIMSY.mute
 	},
 	actionCancelText: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
-		color: WHIMSY.mute,
+		color: WHIMSY.mute
 	},
 	empty: {
 		paddingHorizontal: 16,
-		paddingVertical: 16,
+		paddingVertical: 16
 	},
 	emptyText: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.mute,
 		textAlign: "center",
-		lineHeight: 19,
+		lineHeight: 19
 	},
 	addWrap: { gap: 10 },
 	feedback: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.accent,
-		paddingHorizontal: 4,
+		paddingHorizontal: 4
 	},
 	searching: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: 8,
-		paddingHorizontal: 4,
+		paddingHorizontal: 4
 	},
 	searchingText: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
-		color: WHIMSY.mute,
-	},
+		color: WHIMSY.mute
+	}
 });

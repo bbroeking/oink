@@ -1,4 +1,4 @@
-// The Field Guide — client unlock state + the reveal queue (spec 16).
+// The Field Guide — client unlock state (spec 16).
 //
 // The Field Guide is the evergreen economy-discovery journal beside the seasonal
 // Burrow Book. A page is a silhouette until the player first MEETS the thing;
@@ -8,8 +8,8 @@
 // FAIL-SOFT, like storybook_seen (utils/onboarding): unlock state mirrors in
 // AsyncStorage so the whole feature works against today's prod schema (no table,
 // no RPCs). observeFieldGuide marks the local mirror + fires the idempotent
-// unlock RPC + enqueues ONE ceremony reveal, all fail-soft — an un-pushed server,
-// offline, or a double-fire can never wedge or double-reveal.
+// unlock RPC, all fail-soft — an un-pushed server or offline session never
+// prevents the page from appearing in the Guide.
 //
 // DEPENDENCY NOTE: AsyncStorage + the rpc chain are require()d lazily inside the
 // async paths so importing this module stays pure — nothing native for a test to
@@ -60,6 +60,7 @@ export function deriveUnlockedPages(
 // ── In-memory unlock mirror ───────────────────────────────────────────────────
 const STORAGE_KEY = "field_guide_unlocks_v1";
 let unlocked = new Set<FieldGuidePageId>();
+let initialization: Promise<FieldGuidePageId[]> | null = null;
 
 /** The pages met so far this process (in shelf order). */
 export function unlockedPages(): FieldGuidePageId[] {
@@ -122,52 +123,32 @@ export async function fetchFieldGuideUnlocks(): Promise<FieldGuidePageId[]> {
 	return merged;
 }
 
-// ── The reveal queue ──────────────────────────────────────────────────────────
-// observeFieldGuide enqueues a NEW unlock here; the reveal component drains it
-// one at a time through the popup queue. Module-level so any observation site can
-// enqueue without threading context, and the single mounted reveal listens.
-const pending: FieldGuidePageId[] = [];
-const listeners = new Set<() => void>();
-
-function notify(): void {
-	for (const fn of listeners) {
-		try {
-			fn();
-		} catch {
-			// a bad listener never blocks the queue.
-		}
+/**
+ * Load the durable local + account state once per app process. Encounter paths
+ * await it so a fast first tap cannot race an empty in-memory mirror.
+ */
+export function initializeFieldGuide(): Promise<FieldGuidePageId[]> {
+	if (!initialization) {
+		initialization = (async () => {
+			await hydrateFieldGuideCache();
+			return fetchFieldGuideUnlocks();
+		})();
 	}
-}
-
-/** Subscribe the mounted reveal to queue changes. Returns an unsubscribe. */
-export function subscribeFieldGuideReveals(fn: () => void): () => void {
-	listeners.add(fn);
-	return () => {
-		listeners.delete(fn);
-	};
-}
-
-/** The next page waiting to be revealed (FIFO), or null. */
-export function peekPendingReveal(): FieldGuidePageId | null {
-	return pending[0] ?? null;
-}
-
-/** Pop a revealed page off the queue (called after its ceremony dismisses). */
-export function dequeueReveal(id: FieldGuidePageId): void {
-	const i = pending.indexOf(id);
-	if (i >= 0) {
-		pending.splice(i, 1);
-		notify();
-	}
+	return initialization;
 }
 
 /**
  * The client-observed encounter entry point. Idempotent + fail-soft: a page
  * already met (this process) is a no-op, so hot-path callers can fire it on
- * EVERY encounter. A first encounter marks the local mirror, fires the
- * idempotent unlock RPC (swallowed on failure), and enqueues ONE reveal.
+ * EVERY encounter. A first encounter marks the local mirror and fires the
+ * idempotent unlock RPC (swallowed on failure). Discovery stays visible in the
+ * Guide itself without interrupting play with a modal.
  */
 export function observeFieldGuide(id: FieldGuidePageId): void {
+	unlockFieldGuidePage(id);
+}
+
+function unlockFieldGuidePage(id: FieldGuidePageId): void {
 	if (!isFieldGuidePageId(id)) return;
 	if (unlocked.has(id)) return;
 	unlocked.add(id);
@@ -181,15 +162,22 @@ export function observeFieldGuide(id: FieldGuidePageId): void {
 	} catch {
 		// no rpc available (test env / offline) — the local mirror still stands.
 	}
-	if (!pending.includes(id)) {
-		pending.push(id);
-		notify();
-	}
 }
 
-/** Test seam: reset the mirror + the reveal queue to a clean process. */
+/**
+ * Snouts unlocks quietly like every other Field Guide page. Keep the argument
+ * for call-site compatibility; the lifetime threshold no longer controls a
+ * ceremony because Field Guide discoveries no longer interrupt play.
+ */
+export async function observeSnouts(
+	_lifetimeTickles: number | null
+): Promise<void> {
+	await initializeFieldGuide();
+	unlockFieldGuidePage("snouts");
+}
+
+/** Test seam: reset the mirror to a clean process. */
 export function resetFieldGuideForTests(): void {
 	unlocked = new Set();
-	pending.length = 0;
-	listeners.clear();
+	initialization = null;
 }

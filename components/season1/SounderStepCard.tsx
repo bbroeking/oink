@@ -31,6 +31,7 @@ import { NotifyChip } from "./GuardedCtaExtras";
 import { SpotlightTarget } from "@/components/ui/Spotlight";
 import type { FeedingCta } from "../mudwar/useFeedingCta";
 import { scheduleOpenReminder } from "@/utils/pushNotifications";
+import { patchCtaLabel } from "@/utils/rooting";
 import { markRejoinDismissed } from "@/utils/sounderPath";
 import { JOIN_SPOTLIGHT_TARGET_ID } from "@/hooks/useJoinSpotlight";
 import type { SounderStep } from "@/hooks/useSounderPath";
@@ -213,18 +214,15 @@ export function SounderStepCard({
 			{cta.phaseOpen ? (
 				<>
 					<Button size="md" variant="primary" full onPress={cta.start}>
-						Dig for truffles
+						{patchCtaLabel(true, cta.countdown)}
 					</Button>
 					<Text style={styles.sub}>root the patch</Text>
 					<Text style={styles.cooldown}>the patch closes in {cta.countdown}</Text>
 				</>
 			) : (
 				<>
-					{/* No countdown on the locked label — the WindowStrip caption
-					    above owns the schedule (same de-duplication as the home
-					    card's pill). */}
 					<Button size="md" variant="locked" full disabled>
-						he's guarding
+						{patchCtaLabel(false, cta.countdown)}
 					</Button>
 					<NotifyChip />
 				</>
@@ -251,7 +249,9 @@ function CompactStep({
 			? "still curious? — try a dig ›"
 			: step === "join"
 			? "still herdless — join a Sounder ›"
-			: "your herd's waiting — dig your first feeding ›";
+			: cta.phaseOpen
+				? `${patchCtaLabel(true, cta.countdown)} ›`
+				: `${patchCtaLabel(false, cta.countdown)} · oink me ›`;
 
 	const onPress = () => {
 		Haptics.selectionAsync().catch(() => {});
@@ -271,7 +271,15 @@ function CompactStep({
 	return (
 		<>
 			<Pressable onPress={onPress} style={({ pressed }) => [pressed && { opacity: 0.9 }]}>
-				<Sticker color="paper" rotate={-0.4} radius={RADII.md} style={styles.compact}>
+				<Sticker
+					color={step === "first_dig" && cta.phaseOpen ? "sun" : "paper"}
+					rotate={-0.4}
+					radius={RADII.md}
+					style={[
+						styles.compact,
+						step === "first_dig" && !cta.phaseOpen && styles.compactGuarded,
+					]}
+				>
 					<Glyph name="gem" size={16} />
 					<Text style={styles.compactLine}>{line}</Text>
 				</Sticker>
@@ -383,4 +391,5 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.bodyExtra,
 		color: WHIMSY.ink,
 	},
+	compactGuarded: { opacity: 0.72 },
 });

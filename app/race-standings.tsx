@@ -1,12 +1,12 @@
 // The Dig-Off — the full field. The season tab's Dig-Off card shows only the top
 // rows; this standalone page shows EVERY Sounder in rank order, revealed 25 at a
 // time. Three lenses share the same row grammar:
-//   • THIS WEEK (the default, scored by finds per digging snout);
+//   • THIS WEEK (the default, ranked by overall finds);
 //   • PAST WEEKS (lazy-loaded settled tables, newest first);
 //   • SEASON (cumulative finds across the whole season).
 // My own Sounder highlights IN PLACE (rowMine) whenever its row is in the
 // revealed slice; a sticky sun card appears above the list ONLY when it isn't —
-// paging hasn't reached my rank, or I'm sub-quorum / find-less. Never both, so
+// paging hasn't reached my rank, or I'm find-less. Never both, so
 // the pin never duplicates the #1 row (pinNeeded in utils/race.ts owns the rule).
 //
 // Route/file is technical (race-standings); all player-facing copy says "Dig-Off"
@@ -38,7 +38,7 @@ import {
 	perSnoutLabel,
 	pinNeeded,
 } from "@/utils/race";
-import { CrewLedger } from "@/components/season1/RaceSection";
+import { CrewLedger, SpoilsStrip } from "@/components/season1/RaceSection";
 import {
 	FONTS,
 	RADII,
@@ -236,7 +236,7 @@ function StandingsBody({
 	// Each lens remembers its own useful default: fairness while the race is live,
 	// tangible herd totals once a week (or season) becomes history.
 	const [metrics, setMetrics] = useState<Record<Board, Metric>>({
-		weekly: "perSnout",
+		weekly: "total",
 		history: "total",
 		season: "total",
 	});
@@ -344,20 +344,19 @@ function StandingsBody({
 				/>
 			)}
 
+			{board === "weekly" && <SpoilsStrip prizes={state.prizes} compact />}
+
 			<View style={styles.boardCard}>
 				<View style={styles.metricHeader}>
 					<Text style={styles.countingLabel}>counting ›</Text>
 					<MetricToggle value={metric} onChange={setMetric} compact />
 				</View>
-				{((board === "weekly" && metric === "total") ||
-					(board === "history" && metric === "total") ||
+				{((board === "history" && metric === "perSnout") ||
 					(board === "season" && metric === "perSnout")) && (
 					<Text style={styles.rankingNote}>
 						{board === "season"
 							? "season rank still follows overall finds"
-							: board === "history"
-								? "final rank was settled per snout"
-								: "official rank still follows per snout"}
+							: "final rank follows overall finds"}
 					</Text>
 				)}
 				<FlatList
@@ -623,7 +622,7 @@ function MySounderCard({
 						}`
 					: `#${mine.rank} · ${name} · ${perSnoutLabel(mine.avg)} per snout`;
 		} else {
-			line = "spoils need two diggers this week";
+			line = "dig this week for Monday's spoils";
 		}
 	} else {
 		const ranked = historyWeek?.ranked.find((row) => row.crew_id === myCrewId);
@@ -667,9 +666,8 @@ function MySounderCard({
 	);
 }
 
-// A weekly board row — modeled on SeasonRow's layout, scored by per-snout average.
-// Sub-quorum (grayed) rows carry no rank ("—") and read in mute colors, exactly
-// as the tab treats the bottom of the weekly field.
+// A board row — overall finds are the official weekly score; per-snout remains
+// available as a secondary comparison lens. Legacy unranked rows stay defensive.
 function ScoreRow({
 	row,
 	onPress,

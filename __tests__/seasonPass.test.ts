@@ -13,11 +13,32 @@ import {
 	prestigeMode,
 	readyTiers,
 	shownTrack,
+	tierWindow,
 	tierStatsFor,
 	tiersByNumber,
 	wallowClaimedSet,
 	wallowTiersByNumber,
 } from "@/utils/seasonPass";
+import fs from "fs";
+import path from "path";
+
+describe("premium reward fairness migrations", () => {
+	it("replaces every Season 2 paid tickle and boost slot with cosmetics", () => {
+		const sql = fs.readFileSync(
+			path.join(
+				process.cwd(),
+				"supabase/migrations/20260792000000_season2_premium_cosmetics_only.sql"
+			),
+			"utf8"
+		);
+		const updates = sql.match(/UPDATE public\.season_tiers SET/g) ?? [];
+
+		expect(updates).toHaveLength(9);
+		expect(sql).not.toMatch(/reward_type='(?:tickles|boost)'/);
+		expect(sql).toContain("season_id='snout_season_2'");
+		expect(sql).toContain("track='premium'");
+	});
+});
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -100,6 +121,59 @@ describe("claimedSet / tiersByNumber shaping", () => {
 		const map = wallowTiersByNumber([row(1, "premium", "tickles", { amount: 10 })]);
 		expect(map[1].free?.track).toBe("free");
 		expect(map[1].free?.reward_type).toBe("tickles");
+	});
+});
+
+describe("tierWindow", () => {
+	it("counts only the hidden forward tail as the player levels up", () => {
+		const tiers = Array.from({ length: 30 }, (_, i) => i + 1);
+		const atTier24 = tierWindow(tiers, 30, 24, () => false);
+
+		expect(atTier24.collapsedTiers).toEqual([22, 23, 24, 25, 26]);
+		expect(atTier24.forwardTiers).toEqual([27, 28, 29, 30]);
+		expect(tierWindow(tiers, 30, 25, () => false).forwardTiers).toEqual([
+			28, 29, 30,
+		]);
+		expect(tierWindow(tiers, 30, 28, () => false).forwardTiers).toEqual([]);
+	});
+
+	it("keeps a five-tier window at both pass boundaries", () => {
+		const tiers = Array.from({ length: 30 }, (_, i) => i + 1);
+
+		expect(tierWindow(tiers, 30, 1, () => false).collapsedTiers).toEqual([
+			1, 2, 3, 4, 5,
+		]);
+		expect(tierWindow(tiers, 30, 2, () => false).collapsedTiers).toEqual([
+			1, 2, 3, 4, 5,
+		]);
+		expect(tierWindow(tiers, 30, 30, () => false).collapsedTiers).toEqual([
+			26, 27, 28, 29, 30,
+		]);
+	});
+
+	it("keeps historical ready rewards and the next sparse reward visible", () => {
+		const window = tierWindow(
+			[1, 4, 10, 17, 30],
+			30,
+			12,
+			(tier) => tier === 4
+		);
+
+		expect(window.collapsedTiers).toEqual([4, 10, 17]);
+		expect(window.forwardTiers).toEqual([30]);
+	});
+
+	it("handles empty and unsorted tier catalogs deterministically", () => {
+		expect(tierWindow([], 30, 1, () => false)).toEqual({
+			collapsedTiers: [],
+			forwardTiers: [],
+		});
+		expect(
+			tierWindow([30, 24, 22, 23, 26, 25, 22], 30, 24, () => false)
+		).toEqual({
+			collapsedTiers: [22, 23, 24, 25, 26],
+			forwardTiers: [30],
+		});
 	});
 });
 

@@ -37,7 +37,7 @@ No App Store Connect products needed; purchases are simulated in the sim.
 
 1. **Xcode → New File → StoreKit Configuration File** (`ios/ttp/TickleThePig.storekit`).
    Add, with product IDs **exactly** matching `PRODUCT_IDS`:
-   - Auto-Renewable Subscription group "Slop Club": `monthly` ($3.99 / P1M), `yearly` ($29.99 / P1Y).
+   - Auto-Renewable Subscription group "Slop Club": `monthly` ($2.99 / P1M), `yearly` ($29.99 / P1Y).
    - Consumable: `season_pass` ($4.99).
 2. **Xcode → Edit Scheme → Run → Options → StoreKit Configuration → select the file.**
 3. **RevenueCat dashboard:** create the iOS app, map `monthly`/`yearly`/`season_pass`

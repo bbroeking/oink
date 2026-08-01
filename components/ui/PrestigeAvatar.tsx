@@ -68,10 +68,10 @@ const styles = StyleSheet.create({
 	badgeSmall: { minWidth: 22, paddingHorizontal: 3, paddingVertical: 1 },
 	badgeText: {
 		fontFamily: FONTS.bodyBlack,
-		fontSize: 10,
-		lineHeight: 11,
+			fontSize: 11,
+			lineHeight: 12,
 		textAlign: "center",
 		color: WHIMSY.ink,
 	},
-	badgeTextSmall: { fontSize: 8, lineHeight: 9 },
+		badgeTextSmall: { fontSize: 11, lineHeight: 12 },
 });

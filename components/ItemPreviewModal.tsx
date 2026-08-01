@@ -1,23 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-	Modal,
 	View,
 	Text,
-	Pressable,
 	StyleSheet,
 	Image,
-	ImageBackground,
 	Animated,
 } from "react-native";
 import { Sticker } from "./ui/Sticker";
 import { PigStage } from "./ui/PigStage";
 import { SnoutCoin } from "./ui/SnoutCoin";
-import { Button } from "./ui";
-import { rpc, rpcAction } from "@/utils/rpc";
+import { AdaptiveModalScaffold, Button } from "./ui";
+import { rpcAction } from "@/utils/rpc";
 import { showPurchaseToast } from "./PurchaseToast";
 import { HAT_IMAGES, HatRow, RARITY_COLORS } from "@/constants/hats";
-import { FONTS, MODAL_BACKDROP_BG, RARITY_BG_SOLID, WHIMSY, STICKER_SHADOW, RADII } from "@/constants/theme";
-import { Icon } from "./ui/Icon";
+import { FONTS, RARITY_BG_SOLID, WHIMSY, RADII } from "@/constants/theme";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
 
 // Tickle-particle preview — loops the same burst the Barn would
@@ -184,18 +180,12 @@ export function ItemPreviewModal({
 	onUnequip,
 	onTroughOpened,
 }: Props) {
-	// Measured preview-card side: the PigStage is a fixed 300pt canvas
-	// (item anchors are tuned in that space), so on narrow screens we
-	// SCALE the whole stage down to fit instead of letting overflow:hidden
-	// clip the pig's ears/sides ("can't see the full pig").
-	const [cardSide, setCardSide] = useState(0);
 	// Unmanaged native Modal (direct-tap from the shop, outside the popup queue):
 	// hold the queue while an item is previewed so a foreground poll can't present
 	// a queued popup over it — the #50152 wedge (issue #4). Keyed on `!!item` (the
 	// modal stays mounted with visible={false} when item is null).
 	useUnmanagedModalHold(!!item);
 	if (!item) return null;
-	const stageScale = cardSide > 0 ? Math.min(1, (cardSide - 12) / 300) : 1;
 	const rarity = item.rarity ?? "common";
 	const rarityColor = RARITY_COLORS[rarity];
 	const itemSrc = HAT_IMAGES[item.id] ?? null;
@@ -224,17 +214,17 @@ export function ItemPreviewModal({
 	const stageEquippedHeld = item.category === "held" ? previewSlot : null;
 
 	return (
-		<Modal visible={!!item} animationType="fade" transparent onRequestClose={onClose}>
-			<View style={styles.backdrop}>
+		<AdaptiveModalScaffold
+			visible={!!item}
+			onRequestClose={onClose}
+			bare
+			showCloseButton
+			closeLabel="Close item preview"
+			maxWidth={430}
+			contentContainerStyle={styles.modalContent}
+			testID="item-preview-modal"
+		>
 				<Sticker color="paper" rotate={-0.5} radius={RADII.xxl} style={styles.sheet}>
-					<Pressable
-						onPress={onClose}
-						style={styles.closeBtn}
-						hitSlop={12}
-					>
-						<Icon name="x" size={20} color={WHIMSY.ink} strokeWidth={2.4} />
-					</Pressable>
-
 					{/* Big preview. Two modes:
 					    • Backgrounds → render the image filling the
 					      preview card (no pig). The user will see it
@@ -393,8 +383,7 @@ export function ItemPreviewModal({
 						</View>
 					)}
 				</Sticker>
-			</View>
-		</Modal>
+		</AdaptiveModalScaffold>
 	);
 }
 
@@ -407,37 +396,18 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginTop: 6,
 	},
-	backdrop: {
-		flex: 1,
-		backgroundColor: MODAL_BACKDROP_BG,
+	modalContent: {
+		flexGrow: 1,
 		justifyContent: "center",
-		paddingHorizontal: 18,
+		padding: 6,
 	},
 	sheet: {
 		paddingHorizontal: 22,
-		// Top padding clears the 36pt ✕ (top 12 + 36 = 48) so the
+		// Top padding clears the scaffold's 44pt close affordance so the
 		// preview card — and the pig's ears inside it — can never
 		// slide under the dismiss target.
-		paddingTop: 52,
+		paddingTop: 58,
 		paddingBottom: 24,
-	},
-	closeBtn: {
-		position: "absolute",
-		// Push the X a bit further from the corner so it doesn't
-		// crowd the sticker border or rarity content beside it.
-		top: 12,
-		right: 16,
-		width: 36,
-		height: 36,
-		alignItems: "center",
-		justifyContent: "center",
-		zIndex: 30,
-		// Paper chip under the ✕ — stays legible even if future art
-		// bleeds near the corner.
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		borderRadius: RADII.xl,
 	},
 	previewCard: {
 		width: "100%",
@@ -490,7 +460,7 @@ const styles = StyleSheet.create({
 		marginBottom: 8,
 	},
 	rarityText: {
-		fontSize: 10,
+		fontSize: 11,
 		fontFamily: FONTS.bodyExtra,
 		color: WHIMSY.paper,
 		letterSpacing: 1.2,
@@ -499,14 +469,12 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 26,
 		color: WHIMSY.ink,
-		lineHeight: 28,
 		marginBottom: 4,
 	},
 	itemDesc: {
 		fontFamily: FONTS.hand,
 		fontSize: 15,
 		color: WHIMSY.mute,
-		lineHeight: 19,
 		marginBottom: 14,
 	},
 	ctaRow: {

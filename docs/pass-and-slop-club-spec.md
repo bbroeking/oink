@@ -84,8 +84,8 @@ can stay — they're not user-facing.
 
 ## Open items — confirm before building
 
-- **Pricing** (placeholders): Season Pass **$4.99** one-time/season;
-  Slop Club **$3.99/mo** or **$29.99/yr**.
+- **Pricing:** Season Pass **$4.99** one-time/season;
+  Slop Club **$2.99/mo** or **$29.99/yr**.
 - **Stipend amount**: suggest **250 snouts/month** (post the 10×
   price cut, that's ~3–4 cheap cosmetics — meaningful, not
   game-breaking).
@@ -129,5 +129,5 @@ places; this section ratifies them (SKILL.md decision log, 2026-07-20).
    claimed-state + next-date line. Chosen over the silent launch grant:
    a small monthly ritual on the membership surface.
 
-Shipped prices: Slop Club **$2.99/mo · $24.99/yr**, Season Pass
+Shipped prices: Slop Club **$2.99/mo · $29.99/yr**, Season Pass
 **$4.99** (see `utils/iap.ts` / ASC).

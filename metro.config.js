@@ -6,6 +6,10 @@ const { getDefaultConfig } = require("expo/metro-config");
 
 const config = getDefaultConfig(__dirname);
 
+if (!config.resolver.assetExts.includes("riv")) {
+	config.resolver.assetExts.push("riv");
+}
+
 const prior = config.resolver.blockList;
 config.resolver.blockList = [
 	...(Array.isArray(prior) ? prior : prior ? [prior] : []),

@@ -16,8 +16,8 @@ import {
 	Linking,
 } from "react-native";
 import { Sticker, Tape } from "./ui/Sticker";
-import { Button } from "./ui/Button";
-import { Icon } from "./ui/Icon";
+import { TicketButton } from "./ui/TicketButton";
+import { DialogCloseRow } from "./ui/DialogCloseRow";
 import { FONTS, KICKER_TEXT, MODAL_BACKDROP_BG, WHIMSY, RADII } from "@/constants/theme";
 import { restorePurchases } from "../utils/iap";
 
@@ -42,8 +42,8 @@ const PRIVACY_URL =
 
 const PASS_PERKS = [
 	"All 30 premium-track rewards",
-	"Exclusive premium-only hat",
-	"Boosts and snout bundles",
+	"Exclusive hats, props, auras, and scenes",
+	"Collectible rewards only — no gameplay advantage",
 ];
 
 // The Season Pass — a one-time, per-season unlock of the premium
@@ -76,13 +76,11 @@ export function BattlePassSaleModal({
 						style={styles.tapeTop}
 					/>
 					<Sticker color="paper" rotate={-0.6} radius={RADII.xxl} style={styles.sheet}>
-						<Pressable
+						<DialogCloseRow
 							onPress={onClose}
-							style={styles.closeBtn}
-							accessibilityLabel="Close"
-						>
-							<Icon name="x" size={22} color={WHIMSY.ink} strokeWidth={2.4} />
-						</Pressable>
+							label="Close season pass"
+							style={styles.closeRow}
+						/>
 
 						<ScrollView
 							showsVerticalScrollIndicator={false}
@@ -113,16 +111,15 @@ export function BattlePassSaleModal({
 										</View>
 									))}
 								</View>
-								<Button
-									variant="gold"
-									size="md"
-									full
-									disabled={busy}
+								<TicketButton
+									label="Unlock Season Pass"
+									stub={price}
+									tone="season"
+									loading={busy}
+									loadingLabel="Unlocking…"
 									onPress={onUnlock}
 									style={{ marginTop: 12 }}
-								>
-									Unlock the Season Pass · {price}
-								</Button>
+								/>
 							</Sticker>
 
 							<View style={styles.footer}>
@@ -164,15 +161,8 @@ const styles = StyleSheet.create({
 	sheetWrap: { position: "relative", paddingTop: 12 },
 	tapeTop: { position: "absolute", top: 0, alignSelf: "center", zIndex: 2 },
 	sheet: { maxHeight: "92%", overflow: "hidden" },
-	closeBtn: {
-		position: "absolute",
-		top: 8,
-		right: 10,
-		width: 30,
-		height: 30,
-		alignItems: "center",
-		justifyContent: "center",
-		zIndex: 3,
+	closeRow: {
+		marginBottom: -12,
 	},
 	body: { padding: 18, paddingTop: 22 },
 	kicker: { ...KICKER_TEXT, marginBottom: 4 },
@@ -246,5 +236,5 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textDecorationLine: "underline",
 	},
-	legalDot: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.muteSoft },
+	legalDot: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
 });

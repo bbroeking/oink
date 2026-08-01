@@ -20,11 +20,11 @@ import {
 	View,
 	Text,
 	Pressable,
-	Dimensions,
 	Image,
 	StyleSheet,
 	Animated,
 	Easing,
+  useWindowDimensions,
 	type StyleProp,
 	type ViewStyle,
 } from "react-native";
@@ -34,14 +34,43 @@ import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
 import { remainingMs } from "@/utils/duration";
 import { PigStage, type EquippedItem } from "./ui/PigStage";
-import { Shovel } from "./ui/Shovel";
 import { Glyph, IconText, glyphSource } from "./ui/Glyph";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { LoadingBeat } from "./ui/EmptyState";
+import { TruffleButton } from "./TruffleButton";
 import { HAT_IMAGES } from "@/constants/hats";
-import { FONTS, WHIMSY, COLORS, SHADOW_SM, SPACE, RADII, TYPE, MODAL_BACKDROP_BG } from "@/constants/theme";
-
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+import {
+  FONTS,
+  WHIMSY,
+  COLORS,
+  SHADOW_SM,
+  SPACE,
+  RADII,
+  TYPE,
+  MODAL_BACKDROP_BG,
+} from "@/constants/theme";
+import {
+  refreshVisitEmotes,
+  visitEmoteIds,
+  VISIT_EMOTE_IMAGES,
+  VISIT_EMOTE_META,
+  type VisitEmoteId,
+} from "@/utils/visitEmotes";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import {
+	GUESTBOOK_STAMP_IDS,
+	GUESTBOOK_STAMP_META,
+	type GuestbookStampId,
+} from "@/utils/guestbookStamps";
+import { trackInteraction } from "@/utils/interactionAnalytics";
+import {
+  kindnessCardFailureCopy,
+  parseKindnessCardOffer,
+  type KindnessCardOffer,
+} from "@/utils/kindnessCards";
+import { BLESSING_META } from "@/utils/rituals";
+import { recordPorchStop } from "@/utils/porchRound";
+import { isPigId, type PigId } from "@/utils/pigs";
 
 interface Props {
 	targetUserId: string;
@@ -67,15 +96,29 @@ interface EquipSet {
 	aura: Slot;
 	held: Slot;
 }
-const EMPTY_EQUIP: EquipSet = { hat: null, glasses: null, mask: null, neck: null, aura: null, held: null };
+const EMPTY_EQUIP: EquipSet = {
+  hat: null,
+  glasses: null,
+  mask: null,
+  neck: null,
+  aura: null,
+  held: null,
+};
 
 // Shape of a joined `hats` row (to-one FK). Supabase may surface a to-one embed
 // as a single object or a single-element array depending on the relation hint.
-type HatRow = { id?: string; category?: string | null; emoji?: string | null } | null;
-const one = (v: HatRow | HatRow[]): HatRow => (Array.isArray(v) ? v[0] ?? null : v ?? null);
+type HatRow = {
+  id?: string;
+  category?: string | null;
+  emoji?: string | null;
+} | null;
+const one = (v: HatRow | HatRow[]): HatRow =>
+  Array.isArray(v) ? (v[0] ?? null) : (v ?? null);
 const toSlot = (v: HatRow | HatRow[]): Slot => {
 	const row = one(v);
-	return row && row.id ? { id: row.id, category: row.category ?? null, emoji: row.emoji ?? null } : null;
+  return row && row.id
+    ? { id: row.id, category: row.category ?? null, emoji: row.emoji ?? null }
+    : null;
 };
 
 // Every active_* slot joined to `hats` (id + category + emoji). The active_*_id
@@ -109,10 +152,14 @@ interface BarnProfileRow extends ProfileEquipRow {
 	username: string | null;
 	tickles_earned: number | null;
 	active_background_id: string | null;
+	active_pig_id: string | null;
+	is_vip: boolean | null;
 }
 
 interface MyProfileRow extends ProfileEquipRow {
 	tickles_earned: number | null;
+	active_pig_id: string | null;
+  is_vip: boolean | null;
 }
 
 // "2h 15m" / "12m" until you can visit a different barn.
@@ -127,9 +174,36 @@ function lockLabel(nextAtIso: string | null): string {
 }
 
 export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const motionPolicy = useMotionPolicy();
 	const [barn, setBarn] = useState<Barn | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [busy, setBusy] = useState(false);
+	const [hostPigId, setHostPigId] = useState<PigId>("rosie");
+	const [myPigId, setMyPigId] = useState<PigId>("rosie");
+  const [isVip, setIsVip] = useState(false);
+  const [emoteIds, setEmoteIds] = useState<VisitEmoteId[]>(() =>
+    visitEmoteIds(),
+  );
+  const [partingOpen, setPartingOpen] = useState(false);
+  const [partingSending, setPartingSending] = useState<VisitEmoteId | null>(
+    null,
+  );
+  const [partingSent, setPartingSent] = useState<VisitEmoteId | null>(null);
+  const [partingError, setPartingError] = useState<string | null>(null);
+  const [stampOfferOpen, setStampOfferOpen] = useState(false);
+  const [stampOffered, setStampOffered] = useState(false);
+  const [stampSending, setStampSending] = useState<GuestbookStampId | null>(
+    null,
+  );
+  const [stampSent, setStampSent] = useState<GuestbookStampId | null>(null);
+  const [stampError, setStampError] = useState<string | null>(null);
+  const [kindnessOffer, setKindnessOffer] =
+    useState<KindnessCardOffer | null>(null);
+  const [kindnessSending, setKindnessSending] = useState(false);
+  const [kindnessSent, setKindnessSent] = useState(false);
+  const [kindnessError, setKindnessError] = useState<string | null>(null);
+	const porchRecorded = useRef(false);
 
 	// Live season tickle totals (seeded from each profile's tickles_earned),
 	// then both tick up together by one on every tap. The Barn race is a
@@ -140,18 +214,13 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	// Hearts shared THIS visit only — for the nap summary.
 	const [gained, setGained] = useState(0);
 
-	// Tap-session: the friend's pig tires over a random 3–7 taps. The CAP is now
-	// rolled and enforced server-side (tickle_at_barn / barn_visit_status), so we
-	// seed tapCap from the server and the bar matches what it will actually allow.
-	// Default 7 (full bar) until the server reports the roll on first status/tap.
-	const [tapCount, setTapCount] = useState(0);
-	const [tapCap, setTapCap] = useState(1);
+  // Tap-session tired state is driven by the server's remaining-taps result.
 	const [tired, setTired] = useState(false);
-	// Your shared visit budget: 3 different friends per window. All 3 refresh
-	// together 3h after your first visit. Server-authoritative (barn_visit_status).
+  // Your shared visit budget: 3 different friends per prestige-scaled window.
+  // Server-authoritative (barn_visit_status).
 	const [visitsLeft, setVisitsLeft] = useState<number | null>(null);
 	const [visitBudget, setVisitBudget] = useState(3);
-	const [visitsRefreshAt, setVisitsRefreshAt] = useState<string | null>(null);
+  const [visitWindowHours, setVisitWindowHours] = useState(8);
 	// Nap summary visibility. Mid-visit tire-out no longer slams the scrim
 	// over the barn — a small "All tickled out!" bubble pops instead, and
 	// the summary dialog shows when the player taps Leave. Rested-on-arrival
@@ -179,21 +248,48 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	const [myEquip, setMyEquip] = useState<EquipSet>(EMPTY_EQUIP);
 
 	// Flying hearts + the shared-heartbeat pulse + pig squish, all on each tap.
-	const [floats, setFloats] = useState<{ id: number; anim: Animated.Value; rx: number; star: boolean }[]>([]);
+  const [floats, setFloats] = useState<
+    { id: number; anim: Animated.Value; rx: number; star: boolean }[]
+  >([]);
 	const nextFloat = useRef(0);
 	const squish = useRef(new Animated.Value(0)).current;
 	const beat = useRef(new Animated.Value(0)).current;
 	const tick = useRef(new Animated.Value(0)).current; // "+1 ♥" rise over tallies
 
 	const playTap = () => {
+		if (motionPolicy.reduceMotion) {
+			squish.setValue(0);
+			beat.setValue(0);
+			tick.setValue(0);
+			return;
+		}
 		Animated.sequence([
-			Animated.timing(squish, { toValue: 1, duration: 90, useNativeDriver: true }),
-			Animated.spring(squish, { toValue: 0, friction: 4, tension: 120, useNativeDriver: true }),
+      Animated.timing(squish, {
+        toValue: 1,
+        duration: 90,
+        useNativeDriver: true,
+      }),
+      Animated.spring(squish, {
+        toValue: 0,
+        friction: 4,
+        tension: 120,
+        useNativeDriver: true,
+      }),
 		]).start();
 		beat.setValue(0);
-		Animated.timing(beat, { toValue: 1, duration: 440, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    Animated.timing(beat, {
+      toValue: 1,
+      duration: 440,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
 		tick.setValue(0);
-		Animated.timing(tick, { toValue: 1, duration: 760, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    Animated.timing(tick, {
+      toValue: 1,
+      duration: 760,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
 		for (let i = 0; i < 5; i++) {
 			setTimeout(() => {
 				const id = nextFloat.current++;
@@ -201,9 +297,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				const rx = Math.random() * 70 - 35;
 				const star = Math.random() < 0.14;
 				setFloats((f) => [...f, { id, anim, rx, star }]);
-				Animated.timing(anim, { toValue: 1, duration: 1050, useNativeDriver: true }).start(() =>
-					setFloats((f) => f.filter((x) => x.id !== id))
-				);
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 1050,
+          useNativeDriver: true,
+        }).start(() => setFloats((f) => f.filter((x) => x.id !== id)));
 			}, i * 60);
 		}
 	};
@@ -213,7 +311,9 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 		(async () => {
 			const { data } = await supabase
 				.from("profiles")
-				.select(`username, tickles_earned, active_background_id, ${EQUIP_SELECT}`)
+        .select(
+          `username, tickles_earned, active_background_id, active_pig_id, is_vip, ${EQUIP_SELECT}`,
+        )
 				.eq("id", targetUserId)
 				// Dynamic select string → declare the row type through the
 				// builder so .data lands as BarnProfileRow | null, no cast.
@@ -230,6 +330,9 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				active_background_id: d.active_background_id ?? null,
 			});
 			setHostEquip(rowToEquip(d));
+			setHostPigId(
+				d.is_vip && isPigId(d.active_pig_id) ? d.active_pig_id : "rosie",
+			);
 			// This-season tally: the Barn race counts THIS season's tickles only.
 			setFriendHearts(d.tickles_earned ?? 0); // HOST tally base
 
@@ -237,7 +340,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			if (ures.user) {
 				const { data: me } = await supabase
 					.from("profiles")
-					.select(`tickles_earned, ${EQUIP_SELECT}`)
+          .select(`tickles_earned, active_pig_id, is_vip, ${EQUIP_SELECT}`)
 					.eq("id", ures.user.id)
 					// Dynamic select string → declare the row type through the
 					// builder so .data lands as MyProfileRow | null, no cast.
@@ -246,7 +349,13 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				if (!cancelled && me) {
 					const m = me;
 					setMyEquip(rowToEquip(m));
+					setMyPigId(
+						m.is_vip && isPigId(m.active_pig_id)
+							? m.active_pig_id
+							: "rosie",
+					);
 					setYouHearts(m.tickles_earned ?? 0); // YOU tally base
+          setIsVip(!!m.is_vip);
 				}
 			}
 
@@ -292,6 +401,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				visits_left?: number | null;
 				visit_budget?: number | null;
 				visits_refresh_at?: string | null;
+        visit_window_hours?: number | null;
 			}>("barn_visit_status", { p_target: targetUserId });
 			if (!cancelled && st.ok) {
 				if (st.locked) {
@@ -299,14 +409,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 					setRestingOnArrival(true);
 				}
 				if (st.resting) setRestingOnArrival(true);
-				if (st.tap_cap != null) {
-					setTapCap(st.tap_cap);
-					if (st.taps_left != null) setTapCount(st.tap_cap - st.taps_left);
-				}
 				// Your 3-visits-per-window budget, for the "visits left" bar.
 				if (st.visits_left != null) setVisitsLeft(st.visits_left);
 				if (st.visit_budget != null) setVisitBudget(st.visit_budget);
-				setVisitsRefreshAt(st.visits_refresh_at ?? null);
+        if (st.visit_window_hours != null)
+          setVisitWindowHours(st.visit_window_hours);
 			}
 			setLoading(false);
 		})();
@@ -314,6 +421,10 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			cancelled = true;
 		};
 	}, [targetUserId]);
+
+  useEffect(() => {
+    void refreshVisitEmotes().then(() => setEmoteIds([...visitEmoteIds()]));
+  }, []);
 
 	// Live countdown: while a per-friend lock is set, re-render once a second so
 	// the "comes back in Xh Ym" label (napUntil → lockLabel) ticks down instead
@@ -326,7 +437,9 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	}, [lockedUntil]);
 
 	const tireOut = () => {
-		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+      () => {},
+    );
 		setTired(true);
 	};
 
@@ -339,6 +452,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			next_at?: string | null;
 			visits_left?: number | null;
 			visits_refresh_at?: string | null;
+      visit_window_hours?: number | null;
 			golden_truffle_found?: boolean;
 		}>("tickle_at_barn", { p_target: targetUserId });
 		setBusy(false);
@@ -350,21 +464,49 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			// haptic. Server has already minted it (once/day); this is display-only.
 			if (r.golden_truffle_found) {
 				setForagedTruffle(true);
-				Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        ).catch(() => {});
 			}
 			setYouHearts((n) => n + 1);
 			setFriendHearts((n) => n + 1);
 			setGained((g) => g + 1);
-			if (r.tap_cap != null) setTapCap(r.tap_cap);
+			if (!porchRecorded.current) {
+				porchRecorded.current = true;
+				void recordPorchStop(targetUserId).then((porch) => {
+					if (!porch.ok || !porch.created) return;
+					void trackInteraction({
+						eventName: "porch_stop_completed",
+						surface: "porch_round",
+						targetKind: "pig",
+						targetUserId,
+						result: "completed",
+						properties: { count: porch.stop_number ?? 1, source: "organic" },
+					});
+					if (porch.stop_number === 3) {
+						void trackInteraction({
+							eventName: "porch_round_completed",
+							surface: "porch_round",
+							result: "completed",
+							properties: { count: 3, source: "organic" },
+						});
+					}
+				});
+			}
+      // Unlock the optional guestbook action after this modal's first confirmed
+      // tickle. Never interrupt the visit with it: the player can choose the
+      // in-scene "Sign the guestbook" action whenever they're ready.
+      if (!stampOffered) {
+        setStampOffered(true);
+      }
 			if (r.visits_left != null) setVisitsLeft(r.visits_left);
-			if (r.visits_refresh_at !== undefined)
-				setVisitsRefreshAt(r.visits_refresh_at ?? null);
-			setTapCount(tapCount + 1);
+      if (r.visit_window_hours != null)
+        setVisitWindowHours(r.visit_window_hours);
 			// Server is authoritative on when the visit is spent: taps_left is the
 			// remaining tickles of this visit's 3–7 cap and hits 0 exactly on the
 			// cap-hitting tap. Gate on THAT, not local tapCap state — the cap is
 			// rolled server-side on the first tap, so the freshly-returned value is
-			// the only reliable signal (local tapCap is still its seed here). The
+      // the only reliable signal. The
 			// cap-hitting tap also returns next_at, so we start the 24h countdown
 			// immediately (re-entry would only show the same lock anyway).
 			if ((r.taps_left ?? 99) <= 0) {
@@ -376,62 +518,250 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			// to spend your bank); treat it as the nap so there's a clean exit.
 			tireOut();
 		} else if (r.reason === "cooldown") {
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+        () => {},
+      );
 			setLockedUntil(r.next_at ?? null);
 			setRestingOnArrival(true);
 		}
 	};
 
+  const leaveGuestbookStamp = async (stampId: GuestbookStampId) => {
+    if (stampSending || stampSent) return;
+    setStampSending(stampId);
+    setStampError(null);
+    const result = await rpcAction<{ stamp_id?: string }>(
+      "leave_barn_guestbook_stamp",
+      {
+        p_host: targetUserId,
+        p_stamp_id: stampId,
+      },
+    );
+    setStampSending(null);
+    if (!result.ok) {
+      if (result.reason === "already_stamped") {
+        setStampOffered(false);
+        setStampOfferOpen(false);
+        return;
+      }
+      setStampError("That stamp didn't stick. Try once more?");
+      return;
+    }
+		setStampSent(stampId);
+		void trackInteraction({
+			eventName: "visit_stamp_left",
+			surface: "visit",
+			targetKind: "barn",
+			targetUserId,
+			result: "succeeded",
+			properties: { source: "cta", variant: stampId },
+		});
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+			() => {},
+		);
+    const status = await rpcAction<{
+      eligible?: boolean;
+      blessing_kind?: string;
+      bless_remaining?: number;
+    }>("barn_kindness_card_status", { p_host: targetUserId });
+    const offer = parseKindnessCardOffer(status);
+    if (offer) {
+      void trackInteraction({
+        eventName: "kindness_card_offered",
+        surface: "visit",
+        targetKind: "barn",
+        targetUserId,
+        result: "completed",
+        properties: { source: "cta", variant: offer.blessingKind },
+      });
+    }
+    setTimeout(() => {
+      if (offer) {
+        // Keep the existing post-visit sheet mounted and reveal the optional
+        // warmth action inside it. No second scrim or chained popup.
+        setKindnessOffer(offer);
+      } else {
+        setStampOfferOpen(false);
+      }
+    }, 600);
+  };
+
+  const leaveKindnessCard = async () => {
+    if (!kindnessOffer || kindnessSending || kindnessSent) return;
+    setKindnessSending(true);
+    setKindnessError(null);
+    const result = await rpcAction<{ kind?: string; blessing_id?: string }>(
+      "leave_barn_kindness_card",
+      { p_host: targetUserId },
+    );
+    setKindnessSending(false);
+    if (!result.ok) {
+      setKindnessError(kindnessCardFailureCopy(result.reason));
+      if (
+        result.reason === "daily_cap" ||
+        result.reason === "already_blessed_today" ||
+        result.reason === "no_eligible_visit"
+      ) {
+        setTimeout(() => {
+          setKindnessOffer(null);
+          setStampOfferOpen(false);
+        }, 900);
+      }
+      return;
+    }
+    setKindnessSent(true);
+    void trackInteraction({
+      eventName: "blessing_cast",
+      surface: "visit",
+      targetKind: "pig",
+      targetUserId,
+      result: "succeeded",
+      ...(result.blessing_id ? { contentId: result.blessing_id } : {}),
+      properties: {
+        source: "cta",
+        variant: result.kind ?? kindnessOffer.blessingKind,
+      },
+    });
+    void trackInteraction({
+      eventName: "kindness_card_left",
+      surface: "visit",
+      targetKind: "barn",
+      targetUserId,
+      result: "succeeded",
+      ...(result.blessing_id ? { contentId: result.blessing_id } : {}),
+      properties: {
+        source: "cta",
+        variant: result.kind ?? kindnessOffer.blessingKind,
+      },
+    });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+      () => {},
+    );
+    setTimeout(() => {
+      setKindnessOffer(null);
+      setStampOfferOpen(false);
+    }, 900);
+  };
+
 	const dig = async () => {
 		if (digging || dug != null) return;
 		setDigging(true);
-		const r = await rpcAction<{ reward?: number; remaining?: number; next_at?: string | null }>(
-			"dig_truffle",
-			{ p_host: targetUserId }
-		);
+    const r = await rpcAction<{
+      reward?: number;
+      remaining?: number;
+      next_at?: string | null;
+    }>("dig_truffle", { p_host: targetUserId });
 		setDigging(false);
 		if (r.ok) {
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+        () => {},
+      );
 			setTruffleAvail(false);
 			setDug(r.reward ?? 0);
 		} else if (r.reason === "dig_cooldown") {
 			// Re-dig cooldown (server 20260629): the pot allows another bite per
 			// visitor every 3h, so this shovel isn't spent forever — retire it for
 			// now with the wait time so coming back later reads as worthwhile.
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+        () => {},
+      );
 			setTruffleAvail(false);
-			setDigNote(`You've dug here recently — come back in ${lockLabel(r.next_at ?? null)}.`);
+      setDigNote(
+        `You've dug here recently — come back in ${lockLabel(r.next_at ?? null)}.`,
+      );
 		} else if (r.reason === "none" || r.reason === "already_dug") {
 			// Terminal: someone else emptied the shared pot first — or, on a server
 			// older than 20260629 (one dig EVER, no re-dig cooldown), we already
 			// took our share. The shovel is genuinely spent — retire it with a note
 			// instead of vanishing silently.
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+        () => {},
+      );
 			setTruffleAvail(false);
 			setDigNote("Already dug up!");
 		} else {
 			// Transient (network / SQL) failure — keep the shovel tappable so the
 			// dig can be retried rather than disappearing with no reward.
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+        () => {},
+      );
 		}
 	};
 
-	// Your visit budget (display only): how many of your 3 visits remain this
-	// window. All 3 refresh together 3h after your first visit.
+  const requestExit = () => {
+    if (isVip && gained > 0 && !partingSent) {
+      setNapOpen(false);
+      setPartingOpen(true);
+      return;
+    }
+    onClose();
+  };
+
+  const leavePartingEmote = async (emoteId: VisitEmoteId) => {
+    if (partingSending || partingSent) return;
+    setPartingSending(emoteId);
+    setPartingError(null);
+    const result = await rpcAction<{ emote_id?: string }>("leave_visit_emote", {
+      p_host: targetUserId,
+      p_emote_id: emoteId,
+    });
+    setPartingSending(null);
+    if (!result.ok) {
+      setPartingError(
+        result.reason === "already_left"
+          ? "You already left a note this visit."
+          : "That note didn't stick. Try another?",
+      );
+      return;
+    }
+    setPartingSent(emoteId);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+      () => {},
+    );
+    setTimeout(onClose, 650);
+  };
+
+  // Your visit budget (display only): how many visits remain this
+  // prestige-scaled window.
 	const vLeft = visitsLeft ?? visitBudget;
-	const visitsColor = vLeft > 1 ? COLORS.successText : vLeft === 1 ? WHIMSY.goblin : WHIMSY.accent;
+  const visitsColor =
+    vLeft > 1
+      ? COLORS.successText
+      : vLeft === 1
+        ? WHIMSY.goblin
+        : WHIMSY.accent;
 
 	// Shared squish transform entries for both pigs. Passed as an ARRAY so each
 	// pig can compose it WITH its own { scale } in one transform list — a second
 	// `transform` style object would clobber the scale and render the pig at full
 	// 300px (clipped to nothing in its box).
 	const squishTransform = [
-		{ scaleX: squish.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] }) },
-		{ scaleY: squish.interpolate({ inputRange: [0, 1], outputRange: [1, 0.93] }) },
+    {
+      scaleX: squish.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 1.07],
+      }),
+    },
+    {
+      scaleY: squish.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 0.93],
+      }),
+    },
 	];
 	const tickStyle = {
-		opacity: tick.interpolate({ inputRange: [0, 0.2, 0.9, 1], outputRange: [0, 1, 1, 0] }),
-		transform: [{ translateY: tick.interpolate({ inputRange: [0, 1], outputRange: [4, -16] }) }],
+    opacity: tick.interpolate({
+      inputRange: [0, 0.2, 0.9, 1],
+      outputRange: [0, 1, 1, 0],
+    }),
+    transform: [
+      {
+        translateY: tick.interpolate({
+          inputRange: [0, 1],
+          outputRange: [4, -16],
+        }),
+      },
+    ],
 	};
 
 	const napUntil = lockedUntil ? lockLabel(lockedUntil) : "3h";
@@ -456,7 +786,13 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 			<Image
 				source={bgSrc}
 				// Overscan 2px each side (matches PageBackground) so no edge sliver shows.
-				style={{ position: "absolute", top: 0, left: -2, width: SCREEN_W + 4, height: SCREEN_H }}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: -2,
+          width: screenWidth + 4,
+          height: screenHeight,
+        }}
 				resizeMode="cover"
 			/>
 			{/* soft top fade for title legibility — fades fully to the single
@@ -470,7 +806,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 
 			<View style={styles.content}>
 				{loading ? (
-					<LoadingBeat label="knocking on the barn door" glyph="pigface" style={{ marginTop: 120 }} />
+          <LoadingBeat
+            label="knocking on the barn door"
+            glyph="pigface"
+            style={{ marginTop: 120 }}
+          />
 				) : (
 					<>
 						{/* ===== top chrome ===== */}
@@ -495,12 +835,22 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 										<IconText left={<Glyph name="sparkle" size={12} />} gap={5}>
 											<Text style={styles.visitsChipText}>
 												{vLeft <= 0 ? (
-													<Text style={[styles.visitsChipNum, { color: visitsColor }]}>
+                          <Text
+                            style={[
+                              styles.visitsChipNum,
+                              { color: visitsColor },
+                            ]}
+                          >
 														all tickled out — your snout needs a rest
 													</Text>
 												) : (
 													<>
-														<Text style={[styles.visitsChipNum, { color: visitsColor }]}>
+                            <Text
+                              style={[
+                                styles.visitsChipNum,
+                                { color: visitsColor },
+                              ]}
+                            >
 															{vLeft} of {visitBudget}
 														</Text>
 														<Text> visits left</Text>
@@ -519,7 +869,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 											setNapOpen(true);
 											return;
 										}
-										onClose();
+                    requestExit();
 									}}
 									style={styles.leavePill}
 									hitSlop={8}
@@ -532,7 +882,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 
 							{/* hearts shared — both tick up together */}
 							<View style={styles.heartCard}>
-								<HeartTally label="YOU" total={youHearts} tickStyle={tickStyle} />
+                <HeartTally
+                  label="YOU"
+                  total={youHearts}
+                  tickStyle={tickStyle}
+                />
 								<View style={styles.heartDivider} />
 								<HeartTally
 									label={(barn?.username ?? targetName).toUpperCase()}
@@ -557,6 +911,23 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									<Glyph name="heart" size={15} />
 								</Animated.View>
 							</View>
+							{stampOffered && !stampSent && !restingOnArrival && (
+								<Pressable
+									testID="visit-guestbook-open"
+									accessibilityRole="button"
+									accessibilityLabel="Sign the Barn guestbook"
+									onPress={() => setStampOfferOpen(true)}
+									style={({ pressed }) => [
+										styles.guestbookAction,
+										pressed && styles.guestbookActionPressed,
+									]}
+								>
+									<Glyph name="pigface" size={16} />
+									<Text style={styles.guestbookActionText}>
+										Sign the guestbook
+									</Text>
+								</Pressable>
+							)}
 
 							{/* post-tickle nudge — its own little sticker BELOW the
 							    tally band (never over it), tail pointing up at the hearts
@@ -591,13 +962,26 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 								    buried-shovel truffle below. */}
 								{foragedTruffle && (
 									<View pointerEvents="none" style={styles.forageReveal}>
-										<Image source={HAT_IMAGES.golden_truffle} style={styles.forageTruffle} resizeMode="contain" />
+                    <Image
+                      source={HAT_IMAGES.golden_truffle}
+                      style={styles.forageTruffle}
+                      resizeMode="contain"
+                    />
 										<View style={styles.forageTextWrap}>
-											<IconText left={<Glyph name="sparkle" size={12} />} gap={4}>
-												<Text style={styles.forageKicker}>A GLINT IN THE HAY</Text>
+                      <IconText
+                        left={<Glyph name="sparkle" size={12} />}
+                        gap={4}
+                      >
+                        <Text style={styles.forageKicker}>
+                          A GLINT IN THE HAY
+                        </Text>
 											</IconText>
-											<Text style={styles.forageTitle}>You uncovered a Golden Truffle!</Text>
-											<Text style={styles.forageSub}>One the Great Hungerer missed.</Text>
+                      <Text style={styles.forageTitle}>
+                        You uncovered a Golden Truffle!
+                      </Text>
+                      <Text style={styles.forageSub}>
+                        One the Great Hungerer missed.
+                      </Text>
 										</View>
 									</View>
 								)}
@@ -608,8 +992,10 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									squishTransform={squishTransform}
 									onPress={tickle}
 									label="you"
+									pigId={myPigId}
 									equip={myEquip}
 									tired={tired}
+                  disabled={tired || restingOnArrival || !!lockedUntil || busy}
 									floats={floats}
 								/>
 								{/* host — up front: bigger, lower, shifted right (the pig you tickle) */}
@@ -618,26 +1004,45 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									squishTransform={squishTransform}
 									onPress={tickle}
 									label={barn?.username ?? targetName}
+									pigId={hostPigId}
 									equip={hostEquip}
 									tired={tired}
+                  disabled={tired || restingOnArrival || !!lockedUntil || busy}
 									floats={floats}
 								/>
 
-								{/* barn truffle — a cartoony shovel planted in the ground, tucked
-								    near the front pig's feet so it's an easy, quick tap. */}
+								{/* Barn truffle — reuse Home's compact upper-left shovel
+								    control so burying and digging share one visual language. */}
 								{dug != null ? (
-									<View pointerEvents="none" style={[styles.truffleFoundWrap, styles.truffleFoundRow]}>
+                  <View
+                    pointerEvents="none"
+                    style={[styles.truffleFoundWrap, styles.truffleFoundRow]}
+                  >
 										<SnoutCoin size={16} />
 										<Glyph name="sparkles" size={14} />
 										<Text style={styles.truffleFound}>+{dug} snouts!</Text>
 									</View>
 								) : digNote != null ? (
-									<View pointerEvents="none" style={[styles.truffleFoundWrap, styles.truffleFoundRow]}>
+                  <View
+                    pointerEvents="none"
+                    style={[styles.truffleFoundWrap, styles.truffleFoundRow]}
+                  >
 										<Glyph name="pigface" size={14} />
 										<Text style={styles.truffleFound}>{digNote}</Text>
 									</View>
 								) : truffleAvail && !tired ? (
-									<DigSpot digging={digging} onPress={dig} />
+									<View style={styles.visitTruffleControl}>
+										<TruffleButton
+											buried={false}
+											disabled={digging}
+											accessibilityLabel={
+												digging
+													? "Digging for a truffle"
+													: "Dig for a truffle"
+											}
+											onPress={dig}
+										/>
+									</View>
 								) : null}
 							</View>
 						</View>
@@ -653,7 +1058,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									<Text style={styles.napBody}>
 										{arrivedRested
 											? `${targetName}'s pig is worn out from a recent visit — give it a little while. You can still go tickle another friend's pig!`
-											: `The pigs need a rest! You can visit 3 different Barns every 3 hours — and each friend just once a day. Come back soon to tickle more.`}
+                      : `The pigs need a rest! You can visit ${visitBudget} different Barns every ${visitWindowHours} hours — and each friend just once a day. Come back soon to tickle more.`}
 									</Text>
 									<View style={styles.napStats}>
 										<View style={styles.napStat}>
@@ -668,13 +1073,18 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 												<View style={styles.napStatDivider} />
 												<View style={styles.napStat}>
 													<Text style={styles.napStatNum}>{napUntil}</Text>
-													<Text style={styles.napStatLabel}>until you can visit again</Text>
+                          <Text style={styles.napStatLabel}>
+                            until you can visit again
+                          </Text>
 												</View>
 											</>
 										)}
 									</View>
-									<Pressable onPress={onClose} style={styles.napBtn}>
-										<IconText right={<Glyph name="arrowRight" size={14} />} gap={6}>
+                  <Pressable onPress={requestExit} style={styles.napBtn}>
+                    <IconText
+                      right={<Glyph name="arrowRight" size={14} />}
+                      gap={6}
+                    >
 										<Text style={styles.napBtnText}>Head home</Text>
 									</IconText>
 									</Pressable>
@@ -684,6 +1094,165 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 					</>
 				)}
 			</View>
+      {stampOfferOpen && (
+        <View style={styles.stampScrim}>
+          <View style={styles.stampCard}>
+            {kindnessOffer ? (
+              <>
+                <Text style={styles.stampKicker}>BARN GUESTBOOK</Text>
+                <Image
+                  source={BLESSING_META[kindnessOffer.blessingKind].icon}
+                  style={styles.kindnessIcon}
+                />
+                <Text style={styles.stampTitle}>
+                  {kindnessSent
+                    ? "Your note is ready!"
+                    : "Add a little warmth?"}
+                </Text>
+                <Text style={styles.stampBody}>
+                  {kindnessSent
+                    ? `${targetName} will find the hoofprint and blessing together.`
+                    : `Your hoofprint is saved. Add today’s ${BLESSING_META[kindnessOffer.blessingKind].name}, if you like.`}
+                </Text>
+                {!kindnessSent && (
+                  <Pressable
+                    testID="kindness-card-send"
+                    disabled={kindnessSending}
+                    onPress={leaveKindnessCard}
+                    style={({ pressed }) => [
+                      styles.kindnessSend,
+                      (pressed || kindnessSending) && { opacity: 0.72 },
+                    ]}
+                  >
+                    <Text style={styles.kindnessSendText}>
+                      {kindnessSending
+                        ? "Tucking it in…"
+                        : `Add ${BLESSING_META[kindnessOffer.blessingKind].name}`}
+                    </Text>
+                  </Pressable>
+                )}
+                {!!kindnessError && (
+                  <Text style={styles.stampError}>{kindnessError}</Text>
+                )}
+                {!kindnessSent && (
+                  <Pressable
+                    testID="kindness-card-skip"
+                    onPress={() => {
+                      setKindnessOffer(null);
+                      setStampOfferOpen(false);
+                    }}
+                    style={styles.stampSkip}
+                  >
+                    <Text style={styles.stampSkipText}>The hoofprint says plenty</Text>
+                  </Pressable>
+                )}
+              </>
+            ) : (
+              <>
+                <Text style={styles.stampKicker}>BARN GUESTBOOK</Text>
+                <Text style={styles.stampTitle}>
+                  {stampSent
+                    ? "Your hoofprint is saved!"
+                    : "Leave a little hoofprint?"}
+                </Text>
+                <Text style={styles.stampBody}>
+                  {stampSent
+                    ? `${targetName} can find it whenever they come home.`
+                    : "One tap leaves a warm, permanent note. It never expires."}
+                </Text>
+                <View style={styles.stampChoices}>
+                  {GUESTBOOK_STAMP_IDS.map((id) => {
+                    const meta = GUESTBOOK_STAMP_META[id];
+                    const selected = stampSending === id || stampSent === id;
+                    return (
+                      <Pressable
+                        key={id}
+                        testID={`guestbook-stamp-${id}`}
+                        disabled={!!stampSending || !!stampSent}
+                        onPress={() => leaveGuestbookStamp(id)}
+                        accessibilityLabel={`Leave ${meta.label.toLowerCase()} stamp`}
+                        style={({ pressed }) => [
+                          styles.stampChoice,
+                          selected && styles.stampChoiceSelected,
+                          pressed && { transform: [{ scale: 0.95 }] },
+                        ]}
+                      >
+                        <Glyph name={meta.glyph} size={28} />
+                        <Text style={styles.stampLabel}>{meta.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                {!!stampError && (
+                  <Text style={styles.stampError}>{stampError}</Text>
+                )}
+								{!stampSent && (
+									<Pressable
+										testID="guestbook-stamp-skip"
+										onPress={() => setStampOfferOpen(false)}
+										style={styles.stampSkip}
+									>
+										<Text style={styles.stampSkipText}>Back to the Barn</Text>
+									</Pressable>
+								)}
+              </>
+            )}
+          </View>
+        </View>
+      )}
+      {partingOpen && (
+        <View style={styles.partingScrim}>
+          <View style={styles.partingCard}>
+            <Text style={styles.partingKicker}>SLOP CLUB PARTING NOTE</Text>
+            <Text style={styles.partingTitle}>
+              {partingSent
+                ? "Your note is on its way!"
+                : `Leave ${targetName} a little goodbye`}
+            </Text>
+            <Text style={styles.partingBody}>
+              {partingSent
+                ? VISIT_EMOTE_META[partingSent].sendLine
+                : "They'll find it in Notes from the barn."}
+            </Text>
+            <View style={styles.partingGrid}>
+              {emoteIds.map((id) => {
+                const selected = partingSent === id || partingSending === id;
+                return (
+                  <Pressable
+                    key={id}
+                    disabled={!!partingSending || !!partingSent}
+                    onPress={() => leavePartingEmote(id)}
+                    style={({ pressed }) => [
+                      styles.partingChoice,
+                      selected && styles.partingChoiceSelected,
+                      pressed && { transform: [{ scale: 0.96 }] },
+                    ]}
+                  >
+                    <Image
+                      source={VISIT_EMOTE_IMAGES[id]}
+                      style={styles.partingImage}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.partingLabel}>
+                      {VISIT_EMOTE_META[id].label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {!!partingError && (
+              <Text style={styles.partingError}>{partingError}</Text>
+            )}
+            {!partingSent && (
+              <Pressable onPress={onClose} style={styles.partingSkip}>
+                <Text style={styles.partingSkipText}>
+                  Head home without a note
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      )}
 		</View>
 	);
 }
@@ -696,7 +1265,10 @@ function HeartTally({
 }: {
 	label: string;
 	total: number;
-	tickStyle: { opacity: Animated.AnimatedInterpolation<number>; transform: { translateY: Animated.AnimatedInterpolation<number> }[] };
+  tickStyle: {
+    opacity: Animated.AnimatedInterpolation<number>;
+    transform: { translateY: Animated.AnimatedInterpolation<number> }[];
+  };
 }) {
 	return (
 		<View style={styles.tally}>
@@ -715,68 +1287,6 @@ function HeartTally({
 	);
 }
 
-// The dig affordance: a tappable shovel planted in a little dirt mound, set in
-// the scene near the pigs (not tucked at the far bottom) for a quick, easy tap.
-function DigSpot({ digging, onPress }: { digging: boolean; onPress: () => void }) {
-	const bob = useRef(new Animated.Value(0)).current;
-	const wig = useRef(new Animated.Value(0)).current;
-	const pulse = useRef(new Animated.Value(0)).current;
-	useEffect(() => {
-		const loop = Animated.loop(
-			Animated.sequence([
-				Animated.timing(bob, { toValue: 1, duration: 1100, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-				Animated.timing(bob, { toValue: 0, duration: 1100, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-			])
-		);
-		loop.start();
-		// Attract pulse — a ring that expands + fades to draw the eye to the
-		// (otherwise easy-to-miss) dig spot.
-		const pulseLoop = Animated.loop(
-			Animated.timing(pulse, { toValue: 1, duration: 1600, easing: Easing.out(Easing.quad), useNativeDriver: true })
-		);
-		pulseLoop.start();
-		return () => {
-			loop.stop();
-			pulseLoop.stop();
-		};
-	}, [bob, pulse]);
-	const press = () => {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-		wig.setValue(0);
-		Animated.sequence([
-			Animated.timing(wig, { toValue: 1, duration: 80, useNativeDriver: true }),
-			Animated.timing(wig, { toValue: -1, duration: 80, useNativeDriver: true }),
-			Animated.spring(wig, { toValue: 0, friction: 4, tension: 140, useNativeDriver: true }),
-		]).start();
-		onPress();
-	};
-	const translateY = bob.interpolate({ inputRange: [0, 1], outputRange: [0, -5] });
-	// Rests at a slight planted tilt; wiggles on press.
-	const rotate = wig.interpolate({ inputRange: [-1, 0, 1], outputRange: ["-26deg", "-12deg", "4deg"] });
-	return (
-		<Pressable onPress={press} disabled={digging} style={styles.digSpot} hitSlop={24}>
-			<Animated.View
-				pointerEvents="none"
-				style={[
-					styles.digPulse,
-					{
-						opacity: pulse.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.5, 0.15, 0] }),
-						transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.8] }) }],
-					},
-				]}
-			/>
-			<Glyph name="sparkle" size={18} style={styles.digSparkle} />
-			<Animated.View style={{ transform: [{ translateY }, { rotate }] }}>
-				<Shovel size={64} />
-			</Animated.View>
-			<View style={styles.dirtMound} />
-			<View style={styles.digPill}>
-				<Text style={styles.digPillText}>{digging ? "digging…" : "Dig for a truffle!"}</Text>
-			</View>
-		</Pressable>
-	);
-}
-
 // A tappable pig, placed by its parent `slotStyle`. The host (`!me`) sits up
 // front — bigger; "you" sits back — smaller, for a sense of depth. Floating
 // hearts + an optional energy bar (host only).
@@ -786,8 +1296,10 @@ function TapPig({
 	squishTransform,
 	onPress,
 	label,
+	pigId,
 	equip,
 	tired,
+  disabled,
 	floats,
 }: {
 	me?: boolean;
@@ -796,11 +1308,13 @@ function TapPig({
 	squishTransform: (
 			| { scaleX: Animated.AnimatedInterpolation<number> }
 			| { scaleY: Animated.AnimatedInterpolation<number> }
-		)[]
+  )[];
 	onPress: () => void;
 	label: string;
+	pigId: PigId;
 	equip: EquipSet;
 	tired: boolean;
+  disabled: boolean;
 	floats: { id: number; anim: Animated.Value; rx: number; star: boolean }[];
 }) {
 	const front = !me; // the host pig you're visiting reads as nearer/larger
@@ -811,7 +1325,20 @@ function TapPig({
 	// along with the breathing pig (same wiring as SwipeElement).
 	const [pigFrameIdx, setPigFrameIdx] = useState(0);
 	return (
-		<Pressable onPress={onPress} style={slotStyle}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={slotStyle}
+      accessible={!me}
+      accessibilityElementsHidden={me}
+      importantForAccessibility={me ? "no-hide-descendants" : "auto"}
+      accessibilityRole={!me ? "button" : undefined}
+      accessibilityLabel={!me ? `Tickle ${label}'s pig` : undefined}
+      accessibilityHint={
+        !me && !disabled ? "Shares a heart with your friend." : undefined
+      }
+      accessibilityState={!me ? { disabled } : undefined}
+    >
 			{/* flying hearts */}
 			<View pointerEvents="none" style={styles.floatLayer}>
 				{floats.map((f) => {
@@ -826,11 +1353,24 @@ function TapPig({
 								{
 									width: fs,
 									height: fs,
-									opacity: f.anim.interpolate({ inputRange: [0, 0.15, 0.8, 1], outputRange: [0, 1, 1, 0] }),
+                  opacity: f.anim.interpolate({
+                    inputRange: [0, 0.15, 0.8, 1],
+                    outputRange: [0, 1, 1, 0],
+                  }),
 									transform: [
 										{ translateX: f.rx * (front ? 1 : 0.6) },
-										{ translateY: f.anim.interpolate({ inputRange: [0, 1], outputRange: [10, -96] }) },
-										{ scale: f.anim.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0.5, 1.1, 0.9] }) },
+                    {
+                      translateY: f.anim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [10, -96],
+                      }),
+                    },
+                    {
+                      scale: f.anim.interpolate({
+                        inputRange: [0, 0.2, 1],
+                        outputRange: [0.5, 1.1, 0.9],
+                      }),
+                    },
 									],
 								},
 							]}
@@ -839,9 +1379,16 @@ function TapPig({
 				})}
 			</View>
 			<View style={[styles.pigBox, { width: box, height: box }]}>
-				<View pointerEvents="none" style={[styles.groundShadow, { width: shadowW, left: (box - shadowW) / 2 }]} />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.groundShadow,
+            { width: shadowW, left: (box - shadowW) / 2 },
+          ]}
+        />
 				<Animated.View style={{ transform: [{ scale }, ...squishTransform] }}>
 					<PigStage
+						pigId={pigId}
 						pigFrameIdx={pigFrameIdx}
 						onPigFrame={setPigFrameIdx}
 						equipped={equip.hat}
@@ -859,8 +1406,13 @@ function TapPig({
 					/>
 				</Animated.View>
 			</View>
-			<View style={[styles.nameTag, me ? styles.nameTagYou : styles.nameTagFriend]}>
-				<Text style={[styles.nameTagText, front && { fontSize: 14 }]} numberOfLines={1}>
+      <View
+        style={[styles.nameTag, me ? styles.nameTagYou : styles.nameTagFriend]}
+      >
+        <Text
+          style={[styles.nameTagText, front && { fontSize: 14 }]}
+          numberOfLines={1}
+        >
 					{label}
 				</Text>
 			</View>
@@ -872,7 +1424,11 @@ const INK = WHIMSY.ink;
 const sticker = SHADOW_SM;
 
 const styles = StyleSheet.create({
-	root: { ...StyleSheet.absoluteFillObject, zIndex: 100, backgroundColor: WHIMSY.cream },
+  root: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 100,
+    backgroundColor: WHIMSY.cream,
+  },
 	content: { flex: 1 },
 	topFade: { position: "absolute", top: 0, left: 0, right: 0, height: 190 },
 
@@ -881,7 +1437,12 @@ const styles = StyleSheet.create({
 	chrome: { paddingHorizontal: SPACE.lg, paddingTop: 56 },
 	// Header row: title column (shrinks / wraps the chip) beside the Leave pill.
 	// alignItems flex-start so a two-line title + chip keeps Leave pinned top.
-	headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: SPACE.md },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: SPACE.md,
+  },
 	headerTitleCol: { flexShrink: 1, alignItems: "flex-start" },
 	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.slopBand },
 	title: {
@@ -903,6 +1464,173 @@ const styles = StyleSheet.create({
 		...sticker,
 	},
 	leaveText: { ...TYPE.label, color: INK },
+  partingScrim: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 200,
+    backgroundColor: MODAL_BACKDROP_BG,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: SPACE.xl,
+  },
+  partingCard: {
+    width: "100%",
+    maxWidth: 390,
+    backgroundColor: WHIMSY.cream,
+    borderWidth: 2,
+    borderColor: INK,
+    borderRadius: RADII.xxl,
+    padding: SPACE.lg,
+    ...sticker,
+  },
+  partingKicker: {
+    ...TYPE.kicker,
+    color: WHIMSY.slopBand,
+    textAlign: "center",
+  },
+  partingTitle: {
+    ...TYPE.sectionTitle,
+    color: INK,
+    textAlign: "center",
+    marginTop: SPACE.xs,
+  },
+  partingBody: {
+    ...TYPE.body,
+    color: WHIMSY.mute,
+    textAlign: "center",
+    marginTop: SPACE.xs,
+  },
+  partingGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: SPACE.sm,
+    marginTop: SPACE.lg,
+  },
+  partingChoice: {
+    width: "30%",
+    minWidth: 82,
+    alignItems: "center",
+    paddingVertical: SPACE.sm,
+    borderWidth: 1.5,
+    borderColor: INK,
+    borderRadius: RADII.lg,
+    backgroundColor: WHIMSY.paper,
+  },
+  partingChoiceSelected: { backgroundColor: WHIMSY.sun, borderWidth: 2 },
+  partingImage: { width: 58, height: 58 },
+  partingLabel: {
+    ...TYPE.kickerPill,
+    color: INK,
+    marginTop: 2,
+    textAlign: "center",
+  },
+  partingError: {
+    ...TYPE.bodySm,
+    color: WHIMSY.roseDeep,
+    textAlign: "center",
+    marginTop: SPACE.sm,
+  },
+  partingSkip: { alignSelf: "center", padding: SPACE.sm, marginTop: SPACE.sm },
+  partingSkipText: {
+    ...TYPE.bodySm,
+    color: WHIMSY.mute,
+    textDecorationLine: "underline",
+  },
+  stampScrim: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 43,
+    backgroundColor: MODAL_BACKDROP_BG,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingHorizontal: SPACE.lg,
+    paddingBottom: 34,
+  },
+  stampCard: {
+    width: "100%",
+    maxWidth: 390,
+    backgroundColor: WHIMSY.paper,
+    borderWidth: 2,
+    borderColor: WHIMSY.ink,
+    borderRadius: RADII.xl,
+    paddingHorizontal: SPACE.lg,
+    paddingTop: SPACE.lg,
+    paddingBottom: SPACE.md,
+    ...SHADOW_SM,
+  },
+  stampKicker: { ...TYPE.kicker, color: WHIMSY.roseDeep, textAlign: "center" },
+  stampTitle: {
+    ...TYPE.sectionTitle,
+    color: WHIMSY.ink,
+    textAlign: "center",
+    marginTop: SPACE.xs,
+  },
+  stampBody: {
+    ...TYPE.body,
+    color: WHIMSY.mute,
+    textAlign: "center",
+    marginTop: SPACE.xs,
+  },
+  stampChoices: {
+    flexDirection: "row",
+    gap: SPACE.sm,
+    marginTop: SPACE.md,
+  },
+  stampChoice: {
+    flex: 1,
+    minHeight: 76,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: SPACE.xs,
+    paddingVertical: SPACE.sm,
+    backgroundColor: WHIMSY.cream,
+    borderWidth: 1.5,
+    borderColor: WHIMSY.ink,
+    borderRadius: RADII.md,
+  },
+  stampChoiceSelected: { backgroundColor: WHIMSY.sun, borderWidth: 2 },
+  stampLabel: {
+    ...TYPE.kickerPill,
+    color: WHIMSY.ink,
+    textAlign: "center",
+    marginTop: SPACE.xs,
+  },
+  stampError: {
+    ...TYPE.bodySm,
+    color: WHIMSY.roseDeep,
+    textAlign: "center",
+    marginTop: SPACE.sm,
+  },
+  stampSkip: { alignSelf: "center", padding: SPACE.sm, marginTop: SPACE.xs },
+  stampSkipText: {
+    ...TYPE.bodySm,
+    color: WHIMSY.mute,
+    textDecorationLine: "underline",
+  },
+  kindnessIcon: {
+    width: 72,
+    height: 72,
+    resizeMode: "contain",
+    alignSelf: "center",
+    marginVertical: SPACE.sm,
+  },
+  kindnessSend: {
+    alignSelf: "stretch",
+    alignItems: "center",
+    marginTop: SPACE.md,
+    paddingHorizontal: SPACE.md,
+    paddingVertical: SPACE.sm,
+    backgroundColor: WHIMSY.sun,
+    borderWidth: 2,
+    borderColor: WHIMSY.ink,
+    borderRadius: RADII.md,
+    ...SHADOW_SM,
+  },
+  kindnessSendText: {
+    ...TYPE.sectionTitle,
+    fontSize: 15,
+    color: WHIMSY.ink,
+    textAlign: "center",
+  },
 
 	heartCard: {
 		flexDirection: "row",
@@ -916,7 +1644,12 @@ const styles = StyleSheet.create({
 		...sticker,
 	},
 	heartDivider: { width: 2, backgroundColor: INK, opacity: 0.45 },
-	tally: { flex: 1, paddingVertical: SPACE.sm + 2, alignItems: "center", overflow: "hidden" },
+  tally: {
+    flex: 1,
+    paddingVertical: SPACE.sm + 2,
+    alignItems: "center",
+    overflow: "hidden",
+  },
 	tallyTick: {
 		position: "absolute",
 		top: 2,
@@ -925,10 +1658,19 @@ const styles = StyleSheet.create({
 		gap: 2,
 		zIndex: 3,
 	},
-	tallyTickText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.roseDeep },
+  tallyTickText: {
+    fontFamily: FONTS.whimsy,
+    fontSize: 13,
+    color: WHIMSY.roseDeep,
+  },
 	tallyRow: { flexDirection: "row", alignItems: "center", gap: SPACE.xs + 1 },
 	tallyNum: { ...TYPE.sectionTitle, color: INK },
-	tallyLabel: { ...TYPE.kickerPill, letterSpacing: 1, color: WHIMSY.mute, marginTop: SPACE.xs },
+  tallyLabel: {
+    ...TYPE.kickerPill,
+    letterSpacing: 1,
+    color: WHIMSY.mute,
+    marginTop: SPACE.xs,
+  },
 	beatEmblem: {
 		position: "absolute",
 		left: "50%",
@@ -945,6 +1687,28 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		zIndex: 4,
 		...sticker,
+	},
+	guestbookAction: {
+		minHeight: 44,
+		alignSelf: "flex-end",
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: SPACE.sm,
+		marginTop: SPACE.md,
+		paddingHorizontal: SPACE.lg,
+		borderWidth: 2,
+		borderColor: INK,
+		borderRadius: RADII.pill,
+		backgroundColor: WHIMSY.paper,
+		...sticker,
+	},
+	guestbookActionPressed: {
+		transform: [{ translateX: 1 }, { translateY: 1 }],
+	},
+	guestbookActionText: {
+		...TYPE.label,
+		color: INK,
 	},
 	// Visits-left chip — a gold-accent sticker in the header, under the title.
 	// "2 of 3 visits left · resets in 2h" — the visit's headline stat, up front.
@@ -982,45 +1746,61 @@ const styles = StyleSheet.create({
 	pigSlot: { position: "absolute", left: 0, right: 0, alignItems: "center" },
 	pigSlotBack: { bottom: "14%", transform: [{ translateX: -78 }] },
 	pigSlotFront: { bottom: "9%", transform: [{ translateX: 72 }] },
-	floatLayer: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, alignItems: "center", justifyContent: "center", zIndex: 5 },
+  floatLayer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 5,
+  },
 	float: { position: "absolute", bottom: "60%", fontFamily: FONTS.whimsy },
 	pigBox: { alignItems: "center", justifyContent: "center" },
-	groundShadow: { position: "absolute", bottom: "11%", height: 13, borderRadius: RADII.pill, backgroundColor: "rgba(42,31,21,0.22)" },
-	nameTag: { marginTop: -8, borderWidth: 2, borderColor: INK, borderRadius: RADII.pill, ...sticker },
-	nameTagYou: { backgroundColor: WHIMSY.paper, paddingHorizontal: SPACE.md, paddingVertical: 2 },
-	nameTagFriend: { backgroundColor: WHIMSY.sun, paddingHorizontal: SPACE.md, paddingVertical: 3 },
-	nameTagText: { fontFamily: FONTS.whimsy, fontSize: 12, color: INK, maxWidth: 130, textAlign: "center" },
+  groundShadow: {
+    position: "absolute",
+    bottom: "11%",
+    height: 13,
+    borderRadius: RADII.pill,
+    backgroundColor: "rgba(42,31,21,0.22)",
+  },
+  nameTag: {
+    marginTop: -8,
+    borderWidth: 2,
+    borderColor: INK,
+    borderRadius: RADII.pill,
+    ...sticker,
+  },
+  nameTagYou: {
+    backgroundColor: WHIMSY.paper,
+    paddingHorizontal: SPACE.md,
+    paddingVertical: 2,
+  },
+  nameTagFriend: {
+    backgroundColor: WHIMSY.sun,
+    paddingHorizontal: SPACE.md,
+    paddingVertical: 3,
+  },
+  nameTagText: {
+    fontFamily: FONTS.whimsy,
+    fontSize: 12,
+    color: INK,
+    maxWidth: 130,
+    textAlign: "center",
+  },
 
-	// Dig spot — a planted shovel near the pigs' feet (low-left, off the host).
-	digSpot: { position: "absolute", left: "8%", bottom: "9%", alignItems: "center", zIndex: 6 },
-	digPulse: {
-		position: "absolute",
-		top: 10,
-		width: 76,
-		height: 76,
-		borderRadius: 38,
-		borderWidth: 3,
-		borderColor: WHIMSY.sun,
-	},
-	digSparkle: { position: "absolute", top: -10, left: "60%", zIndex: 2 },
-	// Dug-earth mound — a decorative soil prop; the brown reads as dirt (no
-	// WHIMSY brown fits between paper and the near-black `bark`).
-	dirtMound: { width: 52, height: 15, borderRadius: RADII.pill, backgroundColor: "#8a5a36", borderWidth: 2, borderColor: INK, marginTop: -11 },
-	digPill: {
-		marginTop: SPACE.xs + 1,
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 2,
-		borderColor: INK,
-		borderRadius: RADII.pill,
-		paddingHorizontal: SPACE.lg - 2,
-		paddingVertical: SPACE.xs + 1,
-		...sticker,
-	},
-	digPillText: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
+	// Match the main Barn's compact upper-left bury control, but dig here.
+  visitTruffleControl: {
+    position: "absolute",
+    left: SPACE.lg,
+    top: SPACE.md,
+    zIndex: 6,
+  },
 	truffleFoundWrap: {
 		position: "absolute",
-		left: "8%",
-		bottom: "11%",
+		left: SPACE.lg,
+		top: SPACE.md,
 		zIndex: 6,
 		maxWidth: "84%", // cooldown note is a full sentence — wrap, don't overflow
 		backgroundColor: WHIMSY.sun,
@@ -1032,7 +1812,12 @@ const styles = StyleSheet.create({
 		...sticker,
 	},
 	truffleFoundRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-	truffleFound: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK, flexShrink: 1 },
+  truffleFound: {
+    fontFamily: FONTS.whimsy,
+    fontSize: 14,
+    color: INK,
+    flexShrink: 1,
+  },
 
 	// Barn-forage Golden Truffle reveal — a cozy sticker banner above the pigs.
 	forageReveal: {
@@ -1054,8 +1839,18 @@ const styles = StyleSheet.create({
 	},
 	forageTruffle: { width: 38, height: 38 },
 	forageTextWrap: { flexShrink: 1 },
-	forageKicker: { ...TYPE.kicker, fontSize: 11, letterSpacing: 1, color: WHIMSY.accent },
-	forageTitle: { fontFamily: FONTS.whimsy, fontSize: 15, color: INK, marginTop: 1 },
+  forageKicker: {
+    ...TYPE.kicker,
+    fontSize: 11,
+    letterSpacing: 1,
+    color: WHIMSY.accent,
+  },
+  forageTitle: {
+    fontFamily: FONTS.whimsy,
+    fontSize: 15,
+    color: INK,
+    marginTop: 1,
+  },
 	forageSub: { ...TYPE.hand, fontSize: 12, color: WHIMSY.mute, marginTop: 1 },
 
 	// Post-tickle callout — sits in normal flow BELOW the tally band with its
@@ -1073,7 +1868,12 @@ const styles = StyleSheet.create({
 		...sticker,
 	},
 	ticklesPopTitle: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
-	ticklesPopSub: { ...TYPE.kicker, fontSize: 11, color: WHIMSY.mute, marginTop: 1 },
+  ticklesPopSub: {
+    ...TYPE.kicker,
+    fontSize: 11,
+    color: WHIMSY.mute,
+    marginTop: 1,
+  },
 	// Tail on TOP, pointing UP at the tally band it's celebrating.
 	ticklesPopTail: {
 		position: "absolute",
@@ -1089,7 +1889,14 @@ const styles = StyleSheet.create({
 		borderBottomColor: INK,
 	},
 
-	napScrim: { ...StyleSheet.absoluteFillObject, zIndex: 50, backgroundColor: MODAL_BACKDROP_BG, alignItems: "center", justifyContent: "center", padding: SPACE.xl - 4 },
+  napScrim: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 50,
+    backgroundColor: MODAL_BACKDROP_BG,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: SPACE.xl - 4,
+  },
 	napCard: {
 		width: "100%",
 		maxWidth: 320,
@@ -1102,9 +1909,21 @@ const styles = StyleSheet.create({
 		...sticker,
 	},
 	napGlyph: {},
-	napKicker: { ...TYPE.kicker, letterSpacing: 1, color: WHIMSY.accent, marginTop: SPACE.xs + 2 },
+  napKicker: {
+    ...TYPE.kicker,
+    letterSpacing: 1,
+    color: WHIMSY.accent,
+    marginTop: SPACE.xs + 2,
+  },
 	napTitle: { ...TYPE.pageTitle, color: INK, marginTop: 2 },
-	napBody: { ...TYPE.body, lineHeight: 22, color: WHIMSY.mute, textAlign: "center", marginTop: SPACE.sm, marginBottom: SPACE.lg },
+  napBody: {
+    ...TYPE.body,
+    lineHeight: 22,
+    color: WHIMSY.mute,
+    textAlign: "center",
+    marginTop: SPACE.sm,
+    marginBottom: SPACE.lg,
+  },
 	napStats: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -1118,10 +1937,36 @@ const styles = StyleSheet.create({
 		marginBottom: SPACE.lg,
 	},
 	napStat: { flex: 1, alignItems: "center", paddingHorizontal: SPACE.xs + 2 },
-	napStatNumRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3 },
+  napStatNumRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+  },
 	napStatNum: { fontFamily: FONTS.whimsy, fontSize: 18, color: INK },
-	napStatLabel: { ...TYPE.kickerPill, letterSpacing: 0.5, textTransform: "none", color: WHIMSY.mute, marginTop: 2, textAlign: "center" },
-	napStatDivider: { width: 2, alignSelf: "stretch", backgroundColor: INK, opacity: 0.5 },
-	napBtn: { alignSelf: "stretch", backgroundColor: WHIMSY.sun, borderWidth: 2, borderColor: INK, borderRadius: RADII.lg, paddingVertical: SPACE.md, alignItems: "center", ...sticker },
+  napStatLabel: {
+    ...TYPE.kickerPill,
+    letterSpacing: 0.5,
+    textTransform: "none",
+    color: WHIMSY.mute,
+    marginTop: 2,
+    textAlign: "center",
+  },
+  napStatDivider: {
+    width: 2,
+    alignSelf: "stretch",
+    backgroundColor: INK,
+    opacity: 0.5,
+  },
+  napBtn: {
+    alignSelf: "stretch",
+    backgroundColor: WHIMSY.sun,
+    borderWidth: 2,
+    borderColor: INK,
+    borderRadius: RADII.lg,
+    paddingVertical: SPACE.md,
+    alignItems: "center",
+    ...sticker,
+  },
 	napBtnText: { ...TYPE.numeral, fontSize: 17, color: INK },
 });

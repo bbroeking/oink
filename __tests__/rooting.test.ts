@@ -40,18 +40,26 @@ import {
 	dugInCurrentWindow,
 	bannerDigStatus,
 	feedingPhaseView,
+	patchCtaLabel,
 } from "../utils/rooting";
 import type { Find, PatchBoard } from "../utils/rooting";
+import { applyFeedingSchedule } from "../utils/feedingConfig";
 import {
 	PATCH_COLS,
-	PATCH_OPEN_SECS,
 	PATCH_ROWS,
-	ROOTING_WINDOW_OFFSET_SECS,
-	ROOTING_WINDOW_SECS,
 	STIR_BUDGET,
 	STIR_RUB,
 	STIR_SHOVE,
 } from "../constants/dig";
+
+beforeAll(() => {
+	applyFeedingSchedule({
+		mode: "commuter_eastern",
+		windowSecs: 28800,
+		openSecs: 14400,
+		offsetSecs: 0,
+	});
+});
 
 // Mirrors rooting_finds() in the migration: consume exactly four draws.
 function serverFinds(seed: number): string[] {
@@ -346,11 +354,15 @@ describe("normalizePouch — the last gate before p_finds (22P02 regression)", (
 });
 
 describe("feeding windows", () => {
-	test("windowIndex buckets by 8h epochs off the 02:00 UTC anchor", () => {
-		const anchor = ROOTING_WINDOW_OFFSET_SECS * 1000; // 1970-01-01 02:00 UTC
-		expect(windowIndex(anchor)).toBe(0);
-		expect(windowIndex(anchor + ROOTING_WINDOW_SECS * 1000 - 1)).toBe(0);
-		expect(windowIndex(anchor + ROOTING_WINDOW_SECS * 1000)).toBe(1);
+	const utc = (day: number, hour: number, minute = 0) =>
+		Date.UTC(2026, 6, day, hour, minute);
+
+	test("windowIndex advances across the four Eastern commuter windows", () => {
+		const starts = [utc(16, 10), utc(16, 16), utc(16, 21), utc(17, 1)];
+		for (let i = 1; i < starts.length; i++) {
+			expect(windowIndex(starts[i])).toBe(windowIndex(starts[i - 1]) + 1);
+			expect(windowIndex(starts[i] - 1)).toBe(windowIndex(starts[i]) - 1);
+		}
 	});
 
 	test("windowEndsAtMs is the next boundary", () => {
@@ -358,7 +370,7 @@ describe("feeding windows", () => {
 		const win = windowIndex(now);
 		const end = windowEndsAtMs(win);
 		expect(end).toBeGreaterThan(now);
-		expect(end - now).toBeLessThanOrEqual(ROOTING_WINDOW_SECS * 1000);
+		expect(end - now).toBeLessThanOrEqual(9 * 3600 * 1000);
 	});
 
 	test("feedingCountdown formats h/m", () => {
@@ -395,10 +407,8 @@ describe("bannerDigStatus — phase × dug copy matrix", () => {
 	// countdown, which is a CLOSES-in during the open phase. bannerDigStatus
 	// derives the words + number together from the phase, so each cell of the
 	// matrix pins its exact line.
-	const win = 50_000; // arbitrary window (offset-anchored start)
-	const winStartMs = (win * ROOTING_WINDOW_SECS + ROOTING_WINDOW_OFFSET_SECS) * 1000;
-	const openMs = winStartMs + 60_000; // 1m into open
-	const guardedMs = winStartMs + (PATCH_OPEN_SECS + 60) * 1000;
+	const openMs = Date.UTC(2026, 6, 16, 10, 1); // 06:01 Eastern
+	const guardedMs = Date.UTC(2026, 6, 16, 14, 1); // 10:01 Eastern
 
 	test("the fixture times sit in the phases they claim", () => {
 		expect(patchPhaseOpen(openMs)).toBe(true);
@@ -421,9 +431,9 @@ describe("bannerDigStatus — phase × dug copy matrix", () => {
 		);
 	});
 
-	test("guarded + not dug → the guarding line with the next-open countdown", () => {
+	test("guarded + not dug → the opening CTA with the next-open countdown", () => {
 		expect(bannerDigStatus(false, false, guardedMs)).toBe(
-			`he's guarding — opens in ${nextOpenCountdown(guardedMs)}`
+			`Opening in ${nextOpenCountdown(guardedMs)}`
 		);
 	});
 });
@@ -433,11 +443,8 @@ describe("bannerDigStatus — phase × dug copy matrix", () => {
 // closes-in, guarded → opens-in). Both surfaces read it, so a wrong pairing is
 // unrepresentable and the two can never show a different phase or number.
 describe("feedingPhaseView — the shared Feeding clock", () => {
-	const WINDOW_MS = ROOTING_WINDOW_SECS * 1000;
-	const OPEN_MS = PATCH_OPEN_SECS * 1000;
-	const start = 300000 * WINDOW_MS + ROOTING_WINDOW_OFFSET_SECS * 1000;
-	const openMid = start + 60_000; // 1m into open
-	const guardedMid = start + OPEN_MS + 60_000; // 1m into guarded
+	const openMid = Date.UTC(2026, 6, 16, 10, 1);
+	const guardedMid = Date.UTC(2026, 6, 16, 14, 1);
 
 	test("open phase → open:true, countdown is the closes-in number", () => {
 		expect(feedingPhaseView(openMid)).toEqual({
@@ -461,7 +468,7 @@ describe("feedingPhaseView — the shared Feeding clock", () => {
 			`dug this feeding — opens in ${view.countdown}`
 		);
 		expect(bannerDigStatus(false, false, guardedMid)).toBe(
-			`he's guarding — opens in ${view.countdown}`
+			`Opening in ${view.countdown}`
 		);
 	});
 
@@ -469,6 +476,16 @@ describe("feedingPhaseView — the shared Feeding clock", () => {
 		const s = bannerDigStatus(true, true, openMid)!;
 		expect(s).toBe("dug this feeding — back next feeding ★");
 		expect(s).not.toMatch(/\d+\s*[hm]/);
+	});
+});
+
+describe("patchCtaLabel — explicit open/closed action", () => {
+	test("open tells the player what to do now", () => {
+		expect(patchCtaLabel(true, "3h 12m")).toBe("Dig now");
+	});
+
+	test("closed tells the player exactly when it opens", () => {
+		expect(patchCtaLabel(false, "47m")).toBe("Opening in 47m");
 	});
 });
 
@@ -981,68 +998,46 @@ describe("gildedSilhouetteDepth — presence grows one layer earlier per gild", 
 	});
 });
 
-// ── Patch phases (4h open / 4h guarded within each 8h window) ────────────────
+// ── Server-clock commuter phases ─────────────────────────────────────────────
 describe("patch phases", () => {
-	const WINDOW_MS = ROOTING_WINDOW_SECS * 1000;
-	const OPEN_MS = PATCH_OPEN_SECS * 1000;
-	// A clean window boundary: window index 200000 starts here (offset-anchored).
-	const start = 200000 * WINDOW_MS + ROOTING_WINDOW_OFFSET_SECS * 1000;
+	const utc = (day: number, hour: number, minute = 0) =>
+		Date.UTC(2026, 6, day, hour, minute);
 
-	test("open for the first 4h, guarded for the last 4h", () => {
-		expect(patchPhaseOpen(start)).toBe(true);
-		expect(patchPhaseOpen(start + OPEN_MS - 1)).toBe(true);
-		expect(patchPhaseOpen(start + OPEN_MS)).toBe(false);
-		expect(patchPhaseOpen(start + WINDOW_MS - 1)).toBe(false);
-		// The next window opens again at its boundary.
-		expect(patchPhaseOpen(start + WINDOW_MS)).toBe(true);
+	test("uses 4h / 2h / 3h / 2h open spans", () => {
+		const spans = [
+			[utc(16, 10), utc(16, 14), utc(16, 16)],
+			[utc(16, 16), utc(16, 18), utc(16, 21)],
+			[utc(16, 21), utc(17, 0), utc(17, 1)],
+			[utc(17, 1), utc(17, 3), utc(17, 10)],
+		];
+		for (const [start, close, next] of spans) {
+			expect(patchPhaseOpen(start)).toBe(true);
+			expect(patchPhaseOpen(close - 1)).toBe(true);
+			expect(patchPhaseOpen(close)).toBe(false);
+			expect(patchPhaseOpen(next - 1)).toBe(false);
+		}
 	});
 
 	test("phase close and next-open timestamps are window-aligned", () => {
-		const mid = start + 60_000; // 1 minute into the open phase
-		expect(phaseClosesAtMs(mid)).toBe(start + OPEN_MS);
-		expect(nextOpenAtMs(mid)).toBe(start + WINDOW_MS);
-		const guarded = start + OPEN_MS + 60_000; // 1 minute into guarded
-		expect(nextOpenAtMs(guarded)).toBe(start + WINDOW_MS);
+		const mid = utc(16, 10, 1);
+		expect(phaseClosesAtMs(mid)).toBe(utc(16, 14));
+		expect(nextOpenAtMs(mid)).toBe(utc(16, 16));
+		expect(nextOpenAtMs(utc(16, 14, 1))).toBe(utc(16, 16));
 	});
 
 	test("countdowns format like the feeding countdown", () => {
-		// 1h 30m before the phase closes.
-		const t = start + OPEN_MS - (90 * 60_000);
-		expect(phaseClosesCountdown(t)).toBe("1h 30m");
-		// 3h 45m before the patch reopens, from inside the guarded phase.
-		const g = start + WINDOW_MS - (225 * 60_000);
-		expect(nextOpenCountdown(g)).toBe("3h 45m");
+		expect(phaseClosesCountdown(utc(16, 12, 30))).toBe("1h 30m");
+		expect(nextOpenCountdown(utc(17, 6, 15))).toBe("3h 45m");
 	});
 });
 
-// ── The window anchor — boundaries at 02:00 / 10:00 / 18:00 UTC ──────────────
-// Pins the founder's 2026-07-16 schedule shift in WALL-CLOCK terms, so a future
-// re-anchor has to change these deliberately: opens at 02–06 / 10–14 / 18–22
-// UTC (10pm–2am / 6–10am / 2–6pm US Eastern in summer).
-describe("window anchor — 02:00/10:00/18:00 UTC boundaries", () => {
-	const utc = (h: number, m = 0, s = 0) => Date.UTC(2026, 6, 16, h, m, s);
-
-	test("02:00:00 UTC is minute zero of an OPEN phase", () => {
-		expect(patchPhaseOpen(utc(2))).toBe(true);
-		// …and one second before it, the previous window's guarded tail.
-		expect(patchPhaseOpen(utc(1, 59, 59))).toBe(false);
-	});
-
-	test("the open half runs 02:00–06:00, the guarded half 06:00–10:00", () => {
-		expect(patchPhaseOpen(utc(5, 59, 59))).toBe(true);
-		expect(patchPhaseOpen(utc(6))).toBe(false);
-		expect(patchPhaseOpen(utc(9, 59, 59))).toBe(false);
-	});
-
-	test("10:00:00 UTC opens the NEXT window (index ticks with the boundary)", () => {
-		expect(patchPhaseOpen(utc(10))).toBe(true);
-		expect(windowIndex(utc(10))).toBe(windowIndex(utc(9, 59, 59)) + 1);
-	});
-
-	test("window end and next open land on the 10:00 UTC boundary", () => {
-		const mid = utc(2, 30); // inside the 02–10 window
-		expect(windowEndsAtMs(windowIndex(mid))).toBe(utc(10));
-		expect(nextOpenAtMs(mid)).toBe(utc(10));
-		expect(phaseClosesAtMs(mid)).toBe(utc(6));
+describe("Eastern DST", () => {
+	test("06:00 Eastern follows the spring DST offset", () => {
+		const before = Date.UTC(2026, 2, 7, 11); // 06:00 EST
+		const after = Date.UTC(2026, 2, 9, 10); // 06:00 EDT
+		expect(patchPhaseOpen(before)).toBe(true);
+		expect(patchPhaseOpen(after)).toBe(true);
+		expect(new Date(nextOpenAtMs(before)).toISOString()).toBe("2026-03-07T17:00:00.000Z");
+		expect(new Date(nextOpenAtMs(after)).toISOString()).toBe("2026-03-09T16:00:00.000Z");
 	});
 });

@@ -6,7 +6,7 @@
 //   3. Create products in App Store Connect:
 //      a) The "Slop Club" membership — yearly + monthly Auto-Renewable
 //         subscriptions in one Subscription Group:
-//           - yearly  ($24.99/yr)
+//           - yearly  ($29.99/yr)
 //           - monthly ($2.99/mo)
 //      b) The Season Pass — a Consumable, $4.99. (Consumable, NOT
 //         non-consumable: it's re-bought every season. The per-season

@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Sticker } from "./Sticker";
 import { Glyph, GlyphName } from "./Glyph";
-import { WHIMSY, KICKER_TEXT, SPACE, TYPE } from "@/constants/theme";
+import { KICKER_TEXT, SPACE, TYPE, UI_COLORS } from "@/constants/theme";
 
 // A paper Sticker with an optional hand-drawn Glyph, a whimsy title line, and an
 // optional softer sub line. Pick a glyph that fits the surface (zzz for a slept
@@ -63,7 +63,7 @@ export function LoadingBeat({
 		<View style={[styles.beat, style]}>
 			{glyph && <Glyph name={glyph} size={32} style={{ opacity: 0.85 }} />}
 			<Text style={[KICKER_TEXT, { fontSize: 13 }]}>★ {label} ★</Text>
-			<ActivityIndicator color={WHIMSY.ink} />
+			<ActivityIndicator color={UI_COLORS.textPrimary} />
 		</View>
 	);
 }
@@ -76,12 +76,12 @@ const styles = {
 	},
 	title: {
 		...TYPE.cardTitle,
-		color: WHIMSY.ink,
+		color: UI_COLORS.textPrimary,
 		textAlign: "center" as const,
 	},
 	sub: {
 		...TYPE.hand,
-		color: WHIMSY.mute,
+		color: UI_COLORS.textSecondary,
 		textAlign: "center" as const,
 		marginTop: 4,
 	},

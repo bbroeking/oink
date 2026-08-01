@@ -17,17 +17,17 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { rpc } from "./rpc";
 import { nextOpenAtMs } from "./rooting";
+import { foregroundNotificationBehavior } from "./notificationPolicy";
 
 const PUSH_TOKEN_CACHE_KEY = "ttp_push_token_v1";
 
-// Default handler: show alerts + play sound when the app is foreground.
-// Without this, push received while the app is open does nothing visible.
+// Pushes are re-engagement by default: background/terminated delivery still
+// behaves normally, but a push received while the player is already in-game is
+// quiet unless its producer explicitly sends `{ foreground: "alert" }`.
+// This prevents self-caused rewards from sounding over their own receipt UI.
 Notifications.setNotificationHandler({
-	handleNotification: async () => ({
-		shouldShowAlert: true,
-		shouldPlaySound: true,
-		shouldSetBadge: true,
-	}),
+	handleNotification: async (notification) =>
+		foregroundNotificationBehavior(notification.request.content.data),
 });
 
 let inFlight: Promise<string | null> | null = null;

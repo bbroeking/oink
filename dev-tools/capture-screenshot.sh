@@ -16,7 +16,7 @@
 #   season-bounty      — Season tab with bounty cards + claimable
 #   shop-cosmetic      — Shop preview modal on a tickle particle
 #   leaderboard        — Global leaderboard with champion poster
-#   achievement-unlock — AchievementUnlockModal (open via /achievements)
+#   achievement-digest — AchievementDigestModal (trigger with unseen achievements)
 
 set -e
 

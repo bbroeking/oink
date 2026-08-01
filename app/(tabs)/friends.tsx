@@ -1,10 +1,10 @@
-// The Friends hub — "Your Sounder" in the redesign. One tab
-// consolidates three social surfaces behind a segmented control:
-//   Board   — the leaderboard (Leaderboard.tsx) — DEFAULT
-//   Inbox   — the activity feed (Inbox.tsx)
-//   Friends — your friends list + add (Friends.tsx)
-// Defaults to Board so the first impression on opening the hub is
-// the sounder ranked, not your own friend list.
+// The Friends hub consolidates the player's social surfaces behind a
+// segmented control:
+//   Friends  — your friends list + add — DEFAULT
+//   Inbox    — the activity feed
+//   Rankings — the all-time tickle leaderboard
+//   Sounder  — your crew, when the season feature is live
+// Defaults to Friends so the tab label predicts the first thing players see.
 // See docs/season-1-social-redesign.md.
 import { useState, useCallback, useEffect, useMemo } from "react";
 import {
@@ -41,18 +41,18 @@ import {
 type Segment = "friends" | "inbox" | "board" | "sounder";
 
 const BASE_SEGMENTS: { key: Segment; label: string; icon: IconName }[] = [
-	{ key: "board", label: "Board", icon: "ranks" },
-	{ key: "inbox", label: "Inbox", icon: "bell" },
 	{ key: "friends", label: "Friends", icon: "friends" },
+	{ key: "inbox", label: "Inbox", icon: "bell" },
+	{ key: "board", label: "Rankings", icon: "ranks" },
 ];
 
 // Per-segment page header — kicker over the whimsy title, both swapping with the
 // active nav card. Sounder's title flips to "Find your Sounder" while crewless
 // (handled at the call site so it can read crew state).
 const SEGMENT_HEADERS: Record<Segment, { kicker: string; title: string }> = {
-	board: { kicker: "who's on top", title: "The Board" },
+	board: { kicker: "all-time tickles", title: "Rankings" },
 	inbox: { kicker: "word from the bog", title: "Inbox" },
-	friends: { kicker: "your drove", title: "Friends" },
+	friends: { kicker: "your pig pals", title: "Friends" },
 	sounder: { kicker: "your herd", title: "Your Sounder" },
 };
 
@@ -83,14 +83,14 @@ export default function FriendsHubScreen() {
 	);
 	// Deep-link target — any segment can be routed to (e.g. the launch nudge
 	// sends "?seg=sounder", the SounderCard sends "?seg=board"). Sounder is
-	// flag-gated, so a "?seg=sounder" with the flag off falls back to Board.
+	// flag-gated, so a "?seg=sounder" with the flag off falls back to Friends.
 	const { seg } = useLocalSearchParams<{ seg?: string }>();
 	const wantSeg =
 		typeof seg === "string" && (SEGMENT_KEYS as string[]).includes(seg)
 			? (seg as Segment)
 			: null;
 	const targetSeg = wantSeg && !(wantSeg === "sounder" && !coopDig) ? wantSeg : null;
-	const [segment, setSegment] = useState<Segment>(targetSeg ?? "board");
+	const [segment, setSegment] = useState<Segment>(targetSeg ?? "friends");
 	// Which scope the Board opens on. Stays undefined (Global default) until a
 	// jump asks for a specific one — the Sounder card's standings note opens
 	// the Sounders scope directly.
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
 	title: { ...TYPE.display, color: WHIMSY.ink },
 	titleRule: { ...TITLE_RULE, width: 64, marginTop: 4 },
 	// Top-level nav — flex-1 sticker cards, icon over a Fredoka label. The card
-	// order stays Board · Inbox · Friends · Sounder.
+	// order stays Friends · Inbox · Rankings · Sounder.
 	nav: { flexDirection: "row", gap: SPACE.sm, marginBottom: SPACE.lg },
 	navCard: {
 		flex: 1,
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
 	},
 	badgeText: {
 		fontFamily: FONTS.whimsy,
-		fontSize: 10,
+		fontSize: 11,
 		color: WHIMSY.paper,
 	},
 	body: { flex: 1, marginTop: SPACE.md },

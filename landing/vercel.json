@@ -3,7 +3,8 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/i/:code*", "destination": "/i" },
-    { "source": "/r/:code", "destination": "/" }
+    { "source": "/r/:code", "destination": "/" },
+    { "source": "/redeem/:code", "destination": "/redeem" }
   ],
   "headers": [
     {

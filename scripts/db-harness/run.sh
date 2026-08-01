@@ -119,6 +119,15 @@ CHAIN=(
 	# table access under RLS, no RPC); exercised by 40_friend_favorites_smoke.sql.
 	# Depends only on auth.users (stubbed) + the `authenticated` role (stubbed).
 	supabase/migrations/20260739300000_friend_favorites.sql
+	# The production schema already has are_blocked(); the minimal harness does
+	# not, so provide its no-block fixture before applying the recruiting RPCs.
+	scripts/db-harness/00e_sounder_invite_any_player_prep.sql
+	# 20260801000000 opens leader recruiting beyond friends and ranks the default
+	# candidate board by all-time truffle finds dug; exercised by 41 smoke.
+	supabase/migrations/20260801000000_sounder_invite_any_player.sql
+	# 20260801010000 closes the default PUBLIC/anon EXECUTE grants on the new
+	# SECURITY DEFINER RPCs while retaining authenticated client access.
+	supabase/migrations/20260801010000_sounder_invite_security_grants.sql
 	# 20260742000000 makes open Sounders knock-to-join: a crewless pig files a
 	# crew_join_requests row (request_to_join), any member accepts/declines. Carries
 	# join_crew (20260738000000) — repurposed into request semantics — + crew_state
@@ -186,14 +195,23 @@ trap 'docker rm -f "$NAME" >/dev/null 2>&1 || true' EXIT
 until docker logs "$NAME" 2>&1 | grep -q "init process complete"; do :; done
 until docker exec "$NAME" pg_isready -U postgres >/dev/null 2>&1; do :; done
 
+# The commuter schedule intentionally replaces the legacy uniform clock. Apply
+# it only after historical clock smokes pin their own migrations, then exercise
+# the new authoritative clock in smoke 62.
 cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		scripts/db-harness/[1234]*_smoke.sql \
 		scripts/db-harness/54_feedback_den_smoke.sql \
 		scripts/db-harness/55_field_guide_smoke.sql \
 		scripts/db-harness/56_tickle_breakdown_smoke.sql \
 		scripts/db-harness/57_relic_achievements_smoke.sql \
+		scripts/db-harness/58_cosmetic_supply_smoke.sql \
+		scripts/db-harness/59_equip_cosmetic_smoke.sql \
+		scripts/db-harness/60_pig_roster_smoke.sql \
+		scripts/db-harness/61_enemy_rankings_smoke.sql \
+		supabase/migrations/20260799000000_server_clock_commuter_windows.sql \
+		scripts/db-harness/62_commuter_clock_smoke.sql \
 	| docker exec -i "$NAME" psql -U postgres -v ON_ERROR_STOP=1 > /tmp/db-harness.out 2>&1 \
 	|| { echo "HARNESS FAILED — tail of /tmp/db-harness.out:"; tail -25 /tmp/db-harness.out; exit 1; }
 
-grep -E "chk|ribbons after" /tmp/db-harness.out | head -40
+grep -m 40 -E "chk|ribbons after" /tmp/db-harness.out
 echo "DB HARNESS OK (full output: /tmp/db-harness.out)"

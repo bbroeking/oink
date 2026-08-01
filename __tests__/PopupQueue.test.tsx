@@ -18,6 +18,7 @@ import {
 	usePopupSlot,
 	POPUP_HANDOFF_GAP_MS,
 	POPUP_TEARDOWN_MS,
+	releasePopupThenNavigate,
 } from "../components/ui/PopupQueue";
 
 type SlotSpec = { want: boolean; priority: number };
@@ -28,15 +29,32 @@ type SlotHandle = { visible: boolean; release: () => void };
 // re-render on every ctx/want change, so these never go stale.
 const reg: Record<string, SlotHandle> = {};
 
-function Probe({
-	id,
-	want,
-	priority,
-}: {
-	id: string;
-	want: boolean;
-	priority: number;
-}) {
+describe("releasePopupThenNavigate", () => {
+	beforeEach(() => {
+		jest.useFakeTimers();
+	});
+
+	afterEach(() => {
+		jest.useRealTimers();
+	});
+
+	test("releases now, clears before admission, and navigates after the full gap", () => {
+		const events: string[] = [];
+		releasePopupThenNavigate({
+			release: () => events.push("release"),
+			clear: () => events.push("clear"),
+			navigate: () => events.push("navigate"),
+		});
+
+		expect(events).toEqual(["release"]);
+		jest.advanceTimersByTime(POPUP_TEARDOWN_MS);
+		expect(events).toEqual(["release", "clear"]);
+		jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS - POPUP_TEARDOWN_MS);
+		expect(events).toEqual(["release", "clear", "navigate"]);
+	});
+});
+
+function Probe({ id, want, priority }: { id: string; want: boolean; priority: number }) {
 	const slot = usePopupSlot(id, want, priority);
 	reg[id] = slot;
 	return null;
@@ -487,11 +505,7 @@ function CeremonyProbe({ want, priority }: { want: boolean; priority: number }) 
 // A housekeeping Probe whose want is gated on the session flag (as the real
 // achievements/releaseNotes slots are).
 function HousekeepingProbe({ baseWant }: { baseWant: boolean }) {
-	const slot = usePopupSlot(
-		"housekeeping",
-		baseWant && !ceremonyShownThisSession(),
-		45
-	);
+	const slot = usePopupSlot("housekeeping", baseWant && !ceremonyShownThisSession(), 45);
 	reg.housekeeping = slot;
 	return null;
 }
@@ -578,85 +592,5 @@ describe("same-slot re-present during its own drain", () => {
 		// The queue is healthy: a later want presents directly from idle.
 		setWant("truffleSheet", true);
 		expectOnlyVisible("truffleSheet");
-	});
-});
-
-// ── quiet-login Sounder nudge: the fallback that only fires on an empty queue ──
-// The sounder slot's want ANDs with !anyPopupPresentedThisSession(): if ANY other
-// popup presents this session the nudge is suppressed; only on a genuinely quiet
-// login (nothing else wanted) does it fire. PopupQueue calls markPopupPresented()
-// (excluding the sounderLaunch id) on every presenting edge; the tracker is an
-// in-memory module flag, exactly as the real slot reads it.
-import {
-	anyPopupPresentedThisSession,
-	__resetPopupSession,
-} from "../utils/popupSession";
-
-// A sounder Probe wired like the real slot: crewless want ANDs with the
-// queue-empty gate. Low priority so it can never preempt a real dialog.
-function SounderProbe({ crewless }: { crewless: boolean }) {
-	const slot = usePopupSlot(
-		"sounderLaunch",
-		crewless && !anyPopupPresentedThisSession(),
-		90
-	);
-	reg.sounderLaunch = slot;
-	return null;
-}
-
-describe("quiet-login Sounder nudge (fallback)", () => {
-	beforeEach(() => __resetPopupSession());
-	afterEach(() => __resetPopupSession());
-
-	it("fires when NOTHING else presented this session", () => {
-		act(() => {
-			renderer = TestRenderer.create(
-				<PopupQueueProvider>
-					<SounderProbe crewless={true} />
-				</PopupQueueProvider>
-			);
-		});
-		// Empty queue: the fallback presents.
-		expect(reg.sounderLaunch.visible).toBe(true);
-		// Its own presentation must NOT count as "a popup presented" (else it would
-		// retroactively suppress itself). markPopupPresented excludes the slot id.
-		expect(anyPopupPresentedThisSession()).toBe(false);
-	});
-
-	it("never fires this session once another slot presents first", () => {
-		let setReal: React.Dispatch<React.SetStateAction<boolean>> = () => {};
-		let setCrewless: React.Dispatch<React.SetStateAction<boolean>> = () => {};
-		function Wrap() {
-			const [real, sr] = useState(false);
-			const [crewless, sc] = useState(false);
-			setReal = sr;
-			setCrewless = sc;
-			return (
-				<PopupQueueProvider>
-					<Probe id="schism" want={real} priority={10} />
-					<SounderProbe crewless={crewless} />
-				</PopupQueueProvider>
-			);
-		}
-		act(() => {
-			renderer = TestRenderer.create(<Wrap />);
-		});
-
-		// A real dialog presents first — the session flag latches.
-		act(() => setReal(true));
-		expectOnlyVisible("schism");
-		expect(anyPopupPresentedThisSession()).toBe(true);
-
-		// The crewless condition only becomes known afterward. The nudge's want
-		// ANDs with the (now true) presented-flag's negation, so it stays false —
-		// it never fires this session even after the real dialog is dismissed.
-		act(() => setCrewless(true));
-		expect(reg.sounderLaunch.visible).toBe(false);
-
-		release("schism");
-		act(() => {
-			jest.advanceTimersByTime(POPUP_HANDOFF_GAP_MS * 2);
-		});
-		expect(reg.sounderLaunch.visible).toBe(false);
 	});
 });

@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
 	buyTextOff: { color: WHIMSY.mute },
 
 	note: { ...TYPE.kicker, color: WHIMSY.accent, textAlign: "center", marginTop: SPACE.sm + 2 },
-	footnote: { ...TYPE.label, fontFamily: FONTS.hand, letterSpacing: 0, color: WHIMSY.muteSoft, textAlign: "center", marginTop: SPACE.sm },
+	footnote: { ...TYPE.label, fontFamily: FONTS.hand, letterSpacing: 0, color: WHIMSY.mute, textAlign: "center", marginTop: SPACE.sm },
 
 	doneBtn: {
 		marginTop: SPACE.md,

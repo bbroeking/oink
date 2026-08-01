@@ -3,8 +3,8 @@
 // bottom:
 //   • the WEEKLY RACE HERO — this week's spoils ladder (tickles to the podium +
 //     the "every digging snout wins" floor, from the server's `prizes`), the
-//     weekly board (finds per digging snout, my row pinned), the countdown, and
-//     the sub-quorum nudge. This is the beat anyone can win — promoted to the
+//     weekly board (overall finds, my row pinned), the countdown, and
+//     the participation beat. This is the race anyone can win — promoted to the
 //     hero so the winnable-every-Monday race reads first.
 //   • the SEASON board (secondary, collapsible) — cumulative finds all season,
 //     every crew with a find ranked. The long game, kept always-visible but
@@ -39,23 +39,33 @@ import {
 	RaceCrewDetail,
 	RacePrizes,
 	RaceStandings,
-	SeasonStandingsRow,
 	StandingsRow,
 	cycleEndWeekday,
 	fetchRaceCrewDetail,
 	formatRaceCountdown,
-	perSnoutLabel,
+	raceSpoilsForRank,
 	raceCycle,
 	standingsRows,
-	standingsRowsSeason,
 } from "@/utils/race";
 import { cosmeticImage, cosmeticName } from "@/utils/rewardArt";
-import { COLORS, FONTS, RADII, SHADOW_SM, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import {
+	COLORS,
+	FONTS,
+	RADII,
+	SHADOW_SM,
+	SPACE,
+	TYPE,
+	WHIMSY,
+} from "@/constants/theme";
+import {
+	devCeremonyFixture,
+	type DevCeremony,
+} from "@/utils/devSeasonOverrides";
 
-const VISIBLE_ROWS = 5;
-// The season board shows this many rows before "see the full field" — kept short
-// so the WEEKLY hero above it stays the focus.
-const SEASON_PEEK_ROWS = 3;
+// The season-tab card is a glanceable race preview: podium first, then my
+// Sounder pinned beneath it when I'm outside the top three. The full field owns
+// the longer table.
+const VISIBLE_ROWS = 3;
 
 // cosmeticName (id → "Mud Derby Bg") + cosmeticImage (id → sprite) now live in
 // utils/rewardArt, the single owner of cosmetic art/name resolution.
@@ -81,6 +91,8 @@ export function RaceSection({
 	myCrewId,
 	crewSize,
 	refreshKey,
+	devCeremony,
+	onDismissDevCeremony,
 }: {
 	myCrewId: string | null;
 	crewSize: number;
@@ -88,6 +100,8 @@ export function RaceSection({
 	 *  finds move the standings immediately (focus never changes under the
 	 *  dig modal, so useRace's focus-refresh alone leaves this card stale). */
 	refreshKey?: number;
+	devCeremony?: DevCeremony;
+	onDismissDevCeremony?: () => void;
 }) {
 	const race = useRace(true);
 	const { state } = race;
@@ -111,10 +125,22 @@ export function RaceSection({
 		setSeen((prev) => {
 			const next = new Set(prev);
 			next.add(cycleKey);
-			AsyncStorage.setItem("race_seen", JSON.stringify([...next])).catch(() => {});
+			AsyncStorage.setItem("race_seen", JSON.stringify([...next])).catch(
+				() => {},
+			);
 			return next;
 		});
 	}, []);
+
+	if (__DEV__ && devCeremony) {
+		return (
+			<Ceremony
+				key={`dev-${devCeremony}`}
+				last={devCeremonyFixture(devCeremony)}
+				onDismiss={onDismissDevCeremony ?? (() => {})}
+			/>
+		);
+	}
 
 	// Feature dark (RPC not pushed) — render nothing, exactly like the meter's
 	// fallback. Also covers the first-load null before the fetch resolves.
@@ -147,14 +173,7 @@ export function RaceSection({
 	return (
 		<View style={styles.wrap}>
 			<Text style={styles.kicker}>★ the dig-off</Text>
-			{/* The promise, up front — every Monday the whole barnyard splits the
-			    spoils, and every digging Sounder takes a share. */}
-			<Text style={styles.promise}>
-				every Monday the whole barnyard splits the spoils — dig this week to
-				take your share
-			</Text>
-			<WeeklyHero state={state} myCrewId={myCrewId} crewSize={crewSize} />
-			<SeasonBoard state={state} myCrewId={myCrewId} />
+			<WeeklyHero state={state} myCrewId={myCrewId} />
 			{last && <LastRaceLine last={last} />}
 		</View>
 	);
@@ -165,11 +184,9 @@ export function RaceSection({
 function WeeklyHero({
 	state,
 	myCrewId,
-	crewSize,
 }: {
 	state: RaceStandings;
 	myCrewId: string | null;
-	crewSize: number;
 }) {
 	const endsAtMs = useMemo(() => {
 		const t = new Date(state.cycle.ends_at).getTime();
@@ -179,14 +196,18 @@ function WeeklyHero({
 	const [countdown, setCountdown] = useState(() => raceCountdownChip(endsAtMs));
 	useEffect(() => {
 		setCountdown(raceCountdownChip(endsAtMs));
-		const t = setInterval(() => setCountdown(raceCountdownChip(endsAtMs)), 60000);
+		const t = setInterval(
+			() => setCountdown(raceCountdownChip(endsAtMs)),
+			60000,
+		);
 		return () => clearInterval(t);
 	}, [endsAtMs]);
 
-	// The weekly pinned-row view: top ranked rows + my pinned row (per-snout score).
+	// The weekly pinned-row view: top ranked rows + my pinned row (overall finds).
 	const view = standingsRows(state, myCrewId, VISIBLE_ROWS);
 	const rows = view.rows;
 	const empty = rows.length === 0;
+	const projectedSpoils = weeklyProjectedSpoils(state);
 
 	// The expandable member ledger. One crew open at a time; each crew's detail
 	// is fetched once and cached ("dark" if the RPC resolves null pre-push).
@@ -209,47 +230,71 @@ function WeeklyHero({
 				});
 			}
 		},
-		[expandedCrew, detailCache]
+		[expandedCrew, detailCache],
 	);
 
 	return (
-		<Sticker color="sun" rotate={-0.4} radius={RADII.lg} style={styles.heroCard}>
+		<Sticker
+			color="sun"
+			rotate={-0.4}
+			radius={RADII.lg}
+			style={styles.heroCard}
+		>
 			<View style={styles.heroHead}>
-				<Text style={styles.heroKicker}>★ this week's race</Text>
+				<Text style={styles.heroTitle}>This week's race</Text>
 				<View style={styles.countdownPill}>
 					<Text style={styles.countdownText}>{countdown}</Text>
 				</View>
 			</View>
 
-			{/* The spoils ladder — stated before the board, from the server prizes. */}
-			<SpoilsStrip prizes={state.prizes} />
+			<Text style={styles.raceRule}>
+				most finds wins · every Sounder that digs takes a share
+			</Text>
 
 			{empty ? (
 				<View style={styles.emptyBeat}>
-					<Glyph name="zzz" size={28} style={{ opacity: 0.85, marginBottom: SPACE.xs }} />
+					<Glyph
+						name="zzz"
+						size={28}
+						style={{ opacity: 0.85, marginBottom: SPACE.xs }}
+					/>
 					<Text style={styles.emptyLine}>
 						the patch is quiet — first finds take this week's lead
 					</Text>
 				</View>
 			) : (
-				<View style={styles.rows}>
-					{rows.map((r, i) => {
-						const crewId = r.kind === "separator" ? null : r.crew_id;
-						const expanded = !!crewId && crewId === expandedCrew;
-						return (
-							<View key={weeklyRowKey(r, i)}>
-								<WeeklyRow
-									row={r}
-									onPress={crewId ? () => toggleCrew(crewId) : undefined}
-								/>
-								{expanded && crewId && <CrewLedger entry={detailCache[crewId]} />}
-							</View>
-						);
-					})}
+				<View style={styles.board}>
+					<View style={styles.boardHead}>
+						<Text style={styles.boardLabel}>standings</Text>
+						<Text style={styles.boardFindsLabel}>finds</Text>
+					</View>
+					<View style={styles.rows}>
+						{rows.map((r, i) => {
+							const crewId = r.kind === "separator" ? null : r.crew_id;
+							const expanded = !!crewId && crewId === expandedCrew;
+							return (
+								<View key={weeklyRowKey(r, i)}>
+									<WeeklyRow
+										row={r}
+										note={
+											r.kind !== "separator" && r.highlighted
+												? projectedSpoils
+												: null
+										}
+										onPress={crewId ? () => toggleCrew(crewId) : undefined}
+									/>
+									{expanded && crewId && (
+										<CrewLedger entry={detailCache[crewId]} />
+									)}
+								</View>
+							);
+						})}
+					</View>
 				</View>
 			)}
 
-			<WeeklyBeat state={state} crewSize={crewSize} />
+			{/* Keep the pot obvious without letting it outrank the live board. */}
+			<SpoilsStrip prizes={state.prizes} />
 
 			{rows.length > 0 && (
 				<Pressable
@@ -260,7 +305,10 @@ function WeeklyHero({
 						})
 					}
 					hitSlop={8}
-					style={({ pressed }) => [styles.fullFieldLink, pressed && { opacity: 0.6 }]}
+					style={({ pressed }) => [
+						styles.fullFieldLink,
+						pressed && { opacity: 0.6 },
+					]}
 				>
 					<Text style={styles.fullFieldText}>see the full field ›</Text>
 				</Pressable>
@@ -274,52 +322,89 @@ function WeeklyHero({
 // new reward the founder wants obvious), with truffles + the prize hat + the
 // participation floor spelled out beneath. Renders even on a cold board so a
 // first player sees exactly what's on the line.
-function SpoilsStrip({ prizes }: { prizes: RacePrizes }) {
-	const podium: { place: string; badge: string; tint: string; tickles: number }[] = [
-		{ place: "1st", badge: "1", tint: COLORS.gold, tickles: prizes.tickles.first },
-		{ place: "2nd", badge: "2", tint: COLORS.silver, tickles: prizes.tickles.second },
-		{ place: "3rd", badge: "3", tint: COLORS.bronze, tickles: prizes.tickles.third },
+export function SpoilsStrip({
+	prizes,
+	compact = false,
+}: {
+	prizes: RacePrizes;
+	compact?: boolean;
+}) {
+	const podium: {
+		place: string;
+		badge: string;
+		tint: string;
+		tickles: number;
+		truffles: number;
+	}[] = [
+		{
+			place: "1st",
+			badge: "1",
+			tint: COLORS.gold,
+			tickles: prizes.tickles.first,
+			truffles: prizes.truffles.first,
+		},
+		{
+			place: "2nd",
+			badge: "2",
+			tint: COLORS.silver,
+			tickles: prizes.tickles.second,
+			truffles: prizes.truffles.second,
+		},
+		{
+			place: "3rd",
+			badge: "3",
+			tint: COLORS.bronze,
+			tickles: prizes.tickles.third,
+			truffles: prizes.truffles.third,
+		},
 	];
 	return (
-		<View style={styles.spoils}>
-			<Text style={styles.spoilsKicker}>★ this week's spoils</Text>
+		<View style={[styles.spoils, compact && styles.spoilsCompact]}>
+			<Text style={styles.spoilsKicker}>★ Monday's spoils</Text>
 			<View style={styles.podiumRow}>
 				{podium.map((p) => (
-					<View key={p.place} style={styles.podiumCell}>
+					<View
+						key={p.place}
+						style={styles.podiumCell}
+						accessible
+						accessibilityLabel={`${p.place}: ${p.tickles} tickles and ${p.truffles} Golden Truffles`}
+					>
 						<View style={[styles.podiumBadge, { backgroundColor: p.tint }]}>
 							<Text style={styles.podiumBadgeText}>{p.badge}</Text>
 						</View>
-						<View style={styles.podiumPrize}>
-							<TickleIcon size={18} />
-							<Text style={styles.podiumNum}>{p.tickles}</Text>
+						<View style={styles.podiumRewards}>
+							<View style={styles.podiumPrize}>
+								<TickleIcon size={16} />
+								<Text style={styles.podiumNum}>{p.tickles}</Text>
+							</View>
+							<View style={styles.podiumPrize}>
+								<Image
+									source={cosmeticImage("golden_truffle")}
+									style={styles.podiumTruffle}
+									resizeMode="contain"
+								/>
+								<Text style={styles.podiumTruffleNum}>{p.truffles}</Text>
+							</View>
 						</View>
 					</View>
 				))}
 			</View>
-			<View style={styles.spoilsFootRow}>
-				<Image
-					source={cosmeticImage("golden_truffle")}
-					style={styles.truffleIcon}
-					resizeMode="contain"
-				/>
-				<Text style={styles.spoilsFoot}>
-					+ {prizes.truffles.first}·{prizes.truffles.second}·{prizes.truffles.third}{" "}
-					Golden Truffles & a prize hat to the podium
-				</Text>
-			</View>
 			<Text style={styles.spoilsFloor}>
-				every digging snout banks {prizes.tickles.participation}+ tickles
+				every snout that digs banks {prizes.tickles.participation}+ tickles ·
+				truffles to the top half too
 			</Text>
 		</View>
 	);
 }
 
-// ── A weekly board row — scored by finds per digging snout (the rank metric) ───
+// ── A weekly board row — scored by total finds (the rank metric) ───────────────
 function WeeklyRow({
 	row,
+	note,
 	onPress,
 }: {
 	row: StandingsRow;
+	note?: string | null;
 	onPress?: () => void;
 }) {
 	if (row.kind === "separator") {
@@ -346,14 +431,14 @@ function WeeklyRow({
 					{row.name}
 				</Text>
 				{row.diggers > 0 && (
-					<Text style={styles.rowSub}>
-						{row.diggers} digging{ranked ? "" : " · needs a second snout"}
+					<Text style={[styles.rowSub, row.highlighted && styles.rowSubMine]}>
+						{row.diggers} digging{row.highlighted ? " · your Sounder" : ""}
 					</Text>
 				)}
+				{note && <Text style={styles.rowReward}>{note}</Text>}
 			</View>
 			<View style={styles.rowFindsCol}>
-				<Text style={styles.rowFindsNum}>{perSnoutLabel(row.avg)}</Text>
-				<Text style={styles.rowFindsCap}>per snout</Text>
+				<Text style={styles.rowFindsNum}>{row.total_finds}</Text>
 			</View>
 		</Pressable>
 	);
@@ -367,7 +452,11 @@ export function weeklyRowKey(r: StandingsRow, i: number): string {
 // The inline member breakdown under an expanded board row. `undefined` while the
 // fetch is in flight (→ a loading beat); "dark" never renders (the row auto-
 // collapses first). Otherwise one line per digger, finds DESC as the server sent.
-export function CrewLedger({ entry }: { entry: RaceCrewDetail | "dark" | undefined }) {
+export function CrewLedger({
+	entry,
+}: {
+	entry: RaceCrewDetail | "dark" | undefined;
+}) {
 	if (entry === undefined) {
 		return (
 			<View style={styles.ledger}>
@@ -400,160 +489,24 @@ export function CrewLedger({ entry }: { entry: RaceCrewDetail | "dark" | undefin
 	);
 }
 
-// ── THE SEASON BOARD — cumulative finds, all season (secondary, collapsible) ───
-function SeasonBoard({
-	state,
-	myCrewId,
-}: {
-	state: RaceStandings;
-	myCrewId: string | null;
-}) {
-	const [open, setOpen] = useState(false);
-	const rows = standingsRowsSeason(
-		state.season,
-		state.mineSeason,
-		myCrewId,
-		open ? VISIBLE_ROWS : SEASON_PEEK_ROWS
-	);
-	if (rows.length === 0) return null;
-
-	return (
-		<Sticker color="paper" rotate={0.3} radius={RADII.lg} style={styles.seasonCard}>
-			<Pressable
-				onPress={() => setOpen((o) => !o)}
-				hitSlop={6}
-				style={({ pressed }) => [styles.seasonHead, pressed && { opacity: 0.6 }]}
-				accessibilityRole="button"
-				accessibilityLabel={open ? "Collapse the season board" : "Expand the season board"}
-			>
-				<View style={{ flex: 1 }}>
-					<Text style={styles.seasonKicker}>★ season standings</Text>
-					<Text style={styles.seasonSub}>cumulative finds, all season long</Text>
-				</View>
-				<Text style={styles.seasonToggle}>{open ? "less ›" : "more ›"}</Text>
-			</Pressable>
-
-			<View style={styles.rows}>
-				{rows.map((r, i) => (
-					<SeasonRow key={seasonRowKey(r, i)} row={r} />
-				))}
-			</View>
-
-			<Pressable
-				onPress={() =>
-					router.push({
-						pathname: "/race-standings",
-						params: myCrewId ? { crew: myCrewId, board: "season" } : { board: "season" },
-					})
-				}
-				hitSlop={8}
-				style={({ pressed }) => [styles.fullFieldLink, pressed && { opacity: 0.6 }]}
-			>
-				<Text style={styles.fullFieldText}>see the full season ›</Text>
-			</Pressable>
-		</Sticker>
-	);
-}
-
-export function seasonRowKey(r: SeasonStandingsRow, i: number): string {
-	if (r.kind === "separator") return `sep-${i}`;
-	return `${r.crew_id || r.name}-${i}`;
-}
-
-export function SeasonRow({
-	row,
-	onPress,
-}: {
-	row: SeasonStandingsRow;
-	onPress?: () => void;
-}) {
-	if (row.kind === "separator") {
-		return (
-			<View style={styles.separatorRow}>
-				<Text style={styles.separatorDots}>· · ·</Text>
-			</View>
-		);
-	}
-	return (
-		<Pressable
-			onPress={onPress}
-			disabled={!onPress}
-			style={({ pressed }) => [
-				styles.row,
-				row.highlighted && styles.rowMine,
-				pressed && onPress && styles.rowPressed,
-			]}
-		>
-			<Text style={styles.rowRank}>#{row.rank}</Text>
-			<View style={styles.rowMid}>
-				<Text style={styles.rowName} numberOfLines={1}>
-					{row.name}
-				</Text>
-				{row.diggers > 0 && (
-					<Text style={styles.rowSub}>{row.diggers} digging</Text>
-				)}
-			</View>
-			<View style={styles.rowFindsCol}>
-				<Text style={styles.rowFindsNum}>{row.total_finds}</Text>
-				<Text style={styles.rowFindsCap}>
-					{row.total_finds === 1 ? "find" : "finds"}
-				</Text>
-			</View>
-		</Pressable>
-	);
-}
-
-// ── The weekly beat — one line off the weekly `mine` data ──────────────────────
-// Status (placement / sub-quorum nudge / cold-start prompt). Sits under the board
-// inside the hero.
-function WeeklyBeat({
-	state,
-	crewSize,
-}: {
-	state: RaceStandings;
-	crewSize: number;
-}) {
+// The payout forecast belongs to my highlighted row rather than a detached
+// footer, so placement and consequence read as one thought.
+function weeklyProjectedSpoils(state: RaceStandings): string | null {
 	const mine = state.mine;
-	let line: string;
-	// Sub-quorum — the weekly ranking needs two distinct diggers. When the crew is
-	// solo there's a dead end unless we route them to invite a second snout; the
-	// "invite ›" affordance below appears only in that case.
-	const subQuorumSolo = !!mine && mine.rank == null && crewSize < 2;
 	if (mine && mine.rank != null) {
 		const ofN = Math.max(state.ranked.length, mine.rank);
-		line = `your Sounder: ${ordinal(mine.rank)} of ${ofN} this week`;
-	} else if (mine) {
-		// A solo crew needs a second SNOUT (routed to the invite surface); a crew
-		// that already has members just needs one of them to dig.
-		line =
-			crewSize < 2
-				? "the podium needs two diggers"
-				: "the podium needs two diggers — one more snout must dig";
-	} else {
-		line = "dig this week to take a share";
+		const projected = raceSpoilsForRank(state.prizes, mine.rank, ofN);
+		return `on track: ${projected.tickles} tickles + ${projected.truffles} truffles`;
 	}
-	return (
-		<View style={styles.weeklyBeatRow}>
-			<Text style={styles.weeklyLine}>{line}</Text>
-			{subQuorumSolo && (
-				<Pressable
-					onPress={() => router.push("/(tabs)/friends?seg=sounder")}
-					hitSlop={8}
-					accessibilityRole="button"
-					accessibilityLabel="Invite a second snout to your Sounder"
-					style={({ pressed }) => [styles.inviteRow, pressed && { opacity: 0.6 }]}
-				>
-					<Glyph name="friends" size={14} />
-					<Text style={styles.inviteLink}>invite a second snout ›</Text>
-				</Pressable>
-			)}
-		</View>
-	);
+	return null;
 }
 
 // The countdown chip text: "ends Monday" while far out, "ends in 22h" in the last
 // day, "ends any moment" at the bell.
-function raceCountdownChip(endsAtMs: number, nowMs: number = Date.now()): string {
+function raceCountdownChip(
+	endsAtMs: number,
+	nowMs: number = Date.now(),
+): string {
 	const left = endsAtMs - nowMs;
 	if (left <= 0) return "ends any moment";
 	if (left >= 24 * 3600_000) return `ends ${cycleEndWeekday(endsAtMs)}`;
@@ -566,10 +519,12 @@ function LastRaceLine({ last }: { last: LastRace }) {
 	const cosmeticImg = cosmetic ? cosmeticImage(cosmetic) : undefined;
 	const spoils: string[] = [];
 	if (last.truffles_paid > 0) {
-		spoils.push(`+${last.truffles_paid} ${last.truffles_paid === 1 ? "truffle" : "truffles"}`);
+		spoils.push(`+${last.truffles_paid} Golden Truffles`);
 	}
 	if (last.tickles_paid > 0) {
-		spoils.push(`+${last.tickles_paid} ${last.tickles_paid === 1 ? "tickle" : "tickles"}`);
+		spoils.push(
+			`+${last.tickles_paid} ${last.tickles_paid === 1 ? "tickle" : "tickles"}`,
+		);
 	}
 	// rank < 1 → a sub-quorum PARTICIPATION result (the server sent rank null); it
 	// has no placement, only the tickle floor. Never render a bogus "1st of N".
@@ -577,11 +532,17 @@ function LastRaceLine({ last }: { last: LastRace }) {
 	return (
 		<View style={styles.lastRow}>
 			{cosmeticImg && (
-				<Image source={cosmeticImg} style={styles.lastCosmetic} resizeMode="contain" />
+				<Image
+					source={cosmeticImg}
+					style={styles.lastCosmetic}
+					resizeMode="contain"
+				/>
 			)}
 			<Text style={styles.lastText}>
-				{placed ? `Last race: ${ordinal(last.rank)} of ${last.of}` : "Last race: you dug"}
-				{spoils.length > 0 ? ` — ${spoils.join(" · ")}${placed ? " each" : ""}` : ""}
+				{placed
+					? `Last race: ${ordinal(last.rank)} of ${last.of}`
+					: "Last race: you dug"}
+				{spoils.length > 0 ? ` — you banked ${spoils.join(" · ")}` : ""}
 				{cosmetic ? ` · ${cosmeticName(cosmetic)}` : ""}
 			</Text>
 		</View>
@@ -612,7 +573,7 @@ function Ceremony({
 		? "You dug this week — the herd thanks you"
 		: podium
 			? `You took ${ordinal(last.rank)} — the day is yours`
-			: `${ordinal(last.rank)} of ${last.of} — every find starved him`;
+			: `Last week's race ended — you took ${ordinal(last.rank)} of ${last.of}`;
 
 	const cosmetic = last.cosmetic_hat_id;
 	const cosmeticImg = cosmetic ? cosmeticImage(cosmetic) : undefined;
@@ -625,20 +586,27 @@ function Ceremony({
 	// The spoils line — truffles + tickles, whichever the payout banked.
 	const spoils: string[] = [];
 	if (last.truffles_paid > 0) {
-		spoils.push(`+${last.truffles_paid} ${last.truffles_paid === 1 ? "truffle" : "truffles"}`);
+		spoils.push(`+${last.truffles_paid} Golden Truffles`);
 	}
 	if (last.tickles_paid > 0) {
-		spoils.push(`+${last.tickles_paid} ${last.tickles_paid === 1 ? "tickle" : "tickles"}`);
+		spoils.push(
+			`+${last.tickles_paid} ${last.tickles_paid === 1 ? "tickle" : "tickles"}`,
+		);
 	}
 
 	return (
 		<View style={styles.wrap}>
 			<Text style={styles.kicker}>★ the dig-off</Text>
-			<Sticker color="sun" rotate={-0.6} radius={RADII.lg} style={styles.ceremonyCard}>
+			<Sticker
+				color="sun"
+				rotate={-0.6}
+				radius={RADII.lg}
+				style={styles.ceremonyCard}
+			>
 				<Text style={styles.ceremonyHead}>{headline}</Text>
 				{spoils.length > 0 && (
 					<Text style={styles.ceremonySpoils}>
-						{spoils.join(" · ")} for every snout
+						you banked {spoils.join(" · ")}
 					</Text>
 				)}
 				{cosmetic && (
@@ -650,10 +618,19 @@ function Ceremony({
 								resizeMode="contain"
 							/>
 						)}
-						<Text style={styles.ceremonyCosmeticName}>{cosmeticName(cosmetic)}</Text>
+						<Text style={styles.ceremonyCosmeticName}>
+							{cosmeticName(cosmetic)}
+						</Text>
 					</View>
 				)}
-				<Pressable onPress={dismiss} hitSlop={8} style={({ pressed }) => [styles.ceremonyBtn, pressed && { opacity: 0.7 }]}>
+				<Pressable
+					onPress={dismiss}
+					hitSlop={8}
+					style={({ pressed }) => [
+						styles.ceremonyBtn,
+						pressed && { opacity: 0.7 },
+					]}
+				>
 					<Text style={styles.ceremonyBtnText}>trot home</Text>
 				</Pressable>
 				<ReclaimSlam ref={slamRef} />
@@ -669,17 +646,11 @@ const styles = StyleSheet.create({
 		...TYPE.kicker,
 		color: WHIMSY.accent,
 	},
-	// The payout-promise line under the dig-off kicker — stated before the board.
-	promise: {
-		...TYPE.bodySm,
-		fontFamily: FONTS.bodyExtra,
-		color: WHIMSY.ink,
-	},
 	// ── The weekly hero card ──────────────────────────────────────────────────
 	heroCard: {
 		paddingHorizontal: SPACE.lg,
 		paddingVertical: SPACE.md,
-		gap: SPACE.sm,
+		gap: SPACE.md,
 		...SHADOW_SM,
 	},
 	heroHead: {
@@ -687,39 +658,35 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "space-between",
 	},
-	heroKicker: { ...TYPE.kicker, color: WHIMSY.accent },
+	heroTitle: { ...TYPE.cardTitle, color: WHIMSY.ink, flexShrink: 1 },
 	countdownPill: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		borderRadius: RADII.pill,
 		paddingHorizontal: SPACE.sm,
-		paddingVertical: 2,
+		paddingVertical: SPACE.xs,
 	},
 	countdownText: { ...TYPE.kicker, fontFamily: FONTS.hand, color: WHIMSY.ink },
+	raceRule: {
+		...TYPE.bodySm,
+		fontFamily: FONTS.bodyExtra,
+		color: WHIMSY.ink,
+		marginTop: -SPACE.xs,
+	},
 	// The full-field link — centered hand-font mute link under the board rows.
-	fullFieldLink: { alignSelf: "center", paddingVertical: SPACE.xs },
+	fullFieldLink: {
+		alignSelf: "stretch",
+		minHeight: 44,
+		alignItems: "center",
+		justifyContent: "center",
+		marginTop: -SPACE.xs,
+	},
 	fullFieldText: {
 		...TYPE.kicker,
 		fontFamily: FONTS.hand,
 		color: WHIMSY.accent,
 		textDecorationLine: "underline",
-	},
-	// The weekly beat — one placement line under the board.
-	weeklyBeatRow: {
-		alignItems: "center",
-		gap: SPACE.xs,
-		marginTop: SPACE.xs,
-		paddingTop: SPACE.sm,
-		borderTopWidth: 1.5,
-		borderTopColor: WHIMSY.muteSoft,
-		borderStyle: "dashed",
-	},
-	weeklyLine: {
-		...TYPE.bodySm,
-		fontFamily: FONTS.bodyExtra,
-		color: WHIMSY.ink,
-		textAlign: "center",
 	},
 	// The sub-quorum "invite a second snout ›" affordance — a gem-less friends-
 	// glyph row routing to the Sounder surface, so a solo digger isn't dead-ended.
@@ -734,20 +701,40 @@ const styles = StyleSheet.create({
 	spoils: {
 		alignItems: "center",
 		gap: SPACE.xs,
-		paddingVertical: SPACE.sm,
-		paddingHorizontal: SPACE.sm,
+		paddingTop: SPACE.md,
+		borderTopWidth: 1.5,
+		borderTopColor: WHIMSY.muteSoft,
+		borderStyle: "dashed",
+	},
+	spoilsCompact: {
+		marginHorizontal: SPACE.md,
+		marginBottom: SPACE.md,
+		paddingHorizontal: SPACE.md,
+		paddingBottom: SPACE.md,
 		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
+		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		borderRadius: RADII.md,
+		borderStyle: "solid",
 	},
-	spoilsKicker: { ...TYPE.kicker, fontFamily: FONTS.hand, color: WHIMSY.accent },
+	spoilsKicker: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.accent,
+	},
 	podiumRow: {
 		flexDirection: "row",
-		justifyContent: "center",
-		gap: SPACE.lg,
+		alignSelf: "stretch",
+		gap: SPACE.sm,
 	},
-	podiumCell: { alignItems: "center", gap: 3 },
+	podiumCell: {
+		flex: 1,
+		minWidth: 0,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: SPACE.xs,
+	},
 	podiumBadge: {
 		width: 22,
 		height: 22,
@@ -757,59 +744,50 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 	},
-	podiumBadgeText: { fontFamily: FONTS.whimsy, fontSize: 12, color: WHIMSY.ink },
-	podiumPrize: { flexDirection: "row", alignItems: "center", gap: 3 },
-	podiumNum: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
-	spoilsFootRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		gap: SPACE.xs,
-		flexWrap: "wrap",
+	podiumBadgeText: {
+		...TYPE.label,
+		fontFamily: FONTS.whimsy,
+		color: WHIMSY.ink,
 	},
-	truffleIcon: { width: 16, height: 16 },
-	spoilsFoot: {
+	podiumRewards: { gap: SPACE.xs },
+	podiumPrize: { flexDirection: "row", alignItems: "center", gap: SPACE.xs },
+	podiumTruffle: { width: 16, height: 16 },
+	podiumTruffleNum: {
+		...TYPE.label,
+		fontFamily: FONTS.whimsy,
+		color: WHIMSY.ink,
+	},
+	podiumNum: { ...TYPE.numeral, color: WHIMSY.ink },
+	spoilsFloor: {
 		...TYPE.kicker,
 		fontFamily: FONTS.hand,
 		color: WHIMSY.mute,
 		textAlign: "center",
-		flexShrink: 1,
-	},
-	spoilsFloor: {
-		...TYPE.bodySm,
-		fontFamily: FONTS.bodyExtra,
-		color: WHIMSY.ink,
-		textAlign: "center",
-	},
-	// ── The season board (secondary) ──────────────────────────────────────────
-	seasonCard: {
-		paddingHorizontal: SPACE.lg,
-		paddingVertical: SPACE.md,
-		gap: SPACE.sm,
-	},
-	seasonHead: { flexDirection: "row", alignItems: "center", gap: SPACE.sm },
-	seasonKicker: { ...TYPE.kicker, color: WHIMSY.accent },
-	seasonSub: { ...TYPE.kicker, fontFamily: FONTS.hand, color: WHIMSY.mute },
-	seasonToggle: {
-		...TYPE.kicker,
-		fontFamily: FONTS.hand,
-		color: WHIMSY.accent,
-		textDecorationLine: "underline",
 	},
 	// ── Shared standings rows ─────────────────────────────────────────────────
+	board: { gap: SPACE.xs },
+	boardHead: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		paddingLeft: 34 + SPACE.sm,
+		paddingRight: SPACE.sm,
+	},
+	boardLabel: { ...TYPE.kicker, color: WHIMSY.accent },
+	boardFindsLabel: { ...TYPE.kickerPill, color: WHIMSY.mute },
 	rows: { gap: SPACE.xs },
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
 		gap: SPACE.sm,
 		paddingHorizontal: SPACE.sm,
-		paddingVertical: SPACE.xs + 1,
+		paddingVertical: SPACE.xs,
+		minHeight: 52,
 		borderRadius: RADII.sm,
 	},
 	rowMine: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		...SHADOW_SM,
 	},
 	rowPressed: { opacity: 0.6 },
 	// The expanded member ledger — indented under its row.
@@ -818,7 +796,7 @@ const styles = StyleSheet.create({
 		paddingRight: SPACE.sm,
 		paddingTop: SPACE.xs,
 		paddingBottom: SPACE.xs,
-		gap: 2,
+		gap: SPACE.xs,
 	},
 	ledgerRow: {
 		flexDirection: "row",
@@ -846,21 +824,20 @@ const styles = StyleSheet.create({
 	rowMid: { flex: 1, minWidth: 0 },
 	rowName: { ...TYPE.cardTitle, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
 	rowSub: { ...TYPE.kicker, fontFamily: FONTS.hand, color: WHIMSY.mute },
-	// The score column — big whimsy number over a tiny caption.
+	rowSubMine: { color: WHIMSY.accent },
+	rowReward: {
+		...TYPE.kicker,
+		fontFamily: FONTS.hand,
+		color: WHIMSY.ink,
+	},
+	// The score column shares the one "finds" label above the table.
 	rowFindsCol: { alignItems: "flex-end", minWidth: 52 },
 	rowFindsNum: { ...TYPE.sectionTitle, color: WHIMSY.ink },
-	rowFindsCap: {
-		...TYPE.kickerPill,
-		fontSize: 10,
-		letterSpacing: 0.8,
-		color: WHIMSY.mute,
-		marginTop: -2,
-	},
-	separatorRow: { alignItems: "center", paddingVertical: 2 },
+	separatorRow: { alignItems: "center", paddingVertical: SPACE.xs },
 	separatorDots: {
 		...TYPE.kicker,
 		fontFamily: FONTS.hand,
-		color: WHIMSY.muteSoft,
+		color: WHIMSY.mute,
 		letterSpacing: 2,
 	},
 	emptyBeat: {
@@ -878,7 +855,7 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
-		gap: SPACE.xs + 2,
+		gap: SPACE.sm,
 		paddingHorizontal: SPACE.xs,
 	},
 	lastCosmetic: { width: 18, height: 18 },
@@ -913,7 +890,7 @@ const styles = StyleSheet.create({
 	ceremonyCosmeticRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: SPACE.xs + 2,
+		gap: SPACE.sm,
 	},
 	ceremonyCosmeticImg: { width: 22, height: 22 },
 	ceremonyCosmeticName: {
@@ -928,8 +905,12 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		borderRadius: RADII.pill,
 		paddingHorizontal: SPACE.lg,
-		paddingVertical: SPACE.xs + 2,
+		paddingVertical: SPACE.sm,
 		...SHADOW_SM,
 	},
-	ceremonyBtnText: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
+	ceremonyBtnText: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 15,
+		color: WHIMSY.ink,
+	},
 });

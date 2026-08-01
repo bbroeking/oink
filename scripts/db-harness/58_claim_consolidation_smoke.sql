@@ -1,13 +1,13 @@
 -- Smoke: the phase-2 season claim routers (claim_season_tier, claim_ready_tiers)
 -- resolve prestige-vs-normal + track server-side and reuse the shipped per-tier
--- claimers. Covers normal / premium-gated / premium-success / already-claimed /
--- tier-locked single claims, and multi-tier tally / empty no-op / premium-glass /
--- per-tier failure isolation for the sweep.
+-- claimers plus 20260784's overflow wrapper. Covers normal / premium-gated /
+-- premium-success / already-claimed / tier-locked single claims, and multi-tier
+-- tally / empty no-op / premium-glass / capped-pouch recovery for the sweep.
 --
 -- Self-standing: seeds its own `claim_cons_season` (active via the harness's
 -- active_season stub, keyed on this id) + tiers + users. Assumes the two real
--- claimers (claim_tier_reward 20260686, claim_wallow_tier 20260769) and the two
--- new routers (20260772) are already applied ahead of it.
+-- claimers (claim_tier_reward 20260686, claim_wallow_tier 20260769), the two
+-- new routers (20260772), and the 20260784 overflow wrapper are applied first.
 \set ON_ERROR_STOP on
 
 -- The harness stub's season scaffolding predates the pass columns these routers
@@ -162,25 +162,28 @@ BEGIN
 		RAISE EXCEPTION 'premium-glass leaked a premium claim';
 	END IF;
 
-	-- D. Per-tier failure isolation: cap_pig (lap1, tier 10) sweeps wallow tiers.
-	--    tier5 snouts succeeds; tier10 golden_truffle caps out (truffle_cap RETURN);
-	--    the sweep commits tier5 anyway.
+	-- D. A full pouch cannot deadlock progression: cap_pig (lap1, tier 10)
+	--    sweeps both wallow tiers. Tier5 snouts succeeds; tier10 is recorded,
+	--    and its two Golden Truffles are preserved in recoverable overflow.
 	PERFORM set_config('smoke.uid', cap_pig::text, true);
 	r := public.claim_ready_tiers(NULL);   -- prestige forces free internally
-	IF (r->>'claimed_count')::int <> 1 OR (r->>'failed')::int <> 1 THEN
-		RAISE EXCEPTION 'failure isolation tally wrong (want 1 claimed / 1 failed): %', r;
+	IF (r->>'claimed_count')::int <> 2 OR (r->>'failed')::int <> 0 THEN
+		RAISE EXCEPTION 'overflow tally wrong (want 2 claimed / 0 failed): %', r;
 	END IF;
 	IF NOT EXISTS (SELECT 1 FROM public.user_wallow_tier_claims
 		WHERE user_id = cap_pig AND season_id = 'claim_cons_season' AND wallow_lap = 1 AND tier = 5) THEN
-		RAISE EXCEPTION 'the successful tier5 claim was rolled back by the failed tier10';
+		RAISE EXCEPTION 'the tier5 claim was not recorded';
 	END IF;
-	IF EXISTS (SELECT 1 FROM public.user_wallow_tier_claims
+	IF NOT EXISTS (SELECT 1 FROM public.user_wallow_tier_claims
 		WHERE user_id = cap_pig AND season_id = 'claim_cons_season' AND wallow_lap = 1 AND tier = 10) THEN
-		RAISE EXCEPTION 'the capped tier10 claim was recorded despite failing';
+		RAISE EXCEPTION 'the capped tier10 claim was not recorded';
+	END IF;
+	IF (SELECT amount FROM public.golden_truffle_overflow WHERE user_id = cap_pig) <> 2 THEN
+		RAISE EXCEPTION 'the two capped Golden Truffles were not preserved';
 	END IF;
 	SELECT counter INTO snouts FROM public.profiles WHERE id = cap_pig;
 	IF snouts <> 125 THEN RAISE EXCEPTION 'cap_pig tier5 snouts not credited: %', snouts; END IF;
 
-	RAISE NOTICE 'chk claim consolidation: single-claim routing (normal/premium/prestige/locked/dup) + sweep (tally/no-op/premium-glass/failure-isolation) OK';
+	RAISE NOTICE 'chk claim consolidation: single-claim routing (normal/premium/prestige/locked/dup) + sweep (tally/no-op/premium-glass/overflow) OK';
 END;
 $claim_cons$;

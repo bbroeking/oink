@@ -1,0 +1,2052 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <svg xmlns="http://www.w3.org/2000/svg" width="2400" height="2050" viewBox="0 0 2400 2050">
+    <rect width="2400" height="2050" fill="#F6E6D4"/>
+    <text x="70" y="76" fill="#2A1F15" font-family="Caprasimo" font-size="52">The full 88-card wall</text>
+    <text x="70" y="119" fill="#A13F30" font-family="Patrick Hand" font-size="27">
+      Every card has rules, rarity, rank, style, training, flavor, and an art assignment.
+    </text>
+    <g transform="translate(70 153)">
+      <circle cx="11" cy="11" r="10" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="32" y="18" fill="#2A1F15" font-family="Nunito" font-size="18" font-weight="900">
+        ART READY • 79
+      </text>
+    </g><g transform="translate(480 153)">
+      <circle cx="11" cy="11" r="10" fill="#B57A24" stroke="#2A1F15" stroke-width="3"/>
+      <text x="32" y="18" fill="#2A1F15" font-family="Nunito" font-size="18" font-weight="900">
+        ADAPT GAME ART • 9
+      </text>
+    </g><g transform="translate(890 153)">
+      <circle cx="11" cy="11" r="10" fill="#A13F30" stroke="#2A1F15" stroke-width="3"/>
+      <text x="32" y="18" fill="#2A1F15" font-family="Nunito" font-size="18" font-weight="900">
+        NEW ILLUSTRATION • 0
+      </text>
+    </g>
+    <g transform="translate(70 235)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#F8A8B3"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">001</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Rosie, Heart of the Herd
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">LEGEND • LEGENDARY</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#C98E20" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(42 62) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">L</text>
+    
+  </g>
+    </g><g transform="translate(400 235)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#FFC8A8"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">002</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Copper, Trailblazer
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">LEGEND • LEGENDARY</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#C98E20" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(42 62) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">L</text>
+    
+  </g>
+    </g><g transform="translate(730 235)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D6C8F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">003</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Pepper, Night Watch
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">LEGEND • LEGENDARY</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#C98E20" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(42 62) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">L</text>
+    
+  </g>
+    </g><g transform="translate(1060 235)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#FFD87A"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">004</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Bandit, Quick Hoof
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">LEGEND • LEGENDARY</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#C98E20" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(42 62) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">L</text>
+    
+  </g>
+    </g><g transform="translate(1390 235)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">005</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Pickles, Orchard Finder
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">LEGEND • LEGENDARY</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#C98E20" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(42 62) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">L</text>
+    
+  </g>
+    </g><g transform="translate(1720 235)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">006</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Biscuit, Stouthearted
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">LEGEND • LEGENDARY</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#C98E20" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(42 62) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">L</text>
+    
+  </g>
+    </g><g transform="translate(2050 235)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#9DB64D"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">007</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Ticket Taker's Cap
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HEAD GEAR • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(70 370)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#9DB64D"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">008</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Muddy Cap
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HEAD GEAR • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(400 370)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#9DB64D"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">009</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Mushroom Cap
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HEAD GEAR • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(730 370)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#9DB64D"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">010</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Bog Helmet
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HEAD GEAR • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(1060 370)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#9DB64D"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">011</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Reed Hat
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HEAD GEAR • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(1390 370)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#9DB64D"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">012</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Slop Bucket Hat
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HEAD GEAR • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(1720 370)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#9DB64D"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">013</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Release Party Crown
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HEAD GEAR • LEGENDARY</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#C98E20" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(42 62) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">L</text>
+    
+  </g>
+    </g><g transform="translate(2050 370)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#9DB64D"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">014</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Swamp Crown
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HEAD GEAR • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(70 505)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#9DB64D"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">015</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        The Hungerer's Crown
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HEAD GEAR • EPIC</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8A66C7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">E</text>
+    
+  </g>
+    </g><g transform="translate(400 505)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#62B9A8"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">016</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Toy Sword
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HELD GEAR • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(730 505)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#62B9A8"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">017</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Slop Bucket
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HELD GEAR • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1060 505)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#62B9A8"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">018</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Firefly Lantern
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HELD GEAR • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1390 505)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#62B9A8"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">019</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Mud Shovel
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HELD GEAR • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(1720 505)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#62B9A8"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">020</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Magic Wand
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HELD GEAR • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(2050 505)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#62B9A8"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">021</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Crew Pennant
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HELD GEAR • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(70 640)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#62B9A8"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">022</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Golden Truffle
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HELD GEAR • EPIC</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8A66C7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">E</text>
+    
+  </g>
+    </g><g transform="translate(400 640)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#62B9A8"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">023</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Golden Hog Cup
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HELD GEAR • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(730 640)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#62B9A8"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">024</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Mud Pie
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">HELD GEAR • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(1060 640)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#A89BFF"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">025</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Firefly Aura
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">AURA GEAR • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1390 640)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#A89BFF"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">026</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Mud Splatter Aura
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">AURA GEAR • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1720 640)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#A89BFF"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">027</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Swamp Bubble Aura
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">AURA GEAR • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(2050 640)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#A89BFF"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">028</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Shadow Aura
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">AURA GEAR • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(70 775)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#A89BFF"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">029</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Confetti Aura
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">AURA GEAR • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(400 775)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#A89BFF"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">030</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Holy Aura
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">AURA GEAR • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(730 775)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#A89BFF"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">031</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Golden Bog Aura
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">AURA GEAR • LEGENDARY</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#C98E20" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(42 62) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">L</text>
+    
+  </g>
+    </g><g transform="translate(1060 775)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#A89BFF"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">032</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Heirloom Mire Aura
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">AURA GEAR • EPIC</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8A66C7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">E</text>
+    
+  </g>
+    </g><g transform="translate(1390 775)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#A89BFF"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">033</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Chorus Glow
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">AURA GEAR • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#B57A24" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#B57A24" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ADAPT GAME ART</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(1720 775)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">034</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Firefly Swarm
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(2050 775)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">035</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Dewdrop Spider
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(70 910)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">036</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Trough Sparrow
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(400 910)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">037</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Bumblebee
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(730 910)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">038</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Puddle Duckling
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1060 910)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">039</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Garden Snail
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1390 910)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">040</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Lantern Rabbit
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(1720 910)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">041</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Bog Frog
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(2050 910)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">042</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Truffle Mole
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(70 1045)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">043</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Waltzing Moth
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(400 1045)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">044</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Shy Field Mouse
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(730 1045)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">045</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Acorn Squirrel
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(1060 1045)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">046</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Moon Firefly
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(1390 1045)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">047</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Coquí Critter
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(1720 1045)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">048</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Mud Crab
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(2050 1045)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">049</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Glowworm Choir
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(70 1180)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">050</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Field Mouse Family
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(400 1180)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">051</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Robin Lookout
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(730 1180)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">052</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Goblin Scout
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1060 1180)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">053</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Peeking Hungerling
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1390 1180)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">054</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Mud-Slick Spider
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1720 1180)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">055</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Truffle-Thief Crow
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(2050 1180)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">056</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Goblin Grunt
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(70 1315)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">057</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Cheek-Stuffed Hungerling
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(400 1315)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">058</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Bog Bubble
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(730 1315)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">059</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Root Tangle
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(1060 1315)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">060</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Goblin Brute
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(1390 1315)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">061</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Scurrying Hungerling
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(1720 1315)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">062</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Goblin Warboss
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • EPIC</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8A66C7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">E</text>
+    
+  </g>
+    </g><g transform="translate(2050 1315)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">063</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        The Great Hungerer
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • LEGENDARY</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#C98E20" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(42 62) scale(0.18)" fill="#C98E20"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">L</text>
+    
+  </g>
+    </g><g transform="translate(70 1450)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">064</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Big Wind-Up
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(400 1450)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">065</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Duck Into the Mud
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(730 1450)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">066</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Quick Change
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1060 1450)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">067</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Warm Tea
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#B57A24" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#B57A24" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ADAPT GAME ART</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1390 1450)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">068</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Sun Beam
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#B57A24" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#B57A24" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ADAPT GAME ART</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(1720 1450)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">069</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Root Around
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(2050 1450)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">070</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Firefly Feint
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(70 1585)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">071</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Halo Kiss
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#B57A24" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#B57A24" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ADAPT GAME ART</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(400 1585)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">072</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Mud Wrap
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(730 1585)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">073</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Goblin Whisper
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#B57A24" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#B57A24" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ADAPT GAME ART</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(1060 1585)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">074</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Encore!
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(1390 1585)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">075</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Glimmer Truffle
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(1720 1585)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">076</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Snoot Boop
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(2050 1585)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">077</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Phantom Itch
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • EPIC</text>
+      <circle cx="286" cy="29" r="13" fill="#B57A24" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#B57A24" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ADAPT GAME ART</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8A66C7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">E</text>
+    
+  </g>
+    </g><g transform="translate(70 1720)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">078</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Chorus Glow
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#B57A24" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#B57A24" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ADAPT GAME ART</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(400 1720)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#FFD87A"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">079</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Homestead Barn
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">PLACE • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(730 1720)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#FFD87A"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">080</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Truffle Patch
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">PLACE • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(1060 1720)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#FFD87A"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">081</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Reed Marsh
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">PLACE • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(1390 1720)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#FFD87A"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">082</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Mud Derby
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">PLACE • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(1720 1720)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#FFD87A"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">083</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Festival Night
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">PLACE • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g><g transform="translate(2050 1720)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#FFD87A"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">084</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Golden Mire
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">PLACE • EPIC</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8A66C7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">E</text>
+    
+  </g>
+    </g><g transform="translate(70 1855)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C9DEC1"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">085</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Porch Fireflies
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">CRITTER • COMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#B57A24" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#B57A24" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ADAPT GAME ART</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8C7E71" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">C</text>
+    
+  </g>
+    </g><g transform="translate(400 1855)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#D87462"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">086</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Wallow Gremlin
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">ENEMY • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(730 1855)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#C8E3F0"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">087</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Golden Wave
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">STUNT • UNCOMMON</text>
+      <circle cx="286" cy="29" r="13" fill="#B57A24" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#B57A24" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ADAPT GAME ART</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5F956D" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5F956D"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">U</text>
+    
+  </g>
+    </g><g transform="translate(1060 1855)">
+      <rect x="5" y="5" width="316" height="124" rx="17" fill="#2A1F15"/>
+      <rect width="316" height="124" rx="17" fill="#FFFAF0" stroke="#2A1F15" stroke-width="4"/>
+      <rect width="13" height="124" rx="6" fill="#FFD87A"/>
+      <text x="27" y="28" fill="#605449" font-family="Nunito" font-size="14" font-weight="900">088</text>
+      <text x="27" y="57" fill="#2A1F15" font-family="Caprasimo" font-size="20">
+        Spa Wallow
+      </text>
+      <text x="27" y="84" fill="#605449" font-family="Nunito" font-size="13" font-weight="900"
+        letter-spacing=".8">PLACE • RARE</text>
+      <circle cx="286" cy="29" r="13" fill="#5F956D" stroke="#2A1F15" stroke-width="3"/>
+      <text x="27" y="108" fill="#5F956D" font-family="Nunito" font-size="12"
+        font-weight="900" letter-spacing=".7">ART READY</text>
+      <g transform="translate(285 65) scale(0.26)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#5188B7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#5188B7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">R</text>
+    
+  </g>
+    </g>
+    <text x="70" y="2026" fill="#605449" font-family="Nunito" font-size="17" font-weight="900">
+      A colored dot reports illustration readiness. The truffle symbol reports rarity without relying on color.
+    </text>
+  </svg>

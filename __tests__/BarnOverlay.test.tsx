@@ -33,4 +33,11 @@ describe("BarnOverlay", () => {
 		const root = r.root.findByProps({ testID: "barn-overlay-angel" });
 		expect(root.props.pointerEvents).toBe("none");
 	});
+
+	test("a blessing does not tint the Barn", () => {
+		const r = TestRenderer.create(
+			<BarnOverlay alignment="neutral" {...({ blessed: true } as object)} />
+		);
+		expect(r.toJSON()).toBeNull();
+	});
 });

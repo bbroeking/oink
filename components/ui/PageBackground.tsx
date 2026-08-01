@@ -1,10 +1,10 @@
 import React from "react";
 import {
-	Dimensions,
 	Image,
 	ImageProps,
 	StyleSheet,
 	View,
+	useWindowDimensions,
 } from "react-native";
 import { HAT_IMAGES } from "@/constants/hats";
 import {
@@ -13,13 +13,12 @@ import {
 } from "@/constants/animatedBackgrounds";
 import { AnimatedBackground } from "./AnimatedBackground";
 
-// Explicit screen pixels, NOT percentage / absoluteFill insets. A
+// Explicit current-window pixels, NOT percentage / absoluteFill insets. A
 // percentage-sized background <Image> hits RN's Yoga indefinite-size quirk and
 // falls back toward the art's intrinsic size, rendering a centered band that
 // leaves an edge — most visibly the LEFT — showing the layer behind it. Numeric
-// SCREEN size is the reliable cure already proven by BarnVisitModal's
-// background. (Portrait-locked game, so module-level window size is fine.)
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+// window size preserves that cure while still reacting to Display Zoom and
+// live window changes.
 
 interface Props {
 	/**
@@ -50,6 +49,7 @@ interface Props {
  * mount this component.
  */
 export function PageBackground({ bgId, children, resizeMode = "cover" }: Props) {
+	const { width, height } = useWindowDimensions();
 	// Animated backgrounds (e.g. northern_lights) cross-fade a frame loop.
 	if (isAnimatedBackground(bgId)) {
 		return (
@@ -69,7 +69,11 @@ export function PageBackground({ bgId, children, resizeMode = "cover" }: Props) 
 
 	return (
 		<View style={styles.root}>
-			<Image source={bgSrc} resizeMode={resizeMode} style={styles.fill} />
+			<Image
+				source={bgSrc}
+				resizeMode={resizeMode}
+				style={[styles.fill, { width: width + 4, height }]}
+			/>
 			<View style={styles.content}>{children}</View>
 		</View>
 	);
@@ -82,6 +86,6 @@ const styles = StyleSheet.create({
 	// instead of a centered intrinsic-width band. Overscan 2px each side so a
 	// sub-pixel rounding gap can never leave a sliver of the layer behind showing
 	// at an edge — `cover` just crops the extra.
-	fill: { position: "absolute", top: 0, left: -2, width: SCREEN_W + 4, height: SCREEN_H },
+	fill: { position: "absolute", top: 0, left: -2 },
 	content: { flex: 1 },
 });

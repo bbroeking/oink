@@ -3,12 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Tickle the Pig — you've got a code</title>
-<meta name="description" content="Your friend invited you to Tickle the Pig. Grab your code and join in." />
-<!-- Open Graph so the link looks good when shared in iMessage / social.
-     Absolute URLs are required — relative paths don't resolve in scrapers. -->
-<meta property="og:title" content="Come tickle a pig with me" />
-<meta property="og:description" content="Your friend's code is inside. Get Tickle the Pig on the App Store." />
+<title>Tickle the Pig — A cozy multiplayer game for friends</title>
+<meta name="description" content="Raise Rosie, collect playful cosmetics, and join friends in cozy seasonal adventures. Tickle the Pig is a free social game for iPhone." />
+<meta name="robots" content="index,follow,max-image-preview:large" />
+<link rel="canonical" href="https://ticklethepig.com/" />
+<link rel="sitemap" type="application/xml" href="https://ticklethepig.com/sitemap.xml" />
+<meta name="apple-itunes-app" content="app-id=6740339848" />
+<!-- Absolute URLs are required because social and search crawlers do not
+     reliably resolve relative media paths. -->
+<meta property="og:title" content="Tickle the Pig — A cozy multiplayer game for friends" />
+<meta property="og:description" content="Raise Rosie, collect playful cosmetics, and join friends in cozy seasonal adventures on iPhone." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://ticklethepig.com" />
 <meta property="og:image" content="https://ticklethepig.com/og.png" />
@@ -17,9 +21,89 @@
 <meta property="og:image:height" content="630" />
 <meta property="og:image:alt" content="Rosie — a cheerful pink pig — Tickle the Pig" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Come tickle a pig with me" />
-<meta name="twitter:description" content="Your friend's code is inside. Get Tickle the Pig on the App Store." />
+<meta name="twitter:title" content="Tickle the Pig — A cozy multiplayer game for friends" />
+<meta name="twitter:description" content="Raise Rosie, collect playful cosmetics, and join friends in cozy seasonal adventures on iPhone." />
 <meta name="twitter:image" content="https://ticklethepig.com/og.png" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://ticklethepig.com/#website",
+      "url": "https://ticklethepig.com/",
+      "name": "Tickle the Pig",
+      "description": "The official website for Tickle the Pig, a cozy multiplayer game for friends."
+    },
+    {
+      "@type": ["VideoGame", "MobileApplication"],
+      "@id": "https://ticklethepig.com/#game",
+      "name": "Tickle the Pig",
+      "url": "https://ticklethepig.com/",
+      "sameAs": "https://apps.apple.com/us/app/tickle-the-pig/id6740339848",
+      "downloadUrl": "https://apps.apple.com/us/app/tickle-the-pig/id6740339848",
+      "image": "https://ticklethepig.com/og.png",
+      "description": "A cozy multiplayer iPhone game where friends raise pigs, collect cosmetics, form a Sounder, and play seasonal cooperative adventures together.",
+      "dateModified": "2026-07-22",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "iOS 15.1 or later",
+      "gamePlatform": "iPhone",
+      "genre": ["Casual", "Family", "Cozy", "Social"],
+      "playMode": ["SinglePlayer", "MultiPlayer"],
+      "inLanguage": "en",
+      "author": {
+        "@type": "Person",
+        "name": "Brian Broeking"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "url": "https://apps.apple.com/us/app/tickle-the-pig/id6740339848"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://ticklethepig.com/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Tickle the Pig?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Tickle the Pig is a cozy multiplayer iPhone game for small groups of friends. Players raise Rosie, collect cosmetics, join a Sounder, and take part in seasonal cooperative adventures."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I play Tickle the Pig by myself?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. You can raise and customize your pig on your own, while adding friends unlocks visits, trades, blessings, and cooperative Sounder play."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Tickle the Pig pay-to-win?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Progress and status are earned through play. Optional purchases are for expression, not competitive advantage or accomplishment."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where can I play Tickle the Pig?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Tickle the Pig is free to download for iPhone from the Apple App Store and requires iOS 15.1 or later."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Archivo+Black&display=swap" rel="stylesheet" />
@@ -36,7 +120,7 @@
     --mute: #9a8c7a;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
+  html, body { min-height: 100%; }
   body {
     background:
       radial-gradient(circle at 12% 18%, rgba(255,214,220,.45), transparent 38%),
@@ -44,12 +128,16 @@
       var(--paper);
     color: var(--ink);
     font-family: "Archivo", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 28px 20px;
+    padding: 34px 20px 24px;
     min-height: 100%;
     overflow-x: hidden;
+  }
+  .page {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 820px;
+    margin: 0 auto;
   }
 
   /* ---- floating background confetti stars ---- */
@@ -78,6 +166,7 @@
     box-shadow: 8px 8px 0 var(--ink);
     max-width: 680px;
     width: 100%;
+    margin: 0 auto;
     padding: 26px 30px 26px;
     transform: rotate(-0.6deg) scale(.94);
     opacity: 0;
@@ -362,6 +451,80 @@
     margin-bottom: 12px;
   }
 
+  /* ---- crawlable product answers ---- */
+  .answer-hub {
+    margin: 48px auto 0;
+    max-width: 820px;
+  }
+  .answer-hub > header {
+    max-width: 680px;
+    margin: 0 auto 22px;
+    text-align: center;
+  }
+  .eyebrow {
+    color: #7f6d5a;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    margin-bottom: 9px;
+  }
+  .answer-hub h2 {
+    font-family: "Archivo Black", "Archivo", sans-serif;
+    font-size: clamp(27px, 5vw, 40px);
+    line-height: 1.05;
+    margin-bottom: 12px;
+  }
+  .lede {
+    font-size: 17px;
+    line-height: 1.65;
+  }
+  .feature-grid,
+  .faq-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .answer-card {
+    background: #fff;
+    border: 2.5px solid var(--ink);
+    border-radius: 18px;
+    box-shadow: 4px 4px 0 var(--ink);
+    padding: 20px;
+  }
+  .answer-card:nth-child(4n + 1) { background: #fff7dc; }
+  .answer-card:nth-child(4n + 2) { background: #fff0f2; }
+  .answer-card:nth-child(4n + 3) { background: #edf6e9; }
+  .answer-card:nth-child(4n + 4) { background: #f2edfb; }
+  .answer-card h3 {
+    font-size: 18px;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+  .answer-card p {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .faq {
+    margin-top: 42px;
+  }
+  .faq > h2 {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .bottom-cta {
+    max-width: 680px;
+    margin: 30px auto 0;
+  }
+  footer {
+    margin-top: 28px;
+    text-align: center;
+    color: #756653;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  footer a { color: var(--ink); }
+
   .toast {
     position: fixed;
     bottom: 28px; left: 50%;
@@ -386,6 +549,8 @@
     .rosie-stage { max-width: 190px; }
     h1 { font-size: clamp(34px, 11vw, 46px); }
     .hint { margin-bottom: 4px; }
+    .feature-grid, .faq-grid { grid-template-columns: 1fr; }
+    .answer-hub { margin-top: 38px; }
   }
 
   /* safety net: if intro animations never run (background tab / throttled),
@@ -419,15 +584,16 @@
 <body>
   <div class="bg-stars" id="bgStars" aria-hidden="true"></div>
 
+  <main class="page">
   <div class="card">
     <div class="hero">
       <div class="copy-col">
         <div class="kicker"><span class="tw">★</span> Tickle the Pig <span class="tw">★</span></div>
         <h1>
-          <span class="l1">Come tickle</span>
-          <span class="l2">a pig.</span>
+          <span class="l1" id="headline-one">A cozy game</span>
+          <span class="l2" id="headline-two">for friends.</span>
         </h1>
-        <div class="sub">A friend sent you a code <span class="arrow">▶</span></div>
+        <div class="sub" id="hero-subtitle">Connect. Collect. Contend. <span class="arrow">▶</span></div>
       </div>
 
       <div class="rosie-col">
@@ -439,7 +605,9 @@
     </div>
 
     <div class="panel">
-      <div id="code-block">
+      <p class="no-code" id="organic-summary">Raise Rosie, dress her in ridiculous treasures, and join your friends for small rituals and seasonal adventures that unfold together.</p>
+
+      <div id="code-block" hidden>
         <div class="code-label">Your friend's code</div>
         <div class="code-pill">
           <span class="code" id="code">—</span>
@@ -454,7 +622,7 @@
         Download on the App Store <span class="ja">→</span>
       </a>
 
-      <div class="steps" id="steps">
+      <div class="steps" id="steps" hidden>
         <strong>How to redeem:</strong>
         <ol>
           <li>Tap <em>Copy</em> above.</li>
@@ -465,7 +633,68 @@
     </div>
   </div>
 
-  <p class="hint" style="position:fixed;bottom:10px;left:0;right:0;">psst — tap Rosie 🐽</p>
+  <p class="hint">psst — tap Rosie</p>
+
+  <section class="answer-hub" aria-labelledby="about-title">
+    <header>
+      <p class="eyebrow">A cozy social game for iPhone</p>
+      <h2 id="about-title">What is Tickle the Pig?</h2>
+      <p class="lede">Tickle the Pig is a cozy multiplayer game for small groups of friends. You raise a pig named Rosie, collect playful cosmetics, form a crew called a Sounder, and return for short shared moments instead of an endless daily grind.</p>
+    </header>
+
+    <div class="feature-grid">
+      <article class="answer-card">
+        <h3>Raise and customize Rosie</h3>
+        <p>Tickle Rosie to earn snouts, then build a look from hats, halos, capes, auras, and odd little treasures. Her mood responds to how consistently you care for her.</p>
+      </article>
+      <article class="answer-card">
+        <h3>Play with people you know</h3>
+        <p>Visit a friend's pig, trade tickles, and send a daily blessing or curse. The social loop is built around a few real friends, not a feed full of strangers.</p>
+      </article>
+      <article class="answer-card">
+        <h3>Join a Sounder</h3>
+        <p>Your Sounder is your crew. Seasonal cooperative adventures give everyone a reason to return, contribute, and see what the group accomplished together.</p>
+      </article>
+      <article class="answer-card">
+        <h3>Earn status through play</h3>
+        <p>Tickle the Pig is not pay-to-win. Accomplishments and status are earned in the game; optional purchases are for personal expression, never competitive advantage.</p>
+      </article>
+    </div>
+
+    <section class="faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">Questions, answered</h2>
+      <div class="faq-grid">
+        <article class="answer-card">
+          <h3>Can I play by myself?</h3>
+          <p>Yes. You can raise and customize Rosie on your own. Adding friends unlocks visits, trades, blessings, and cooperative Sounder play.</p>
+        </article>
+        <article class="answer-card">
+          <h3>Is it a virtual pet game?</h3>
+          <p>Partly—but the point is the friendship around the pet. Rosie's care, your collection, and each season give your group small reasons to think about one another.</p>
+        </article>
+        <article class="answer-card">
+          <h3>Does it have ads?</h3>
+          <p>No. Tickle the Pig has no advertising. It is designed for warm, intentional check-ins rather than an attention-maximizing feed.</p>
+        </article>
+        <article class="answer-card">
+          <h3>Where can I play?</h3>
+          <p>Tickle the Pig is free to download for iPhone from the Apple App Store. It requires iOS 15.1 or later and uses Sign in with Apple.</p>
+        </article>
+      </div>
+    </section>
+
+    <div class="bottom-cta">
+      <a class="join-btn" href="https://apps.apple.com/us/app/tickle-the-pig/id6740339848">
+        Meet Rosie on the App Store <span class="ja">→</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <p>Tickle the Pig is an independent game by Brian Broeking.</p>
+    <p><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/report">Report a concern</a></p>
+  </footer>
+  </main>
 
   <div class="toast" id="toast">Code copied ✓</div>
 
@@ -547,9 +776,18 @@
   var codeEl = document.getElementById('code');
   var copyBtn = document.getElementById('copy');
   var codeBlock = document.getElementById('code-block');
+  var organicSummary = document.getElementById('organic-summary');
+  var steps = document.getElementById('steps');
   var toast = document.getElementById('toast');
 
   if (code) {
+    document.body.classList.add('referral');
+    document.getElementById('headline-one').textContent = 'Come tickle';
+    document.getElementById('headline-two').textContent = 'a pig.';
+    document.getElementById('hero-subtitle').innerHTML = 'A friend sent you a code <span class="arrow">▶</span>';
+    organicSummary.hidden = true;
+    codeBlock.hidden = false;
+    steps.hidden = false;
     codeEl.textContent = code;
     // Pre-warm the clipboard so the in-app first-launch clipboard sniff
     // (parseReferralCodeFromClipboard) can pick it up. Best-effort —
@@ -558,17 +796,6 @@
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(code).catch(function () {});
     }
-  } else {
-    // No code in the URL = organic visitor (no /r/<code> path) OR a
-    // malformed code that failed the regex. Either way, welcome them
-    // in instead of telling them they "need" something. Hide the
-    // "How to redeem" steps too, since they reference a Copy button
-    // that doesn't exist in this state. The Join button stays visible
-    // so they can install regardless — the in-app onboarding will
-    // present an optional code field with a Skip option.
-    codeBlock.innerHTML = '<p class="no-code">Came in without a friend\'s code? No worries — get the app and start tickling. (Friend codes get the inviter +50 snouts; nothing\'s lost if you don\'t have one.)</p>';
-    var steps = document.getElementById('steps');
-    if (steps) steps.style.display = 'none';
   }
 
   function showToast() {

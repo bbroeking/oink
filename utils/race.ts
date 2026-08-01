@@ -6,9 +6,9 @@
 // Two boards ride the same RPC:
 //   • the SEASON board — cumulative finds over the whole season (the headline
 //     ranking; every non-bot crew with ≥1 find ranks, no quorum).
-//   • the WEEKLY beat — a 7-day cycle anchored to MONDAY 00:00 UTC; the week's
-//     best diggers (finds per digging snout) take spoils every Monday. Quorum 2
-//     diggers to be ranked, 1-digger herds show unranked.
+//   • the WEEKLY beat — a 7-day cycle anchored to MONDAY 00:00 UTC; Sounders
+//     rank by overall finds ("most finds wins") and take spoils every Monday.
+//     Every crew with a find ranks; per-snout remains a secondary display lens.
 // Rank-scaled weekly spoils pay at cycle end (server-side). No challenges, no
 // queue, no bot rival, no accept — entering the race is automatic.
 //
@@ -32,19 +32,19 @@ export interface RaceCycleInfo {
 	ends_at: string;
 }
 
-/** A ranked crew (met quorum) — carries its server-assigned rank. */
+/** A ranked crew — every crew with at least one find receives a rank. */
 export interface RankedStanding {
 	rank: number;
 	crew_id: string;
 	name: string;
-	/** Finds per digging snout — the score. */
+	/** Finds per digging snout — a secondary comparison lens. */
 	avg: number;
 	diggers: number;
 	total_finds: number;
 	roster_size: number;
 }
 
-/** A sub-quorum crew — no rank until a second snout digs. */
+/** Legacy/pre-migration unranked row, retained for defensive parsing/history. */
 export interface UnrankedStanding {
 	crew_id: string;
 	name: string;
@@ -54,7 +54,7 @@ export interface UnrankedStanding {
 	roster_size: number;
 }
 
-/** My crew's own line — `rank` is null while sub-quorum. */
+/** My crew's own line — `rank` is null until its first find. */
 export interface MyStanding {
 	crew_id: string;
 	rank: number | null;
@@ -106,7 +106,7 @@ export interface PrizeLadder {
 export interface RacePrizes {
 	/** Tickles banked to the SPENDABLE tap pool (never tickles_earned). */
 	tickles: PrizeLadder & {
-		/** Every digging snout in a sub-quorum crew — the "everyone wins" floor. */
+		/** Compiled participation floor retained for pre-migration payloads. */
 		participation: number;
 	};
 	/** Golden Truffles minted at cycle end. */
@@ -116,18 +116,41 @@ export interface RacePrizes {
 // Compiled fallback for the spoils ladder — used until the server reports its own
 // `prizes` (server-config-over-constants: the numbers live server-side, this is
 // only what a pre-push client ticks on). MUST match the server payout helpers in
-// migration 20260767000000 (_race_tickles_for_rank / _race_truffles_for_rank).
+// migrations 20260793000000 (_race_tickles_for_rank) and 20260719000000
+// (_race_truffles_for_rank).
 export const DEFAULT_RACE_PRIZES: RacePrizes = {
 	tickles: {
-		first: 50,
-		second: 30,
-		third: 20,
-		upper: 12,
-		field: 8,
-		participation: 5,
+		first: 500,
+		second: 300,
+		third: 200,
+		upper: 100,
+		field: 50,
+		participation: 25,
 	},
 	truffles: { first: 6, second: 5, third: 4, upper: 3, field: 2 },
 };
+
+/** The per-digger payout a ranked Sounder is currently on track to receive. */
+export function raceSpoilsForRank(
+	prizes: RacePrizes,
+	rank: number,
+	rankedCount: number,
+): { tickles: number; truffles: number } {
+	const tier: keyof PrizeLadder =
+		rank === 1
+			? "first"
+			: rank === 2
+				? "second"
+				: rank === 3
+					? "third"
+					: rank >= 4 && rank <= Math.ceil(Math.max(0, rankedCount) / 2)
+						? "upper"
+						: "field";
+	return {
+		tickles: prizes.tickles[tier],
+		truffles: prizes.truffles[tier],
+	};
+}
 
 export interface RaceStandings {
 	cycle: RaceCycleInfo;

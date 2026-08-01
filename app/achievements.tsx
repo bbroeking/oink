@@ -12,7 +12,7 @@
 //     - Claimed + viewed: paper card, dim, ✓ badge.
 //
 // The "Claim" button on the page is the same acknowledgment the
-// AchievementUnlockModal does on launch; auto-grant of the reward
+// AchievementDigestModal batches on launch; auto-grant of the reward
 // itself happens server-side when the threshold is crossed.
 import React, { useCallback, useMemo, useState } from "react";
 import { PageHeader } from "../components/ui/PageHeader";

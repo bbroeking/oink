@@ -27,6 +27,8 @@
         "image": "latest"
       },
       "env": {
+        "GYM_INCLUDE_SYMBOLS": "false",
+        "SENTRY_ALLOW_FAILURE": "true",
         "EXPO_PUBLIC_PRIVACY_URL": "https://ticklethepig.com/privacy",
         "EXPO_PUBLIC_SENTRY_DSN": "https://8a094ff0378a99d9a921aad9d57a3b56@o4511452672884736.ingest.us.sentry.io/4511452680749056",
         "EXPO_PUBLIC_IAP_ENABLED": "true",
@@ -38,7 +40,7 @@
       "env": {
         "EXPO_PUBLIC_PRIVACY_URL": "https://ticklethepig.com/privacy",
         "EXPO_PUBLIC_SENTRY_DSN": "https://8a094ff0378a99d9a921aad9d57a3b56@o4511452672884736.ingest.us.sentry.io/4511452680749056",
-        "EXPO_PUBLIC_IAP_ENABLED": "false"
+        "EXPO_PUBLIC_IAP_ENABLED": "true"
       }
     }
   },

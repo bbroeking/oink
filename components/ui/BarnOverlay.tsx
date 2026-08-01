@@ -4,11 +4,11 @@
 //   alignment  angel  → white cloud puffs + warm tint
 //              goblin → gold coin piles + green tint
 //              neutral→ nothing
-//   effects    blessed→ a warm gold glow wash
-//              cursed → a murky green miasma wash
+//   effects    cursed → a murky green miasma wash
 //
 // The two axes are independent — you can be a neutral pig who's
-// currently blessed. pointerEvents="none" so taps reach the pig.
+// currently cursed. Blessings stay visible in the effect strip without
+// recoloring the whole page. pointerEvents="none" so taps reach the pig.
 import React from "react";
 import { View, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import type { AlignmentLabel } from "@/utils/alignment";
@@ -16,13 +16,12 @@ import { WHIMSY } from "@/constants/theme";
 
 interface Props {
 	alignment: AlignmentLabel;
-	// Active daily-ritual effects — drive the glow / miasma wash.
-	blessed?: boolean;
+	// Active curse effects drive the miasma wash.
 	cursed?: boolean;
 }
 
-export function BarnOverlay({ alignment, blessed, cursed }: Props) {
-	if (alignment === "neutral" && !blessed && !cursed) return null;
+export function BarnOverlay({ alignment, cursed }: Props) {
+	if (alignment === "neutral" && !cursed) return null;
 
 	return (
 		<View style={styles.fill} pointerEvents="none">
@@ -52,12 +51,6 @@ export function BarnOverlay({ alignment, blessed, cursed }: Props) {
 				</View>
 			)}
 
-			{blessed && (
-				<View
-					style={[styles.tint, styles.blessGlow]}
-					testID="barn-overlay-blessed"
-				/>
-			)}
 			{cursed && (
 				<View
 					style={[styles.tint, styles.curseMiasma]}
@@ -123,9 +116,8 @@ const styles = StyleSheet.create({
 	// palette token, so they stay as raw rgba on purpose (not token leak).
 	angelTint: { backgroundColor: "rgba(249,209,76,0.07)" },
 	goblinTint: { backgroundColor: "rgba(123,162,102,0.10)" },
-	// Effect washes — stronger than the ambient alignment tints so an
-	// active ritual reads as "something is happening to me".
-	blessGlow: { backgroundColor: "rgba(249,209,76,0.16)" },
+	// Curse wash — stronger than the ambient alignment tints so an active
+	// curse reads as "something is happening to me".
 	curseMiasma: { backgroundColor: "rgba(74,104,58,0.18)" },
 	cloudWrap: {
 		position: "absolute",

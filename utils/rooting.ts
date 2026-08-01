@@ -11,9 +11,20 @@
 //
 // All values here are safe in JS doubles: 16807 * 2147483646 ≈ 3.6e13 < 2^53.
 
-import { PATCH_COLS, PATCH_ROWS, STIR_RUB, STIR_SHOVE } from "@/constants/dig";
+import {
+	DIG_BUCKET_OPEN_MINS,
+	DIG_BUCKET_STARTS,
+	DIG_DAY_ANCHOR_MIN,
+	DIG_DAY_MIN,
+	DIG_WINDOWS_PER_DAY,
+	PATCH_COLS,
+	PATCH_ROWS,
+	STIR_RUB,
+	STIR_SHOVE,
+} from "@/constants/dig";
 import { feedingSchedule, type FeedingSchedule } from "@/utils/feedingConfig";
 import { formatHM } from "@/utils/duration";
+import { getDevSeasonOverrides } from "@/utils/devSeasonOverrides";
 
 export type Find =
 	| "truffle_l"
@@ -326,26 +337,98 @@ export function clusterBox(indices: number[]): ClusterBox | null {
 }
 
 // ── Feeding-window math ──────────────────────────────────────────────────────
-// Windows are 8h buckets of (epoch − offset): boundaries at 02:00 / 10:00 /
-// 18:00 UTC by default (the founder's US-Eastern sweet spots — see the
-// constants' rationale). The geometry is SERVER-AUTHORITATIVE: every function
-// reads the live feedingSchedule() (utils/feedingConfig — server row, cache,
-// compiled fallback) via a defaulted param, so tests can pin a schedule
-// explicitly and production follows a server UPDATE without a binary. MUST
-// match the server's window math (migrations 20260744000000 + 20260744100000).
+// Four non-uniform commuter windows on one SERVER-OWNED Eastern clock. The
+// client mirror is display-only; privileged RPCs derive the same clock from
+// America/New_York and accept no phone offset. US DST transition instants are
+// mirrored here so countdowns agree without relying on the device timezone.
+
+interface DigClock {
+	digDay: number;
+	bucket: number;
+	minute: number;
+	baseLocalMinute: number;
+	open: boolean;
+}
+
+function firstSunday(year: number, month: number): number {
+	const weekday = new Date(Date.UTC(year, month, 1)).getUTCDay();
+	return 1 + ((7 - weekday) % 7);
+}
+
+/** Eastern offset at a UTC instant: -300 standard, -240 daylight. */
+function easternOffsetMinutes(utcMs: number): number {
+	const year = new Date(utcMs).getUTCFullYear();
+	const marchSecondSunday = firstSunday(year, 2) + 7;
+	const novemberFirstSunday = firstSunday(year, 10);
+	const starts = Date.UTC(year, 2, marchSecondSunday, 7); // 02:00 EST
+	const ends = Date.UTC(year, 10, novemberFirstSunday, 6); // 02:00 EDT
+	return utcMs >= starts && utcMs < ends ? -240 : -300;
+}
+
+function localMinuteToUtcMs(localEpochMinute: number): number {
+	// Schedule boundaries are 06:00 or later, never inside the repeated/missing
+	// 02:00 DST hour. One standard-time guess therefore resolves unambiguously.
+	const standardGuess = (localEpochMinute + 300) * 60000;
+	return (localEpochMinute - easternOffsetMinutes(standardGuess)) * 60000;
+}
+
+function commuterClock(nowMs: number): DigClock {
+	const localEpochMinute =
+		Math.floor(nowMs / 60000) + easternOffsetMinutes(nowMs);
+	const adjusted = localEpochMinute - DIG_DAY_ANCHOR_MIN;
+	const digDay = Math.floor(adjusted / DIG_DAY_MIN);
+	const minute = adjusted - digDay * DIG_DAY_MIN;
+	let bucket = 0;
+	for (let i = DIG_BUCKET_STARTS.length - 1; i >= 0; i--) {
+		if (minute >= DIG_BUCKET_STARTS[i]) {
+			bucket = i;
+			break;
+		}
+	}
+	return {
+		digDay,
+		bucket,
+		minute,
+		baseLocalMinute: digDay * DIG_DAY_MIN + DIG_DAY_ANCHOR_MIN,
+		open:
+			minute < DIG_BUCKET_STARTS[bucket] + DIG_BUCKET_OPEN_MINS[bucket],
+	};
+}
+
+function normalizedBucket(win: number): number {
+	return ((win % DIG_WINDOWS_PER_DAY) + DIG_WINDOWS_PER_DAY) %
+		DIG_WINDOWS_PER_DAY;
+}
 
 export function windowIndex(
 	nowMs: number = Date.now(),
-	sched: FeedingSchedule = feedingSchedule()
+	sched?: FeedingSchedule
 ): number {
-	return Math.floor((nowMs / 1000 - sched.offsetSecs) / sched.windowSecs);
+	const active = sched ?? feedingSchedule();
+	if (active.mode === "commuter_eastern") {
+		const c = commuterClock(nowMs);
+		return c.digDay * DIG_WINDOWS_PER_DAY + c.bucket;
+	}
+	return Math.floor((nowMs / 1000 - active.offsetSecs) / active.windowSecs);
 }
 
 export function windowEndsAtMs(
 	win: number,
-	sched: FeedingSchedule = feedingSchedule()
+	sched?: FeedingSchedule
 ): number {
-	return ((win + 1) * sched.windowSecs + sched.offsetSecs) * 1000;
+	const active = sched ?? feedingSchedule();
+	if (active.mode === "commuter_eastern") {
+		const digDay = Math.floor(win / DIG_WINDOWS_PER_DAY);
+		const bucket = normalizedBucket(win);
+		const endMinute =
+			bucket < DIG_WINDOWS_PER_DAY - 1
+				? DIG_BUCKET_STARTS[bucket + 1]
+				: DIG_DAY_MIN;
+		return localMinuteToUtcMs(
+			digDay * DIG_DAY_MIN + DIG_DAY_ANCHOR_MIN + endMinute
+		);
+	}
+	return ((win + 1) * active.windowSecs + active.offsetSecs) * 1000;
 }
 
 /** "2h 10m" until the Hunger's next gorge (end of the current feeding). */
@@ -368,21 +451,32 @@ const formatLeft = (leftMs: number): string => formatHM(leftMs, { minMinute: 1 }
 /** True while the patch is diggable (the open head of the current window). */
 export function patchPhaseOpen(
 	nowMs: number = Date.now(),
-	sched: FeedingSchedule = feedingSchedule()
+	sched?: FeedingSchedule
 ): boolean {
+	const active = sched ?? feedingSchedule();
+	if (active.mode === "commuter_eastern") return commuterClock(nowMs).open;
 	// epoch − offset is positive for any real date, so % never goes negative.
-	return (nowMs / 1000 - sched.offsetSecs) % sched.windowSecs < sched.openSecs;
+	return (nowMs / 1000 - active.offsetSecs) % active.windowSecs < active.openSecs;
 }
 
 /** Ms timestamp when the CURRENT open phase closes (only valid while open). */
 export function phaseClosesAtMs(
 	nowMs: number = Date.now(),
-	sched: FeedingSchedule = feedingSchedule()
+	sched?: FeedingSchedule
 ): number {
+	const active = sched ?? feedingSchedule();
+	if (active.mode === "commuter_eastern") {
+		const c = commuterClock(nowMs);
+		return localMinuteToUtcMs(
+			c.baseLocalMinute +
+				DIG_BUCKET_STARTS[c.bucket] +
+				DIG_BUCKET_OPEN_MINS[c.bucket]
+		);
+	}
 	return (
-		(windowIndex(nowMs, sched) * sched.windowSecs +
-			sched.offsetSecs +
-			sched.openSecs) *
+		(windowIndex(nowMs, active) * active.windowSecs +
+			active.offsetSecs +
+			active.openSecs) *
 		1000
 	);
 }
@@ -390,9 +484,40 @@ export function phaseClosesAtMs(
 /** Ms timestamp of the NEXT open phase (= the next window's start). */
 export function nextOpenAtMs(
 	nowMs: number = Date.now(),
-	sched: FeedingSchedule = feedingSchedule()
+	sched?: FeedingSchedule
 ): number {
-	return windowEndsAtMs(windowIndex(nowMs, sched), sched);
+	const active = sched ?? feedingSchedule();
+	return windowEndsAtMs(windowIndex(nowMs, active), active);
+}
+
+/** Current commuter bucket geometry for the Feeding strip. */
+export function patchWindowShape(nowMs: number = Date.now()): {
+	open: boolean;
+	openFrac: number;
+	marker: number;
+} {
+	const active = feedingSchedule();
+	if (active.mode !== "commuter_eastern") {
+		const intoWindow =
+			(nowMs / 1000 - active.offsetSecs) % active.windowSecs;
+		return {
+			open: intoWindow < active.openSecs,
+			openFrac: active.openSecs / active.windowSecs,
+			marker: Math.max(0, Math.min(1, intoWindow / active.windowSecs)),
+		};
+	}
+	const c = commuterClock(nowMs);
+	const start = DIG_BUCKET_STARTS[c.bucket];
+	const end =
+		c.bucket < DIG_WINDOWS_PER_DAY - 1
+			? DIG_BUCKET_STARTS[c.bucket + 1]
+			: DIG_DAY_MIN;
+	const length = end - start;
+	return {
+		open: c.open,
+		openFrac: DIG_BUCKET_OPEN_MINS[c.bucket] / length,
+		marker: Math.max(0, Math.min(1, (c.minute - start) / length)),
+	};
 }
 
 /** "1h 12m" until the current open phase closes. */
@@ -419,11 +544,20 @@ export interface FeedingPhaseView {
 }
 
 export function feedingPhaseView(nowMs: number = Date.now()): FeedingPhaseView {
+	const forced = getDevSeasonOverrides().phase;
+	if (forced) {
+		return { open: forced === "open", countdown: "dev · forced" };
+	}
 	const open = patchPhaseOpen(nowMs);
 	return {
 		open,
 		countdown: open ? phaseClosesCountdown(nowMs) : nextOpenCountdown(nowMs),
 	};
+}
+
+/** The patch's primary action label, shared by every season entry point. */
+export function patchCtaLabel(phaseOpen: boolean, countdown: string): string {
+	return phaseOpen ? "Dig now" : `Opening in ${countdown}`;
 }
 
 // ── Feeding-CTA state derivation (pure — pins the stale-dug fix) ─────────────
@@ -467,7 +601,7 @@ export function bannerDigStatus(
 	const opensIn = feedingPhaseView(nowMs).countdown;
 	return dug
 		? `dug this feeding — opens in ${opensIn}`
-		: `he's guarding — opens in ${opensIn}`;
+		: patchCtaLabel(false, opensIn);
 }
 
 // Deterministic client seed kernel — FNV-1a folded into the Park–Miller range

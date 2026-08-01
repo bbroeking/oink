@@ -332,13 +332,13 @@ const styles = StyleSheet.create({
 	},
 	rerollBtnText: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		color: WHIMSY.mute,
 	},
 	// After-the-reroll receipt — replaces the pill once used.
 	rerolledTag: {
 		fontFamily: FONTS.hand,
-		fontSize: 10,
+		fontSize: 11,
 		color: WHIMSY.mute,
 		textAlign: "right",
 		marginTop: 6,

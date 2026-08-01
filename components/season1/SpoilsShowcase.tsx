@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
 	itemRarity: {
 		...TYPE.kickerPill,
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		color: WHIMSY.mute,
 		marginTop: 1,
 	},

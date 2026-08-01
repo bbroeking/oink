@@ -1,0 +1,1 @@
+export { RiveRuntimeProbe } from "./RiveRuntimeProbeFallback";

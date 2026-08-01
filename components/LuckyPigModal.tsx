@@ -28,6 +28,11 @@ import {
 	WHIMSY,
 	RADII,
 } from "@/constants/theme";
+import {
+	MOTION_DURATION,
+	useMotionPolicy,
+} from "@/hooks/useMotionPolicy";
+import type { TitleRow } from "@/constants/title_types";
 
 // ── Lucky burst: 3 stacked animated layers ─────────────────────────
 //   1. Sunburst rays (8 triangles) — slow rotation, hue gold
@@ -59,6 +64,7 @@ function LuckyBurst({
 	// 'outro'  = beat 3, everything fades out
 	phase: "idle" | "enter" | "sustain" | "outro";
 }) {
+	const motionPolicy = useMotionPolicy();
 	const burstScale = useRef(new Animated.Value(0)).current;  // beat 1 + 3 — overall burst scale
 	const rayRotation = useRef(new Animated.Value(0)).current;
 	const auraPulse = useRef(new Animated.Value(0)).current;
@@ -79,6 +85,18 @@ function LuckyBurst({
 			return;
 		}
 		if (phase === "enter") {
+			if (motionPolicy.reduceMotion) {
+				burstScale.setValue(1);
+				rayRotation.setValue(0);
+				auraPulse.setValue(0.5);
+				sparkles.forEach((sparkle) => sparkle.setValue(0.65));
+				Animated.timing(fade, {
+					toValue: 1,
+					duration: MOTION_DURATION.crossfade,
+					useNativeDriver: true,
+				}).start();
+				return;
+			}
 			// Beat 1: burst scale springs from 0 → 1.18 (overshoot) → 1.0;
 			// the underlying spring handles the overshoot naturally.
 			Animated.parallel([
@@ -97,6 +115,14 @@ function LuckyBurst({
 			return;
 		}
 		if (phase === "sustain") {
+			if (!motionPolicy.allowDecorativeMotion) {
+				burstScale.setValue(1);
+				rayRotation.setValue(0);
+				auraPulse.setValue(0.5);
+				fade.setValue(1);
+				sparkles.forEach((sparkle) => sparkle.setValue(0.65));
+				return;
+			}
 			// Beat 2: kick off the infinite loops.
 			const rayLoop = Animated.loop(
 				Animated.timing(rayRotation, {
@@ -152,13 +178,13 @@ function LuckyBurst({
 			Animated.parallel([
 				Animated.timing(fade, {
 					toValue: 0,
-					duration: 600,
+					duration: motionPolicy.duration(600),
 					easing: Easing.in(Easing.quad),
 					useNativeDriver: true,
 				}),
 				Animated.timing(burstScale, {
-					toValue: 0.85,
-					duration: 600,
+					toValue: motionPolicy.reduceMotion ? 1 : 0.85,
+					duration: motionPolicy.duration(600),
 					easing: Easing.in(Easing.quad),
 					useNativeDriver: true,
 				}),
@@ -166,13 +192,21 @@ function LuckyBurst({
 				...sparkles.map((s) =>
 					Animated.timing(s, {
 						toValue: 0,
-						duration: 400,
+						duration: motionPolicy.duration(400),
 						useNativeDriver: true,
 					})
 				),
 			]).start();
 		}
-	}, [phase, burstScale, rayRotation, auraPulse, fade, sparkles]);
+	}, [
+		phase,
+		burstScale,
+		rayRotation,
+		auraPulse,
+		fade,
+		sparkles,
+		motionPolicy,
+	]);
 
 	const rayRotateDeg = rayRotation.interpolate({
 		inputRange: [0, 1],
@@ -316,6 +350,8 @@ interface Props {
 	visible: boolean;
 	windowSize: number;       // e.g. 10 — the number of tickles this lucky window covers
 	doublePercent: number;    // e.g. 30 — the % chance each tickle in the window doubles
+	unlockedTitle: TitleRow | null;
+	onEquipTitle: (id: string) => Promise<void>;
 	onDismiss: () => void;
 }
 
@@ -323,6 +359,8 @@ export function LuckyPigModal({
 	visible,
 	windowSize,
 	doublePercent,
+	unlockedTitle,
+	onEquipTitle,
 	onDismiss,
 }: Props) {
 	const trumpet = useAudioPlayer(fanfareSound);
@@ -330,19 +368,22 @@ export function LuckyPigModal({
 	const pigDrop = useRef(new Animated.Value(0)).current;   // 0 = dropped above frame, 1 = settled
 	const cardOpacity = useRef(new Animated.Value(0)).current; // outro fade
 	const [phase, setPhase] = useState<"idle" | "enter" | "sustain" | "outro">("idle");
+	const [equipping, setEquipping] = useState(false);
 	const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+	const motionPolicy = useMotionPolicy();
 
 	// Phased timeline:
 	//   t=0    beat 1 — burst pops, pig drops in, fanfare, haptic   (~400ms)
 	//   t=400  beat 2 — sustain loops run (rays / aura / sparkles)  — stays here until user taps "View reward"
 	//   on tap beat 3 — outro: shrink + fade                        (~600ms)
-	//   then   dismiss callback fires → Barn handles next step (title unlock)
+	//   then   dismiss callback fires → Barn closes the single reward surface
 	useEffect(() => {
 		if (!visible) {
 			cardScale.setValue(0);
 			pigDrop.setValue(0);
 			cardOpacity.setValue(0);
 			setPhase("idle");
+			setEquipping(false);
 			timers.current.forEach(clearTimeout);
 			timers.current = [];
 			return;
@@ -357,63 +398,84 @@ export function LuckyPigModal({
 			trumpet.seekTo(0);
 			trumpet.play();
 		} catch {}
-		Animated.parallel([
-			Animated.spring(cardScale, {
-				toValue: 1,
-				tension: 80,
-				friction: 6,
-				useNativeDriver: true,
-			}),
+		if (motionPolicy.reduceMotion) {
+			cardScale.setValue(1);
+			pigDrop.setValue(1);
 			Animated.timing(cardOpacity, {
 				toValue: 1,
-				duration: 220,
+				duration: MOTION_DURATION.crossfade,
 				useNativeDriver: true,
-			}),
-			// Pig drops in a hair after the card pops so the eye lands
-			// on the burst expansion first, then the pig.
-			Animated.sequence([
-				Animated.delay(120),
-				Animated.spring(pigDrop, {
+			}).start();
+		} else {
+			Animated.parallel([
+				Animated.spring(cardScale, {
 					toValue: 1,
-					tension: 70,
-					friction: 7,
+					tension: 80,
+					friction: 6,
 					useNativeDriver: true,
 				}),
-			]),
-		]).start();
+				Animated.timing(cardOpacity, {
+					toValue: 1,
+					duration: 220,
+					useNativeDriver: true,
+				}),
+				// Pig drops in a hair after the card pops so the eye lands
+				// on the burst expansion first, then the pig.
+				Animated.sequence([
+					Animated.delay(120),
+					Animated.spring(pigDrop, {
+						toValue: 1,
+						tension: 70,
+						friction: 7,
+						useNativeDriver: true,
+					}),
+				]),
+			]).start();
+		}
 
 		// Hand off to sustain after beat 1 — no auto-outro/dismiss; the
-		// user explicitly drives the next step via the View reward button.
-		timers.current.push(setTimeout(() => setPhase("sustain"), 400));
+		// user explicitly closes the reward via its primary action.
+		timers.current.push(
+			setTimeout(
+				() => setPhase("sustain"),
+				motionPolicy.duration(400, MOTION_DURATION.crossfade)
+			)
+		);
 		return () => {
 			timers.current.forEach(clearTimeout);
 			timers.current = [];
 		};
-	}, [visible, cardScale, cardOpacity, pigDrop, trumpet]);
+	}, [visible, cardScale, cardOpacity, pigDrop, trumpet, motionPolicy]);
 
-	// Tapping "View reward" runs the outro animation, then calls
-	// onDismiss so the parent can transition to the title-unlock modal.
+	// The primary action optionally equips the inline title, runs the outro,
+	// then calls onDismiss.
 	// onDismiss is fired by a timeout that runs in lockstep with the
 	// outro (NOT the animation callback) — animation callbacks are
 	// unreliable when a component unmounts mid-animation, which caused
 	// the dismiss to silently no-op in early testing.
-	const handleViewReward = () => {
+	const handleViewReward = async (equipTitle = false) => {
+		if (equipping) return;
+		if (equipTitle && unlockedTitle) {
+			setEquipping(true);
+			await onEquipTitle(unlockedTitle.id);
+			setEquipping(false);
+		}
 		setPhase("outro");
 		Animated.parallel([
 			Animated.timing(cardScale, {
-				toValue: 0.88,
-				duration: 600,
+				toValue: motionPolicy.reduceMotion ? 1 : 0.88,
+				duration: motionPolicy.duration(600),
 				easing: Easing.in(Easing.quad),
 				useNativeDriver: true,
 			}),
 			Animated.timing(cardOpacity, {
 				toValue: 0,
-				duration: 600,
+				duration: motionPolicy.duration(600),
 				easing: Easing.in(Easing.quad),
 				useNativeDriver: true,
 			}),
 		]).start();
-		timers.current.push(setTimeout(onDismiss, 600));
+		timers.current.push(setTimeout(onDismiss, motionPolicy.duration(600)));
 	};
 
 	const pigTranslateY = pigDrop.interpolate({
@@ -464,15 +526,42 @@ export function LuckyPigModal({
 							Your next {windowSize} tickles have a {doublePercent}% chance
 							to be doubled.
 						</Text>
+						{unlockedTitle && (
+							<View style={styles.titleReward}>
+								<Text style={styles.titleRewardLabel}>bonus title</Text>
+								<Text style={styles.titleRewardName}>{unlockedTitle.name}</Text>
+								<Text style={styles.titleRewardPlacement}>
+									{unlockedTitle.placement === "pre"
+										? "before your name"
+										: "after your name"}
+								</Text>
+							</View>
+						)}
 						<Pressable
-							onPress={handleViewReward}
+							onPress={() => handleViewReward(!!unlockedTitle)}
+							disabled={equipping}
 							style={({ pressed }) => [
 								styles.viewRewardBtn,
-								pressed && { opacity: 0.7 },
+								(pressed || equipping) && { opacity: 0.7 },
 							]}
 						>
-							<Text style={styles.viewRewardText}>View reward</Text>
+							<Text style={styles.viewRewardText}>
+								{equipping
+									? "Equipping…"
+									: unlockedTitle
+										? "Equip title"
+										: "Keep tickling"}
+							</Text>
 						</Pressable>
+						{unlockedTitle && (
+							<Pressable
+								onPress={() => handleViewReward(false)}
+								disabled={equipping}
+								style={styles.keepLaterBtn}
+							>
+								<Text style={styles.keepLaterText}>Keep for later</Text>
+							</Pressable>
+						)}
 					</Sticker>
 				</Animated.View>
 			</View>
@@ -545,6 +634,33 @@ const styles = StyleSheet.create({
 		lineHeight: 22,
 		marginBottom: 10,
 	},
+	titleReward: {
+		width: "100%",
+		alignItems: "center",
+		paddingVertical: 10,
+		marginBottom: 4,
+		borderTopWidth: StyleSheet.hairlineWidth,
+		borderBottomWidth: StyleSheet.hairlineWidth,
+		borderColor: WHIMSY.muteSoft,
+	},
+	titleRewardLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		color: WHIMSY.mute,
+		textTransform: "uppercase",
+		letterSpacing: 1.2,
+	},
+	titleRewardName: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 22,
+		color: WHIMSY.ink,
+		marginTop: 2,
+	},
+	titleRewardPlacement: {
+		fontFamily: FONTS.hand,
+		fontSize: 12,
+		color: WHIMSY.mute,
+	},
 	viewRewardBtn: {
 		marginTop: 6,
 		paddingHorizontal: 24,
@@ -557,5 +673,15 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		color: WHIMSY.paper,
 		letterSpacing: 0.4,
+	},
+	keepLaterBtn: {
+		paddingHorizontal: 18,
+		paddingVertical: 9,
+	},
+	keepLaterText: {
+		fontFamily: FONTS.hand,
+		fontSize: 14,
+		color: WHIMSY.mute,
+		textDecorationLine: "underline",
 	},
 });

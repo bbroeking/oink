@@ -1,6 +1,6 @@
 import React from "react";
 import { View, ViewStyle, StyleProp, StyleSheet } from "react-native";
-import { WHIMSY, STICKER_SHADOW } from "@/constants/theme";
+import { WHIMSY, STICKER_SHADOW, UI_COLORS } from "@/constants/theme";
 
 type StickerColor =
 	| "paper"
@@ -105,11 +105,11 @@ export function Tape({
 
 const styles = StyleSheet.create({
 	base: {
-		borderColor: WHIMSY.ink,
+		borderColor: UI_COLORS.border,
 	},
 	tape: {
 		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+		borderColor: UI_COLORS.border,
 		opacity: 0.85,
 	},
 });

@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
 	nameHidden: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 14,
-		color: WHIMSY.muteSoft,
+		color: WHIMSY.mute,
 	},
 	story: {
 		fontFamily: FONTS.hand,
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		fontFamily: FONTS.whimsy,
 		fontSize: 22,
-		color: WHIMSY.muteSoft,
+		color: WHIMSY.mute,
 	},
 	guideCopy: { flex: 1 },
 	guideName: {
@@ -390,12 +390,12 @@ const styles = StyleSheet.create({
 	guideNameHidden: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
-		color: WHIMSY.muteSoft,
+		color: WHIMSY.mute,
 	},
 	guideWhimsyHidden: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
-		color: WHIMSY.muteSoft,
+		color: WHIMSY.mute,
 		marginTop: 1,
 	},
 });

@@ -1,6 +1,7 @@
 // Pair bonds module — the friendship-bond ledger read path. Single owner of
 // the pair-bond contract: the row/summary shapes and the two typed wrappers
-// around the client-callable RPCs (pair_leaderboard, pair_bond_with).
+// around the client-callable RPCs (pair_leaderboard, enemy_leaderboard,
+// pair_bond_with).
 //
 // Same wrapper-shape pattern as utils/referrals.ts + utils/friendships.ts:
 // thin rpc<T>() pass-throughs, no React, no AsyncStorage. The Strongest Pairs
@@ -39,6 +40,26 @@ export interface PairLeaderboard {
 	you: PairBondRow | null;
 }
 
+// One unordered rivalry on the Biggest Enemies board. `curses` counts curses
+// sent in either direction; is_self marks rivalries involving the caller.
+export interface EnemyPairRow {
+	rank: number;
+	user_a: string;
+	user_b: string;
+	name_a: string | null;
+	name_b: string | null;
+	curses: number;
+	curses_a_to_b?: number;
+	curses_b_to_a?: number;
+	is_self: boolean;
+}
+
+export interface EnemyLeaderboard {
+	ok: true;
+	enemies: EnemyPairRow[];
+	you: EnemyPairRow | null;
+}
+
 // pair_bond_with's shape — the caller's bond with one friend, zeros when no
 // bond has formed yet.
 export interface PairBondWith {
@@ -57,6 +78,13 @@ export interface PairBondWith {
 export function pairLeaderboard(limit = 25) {
 	return rpc<PairLeaderboard | { ok: false; reason: string }>(
 		"pair_leaderboard",
+		{ p_limit: limit }
+	);
+}
+
+export function enemyLeaderboard(limit = 25) {
+	return rpc<EnemyLeaderboard | { ok: false; reason: string }>(
+		"enemy_leaderboard",
 		{ p_limit: limit }
 	);
 }
@@ -83,4 +111,26 @@ export function bondBreakdown(row: {
 	push(row.blessings, "blessing");
 	push(row.visits, "visit");
 	return parts.join(" · ");
+}
+
+// Canonical user_a/user_b order is stable, so these two lines explain exactly
+// who cursed whom without changing the total used to rank the rivalry.
+export function curseDirections(row: {
+	name_a: string | null;
+	name_b: string | null;
+	curses: number;
+	curses_a_to_b?: number;
+	curses_b_to_a?: number;
+}): string[] {
+	if (row.curses_a_to_b == null || row.curses_b_to_a == null) {
+		return [`${row.curses.toLocaleString()} curses exchanged`];
+	}
+	const nameA = row.name_a ?? "Anonymous";
+	const nameB = row.name_b ?? "Anonymous";
+	const line = (from: string, to: string, count: number) =>
+		`${from} cursed ${to}: ${count.toLocaleString()} ${count === 1 ? "curse" : "curses"}`;
+	return [
+		line(nameA, nameB, row.curses_a_to_b),
+		line(nameB, nameA, row.curses_b_to_a),
+	];
 }

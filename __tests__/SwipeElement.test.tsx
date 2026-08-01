@@ -108,6 +108,21 @@ describe("SwipeElement — pig tap wiring", () => {
 		const pressable = r.root.findByType(Pressable);
 		expect(typeof pressable.props.onPress).toBe("function");
 		expect(pressable.props.disabled).toBeFalsy();
+		expect(pressable.props.accessibilityRole).toBe("button");
+		expect(pressable.props.accessibilityLabel).toBe("Tickle Rosie");
+		act(() => r.unmount());
+	});
+
+	test("names the active roster pig for VoiceOver", async () => {
+		const r = await renderAct(
+			<SwipeElement
+				onLuckySwipe={jest.fn()}
+				pigId="copper"
+				canTickle={true}
+			/>
+		);
+		const pressable = r.root.findByType(Pressable);
+		expect(pressable.props.accessibilityLabel).toBe("Tickle Copper");
 		act(() => r.unmount());
 	});
 });

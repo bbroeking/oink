@@ -33,6 +33,7 @@ import Svg, { Ellipse } from "react-native-svg";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Icon } from "./Icon";
 import { WHIMSY, FONTS } from "@/constants/theme";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 
 // Tab config keyed by the route name set in app/(tabs)/_layout.tsx.
 // Owns the label + icon name + active color so the bar doesn't have
@@ -72,6 +73,7 @@ export function HangingSignsTabBar({
 	badges,
 }: BottomTabBarProps & TabBarExtras) {
 	const insets = useSafeAreaInsets();
+	const { reduceMotion } = useMotionPolicy();
 	return (
 		<View>
 			{/* Wood rail — top border + plank gradient + a faint
@@ -105,6 +107,7 @@ export function HangingSignsTabBar({
 							focused={focused}
 							swayDelay={STAGGER_DELAYS_MS[i] ?? 0}
 							badge={badges?.[route.name] ?? 0}
+							reduceMotion={reduceMotion}
 							onPress={() => {
 								const event = navigation.emit({
 									type: "tabPress",
@@ -133,6 +136,7 @@ function HangingSign({
 	focused,
 	swayDelay,
 	badge,
+	reduceMotion,
 	onPress,
 }: {
 	label: string;
@@ -141,6 +145,7 @@ function HangingSign({
 	focused: boolean;
 	swayDelay: number;
 	badge: number;
+	reduceMotion: boolean;
 	onPress: () => void;
 }) {
 	// Continuous sway value, 0..1, mapped to -1.4° → 1.4° (or
@@ -155,6 +160,11 @@ function HangingSign({
 	// Sway loop. Restarts when focus flips so the focused tab can
 	// breathe slower; idle tabs sway on the longer rhythm.
 	useEffect(() => {
+		if (reduceMotion) {
+			sway.stopAnimation();
+			sway.setValue(0.5);
+			return;
+		}
 		const half = focused ? BREATHE_DURATION_MS : SWAY_DURATION_MS;
 		const loop = Animated.loop(
 			Animated.sequence([
@@ -179,9 +189,17 @@ function HangingSign({
 			clearTimeout(t);
 			loop.stop();
 		};
-	}, [focused, sway, swayDelay]);
+	}, [focused, reduceMotion, sway, swayDelay]);
 
 	const handlePress = () => {
+		if (reduceMotion) {
+			swing.stopAnimation();
+			tug.stopAnimation();
+			swing.setValue(1);
+			tug.setValue(0);
+			onPress();
+			return;
+		}
 		// Sign swing-in: -10° → 6° → -3° → 1° → 0°, ~620ms total.
 		// Modeled via a single Animated.Value 0..4 → 5 keyframe stops.
 		swing.setValue(0);
@@ -232,7 +250,17 @@ function HangingSign({
 	});
 
 	return (
-		<Pressable onPress={handlePress} style={styles.col}>
+		<Pressable
+			onPress={handlePress}
+			style={styles.col}
+			accessibilityRole="tab"
+			accessibilityLabel={
+				badge > 0
+					? `${label}, ${badge} ${badge === 1 ? "item" : "items"} ready`
+					: label
+			}
+			accessibilityState={{ selected: focused }}
+		>
 			{/* Chain — two interlocked SVG ovals + a small top link
 			    that anchors to the rail. */}
 			<Animated.View
@@ -441,7 +469,7 @@ const styles = StyleSheet.create({
 	lbl: {
 		fontFamily: FONTS.bodyExtra,
 		fontWeight: "900",
-		fontSize: 9,
+		fontSize: 11,
 		color: WHIMSY.ink,
 		marginTop: 3,
 		letterSpacing: 0.3,
@@ -453,10 +481,10 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		top: -4,
 		right: -4,
-		minWidth: 14,
-		height: 14,
+			minWidth: 18,
+			height: 18,
 		paddingHorizontal: 3,
-		borderRadius: 7,
+			borderRadius: 9,
 		backgroundColor: WHIMSY.accent,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
@@ -465,7 +493,7 @@ const styles = StyleSheet.create({
 	},
 	badgeText: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 8,
+			fontSize: 11,
 		fontWeight: "900",
 		color: WHIMSY.paper,
 		letterSpacing: 0,

@@ -19,6 +19,7 @@
 // Paths match the convention the layout already uses when it hands the result
 // to router.replace (bare tab-relative paths, e.g. "/season", not "/(tabs)/…").
 const NOTIFICATION_ROUTES = {
+	home: "/",
 	trade: "/friends", // the Inbox on the Friends tab carries the event
 	friends: "/friends", // (trade + friends both land on the Friends Inbox)
 	achievements: "/achievements",
@@ -28,7 +29,7 @@ const NOTIFICATION_ROUTES = {
 	// Reserved alias, NOT emitted by the server today: kept so a future
 	// trough (item-drive) push routes to the Shop tab without another edit.
 	// utils/whileAway.ts also resolves "trough" through here on purpose.
-	trough: "/shop",
+	trough: "/shop?trough=open",
 } as const;
 
 // Every screen the router accepts (table keys). Includes the reserved `trough`

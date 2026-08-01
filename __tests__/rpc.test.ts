@@ -15,7 +15,7 @@ jest.mock("../utils/log", () => ({
 	},
 }));
 
-import { rpc, rpcAction } from "../utils/rpc";
+import { rpc, rpcAction, rpcOutcome } from "../utils/rpc";
 
 describe("rpc", () => {
 	beforeEach(() => {
@@ -81,6 +81,39 @@ describe("rpc", () => {
 		mockRpc.mockResolvedValue({ data: null, error: null });
 		await rpc("my_active_effects");
 		expect(mockRpc).toHaveBeenCalledWith("my_active_effects", undefined);
+	});
+});
+
+describe("rpcOutcome — typed failures", () => {
+	beforeEach(() => {
+		mockRpc.mockReset();
+		mockError.mockReset();
+		mockWarn.mockReset();
+	});
+
+	test("returns data without collapsing a successful null", async () => {
+		mockRpc.mockResolvedValue({ data: null, error: null });
+		expect(await rpcOutcome("foo")).toEqual({ ok: true, data: null });
+	});
+
+	test("classifies PGRST202 as a missing function", async () => {
+		const error = { code: "PGRST202", message: "Could not find the function" };
+		mockRpc.mockResolvedValue({ data: null, error });
+		expect(await rpcOutcome("equip_cosmetic")).toEqual({
+			ok: false,
+			kind: "missing_function",
+			error,
+		});
+	});
+
+	test("distinguishes network and other RPC failures", async () => {
+		const networkError = { name: "TypeError", message: "Failed to fetch" };
+		mockRpc.mockResolvedValueOnce({ data: null, error: networkError });
+		expect(await rpcOutcome("foo")).toMatchObject({ ok: false, kind: "network" });
+
+		const rpcError = { code: "42501", message: "permission denied" };
+		mockRpc.mockResolvedValueOnce({ data: null, error: rpcError });
+		expect(await rpcOutcome("foo")).toMatchObject({ ok: false, kind: "rpc_error" });
 	});
 });
 

@@ -8,6 +8,10 @@ import {
 	DimensionValue,
 } from "react-native";
 import { WHIMSY } from "@/constants/theme";
+import {
+	startDecorativeLoop,
+	useMotionPolicy,
+} from "@/hooks/useMotionPolicy";
 
 interface Props {
 	width?: DimensionValue;
@@ -19,14 +23,19 @@ interface Props {
 // Shimmery placeholder block. Pulses between two paper tones.
 export function Skeleton({ width = "100%", height = 20, radius = 8, style }: Props) {
 	const v = useRef(new Animated.Value(0)).current;
+	const motionPolicy = useMotionPolicy();
 	useEffect(() => {
-		Animated.loop(
+		return startDecorativeLoop({
+			policy: motionPolicy,
+			animation: Animated.loop(
 			Animated.sequence([
 				Animated.timing(v, { toValue: 1, duration: 800, useNativeDriver: false }),
 				Animated.timing(v, { toValue: 0, duration: 800, useNativeDriver: false }),
 			])
-		).start();
-	}, [v]);
+			),
+			rest: () => v.setValue(0),
+		});
+	}, [motionPolicy, v]);
 	const bg = v.interpolate({
 		inputRange: [0, 1],
 		outputRange: [WHIMSY.cream, WHIMSY.paper],

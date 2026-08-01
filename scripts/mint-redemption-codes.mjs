@@ -7,6 +7,9 @@
 //
 // Flags:
 //   --grant   REQUIRED  hat:<hat_id> | truffles:<amount> | snouts:<amount>
+//   --item    shorthand for --grant hat:<existing_catalog_item_id>
+//   --list-items list existing catalog item ids, then exit
+//   --dry-run validate the grant and print the plan without minting
 //   --label   REQUIRED  admin-facing batch label (every batch is auditable)
 //   --count   default 1 number of codes to mint
 //   --max-uses default 1 uses per code (1 = single-use print, N = event poster)
@@ -32,12 +35,27 @@ function flag(name, def = undefined) {
 	return i !== -1 && i + 1 < process.argv.length ? process.argv[i + 1] : def;
 }
 
+function hasFlag(name) {
+	return process.argv.includes(`--${name}`);
+}
+
 const USAGE =
 	'Usage: node --env-file=.env --env-file=.env.local scripts/mint-redemption-codes.mjs \\\n' +
-	'  --grant hat:mushroom_cap|truffles:50|snouts:100 --label "PAX booth" \\\n' +
-	"  [--count 25] [--max-uses 1] [--expires 2026-09-01] [--out ./codes-out]";
+	'  --item mushroom_cap | --grant hat:mushroom_cap|truffles:50|snouts:100 \\\n' +
+	'  --label "PAX booth" [--count 25] [--max-uses 1] \\\n' +
+	"  [--expires 2026-09-01] [--out ./codes-out] [--dry-run]\n" +
+	"  Or: --list-items";
 
-const grantArg = flag("grant");
+const itemArg = flag("item");
+const explicitGrantArg = flag("grant");
+if (itemArg && explicitGrantArg) {
+	console.error("Use either --item or --grant, not both.");
+	console.error(USAGE);
+	process.exit(1);
+}
+const grantArg = itemArg ? `hat:${itemArg}` : explicitGrantArg;
+const listItems = hasFlag("list-items");
+const dryRun = hasFlag("dry-run");
 const label = flag("label");
 const count = parseInt(flag("count", "1"), 10);
 const maxUses = parseInt(flag("max-uses", "1"), 10);
@@ -50,24 +68,26 @@ function die(msg) {
 	process.exit(1);
 }
 
-if (!grantArg) die("Missing --grant.");
-if (!label) die("Missing --label (every batch must be auditable).");
+if (!grantArg && !listItems) die("Missing --item or --grant.");
+if (!label && !listItems) die("Missing --label (every batch must be auditable).");
 if (!Number.isInteger(count) || count < 1) die("--count must be a positive integer.");
 if (!Number.isInteger(maxUses) || maxUses < 1) die("--max-uses must be a positive integer.");
 
 // grant → jsonb
-const [gKind, gRest] = grantArg.split(":");
+const [gKind, gRest] = (grantArg ?? "").split(":");
 let grant;
-if (gKind === "hat") {
-	if (!gRest) die("--grant hat:<hat_id> requires a hat id.");
-	grant = { kind: "hat", id: gRest };
-} else if (gKind === "truffles" || gKind === "snouts") {
-	const amount = parseInt(gRest, 10);
-	if (!Number.isInteger(amount) || amount < 1)
-		die(`--grant ${gKind}:<amount> requires a positive integer amount.`);
-	grant = { kind: gKind, amount };
-} else {
-	die(`Unknown grant kind '${gKind}'. Use hat | truffles | snouts.`);
+if (!listItems) {
+	if (gKind === "hat") {
+		if (!gRest) die("--grant hat:<hat_id> requires a hat id.");
+		grant = { kind: "hat", id: gRest };
+	} else if (gKind === "truffles" || gKind === "snouts") {
+		const amount = parseInt(gRest, 10);
+		if (!Number.isInteger(amount) || amount < 1)
+			die(`--grant ${gKind}:<amount> requires a positive integer amount.`);
+		grant = { kind: gKind, amount };
+	} else {
+		die(`Unknown grant kind '${gKind}'. Use hat | truffles | snouts.`);
+	}
 }
 
 let expiresAt = null;
@@ -80,8 +100,24 @@ if (expiresArg) {
 // ── Supabase (service role) ──────────────────────────────────────────────────
 const db = serviceClient(die);
 
+if (listItems) {
+	const { data: items, error } = await db
+		.from("hats")
+		.select("id, name, category, rarity, cost")
+		.order("category")
+		.order("name");
+	if (error) die(`items lookup failed: ${error.message}`);
+	console.log("id\tcategory\trarity\tcost\tname");
+	for (const item of items ?? []) {
+		console.log(
+			[item.id, item.category ?? "hat", item.rarity ?? "", item.cost, item.name].join("\t")
+		);
+	}
+	process.exit(0);
+}
+
 // If minting a hat grant, validate the id against the hats table BEFORE any insert.
-if (grant.kind === "hat") {
+if (grant?.kind === "hat") {
 	const { data: hat, error } = await db
 		.from("hats")
 		.select("id, name")
@@ -90,8 +126,27 @@ if (grant.kind === "hat") {
 	if (error) die(`hats lookup failed: ${error.message}`);
 	if (!hat) die(`No hat with id '${grant.id}' in the hats table.`);
 	console.log(`Grant: hat '${grant.id}' (${hat.name}).`);
-} else {
+} else if (grant) {
 	console.log(`Grant: ${grant.amount} ${grant.kind}.`);
+}
+
+if (dryRun) {
+	console.log("Dry run — no redemption code was inserted and no QR was written.");
+	console.log(
+		JSON.stringify(
+			{
+				label,
+				grant,
+				count,
+				max_uses: maxUses,
+				expires_at: expiresAt,
+				output: path.resolve(outDir),
+			},
+			null,
+			2
+		)
+	);
+	process.exit(0);
 }
 
 // ── Crockford base32 code generation ─────────────────────────────────────────

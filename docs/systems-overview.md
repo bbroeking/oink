@@ -1,7 +1,9 @@
 # Tickle the Pig — Systems Overview
 
 Everything built in the build-62 cycle (commits `8995113` … `d45fc42`).
-Reference doc — what each system is, how it works, where it lives.
+Historical reference for that cycle, not a current-system contract. Use
+`CONTEXT.md` for current domain language and the latest feature specifications
+and migrations for live behavior.
 
 ---
 

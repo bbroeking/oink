@@ -8,13 +8,12 @@ import {
 	StyleProp,
 } from "react-native";
 import {
-	FONTS,
-	WHIMSY,
 	KICKER_PILL,
 	TITLE_RULE,
 	PAGE_PAD,
 	SPACE,
 	TYPE,
+	UI_COLORS,
 } from "@/constants/theme";
 
 // The top-of-screen page header — the "crown" every screen wears. An uppercase
@@ -44,7 +43,12 @@ export function PageHeader({
 	return (
 		<View style={[styles.wrap, style]}>
 			{onBack ? (
-				<Pressable onPress={onBack} hitSlop={12} style={styles.backBtn}>
+				<Pressable
+					onPress={onBack}
+					accessibilityRole="button"
+					accessibilityLabel="Back"
+					style={styles.backBtn}
+				>
 					<Text style={styles.back}>‹ back</Text>
 				</Pressable>
 			) : null}
@@ -61,8 +65,13 @@ export function PageHeader({
 
 const styles = StyleSheet.create({
 	wrap: { paddingHorizontal: PAGE_PAD, paddingTop: 8, paddingBottom: SPACE.md },
-	backBtn: { alignSelf: "flex-start", marginBottom: SPACE.sm },
-	back: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
+	backBtn: {
+		alignSelf: "flex-start",
+		minHeight: 44,
+		justifyContent: "center",
+		marginBottom: SPACE.xs,
+	},
+	back: { ...TYPE.hand, color: UI_COLORS.textSecondary },
 	kicker: { ...KICKER_PILL, marginBottom: SPACE.xs },
 	row: {
 		flexDirection: "row",
@@ -71,7 +80,7 @@ const styles = StyleSheet.create({
 	},
 	title: {
 		...TYPE.pageTitle,
-		color: WHIMSY.ink,
+		color: UI_COLORS.textPrimary,
 		flexShrink: 1,
 	},
 	rightSlot: { marginLeft: SPACE.sm, flexDirection: "row", alignItems: "center" },

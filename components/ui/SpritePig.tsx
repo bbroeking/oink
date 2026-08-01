@@ -1,87 +1,28 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Image, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
-import { usePigSkinTint, PIG_SKIN_WASH } from "@/utils/pigSkin";
+import { PIG_SKIN_WASH } from "@/utils/pigSkin";
+import { PIG_FRAMES } from "@/constants/pigFrames.generated";
+import type { PigId } from "@/utils/pigs";
+import {
+	PIG_ANIMATION_SPECS,
+	pigAnimationDurationMs,
+	type PigAnimation,
+} from "./pigRendererContract";
 
-const FRAMES: Record<string, number> = {
-	idle_1: require("../../assets/images/sprites/rosie/idle_1.png"),
-	idle_2: require("../../assets/images/sprites/rosie/idle_2.png"),
-	idle_3: require("../../assets/images/sprites/rosie/idle_3.png"),
-	idle_4: require("../../assets/images/sprites/rosie/idle_4.png"),
-	sad_1: require("../../assets/images/sprites/rosie/sad_1.png"),
-	sad_2: require("../../assets/images/sprites/rosie/sad_2.png"),
-	sad_3: require("../../assets/images/sprites/rosie/sad_3.png"),
-	sad_4: require("../../assets/images/sprites/rosie/sad_4.png"),
-	walk_1: require("../../assets/images/sprites/rosie/walk_1.png"),
-	walk_2: require("../../assets/images/sprites/rosie/walk_2.png"),
-	walk_3: require("../../assets/images/sprites/rosie/walk_3.png"),
-	walk_4: require("../../assets/images/sprites/rosie/walk_4.png"),
-	jump_1: require("../../assets/images/sprites/rosie/jump_1.png"),
-	jump_2: require("../../assets/images/sprites/rosie/jump_2.png"),
-	jump_3: require("../../assets/images/sprites/rosie/jump_3.png"),
-	jump_4: require("../../assets/images/sprites/rosie/jump_4.png"),
-	surprise_1: require("../../assets/images/sprites/rosie/surprise_1.png"),
-	surprise_2: require("../../assets/images/sprites/rosie/surprise_2.png"),
-	surprise_3: require("../../assets/images/sprites/rosie/surprise_3.png"),
-	surprise_4: require("../../assets/images/sprites/rosie/surprise_4.png"),
-	happy_1: require("../../assets/images/sprites/rosie/happy_1.png"),
-	happy_2: require("../../assets/images/sprites/rosie/happy_2.png"),
-	happy_3: require("../../assets/images/sprites/rosie/happy_3.png"),
-	happy_4: require("../../assets/images/sprites/rosie/happy_4.png"),
-	tired_1: require("../../assets/images/sprites/rosie/tired_1.png"),
-	tired_2: require("../../assets/images/sprites/rosie/tired_2.png"),
-	tired_3: require("../../assets/images/sprites/rosie/tired_3.png"),
-	tired_4: require("../../assets/images/sprites/rosie/tired_4.png"),
-	wave_1: require("../../assets/images/sprites/rosie/wave_1.png"),
-	wave_2: require("../../assets/images/sprites/rosie/wave_2.png"),
-	wave_3: require("../../assets/images/sprites/rosie/wave_3.png"),
-	wave_4: require("../../assets/images/sprites/rosie/wave_4.png"),
-};
-
-export type PigAnimation =
-	| "idle"
-	| "walk"
-	| "jump"
-	| "bounce"
-	| "happy"
-	| "sad"
-	| "tired"
-	| "surprise"
-	| "wave";
-
-interface AnimationConfig {
-	frames: string[];
-	fps: number;
-	loop: boolean;
-}
-
-const ANIMATIONS: Record<PigAnimation, AnimationConfig> = {
-	idle: { frames: ["idle_1", "idle_2", "idle_3", "idle_4"], fps: 2.5, loop: true },
-	walk: { frames: ["walk_1", "walk_2", "walk_3", "walk_4"], fps: 4, loop: true },
-	jump: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 6, loop: false },
-	// Looping version of the jump frames, slower — for ambient bouncy idle.
-	bounce: { frames: ["jump_1", "jump_2", "jump_3", "jump_4"], fps: 3, loop: true },
-	happy: { frames: ["happy_1", "happy_2", "happy_3", "happy_4"], fps: 4, loop: true },
-	sad: { frames: ["sad_1", "sad_2", "sad_3", "sad_4"], fps: 3, loop: true },
-	// Drowsy/sleepy — the slowest loop, for the barn-visit tired-out.
-	tired: { frames: ["tired_1", "tired_2", "tired_3", "tired_4"], fps: 2, loop: true },
-	surprise: {
-		frames: ["surprise_1", "surprise_2", "surprise_3", "surprise_4"],
-		fps: 6,
-		loop: false,
-	},
-	wave: { frames: ["wave_1", "wave_2", "wave_3", "wave_4"], fps: 4, loop: true },
-};
+export type { PigAnimation } from "./pigRendererContract";
 
 // One full play/cycle of an animation, in ms. Callers (SwipeElement) hold a
 // reaction this long so it plays through completely before reverting to rest,
 // instead of being cut off mid-cycle by a flat timer.
 export function animDurationMs(animation: PigAnimation): number {
-	const cfg = ANIMATIONS[animation] ?? ANIMATIONS.idle;
-	return Math.round((cfg.frames.length / cfg.fps) * 1000);
+	return pigAnimationDurationMs(animation);
 }
 
 interface Props {
 	animation: PigAnimation;
+	// Character identity. Rosie is the default for every existing caller.
+	// Every identity has a complete, baked animation pack.
+	pigId?: PigId;
 	size?: number;
 	style?: StyleProp<ViewStyle>;
 	onComplete?: () => void;
@@ -94,14 +35,14 @@ interface Props {
 	// internal interval. Used by the alignment screen's frame stepper so
 	// we can pause an animation and inspect anchor placement frame-by-frame.
 	frameIdx?: number;
-	// Prototype-only escape hatch: render a supplied wash without mutating the
-	// app-wide AsyncStorage-backed Slop Club skin setting. `undefined` keeps the
-	// normal global behavior; `null` explicitly disables the wash.
+	// Prototype-only escape hatch for isolated internal previews. Production
+	// pigs never read or apply the retired global gold-wash setting.
 	skinTintOverride?: string | null;
 }
 
 export function SpritePig({
 	animation,
+	pigId = "rosie",
 	size = 300,
 	style,
 	onComplete,
@@ -128,7 +69,7 @@ export function SpritePig({
 	// back to "idle" instead of crashing. This protects against future
 	// drift between SpritePig's ANIMATIONS table and external callers.
 	const { frames: activeFrames, fps: activeFps, loop: activeLoop } = useMemo(() => {
-		const baseCfg = ANIMATIONS[animation] ?? ANIMATIONS.idle;
+		const baseCfg = PIG_ANIMATION_SPECS[animation] ?? PIG_ANIMATION_SPECS.idle;
 		const overrideFrames = customFrames?.[animation];
 		return {
 			frames: overrideFrames ?? baseCfg.frames,
@@ -170,20 +111,19 @@ export function SpritePig({
 	// during the loop → no decode/flash; never two poses on screen → no ghost.
 	// fadeDuration={0} disables Android's default image fade-in.
 	const safeIdx = Math.min(idx, activeFrames.length - 1);
-	// Slop Club Rosie (member skin, client-only prototype). When the member has
-	// the skin on, wash a low-opacity gold-tinted copy of the visible frame over
-	// Rosie so she reads as the gilded "club" variant everywhere she renders. Off
-	// (default / non-members) this is null → nothing extra mounts → the render is
-	// byte-identical. pointerEvents="none" so the wash never eats a tap.
-	const storedSkinTint = usePigSkinTint();
-	const skinTint =
-		skinTintOverride === undefined ? storedSkinTint : skinTintOverride;
+	// The retired gold-Rosie experiment survives only as an explicit preview
+	// override. No persisted setting can alter production character art.
+	const prototypeSkinTint = skinTintOverride ?? null;
+	const frames = PIG_FRAMES[pigId] ?? PIG_FRAMES.rosie;
+	// The old optional gold-wash prototype only applies to Rosie. Recruitable
+	// pigs already have authored coats and must never be flattened by a tint.
+	const skinTint = pigId === "rosie" ? prototypeSkinTint : null;
 	return (
 		<View style={[{ width: size, height: size }, style]}>
 			{activeFrames.map((f, i) => (
 				<Image
 					key={i}
-					source={FRAMES[f]}
+					source={frames[f] ?? PIG_FRAMES.rosie[f]}
 					style={[styles.fill, { opacity: i === safeIdx ? 1 : 0 }]}
 					resizeMode="contain"
 					fadeDuration={0}
@@ -192,7 +132,10 @@ export function SpritePig({
 			{skinTint && (
 				<View style={styles.fill} pointerEvents="none">
 					<Image
-						source={FRAMES[activeFrames[safeIdx]]}
+						source={
+							frames[activeFrames[safeIdx]] ??
+							PIG_FRAMES.rosie[activeFrames[safeIdx]]
+						}
 						style={[styles.fill, { tintColor: skinTint, opacity: PIG_SKIN_WASH }]}
 						resizeMode="contain"
 						fadeDuration={0}

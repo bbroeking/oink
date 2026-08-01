@@ -74,8 +74,6 @@ import {
 	useState,
 	type ReactNode,
 } from "react";
-import { markPopupPresented } from "@/utils/popupSession";
-import { QUIET_FILL_SLOT_IDS } from "@/constants/popupPriorities";
 
 // See the timing contract above for how these two relate. The gap is the quiet
 // window after ANY hide (release, drop-of-presented, preemption) before the
@@ -84,6 +82,25 @@ import { QUIET_FILL_SLOT_IDS } from "@/constants/popupPriorities";
 // Beat < gap is load-bearing.
 export const POPUP_HANDOFF_GAP_MS = 700;
 export const POPUP_TEARDOWN_MS = 500;
+
+// CTA path for a queue-owned modal that navigates somewhere else. Releasing
+// first lets the native modal start dismissing; backing state clears before
+// the queue can re-admit the slot, and navigation waits for the full native
+// handoff gap. Keeping this choreography here prevents individual popup
+// callers from accidentally routing underneath a still-presented Modal.
+export function releasePopupThenNavigate({
+	release,
+	clear,
+	navigate,
+}: {
+	release: () => void;
+	clear: () => void;
+	navigate: () => void;
+}) {
+	release();
+	setTimeout(clear, POPUP_TEARDOWN_MS);
+	setTimeout(navigate, POPUP_HANDOFF_GAP_MS);
+}
 
 type Req = { id: string; priority: number };
 
@@ -143,21 +160,6 @@ export function PopupQueueProvider({ children }: { children: ReactNode }) {
 	const write = useCallback((next: Machine) => {
 		// Session-level "a popup presented this login" signal for the quiet-login
 		// Sounder nudge. Fire on the EDGE into presenting a given id (idle→present
-		// or draining→present), never on re-renders that keep the same presentedId.
-		// The arbiter is the single point that decides what counts as "a popup
-		// presented", so the quiet-fill exclusion lives HERE: the fallback nudges
-		// (QUIET_FILL_SLOT_IDS — see constants/popupPriorities.ts) must not have
-		// their OWN presentation latch the session signal, or they'd retroactively
-		// suppress themselves. Everything else latches it (utils/popupSession.ts).
-		const prev = machineRef.current;
-		if (
-			next.phase === "presenting" &&
-			next.presentedId &&
-			!QUIET_FILL_SLOT_IDS.has(next.presentedId) &&
-			!(prev.phase === "presenting" && prev.presentedId === next.presentedId)
-		) {
-			markPopupPresented(next.presentedId);
-		}
 		machineRef.current = next;
 		setMachine(next);
 	}, []);
@@ -238,9 +240,7 @@ export function PopupQueueProvider({ children }: { children: ReactNode }) {
 			return;
 		}
 		// presenting:
-		const presentedStillWants = reqsRef.current.some(
-			(r) => r.id === m.presentedId
-		);
+		const presentedStillWants = reqsRef.current.some((r) => r.id === m.presentedId);
 		if (!presentedStillWants) {
 			// The presented slot's want died without a release() (unmount,
 			// background state clear). The native modal may already be tearing

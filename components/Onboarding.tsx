@@ -4,19 +4,17 @@ import {
 	Text,
 	Pressable,
 	StyleSheet,
-	Dimensions,
 	ScrollView,
 	NativeSyntheticEvent,
 	NativeScrollEvent,
 	SafeAreaView,
+	useWindowDimensions,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { markStorybookSeenServer } from "@/utils/onboarding";
 import { SpritePig, PigAnimation } from "./ui/SpritePig";
 import { Sticker } from "./ui/Sticker";
 import { FONTS, KICKER_TEXT, WHIMSY } from "@/constants/theme";
-
-const { width: SCREEN_W } = Dimensions.get("window");
 
 const STEPS: {
 	animation: PigAnimation;
@@ -26,15 +24,21 @@ const STEPS: {
 }[] = [
 	{
 		animation: "wave", // celebratory wave — arms_up was removed when
-		kicker: "★ welcome",
-		title: "Hi, I'm Rosie!",
-		body: "Tap me on the home screen to give me a tickle. The more tickles you give, the more we both grow.",
+		kicker: "★ care for rosie",
+		title: "Meet Rosie",
+		body: "Give Rosie a tickle in the Barn. Tickling earns snouts to spend in the Shop.",
 	},
 	{
 		animation: "idle", // calm 4-frame breathing
-		kicker: "★ how it works",
-		title: "Earn & dress me up",
-		body: "Each tickle earns a heart. Spend hearts in the shop on hats, glasses, capes, and more — then come back and dress me however you like.",
+		kicker: "★ follow the feeding",
+		title: "Dig when it opens",
+		body: "See Dig now? The Truffle Patch is open. When it closes, Opening in tells you when to come back.",
+	},
+	{
+		animation: "wave",
+		kicker: "★ better together",
+		title: "Help your herd",
+		body: "Visit friends and join a Sounder. Every find helps your herd push back the Great Hungerer.",
 	},
 ];
 
@@ -45,6 +49,7 @@ interface Props {
 export function Onboarding({ onDone }: Props) {
 	const [page, setPage] = useState(0);
 	const scrollRef = useRef<ScrollView>(null);
+	const { width: screenWidth } = useWindowDimensions();
 
 	// Persist storybook-seen BOTH locally and on the server. The local flag
 	// gates offline; the server mirror survives a reinstall so a veteran doesn't
@@ -57,7 +62,10 @@ export function Onboarding({ onDone }: Props) {
 
 	const goNext = () => {
 		if (page < STEPS.length - 1) {
-			scrollRef.current?.scrollTo({ x: SCREEN_W * (page + 1), animated: true });
+			scrollRef.current?.scrollTo({
+				x: screenWidth * (page + 1),
+				animated: true,
+			});
 		} else {
 			markSeen();
 			onDone();
@@ -65,7 +73,7 @@ export function Onboarding({ onDone }: Props) {
 	};
 
 	const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-		const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
+		const idx = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
 		if (idx !== page) setPage(idx);
 	};
 
@@ -80,7 +88,7 @@ export function Onboarding({ onDone }: Props) {
 					onMomentumScrollEnd={onScroll}
 				>
 					{STEPS.map((step, i) => (
-						<View key={i} style={[styles.page, { width: SCREEN_W }]}>
+						<View key={i} style={[styles.page, { width: screenWidth }]}>
 							<View style={styles.pigWrap}>
 								<SpritePig animation={step.animation} size={260} />
 							</View>
@@ -117,14 +125,25 @@ export function Onboarding({ onDone }: Props) {
 								markSeen();
 								onDone();
 							}}
+							accessibilityRole="button"
+							accessibilityLabel="Skip introduction"
 						>
 							<Text style={styles.skipLink}>Skip</Text>
 						</Pressable>
 					)}
 					<View style={{ flex: 1 }} />
-					<Pressable onPress={goNext} style={styles.cta}>
+					<Pressable
+						onPress={goNext}
+						style={styles.cta}
+						accessibilityRole="button"
+						accessibilityLabel={
+							page < STEPS.length - 1
+								? "Next introduction page"
+								: "Finish introduction"
+						}
+					>
 						<Text style={styles.ctaText}>
-							{page < STEPS.length - 1 ? "Next" : "Get started"}
+							{page < STEPS.length - 1 ? "Next" : "Meet Rosie"}
 						</Text>
 					</Pressable>
 				</View>

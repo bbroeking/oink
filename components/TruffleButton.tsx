@@ -8,29 +8,52 @@ import * as Haptics from "expo-haptics";
 import { Shovel } from "./ui/Shovel";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { WHIMSY, FONTS, SHADOW_SM, RADII } from "@/constants/theme";
+import {
+	startDecorativeLoop,
+	useMotionPolicy,
+} from "@/hooks/useMotionPolicy";
 
 interface Props {
 	buried: boolean;
 	remaining?: number; // snout-count badge when buried
 	onPress: () => void;
+	disabled?: boolean;
+	accessibilityLabel?: string;
 }
 
-export function TruffleButton({ buried, remaining, onPress }: Props) {
+export function TruffleButton({
+	buried,
+	remaining,
+	onPress,
+	disabled = false,
+	accessibilityLabel,
+}: Props) {
 	const pulse = useRef(new Animated.Value(0)).current;
 	const wig = useRef(new Animated.Value(0)).current;
+	const motionPolicy = useMotionPolicy();
 
 	// Gentle attract pulse only when there's nothing buried yet (invites a bury).
 	useEffect(() => {
-		if (buried) return;
+		if (buried) {
+			pulse.setValue(0);
+			return;
+		}
 		const loop = Animated.loop(
 			Animated.timing(pulse, { toValue: 1, duration: 1700, easing: Easing.out(Easing.quad), useNativeDriver: true })
 		);
-		loop.start();
-		return () => loop.stop();
-	}, [buried, pulse]);
+		return startDecorativeLoop({
+			policy: motionPolicy,
+			animation: loop,
+			rest: () => pulse.setValue(0),
+		});
+	}, [buried, motionPolicy, pulse]);
 
 	const press = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+		if (motionPolicy.reduceMotion) {
+			onPress();
+			return;
+		}
 		wig.setValue(0);
 		Animated.sequence([
 			Animated.timing(wig, { toValue: 1, duration: 80, useNativeDriver: true }),
@@ -43,7 +66,17 @@ export function TruffleButton({ buried, remaining, onPress }: Props) {
 	const rotate = wig.interpolate({ inputRange: [-1, 0, 1], outputRange: ["-13deg", "0deg", "11deg"] });
 
 	return (
-		<Pressable onPress={press} hitSlop={12} style={styles.btn} accessibilityLabel={buried ? "Manage your buried truffle" : "Bury a truffle"}>
+		<Pressable
+			onPress={press}
+			disabled={disabled}
+			hitSlop={12}
+			style={styles.btn}
+			accessibilityLabel={
+				accessibilityLabel ??
+				(buried ? "Manage your buried truffle" : "Bury a truffle")
+			}
+			accessibilityState={{ disabled }}
+		>
 			{!buried && (
 				<Animated.View
 					pointerEvents="none"

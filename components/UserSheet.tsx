@@ -1044,7 +1044,7 @@ const styles = StyleSheet.create({
 	},
 	// "★ this season" kicker over the friend's stat cluster — names the
 	// window so GIVEN/RECEIVED/TICKLES read as the live-season race.
-	seasonKicker: { ...KICKER_TEXT, fontSize: 10, marginBottom: 6 },
+	seasonKicker: { ...KICKER_TEXT, fontSize: 11, marginBottom: 6 },
 	statsRow: {
 		flexDirection: "row",
 		alignItems: "stretch",
@@ -1057,7 +1057,7 @@ const styles = StyleSheet.create({
 	},
 	statsDivider: { width: 1.5, backgroundColor: WHIMSY.ink, marginVertical: 6 },
 	statCol: { flex: 1, alignItems: "center", gap: 4 },
-	statLabel: { ...KICKER_TEXT, fontSize: 10 },
+	statLabel: { ...KICKER_TEXT, fontSize: 11 },
 	crewmateKicker: { ...KICKER_TEXT, textAlign: "center", marginBottom: 6 },
 	statValue: { fontFamily: FONTS.whimsy, fontSize: 22 },
 	tierChip: {

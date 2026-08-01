@@ -111,7 +111,7 @@ pig,cute,cozy,pet,dress up,kawaii,friends,co-op,truffle,farm,casual,idle,tickle,
   points in App Store Connect** (RevenueCat reads them onto the paywall — the app
   does not hardcode subscription prices):
   - Slop Club **monthly** — **$2.99** (299)
-  - Slop Club **yearly** — **$24.99** (2499)
+  - Slop Club **yearly** — **$29.99** (2999)
   - Season pass (battle pass) — consumable; price lives in the DB
     (`season.premium_price_cents`), unchanged unless you say so.
   - (v1 doc previously listed monthly $4.99 / yearly $39.99 / lifetime $19.99.)

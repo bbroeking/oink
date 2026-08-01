@@ -185,6 +185,11 @@ Depth is drawn, not blurred. Every sticker throws a hard-edged offset shadow wit
 
 ## 5. Components
 
+### Centered Dialogs
+- **Shell:** Use `AdaptiveModalScaffold` for centered, dismissible tasks so the frame respects safe areas, compact heights, and accessibility-sized content.
+- **Dismiss action:** A corner X uses `DialogCloseRow`. It stays in normal layout flow with a 44pt target; never absolutely position an X over a dialog heading.
+- **Content:** Dialog artwork and ceremony layouts may keep their own composition, but safe-area sizing, scrolling, and dismiss placement come from the shared primitives.
+
 ### Buttons
 - **Shape:** Full pills (radius scales with size: 16/22/27px for sm/md/lg — always ≥ half the height).
 - **Primary:** Colorful gradient fills (rose `#F0B8C8→#E8A7B9`, purple `#9078FF→#7B5FFF`, gold `#F8D068→#F5C44A`) wrapped in the signature 2px ink outline + `SHADOW_SM`, so they read as hand-drawn buttons, not flat gradient pills. Ink or contrasting text per variant.

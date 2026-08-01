@@ -87,6 +87,9 @@ const styles = StyleSheet.create({
 		// Top gap is owned by statsRow.marginBottom so the band spacing holds
 		// whether or not this (conditional) strip renders.
 		marginTop: 0,
+		// Keep the conditional Bury Truffle control from crowding or appearing
+		// to overlap the blessing/curse cards below them.
+		marginBottom: SPACE.sm,
 	},
 	chip: {
 		flex: 1,
@@ -129,7 +132,7 @@ const styles = StyleSheet.create({
 	senderDotCurse: { backgroundColor: WHIMSY.sage },
 	senderInitial: {
 		fontFamily: FONTS.whimsy,
-		fontSize: 9,
+		fontSize: 11,
 		color: WHIMSY.ink,
 	},
 	meta: {

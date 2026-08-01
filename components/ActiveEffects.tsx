@@ -20,7 +20,14 @@ import { RitualIconWell } from "./ui/RitualIconWell";
 import { CleanseModal } from "./CleanseModal";
 import { useActiveEffectsContext } from "../hooks/ActiveEffectsProvider";
 import { effectMeta } from "../utils/activeEffects";
-import { FONTS, WHIMSY, ROW_TILTS, RADII, SPACE } from "@/constants/theme";
+import {
+	FONTS,
+	WHIMSY,
+	ROW_TILTS,
+	RADII,
+	SPACE,
+	UI_COLORS,
+} from "@/constants/theme";
 import { SectionHeader } from "./ui/SectionHeader";
 
 export function ActiveEffects() {
@@ -179,7 +186,7 @@ const styles = StyleSheet.create({
 	cornerPillCurse: { backgroundColor: WHIMSY.ink },
 	cornerPillText: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 9,
+		fontSize: 11,
 		letterSpacing: 1,
 		textTransform: "uppercase",
 		color: WHIMSY.paper,
@@ -192,7 +199,7 @@ const styles = StyleSheet.create({
 		marginTop: 1,
 	},
 	countdown: { fontFamily: FONTS.whimsy, fontSize: 12 },
-	cdBless: { color: WHIMSY.bless },
+	cdBless: { color: UI_COLORS.warningText },
 	cdCurse: { color: WHIMSY.curseGreen },
 	// Right column for each effect card — stacks the countdown above
 	// the (curse-only) inline Cleanse pill.
@@ -237,7 +244,7 @@ const styles = StyleSheet.create({
 	senderAvatarCurse: { backgroundColor: WHIMSY.sage },
 	senderInitial: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		color: WHIMSY.ink,
 	},
 	senderName: {

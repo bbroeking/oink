@@ -41,6 +41,8 @@ import {
 import { createConfigCell } from "@/utils/configCell";
 
 export interface FeedingSchedule {
+	/** Omitted/"uniform" is the deployed legacy clock; commuter is the v2 clock. */
+	mode?: "uniform" | "commuter_eastern";
 	/** Full window length, seconds (compiled default 28800 — 8h). */
 	windowSecs: number;
 	/** Open (diggable) span at the head of each window, seconds (default 14400). */
@@ -51,6 +53,7 @@ export interface FeedingSchedule {
 
 // The compiled fallback — always the same numbers as constants/dig.ts.
 export const DEFAULT_FEEDING_SCHEDULE: FeedingSchedule = Object.freeze({
+	mode: "uniform",
 	windowSecs: ROOTING_WINDOW_SECS,
 	openSecs: PATCH_OPEN_SECS,
 	offsetSecs: ROOTING_WINDOW_OFFSET_SECS,
@@ -79,13 +82,21 @@ function intField(v: unknown): number {
 export function sanitizeFeedingSchedule(raw: unknown): FeedingSchedule | null {
 	if (raw == null || typeof raw !== "object") return null;
 	const r = raw as Record<string, unknown>;
+	if (r.mode === "commuter_eastern") {
+		return {
+			mode: "commuter_eastern",
+			windowSecs: ROOTING_WINDOW_SECS,
+			openSecs: PATCH_OPEN_SECS,
+			offsetSecs: ROOTING_WINDOW_OFFSET_SECS,
+		};
+	}
 	const windowSecs = intField(r.window_secs);
 	const openSecs = intField(r.open_secs);
 	const offsetSecs = intField(r.offset_secs);
 	if (!Number.isFinite(windowSecs) || windowSecs <= 0) return null;
 	if (!Number.isFinite(openSecs) || openSecs <= 0 || openSecs > windowSecs) return null;
 	if (!Number.isFinite(offsetSecs) || offsetSecs < 0 || offsetSecs >= windowSecs) return null;
-	return { windowSecs, openSecs, offsetSecs };
+	return { mode: "uniform", windowSecs, openSecs, offsetSecs };
 }
 
 const cell = createConfigCell<FeedingSchedule>({

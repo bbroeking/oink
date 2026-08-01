@@ -41,7 +41,10 @@ import { HungerHero } from "../../components/season1/HungerHero";
 import { TickleBreakdownSheet } from "../../components/TickleBreakdownSheet";
 import { BountyBoard } from "../../components/BountyBoard";
 import { WindowStrip } from "../../components/season1/WindowStrip";
-import { SounderHomeCard } from "../../components/season1/SounderHomeCard";
+import {
+	FeedingAction,
+	SounderHomeCard,
+} from "../../components/season1/SounderHomeCard";
 import { SounderStepCard } from "../../components/season1/SounderStepCard";
 import { useFeedingCta } from "../../components/mudwar/useFeedingCta";
 import { YourTakeStrip } from "../../components/season1/YourTakeStrip";
@@ -55,6 +58,7 @@ import {
 	JOIN_SPOTLIGHT_TARGET_ID,
 } from "../../hooks/useJoinSpotlight";
 import { RaceSection } from "../../components/season1/RaceSection";
+import { DevSeasonStatesSheet } from "../../components/season1/DevSeasonStatesSheet";
 import { SeasonGuideModal } from "../../components/season1/SeasonGuideModal";
 import {
 	SeasonInfoModal,
@@ -75,17 +79,23 @@ import { resolveRewardArt, rewardItemId, WEARABLE_REWARD_TYPES } from "@/utils/r
 import { useSeason } from "../../hooks/useSeason";
 import * as seasonPass from "@/utils/seasonPass";
 import type { TierRow, TierState } from "@/utils/seasonPass";
-import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, MODAL_BACKDROP_BG, STICKER_SHADOW, SHADOW_SM, PAGE_PAD, TAB_SAFE, RADII, SPACE, TYPE } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, WHIMSY, UI_COLORS, MODAL_BACKDROP_BG, STICKER_SHADOW, SHADOW_SM, PAGE_PAD, TAB_SAFE, RADII, SPACE, TYPE } from "@/constants/theme";
 import { daysUntilJudgement } from "@/utils/season";
 import { formatDurationCompact } from "@/utils/duration";
 import {
 	WALLOW_MAX_POWER_LEVEL,
 	WALLOW_REGEN_STEP_PCT,
+	wallowProgress,
+	wallowWaitReductionLabel,
 } from "@/utils/wallow";
 import { Button, SectionHeader } from "../../components/ui";
 import { PURCHASES_LIVE } from "../../constants/featureFlags";
 import { useAudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
+import {
+	patchDevSeasonOverrides,
+	useDevSeasonOverrides,
+} from "@/utils/devSeasonOverrides";
 
 const claimSound = require("../../assets/sounds/claim.mp3");
 
@@ -125,7 +135,7 @@ function WallowCard({
 					<Text style={wallowStyles.body}>
 						{powerLevel >= WALLOW_MAX_POWER_LEVEL
 							? "Begin another sparse reward path and raise your public rank. Your regeneration is already at full blaze."
-							: `Keep everything, begin a new reward path, and jump to ${nextRegenPercent}% faster regeneration.`}
+							: `Keep everything, begin a new reward path, and get a tickle ${formatDurationCompact(nextRegenSeconds)} apart (${wallowWaitReductionLabel(nextRegenPercent)}).`}
 					</Text>
 				</View>
 			</View>
@@ -133,13 +143,13 @@ function WallowCard({
 				<View style={wallowStyles.rateStat}>
 					<Text style={wallowStyles.rateKicker}>NOW · RANK {count}</Text>
 					<Text style={wallowStyles.rateValue}>1 tickle / {formatDurationCompact(regenSeconds)}</Text>
-					<Text style={wallowStyles.rateSub}>{regenPercent}% faster</Text>
+					<Text style={wallowStyles.rateSub}>{wallowWaitReductionLabel(regenPercent)}</Text>
 				</View>
 				<Glyph name="arrowRight" size={18} />
 				<View style={[wallowStyles.rateStat, wallowStyles.rateStatNext]}>
 					<Text style={wallowStyles.rateKicker}>AFTER · RANK {count + 1}</Text>
 					<Text style={wallowStyles.rateValue}>1 tickle / {formatDurationCompact(nextRegenSeconds)}</Text>
-					<Text style={wallowStyles.rateSub}>{nextRegenPercent}% faster</Text>
+					<Text style={wallowStyles.rateSub}>{wallowWaitReductionLabel(nextRegenPercent)}</Text>
 				</View>
 			</View>
 			<View style={wallowStyles.powerRow}>
@@ -188,13 +198,13 @@ function StoneThumb({ reward, locked }: { reward: TierRow; locked: boolean }) {
 			inner = <Icon name="globe" size={22} color={WHIMSY.ink} strokeWidth={1.6} />;
 			break;
 		case "legacyAura":
-			inner = <Icon name="premium" size={22} color={WHIMSY.bless} strokeWidth={1.6} />;
+			inner = <Icon name="premium" size={22} color={UI_COLORS.warningText} strokeWidth={1.6} />;
 			break;
 		case "legacyCape":
 			inner = <Icon name="star" size={22} color={WHIMSY.ink} strokeWidth={1.6} />;
 			break;
 		case "special":
-			inner = <Icon name="star" size={22} filled color={WHIMSY.bless} strokeWidth={1.6} />;
+			inner = <Icon name="star" size={22} filled color={UI_COLORS.warningText} strokeWidth={1.6} />;
 			break;
 		default:
 			inner = <Icon name="star" size={20} color={WHIMSY.muteSoft} />;
@@ -426,29 +436,24 @@ function VerticalListPassTrack({
 					? "ready"
 					: "locked";
 
-	// Peak-end: don't end every session scrolling a 20-row lock wall. Always show
-	// the context around where the player is (current ±2), EVERY ready-to-claim
-	// tier wherever it sits, and the NEXT reward above current even if it's far
-	// off (so there's always a "here's what's next" beat). Collapse the long
-	// locked tail behind an expandable row. Expansion is remembered for the
-	// session (the tab stays mounted).
+	// Peak-end: show a five-tier context around the player (rebalanced at either
+	// end), every ready tier, and the next reward. The forward tail expands in
+	// place and is remembered until this track remounts.
 	const [expanded, setExpanded] = useState(false);
 
 	const tiers = rewardTiers;
-
-	// The next reward above the current tier — the lowest locked tier that
-	// actually carries a reward on this track.
-	const nextRewardTier = tiers.find(
-		(t) => t > currentTier && !!tiersByNumber[t]?.[track]
+	const window = seasonPass.tierWindow(
+		tiers,
+		totalTiers,
+		currentTier,
+		(t) => stateFor(t) === "ready"
 	);
-
-	const alwaysShown = (t: number): boolean =>
-		Math.abs(t - currentTier) <= 2 || // current ±2 context
-		stateFor(t) === "ready" || // every claimable tier
-		t === nextRewardTier; // the next milestone above current
-
-	const visibleTiers = sparse || expanded ? tiers : tiers.filter(alwaysShown);
-	const hiddenCount = tiers.length - visibleTiers.length;
+	const visibleTiers = sparse
+		? tiers
+		: expanded
+			? [...window.collapsedTiers, ...window.forwardTiers]
+			: window.collapsedTiers;
+	const forwardCount = sparse ? 0 : window.forwardTiers.length;
 
 	return (
 		<View>
@@ -475,19 +480,24 @@ function VerticalListPassTrack({
 					);
 				})}
 			</View>
-			{!expanded && hiddenCount > 0 && (
+			{forwardCount > 0 && (
 				<Pressable
-					onPress={() => setExpanded(true)}
+					onPress={() => setExpanded((value) => !value)}
 					hitSlop={6}
 					accessibilityRole="button"
-					accessibilityLabel={`Show ${hiddenCount} more tiers`}
+					accessibilityLabel={
+						expanded ? "Show fewer tiers" : `Show ${forwardCount} more tiers`
+					}
+					accessibilityState={{ expanded }}
 					style={({ pressed }) => [
 						collapseStyles.row,
 						pressed && { opacity: 0.6 },
 					]}
 				>
 					<Text style={collapseStyles.text}>
-						…and {hiddenCount} more {hiddenCount === 1 ? "tier" : "tiers"} ›
+						{expanded
+							? "‹ show fewer tiers"
+							: `…and ${forwardCount} more ${forwardCount === 1 ? "tier" : "tiers"} ›`}
 					</Text>
 				</Pressable>
 			)}
@@ -984,6 +994,10 @@ export default function SeasonScreen() {
 	// so the "do this now" slot always shows the right next move and retires itself
 	// at DONE. Re-reads on focus; we also refresh() it after a dig / crew change.
 	const sounderPath = useSounderPath(s1);
+	const devSeason = useDevSeasonOverrides();
+	const [devSeasonSheetOpen, setDevSeasonSheetOpen] = useState(false);
+	const visibleSounderStep =
+		__DEV__ && devSeason.step ? devSeason.step : sounderPath.step;
 	// The "join a Sounder" coach-mark gate — lights once, on the `join` step, when
 	// the master flag is on (SPOTLIGHT_ENABLED, __DEV__ for now so it ships dark).
 	// The step card nests the SpotlightTarget around just its join door; we only
@@ -1206,7 +1220,7 @@ export default function SeasonScreen() {
 		claimFlourish();
 		setClaimAllSummary({
 			title: `Wallow Rank ${r.wallow_count}`,
-			body: `Your aura burns brighter. Tickles now regenerate ${r.regen_percent}% faster — one every ${formatDurationCompact(r.regen_seconds)} at your current effects.`,
+			body: `Your aura burns brighter. Tickle ${wallowWaitReductionLabel(r.regen_percent)} — one every ${formatDurationCompact(r.regen_seconds)} at your current effects.`,
 		});
 		await load();
 	};
@@ -1374,13 +1388,11 @@ export default function SeasonScreen() {
 							<Text style={styles.kicker}>
 								{s1 ? "★ season 1 — the great hunger" : `★ ${season.name.toLowerCase()}`}
 							</Text>
-							{/* One line beside the icon row — shrink before wrapping
-							    (a two-line title under three buttons read as clutter). */}
+								{/* Let accessibility text wrap instead of shrinking below the
+								    player's chosen reading size. */}
 							<Text
 								style={styles.title}
-								numberOfLines={1}
-								adjustsFontSizeToFit
-								minimumFontScale={0.7}
+									numberOfLines={2}
 							>
 								{s1 ? "The Great Hunger" : "Goblins vs Angels"}
 							</Text>
@@ -1433,21 +1445,30 @@ export default function SeasonScreen() {
 					{/* Live entry point is the pass header's recap icon (only shows
 					    when a real grant exists). This __DEV__-only chip cycles the
 					    four founder tiers so the reveal is previewable without a
-					    grant; it never renders in production. */}
+					grant; it never renders in production. */}
 					{__DEV__ && (
-						<Pressable
-							onPress={() => {
-								const r = DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length];
-								setDevTierIdx((n) => n + 1);
-								setDevReward(r);
-							}}
-							hitSlop={8}
-							style={({ pressed }) => [styles.devRewardChip, pressed && { opacity: 0.6 }]}
-						>
-							<Text style={styles.devRewardChipText}>
-								dev · founder gift ({DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length].tier})
-							</Text>
-						</Pressable>
+						<View style={styles.devChipRow}>
+							<Pressable
+								onPress={() => {
+									const r = DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length];
+									setDevTierIdx((n) => n + 1);
+									setDevReward(r);
+								}}
+								hitSlop={8}
+								style={({ pressed }) => [styles.devRewardChip, pressed && { opacity: 0.6 }]}
+							>
+								<Text style={styles.devRewardChipText}>
+									dev · founder gift ({DEV_PREVIEW_REWARDS[devTierIdx % DEV_PREVIEW_REWARDS.length].tier})
+								</Text>
+							</Pressable>
+							<Pressable
+								onPress={() => setDevSeasonSheetOpen(true)}
+								hitSlop={8}
+								style={({ pressed }) => [styles.devRewardChip, pressed && { opacity: 0.6 }]}
+							>
+								<Text style={styles.devRewardChipText}>dev · season states</Text>
+							</Pressable>
+						</View>
 					)}
 						{/* Season 0 only — S1's clock is the Hungerer's drain + the
 						    feeding cadence, not a doomsday date. */}
@@ -1471,27 +1492,20 @@ export default function SeasonScreen() {
 				    slot below. */}
 
 				<ScrollView ref={scrollRef} contentContainerStyle={styles.tierList}>
-					{/* ── Season 1 — reordered from first principles (what is this? →
-					    what do I do now? → the pass → the race). The VALUE BANNER
-					    (compressed hero + loop line) answers "what is this?"; then the
-					    "do this now" slot — the window strip's feeding rhythm above the
-					    dig CTA / join door; then the pass section; then the dig-off. The
-					    story + earnables shelf live in the header-icon modals, off the
-					    scroll. The weekly BountyBoard sits above the pass section
-				    (self-hiding when there are no active bounties). ── */}
+					{/* ── Season 1: the Hunger overview answers "what is this?", then
+					    the Feeding action answers "what do I do now?" before schedule,
+					    Sounder context, rewards, bounties, pass, and standings. ── */}
 					{s1 && (
 						<>
 							{/* The value banner — the compressed hero. Its full art +
 							    hunger ladder open in a sheet on tap. Controlled-open so
 							    the YOUR TAKE tickle cell can open this same sheet. */}
-							{/* The banner's dig CTA only exists for crewed players — gate on
-							    the real crew read here (cta.noCrew is lazy: it only flips
-							    after a refused open, so it can't gate the initial render). */}
+							{/* The Hunger overview is context, not another action surface. */}
 							<HungerHero
 								refreshKey={digTick}
 								open={heroOpen}
 								onOpenChange={setHeroOpen}
-								cta={crewHook.crew.crew ? feedingCta : undefined}
+								stageIndexOverride={devSeason.hungerStage}
 							/>
 
 							{/* The tickle breakdown receipt for yourself (spec 17) — opened
@@ -1502,6 +1516,18 @@ export default function SeasonScreen() {
 								fallbackTotal={ticklesEarned}
 								onClose={() => setBreakdownOpen(false)}
 							/>
+
+							{/* Returning players see one authoritative Feeding action before
+							    schedule, herd context, rewards, or standings. */}
+							{(!visibleSounderStep ||
+								visibleSounderStep === "done" ||
+								visibleSounderStep === "hook") &&
+								crewHook.crew.crew && (
+									<FeedingAction cta={feedingCta} prominent />
+								)}
+
+							{/* The schedule explains the action after the action itself. */}
+							<WindowStrip cta={feedingCta} />
 
 							<View style={{ marginTop: 8 }}>
 								<SectionHeader
@@ -1519,28 +1545,15 @@ export default function SeasonScreen() {
 									}
 								/>
 							</View>
-							{/* The feeding rhythm — the 8h open/guarded timeline with a
-							    "now" marker, above the dig CTA. Renders for crewed AND
-							    crewless: the rhythm sells the loop even before you join.
-							    Fed the shared CTA so its caption and every dig button
-							    tick the same clock. */}
-							<WindowStrip cta={feedingCta} />
-
-							{/* The "do this now" slot. Pre-DONE, the onboarding step card
-							    IS the primary (taste → join → first dig); it retires
-							    automatically at DONE (and while the step is still
-							    resolving), when the normal SounderHomeCard takes over:
-							    the join-first door when crewless, else roster +
-							    play/cooldown + milestone. The step machine, not a
-							    dismissal flag, decides — nobody who finished is nagged,
-							    nobody who hasn't is left without a next move. */}
-							{sounderPath.step && sounderPath.step !== "done" && sounderPath.step !== "hook" ? (
+							{/* Pre-DONE, the onboarding step card remains the primary
+							    taste → join → first-dig path. */}
+							{visibleSounderStep && visibleSounderStep !== "done" && visibleSounderStep !== "hook" ? (
 								// The spotlight target is now nested INSIDE the step card,
 								// wrapping just the join door (not the whole card), so the
 								// coach-mark hole hugs the join affordance. We only pass the
 								// "should show" flag down; the card owns the target wrap.
 								<SounderStepCard
-									step={sounderPath.step}
+									step={visibleSounderStep}
 									stalled={sounderPath.stalled}
 									leaver={sounderPath.leaver}
 									joinSpotlightActive={joinSpotlight.show}
@@ -1556,11 +1569,10 @@ export default function SeasonScreen() {
 									uid={uid}
 									cta={feedingCta}
 									refreshKey={digTick}
+									showFeedingAction={false}
 								/>
 							)}
-							{/* The shared dig modal — mounted ONCE for every trigger above
-							    (banner CTA, play row, step card); one session state means
-							    it can never double-present. */}
+							{/* One shared modal for the promoted action and first-dig step. */}
 							{feedingCta.modal}
 
 							{/* YOUR TAKE (Q3 — "what do I get?"). The personal value
@@ -1586,6 +1598,10 @@ export default function SeasonScreen() {
 									myCrewId={crewHook.crew.crew.id}
 									crewSize={crewHook.crew.members.length}
 									refreshKey={digTick}
+									devCeremony={devSeason.ceremony}
+									onDismissDevCeremony={() =>
+										patchDevSeasonOverrides({ ceremony: undefined })
+									}
 								/>
 							)}
 						</>
@@ -1676,7 +1692,7 @@ export default function SeasonScreen() {
 					    header (the full "how to earn XP" modal stays for detail). */}
 					<Text style={passProgressStyles.subtitle}>
 						{prestigeMode
-							? `Rank ${state.wallow_count ?? 0} · ${state.wallow_regen_percent ?? 0}% faster · 1 tickle / ${formatDurationCompact(state.wallow_regen_seconds ?? 3600)} · five rewards`
+							? `Rank ${state.wallow_count ?? 0} · ${wallowWaitReductionLabel(state.wallow_regen_percent ?? 0)} · 1 tickle / ${formatDurationCompact(state.wallow_regen_seconds ?? 3600)} · five rewards`
 							: "earn XP by burying, digging, tickling, and visiting"}
 					</Text>
 
@@ -1686,23 +1702,26 @@ export default function SeasonScreen() {
 					{(() => {
 						const xpPer = season.xp_per_tier || 1;
 						const xp = state.xp ?? 0;
-						const atMax = tier >= season.total_tiers;
-						const into = xp % xpPer;
-						const pct = atMax ? 1 : Math.max(0, Math.min(1, into / xpPer));
+						const progress = wallowProgress({
+							xp,
+							xpPerTier: xpPer,
+							currentTier: tier,
+							totalTiers: season.total_tiers,
+							canWallow: state.can_wallow,
+							prestigeMode,
+						});
 						return (
 							<View style={passProgressStyles.wrap}>
 								<View style={passProgressStyles.track}>
 									<View
 										style={[
 											passProgressStyles.fill,
-											{ width: `${Math.round(pct * 100)}%` },
+											{ width: `${Math.round(progress.fraction * 100)}%` },
 										]}
 									/>
 								</View>
 								<Text style={passProgressStyles.label}>
-									{atMax
-									? prestigeMode ? "Ready to raise your Wallow rank ★" : "Max tier reached ★"
-										: `${into} / ${xpPer} XP to Tier ${tier + 1}`}
+									{progress.label}
 								</Text>
 							</View>
 						);
@@ -1760,6 +1779,7 @@ export default function SeasonScreen() {
 						/>
 					)}
 					<VerticalListPassTrack
+						key={`${season.id}:${prestigeMode ? `wallow:${state.season_wallow_count ?? 0}` : shownTrack}`}
 						totalTiers={season.total_tiers}
 						currentTier={tier}
 						tiersByNumber={activeTiersByNumber}
@@ -1951,6 +1971,11 @@ export default function SeasonScreen() {
 					}}
 				/>
 			)}
+			<DevSeasonStatesSheet
+				visible={devSeasonSheetOpen}
+				overrides={devSeason}
+				onClose={() => setDevSeasonSheetOpen(false)}
+			/>
 		</View>
 		</SpotlightProvider>
 	);
@@ -1999,7 +2024,7 @@ function ClaimRewardDialog({
 			</View>
 		) : (
 			<View style={rewardStyles.heroFallback}>
-				<Icon name="star" size={56} filled color={WHIMSY.bless} />
+				<Icon name="star" size={56} filled color={UI_COLORS.warningText} />
 			</View>
 		);
 
@@ -2372,6 +2397,12 @@ const styles = StyleSheet.create({
 		...SHADOW_SM,
 	},
 	// __DEV__-only founder-gift preview chip (never ships).
+	devChipRow: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		justifyContent: "center",
+		gap: SPACE.xs,
+	},
 	devRewardChip: {
 		alignSelf: "center",
 		marginTop: 8,
@@ -2452,7 +2483,7 @@ function XPHowToModal({
 						</View>
 					))}
 					<Text style={xpHowTo.foot}>
-						{xpPer} XP = 1 tier · each Wallow makes tickles regenerate {WALLOW_REGEN_STEP_PCT}% faster
+						{xpPer} XP = 1 tier · your Wallow card shows the exact shorter tickle interval
 					</Text>
 					<Button size="md" variant="primary" full onPress={onDismiss}>
 						Back to the season

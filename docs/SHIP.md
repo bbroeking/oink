@@ -1,4 +1,9 @@
-# Shipping `ttp` to TestFlight without EAS
+# Legacy iOS shipping paths
+
+> This document describes older Xcode/scripted paths and is retained for
+> troubleshooting. The canonical release process is
+> [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md): local EAS production build,
+> upload through Transporter, and no `eas submit`.
 
 Two paths. Pick one.
 

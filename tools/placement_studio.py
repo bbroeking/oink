@@ -106,6 +106,10 @@ def parse_anim_scale():
 
 
 def write_anim_scale(data):
+    # Idle is the normalization baseline used by every other pose and by the
+    # runtime guardrail test. Letting the editor scale idle changes the ruler
+    # while measurements are being compared, so keep it fixed at 1.
+    data = {**data, "idle": 1.0}
     g = lambda v: "%g" % round(float(v), 4)
     lines = [f"\t{a}: {g(data.get(a, 1))}," for a in ANIMS]
     body = (

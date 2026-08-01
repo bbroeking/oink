@@ -25,6 +25,7 @@ import {
 	perSnoutLabel,
 	pinNeeded,
 	raceCycle,
+	raceSpoilsForRank,
 	standingsRows,
 	standingsRowsSeason,
 } from "../utils/race";
@@ -47,6 +48,36 @@ describe("perSnoutLabel", () => {
 		expect(perSnoutLabel(-3)).toBe("0");
 		expect(perSnoutLabel(NaN)).toBe("0");
 		expect(perSnoutLabel(Infinity)).toBe("0");
+	});
+});
+
+describe("raceSpoilsForRank — projected weekly payout", () => {
+	const prizes = parseRaceStandings({}).prizes;
+
+	it("uses the jackpot-scale tickle ladder without inflating Golden Truffles", () => {
+		expect(raceSpoilsForRank(prizes, 1, 8)).toEqual({
+			tickles: 500,
+			truffles: 6,
+		});
+		expect(raceSpoilsForRank(prizes, 2, 8)).toEqual({
+			tickles: 300,
+			truffles: 5,
+		});
+		expect(raceSpoilsForRank(prizes, 3, 8)).toEqual({
+			tickles: 200,
+			truffles: 4,
+		});
+	});
+
+	it("distinguishes the top half from the rest of the field", () => {
+		expect(raceSpoilsForRank(prizes, 4, 8)).toEqual({
+			tickles: 100,
+			truffles: 3,
+		});
+		expect(raceSpoilsForRank(prizes, 5, 8)).toEqual({
+			tickles: 50,
+			truffles: 2,
+		});
 	});
 });
 

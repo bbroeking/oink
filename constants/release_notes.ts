@@ -270,6 +270,22 @@ export const RELEASE_NOTES: ReleaseNote[] = [
 			},
 		],
 	},
+	{
+		version: "1.11.0",
+		date: "2026-07-24",
+		availableFrom: "2026-07-24",
+		headline: "Rosie’s friends have arrived!",
+		items: [
+			{
+				title: "Meet the new pigs",
+				body: "Copper, Pepper, Bandit, Pickles, and Biscuit each have their own coat, collectible card, and full set of animations.",
+			},
+			{
+				title: "A Slop Club companion",
+				body: "Visit the new Pen in the Shop to choose one long-term friend for Rosie, then choose whether Rosie or that friend greets you at home.",
+			},
+		],
+	},
 ];
 
 // The newest release whose availableFrom date has arrived. Future

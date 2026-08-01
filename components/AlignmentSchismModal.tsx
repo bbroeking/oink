@@ -28,6 +28,10 @@ import {
 	WHIMSY,
 	RADII,
 } from "@/constants/theme";
+import {
+	MOTION_DURATION,
+	useMotionPolicy,
+} from "@/hooks/useMotionPolicy";
 
 export type SchismSide = "angel" | "goblin";
 export type SchismMilestone = 25 | 50 | 100;
@@ -119,6 +123,7 @@ export function AlignmentSchismModal({
 }: Props) {
 	const scale = useRef(new Animated.Value(0)).current;
 	const opacity = useRef(new Animated.Value(0)).current;
+	const motionPolicy = useMotionPolicy();
 
 	useEffect(() => {
 		// Keyed on visible so the entrance plays when the queue actually
@@ -131,6 +136,15 @@ export function AlignmentSchismModal({
 		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
 			() => {}
 		);
+		if (motionPolicy.reduceMotion) {
+			scale.setValue(1);
+			Animated.timing(opacity, {
+				toValue: 1,
+				duration: MOTION_DURATION.crossfade,
+				useNativeDriver: true,
+			}).start();
+			return;
+		}
 		Animated.parallel([
 			Animated.spring(scale, {
 				toValue: 1,
@@ -145,7 +159,7 @@ export function AlignmentSchismModal({
 				useNativeDriver: true,
 			}),
 		]).start();
-	}, [visible, scale, opacity]);
+	}, [visible, scale, opacity, motionPolicy.reduceMotion]);
 
 	const handleDismiss = async () => {
 		try {
@@ -257,7 +271,7 @@ const styles = StyleSheet.create({
 	},
 	scoreLabel: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		color: WHIMSY.mute,
 		letterSpacing: 1.5,
 		textTransform: "uppercase",

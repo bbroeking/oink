@@ -50,12 +50,47 @@ export async function rpc<T = unknown>(
 	name: string,
 	params?: Record<string, unknown>
 ): Promise<T | null> {
+	const result = await rpcOutcome<T>(name, params);
+	if (!result.ok) {
+		return null;
+	}
+	return result.data;
+}
+
+export type RpcFailureKind = "missing_function" | "network" | "rpc_error";
+
+export interface RpcFailure {
+	message?: string;
+	name?: string;
+	code?: string;
+}
+
+export type RpcOutcome<T> =
+	| { ok: true; data: T | null }
+	| { ok: false; kind: RpcFailureKind; error: RpcFailure };
+
+// Detailed counterpart to rpc() for callers whose fallback behavior depends on
+// WHY a call failed. Keep rpc() above for its historical null-on-error contract;
+// new fail-closed write paths should use this result instead of guessing from
+// null.
+export async function rpcOutcome<T = unknown>(
+	name: string,
+	params?: Record<string, unknown>
+): Promise<RpcOutcome<T>> {
 	const { data, error } = await supabase.rpc(name, params);
 	if (error) {
 		logRpcError(name, error);
-		return null;
+		return {
+			ok: false,
+			kind: isMissingFunctionError(error)
+				? "missing_function"
+				: isTransientNetworkError(error)
+					? "network"
+					: "rpc_error",
+			error,
+		};
 	}
-	return (data as T) ?? null;
+	return { ok: true, data: (data as T) ?? null };
 }
 
 // ── Typed result for ACTION RPCs ────────────────────────────────────────────

@@ -1,4 +1,4 @@
-// Truffle Patch session state — open a rooting for the current 8h feeding,
+// Truffle Patch session state — open a rooting for the current commuter feeding,
 // submit the finds, remember "already dug this feeding".
 //
 // Digging is crew-gated and purely co-op vs the Great Hungerer: a find mints
@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { rpcAction, RpcResult } from "@/utils/rpc";
 import { supabase } from "@/utils/supabase";
 import { markFirstRealDig } from "@/utils/sounderPath";
+import { cancelOpenReminder } from "@/utils/pushNotifications";
 import { fetchFeedingState } from "@/utils/dig";
 import {
 	ClaimableFind,
@@ -200,7 +201,7 @@ export function useRooting() {
 	const { session, noCrew } = state;
 	const win = windowIndex();
 	// Derived + expiring: isDugThisWindow re-compares the recorded dug WINDOW
-	// against the live clock, so the flag clears itself the instant the 8h window
+	// against the live clock, so the flag clears itself at the next window
 	// rolls over (the founder's "still dug two hours later" bug).
 	const dugThisWindow = isDugThisWindow(state);
 
@@ -391,10 +392,14 @@ export function useRooting() {
 				p_missed: safeMissed,
 			});
 			if (!r.ok) {
-				if (r.reason === "already_rooted") await markDug();
+				if (r.reason === "already_rooted") {
+					await markDug();
+					await cancelOpenReminder();
+				}
 				return { ok: false, reason: r.reason };
 			}
 			await markDug();
+			await cancelOpenReminder();
 			// The onboarding funnel's FIRST_DIG → DONE boundary — stamp that this
 			// player has dug for real at least once (per-user, fail-soft). Derived,
 			// not authoritative: the step machine reads this stamp so it retires the

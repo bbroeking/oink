@@ -135,6 +135,13 @@ export const HAT_IMAGES: Record<string, number> = {
 	slop_bucket: require("../assets/images/hats/slop_bucket.png"),
 	mud_shovel: require("../assets/images/hats/mud_shovel.png"),
 	mud_pie: require("../assets/images/hats/mud_pie.png"),
+	// Wallow prestige ladder — one grant-only wearable per rank.
+	wallow_rookie_cap: require("../assets/images/hats/wallow_rookie_cap.png"),
+	wallow_bronze_specs: require("../assets/images/hats/wallow_bronze_specs.png"),
+	wallow_marsh_crown: require("../assets/images/hats/wallow_marsh_crown.png"),
+	wallow_gilded_bow: require("../assets/images/hats/wallow_gilded_bow.png"),
+	wallow_golden_trowel: require("../assets/images/hats/wallow_golden_trowel.png"),
+	wallow_sovereign_crown: require("../assets/images/hats/wallow_sovereign_crown.png"),
 	// 2026 Hog Cup champions' reward — grant-only held trophy for players flying
 	// Spain's flag at closeout. Seeded by the World Cup closeout migration.
 	golden_hog_cup: require("../assets/images/hats/golden_hog_cup.png"),
@@ -216,7 +223,36 @@ export const HAT_IMAGES: Record<string, number> = {
 	// grant_season1_finale(). Seeded in migration
 	// 20260739100000_season1_finale_reward.sql. Placement tuned in
 	// hat_rel.generated (pivot y 0.9, widthFrac 0.54).
-	hungerers_crown: require("../assets/images/hats/hungerers_crown.png"),
+	hungerers_crown: require("../assets/images/hats/hungerers_crown.png")
+};
+
+// Browse surfaces never display these held-item masters above a few dozen
+// points, but the source art is 1024². Keep masters for PigStage/preview
+// composition and decode these explicit tiers in chips and catalog grids.
+export const HAT_THUMBNAILS_128: Partial<Record<string, number>> = {
+	magic_wand: require("../assets/images/hats/thumbs/128/magic_wand.png"),
+	toy_sword: require("../assets/images/hats/thumbs/128/toy_sword.png"),
+	controller: require("../assets/images/hats/thumbs/128/controller.png"),
+	pencil: require("../assets/images/hats/thumbs/128/pencil.png"),
+	magnifier: require("../assets/images/hats/thumbs/128/magnifier.png"),
+	balloon: require("../assets/images/hats/thumbs/128/balloon.png"),
+	flowers: require("../assets/images/hats/thumbs/128/flowers.png"),
+	ice_cream: require("../assets/images/hats/thumbs/128/ice_cream.png"),
+	pizza_slice: require("../assets/images/hats/thumbs/128/pizza_slice.png"),
+	coffee_mug: require("../assets/images/hats/thumbs/128/coffee_mug.png")
+};
+
+export const HAT_THUMBNAILS_256: Partial<Record<string, number>> = {
+	magic_wand: require("../assets/images/hats/thumbs/256/magic_wand.png"),
+	toy_sword: require("../assets/images/hats/thumbs/256/toy_sword.png"),
+	controller: require("../assets/images/hats/thumbs/256/controller.png"),
+	pencil: require("../assets/images/hats/thumbs/256/pencil.png"),
+	magnifier: require("../assets/images/hats/thumbs/256/magnifier.png"),
+	balloon: require("../assets/images/hats/thumbs/256/balloon.png"),
+	flowers: require("../assets/images/hats/thumbs/256/flowers.png"),
+	ice_cream: require("../assets/images/hats/thumbs/256/ice_cream.png"),
+	pizza_slice: require("../assets/images/hats/thumbs/256/pizza_slice.png"),
+	coffee_mug: require("../assets/images/hats/thumbs/256/coffee_mug.png")
 };
 
 // Slop Club members-only art — AUTO-WIRED from constants/membersImages.generated
@@ -238,12 +274,7 @@ for (const [slug, src] of Object.entries(WORLD_CUP_FLAG_IMAGES)) {
 // auto-generated overlays file; re-export here so consumers can keep
 // importing it from "constants/hats".
 export type { HatOverlay, AnchorName, Anchor, RelSpec } from "./hat_overlay_types";
-import type {
-	HatOverlay,
-	AnchorName,
-	Anchor,
-	RelSpec,
-} from "./hat_overlay_types";
+import type { HatOverlay, AnchorName, Anchor, RelSpec } from "./hat_overlay_types";
 
 // The anchor coordinate space — all REST_ANCHORS / PIG_FRAME_ANCHORS
 // values are in this 300×300 box. Anchor-relative placement divides by
@@ -262,7 +293,7 @@ import { MEMBERS_REL_DATA } from "./membersRel.generated";
 // hat_rel.generated (via tools/item-anchor) overrides it.
 export const HAT_REL: Record<string, RelSpec> = {
 	...MEMBERS_REL_DATA,
-	...HAT_REL_DATA,
+	...HAT_REL_DATA
 };
 
 // Per-item overlay overrides. Auto-generated coordinates from
@@ -276,7 +307,7 @@ export const HAT_OVERLAYS: Record<string, HatOverlay> = {
 	// by compute_overlays.py (it skips any item with a RelSpec). Kept only as
 	// the resolveSlot fallback for a future item that somehow lacks a RelSpec;
 	// tune new items in tools/placement_studio instead of adding rows here.
-	...HAT_OVERLAYS_GENERATED,
+	...HAT_OVERLAYS_GENERATED
 };
 
 // Per-category z-order: items rendered BEHIND the pig vs IN FRONT.
@@ -284,7 +315,7 @@ export const HAT_OVERLAYS: Record<string, HatOverlay> = {
 export const Z_BEHIND_PIG: Record<string, boolean> = {
 	background: true,
 	aura: true,
-	cape: true,
+	cape: true
 };
 
 // Categories temporarily hidden from shop + wardrobe because they wrap
@@ -344,7 +375,7 @@ const REST_ANCHORS: Record<AnchorName, Anchor> = {
 	hand_r: { x: 231, y: 266 },
 	leg_l: { x: 29, y: 268 },
 	leg_r: { x: 107, y: 265 },
-	feet: { x: 68, y: 266 }, // midpoint of leg_l/leg_r (virtual)
+	feet: { x: 68, y: 266 } // midpoint of leg_l/leg_r (virtual)
 };
 
 // Helper: builds an anchor frame where every anchor shifts by dy (negative =
@@ -379,58 +410,439 @@ function shiftAll(dy: number): Partial<Record<AnchorName, Anchor>> {
 // ANCHOR_EDITOR_START — content between these sentinels is managed by
 // tools/anchor-editor's Save button. Hand edits are OK but will be
 // overwritten on the next save. Do not move or rename the sentinels.
-export const PIG_FRAME_ANCHORS: Record<
-	PigAnimationKey,
-	Partial<Record<AnchorName, Anchor>>[]
-> = {
+export const PIG_FRAME_ANCHORS: Record<PigAnimationKey, Partial<Record<AnchorName, Anchor>>[]> = {
 	idle: [
-		{ head: { x: 158, y: 31 }, eye_l: { x: 131, y: 113 }, eye_r: { x: 223, y: 115 }, snout: { x: 184, y: 138 }, mouth: { x: 179, y: 172 }, neck: { x: 163, y: 225 }, body: { x: 150, y: 241 }, hand_l: { x: 134, y: 281 }, hand_r: { x: 231, y: 266 }, leg_l: { x: 29, y: 268 }, leg_r: { x: 107, y: 265 } },
-		{ head: { x: 158, y: 31 }, eye_l: { x: 129, y: 114 }, eye_r: { x: 221, y: 114 }, snout: { x: 180, y: 143 }, mouth: { x: 177, y: 175 }, neck: { x: 159, y: 224 }, body: { x: 145, y: 240 }, hand_l: { x: 110, y: 281 }, hand_r: { x: 163, y: 281 }, leg_l: { x: 62, y: 280 }, leg_r: { x: 130, y: 278 } },
-		{ head: { x: 158, y: 31 }, eye_l: { x: 131, y: 110 }, eye_r: { x: 223, y: 110 }, snout: { x: 189, y: 137 }, mouth: { x: 183, y: 170 }, neck: { x: 173, y: 222 }, body: { x: 169, y: 241 }, hand_l: { x: 131, y: 276 }, hand_r: { x: 240, y: 264 }, leg_l: { x: 27, y: 266 }, leg_r: { x: 109, y: 255 } },
-		{ head: { x: 158, y: 31 }, eye_l: { x: 132, y: 114 }, eye_r: { x: 221, y: 117 }, snout: { x: 181, y: 143 }, mouth: { x: 177, y: 175 }, neck: { x: 163, y: 224 }, body: { x: 148, y: 238 }, hand_l: { x: 114, y: 282 }, hand_r: { x: 162, y: 281 }, leg_l: { x: 63, y: 281 }, leg_r: { x: 130, y: 277 } },
+		{
+			head: { x: 158, y: 31 },
+			eye_l: { x: 131, y: 113 },
+			eye_r: { x: 223, y: 115 },
+			snout: { x: 184, y: 138 },
+			mouth: { x: 179, y: 172 },
+			neck: { x: 163, y: 225 },
+			body: { x: 150, y: 241 },
+			hand_l: { x: 134, y: 281 },
+			hand_r: { x: 231, y: 266 },
+			leg_l: { x: 29, y: 268 },
+			leg_r: { x: 107, y: 265 }
+		},
+		{
+			head: { x: 158, y: 31 },
+			eye_l: { x: 129, y: 114 },
+			eye_r: { x: 221, y: 114 },
+			snout: { x: 180, y: 143 },
+			mouth: { x: 177, y: 175 },
+			neck: { x: 159, y: 224 },
+			body: { x: 145, y: 240 },
+			hand_l: { x: 110, y: 281 },
+			hand_r: { x: 163, y: 281 },
+			leg_l: { x: 62, y: 280 },
+			leg_r: { x: 130, y: 278 }
+		},
+		{
+			head: { x: 158, y: 31 },
+			eye_l: { x: 131, y: 110 },
+			eye_r: { x: 223, y: 110 },
+			snout: { x: 189, y: 137 },
+			mouth: { x: 183, y: 170 },
+			neck: { x: 173, y: 222 },
+			body: { x: 169, y: 241 },
+			hand_l: { x: 131, y: 276 },
+			hand_r: { x: 240, y: 264 },
+			leg_l: { x: 27, y: 266 },
+			leg_r: { x: 109, y: 255 }
+		},
+		{
+			head: { x: 158, y: 31 },
+			eye_l: { x: 132, y: 114 },
+			eye_r: { x: 221, y: 117 },
+			snout: { x: 181, y: 143 },
+			mouth: { x: 177, y: 175 },
+			neck: { x: 163, y: 224 },
+			body: { x: 148, y: 238 },
+			hand_l: { x: 114, y: 282 },
+			hand_r: { x: 162, y: 281 },
+			leg_l: { x: 63, y: 281 },
+			leg_r: { x: 130, y: 277 }
+		}
 	],
 	walk: [
-		{ head: { x: 158, y: 32 }, eye_l: { x: 132, y: 110 }, eye_r: { x: 229, y: 111 }, snout: { x: 184, y: 138 }, mouth: { x: 182, y: 171 }, neck: { x: 175, y: 220 }, body: { x: 159, y: 234 }, hand_l: { x: 133, y: 279 }, hand_r: { x: 235, y: 266 }, leg_l: { x: 27, y: 267 }, leg_r: { x: 112, y: 251 } },
-		{ head: { x: 158, y: 35 }, eye_l: { x: 128, y: 114 }, eye_r: { x: 220, y: 116 }, snout: { x: 179, y: 145 }, mouth: { x: 178, y: 176 }, neck: { x: 163, y: 224 }, body: { x: 150, y: 240 }, hand_l: { x: 111, y: 281 }, hand_r: { x: 163, y: 279 }, leg_l: { x: 61, y: 279 }, leg_r: { x: 128, y: 278 } },
-		{ head: { x: 167, y: 36 }, eye_l: { x: 136, y: 109 }, eye_r: { x: 227, y: 107 }, snout: { x: 189, y: 136 }, mouth: { x: 185, y: 166 }, neck: { x: 163, y: 219 }, body: { x: 161, y: 236 }, hand_l: { x: 129, y: 279 }, hand_r: { x: 235, y: 263 }, leg_l: { x: 28, y: 267 }, leg_r: { x: 129, y: 240 } },
-		{ head: { x: 160, y: 40 }, eye_l: { x: 131, y: 116 }, eye_r: { x: 222, y: 117 }, snout: { x: 183, y: 144 }, mouth: { x: 178, y: 177 }, neck: { x: 161, y: 226 }, body: { x: 150, y: 243 }, hand_l: { x: 112, y: 283 }, hand_r: { x: 164, y: 282 }, leg_l: { x: 61, y: 276 }, leg_r: { x: 129, y: 279 } },
+		{
+			head: { x: 158, y: 32 },
+			eye_l: { x: 132, y: 110 },
+			eye_r: { x: 229, y: 111 },
+			snout: { x: 184, y: 138 },
+			mouth: { x: 182, y: 171 },
+			neck: { x: 175, y: 220 },
+			body: { x: 159, y: 234 },
+			hand_l: { x: 133, y: 279 },
+			hand_r: { x: 235, y: 266 },
+			leg_l: { x: 27, y: 267 },
+			leg_r: { x: 112, y: 251 }
+		},
+		{
+			head: { x: 158, y: 35 },
+			eye_l: { x: 128, y: 114 },
+			eye_r: { x: 220, y: 116 },
+			snout: { x: 179, y: 145 },
+			mouth: { x: 178, y: 176 },
+			neck: { x: 163, y: 224 },
+			body: { x: 150, y: 240 },
+			hand_l: { x: 111, y: 281 },
+			hand_r: { x: 163, y: 279 },
+			leg_l: { x: 61, y: 279 },
+			leg_r: { x: 128, y: 278 }
+		},
+		{
+			head: { x: 167, y: 36 },
+			eye_l: { x: 136, y: 109 },
+			eye_r: { x: 227, y: 107 },
+			snout: { x: 189, y: 136 },
+			mouth: { x: 185, y: 166 },
+			neck: { x: 163, y: 219 },
+			body: { x: 161, y: 236 },
+			hand_l: { x: 129, y: 279 },
+			hand_r: { x: 235, y: 263 },
+			leg_l: { x: 28, y: 267 },
+			leg_r: { x: 129, y: 240 }
+		},
+		{
+			head: { x: 160, y: 40 },
+			eye_l: { x: 131, y: 116 },
+			eye_r: { x: 222, y: 117 },
+			snout: { x: 183, y: 144 },
+			mouth: { x: 178, y: 177 },
+			neck: { x: 161, y: 226 },
+			body: { x: 150, y: 243 },
+			hand_l: { x: 112, y: 283 },
+			hand_r: { x: 164, y: 282 },
+			leg_l: { x: 61, y: 276 },
+			leg_r: { x: 129, y: 279 }
+		}
 	],
 	jump: [
-		{ head: { x: 166, y: 125 }, eye_l: { x: 134, y: 190 }, eye_r: { x: 213, y: 194 }, snout: { x: 179, y: 219 }, mouth: { x: 170, y: 243 }, neck: { x: 162, y: 271 }, body: { x: 148, y: 274 }, hand_l: { x: 125, y: 283 }, hand_r: { x: 215, y: 278 }, leg_l: { x: 67, y: 279 }, leg_r: { x: 158, y: 280 } },
-		{ head: { x: 158, y: 34 }, eye_l: { x: 133, y: 102 }, eye_r: { x: 216, y: 104 }, snout: { x: 181, y: 126 }, mouth: { x: 174, y: 155 }, neck: { x: 166, y: 204 }, body: { x: 157, y: 225 }, hand_l: { x: 117, y: 278 }, hand_r: { x: 162, y: 281 }, leg_l: { x: 89, y: 274 }, leg_r: { x: 113, y: 259 } },
-		{ head: { x: 163, y: 69 }, eye_l: { x: 131, y: 136 }, eye_r: { x: 215, y: 141 }, snout: { x: 179, y: 161 }, mouth: { x: 173, y: 192 }, neck: { x: 158, y: 236 }, body: { x: 160, y: 250 }, hand_l: { x: 134, y: 256 }, hand_r: { x: 201, y: 256 }, leg_l: { x: 98, y: 283 }, leg_r: { x: 159, y: 281 } },
-		{ head: { x: 158, y: 124 }, eye_l: { x: 135, y: 198 }, eye_r: { x: 213, y: 199 }, snout: { x: 181, y: 225 }, mouth: { x: 172, y: 249 }, neck: { x: 170, y: 275 }, body: { x: 153, y: 278 }, hand_l: { x: 115, y: 282 }, hand_r: { x: 259, y: 274 }, leg_l: { x: 35, y: 276 }, leg_r: { x: 220, y: 273 } },
+		{
+			head: { x: 166, y: 125 },
+			eye_l: { x: 134, y: 190 },
+			eye_r: { x: 213, y: 194 },
+			snout: { x: 179, y: 219 },
+			mouth: { x: 170, y: 243 },
+			neck: { x: 162, y: 271 },
+			body: { x: 148, y: 274 },
+			hand_l: { x: 125, y: 283 },
+			hand_r: { x: 215, y: 278 },
+			leg_l: { x: 67, y: 279 },
+			leg_r: { x: 158, y: 280 }
+		},
+		{
+			head: { x: 158, y: 34 },
+			eye_l: { x: 133, y: 102 },
+			eye_r: { x: 216, y: 104 },
+			snout: { x: 181, y: 126 },
+			mouth: { x: 174, y: 155 },
+			neck: { x: 166, y: 204 },
+			body: { x: 157, y: 225 },
+			hand_l: { x: 117, y: 278 },
+			hand_r: { x: 162, y: 281 },
+			leg_l: { x: 89, y: 274 },
+			leg_r: { x: 113, y: 259 }
+		},
+		{
+			head: { x: 163, y: 69 },
+			eye_l: { x: 131, y: 136 },
+			eye_r: { x: 215, y: 141 },
+			snout: { x: 179, y: 161 },
+			mouth: { x: 173, y: 192 },
+			neck: { x: 158, y: 236 },
+			body: { x: 160, y: 250 },
+			hand_l: { x: 134, y: 256 },
+			hand_r: { x: 201, y: 256 },
+			leg_l: { x: 98, y: 283 },
+			leg_r: { x: 159, y: 281 }
+		},
+		{
+			head: { x: 158, y: 124 },
+			eye_l: { x: 135, y: 198 },
+			eye_r: { x: 213, y: 199 },
+			snout: { x: 181, y: 225 },
+			mouth: { x: 172, y: 249 },
+			neck: { x: 170, y: 275 },
+			body: { x: 153, y: 278 },
+			hand_l: { x: 115, y: 282 },
+			hand_r: { x: 259, y: 274 },
+			leg_l: { x: 35, y: 276 },
+			leg_r: { x: 220, y: 273 }
+		}
 	],
 	happy: [
-		{ head: { x: 157, y: 30 }, eye_l: { x: 127, y: 112 }, eye_r: { x: 217, y: 112 }, snout: { x: 174, y: 138 }, mouth: { x: 170, y: 170 }, neck: { x: 165, y: 214 }, body: { x: 156, y: 235 }, hand_l: { x: 117, y: 281 }, hand_r: { x: 196, y: 282 }, leg_l: { x: 75, y: 274 }, leg_r: { x: 121, y: 264 } },
-		{ head: { x: 154, y: 28 }, eye_l: { x: 121, y: 114 }, eye_r: { x: 214, y: 113 }, snout: { x: 172, y: 141 }, mouth: { x: 170, y: 170 }, neck: { x: 163, y: 213 }, body: { x: 160, y: 234 }, hand_l: { x: 120, y: 279 }, hand_r: { x: 193, y: 281 }, leg_l: { x: 73, y: 274 }, leg_r: { x: 128, y: 266 } },
-		{ head: { x: 159, y: 37 }, eye_l: { x: 120, y: 113 }, eye_r: { x: 215, y: 114 }, snout: { x: 171, y: 142 }, mouth: { x: 170, y: 170 }, neck: { x: 158, y: 215 }, body: { x: 153, y: 236 }, hand_l: { x: 120, y: 281 }, hand_r: { x: 193, y: 280 }, leg_l: { x: 75, y: 273 }, leg_r: { x: 120, y: 265 } },
-		{ head: { x: 155, y: 31 }, eye_l: { x: 124, y: 113 }, eye_r: { x: 216, y: 114 }, snout: { x: 173, y: 142 }, mouth: { x: 170, y: 169 }, neck: { x: 163, y: 214 }, body: { x: 159, y: 235 }, hand_l: { x: 119, y: 280 }, hand_r: { x: 195, y: 280 }, leg_l: { x: 74, y: 274 }, leg_r: { x: 127, y: 264 } },
+		{
+			head: { x: 157, y: 30 },
+			eye_l: { x: 127, y: 112 },
+			eye_r: { x: 217, y: 112 },
+			snout: { x: 174, y: 138 },
+			mouth: { x: 170, y: 170 },
+			neck: { x: 165, y: 214 },
+			body: { x: 156, y: 235 },
+			hand_l: { x: 117, y: 281 },
+			hand_r: { x: 196, y: 282 },
+			leg_l: { x: 75, y: 274 },
+			leg_r: { x: 121, y: 264 }
+		},
+		{
+			head: { x: 154, y: 28 },
+			eye_l: { x: 121, y: 114 },
+			eye_r: { x: 214, y: 113 },
+			snout: { x: 172, y: 141 },
+			mouth: { x: 170, y: 170 },
+			neck: { x: 163, y: 213 },
+			body: { x: 160, y: 234 },
+			hand_l: { x: 120, y: 279 },
+			hand_r: { x: 193, y: 281 },
+			leg_l: { x: 73, y: 274 },
+			leg_r: { x: 128, y: 266 }
+		},
+		{
+			head: { x: 159, y: 37 },
+			eye_l: { x: 120, y: 113 },
+			eye_r: { x: 215, y: 114 },
+			snout: { x: 171, y: 142 },
+			mouth: { x: 170, y: 170 },
+			neck: { x: 158, y: 215 },
+			body: { x: 153, y: 236 },
+			hand_l: { x: 120, y: 281 },
+			hand_r: { x: 193, y: 280 },
+			leg_l: { x: 75, y: 273 },
+			leg_r: { x: 120, y: 265 }
+		},
+		{
+			head: { x: 155, y: 31 },
+			eye_l: { x: 124, y: 113 },
+			eye_r: { x: 216, y: 114 },
+			snout: { x: 173, y: 142 },
+			mouth: { x: 170, y: 169 },
+			neck: { x: 163, y: 214 },
+			body: { x: 159, y: 235 },
+			hand_l: { x: 119, y: 280 },
+			hand_r: { x: 195, y: 280 },
+			leg_l: { x: 74, y: 274 },
+			leg_r: { x: 127, y: 264 }
+		}
 	],
 	sad: [
-		{ head: { x: 153, y: 42 }, eye_l: { x: 128, y: 141 }, eye_r: { x: 212, y: 139 }, snout: { x: 174, y: 163 }, mouth: { x: 168, y: 190 }, neck: { x: 163, y: 218 }, body: { x: 143, y: 232 }, hand_l: { x: 99, y: 276 }, hand_r: { x: 181, y: 272 }, leg_l: { x: 57, y: 270 }, leg_r: { x: 140, y: 268 } },
-		{ head: { x: 151, y: 35 }, eye_l: { x: 125, y: 142 }, eye_r: { x: 213, y: 143 }, snout: { x: 175, y: 166 }, mouth: { x: 169, y: 190 }, neck: { x: 154, y: 220 }, body: { x: 141, y: 233 }, hand_l: { x: 97, y: 276 }, hand_r: { x: 181, y: 273 }, leg_l: { x: 60, y: 271 }, leg_r: { x: 142, y: 268 } },
-		{ head: { x: 153, y: 33 }, eye_l: { x: 130, y: 145 }, eye_r: { x: 212, y: 141 }, snout: { x: 178, y: 166 }, mouth: { x: 171, y: 190 }, neck: { x: 158, y: 221 }, body: { x: 150, y: 251 }, hand_l: { x: 101, y: 275 }, hand_r: { x: 182, y: 276 }, leg_l: { x: 63, y: 269 }, leg_r: { x: 145, y: 269 } },
-		{ head: { x: 161, y: 38 }, eye_l: { x: 127, y: 142 }, eye_r: { x: 215, y: 141 }, snout: { x: 178, y: 167 }, mouth: { x: 168, y: 192 }, neck: { x: 158, y: 221 }, body: { x: 139, y: 238 }, hand_l: { x: 97, y: 275 }, hand_r: { x: 179, y: 273 }, leg_l: { x: 57, y: 271 }, leg_r: { x: 143, y: 269 } },
+		{
+			head: { x: 153, y: 42 },
+			eye_l: { x: 128, y: 141 },
+			eye_r: { x: 212, y: 139 },
+			snout: { x: 174, y: 163 },
+			mouth: { x: 168, y: 190 },
+			neck: { x: 163, y: 218 },
+			body: { x: 143, y: 232 },
+			hand_l: { x: 99, y: 276 },
+			hand_r: { x: 181, y: 272 },
+			leg_l: { x: 57, y: 270 },
+			leg_r: { x: 140, y: 268 }
+		},
+		{
+			head: { x: 151, y: 35 },
+			eye_l: { x: 125, y: 142 },
+			eye_r: { x: 213, y: 143 },
+			snout: { x: 175, y: 166 },
+			mouth: { x: 169, y: 190 },
+			neck: { x: 154, y: 220 },
+			body: { x: 141, y: 233 },
+			hand_l: { x: 97, y: 276 },
+			hand_r: { x: 181, y: 273 },
+			leg_l: { x: 60, y: 271 },
+			leg_r: { x: 142, y: 268 }
+		},
+		{
+			head: { x: 153, y: 33 },
+			eye_l: { x: 130, y: 145 },
+			eye_r: { x: 212, y: 141 },
+			snout: { x: 178, y: 166 },
+			mouth: { x: 171, y: 190 },
+			neck: { x: 158, y: 221 },
+			body: { x: 150, y: 251 },
+			hand_l: { x: 101, y: 275 },
+			hand_r: { x: 182, y: 276 },
+			leg_l: { x: 63, y: 269 },
+			leg_r: { x: 145, y: 269 }
+		},
+		{
+			head: { x: 161, y: 38 },
+			eye_l: { x: 127, y: 142 },
+			eye_r: { x: 215, y: 141 },
+			snout: { x: 178, y: 167 },
+			mouth: { x: 168, y: 192 },
+			neck: { x: 158, y: 221 },
+			body: { x: 139, y: 238 },
+			hand_l: { x: 97, y: 275 },
+			hand_r: { x: 179, y: 273 },
+			leg_l: { x: 57, y: 271 },
+			leg_r: { x: 143, y: 269 }
+		}
 	],
 	tired: [
-		{ head: { x: 161, y: 41 }, eye_l: { x: 128, y: 141 }, eye_r: { x: 232, y: 138 }, snout: { x: 189, y: 160 }, mouth: { x: 186, y: 194 }, neck: { x: 172, y: 234 }, body: { x: 174, y: 253 }, hand_l: { x: 87, y: 271 }, hand_r: { x: 233, y: 279 }, leg_l: { x: 32, y: 269 }, leg_r: { x: 133, y: 281 } },
-		{ head: { x: 161, y: 41 }, eye_l: { x: 128, y: 141 }, eye_r: { x: 232, y: 138 }, snout: { x: 189, y: 153 }, mouth: { x: 186, y: 194 }, neck: { x: 172, y: 234 }, body: { x: 174, y: 253 }, hand_l: { x: 87, y: 271 }, hand_r: { x: 233, y: 279 }, leg_l: { x: 32, y: 269 }, leg_r: { x: 133, y: 281 } },
-		{ head: { x: 159, y: 67 }, eye_l: { x: 134, y: 176 }, eye_r: { x: 235, y: 171 }, snout: { x: 195, y: 190 }, mouth: { x: 192, y: 219 }, neck: { x: 171, y: 250 }, body: { x: 156, y: 260 }, hand_l: { x: 87, y: 271 }, hand_r: { x: 233, y: 279 }, leg_l: { x: 32, y: 269 }, leg_r: { x: 133, y: 281 } },
-		{ head: { x: 159, y: 89 }, eye_l: { x: 130, y: 189 }, eye_r: { x: 217, y: 187 }, snout: { x: 184, y: 207 }, mouth: { x: 179, y: 236 }, neck: { x: 158, y: 254 }, body: { x: 146, y: 260 }, hand_l: { x: 115, y: 276 }, hand_r: { x: 202, y: 277 }, leg_l: { x: 25, y: 271 }, leg_r: { x: 110, y: 271 } },
+		{
+			head: { x: 161, y: 41 },
+			eye_l: { x: 128, y: 141 },
+			eye_r: { x: 232, y: 138 },
+			snout: { x: 189, y: 160 },
+			mouth: { x: 186, y: 194 },
+			neck: { x: 172, y: 234 },
+			body: { x: 174, y: 253 },
+			hand_l: { x: 87, y: 271 },
+			hand_r: { x: 233, y: 279 },
+			leg_l: { x: 32, y: 269 },
+			leg_r: { x: 133, y: 281 }
+		},
+		{
+			head: { x: 161, y: 41 },
+			eye_l: { x: 128, y: 141 },
+			eye_r: { x: 232, y: 138 },
+			snout: { x: 189, y: 153 },
+			mouth: { x: 186, y: 194 },
+			neck: { x: 172, y: 234 },
+			body: { x: 174, y: 253 },
+			hand_l: { x: 87, y: 271 },
+			hand_r: { x: 233, y: 279 },
+			leg_l: { x: 32, y: 269 },
+			leg_r: { x: 133, y: 281 }
+		},
+		{
+			head: { x: 159, y: 67 },
+			eye_l: { x: 134, y: 176 },
+			eye_r: { x: 235, y: 171 },
+			snout: { x: 195, y: 190 },
+			mouth: { x: 192, y: 219 },
+			neck: { x: 171, y: 250 },
+			body: { x: 156, y: 260 },
+			hand_l: { x: 87, y: 271 },
+			hand_r: { x: 233, y: 279 },
+			leg_l: { x: 32, y: 269 },
+			leg_r: { x: 133, y: 281 }
+		},
+		{
+			head: { x: 159, y: 89 },
+			eye_l: { x: 130, y: 189 },
+			eye_r: { x: 217, y: 187 },
+			snout: { x: 184, y: 207 },
+			mouth: { x: 179, y: 236 },
+			neck: { x: 158, y: 254 },
+			body: { x: 146, y: 260 },
+			hand_l: { x: 115, y: 276 },
+			hand_r: { x: 202, y: 277 },
+			leg_l: { x: 25, y: 271 },
+			leg_r: { x: 110, y: 271 }
+		}
 	],
 	surprise: [
-		{ head: { x: 152, y: 42 }, eye_l: { x: 119, y: 113 }, eye_r: { x: 198, y: 111 }, snout: { x: 165, y: 140 }, mouth: { x: 163, y: 171 }, neck: { x: 156, y: 208 }, body: { x: 158, y: 237 }, hand_l: { x: 122, y: 275 }, hand_r: { x: 187, y: 273 }, leg_l: { x: 84, y: 263 }, leg_r: { x: 131, y: 256 } },
-		{ head: { x: 152, y: 42 }, eye_l: { x: 119, y: 113 }, eye_r: { x: 198, y: 111 }, snout: { x: 165, y: 140 }, mouth: { x: 163, y: 162 }, neck: { x: 156, y: 208 }, body: { x: 158, y: 237 }, hand_l: { x: 121, y: 266 }, hand_r: { x: 183, y: 265 }, leg_l: { x: 85, y: 254 }, leg_r: { x: 117, y: 246 } },
-		{ head: { x: 152, y: 42 }, eye_l: { x: 119, y: 113 }, eye_r: { x: 198, y: 111 }, snout: { x: 159, y: 134 }, mouth: { x: 158, y: 162 }, neck: { x: 156, y: 208 }, body: { x: 151, y: 237 }, hand_l: { x: 121, y: 266 }, hand_r: { x: 183, y: 265 }, leg_l: { x: 85, y: 254 }, leg_r: { x: 117, y: 246 } },
-		{ head: { x: 152, y: 42 }, eye_l: { x: 119, y: 113 }, eye_r: { x: 198, y: 111 }, snout: { x: 165, y: 133 }, mouth: { x: 160, y: 164 }, neck: { x: 156, y: 208 }, body: { x: 151, y: 237 }, hand_l: { x: 117, y: 272 }, hand_r: { x: 183, y: 265 }, leg_l: { x: 75, y: 263 }, leg_r: { x: 117, y: 246 } },
+		{
+			head: { x: 152, y: 42 },
+			eye_l: { x: 119, y: 113 },
+			eye_r: { x: 198, y: 111 },
+			snout: { x: 165, y: 140 },
+			mouth: { x: 163, y: 171 },
+			neck: { x: 156, y: 208 },
+			body: { x: 158, y: 237 },
+			hand_l: { x: 122, y: 275 },
+			hand_r: { x: 187, y: 273 },
+			leg_l: { x: 84, y: 263 },
+			leg_r: { x: 131, y: 256 }
+		},
+		{
+			head: { x: 152, y: 42 },
+			eye_l: { x: 119, y: 113 },
+			eye_r: { x: 198, y: 111 },
+			snout: { x: 165, y: 140 },
+			mouth: { x: 163, y: 162 },
+			neck: { x: 156, y: 208 },
+			body: { x: 158, y: 237 },
+			hand_l: { x: 121, y: 266 },
+			hand_r: { x: 183, y: 265 },
+			leg_l: { x: 85, y: 254 },
+			leg_r: { x: 117, y: 246 }
+		},
+		{
+			head: { x: 152, y: 42 },
+			eye_l: { x: 119, y: 113 },
+			eye_r: { x: 198, y: 111 },
+			snout: { x: 159, y: 134 },
+			mouth: { x: 158, y: 162 },
+			neck: { x: 156, y: 208 },
+			body: { x: 151, y: 237 },
+			hand_l: { x: 121, y: 266 },
+			hand_r: { x: 183, y: 265 },
+			leg_l: { x: 85, y: 254 },
+			leg_r: { x: 117, y: 246 }
+		},
+		{
+			head: { x: 152, y: 42 },
+			eye_l: { x: 119, y: 113 },
+			eye_r: { x: 198, y: 111 },
+			snout: { x: 165, y: 133 },
+			mouth: { x: 160, y: 164 },
+			neck: { x: 156, y: 208 },
+			body: { x: 151, y: 237 },
+			hand_l: { x: 117, y: 272 },
+			hand_r: { x: 183, y: 265 },
+			leg_l: { x: 75, y: 263 },
+			leg_r: { x: 117, y: 246 }
+		}
 	],
 	wave: [
-		{ head: { x: 136, y: 66 }, eye_l: { x: 112, y: 123 }, eye_r: { x: 173, y: 118 }, snout: { x: 150, y: 134 }, mouth: { x: 148, y: 162 }, neck: { x: 147, y: 189 }, body: { x: 147, y: 206 }, hand_l: { x: 123, y: 246 }, hand_r: { x: 231, y: 118 }, leg_l: { x: 94, y: 240 }, leg_r: { x: 174, y: 245 } },
-		{ head: { x: 158, y: 68 }, eye_l: { x: 135, y: 124 }, eye_r: { x: 198, y: 121 }, snout: { x: 171, y: 140 }, mouth: { x: 170, y: 160 }, neck: { x: 169, y: 189 }, body: { x: 170, y: 208 }, hand_l: { x: 145, y: 245 }, hand_r: { x: 257, y: 126 }, leg_l: { x: 119, y: 240 }, leg_r: { x: 185, y: 238 } },
-		{ head: { x: 165, y: 65 }, eye_l: { x: 143, y: 124 }, eye_r: { x: 206, y: 119 }, snout: { x: 180, y: 140 }, mouth: { x: 179, y: 161 }, neck: { x: 176, y: 188 }, body: { x: 180, y: 213 }, hand_l: { x: 153, y: 245 }, hand_r: { x: 255, y: 126 }, leg_l: { x: 127, y: 239 }, leg_r: { x: 205, y: 244 } },
-		{ head: { x: 133, y: 70 }, eye_l: { x: 108, y: 127 }, eye_r: { x: 166, y: 124 }, snout: { x: 141, y: 145 }, mouth: { x: 139, y: 167 }, neck: { x: 132, y: 194 }, body: { x: 134, y: 217 }, hand_l: { x: 105, y: 244 }, hand_r: { x: 229, y: 128 }, leg_l: { x: 79, y: 240 }, leg_r: { x: 154, y: 245 } },
-	],
+		{
+			head: { x: 136, y: 66 },
+			eye_l: { x: 112, y: 123 },
+			eye_r: { x: 173, y: 118 },
+			snout: { x: 150, y: 134 },
+			mouth: { x: 148, y: 162 },
+			neck: { x: 147, y: 189 },
+			body: { x: 147, y: 206 },
+			hand_l: { x: 123, y: 246 },
+			hand_r: { x: 231, y: 118 },
+			leg_l: { x: 94, y: 240 },
+			leg_r: { x: 174, y: 245 }
+		},
+		{
+			head: { x: 158, y: 68 },
+			eye_l: { x: 135, y: 124 },
+			eye_r: { x: 198, y: 121 },
+			snout: { x: 171, y: 140 },
+			mouth: { x: 170, y: 160 },
+			neck: { x: 169, y: 189 },
+			body: { x: 170, y: 208 },
+			hand_l: { x: 145, y: 245 },
+			hand_r: { x: 257, y: 126 },
+			leg_l: { x: 119, y: 240 },
+			leg_r: { x: 185, y: 238 }
+		},
+		{
+			head: { x: 165, y: 65 },
+			eye_l: { x: 143, y: 124 },
+			eye_r: { x: 206, y: 119 },
+			snout: { x: 180, y: 140 },
+			mouth: { x: 179, y: 161 },
+			neck: { x: 176, y: 188 },
+			body: { x: 180, y: 213 },
+			hand_l: { x: 153, y: 245 },
+			hand_r: { x: 255, y: 126 },
+			leg_l: { x: 127, y: 239 },
+			leg_r: { x: 205, y: 244 }
+		},
+		{
+			head: { x: 133, y: 70 },
+			eye_l: { x: 108, y: 127 },
+			eye_r: { x: 166, y: 124 },
+			snout: { x: 141, y: 145 },
+			mouth: { x: 139, y: 167 },
+			neck: { x: 132, y: 194 },
+			body: { x: 134, y: 217 },
+			hand_l: { x: 105, y: 244 },
+			hand_r: { x: 229, y: 128 },
+			leg_l: { x: 79, y: 240 },
+			leg_r: { x: 154, y: 245 }
+		}
+	]
 };
 // ANCHOR_EDITOR_END
 
@@ -441,11 +853,7 @@ export const PIG_FRAME_ANCHORS: Record<
 // `eyes` and `feet` are virtual: compute midpoint of their L/R pair so
 // items targeting the symmetric anchor track both sides correctly when
 // the underlying L/R anchors drift apart per pose.
-export function resolveAnchor(
-	anim: PigAnimationKey,
-	frameIdx: number,
-	name: AnchorName,
-): Anchor {
+export function resolveAnchor(anim: PigAnimationKey, frameIdx: number, name: AnchorName): Anchor {
 	if (name === "eyes") {
 		const l = resolveAnchor(anim, frameIdx, "eye_l");
 		const r = resolveAnchor(anim, frameIdx, "eye_r");
@@ -461,6 +869,52 @@ export function resolveAnchor(
 	return frame[name] ?? REST_ANCHORS[name];
 }
 
+export interface WearablePose {
+	rotate: number;
+	scale: number;
+}
+
+const FACE_RIG_ANCHORS = new Set<AnchorName>([
+	"head",
+	"eye_l",
+	"eye_r",
+	"eyes",
+	"snout",
+	"mouth",
+	"neck"
+]);
+
+// Head/face wearables inherit Rosie's authored face angle and apparent scale.
+// The item-specific RelSpec still owns art size and pivot; this pose transform
+// only makes that tuned item sit on the moving anatomy instead of translating
+// like a rigid sticker. Body, hand, aura, and background slots stay unchanged.
+export function resolveWearablePose(
+	anim: PigAnimationKey,
+	frameIdx: number,
+	anchor: AnchorName
+): WearablePose {
+	if (!FACE_RIG_ANCHORS.has(anchor)) {
+		return { rotate: 0, scale: 1 };
+	}
+	const restLeft = resolveAnchor("idle", 0, "eye_l");
+	const restRight = resolveAnchor("idle", 0, "eye_r");
+	const currentLeft = resolveAnchor(anim, frameIdx, "eye_l");
+	const currentRight = resolveAnchor(anim, frameIdx, "eye_r");
+
+	const restDx = restRight.x - restLeft.x;
+	const restDy = restRight.y - restLeft.y;
+	const currentDx = currentRight.x - currentLeft.x;
+	const currentDy = currentRight.y - currentLeft.y;
+	const restDistance = Math.hypot(restDx, restDy);
+	const currentDistance = Math.hypot(currentDx, currentDy);
+	const restAngle = Math.atan2(restDy, restDx);
+	const currentAngle = Math.atan2(currentDy, currentDx);
+	const rawDegrees = ((currentAngle - restAngle) * 180) / Math.PI;
+	const rotate = ((rawDegrees + 180) % 360) - 180;
+	const scale = Math.max(0.72, Math.min(1.18, currentDistance / restDistance));
+	return { rotate, scale };
+}
+
 // Default anchor per category. Items can override via HatOverlay.anchor.
 export const CATEGORY_ANCHORS: Record<string, AnchorName> = {
 	hat: "head",
@@ -472,7 +926,7 @@ export const CATEGORY_ANCHORS: Record<string, AnchorName> = {
 	cape: "body",
 	held: "hand_r",
 	aura: "body",
-	background: "body",
+	background: "body"
 };
 
 // Pivot point per category — fraction (0..1) of the item's bounding box
@@ -494,7 +948,7 @@ export const CATEGORY_PIVOTS: Record<string, { x: number; y: number }> = {
 	cape: { x: 0.5, y: 0.0 },
 	held: { x: 0.0, y: 1.0 },
 	aura: { x: 0.5, y: 0.5 },
-	background: { x: 0.5, y: 0.5 },
+	background: { x: 0.5, y: 0.5 }
 };
 
 // Per-category, per-animation positional shift applied AFTER the
@@ -522,7 +976,7 @@ export function frameDelta(
 	anim: PigAnimationKey,
 	frameIdx: number,
 	category: string | null,
-	itemAnchor?: AnchorName,
+	itemAnchor?: AnchorName
 ): { dx: number; dy: number } {
 	const name = itemAnchor ?? (category ? CATEGORY_ANCHORS[category] : undefined);
 	if (!name) return { dx: 0, dy: 0 };
@@ -535,7 +989,7 @@ export const DEFAULT_HAT_OVERLAY: HatOverlay = {
 	bottom: 245,
 	left: 88,
 	width: 125,
-	height: 125,
+	height: 125
 };
 
 // Position presets per category, on the 300x300 pig card.
@@ -562,7 +1016,7 @@ export const CATEGORY_OVERLAYS: Record<string, HatOverlay> = {
 	// Country flag — a tilted sticker tucked into the bottom-right corner
 	// of the card (no CATEGORY_ANCHORS entry, so it stays fixed rather than
 	// tracking the pig). Iterate placement/angle here.
-	flag:       { bottom: 10,  left: 188, width: 104, height: 88, rotate: -12 },
+	flag: { bottom: 10, left: 188, width: 104, height: 88, rotate: -12 }
 };
 
 export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
@@ -581,6 +1035,8 @@ export interface HatRow {
 	// (daily_shop/buy_hat) is the source of truth; the client also hides them
 	// from Browse. Optional so pre-20260675 servers (no column) still parse.
 	pass_exclusive?: boolean;
+	// Granted by Wallow rank, never sold. Used by the Closet's prestige filter.
+	prestige_exclusive?: boolean;
 	// True for Slop Club members-only cosmetics (20260688). Server gates the
 	// buy; the client groups them into the shop's collapsible Members section
 	// and shows a lock on the card for non-members. Optional so pre-migration
@@ -593,5 +1049,5 @@ export const RARITY_COLORS: Record<string, string> = {
 	uncommon: "#5BC97D",
 	rare: "#5C9DFF",
 	epic: "#9078FF",
-	legendary: "#F5C44A",
+	legendary: "#F5C44A"
 };

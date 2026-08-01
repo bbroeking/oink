@@ -1,163 +1,222 @@
-# Rigging Rosie in Rive
+# Rive homepage pig authoring guide
 
-End-to-end guide: take the flat sprite sheet → cut layered parts → rig + animate in Rive editor → export `.riv` → drop into the RN app.
+This is the editor-side contract for the homepage Rive decision spike. The
+current implementation plan is
+`docs/design/rive-homepage-implementation-plan-2026-07.md`.
 
----
+## Non-negotiable result
 
-## 1. Cut the pig into parts (Photoshop / Pixelmator / Affinity / Procreate)
+One skeleton and one animation graph drive every pig. A skin may change pixels,
+but it may not change the artboard, bone positions, mesh topology, vertex
+weights, animation timelines, or state-machine transitions.
 
-Pick **one** clean reference frame from the sheet — `idle_1` is best. Open it as your master file and split into the layers below. Each layer should be a transparent PNG with **as little extra empty space as possible** — Rive uses each part's own bounding box as its origin.
+The earlier exploded-parts approach failed the Rosie silhouette review. Do not
+import those cut parts into the active rig. Use the approved full idle images as
+deformable meshes so the neutral pose remains the current homepage artwork.
 
-| Layer name        | Notes                                                                           |
-| ----------------- | ------------------------------------------------------------------------------- |
-| `body`            | Torso + belly, but **not** the head. The body bone will be the parent.          |
-| `head`            | Just the head shape, no ears. Ears go on top as separate bones for ear-wiggle.  |
-| `ear_l`, `ear_r`  | Each ear separately so they can wiggle/flop independently.                      |
-| `eye_l`, `eye_r`  | Each eye separately if you want blink animation; otherwise one combined `eyes`. |
-| `snout`           | The pink snout disk + nostrils. Sits on top of the head.                        |
-| `mouth`           | Mouth/smile shape. Separate so it can swap (open mouth for surprise/cheer).     |
-| `cheek_l`, `cheek_r` | Optional, for the blush tints. Keeps you flexible later.                     |
-| `leg_fl`, `leg_fr`, `leg_bl`, `leg_br` | Front-left, front-right, back-left, back-right.       |
-| `tail`            | Curly tail behind the body.                                                     |
-| `arm_l`, `arm_r`  | Only needed if you plan to do `wave` / `clap` / `arms_up`. Optional otherwise.  |
+## Prepared inputs
 
-**Pivot guidance** (where the part rotates around — Rive lets you set this in the editor):
+Run:
 
-- `head` → **bottom-center** of the head silhouette (where it meets the neck).
-- `ear_*` → **base of the ear** where it meets the head.
-- `arm_*` → **shoulder joint**.
-- `leg_*` → **hip joint**.
-- `tail` → **base where it attaches to the body**.
-
-Rule of thumb: pivot at the joint, not the center of the part.
-
----
-
-## 2. Skeleton plan (in Rive editor at [rive.app](https://rive.app))
-
-Rive is free for indie use. Sign up, create a new file, set canvas to **300 × 300** (matches our `<SpritePig>` render size).
-
-Bone hierarchy:
-
+```sh
+scripts/rive/build-prototype-mesh-textures.sh
 ```
+
+The outputs are:
+
+```text
+assets/rive/prototype/textures/
+├── rosie.png
+├── copper.png
+├── pepper.png
+├── bandit.png
+├── pickles.png
+└── biscuit.png
+```
+
+Every file is 370×383 and has Rosie's exact alpha field. The build script
+verifies zero alpha differences across all six outputs. Coat colors, facial
+paint, and markings are contained inside the texture, so they deform with the
+mesh instead of drifting as independent overlays.
+
+The machine-readable hierarchy and indexes live in
+`assets/rive/prototype/rig-manifest.json`.
+
+## Current editor prototype
+
+Verified in the Rive editor on 2026-07-27:
+
+- `pig_skin` is a Referenced image asset with `Prevent Export` behavior.
+- One `pig_mesh` is bound to `body`, `head`, and
+  `leg_front_screen_right`; Auto Weights has been applied once.
+- `slot_head` and `slot_face` are direct children of `head`.
+- `slot_held` is Transform-constrained in World space to
+  `leg_front_screen_right`. The real garden-trowel image follows it through
+  separate Translation and Rotation constraints, inheriting the foreleg at
+  wave frame 25 and the shared root at jump frame 20. The temporary Rectangle
+  proxy has been removed.
+- The real party-hat image is fitted at 35% scale and follows `slot_head`
+  through separate World-space Translation and Rotation constraints. This
+  avoids copying the slot's scale; it remains registered at jump frame 20.
+- The real pixel-glasses image is fitted at 35% scale and follows `slot_face`
+  through the same Translation-and-Rotation pattern. It remains registered at
+  jump frame 20.
+- `idle`, `jump`, and `wave` contain only controlled numeric keys:
+  - idle translates the shared body root by two points and back;
+  - jump translates that same root through a 40-frame arc;
+  - wave rotates only `leg_front_screen_right` between its measured
+    `145.814°` rest angle and a restrained `116°` extreme.
+- The `pig` state machine contains `idle`, `jump`, and `wave`, with working
+  `jump` and `wave` triggers and timed returns to idle.
+- Compatibility Number inputs exist for `skin`, `rest`, `equip_hat`,
+  `equip_face`, and `equip_held`.
+- Independent `Hat Equip`, `Face Equip`, and `Held Equip` state-machine layers
+  use 0 ms transitions: `0 = hidden`, `1 = visible`, and Entry routes to hidden.
+- Selector playback passes no equipment, every single representative item, and
+  all three equipped together. All three remain attached at the jump apex.
+
+All timelines use a 60 fps timebase: idle is 60 frames, jump is 40 frames, and
+wave is 45 frames. An earlier numeric pass was interpreted as seconds; changing
+the durations to their frame-based values rescaled the keys into the verified
+positions above. The state-machine return times already match the corrected
+one-shot durations.
+
+The editor preview has proven that both one-shots enter and return to idle. The
+extreme idle, jump, and wave poses retain the neutral silhouette, painted
+details stay inside the shared mesh, and the visible held-item proxy follows
+the foreleg without screen-space drift.
+
+The visible selector timelines must use 100% opacity. During authoring they were
+briefly keyed at 10,000%, which rendered white silhouettes; this has been
+corrected for the hat, face, and held item.
+
+Still incomplete:
+
+- The current Rive account shows `Upgrade` for `.riv` export, so no local
+  production asset exists and native six-skin/runtime validation cannot run.
+- Wave attachment passes at the authored frame-25 extreme, but should be
+  repeated through the exported state machine before adoption.
+
+The rejected Rive Agent transform pass produced invalid absolute values
+including a `2005.352°` leg rotation. Those keys were removed. Do not ask the
+Agent to author transform keys; use measured absolute values in the Inspector.
+
+## File and artboard
+
+1. Create one file named `Oink homepage pig`.
+2. Create one 300×300 artboard named `pig`.
+3. Import Rosie, rename the image asset `pig_skin`, and mark it Referenced.
+4. Center Rosie in the artboard and fit her to the same visual footprint as the
+   current 300-point `SpritePig`.
+5. Add a custom image mesh to Rosie. Preserve the outside contour and add enough
+   internal vertices to isolate the head, body, ears, visible legs, and tail.
+
+## Shared skeleton
+
+Use this hierarchy:
+
+```text
 root
-└── body                    (the body PNG is the visual for this bone)
-    ├── head                (translates up/down for breathing, jump)
-    │   ├── ear_l
-    │   ├── ear_r
-    │   ├── eye_l
-    │   ├── eye_r
-    │   ├── snout
-    │   │   └── slot:hat         ← cosmetic items attach here
-    │   └── slot:glasses          ← items
-    ├── leg_fl
-    ├── leg_fr
-    ├── leg_bl
-    ├── leg_br
-    ├── tail
-    ├── slot:scarf
-    ├── slot:cape (behind body in z-order)
-    └── slot:held (in front, attached to a forward-facing arm)
+└── body
+    ├── head
+    │   ├── ear_screen_left
+    │   ├── ear_screen_right
+    │   ├── slot_head
+    │   └── slot_face
+    ├── leg_front_screen_left
+    ├── leg_front_screen_right
+    │   └── slot_held
+    ├── leg_rear_screen_left
+    └── tail
 ```
 
-**Slots** in Rive are achieved by adding **empty target nodes** at the right anchor positions. We treat them like attachment points — at runtime we'll position the item PNG onto the slot's world transform.
+Bind the single `pig_skin` mesh to these bones and weight transitions broadly
+enough to avoid creases in the painted outline. Do not duplicate the mesh for
+the other coats. `rive-react-native@9.8.3` supplies Rosie, Copper, Pepper,
+Bandit, Pickles, or Biscuit through its `referencedAssets` prop when the Rive
+view mounts. Since every prepared texture has the same dimensions and alpha
+field, all six pigs literally share the same vertices, triangles, bindings, and
+weights.
 
----
+Retain the numeric `skin` state-machine input for the renderer contract, but the
+prototype's visible coat comes from the referenced `pig_skin` asset. Remounting
+on pig selection is acceptable because players change their active pig
+infrequently. The React renderer must replay the numeric skin, all three
+equipment inputs, and the current animation after every native `onPlay`; the
+remounted native instance has no state from the previous coat.
 
-## 3. Animate
+## Prototype animation set
 
-Re-create each animation with bone keyframes. Reference the original sprite sheet for timing — the symbol legend already calls out **highest point**, **lowest point**, and **key pose** frames, so use those as your keyframes and let Rive interpolate between.
+Author these once on the shared bones:
 
-| State machine state | Source on sheet      | Suggested duration |
-| ------------------- | -------------------- | ------------------ |
-| `idle`              | IDLE 12 frames       | 1.0s loop          |
-| `walk`              | WALK 12 frames       | 0.8s loop          |
-| `run`               | RUN 12 frames        | 0.5s loop          |
-| `jump`              | JUMP 12 frames       | 0.6s one-shot      |
-| `fall`              | FALL 8 frames        | 0.5s loop          |
-| `roll`              | ROLL FORWARD         | 0.6s one-shot      |
-| `attack`            | ATTACK 10 frames     | 0.4s one-shot      |
-| `happy`             | HAPPY/CHEER 8 frames | 0.6s one-shot      |
-| `hurt`              | HURT 6 frames        | 0.4s one-shot      |
-| `sleep`             | SLEEP 8 frames       | 1.5s loop          |
-| `wave`              | WAVE 8 frames        | 0.7s one-shot      |
-| `clap`              | CLAP 8 frames        | 0.5s loop          |
-| `surprise`          | SURPRISE 6 frames    | 0.4s one-shot      |
+| Animation | Behavior | Duration |
+|---|---|---:|
+| `idle` | subtle breathing | 1000 ms loop |
+| `jump` | anticipation, lift, settle | 667 ms one-shot |
+| `wave` | front leg raises and waves, then settles | 750 ms one-shot |
 
-`idle` is the default. Everything else is reachable via state-machine **trigger inputs**.
+The durations match the renderer-neutral contract closely enough for the first
+comparison. Do not animate skin mesh objects directly; animate shared bones.
 
----
+## State machine
 
-## 4. State machine schema (this is what the RN app talks to)
+Create one state machine named `pig` with legacy-compatible inputs:
 
-In Rive, build a state machine called `pig` with these inputs:
+| Input | Type | Meaning |
+|---|---|---|
+| `skin` | Number | Compatibility input: `0` Rosie, `1` Copper, `2` Pepper, `3` Bandit, `4` Pickles, `5` Biscuit. The prototype coat is supplied through `pig_skin`. |
+| `rest` | Number | `0` idle, `1` sad, `2` tired |
+| `walk` | Trigger | play `walk`, then return to selected rest state |
+| `jump` | Trigger | play `jump`, then return to `idle` |
+| `happy` | Trigger | play `happy`, then return to selected rest state |
+| `surprise` | Trigger | play `surprise`, then return to selected rest state |
+| `wave` | Trigger | play `wave`, then return to `idle` |
+| `equip_hat` | Number | `0` none, `1` party hat |
+| `equip_face` | Number | `0` none, `1` pixel glasses |
+| `equip_held` | Number | `0` none, `1` garden trowel |
 
-| Input name        | Type    | Used by RN to                      |
-| ----------------- | ------- | ---------------------------------- |
-| `tickle`          | Trigger | Plays a random reaction (jump/happy/wave) |
-| `sad`             | Boolean | When `true`, idle morphs to sad pose      |
-| `arms_up`         | Trigger | The 6-7 celebration                       |
-| `equip_hat`       | Number  | Index into the active-hat artwork list    |
-| `equip_glasses`   | Number  |                                          |
-| `equip_scarf`     | Number  |                                          |
+`idle` is the default state. The production animation set is deliberately not
+authored until this vertical slice passes.
 
-For the cosmetic inputs we'll use Rive's **Solo** pattern: each cosmetic slot has N nested artboards (or visibility-toggled groups), one per item. The number input picks which one is visible. `0` = none.
+The exact code-side input and skin maps live in
+`components/ui/rivePigContract.ts`; treat that module and this table as one
+contract and update both together.
 
-Alternative (cleaner but more setup): use **dynamic loading** of separate item .riv files and position them at the slot world-transform. We'll start with the Solo pattern because it's all in one file and ships with the pig.
+## Cosmetics
 
----
+Cosmetics must be inside Rive. The React Native runtime does not expose live
+bone world transforms, so external `<Image>` layers cannot reliably follow
+interpolated animation.
 
-## 5. Export
+Import only these first:
 
-In Rive editor: **File → Export → .riv (binary)**. Save as `assets/rive/pig.riv`. The runtime will load this directly.
+- `assets/images/hats/party.png` under `slot_head`;
+- `assets/images/hats/pixel_glasses.png` under `slot_face`;
+- `assets/images/hats/garden_trowel_held.png` under `slot_held`.
 
----
+Each slot uses a Solo with `0 = none` and `1 = item`. Check attachment at the
+extreme pose of both `jump` and `wave`.
 
-## 6. RN side (we handle this once the .riv lands)
+## Export
 
-```ts
-import Rive, { RiveRef, Fit, Alignment } from "rive-react-native";
+Export the binary as:
 
-<Rive
-  resourceName="pig"          // looks for assets/rive/pig.riv
-  stateMachineName="pig"
-  artboardName="Rosie"
-  fit={Fit.Contain}
-  alignment={Alignment.BottomCenter}
-  ref={riveRef}
-  autoplay
-/>
+```text
+assets/rive/pig.riv
 ```
 
-To trigger an animation:
-```ts
-riveRef.current?.fireState("pig", "tickle");
+Then run:
+
+```sh
+npm run verify:rive-pig
 ```
 
-To swap a hat:
-```ts
-riveRef.current?.setInputState("pig", "equip_hat", 3); // 3 = the third hat
-```
+This is a static preflight only. It rejects a missing or malformed binary,
+missing authored contract names, skin-map drift, wrong texture dimensions, and
+alpha-geometry differences. Passing it does not satisfy the simulator/device
+motion and attachment gate.
 
----
-
-## 7. Rough timeline (for one person, no prior Rive experience)
-
-| Step                                     | Time      |
-| ---------------------------------------- | --------- |
-| Cut pig into 12-15 layered PNGs          | 1–2 h     |
-| Import + build skeleton in Rive          | 2–3 h     |
-| Animate `idle` (the easiest, sets style) | 1–2 h     |
-| Each subsequent animation                | 1–2 h     |
-| 13 animations × 1.5 h avg                | ~20 h     |
-| State machine + slot wiring              | 2–3 h     |
-| Per-item Rive variants for hats etc.     | ~10 min/item × 100 = ~17 h |
-| RN integration (we do this)              | ~3 h      |
-
-**Realistic delivery: 1–2 working weeks of focused effort.**
-
----
-
-## What we ship while you're rigging
-
-The current PNG-frame `<SpritePig>` keeps working. We're parking the Rive runtime install + a stub `<RivePig>` component in the codebase but **not yet swapping** anything in `SwipeElement.tsx`. Once you have a `pig.riv` in `assets/rive/`, the swap is one import change away.
+Do not replace the current homepage renderer after export. The app first loads
+the file through the development audit route, maps the state-machine contract,
+and runs the simulator/device comparison. `SpritePig` remains the default and
+fallback until the full gate passes.

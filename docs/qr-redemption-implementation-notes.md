@@ -63,7 +63,18 @@ required sections; appended continuously as the work lands.
 
 ## Heads-up
 
-- Migration is AUTHORED, NOT PUSHED (per constraint + CLAUDE.md).
+- 2026-07-23 — `20260776000000_cosmetic_owner_caps.sql` is deployed to
+  production. It caps both existing Crown/Cap campaigns to 10 uses and adds a
+  server-owned lifetime issuance cap of 10 owners per cosmetic. A row-locked
+  `user_hats` trigger enforces the cap across every grant path; `redeem_code`
+  checks it before consuming a claim and returns `item_sold_out`. Existing
+  ownership is counted and never revoked if circulation already exceeded ten.
+- 2026-07-23 — `20260777000000_extend_release_party_crown.sql` is deployed to
+  production. It extends only `PIG-GXF8-ST7N` through the end of September 1,
+  2026 Eastern (`2026-09-02 00:00:00-04`), leaving future Crown campaigns
+  untouched.
+- 2026-07-23 — `supabase db push --dry-run` reports the remote database is
+  current; no migration push was required in the release pass.
 - **Harness note:** `scripts/db-harness/run.sh` CANNOT run to completion on `main`
   right now — a PRE-EXISTING failure at `22_uniques_smoke.sql` (the CHAIN in
   run.sh stops at 20260725, so the `unique_id` key from 20260728 is absent; the
@@ -88,7 +99,8 @@ required sections; appended continuously as the work lands.
   ALL app.json / infoPlist requirements are in the final report for manual apply.
 - The shop entry link ships only in the SAME native build as expo-camera (§5/§6):
   the `/scan-code` route imports `CameraView`, which needs the native module present.
-- Deep-link `/redeem/*` requires the landing owner to add `"/redeem/*"` to AASA
-  `paths` (currently `["/i/*","/r/*"]`) — reported, not done here (landing/ forbidden).
+- Deep-link `/redeem/*` is deployed on `ticklethepig.com`. The live fallback
+  route returns the App Store handoff and code-entry instructions, and the live
+  AASA file includes `"/redeem/*"` with `application/json`.
 - `scripts/mint-redemption-codes.mjs` requires `qrcode` (dev dep) to emit PNGs;
   added to package.json.

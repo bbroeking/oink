@@ -1,6 +1,6 @@
 // The Field Guide (spec 16) — covers the page-id whitelist, the pure
 // unlock-state derivation (local ∪ server, whitelist-filtered, shelf order),
-// the client observe/reveal-queue lifecycle (idempotent, fail-soft, FIFO), the
+// the client observe lifecycle (idempotent and fail-soft), the
 // config-fed value numbers (sanitizer + propagation + defaults), and — the
 // founder-critical one — the feeding-windows value line RECOMPUTING when the
 // schedule config shifts. The util lazy-requires AsyncStorage + rpc, mocked at
@@ -23,9 +23,7 @@ import {
 	isFieldGuidePageId,
 	deriveUnlockedPages,
 	observeFieldGuide,
-	peekPendingReveal,
-	dequeueReveal,
-	subscribeFieldGuideReveals,
+	observeSnouts,
 	unlockedPages,
 	resetFieldGuideForTests,
 } from "../utils/fieldGuide";
@@ -87,18 +85,17 @@ describe("deriveUnlockedPages", () => {
 	});
 });
 
-describe("observe + reveal queue", () => {
-	it("first observe unlocks, enqueues a reveal, and fires the RPC once", () => {
+describe("observe", () => {
+	it("first observe unlocks quietly and fires the RPC once", () => {
 		observeFieldGuide("truffle");
 		expect(unlockedPages()).toEqual(["truffle"]);
-		expect(peekPendingReveal()).toBe("truffle");
 		expect(mockRpc).toHaveBeenCalledWith("unlock_field_guide_page", {
 			p_page: "truffle",
 		});
 		expect(mockRpc).toHaveBeenCalledTimes(1);
 	});
 
-	it("a repeat observe is a no-op — no second RPC, no second enqueue", () => {
+	it("a repeat observe is a no-op — no second RPC", () => {
 		observeFieldGuide("snouts");
 		observeFieldGuide("snouts");
 		expect(mockRpc).toHaveBeenCalledTimes(1);
@@ -108,27 +105,29 @@ describe("observe + reveal queue", () => {
 	it("ignores an off-whitelist id entirely", () => {
 		observeFieldGuide("echo" as never);
 		expect(unlockedPages()).toEqual([]);
-		expect(peekPendingReveal()).toBeNull();
 		expect(mockRpc).not.toHaveBeenCalled();
 	});
 
-	it("presents FIFO — dequeue advances to the next queued page", () => {
-		observeFieldGuide("truffle");
-		observeFieldGuide("exchange");
-		expect(peekPendingReveal()).toBe("truffle");
-		dequeueReveal("truffle");
-		expect(peekPendingReveal()).toBe("exchange");
-		dequeueReveal("exchange");
-		expect(peekPendingReveal()).toBeNull();
+	it("unlocks Snouts quietly for a veteran", async () => {
+		await observeSnouts(101);
+		expect(unlockedPages()).toEqual(["snouts"]);
 	});
 
-	it("notifies subscribers on enqueue and dequeue", () => {
-		const seen = jest.fn();
-		const unsub = subscribeFieldGuideReveals(seen);
-		observeFieldGuide("trough");
-		dequeueReveal("trough");
-		expect(seen).toHaveBeenCalledTimes(2);
-		unsub();
+	it("unlocks Snouts quietly for a new player", async () => {
+		await observeSnouts(100);
+		expect(unlockedPages()).toEqual(["snouts"]);
+	});
+
+	it("does not re-present Snouts after a cold-start cache hydration", async () => {
+		mockGetItem.mockResolvedValueOnce(JSON.stringify(["snouts"]));
+		await observeSnouts(1);
+		expect(unlockedPages()).toEqual(["snouts"]);
+	});
+
+	it("does not fetch home stats when the lifetime total is unknown", async () => {
+		await observeSnouts(null);
+		expect(unlockedPages()).toEqual(["snouts"]);
+		expect(mockRpc).not.toHaveBeenCalledWith("home_stats");
 	});
 });
 

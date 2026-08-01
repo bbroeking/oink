@@ -67,3 +67,6 @@ tmp/
 # build artifacts + personal agent config
 *.aab
 .claude/settings.local.json
+
+# Local quality-loop reports
+.quality/

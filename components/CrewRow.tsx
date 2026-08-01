@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
 	rowSub: { ...TYPE.kicker, color: WHIMSY.mute, marginTop: 2 },
 	rowRight: { alignItems: "flex-end", gap: SPACE.xs + 1 },
 	accent: { color: WHIMSY.accent },
-	disc: { ...TYPE.label, color: WHIMSY.muteSoft },
+	disc: { ...TYPE.label, color: WHIMSY.mute },
 	pill: {
 		backgroundColor: WHIMSY.sun,
 		borderWidth: 2,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
 	},
 	pillDim: { opacity: 0.6 },
 	pillText: { ...TYPE.bodySm, fontFamily: FONTS.display, color: WHIMSY.ink },
-	status: { ...TYPE.kicker, color: WHIMSY.muteSoft },
+	status: { ...TYPE.kicker, color: WHIMSY.mute },
 	statusAccent: { color: WHIMSY.accent },
 	link: { ...TYPE.kicker, color: WHIMSY.mute, textDecorationLine: "underline" },
 	linkPlain: { textDecorationLine: "none" },

@@ -8,10 +8,12 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/utils/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { isPigId, type PigId } from "@/utils/pigs";
 
 export interface LoungePeer {
 	key: string; // user id
 	username: string;
+	pigId: PigId;
 	x: number;
 	y: number;
 	dir: number; // 0=S 1=N 2=E 3=W
@@ -36,7 +38,8 @@ const SHARD = "lounge:1"; // shard picker lands with P2-final
 export function useLoungePeers(
 	uid: string | null,
 	username: string,
-	spawn: { x: number; y: number }
+	spawn: { x: number; y: number },
+	pigId: PigId = "rosie"
 ): LoungeRoom {
 	const [peers, setPeers] = useState<LoungePeer[]>([]);
 	const chanRef = useRef<RealtimeChannel | null>(null);
@@ -57,6 +60,7 @@ export function useLoungePeers(
 		chan.on("presence", { event: "sync" }, () => {
 			const state = chan.presenceState<{
 				username: string;
+				pigId?: string;
 				station?: { id: string; slot: number; since: number } | null;
 			}>();
 			const seen = new Set<string>();
@@ -66,11 +70,13 @@ export function useLoungePeers(
 				const existing = peersRef.current.get(key);
 				if (existing) {
 					existing.station = state[key][0]?.station ?? null;
+					existing.pigId = isPigId(state[key][0]?.pigId) ? state[key][0].pigId : "rosie";
 				}
 				if (!existing) {
 					peersRef.current.set(key, {
 						key,
 						username: state[key][0]?.username ?? "a pig",
+						pigId: isPigId(state[key][0]?.pigId) ? state[key][0].pigId : "rosie",
 						// Spawn where we spawn until their first pos event lands.
 						x: spawn.x,
 						y: spawn.y,
@@ -92,6 +98,7 @@ export function useLoungePeers(
 				x: number;
 				y: number;
 				dir: number;
+				pigId?: string;
 			};
 			if (!p?.key || p.key === uid) return;
 			const peer = peersRef.current.get(p.key);
@@ -99,11 +106,13 @@ export function useLoungePeers(
 				peer.x = p.x;
 				peer.y = p.y;
 				peer.dir = p.dir;
+				if (isPigId(p.pigId)) peer.pigId = p.pigId;
 				peer.movedAt = Date.now();
 			} else {
 				peersRef.current.set(p.key, {
 					key: p.key,
 					username: "a pig",
+					pigId: isPigId(p.pigId) ? p.pigId : "rosie",
 					x: p.x,
 					y: p.y,
 					dir: p.dir,
@@ -125,7 +134,7 @@ export function useLoungePeers(
 
 		chan.subscribe(async (status) => {
 			if (status === "SUBSCRIBED") {
-				await chan.track({ username });
+				await chan.track({ username, pigId });
 			}
 		});
 
@@ -134,24 +143,22 @@ export function useLoungePeers(
 			peersRef.current.clear();
 			supabase.removeChannel(chan);
 		};
-	}, [uid, username, spawn.x, spawn.y]);
+	}, [uid, username, spawn.x, spawn.y, pigId]);
 
 	const sendPos = (x: number, y: number, dir: number) => {
 		chanRef.current
 			?.send({
 				type: "broadcast",
 				event: "pos",
-				payload: { key: uid, x: Math.round(x), y: Math.round(y), dir },
+				payload: { key: uid, x: Math.round(x), y: Math.round(y), dir, pigId },
 			})
 			.catch(() => {});
 	};
 
-	const setStation = (
-		st: { id: string; slot: number; since: number } | null
-	) => {
+	const setStation = (st: { id: string; slot: number; since: number } | null) => {
 		const chan = chanRef.current;
 		if (!chan) return;
-		chan.track({ username, station: st }).catch(() => {});
+		chan.track({ username, pigId, station: st }).catch(() => {});
 	};
 
 	const sendEmote = (i: number) => {

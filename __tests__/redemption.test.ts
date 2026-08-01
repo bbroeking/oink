@@ -7,9 +7,13 @@ import {
 	normalizeRedemptionCode,
 	formatRedemptionCode,
 	parseRedemptionPayload,
+	parseTradingCardPayload,
 	redemptionErrorMessage,
 	REDEMPTION_CODE_PATTERN,
+	TICKLE_THE_PIG_APP_STORE_URL,
 } from "../utils/redemption";
+import fs from "fs";
+import path from "path";
 
 describe("normalizeRedemptionCode", () => {
 	it("uppercases and strips dashes (typed poster form → stored form)", () => {
@@ -90,6 +94,37 @@ describe("REDEMPTION_CODE_PATTERN", () => {
 	});
 });
 
+describe("parseTradingCardPayload", () => {
+	it("classifies the canonical App Store card", () => {
+		expect(parseTradingCardPayload(TICKLE_THE_PIG_APP_STORE_URL)).toEqual({
+			kind: "app_store",
+			url: TICKLE_THE_PIG_APP_STORE_URL,
+		});
+	});
+
+	it("classifies a Golden Ticket URL", () => {
+		expect(
+			parseTradingCardPayload(
+				"https://ticklethepig.com/redeem/PIG-4KF2-9XQM"
+			)
+		).toEqual({ kind: "redemption", code: "PIG4KF29XQM" });
+	});
+
+	it("classifies a typed Golden Ticket", () => {
+		expect(parseTradingCardPayload("pig-4kf2-9xqm")).toEqual({
+			kind: "redemption",
+			code: "PIG4KF29XQM",
+		});
+	});
+
+	it("ignores unrelated URLs and other App Store listings", () => {
+		expect(parseTradingCardPayload("https://example.com/PIG-4KF2-9XQM")).toBeNull();
+		expect(
+			parseTradingCardPayload("https://apps.apple.com/us/app/other/id123")
+		).toBeNull();
+	});
+});
+
 describe("redemptionErrorMessage", () => {
 	it("maps each known refusal reason to distinct copy", () => {
 		const reasons = [
@@ -100,6 +135,7 @@ describe("redemptionErrorMessage", () => {
 			"not_signed_in",
 			"bad_grant",
 			"pouch_full",
+			"item_sold_out",
 		];
 		const msgs = reasons.map(redemptionErrorMessage);
 		expect(new Set(msgs).size).toBe(reasons.length); // all distinct
@@ -111,5 +147,22 @@ describe("redemptionErrorMessage", () => {
 		expect(redemptionErrorMessage("no_data")).toBe(fallback);
 		expect(redemptionErrorMessage(undefined)).toBe(fallback);
 		expect(redemptionErrorMessage("some_new_reason")).toBe(fallback);
+	});
+});
+
+describe("Release Party Crown campaign", () => {
+	it("extends the exact Crown code through the end of September 1", () => {
+		const sql = fs.readFileSync(
+			path.join(
+				__dirname,
+				"..",
+				"supabase",
+				"migrations",
+				"20260777000000_extend_release_party_crown.sql"
+			),
+			"utf8"
+		);
+		expect(sql).toMatch(/code\s*=\s*'PIGGXF8ST7N'/);
+		expect(sql).toMatch(/2026-09-02 00:00:00-04/);
 	});
 });

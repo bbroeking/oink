@@ -1,0 +1,10 @@
+file,slot,title,pattern,bash,guard,flair,qr_kind,qr_target
+01-head-ticket-taker-s-cap.png,HEAD,"Ticket Taker's Cap","ORCHARD SPOT ROSIE",1,3,2,reward,https://ticklethepig.com/redeem/PIG-GXF8-ST7N
+02-head-bog-helmet.png,HEAD,"Bog Helmet","SANDY PATCH ROSIE",1,4,1,reward,https://ticklethepig.com/redeem/PIG-GXF8-ST7N
+03-head-release-party-crown.png,HEAD,"Release Party Crown","CLASSIC ROSIE",2,1,3,reward,https://ticklethepig.com/redeem/PIG-GXF8-ST7N
+04-held-toy-sword.png,HELD,"Toy Sword","ORCHARD SPOT ROSIE",4,1,1,reward,https://ticklethepig.com/redeem/PIG-GXF8-ST7N
+05-held-mud-shovel.png,HELD,"Mud Shovel","CLASSIC ROSIE",3,2,1,reward,https://ticklethepig.com/redeem/PIG-GXF8-ST7N
+06-held-golden-truffle.png,HELD,"Golden Truffle","HALO SPOT ROSIE",1,1,4,reward,https://ticklethepig.com/redeem/PIG-GXF8-ST7N
+07-aura-shadow-aura.png,AURA,"Shadow Aura","MIDNIGHT POINTS ROSIE",3,1,2,reward,https://ticklethepig.com/redeem/PIG-GXF8-ST7N
+08-aura-firefly-aura.png,AURA,"Firefly Aura","CLASSIC ROSIE",1,2,3,reward,https://ticklethepig.com/redeem/PIG-GXF8-ST7N
+09-aura-golden-bog-aura.png,AURA,"Golden Bog Aura","SADDLE STRIPE ROSIE",2,2,2,reward,https://ticklethepig.com/redeem/PIG-GXF8-ST7N

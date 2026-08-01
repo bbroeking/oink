@@ -8,22 +8,23 @@
 // Incoming trade rows are styled as Stockyard pen cards — the theme
 // the retired TickleTradeModal carried. See
 // docs/season-1-social-redesign.md §"The Inbox feed".
-import React, { useCallback, useState } from "react";
-import {
-	View,
-	Text,
-	Image,
-	StyleSheet,
-	Pressable,
-	ScrollView,
-} from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { View, Text, Image, StyleSheet, Pressable, FlatList } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { usePostgresChanges } from "@/hooks/usePostgresChanges";
 import { ActiveEffects } from "./ActiveEffects";
-import { FONTS, WHIMSY, STICKER_SHADOW, SHADOW_SM, RADII, TAB_SAFE, SPACE } from "@/constants/theme";
+import {
+	FONTS,
+	WHIMSY,
+	STICKER_SHADOW,
+	SHADOW_SM,
+	RADII,
+	TAB_SAFE,
+	SPACE
+} from "@/constants/theme";
 import type { TradeRow } from "@/constants/trade_types";
 import { SectionHeader } from "./ui/SectionHeader";
 import { Sticker } from "./ui/Sticker";
@@ -31,6 +32,8 @@ import { Icon } from "./ui/Icon";
 import { Glyph } from "./ui/Glyph";
 import { EmptyState, LoadingBeat } from "./ui/EmptyState";
 import { FRIEND_CAP_LIMIT } from "@/utils/friendships";
+import { BLESSING_META, CURSE_META, type BlessingKind, type CurseKind } from "../utils/rituals";
+import { DigPostcardInbox } from "./DigPostcardInbox";
 
 interface FriendReq {
 	requester_id: string;
@@ -60,6 +63,13 @@ interface AcceptedFriend {
 	updated_at: string;
 }
 
+type PassiveEvent = {
+	id: string;
+	text: string;
+	kind: "answered" | "gifted" | "friended" | "blessed" | "cursed";
+	at: number;
+};
+
 // Inbox copy mirrors what the SENDER saw when they cast the effect
 // (RitualPicker reads ritual.blurb from these same meta tables) +
 // what the RECEIVER sees on the ActiveEffects strip + Hoofprints
@@ -67,13 +77,6 @@ interface AcceptedFriend {
 // flavor-only label map that drifted — the recipient was getting
 // vague poetry while every other surface showed the actual rule
 // the effect was applying. Source of truth: utils/rituals.ts.
-import {
-	BLESSING_META,
-	CURSE_META,
-	type BlessingKind,
-	type CurseKind,
-} from "../utils/rituals";
-
 function blessingDescription(kind: string): string {
 	const m = BLESSING_META[kind as BlessingKind];
 	return m ? `${m.name} — ${m.blurb}` : kind;
@@ -110,26 +113,15 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	const [balance, setBalance] = useState<number | null>(null);
 	// What-happened pagination: newest 10, then "Load more" pages by 10.
 	const [shownCount, setShownCount] = useState(10);
+	const [hasPostcards, setHasPostcards] = useState(false);
 
 	const load = useCallback(async () => {
 		// Trades — one RPC covers incoming / outgoing / answered.
 		const trades = (await rpc<TradeRow[]>("my_tickle_trades")) ?? [];
-		setIncomingTrades(
-			trades.filter((t) => t.status === "pending" && t.target_id === userId)
-		);
-		setOutgoingTrades(
-			trades.filter((t) => t.status === "pending" && t.requester_id === userId)
-		);
-		setAnswered(
-			trades.filter(
-				(t) => t.status === "fulfilled" && t.requester_id === userId
-			)
-		);
-		setGifted(
-			trades.filter(
-				(t) => t.status === "fulfilled" && t.target_id === userId
-			)
-		);
+		setIncomingTrades(trades.filter((t) => t.status === "pending" && t.target_id === userId));
+		setOutgoingTrades(trades.filter((t) => t.status === "pending" && t.requester_id === userId));
+		setAnswered(trades.filter((t) => t.status === "fulfilled" && t.requester_id === userId));
+		setGifted(trades.filter((t) => t.status === "fulfilled" && t.target_id === userId));
 
 		// Incoming friend requests.
 		const { data: incRows } = await supabase
@@ -137,23 +129,19 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			.select("requester_id")
 			.eq("receiver_id", userId)
 			.eq("status", "pending");
-		const incIds = ((incRows ?? []) as { requester_id: string }[]).map(
-			(r) => r.requester_id
-		);
+		const incIds = ((incRows ?? []) as { requester_id: string }[]).map((r) => r.requester_id);
 		if (incIds.length > 0) {
 			const { data: profs } = await supabase
 				.from("profiles")
 				.select("id, username")
 				.in("id", incIds);
 			const byId = new Map(
-				((profs ?? []) as { id: string; username: string | null }[]).map(
-					(p) => [p.id, p.username]
-				)
+				((profs ?? []) as { id: string; username: string | null }[]).map((p) => [p.id, p.username])
 			);
 			setFriendReqs(
 				incIds.map((id) => ({
 					requester_id: id,
-					username: byId.get(id) ?? null,
+					username: byId.get(id) ?? null
 				}))
 			);
 		} else {
@@ -161,9 +149,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		}
 
 		// Blessings / curses received — recent, for the passive band.
-		const hydrate = async (
-			table: "blessings" | "curses"
-		): Promise<RitualRow[]> => {
+		const hydrate = async (table: "blessings" | "curses"): Promise<RitualRow[]> => {
 			const { data } = await supabase
 				.from(table)
 				.select("id, kind, sent_at, sender_id")
@@ -187,15 +173,13 @@ export function Inbox({ userId, onActionableCount }: Props) {
 					rows.map((r) => r.sender_id)
 				);
 			const byId = new Map(
-				((profs ?? []) as { id: string; username: string | null }[]).map(
-					(p) => [p.id, p.username]
-				)
+				((profs ?? []) as { id: string; username: string | null }[]).map((p) => [p.id, p.username])
 			);
 			return rows.map((r) => ({
 				id: r.id,
 				kind: r.kind,
 				sent_at: r.sent_at,
-				from_username: byId.get(r.sender_id) ?? null,
+				from_username: byId.get(r.sender_id) ?? null
 			}));
 		};
 		setBlessings(await hydrate("blessings"));
@@ -206,7 +190,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		// regen-catchup balance, which is what the player can
 		// actually spend right now.
 		const t = await rpc<{ balance?: number }>("tickle_info", {
-			uid: userId,
+			uid: userId
 		});
 		setBalance(typeof t?.balance === "number" ? t.balance : null);
 
@@ -223,24 +207,31 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			.gt("updated_at", sevenDaysAgo)
 			.order("updated_at", { ascending: false })
 			.limit(10);
-		const accList = (accRows ?? []) as { receiver_id: string; updated_at: string }[];
+		const accList = (accRows ?? []) as {
+			receiver_id: string;
+			updated_at: string;
+		}[];
 		if (accList.length === 0) {
 			setAcceptedFriends([]);
 		} else {
 			const { data: accProfs } = await supabase
 				.from("profiles")
 				.select("id, username")
-				.in("id", accList.map((r) => r.receiver_id));
+				.in(
+					"id",
+					accList.map((r) => r.receiver_id)
+				);
 			const accById = new Map(
-				((accProfs ?? []) as { id: string; username: string | null }[]).map(
-					(p) => [p.id, p.username]
-				)
+				((accProfs ?? []) as { id: string; username: string | null }[]).map((p) => [
+					p.id,
+					p.username
+				])
 			);
 			setAcceptedFriends(
 				accList.map((r) => ({
 					receiver_id: r.receiver_id,
 					username: accById.get(r.receiver_id) ?? null,
-					updated_at: r.updated_at,
+					updated_at: r.updated_at
 				}))
 			);
 		}
@@ -272,35 +263,35 @@ export function Inbox({ userId, onActionableCount }: Props) {
 				event: "INSERT",
 				table: "blessings",
 				filter: `receiver_id=eq.${uid}`,
-				callback: () => load(),
+				callback: () => load()
 			},
 			// Incoming curses → "cursed you" passive row + hoofprints panel
 			{
 				event: "INSERT",
 				table: "curses",
 				filter: `receiver_id=eq.${uid}`,
-				callback: () => load(),
+				callback: () => load()
 			},
 			// New incoming trade request (someone asked you)
 			{
 				event: "INSERT",
 				table: "tickle_trades",
 				filter: `target_id=eq.${uid}`,
-				callback: () => load(),
+				callback: () => load()
 			},
 			// Your outgoing trade was fulfilled / cancelled (target side wrote)
 			{
 				event: "UPDATE",
 				table: "tickle_trades",
 				filter: `requester_id=eq.${uid}`,
-				callback: () => load(),
+				callback: () => load()
 			},
 			// New friend request landed (you're the receiver)
 			{
 				event: "INSERT",
 				table: "friendships",
 				filter: `receiver_id=eq.${uid}`,
-				callback: () => load(),
+				callback: () => load()
 			},
 			// Your outgoing request was accepted (you're the requester,
 			// status flipped pending → accepted)
@@ -308,10 +299,10 @@ export function Inbox({ userId, onActionableCount }: Props) {
 				event: "UPDATE",
 				table: "friendships",
 				filter: `requester_id=eq.${uid}`,
-				callback: () => load(),
-			},
+				callback: () => load()
+			}
 		],
-		deps: [userId, load],
+		deps: [userId, load]
 	});
 
 	// Report the actionable count (friend + trade requests) upward so
@@ -320,12 +311,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 		onActionableCount?.(friendReqs.length + incomingTrades.length);
 	}, [friendReqs.length, incomingTrades.length, onActionableCount]);
 
-	const doRpc = async (
-		rpcName: string,
-		args: Record<string, unknown>,
-		id: string,
-		ok: string
-	) => {
+	const doRpc = async (rpcName: string, args: Record<string, unknown>, id: string, ok: string) => {
 		if (busy) return;
 		setBusy(id);
 		const r = await rpc<{
@@ -340,9 +326,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			// Surface specific reasons — they tell the user what to do
 			// instead of a vague retry.
 			if (r?.reason === "at_cap") {
-				setFeedback(
-					`You're at the ${r.cap ?? FRIEND_CAP_LIMIT}-friend cap. Remove someone first.`
-				);
+				setFeedback(`You're at the ${r.cap ?? FRIEND_CAP_LIMIT}-friend cap. Remove someone first.`);
 			} else if (r?.reason === "target_at_cap") {
 				setFeedback("They're at the friend cap.");
 			} else if (r?.reason === "insufficient_bank") {
@@ -351,9 +335,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 				// number is, and tell the user how short they were.
 				const have = r.balance ?? 0;
 				const need = r.needed ?? 0;
-				setFeedback(
-					`Not enough tickles — you have ${have}, they asked for ${need}.`
-				);
+				setFeedback(`Not enough tickles — you have ${have}, they asked for ${need}.`);
 				load();
 			} else {
 				setFeedback("That didn't take — try again.");
@@ -361,9 +343,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			return;
 		}
 		setFeedback(ok);
-		Haptics.notificationAsync(
-			Haptics.NotificationFeedbackType.Success
-		).catch(() => {});
+		Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 		load();
 	};
 
@@ -399,44 +379,47 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	const actionableCount = friendReqs.length + incomingTrades.length;
 	// What-happened feed: every row names WHO it happened with, carries its
 	// timestamp, and renders newest-first. Pagination below (10 + Load more).
-	const passive = [
+	const passive = useMemo<PassiveEvent[]>(
+		() =>
+			[
 		...answered.map((t) => ({
 			id: `ans-${t.id}`,
 			text: `${t.partner_username ?? "A friend"} answered your trade — +${t.amount * 2} tickles`,
 			kind: "answered" as const,
-			at: Date.parse(t.fulfilled_at ?? t.created_at),
+					at: Date.parse(t.fulfilled_at ?? t.created_at)
 		})),
 		...gifted.map((t) => ({
 			id: `gft-${t.id}`,
 			text: `you gifted ${t.partner_username ?? "a friend"} ${t.amount * 2} tickles`,
 			kind: "gifted" as const,
-			at: Date.parse(t.fulfilled_at ?? t.created_at),
+					at: Date.parse(t.fulfilled_at ?? t.created_at)
 		})),
 		...acceptedFriends.map((a) => ({
 			id: `frd-${a.receiver_id}`,
 			text: `${a.username ?? "A friend"} accepted your request`,
 			kind: "friended" as const,
-			at: Date.parse(a.updated_at),
+					at: Date.parse(a.updated_at)
 		})),
 		...blessings.map((b) => ({
 			id: `bl-${b.id}`,
 			text: `${b.from_username ?? "A friend"} blessed you — ${blessingDescription(b.kind)}`,
 			kind: "blessed" as const,
-			at: Date.parse(b.sent_at),
+					at: Date.parse(b.sent_at)
 		})),
 		...curses.map((c) => ({
 			id: `cu-${c.id}`,
 			text: `${c.from_username ?? "Someone"} cursed you — ${curseDescription(c.kind)}`,
 			kind: "cursed" as const,
-			at: Date.parse(c.sent_at),
-		})),
-	].sort((a, b) => (b.at || 0) - (a.at || 0));
+					at: Date.parse(c.sent_at)
+				}))
+			].sort((a, b) => (b.at || 0) - (a.at || 0)),
+		[answered, gifted, acceptedFriends, blessings, curses]
+	);
 	// "Up to 100 in the past" — start at shownCount (10), Load-more grows it,
 	// capped at FEED_CAP. Display-only depth; no event is ever deleted.
 	const FEED_CAP = 100;
 	const passiveShown = passive.slice(0, shownCount);
-	const hasMorePassive =
-		passiveShown.length < Math.min(passive.length, FEED_CAP);
+	const hasMorePassive = passiveShown.length < Math.min(passive.length, FEED_CAP);
 
 	if (loading) {
 		return (
@@ -447,18 +430,29 @@ export function Inbox({ userId, onActionableCount }: Props) {
 	}
 
 	const empty =
-		actionableCount === 0 && outgoingTrades.length === 0 && passive.length === 0;
+		actionableCount === 0 &&
+		outgoingTrades.length === 0 &&
+		passive.length === 0 &&
+		!hasPostcards;
 
 	return (
-		<ScrollView
+		<FlatList
 			style={styles.scroll}
 			contentContainerStyle={styles.content}
 			showsVerticalScrollIndicator={false}
-		>
+			data={passiveShown}
+			keyExtractor={(event) => event.id}
+			initialNumToRender={10}
+			maxToRenderPerBatch={8}
+			windowSize={7}
+			removeClippedSubviews
+			ListHeaderComponent={
+				<>
 			{!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
 
 			{/* Receiver bless/curse status — what's active on you now. */}
 			<ActiveEffects />
+			<DigPostcardInbox userId={userId} onPresence={setHasPostcards} />
 
 			{empty && (
 				<EmptyState
@@ -472,35 +466,20 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			{outgoingTrades.length > 0 && (
 				<>
 					<View style={styles.headerWrap}>
-						<SectionHeader
-							kicker="out to market"
-							title="Your trades"
-							ruleWidth={88}
-						/>
+								<SectionHeader kicker="out to market" title="Your trades" ruleWidth={88} />
 					</View>
 					{/* Flat paper sticker with dashed-divided rows so the
 					    list reads as one card rather than loose lines
 					    nudging against the screen edge. */}
-					<Sticker
-						color="paper"
-						rotate={-0.3}
-						radius={14}
-						style={styles.flatList}
-					>
+							<Sticker color="paper" rotate={-0.3} radius={14} style={styles.flatList}>
 						{outgoingTrades.map((t, i) => {
 							const last = i === outgoingTrades.length - 1;
 							return (
-								<View
-									key={t.id}
-									style={[styles.marketRow, !last && styles.flatRowDivider]}
-								>
+										<View key={t.id} style={[styles.marketRow, !last && styles.flatRowDivider]}>
 									<Text style={styles.marketText} numberOfLines={1}>
 										{t.partner_username ?? "—"}
 										{t.partner_discriminator && (
-											<Text style={styles.marketDisc}>
-												{" "}
-												#{t.partner_discriminator}
-											</Text>
+													<Text style={styles.marketDisc}> #{t.partner_discriminator}</Text>
 										)}{" "}
 										· you'd pocket {t.amount * 2}
 									</Text>
@@ -509,9 +488,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 										disabled={busy === t.id}
 										hitSlop={8}
 									>
-										<Text style={styles.withdraw}>
-											{busy === t.id ? "…" : "withdraw"}
-										</Text>
+												<Text style={styles.withdraw}>{busy === t.id ? "…" : "withdraw"}</Text>
 									</Pressable>
 								</View>
 							);
@@ -524,11 +501,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			{actionableCount > 0 && (
 				<>
 					<View style={styles.headerWrap}>
-						<SectionHeader
-							kicker="needs you"
-							title="Pen cards"
-							ruleWidth={70}
-						/>
+								<SectionHeader kicker="needs you" title="Pen cards" ruleWidth={70} />
 					</View>
 					{friendReqs.map((r) => (
 						<View key={`fr-${r.requester_id}`} style={styles.card}>
@@ -567,10 +540,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 						// balance is short, so the player isn't tapping a
 						// button just to get a rejection toast back.
 						const canAfford = balance !== null && balance >= t.amount;
-						const shortBy =
-							balance !== null && balance < t.amount
-								? t.amount - balance
-								: 0;
+								const shortBy = balance !== null && balance < t.amount ? t.amount - balance : 0;
 						return (
 							<View key={`tr-${t.id}`} style={styles.pen}>
 								<View style={styles.penHeader}>
@@ -582,22 +552,13 @@ export function Inbox({ userId, onActionableCount }: Props) {
 										<Text style={styles.cardTitle} numberOfLines={1}>
 											{t.partner_username ?? "A friend"}
 											{t.partner_discriminator && (
-												<Text style={styles.cardTitleDisc}>
-													{" "}
-													#{t.partner_discriminator}
-												</Text>
+														<Text style={styles.cardTitleDisc}> #{t.partner_discriminator}</Text>
 											)}
 										</Text>
 										<Text style={styles.cardSub}>
 											asks for {t.amount} tickles
 											{balance !== null && (
-												<Text
-													style={
-														canAfford
-															? styles.balanceHint
-															: styles.balanceHintShort
-													}
-												>
+														<Text style={canAfford ? styles.balanceHint : styles.balanceHintShort}>
 													{"  ·  you have "}
 													{balance}
 												</Text>
@@ -611,15 +572,11 @@ export function Inbox({ userId, onActionableCount }: Props) {
 										disabled={busy === t.id || !canAfford}
 										style={[
 											styles.penBtn,
-											canAfford ? styles.penBtnPrimary : styles.penBtnLocked,
+													canAfford ? styles.penBtnPrimary : styles.penBtnLocked
 										]}
 									>
 										<Text
-											style={
-												canAfford
-													? styles.penBtnPrimaryText
-													: styles.penBtnLockedText
-											}
+													style={canAfford ? styles.penBtnPrimaryText : styles.penBtnLockedText}
 										>
 											{busy === t.id
 												? "…"
@@ -644,94 +601,72 @@ export function Inbox({ userId, onActionableCount }: Props) {
 
 			{/* Recent — passive events */}
 			{passive.length > 0 && (
-				<>
 					<View style={styles.headerWrap}>
-						<SectionHeader
-							kicker="recent"
-							title="What happened"
-							ruleWidth={96}
-						/>
+							<SectionHeader kicker="recent" title="What happened" ruleWidth={96} />
 					</View>
-					{/* Flat paper sticker with dashed-divided rows — the
-					    What-happened list reads as one bordered card,
-					    matching Out-to-market above. */}
-					<Sticker
-						color="paper"
-						rotate={-0.3}
-						radius={14}
-						style={styles.flatList}
-					>
-						{passiveShown.map((p, i) => {
-							// Last row only when nothing follows — keep the divider
-							// when a Load-more footer sits below it.
-							const last =
-								i === passiveShown.length - 1 && !hasMorePassive;
-							// Per-kind avatar bubble: small ink-outlined
-							// circle with a glyph + tinted background.
+					)}
+				</>
+			}
+			renderItem={({ item: event, index }) => {
+				const last = index === passiveShown.length - 1 && !hasMorePassive;
 							const bubbleStyle =
-								p.kind === "answered"
+					event.kind === "answered"
 									? styles.passiveBubbleAnswered
-									: p.kind === "gifted"
+						: event.kind === "gifted"
 										? styles.passiveBubbleGifted
-										: p.kind === "friended"
+							: event.kind === "friended"
 											? styles.passiveBubbleFriended
-											: p.kind === "blessed"
+								: event.kind === "blessed"
 												? styles.passiveBubbleBlessed
 												: styles.passiveBubbleCursed;
-							// ♥ is semantic (love-count) → the heart Glyph. ★ ✦ ☁ +
-							// are decorative print glyphs and stay as Text (dingbat
-							// ruling 2026-07-13).
 							const glyph =
-								p.kind === "gifted"
+					event.kind === "gifted"
 									? "★"
-									: p.kind === "friended"
+						: event.kind === "friended"
 										? "+"
-										: p.kind === "blessed"
+							: event.kind === "blessed"
 											? "✦"
 											: "☁";
-							const glyphStyle =
-								p.kind === "cursed"
-									? styles.passiveBubbleGlyphInverted
-									: styles.passiveBubbleGlyph;
 							return (
 								<View
-									key={p.id}
 									style={[
-										styles.passiveRow,
-										!last && styles.flatRowDivider,
+							styles.passiveCardRow,
+							index === 0 && styles.passiveCardRowFirst,
+							last && styles.passiveCardRowLast,
+							!last && styles.flatRowDivider
 									]}
 								>
 									<View style={[styles.passiveBubble, bubbleStyle]}>
-										{p.kind === "answered" ? (
+							{event.kind === "answered" ? (
 											<Glyph name="heart" size={16} />
 										) : (
-											<Text style={glyphStyle}>{glyph}</Text>
-										)}
-									</View>
-									<Text style={styles.passiveText}>{p.text}</Text>
-									{!!relTime(p.at) && (
-										<Text style={styles.passiveTime}>
-											{relTime(p.at)}
+								<Text
+									style={
+										event.kind === "cursed"
+											? styles.passiveBubbleGlyphInverted
+											: styles.passiveBubbleGlyph
+									}
+								>
+									{glyph}
 										</Text>
 									)}
 								</View>
+						<Text style={styles.passiveText}>{event.text}</Text>
+						{!!relTime(event.at) && <Text style={styles.passiveTime}>{relTime(event.at)}</Text>}
+					</View>
 							);
-						})}
-						{hasMorePassive && (
+			}}
+			ListFooterComponent={
+				hasMorePassive ? (
 							<Pressable
-								style={styles.loadMoreRow}
-								onPress={() =>
-									setShownCount((n) => Math.min(n + 10, FEED_CAP))
-								}
+						style={styles.loadMoreCard}
+						onPress={() => setShownCount((n) => Math.min(n + 10, FEED_CAP))}
 							>
 								<Text style={styles.loadMoreText}>Load more</Text>
 							</Pressable>
-						)}
-					</Sticker>
-
-				</>
-			)}
-		</ScrollView>
+				) : null
+			}
+		/>
 	);
 }
 
@@ -744,13 +679,13 @@ const styles = StyleSheet.create({
 		fontSize: 13,
 		color: WHIMSY.accent,
 		textAlign: "center",
-		paddingVertical: 8,
+		paddingVertical: 8
 	},
 	// Wrap SectionHeaders so they get the same vertical breathing room
 	// the old band labels did.
 	headerWrap: {
 		marginTop: 14,
-		marginBottom: 4,
+		marginBottom: 4
 	},
 	// Decline ghost — small ✕ button next to Accept on friend requests.
 	declineGhost: {
@@ -760,7 +695,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1.5,
 		borderColor: WHIMSY.muteSoft,
 		alignItems: "center",
-		justifyContent: "center",
+		justifyContent: "center"
 	},
 	// Wraps Out-to-market + Recent rows in a single flat sticker.
 	// Padding 0 inside (rows manage their own horizontal padding) so
@@ -774,22 +709,33 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.hand,
 		fontSize: 11,
 		color: WHIMSY.mute,
-		marginLeft: 8,
+		marginLeft: 8
 	},
 	// "Load more" footer row inside the What-happened sticker.
 	loadMoreRow: {
 		paddingVertical: 11,
-		alignItems: "center",
+		alignItems: "center"
 	},
 	loadMoreText: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 12,
-		color: WHIMSY.accent,
+		color: WHIMSY.accent
+	},
+	loadMoreCard: {
+		paddingVertical: 12,
+		alignItems: "center",
+		backgroundColor: WHIMSY.paper,
+		borderWidth: 2,
+		borderTopWidth: 0,
+		borderColor: WHIMSY.ink,
+		borderBottomLeftRadius: 14,
+		borderBottomRightRadius: 14,
+		...SHADOW_SM
 	},
 	flatRowDivider: {
 		borderBottomWidth: 1.5,
 		borderBottomColor: WHIMSY.muteSoft,
-		borderStyle: "dashed",
+		borderStyle: "dashed"
 	},
 	// Out-to-market row — now a flat row inside the flatList Sticker
 	// wrapper, so it drops its old standalone bg + border + margin
@@ -801,9 +747,14 @@ const styles = StyleSheet.create({
 		justifyContent: "space-between",
 		paddingHorizontal: 14,
 		paddingVertical: 12,
-		gap: 8,
+		gap: 8
 	},
-	marketText: { fontFamily: FONTS.hand, fontSize: 13, color: WHIMSY.ink, flex: 1 },
+	marketText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.ink,
+		flex: 1
+	},
 	withdraw: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
 	// actionable card (friend request)
 	card: {
@@ -816,7 +767,7 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		paddingHorizontal: 12,
 		paddingVertical: 10,
-		marginBottom: 6,
+		marginBottom: 6
 	},
 	cardIcon: { width: 30, height: 30, resizeMode: "contain" },
 	cardTitle: { fontFamily: FONTS.whimsy, fontSize: 16, color: WHIMSY.ink },
@@ -826,18 +777,18 @@ const styles = StyleSheet.create({
 	balanceHint: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
-		color: WHIMSY.mute,
+		color: WHIMSY.mute
 	},
 	balanceHintShort: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
-		color: WHIMSY.accent,
+		color: WHIMSY.accent
 	},
 	cardSub: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
 		color: WHIMSY.mute,
-		marginTop: 1,
+		marginTop: 1
 	},
 	primaryBtn: {
 		backgroundColor: WHIMSY.lilac,
@@ -845,7 +796,7 @@ const styles = StyleSheet.create({
 		borderColor: WHIMSY.ink,
 		borderRadius: 10,
 		paddingHorizontal: 12,
-		paddingVertical: 7,
+		paddingVertical: 7
 	},
 	primaryBtnText: { fontFamily: FONTS.whimsy, fontSize: 13, color: WHIMSY.ink },
 	declineText: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },
@@ -862,17 +813,17 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 14,
 		paddingVertical: 12,
 		marginBottom: 8,
-		...STICKER_SHADOW,
+		...STICKER_SHADOW
 	},
 	penHeader: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 10,
+		gap: 10
 	},
 	penActions: {
 		flexDirection: "row",
 		gap: 8,
-		marginTop: 10,
+		marginTop: 10
 	},
 	penBtn: {
 		flex: 1,
@@ -880,25 +831,25 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		borderRadius: RADII.pill,
 		borderWidth: 2,
-		borderColor: WHIMSY.ink,
+		borderColor: WHIMSY.ink
 	},
 	penBtnPrimary: {
 		backgroundColor: WHIMSY.lilacDeep,
-		...SHADOW_SM,
+		...SHADOW_SM
 	},
 	penBtnPrimaryText: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
-		color: WHIMSY.paper,
+		color: WHIMSY.paper
 	},
 	penBtnGhost: {
 		backgroundColor: "transparent",
-		borderColor: WHIMSY.muteSoft,
+		borderColor: WHIMSY.muteSoft
 	},
 	penBtnGhostText: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
-		color: WHIMSY.ink,
+		color: WHIMSY.ink
 	},
 	// "Need N more" — the trade is unaffordable. Muted fill + dashed
 	// ink border so the button reads as locked-but-still-meaningful,
@@ -909,12 +860,12 @@ const styles = StyleSheet.create({
 	// disabled; reads as locked-but-legible, not greyed-out-and-broken.
 	penBtnLocked: {
 		backgroundColor: WHIMSY.cream,
-		borderColor: WHIMSY.mute,
+		borderColor: WHIMSY.mute
 	},
 	penBtnLockedText: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
-		color: WHIMSY.mute,
+		color: WHIMSY.mute
 	},
 	// Recent / passive row — lives inside the flatList Sticker so
 	// horizontal padding mirrors the marketRow above. Bumped from 4
@@ -924,7 +875,31 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: 12,
 		paddingVertical: 10,
+		paddingHorizontal: 14
+	},
+	passiveCardRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+		paddingVertical: 10,
 		paddingHorizontal: 14,
+		backgroundColor: WHIMSY.paper,
+		borderLeftWidth: 2,
+		borderRightWidth: 2,
+		borderColor: WHIMSY.ink
+	},
+	passiveCardRowFirst: {
+		borderTopWidth: 2,
+		borderTopLeftRadius: 14,
+		borderTopRightRadius: 14,
+		paddingTop: 14
+	},
+	passiveCardRowLast: {
+		borderBottomWidth: 2,
+		borderBottomLeftRadius: 14,
+		borderBottomRightRadius: 14,
+		paddingBottom: 14,
+		...SHADOW_SM
 	},
 	// Recent feed bubble — small ink-outlined circle with a glyph,
 	// per kind: rose ♥ for answered, lilac ✦ for blessed, ink ☁ for
@@ -936,7 +911,7 @@ const styles = StyleSheet.create({
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		alignItems: "center",
-		justifyContent: "center",
+		justifyContent: "center"
 	},
 	passiveBubbleAnswered: { backgroundColor: WHIMSY.rose },
 	passiveBubbleGifted:   { backgroundColor: WHIMSY.sun },
@@ -946,29 +921,29 @@ const styles = StyleSheet.create({
 	passiveBubbleGlyph: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
-		color: WHIMSY.ink,
+		color: WHIMSY.ink
 	},
 	passiveBubbleGlyphInverted: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 16,
-		color: WHIMSY.paper,
+		color: WHIMSY.paper
 	},
 	// Discriminator suffix on trade rows + outgoing market rows.
 	marketDisc: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 12,
-		color: WHIMSY.mute,
+		color: WHIMSY.mute
 	},
 	cardTitleDisc: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 11,
-		color: WHIMSY.mute,
+		color: WHIMSY.mute
 	},
 	passiveText: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.ink,
 		flex: 1,
-		lineHeight: 18,
-	},
+		lineHeight: 18
+	}
 });

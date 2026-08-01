@@ -81,7 +81,7 @@ describe("dailyRitual", () => {
 		const r = dailyRitual("bless", d);
 		expect(r.kind).toBe(dailyBlessingKind(d));
 		expect(r.name).toBe(BLESSING_META[r.kind as keyof typeof BLESSING_META].name);
-		expect(r.emoji).toBeTruthy();
+		expect(r.icon).toBeTruthy();
 		expect(r.blurb).toBeTruthy();
 	});
 

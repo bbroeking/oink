@@ -13,12 +13,11 @@ import React from "react";
 import {
 	View,
 	Image,
-	Text,
 	StyleSheet,
 	Animated,
 	Easing,
-	AccessibilityInfo,
 } from "react-native";
+import { Glyph } from "./Glyph";
 import { categoryIcon } from "../../constants/emojiArt";
 import {
 	HAT_IMAGES,
@@ -32,6 +31,7 @@ import {
 	PIG_CANVAS,
 	frameDelta,
 	resolveAnchor,
+	resolveWearablePose,
 } from "../../constants/hats";
 import type {
 	PigAnimationKey,
@@ -40,7 +40,15 @@ import type {
 	RelSpec,
 } from "../../constants/hat_overlay_types";
 import { ITEM_PREBAKED, isPrebaked } from "../../constants/prebaked";
-import { SpritePig, PigAnimation } from "./SpritePig";
+import { PigRenderer, type PigRendererKind } from "./PigRenderer";
+import type { PigAnimation } from "./pigRendererContract";
+import {
+	isRivePigPrototypeAnimation,
+	resolveRivePigEquipment,
+} from "./rivePigContract";
+import type { PigId } from "@/utils/pigs";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
+import { useRivePigRolloutEnabled } from "@/utils/rivePigRollout";
 
 // Auras that ROTATE — radial rays / rings / sunbursts read well spinning. Every
 // OTHER aura gently pulses (breathes) instead: a spinning flame or mist looks
@@ -57,6 +65,25 @@ const AURA_SPIN = new Set<string>([
 	"nebula_aura",
 ]);
 
+type AssetResolver = (
+	source: number,
+) => { width?: number; height?: number } | null | undefined;
+
+export function resolvePigStageAssetAspect(
+	source: number,
+	resolveAssetSource?: AssetResolver,
+): number {
+	if (!resolveAssetSource) return 1;
+
+	try {
+		const resolved = resolveAssetSource(source);
+		if (!resolved?.width || !resolved.height) return 1;
+		return resolved.height / resolved.width;
+	} catch {
+		return 1;
+	}
+}
+
 // Canonical "one equipped cosmetic slot" shape. This is both PigStage's
 // render contract AND the data shape every producer hands it: useHomeStats
 // (Stats.activeHat etc.), BarnVisitModal's join projection, ClosetView's
@@ -72,6 +99,8 @@ export interface EquippedItem {
 }
 
 export interface PigStageProps {
+	// Which pig is under the shared animation/equipment stack.
+	pigId?: PigId;
 	// Pig animation state. Defaults to "idle" — preview mode wants this;
 	// SwipeElement passes whatever it's currently animating to.
 	pigAnimation?: PigAnimation;
@@ -120,6 +149,13 @@ export interface PigStageProps {
 	// Dev prototype control for previewing the Slop Club Rosie wash in memory.
 	// Ordinary callers omit this and keep the global skin-store behavior.
 	skinTintOverride?: string | null;
+
+	// Renderer decision-spike controls. Ordinary callers omit these and stay on
+	// the raster renderer. A Rive source must be supplied explicitly.
+	renderer?: PigRendererKind;
+	riveSource?: number;
+	onRiveReady?: () => void;
+	onRiveError?: (error: Error) => void;
 }
 
 // Compute the per-frame, per-anchor overlay for one equipped item.
@@ -162,16 +198,43 @@ export function resolveSlot(
 			pigFrameIdx,
 			anchorName,
 		);
-		const src = Image.resolveAssetSource(imageSrc);
-		const aspect = src && src.width ? src.height / src.width : 1;
-		const w = relSpec.widthFrac * PIG_CANVAS;
+		const aspect = resolvePigStageAssetAspect(
+			imageSrc,
+			typeof Image.resolveAssetSource === "function"
+				? Image.resolveAssetSource.bind(Image)
+				: undefined,
+		);
+		const pose = resolveWearablePose(
+			pigAnim as PigAnimationKey,
+			pigFrameIdx,
+			anchorName,
+		);
+		const w = relSpec.widthFrac * PIG_CANVAS * pose.scale;
 		const h = w * aspect;
+		// React Native rotates a View around its centre. Compensate the box
+		// position so the item's authored pivot—not its centre—stays exactly on
+		// the anatomy anchor after that rotation.
+		const radians = (pose.rotate * Math.PI) / 180;
+		const pivotX = relSpec.pivot.x * w;
+		const pivotY = relSpec.pivot.y * h;
+		const fromCenterX = pivotX - w / 2;
+		const fromCenterY = pivotY - h / 2;
+		const rotatedPivotX =
+			w / 2 +
+			fromCenterX * Math.cos(radians) -
+			fromCenterY * Math.sin(radians);
+		const rotatedPivotY =
+			h / 2 +
+			fromCenterX * Math.sin(radians) +
+			fromCenterY * Math.cos(radians);
+		const top = a.y - rotatedPivotY;
 		const overlay: HatOverlay = {
-			left: a.x - relSpec.pivot.x * w,
-			bottom: PIG_CANVAS - (a.y - relSpec.pivot.y * h) - h,
+			left: a.x - rotatedPivotX,
+			bottom: PIG_CANVAS - top - h,
 			width: w,
 			height: h,
 			anchor: anchorName,
+			rotate: Math.abs(pose.rotate) > 0.05 ? pose.rotate : undefined,
 			behind: relSpec.behind,
 		};
 		return { itemId, category, emoji, imageSrc, prebaked: null, overlay };
@@ -275,17 +338,10 @@ function ItemOverlay({
 					/>
 				)
 			) : (
-				<Text
-					style={[
-						styles.emojiPlaceholder,
-						{
-							fontSize:
-								Math.min(overlay.width, overlay.height) * 0.7,
-						},
-					]}
-				>
-					✦
-				</Text>
+				<Glyph
+					name="sparkle"
+					size={Math.min(overlay.width, overlay.height) * 0.7}
+				/>
 			)}
 		</View>
 	);
@@ -303,6 +359,7 @@ function ItemOverlay({
 // (rendering them inside the pig card creates a "ghost tile"
 // behind the pig).
 export function PigStage({
+	pigId = "rosie",
 	pigAnimation = "idle",
 	pigFrameIdx = 0,
 	onPigFrame,
@@ -320,7 +377,17 @@ export function PigStage({
 	tints = {},
 	prestigeLevel = 0,
 	skinTintOverride,
+	renderer = "raster",
+	riveSource,
+	onRiveReady,
+	onRiveError,
 }: PigStageProps) {
+	const [riveFailed, setRiveFailed] = React.useState(false);
+	const motionPolicy = useMotionPolicy();
+	const rolloutEnabled = useRivePigRolloutEnabled();
+	React.useEffect(() => {
+		setRiveFailed(false);
+	}, [renderer, riveSource]);
 	// Regeneration power caps at rank two, but the earned aura keeps evolving
 	// through five visual stages so later ranks still look more legendary.
 	const prestigeVisualStage = Math.min(5, Math.max(0, Math.floor(prestigeLevel)));
@@ -334,29 +401,49 @@ export function PigStage({
 	const auraSlot = resolveSlot(equippedAura, pigAnimation, pigFrameIdx, relOverrides);
 	const heldSlot = resolveSlot(equippedHeld, pigAnimation, pigFrameIdx, relOverrides);
 	const flagSlot = resolveSlot(equippedFlag, pigAnimation, pigFrameIdx, relOverrides);
+	const equipment = {
+		headId: equipped?.id,
+		faceId: equippedGlasses?.id,
+		heldId: equippedHeld?.id,
+		maskId: equippedMask?.id,
+		neckId: equippedNeck?.id,
+	};
+	const resolvedRiveEquipment = resolveRivePigEquipment(equipment);
+	const riveActive =
+		renderer === "rive" &&
+		riveSource !== undefined &&
+		rolloutEnabled &&
+		!motionPolicy.reduceMotion &&
+		isRivePigPrototypeAnimation(pigAnimation) &&
+		resolvedRiveEquipment.supported &&
+		main?.prebaked == null &&
+		!pigFrozen &&
+		skinTintOverride == null &&
+		!riveFailed;
 
 	const mainOverlay = main?.overlay ?? null;
 	const mainCategory = main?.category ?? null;
 	const mainIsBehind =
 		mainOverlay?.behind ??
 		(mainCategory ? !!Z_BEHIND_PIG[mainCategory] : false);
-	const showMainOverlay = mainOverlay && !hideAccessory;
+	const showMainOverlay =
+		mainOverlay &&
+		!hideAccessory &&
+		!(riveActive && resolvedRiveEquipment.equipment.hat === 1);
 
 	// Simple aura animations. Radial rays/rings/sunbursts (AURA_SPIN) rotate slowly
 	// around Rosie; everything else — soft glows, elemental, particle clouds —
 	// gently breathes out→in→out (a spinning flame/mist looks wrong). Native-driven
 	// (cheap); the loops only run while an aura is equipped.
 	const hasAura = !!auraSlot?.overlay || prestigeVisualStage > 0;
-	const [reduceMotion, setReduceMotion] = React.useState(false);
 	const auraSpinRaw = React.useRef(new Animated.Value(0)).current;
 	const auraPulseRaw = React.useRef(new Animated.Value(0)).current;
 	React.useEffect(() => {
-		AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => {});
-		const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
-		return () => sub.remove();
-	}, []);
-	React.useEffect(() => {
-		if (!hasAura || reduceMotion) return;
+		if (!hasAura || !motionPolicy.allowDecorativeMotion) {
+			auraSpinRaw.setValue(0);
+			auraPulseRaw.setValue(0);
+			return;
+		}
 		const spin = Animated.loop(
 			Animated.timing(auraSpinRaw, {
 				toValue: 1,
@@ -387,7 +474,12 @@ export function PigStage({
 			spin.stop();
 			pulse.stop();
 		};
-	}, [auraSpinRaw, auraPulseRaw, hasAura, reduceMotion]);
+	}, [
+		auraSpinRaw,
+		auraPulseRaw,
+		hasAura,
+		motionPolicy.allowDecorativeMotion,
+	]);
 	const auraSpin = auraSpinRaw.interpolate({
 		inputRange: [0, 1],
 		outputRange: ["0deg", "360deg"],
@@ -411,7 +503,13 @@ export function PigStage({
 							{
 								opacity: 0.18 + prestigeVisualStage * 0.1,
 								transform: [
-									{ rotate: prestigeVisualStage >= 4 && !reduceMotion ? auraSpin : "0deg" },
+									{
+										rotate:
+											prestigeVisualStage >= 4 &&
+											motionPolicy.allowDecorativeMotion
+												? auraSpin
+												: "0deg",
+									},
 									{ scale: Animated.multiply(auraPulse, 0.82 + prestigeVisualStage * 0.045) },
 								],
 							},
@@ -460,7 +558,8 @@ export function PigStage({
 				/>
 			)}
 			<View style={[styles.pigWrap, { zIndex: 5 }]}>
-				<SpritePig
+				<PigRenderer
+					pigId={pigId}
 					animation={pigAnimation}
 					size={PIG_CANVAS}
 					onFrame={onPigFrame}
@@ -468,6 +567,16 @@ export function PigStage({
 					customFrames={main?.prebaked ?? undefined}
 					frameIdx={pigFrozen ? pigFrameIdx : undefined}
 					skinTintOverride={skinTintOverride}
+					renderer={riveActive ? "rive" : "raster"}
+					riveSource={riveSource}
+					equipment={equipment}
+					rolloutEnabled={rolloutEnabled}
+					reduceMotion={motionPolicy.reduceMotion}
+					onRendererReady={onRiveReady}
+					onRendererError={(error) => {
+						setRiveFailed(true);
+						onRiveError?.(error);
+					}}
 				/>
 			</View>
 			{showMainOverlay && !mainIsBehind && (
@@ -497,7 +606,9 @@ export function PigStage({
 					tint={tintFor(maskSlot.itemId)}
 				/>
 			)}
-			{glassesSlot?.overlay && !hideAccessory && (
+			{glassesSlot?.overlay &&
+				!hideAccessory &&
+				!(riveActive && resolvedRiveEquipment.equipment.face === 1) && (
 				<ItemOverlay
 					overlay={glassesSlot.overlay}
 					imageSrc={glassesSlot.imageSrc}
@@ -506,7 +617,9 @@ export function PigStage({
 					tint={tintFor(glassesSlot.itemId)}
 				/>
 			)}
-			{heldSlot?.overlay && !hideAccessory && (
+			{heldSlot?.overlay &&
+				!hideAccessory &&
+				!(riveActive && resolvedRiveEquipment.equipment.held === 1) && (
 				<ItemOverlay
 					overlay={heldSlot.overlay}
 					imageSrc={heldSlot.imageSrc}
@@ -578,8 +691,5 @@ const styles = StyleSheet.create({
 	fillImage: {
 		width: "100%",
 		height: "100%",
-	},
-	emojiPlaceholder: {
-		textAlign: "center",
 	},
 });

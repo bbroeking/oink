@@ -1,6 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet, ViewStyle, StyleProp } from "react-native";
-import { WHIMSY, FONTS, KICKER_TEXT, TITLE_RULE, TYPE } from "@/constants/theme";
+import {
+	FONTS,
+	KICKER_TEXT,
+	TITLE_RULE,
+	TYPE,
+	UI_COLORS,
+} from "@/constants/theme";
 
 interface Props {
 	/** Hand-script accent line above the title. Prefix "★ " baked in. */
@@ -61,13 +67,13 @@ const styles = StyleSheet.create({
 	},
 	title: {
 		...TYPE.sectionTitle,
-		color: WHIMSY.ink,
+		color: UI_COLORS.textPrimary,
 		flexShrink: 1,
 	},
 	right: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 12,
-		color: WHIMSY.mute,
+		color: UI_COLORS.textSecondary,
 		marginLeft: 8,
 	},
 	rightSlot: {

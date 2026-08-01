@@ -27,6 +27,10 @@ import {
 	type ViewStyle,
 } from "react-native";
 import type { CosmeticFx, SparkleSpec } from "@/constants/cosmeticFx";
+import {
+	startDecorativeLoop,
+	useMotionPolicy,
+} from "@/hooks/useMotionPolicy";
 
 const SPARKLE_SRC = require("../../assets/images/tickle-particles/sparkle.png");
 
@@ -34,6 +38,7 @@ const SPARKLE_SRC = require("../../assets/images/tickle-particles/sparkle.png");
 // value plus a stop fn; callers wire the value into interpolations.
 function usePingPong(period: number, easing = Easing.inOut(Easing.ease)) {
 	const v = useRef(new Animated.Value(0)).current;
+	const motionPolicy = useMotionPolicy();
 	useEffect(() => {
 		const loop = Animated.loop(
 			Animated.sequence([
@@ -51,12 +56,15 @@ function usePingPong(period: number, easing = Easing.inOut(Easing.ease)) {
 				}),
 			])
 		);
-		loop.start();
-		return () => {
-			loop.stop();
-			v.stopAnimation();
-		};
-	}, [v, period, easing]);
+		return startDecorativeLoop({
+			policy: motionPolicy,
+			animation: loop,
+			rest: () => {
+				v.stopAnimation();
+				v.setValue(0);
+			},
+		});
+	}, [v, period, easing, motionPolicy]);
 	return v;
 }
 
@@ -64,7 +72,12 @@ function usePingPong(period: number, easing = Easing.inOut(Easing.ease)) {
 function Sparkle({ spec, box }: { spec: SparkleSpec; box: number }) {
 	const v = useRef(new Animated.Value(0)).current;
 	const size = ((spec.size ?? 14) * box) / 100;
+	const motionPolicy = useMotionPolicy();
 	useEffect(() => {
+		if (!motionPolicy.allowDecorativeMotion) {
+			v.setValue(0);
+			return;
+		}
 		// twinkle: pop up, fade out, rest, repeat — offset by `delay`.
 		const loop = Animated.loop(
 			Animated.sequence([
@@ -89,7 +102,7 @@ function Sparkle({ spec, box }: { spec: SparkleSpec; box: number }) {
 			loop.stop();
 			v.stopAnimation();
 		};
-	}, [v, spec.delay]);
+	}, [motionPolicy.allowDecorativeMotion, v, spec.delay]);
 	return (
 		<Animated.Image
 			source={SPARKLE_SRC}
@@ -142,8 +155,12 @@ export function AnimatedCosmetic({
 	// so the hold dominates and the gleam reads as an occasional catch-light.
 	const shimmerV = useRef(new Animated.Value(0)).current;
 	const shimmerPeriod = fx.shimmer?.period ?? 3400;
+	const motionPolicy = useMotionPolicy();
 	useEffect(() => {
-		if (!fx.shimmer) return;
+		if (!fx.shimmer || !motionPolicy.allowDecorativeMotion) {
+			shimmerV.setValue(0);
+			return;
+		}
 		const loop = Animated.loop(
 			Animated.sequence([
 				Animated.delay(shimmerPeriod * 0.62),
@@ -166,7 +183,12 @@ export function AnimatedCosmetic({
 			loop.stop();
 			shimmerV.stopAnimation();
 		};
-	}, [shimmerV, shimmerPeriod, fx.shimmer]);
+	}, [
+		shimmerV,
+		shimmerPeriod,
+		fx.shimmer,
+		motionPolicy.allowDecorativeMotion,
+	]);
 
 	const translateY = floatV.interpolate({
 		inputRange: [0, 1],

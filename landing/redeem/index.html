@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Golden Ticket — Tickle the Pig</title>
+  <style>
+    :root { color-scheme:light; --ink:#442d38; --pink:#ffd7df; --cream:#fff8e8; --red:#d94a62; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px;
+      color:var(--ink); background:radial-gradient(circle at 50% 10%,#fff 0,var(--cream) 42%,var(--pink) 100%);
+      font-family:ui-rounded,"Arial Rounded MT Bold",system-ui,sans-serif; }
+    main { width:min(440px,100%); padding:32px 26px; text-align:center; background:#fffdf8;
+      border:4px solid var(--ink); border-radius:28px; box-shadow:0 12px 0 rgba(68,45,56,.16); }
+    .pig { width:92px; height:92px; margin:auto; border-radius:24px; }
+    .kicker { margin:20px 0 5px; color:var(--red); font-weight:900; letter-spacing:.16em; text-transform:uppercase; }
+    h1 { margin:0; font-size:clamp(34px,10vw,52px); line-height:.96; }
+    p { font:700 17px/1.45 system-ui,sans-serif; }
+    .code { margin:20px 0; padding:15px 10px; border:3px dashed #e7a331; border-radius:16px;
+      background:#fff5c7; font:900 24px/1 ui-monospace,SFMono-Regular,monospace; letter-spacing:.04em; }
+    a { display:block; margin-top:14px; padding:15px 18px; border-radius:15px; color:white;
+      background:var(--red); font-weight:900; text-decoration:none; box-shadow:0 5px 0 #9d3045; }
+    small { display:block; margin-top:18px; font:600 13px/1.4 system-ui,sans-serif; color:#765d68; }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="pig" src="/rosie.png" alt="Rosie the pig">
+    <div class="kicker">Golden Ticket</div>
+    <h1>Keep this code</h1>
+    <p>If Tickle the Pig is installed, this link opens the claim screen. Otherwise, install the app and enter the code in the Shop scanner.</p>
+    <div class="code" id="code">PIG-XXXX-XXXX</div>
+    <a href="https://apps.apple.com/us/app/tickle-the-pig/id6740339848">Download on the App Store</a>
+    <small>Each account can claim a shared event code once, while supplies last.</small>
+  </main>
+  <script>
+    const match = location.pathname.match(/\/redeem\/([^/?#]+)/i);
+    if (match) document.getElementById("code").textContent = decodeURIComponent(match[1]).toUpperCase();
+  </script>
+</body>
+</html>

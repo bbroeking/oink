@@ -42,8 +42,6 @@ export function ProfileIdentity({
 			<Text
 				style={[styles.name, styles[`${variant}Name`], alignStyle, nameStyle]}
 				numberOfLines={1}
-				adjustsFontSizeToFit
-				minimumFontScale={0.6}
 			>
 				{username ?? "Anonymous"}
 				{discriminator ? <Text style={styles.meta}>#{discriminator}</Text> : null}
@@ -62,11 +60,17 @@ const styles = StyleSheet.create({
 	root: { minWidth: 0 },
 	center: { alignItems: "center", textAlign: "center" },
 	name: { color: WHIMSY.ink },
-	rowName: { fontFamily: FONTS.whimsy, fontSize: 15, lineHeight: 18 },
+	rowName: { ...TYPE.cardTitle },
 	heroName: { ...TYPE.sectionTitle },
 	profileName: { fontFamily: FONTS.whimsy, fontSize: 24, lineHeight: 27 },
 	title: { fontFamily: FONTS.hand, color: WHIMSY.accent },
-	rowTitle: { fontSize: 12, lineHeight: 15 },
+	rowTitle: {
+		...TYPE.kicker,
+		fontSize: 11,
+		lineHeight: 14,
+		color: WHIMSY.mute,
+		textTransform: "lowercase",
+	},
 	heroTitle: { fontSize: 14, lineHeight: 17 },
 	profileTitle: { fontSize: 15, lineHeight: 18 },
 	meta: { fontFamily: FONTS.hand, fontSize: 12, color: WHIMSY.mute },

@@ -9,7 +9,13 @@
 // the N/E/W strips are sliced. Realtime presence (P2) and emotes (P3) layer
 // onto the same shared-value state.
 import React, { useEffect, useRef, useState } from "react";
-import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+	Pressable,
+	StyleSheet,
+	Text,
+	View,
+	useWindowDimensions,
+} from "react-native";
 import {
 	Canvas,
 	Group,
@@ -18,11 +24,7 @@ import {
 	useFont,
 	useImage,
 } from "@shopify/react-native-skia";
-import {
-	Gesture,
-	GestureDetector,
-	GestureHandlerRootView,
-} from "react-native-gesture-handler";
+import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import {
 	runOnJS,
 	useDerivedValue,
@@ -30,14 +32,16 @@ import {
 	useSharedValue,
 	withTiming,
 } from "react-native-reanimated";
-import { Stack, router } from "expo-router";
+import { Redirect, Stack, router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "@/utils/supabase";
 import { useLoungePeers } from "@/hooks/useLoungePeers";
-import { Icon } from "@/components/ui/Icon";
+import { IconButton } from "@/components/ui/IconButton";
 import { Glyph, glyphSource, type GlyphName } from "@/components/ui/Glyph";
-import { FONTS, WHIMSY } from "@/constants/theme";
+import { COLORS, FONTS, WHIMSY } from "@/constants/theme";
+import { PIG_LOUNGE_FRAMES } from "@/constants/pigFrames.generated";
+import { isPigId, type PigId } from "@/utils/pigs";
 
-const { width: SW, height: SH } = Dimensions.get("window");
 // lounge_farm.png native size drawn at 1:2 (432×910 pt world) — generated
 // farm playfield (fence border, mud wallow, barn, trough). The fence is the
 // walkable border: walk targets clamp inside FENCE_INSET.
@@ -57,6 +61,47 @@ const SIT_MS = 320;
 
 type SeesawStation = { id: "seesaw"; slot: number; since: number };
 
+function usePigLoungeImages(pigId: PigId) {
+	const frames = PIG_LOUNGE_FRAMES[pigId];
+	const dirs = [
+		[
+			useImage(frames.walk_s_1),
+			useImage(frames.walk_s_2),
+			useImage(frames.walk_s_3),
+			useImage(frames.walk_s_4),
+		],
+		[
+			useImage(frames.walk_n_1),
+			useImage(frames.walk_n_2),
+			useImage(frames.walk_n_3),
+			useImage(frames.walk_n_4),
+		],
+		[
+			useImage(frames.walk_e_1),
+			useImage(frames.walk_e_2),
+			useImage(frames.walk_e_3),
+			useImage(frames.walk_e_4),
+		],
+		[
+			useImage(frames.walk_w_1),
+			useImage(frames.walk_w_2),
+			useImage(frames.walk_w_3),
+			useImage(frames.walk_w_4),
+		],
+	];
+	return {
+		dirs,
+		idle: [
+			useImage(frames.idle_s_1),
+			useImage(frames.idle_s_2),
+			useImage(frames.idle_s_3),
+			useImage(frames.idle_s_4),
+		],
+		sitE: useImage(frames.sit_e),
+		sitW: useImage(frames.sit_w),
+	};
+}
+
 function seesawRotation(stations: SeesawStation[], now: number) {
 	const left = stations.some((station) => station.slot === 0);
 	const right = stations.some((station) => station.slot === 1);
@@ -67,12 +112,18 @@ function seesawRotation(stations: SeesawStation[], now: number) {
 	return left ? -0.16 : right ? 0.16 : 0;
 }
 
-export default function LoungeScreen() {
+export function LoungePrototype() {
+	const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+	const insets = useSafeAreaInsets();
 	// Member gate — same source of truth as the Barn chip (profiles.is_vip).
 	// Non-members are bounced straight back; the chip that routes here is
 	// itself member-gated, so this only fires on deep links / stale sessions.
 	const [allowed, setAllowed] = useState(false);
-	const [me, setMe] = useState<{ uid: string; username: string } | null>(null);
+	const [me, setMe] = useState<{
+		uid: string;
+		username: string;
+		pigId: PigId;
+	} | null>(null);
 	useEffect(() => {
 		let cancelled = false;
 		(async () => {
@@ -83,14 +134,30 @@ export default function LoungeScreen() {
 				router.back();
 				return;
 			}
-			const { data } = await supabase
+			let { data, error } = await supabase
 				.from("profiles")
-				.select("is_vip, username")
+				.select("is_vip, username, active_pig_id")
 				.eq("id", user.id)
 				.single();
+			// Rollout-safe against a client briefly reaching production before
+			// the roster migration: the Lounge stays usable as Rosie.
+			if (error) {
+				const fallback = await supabase
+					.from("profiles")
+					.select("is_vip, username")
+					.eq("id", user.id)
+					.single();
+				data = fallback.data
+					? { ...fallback.data, active_pig_id: "rosie" }
+					: null;
+			}
 			if (cancelled) return;
 			if (data?.is_vip) {
-				setMe({ uid: user.id, username: data.username ?? "a pig" });
+				setMe({
+					uid: user.id,
+					username: data.username ?? "a pig",
+					pigId: isPigId(data.active_pig_id) ? data.active_pig_id : "rosie",
+				});
 				setAllowed(true);
 			} else router.back();
 		})();
@@ -104,50 +171,32 @@ export default function LoungeScreen() {
 	const { peers, sendPos, sendEmote, setStation } = useLoungePeers(
 		me?.uid ?? null,
 		me?.username ?? "a pig",
-		{ x: WORLD_W / 2, y: WORLD_H / 2 }
+		{ x: WORLD_W / 2, y: WORLD_H / 2 },
+		me?.pigId ?? "rosie"
 	);
 
-	const ground = useImage(
-		require("../assets/images/backgrounds/lounge_farm.png")
-	);
-	// 4 directions × 4 frames. Hook count is static — the arrays are fixed.
-	const sImgs = [
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_s_1.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_s_2.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_s_3.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_s_4.png")),
-	];
-	const nImgs = [
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_n_1.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_n_2.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_n_3.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_n_4.png")),
-	];
-	const eImgs = [
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_e_1.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_e_2.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_e_3.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_e_4.png")),
-	];
-	const wImgs = [
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_w_1.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_w_2.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_w_3.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/walk_w_4.png")),
-	];
-	const dirImgs = [sImgs, nImgs, eImgs, wImgs]; // index = DIR_S/N/E/W
-	const idleImgs = [
-		useImage(require("../assets/images/sprites/rosie/lounge/idle_s_1.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/idle_s_2.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/idle_s_3.png")),
-		useImage(require("../assets/images/sprites/rosie/lounge/idle_s_4.png")),
-	];
-	const sitE = useImage(
-		require("../assets/images/sprites/rosie/lounge/sit_e.png")
-	);
-	const sitW = useImage(
-		require("../assets/images/sprites/rosie/lounge/sit_w.png")
-	);
+	const ground = useImage(require("../assets/images/backgrounds/lounge_farm.png"));
+	// All packs load in a fixed hook order. This lets a mixed herd render without
+	// swapping Skia image sources mid-stride.
+	const rosieImgs = usePigLoungeImages("rosie");
+	const copperImgs = usePigLoungeImages("copper");
+	const pepperImgs = usePigLoungeImages("pepper");
+	const banditImgs = usePigLoungeImages("bandit");
+	const picklesImgs = usePigLoungeImages("pickles");
+	const biscuitImgs = usePigLoungeImages("biscuit");
+	const packs = {
+		rosie: rosieImgs,
+		copper: copperImgs,
+		pepper: pepperImgs,
+		bandit: banditImgs,
+		pickles: picklesImgs,
+		biscuit: biscuitImgs,
+	};
+	const myPack = packs[me?.pigId ?? "rosie"];
+	const dirImgs = myPack.dirs;
+	const idleImgs = myPack.idle;
+	const sitE = myPack.sitE;
+	const sitW = myPack.sitW;
 
 	// Emotes (P3) — one-shot broadcast; bubble floats over the pig ~1.8s.
 	const EMOTES: GlyphName[] = ["heart", "sparkles", "coffee", "party", "zzz"];
@@ -161,13 +210,8 @@ export default function LoungeScreen() {
 	// Bottom-right blow-out menu: closed = one round button, open = the
 	// emote column above it.
 	const [emotesOpen, setEmotesOpen] = useState(false);
-	const tagFont = useFont(
-		require("../assets/fonts/SpaceMono-Regular.ttf"),
-		11
-	);
-	const [myEmote, setMyEmote] = useState<{ i: number; at: number } | null>(
-		null
-	);
+	const tagFont = useFont(require("../assets/fonts/SpaceMono-Regular.ttf"), 11);
+	const [myEmote, setMyEmote] = useState<{ i: number; at: number } | null>(null);
 
 	const seesawBase = useImage(require("../assets/images/lounge/seesaw_base.png"));
 	const seesawPlank = useImage(require("../assets/images/lounge/seesaw_plank.png"));
@@ -215,8 +259,7 @@ export default function LoungeScreen() {
 			walkClock.value += dtMs;
 			resting.value = 0;
 			frame.value = Math.floor(walkClock.value / FRAME_MS) % 4;
-			dir.value =
-				Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 2 : 3) : dy > 0 ? 0 : 1;
+			dir.value = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 2 : 3) : dy > 0 ? 0 : 1;
 		} else {
 			// At rest: gentle S-facing idle loop (other facings hold frame 1).
 			resting.value = 1;
@@ -236,10 +279,16 @@ export default function LoungeScreen() {
 
 	// Camera: keep the pig centered until the world edge clamps the view.
 	const camX = useDerivedValue(() =>
-		Math.min(Math.max(px.value - SW / 2, 0), Math.max(WORLD_W - SW, 0))
+		Math.min(
+			Math.max(px.value - windowWidth / 2, 0),
+			Math.max(WORLD_W - windowWidth, 0),
+		)
 	);
 	const camY = useDerivedValue(() =>
-		Math.min(Math.max(py.value - SH / 2, 0), Math.max(WORLD_H - SH, 0))
+		Math.min(
+			Math.max(py.value - windowHeight / 2, 0),
+			Math.max(WORLD_H - windowHeight, 0),
+		)
 	);
 	const camTransform = useDerivedValue(() => [
 		{ translateX: -camX.value },
@@ -251,9 +300,7 @@ export default function LoungeScreen() {
 	// seesaw walks to a free seat; anywhere else stands up + walks.
 	const boardSeesaw = () => {
 		const taken = new Set(
-			peers
-				.filter((pr) => pr.station?.id === "seesaw")
-				.map((pr) => pr.station!.slot)
+			peers.filter((pr) => pr.station?.id === "seesaw").map((pr) => pr.station!.slot)
 		);
 		if (myStation) taken.add(myStation.slot);
 		if (practiceSlot !== null) taken.add(practiceSlot);
@@ -265,8 +312,7 @@ export default function LoungeScreen() {
 	};
 
 	const handleTap = (wx: number, wy: number) => {
-		const nearSeesaw =
-			Math.hypot(wx - SEESAW.x, wy - SEESAW.y) < SEESAW_TAP_R;
+		const nearSeesaw = Math.hypot(wx - SEESAW.x, wy - SEESAW.y) < SEESAW_TAP_R;
 		if (nearSeesaw) {
 			boardSeesaw();
 			return;
@@ -278,14 +324,8 @@ export default function LoungeScreen() {
 			mySlot.value = -1;
 			seatProgress.value = 0;
 		}
-		tx.value = Math.min(
-			Math.max(wx, FENCE_INSET + PIG / 2),
-			WORLD_W - FENCE_INSET - PIG / 2
-		);
-		ty.value = Math.min(
-			Math.max(wy, FENCE_INSET + PIG),
-			WORLD_H - FENCE_INSET
-		);
+		tx.value = Math.min(Math.max(wx, FENCE_INSET + PIG / 2), WORLD_W - FENCE_INSET - PIG / 2);
+		ty.value = Math.min(Math.max(wy, FENCE_INSET + PIG), WORLD_H - FENCE_INSET);
 	};
 	const tap = Gesture.Tap().onEnd((e) => {
 		"worklet";
@@ -294,30 +334,68 @@ export default function LoungeScreen() {
 
 	// Frame swap via per-(direction,frame) opacity — 16 stacked images, one
 	// visible. (Deliberately avoids animating the `image` prop itself.)
-	const standingOpacity = useDerivedValue(() =>
-		mySlot.value >= 0 ? 1 - seatProgress.value : 1
+	const standingOpacity = useDerivedValue(() => (mySlot.value >= 0 ? 1 - seatProgress.value : 1));
+	const s0 = useDerivedValue(() =>
+		dir.value === 0 && !resting.value && frame.value === 0 ? standingOpacity.value : 0
 	);
-	const s0 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 0 ? standingOpacity.value : 0));
-	const s1 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 1 ? standingOpacity.value : 0));
-	const s2 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 2 ? standingOpacity.value : 0));
-	const s3 = useDerivedValue(() => (dir.value === 0 && !resting.value && frame.value === 3 ? standingOpacity.value : 0));
-	const i0 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 0 ? standingOpacity.value : 0));
-	const i1 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 1 ? standingOpacity.value : 0));
-	const i2 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 2 ? standingOpacity.value : 0));
-	const i3 = useDerivedValue(() => (dir.value === 0 && resting.value && frame.value === 3 ? standingOpacity.value : 0));
+	const s1 = useDerivedValue(() =>
+		dir.value === 0 && !resting.value && frame.value === 1 ? standingOpacity.value : 0
+	);
+	const s2 = useDerivedValue(() =>
+		dir.value === 0 && !resting.value && frame.value === 2 ? standingOpacity.value : 0
+	);
+	const s3 = useDerivedValue(() =>
+		dir.value === 0 && !resting.value && frame.value === 3 ? standingOpacity.value : 0
+	);
+	const i0 = useDerivedValue(() =>
+		dir.value === 0 && resting.value && frame.value === 0 ? standingOpacity.value : 0
+	);
+	const i1 = useDerivedValue(() =>
+		dir.value === 0 && resting.value && frame.value === 1 ? standingOpacity.value : 0
+	);
+	const i2 = useDerivedValue(() =>
+		dir.value === 0 && resting.value && frame.value === 2 ? standingOpacity.value : 0
+	);
+	const i3 = useDerivedValue(() =>
+		dir.value === 0 && resting.value && frame.value === 3 ? standingOpacity.value : 0
+	);
 	const idleOpacities = [i0, i1, i2, i3];
-	const n0 = useDerivedValue(() => (dir.value === 1 && frame.value === 0 ? standingOpacity.value : 0));
-	const n1 = useDerivedValue(() => (dir.value === 1 && frame.value === 1 ? standingOpacity.value : 0));
-	const n2 = useDerivedValue(() => (dir.value === 1 && frame.value === 2 ? standingOpacity.value : 0));
-	const n3 = useDerivedValue(() => (dir.value === 1 && frame.value === 3 ? standingOpacity.value : 0));
-	const e0 = useDerivedValue(() => (dir.value === 2 && frame.value === 0 ? standingOpacity.value : 0));
-	const e1 = useDerivedValue(() => (dir.value === 2 && frame.value === 1 ? standingOpacity.value : 0));
-	const e2 = useDerivedValue(() => (dir.value === 2 && frame.value === 2 ? standingOpacity.value : 0));
-	const e3 = useDerivedValue(() => (dir.value === 2 && frame.value === 3 ? standingOpacity.value : 0));
-	const w0 = useDerivedValue(() => (dir.value === 3 && frame.value === 0 ? standingOpacity.value : 0));
-	const w1 = useDerivedValue(() => (dir.value === 3 && frame.value === 1 ? standingOpacity.value : 0));
-	const w2 = useDerivedValue(() => (dir.value === 3 && frame.value === 2 ? standingOpacity.value : 0));
-	const w3 = useDerivedValue(() => (dir.value === 3 && frame.value === 3 ? standingOpacity.value : 0));
+	const n0 = useDerivedValue(() =>
+		dir.value === 1 && frame.value === 0 ? standingOpacity.value : 0
+	);
+	const n1 = useDerivedValue(() =>
+		dir.value === 1 && frame.value === 1 ? standingOpacity.value : 0
+	);
+	const n2 = useDerivedValue(() =>
+		dir.value === 1 && frame.value === 2 ? standingOpacity.value : 0
+	);
+	const n3 = useDerivedValue(() =>
+		dir.value === 1 && frame.value === 3 ? standingOpacity.value : 0
+	);
+	const e0 = useDerivedValue(() =>
+		dir.value === 2 && frame.value === 0 ? standingOpacity.value : 0
+	);
+	const e1 = useDerivedValue(() =>
+		dir.value === 2 && frame.value === 1 ? standingOpacity.value : 0
+	);
+	const e2 = useDerivedValue(() =>
+		dir.value === 2 && frame.value === 2 ? standingOpacity.value : 0
+	);
+	const e3 = useDerivedValue(() =>
+		dir.value === 2 && frame.value === 3 ? standingOpacity.value : 0
+	);
+	const w0 = useDerivedValue(() =>
+		dir.value === 3 && frame.value === 0 ? standingOpacity.value : 0
+	);
+	const w1 = useDerivedValue(() =>
+		dir.value === 3 && frame.value === 1 ? standingOpacity.value : 0
+	);
+	const w2 = useDerivedValue(() =>
+		dir.value === 3 && frame.value === 2 ? standingOpacity.value : 0
+	);
+	const w3 = useDerivedValue(() =>
+		dir.value === 3 && frame.value === 3 ? standingOpacity.value : 0
+	);
 	const opacities = [
 		[s0, s1, s2, s3],
 		[n0, n1, n2, n3],
@@ -325,15 +403,9 @@ export default function LoungeScreen() {
 		[w0, w1, w2, w3],
 	];
 
-	const plankTransform = useDerivedValue(() => [
-		{ rotate: seesawRot.value },
-	]);
-	const sitEOpacity = useDerivedValue(() =>
-		mySlot.value === 0 ? seatProgress.value : 0
-	);
-	const sitWOpacity = useDerivedValue(() =>
-		mySlot.value === 1 ? seatProgress.value : 0
-	);
+	const plankTransform = useDerivedValue(() => [{ rotate: seesawRot.value }]);
+	const sitEOpacity = useDerivedValue(() => (mySlot.value === 0 ? seatProgress.value : 0));
+	const sitWOpacity = useDerivedValue(() => (mySlot.value === 1 ? seatProgress.value : 0));
 	const pigX = useDerivedValue(() => px.value - PIG / 2);
 	// Seated pigs RIDE the plank: the seat's vertical travel is the plank
 	// end's arc, sin(rot) * (signed seat arm).
@@ -342,24 +414,20 @@ export default function LoungeScreen() {
 			py.value -
 			PIG +
 			(mySlot.value >= 0
-				? Math.sin(seesawRot.value) *
-						(mySlot.value === 0 ? -SEAT_DX : SEAT_DX) -
+				? Math.sin(seesawRot.value) * (mySlot.value === 0 ? -SEAT_DX : SEAT_DX) -
 					Math.sin(seatProgress.value * Math.PI) * 8
 				: 0)
 	);
-	const myName = me?.username ?? "";
-	const tagX = useDerivedValue(() => px.value - myName.length * 3.3);
-	const tagY = useDerivedValue(
+	const bubbleX = useDerivedValue(() => px.value - 14);
+	const bubbleY = useDerivedValue(
 		() =>
-			py.value +
-			14 +
+			py.value -
+			PIG -
+			34 +
 			(mySlot.value >= 0
-				? Math.sin(seesawRot.value) *
-				  (mySlot.value === 0 ? -SEAT_DX : SEAT_DX)
+				? Math.sin(seesawRot.value) * (mySlot.value === 0 ? -SEAT_DX : SEAT_DX)
 				: 0)
 	);
-	const bubbleX = useDerivedValue(() => px.value - 14);
-	const bubbleY = useDerivedValue(() => py.value - PIG - 34);
 
 	// Publish my position at 10 Hz while moving (shared values are readable
 	// from JS). Also drives an 8 fps tick that re-renders remote walk frames.
@@ -370,10 +438,7 @@ export default function LoungeScreen() {
 		const pub = setInterval(() => {
 			const x = px.value;
 			const y = py.value;
-			if (
-				Math.abs(x - lastSent.current.x) > 1 ||
-				Math.abs(y - lastSent.current.y) > 1
-			) {
+			if (Math.abs(x - lastSent.current.x) > 1 || Math.abs(y - lastSent.current.y) > 1) {
 				lastSent.current = { x, y };
 				sendPos(x, y, dir.value);
 			}
@@ -406,10 +471,13 @@ export default function LoungeScreen() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [me]);
 	const now = Date.now();
+	// Broadcasts deliberately do not echo to their sender (`self: false` in
+	// useLoungePeers), so the local pig needs its own render path. Without this,
+	// a successful tap only appeared on other members' screens and looked inert
+	// to the person who sent it.
+	const myEmoteImage = myEmote && now - myEmote.at < 1800 ? emoteImgs[myEmote.i] : null;
 	const realTakenSlots = new Set(
-		peers
-			.filter((peer) => peer.station?.id === "seesaw")
-			.map((peer) => peer.station!.slot)
+		peers.filter((peer) => peer.station?.id === "seesaw").map((peer) => peer.station!.slot)
 	);
 	if (myStation) realTakenSlots.add(myStation.slot);
 	const preferredPracticeSlot = myStation ? 1 - myStation.slot : 1;
@@ -449,9 +517,7 @@ export default function LoungeScreen() {
 		const left = sitters.some((st) => st.slot === 0);
 		const right = sitters.some((st) => st.slot === 1);
 		seatMode.value = left && right ? 3 : left ? 1 : right ? 2 : 0;
-		rideSince.value = sitters.length
-			? Math.max(...sitters.map((st) => st.since))
-			: 0;
+		rideSince.value = sitters.length ? Math.max(...sitters.map((st) => st.since)) : 0;
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [peers, myStation, practiceSlot]);
 
@@ -473,17 +539,15 @@ export default function LoungeScreen() {
 			<Stack.Screen options={{ headerShown: false }} />
 			{allowed && (
 				<GestureDetector gesture={tap}>
-					<Canvas style={styles.canvas}>
+					<Canvas
+						// The Stack scene ends at its safe-area content edge on iOS.
+						// Overscan the painted world through the home-indicator inset
+						// so the lounge does not finish on a flat fallback-color band.
+						style={[styles.canvas, { bottom: -insets.bottom }]}
+					>
 						<Group transform={camTransform}>
 							{ground && (
-								<SkiaImage
-									image={ground}
-									x={0}
-									y={0}
-									width={WORLD_W}
-									height={WORLD_H}
-									fit="fill"
-								/>
+								<SkiaImage image={ground} x={0} y={0} width={WORLD_W} height={WORLD_H} fit="fill" />
 							)}
 							{/* Seesaw — base, then the plank rotating around the pivot.
 						    Drawn under the pigs so riders sit on top. */}
@@ -497,10 +561,7 @@ export default function LoungeScreen() {
 							/>
 						)}
 						{seesawPlank && (
-							<Group
-								origin={{ x: SEESAW.x, y: SEESAW.y - 34 }}
-								transform={plankTransform}
-							>
+								<Group origin={{ x: SEESAW.x, y: SEESAW.y - 34 }} transform={plankTransform}>
 								<SkiaImage
 									image={seesawPlank}
 									x={SEESAW.x - 75}
@@ -527,21 +588,17 @@ export default function LoungeScreen() {
 								drawDir = slot === 0 ? 2 : 3;
 								px2 = SEESAW.x + (slot === 0 ? -SEAT_DX : SEAT_DX);
 								py2 = SEESAW.y - 6;
-								rideDy =
-									Math.sin(visibleSeesawRotation) *
-									(slot === 0 ? -SEAT_DX : SEAT_DX);
+									rideDy = Math.sin(visibleSeesawRotation) * (slot === 0 ? -SEAT_DX : SEAT_DX);
 							}
+								const peerPack = packs[peer.pigId];
 							const img = seated
 								? peer.station!.slot === 0
-									? sitE
-									: sitW
-								: dirImgs[drawDir]?.[moving ? remoteTick % 4 : 0];
+										? peerPack.sitE
+										: peerPack.sitW
+									: peerPack.dirs[drawDir]?.[moving ? remoteTick % 4 : 0];
 							if (!img) return null;
-							const emoteFresh =
-								peer.emote && now - peer.emote.at < 1800;
-							const eimg = emoteFresh
-								? emoteImgs[peer.emote!.i]
-								: null;
+								const emoteFresh = peer.emote && now - peer.emote.at < 1800;
+								const eimg = emoteFresh ? emoteImgs[peer.emote!.i] : null;
 							return (
 								<Group key={peer.key}>
 									<SkiaImage
@@ -572,22 +629,16 @@ export default function LoungeScreen() {
 								</Group>
 							);
 						})}
-						{practiceSlot !== null &&
-							(practiceSlot === 0 ? sitE : sitW) && (
+							{practiceSlot !== null && (practiceSlot === 0 ? sitE : sitW) && (
 								<Group>
 									<SkiaImage
 										image={practiceSlot === 0 ? sitE! : sitW!}
-										x={
-											SEESAW.x +
-											(practiceSlot === 0 ? -SEAT_DX : SEAT_DX) -
-											PIG / 2
-										}
+										x={SEESAW.x + (practiceSlot === 0 ? -SEAT_DX : SEAT_DX) - PIG / 2}
 										y={
 											SEESAW.y -
 											6 -
 											PIG +
-											Math.sin(visibleSeesawRotation) *
-												(practiceSlot === 0 ? -SEAT_DX : SEAT_DX)
+											Math.sin(visibleSeesawRotation) * (practiceSlot === 0 ? -SEAT_DX : SEAT_DX)
 										}
 										width={PIG}
 										height={PIG}
@@ -596,16 +647,11 @@ export default function LoungeScreen() {
 										<SkiaText
 											text="Practice Pig"
 											font={tagFont}
-											x={
-												SEESAW.x +
-												(practiceSlot === 0 ? -SEAT_DX : SEAT_DX) -
-												39
-											}
+											x={SEESAW.x + (practiceSlot === 0 ? -SEAT_DX : SEAT_DX) - 39}
 											y={
 												SEESAW.y +
 												8 +
-												Math.sin(visibleSeesawRotation) *
-													(practiceSlot === 0 ? -SEAT_DX : SEAT_DX)
+												Math.sin(visibleSeesawRotation) * (practiceSlot === 0 ? -SEAT_DX : SEAT_DX)
 											}
 											color="#4a3325"
 										/>
@@ -662,6 +708,9 @@ export default function LoungeScreen() {
 								opacity={sitWOpacity}
 							/>
 						)}
+							{myEmoteImage && (
+								<SkiaImage image={myEmoteImage} x={bubbleX} y={bubbleY} width={28} height={28} />
+							)}
 					</Group>
 					</Canvas>
 				</GestureDetector>
@@ -670,10 +719,7 @@ export default function LoungeScreen() {
 			{allowed && !myStation && (
 				<Pressable
 					onPress={boardSeesaw}
-					style={({ pressed }) => [
-						styles.boardBtn,
-						pressed && { opacity: 0.85 },
-					]}
+					style={({ pressed }) => [styles.boardBtn, pressed && { opacity: 0.85 }]}
 				>
 					<Text style={styles.boardBtnText}>hop on the seesaw ›</Text>
 				</Pressable>
@@ -702,10 +748,7 @@ export default function LoungeScreen() {
 			{allowed && __DEV__ && (
 				<Pressable
 					onPress={() => router.push("/member-perks-prototype" as never)}
-					style={({ pressed }) => [
-						styles.perkLabBtn,
-						pressed && { opacity: 0.85 },
-					]}
+					style={({ pressed }) => [styles.perkLabBtn, pressed && { opacity: 0.85 }]}
 					accessibilityRole="button"
 					accessibilityLabel="Open the Slop Club perk lab"
 				>
@@ -726,10 +769,7 @@ export default function LoungeScreen() {
 									sendEmote(i);
 									setEmotesOpen(false);
 								}}
-								style={({ pressed }) => [
-									styles.emoteBtn,
-									pressed && { opacity: 0.8 },
-								]}
+								style={({ pressed }) => [styles.emoteBtn, pressed && { opacity: 0.8 }]}
 							>
 								<Glyph name={g} size={22} />
 							</Pressable>
@@ -748,20 +788,30 @@ export default function LoungeScreen() {
 			)}
 
 			{/* Exit — back to the Barn. */}
-			<Pressable
+			<IconButton
+				name="x"
+				label="Leave the Lounge"
 				onPress={() => router.back()}
-				style={({ pressed }) => [styles.exit, pressed && { opacity: 0.8 }]}
-				hitSlop={8}
-			>
-				<Icon name="x" size={18} color={WHIMSY.ink} strokeWidth={2.4} />
-			</Pressable>
+				visualSize={40}
+				style={styles.exit}
+			/>
 		</GestureHandlerRootView>
 	);
 }
 
+export default function LoungeScreen() {
+	return <Redirect href="/(tabs)/shop" />;
+}
+
 const styles = StyleSheet.create({
-	root: { flex: 1, backgroundColor: "#9ec27a" },
-	canvas: { flex: 1 },
+	root: { flex: 1, backgroundColor: COLORS.grass },
+	canvas: {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+	},
 	emoteWrap: {
 		position: "absolute",
 		bottom: 42,
@@ -845,13 +895,5 @@ const styles = StyleSheet.create({
 		position: "absolute",
 		top: 58,
 		right: 18,
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		alignItems: "center",
-		justifyContent: "center",
 	},
 });

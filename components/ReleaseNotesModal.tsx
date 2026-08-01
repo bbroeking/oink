@@ -1,6 +1,5 @@
-// "What's new" modal. Auto-fired on Barn mount when the latest release
-// in constants/release_notes is newer than the user's last_seen value.
-// Also openable manually via the Account "What's new" link.
+// "What's new" modal. Opened manually from Me → Settings so release notes
+// remain available without interrupting a login.
 import React from "react";
 import {
 	Modal,
@@ -103,18 +102,6 @@ export function ReleaseNotesModal({
 			</View>
 		</Modal>
 	);
-}
-
-// Helper: true if the user hasn't seen the current (latest *available*)
-// release. Future season entries are invisible until their date, so a
-// player isn't shown a "what's new" for something not yet rolled out.
-export async function shouldShowReleaseNotes(): Promise<boolean> {
-	try {
-		const seen = await AsyncStorage.getItem(RELEASE_SEEN_KEY);
-		return seen !== currentRelease().version;
-	} catch {
-		return false;
-	}
 }
 
 const styles = StyleSheet.create({

@@ -16,16 +16,15 @@
 // ownership + members-only gating, and applies Face-slot exclusivity in one
 // server write — then hands back the same column-patch computeEquip would.
 // The RPC is the source of truth; computeEquip stays as (a) the shape/rule
-// documentation and (b) the fallback rule when the RPC is unreachable.
+// documentation and (b) the fallback rule when the RPC is not yet deployed.
 //
-// FALLBACK: on an rpc() null (un-migrated env — the function isn't deployed —
-// or a transient transport blip) equipCosmetic drops to the LEGACY direct
-// profiles.active_*_id write (equipCosmeticLegacy) so shipped/offline builds
-// keep working. That RLS write path is deliberately still live server-side
-// (the migration does NOT revoke it).
+// FALLBACK: only when PostgREST positively identifies equip_cosmetic as missing
+// does equipCosmetic drop to the LEGACY direct profiles.active_*_id write.
+// Network, permission, and SQL failures fail closed instead of bypassing the
+// server's ownership/member checks.
 
 import { supabase } from "./supabase";
-import { rpc } from "./rpc";
+import { rpcOutcome } from "./rpc";
 import { columnForCategory } from "@/constants/slots";
 
 export interface EquipComputation {
@@ -63,8 +62,7 @@ export function computeEquip(
 
 // Shape the equip_cosmetic RPC returns: {ok:true, update} on success, or
 // {ok:false, reason} on a refusal (not_owned / no_such_item / bad_category /
-// unauthenticated). rpc() returns null instead when the call itself failed
-// (function undeployed → PGRST202, or a transport blip).
+// unauthenticated).
 interface EquipRpcResult {
 	ok: boolean;
 	update?: Record<string, string | null>;
@@ -76,9 +74,10 @@ interface EquipRpcResult {
 // Passing `itemId = null` unequips just the matching slot (needs `category`).
 //
 // Preferred path: the server RPC, which returns the authoritative column-patch.
-// On rpc() null (undeployed / transport blip) we fall back to the legacy direct
-// write. On a server REFUSAL ({ok:false}) we return an EMPTY patch — a no-op
-// merge into activeIds — so the UI simply doesn't move the item into the slot
+// On a positively identified missing function we fall back to the legacy direct
+// write. Other call failures throw. On a server REFUSAL ({ok:false}) we return
+// an EMPTY patch — a no-op merge into activeIds — so the UI simply doesn't
+// move the item into the slot
 // the server declined. Callers (shop.tsx handleEquip → patchActiveIds) already
 // ignore failures, so a no-op patch is the least-surprising surface and keeps
 // the client in step with the server rather than optimistically lying. These
@@ -89,13 +88,19 @@ export async function equipCosmetic(
 	itemId: string | null,
 	category: string | null | undefined,
 ): Promise<Record<string, string | null>> {
-	const res = await rpc<EquipRpcResult>("equip_cosmetic", {
+	const outcome = await rpcOutcome<EquipRpcResult>("equip_cosmetic", {
 		p_item_id: itemId,
 		p_category: category ?? null,
 	});
-	// rpc null → function undeployed or transport blip → legacy direct write.
-	if (res == null) {
+	if (!outcome.ok) {
+		if (outcome.kind !== "missing_function") {
+			throw new Error(`equip_cosmetic failed: ${outcome.error.message ?? outcome.kind}`);
+		}
 		return equipCosmeticLegacy(userId, itemId, category);
+	}
+	const res = outcome.data;
+	if (res == null) {
+		throw new Error("equip_cosmetic failed: no data");
 	}
 	// Server accepted → apply its authoritative patch.
 	if (res.ok && res.update) {
@@ -105,8 +110,8 @@ export async function equipCosmetic(
 	return {};
 }
 
-// LEGACY fallback: the pre-#35 client-side direct write. Kept only for the
-// undeployed/offline path in equipCosmetic — the server RPC is the real rule.
+// LEGACY fallback: the pre-#35 client-side direct write. Kept only for an
+// undeployed equip_cosmetic function — the server RPC is the real rule.
 // Uses computeEquip so the fallback obeys the same routing + exclusivity.
 async function equipCosmeticLegacy(
 	userId: string,
@@ -114,6 +119,9 @@ async function equipCosmeticLegacy(
 	category: string | null | undefined,
 ): Promise<Record<string, string | null>> {
 	const { update } = computeEquip(category, itemId, {});
-	await supabase.from("profiles").update(update).eq("id", userId);
+	const { error } = await supabase.from("profiles").update(update).eq("id", userId);
+	if (error) {
+		throw new Error(`legacy cosmetic equip failed: ${error.message}`);
+	}
 	return update;
 }

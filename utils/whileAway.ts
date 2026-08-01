@@ -18,19 +18,32 @@ export type SystemAnnouncementRow = {
 	data?: unknown;
 };
 
+// An empty successful response is meaningfully different from a failed source:
+// only the former proves there was nothing to show and may advance away_seen_v1.
+// PostgREST query results expose `error`; the RPC wrapper exposes a failure as
+// null, while a successful no-row announcement response is [].
+export function launchEventSourcesSucceeded(
+	queryResults: readonly { error?: unknown }[],
+	systemRows: readonly unknown[] | null
+): boolean {
+	return systemRows !== null && queryResults.every((result) => result.error == null);
+}
+
 // Pull a non-empty string drive_id out of an announcement's `data`, or null.
 function driveIdOf(data: unknown): string | null {
 	const raw = (data as { drive_id?: unknown } | null | undefined)?.drive_id;
 	return typeof raw === "string" && raw.length > 0 ? raw : null;
 }
 
+function emoteIdOf(data: unknown): string | null {
+	const raw = (data as { emote_id?: unknown } | null | undefined)?.emote_id;
+	return typeof raw === "string" && raw.length > 0 ? raw : null;
+}
+
 // The in-app route an announcement taps through to, or null when it has no
 // destination (unknown kind, or a trough_nudge missing its drive_id). Null
 // rows render non-pressable — no dead affordance.
-export function systemAnnouncementRoute(
-	kind: string | undefined,
-	data: unknown
-): string | null {
+export function systemAnnouncementRoute(kind: string | undefined, data: unknown): string | null {
 	if (kind === "trough_nudge" && driveIdOf(data)) {
 		// Troughs live on the Shop tab — routeForScreen is the single
 		// screen→route map (utils/notificationRouting).
@@ -50,5 +63,6 @@ export function toWhileAwaySystemEvent(
 		title: row.title,
 		body: row.body,
 		route: systemAnnouncementRoute(row.kind, row.data),
+		emoteId: row.kind === "barn_visit" ? emoteIdOf(row.data) : null,
 	};
 }

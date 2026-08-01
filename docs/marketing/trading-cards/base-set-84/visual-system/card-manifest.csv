@@ -1,0 +1,89 @@
+number,id,name,type,slot,rank,style,rarity,art_status
+001,legend_rosie,"Rosie, Heart of the Herd",legend,,,,legendary,ready
+002,legend_copper,"Copper, Trailblazer",legend,,,,legendary,ready
+003,legend_pepper,"Pepper, Night Watch",legend,,,,legendary,ready
+004,legend_bandit,"Bandit, Quick Hoof",legend,,,,legendary,ready
+005,legend_pickles,"Pickles, Orchard Finder",legend,,,,legendary,ready
+006,legend_biscuit,"Biscuit, Stouthearted",legend,,,,legendary,ready
+007,ticket_takers_cap,"Ticket Taker's Cap",gear,head,1,steady,common,ready
+008,muddy_cap,"Muddy Cap",gear,head,1,brave,common,ready
+009,mushroom_cap,"Mushroom Cap",gear,head,1,spark,common,ready
+010,bog_helmet,"Bog Helmet",gear,head,2,steady,uncommon,ready
+011,reed_hat,"Reed Hat",gear,head,2,spark,uncommon,ready
+012,slop_bucket_hat,"Slop Bucket Hat",gear,head,2,brave,uncommon,ready
+013,release_party_crown,"Release Party Crown",gear,head,3,spark,legendary,ready
+014,swamp_crown,"Swamp Crown",gear,head,3,steady,rare,ready
+015,hungerers_crown,"The Hungerer's Crown",gear,head,3,brave,epic,ready
+016,toy_sword,"Toy Sword",gear,held,1,brave,common,ready
+017,slop_bucket,"Slop Bucket",gear,held,1,steady,common,ready
+018,firefly_lantern,"Firefly Lantern",gear,held,1,spark,common,ready
+019,mud_shovel,"Mud Shovel",gear,held,2,steady,uncommon,ready
+020,magic_wand,"Magic Wand",gear,held,2,spark,uncommon,ready
+021,crew_pennant,"Crew Pennant",gear,held,2,brave,uncommon,ready
+022,golden_truffle,"Golden Truffle",gear,held,3,spark,epic,ready
+023,golden_hog_cup,"Golden Hog Cup",gear,held,3,brave,rare,ready
+024,mud_pie,"Mud Pie",gear,held,3,steady,rare,ready
+025,firefly_aura,"Firefly Aura",gear,aura,1,spark,common,ready
+026,mud_splatter_aura,"Mud Splatter Aura",gear,aura,1,brave,common,ready
+027,swamp_bubble_aura,"Swamp Bubble Aura",gear,aura,1,steady,common,ready
+028,shadow_aura,"Shadow Aura",gear,aura,2,brave,uncommon,ready
+029,confetti_aura,"Confetti Aura",gear,aura,2,spark,uncommon,ready
+030,holy_aura,"Holy Aura",gear,aura,2,steady,uncommon,ready
+031,golden_bog_aura,"Golden Bog Aura",gear,aura,3,steady,legendary,ready
+032,heirloom_mire_aura,"Heirloom Mire Aura",gear,aura,3,brave,epic,ready
+033,chorus_glow,"Chorus Glow",gear,aura,3,spark,rare,adapt-existing
+034,firefly_swarm,"Firefly Swarm",critter,,1,spark,common,ready
+035,dewdrop_spider,"Dewdrop Spider",critter,,1,steady,common,ready
+036,trough_sparrow,"Trough Sparrow",critter,,1,brave,common,ready
+037,bumblebee,"Bumblebee",critter,,1,spark,common,ready
+038,puddle_duckling,"Puddle Duckling",critter,,1,steady,common,ready
+039,garden_snail,"Garden Snail",critter,,1,brave,common,ready
+040,lantern_rabbit,"Lantern Rabbit",critter,,2,spark,uncommon,ready
+041,bog_frog,"Bog Frog",critter,,2,steady,uncommon,ready
+042,truffle_mole,"Truffle Mole",critter,,2,brave,uncommon,ready
+043,waltzing_moth,"Waltzing Moth",critter,,2,spark,uncommon,ready
+044,shy_field_mouse,"Shy Field Mouse",critter,,2,steady,uncommon,ready
+045,acorn_squirrel,"Acorn Squirrel",critter,,2,brave,uncommon,ready
+046,moon_firefly,"Moon Firefly",critter,,3,spark,rare,ready
+047,coqui_critter,"Coquí Critter",critter,,3,steady,rare,ready
+048,mud_crab,"Mud Crab",critter,,3,brave,rare,ready
+049,glowworm_choir,"Glowworm Choir",critter,,3,spark,common,ready
+050,field_mouse_family,"Field Mouse Family",critter,,3,steady,common,ready
+051,robin_lookout,"Robin Lookout",critter,,3,brave,common,ready
+052,goblin_scout,"Goblin Scout",enemy,,1,brave,common,ready
+053,peeking_hungerling,"Peeking Hungerling",enemy,,1,spark,common,ready
+054,mud_slick_spider,"Mud-Slick Spider",enemy,,1,steady,common,ready
+055,truffle_thief_crow,"Truffle-Thief Crow",enemy,,1,brave,common,ready
+056,goblin_grunt,"Goblin Grunt",enemy,,2,brave,uncommon,ready
+057,cheek_stuffed_hungerling,"Cheek-Stuffed Hungerling",enemy,,2,steady,uncommon,ready
+058,bog_bubble,"Bog Bubble",enemy,,2,spark,uncommon,ready
+059,root_tangle,"Root Tangle",enemy,,2,steady,uncommon,ready
+060,goblin_brute,"Goblin Brute",enemy,,3,brave,rare,ready
+061,scurrying_hungerling,"Scurrying Hungerling",enemy,,3,spark,rare,ready
+062,goblin_warboss,"Goblin Warboss",enemy,,3,steady,epic,ready
+063,great_hungerer,"The Great Hungerer",enemy,,3,spark,legendary,ready
+064,big_wind_up,"Big Wind-Up",stunt,,1,brave,common,ready
+065,duck_into_the_mud,"Duck Into the Mud",stunt,,1,steady,common,ready
+066,quick_change,"Quick Change",stunt,,1,spark,common,ready
+067,warm_tea,"Warm Tea",stunt,,1,steady,common,adapt-existing
+068,sun_beam,"Sun Beam",stunt,,1,spark,uncommon,adapt-existing
+069,root_around,"Root Around",stunt,,2,steady,common,ready
+070,firefly_feint,"Firefly Feint",stunt,,2,spark,uncommon,ready
+071,halo_kiss,"Halo Kiss",stunt,,2,brave,uncommon,adapt-existing
+072,mud_wrap,"Mud Wrap",stunt,,2,steady,uncommon,ready
+073,goblin_whisper,"Goblin Whisper",stunt,,2,brave,rare,adapt-existing
+074,encore,"Encore!",stunt,,3,brave,rare,ready
+075,glimmer_truffle,"Glimmer Truffle",stunt,,3,spark,rare,ready
+076,snoot_boop,"Snoot Boop",stunt,,3,brave,rare,ready
+077,phantom_itch,"Phantom Itch",stunt,,3,spark,epic,adapt-existing
+078,chorus_glow_stunt,"Chorus Glow",stunt,,3,steady,common,adapt-existing
+079,homestead_barn,"Homestead Barn",place,,1,steady,common,ready
+080,truffle_patch,"Truffle Patch",place,,1,brave,common,ready
+081,reed_marsh,"Reed Marsh",place,,2,spark,uncommon,ready
+082,mud_derby,"Mud Derby",place,,2,brave,rare,ready
+083,festival_night,"Festival Night",place,,3,spark,rare,ready
+084,golden_mire,"Golden Mire",place,,3,steady,epic,ready
+085,porch_fireflies,"Porch Fireflies",critter,,1,spark,common,adapt-existing
+086,wallow_gremlin,"Wallow Gremlin",enemy,,2,brave,uncommon,ready
+087,golden_wave,"Golden Wave",stunt,,2,steady,uncommon,adapt-existing
+088,spa_wallow,"Spa Wallow",place,,3,steady,rare,ready

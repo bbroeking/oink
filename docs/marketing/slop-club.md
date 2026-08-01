@@ -8,35 +8,28 @@ this (see "Open items").
 
 ## 1. The offer (what Slop Club is)
 
-**Slop Club is the membership for pigs who love the good life** — cosmetics,
-comfort, and little ways to spoil your friends. It is **not** a head start:
-membership never buys you a place on the leaderboard. That's the whole promise,
-and it's what keeps the game fair for everyone who plays for free.
+**Slop Club gives Rosie one long-term friend.** Members choose Copper, Pepper,
+Bandit, Pickles, or Biscuit, then decide whether Rosie or that companion greets
+them at home. It is **not** a head start: membership never buys a place on the
+leaderboard.
 
-**Price:** $2.99/month or $24.99/year — the annual plan is ~30% off (a year for
-the price of ~8.4 months), the value nudge toward annual.
+**Price:** $2.99/month or $29.99/year — the annual plan is ~16% off (a year for
+the price of ~10 months), the value nudge toward annual.
 
 ### What you get today (live at launch)
-- **The members' shop** — 76+ member-only cosmetics you can't get any other
-  way: crowns, bows, glasses, held props, animated auras, barn backgrounds, and
-  tickle sparkles. New pieces added over time.
+- **One long-term companion** — choose one of five fully animated pigs in the
+  Pen. The choice is locked for now, so the UI must say so before recruitment.
+- **A choice at home** — freely choose whether Rosie or the recruited companion
+  appears on the home screen.
 - **The season's premium track** — Slop Club includes the Season Pass, so every
   premium reward on the current season's track is yours to claim as you play.
+  Paid tiers contain cosmetic collectibles only: no tickle bundles, boosts, or
+  progression advantages.
 - *(Retiring: the old "bigger tickle bank" perk is being removed — see note. We
   don't market it, because it's exactly the "head start" the club refuses.)*
 
-### Coming soon (the roadmap — prototyped, being felt out)
-- **The Dye Vat** — recolor cosmetics you already own into member-only palettes
-  (rose gold, bog moss, deep plum, gilded…). One hat becomes a wardrobe.
-- **The Members' Lounge** — a members-only barn scene that's yours to settle into.
-- **Slop Club Rosie** — a golden members' look for your pig.
-- **Reactions** — exclusive stickers to drop on a friend's barn.
-- **Gift a friend a taste** — share a day of the club with a friend (the perk
-  that makes members our best neighbors).
-
 ### The one-line pitch
-> Slop Club: the good life for your pig — dress up, settle in, and spoil your
-> friends. Never a head start, always a good time.
+> Join the Slop Club and give Rosie one long-term friend.
 
 ---
 
@@ -46,13 +39,13 @@ the price of ~8.4 months), the value nudge toward annual.
 **Subhead:** the good life for your pig
 
 **Perk bullets** (lead with the strongest, keep it cosmetic/cozy — no power):
-- ✦ The members' shop — 76+ cosmetics you can't get anywhere else
-- ✦ The whole season's premium reward track, included
-- ✦ Members' looks, scenes, and colors — coming for the club
+- ✦ Choose one long-term friend for Rosie
+- ✦ Decide who greets you at home
+- ✦ The season's cosmetic premium track, included
 - ✦ Cancel anytime · keeps the game fair for everyone
 
 **Plan toggle:**
-- Yearly — $24.99/yr · best value (save ~30%)
+- Yearly — $29.99/yr · best value (save ~16%)
 - Monthly — $2.99/mo
 
 **CTA button:** Join the Slop Club
@@ -64,16 +57,15 @@ cosmetics and comfort — never a leaderboard advantage.
 ## 3. App Store
 
 **Promotional text** (170 char max, updatable without review):
-> The Slop Club is here! Join for members-only cosmetics, the season's premium
-> rewards, and cozy perks — the good life for your pig. Never a head start.
+> The Slop Club is here! Choose one long-term friend for Rosie and collect the
+> season's cosmetic premium rewards. Never a head start.
 
 **Description insert** (add under the feature list):
 > SLOP CLUB MEMBERSHIP
-> Love the good life? Join the Slop Club for a members-only shop full of
-> exclusive cosmetics, the season's premium reward track, and cozy perks made
-> for pigs of taste. Membership dresses up your pig and spoils your friends — it
-> never buys you a place on the leaderboard. $2.99/month or $24.99/year,
-> cancel anytime.
+> Give Rosie a friend. Join the Slop Club to choose one long-term companion,
+> decide who greets you at home, and claim the season's cosmetic premium
+> rewards as you play. Membership never buys a place on the leaderboard.
+> $2.99/month or $29.99/year, cancel anytime.
 
 ---
 
@@ -81,30 +73,28 @@ cosmetics and comfort — never a leaderboard advantage.
 
 **Launch post (X / Instagram caption):**
 > 🐷 The Slop Club is open.
-> Members-only cosmetics. The season's premium rewards. Cozy perks made for the
-> good life — and never a head start, because the board stays fair for everyone.
-> Join in Tickle the Pig. $2.99/mo.
+> Give Rosie one long-term friend and collect the season's cosmetic premium
+> rewards. Never a head start. Join in Tickle the Pig. $2.99/mo.
 
 **Short taglines (pick one per surface):**
-- "The good life for your pig."
-- "Dress up. Settle in. Spoil your friends."
+- "Give Rosie a friend."
+- "Choose the pig that feels like yours."
 - "Membership, minus the pay-to-win."
-- "A little luxury for your little pig."
-- "Fair board, fancy pig."
+- "One long-term friend. Five pigs to meet."
 
 **Story/teaser beats** (for a 3-panel promo — reuse the generated capsule art):
-1. a plain pig → "everyone starts the same."
-2. a pig in a gold crown + velvet cravat → "the club just dresses better."
-3. the members' lounge → "come settle in."
+1. Rosie alone → "Rosie has room for one friend."
+2. all five recruitable pigs → "Meet Copper, Pepper, Bandit, Pickles, and Biscuit."
+3. Rosie beside the chosen pig → "Join the Slop Club to get Rosie a friend."
 
 ---
 
 ## 5. In-game explainer (storybook voice — no emoji in-app)
 
 For the paywall's "what's this?" / the members card:
-> the slop club is for pigs who like the good life. members get a shop all their
-> own, the season's finest rewards, and cozy little touches to come. it never
-> puts you ahead on the board — the club's about the good life, not a head start.
+> the slop club gives Rosie one long-term friend. choose carefully, then decide
+> who greets you at home. the premium season rewards are collectible looks, not
+> a head start.
 
 For the cap-removal announcement (warm, preempts "you nerfed my perk"):
 > the club's changing for the better: it's about the good life now, not a head
@@ -115,12 +105,11 @@ For the cap-removal announcement (warm, preempts "you nerfed my perk"):
 
 ## Open items (reconcile before shipping)
 
-1. ~~PRICE~~ — RESOLVED 2026-07-20: **$2.99/mo · $24.99/yr** (founder call).
+1. ~~PRICE~~ — UPDATED 2026-07-28: **$2.99/mo · $29.99/yr** (founder call).
    Code comment (iap.ts), App Store Connect, and this copy now agree. Annual
-   is ~30% off ($2.99×12 = $35.88 vs $24.99).
+   is ~16% off ($2.99×12 = $35.88 vs $29.99).
 2. **Don't market the tickle cap** — it's being retired as pay-to-win; all copy
    above deliberately omits it and leans on cosmetics/comfort/fairness.
-4. **Roadmap honesty** — "coming soon" perks (Dye Vat, Lounge, Rosie, reactions,
-   gifting) are prototyped, not shipped. Keep them in the "coming" column until
-   they land so launch copy doesn't over-promise.
+4. **Offer discipline** — do not advertise the retired Lounge, Dye Vat, or
+   gold-Rosie experiments. The companion pigs are the membership hook.
 5. Emoji: fine in App Store / social copy above; NOT in in-app UI (house rule).

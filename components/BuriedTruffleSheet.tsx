@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
 	chipOff: { opacity: 0.4, borderColor: WHIMSY.muteSoft }, // would exceed the 50 cap
 	chipText: { ...TYPE.numeral, color: WHIMSY.mute },
 	chipTextOn: { color: INK },
-	chipTextOff: { color: WHIMSY.muteSoft },
+	chipTextOff: { color: WHIMSY.mute },
 
 	maxNote: { ...TYPE.body, color: WHIMSY.mute, textAlign: "center", paddingVertical: SPACE.xs },
 	note: { ...TYPE.hand, color: WHIMSY.accent, textAlign: "center", marginTop: SPACE.md },

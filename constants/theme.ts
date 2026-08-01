@@ -14,9 +14,14 @@ export const WHIMSY = {
 	lilac: "#d6c8f0",
 	lilacDeep: "#a89bff",
 	peach: "#ffc8a8",
-	accent: "#c25a3f",
-	mute: "rgba(40,30,20,0.6)",
-	muteSoft: "rgba(40,30,20,0.4)",
+	// Interactive terracotta. Dark enough for normal-size text on paper and
+	// rose surfaces (the previous #c25a3f missed AA on paper).
+	accent: "#a13f30",
+	// Explicit warm-ink steps avoid alpha-dependent contrast as surfaces change.
+	// `mute` is text-safe across every core pastel; `muteSoft` is for disabled
+	// icons, separators, and other non-body-text UI.
+	mute: "#605449",
+	muteSoft: "#8c7e71",
 	// Dark "storyteller" callout — the why-we-scuffle / vs-the-Great-Hunger
 	// strips on the war surfaces (Your Sounder redesign, 2026-07-06). Ink-dark
 	// bark panel with warm cream text; kicker text on bark uses WHIMSY.sun.
@@ -40,12 +45,40 @@ export const WHIMSY = {
 	// (#C99B23 / #5E7E49 / #7BA266 / #D5E4C9 / #5b8a4a); tokenized once so
 	// "matches Barn" is matched by token, not by copy-paste. (2026-07-12)
 	bless: "#C99B23",
-	curseGreen: "#5E7E49",
+	curseGreen: "#526f40",
 	// Boost flame — the warm ember a "boost" reward burns in on the pass track's
 	// tier stones. A single sanctioned orange, tokenized before reuse so the
 	// flame glyph can't drift back into an inline `#F58F4A`. (2026-07-13)
 	flame: "#F58F4A",
 };
+
+// Semantic interface roles. WHIMSY remains the primitive brand palette; new
+// shared UI should consume these roles so meaning survives palette tuning.
+// Tickle the Pig intentionally ships light-only until a complete dark paper,
+// ink, art, shadow, and navigation treatment exists.
+export const UI_COLORS = {
+	canvas: WHIMSY.paper,
+	surface: WHIMSY.paper,
+	surfaceMuted: WHIMSY.cream,
+	surfaceStrong: WHIMSY.cream2,
+	textPrimary: WHIMSY.ink,
+	textSecondary: WHIMSY.mute,
+	textDisabled: WHIMSY.muteSoft,
+	border: WHIMSY.ink,
+	separator: "#8c7e71",
+	action: WHIMSY.accent,
+	actionSurface: WHIMSY.sun,
+	successText: "#476436",
+	successSurface: "#e8f5e0",
+	warningText: "#7b5a00",
+	warningSurface: "#fff3d0",
+	infoText: "#3d687f",
+	infoSurface: WHIMSY.sky,
+	dangerText: "#983a2c",
+	dangerSurface: WHIMSY.rose,
+	textOnDark: WHIMSY.barkText,
+	scrim: "rgba(40,30,20,0.55)",
+} as const;
 
 // Hard sticker drop shadow (offset 4,4 / radius 0 / opacity 1).
 export const STICKER_SHADOW = {
@@ -107,8 +140,12 @@ export const TYPE = {
 	pageTitle: { fontFamily: FONTS.whimsy, fontSize: 26, lineHeight: 28 },
 	sectionTitle: { fontFamily: FONTS.whimsy, fontSize: 22, lineHeight: 24, letterSpacing: 0.2 },
 	cardTitle: { fontFamily: FONTS.whimsy, fontSize: 18, lineHeight: 22, letterSpacing: 0.2 },
+	// Small card title — the sanctioned 15px Caprasimo used on gear/card/dupe/
+	// bestiary chips (replaces the `...TYPE.cardTitle, fontSize: 15` overrides).
+	cardTitleSm: { fontFamily: FONTS.whimsy, fontSize: 15, lineHeight: 22, letterSpacing: 0.2 },
 	numeral: { fontFamily: FONTS.whimsy, fontSize: 16 },
 	// Nunito — reading text
+	bodyLg: { fontFamily: FONTS.body, fontSize: 17, lineHeight: 24 },
 	body: { fontFamily: FONTS.body, fontSize: 15, lineHeight: 21 },
 	bodySm: { fontFamily: FONTS.body, fontSize: 13, lineHeight: 18 },
 	// Nunito ExtraBold — labels (often tracked)
@@ -116,8 +153,14 @@ export const TYPE = {
 	// PatrickHand — cozy accents / kickers / sub-text
 	kicker: { fontFamily: FONTS.hand, fontSize: 13, letterSpacing: 0.4 },
 	hand: { fontFamily: FONTS.hand, fontSize: 14, lineHeight: 20 },
+	handLg: { fontFamily: FONTS.hand, fontSize: 17, lineHeight: 24 },
+	handDisplay: { fontFamily: FONTS.hand, fontSize: 21, lineHeight: 28 },
 	// Nunito ExtraBold caps — the tracked "pill" kicker
 	kickerPill: { fontFamily: FONTS.bodyExtra, fontSize: 11, letterSpacing: 1.6, textTransform: "uppercase" },
+	// Smaller tracked pill kicker — the sanctioned 10px caption pill (replaces the
+	// `...TYPE.kickerPill, fontSize: 9|10` overrides; the 9s move up to 10, a
+	// negligible visual delta that kills the sub-pixel shadow scale).
+	kickerPillSm: { fontFamily: FONTS.bodyExtra, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase" },
 } as const;
 
 export const RADII = {
@@ -164,7 +207,7 @@ export const ROW_TILTS = [-1.2, 0.8, -0.6, 0.5, -0.4, 1, -0.7, 0.6];
 
 // Shared modal-backdrop tint (warm ink shadow) so all sticker modals share the
 // same dim treatment.
-export const MODAL_BACKDROP_BG = "rgba(40,30,20,0.55)";
+export const MODAL_BACKDROP_BG = UI_COLORS.scrim;
 
 // Tiny accent text that sits above a section title — e.g. "★ welcome",
 // "★ snout season 0". Identical across Account, Onboarding, season,

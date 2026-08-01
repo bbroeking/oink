@@ -16,7 +16,7 @@ HOW TO REACH THE PURCHASE:
    tap "or use email"). You may create a test account or use the sandbox tester.
 2. Tap the "Me" tab (bottom-right).
 3. On the account screen, tap "Join the Slop Club." This opens the paywall with
-   the Monthly ($2.99) and Yearly ($24.99) subscription options.
+   the Monthly ($2.99) and Yearly ($29.99) subscription options.
    • The same paywall is also reachable from the "Season" tab (the "A Slop Club
      perk — Join the Slop Club" banner) and from the "Shop" tab's members band.
 

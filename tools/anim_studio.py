@@ -45,6 +45,9 @@ def parse_scale():
 
 
 def write_scale(scale):
+    # Idle is the pose-normalization baseline; other animations are measured
+    # relative to it, so the studio must never persist an idle override.
+    scale = {**scale, "idle": 1.0}
     body = "\n".join(f"\t{k}: {round(scale.get(k, 1), 3)}," for k in ORDER)
     new_obj = "export const ANIM_SCALE: Record<string, number> = {\n" + body + "\n};"
     src = open(SCALE_TS).read()

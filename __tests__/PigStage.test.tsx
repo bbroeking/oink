@@ -4,17 +4,18 @@
 // mood surfaces — Barn/Closet/Visit — where the item rides the moving pig).
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
-import { PigStage } from "../components/ui/PigStage";
+import {
+	PigStage,
+	resolvePigStageAssetAspect,
+} from "../components/ui/PigStage";
+import { HAT_IMAGES } from "../constants/hats";
+import { PIG_FRAMES } from "../constants/pigFrames.generated";
+import { PIG_IDS } from "../utils/pigs";
 
 // The pig sprite mounts every frame at once, toggling opacity; find the frame
 // Image nodes and read which one is visible (same shape as SpritePig.test).
 const frameNodes = (r: TestRenderer.ReactTestRenderer) =>
-	r.root.findAll(
-		(n) =>
-			!!n.props &&
-			n.props.source !== undefined &&
-			n.props.resizeMode !== undefined
-	);
+	r.root.findAll((n) => !!n.props && n.props.source !== undefined && n.props.resizeMode !== undefined);
 const opacityOf = (style: unknown): number | undefined => {
 	const arr = Array.isArray(style) ? style : [style];
 	for (const s of arr) {
@@ -30,7 +31,7 @@ const visibleSource = (r: TestRenderer.ReactTestRenderer) =>
 			frameNodes(r)
 				.filter((n) => opacityOf(n.props.style) === 1)
 				.map((n) => n.props.source)
-		),
+		)
 	][0];
 
 async function renderAct(node: React.ReactElement) {
@@ -66,5 +67,20 @@ describe("PigStage — shop-preview freeze", () => {
 		});
 		expect(visibleSource(r)).not.toBe(first); // stepped forward
 		act(() => r.unmount());
+	});
+
+	test.each(PIG_IDS)("%s renders its own coat with an equipped wearable", async (pigId) => {
+		const r = await renderAct(
+			<PigStage pigId={pigId} pigAnimation="idle" pigFrozen equipped={{ id: "cowboy", category: "hat", emoji: null }} />
+		);
+		const sources = frameNodes(r).map((node) => node.props.source);
+
+		expect(sources).toContain(PIG_FRAMES[pigId].idle_1);
+		expect(sources).toContain(HAT_IMAGES.cowboy);
+		act(() => r.unmount());
+	});
+
+	test("uses square authored-item geometry when the web image resolver is absent", () => {
+		expect(resolvePigStageAssetAspect(HAT_IMAGES.cowboy, undefined)).toBe(1);
 	});
 });

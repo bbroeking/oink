@@ -53,6 +53,7 @@ afterEach(() => resetFeedingScheduleForTests());
 describe("default parity — the module boots on the compiled constants", () => {
 	test("feedingSchedule() === the constants until something overrides", () => {
 		expect(feedingSchedule()).toEqual({
+			mode: "uniform",
 			windowSecs: ROOTING_WINDOW_SECS,
 			openSecs: PATCH_OPEN_SECS,
 			offsetSecs: ROOTING_WINDOW_OFFSET_SECS,
@@ -61,8 +62,8 @@ describe("default parity — the module boots on the compiled constants", () => 
 	});
 });
 
-describe("override propagation — the window functions follow the module", () => {
-	test("applying a new schedule moves windowIndex / phase / boundaries", () => {
+describe("legacy uniform schedule compatibility", () => {
+	test("an explicit legacy schedule still drives the pure helpers", () => {
 		// 1h windows, 30m open, 10m offset — tiny geometry, easy wall math.
 		const changed = applyFeedingSchedule({
 			windowSecs: 3600,
@@ -72,11 +73,12 @@ describe("override propagation — the window functions follow the module", () =
 		expect(changed).toBe(true);
 
 		const anchor = 600 * 1000; // first boundary of the new schedule
-		expect(windowIndex(anchor)).toBe(0);
-		expect(windowIndex(anchor + 3600 * 1000)).toBe(1);
-		expect(windowEndsAtMs(0)).toBe(anchor + 3600 * 1000);
-		expect(patchPhaseOpen(anchor)).toBe(true); // minute zero of open
-		expect(patchPhaseOpen(anchor + 1800 * 1000)).toBe(false); // guarded half
+		const sched = feedingSchedule();
+		expect(windowIndex(anchor, sched)).toBe(0);
+		expect(windowIndex(anchor + 3600 * 1000, sched)).toBe(1);
+		expect(windowEndsAtMs(0, sched)).toBe(anchor + 3600 * 1000);
+		expect(patchPhaseOpen(anchor, sched)).toBe(true);
+		expect(patchPhaseOpen(anchor + 1800 * 1000, sched)).toBe(false);
 	});
 
 	test("re-applying identical values reports no change", () => {
@@ -94,6 +96,7 @@ describe("override propagation — the window functions follow the module", () =
 describe("sanitizeFeedingSchedule — the clamp that guards the clocks", () => {
 	test("a valid server row parses", () => {
 		expect(sanitizeFeedingSchedule(row())).toEqual({
+			mode: "uniform",
 			windowSecs: 3600,
 			openSecs: 1800,
 			offsetSecs: 600,
@@ -117,6 +120,12 @@ describe("sanitizeFeedingSchedule — the clamp that guards the clocks", () => {
 
 	test("open === window is allowed (an always-open patch is a valid dial)", () => {
 		expect(sanitizeFeedingSchedule(row({ open_secs: 3600 }))).not.toBeNull();
+	});
+
+	test("accepts the server-owned commuter activation shape", () => {
+		expect(sanitizeFeedingSchedule({ mode: "commuter_eastern" })).toMatchObject({
+			mode: "commuter_eastern",
+		});
 	});
 });
 

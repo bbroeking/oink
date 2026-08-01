@@ -22,18 +22,27 @@ const WAR_COSMETICS = "20260650000000_mud_war_cosmetics.sql";
 const sqlFiles = () =>
 	fs.readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort();
 
+const activeDef = (fnName: string) => {
+	const defs = sqlFiles().filter((f) =>
+		fs
+			.readFileSync(path.join(MIGRATIONS, f), "utf8")
+			.includes(`FUNCTION public.${fnName}`)
+	);
+	expect(defs.length).toBeGreaterThan(0);
+	return fs.readFileSync(path.join(MIGRATIONS, defs[defs.length - 1]), "utf8");
+};
+
 describe("cost-0 items never leak into the shop", () => {
 	it("the active daily_shop() definition still filters cost > 0", () => {
-		// The last migration (alphabetically) that redefines daily_shop() is the
-		// one Postgres actually runs.
-		const defs = sqlFiles().filter((f) =>
-			fs
-				.readFileSync(path.join(MIGRATIONS, f), "utf8")
-				.includes("FUNCTION public.daily_shop")
-		);
-		expect(defs.length).toBeGreaterThan(0);
-		const active = fs.readFileSync(path.join(MIGRATIONS, defs[defs.length - 1]), "utf8");
-		expect(active).toMatch(/cost\s*>\s*0/);
+		expect(activeDef("daily_shop")).toMatch(/cost\s*>\s*0/);
+	});
+
+	it("the active buy_hat() rejects cost-0 items", () => {
+		expect(activeDef("buy_hat")).toMatch(/hat_cost\s*<=\s*0/);
+	});
+
+	it("the active mystery-box picker only draws positive-cost items", () => {
+		expect(activeDef("grant_mystery_box")).toMatch(/h\.cost\s*>\s*0/);
 	});
 
 	it("the Browse grid hides unowned cost-0 items", () => {
@@ -53,20 +62,38 @@ describe("cost-0 items never leak into the shop", () => {
 	});
 });
 
+describe("Golden Ticket cosmetics stay redemption-only", () => {
+	const redemptionOnlySeeds = [
+		"20260733000000_release_party_crown.sql",
+		"20260734000000_ticket_takers_cap.sql",
+	];
+
+	it.each(redemptionOnlySeeds)("%s seeds the cosmetic at cost 0", (file) => {
+		const sql = fs.readFileSync(path.join(MIGRATIONS, file), "utf8");
+		expect(sql).toMatch(
+			/INSERT INTO public\.hats[\s\S]*?VALUES[\s\S]*?,\s*0,\s*47[01],/
+		);
+	});
+
+	it("both have a global ten-owner supply policy", () => {
+		const sql = fs.readFileSync(
+			path.join(MIGRATIONS, "20260776000000_cosmetic_owner_caps.sql"),
+			"utf8"
+		);
+		expect(sql).toMatch(
+			/WHERE h\.id IN \('release_party_crown', 'ticket_takers_cap'\)/
+		);
+		expect(sql).toMatch(/SELECT h\.id,\s*10,\s*COUNT/);
+		expect(sql).toMatch(/BEFORE INSERT ON public\.user_hats/);
+		expect(sql).toMatch(/issued_count\s*>=\s*supply\.max_owners/);
+	});
+});
+
 // Battle-pass tier rewards are EARNED, never sold — a structural separation
 // (not the manual cost=0 convention) so every future season is covered the
 // moment its tiers are seeded. Source of truth: season_tiers; enforced by the
 // pass_exclusive flag (synced by trigger) in daily_shop/buy_hat + Browse.
 describe("battle-pass rewards can never enter the shop (all seasons)", () => {
-	const activeDef = (fnName: string) => {
-		const defs = sqlFiles().filter((f) =>
-			fs
-				.readFileSync(path.join(MIGRATIONS, f), "utf8")
-				.includes(`FUNCTION public.${fnName}`)
-		);
-		expect(defs.length).toBeGreaterThan(0);
-		return fs.readFileSync(path.join(MIGRATIONS, defs[defs.length - 1]), "utf8");
-	};
 	const allSql = () =>
 		sqlFiles()
 			.map((f) => fs.readFileSync(path.join(MIGRATIONS, f), "utf8"))

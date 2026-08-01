@@ -30,7 +30,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Sticker } from "@/components/ui/Sticker";
-import { Button } from "@/components/ui";
+import { Button, TicketButton } from "@/components/ui";
 import { EmptyState, LoadingBeat } from "@/components/ui/EmptyState";
 import { Glyph } from "@/components/ui/Glyph";
 import { SnoutCoin } from "@/components/ui/SnoutCoin";
@@ -38,6 +38,7 @@ import { supabase } from "@/utils/supabase";
 import { rpcAction } from "@/utils/rpc";
 import {
 	parseRedemptionPayload,
+	parseTradingCardPayload,
 	formatRedemptionCode,
 	redemptionErrorMessage,
 	PENDING_REDEMPTION_CODE_KEY,
@@ -156,8 +157,17 @@ export default function ScanCodeScreen() {
 	const onScanned = useCallback(
 		(data: string) => {
 			if (scanLock.current || busy || reveal) return;
-			const code = parseRedemptionPayload(data);
-			if (!code) return;
+			const payload = parseTradingCardPayload(data);
+			if (!payload) return;
+			if (payload.kind === "app_store") {
+				scanLock.current = true;
+				Linking.openURL(payload.url).catch(() => {
+					scanLock.current = false;
+					setError("Couldn't open the App Store — try the QR with your phone camera.");
+				});
+				return;
+			}
+			const code = payload.code;
 			// Don't re-submit the exact code we just refused while it's still in
 			// frame — wait for the payload to change (or a manual edit clears it).
 			if (code === lastFailedPayload.current) return;
@@ -388,16 +398,16 @@ function ManualEntry({
 				onSubmitEditing={onSubmit}
 			/>
 			{!!error && <Text style={styles.errorText}>{error}</Text>}
-			<Button
-				variant="primary"
-				size="lg"
-				full
+			<TicketButton
+				label="Redeem ticket"
+				stub="Golden"
+				tone="golden"
+				loading={busy}
+				loadingLabel="Checking…"
 				style={{ marginTop: SPACE.md }}
-				disabled={busy || value.trim().length === 0}
+				disabled={value.trim().length === 0}
 				onPress={onSubmit}
-			>
-				{busy ? "Checking…" : "Redeem"}
-			</Button>
+			/>
 		</View>
 	);
 }

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="theme-color" content="#f8eddf" />
+		<title>Snatch Chain Prototype</title>
+		<link rel="stylesheet" href="./styles.css" />
+	</head>
+	<body>
+		<main class="shell">
+			<header class="masthead">
+				<div>
+					<p class="eyebrow">Leaderboard mischief lab</p>
+					<h1>Snatch Chain</h1>
+					<p class="lede">Steal one snout. Get caught for three. Decide when to walk away.</p>
+				</div>
+				<div class="clock-card" aria-label="Prototype clock">
+					<span>Prototype time</span>
+					<strong id="clock">Hour 0</strong>
+				</div>
+			</header>
+
+			<section class="notice" id="notice" aria-live="polite"></section>
+
+			<div class="workspace">
+				<section class="panel leaderboard-panel">
+					<div class="panel-heading">
+						<div>
+							<p class="kicker">Choose an opponent</p>
+							<h2>Leaderboard</h2>
+						</div>
+						<div class="limit-badge">2 targets / 24h</div>
+					</div>
+					<div class="players" id="players"></div>
+				</section>
+
+				<aside class="side-column">
+					<section class="panel action-panel">
+						<p class="kicker">Start trouble</p>
+						<h2>Steal a snout</h2>
+						<label>
+							Playing as
+							<select id="attacker"></select>
+						</label>
+						<label>
+							Target
+							<select id="target"></select>
+						</label>
+						<button class="primary-button" id="steal-button">Steal 1 snout</button>
+					</section>
+
+					<section class="panel time-panel">
+						<div>
+							<p class="kicker">Test the deadline</p>
+							<h2>Advance time</h2>
+						</div>
+						<div class="button-row">
+							<button class="secondary-button" data-wait="1">+1h</button>
+							<button class="secondary-button" data-wait="8">+8h</button>
+							<button class="secondary-button" data-wait="24">+24h</button>
+						</div>
+					</section>
+				</aside>
+			</div>
+
+			<section class="panel chains-panel">
+				<div class="panel-heading">
+					<div>
+						<p class="kicker">Live retaliation</p>
+						<h2>Snatch chains</h2>
+					</div>
+					<button class="text-button" id="reset-button">Reset prototype</button>
+				</div>
+				<div class="chains" id="chains"></div>
+			</section>
+
+			<footer>
+				In-memory prototype · no real players, balances, or Supabase data
+			</footer>
+		</main>
+		<script type="module" src="./web.mjs"></script>
+	</body>
+</html>

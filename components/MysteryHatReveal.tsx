@@ -45,6 +45,10 @@ import {
 	STICKER_SHADOW,
 	WHIMSY,
 } from "@/constants/theme";
+import {
+	MOTION_DURATION,
+	useMotionPolicy,
+} from "@/hooks/useMotionPolicy";
 
 const revealSound = require("../assets/sounds/claim.mp3");
 
@@ -78,11 +82,12 @@ export function MysteryHatReveal({
 	const hatPop = useRef(new Animated.Value(0)).current;
 	const wobbleLoop = useRef<Animated.CompositeAnimation | null>(null);
 	const teardown = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const motionPolicy = useMotionPolicy();
 
 	// Reset to the closed box whenever the modal isn't presented so a
 	// re-present (queue churn) replays the full unboxing.
 	useEffect(() => {
-		if (slot.visible) {
+		if (slot.visible && motionPolicy.allowDecorativeMotion) {
 			wobbleLoop.current = Animated.loop(
 				Animated.sequence([
 					Animated.timing(wobble, {
@@ -114,7 +119,7 @@ export function MysteryHatReveal({
 			hatPop.setValue(0);
 			setPhase("box");
 		}
-	}, [slot.visible, wobble, hatPop]);
+	}, [slot.visible, wobble, hatPop, motionPolicy.allowDecorativeMotion]);
 
 	useEffect(
 		() => () => {
@@ -134,12 +139,19 @@ export function MysteryHatReveal({
 			chime.seekTo(0);
 			chime.play();
 		} catch {}
-		Animated.spring(hatPop, {
-			toValue: 1,
-			tension: 80,
-			friction: 6,
-			useNativeDriver: true,
-		}).start();
+		const revealAnimation = motionPolicy.reduceMotion
+			? Animated.timing(hatPop, {
+					toValue: 1,
+					duration: MOTION_DURATION.crossfade,
+					useNativeDriver: true,
+				})
+			: Animated.spring(hatPop, {
+					toValue: 1,
+					tension: 80,
+					friction: 6,
+					useNativeDriver: true,
+				});
+		revealAnimation.start();
 	};
 
 	// Two-phase dismiss per the PopupQueue contract: hide now, clear the

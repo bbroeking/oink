@@ -1,15 +1,19 @@
 // Leaderboard — the "Board" segment of the Friends hub. The hub owns
 // the outer chrome (SafeAreaView + tab title), so this component is
 // just the scope toggle + the ranked list + UserSheet.
-import { useState, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Text } from "react-native";
-import { bondBreakdown, type PairBondRow } from "@/utils/pairBonds";
+import { memo, useState, useCallback, useMemo } from "react";
+import { View, StyleSheet, ScrollView, FlatList, SectionList, Pressable, Text } from "react-native";
+import {
+	bondBreakdown,
+	type EnemyPairRow,
+	type PairBondRow
+} from "@/utils/pairBonds";
 import {
 	useLeaderboard,
 	LEADERBOARD_MAX_ROWS,
 	type LeaderboardEntry,
 	type Scope,
-	type BoardScope,
+	type BoardScope
 } from "@/hooks/useLeaderboard";
 import { useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { Icon } from "./ui/Icon";
@@ -20,13 +24,16 @@ import { Sticker, Tape } from "./ui/Sticker";
 import { ListRowSkeleton } from "./ui/Skeleton";
 import { UserSheet } from "./UserSheet";
 import { TickleBreakdownSheet } from "./TickleBreakdownSheet";
+import { EnemyBreakdownSheet } from "./EnemyBreakdownSheet";
+import { SegmentedControl } from "./ui/SegmentedControl";
 import {
 	FONTS,
 	KICKER_TEXT,
 	SHADOW_SM,
 	TAB_SAFE,
 	TYPE,
-	WHIMSY,
+	UI_COLORS,
+	WHIMSY
 } from "@/constants/theme";
 
 // The Board's fetch/pagination now lives in hooks/useLeaderboard.ts, which owns
@@ -48,7 +55,7 @@ const DEV_WALLOW_PREVIEW: LeaderboardEntry[] = [
 		active_hat_id: null,
 		active_hat: null,
 		active_title: { id: "preview-pre", name: "Blazing", placement: "pre" },
-		wallow_count: 5,
+		wallow_count: 5
 	},
 	{
 		id: "wallow-preview-2",
@@ -57,7 +64,7 @@ const DEV_WALLOW_PREVIEW: LeaderboardEntry[] = [
 		active_hat_id: null,
 		active_hat: null,
 		active_title: { id: "preview-post", name: "the Rooted", placement: "post" },
-		wallow_count: 2,
+		wallow_count: 2
 	},
 	{
 		id: "wallow-preview-1",
@@ -66,7 +73,7 @@ const DEV_WALLOW_PREVIEW: LeaderboardEntry[] = [
 		active_hat_id: null,
 		active_hat: null,
 		active_title: null,
-		wallow_count: 1,
+		wallow_count: 1
 	},
 	{
 		id: "wallow-preview-0",
@@ -75,8 +82,8 @@ const DEV_WALLOW_PREVIEW: LeaderboardEntry[] = [
 		active_hat_id: null,
 		active_hat: null,
 		active_title: null,
-		wallow_count: 0,
-	},
+		wallow_count: 0
+	}
 ];
 
 function DevWallowPreview() {
@@ -88,12 +95,7 @@ function DevWallowPreview() {
 				Production leaderboard treatment · ranks 0, 1, 2, and 5
 			</Text>
 			<ChampionPoster champ={champ} onPress={noop} onPressScore={noop} />
-			<Sticker
-				color="paper"
-				rotate={-0.3}
-				radius={14}
-				style={styles.listSticker}
-			>
+			<Sticker color="paper" rotate={-0.3} radius={14} style={styles.listSticker}>
 				{rows.map((player, index) => (
 					<ClippingRow
 						key={player.id}
@@ -113,7 +115,7 @@ function DevWallowPreview() {
 function ChampionPoster({
 	champ,
 	onPress,
-	onPressScore,
+	onPressScore
 }: {
 	champ: LeaderboardEntry;
 	onPress: (userId: string) => void;
@@ -123,23 +125,11 @@ function ChampionPoster({
 }) {
 	return (
 		<Pressable style={styles.champWrap} onPress={() => onPress(champ.id)}>
-			<Sticker
-				color="sun"
-				rotate={-1.5}
-				radius={18}
-				border={2.5}
-				style={styles.champ}
-			>
+			<Sticker color="sun" rotate={-1.5} radius={18} border={2.5} style={styles.champ}>
 				{/* Rose tape pinning the poster — small decorative pin in
 				    the top-left so the champion poster reads as "tacked up"
 				    on the leaderboard wall. */}
-				<Tape
-					color="roseDeep"
-					rotate={-12}
-					width={48}
-					height={12}
-					style={styles.champTape}
-				/>
+				<Tape color="roseDeep" rotate={-12} width={48} height={12} style={styles.champTape} />
 				{/* Lifetime tickles_earned drives the sort, so the #1 slot
 				    is the all-time leader — calling them 'today's
 				    champion' would imply a daily reset the schema
@@ -152,11 +142,7 @@ function ChampionPoster({
 						prestigeLevel={champ.wallow_count}
 					/>
 					<View style={{ flex: 1, minWidth: 0 }}>
-						<ProfileIdentity
-							username={champ.username}
-							title={champ.active_title}
-							variant="hero"
-						/>
+						<ProfileIdentity username={champ.username} title={champ.active_title} variant="hero" />
 						{/* Second line — tickles count is always present
 						    (it's what earned them the leader spot), the
 						    "wears X" reads alongside when a hat is
@@ -177,9 +163,7 @@ function ChampionPoster({
 							<IconText left={<Glyph name="heart" size={14} />} gap={5}>
 								<Text style={styles.champScore} numberOfLines={1}>
 									{champ.tickles_earned.toLocaleString()}
-									{champ.active_hat?.name
-										? `  ·  wears ${champ.active_hat.name}`
-										: ""}
+									{champ.active_hat?.name ? `  ·  wears ${champ.active_hat.name}` : ""}
 								</Text>
 							</IconText>
 						</Pressable>
@@ -198,14 +182,14 @@ function ChampionPoster({
 	);
 }
 
-function ClippingRow({
+const ClippingRow = memo(function ClippingRow({
 	player,
 	rank,
 	isYou,
 	last,
 	onPress,
 	onPressScore,
-	showAlignment = false,
+	showAlignment = false
 }: {
 	player: LeaderboardEntry;
 	rank: number;
@@ -223,11 +207,7 @@ function ClippingRow({
 	return (
 		<Pressable
 			onPress={() => onPress(player.id)}
-			style={[
-				styles.row,
-				isYou && styles.rowYouHighlight,
-				!last && styles.rowDivider,
-			]}
+			style={[styles.row, isYou && styles.rowYouHighlight, !last && styles.rowDivider]}
 		>
 			<Text style={styles.rowRank}>#{rank}</Text>
 			<PrestigeAvatar
@@ -295,7 +275,7 @@ function ClippingRow({
 			)}
 		</Pressable>
 	);
-}
+});
 
 // "{nameA} × {nameB}" — the pair's two pigs joined by a small cross. Anonymous
 // fallback matches the rest of the board.
@@ -308,29 +288,12 @@ function pairTitle(row: PairBondRow): string {
 function PairChampionPoster({ champ }: { champ: PairBondRow }) {
 	return (
 		<View style={styles.champWrap}>
-			<Sticker
-				color="sun"
-				rotate={-1.5}
-				radius={18}
-				border={2.5}
-				style={styles.champ}
-			>
-				<Tape
-					color="roseDeep"
-					rotate={-12}
-					width={48}
-					height={12}
-					style={styles.champTape}
-				/>
+			<Sticker color="sun" rotate={-1.5} radius={18} border={2.5} style={styles.champ}>
+				<Tape color="roseDeep" rotate={-12} width={48} height={12} style={styles.champTape} />
 				<Text style={styles.champOver}>★ the strongest pair in the bog ★</Text>
 				<View style={styles.champBody}>
 					<View style={{ flex: 1, minWidth: 0 }}>
-						<Text
-							style={styles.champName}
-							numberOfLines={1}
-							adjustsFontSizeToFit
-							minimumFontScale={0.55}
-						>
+						<Text style={styles.champName} numberOfLines={2}>
 							{pairTitle(champ)}
 						</Text>
 						{/* Breakdown sub-line — the three bond acts that add up to the
@@ -354,31 +317,20 @@ function PairChampionPoster({ champ }: { champ: PairBondRow }) {
 
 // One ranked pair row. isYou → the caller is in the pair; the row lights rose
 // (matching the self-highlight grammar used for the you-row elsewhere).
-function PairRow({
+const PairRow = memo(function PairRow({
 	row,
 	last,
-	isYou,
+	isYou
 }: {
 	row: PairBondRow;
 	last?: boolean;
 	isYou?: boolean;
 }) {
 	return (
-		<View
-			style={[
-				styles.row,
-				isYou && styles.pairRowYou,
-				!last && styles.rowDivider,
-			]}
-		>
+		<View style={[styles.row, isYou && styles.pairRowYou, !last && styles.rowDivider]}>
 			<Text style={styles.rowRank}>#{row.rank}</Text>
 			<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
-				<Text
-					style={styles.rowName}
-					numberOfLines={1}
-					adjustsFontSizeToFit
-					minimumFontScale={0.6}
-				>
+				<Text style={styles.rowName} numberOfLines={2}>
 					{pairTitle(row)}
 					{isYou && <Text style={styles.rowYouTag}> (you)</Text>}
 				</Text>
@@ -394,13 +346,87 @@ function PairRow({
 			</View>
 		</View>
 	);
+});
+
+function enemyTitle(row: EnemyPairRow): string {
+	return `${row.name_a ?? "Anonymous"} vs ${row.name_b ?? "Anonymous"}`;
 }
+
+function EnemyChampionPoster({
+	champ,
+	onPress
+}: {
+	champ: EnemyPairRow;
+	onPress: (enemy: EnemyPairRow) => void;
+}) {
+	return (
+		<Pressable
+			style={styles.champWrap}
+			onPress={() => onPress(champ)}
+			accessibilityRole="button"
+			accessibilityLabel={`Open rivalry breakdown for ${enemyTitle(champ)}`}
+		>
+			<Sticker color="sage" rotate={1.2} radius={18} border={2.5} style={styles.champ}>
+				<Tape color="lilac" rotate={10} width={48} height={12} style={styles.champTape} />
+				<Text style={[styles.champOver, styles.enemyAccent]}>
+					★ the biggest enemies in the bog ★
+				</Text>
+				<View style={styles.champBody}>
+					<View style={{ flex: 1, minWidth: 0 }}>
+						<Text style={styles.champName}>{enemyTitle(champ)}</Text>
+						<Text style={styles.pairChampSub}>tap to see who cursed whom</Text>
+					</View>
+					<View style={styles.rowScoreCol}>
+						<Text style={styles.champBond}>{champ.curses.toLocaleString()}</Text>
+						<Text style={styles.rowScoreUnit}>curses</Text>
+					</View>
+				</View>
+			</Sticker>
+		</Pressable>
+	);
+}
+
+const EnemyRow = memo(function EnemyRow({
+	row,
+	last,
+	isYou,
+	onPress
+}: {
+	row: EnemyPairRow;
+	last?: boolean;
+	isYou?: boolean;
+	onPress: (enemy: EnemyPairRow) => void;
+}) {
+	return (
+		<Pressable
+			onPress={() => onPress(row)}
+			accessibilityRole="button"
+			accessibilityLabel={`Open rivalry breakdown for ${enemyTitle(row)}`}
+			style={[styles.row, isYou && styles.enemyRowYou, !last && styles.rowDivider]}
+		>
+			<Text style={styles.rowRank}>#{row.rank}</Text>
+			<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
+				<Text style={styles.rowName}>
+					{enemyTitle(row)}
+					{isYou && <Text style={styles.rowYouTag}> (you)</Text>}
+				</Text>
+				<Text style={styles.rowSub}>tap to see who cursed whom</Text>
+			</View>
+			<View style={styles.rowScoreCol}>
+				<Text style={styles.rowScore}>{row.curses.toLocaleString()}</Text>
+				<Text style={styles.rowScoreUnit}>curses</Text>
+			</View>
+		</Pressable>
+	);
+});
 
 // `initialScope` lets a host open the board on a specific tab (the Sounder
 // card's "standings live in the Board" note lands on the Sounders scope).
 export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 	const [showWallowPreview, setShowWallowPreview] = useState(false);
 	const [scope, setScope] = useState<Scope>(initialScope ?? "global");
+	const [pairView, setPairView] = useState<"pairs" | "enemies">("pairs");
+	const [selectedEnemy, setSelectedEnemy] = useState<EnemyPairRow | null>(null);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 	// The tickle breakdown receipt (spec 17) — which pig's ledger is open + its
 	// already-known total (the fail-soft display when the RPC is dark).
@@ -410,7 +436,7 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 	} | null>(null);
 	const openBreakdown = useCallback(
 		(userId: string, total: number) => setBreakdownUser({ id: userId, total }),
-		[],
+		[]
 	);
 	// Alignment isn't a thing in Season 1 — the greedy/generous board
 	// retires with Judgement Day, so its scope tab hides once s1 is live.
@@ -428,77 +454,95 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 		rows: leaderboard,
 		pairs,
 		youPair,
+		enemies,
+		youEnemy,
 		myId,
 		loading,
 		loadingMore,
 		hasMore,
 		error,
 		refresh: fetchLeaderboard,
-		loadMore,
+		loadMore
 	} = useLeaderboard(scope);
 
 	const champ = leaderboard[0];
-	const rest = leaderboard.slice(1);
+	const rest = useMemo(() => leaderboard.slice(1), [leaderboard]);
+	const pairRest = useMemo(() => pairs.slice(1), [pairs]);
+	const enemyRest = useMemo(() => enemies.slice(1), [enemies]);
+	const alignmentSections = useMemo(
+		() =>
+			[
+				{
+					key: "generous",
+					title: "GENEROUS",
+					titleStyle: styles.alignSectionGenerous,
+					data: leaderboard.filter((row) => row.align_side === "generous")
+				},
+				{
+					key: "greedy",
+					title: "GREEDY",
+					titleStyle: styles.alignSectionGreedy,
+					data: leaderboard.filter((row) => row.align_side === "greedy")
+				}
+			].filter((section) => section.data.length > 0),
+		[leaderboard]
+	);
 
 	return (
 		<View style={styles.container}>
 			<View style={styles.toggleWrap}>
-				<Sticker color="paper" rotate={0} radius={22} style={styles.toggle}>
-					{scopes.map((s) => {
-						const active = s === scope;
-						return (
-							<Pressable
-								key={s}
-								onPress={() => setScope(s)}
-								style={[styles.toggleBtn, active && styles.toggleBtnActive]}
-							>
-								<Icon
-									name={
-										s === "global"
-											? "globe"
-											: s === "friends"
-												? "friends"
-												: s === "pairs"
-													? "handshake"
-													: "star"
-									}
-									size={14}
-									filled={active}
-									color={WHIMSY.ink}
-									strokeWidth={1.8}
-								/>
-								<Text
-									style={[styles.toggleText, active && styles.toggleTextActive]}
-								>
-									{s === "global"
-										? "Global"
-										: s === "friends"
-											? "Friends"
-											: s === "pairs"
-												? "Pairs"
-												: "Alignment"}
-								</Text>
-							</Pressable>
-						);
-					})}
-				</Sticker>
+				<SegmentedControl
+					label="Leaderboard scope"
+					value={scope}
+					onChange={setScope}
+					options={scopes.map((item) => ({
+						value: item,
+						label:
+							item === "global"
+								? "Global"
+								: item === "friends"
+									? "Friends"
+								: item === "pairs"
+									? "Pairs"
+									: "Alignment",
+						icon:
+							item === "global"
+								? "globe"
+								: item === "friends"
+									? "friends"
+									: item === "pairs"
+										? "handshake"
+										: "star"
+					}))}
+				/>
 			</View>
+			{scope === "pairs" && (
+				<View style={styles.pairToggleWrap}>
+					<SegmentedControl
+						label="Pair ranking"
+						value={pairView}
+						onChange={setPairView}
+						options={[
+							{ value: "pairs", label: "Pairs", icon: "handshake" },
+							{ value: "enemies", label: "Enemies", icon: "ghost" }
+						]}
+					/>
+				</View>
+			)}
 			{__DEV__ && (
 				<Pressable
 					onPress={() => setShowWallowPreview((shown) => !shown)}
 					style={({ pressed }) => [
 						styles.previewToggle,
 						showWallowPreview && styles.previewToggleOn,
-						pressed && { opacity: 0.75 },
+						pressed && { opacity: 0.75 }
 					]}
 					accessibilityRole="button"
 					accessibilityState={{ selected: showWallowPreview }}
 				>
 					<Glyph name="flame" size={16} />
 					<Text style={styles.previewToggleText}>
-						{showWallowPreview
-							? "Showing Wallow ranks"
-							: "Preview Wallow ranks"}
+						{showWallowPreview ? "Showing Wallow ranks" : "Preview Wallow ranks"}
 					</Text>
 				</Pressable>
 			)}
@@ -515,93 +559,117 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				// Fetch failed (both selects threw) — a cozy card with a
 				// hand-link retry, so the Board never renders silently empty.
 				<View style={styles.emptyWrap}>
-					<Sticker
-						color="paper"
-						rotate={-0.5}
-						radius={12}
-						style={styles.emptyCard}
-					>
-						<Text style={styles.emptyText}>
-							the Board is being shy — give it another nudge.
-						</Text>
-						<Pressable
-							onPress={fetchLeaderboard}
-							hitSlop={8}
-							style={styles.retryLink}
-						>
+					<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
+						<Text style={styles.emptyText}>the Board is being shy — give it another nudge.</Text>
+						<Pressable onPress={fetchLeaderboard} hitSlop={8} style={styles.retryLink}>
 							<Text style={styles.retryText}>try again ›</Text>
 						</Pressable>
 					</Sticker>
 				</View>
-			) : scope === "pairs" ? (
+			) : scope === "pairs" && pairView === "pairs" ? (
 				// Strongest pairs — the bond between two specific pigs, ranked.
 				// Champion pair poster on top, then a flat sticker of ranked
 				// rows, then the caller's own best pair pinned below when it
 				// falls outside the top slice.
 				pairs.length === 0 ? (
 					<View style={styles.emptyWrap}>
-						<Sticker
-							color="paper"
-							rotate={-0.5}
-							radius={12}
-							style={styles.emptyCard}
-						>
+						<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
 							<Text style={styles.emptyText}>
 								no bonds yet. trade, bless, and visit a friend to build one.
 							</Text>
 						</Sticker>
 					</View>
 				) : (
-					<ScrollView
+					<FlatList
 						style={styles.list}
 						contentContainerStyle={styles.listContent}
-					>
-						<PairChampionPoster champ={pairs[0]} />
-						{pairs.length > 1 && (
-							<Sticker
-								color="paper"
-								rotate={-0.3}
-								radius={14}
-								style={styles.listSticker}
+						data={pairRest}
+						keyExtractor={(row) => `${row.user_a}-${row.user_b}`}
+						initialNumToRender={10}
+						maxToRenderPerBatch={8}
+						windowSize={7}
+						removeClippedSubviews
+						ListHeaderComponent={<PairChampionPoster champ={pairs[0]} />}
+						renderItem={({ item: row, index }) => (
+							<View
+								style={[
+									styles.virtualBoardRow,
+									index === 0 && styles.virtualBoardRowFirst,
+									index === pairRest.length - 1 && styles.virtualBoardRowLast
+								]}
 							>
-								{pairs.slice(1).map((row, i, arr) => (
-									<PairRow
-										key={`${row.user_a}-${row.user_b}`}
-										row={row}
-										isYou={row.is_self}
-										last={i === arr.length - 1}
-									/>
-								))}
-							</Sticker>
+								<PairRow row={row} isYou={row.is_self} last={index === pairRest.length - 1} />
+							</View>
 						)}
-						{/* The caller's own best pair, pinned below when it sits
-						    outside the returned top slice — so you always see
-						    where your strongest bond lands. */}
-						{youPair && (
-							<>
-								<Text style={styles.youPairLabel}>★ your strongest pair</Text>
-								<Sticker
-									color="rose"
-									rotate={0.4}
-									radius={14}
-									style={styles.listSticker}
-								>
-									<PairRow row={youPair} isYou last />
-								</Sticker>
-							</>
+						ListFooterComponent={
+							youPair ? (
+								<>
+									<Text style={styles.youPairLabel}>★ your strongest pair</Text>
+									<Sticker color="rose" rotate={0.4} radius={14} style={styles.listSticker}>
+										<PairRow row={youPair} isYou last />
+									</Sticker>
+								</>
+							) : null
+						}
+					/>
+				)
+			) : scope === "pairs" && pairView === "enemies" ? (
+				enemies.length === 0 ? (
+					<View style={styles.emptyWrap}>
+						<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
+							<Text style={styles.emptyText}>
+								no enemies yet. swap a curse with a friend to start a rivalry.
+							</Text>
+						</Sticker>
+					</View>
+				) : (
+					<FlatList
+						style={styles.list}
+						contentContainerStyle={styles.listContent}
+						data={enemyRest}
+						keyExtractor={(row) => `${row.user_a}-${row.user_b}`}
+						initialNumToRender={10}
+						maxToRenderPerBatch={8}
+						windowSize={7}
+						removeClippedSubviews
+						ListHeaderComponent={
+							<EnemyChampionPoster champ={enemies[0]} onPress={setSelectedEnemy} />
+						}
+						renderItem={({ item: row, index }) => (
+							<View
+								style={[
+									styles.virtualBoardRow,
+									index === 0 && styles.virtualBoardRowFirst,
+									index === enemyRest.length - 1 && styles.virtualBoardRowLast
+								]}
+							>
+								<EnemyRow
+									row={row}
+									isYou={row.is_self}
+									last={index === enemyRest.length - 1}
+									onPress={setSelectedEnemy}
+								/>
+							</View>
 						)}
-					</ScrollView>
+						ListFooterComponent={
+							youEnemy ? (
+								<>
+									<Text style={[styles.youPairLabel, styles.enemyAccent]}>
+										★ your biggest enemy
+									</Text>
+									<Sticker color="sage" rotate={-0.4} radius={14} style={styles.listSticker}>
+										<EnemyRow row={youEnemy} isYou last onPress={setSelectedEnemy} />
+									</Sticker>
+								</>
+							) : null
+						}
+					/>
 				)
 			) : leaderboard.length === 0 ? (
 				// Empty state on a paper Sticker so it matches the Friends
 				// segment's empty card instead of reading as bare text.
 				<View style={styles.emptyWrap}>
-					<Sticker
-						color="paper"
-						rotate={-0.5}
-						radius={12}
-						style={styles.emptyCard}
-					>
+					<Sticker color="paper" rotate={-0.5} radius={12} style={styles.emptyCard}>
 						<Text style={styles.emptyText}>
 							{scope === "friends"
 								? "No friends yet. Add some on the Friends segment."
@@ -619,146 +687,106 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				// made the most-greedy player look like "rank N+1
 				// overall" — confusing because the two sides aren't
 				// comparable, they're competing extremes.
-				<ScrollView
+				<SectionList
 					style={styles.list}
 					contentContainerStyle={styles.listContent}
-				>
-					{(() => {
-						const generous = leaderboard.filter(
-							(r) => r.align_side === "generous",
-						);
-						const greedy = leaderboard.filter((r) => r.align_side === "greedy");
-						return (
-							<>
-								{generous.length > 0 && (
-									<>
-										<View style={styles.alignSectionHeader}>
-											<Text
-												style={[
-													styles.alignSectionText,
-													styles.alignSectionGenerous,
-												]}
-											>
-												GENEROUS · top {generous.length}
-											</Text>
-										</View>
-										<Sticker
-											color="paper"
-											rotate={-0.3}
-											radius={14}
-											style={styles.listSticker}
-										>
-											{generous.map((item, i) => (
-												<ClippingRow
-													key={item.id}
-													player={item}
-													rank={item.align_side_rank ?? i + 1}
-													isYou={item.id === myId}
-													last={i === generous.length - 1}
-													onPress={setSelectedUserId}
-													showAlignment
-												/>
-											))}
-										</Sticker>
-									</>
-								)}
-								{greedy.length > 0 && (
-									<>
-										<View
-											style={[styles.alignSectionHeader, { marginTop: 16 }]}
-										>
-											<Text
-												style={[
-													styles.alignSectionText,
-													styles.alignSectionGreedy,
-												]}
-											>
-												GREEDY · top {greedy.length}
-											</Text>
-										</View>
-										<Sticker
-											color="paper"
-											rotate={0.4}
-											radius={14}
-											style={styles.listSticker}
-										>
-											{greedy.map((item, i) => (
-												<ClippingRow
-													key={item.id}
-													player={item}
-													rank={item.align_side_rank ?? i + 1}
-													isYou={item.id === myId}
-													last={i === greedy.length - 1}
-													onPress={setSelectedUserId}
-													showAlignment
-												/>
-											))}
-										</Sticker>
-									</>
-								)}
-							</>
-						);
-					})()}
-				</ScrollView>
+					sections={alignmentSections}
+					keyExtractor={(item) => item.id}
+					initialNumToRender={12}
+					maxToRenderPerBatch={8}
+					windowSize={7}
+					removeClippedSubviews
+					renderSectionHeader={({ section }) => (
+						<View style={styles.alignSectionHeader}>
+							<Text style={[styles.alignSectionText, section.titleStyle]}>
+								{section.title} · top {section.data.length}
+							</Text>
+						</View>
+					)}
+					renderItem={({ item, index, section }) => (
+						<View
+							style={[
+								styles.virtualBoardRow,
+								index === 0 && styles.virtualBoardRowFirst,
+								index === section.data.length - 1 && styles.virtualBoardRowLast
+							]}
+						>
+							<ClippingRow
+								player={item}
+								rank={item.align_side_rank ?? index + 1}
+								isYou={item.id === myId}
+								last={index === section.data.length - 1}
+								onPress={setSelectedUserId}
+								showAlignment
+							/>
+						</View>
+					)}
+				/>
 			) : (
 				// Global / friends leaderboard — champion poster on top,
 				// then a single flat sticker with the ranked rows. The
 				// Load more pill paginates the global scope; friends
 				// scope is naturally bounded by the 100-friend cap.
-				<ScrollView
+				<FlatList
 					style={styles.list}
 					contentContainerStyle={styles.listContent}
-				>
-					{champ ? (
-						<ChampionPoster
-							champ={champ}
-							onPress={setSelectedUserId}
-							onPressScore={openBreakdown}
-						/>
-					) : null}
-					{rest.length > 0 && (
-						<Sticker
-							color="paper"
-							rotate={-0.3}
-							radius={14}
-							style={styles.listSticker}
-						>
-							{rest.map((item, index) => (
-								<ClippingRow
-									key={item.id}
-									player={item}
-									rank={index + 2}
-									isYou={item.id === myId}
-									last={index === rest.length - 1}
-									onPress={setSelectedUserId}
-									onPressScore={openBreakdown}
-								/>
-							))}
-						</Sticker>
-					)}
-					{scope === "global" && hasMore && (
-						<Pressable
-							onPress={loadMore}
-							disabled={loadingMore}
-							style={({ pressed }) => [
-								styles.loadMoreBtn,
-								(pressed || loadingMore) && { opacity: 0.7 },
+					data={rest}
+					keyExtractor={(item) => item.id}
+					initialNumToRender={12}
+					maxToRenderPerBatch={8}
+					windowSize={7}
+					removeClippedSubviews
+					ListHeaderComponent={
+						champ ? (
+							<ChampionPoster
+								champ={champ}
+								onPress={setSelectedUserId}
+								onPressScore={openBreakdown}
+							/>
+						) : null
+					}
+					renderItem={({ item, index }) => (
+						<View
+							style={[
+								styles.virtualBoardRow,
+								index === 0 && styles.virtualBoardRowFirst,
+								index === rest.length - 1 && styles.virtualBoardRowLast
 							]}
 						>
-							<Text style={styles.loadMoreBtnText}>
-								{loadingMore ? "Loading…" : "Load more"}
-							</Text>
-						</Pressable>
+							<ClippingRow
+								player={item}
+								rank={index + 2}
+								isYou={item.id === myId}
+								last={index === rest.length - 1}
+								onPress={setSelectedUserId}
+								onPressScore={openBreakdown}
+							/>
+						</View>
 					)}
-					{scope === "global" &&
-						!hasMore &&
-						leaderboard.length >= LEADERBOARD_MAX_ROWS && (
-							<Text style={styles.capNote}>
-								★ top {LEADERBOARD_MAX_ROWS} pigs — that's the floor of the
-								leaderboard
-							</Text>
-						)}
-				</ScrollView>
+					ListFooterComponent={
+						<>
+							{scope === "global" && hasMore && (
+								<Pressable
+									onPress={loadMore}
+									disabled={loadingMore}
+									style={({ pressed }) => [
+										styles.loadMoreBtn,
+										(pressed || loadingMore) && { opacity: 0.7 }
+									]}
+								>
+									<Text style={styles.loadMoreBtnText}>
+										{loadingMore ? "Loading…" : "Load more"}
+									</Text>
+								</Pressable>
+							)}
+							{scope === "global" && !hasMore && leaderboard.length >= LEADERBOARD_MAX_ROWS && (
+								<Text style={styles.capNote}>
+									★ top {LEADERBOARD_MAX_ROWS} pigs — that's the floor of the leaderboard
+								</Text>
+							)}
+						</>
+					}
+				/>
 			)}
 
 			<UserSheet
@@ -772,6 +800,11 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 				fallbackTotal={breakdownUser?.total ?? null}
 				onClose={() => setBreakdownUser(null)}
 			/>
+
+			<EnemyBreakdownSheet
+				enemy={selectedEnemy}
+				onClose={() => setSelectedEnemy(null)}
+			/>
 		</View>
 	);
 }
@@ -779,23 +812,13 @@ export function Leaderboard({ initialScope }: { initialScope?: BoardScope }) {
 const styles = StyleSheet.create({
 	container: { flex: 1 },
 	toggleWrap: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 2 },
-	toggle: { flexDirection: "row", padding: 4, gap: 4 },
-	toggleBtn: {
-		flex: 1,
-		paddingVertical: 8,
-		borderRadius: 18,
-		flexDirection: "row",
-		justifyContent: "center",
-		alignItems: "center",
-		gap: 6,
+	pairToggleWrap: {
+		// Match the primary scope track exactly so both outlined controls share
+		// one left/right edge; only the number of segments changes.
+		paddingHorizontal: 14,
+		paddingTop: 6,
+		paddingBottom: 2
 	},
-	toggleBtnActive: {
-		backgroundColor: WHIMSY.sun,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
-	},
-	toggleText: { fontFamily: FONTS.hand, fontSize: 14, color: WHIMSY.mute },
-	toggleTextActive: { fontFamily: FONTS.whimsy, color: WHIMSY.ink },
 	previewToggle: {
 		alignSelf: "center",
 		flexDirection: "row",
@@ -807,7 +830,7 @@ const styles = StyleSheet.create({
 		borderRadius: 18,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.paper,
+		backgroundColor: WHIMSY.paper
 	},
 	previewToggleOn: { backgroundColor: WHIMSY.sun },
 	previewToggleText: { ...TYPE.label, color: WHIMSY.ink },
@@ -816,7 +839,7 @@ const styles = StyleSheet.create({
 		color: WHIMSY.mute,
 		textAlign: "center",
 		marginTop: 8,
-		marginBottom: 2,
+		marginBottom: 2
 	},
 	champWrap: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 },
 	// Poster padding aligned to the ranked-row horizontal padding (14) so
@@ -827,26 +850,26 @@ const styles = StyleSheet.create({
 	champTape: {
 		position: "absolute",
 		top: -6,
-		left: 14,
+		left: 14
 	},
 	champOver: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.accent,
 		letterSpacing: 0.5,
-		marginBottom: 8,
+		marginBottom: 8
 	},
 	champBody: { flexDirection: "row", alignItems: "center", gap: 14 },
 	champName: { ...TYPE.sectionTitle, color: WHIMSY.ink },
 	champScore: {
 		...TYPE.hand,
 		color: WHIMSY.mute,
-		marginTop: 2,
+		marginTop: 2
 	},
 	champPrestige: {
 		...TYPE.label,
 		color: WHIMSY.accent,
-		marginTop: 3,
+		marginTop: 3
 	},
 	// Pair champion — bond breakdown sub-line + the big bond number, matching
 	// the ranked-row score treatment so the number reads as ONE thing.
@@ -859,14 +882,36 @@ const styles = StyleSheet.create({
 	listContent: {
 		paddingHorizontal: 14,
 		paddingTop: 4,
-		paddingBottom: TAB_SAFE,
+		paddingBottom: TAB_SAFE
 	},
 	// Single sticker wrapping every ranked row — replaces per-row
 	// tilted stickers so the leaderboard reads as one cohesive card.
 	listSticker: {
 		marginTop: 12,
 		paddingHorizontal: 0,
-		paddingVertical: 4,
+		paddingVertical: 4
+	},
+	// Virtualized rows keep the old single-sticker silhouette without mounting
+	// the whole board at once. Only the visible window is decoded and laid out.
+	virtualBoardRow: {
+		backgroundColor: WHIMSY.paper,
+		borderLeftWidth: 2,
+		borderRightWidth: 2,
+		borderColor: WHIMSY.ink
+	},
+	virtualBoardRowFirst: {
+		marginTop: 12,
+		borderTopWidth: 2,
+		borderTopLeftRadius: 14,
+		borderTopRightRadius: 14,
+		paddingTop: 4
+	},
+	virtualBoardRowLast: {
+		borderBottomWidth: 2,
+		borderBottomLeftRadius: 14,
+		borderBottomRightRadius: 14,
+		paddingBottom: 4,
+		...SHADOW_SM
 	},
 	// Per-side section header for the alignment scope. Generous gets
 	// a gold-ish tint, Greedy gets the sage-green miasma — matches
@@ -874,30 +919,36 @@ const styles = StyleSheet.create({
 	alignSectionHeader: {
 		marginTop: 12,
 		marginBottom: 4,
-		paddingHorizontal: 4,
+		paddingHorizontal: 4
 	},
 	// In-card section header — unified on KICKER_TEXT (13px hand) per the
 	// UI audit so it matches the in-card kicker treatment elsewhere; the
 	// per-side gold/green color is overridden below.
 	alignSectionText: {
-		...KICKER_TEXT,
+		...KICKER_TEXT
 	},
-	alignSectionGenerous: { color: WHIMSY.bless }, // Barn blessing countdown (shared token)
+	alignSectionGenerous: { color: UI_COLORS.warningText }, // Barn blessing countdown (shared token)
 	alignSectionGreedy: { color: WHIMSY.curseGreen }, // Barn curse countdown (shared token)
 	row: {
 		flexDirection: "row",
 		alignItems: "center",
 		paddingVertical: 12,
 		paddingHorizontal: 14,
-		gap: 12,
+		gap: 12
 	},
 	rowYouHighlight: {
-		backgroundColor: WHIMSY.cream,
+		backgroundColor: WHIMSY.cream
 	},
 	// A pair row the caller is in — rose wash matching the you-row self-highlight
 	// grammar used elsewhere (referral card, pinned you-pair sticker).
 	pairRowYou: {
-		backgroundColor: WHIMSY.rose,
+		backgroundColor: WHIMSY.rose
+	},
+	enemyRowYou: {
+		backgroundColor: WHIMSY.sage
+	},
+	enemyAccent: {
+		color: WHIMSY.curseGreen
 	},
 	// Kicker over the pinned "your strongest pair" sticker.
 	youPairLabel: {
@@ -905,35 +956,35 @@ const styles = StyleSheet.create({
 		marginTop: 16,
 		marginBottom: 2,
 		paddingHorizontal: 4,
-		color: WHIMSY.accent,
+		color: WHIMSY.accent
 	},
 	rowDivider: {
 		borderBottomWidth: 1.5,
 		borderBottomColor: WHIMSY.muteSoft,
-		borderStyle: "dashed",
+		borderStyle: "dashed"
 	},
 	rowRank: {
 		width: 28,
 		fontFamily: FONTS.whimsy,
 		fontSize: 15,
 		color: WHIMSY.ink,
-		textAlign: "center",
+		textAlign: "center"
 	},
 	// Name + discriminator on a baseline-aligned line.
 	rowNameLine: {
 		flexDirection: "row",
 		alignItems: "baseline",
-		gap: 6,
+		gap: 6
 	},
 	rowName: {
 		fontFamily: FONTS.whimsy,
 		fontSize: 15,
 		color: WHIMSY.ink,
-		flexShrink: 1,
+		flexShrink: 1
 	},
 	rowDisc: {
 		...TYPE.label,
-		color: WHIMSY.mute,
+		color: WHIMSY.mute
 	},
 	rowYouTag: { fontFamily: FONTS.hand, color: WHIMSY.accent },
 	// Second-line under the name — "wears <hat>", falls back to
@@ -941,7 +992,7 @@ const styles = StyleSheet.create({
 	rowSub: {
 		...TYPE.label,
 		color: WHIMSY.mute,
-		marginTop: 2,
+		marginTop: 2
 	},
 	// Score column — number above tiny ♥ suffix, right-aligned. Sizes to
 	// its content (flexShrink 0) so a 5-digit score keeps its own column
@@ -949,13 +1000,13 @@ const styles = StyleSheet.create({
 	rowScoreCol: {
 		alignItems: "flex-end",
 		minWidth: 60,
-		flexShrink: 0,
+		flexShrink: 0
 	},
 	rowScore: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	rowScoreUnit: {
 		...TYPE.label,
 		color: WHIMSY.mute,
-		marginTop: 2,
+		marginTop: 2
 	},
 	// "Load more" pill at the bottom of the global leaderboard.
 	// Reads as a deliberate action button rather than infinite-scroll
@@ -969,33 +1020,33 @@ const styles = StyleSheet.create({
 		borderWidth: 2,
 		borderColor: WHIMSY.ink,
 		backgroundColor: WHIMSY.paper,
-		...SHADOW_SM,
+		...SHADOW_SM
 	},
 	loadMoreBtnText: {
 		fontFamily: FONTS.bodyExtra,
 		fontSize: 13,
-		color: WHIMSY.ink,
+		color: WHIMSY.ink
 	},
 	capNote: {
 		fontFamily: FONTS.hand,
 		fontSize: 13,
 		color: WHIMSY.mute,
 		textAlign: "center",
-		marginTop: 14,
+		marginTop: 14
 	},
 	// Empty state — paper Sticker card matching the Friends segment's
 	// empty card. Replaces the old bare centered Text.
 	emptyWrap: { paddingHorizontal: 14, paddingTop: 12 },
 	emptyCard: {
 		paddingHorizontal: 16,
-		paddingVertical: 16,
+		paddingVertical: 16
 	},
 	emptyText: {
 		fontFamily: FONTS.hand,
 		fontSize: 15,
 		color: WHIMSY.mute,
 		textAlign: "center",
-		lineHeight: 21,
+		lineHeight: 21
 	},
 	// Hand-link retry under the error copy — accent + underline, matching
 	// the "leave it for now ›" hand-link grammar used elsewhere.
@@ -1004,6 +1055,6 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.hand,
 		fontSize: 14,
 		color: WHIMSY.accent,
-		textDecorationLine: "underline",
-	},
+		textDecorationLine: "underline"
+	}
 });

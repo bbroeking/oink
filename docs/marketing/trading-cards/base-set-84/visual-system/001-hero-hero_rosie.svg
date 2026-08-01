@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <svg xmlns="http://www.w3.org/2000/svg" width="750" height="1050" viewBox="0 0 750 1050">
+    <defs>
+      <clipPath id="card"><rect x="10" y="10" width="730" height="1030" rx="24"/></clipPath>
+      <linearGradient id="artShade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#2A1F15" stop-opacity=".18"/>
+        <stop offset=".48" stop-color="#2A1F15" stop-opacity="0"/>
+        <stop offset="1" stop-color="#2A1F15" stop-opacity=".48"/>
+      </linearGradient>
+      <filter id="subjectLift" x="-30%" y="-30%" width="160%" height="160%">
+        <feFlood flood-color="#2A1F15" result="shadowColor"/>
+        <feComposite in="shadowColor" in2="SourceAlpha" operator="in" result="shadow"/>
+        <feOffset in="shadow" dx="8" dy="10" result="offsetShadow"/>
+        <feMerge><feMergeNode in="offsetShadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <g clip-path="url(#card)">
+      
+      <rect x="10" y="10" width="730" height="686"
+        fill="url(#artShade)"/>
+      
+      <rect x="25" y="25" width="700" height="661"
+        fill="none" stroke="#E67962" stroke-width="14"/>
+      <rect x="37" y="37" width="676" height="637"
+        fill="none" stroke="#9A7DE0" stroke-width="4"/>
+      
+
+      <path d="M30 30 H720 V137 H149 L125 119 H30Z"
+        fill="#FFFAF0" fill-opacity=".97" stroke="#2A1F15" stroke-width="7"/>
+      <path d="M144 30 H720 V54 H167Z" fill="#E67962"/>
+      <g transform="translate(82 88) scale(0.86)">
+    <path d="M0-59 C38-59 57-35 57 0 C57 35 38 59 0 59 C-38 59-57 35-57 0 C-57-35-38-59 0-59Z"
+      fill="#FFFAF0" stroke="#2A1F15" stroke-width="8"/>
+    <path d="M0-48 C30-48 45-29 45 0 C45 29 30 48 0 48 C-30 48-45 29-45 0 C-45-29-30-48 0-48Z"
+      fill="#E67962" stroke="#FFFAF0" stroke-width="3"/>
+    <g transform="translate(-23 -37) scale(0.18)" fill="#2A1F15"><path d="M0 12 C-24-5-38 28 0 50 C38 28 24-5 0 12Z"/></g>
+    <text x="8" y="15" text-anchor="middle" fill="#2A1F15" font-family="Caprasimo"
+      font-size="49">12</text>
+    <path d="M-47 25 H47 V48 C22 63-22 63-47 48Z" fill="#2A1F15"/>
+    <text x="0" y="45" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="12" font-weight="900" letter-spacing="1.1">CHEER</text>
+  </g>
+      <text x="144" y="59" fill="#605449" font-family="Nunito"
+        font-size="12" font-weight="900" letter-spacing="1.6">SPECIAL CHARACTER</text>
+      <text x="144" y="101" fill="#2A1F15" font-family="Fredoka"
+        font-size="45" font-weight="700">Rosie</text>
+      <text x="144" y="127" fill="#A13F30" font-family="Patrick Hand"
+        font-size="23">Heart of the Herd</text>
+      
+      <g transform="translate(678 49) scale(0.48)">
+    <path d="M0 12 C30 12 39 34 31 56 C23 78-23 78-31 56 C-39 34-30 12 0 12Z"
+      fill="#8A66C7" stroke="#2A1F15" stroke-width="4"/>
+    <path d="M-10 15 Q0-2 13 13" fill="none" stroke="#2A1F15" stroke-width="6"
+      stroke-linecap="round"/>
+    <g transform="translate(-37 4) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(39 12) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g><g transform="translate(-43 55) scale(0.18)" fill="#8A66C7"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+    <text x="0" y="55" text-anchor="middle" fill="#FFFAF0" font-family="Nunito"
+      font-size="25" font-weight="900">E</text>
+    
+  </g>
+
+      <path d="M38 638 H712" fill="none"
+        stroke="#2A1F15" stroke-width="12"/>
+      
+      
+
+      <g>
+        <rect x="28" y="666" width="694" height="220" fill="#FFFAF0"
+          stroke="#2A1F15" stroke-width="7"/>
+        <rect x="28" y="666" width="694" height="48" fill="#9A7DE0"/>
+        <text x="52" y="698" fill="#2A1F15" font-family="Patrick Hand" font-size="20">
+          Every grand adventure begins with a very small oink.
+        </text>
+        <path d="M28 714 H145 L167 736 V886 H28Z" fill="#E67962"/>
+        <g transform="translate(87 746) scale(0.31)" fill="#2A1F15"><path d="M0 12 C-24-5-38 28 0 50 C38 28 24-5 0 12Z"/></g>
+        <text x="87" y="849" text-anchor="middle" fill="#2A1F15" font-family="Nunito"
+          font-size="12" font-weight="900" letter-spacing="1.2">HERO ABILITY</text>
+        <text x="183" y="760" fill="#2A1F15" font-family="Fredoka"
+          font-size="29" font-weight="700">Loadout Instinct</text>
+        <text x="183" y="800" text-anchor="start" fill="#2A1F15"
+    font-family="Nunito" font-size="20" font-weight="800">
+    <tspan x="183" dy="0">Once each turn after you equip Gear, draw a</tspan><tspan x="183" dy="27">card, then discard a card.</tspan>
+  </text>
+      </g>
+      <g>
+    <rect x="28" y="886" width="694" height="120" fill="#2A1F15"
+      stroke="#FFD87A" stroke-width="5"/>
+    <text x="54" y="919" fill="#FFD87A" font-family="Nunito"
+      font-size="13" font-weight="900" letter-spacing="1.7">FAVORED STYLES</text>
+    <g transform="translate(54 936)">
+        <path d="M0 0 H228 L214 52 H0Z" fill="#E67962" stroke="#FFFAF0" stroke-width="3"/>
+        <g transform="translate(35 6) scale(0.28)" fill="#2A1F15"><path d="M-6 0 L15 0 L7 27 L28 27 L-13 75 L-2 39 L-24 39Z"/></g>
+        <text x="68" y="34" fill="#2A1F15" font-family="Fredoka" font-size="21"
+          font-weight="700">BRAVE</text>
+      </g><g transform="translate(306 936)">
+        <path d="M0 0 H228 L214 52 H0Z" fill="#9A7DE0" stroke="#FFFAF0" stroke-width="3"/>
+        <g transform="translate(35 6) scale(0.28)" fill="#2A1F15"><path d="M0 0 L10 27 L38 38 L10 49 L0 78 L-10 49 L-38 38 L-10 27Z"/></g>
+        <text x="68" y="34" fill="#2A1F15" font-family="Fredoka" font-size="21"
+          font-weight="700">SPARK</text>
+      </g>
+    <text x="698" y="956" text-anchor="end" fill="#FFFAF0" font-family="Nunito"
+      font-size="12" font-weight="900">STARTS</text>
+    <text x="698" y="976" text-anchor="end" fill="#FFFAF0" font-family="Nunito"
+      font-size="12" font-weight="900">OUTSIDE DECK</text>
+  </g>
+      <text x="37" y="1016" fill="#FFF3E2" font-family="Nunito" font-size="11"
+        font-weight="900" letter-spacing=".9">001/84 • RLB</text>
+      <text x="713" y="1016" text-anchor="end" fill="#FFF3E2" font-family="Nunito"
+        font-size="11" font-weight="900">QR REWARD ON BACK</text>
+    </g>
+    <rect x="10" y="10" width="730" height="1030" rx="24" fill="none"
+      stroke="#2A1F15" stroke-width="20"/>
+    <rect x="25" y="25" width="700" height="1000" rx="11" fill="none"
+      stroke="#FFD87A" stroke-width="5"/>
+  </svg>

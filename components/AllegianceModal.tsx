@@ -18,7 +18,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { Sticker } from "./ui/Sticker";
 import { Icon } from "./ui/Icon";
-import { Button } from "./ui";
+import { Button, DialogCloseRow } from "./ui";
 import { rpcAction } from "@/utils/rpc";
 import { HAT_IMAGES } from "@/constants/hats";
 import { WORLD_CUP_TEAMS } from "@/constants/worldCupFlags";
@@ -89,13 +89,11 @@ export function AllegianceModal({ visible, onSkip, onChosen, currentFlagId }: Pr
 						</View>
 					) : (
 						<>
-							<Pressable
+							<DialogCloseRow
 								onPress={onSkip}
-								style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
-								hitSlop={12}
-							>
-								<Icon name="x" size={20} color={WHIMSY.ink} strokeWidth={2.5} />
-							</Pressable>
+								label="Close country picker"
+								style={styles.closeRow}
+							/>
 
 							<Text style={styles.kicker}>the hog cup</Text>
 							<Text style={styles.title}>Pick your country</Text>
@@ -186,15 +184,10 @@ const styles = StyleSheet.create({
 		paddingBottom: 20,
 		maxHeight: "86%",
 	},
-	closeBtn: {
-		position: "absolute",
-		top: 12,
-		right: 14,
-		width: 36,
-		height: 36,
-		alignItems: "center",
-		justifyContent: "center",
-		zIndex: 30,
+	closeRow: {
+		marginTop: -14,
+		marginRight: -12,
+		marginBottom: -4,
 	},
 	kicker: {
 		fontFamily: FONTS.bodyExtra,
@@ -238,7 +231,7 @@ const styles = StyleSheet.create({
 	flagImg: { width: 48, height: 48, marginBottom: 4 },
 	flagName: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		color: WHIMSY.mute,
 		textAlign: "center",
 	},
@@ -247,7 +240,7 @@ const styles = StyleSheet.create({
 	lockNote: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
-		color: WHIMSY.muteSoft,
+		color: WHIMSY.mute,
 		textAlign: "center",
 	},
 	skipBtn: { alignSelf: "center", paddingVertical: 4 },

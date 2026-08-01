@@ -24,7 +24,7 @@ import { Glyph } from "../ui/Glyph";
 import { TickleIcon } from "../ui/SnoutCoin";
 import { HAT_IMAGES } from "@/constants/hats";
 import { resolveRewardArt } from "@/utils/rewardArt";
-import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
+import { FONTS, RADII, SPACE, TYPE, UI_COLORS, WHIMSY } from "@/constants/theme";
 import { useTruffles } from "@/hooks/useTruffles";
 import { TruffleExchangeSheet } from "../mudwar/TruffleExchangeSheet";
 // The next-reward preview shape lives in utils/seasonPass (the single owner of
@@ -54,7 +54,7 @@ function RewardArt({ reward, size }: { reward: NextReward; size: number }) {
 				/>
 			);
 		default:
-			return <Icon name="star" size={Math.round(size * 0.7)} filled color={WHIMSY.bless} strokeWidth={1.6} />;
+			return <Icon name="star" size={Math.round(size * 0.7)} filled color={UI_COLORS.warningText} strokeWidth={1.6} />;
 	}
 }
 
@@ -116,7 +116,7 @@ export function YourTakeStrip({
 							</View>
 						) : (
 							<View style={styles.rewardThumb}>
-								<Icon name="crown" size={20} color={WHIMSY.bless} filled />
+								<Icon name="crown" size={20} color={UI_COLORS.warningText} filled />
 							</View>
 						)}
 					</View>
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
 	cellCap: {
 		...TYPE.kicker,
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		letterSpacing: 0.8,
 		textTransform: "uppercase",
 		color: WHIMSY.mute,
@@ -268,5 +268,5 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.hand,
 		color: WHIMSY.accent,
 	},
-	dash: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.muteSoft },
+	dash: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.mute },
 });

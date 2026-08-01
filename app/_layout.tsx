@@ -1,9 +1,5 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import {
-	useFonts,
-	Fredoka_600SemiBold,
-	Fredoka_700Bold,
-} from "@expo-google-fonts/fredoka";
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { useFonts, Fredoka_600SemiBold, Fredoka_700Bold } from "@expo-google-fonts/fredoka";
 import {
 	Nunito_600SemiBold,
 	Nunito_700Bold,
@@ -36,11 +32,7 @@ import "react-native-reanimated";
 // A getSession().catch() can't intercept it (the error is emitted inside the
 // library during init, not by our call), so we suppress the dev-only LogBox
 // toast here instead. Dev-only: LogBox is a no-op in production.
-LogBox.ignoreLogs([
-	"Unsupported dashed",
-	"Unsupported dotted",
-	"Invalid Refresh Token",
-]);
+LogBox.ignoreLogs(["Unsupported dashed", "Unsupported dotted", "Invalid Refresh Token"]);
 import * as Sentry from "@sentry/react-native";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -51,32 +43,16 @@ import {
 	responseConsumeKey,
 	LAST_NOTIF_RESPONSE_KEY,
 } from "@/utils/notificationRouting";
-import { toWhileAwaySystemEvent } from "@/utils/whileAway";
+import { launchEventSourcesSucceeded, toWhileAwaySystemEvent } from "@/utils/whileAway";
+import { AlignmentSchismModal, type SchismSide } from "@/components/AlignmentSchismModal";
+import { JudgementDayModal, type FinaleResult } from "@/components/JudgementDayModal";
+import { WhileAwayModal, type WhileAwayEvent } from "@/components/WhileAwayModal";
 import {
-	AlignmentSchismModal,
-	type SchismSide,
-} from "@/components/AlignmentSchismModal";
-import {
-	JudgementDayModal,
-	type FinaleResult,
-} from "@/components/JudgementDayModal";
-import {
-	WhileAwayModal,
-	type WhileAwayEvent,
-} from "@/components/WhileAwayModal";
-import {
-	AchievementUnlockModal,
+	AchievementDigestModal,
 	type UnlockedAchievement,
-} from "@/components/AchievementUnlockModal";
-import { SounderLaunchModal } from "@/components/SounderLaunchModal";
-import type { SounderStep } from "@/hooks/useSounderPath";
-import { PRACTICED_KEY } from "@/utils/sounderPath";
+} from "@/components/AchievementDigestModal";
 import { GreatHungerIntroModal } from "@/components/GreatHungerIntroModal";
-import {
-	FeatureFlagsProvider,
-	useFeatureFlag,
-} from "@/hooks/useFeatureFlags";
-import { fetchCrewState } from "@/utils/crews";
+import { FeatureFlagsProvider, useFeatureFlag } from "@/hooks/useFeatureFlags";
 import { PurchaseToastHost } from "@/components/PurchaseToast";
 import {
 	PopupQueueProvider,
@@ -85,6 +61,7 @@ import {
 	usePopupActive,
 	POPUP_TEARDOWN_MS,
 	POPUP_HANDOFF_GAP_MS,
+	releasePopupThenNavigate,
 } from "@/components/ui/PopupQueue";
 import {
 	PENDING_REFERRAL_CODE_KEY,
@@ -92,30 +69,12 @@ import {
 	redeemReferralCode,
 	referralErrorMessage,
 } from "@/utils/referrals";
-import {
-	PENDING_REDEMPTION_CODE_KEY,
-	parseRedemptionPayload,
-} from "@/utils/redemption";
-import {
-	markCeremonyShown,
-	ceremonyShownThisSession,
-} from "@/utils/ceremonyGate";
-import {
-	anyPopupPresentedThisSession,
-	sounderNudgeFiredThisSession,
-	markSounderNudgeFired,
-	feedbackNudgeFiredThisSession,
-	markFeedbackNudgeFired,
-} from "@/utils/popupSession";
+import { PENDING_REDEMPTION_CODE_KEY, parseRedemptionPayload } from "@/utils/redemption";
+import { markCeremonyShown, ceremonyShownThisSession } from "@/utils/ceremonyGate";
 import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
-import {
-	shouldShowFeedbackNudge,
-	readFeedbackNudgeStamps,
-	stampFeedbackNudgeShown,
-	stampFeedbackNudgeOff,
-} from "@/utils/feedbackNudge";
-import { FeedbackNudgeModal } from "@/components/FeedbackNudgeModal";
-import { FieldGuideReveal } from "@/components/FieldGuideReveal";
+import { PigFriendsLaunchModal } from "@/components/PigFriendsLaunchModal";
+import { OFFERING_IDS, presentPaywall } from "@/utils/iap";
+import { UI_COLORS } from "@/constants/theme";
 
 // Initialize Sentry as early as possible. Gated on DSN env var so dev
 // without a project still works.
@@ -129,26 +88,26 @@ if (SENTRY_DSN && !__DEV__) {
 	});
 }
 
-import { useColorScheme } from "@/hooks/useColorScheme";
-
 SplashScreen.preventAutoHideAsync();
 
-// How long the quiet-login Sounder nudge waits after its crew check before
-// arming its want — long enough for the sibling popup polls (schism/finale/
-// rituals/achievements/recap/intro) to land and present, so the
-// anyPopupPresentedThisSession() AND-gate reflects a settled queue. A generous
-// window: the nudge is the lowest-priority fallback, so a little extra quiet
-// before it appears is fine.
-const SOUNDER_NUDGE_SETTLE_MS = 1500;
-
-// The feedback nudge (an even-lower-priority fallback than the Sounder nudge)
-// settles a beat LONGER, so the Sounder nudge — which arms on the same quiet
-// login — gets to land and fire first. Onboarding beats feedback: if the Sounder
-// nudge presents in this window, the feedback nudge's want stays false.
-const FEEDBACK_NUDGE_SETTLE_MS = 2200;
+// The paper-craft UI is deliberately light-only. Keep React Navigation's
+// transition surfaces, cards, labels, and notification accent on the same
+// semantic palette so system appearance cannot flash a dark route between
+// cream screens.
+const APP_NAV_THEME = {
+	...DefaultTheme,
+	colors: {
+		...DefaultTheme.colors,
+		primary: UI_COLORS.action,
+		background: UI_COLORS.canvas,
+		card: UI_COLORS.surface,
+		text: UI_COLORS.textPrimary,
+		border: UI_COLORS.separator,
+		notification: UI_COLORS.dangerText,
+	},
+};
 
 function RootLayoutInner() {
-	const colorScheme = useColorScheme();
 	const [loaded] = useFonts({
 		SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
 		Fredoka_600SemiBold,
@@ -196,16 +155,8 @@ function RootLayoutInner() {
 	// modal permanently ate the batch (issue #8). Fetch stashes the value
 	// here; the WhileAwayModal onDismiss persists it.
 	const pendingAwaySeenRef = useRef<string | null>(null);
-	// Earned-but-unseen achievements, shown one reveal at a time.
+	// Earned-but-unseen achievements, shown as one compact digest.
 	const [achievements, setAchievements] = useState<UnlockedAchievement[]>([]);
-	// "Start a Sounder!" launch nudge: shown when the feature is live + the
-	// player has no crew, ≤ once/day until they create/join one.
-	const [sounderPrompt, setSounderPrompt] = useState(false);
-	// The onboarding step this crewless nudge should speak to — "taste" (hasn't
-	// practiced) or "join" (has). Resolved when the nudge arms (below) from the
-	// practiced flag, so the modal's CTA reflects the real next move. Crewed steps
-	// never reach the nudge (it's gated on no-crew), so only these two matter here.
-	const [sounderStep, setSounderStep] = useState<SounderStep>("join");
 	// The Great Hunger (Season 1) intro cinematic. The tale must tell itself on
 	// the MAIN page at login (not only on the Season tab), so the FIRST-VIEW
 	// auto-present is owned here at root — same gating as the old
@@ -214,99 +165,76 @@ function RootLayoutInner() {
 	// hungerIntroUid carries the user id so the dismiss handler can stamp.
 	const [hungerIntro, setHungerIntro] = useState(false);
 	const [hungerIntroUid, setHungerIntroUid] = useState<string | null>(null);
-	// Feedback nudge — the RAREST fallback: a cozy "the bog's curious…" invite to
-	// whisper an idea, shown only on a genuinely empty login for a player with real
-	// history, at most once every 14 days (60 after they've ever whispered), never
-	// once they opt out. All gating in utils/feedbackNudge.ts; armed below. Carries
-	// the uid so the dismiss handlers can stamp the per-user cooldown/opt-out.
-	const [feedbackNudge, setFeedbackNudge] = useState(false);
-	const [feedbackNudgeUid, setFeedbackNudgeUid] = useState<string | null>(null);
+	const [pigFriendsLaunch, setPigFriendsLaunch] = useState(false);
+	const [pigFriendsLaunchUid, setPigFriendsLaunchUid] = useState<string | null>(null);
+	const [pigFriendsMember, setPigFriendsMember] = useState(false);
 
 	// Global popup queue slots — every launch popup goes through PopupQueue so
 	// only one shows at a time (across root AND the Barn tab). Lower priority
 	// number shows first when several are pending.
 	const schismSlot = usePopupSlot("schism", !!schism, POPUP_PRIORITIES.schism);
 	const finaleSlot = usePopupSlot("finale", !!finale, POPUP_PRIORITIES.finale);
-	const ritualsSlot = usePopupSlot(
-		"rituals",
-		!!rituals,
-		POPUP_PRIORITIES.rituals
-	);
+	const ritualsSlot = usePopupSlot("rituals", !!rituals, POPUP_PRIORITIES.rituals);
 	// Suppressed for the session if a ceremony (recap / hungerIntro) fired —
-	// the carousel surfaces next login instead (flip-day stacking ceiling).
+	// the digest surfaces next login instead (flip-day stacking ceiling).
 	const achievementsSlot = usePopupSlot(
 		"achievements",
 		achievements.length > 0 && !ceremonyShownThisSession(),
 		POPUP_PRIORITIES.achievements
 	);
-	// Quiet-login Sounder nudge — the FALLBACK popup: "show them something about
-	// joining a Sounder if no other dialog is going to show up" (founder, 2026-07).
-	// LOW priority (90) so it can never preempt a real dialog, and its want ANDs
-	// with anyPopupPresentedThisSession()'s negation so it's suppressed the moment
-	// anything else presents this session. Fires at most once per SESSION (the
-	// popupSession latch) — the old AsyncStorage daily cap is gone; the queue-empty
-	// condition is the real limiter (see utils/popupSession.ts). markSounderNudge-
-	// Fired() latches on present so it never re-arms mid-session.
-	const sounderSlot = usePopupSlot(
-		"sounderLaunch",
-		sounderPrompt &&
-			!anyPopupPresentedThisSession() &&
-			!sounderNudgeFiredThisSession(),
-		POPUP_PRIORITIES.sounderLaunch
-	);
-	useEffect(() => {
-		if (sounderSlot.visible) markSounderNudgeFired();
-	}, [sounderSlot.visible]);
-	// Feedback nudge slot — the LOWEST priority (95, below the Sounder nudge's 90)
-	// so a real dialog AND the Sounder onboarding nudge both beat it. Its want ANDs
-	// the SAME quiet-login gate the Sounder nudge uses PLUS an explicit "the Sounder
-	// nudge didn't fire" check: both fallback nudges are excluded from
-	// anyPopupPresentedThisSession(), so onboarding-wins has to be spelled out here.
-	// Fires at most once per session (the popupSession feedback latch); the 14-day
-	// AsyncStorage cooldown is the cross-session ceiling.
-	const feedbackNudgeSlot = usePopupSlot(
-		"feedbackNudge",
-		feedbackNudge &&
-			!anyPopupPresentedThisSession() &&
-			!sounderNudgeFiredThisSession() &&
-			!feedbackNudgeFiredThisSession(),
-		POPUP_PRIORITIES.feedbackNudge
-	);
-	useEffect(() => {
-		if (feedbackNudgeSlot.visible) markFeedbackNudgeFired();
-	}, [feedbackNudgeSlot.visible]);
 	// The flip-day ceremony chain is recap (seasonEnd, pri 25 in season.tsx) →
 	// intro (pri 27): slotting the intro just ABOVE the recap guarantees it can
 	// never co-present over the recap on the season-flip login.
-	const hungerIntroSlot = usePopupSlot(
-		"hungerIntro",
-		hungerIntro,
-		POPUP_PRIORITIES.hungerIntro
+	const hungerIntroSlot = usePopupSlot("hungerIntro", hungerIntro, POPUP_PRIORITIES.hungerIntro);
+	const pigFriendsSlot = usePopupSlot(
+		"pigFriendsLaunch",
+		pigFriendsLaunch,
+		POPUP_PRIORITIES.pigFriendsLaunch
 	);
 	// The moment a ceremony PRESENTS (not on dismiss), latch the session gate so
-	// the achievements carousel + release notes hold their `want` for next login
+	// the achievement digest holds its `want` for next login
 	// (flip-day stacking ceiling — SKILL.md 2026-07-11).
 	useEffect(() => {
 		if (hungerIntroSlot.visible) markCeremonyShown();
 	}, [hungerIntroSlot.visible]);
+	useEffect(() => {
+		if (pigFriendsSlot.visible) markCeremonyShown();
+	}, [pigFriendsSlot.visible]);
 
 	// Resolve the initial auth state before letting the splash drop, so we
 	// transition straight into either auth or the home screen — no blank flash.
 	useEffect(() => {
 		supabase.auth
 			.getSession()
-			.then(({ data: { session } }) =>
-				setSessionUserId(session?.user?.id ?? null)
-			)
+			.then(({ data: { session } }) => setSessionUserId(session?.user?.id ?? null))
 			.finally(() => setAuthChecked(true));
 		// Re-run the launch-popup polls on sign-in (see sessionUserId above). On a
 		// reinstall the poll deps below re-fire the moment a session identity
 		// appears; on a warm launch the id resolves once, so nothing double-fires.
-		const { data: authSub } = supabase.auth.onAuthStateChange(
-			(_event, session) => setSessionUserId(session?.user?.id ?? null)
+		const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) =>
+			setSessionUserId(session?.user?.id ?? null)
 		);
 		return () => authSub.subscription.unsubscribe();
 	}, []);
+
+	useEffect(() => {
+		if (!authChecked || !sessionUserId) return;
+		let cancelled = false;
+		(async () => {
+			const seenKey = `pig_friends_launch_v1_seen:${sessionUserId}`;
+			const [seen, profile] = await Promise.all([
+				AsyncStorage.getItem(seenKey),
+				supabase.from("profiles").select("is_vip").eq("id", sessionUserId).maybeSingle(),
+			]);
+			if (cancelled || seen) return;
+			setPigFriendsMember((profile.data as { is_vip?: boolean } | null)?.is_vip === true);
+			setPigFriendsLaunchUid(sessionUserId);
+			setPigFriendsLaunch(true);
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [authChecked, sessionUserId]);
 
 	// Tag the Sentry scope with the signed-in user so crashes/errors are
 	// attributable (id + username) instead of anonymous — makes "Freddy and
@@ -327,8 +255,7 @@ function RootLayoutInner() {
 				.maybeSingle();
 			Sentry.setUser({
 				id: data.user.id,
-				username:
-					(prof as { username?: string | null } | null)?.username ?? undefined,
+				username: (prof as { username?: string | null } | null)?.username ?? undefined,
 			});
 		})();
 		return () => {
@@ -375,9 +302,7 @@ function RootLayoutInner() {
 		if (!authChecked) return;
 		let cancelled = false;
 		const check = async () => {
-			const r = await rpc<{ pending?: boolean } & Partial<FinaleResult>>(
-				"my_finale_result"
-			);
+			const r = await rpc<{ pending?: boolean } & Partial<FinaleResult>>("my_finale_result");
 			if (cancelled) return;
 			if (r?.pending) {
 				setFinale(r as FinaleResult);
@@ -390,114 +315,6 @@ function RootLayoutInner() {
 		return () => {
 			cancelled = true;
 			sub.remove();
-		};
-	}, [authChecked, sessionUserId]);
-
-	// Sounder launch nudge — the quiet-login FALLBACK. Fires only when the feature
-	// is live (the `coop_dig` server flag) AND the player has no crew. Unlike the
-	// other launch popups it carries no persistent frequency stamp: the want is
-	// gated (at the slot) on nothing-else-having-presented-this-session, which is
-	// both the UX rule ("fill the quiet, never compete") and the frequency ceiling.
-	// A short settle delay after the crew check lets the higher-priority popup polls
-	// (schism / finale / rituals / achievements / recap / hunger intro) land and
-	// present first, so "no other dialog is going to show" is actually knowable by
-	// the time we arm the want. If one of them presented in that window,
-	// anyPopupPresentedThisSession() is already true and the slot's want stays
-	// false; if the queue is genuinely empty, the low-priority (90) nudge presents.
-	useEffect(() => {
-		if (!authChecked || !coopDig) return;
-		let cancelled = false;
-		(async () => {
-			const { data: ures } = await supabase.auth.getUser();
-			if (cancelled || !ures.user) return;
-			const crew = await fetchCrewState();
-			if (cancelled || crew.crew) return;
-			// Settle beat: give the sibling popup polls a chance to arrive + present
-			// before we arm. Mirrors how the slot's gating waits for authChecked —
-			// the AND with anyPopupPresentedThisSession() is only meaningful once the
-			// other sources have had a tick to declare their wants.
-			await new Promise((r) => setTimeout(r, SOUNDER_NUDGE_SETTLE_MS));
-			if (cancelled) return;
-			// If anything already presented in the settle window, don't even arm —
-			// the slot's want would evaluate false anyway, but skipping the state
-			// set keeps the module-flag read authoritative without relying on a
-			// re-render to drop a queued want.
-			if (anyPopupPresentedThisSession() || sounderNudgeFiredThisSession()) {
-				return;
-			}
-			// Speak to the real next move: "taste" until they've practiced, else
-			// "join". (Crewed steps can't reach here — the nudge is no-crew gated.)
-			const practiced = await AsyncStorage.getItem(PRACTICED_KEY);
-			setSounderStep(practiced ? "join" : "taste");
-			setSounderPrompt(true);
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [authChecked, coopDig, sessionUserId]);
-
-	// Feedback nudge — the RAREST quiet-login fallback, a sibling of the Sounder
-	// nudge one rung lower. Fires only when: the player has real history
-	// (distinct_active_days ≥ 3 — a brand-new player is NEVER prompted), no
-	// long-cooldown / opt-out / recently-whispered stamp blocks it (the pure
-	// shouldShowFeedbackNudge gate), AND the login is genuinely empty (nothing —
-	// including the Sounder nudge — presented in the settle window). Settles LONGER
-	// than the Sounder nudge so onboarding lands first. Fail-soft throughout: any
-	// missing field / read miss just means we don't nag. No feature flag — it's not
-	// season-scoped like the Sounder nudge; it's the always-quiet feedback door.
-	useEffect(() => {
-		if (!authChecked) return;
-		let cancelled = false;
-		(async () => {
-			const { data: ures } = await supabase.auth.getUser();
-			const me = ures?.user?.id;
-			if (cancelled || !me) return;
-			// Cheap read: one profiles field (the "real history" signal) + three
-			// per-user AsyncStorage stamps. Mirrors the Sounder nudge's one-shot read.
-			const [{ data: prof }, stamps] = await Promise.all([
-				supabase
-					.from("profiles")
-					.select("distinct_active_days")
-					.eq("id", me)
-					.maybeSingle(),
-				readFeedbackNudgeStamps(me),
-			]);
-			if (cancelled) return;
-			const activeDays =
-				(prof as { distinct_active_days?: number } | null)?.distinct_active_days ??
-				0;
-			// The pure AND-gate — the covenant made concrete (rarity + respect).
-			if (
-				!shouldShowFeedbackNudge({
-					activeDays,
-					lastStampMs: stamps.lastStampMs,
-					everSentMs: stamps.everSentMs,
-					optedOff: stamps.optedOff,
-					nowMs: Date.now(),
-				})
-			) {
-				return;
-			}
-			// Settle beat: let the sibling popup polls — crucially the Sounder nudge —
-			// arm + present first, so "no other dialog is going to show" (and "the
-			// Sounder nudge isn't taking this login") is actually knowable before we arm.
-			await new Promise((r) => setTimeout(r, FEEDBACK_NUDGE_SETTLE_MS));
-			if (cancelled) return;
-			// If anything (including the Sounder nudge) presented in the settle
-			// window, don't even arm — the slot's want would be false anyway, but
-			// skipping the state set keeps the module-flag read authoritative.
-			if (
-				anyPopupPresentedThisSession() ||
-				sounderNudgeFiredThisSession() ||
-				feedbackNudgeFiredThisSession()
-			) {
-				return;
-			}
-			setFeedbackNudgeUid(me);
-			setFeedbackNudge(true);
-		})();
-		return () => {
-			cancelled = true;
 		};
 	}, [authChecked, sessionUserId]);
 
@@ -543,20 +360,25 @@ function RootLayoutInner() {
 				(await AsyncStorage.getItem(LEGACY)) ??
 				new Date().toISOString();
 
-			// Rituals: blessings + curses where receiver = me.
+			// Rituals: blessings + curses where receiver = me. Preserve the
+			// source error alongside its rows: an error is NOT an empty result
+			// and must never advance away_seen_v1.
 			const ritualSide = async (table: "blessings" | "curses") => {
-				const { data } = await supabase
+				const { data, error } = await supabase
 					.from(table)
 					.select("kind, sender_id, sent_at")
 					.eq("receiver_id", me)
 					.gt("sent_at", since)
 					.order("sent_at", { ascending: false })
 					.limit(20);
-				return (data ?? []) as {
-					kind: string;
-					sender_id: string;
-					sent_at: string;
-				}[];
+				return {
+					rows: (data ?? []) as {
+						kind: string;
+						sender_id: string;
+						sent_at: string;
+					}[],
+					error,
+				};
 			};
 
 			// Trades you requested that got fulfilled while you were
@@ -564,8 +386,8 @@ function RootLayoutInner() {
 			// landed in your barn. Pending requests aren't surfaced
 			// here; those sit in the Inbox actionable band where they
 			// belong (they need a tap, not a "got it" dismiss).
-			const tradeRows = await (async () => {
-				const { data } = await supabase
+			const tradeSide = async () => {
+				const { data, error } = await supabase
 					.from("tickle_trades")
 					.select("id, amount, target_id, fulfilled_at")
 					.eq("requester_id", me)
@@ -573,13 +395,16 @@ function RootLayoutInner() {
 					.gt("fulfilled_at", since)
 					.order("fulfilled_at", { ascending: false })
 					.limit(20);
-				return (data ?? []) as {
-					id: string;
-					amount: number;
-					target_id: string;
-					fulfilled_at: string;
-				}[];
-			})();
+				return {
+					rows: (data ?? []) as {
+						id: string;
+						amount: number;
+						target_id: string;
+						fulfilled_at: string;
+					}[],
+					error,
+				};
+			};
 
 			// System announcements — admin-issued messages that
 			// persist server-side. Independent of the `since` marker
@@ -587,8 +412,8 @@ function RootLayoutInner() {
 			// install still gets every unread announcement, not just
 			// ones newer than first-launch). Marked seen on modal
 			// dismiss via mark_announcement_seen.
-			const systemRows = await (async () => {
-				const data = await rpc<
+			const systemSide = () =>
+				rpc<
 					{
 						id: number;
 						kind: string;
@@ -598,8 +423,23 @@ function RootLayoutInner() {
 						dispatched_at: string;
 					}[]
 				>("my_unseen_announcements");
-				return data ?? [];
-			})();
+
+			const [blessingSide, curseSide, tradeResult, systemRows] = await Promise.all([
+				ritualSide("blessings"),
+				ritualSide("curses"),
+				tradeSide(),
+				systemSide(),
+			]);
+			if (cancelled) return;
+			if (
+				systemRows === null ||
+				!launchEventSourcesSucceeded([blessingSide, curseSide, tradeResult], systemRows)
+			) {
+				// Conservative retry: one failed source means the combined batch
+				// is incomplete. Do not present it and, critically, do not move
+				// away_seen_v1 past events the failed source may have contained.
+				return;
+			}
 
 			// Normalize all events to a shared shape so we can sort + cap
 			// uniformly. `ts` is the comparable timestamp; `actor_id` is
@@ -618,19 +458,19 @@ function RootLayoutInner() {
 				data?: unknown; // carries drive_id for trough-nudge tap-through
 			};
 			const all: Norm[] = [
-				...(await ritualSide("blessings")).map<Norm>((r) => ({
+				...blessingSide.rows.map<Norm>((r) => ({
 					source: "blessing",
 					ts: r.sent_at,
 					actor_id: r.sender_id,
 					kind: r.kind,
 				})),
-				...(await ritualSide("curses")).map<Norm>((r) => ({
+				...curseSide.rows.map<Norm>((r) => ({
 					source: "curse",
 					ts: r.sent_at,
 					actor_id: r.sender_id,
 					kind: r.kind,
 				})),
-				...tradeRows.map<Norm>((r) => ({
+				...tradeResult.rows.map<Norm>((r) => ({
 					source: "trade_fulfilled",
 					ts: r.fulfilled_at,
 					actor_id: r.target_id,
@@ -654,9 +494,7 @@ function RootLayoutInner() {
 			}
 			// Profile hydration only needed for rows with an actor_id
 			// (rituals + trades). System rows skip this.
-			const actorIds = [
-				...new Set(all.map((r) => r.actor_id).filter((x): x is string => !!x)),
-			];
+			const actorIds = [...new Set(all.map((r) => r.actor_id).filter((x): x is string => !!x))];
 			let byId = new Map<string, string | null>();
 			if (actorIds.length > 0) {
 				const { data: profs } = await supabase
@@ -665,9 +503,10 @@ function RootLayoutInner() {
 					.in("id", actorIds);
 				if (cancelled) return;
 				byId = new Map(
-					((profs ?? []) as { id: string; username: string | null }[]).map(
-						(p) => [p.id, p.username]
-					)
+					((profs ?? []) as { id: string; username: string | null }[]).map((p) => [
+						p.id,
+						p.username,
+					])
 				);
 			}
 			all.sort((a, b) => (a.ts < b.ts ? 1 : -1));
@@ -678,8 +517,7 @@ function RootLayoutInner() {
 			// "now" every boot and silently skips between-launch rituals.
 			// Stashed here, WRITTEN on modal dismiss (see render below).
 			const nonSystemNewest = all.find((r) => r.source !== "system");
-			pendingAwaySeenRef.current =
-				nonSystemNewest?.ts ?? new Date().toISOString();
+			pendingAwaySeenRef.current = nonSystemNewest?.ts ?? new Date().toISOString();
 			setRituals(
 				all.map<WhileAwayEvent>((r) => {
 					if (r.source === "system") {
@@ -694,7 +532,7 @@ function RootLayoutInner() {
 							data: r.data,
 						});
 					}
-					const from = r.actor_id ? byId.get(r.actor_id) ?? null : null;
+					const from = r.actor_id ? (byId.get(r.actor_id) ?? null) : null;
 					if (r.source === "trade_fulfilled") {
 						return { source: "trade_fulfilled", amount: r.amount ?? 0, from };
 					}
@@ -707,9 +545,37 @@ function RootLayoutInner() {
 		};
 	}, [authChecked, sessionUserId]);
 
-	// Achievement reveals — surface achievements earned but not yet
-	// seen (claimed = true, viewed_at = null). Shown one at a time;
-	// AchievementUnlockModal marks each viewed on dismiss. Polls on
+	const dismissWhileAway = (route?: string) => {
+		if (!rituals) return;
+		// Server-side mark-seen for any system announcements in the batch.
+		// Fire-and-forget; a network miss leaves the row unseen for next launch.
+		rituals.forEach((event) => {
+			if (event.source === "system") {
+				rpc("mark_announcement_seen", {
+					announcement_id: event.announcementId,
+				}).then(() => {});
+			}
+		});
+		// Persist only after the player actually saw the complete batch.
+		if (pendingAwaySeenRef.current) {
+			AsyncStorage.setItem("away_seen_v1", pendingAwaySeenRef.current);
+			pendingAwaySeenRef.current = null;
+		}
+		if (route) {
+			releasePopupThenNavigate({
+				release: ritualsSlot.release,
+				clear: () => setRituals(null),
+				navigate: () => router.replace(route as never),
+			});
+			return;
+		}
+		ritualsSlot.release();
+		setTimeout(() => setRituals(null), POPUP_TEARDOWN_MS);
+	};
+
+	// Achievement digest — surface achievements earned but not yet
+	// seen (claimed = true, viewed_at = null) in one batch.
+	// AchievementDigestModal marks the batch viewed on dismiss. Polls on
 	// launch + foreground, but never clobbers an in-progress queue.
 	useEffect(() => {
 		if (!authChecked) return;
@@ -780,32 +646,25 @@ function RootLayoutInner() {
 				return;
 			}
 
-			Alert.alert(
-				"Apply your friend's code?",
-				`Add ${code} to your account?`,
-				[
-					{ text: "Cancel", style: "cancel" },
-					{
-						text: "Apply",
-						onPress: async () => {
-							const result = await redeemReferralCode(code);
-							if (result?.ok) {
-								Alert.alert(
-									"Code applied",
-									result.inviter_username
-										? `${result.inviter_username} brought you in. +50 snouts.`
-										: "+50 snouts landed."
-								);
-							} else {
-								Alert.alert(
-									"Couldn't apply",
-									referralErrorMessage(result?.reason)
-								);
-							}
-						},
+			Alert.alert("Apply your friend's code?", `Add ${code} to your account?`, [
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Apply",
+					onPress: async () => {
+						const result = await redeemReferralCode(code);
+						if (result?.ok) {
+							Alert.alert(
+								"Code applied",
+								result.inviter_username
+									? `${result.inviter_username} brought you in. +50 snouts.`
+									: "+50 snouts landed."
+							);
+						} else {
+							Alert.alert("Couldn't apply", referralErrorMessage(result?.reason));
+						}
 					},
-				]
-			);
+				},
+			]);
 		};
 
 		// Cold launch.
@@ -880,8 +739,7 @@ function RootLayoutInner() {
 					{ text: "Later", style: "cancel" },
 					{
 						text: "Redeem",
-						onPress: () =>
-							router.push({ pathname: "/scan-code", params: { code } }),
+						onPress: () => router.push({ pathname: "/scan-code", params: { code } }),
 					},
 				]
 			);
@@ -984,7 +842,9 @@ function RootLayoutInner() {
 						if (consumed === key) return; // already routed this physical tap
 						await AsyncStorage.setItem(LAST_NOTIF_RESPONSE_KEY, key);
 					}
-					const data = res.notification.request.content.data as { screen?: string };
+					const data = res.notification.request.content.data as {
+						screen?: string;
+					};
 					routeForTap(data?.screen);
 				})
 				.catch(() => {});
@@ -995,7 +855,9 @@ function RootLayoutInner() {
 				if (key) {
 					AsyncStorage.setItem(LAST_NOTIF_RESPONSE_KEY, key).catch(() => {});
 				}
-				const data = res.notification.request.content.data as { screen?: string };
+				const data = res.notification.request.content.data as {
+					screen?: string;
+				};
 				routeForTap(data?.screen);
 			});
 		} catch {
@@ -1015,12 +877,12 @@ function RootLayoutInner() {
 	}
 
 	return (
-		<ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+		<ThemeProvider value={APP_NAV_THEME}>
 			<Stack>
 				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 				<Stack.Screen name="+not-found" />
 			</Stack>
-			<StatusBar style="auto" />
+			<StatusBar style="dark" backgroundColor={UI_COLORS.canvas} />
 			{/* Launch popups all route through the global PopupQueue. Each
 			    mounts on its own state, but the NATIVE modal's `visible` is
 			    driven by its queue slot, and the dismiss handlers are
@@ -1051,103 +913,53 @@ function RootLayoutInner() {
 					}}
 				/>
 			)}
+			{pigFriendsLaunch && (
+				<PigFriendsLaunchModal
+					visible={pigFriendsSlot.visible}
+					isMember={pigFriendsMember}
+					onDismiss={() => {
+						if (pigFriendsLaunchUid) {
+							AsyncStorage.setItem(`pig_friends_launch_v1_seen:${pigFriendsLaunchUid}`, "1").catch(
+								() => {}
+							);
+						}
+						pigFriendsSlot.release();
+						setTimeout(() => setPigFriendsLaunch(false), POPUP_TEARDOWN_MS);
+					}}
+					onAction={() => {
+						if (pigFriendsLaunchUid) {
+							AsyncStorage.setItem(`pig_friends_launch_v1_seen:${pigFriendsLaunchUid}`, "1").catch(
+								() => {}
+							);
+						}
+						pigFriendsSlot.release();
+						setTimeout(() => setPigFriendsLaunch(false), POPUP_TEARDOWN_MS);
+						setTimeout(async () => {
+							if (pigFriendsMember) {
+								router.replace("/shop?view=pen");
+								return;
+							}
+							const result = await presentPaywall(OFFERING_IDS.slopClub);
+							if (result.ok) router.replace("/shop?view=pen");
+						}, POPUP_HANDOFF_GAP_MS);
+					}}
+				/>
+			)}
 			{rituals && (
 				<WhileAwayModal
 					visible={ritualsSlot.visible}
 					events={rituals}
-					// Deep-link a trough-nudge row to its drive. The row calls
-					// onDismiss() first (normal dismiss path — marks the batch
-					// seen + persists the away marker), so here we only route.
-					onNavigate={(route) => router.replace(route as never)}
-					onDismiss={() => {
-						// Server-side mark-seen for any system announcements
-						// in the batch. Fire-and-forget; if the network is
-						// down the rows stay unseen and reappear next launch,
-						// which is the correct conservative behavior.
-						rituals.forEach((e) => {
-							if (e.source === "system") {
-								rpc("mark_announcement_seen", {
-									announcement_id: e.announcementId,
-								}).then(() => {});
-							}
-						});
-						// Persist the away-seen marker only now that the player
-						// actually SAW the batch (see pendingAwaySeenRef).
-						if (pendingAwaySeenRef.current) {
-							AsyncStorage.setItem("away_seen_v1", pendingAwaySeenRef.current);
-							pendingAwaySeenRef.current = null;
-						}
-						ritualsSlot.release();
-						setTimeout(() => setRituals(null), POPUP_TEARDOWN_MS);
-					}}
+					onNavigate={(route) => dismissWhileAway(route)}
+					onDismiss={() => dismissWhileAway()}
 				/>
 			)}
 			{achievements.length > 0 && (
-				<AchievementUnlockModal
+				<AchievementDigestModal
 					visible={achievementsSlot.visible}
-					achievement={achievements[0]}
+					achievements={achievements}
 					onDismiss={() => {
 						achievementsSlot.release();
-						// Advance AFTER the beat: while more unlocks remain,
-						// `want` stays true so the slot re-requests and the
-						// queue presents the next one once the gap clears.
-						setTimeout(
-							() => setAchievements((q) => q.slice(1)),
-							POPUP_TEARDOWN_MS
-						);
-					}}
-				/>
-			)}
-			{sounderPrompt && (
-				<SounderLaunchModal
-					visible={sounderSlot.visible}
-					step={sounderStep}
-					onCreate={() => {
-						// No persistent daily stamp anymore — the session latch
-						// (markSounderNudgeFired on present) + the queue-empty gate
-						// are the frequency ceiling. Two-phase dismiss per the
-						// PopupQueue TIMING CONTRACT.
-						sounderSlot.release();
-						setTimeout(() => setSounderPrompt(false), POPUP_TEARDOWN_MS);
-						// taste → the season tab (where the practice dig lives); join →
-						// the Sounder segment where the join/create form is.
-						router.push(
-							sounderStep === "taste"
-								? "/(tabs)/season"
-								: "/(tabs)/friends?seg=sounder"
-						);
-					}}
-					onDismiss={() => {
-						sounderSlot.release();
-						setTimeout(() => setSounderPrompt(false), POPUP_TEARDOWN_MS);
-					}}
-				/>
-			)}
-			{/* The rare feedback nudge — the lowest-priority fallback (95). "share a
-			    thought" routes to the Me tab with ?feedback=1, which auto-opens the
-			    same whisper dialog the settings row uses (one dialog, two doors).
-			    "not now" stamps the 14-day cooldown; "don't ask again" the opt-out.
-			    Two-phase dismiss per the PopupQueue TIMING CONTRACT. */}
-			{feedbackNudge && (
-				<FeedbackNudgeModal
-					visible={feedbackNudgeSlot.visible}
-					onShare={() => {
-						if (feedbackNudgeUid) stampFeedbackNudgeShown(feedbackNudgeUid);
-						feedbackNudgeSlot.release();
-						setTimeout(() => setFeedbackNudge(false), POPUP_TEARDOWN_MS);
-						router.push("/(tabs)/account?feedback=1");
-					}}
-					onNotNow={() => {
-						// Soft dismiss — arm the 14-day cooldown, never nag again this window.
-						if (feedbackNudgeUid) stampFeedbackNudgeShown(feedbackNudgeUid);
-						feedbackNudgeSlot.release();
-						setTimeout(() => setFeedbackNudge(false), POPUP_TEARDOWN_MS);
-					}}
-					onNever={() => {
-						// Hard opt-out — the player asked us to stop. Forever-ish.
-						if (feedbackNudgeUid) stampFeedbackNudgeOff(feedbackNudgeUid);
-						feedbackNudgeSlot.release();
-						setTimeout(() => setFeedbackNudge(false), POPUP_TEARDOWN_MS);
+						setTimeout(() => setAchievements([]), POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}
@@ -1160,19 +972,12 @@ function RootLayoutInner() {
 					onDone={() => {
 						hungerIntroSlot.release();
 						if (hungerIntroUid) {
-							AsyncStorage.setItem(`s2_intro_seen:${hungerIntroUid}`, "1").catch(
-								() => {}
-							);
+							AsyncStorage.setItem(`s2_intro_seen:${hungerIntroUid}`, "1").catch(() => {});
 						}
 						setTimeout(() => setHungerIntro(false), POPUP_TEARDOWN_MS);
 					}}
 				/>
 			)}
-			{/* Field Guide page reveals — the ceremony a page gets the first time
-			    the player meets its economy object. Self-driven off the module
-			    reveal queue; slotted at pri 50 (below the season ceremonies).
-			    Stays mounted; presents only when a page unlocks. */}
-			<FieldGuideReveal />
 			{/* Purchase toast — global, slides down from the top on
 			    shop buys + Slop Club join. Stays mounted; quiet until
 			    showPurchaseToast() is called from anywhere. */}

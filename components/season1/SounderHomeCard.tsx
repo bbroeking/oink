@@ -32,6 +32,7 @@ import {
 	milestoneProgress,
 	type FeedingState,
 } from "@/utils/dig";
+import { patchCtaLabel } from "@/utils/rooting";
 import { fetchRaceCrewDetail, type RaceCrewDetail } from "@/utils/race";
 import { CREW_CAP_WORD } from "@/constants/crews";
 import { RACE_TRUFFLE_TABLE } from "@/constants/dig";
@@ -44,6 +45,7 @@ export function SounderHomeCard({
 	uid,
 	cta,
 	refreshKey,
+	showFeedingAction = true,
 }: {
 	crewHook: UseCrew;
 	/** The caller's own user id — lights their pig in the roster when they've dug. */
@@ -56,13 +58,21 @@ export function SounderHomeCard({
 	cta: FeedingCta;
 	/** Bumped after a dig so the roster's "who dug this feeding" re-reads. */
 	refreshKey?: number;
+	/** Hide the inline action when its prominent form is rendered above this card. */
+	showFeedingAction?: boolean;
 }) {
 	const { crew } = crewHook;
 
 	if (crew.crew) {
 		return (
 			<Sticker color="paper" rotate={-0.4} radius={RADII.lg} style={styles.card}>
-				<CrewedHome crewHook={crewHook} uid={uid} cta={cta} refreshKey={refreshKey} />
+				<CrewedHome
+					crewHook={crewHook}
+					uid={uid}
+					cta={cta}
+					refreshKey={refreshKey}
+					showFeedingAction={showFeedingAction}
+				/>
 			</Sticker>
 		);
 	}
@@ -87,17 +97,106 @@ export function SounderHomeCard({
 	);
 }
 
+/** One authoritative Feeding action, promoted above secondary systems on Season. */
+export function FeedingAction({
+	cta,
+	prominent = false,
+}: {
+	cta: FeedingCta;
+	prominent?: boolean;
+}) {
+	const content = (
+		<View style={styles.playRow}>
+			{prominent && (
+				<>
+					<Text style={styles.feedingKicker}>★ THIS FEEDING</Text>
+					<Text accessibilityRole="header" style={styles.feedingTitle}>
+						{cta.dugThisWindow
+							? "20 Pass XP banked"
+							: cta.phaseOpen
+								? "Dig for Golden Truffles"
+								: "The Hungerer is guarding"}
+					</Text>
+					<Text style={styles.feedingReward}>
+						Golden Truffles + relics · +20 Pass XP
+					</Text>
+					<Text style={styles.feedingPromise}>
+						{"Bring home a find to join the next 15-Truffle stage reward and your Sounder's Monday payout."}
+					</Text>
+				</>
+			)}
+			{cta.dugThisWindow ? (
+				<Button size={prominent ? "lg" : "md"} variant="locked" full disabled>
+					dug this feeding ★
+				</Button>
+			) : cta.noCrew ? null : cta.phaseOpen ? (
+				<>
+					<Button
+						size={prominent ? "lg" : "md"}
+						variant="primary"
+						full
+						onPress={cta.start}
+					>
+						{patchCtaLabel(true, cta.countdown)}
+					</Button>
+					<Text style={styles.digSub}>root the patch</Text>
+					<Text style={styles.cooldownLine}>
+						the patch closes in {cta.countdown}
+					</Text>
+				</>
+			) : (
+				<>
+					<Button
+						size={prominent ? "lg" : "md"}
+						variant="locked"
+						full
+						disabled
+					>
+						{patchCtaLabel(false, cta.countdown)}
+					</Button>
+					<NotifyChip />
+				</>
+			)}
+			{!!cta.note && <Text style={styles.note}>{cta.note}</Text>}
+			{__DEV__ && cta.startPractice && (
+				<Pressable
+					onPress={cta.startPractice}
+					hitSlop={6}
+					style={({ pressed }) => pressed && { opacity: 0.65 }}
+				>
+					<Text style={styles.burrowLink}>dev · practice dig ›</Text>
+				</Pressable>
+			)}
+		</View>
+	);
+
+	if (!prominent) return content;
+
+	return (
+		<Sticker
+			color={cta.phaseOpen && !cta.dugThisWindow ? "sun" : "cream"}
+			rotate={-0.4}
+			radius={RADII.xl}
+			style={styles.feedingCard}
+		>
+			{content}
+		</Sticker>
+	);
+}
+
 // ── CREWED — roster · play/cooldown · milestone ───────────────────────────────
 function CrewedHome({
 	crewHook,
 	uid,
 	cta,
 	refreshKey,
+	showFeedingAction,
 }: {
 	crewHook: UseCrew;
 	uid: string | null;
 	cta: FeedingCta;
 	refreshKey?: number;
+	showFeedingAction: boolean;
 }) {
 	const { crew } = crewHook;
 	const members = crew.members;
@@ -142,6 +241,8 @@ function CrewedHome({
 
 	return (
 		<>
+			{showFeedingAction && <FeedingAction cta={cta} />}
+
 			{/* Roster — every snout, lit when it's dug this feeding. */}
 			<View style={styles.roster}>
 				{members.map((mem) => {
@@ -178,49 +279,6 @@ function CrewedHome({
 				})}
 			</View>
 
-			{/* Play the open patch, or the locked state until it opens again.
-			    The patch alternates 4h open / 4h guarded within each feeding.
-			    Locked labels carry NO countdown — the WindowStrip caption directly
-			    above this card owns the schedule, and stating it twice a minute
-			    apart is how the two clocks visibly disagreed. */}
-			<View style={styles.playRow}>
-				{cta.dugThisWindow ? (
-					<Button size="md" variant="locked" full disabled>
-						dug this feeding ★
-					</Button>
-				) : cta.noCrew ? null : cta.phaseOpen ? (
-					<>
-						<Button size="md" variant="primary" full onPress={cta.start}>
-							Dig for truffles
-						</Button>
-						{/* The dig verb leads; "root the patch" rides under it as the
-						    small storybook whisper (inverted roles). */}
-						<Text style={styles.digSub}>root the patch</Text>
-						<Text style={styles.cooldownLine}>the patch closes in {cta.countdown}</Text>
-					</>
-				) : (
-					<>
-						<Button size="md" variant="locked" full disabled>
-							he's guarding
-						</Button>
-						{/* Guarded, nothing to dig — offer the same "oink me" opt-in the
-						    onboarding first_dig branch gives, so a retained player isn't
-						    left at a dead disabled button. */}
-						<NotifyChip />
-					</>
-				)}
-				{!!cta.note && <Text style={styles.note}>{cta.note}</Text>}
-				{/* Dev escape hatch: play the dig any time (fresh practice board,
-				    mints nothing) — the phase gate makes on-device testing painful. */}
-				{__DEV__ && cta.startPractice && (
-					<Pressable onPress={cta.startPractice} hitSlop={6} style={({ pressed }) => pressed && { opacity: 0.65 }}>
-						<Text style={styles.burrowLink}>dev · practice dig ›</Text>
-					</Pressable>
-				)}
-				{/* The relic shelf — the dig's collection page (Part D). A real
-				    bordered secondary affordance, not a bare afterthought link. */}
-				<BurrowBookLink />
-			</View>
 			{/* cta.modal renders once at the owner (season.tsx), not here. */}
 
 			{/* One quiet milestone line + thin bar. */}
@@ -240,6 +298,8 @@ function CrewedHome({
 					</Text>
 				)}
 			</View>
+			{/* Collection stays reachable with herd context, below the primary action. */}
+			<BurrowBookLink />
 		</>
 	);
 }
@@ -412,8 +472,34 @@ const styles = StyleSheet.create({
 		maxWidth: 72,
 	},
 
-	// Play / cooldown.
+	// Feeding action.
 	playRow: { marginBottom: SPACE.sm },
+	feedingCard: {
+		paddingHorizontal: SPACE.lg,
+		paddingVertical: SPACE.lg,
+	},
+	feedingKicker: {
+		...TYPE.kicker,
+		color: WHIMSY.accent,
+		textTransform: "uppercase",
+		letterSpacing: 0.8,
+		marginBottom: SPACE.xs,
+	},
+	feedingTitle: {
+		...TYPE.sectionTitle,
+		color: WHIMSY.ink,
+		marginBottom: SPACE.xs,
+	},
+	feedingReward: {
+		...TYPE.body,
+		color: WHIMSY.ink,
+	},
+	feedingPromise: {
+		...TYPE.bodySm,
+		color: WHIMSY.mute,
+		marginTop: 2,
+		marginBottom: SPACE.md,
+	},
 	cooldownLine: { ...TYPE.hand, fontFamily: FONTS.hand, color: WHIMSY.mute },
 	// The "root the patch" whisper subtitle under the "Dig for truffles" verb.
 	digSub: {

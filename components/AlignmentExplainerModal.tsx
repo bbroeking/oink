@@ -14,11 +14,9 @@
 // it's easy to move once the copy + layout are signed off.
 import React, { useEffect, useRef } from "react";
 import {
-	Modal,
 	View,
 	Text,
 	StyleSheet,
-	Pressable,
 	Animated,
 	Easing,
 } from "react-native";
@@ -28,12 +26,16 @@ import { AlignmentEmblem } from "./ui/AlignmentEmblem";
 import {
 	FONTS,
 	KICKER_TEXT,
-	MODAL_BACKDROP_BG,
 	STICKER_SHADOW,
 	WHIMSY,
 	RADII,
 } from "@/constants/theme";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
+import { AdaptiveModalScaffold, Button } from "./ui";
+import {
+	MOTION_DURATION,
+	useMotionPolicy,
+} from "@/hooks/useMotionPolicy";
 
 interface Props {
 	onDismiss: () => void;
@@ -56,9 +58,19 @@ export function AlignmentExplainerModal({ onDismiss, s1 = false }: Props) {
 	useUnmanagedModalHold(true);
 	const scale = useRef(new Animated.Value(0)).current;
 	const opacity = useRef(new Animated.Value(0)).current;
+	const motionPolicy = useMotionPolicy();
 
 	useEffect(() => {
 		Haptics.selectionAsync().catch(() => {});
+		if (motionPolicy.reduceMotion) {
+			scale.setValue(1);
+			Animated.timing(opacity, {
+				toValue: 1,
+				duration: MOTION_DURATION.crossfade,
+				useNativeDriver: true,
+			}).start();
+			return;
+		}
 		Animated.parallel([
 			Animated.spring(scale, {
 				toValue: 1,
@@ -73,11 +85,17 @@ export function AlignmentExplainerModal({ onDismiss, s1 = false }: Props) {
 				useNativeDriver: true,
 			}),
 		]).start();
-	}, [scale, opacity]);
+	}, [scale, opacity, motionPolicy.reduceMotion]);
 
 	return (
-		<Modal visible transparent animationType="fade" onRequestClose={onDismiss}>
-			<View style={styles.backdrop}>
+		<AdaptiveModalScaffold
+			visible
+			onRequestClose={onDismiss}
+			bare
+			maxWidth={404}
+			contentContainerStyle={styles.modalContent}
+			testID="alignment-explainer-modal"
+		>
 				<Animated.View
 					style={[styles.cardWrap, { opacity, transform: [{ scale }] }]}
 				>
@@ -144,30 +162,26 @@ export function AlignmentExplainerModal({ onDismiss, s1 = false }: Props) {
 								: "When Judgement Day comes, the most Generous and the most Greedy earn titles no one can claim again."}
 						</Text>
 
-						<Pressable
+						<Button
 							testID="alignment-explainer-dismiss"
 							onPress={onDismiss}
-							style={({ pressed }) => [
-								styles.btn,
-								pressed && { opacity: 0.75 },
-							]}
+							variant="gold"
+							full
 						>
-							<Text style={styles.btnText}>Got it</Text>
-						</Pressable>
+							Got it
+						</Button>
 					</Sticker>
 				</Animated.View>
-			</View>
-		</Modal>
+		</AdaptiveModalScaffold>
 	);
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		flex: 1,
+	modalContent: {
+		flexGrow: 1,
 		alignItems: "center",
 		justifyContent: "center",
-		backgroundColor: MODAL_BACKDROP_BG,
-		padding: 28,
+		padding: 6,
 	},
 	cardWrap: { width: "100%", maxWidth: 380 },
 	card: { paddingHorizontal: 24, paddingVertical: 28, alignItems: "center" },
@@ -199,10 +213,11 @@ const styles = StyleSheet.create({
 	},
 	zoneRange: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 9,
+		fontSize: 11,
 		color: WHIMSY.mute,
-		letterSpacing: 1,
+		letterSpacing: 0.7,
 		textTransform: "uppercase",
+		textAlign: "center",
 	},
 	spectrum: {
 		flexDirection: "row",
@@ -250,23 +265,8 @@ const styles = StyleSheet.create({
 	stakes: {
 		fontFamily: FONTS.hand,
 		fontSize: 14,
-		lineHeight: 20,
 		color: WHIMSY.mute,
 		textAlign: "center",
 		marginBottom: 22,
-	},
-	btn: {
-		paddingHorizontal: 28,
-		paddingVertical: 12,
-		borderRadius: 14,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		backgroundColor: WHIMSY.sun,
-	},
-	btnText: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 17,
-		color: WHIMSY.ink,
-		letterSpacing: 0.4,
 	},
 });

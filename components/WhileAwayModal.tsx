@@ -4,25 +4,13 @@
 // mounts this; the events also live in the Friends-tab Inbox, this
 // is just the can't-miss-it announcement.
 import React from "react";
-import {
-	Modal,
-	View,
-	Text,
-	ScrollView,
-	StyleSheet,
-	Pressable,
-} from "react-native";
+import { Modal, View, Text, ScrollView, StyleSheet, Pressable, Image } from "react-native";
 import { Sticker } from "./ui/Sticker";
 import { Button } from "./ui/Button";
 import { Glyph } from "./ui/Glyph";
 import { Icon } from "./ui/Icon";
 import { RitualIconWell } from "./ui/RitualIconWell";
-import {
-	BLESSING_META,
-	CURSE_META,
-	type BlessingKind,
-	type CurseKind,
-} from "../utils/rituals";
+import { BLESSING_META, CURSE_META, type BlessingKind, type CurseKind } from "../utils/rituals";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -32,6 +20,7 @@ import {
 	WHIMSY,
 	RADII,
 } from "@/constants/theme";
+import { VISIT_EMOTE_IMAGES, type VisitEmoteId } from "@/utils/visitEmotes";
 
 // Discriminated union — blessings + curses + trades + system
 // announcements all surface in the same launch modal so the player
@@ -52,6 +41,9 @@ export type WhileAwayEvent =
 			// non-pressable so there's no dead affordance. Set by
 			// systemAnnouncementRoute() in utils/whileAway.
 			route?: string | null;
+			// Member visit notes carry a commissioned sticker. Unknown ids fail
+			// soft to the normal barn star while old binaries roll forward.
+			emoteId?: string | null;
 	  };
 
 export function WhileAwayModal({
@@ -67,9 +59,9 @@ export function WhileAwayModal({
 	visible: boolean;
 	events: WhileAwayEvent[];
 	onDismiss: () => void;
-	// Tap-through for a system row that carries a deep-link `route`. The row
-	// dismisses (normal path — persists the away marker + marks seen) THEN
-	// navigates. Rows without a route stay non-pressable.
+	// Tap-through for a system row that carries a deep-link `route`. The
+	// parent owns dismissal + delayed navigation as one PopupQueue operation.
+	// Rows without a route stay non-pressable.
 	onNavigate?: (route: string) => void;
 }) {
 	const blessings = events.filter((e) => e.source === "blessing").length;
@@ -99,12 +91,7 @@ export function WhileAwayModal({
 						: "Blessings & curses landed";
 
 	return (
-		<Modal
-			visible={visible}
-			transparent
-			animationType="fade"
-			onRequestClose={onDismiss}
-		>
+		<Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
 			<View style={styles.backdrop}>
 				<Sticker
 					color="paper"
@@ -115,19 +102,30 @@ export function WhileAwayModal({
 					<Text style={styles.kicker}>★ while you were away</Text>
 					<Text style={styles.headline}>{headline}</Text>
 
-					<ScrollView
-						style={{ maxHeight: 270 }}
-						showsVerticalScrollIndicator={false}
-					>
+					<ScrollView style={{ maxHeight: 270 }} showsVerticalScrollIndicator={false}>
 						{events.map((e, i) => {
 							if (e.source === "system") {
 								const route = e.route ?? null;
 								const tappable = !!route && !!onNavigate;
+								const emoteSource =
+									e.emoteId && Object.prototype.hasOwnProperty.call(VISIT_EMOTE_IMAGES, e.emoteId)
+										? VISIT_EMOTE_IMAGES[e.emoteId as VisitEmoteId]
+										: null;
 								const inner = (
 									<>
-										<View style={styles.systemGlyphWell}>
-											<Text style={styles.systemGlyph}>★</Text>
-										</View>
+										{emoteSource ? (
+											<View style={styles.systemEmoteWell}>
+												<Image
+													source={emoteSource}
+													style={styles.systemEmote}
+													resizeMode="contain"
+												/>
+											</View>
+										) : (
+											<View style={styles.systemGlyphWell}>
+												<Text style={styles.systemGlyph}>★</Text>
+											</View>
+										)}
 										<View style={{ flex: 1, minWidth: 0 }}>
 											<Text style={styles.rowName} numberOfLines={1}>
 												{e.title}
@@ -136,9 +134,7 @@ export function WhileAwayModal({
 												{e.body}
 											</Text>
 										</View>
-										{tappable && (
-											<Icon name="arrowRight" size={18} color={WHIMSY.ink} />
-										)}
+										{tappable && <Icon name="arrowRight" size={18} color={WHIMSY.ink} />}
 									</>
 								);
 								if (tappable) {
@@ -151,10 +147,8 @@ export function WhileAwayModal({
 												pressed && styles.rowPressed,
 											]}
 											onPress={() => {
-												// Dismiss via the normal path (persists the
-												// away marker + marks the batch seen), THEN
-												// deep-link to the drive.
-												onDismiss();
+												// The parent persists the batch marker, releases
+												// the popup, then routes after native teardown.
 												onNavigate!(route!);
 											}}
 										>
@@ -190,18 +184,8 @@ export function WhileAwayModal({
 								? BLESSING_META[e.kind as BlessingKind]
 								: CURSE_META[e.kind as CurseKind];
 							return (
-								<View
-									key={i}
-									style={[
-										styles.row,
-										blessed ? styles.rowBless : styles.rowCurse,
-									]}
-								>
-									<RitualIconWell
-										icon={meta?.icon}
-										blessed={blessed}
-										size={40}
-									/>
+								<View key={i} style={[styles.row, blessed ? styles.rowBless : styles.rowCurse]}>
+									<RitualIconWell icon={meta?.icon} blessed={blessed} size={40} />
 									<View style={{ flex: 1, minWidth: 0 }}>
 										<Text style={styles.rowName} numberOfLines={1}>
 											{e.from ?? (blessed ? "A friend" : "Someone")}{" "}
@@ -217,18 +201,10 @@ export function WhileAwayModal({
 						})}
 					</ScrollView>
 
-					<Button
-						variant="purple"
-						size="md"
-						full
-						onPress={onDismiss}
-						style={{ marginTop: 6 }}
-					>
+					<Button variant="purple" size="md" full onPress={onDismiss} style={{ marginTop: 6 }}>
 						Got it
 					</Button>
-					<Text style={styles.foot}>
-						See the full activity in the Friends tab.
-					</Text>
+					<Text style={styles.foot}>See the full activity in the Friends tab.</Text>
 				</Sticker>
 			</View>
 		</Modal>
@@ -290,6 +266,17 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	systemGlyph: { fontFamily: FONTS.whimsy, fontSize: 18, color: WHIMSY.ink },
+	systemEmoteWell: {
+		width: 52,
+		height: 52,
+		borderRadius: 16,
+		borderWidth: 1.5,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	systemEmote: { width: 48, height: 48 },
 	rowName: { fontFamily: FONTS.whimsy, fontSize: 15, color: WHIMSY.ink },
 	rowBlurb: {
 		fontFamily: FONTS.hand,

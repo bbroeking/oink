@@ -155,6 +155,43 @@ export function tierStatsFor(
 	return { claimed: claimedN, ready, locked };
 }
 
+// The compact pass window keeps five tiers around the player's current tier,
+// rebalancing at the start/end of the pass. It also keeps every reward waiting
+// to be claimed and the next reward when a sparse track puts it beyond that
+// five-tier range. Only the forward tail belongs under the "more tiers"
+// expander; omitted completed history above the viewport does not.
+export function tierWindow(
+	rewardTiers: number[],
+	totalTiers: number,
+	currentTier: number,
+	isReady: (tier: number) => boolean
+): { collapsedTiers: number[]; forwardTiers: number[] } {
+	const tiers = [...new Set(rewardTiers)]
+		.filter((tier) => tier >= 1 && tier <= totalTiers)
+		.sort((a, b) => a - b);
+	const windowSize = Math.min(5, Math.max(0, totalTiers));
+	const latestWindowStart = Math.max(1, totalTiers - windowSize + 1);
+	const windowStart = Math.min(
+		Math.max(1, currentTier - 2),
+		latestWindowStart
+	);
+	const windowEnd = windowStart + windowSize - 1;
+	const nextRewardTier = tiers.find((tier) => tier > currentTier);
+	const collapsedTiers = tiers.filter(
+		(tier) =>
+			(tier >= windowStart && tier <= windowEnd) ||
+			isReady(tier) ||
+			tier === nextRewardTier
+	);
+	const lastShownTier = collapsedTiers.at(-1);
+	const forwardTiers =
+		lastShownTier === undefined
+			? []
+			: tiers.filter((tier) => tier > lastShownTier);
+
+	return { collapsedTiers, forwardTiers };
+}
+
 // YOUR TAKE — the next unclaimed reward for the strip's pass cell. Picks the
 // lowest tier whose reward on the SHOWN track is still unclaimed; the shown
 // track is premium only for members, so a non-premium player is never shown a

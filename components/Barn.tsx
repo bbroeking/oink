@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { router } from "expo-router";
 import {
 	View,
 	StyleSheet,
@@ -11,7 +10,6 @@ import {
 	Text,
 	Animated,
 	AppState,
-	DevSettings,
 } from "react-native";
 import Svg, { Polygon, Rect, Line } from "react-native-svg";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
@@ -19,29 +17,30 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../utils/supabase";
 import { rpc } from "@/utils/rpc";
-import { observeFieldGuide } from "@/utils/fieldGuide";
+import { observeFieldGuide, observeSnouts } from "@/utils/fieldGuide";
 import { claimEcho, fetchActiveEcho, type EchoState } from "@/utils/crews";
 import { log } from "../utils/log";
 import SwipeElement from "./SwipeElement";
 import { Icon } from "./ui/Icon";
 import { Glyph, glyphSource, type GlyphName } from "./ui/Glyph";
 import { usePopupSlot, POPUP_TEARDOWN_MS } from "./ui/PopupQueue";
-import { ceremonyShownThisSession } from "@/utils/ceremonyGate";
 import { POPUP_PRIORITIES } from "@/constants/popupPriorities";
 import { Sticker, Tape } from "./ui/Sticker";
-import { WHIMSY, FONTS, SPACE, PAGE_PAD, SHADOW_SM, RADII, COLORS } from "@/constants/theme";
+import {
+  WHIMSY,
+  FONTS,
+  SPACE,
+  PAGE_PAD,
+  SHADOW_SM,
+  RADII,
+  COLORS,
+} from "@/constants/theme";
 import { HAT_IMAGES } from "@/constants/hats";
 import { PageBackground } from "./ui/PageBackground";
 import { LuckyPigModal } from "./LuckyPigModal";
-import { LuckyTitleUnlockModal } from "./LuckyTitleUnlockModal";
-import { ConfirmDialog } from "./ui/ConfirmDialog";
-import { ensurePushPermission } from "../utils/pushNotifications";
-import { ReleaseNotesModal, shouldShowReleaseNotes } from "./ReleaseNotesModal";
 import { BarnOverlay } from "./ui/BarnOverlay";
-import { BarnActiveEffectsStrip } from "./BarnActiveEffectsStrip";
-import { BarnSounderChip } from "./BarnSounderChip";
+import { BarnUpdatesTray } from "./BarnUpdatesTray";
 import { BarnBountyChip } from "./BarnBountyChip";
-import { BarnLoungeChip, BarnMemberReactions } from "./BarnMemberPerks";
 import {
 	alignmentLabel,
 	alignmentDisplay,
@@ -50,7 +49,7 @@ import {
 import { useHomeStats } from "@/hooks/useHomeStats";
 import { moodAnimation } from "@/utils/happiness";
 import { formatClockMS } from "@/utils/duration";
-import { wallowRegenPercent } from "@/utils/wallow";
+import { wallowRegenPercent, wallowWaitReductionLabel } from "@/utils/wallow";
 import { TruffleButton } from "./TruffleButton";
 import { BuryTruffleSheet } from "./BuryTruffleSheet";
 import { BuriedTruffleSheet } from "./BuriedTruffleSheet";
@@ -58,6 +57,8 @@ import { useBuriedTruffle } from "@/hooks/useBuriedTruffle";
 import { usePassEvents } from "@/hooks/usePassEvents";
 import { useLuckyPig } from "@/hooks/useLuckyPig";
 import { useActiveEffectsContext } from "@/hooks/ActiveEffectsProvider";
+import { usePigRoster } from "@/hooks/usePigRoster";
+import { BarnGuestbook } from "./BarnGuestbook";
 
 // Lucky Pig tunables live in utils/luckyPig.ts (extracted to the
 // useLuckyPig hook). Phantom-itch is the only ritual-effect tunable
@@ -184,11 +185,7 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 							style={[
 								styles.floatImage,
 								{
-									transform: [
-										{ translateX: f.dx },
-										{ translateY },
-										{ scale },
-									],
+                  transform: [{ translateX: f.dx }, { translateY }, { scale }],
 									opacity,
 								},
 							]}
@@ -197,7 +194,7 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 				})}
 			</View>
 		);
-	}
+  },
 );
 HeartFloats.displayName = "HeartFloats";
 
@@ -233,24 +230,34 @@ function PaperTicket({
 				height={16}
 				style={styles.tape}
 			/>
-			<Sticker color="paper" rotate={rotate} radius={RADII.md} style={styles.ticket}>
+      <Sticker
+        color="paper"
+        rotate={rotate}
+        radius={RADII.md}
+        style={styles.ticket}
+      >
 				<View style={styles.ticketInner}>
 					<View style={styles.coin}>
 						<Glyph name={chipGlyph} size={20} />
 					</View>
 					<View style={{ flex: 1, minWidth: 0 }}>
-						<View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}
+            >
 							<Text style={styles.ticketValue}>{value}</Text>
-							{subValue && (
-								<Text style={styles.ticketSub}>{subValue}</Text>
-							)}
+              {subValue && <Text style={styles.ticketSub}>{subValue}</Text>}
 						</View>
 						<Text style={styles.ticketLabel}>{label}</Text>
 					</View>
 				</View>
 			</Sticker>
 			{ribbon && (
-				<View style={[styles.ticketRibbon, { transform: [{ rotate: `${rotate * 0.6}deg` }] }]}>
+        <View
+          style={[
+            styles.ticketRibbon,
+            { transform: [{ rotate: `${rotate * 0.6}deg` }] },
+          ]}
+        >
 					<Glyph name="sparkle" size={11} />
 					<Text style={styles.ticketRibbonText}>{ribbon}</Text>
 				</View>
@@ -259,47 +266,12 @@ function PaperTicket({
 	);
 }
 
-function WoodenSign({
-	tier,
-	totalTiers,
-	onPress,
-}: {
-	tier: number;
-	totalTiers: number;
-	onPress: () => void;
-}) {
-	return (
-		<Pressable onPress={onPress} style={styles.signWrap}>
-			{/* Post (drawn first, behind sign) */}
-			<View style={styles.signPost} />
-			<Sticker color="peach" rotate={-2.5} radius={12} style={styles.sign}>
-				<View style={styles.signInner}>
-					<View style={{ flex: 1 }}>
-						<Text style={styles.signLabel}>snout season 0 ★</Text>
-						<Text style={styles.signTier}>
-							Tier {tier} of {totalTiers}
-						</Text>
-					</View>
-					<Icon name="arrowRight" size={20} color={WHIMSY.ink} strokeWidth={2.5} />
-				</View>
-			</Sticker>
-		</Pressable>
-	);
-}
-
 export default function Barn() {
 	const [sixSevenTick, setSixSevenTick] = useState(0);
-	// Last counter value we prompted a six-seven for (in-session guard; the
+	// Last counter value we celebrated a six-seven for (in-session guard; the
 	// cross-launch guard is AsyncStorage seen_67_at). Number, not boolean,
 	// since the egg now fires at EVERY x67 milestone (67, 167, 267, …).
 	const sixSevenPromptedRef = useRef<number | null>(null);
-	// Storybook dialog state for the 67-celebration prompt. Replaces the
-	// bare iOS Alert.alert that used to fire here — same modal-style
-	// switch we made for the bounty Swap dialog, applied here because
-	// the iOS native alert may have been contributing to a freeze
-	// reported on a TestFlight build (pigAnim stuck at "happy" after
-	// the celebration animation, blocking all subsequent taps).
-	const [sixSevenDialog, setSixSevenDialog] = useState(false);
 	// Tracks the previous-seen alignment_score for the in-app toast on
 	// every shift. The server-side `shift_alignment` push covers the
 	// milestone moments (±10/±25/±50/±100); this is the every-shift
@@ -310,28 +282,8 @@ export default function Barn() {
 	// in checkAlignment() below (on every focus).
 	const [alignment, setAlignment] = useState<AlignmentLabel>("neutral");
 
-	// Slop Club member perks (CLIENT-ONLY PROTOTYPE). is_vip is read off
-	// the same profile fetch checkAlignment already runs (no new round-trip);
-	// barnScene ("default" | "lounge") is a purely local, AsyncStorage-backed
-	// choice — no server, no migration. When a member picks the lounge we
-	// swap the Barn background to the members-only scene; every other path
-	// renders byte-identically to before.
-	const [isVip, setIsVip] = useState(false);
 	const [wallowCount, setWallowCount] = useState(0);
-	const [barnScene, setBarnScene] = useState<"default" | "lounge">("default");
-	useEffect(() => {
-		AsyncStorage.getItem("barn_scene_v0").then((v) => {
-			if (v === "lounge") setBarnScene("lounge");
-		});
-	}, []);
-	const lounged = isVip && barnScene === "lounge";
-	const toggleScene = useCallback(() => {
-		setBarnScene((prev) => {
-			const next = prev === "lounge" ? "default" : "lounge";
-			AsyncStorage.setItem("barn_scene_v0", next).catch(() => {});
-			return next;
-		});
-	}, []);
+  const pigRoster = usePigRoster();
 
 	// Active daily-ritual effects — drive the overlay + the tap loop.
 	// Shared via ActiveEffectsProvider (one instance for the whole tab
@@ -346,14 +298,15 @@ export default function Barn() {
 			// Lucky-pig boost — sun_beam (S0) or glimmer_truffle (S1), same
 			// consume-on-first-lucky mechanic. luckyKind targets the clear.
 			sunBeam:     activeEffects.effects.some(
-				(e) => e.kind === "sun_beam" || e.kind === "glimmer_truffle"
+        (e) => e.kind === "sun_beam" || e.kind === "glimmer_truffle",
 			),
-			luckyKind:   activeEffects.effects.find(
-				(e) => e.kind === "sun_beam" || e.kind === "glimmer_truffle"
+      luckyKind:
+        activeEffects.effects.find(
+          (e) => e.kind === "sun_beam" || e.kind === "glimmer_truffle",
 			)?.kind ?? null,
 			phantomItch: activeEffects.effects.some((e) => e.kind === "phantom_itch"),
 		}),
-		[activeEffects.blessings, activeEffects.curses, activeEffects.effects]
+    [activeEffects.blessings, activeEffects.curses, activeEffects.effects],
 	);
 
 	// Echo — a crewmate's Lucky Pig rings for 10 minutes; the first tap
@@ -363,7 +316,7 @@ export default function Barn() {
 	useFocusEffect(
 		useCallback(() => {
 			fetchActiveEcho().then(setEcho);
-		}, [])
+    }, []),
 	);
 
 	// Home stats (counter, balance, equipped cosmetics, season tier).
@@ -380,14 +333,6 @@ export default function Barn() {
 		onAlignmentLoaded: setAlignment,
 	});
 
-	// Release-notes auto-show: fires once on Barn mount per app launch
-	// when the user hasn't seen the latest version yet.
-	const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
-	useEffect(() => {
-		shouldShowReleaseNotes().then((show) => {
-			if (show) setReleaseNotesOpen(true);
-		});
-	}, []);
 	// useAudioPlayer is a hook, so each variant gets its own top-level
 	// call. Bundled into an array below for random-pick playback.
 	const laughPlayer1 = useAudioPlayer(laughSound1);
@@ -443,7 +388,7 @@ export default function Barn() {
 				]),
 			]).start(() => setToast(null));
 		},
-		[toastOpacity, toastY]
+    [toastOpacity, toastY],
 	);
 
 	// Pass events — "X just trotted past you" toasts when another
@@ -453,7 +398,7 @@ export default function Barn() {
 
 	// Lucky Pig — the surprise +X tickle window mechanic. Hook owns
 	// the trigger/double rolls, the AsyncStorage persistence, the
-	// burst-modal lifecycle, and the title-unlock RPC chain.
+	// combined reward-modal lifecycle, including an optional title grant.
 	const luckyPig = useLuckyPig({ showToast });
 
 	// Home-screen popups route through the global PopupQueue so they show one at
@@ -462,30 +407,12 @@ export default function Barn() {
 	const truffleSlot = usePopupSlot(
 		"truffleSheet",
 		truffleSheetOpen,
-		POPUP_PRIORITIES.truffleSheet
-	);
-	// Suppressed for the session if a ceremony (season-end recap / Great Hunger
-	// intro) fired this login — the notes surface next login instead (flip-day
-	// stacking ceiling, SKILL.md 2026-07-11).
-	const releaseNotesSlot = usePopupSlot(
-		"releaseNotes",
-		releaseNotesOpen && !ceremonyShownThisSession(),
-		POPUP_PRIORITIES.releaseNotes
-	);
-	const luckyTitleSlot = usePopupSlot(
-		"luckyTitle",
-		!!luckyPig.unlockedTitle,
-		POPUP_PRIORITIES.luckyTitle
+    POPUP_PRIORITIES.truffleSheet,
 	);
 	const luckyPigSlot = usePopupSlot(
 		"luckyPig",
 		luckyPig.luckyModalOpen,
-		POPUP_PRIORITIES.luckyPig
-	);
-	const sixSevenSlot = usePopupSlot(
-		"sixSeven",
-		sixSevenDialog,
-		POPUP_PRIORITIES.sixSeven
+    POPUP_PRIORITIES.luckyPig,
 	);
 
 	useEffect(() => {
@@ -503,22 +430,17 @@ export default function Barn() {
 		if (stats.seen67At != null) return;
 		sixSevenPromptedRef.current = c;
 		(async () => {
-			// AsyncStorage fast-path: skips a re-prompt in the same session /
+			// AsyncStorage fast-path: skips a replay in the same session /
 			// device without waiting on the server stamp to land.
 			const seen = await AsyncStorage.getItem("seen_67_at");
 			if (seen != null && Number(seen) === c) return;
-			setSixSevenDialog(true);
+			await AsyncStorage.setItem("seen_67_at", String(c));
+			applyOptimistic({ seen67At: new Date().toISOString() });
+			void rpc("mark_67_seen");
+			setSixSevenTick((t) => t + 1);
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 		})();
-	}, [stats.counter, stats.seen67At]);
-
-	// Record the six-seven as seen on this account. Optimistically patch the
-	// local seen67At so the trigger effect can't re-arm before the refetch
-	// lands, then fire-and-forget the server stamp (idempotent, mark_67_seen
-	// only writes if still null). Called from both dialog exits.
-	const markSixSevenSeen = useCallback(() => {
-		applyOptimistic({ seen67At: new Date().toISOString() });
-		void rpc("mark_67_seen");
-	}, [applyOptimistic]);
+	}, [stats.counter, stats.seen67At, applyOptimistic]);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -526,7 +448,7 @@ export default function Barn() {
 			passEvents.check();
 			checkAlignment();
 			setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
-		}, [])
+    }, []),
 	);
 
 	// Foreground refresh — re-fetch stats every time the app returns to the
@@ -552,12 +474,11 @@ export default function Barn() {
 		if (!uid) return;
 		const withWallow = await supabase
 			.from("profiles")
-			.select("alignment_score, is_vip, wallow_count")
+			.select("alignment_score, wallow_count")
 			.eq("id", uid)
 			.single();
 		let prof = withWallow.data as {
 			alignment_score?: number;
-			is_vip?: boolean | null;
 			wallow_count?: number | null;
 		} | null;
 		// Client and migration can ship in either order. On a pre-Wallow server,
@@ -566,15 +487,11 @@ export default function Barn() {
 		if (withWallow.error) {
 			const legacy = await supabase
 				.from("profiles")
-				.select("alignment_score, is_vip")
+				.select("alignment_score")
 				.eq("id", uid)
 				.single();
 			prof = legacy.data as typeof prof;
 		}
-		// Slop Club gate for the member perks — piggybacks this existing
-		// focus fetch rather than adding a round-trip. Non-members never
-		// see the lounge chip or the reaction row.
-		setIsVip(!!prof?.is_vip);
 		setWallowCount(prof?.wallow_count ?? 0);
 		const score = prof?.alignment_score ?? 0;
 		// Hydrate the alignment state — drives BarnOverlay theming. The
@@ -608,13 +525,13 @@ export default function Barn() {
 				deniedPlayer.play();
 			} catch {}
 			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
-				() => {}
+        () => {},
 			);
 			showToast(
 				"Out of tickles!",
 				next != null
 					? `Next in ${formatClockMS(next)} · +1 every ${formatClockMS(stats.regenSeconds ?? 3600)} · max ${stats.cap}`
-					: `Wait for regen or buy more soon.`
+          : `Wait for regen or buy more soon.`,
 			);
 			return;
 		}
@@ -622,9 +539,9 @@ export default function Barn() {
 		// Phantom itch — a curse: while active, a tap sometimes slips
 		// right off. No bank spent, no score; just a missed beat.
 		if (effects.phantomItch && Math.random() < PHANTOM_ITCH_MISS_CHANCE) {
-			Haptics.notificationAsync(
-				Haptics.NotificationFeedbackType.Warning
-			).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+        () => {},
+      );
 			showToast("Phantom itch", "Your tap slipped right off.");
 			return;
 		}
@@ -643,9 +560,7 @@ export default function Barn() {
 		// math + the burst-modal lifecycle. Barn handles the side
 		// effects: sun_beam clear on a fresh trigger, and the +1
 		// bonus payout on doubles.
-		const { triggered, doubleEarned } = luckyPig.rollOnTickle(
-			effects.sunBeam,
-		);
+    const { triggered, doubleEarned } = luckyPig.rollOnTickle(effects.sunBeam);
 		const bonusEarned = doubleEarned;
 
 		// A Lucky Pig fired (the 5% client roll users actually see). Record it
@@ -665,7 +580,9 @@ export default function Barn() {
 				const r = await claimEcho();
 				if (r.ok) {
 					heartFloatsRef.current?.spawn();
-					Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Success,
+          ).catch(() => {});
 				}
 			})();
 		}
@@ -715,7 +632,11 @@ export default function Barn() {
 
 			// Field Guide: a successful tickle is the tap that mints a snout —
 			// meet the Snouts page (fail-soft, idempotent after the first).
-			observeFieldGuide("snouts");
+      // This is onboarding knowledge: reveal it only to a genuinely new
+      // pig. Lifetime tickles are monotonic (snout balance is spendable),
+      // and this successful tap has not reached the local stats snapshot
+      // yet, hence +1.
+      void observeSnouts(statsLoaded ? stats.ticklesEarned + 1 : null);
 
 			// Daily lucky number: the server rolls a shared counter and, when
 			// this tickle lands on today's lucky number, pays +5 tickles
@@ -726,7 +647,7 @@ export default function Barn() {
 				observeFieldGuide("lucky_number");
 				showToast(
 					"You hit today's lucky number!",
-					`Lucky #${res.lucky_won} — +5 tickles land in your bank.`
+          `Lucky #${res.lucky_won} — +5 tickles land in your bank.`,
 				);
 			}
 
@@ -755,7 +676,7 @@ export default function Barn() {
 				"Tickle bank full",
 				stats.itemCount > stats.cap
 					? `${stats.itemCount} banked — regen resumes under ${stats.cap}.`
-					: `You're at the ${stats.cap} max.`
+          : `You're at the ${stats.cap} max.`,
 			);
 			return;
 		}
@@ -782,18 +703,17 @@ export default function Barn() {
 			: "+1 every hour";
 		const prestige = wallowRegenPercent(wallowCount);
 		showToast(
-			prestige > 0 ? `Aura power · ${prestige}% faster` : "Next tickle",
-			`In ${formatClockMS(Math.max(1, remaining))} · ${rate}, max ${stats.cap}`
+      prestige > 0
+        ? `Aura power · ${wallowWaitReductionLabel(prestige)}`
+        : "Next tickle",
+      `In ${formatClockMS(Math.max(1, remaining))} · ${rate}, max ${stats.cap}`,
 		);
 	};
 
 	return (
-		<PageBackground
-			bgId={lounged ? "slop_club_lounge_bg" : stats.activeBackground?.id ?? null}
-		>
+    <PageBackground bgId={stats.activeBackground?.id ?? null}>
 			<BarnOverlay
 				alignment={alignment}
-				blessed={effects.blessed}
 				cursed={effects.cursed}
 			/>
 
@@ -801,7 +721,7 @@ export default function Barn() {
 			    the painted scene. Decorative — only visible when there's
 			    no cosmetic background equipped (since PageBackground
 			    paints over the area when it is). Behind everything else. */}
-			{!stats.activeBackground && !lounged && (
+      {!stats.activeBackground && (
 				<View pointerEvents="none" style={styles.barnSilhouette}>
 					<Svg viewBox="0 0 64 56" width={64} height={56}>
 						<Polygon
@@ -811,8 +731,22 @@ export default function Barn() {
 							strokeWidth={2}
 						/>
 						<Rect x={22} y={32} width={20} height={20} fill={WHIMSY.ink} />
-						<Line x1={22} y1={22} x2={22} y2={52} stroke={WHIMSY.ink} strokeWidth={1.5} />
-						<Line x1={42} y1={22} x2={42} y2={52} stroke={WHIMSY.ink} strokeWidth={1.5} />
+            <Line
+              x1={22}
+              y1={22}
+              x2={22}
+              y2={52}
+              stroke={WHIMSY.ink}
+              strokeWidth={1.5}
+            />
+            <Line
+              x1={42}
+              y1={22}
+              x2={42}
+              y2={52}
+              stroke={WHIMSY.ink}
+              strokeWidth={1.5}
+            />
 					</Svg>
 				</View>
 			)}
@@ -832,7 +766,9 @@ export default function Barn() {
 					style={styles.barnRecovery}
 				>
 					<Icon name="refresh" size={20} color={WHIMSY.ink} />
-					<Text style={styles.barnRecoveryText}>lost the barn?{"\n"}tap to reload</Text>
+          <Text style={styles.barnRecoveryText}>
+            lost the barn?{"\n"}tap to reload
+          </Text>
 				</Pressable>
 			) : null}
 
@@ -841,8 +777,14 @@ export default function Barn() {
 			    angel territory. "Angel-coded" overlay from the design. */}
 			{alignment === "angel" && (
 				<>
-					<View pointerEvents="none" style={[styles.generousPuff, styles.generousPuffL]} />
-					<View pointerEvents="none" style={[styles.generousPuff, styles.generousPuffR]} />
+          <View
+            pointerEvents="none"
+            style={[styles.generousPuff, styles.generousPuffL]}
+          />
+          <View
+            pointerEvents="none"
+            style={[styles.generousPuff, styles.generousPuffR]}
+          />
 				</>
 			)}
 
@@ -861,9 +803,7 @@ export default function Barn() {
 						// Over-cap banks (trough/event grants) show e.g. 28 — pairing
 						// it with "/ 25" reads as an impossible fraction. Say "banked"
 						// instead so the surplus reads as a bonus, not a bug.
-						subValue={
-							stats.itemCount > stats.cap ? "banked" : `/ ${stats.cap}`
-						}
+            subValue={stats.itemCount > stats.cap ? "banked" : `/ ${stats.cap}`}
 						tapeColor="rose"
 						rotate={2.5}
 						chipGlyph="sparkle"
@@ -878,30 +818,25 @@ export default function Barn() {
 					/>
 				</View>
 
-				{/* Active-effect chips — horizontal strip showing hoofprints
-				    on you. Compact preview; the full panel lives in Friends
-				    → Inbox. Tapping a chip routes to the hub. */}
-				<BarnActiveEffectsStrip />
-				{/* Truffle control — ONE always-visible shovel, upper-left. Tap to
-				    bury (nothing down) or to manage / dig it back up (buried, shown
-				    with a snout badge). Replaced the bottom shovel + the easy-to-miss
-				    feet mound. */}
-				{truffle.status != null && (
-					<View style={styles.truffleSlot}>
+				{/* Live effects and the recurring Patch action share one collapsed
+				    tray. They remain available without taking over Rosie's stage. */}
+				<BarnUpdatesTray />
+        {/* A permanent, owner-only record of stamps friends deliberately
+				    leave after visiting. It renders nothing until the first stamp,
+				    keeping a new Barn open and uncluttered. */}
+        <BarnGuestbook />
+        {/* Barn corner control: the shovel stays in flow so it never overlays Rosie. */}
+        {truffle.status != null && (
+          <View style={styles.cornerControls}>
 						<TruffleButton
 							buried={truffleBuried}
 							remaining={truffle.status?.remaining}
-							onPress={() => (truffleBuried ? setTruffleSheetOpen(true) : setBuryOpen(true))}
+              onPress={() =>
+                truffleBuried ? setTruffleSheetOpen(true) : setBuryOpen(true)
+              }
 						/>
 					</View>
 				)}
-
-				{/* Crewless-player nudge — a quiet bark chip inviting a solo
-				    player into a Sounder while the Great Hunger is live. Rides
-				    the in-flow column here (below the truffle, above the pig) so
-				    it never covers Rosie; it self-hides once they join. The
-				    persistent fallback to the once-per-session launch modal. */}
-				<BarnSounderChip />
 
 				{/* Weekly-bounty home entry point — a quiet chip that appears only
 				    when the player has a claimable bounty (count > 0), routing to the
@@ -911,17 +846,6 @@ export default function Barn() {
 				    restored as a Season-tab section (not its own tab); this is the
 				    surface that keeps it from being forgotten. */}
 				<BarnBountyChip />
-
-				{/* Slop Club member perks (CLIENT-ONLY PROTOTYPE) — a lounge-scene
-				    toggle and a cozy reaction row, both gated on is_vip so
-				    non-members never see them. In-flow chips (no absolute chrome
-				    over Rosie); the reaction burst overlay is pointerEvents="none". */}
-				{isVip && (
-					<>
-						<BarnLoungeChip active={lounged} onToggle={toggleScene} />
-						<BarnMemberReactions />
-					</>
-				)}
 
 				{/* Alignment placard removed — the hanging Pilgrim/
 				    Generous/Greedy sign that used to live up here
@@ -935,6 +859,7 @@ export default function Barn() {
 				<View style={styles.mainSection}>
 					<View style={styles.swipeContainer}>
 						<SwipeElement
+              pigId={pigRoster.roster.activePigId}
 							onLuckySwipe={handleIncrement}
 							canTickle={!statsLoaded || stats.itemCount > 0}
 							playSixSeven={sixSevenTick}
@@ -955,7 +880,7 @@ export default function Barn() {
 							ref={heartFloatsRef}
 							particleImage={
 								stats.activeTickleParticle?.id
-									? HAT_IMAGES[stats.activeTickleParticle.id] ?? null
+                  ? (HAT_IMAGES[stats.activeTickleParticle.id] ?? null)
 									: null
 							}
 						/>
@@ -983,11 +908,13 @@ export default function Barn() {
 							},
 						]}
 					>
-						<Pressable
-							onPress={toast.onPress}
-							disabled={!toast.onPress}
+            <Pressable onPress={toast.onPress} disabled={!toast.onPress}>
+              <Sticker
+                color="rose"
+                rotate={-1.2}
+                radius={14}
+                style={styles.toast}
 						>
-							<Sticker color="rose" rotate={-1.2} radius={14} style={styles.toast}>
 								<View style={styles.toastInner}>
 									<View style={styles.toastIcon}>
 										<Glyph name="heart" size={18} />
@@ -1001,13 +928,24 @@ export default function Barn() {
 						</Pressable>
 					</Animated.View>
 				)}
-
 			</SafeAreaView>
 
 			<LuckyPigModal
 				visible={luckyPigSlot.visible}
 				windowSize={luckyPig.windowSize}
 				doublePercent={luckyPig.doublePercent}
+				unlockedTitle={luckyPig.unlockedTitle}
+				onEquipTitle={async (id) => {
+					try {
+						await rpc("equip_title", { target_title_id: id });
+						showToast(
+							"Title equipped",
+							"Visible on your account + leaderboard.",
+						);
+					} catch {
+						showToast("Couldn't equip title", "It is still saved in Me.");
+					}
+				}}
 				onDismiss={() => {
 					// Two-phase (PopupQueue TIMING CONTRACT): release() hides the
 					// native modal this frame, then clear the backing want
@@ -1018,74 +956,8 @@ export default function Barn() {
 				}}
 			/>
 
-			{/* Queue-slotted: `open` is the MOUNT gate (local state, kept true
-			    through the teardown beat so the native modal stays mounted while
-			    it dismisses); `visible` is slot-driven so release() hides it this
-			    frame. Clearing `open` in the same commit as release() unmounted the
-			    native <Modal> at t=0 of its own dismissal, and a queued successor
-			    then presented into that half-torn modal (the iOS invisible-modal
-			    wedge, #50152). Two-phase per the PopupQueue TIMING CONTRACT. */}
-			<ConfirmDialog
-				open={sixSevenDialog}
-				visible={sixSevenSlot.visible}
-				title="6 7!"
-				body="You've crossed 67 tickles. Wanna celebrate with a six-seven?"
-				confirmLabel="Six seven!"
-				cancelLabel="Skip"
-				onCancel={() => {
-					// Remember WHICH milestone was celebrated (the trigger effect
-					// compares seen_67_at against the current counter) — the old
-					// seen_67="1" write never matched, re-arming this every boot.
-					AsyncStorage.setItem(
-						"seen_67_at",
-						String(sixSevenPromptedRef.current ?? stats.counter)
-					);
-					markSixSevenSeen();
-					sixSevenSlot.release();
-					setTimeout(() => setSixSevenDialog(false), POPUP_TEARDOWN_MS);
-				}}
-				onConfirm={() => {
-					AsyncStorage.setItem(
-						"seen_67_at",
-						String(sixSevenPromptedRef.current ?? stats.counter)
-					);
-					markSixSevenSeen();
-					setSixSevenTick((t) => t + 1);
-					sixSevenSlot.release();
-					setTimeout(() => setSixSevenDialog(false), POPUP_TEARDOWN_MS);
-				}}
-			/>
-
-			<LuckyTitleUnlockModal
-				title={luckyTitleSlot.visible ? luckyPig.unlockedTitle : null}
-				onDismiss={() => {
-					// Two-phase: release() first, clear the want (unlockedTitle)
-					// a teardown beat later (PopupQueue TIMING CONTRACT).
-					luckyTitleSlot.release();
-					setTimeout(() => luckyPig.dismissUnlockedTitle(), POPUP_TEARDOWN_MS);
-				}}
-				onEquip={async (id) => {
-					try {
-						await rpc("equip_title", { target_title_id: id });
-						showToast("Title equipped", "Visible on your account + leaderboard.");
-					} catch {}
-					luckyTitleSlot.release();
-					setTimeout(() => luckyPig.dismissUnlockedTitle(), POPUP_TEARDOWN_MS);
-				}}
-			/>
-
 			{/* Tickle trades moved to the Friends-tab Inbox in the
 			    Season-0 social redesign — no Barn pill or modal. */}
-
-			<ReleaseNotesModal
-				visible={releaseNotesSlot.visible}
-				onClose={() => {
-					// Two-phase: release() first, clear the want a teardown beat
-					// later (PopupQueue TIMING CONTRACT).
-					releaseNotesSlot.release();
-					setTimeout(() => setReleaseNotesOpen(false), POPUP_TEARDOWN_MS);
-				}}
-			/>
 
 			{/* Bury dialogue — direct-tap modal, so
 			    it stays out of the launch popup queue and owns the screen on tap. */}
@@ -1134,8 +1006,16 @@ const styles = StyleSheet.create({
 		marginBottom: SPACE.lg,
 		zIndex: 1,
 	},
-	// Truffle shovel button — pinned upper-left, just below the stat cards.
-	truffleSlot: { paddingHorizontal: PAGE_PAD, alignItems: "flex-start", marginBottom: SPACE.sm, zIndex: 2 },
+  // Mirrored in-flow corner controls just below the stat cards.
+  cornerControls: {
+    paddingHorizontal: PAGE_PAD,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: SPACE.sm,
+    zIndex: 2,
+  },
+  cornerSpacer: { width: 46, height: 46 },
 	// Placard styles dropped with the JSX above.
 	// tickleHint dropped — the "tap rosie to tickle" prompt was
 	// noise once the pig was the only thing on screen.
@@ -1263,7 +1143,7 @@ const styles = StyleSheet.create({
 	},
 	barnRecoveryText: {
 		fontFamily: FONTS.hand,
-		fontSize: 9,
+    fontSize: 11,
 		color: WHIMSY.ink,
 		textAlign: "center",
 	},
@@ -1292,42 +1172,6 @@ const styles = StyleSheet.create({
 		right: -20,
 		width: 110,
 		height: 60,
-	},
-	signWrap: {
-		alignItems: "center",
-		marginBottom: Platform.OS === "ios" ? 16 : 36,
-	},
-	signPost: {
-		width: 14,
-		height: 28,
-		backgroundColor: WHIMSY.peach,
-		borderWidth: 2,
-		borderColor: WHIMSY.ink,
-		marginBottom: -10,
-		zIndex: 0,
-		transform: [{ rotate: "-1.5deg" }],
-	},
-	sign: {
-		paddingHorizontal: PAGE_PAD,
-		paddingVertical: SPACE.md,
-		minWidth: "78%",
-		zIndex: 1,
-	},
-	signInner: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: SPACE.md,
-	},
-	signLabel: {
-		fontFamily: FONTS.hand,
-		fontSize: 13,
-		color: WHIMSY.mute,
-		marginBottom: 2,
-	},
-	signTier: {
-		fontFamily: FONTS.whimsy,
-		fontSize: 18,
-		color: WHIMSY.ink,
 	},
 	dev67: {
 		position: "absolute",

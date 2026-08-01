@@ -16,7 +16,6 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { router, useLocalSearchParams, type Href } from "expo-router";
 import { Session } from "@supabase/supabase-js";
@@ -28,16 +27,17 @@ import { stampFeedbackEverSent } from "@/utils/feedbackNudge";
 import { ReleaseNotesModal } from "./ReleaseNotesModal";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
-import { Button, SectionHeader } from "./ui";
 import { LoadingBeat } from "./ui/EmptyState";
 import { Icon, type IconName } from "./ui/Icon";
+import { Glyph } from "./ui/Glyph";
 import { Image } from "react-native";
 import { PrestigeAvatar } from "./ui/PrestigeAvatar";
 import { ProfileIdentity } from "./ui/ProfileIdentity";
+import { PigPortrait } from "./ui/PigPortrait";
 import type { TitlePlacement } from "@/constants/title_types";
 import { Sticker, Tape } from "./ui/Sticker";
 import Constants from "expo-constants";
-import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, TYPE, WHIMSY, STICKER_SHADOW, SPACE, RADII, PAGE_PAD, TAB_SAFE, MODAL_BACKDROP_BG } from "@/constants/theme";
+import { COLORS, FONTS, KICKER_TEXT, TITLE_RULE, TYPE, WHIMSY, STICKER_SHADOW, SHADOW_SM, SPACE, RADII, PAGE_PAD, TAB_SAFE, MODAL_BACKDROP_BG } from "@/constants/theme";
 import {
 	IAP_ENABLED,
 	initIAP,
@@ -63,7 +63,13 @@ import {
 } from "@/utils/referrals";
 import { clearPushToken, ensurePushPermission } from "@/utils/pushNotifications";
 import { isUsernameAllowed } from "@/constants/bannedWords";
-import { wallowRankLabel, wallowRegenPercent } from "@/utils/wallow";
+import {
+	refreshWallowTuning,
+	wallowRankLabel,
+	wallowRegenPercent,
+	wallowRegenSeconds as compiledWallowRegenSeconds,
+	wallowVisitCooldownHours,
+} from "@/utils/wallow";
 
 // Aggregate counts from me_lifetime_stats() — the social tallies the "long
 // story" sheet lists beneath the scalar lifetime figures.
@@ -135,6 +141,14 @@ export function Account({ session }: { session: Session }) {
 	const [wallowCount, setWallowCount] = useState(0);
 	const [wallowRegenSeconds, setWallowRegenSeconds] = useState<number | null>(null);
 	const [devWallowPreview, setDevWallowPreview] = useState(false);
+	const [, setWallowTuningVersion] = useState(0);
+	useFocusEffect(
+		useCallback(() => {
+			refreshWallowTuning().then((changed) => {
+				if (changed) setWallowTuningVersion((version) => version + 1);
+			});
+		}, []),
+	);
 
 	// A deep-linked code stashed before sign-in (PENDING_REFERRAL_CODE_KEY)
 	// pre-fills the input — finally consuming the stranded stash.
@@ -415,7 +429,7 @@ export function Account({ session }: { session: Session }) {
 		renameCost === 0 ? "First rename is free." : `${renameCost.toLocaleString()} snouts.`;
 	const visibleWallowCount = __DEV__ && devWallowPreview ? 5 : wallowCount;
 	const visibleRegenSeconds = __DEV__ && devWallowPreview
-		? 1800
+		? compiledWallowRegenSeconds(5)
 		: wallowRegenSeconds ?? Math.round(3600 * (1 - wallowRegenPercent(visibleWallowCount) / 100));
 
 	const openRename = () => {
@@ -484,10 +498,8 @@ export function Account({ session }: { session: Session }) {
 		setFeedbackOpen(true);
 	};
 
-	// Deep-link auto-open: the rare feedback nudge (FeedbackNudgeModal, armed in
-	// app/_layout.tsx) routes here with ?feedback=1 to land the player straight in
-	// the whisper dialog — one dialog, two entry points, no duplicated flow. We
-	// clear the param immediately so a back-nav / re-focus can't re-trigger it.
+	// Deep-link auto-open for explicit links into the whisper dialog. Clear the
+	// param immediately so a back-nav / re-focus cannot re-trigger it.
 	const { feedback: feedbackParam } = useLocalSearchParams<{ feedback?: string }>();
 	useFocusEffect(
 		useCallback(() => {
@@ -783,64 +795,77 @@ export function Account({ session }: { session: Session }) {
 					{IAP_ENABLED && (
 						<Sticker
 							color={isVip ? "lilac" : "sun"}
-							rotate={-1}
+							rotate={-0.5}
 							radius={16}
 							style={[styles.slopWrap, { overflow: "hidden" }]}
 						>
-							{/* Member badge — shown once joined */}
-							{isVip && (
-								<View style={styles.slopMemberBadge}>
-									<Text style={styles.slopMemberBadgeText}>★ ACTIVE</Text>
+							<View style={styles.slopHeader}>
+								<View>
+									<Text style={styles.slopTitle}>Slop Club</Text>
+									<Text style={styles.slopMembershipLabel}>membership</Text>
 								</View>
-							)}
-
-							<Text style={styles.slopKicker}>★ membership ★</Text>
-							<Text style={styles.slopTitle}>Slop Club</Text>
-							<Text style={styles.slopTagline}>
-								{hasReferralOnlySlopClub
-									? `Your referral reward keeps every perk active through ${referralGrantDateLabel}.`
-									: isVip
-									? "Your membership is active — these perks are yours:"
-									: "The good life for swine of standing."}
-							</Text>
-
-							{/* Perks — shown in BOTH states. For members the icon
-							    wells light up gold (active) so the card celebrates
-							    membership instead of sitting empty; for prospects
-							    they're the pitch above the plan toggle. */}
-							<View style={styles.slopPerks}>
-								<SlopPerk
-									node={
-										<Image
-											source={require("@/assets/images/perks/bigger_bank.png")}
-											style={styles.perkArtImg}
-											resizeMode="contain"
-										/>
-									}
-									label="Bigger tickle bank"
-									detail="Hold 50 tickles, up from 25"
-								/>
-								<SlopPerk
-									node={
-										<Image
-											source={require("@/assets/images/perks/members_drops.png")}
-											style={styles.perkArtImg}
-											resizeMode="contain"
-										/>
-									}
-									label="Members-only drops"
-									detail="Cosmetics you can't get in the shop"
-								/>
+								<View style={[styles.slopStatus, isVip && styles.slopStatusActive]}>
+									<Text style={styles.slopStatusText}>
+										{isVip ? "ACTIVE" : "ONE FRIEND"}
+									</Text>
+								</View>
 							</View>
 
-							{isVip && !hasReferralOnlySlopClub ? (
-								<Pressable
-									onPress={handleManage}
-									style={[styles.slopBtn, { backgroundColor: WHIMSY.paper }]}
-								>
-									<Text style={styles.slopBtnText}>Manage subscription</Text>
-								</Pressable>
-							) : !isVip ? (
+							<View style={styles.slopHero}>
+								<View style={styles.slopPigPair} accessibilityElementsHidden>
+									<View style={styles.slopPigRosie}>
+										<PigPortrait pigId="rosie" size={82} />
+									</View>
+									<View style={styles.slopPigFriend}>
+										<PigPortrait pigId="bandit" size={82} />
+									</View>
+								</View>
+								<View style={styles.slopHeroCopy}>
+									<Text style={styles.slopPromise}>
+										{isVip ? "Rosie has company." : "Give Rosie a friend."}
+									</Text>
+									<Text style={styles.slopTagline}>
+										{hasReferralOnlySlopClub
+											? `Your companion access is active through ${referralGrantDateLabel}.`
+											: "Choose one long-term companion in the Pen, then decide who greets you at home."}
+									</Text>
+								</View>
+							</View>
+
+							<View style={styles.slopSeasonRow}>
+								<Image
+									source={require("@/assets/images/perks/members_drops.png")}
+									style={styles.slopSeasonArt}
+									resizeMode="contain"
+								/>
+								<View style={styles.slopSeasonCopy}>
+									<Text style={styles.slopSeasonKicker}>Also included</Text>
+									<Text style={styles.slopSeasonTitle}>Premium season collectibles</Text>
+									<Text style={styles.slopSeasonDetail}>
+										Earn cosmetic rewards as you play—never a gameplay advantage.
+									</Text>
+								</View>
+							</View>
+
+							{isVip ? (
+								<>
+									<Pressable
+										onPress={() => router.push("/(tabs)/shop?view=pen" as Href)}
+										style={[styles.slopBtn, { backgroundColor: WHIMSY.paper }]}
+									>
+										<Text style={styles.slopBtnText}>Visit the Pen</Text>
+									</Pressable>
+									{!hasReferralOnlySlopClub ? (
+										<Pressable onPress={handleManage} style={styles.slopManageLink}>
+											<Text style={styles.slopManageLinkText}>Manage subscription</Text>
+										</Pressable>
+									) : (
+										<Text style={styles.slopGrantFinePrint}>
+											No subscription needed. You won’t be charged.
+										</Text>
+									)}
+								</>
+							) : (
 								<Pressable
 									onPress={PURCHASES_LIVE ? handleUnlockPro : undefined}
 									disabled={busy || !PURCHASES_LIVE}
@@ -859,10 +884,6 @@ export function Account({ session }: { session: Session }) {
 											: "Join the Slop Club"}
 									</Text>
 								</Pressable>
-							) : (
-								<Text style={styles.slopGrantFinePrint}>
-									No subscription needed. You won’t be charged.
-								</Text>
 							)}
 
 							{!isVip && PURCHASES_LIVE && (
@@ -872,23 +893,25 @@ export function Account({ session }: { session: Session }) {
 							)}
 							{/* Terms + Privacy on the purchase surface — Apple review
 							    expects both linked where a subscription is sold. */}
-							<View style={styles.slopLegal}>
-								<Pressable
-									onPress={() =>
-										Linking.openURL("https://ticklethepig.com/terms")
-									}
-								>
-									<Text style={styles.slopLegalLink}>Terms</Text>
-								</Pressable>
-								<Text style={styles.slopLegalDot}>·</Text>
-								<Pressable
-									onPress={() =>
-										Linking.openURL("https://ticklethepig.com/privacy")
-									}
-								>
-									<Text style={styles.slopLegalLink}>Privacy</Text>
-								</Pressable>
-							</View>
+							{!isVip && (
+								<View style={styles.slopLegal}>
+									<Pressable
+										onPress={() =>
+											Linking.openURL("https://ticklethepig.com/terms")
+										}
+									>
+										<Text style={styles.slopLegalLink}>Terms</Text>
+									</Pressable>
+									<Text style={styles.slopLegalDot}>·</Text>
+									<Pressable
+										onPress={() =>
+											Linking.openURL("https://ticklethepig.com/privacy")
+										}
+									>
+										<Text style={styles.slopLegalLink}>Privacy</Text>
+									</Pressable>
+								</View>
+							)}
 						</Sticker>
 					)}
 
@@ -1079,11 +1102,6 @@ export function Account({ session }: { session: Session }) {
 								onPress={openRename}
 							/>
 							<SettingRow
-								icon="bell"
-								label="Send an idea to the den"
-								onPress={openFeedback}
-							/>
-							<SettingRow
 								icon="scroll"
 								label="What's new"
 								onPress={() => setReleaseNotesOpen(true)}
@@ -1113,17 +1131,12 @@ export function Account({ session }: { session: Session }) {
 								last
 							/>
 						</Sticker>
-						{/* Report a bug / idea — a quiet door out to the web report
-						    page (ticklethepig.com/report.html). Sits below the
-						    Settings card, above the version footer: a settings-row-
-						    like affordance, not a banner. The in-app "Send an idea
-						    to the den" whisper (in Settings above) stays the primary
-						    path; this is the always-there web door that also works
-						    for anyone sharing the page. */}
+						{/* Report a bug / idea — the single quiet door into the
+						    in-app Den whisper. It sits below the Settings card,
+						    above the version footer, as a settings-row-like
+						    affordance rather than a banner. */}
 						<Pressable
-							onPress={() =>
-								Linking.openURL("https://ticklethepig.com/report.html")
-							}
+							onPress={openFeedback}
 							style={({ pressed }) => [
 								reportStyles.row,
 								pressed && { opacity: 0.65 },
@@ -1482,43 +1495,6 @@ export function Account({ session }: { session: Session }) {
 	);
 }
 
-// One line of the Slop Club perks list — small ink icon + label + detail.
-function SlopPerk({
-	icon,
-	node,
-	label,
-	detail,
-	active,
-}: {
-	icon?: IconName;
-	// Custom art (e.g. the snout/tickle coin) rendered in the well instead of
-	// a vector Icon.
-	node?: React.ReactNode;
-	label: string;
-	detail: string;
-	// Members see their perks "lit up" (gold well); prospects see the plain pitch.
-	active?: boolean;
-}) {
-	return (
-		<View style={styles.slopPerk}>
-			{node ? (
-				// Custom sticker art stands on its own (no bordered well).
-				<View style={styles.slopPerkArt}>{node}</View>
-			) : (
-				<View style={[styles.slopPerkIcon, active && styles.slopPerkIconActive]}>
-					{icon ? (
-						<Icon name={icon} size={14} color={WHIMSY.ink} strokeWidth={2.2} />
-					) : null}
-				</View>
-			)}
-			<View style={{ flex: 1, minWidth: 0 }}>
-				<Text style={styles.slopPerkLabel}>{label}</Text>
-				<Text style={styles.slopPerkDetail}>{detail}</Text>
-			</View>
-		</View>
-	);
-}
-
 // A single row inside the Settings card. Icon + label + optional chev,
 // dashed bottom border unless it's the last row. Icon takes an Icon
 // name from the shared ui/Icon set (e.g. "scroll", "refresh", "exit")
@@ -1662,8 +1638,6 @@ function LedgerRow({
 	);
 }
 
-const WALLOW_DECAL_COLORS = [WHIMSY.sun, WHIMSY.flame, WHIMSY.roseDeep, WHIMSY.accent, WHIMSY.bark];
-
 function formatRegenInterval(seconds: number): string {
 	const safe = Math.max(60, Math.round(seconds));
 	if (safe % 3600 === 0) return `${safe / 3600}h`;
@@ -1683,53 +1657,97 @@ function WallowWall({
 	onTogglePreview?: () => void;
 }) {
 	const rank = Math.max(0, Math.floor(count));
-	const regenPercent = wallowRegenPercent(rank);
+	const nextRank = rank + 1;
+	const currentBaseInterval = formatRegenInterval(compiledWallowRegenSeconds(rank));
+	const nextBaseInterval = formatRegenInterval(compiledWallowRegenSeconds(nextRank));
+	const currentVisitHours = wallowVisitCooldownHours(rank);
+	const nextVisitHours = wallowVisitCooldownHours(nextRank);
 	return (
 		<View style={wallowWallStyles.wrap}>
 			<View style={wallowWallStyles.headingRow}>
 				<View style={{ flex: 1 }}>
 					<Text style={wallowWallStyles.kicker}>★ your prestige</Text>
-					<Text style={wallowWallStyles.title}>Wall of Tiers</Text>
+					<Text style={wallowWallStyles.title}>Wallow rank</Text>
 				</View>
 				{onTogglePreview && (
-					<Pressable onPress={onTogglePreview} style={({ pressed }) => [wallowWallStyles.previewBtn, previewing && wallowWallStyles.previewBtnOn, pressed && { opacity: 0.7 }]}>
+					<Pressable
+						onPress={onTogglePreview}
+						style={({ pressed }) => [
+							wallowWallStyles.previewBtn,
+							previewing && wallowWallStyles.previewBtnOn,
+							pressed && { opacity: 0.7 },
+						]}
+						accessibilityRole="button"
+						accessibilityState={{ selected: previewing }}
+						accessibilityLabel="Preview Wallow rank 5"
+					>
 						<Icon name="flame" size={14} color={WHIMSY.ink} filled />
 						<Text style={wallowWallStyles.previewText}>{previewing ? "W5 preview" : "Preview W5"}</Text>
 					</Pressable>
 				)}
 			</View>
 			<Sticker color="paper" rotate={0.4} radius={16} style={wallowWallStyles.card}>
-				<Text style={wallowWallStyles.intro}>
-					Every Wallow leaves a hotter mark. Power tops out at Rank 2; the wall keeps growing.
-				</Text>
-				<View style={wallowWallStyles.decalRow}>
-					{WALLOW_DECAL_COLORS.map((color, index) => {
-						const decalRank = index + 1;
-						const earned = rank >= decalRank;
-						const dark = earned && decalRank >= 4;
-						return (
-							<View key={decalRank} style={wallowWallStyles.decalSlot}>
-								<View style={[wallowWallStyles.decalBurst, { backgroundColor: earned ? color : WHIMSY.cream2 }, decalRank % 2 === 0 && { transform: [{ rotate: "8deg" }] }]}>
-									<View style={[wallowWallStyles.decalCore, dark && { backgroundColor: WHIMSY.bark }]}>
-										<Icon name={earned ? (decalRank === 5 ? "crown" : "flame") : "lock"} size={earned ? 16 : 14} color={dark ? WHIMSY.sun : earned ? WHIMSY.ink : WHIMSY.muteSoft} filled={earned} />
-										<Text style={[wallowWallStyles.decalRank, dark && { color: WHIMSY.paper }]}>W{decalRank}</Text>
-									</View>
-								</View>
-							</View>
-						);
-					})}
-				</View>
-				{rank > 5 && <Text style={wallowWallStyles.beyond}>+{rank - 5} marks beyond the wall</Text>}
-				<View style={wallowWallStyles.powerBand}>
-					<View style={{ flex: 1, minWidth: 0 }}>
+				<View style={wallowWallStyles.currentRow}>
+					<View style={wallowWallStyles.currentDecal}>
+						<Text style={wallowWallStyles.currentRank}>W{rank}</Text>
+					</View>
+					<View style={wallowWallStyles.currentCopy}>
+						<Text style={wallowWallStyles.stepLabel}>CURRENT</Text>
 						<Text style={wallowWallStyles.rankLabel}>{wallowRankLabel(rank)}</Text>
-						<Text style={wallowWallStyles.regenLead}>{regenPercent > 0 ? `${regenPercent}% faster regeneration` : "Base regeneration"}</Text>
-					</View>
-					<View style={wallowWallStyles.intervalBlock}>
-						<Text style={wallowWallStyles.intervalValue}>1 / {formatRegenInterval(regenSeconds)}</Text>
-						<Text style={wallowWallStyles.intervalLabel}>CURRENT TICKLE RATE</Text>
+						<Text style={wallowWallStyles.currentBenefits}>
+							1 tickle / {formatRegenInterval(regenSeconds)} · visits every {currentVisitHours}h
+						</Text>
 					</View>
 				</View>
+
+				<View style={wallowWallStyles.stepConnector}>
+					<View style={wallowWallStyles.stepConnectorLine} />
+					<Icon name="chevronDown" size={16} color={WHIMSY.mute} strokeWidth={2.4} />
+				</View>
+
+				<View style={wallowWallStyles.nextStep}>
+					<View style={wallowWallStyles.nextHeading}>
+						<View>
+							<Text style={wallowWallStyles.stepLabel}>NEXT WALLOW</Text>
+							<Text style={wallowWallStyles.nextTitle}>Reach W{nextRank}</Text>
+						</View>
+						<View style={wallowWallStyles.nextDecal}>
+							<Text style={wallowWallStyles.nextRank}>W{nextRank}</Text>
+						</View>
+					</View>
+					<View style={wallowWallStyles.deltaRow}>
+						<Text style={wallowWallStyles.deltaLabel}>Tickle refill</Text>
+						<Text style={wallowWallStyles.deltaValue}>
+							{currentBaseInterval} → {nextBaseInterval}
+						</Text>
+					</View>
+					<View style={wallowWallStyles.deltaRow}>
+						<Text style={wallowWallStyles.deltaLabel}>Friend visits</Text>
+						<Text style={wallowWallStyles.deltaValue}>
+							{currentVisitHours}h → {nextVisitHours}h
+						</Text>
+					</View>
+					<Text style={wallowWallStyles.unlockLine}>
+						+ exclusive W{nextRank} wearable
+					</Text>
+				</View>
+				<Pressable
+					onPress={() =>
+						router.push({
+							pathname: "/(tabs)/shop",
+							params: { view: "wardrobe", filter: "prestige" },
+						})
+					}
+					style={({ pressed }) => [
+						wallowWallStyles.gearLink,
+						pressed && { opacity: 0.65 },
+					]}
+				>
+					<Glyph name="crown" size={18} />
+					<Text style={wallowWallStyles.gearLinkText}>
+						prestige gear · {rank} earned ›
+					</Text>
+				</Pressable>
 			</Sticker>
 		</View>
 	);
@@ -1867,7 +1885,7 @@ const styles = StyleSheet.create({
 	},
 	lifetimeStatLabel: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+			fontSize: 11,
 		color: WHIMSY.mute,
 		marginTop: 4,
 		letterSpacing: 1.4,
@@ -1893,28 +1911,34 @@ const styles = StyleSheet.create({
 	},
 	// ── Slop Club membership card ──────────────────────────────────
 	slopWrap: { padding: 18 },
-	slopMemberBadge: {
-		position: "absolute",
-		top: 12,
-		right: 12,
-		backgroundColor: WHIMSY.sun,
+	slopHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: SPACE.md,
+	},
+	slopMembershipLabel: {
+		fontFamily: FONTS.bodyExtra,
+		fontSize: 11,
+		letterSpacing: 0.8,
+		textTransform: "uppercase",
+		color: WHIMSY.mute,
+		marginTop: 1,
+	},
+	slopStatus: {
+		backgroundColor: WHIMSY.paper,
 		borderWidth: 1.5,
 		borderColor: WHIMSY.ink,
 		borderRadius: RADII.pill,
 		paddingHorizontal: 10,
-		paddingVertical: 3,
-		zIndex: 2,
+		paddingVertical: 5,
 	},
-	slopMemberBadgeText: {
+	slopStatusActive: { backgroundColor: WHIMSY.sun },
+	slopStatusText: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 9,
-		letterSpacing: 1,
-		color: WHIMSY.ink,
-	},
-	slopKicker: {
-		...KICKER_TEXT,
 		fontSize: 11,
-		marginBottom: 4,
+		letterSpacing: 0.7,
+		color: WHIMSY.ink,
 	},
 	slopTitle: {
 		fontFamily: FONTS.whimsy,
@@ -1922,42 +1946,74 @@ const styles = StyleSheet.create({
 		color: WHIMSY.ink,
 		lineHeight: 26,
 	},
+	slopHero: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.sm,
+		marginTop: SPACE.md,
+	},
+	slopPigPair: {
+		width: 126,
+		height: 100,
+		position: "relative",
+		flexShrink: 0,
+	},
+	slopPigRosie: {
+		position: "absolute",
+		left: 0,
+		top: 8,
+		transform: [{ rotate: "-3deg" }],
+	},
+	slopPigFriend: {
+		position: "absolute",
+		right: 0,
+		top: 0,
+		transform: [{ rotate: "3deg" }],
+	},
+	slopHeroCopy: { flex: 1, minWidth: 0 },
+	slopPromise: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 19,
+		lineHeight: 21,
+		color: WHIMSY.ink,
+	},
 	slopTagline: {
 		fontFamily: FONTS.hand,
 		fontSize: 14,
 		color: WHIMSY.ink,
-		opacity: 0.72,
 		marginTop: 4,
-		maxWidth: 260,
+		lineHeight: 17,
 	},
-	slopPerks: { marginTop: 14, gap: 10 },
-	slopPerk: { flexDirection: "row", alignItems: "center", gap: 10 },
-	slopPerkIcon: {
-		width: 26,
-		height: 26,
-		borderRadius: 13,
-		backgroundColor: WHIMSY.paper,
-		borderWidth: 1.5,
-		borderColor: WHIMSY.ink,
+	slopSeasonRow: {
+		flexDirection: "row",
 		alignItems: "center",
-		justifyContent: "center",
+		gap: SPACE.sm,
+		marginTop: SPACE.md,
+		paddingTop: SPACE.md,
+		borderTopWidth: 1.5,
+		borderTopColor: WHIMSY.ink,
 	},
-	// Member state: the perk well lights up gold to read as "active".
-	slopPerkIconActive: { backgroundColor: WHIMSY.sun },
-	// Sticker-art perk icon — slightly larger than the vector well, no chrome.
-	slopPerkArt: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-	perkArtImg: { width: 44, height: 44 },
-	slopPerkLabel: {
+	slopSeasonArt: { width: 46, height: 46 },
+	slopSeasonCopy: { flex: 1, minWidth: 0 },
+	slopSeasonKicker: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 13,
-		color: WHIMSY.ink,
+		fontSize: 11,
+		letterSpacing: 0.6,
+		textTransform: "uppercase",
+		color: WHIMSY.mute,
 	},
-	slopPerkDetail: {
+	slopSeasonTitle: {
+		fontFamily: FONTS.whimsy,
+		fontSize: 14,
+		color: WHIMSY.ink,
+		marginTop: 1,
+	},
+	slopSeasonDetail: {
 		fontFamily: FONTS.hand,
 		fontSize: 12,
 		color: WHIMSY.ink,
-		opacity: 0.7,
-		marginTop: 1,
+		lineHeight: 14,
+		marginTop: 2,
 	},
 	slopBtn: {
 		paddingVertical: 12,
@@ -1971,6 +2027,17 @@ const styles = StyleSheet.create({
 		fontFamily: FONTS.whimsy,
 		fontSize: 15,
 		color: WHIMSY.ink,
+	},
+	slopManageLink: {
+		alignItems: "center",
+		paddingVertical: 9,
+		marginTop: 2,
+	},
+	slopManageLinkText: {
+		fontFamily: FONTS.hand,
+		fontSize: 13,
+		color: WHIMSY.accent,
+		textDecorationLine: "underline",
 	},
 	slopLegal: {
 		flexDirection: "row",
@@ -2646,23 +2713,96 @@ const wallowWallStyles = StyleSheet.create({
 	headingRow: { flexDirection: "row", alignItems: "flex-end", gap: SPACE.sm },
 	kicker: { ...KICKER_TEXT, marginBottom: 1 },
 	title: { ...TYPE.sectionTitle, color: WHIMSY.ink },
-	previewBtn: { flexDirection: "row", alignItems: "center", gap: SPACE.xs, paddingHorizontal: SPACE.sm, paddingVertical: 6, borderRadius: RADII.pill, borderWidth: 1.5, borderColor: WHIMSY.ink, backgroundColor: WHIMSY.paper },
+	previewBtn: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: SPACE.xs, paddingHorizontal: SPACE.sm, paddingVertical: 6, borderRadius: RADII.pill, borderWidth: 1.5, borderColor: WHIMSY.ink, backgroundColor: WHIMSY.paper },
 	previewBtnOn: { backgroundColor: WHIMSY.sun },
 	previewText: { ...TYPE.label, color: WHIMSY.ink },
-	card: { padding: SPACE.lg, overflow: "hidden" },
-	intro: { ...TYPE.hand, color: WHIMSY.mute, marginBottom: SPACE.md },
-	decalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 5 },
-	decalSlot: { flex: 1, alignItems: "center" },
-	decalBurst: { width: 52, height: 52, borderRadius: RADII.md, borderWidth: 2, borderColor: WHIMSY.ink, padding: 4, alignItems: "center", justifyContent: "center" },
-	decalCore: { width: 40, height: 40, borderRadius: RADII.pill, borderWidth: 1.5, borderColor: WHIMSY.ink, backgroundColor: WHIMSY.paper, alignItems: "center", justifyContent: "center" },
-	decalRank: { fontFamily: FONTS.whimsy, fontSize: 9, lineHeight: 10, color: WHIMSY.ink },
-	beyond: { ...TYPE.hand, color: WHIMSY.accent, textAlign: "center", marginTop: 6 },
-	powerBand: { flexDirection: "row", alignItems: "center", gap: SPACE.md, marginTop: SPACE.lg, paddingTop: SPACE.md, borderTopWidth: 1.5, borderTopColor: WHIMSY.muteSoft, borderStyle: "dashed" },
+	card: { padding: SPACE.md, overflow: "hidden" },
+	currentRow: {
+		minHeight: 64,
+		flexDirection: "row",
+		alignItems: "center",
+		gap: SPACE.md,
+	},
+	currentDecal: {
+		width: 54,
+		height: 54,
+		borderRadius: RADII.lg,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.sun,
+		alignItems: "center",
+		justifyContent: "center",
+		transform: [{ rotate: "-2deg" }],
+		...SHADOW_SM,
+	},
+	currentRank: { ...TYPE.cardTitle, color: WHIMSY.ink },
+	currentCopy: { flex: 1, minWidth: 0 },
+	stepLabel: { ...TYPE.kickerPill, color: WHIMSY.accent },
 	rankLabel: { ...TYPE.cardTitle, fontSize: 16, lineHeight: 19, color: WHIMSY.ink },
-	regenLead: { ...TYPE.bodySm, color: WHIMSY.accent, marginTop: 2 },
-	intervalBlock: { width: 112, alignItems: "flex-end" },
-	intervalValue: { ...TYPE.numeral, color: WHIMSY.ink },
-	intervalLabel: { ...TYPE.kickerPill, color: WHIMSY.mute, fontSize: 7, letterSpacing: 1 },
+	currentBenefits: { ...TYPE.bodySm, color: WHIMSY.mute, marginTop: 2 },
+	stepConnector: {
+		width: 54,
+		height: 28,
+		alignItems: "center",
+		justifyContent: "flex-end",
+	},
+	stepConnectorLine: {
+		position: "absolute",
+		top: 0,
+		bottom: 10,
+		width: 2,
+		backgroundColor: WHIMSY.muteSoft,
+	},
+	nextStep: {
+		borderRadius: RADII.md,
+		backgroundColor: WHIMSY.cream,
+		padding: SPACE.md,
+		gap: SPACE.xs,
+	},
+	nextHeading: {
+		minHeight: 44,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: SPACE.sm,
+		marginBottom: SPACE.xs,
+	},
+	nextTitle: { ...TYPE.cardTitle, fontSize: 16, lineHeight: 19, color: WHIMSY.ink },
+	nextDecal: {
+		minWidth: 44,
+		height: 44,
+		paddingHorizontal: SPACE.xs,
+		borderRadius: RADII.md,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.paper,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	nextRank: { ...TYPE.label, fontFamily: FONTS.whimsy, color: WHIMSY.ink },
+	deltaRow: {
+		minHeight: 24,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: SPACE.sm,
+	},
+	deltaLabel: { ...TYPE.bodySm, color: WHIMSY.mute },
+	deltaValue: { ...TYPE.bodySm, color: WHIMSY.ink },
+	unlockLine: { ...TYPE.hand, color: WHIMSY.accent, marginTop: SPACE.xs },
+	gearLink: {
+		minHeight: 44,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: SPACE.xs,
+		marginTop: SPACE.md,
+		borderRadius: RADII.pill,
+		borderWidth: 2,
+		borderColor: WHIMSY.ink,
+		backgroundColor: WHIMSY.cream2,
+	},
+	gearLinkText: { ...TYPE.bodySm, color: WHIMSY.ink },
 });
 
 // "The long story" — lifetime dashboard card + its detail-sheet ledger.

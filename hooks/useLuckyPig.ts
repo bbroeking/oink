@@ -1,7 +1,7 @@
 // Lucky Pig — the surprise +X tickle window mechanic. Owns:
 //  • luckyTicklesLeft (how many tickles into the window we are)
 //  • the trigger / double decision rolled on every tap
-//  • the burst-modal + title-unlock-modal lifecycle
+//  • the single Lucky Pig reward-modal lifecycle
 //  • AsyncStorage persistence for window state, ever-triggered flag,
 //    and pre-first tickle count (for the first-time guarantee)
 //
@@ -108,7 +108,7 @@ export interface LuckyTickleOutcome {
 }
 
 export interface UseLuckyPigOptions {
-	// Used by the title-unlock flow on burst dismiss for the
+	// Used by the inline title-grant flow for
 	// "Couldn't unlock" + "Lucky title sweep!" feedback toasts.
 	showToast: (title: string, body: string) => void;
 }
@@ -118,8 +118,7 @@ export interface UseLuckyPig {
 	luckyModalOpen: boolean;
 	unlockedTitle: TitleRow | null;
 	rollOnTickle: (sunBeamActive: boolean) => LuckyTickleOutcome;
-	onBurstDismiss: () => Promise<void>;
-	dismissUnlockedTitle: () => void;
+	onBurstDismiss: () => void;
 	// Constants surfaced for UI (LuckyPigModal needs window size +
 	// the double percentage to render its "X tickles, 30% double" copy).
 	windowSize: number;
@@ -129,13 +128,9 @@ export interface UseLuckyPig {
 export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 	const [luckyTicklesLeft, setLuckyTicklesLeft] = useState(0);
 	const [luckyModalOpen, setLuckyModalOpen] = useState(false);
-	// Title-unlock modal: shown after the burst dismisses if the 20%
-	// title sub-roll succeeded. Persists across the burst modal
-	// closing so the user gets two beats instead of one cluttered modal.
+	const luckyModalOpenRef = useRef(false);
+	// A lucky title, when granted, is folded into the same reward modal.
 	const [unlockedTitle, setUnlockedTitle] = useState<TitleRow | null>(null);
-	// Whether the current lucky trigger ALSO rolled a title — captured
-	// at trigger time, consumed when the burst dismisses.
-	const pendingTitleRoll = useRef(false);
 	// Lifetime onboarding state — has the user ever triggered a lucky
 	// pig? If not, count their tickles so we can force-fire on the Nth
 	// to guarantee they see the feature. Refs so reads inside
@@ -202,11 +197,49 @@ export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 
 			if (isFirstTimeUser) markFirstLucky();
 			persistLucky(LUCKY_WINDOW_SIZE);
+			setUnlockedTitle(null);
+			luckyModalOpenRef.current = true;
 			setLuckyModalOpen(true);
-			// Roll the title sub-die NOW so the result is deterministic
-			// for this trigger; we just defer the RPC + modal display
-			// until the burst dismisses to keep the beats separated.
-			pendingTitleRoll.current = Math.random() < LUCKY_TITLE_UNLOCK_CHANCE;
+			// Resolve the title sub-roll while the Lucky Pig surface is already
+			// open. A grant appears inline; it never creates a second popup.
+			if (Math.random() < LUCKY_TITLE_UNLOCK_CHANCE) {
+				void Promise.resolve(
+					rpc<{
+						ok?: boolean;
+						granted?: TitleRow | null;
+					}>("unlock_random_lucky_title")
+				)
+					.then((r) => {
+						if (!r) {
+							showToastRef.current(
+								"Couldn't unlock",
+								"Title grant failed — try again next time."
+							);
+							return;
+						}
+						if (!r.granted) {
+							showToastRef.current(
+								"Lucky title sweep!",
+								"You already own every lucky-drop title."
+							);
+							return;
+						}
+						if (luckyModalOpenRef.current) {
+							setUnlockedTitle(r.granted);
+						} else {
+							showToastRef.current(
+								`Title unlocked: ${r.granted.name}`,
+								"Find it with your other titles in Me."
+							);
+						}
+					})
+					.catch(() => {
+						showToastRef.current(
+							"Couldn't unlock",
+							"Title grant failed — try again next time."
+						);
+					});
+			}
 			return { triggered: true, doubleEarned: false };
 		},
 		[luckyTicklesLeft, bumpPreFirstTickles, markFirstLucky, persistLucky]
@@ -221,48 +254,10 @@ export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 		setTimeout(() => { void maybeAskForReview(); }, 1200);
 	};
 
-	const onBurstDismiss = useCallback(async () => {
+	const onBurstDismiss = useCallback(() => {
+		luckyModalOpenRef.current = false;
 		setLuckyModalOpen(false);
-		// Burst dismissed — if this trigger also rolled a title unlock,
-		// hit the RPC and surface the second modal once the burst is
-		// fully torn down. Review prompt fires after the title-unlock
-		// modal dismisses (or now, if there's no title to surface).
-		if (!pendingTitleRoll.current) {
-			scheduleReviewPrompt();
-			return;
-		}
-		pendingTitleRoll.current = false;
-		const r = await rpc<{
-			ok?: boolean;
-			granted?: TitleRow | null;
-		}>("unlock_random_lucky_title");
-		if (!r) {
-			showToastRef.current(
-				"Couldn't unlock",
-				"Title grant failed — try again next time."
-			);
-			scheduleReviewPrompt();
-			return;
-		}
-		if (!r.granted) {
-			// All 10 lucky titles already owned.
-			showToastRef.current(
-				"Lucky title sweep!",
-				"You already own every lucky-drop title."
-			);
-			scheduleReviewPrompt();
-			return;
-		}
-		// Brief beat so the burst dismiss animation finishes before
-		// the title modal pops in. Review prompt deferred until that
-		// modal dismisses (see dismissUnlockedTitle).
-		setTimeout(() => setUnlockedTitle(r.granted!), 280);
-	}, []);
-
-	const dismissUnlockedTitle = useCallback(() => {
 		setUnlockedTitle(null);
-		// User has now seen burst + title unlock = peak of the
-		// first-lucky-pig experience. Best moment to ask.
 		scheduleReviewPrompt();
 	}, []);
 
@@ -272,7 +267,6 @@ export function useLuckyPig(opts: UseLuckyPigOptions): UseLuckyPig {
 		unlockedTitle,
 		rollOnTickle,
 		onBurstDismiss,
-		dismissUnlockedTitle,
 		windowSize: LUCKY_WINDOW_SIZE,
 		doublePercent: Math.round(LUCKY_DOUBLE_CHANCE * 100),
 	};

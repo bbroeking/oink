@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
 	badgeCurse: { backgroundColor: WHIMSY.paper },
 	badgeGlyph: {
 		fontFamily: FONTS.whimsy,
-		fontSize: 9,
+		fontSize: 11,
 		color: WHIMSY.ink,
 		lineHeight: 11,
 	},

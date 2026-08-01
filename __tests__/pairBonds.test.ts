@@ -11,7 +11,13 @@ jest.mock("../utils/log", () => ({
 	log: { error: jest.fn() },
 }));
 
-import { bondBreakdown, pairLeaderboard, pairBondWith } from "../utils/pairBonds";
+import {
+	bondBreakdown,
+	curseDirections,
+	enemyLeaderboard,
+	pairLeaderboard,
+	pairBondWith,
+} from "../utils/pairBonds";
 
 describe("bondBreakdown", () => {
 	it("pluralizes each component and joins with a middot", () => {
@@ -40,6 +46,45 @@ describe("bondBreakdown", () => {
 	});
 });
 
+describe("curseDirections", () => {
+	it("shows both directions with singular-aware counts", () => {
+		expect(
+			curseDirections({
+				name_a: "Ada",
+				name_b: "Bo",
+				curses: 13,
+				curses_a_to_b: 1,
+				curses_b_to_a: 12,
+			}),
+		).toEqual(["Ada cursed Bo: 1 curse", "Bo cursed Ada: 12 curses"]);
+	});
+
+	it("keeps a zero direction visible and falls back for unnamed pigs", () => {
+		expect(
+			curseDirections({
+				name_a: null,
+				name_b: "Bo",
+				curses: 2,
+				curses_a_to_b: 0,
+				curses_b_to_a: 2,
+			}),
+		).toEqual([
+			"Anonymous cursed Bo: 0 curses",
+			"Bo cursed Anonymous: 2 curses",
+		]);
+	});
+
+	it("falls back to the total before the directional RPC is deployed", () => {
+		expect(
+			curseDirections({
+				name_a: "Ada",
+				name_b: "Bo",
+				curses: 4,
+			}),
+		).toEqual(["4 curses exchanged"]);
+	});
+});
+
 describe("typed wrappers", () => {
 	beforeEach(() => mockRpc.mockReset());
 
@@ -49,6 +94,19 @@ describe("typed wrappers", () => {
 		expect(mockRpc).toHaveBeenCalledWith("pair_leaderboard", { p_limit: 25 });
 		await pairLeaderboard(10);
 		expect(mockRpc).toHaveBeenLastCalledWith("pair_leaderboard", { p_limit: 10 });
+	});
+
+	it("enemyLeaderboard passes p_limit and defaults to 25", async () => {
+		mockRpc.mockResolvedValue({
+			data: { ok: true, enemies: [], you: null },
+			error: null,
+		});
+		await enemyLeaderboard();
+		expect(mockRpc).toHaveBeenCalledWith("enemy_leaderboard", { p_limit: 25 });
+		await enemyLeaderboard(10);
+		expect(mockRpc).toHaveBeenLastCalledWith("enemy_leaderboard", {
+			p_limit: 10,
+		});
 	});
 
 	it("pairBondWith passes p_other", async () => {

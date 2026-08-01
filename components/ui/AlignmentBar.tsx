@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
 	},
 	pole: {
 		fontFamily: FONTS.bodyExtra,
-		fontSize: 10,
+		fontSize: 11,
 		letterSpacing: 1.4,
 		color: WHIMSY.mute,
 		flex: 1,

@@ -11,16 +11,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
 	Animated,
-	Dimensions,
 	Easing,
 	StyleSheet,
 	View,
+	useWindowDimensions,
 	type ImageSourcePropType,
 	type ImageResizeMode,
 } from "react-native";
-
-// Explicit screen pixels — see styles.fill note (matches PageBackground).
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 
 interface Props {
 	frames: ImageSourcePropType[];
@@ -36,6 +34,8 @@ export function AnimatedBackground({
 	frameMs = 1700,
 	resizeMode = "cover",
 }: Props) {
+	const { width, height } = useWindowDimensions();
+	const motionPolicy = useMotionPolicy();
 	const n = frames.length;
 	const opA = useRef(new Animated.Value(1)).current; // layer A starts visible (frame 0)
 	const opB = useRef(new Animated.Value(0)).current;
@@ -44,7 +44,14 @@ export function AnimatedBackground({
 	const [aTop, setATop] = useState(false); // is layer A rendered on top?
 
 	useEffect(() => {
-		if (n < 2) return;
+		if (n < 2 || !motionPolicy.allowDecorativeMotion) {
+			setA(0);
+			setB(n > 1 ? 1 : 0);
+			setATop(false);
+			opA.setValue(1);
+			opB.setValue(0);
+			return;
+		}
 		let cancelled = false;
 		let cur = 0; // the frame currently fully shown
 		let showingA = true; // is `cur` on layer A?
@@ -93,7 +100,7 @@ export function AnimatedBackground({
 			opA.stopAnimation();
 			opB.stopAnimation();
 		};
-	}, [n, frameMs, opA, opB]);
+	}, [n, frameMs, motionPolicy.allowDecorativeMotion, opA, opB]);
 
 	if (n === 0) return <View style={styles.root}>{children}</View>;
 
@@ -103,7 +110,7 @@ export function AnimatedBackground({
 			key="a"
 			source={frames[a]}
 			resizeMode={resizeMode}
-			style={[styles.fill, { opacity: opA }]}
+			style={[styles.fill, { width: width + 4, height, opacity: opA }]}
 		/>
 	);
 	const layerB = (
@@ -111,7 +118,7 @@ export function AnimatedBackground({
 			key="b"
 			source={frames[b]}
 			resizeMode={resizeMode}
-			style={[styles.fill, { opacity: opB }]}
+			style={[styles.fill, { width: width + 4, height, opacity: opB }]}
 		/>
 	);
 
@@ -135,6 +142,12 @@ const styles = StyleSheet.create({
 	// without them these full-screen frames swallow every touch on the screen
 	// they back (the Barn went fully dead). Guarded by AnimatedBackground.test.
 	// Overscan 2px each side (matches PageBackground) so no edge sliver shows.
-	fill: { position: "absolute", top: 0, left: -2, width: SCREEN_W + 4, height: SCREEN_H, zIndex: 0, pointerEvents: "none" },
+	fill: {
+		position: "absolute",
+		top: 0,
+		left: -2,
+		zIndex: 0,
+		pointerEvents: "none",
+	},
 	content: { flex: 1, zIndex: 1 },
 });

@@ -97,9 +97,7 @@ export default function SounderScreen() {
 									<View style={{ flex: 1, minWidth: 0 }}>
 										<Text
 											style={styles.champName}
-											numberOfLines={1}
-											adjustsFontSizeToFit
-											minimumFontScale={0.6}
+												numberOfLines={2}
 										>
 											{champ.username ?? "—"}
 											{champ.is_self && (
@@ -133,9 +131,7 @@ export default function SounderScreen() {
 								<View style={{ flex: 1, minWidth: 0, marginLeft: 8 }}>
 									<Text
 										style={styles.rowName}
-										numberOfLines={1}
-										adjustsFontSizeToFit
-										minimumFontScale={0.6}
+										numberOfLines={2}
 									>
 										{r.username ?? "—"}
 										{r.is_self && (

@@ -19,6 +19,7 @@ import { PigAnimation, animDurationMs } from "./ui/SpritePig";
 
 import { PigStage, resolveSlot, type EquippedItem } from "./ui/PigStage";
 import { AnchorDebugOverlay, type DebugItem } from "./dev/AnchorDebugOverlay";
+import { pigDefinition, type PigId } from "@/utils/pigs";
 
 // To swap to <RivePig> once you have a Rive build:
 //
@@ -33,6 +34,7 @@ import { AnchorDebugOverlay, type DebugItem } from "./dev/AnchorDebugOverlay";
 
 interface SwipeElementProps {
 	onLuckySwipe: () => void;
+	pigId?: PigId;
 	hatId?: string | null;
 	restingAnim?: PigAnimation;
 	equipped?: EquippedItem | null;
@@ -58,6 +60,7 @@ const sixSevenSound = require("../assets/sounds/sixseven.m4a");
 
 export default function SwipeElement({
 	onLuckySwipe,
+	pigId = "rosie",
 	hatId,
 	restingAnim = "idle",
 	equipped,
@@ -307,10 +310,21 @@ export default function SwipeElement({
 		inputRange: [-1, 1],
 		outputRange: ["-15deg", "15deg"],
 	});
+	const pigName = pigDefinition(pigId).name;
 
 	return (
 		<View style={styles.container}>
-			<Pressable onPress={handlePress}>
+			<Pressable
+				onPress={handlePress}
+				accessibilityRole="button"
+				accessibilityLabel={`Tickle ${pigName}`}
+				accessibilityHint={
+					canTickle
+						? `Makes ${pigName} react and earns a heart.`
+						: "Your tickle bank is empty. Activating explains when the next tickle is ready."
+				}
+				accessibilityState={{ disabled: false }}
+			>
 				<Animated.View
 					style={[
 						styles.card,
@@ -333,6 +347,7 @@ export default function SwipeElement({
 					]}
 				>
 					<PigStage
+						pigId={pigId}
 						pigAnimation={pigAnim}
 						pigFrameIdx={pigFrameIdx}
 						onPigFrame={setPigFrameIdx}

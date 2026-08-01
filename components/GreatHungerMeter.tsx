@@ -18,6 +18,7 @@ import Animated, {
 	withSequence,
 	withTiming,
 	Easing,
+	cancelAnimation,
 } from "react-native-reanimated";
 import {
 	FONTS,
@@ -35,6 +36,7 @@ import {
 	formatCredit,
 	type HungerStage,
 } from "@/hooks/useHungerMeter";
+import { useMotionPolicy } from "@/hooks/useMotionPolicy";
 
 const HUNGER = require("../assets/images/hunger/great_hungerer_hero.png");
 const BOG = require("../assets/images/backgrounds/bog_dusk_bg.png");
@@ -60,10 +62,16 @@ const HUNGER_ART: Record<HungerStage, StageArt> = {
 export function GreatHungerMeter({ refreshKey }: { refreshKey?: number } = {}) {
 	const meter = useHungerMeter(refreshKey);
 	const art = HUNGER_ART[meter.stage];
+	const motionPolicy = useMotionPolicy();
 
 	// Slow gorging breath — amplitude eases down as he weakens.
 	const breathe = useSharedValue(1);
 	useEffect(() => {
+		if (!motionPolicy.allowDecorativeMotion) {
+			cancelAnimation(breathe);
+			breathe.value = 1;
+			return;
+		}
 		breathe.value = withRepeat(
 			withSequence(
 				withTiming(art.breatheTo, {
@@ -75,7 +83,8 @@ export function GreatHungerMeter({ refreshKey }: { refreshKey?: number } = {}) {
 			-1,
 			true
 		);
-	}, [art.breatheTo, breathe]);
+		return () => cancelAnimation(breathe);
+	}, [art.breatheTo, breathe, motionPolicy.allowDecorativeMotion]);
 	const heroStyle = useAnimatedStyle(() => ({
 		transform: [{ scale: art.hero * breathe.value }],
 	}));

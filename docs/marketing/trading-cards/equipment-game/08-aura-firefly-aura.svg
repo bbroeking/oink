@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	width="1500" height="2100" viewBox="0 0 1500 2100">
+	<defs>
+		<clipPath id="cardClip"><rect width="1500" height="2100" rx="88"/></clipPath>
+		<linearGradient id="topShade" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#100B10" stop-opacity=".82"/>
+			<stop offset=".62" stop-color="#100B10" stop-opacity=".18"/>
+			<stop offset="1" stop-color="#100B10" stop-opacity="0"/>
+		</linearGradient>
+		<linearGradient id="bottomShade" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#100B10" stop-opacity="0"/>
+			<stop offset=".26" stop-color="#100B10" stop-opacity=".56"/>
+			<stop offset=".55" stop-color="#100B10" stop-opacity=".93"/>
+			<stop offset="1" stop-color="#100B10"/>
+		</linearGradient>
+	</defs>
+
+	<g clip-path="url(#cardClip)">
+		<image xlink:href="art/08-firefly-aura.png" x="0" y="0" width="1500" height="2100"
+			preserveAspectRatio="xMidYMid slice"/>
+		<rect width="1500" height="610" fill="url(#topShade)"/>
+		<rect y="1330" width="1500" height="770" fill="url(#bottomShade)"/>
+
+		<g transform="translate(88 82)">
+			<rect width="236" height="76" rx="38" fill="#B89AF4"
+				stroke="#FFF9ED" stroke-width="5"/>
+			<text x="44" y="52" fill="#21181B" font-family="Fredoka" font-size="37">◌</text>
+			<text x="92" y="51" fill="#21181B" font-family="Nunito"
+				font-size="29" letter-spacing="3">AURA</text>
+		</g>
+
+		<text x="1410" y="132" text-anchor="end" fill="#FFF9ED" font-family="Nunito"
+			font-size="25" letter-spacing="3">ROSIE'S LOADOUT • 08/09</text>
+		<text x="91" y="279" fill="#21181B" fill-opacity=".82" font-family="Caprasimo"
+			font-size="88">Firefly Aura</text>
+		<text x="86" y="273" fill="#FFF9ED" font-family="Caprasimo"
+			font-size="88">Firefly Aura</text>
+		<text x="90" y="327" fill="#B89AF4" font-family="Nunito"
+			font-size="24" letter-spacing="3">CLASSIC ROSIE</text>
+		
+
+		<path d="M90 1574 H132" stroke="#B89AF4" stroke-width="12"
+			stroke-linecap="round"/>
+		<text x="156" y="1584" fill="#B89AF4" font-family="Nunito"
+			font-size="25" letter-spacing="3">BRIGHT STYLE</text>
+		<text x="92" y="1680" fill="#FFF9ED" font-family="Patrick Hand"
+			font-size="51">Every firefly volunteered. Allegedly.</text>
+
+		<rect x="72" y="1720" width="1356" height="174" rx="30"
+			fill="#100B10" fill-opacity=".82" stroke="#FFF9ED" stroke-opacity=".22"
+			stroke-width="3"/>
+		
+		<g>
+			
+			<text x="92" y="1811" fill="#FA716B" font-family="Fredoka"
+				font-size="39">✦</text>
+			<text x="144" y="1808" fill="#FFF9ED" fill-opacity=".78"
+				font-family="Nunito" font-size="25" letter-spacing="2">BASH</text>
+			<text x="442" y="1834" text-anchor="end" fill="#FFF9ED"
+				font-family="Caprasimo" font-size="86">1</text>
+		</g>
+		<g>
+			<path d="M508 1745 V1867" stroke="#FFF9ED" stroke-opacity=".24"
+					stroke-width="3"/>
+			<text x="530" y="1811" fill="#63CBE2" font-family="Fredoka"
+				font-size="39">◆</text>
+			<text x="582" y="1808" fill="#FFF9ED" fill-opacity=".78"
+				font-family="Nunito" font-size="25" letter-spacing="2">GUARD</text>
+			<text x="880" y="1834" text-anchor="end" fill="#FFF9ED"
+				font-family="Caprasimo" font-size="86">2</text>
+		</g>
+		<g>
+			<path d="M946 1745 V1867" stroke="#FFF9ED" stroke-opacity=".24"
+					stroke-width="3"/>
+			<text x="968" y="1811" fill="#F7C857" font-family="Fredoka"
+				font-size="39">✶</text>
+			<text x="1020" y="1808" fill="#FFF9ED" fill-opacity=".78"
+				font-family="Nunito" font-size="25" letter-spacing="2">FLAIR</text>
+			<text x="1318" y="1834" text-anchor="end" fill="#FFF9ED"
+				font-family="Caprasimo" font-size="86">3</text>
+		</g>
+
+		<text x="90" y="1985" fill="#F7C857" font-family="Caprasimo"
+			font-size="42">TICKLE THE PIG</text>
+		<text x="1410" y="1978" text-anchor="end" fill="#FFF9ED" font-family="Fredoka"
+			font-size="29">1 HEAD  +  1 HELD  +  1 AURA</text>
+		<text x="1410" y="2022" text-anchor="end" fill="#FFF9ED" fill-opacity=".7"
+			font-family="Nunito" font-size="20" letter-spacing="2">EQUIP • REVEAL • BATTLE</text>
+	</g>
+
+	<rect x="26" y="26" width="1448" height="2048" rx="70" fill="none"
+		stroke="#21181B" stroke-width="30"/>
+	<rect x="52" y="52" width="1396" height="1996" rx="52" fill="none"
+		stroke="#FFF9ED" stroke-width="7"/>
+</svg>

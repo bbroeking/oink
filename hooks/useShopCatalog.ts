@@ -24,7 +24,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "@/utils/supabase";
-import { rpc } from "@/utils/rpc";
 import { HatRow, HIDDEN_CATEGORIES } from "@/constants/hats";
 
 export interface UseShopCatalog {
@@ -33,6 +32,9 @@ export interface UseShopCatalog {
 	// refetch keeps prior items on screen (lists are never cleared), so consumers
 	// only read `loading` on the very first fetch.
 	loading: boolean;
+	// A failed fetch is not an empty shop. Consumers show a recoverable
+	// unavailable state while preserving any catalog data already on screen.
+	error: string | null;
 	// Today's drop (even-count-trimmed for the 2-col grid), the full shoppable
 	// catalog, and the caller's owned item ids.
 	daily: HatRow[];
@@ -82,6 +84,7 @@ type ProfileRow = {
 export function useShopCatalog(): UseShopCatalog {
 	const [daily, setDaily] = useState<HatRow[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
+	const [error, setError] = useState<string | null>(null);
 	const [allItems, setAllItems] = useState<HatRow[]>([]);
 	const [owned, setOwned] = useState<Set<string>>(new Set());
 	// Multi-slot equipment: hat, aura, and background each have their own column
@@ -101,23 +104,30 @@ export function useShopCatalog(): UseShopCatalog {
 
 	const load = useCallback(async () => {
 		setLoading(true);
+		setError(null);
 		const {
 			data: { user },
+			error: authError,
 		} = await supabase.auth.getUser();
-		if (!user) {
+		if (authError || !user) {
+			setError(
+				authError
+					? "We couldn't reach the shop. Check your connection and try again."
+					: "Sign in to see today's shop."
+			);
 			setLoading(false);
 			return;
 		}
 
 		const [dailyRes, allRes, ownedRes, profRes, resetsRes] = await Promise.all([
-			rpc<HatRow[]>("daily_shop"),
+			supabase.rpc("daily_shop"),
 			// pass_exclusive lands in 20260675. On a pre-migration server the
 			// unknown column 400s the whole select — retry without it so Browse
 			// still loads (server daily_shop/buy_hat gate pass items regardless;
 			// the cost>0 filter hides them client-side until the column exists).
 			supabase
 				.from("hats")
-				.select("id, name, cost, display_order, emoji, image_path, category, rarity, description, pass_exclusive, members_only")
+				.select("id, name, cost, display_order, emoji, image_path, category, rarity, description, pass_exclusive, members_only, prestige_exclusive")
 				.order("display_order")
 				.then(async (res) => {
 					if (res.error) {
@@ -147,8 +157,19 @@ export function useShopCatalog(): UseShopCatalog {
 					}
 					return res;
 				}),
-			rpc<number>("shop_resets_in_seconds"),
+			supabase.rpc("shop_resets_in_seconds"),
 		]);
+		const fetchError =
+			dailyRes.error ??
+			allRes.error ??
+			ownedRes.error ??
+			profRes.error ??
+			resetsRes.error;
+		if (fetchError) {
+			setError("The shop didn't load. Your balance and collection are unchanged.");
+			setLoading(false);
+			return;
+		}
 		const filterPlaceable = (rows: HatRow[]) =>
 			rows.filter(
 				(r) => !r.category || !HIDDEN_CATEGORIES.has(r.category)
@@ -160,7 +181,7 @@ export function useShopCatalog(): UseShopCatalog {
 		// but client-side hidden-category filtering (scarf/necklace) can drop
 		// that to an odd number, leaving a lonely dangling card. Trim the
 		// trailing item to the nearest even count.
-		const dailyItems = filterPlaceable(dailyRes ?? []);
+		const dailyItems = filterPlaceable((dailyRes.data as HatRow[] | null) ?? []);
 		if (dailyItems.length % 2 === 1) dailyItems.pop();
 		setDaily(dailyItems);
 		// Cost-0 items are season-pass exclusives — not for sale. Only surface
@@ -192,7 +213,7 @@ export function useShopCatalog(): UseShopCatalog {
 		}
 		setActiveTitleId(prof?.active_title_id ?? null);
 		setUserId(user.id);
-		setResetsIn(resetsRes ?? 0);
+		setResetsIn((resetsRes.data as number | null) ?? 0);
 		setLoading(false);
 	}, []);
 
@@ -233,6 +254,7 @@ export function useShopCatalog(): UseShopCatalog {
 
 	return {
 		loading,
+		error,
 		daily,
 		allItems,
 		owned,

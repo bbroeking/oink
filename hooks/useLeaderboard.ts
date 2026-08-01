@@ -6,7 +6,7 @@
 // One entry point drives four scopes off `scope`:
 //   • global    — the paginated profiles board (Load-more cursor + row cap);
 //   • friends   — one bounded read (the 100-friend cap, no pagination);
-//   • pairs     — the strongest-pairs RPC (fail-soft to an empty board);
+//   • pairs     — both pair-board RPCs (Strongest + Enemies, each fail-soft);
 //   • alignment — the two-sided alignment RPC (season-0 internal).
 // It refreshes on focus and on demand (refresh()), and pages the global scope
 // through loadMore() with a stable-id cursor + dedupe. The mark_all_pass_events_seen
@@ -24,6 +24,9 @@ import { supabase } from "@/utils/supabase";
 import { rpc } from "@/utils/rpc";
 import { getFriendIds } from "@/utils/friendships";
 import {
+	enemyLeaderboard,
+	type EnemyLeaderboard,
+	type EnemyPairRow,
 	pairLeaderboard,
 	type PairBondRow,
 	type PairLeaderboard,
@@ -103,6 +106,10 @@ export interface UseLeaderboard {
 	pairs: PairBondRow[];
 	/** The caller's own best pair, pinned below when outside the top slice. */
 	youPair: PairBondRow | null;
+	/** Biggest-enemies board (the Enemies toggle inside pairs scope). */
+	enemies: EnemyPairRow[];
+	/** The caller's biggest enemy, pinned below when outside the top slice. */
+	youEnemy: EnemyPairRow | null;
 	/** The signed-in user's id (drives the you-row highlight). */
 	myId: string | null;
 	loading: boolean;
@@ -134,6 +141,8 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 	// so no pagination; the top slice is bounded server-side.
 	const [pairs, setPairs] = useState<PairBondRow[]>([]);
 	const [youPair, setYouPair] = useState<PairBondRow | null>(null);
+	const [enemies, setEnemies] = useState<EnemyPairRow[]>([]);
+	const [youEnemy, setYouEnemy] = useState<EnemyPairRow | null>(null);
 
 	// Fetches `count` rows starting at `from` from profiles, ordered
 	// by tickles_earned desc. Falls back to the no-titles select if
@@ -212,13 +221,19 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 			setMyId(user?.id ?? null);
 
 			if (scope === "pairs") {
-				// Strongest pairs — RPC-served, both usernames + breakdown + the
-				// you-row baked in. Fail-soft: a null result (unpushed migration)
-				// leaves the board empty rather than throwing.
-				const res = await pairLeaderboard(25);
-				const ok = res && (res as PairLeaderboard).ok;
-				setPairs(ok ? (res as PairLeaderboard).pairs : []);
-				setYouPair(ok ? (res as PairLeaderboard).you : null);
+				// The page owns a local Strongest/Enemies toggle, so fetch both
+				// bounded boards together. Switching the toggle is then instant
+				// and never flashes a second loading state.
+				const [pairRes, enemyRes] = await Promise.all([
+					pairLeaderboard(25),
+					enemyLeaderboard(25),
+				]);
+				const pairsOk = pairRes && (pairRes as PairLeaderboard).ok;
+				const enemiesOk = enemyRes && (enemyRes as EnemyLeaderboard).ok;
+				setPairs(pairsOk ? (pairRes as PairLeaderboard).pairs : []);
+				setYouPair(pairsOk ? (pairRes as PairLeaderboard).you : null);
+				setEnemies(enemiesOk ? (enemyRes as EnemyLeaderboard).enemies : []);
+				setYouEnemy(enemiesOk ? (enemyRes as EnemyLeaderboard).you : null);
 				return;
 			}
 
@@ -356,6 +371,8 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 		rows: leaderboard,
 		pairs,
 		youPair,
+		enemies,
+		youEnemy,
 		myId,
 		loading,
 		loadingMore,

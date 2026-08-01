@@ -28,6 +28,18 @@ export const ROOTING_WINDOW_OFFSET_SECS = 7200; // +2h — windows at 02/10/18 U
 // then GUARDED for the remaining 4h (cooldown). MUST match the server's
 // patch_phase_open() — migrations 20260721000000 + 20260744000000.
 export const PATCH_OPEN_SECS = 14400;
+
+// Server-clock commuter schedule (America/New_York). Unlike PR #52's proposed
+// phone-local offset, these values never travel through an RPC argument: the
+// database resolves Eastern civil time itself, so changing a phone's clock or
+// timezone cannot create another eligible board. The client mirrors the clock
+// only for display and is always overruled by open_rooting()/submit_rooting().
+export const DIG_TIME_ZONE = "America/New_York";
+export const DIG_DAY_ANCHOR_MIN = 360; // 6:00am Eastern
+export const DIG_DAY_MIN = 1440;
+export const DIG_BUCKET_STARTS = [0, 360, 660, 900] as const;
+export const DIG_BUCKET_OPEN_MINS = [240, 120, 180, 120] as const;
+export const DIG_WINDOWS_PER_DAY = DIG_BUCKET_STARTS.length;
 export const STIR_BUDGET = 20;  // a session ends (gracefully) at full stir
 export const STIR_RUB = 1;      // quiet scratch
 export const STIR_SHOVE = 3;    // loud scoop

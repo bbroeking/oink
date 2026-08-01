@@ -54,8 +54,7 @@ export const CURSE_ROTATION: CurseKind[] = [
 
 interface RitualMeta {
 	name: string;
-	emoji: string;
-	// require()'d art asset — the real icon, replaces the emoji.
+	// require()'d art asset — the only rendered ritual icon.
 	icon: number;
 	blurb: string;
 }
@@ -63,25 +62,21 @@ interface RitualMeta {
 export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 	warm_tea: {
 		name: "Warm Tea",
-		emoji: "☕",
 		icon: require("../assets/images/emoji/warm-tea.png"),
 		blurb: "Tickle regen runs at double speed for a few hours.",
 	},
 	sun_beam: {
 		name: "Sun Beam",
-		emoji: "🌞",
 		icon: require("../assets/images/emoji/sun-beam.png"),
 		blurb: "A big Lucky-Pig boost — pops on the next lucky pig.",
 	},
 	halo_kiss: {
 		name: "Halo Kiss",
-		emoji: "😇",
 		icon: require("../assets/images/emoji/halo-kiss.png"),
 		blurb: "+5 tickles, right now.",
 	},
 	bountiful_snouts: {
 		name: "Bountiful Snouts",
-		emoji: "🪙",
 		icon: require("../assets/images/emoji/bountiful-snouts.png"),
 		blurb: "+5 snouts, right now.",
 	},
@@ -90,31 +85,26 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 	//    trough-bounty pngs). ──
 	mud_wrap: {
 		name: "Mud Wrap",
-		emoji: "🛁",
 		icon: require("../assets/images/emoji/warm-tea.png"),
 		blurb: "A warm mud wrap — tickle regen runs double speed for a few hours.",
 	},
 	glimmer_truffle: {
 		name: "Glimmer Truffle",
-		emoji: "🍄",
 		icon: require("../assets/images/emoji/sun-beam.png"),
 		blurb: "A glimmering truffle — pops on your next lucky pig.",
 	},
 	snoot_boop: {
 		name: "Snoot Boop",
-		emoji: "🐽",
 		icon: require("../assets/images/emoji/halo-kiss.png"),
 		blurb: "+5 tickles, right now.",
 	},
 	trough_bounty: {
 		name: "Trough Bounty",
-		emoji: "🥣",
 		icon: require("../assets/images/emoji/bountiful-snouts.png"),
 		blurb: "+5 snouts, right now.",
 	},
 	chorus_glow: {
 		name: "Chorus Glow",
-		emoji: "🎶",
 		icon: require("../assets/images/emoji/blessed.png"),
 		blurb: "The Sounder sang together — regen runs double for the hour.",
 	},
@@ -123,25 +113,21 @@ export const BLESSING_META: Record<BlessingKind, RitualMeta> = {
 export const CURSE_META: Record<CurseKind, RitualMeta> = {
 	sluggish_snout: {
 		name: "Sluggish Snout",
-		emoji: "🐌",
 		icon: require("../assets/images/emoji/sluggish-snout.png"),
 		blurb: "Tickle regen runs at half speed for a few hours.",
 	},
 	phantom_itch: {
 		name: "Phantom Itch",
-		emoji: "✨",
 		icon: require("../assets/images/emoji/phantom-itch.png"),
 		blurb: "1 in 3 taps slip off — for a few hours.",
 	},
 	goblin_whisper: {
 		name: "Goblin Whisper",
-		emoji: "🟢",
 		icon: require("../assets/images/emoji/goblin-whisper.png"),
 		blurb: "A green haze hangs over the Barn — spooky, but harmless.",
 	},
 	coin_pinch: {
 		name: "Coin Pinch",
-		emoji: "🤏",
 		icon: require("../assets/images/emoji/coin-pinch.png"),
 		blurb: "Snips 1–3 snouts on the spot (max 10/day).",
 	},

@@ -1,0 +1,193 @@
+{
+  "version": 6,
+  "artboard": {
+    "name": "pig",
+    "width": 300,
+    "height": 300
+  },
+  "source": {
+    "reference": "assets/images/pigs/normalized/rosie.png",
+    "meshTextures": "assets/rive/prototype/textures",
+    "referencedAsset": "pig_skin",
+    "note": "All six textures use Rosie's exact 370x383 alpha field. Author one referenced image mesh named pig_skin; React Native supplies the selected coat at runtime."
+  },
+  "renderer": {
+    "mode": "deformable-image-mesh",
+    "skinSwitch": "referenced-asset",
+    "meshInvariant": "one image mesh, one set of vertex positions and triangles, one bone binding, and one weight map are shared by all six runtime-supplied textures",
+    "partsLane": {
+      "status": "rejected-for-fidelity",
+      "location": "assets/rive/prototype/parts/rosie",
+      "reason": "The generated decomposition assembled into a different upright silhouette."
+    }
+  },
+  "bones": {
+    "root": { "parent": null },
+    "body": { "parent": "root" },
+    "head": { "parent": "body" },
+    "ear_screen_left": { "parent": "head" },
+    "ear_screen_right": { "parent": "head" },
+    "leg_front_screen_left": { "parent": "body" },
+    "leg_front_screen_right": { "parent": "body" },
+    "leg_rear_screen_left": { "parent": "body" },
+    "tail": { "parent": "body" },
+    "slot_head": { "parent": "head" },
+    "slot_face": { "parent": "head" },
+    "slot_held": { "parent": "leg_front_screen_right" }
+  },
+  "skins": {
+    "rosie": { "index": 0, "texture": "textures/rosie.png" },
+    "copper": { "index": 1, "texture": "textures/copper.png" },
+    "pepper": { "index": 2, "texture": "textures/pepper.png" },
+    "bandit": { "index": 3, "texture": "textures/bandit.png" },
+    "pickles": { "index": 4, "texture": "textures/pickles.png" },
+    "biscuit": { "index": 5, "texture": "textures/biscuit.png" }
+  },
+  "prototypeCosmetics": {
+    "hat": "party",
+    "face": "pixel_glasses",
+    "held": "garden_trowel_held"
+  },
+  "animations": ["idle", "jump", "wave"],
+  "editorPrototypeStatus": {
+    "verifiedAt": "2026-07-27",
+    "referencedAsset": {
+      "name": "pig_skin",
+      "type": "Referenced",
+      "behavior": "Prevent Export"
+    },
+    "meshBindings": ["body", "head", "leg_front_screen_right"],
+    "authoredHierarchy": {
+      "body": { "parent": "pig" },
+      "head": { "parent": "body" },
+      "leg_front_screen_right": { "parent": "body" },
+      "slot_head": { "parent": "head" },
+      "slot_face": { "parent": "head" },
+      "slot_held": {
+        "parent": "pig",
+        "status": "transform-constrained-to-leg_front_screen_right",
+        "constraint": {
+          "type": "Transform",
+          "target": "leg_front_screen_right",
+          "sourceSpace": "World",
+          "destinationSpace": "World",
+          "strength": 1
+        }
+      },
+      "Image Layout": { "parent": "pig", "child": "pig_mesh" }
+    },
+    "timebase": {
+      "fps": 60,
+      "note": "The first numeric pass was interpreted as seconds. On 2026-07-26 the animation durations were corrected to frame-based durations; Rive rescaled the existing keys into the verified frame positions below."
+    },
+    "authoredMotion": {
+      "idle": {
+        "durationFrames": 60,
+        "property": "body.positionY",
+        "keys": [[0, 247.38], [30, 245.38], [60, 247.38]]
+      },
+      "jump": {
+        "durationFrames": 40,
+        "property": "body.positionY",
+        "keys": [[0, 247.38], [8, 251.38], [20, 226.38], [32, 249.38], [40, 247.38]]
+      },
+      "wave": {
+        "durationFrames": 45,
+        "property": "leg_front_screen_right.rotationDegrees",
+        "keys": [[0, 145.814], [15, 130], [25, 116], [35, 130], [45, 145.814]]
+      }
+    },
+    "stateMachine": {
+      "name": "pig",
+      "states": ["idle", "jump", "wave"],
+      "inputs": {
+        "skin": "Number",
+        "rest": "Number",
+        "equip_hat": "Number",
+        "equip_face": "Number",
+        "equip_held": "Number",
+        "jump": "Trigger",
+        "wave": "Trigger"
+      },
+      "verifiedTransitions": [
+        "Entry -> idle",
+        "Any State -(jump)-> jump -> idle at 667ms",
+        "Any State -(wave)-> wave -> idle at 750ms"
+      ],
+      "equipmentLayers": [
+        {
+          "name": "Hat Equip",
+          "input": "equip_hat",
+          "entry": "hidden",
+          "showWhen": 1,
+          "hideWhen": 0,
+          "transitionDurationMs": 0
+        },
+        {
+          "name": "Face Equip",
+          "input": "equip_face",
+          "entry": "hidden",
+          "showWhen": 1,
+          "hideWhen": 0,
+          "transitionDurationMs": 0
+        },
+        {
+          "name": "Held Equip",
+          "input": "equip_held",
+          "entry": "hidden",
+          "showWhen": 1,
+          "hideWhen": 0,
+          "transitionDurationMs": 0
+        }
+      ],
+      "equipmentPlaybackProof": {
+        "testedLoadouts": [
+          "none",
+          "hat only",
+          "face only",
+          "held only",
+          "hat + face + held"
+        ],
+        "result": "passed",
+        "visibleOpacityPercent": 100,
+        "initialState": "All three cosmetics are hidden when their inputs are zero."
+      },
+      "motionPlaybackProof": {
+        "jumpAllEquipped": "passed",
+        "waveAllEquipped": "pending exported state-machine replay; attachment is proven manually at wave frame 25"
+      }
+    },
+    "attachmentProof": {
+      "held": {
+        "status": "passed-with-garden-trowel-artwork",
+        "method": "The garden_trowel_held image instance uses World-space Translation and Rotation constraints targeting slot_held; slot_held remains Transform-constrained to leg_front_screen_right.",
+        "verifiedFrames": [
+          "wave frame 25",
+          "jump frame 20"
+        ],
+        "result": "The real held artwork inherits foreleg rotation and shared-root translation. The temporary Rectangle proxy has been removed."
+      },
+      "head": {
+        "status": "passed-with-party-artwork",
+        "method": "The party image instance uses World-space Translation and Rotation constraints targeting slot_head, while retaining its fitted 35% image scale.",
+        "verifiedFrames": [
+          "jump frame 20"
+        ],
+        "result": "The real hat follows the shared body/head motion at the jump apex without copying the slot's scale."
+      },
+      "face": {
+        "status": "passed-with-pixel-glasses-artwork",
+        "method": "The pixel_glasses image instance uses World-space Translation and Rotation constraints targeting slot_face, while retaining its fitted 35% image scale.",
+        "verifiedFrames": [
+          "jump frame 20"
+        ],
+        "result": "The real glasses remain registered to the face at the jump apex."
+      }
+    },
+    "pending": [
+      "Replay the fully equipped wave through the exported state machine.",
+      "Validate all six referenced textures through the native runtime.",
+      "Exporting a local .riv is blocked by the current Rive account's Upgrade requirement."
+    ]
+  }
+}
