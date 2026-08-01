@@ -119,6 +119,14 @@ CHAIN=(
 	# table access under RLS, no RPC); exercised by 40_friend_favorites_smoke.sql.
 	# Depends only on auth.users (stubbed) + the `authenticated` role (stubbed).
 	supabase/migrations/20260739300000_friend_favorites.sql
+	# The production schema already has are_blocked(); the minimal harness does
+	# not, so provide its no-block fixture before applying the recruiting RPCs.
+	scripts/db-harness/00e_sounder_invite_any_player_prep.sql
+	# 20260801000000 opens leader recruiting beyond friends and ranks the default
+	# candidate board by all-time truffle finds dug; exercised by 41 smoke.
+	supabase/migrations/20260801000000_sounder_invite_any_player.sql
+	# 20260801010000 closes default PUBLIC/anon EXECUTE on the new definers.
+	supabase/migrations/20260801010000_sounder_invite_security_grants.sql
 )
 
 NAME="pgharness_$$"

@@ -52,6 +52,7 @@ import {
 } from "./CrewRow";
 import { JoinableSounders } from "./JoinableSounders";
 import { FriendInvitePicker } from "./FriendInvitePicker";
+import { PlayerInvitePicker } from "./PlayerInvitePicker";
 import { TransferLeadershipSheet } from "./TransferLeadershipSheet";
 import { UserSheet } from "./UserSheet";
 import { TruffleCatalogSheet } from "./TruffleCatalogSheet";
@@ -96,6 +97,8 @@ export function SounderCard({
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState<string | null>(null);
 	const [pickerOpen, setPickerOpen] = useState(false);
+	// Leader-only recruiting picker (all-time truffle diggers + search; can poach).
+	const [playerPickerOpen, setPlayerPickerOpen] = useState(false);
 	const [crownOpen, setCrownOpen] = useState(false);
 	// Golden Truffle economy doors — the rewards catalog + the Truffle Exchange.
 	const [spoilsOpen, setSpoilsOpen] = useState(false);
@@ -412,6 +415,14 @@ export function SounderCard({
 						<Text style={styles.inviteCtaText}>Call a snout to your banner</Text>
 					</Pressable>
 				)}
+				{/* Leaders reach beyond friends: all-time truffle diggers + username search
+				    (can poach a rider from another Sounder — they choose to switch). */}
+				{openSlots > 0 && isLeader && (
+					<Pressable onPress={() => setPlayerPickerOpen(true)} style={styles.inviteCta}>
+						<Icon name="search" size={18} color={WHIMSY.ink} strokeWidth={2.6} />
+						<Text style={styles.inviteCtaText}>Recruit any snout</Text>
+					</Pressable>
+				)}
 			</Sticker>
 
 			{/* Incoming invites — NON-actionable while you ride with a crew.
@@ -488,6 +499,12 @@ export function SounderCard({
 			<FriendInvitePicker
 				visible={pickerOpen}
 				onDismiss={() => setPickerOpen(false)}
+				crewHook={crewHook}
+			/>
+
+			<PlayerInvitePicker
+				visible={playerPickerOpen}
+				onDismiss={() => setPlayerPickerOpen(false)}
 				crewHook={crewHook}
 			/>
 
