@@ -6,6 +6,8 @@
 
 **Primary prototype:** docs/idle-lab.html
 
+**Playtest protocol:** docs/beyond-the-hedge-playtest-guide.md
+
 Run locally with one command:
 
 ```sh
@@ -175,3 +177,22 @@ Verified locally against the shared in-memory simulation:
 - The page reports no browser console errors during the full three-trip sequence.
 
 This verifies implementation causality and presentation structure. It does **not** yet prove memory, anticipation, delight, or willingness to revisit; those require observed player sessions against the eight validation criteria above.
+
+### Validation instrument
+
+The prototype now withholds exact solution buttons: a return offers **Change one thing**, then requires the tester to infer the relevant Tool, Pack, Intention, or trip shape from Rosie's story. After the Hedge Bell, a local-only verdict sheet compares the behavioral trace with three self-reports:
+
+- What primarily pulled the tester back.
+- Which interface made them want to act.
+- Whether they would send Rosie again after the Wonder.
+
+The optional copied trace contains preparation changes, returns, variants viewed, and answers, but no persistence or player identifier. Use docs/beyond-the-hedge-playtest-guide.md for the unprimed facilitator script and five-person pass thresholds.
+
+Verified locally on 2026-08-04:
+
+- The Blue Button return names a waterproof possibility but exposes no Dry Bag shortcut.
+- The tester must reopen preparation and manually choose Dry Bag.
+- The Creek Glass return likewise requires a manual trip-shape inference.
+- The trace correctly reports both preparation changes, all returns, variants viewed, and verdict answers.
+- The verdict sheet and copyable trace remain within a 390px viewport in all variants.
+- The full instrumented sequence reports no browser console errors.

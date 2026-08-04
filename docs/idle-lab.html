@@ -830,6 +830,110 @@
         font-size: 34px;
         margin: 6px 0;
       }
+      .evaluation {
+        margin-top: 28px;
+        padding: 22px;
+        background: #f8f1e6;
+      }
+      .evaluation-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-start;
+      }
+      .evaluation-head h2 {
+        margin: 4px 0 6px;
+        font-size: clamp(26px, 3vw, 38px);
+      }
+      .evidence-chip {
+        flex: 0 0 auto;
+        max-width: 300px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--clover-soft);
+        font-size: 10px;
+        line-height: 1.4;
+      }
+      .evidence-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin: 17px 0;
+      }
+      .evidence-cell {
+        padding: 11px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--white);
+      }
+      .evidence-cell small {
+        display: block;
+        color: var(--ink-soft);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .evidence-cell strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+      }
+      .verdict-grid {
+        display: grid;
+        grid-template-columns: 1.25fr 0.9fr 0.9fr;
+        gap: 15px;
+      }
+      .verdict-question {
+        padding: 14px;
+        border: 2px solid var(--ink);
+        border-radius: 15px;
+        background: var(--paper);
+      }
+      .verdict-question h3 {
+        margin: 4px 0 9px;
+        font-size: 17px;
+      }
+      .verdict-options {
+        display: grid;
+        gap: 7px;
+      }
+      .verdict-button {
+        border: 1px solid var(--ink);
+        border-radius: 10px;
+        padding: 8px 9px;
+        background: var(--white);
+        cursor: pointer;
+        text-align: left;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .verdict-button[aria-pressed="true"] {
+        background: var(--sun-soft);
+        box-shadow: var(--shadow-small);
+      }
+      .trace-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 14px;
+      }
+      .trace-output {
+        width: 100%;
+        min-height: 210px;
+        margin-top: 13px;
+        resize: vertical;
+        border: 2px solid var(--ink);
+        border-radius: 12px;
+        padding: 12px;
+        background: #fff;
+        color: var(--ink);
+        font:
+          11px/1.5 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+      }
 
       .prototype-switcher {
         position: fixed;
@@ -909,6 +1013,9 @@
         .journal-side > :last-child {
           grid-column: 1 / -1;
         }
+        .verdict-grid {
+          grid-template-columns: 1fr;
+        }
       }
       @media (max-width: 590px) {
         .shell {
@@ -971,6 +1078,16 @@
         .action-row {
           grid-template-columns: 1fr;
         }
+        .evaluation-head {
+          display: block;
+        }
+        .evidence-chip {
+          margin-top: 10px;
+          max-width: none;
+        }
+        .evidence-grid {
+          grid-template-columns: 1fr;
+        }
       }
       @media (prefers-reduced-motion: reduce) {
         *,
@@ -1022,6 +1139,7 @@
         aria-label="Shared prototype state"
       ></section>
       <section class="experiment" id="experiment" aria-live="polite"></section>
+      <section id="evaluation" aria-live="polite"></section>
     </main>
 
     <nav class="prototype-switcher" aria-label="Prototype variants">
@@ -1100,6 +1218,19 @@
           trip: "Poke Around",
           trips: 0,
           discoveries: [],
+          variantViews: [
+            normalizeVariant(
+              new URLSearchParams(location.search).get("variant"),
+            ),
+          ],
+          returns: [],
+          events: [],
+          verdict: {
+            motivation: "",
+            preferred: "",
+            resend: "",
+          },
+          summaryVisible: false,
           flags: {
             rainGlassClue: false,
             creekGlass: false,
@@ -1139,8 +1270,19 @@
         if (!state.discoveries.includes(name)) state.discoveries.push(name);
       }
 
+      function record(type, detail) {
+        state.events.push({
+          step: state.events.length + 1,
+          type: type,
+          detail: detail,
+        });
+      }
+
       function setVariant(key) {
         state.variant = normalizeVariant(key);
+        if (!state.variantViews.includes(state.variant))
+          state.variantViews.push(state.variant);
+        record("variant", state.variant);
         const url = new URL(location.href);
         url.searchParams.set("variant", state.variant);
         history.replaceState({}, "", url);
@@ -1158,8 +1300,18 @@
       }
 
       function choose(kind, value) {
+        const from = state[kind];
         state[kind] = value;
         state.phase = "prepare";
+        if (from !== value)
+          record("choice", {
+            after: state.lastResult
+              ? state.lastResult.title
+              : "before first trip",
+            kind: kind,
+            from: from,
+            to: value,
+          });
         render();
         showToast(value + " selected.");
       }
@@ -1180,6 +1332,12 @@
 
       function resolveAdventure() {
         let result;
+        const preparation = {
+          tool: state.tool,
+          pack: state.pack,
+          intention: state.intention,
+          trip: state.trip,
+        };
 
         if (
           state.flags.creekGlass &&
@@ -1292,6 +1450,16 @@
 
         state.trips += 1;
         state.lastResult = result;
+        state.returns.push({
+          number: state.trips,
+          result: result.title,
+          kind: result.kind,
+          preparation: preparation,
+        });
+        record("return", {
+          result: result.title,
+          preparation: preparation,
+        });
         state.phase = "return";
         render();
         showToast("Rosie is Home with " + result.title + ".");
@@ -1299,20 +1467,12 @@
 
       function prepareAgain() {
         state.phase = "prepare";
+        record(
+          "reconsider",
+          state.lastResult ? state.lastResult.title : "before first trip",
+        );
         render();
         showToast("The Bag is open. Change one thing or send Rosie as she is.");
-      }
-
-      function applySuggestion() {
-        if (!state.lastResult || !state.lastResult.suggestion)
-          return prepareAgain();
-        const suggestion = state.lastResult.suggestion;
-        state[suggestion.kind] = suggestion.value;
-        state.phase = "prepare";
-        render();
-        showToast(
-          suggestion.value + " packed. Everything else stayed the same.",
-        );
       }
 
       function resetLab() {
@@ -1449,15 +1609,8 @@
       }
 
       function returnActions() {
-        const suggestion =
-          state.lastResult && state.lastResult.suggestion
-            ? '<button class="soft-button" data-action="suggest">' +
-              escapeHtml(state.lastResult.suggestion.label) +
-              "</button>"
-            : '<button class="soft-button" data-action="prepare">Change the preparation</button>';
         return (
-          '<div class="action-row">' +
-          suggestion +
+          '<div class="action-row"><button class="soft-button" data-action="prepare">Change one thing</button>' +
           '<button class="primary-button" data-action="send">Send the same way</button></div>'
         );
       }
@@ -1661,6 +1814,179 @@
         ].join("");
       }
 
+      function observedChoice(after, kind, to) {
+        return state.events.some(function (event) {
+          return (
+            event.type === "choice" &&
+            event.detail.after === after &&
+            event.detail.kind === kind &&
+            event.detail.to === to
+          );
+        });
+      }
+
+      function verdictOptions(kind, options) {
+        return options
+          .map(function (option) {
+            return (
+              '<button class="verdict-button" data-action="verdict" data-kind="' +
+              kind +
+              '" data-value="' +
+              escapeHtml(option[0]) +
+              '" aria-pressed="' +
+              selected(option[0], state.verdict[kind]) +
+              '">' +
+              escapeHtml(option[1]) +
+              "</button>"
+            );
+          })
+          .join("");
+      }
+
+      function setVerdict(kind, value) {
+        state.verdict[kind] = value;
+        record("verdict", { kind: kind, value: value });
+        render();
+        showToast("Playtest answer recorded locally.");
+      }
+
+      function traceSummary() {
+        const choiceLines = state.events
+          .filter(function (event) {
+            return event.type === "choice";
+          })
+          .map(function (event) {
+            return (
+              "- After " +
+              event.detail.after +
+              ": " +
+              event.detail.kind +
+              " changed from " +
+              event.detail.from +
+              " to " +
+              event.detail.to
+            );
+          });
+        const returnLines = state.returns.map(function (entry) {
+          return (
+            entry.number +
+            ". " +
+            entry.result +
+            " — " +
+            entry.preparation.tool +
+            " / " +
+            entry.preparation.pack +
+            " / " +
+            entry.preparation.intention +
+            " / " +
+            entry.preparation.trip
+          );
+        });
+        return [
+          "BEYOND THE HEDGE — PLAYTEST TRACE",
+          "",
+          "Variants viewed: " + state.variantViews.join(", "),
+          "Returns:",
+          returnLines.join("\n") || "None",
+          "",
+          "Preparation changes:",
+          choiceLines.join("\n") || "None",
+          "",
+          "Behavioral signals:",
+          "- Inferred waterproof Pack: " +
+            (observedChoice("The Blue Button", "pack", "Dry Bag")
+              ? "yes"
+              : "no"),
+          "- Inferred farther trip: " +
+            (observedChoice("Creek Glass", "trip", "Good Wander") ||
+            observedChoice("Creek Glass", "trip", "Day Out")
+              ? "yes"
+              : "no"),
+          "- Reached Hedge Bell: " + (state.flags.hedgeBell ? "yes" : "no"),
+          "",
+          "Self-report:",
+          "- Primary pull: " + (state.verdict.motivation || "unanswered"),
+          "- Strongest interface: " + (state.verdict.preferred || "unanswered"),
+          "- Send Rosie again: " + (state.verdict.resend || "unanswered"),
+          "",
+          "This trace was generated in memory. It contains no account or player identifier.",
+        ].join("\n");
+      }
+
+      async function copyTrace() {
+        const summary = traceSummary();
+        state.summaryVisible = true;
+        render();
+        try {
+          await navigator.clipboard.writeText(summary);
+          showToast(
+            "Playtest trace copied. Paste it back into the Codex task.",
+          );
+        } catch (_error) {
+          showToast(
+            "Copy was unavailable. The trace is shown for manual copying.",
+          );
+        }
+      }
+
+      function evaluationPanel() {
+        if (!state.flags.hedgeBell) return "";
+        const waterproof = observedChoice("The Blue Button", "pack", "Dry Bag");
+        const farther =
+          observedChoice("Creek Glass", "trip", "Good Wander") ||
+          observedChoice("Creek Glass", "trip", "Day Out");
+        const chain = state.returns
+          .map(function (entry) {
+            return entry.result;
+          })
+          .join(" → ");
+        return [
+          '<section class="panel evaluation" aria-label="Playtest verdict">',
+          '<div class="evaluation-head"><div><span class="kicker">Only after the Hedge Bell</span><h2>What actually pulled you back?</h2><p class="muted">The trace records behavior. These questions capture the part code cannot observe.</p></div>',
+          '<div class="evidence-chip"><strong>Private prototype:</strong> answers stay in this tab. Nothing is saved or sent unless you choose to copy the summary.</div></div>',
+          '<div class="evidence-grid">',
+          '<div class="evidence-cell"><small>Return chain</small><strong>',
+          escapeHtml(chain),
+          "</strong></div>",
+          '<div class="evidence-cell"><small>Rain-Glass inference</small><strong>',
+          waterproof ? "Changed to a waterproof Pack" : "Not observed",
+          "</strong></div>",
+          '<div class="evidence-cell"><small>Fencepost inference</small><strong>',
+          farther ? "Chose a farther trip shape" : "Not observed",
+          "</strong></div></div>",
+          '<div class="verdict-grid">',
+          '<section class="verdict-question"><span class="kicker">Primary pull</span><h3>Why did you send Rosie again?</h3><div class="verdict-options">',
+          verdictOptions("motivation", [
+            ["curiosity", "I wanted to resolve a clue."],
+            ["story", "I wanted another Rosie story."],
+            ["instruction", "I followed what the interface suggested."],
+            ["loot", "I wanted more or better rewards."],
+          ]),
+          "</div></section>",
+          '<section class="verdict-question"><span class="kicker">Interface</span><h3>Which made you want to act?</h3><div class="verdict-options">',
+          verdictOptions("preferred", [
+            ["A — Pack the Bag", "A — Pack the Bag"],
+            ["B — Walk the Verge", "B — Walk the Verge"],
+            ["C — Welcome Home", "C — Welcome Home"],
+          ]),
+          "</div></section>",
+          '<section class="verdict-question"><span class="kicker">After the Wonder</span><h3>Would you send Rosie again?</h3><div class="verdict-options">',
+          verdictOptions("resend", [
+            ["yes", "Yes — I want to know what is next."],
+            ["maybe", "Maybe — if the next reward is useful."],
+            ["no", "No — Clover Verge feels finished."],
+          ]),
+          "</div></section></div>",
+          '<div class="trace-actions"><button class="mini-button" data-action="copy-trace">Copy the playtest trace</button></div>',
+          state.summaryVisible
+            ? '<textarea class="trace-output" readonly aria-label="Copyable playtest trace">' +
+              escapeHtml(traceSummary()) +
+              "</textarea>"
+            : "",
+          "</section>",
+        ].join("");
+      }
+
       function render() {
         document.getElementById("state-strip").innerHTML = stateStrip();
         document.getElementById("experiment").innerHTML =
@@ -1669,6 +1995,7 @@
             : state.variant === "B"
               ? walkTheVerge()
               : welcomeHome();
+        document.getElementById("evaluation").innerHTML = evaluationPanel();
         const current = variants.find(function (variant) {
           return variant.key === state.variant;
         });
@@ -1685,7 +2012,9 @@
           choose(button.dataset.kind, button.dataset.value);
         if (action === "send") resolveAdventure();
         if (action === "prepare") prepareAgain();
-        if (action === "suggest") applySuggestion();
+        if (action === "verdict")
+          setVerdict(button.dataset.kind, button.dataset.value);
+        if (action === "copy-trace") copyTrace();
         if (action === "reset") resetLab();
         if (action === "previous") moveVariant(-1);
         if (action === "next") moveVariant(1);
