@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Idle Lab - Tickle the Pig</title>
+  <meta name="description" content="Three interactive idle-game interface experiments for Tickle the Pig." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Inter:wght@400;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #2a1f15;
+      --ink-soft: #6d5e52;
+      --paper: #fffaf0;
+      --paper-2: #f7ecdf;
+      --rose: #ef7897;
+      --rose-soft: #ffd6dc;
+      --sage: #7bc1a7;
+      --sage-soft: #cce7da;
+      --sky: #82b9df;
+      --sky-soft: #d9edf9;
+      --sun: #efad32;
+      --sun-soft: #ffe3a1;
+      --clay: #c95c49;
+      --bark: #493325;
+      --white: #fff;
+      --line: rgba(42, 31, 21, 0.18);
+      --shadow: 4px 4px 0 var(--ink);
+      --shadow-small: 2px 2px 0 var(--ink);
+    }
+
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--paper-2); }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      font-family: Inter, system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 8% 4%, rgba(239,120,151,.18), transparent 25rem),
+        radial-gradient(circle at 92% 14%, rgba(130,185,223,.24), transparent 26rem),
+        var(--paper-2);
+    }
+    button { font: inherit; color: inherit; }
+    button:focus-visible, a:focus-visible { outline: 4px solid var(--sky); outline-offset: 3px; }
+
+    .shell { width: min(1160px, calc(100% - 32px)); margin: 0 auto; padding: 30px 0 140px; }
+    .lab-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+    .brandline { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+    .brand-mark {
+      width: 30px; height: 30px; border-radius: 50%; background: var(--rose);
+      border: 2px solid var(--ink); position: relative;
+    }
+    .brand-mark::before, .brand-mark::after {
+      content: ""; position: absolute; width: 8px; height: 11px; top: -6px;
+      background: var(--rose-soft); border: 2px solid var(--ink); border-radius: 70% 20% 50% 30%;
+    }
+    .brand-mark::before { left: 1px; transform: rotate(-24deg); }
+    .brand-mark::after { right: 1px; transform: rotate(24deg) scaleX(-1); }
+    .kicker { color: var(--clay); font-weight: 800; letter-spacing: .11em; font-size: 12px; text-transform: uppercase; }
+    h1, h2, h3 { font-family: Caprasimo, Georgia, serif; font-weight: 400; }
+    h1 { margin: 0; font-size: clamp(36px, 6vw, 66px); line-height: 1.02; max-width: 800px; }
+    .dek { margin: 12px 0 0; max-width: 700px; color: var(--ink-soft); font-size: 17px; line-height: 1.55; }
+    .prototype-tag {
+      flex: 0 0 auto; background: var(--sun-soft); border: 2px solid var(--ink);
+      border-radius: 999px; padding: 9px 14px; font-weight: 800; font-size: 12px;
+      box-shadow: var(--shadow-small); transform: rotate(1deg);
+    }
+
+    .lab-controls {
+      display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center;
+      background: var(--bark); color: var(--paper); border: 2px solid var(--ink);
+      border-radius: 20px; padding: 14px 16px; box-shadow: var(--shadow); margin-bottom: 28px;
+    }
+    .control-copy strong { display: block; color: var(--sun-soft); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+    .control-copy span { display: block; color: rgba(255,250,240,.72); font-size: 12px; margin-top: 4px; }
+    .time-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .lab-button, .soft-button, .primary-button, .choice-button {
+      border: 2px solid var(--ink); border-radius: 12px; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .lab-button { background: var(--paper); padding: 9px 13px; font-weight: 800; font-size: 12px; box-shadow: 2px 2px 0 #000; }
+    .lab-button:hover, .soft-button:hover, .primary-button:hover, .choice-button:hover { transform: translate(-1px,-1px); }
+    .reset-button { background: transparent; color: var(--paper); border: 1px solid rgba(255,255,255,.35); box-shadow: none; }
+
+    .state-strip {
+      display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 28px;
+    }
+    .state-cell { background: rgba(255,250,240,.78); border: 1px solid var(--line); border-radius: 13px; padding: 11px 12px; min-width: 0; }
+    .state-label { color: var(--ink-soft); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .state-value { display: block; margin-top: 4px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .experiment { min-height: 670px; }
+    .variant-header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-end; margin-bottom: 18px; }
+    .variant-header h2 { font-size: clamp(28px, 4vw, 44px); margin: 0; line-height: 1.04; }
+    .variant-header p { color: var(--ink-soft); margin: 8px 0 0; max-width: 680px; line-height: 1.5; }
+    .question-chip { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; background: rgba(255,255,255,.45); font-size: 12px; max-width: 260px; }
+    .question-chip strong { display: block; margin-bottom: 3px; }
+
+    .panel { background: var(--paper); border: 2px solid var(--ink); border-radius: 24px; box-shadow: var(--shadow); }
+    .panel-title { margin: 0 0 6px; font-size: 22px; }
+    .hand { font-family: "Patrick Hand", cursive; }
+    .muted { color: var(--ink-soft); }
+
+    /* Variant A: Living Barn */
+    .living-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .72fr); gap: 22px; }
+    .barn-scene {
+      min-height: 510px; overflow: hidden; position: relative; isolation: isolate;
+      background: linear-gradient(#bfe6f6 0 58%, #b9d889 58% 100%);
+    }
+    .sun { position: absolute; width: 92px; height: 92px; border: 3px solid var(--ink); border-radius: 50%; background: var(--sun-soft); top: 34px; right: 46px; z-index: -1; }
+    .cloud, .cloud::before, .cloud::after { position: absolute; background: rgba(255,255,255,.85); border-radius: 999px; }
+    .cloud { width: 110px; height: 25px; top: 65px; left: 45px; }
+    .cloud::before { content: ""; width: 42px; height: 42px; left: 17px; bottom: 0; }
+    .cloud::after { content: ""; width: 55px; height: 50px; right: 11px; bottom: 0; }
+    .barn-building { position: absolute; left: 7%; bottom: 24%; width: 43%; height: 47%; background: #bc5d4a; border: 3px solid var(--ink); border-radius: 8px; }
+    .barn-building::before { content: ""; position: absolute; left: -8%; right: -8%; top: -32%; height: 45%; background: #704331; border: 3px solid var(--ink); clip-path: polygon(50% 0,100% 100%,0 100%); }
+    .barn-door { position: absolute; width: 36%; height: 54%; left: 32%; bottom: 0; background: #5d382a; border: 3px solid var(--ink); }
+    .barn-door::before, .barn-door::after { content: ""; position: absolute; left: -5%; width: 110%; height: 3px; background: var(--paper); top: 46%; transform: rotate(38deg); }
+    .barn-door::after { transform: rotate(-38deg); }
+    .scene-rosie { position: absolute; width: min(35%, 245px); left: 39%; bottom: 7%; filter: drop-shadow(4px 5px 0 rgba(42,31,21,.25)); }
+    .station {
+      position: absolute; min-width: 150px; background: rgba(255,250,240,.95); border: 2px solid var(--ink);
+      border-radius: 14px; padding: 10px 12px; box-shadow: var(--shadow-small);
+    }
+    .station strong { display: block; font-size: 13px; }
+    .station span { font-size: 11px; color: var(--ink-soft); }
+    .station-a { left: 5%; bottom: 5%; transform: rotate(-1deg); }
+    .station-b { right: 4%; bottom: 31%; transform: rotate(1deg); }
+    .station-c { right: 7%; top: 23%; transform: rotate(-1deg); }
+    .motion-dots { display: flex; gap: 4px; margin-top: 7px; }
+    .motion-dots i { display: block; width: 8px; height: 8px; background: var(--sage); border: 1px solid var(--ink); border-radius: 50%; animation: bob 1s infinite alternate; }
+    .motion-dots i:nth-child(2) { animation-delay: .2s; }.motion-dots i:nth-child(3) { animation-delay: .4s; }
+    @keyframes bob { to { transform: translateY(-5px); } }
+    .living-sidebar { padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+    .bottleneck { background: var(--rose-soft); border: 2px solid var(--ink); border-radius: 15px; padding: 14px; }
+    .bottleneck-label { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--clay); }
+    .meter { height: 12px; background: rgba(42,31,21,.12); border: 1px solid var(--ink); border-radius: 999px; overflow: hidden; margin: 10px 0 7px; }
+    .meter > span { display: block; height: 100%; background: var(--rose); width: var(--meter, 50%); }
+    .choice-list { display: grid; gap: 9px; }
+    .choice-button { text-align: left; padding: 12px 13px; background: var(--white); box-shadow: var(--shadow-small); }
+    .choice-button[aria-pressed="true"] { background: var(--sun-soft); transform: rotate(-.5deg); }
+    .choice-button strong { display: block; font-size: 13px; }
+    .choice-button span { color: var(--ink-soft); font-size: 11px; }
+    .primary-button { width: 100%; padding: 14px 16px; background: var(--rose); box-shadow: var(--shadow); font-family: Caprasimo, serif; font-size: 16px; }
+    .soft-button { width: 100%; padding: 12px 14px; background: var(--sage-soft); box-shadow: var(--shadow-small); font-weight: 800; }
+
+    /* Variant B: Explorer Road */
+    .road-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, .75fr); gap: 22px; }
+    .map-panel { min-height: 540px; padding: 24px; position: relative; overflow: hidden; background: #f7edcf; }
+    .map-panel::before { content: ""; position: absolute; inset: 0; opacity: .22; background-image: radial-gradient(var(--clay) 1px, transparent 1px); background-size: 18px 18px; }
+    .route-line { position: absolute; left: 15%; right: 12%; top: 48%; height: 7px; background: var(--clay); border: 2px solid var(--ink); border-radius: 999px; transform: rotate(-5deg); }
+    .route-line::after { content: ""; position: absolute; left: 37%; width: 34%; height: 130px; bottom: -20px; border: 7px solid var(--clay); border-left: 0; border-bottom: 0; border-radius: 0 80px 0 0; transform: rotate(30deg); }
+    .map-node { position: absolute; width: 76px; height: 76px; border: 3px solid var(--ink); border-radius: 50%; background: var(--paper); display: grid; place-items: center; text-align: center; font-size: 10px; font-weight: 800; box-shadow: var(--shadow-small); z-index: 2; }
+    .map-node.done { background: var(--sage-soft); }
+    .map-node.current { background: var(--rose-soft); transform: scale(1.12); }
+    .map-node.locked { background: #d8cfc2; color: #7d7167; }
+    .node-1 { left: 7%; top: 58%; }.node-2 { left: 26%; top: 43%; }.node-3 { left: 46%; top: 51%; }.node-4 { left: 61%; top: 30%; }.node-5 { right: 7%; top: 42%; }
+    .map-rosie { position: absolute; width: 120px; left: calc(46% - 24px); top: 30%; z-index: 3; filter: drop-shadow(3px 4px 0 rgba(42,31,21,.22)); }
+    .map-note { position: absolute; left: 24px; top: 22px; max-width: 250px; transform: rotate(-1deg); background: var(--paper); border: 2px solid var(--ink); border-radius: 14px; padding: 13px; box-shadow: var(--shadow-small); }
+    .map-note strong { display: block; font-family: "Patrick Hand", cursive; font-size: 20px; }
+    .road-sidebar { display: flex; flex-direction: column; gap: 14px; }
+    .route-card { padding: 16px; cursor: pointer; }
+    .route-card.selected { background: var(--sky-soft); }
+    .route-card h3 { margin: 0 0 5px; font-size: 19px; }
+    .route-meta { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--ink-soft); }
+    .gear-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .gear-choice { padding: 10px 6px; text-align: center; background: var(--paper); }
+    .gear-choice b { display: block; font-size: 11px; }
+    .gear-icon { width: 38px; height: 38px; border: 2px solid var(--ink); border-radius: 10px; margin: 0 auto 6px; display: grid; place-items: center; background: var(--sun-soft); font-size: 9px; font-weight: 800; }
+    .gear-choice[aria-pressed="true"] { background: var(--sage-soft); }
+
+    /* Variant C: Postcard Journal */
+    .journal-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); gap: 22px; }
+    .postcard { min-height: 520px; padding: 28px; transform: rotate(-.5deg); position: relative; background: #fff8df; }
+    .postcard::after { content: ""; position: absolute; inset: 16px; border: 2px dashed rgba(201,92,73,.5); border-radius: 16px; pointer-events: none; }
+    .postcard-top { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; }
+    .postcard-label { color: var(--clay); font-size: 11px; letter-spacing: .14em; font-weight: 800; }
+    .postcard h2 { margin: 6px 0 0; font-size: clamp(32px, 4vw, 48px); }
+    .stamp { width: 78px; height: 92px; border: 2px dashed var(--clay); background: var(--rose-soft); display: grid; place-items: center; transform: rotate(5deg); }
+    .stamp img { width: 66px; height: 66px; object-fit: contain; }
+    .postcard-body { position: relative; z-index: 1; display: grid; grid-template-columns: .9fr 1.1fr; gap: 24px; margin-top: 25px; }
+    .postcard-photo { min-height: 280px; background: linear-gradient(#bfe6f6 0 60%, #c8df9a 60%); border: 2px solid var(--ink); border-radius: 12px; position: relative; overflow: hidden; }
+    .postcard-photo img { position: absolute; width: 78%; left: 11%; bottom: -2%; }
+    .photo-caption { position: absolute; left: 12px; top: 12px; background: var(--paper); border: 1px solid var(--ink); border-radius: 999px; padding: 6px 9px; font-size: 10px; font-weight: 800; }
+    .report { padding-top: 3px; }
+    .report p { font-family: "Patrick Hand", cursive; font-size: 21px; line-height: 1.27; margin: 0 0 14px; }
+    .report-line { border-top: 1px solid rgba(42,31,21,.2); padding-top: 12px; margin-top: 12px; }
+    .journal-side { display: flex; flex-direction: column; gap: 16px; }
+    .find-shelf { padding: 18px; }
+    .find-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 12px; }
+    .find { aspect-ratio: 1; border: 2px solid var(--ink); border-radius: 12px; display: grid; place-items: center; text-align: center; background: var(--sun-soft); font-size: 10px; font-weight: 800; }
+    .find.locked { background: #e1d9cd; color: transparent; position: relative; }
+    .find.locked::after { content: "?"; color: var(--ink-soft); font-size: 24px; }
+    .next-card { padding: 18px; background: var(--rose-soft); }
+    .next-card p { margin: 5px 0 14px; color: var(--ink-soft); font-size: 13px; line-height: 1.45; }
+
+    .prototype-switcher {
+      position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 100;
+      display: grid; grid-template-columns: 46px minmax(220px, auto) 46px; align-items: center;
+      background: var(--bark); color: var(--paper); border: 2px solid var(--ink); border-radius: 999px;
+      padding: 5px; box-shadow: 5px 5px 0 rgba(42,31,21,.45);
+    }
+    .switch-arrow { border: 0; background: transparent; color: var(--sun-soft); font-size: 27px; cursor: pointer; height: 40px; }
+    .switch-label { text-align: center; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+
+    .toast { position: fixed; right: 20px; top: 20px; z-index: 120; background: var(--paper); border: 2px solid var(--ink); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px; max-width: 310px; opacity: 0; transform: translateY(-12px); pointer-events: none; transition: .2s ease; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 850px) {
+      .lab-header, .variant-header { align-items: flex-start; flex-direction: column; }
+      .lab-controls { grid-template-columns: 1fr; }
+      .state-strip { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .living-layout, .road-layout, .journal-layout { grid-template-columns: 1fr; }
+      .living-sidebar, .road-sidebar, .journal-side { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .living-sidebar > :last-child, .road-sidebar > :last-child, .journal-side > :last-child { grid-column: 1 / -1; }
+    }
+    @media (max-width: 570px) {
+      .shell { width: min(100% - 20px, 1160px); padding-top: 18px; }
+      .prototype-tag { display: none; }
+      .state-strip { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .living-sidebar, .road-sidebar, .journal-side { grid-template-columns: 1fr; }
+      .barn-scene { min-height: 440px; }
+      .station { min-width: 126px; padding: 8px; }
+      .station-c { top: 16%; right: 2%; }
+      .station-b { right: 2%; bottom: 35%; }
+      .scene-rosie { width: 45%; left: 35%; }
+      .map-panel { min-height: 510px; padding: 12px; }
+      .map-node { width: 60px; height: 60px; font-size: 8px; }
+      .map-rosie { width: 92px; }
+      .postcard { padding: 20px; }
+      .postcard-body { grid-template-columns: 1fr; }
+      .postcard-photo { min-height: 230px; }
+      .prototype-switcher { width: calc(100% - 24px); grid-template-columns: 44px 1fr 44px; bottom: 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="lab-header">
+      <div>
+        <div class="brandline"><span class="brand-mark" aria-hidden="true"></span><span class="kicker">Tickle the Pig · Idle Lab</span></div>
+        <h1>What should away-time feel like?</h1>
+        <p class="dek">Three interfaces, one shared simulation. Switch between them to judge the emotional center of a TTP idle game—not its final art or production rules.</p>
+      </div>
+      <div class="prototype-tag">THROWAWAY PROTOTYPE</div>
+    </header>
+
+    <section class="lab-controls" aria-label="Prototype time controls">
+      <div class="control-copy">
+        <strong>Simulate Rosie being away</strong>
+        <span>Every button advances the same state in all three experiments.</span>
+      </div>
+      <div class="time-row">
+        <button class="lab-button" data-action="warp" data-hours="1">+1 hour</button>
+        <button class="lab-button" data-action="warp" data-hours="4">+4 hours</button>
+        <button class="lab-button" data-action="warp" data-hours="8">+8 hours</button>
+      </div>
+      <button class="lab-button reset-button" data-action="reset">Reset lab</button>
+    </section>
+
+    <section class="state-strip" id="state-strip" aria-label="Shared prototype state"></section>
+    <section class="experiment" id="experiment" aria-live="polite"></section>
+  </main>
+
+  <nav class="prototype-switcher" aria-label="Prototype variants">
+    <button class="switch-arrow" data-action="previous" aria-label="Previous experiment">‹</button>
+    <div class="switch-label" id="switch-label"></div>
+    <button class="switch-arrow" data-action="next" aria-label="Next experiment">›</button>
+  </nav>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const variants = [
+      { key: "A", name: "Living Barn" },
+      { key: "B", name: "Explorer Road" },
+      { key: "C", name: "Postcard Journal" }
+    ];
+
+    const initialState = () => ({
+      variant: normalizeVariant(new URLSearchParams(location.search).get("variant")),
+      awayHours: 0,
+      cycles: 0,
+      snoutlets: 18,
+      finds: 2,
+      stationLevel: 1,
+      automated: false,
+      assignment: "Sort the finds",
+      route: "Meadow Loop",
+      gear: "Saucepan Lid",
+      road: 2,
+      sounder: 14,
+      wall: "Bramble Gate",
+      lastReport: "Rosie reached the Bramble Gate and came home with two curious little finds."
+    });
+
+    let state = initialState();
+    let toastTimer;
+
+    function normalizeVariant(value) {
+      const key = String(value || "A").toUpperCase();
+      return variants.some(v => v.key === key) ? key : "A";
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1900);
+    }
+
+    function setVariant(key) {
+      state.variant = normalizeVariant(key);
+      const url = new URL(location.href);
+      url.searchParams.set("variant", state.variant);
+      history.replaceState({}, "", url);
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function moveVariant(delta) {
+      const index = variants.findIndex(v => v.key === state.variant);
+      setVariant(variants[(index + delta + variants.length) % variants.length].key);
+    }
+
+    function simulateAway(hours) {
+      const production = hours * (4 + state.stationLevel * 2 + (state.automated ? 3 : 0));
+      const newFinds = Math.max(1, Math.floor(hours / 3)) + (state.gear === "Lucky Clover" ? 1 : 0);
+      state.awayHours = hours;
+      state.cycles += 1;
+      state.snoutlets += production;
+      state.finds += newFinds;
+      state.road = Math.min(5, state.road + Math.max(1, Math.floor(hours / 4)));
+      state.sounder = Math.min(100, state.sounder + Math.max(2, hours * 2));
+      state.wall = state.road >= 5 ? "Tollbooth Goose" : state.road >= 4 ? "Moonlit Creek" : "Bramble Gate";
+      state.lastReport = reportFor(hours, newFinds, production);
+      render();
+      showToast(`Rosie was away ${hours}h and returned with ${newFinds} find${newFinds === 1 ? "" : "s"}.`);
+    }
+
+    function reportFor(hours, newFinds, production) {
+      const action = state.assignment === "Find something strange"
+        ? "nosed under every glittery leaf"
+        : state.assignment === "Help the Sounder"
+          ? "left a neat little pile for the Sounder"
+          : "sorted the road finds into extremely serious heaps";
+      return `Rosie spent ${hours} hour${hours === 1 ? "" : "s"} on the ${state.route}, ${action}, and brought home ${newFinds} find${newFinds === 1 ? "" : "s"} plus ${production} snoutlets.`;
+    }
+
+    function upgradeStation() {
+      const cost = state.stationLevel * 20;
+      if (state.snoutlets < cost) return showToast(`The next Barn improvement needs ${cost} snoutlets.`);
+      state.snoutlets -= cost;
+      state.stationLevel += 1;
+      if (state.stationLevel >= 2) state.automated = true;
+      render();
+      showToast(state.automated ? "The sorting table now works while Rosie rambles." : "The Barn station improved.");
+    }
+
+    function choose(kind, value) {
+      state[kind] = value;
+      render();
+      showToast(`${value} selected.`);
+    }
+
+    function resetLab() {
+      const variant = state.variant;
+      state = initialState();
+      state.variant = variant;
+      render();
+      showToast("Prototype state reset.");
+    }
+
+    function stateStrip() {
+      const cells = [
+        ["Last trip", state.awayHours ? `${state.awayHours} hours` : "Not sent"],
+        ["Snoutlets", state.snoutlets],
+        ["Finds", state.finds],
+        ["Automation", state.automated ? "Sorting table" : "Manual"],
+        ["Road", `${state.road} / 5`],
+        ["Next obstacle", state.wall]
+      ];
+      return cells.map(([label, value]) => `<div class="state-cell"><span class="state-label">${escapeHtml(label)}</span><span class="state-value">${escapeHtml(value)}</span></div>`).join("");
+    }
+
+    function selected(value, actual) { return value === actual ? "true" : "false"; }
+
+    function livingBarn() {
+      const bottleneck = state.automated ? "Packing is the slow step now" : "Rosie is still sorting by hoof";
+      const meter = Math.min(92, 34 + state.stationLevel * 17);
+      return `
+        <div class="variant-header">
+          <div><span class="kicker">Experiment A</span><h2>The Living Barn</h2><p>Progress is a changing place. The primary decision is which visible bottleneck to improve.</p></div>
+          <div class="question-chip"><strong>What this tests</strong>Can the pleasure of watching the Barn evolve carry the idle loop?</div>
+        </div>
+        <div class="living-layout">
+          <section class="panel barn-scene" aria-label="Animated Barn production scene">
+            <div class="sun"></div><div class="cloud"></div>
+            <div class="barn-building"><div class="barn-door"></div></div>
+            <img class="scene-rosie" src="./rosie.png" alt="Rosie happily working outside the Barn" />
+            <div class="station station-a"><strong>Truffle sorting</strong><span>Level ${state.stationLevel} · ${state.automated ? "automatic" : "Rosie-operated"}</span><div class="motion-dots"><i></i><i></i><i></i></div></div>
+            <div class="station station-b"><strong>Road basket</strong><span>${state.finds} finds waiting</span></div>
+            <div class="station station-c"><strong>Sounder crate</strong><span>${state.sounder}% packed together</span></div>
+          </section>
+          <aside class="panel living-sidebar">
+            <div><span class="kicker">Barn manager</span><h3 class="panel-title">One thing needs you</h3><p class="muted">Everything else keeps moving while you decide.</p></div>
+            <div class="bottleneck"><span class="bottleneck-label">Visible bottleneck</span><strong>${bottleneck}</strong><div class="meter" style="--meter:${meter}%"><span></span></div><small>${state.automated ? "Improve packing to raise every return." : "Upgrade once to earn automation."}</small></div>
+            <div class="choice-list" aria-label="Rosie's assignment">
+              ${["Sort the finds","Find something strange","Help the Sounder"].map(value => `<button class="choice-button" data-action="choose" data-kind="assignment" data-value="${value}" aria-pressed="${selected(value,state.assignment)}"><strong>${value}</strong><span>${value === "Sort the finds" ? "More reliable income" : value === "Find something strange" ? "Better discovery chance" : "Adds pooled progress"}</span></button>`).join("")}
+            </div>
+            <button class="primary-button" data-action="upgrade">Improve the Barn · ${state.stationLevel * 20}</button>
+          </aside>
+        </div>`;
+    }
+
+    function explorerRoad() {
+      const routes = [
+        ["Meadow Loop","Safe · 4 hours","Reliable finds"],
+        ["Bramble Road","Needs Cushion · 8 hours","Better gear chance"],
+        ["Moonlit Hollow","Uncertain · 8 hours","Rare Field Guide page"]
+      ];
+      const gear = ["Saucepan Lid","Wooden Spoon","Lucky Clover"];
+      return `
+        <div class="variant-header">
+          <div><span class="kicker">Experiment B</span><h2>The Explorer Road</h2><p>Progress is a route through remembered places. The primary decision is where Rosie goes and what she carries.</p></div>
+          <div class="question-chip"><strong>What this tests</strong>Does preparation and discovery create stronger authorship than management?</div>
+        </div>
+        <div class="road-layout">
+          <section class="panel map-panel" aria-label="Rosie's expedition map">
+            <div class="map-note"><strong>Rosie's road notes</strong><span class="muted">She is waiting at ${state.wall}. The ${state.gear} changes what happens next.</span></div>
+            <div class="route-line"></div>
+            <div class="map-node done node-1">Barn</div><div class="map-node done node-2">Meadow</div><div class="map-node ${state.road === 2 ? "current" : "done"} node-3">Bramble<br>Gate</div><div class="map-node ${state.road >= 4 ? "current" : "locked"} node-4">Moonlit<br>Creek</div><div class="map-node ${state.road >= 5 ? "current" : "locked"} node-5">Goose<br>Bridge</div>
+            <img class="map-rosie" src="./rosie.png" alt="Rosie standing on the expedition road" />
+          </section>
+          <aside class="road-sidebar">
+            ${routes.map(([name,meta,reward]) => `<button class="panel route-card ${name === state.route ? "selected" : ""}" data-action="choose" data-kind="route" data-value="${name}" aria-pressed="${selected(name,state.route)}"><h3>${name}</h3><div class="route-meta"><span>${meta}</span><strong>${reward}</strong></div></button>`).join("")}
+            <section class="panel" style="padding:16px"><span class="kicker">Carry one thing</span><div class="gear-row">${gear.map(name => `<button class="choice-button gear-choice" data-action="choose" data-kind="gear" data-value="${name}" aria-pressed="${selected(name,state.gear)}"><span class="gear-icon">${name === "Saucepan Lid" ? "LID" : name === "Wooden Spoon" ? "SPOON" : "LUCK"}</span><b>${name.replace("Saucepan ","").replace("Wooden ","").replace("Lucky ","")}</b></button>`).join("")}</div></section>
+            <button class="primary-button" data-action="warp" data-hours="8">Send Rosie for 8 hours</button>
+          </aside>
+        </div>`;
+    }
+
+    function postcardJournal() {
+      const next = state.wall === "Tollbooth Goose" ? "The Goose pecks first. A lid would make the next return different." : "The road gets thornier ahead. Cushion or a careful route will help.";
+      return `
+        <div class="variant-header">
+          <div><span class="kicker">Experiment C</span><h2>The Postcard Journal</h2><p>Progress is a story worth remembering. The primary decision comes after the return ceremony.</p></div>
+          <div class="question-chip"><strong>What this tests</strong>Can the return itself become the emotional center of the product?</div>
+        </div>
+        <div class="journal-layout">
+          <article class="panel postcard">
+            <div class="postcard-top"><div><span class="postcard-label">A NOTE FROM THE ROAD</span><h2>Rosie came home.</h2></div><div class="stamp"><img src="./rosie.png" alt="Rosie postage stamp" /></div></div>
+            <div class="postcard-body">
+              <div class="postcard-photo"><span class="photo-caption">${escapeHtml(state.route)}</span><img src="./rosie.png" alt="Rosie on her latest ramble" /></div>
+              <div class="report"><p>${escapeHtml(state.lastReport)}</p><p class="report-line">Her ${escapeHtml(state.gear)} mattered at ${escapeHtml(state.wall)}.</p><p class="report-line">She also spent several minutes trying to organize leaves by personality.</p></div>
+            </div>
+          </article>
+          <aside class="journal-side">
+            <section class="panel find-shelf"><span class="kicker">Today's shelf</span><h3 class="panel-title">Things she remembers</h3><div class="find-grid"><div class="find">Bent<br>Button</div><div class="find">Shiny<br>Acorn</div><div class="find">Goose<br>Receipt</div><div class="find locked"></div><div class="find locked"></div><div class="find locked"></div></div></section>
+            <section class="panel next-card"><span class="kicker">One good decision</span><h3 class="panel-title">What should change?</h3><p>${next}</p><div class="choice-list">${["Saucepan Lid","Wooden Spoon","Lucky Clover"].map(value => `<button class="choice-button" data-action="choose" data-kind="gear" data-value="${value}" aria-pressed="${selected(value,state.gear)}"><strong>${value}</strong></button>`).join("")}</div></section>
+            <button class="primary-button" data-action="warp" data-hours="8">Send her back out</button>
+          </aside>
+        </div>`;
+    }
+
+    function render() {
+      document.getElementById("state-strip").innerHTML = stateStrip();
+      document.getElementById("experiment").innerHTML = state.variant === "A" ? livingBarn() : state.variant === "B" ? explorerRoad() : postcardJournal();
+      const current = variants.find(v => v.key === state.variant);
+      document.getElementById("switch-label").textContent = `${current.key} · ${current.name}`;
+      document.title = `${current.name} - Tickle the Pig Idle Lab`;
+    }
+
+    document.addEventListener("click", event => {
+      const button = event.target.closest("[data-action]");
+      if (!button) return;
+      const action = button.dataset.action;
+      if (action === "warp") simulateAway(Number(button.dataset.hours));
+      if (action === "reset") resetLab();
+      if (action === "upgrade") upgradeStation();
+      if (action === "choose") choose(button.dataset.kind, button.dataset.value);
+      if (action === "previous") moveVariant(-1);
+      if (action === "next") moveVariant(1);
+    });
+
+    window.addEventListener("keydown", event => {
+      const tag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : "";
+      if (tag === "input" || tag === "textarea" || event.target?.isContentEditable) return;
+      if (event.key === "ArrowLeft") moveVariant(-1);
+      if (event.key === "ArrowRight") moveVariant(1);
+    });
+
+    window.addEventListener("popstate", () => {
+      state.variant = normalizeVariant(new URLSearchParams(location.search).get("variant"));
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
