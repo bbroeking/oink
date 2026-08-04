@@ -1,510 +1,1719 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="robots" content="noindex,nofollow" />
-  <title>Idle Lab - Tickle the Pig</title>
-  <meta name="description" content="Three interactive idle-game interface experiments for Tickle the Pig." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Inter:wght@400;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --ink: #2a1f15;
-      --ink-soft: #6d5e52;
-      --paper: #fffaf0;
-      --paper-2: #f7ecdf;
-      --rose: #ef7897;
-      --rose-soft: #ffd6dc;
-      --sage: #7bc1a7;
-      --sage-soft: #cce7da;
-      --sky: #82b9df;
-      --sky-soft: #d9edf9;
-      --sun: #efad32;
-      --sun-soft: #ffe3a1;
-      --clay: #c95c49;
-      --bark: #493325;
-      --white: #fff;
-      --line: rgba(42, 31, 21, 0.18);
-      --shadow: 4px 4px 0 var(--ink);
-      --shadow-small: 2px 2px 0 var(--ink);
-    }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Beyond the Hedge Lab - Tickle the Pig</title>
+    <meta
+      name="description"
+      content="Three interactive Clover Verge interface experiments for Beyond the Hedge."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Inter:wght@400;600;700;800&family=Patrick+Hand&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #2b2118;
+        --ink-soft: #6d6055;
+        --paper: #fffaf0;
+        --paper-deep: #f3e8d5;
+        --white: #fff;
+        --rose: #ed7895;
+        --rose-soft: #ffd6df;
+        --clover: #3f8c62;
+        --clover-mid: #78b879;
+        --clover-soft: #dcebc9;
+        --sky: #84c5dd;
+        --sky-soft: #dff1f8;
+        --rain: #4c83a1;
+        --sun: #f2b843;
+        --sun-soft: #ffe7a4;
+        --creek: #74bfd0;
+        --bark: #513727;
+        --clay: #b75a49;
+        --line: rgba(43, 33, 24, 0.2);
+        --shadow: 4px 4px 0 var(--ink);
+        --shadow-small: 2px 2px 0 var(--ink);
+      }
 
-    * { box-sizing: border-box; }
-    html { min-height: 100%; background: var(--paper-2); }
-    body {
-      min-height: 100vh;
-      margin: 0;
-      color: var(--ink);
-      font-family: Inter, system-ui, sans-serif;
-      background:
-        radial-gradient(circle at 8% 4%, rgba(239,120,151,.18), transparent 25rem),
-        radial-gradient(circle at 92% 14%, rgba(130,185,223,.24), transparent 26rem),
-        var(--paper-2);
-    }
-    button { font: inherit; color: inherit; }
-    button:focus-visible, a:focus-visible { outline: 4px solid var(--sky); outline-offset: 3px; }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        min-height: 100%;
+        background: var(--paper-deep);
+      }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        color: var(--ink);
+        font-family: Inter, system-ui, sans-serif;
+        background:
+          radial-gradient(
+            circle at 6% 3%,
+            rgba(237, 120, 149, 0.17),
+            transparent 25rem
+          ),
+          radial-gradient(
+            circle at 94% 10%,
+            rgba(132, 197, 221, 0.23),
+            transparent 27rem
+          ),
+          var(--paper-deep);
+      }
+      button {
+        color: inherit;
+        font: inherit;
+      }
+      button:focus-visible {
+        outline: 4px solid var(--sky);
+        outline-offset: 3px;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: Caprasimo, Georgia, serif;
+        font-weight: 400;
+      }
+      .hand {
+        font-family: "Patrick Hand", cursive;
+      }
+      .muted {
+        color: var(--ink-soft);
+      }
+      .shell {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 136px;
+      }
+      .lab-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 20px;
+      }
+      .brandline {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .brand-mark {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--rose);
+        border: 2px solid var(--ink);
+        position: relative;
+      }
+      .brand-mark::before,
+      .brand-mark::after {
+        content: "";
+        position: absolute;
+        width: 8px;
+        height: 11px;
+        top: -6px;
+        background: var(--rose-soft);
+        border: 2px solid var(--ink);
+        border-radius: 70% 20% 50% 30%;
+      }
+      .brand-mark::before {
+        left: 1px;
+        transform: rotate(-24deg);
+      }
+      .brand-mark::after {
+        right: 1px;
+        transform: rotate(24deg) scaleX(-1);
+      }
+      .kicker {
+        color: var(--clay);
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(35px, 5.8vw, 64px);
+        line-height: 1.02;
+        max-width: 850px;
+      }
+      .dek {
+        margin: 11px 0 0;
+        max-width: 760px;
+        color: var(--ink-soft);
+        font-size: 16px;
+        line-height: 1.55;
+      }
+      .prototype-tag {
+        flex: 0 0 auto;
+        background: var(--sun-soft);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        padding: 9px 14px;
+        font-weight: 800;
+        font-size: 11px;
+        box-shadow: var(--shadow-small);
+        transform: rotate(1deg);
+      }
+      .question-bar {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 18px;
+        align-items: center;
+        background: var(--bark);
+        color: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 19px;
+        padding: 14px 16px;
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+      }
+      .question-bar strong {
+        display: block;
+        color: var(--sun-soft);
+        font-size: 12px;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+      .question-bar span {
+        display: block;
+        color: rgba(255, 250, 240, 0.77);
+        font-size: 12px;
+        margin-top: 4px;
+      }
+      .reset-button {
+        border: 1px solid rgba(255, 255, 255, 0.42);
+        background: transparent;
+        color: var(--paper);
+        border-radius: 10px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-weight: 800;
+        font-size: 11px;
+      }
+      .state-strip {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 9px;
+        margin-bottom: 24px;
+      }
+      .state-cell {
+        background: rgba(255, 250, 240, 0.82);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 11px;
+        min-width: 0;
+      }
+      .state-label {
+        color: var(--ink-soft);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+      .state-value {
+        display: block;
+        margin-top: 4px;
+        font-weight: 800;
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .experiment {
+        min-height: 680px;
+      }
+      .variant-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-end;
+        margin-bottom: 17px;
+      }
+      .variant-header h2 {
+        font-size: clamp(27px, 4vw, 43px);
+        margin: 0;
+        line-height: 1.05;
+      }
+      .variant-header p {
+        color: var(--ink-soft);
+        margin: 7px 0 0;
+        max-width: 700px;
+        line-height: 1.5;
+      }
+      .question-chip {
+        flex: 0 0 auto;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.48);
+        font-size: 11px;
+        max-width: 265px;
+      }
+      .question-chip strong {
+        display: block;
+        margin-bottom: 3px;
+      }
+      .panel {
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 23px;
+        box-shadow: var(--shadow);
+      }
+      .panel-title {
+        margin: 0 0 6px;
+        font-size: 21px;
+      }
+      .primary-button,
+      .soft-button,
+      .choice-button,
+      .mini-button {
+        border: 2px solid var(--ink);
+        border-radius: 12px;
+        cursor: pointer;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease;
+      }
+      .primary-button:hover,
+      .soft-button:hover,
+      .choice-button:hover,
+      .mini-button:hover {
+        transform: translate(-1px, -1px);
+      }
+      .primary-button {
+        width: 100%;
+        padding: 14px 16px;
+        background: var(--rose);
+        box-shadow: var(--shadow);
+        font-family: Caprasimo, serif;
+        font-size: 16px;
+      }
+      .soft-button {
+        width: 100%;
+        padding: 11px 13px;
+        background: var(--clover-soft);
+        box-shadow: var(--shadow-small);
+        font-weight: 800;
+      }
+      .mini-button {
+        padding: 8px 10px;
+        background: var(--paper);
+        box-shadow: var(--shadow-small);
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .choice-button {
+        text-align: left;
+        padding: 10px 11px;
+        background: var(--white);
+        box-shadow: var(--shadow-small);
+      }
+      .choice-button[aria-pressed="true"] {
+        background: var(--sun-soft);
+        transform: rotate(-0.35deg);
+      }
+      .choice-button strong {
+        display: block;
+        font-size: 12px;
+      }
+      .choice-button span {
+        display: block;
+        color: var(--ink-soft);
+        font-size: 10px;
+        line-height: 1.35;
+        margin-top: 2px;
+      }
+      .choice-block {
+        margin-top: 13px;
+      }
+      .choice-block > span {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--ink-soft);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .choice-row {
+        display: grid;
+        gap: 7px;
+      }
+      .choice-row.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .choice-row.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .condition-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--ink);
+        border-radius: 999px;
+        padding: 6px 9px;
+        background: var(--sky-soft);
+        font-size: 10px;
+        font-weight: 800;
+      }
+      .result-card {
+        border: 2px solid var(--ink);
+        border-radius: 18px;
+        background: var(--rose-soft);
+        padding: 15px;
+      }
+      .result-card.wonder {
+        background: var(--sun-soft);
+      }
+      .result-card.discovery {
+        background: var(--sky-soft);
+      }
+      .result-title {
+        font-family: Caprasimo, serif;
+        font-size: 25px;
+        margin: 4px 0 8px;
+      }
+      .result-story {
+        font-family: "Patrick Hand", cursive;
+        font-size: 20px;
+        line-height: 1.3;
+        margin: 0;
+      }
+      .truth-line,
+      .change-line,
+      .near-line {
+        border-top: 1px solid var(--line);
+        margin-top: 10px;
+        padding-top: 9px;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+      .near-line {
+        color: #315f70;
+        font-weight: 700;
+      }
+      .action-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+        margin-top: 12px;
+      }
 
-    .shell { width: min(1160px, calc(100% - 32px)); margin: 0 auto; padding: 30px 0 140px; }
-    .lab-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
-    .brandline { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
-    .brand-mark {
-      width: 30px; height: 30px; border-radius: 50%; background: var(--rose);
-      border: 2px solid var(--ink); position: relative;
-    }
-    .brand-mark::before, .brand-mark::after {
-      content: ""; position: absolute; width: 8px; height: 11px; top: -6px;
-      background: var(--rose-soft); border: 2px solid var(--ink); border-radius: 70% 20% 50% 30%;
-    }
-    .brand-mark::before { left: 1px; transform: rotate(-24deg); }
-    .brand-mark::after { right: 1px; transform: rotate(24deg) scaleX(-1); }
-    .kicker { color: var(--clay); font-weight: 800; letter-spacing: .11em; font-size: 12px; text-transform: uppercase; }
-    h1, h2, h3 { font-family: Caprasimo, Georgia, serif; font-weight: 400; }
-    h1 { margin: 0; font-size: clamp(36px, 6vw, 66px); line-height: 1.02; max-width: 800px; }
-    .dek { margin: 12px 0 0; max-width: 700px; color: var(--ink-soft); font-size: 17px; line-height: 1.55; }
-    .prototype-tag {
-      flex: 0 0 auto; background: var(--sun-soft); border: 2px solid var(--ink);
-      border-radius: 999px; padding: 9px 14px; font-weight: 800; font-size: 12px;
-      box-shadow: var(--shadow-small); transform: rotate(1deg);
-    }
+      /* Variant A: preparation-first */
+      .pack-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(330px, 0.85fr);
+        gap: 21px;
+      }
+      .bag-board {
+        min-height: 555px;
+        position: relative;
+        overflow: hidden;
+        padding: 24px;
+        background: #e9d7b9;
+      }
+      .bag-board::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: 0.22;
+        background-image:
+          linear-gradient(90deg, transparent 97%, rgba(81, 55, 39, 0.18) 97%),
+          linear-gradient(transparent 97%, rgba(81, 55, 39, 0.18) 97%);
+        background-size: 28px 28px;
+      }
+      .bag-copy {
+        position: relative;
+        z-index: 2;
+        max-width: 330px;
+      }
+      .bag-copy h3 {
+        margin: 5px 0;
+        font-size: 26px;
+      }
+      .rosie-pack {
+        position: absolute;
+        width: 215px;
+        left: 6%;
+        bottom: 4%;
+        filter: drop-shadow(4px 5px 0 rgba(43, 33, 24, 0.2));
+      }
+      .bag-shape {
+        position: absolute;
+        width: 44%;
+        min-width: 235px;
+        height: 62%;
+        right: 6%;
+        bottom: 8%;
+        background: #c88c58;
+        border: 4px solid var(--ink);
+        border-radius: 48% 48% 28% 28%;
+        box-shadow:
+          inset 0 -22px 0 rgba(81, 55, 39, 0.13),
+          6px 7px 0 rgba(43, 33, 24, 0.2);
+      }
+      .bag-shape::before {
+        content: "";
+        position: absolute;
+        width: 62%;
+        height: 32%;
+        left: 19%;
+        top: -20%;
+        border: 8px solid var(--ink);
+        border-bottom: 0;
+        border-radius: 999px 999px 0 0;
+      }
+      .bag-slot {
+        position: absolute;
+        left: 12%;
+        right: 12%;
+        border: 2px dashed var(--ink);
+        border-radius: 15px;
+        background: rgba(255, 250, 240, 0.85);
+        padding: 12px;
+        text-align: center;
+      }
+      .bag-slot.tool {
+        top: 17%;
+      }
+      .bag-slot.pack {
+        top: 47%;
+      }
+      .bag-slot small {
+        display: block;
+        color: var(--ink-soft);
+        font-size: 9px;
+        text-transform: uppercase;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+      .bag-slot strong {
+        display: block;
+        margin-top: 4px;
+        font-family: Caprasimo, serif;
+        font-size: 17px;
+      }
+      .bag-mark {
+        position: absolute;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 2px solid var(--ink);
+        background: var(--sky-soft);
+        display: grid;
+        place-items: center;
+        font-size: 8px;
+        font-weight: 800;
+        transform: rotate(-9deg);
+        left: 8%;
+        bottom: 7%;
+      }
+      .bag-mark.hidden {
+        opacity: 0.25;
+        filter: grayscale(1);
+      }
+      .pack-controls {
+        padding: 19px;
+      }
+      .pack-controls .result-card {
+        margin-bottom: 15px;
+      }
 
-    .lab-controls {
-      display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center;
-      background: var(--bark); color: var(--paper); border: 2px solid var(--ink);
-      border-radius: 20px; padding: 14px 16px; box-shadow: var(--shadow); margin-bottom: 28px;
-    }
-    .control-copy strong { display: block; color: var(--sun-soft); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
-    .control-copy span { display: block; color: rgba(255,250,240,.72); font-size: 12px; margin-top: 4px; }
-    .time-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .lab-button, .soft-button, .primary-button, .choice-button {
-      border: 2px solid var(--ink); border-radius: 12px; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease;
-    }
-    .lab-button { background: var(--paper); padding: 9px 13px; font-weight: 800; font-size: 12px; box-shadow: 2px 2px 0 #000; }
-    .lab-button:hover, .soft-button:hover, .primary-button:hover, .choice-button:hover { transform: translate(-1px,-1px); }
-    .reset-button { background: transparent; color: var(--paper); border: 1px solid rgba(255,255,255,.35); box-shadow: none; }
+      /* Variant B: destination-first */
+      .verge-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(315px, 0.72fr);
+        gap: 21px;
+      }
+      .verge-scene {
+        min-height: 560px;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(#bfe7f3 0 48%, #8fc276 48% 100%);
+      }
+      .verge-sun {
+        position: absolute;
+        width: 86px;
+        height: 86px;
+        right: 8%;
+        top: 8%;
+        border: 3px solid var(--ink);
+        border-radius: 50%;
+        background: var(--sun-soft);
+      }
+      .hedge {
+        position: absolute;
+        left: -4%;
+        right: -4%;
+        bottom: 9%;
+        height: 44%;
+        background: #3f8452;
+        border-top: 4px solid var(--ink);
+        border-radius: 45% 55% 0 0;
+      }
+      .hedge::before {
+        content: "";
+        position: absolute;
+        inset: 18% 5% 0;
+        border-radius: 45% 45% 0 0;
+        background: #2e6843;
+      }
+      .puddle {
+        position: absolute;
+        width: 35%;
+        height: 13%;
+        left: 8%;
+        bottom: 11%;
+        background: var(--creek);
+        border: 3px solid var(--ink);
+        border-radius: 50%;
+        box-shadow: inset 0 8px 0 rgba(255, 255, 255, 0.38);
+        z-index: 2;
+      }
+      .fencepost {
+        position: absolute;
+        width: 46px;
+        height: 47%;
+        left: 61%;
+        bottom: 16%;
+        background: #8b6546;
+        border: 3px solid var(--ink);
+        border-radius: 8px;
+        z-index: 2;
+        transform: rotate(2deg);
+      }
+      .fencepost::after {
+        content: "";
+        position: absolute;
+        width: 90px;
+        height: 30px;
+        left: -24px;
+        top: 16%;
+        background: #8b6546;
+        border: 3px solid var(--ink);
+        border-radius: 7px;
+        transform: rotate(-4deg);
+      }
+      .verge-rosie {
+        position: absolute;
+        width: 190px;
+        left: 39%;
+        bottom: 3%;
+        z-index: 4;
+        filter: drop-shadow(4px 5px 0 rgba(43, 33, 24, 0.22));
+      }
+      .place-note {
+        position: absolute;
+        z-index: 5;
+        background: rgba(255, 250, 240, 0.95);
+        border: 2px solid var(--ink);
+        border-radius: 13px;
+        padding: 9px 11px;
+        box-shadow: var(--shadow-small);
+        max-width: 175px;
+      }
+      .place-note strong {
+        display: block;
+        font-size: 11px;
+      }
+      .place-note span {
+        display: block;
+        color: var(--ink-soft);
+        font-size: 9px;
+        line-height: 1.35;
+        margin-top: 2px;
+      }
+      .note-puddle {
+        left: 3%;
+        bottom: 29%;
+        transform: rotate(-1deg);
+      }
+      .note-post {
+        right: 3%;
+        top: 30%;
+        transform: rotate(1deg);
+      }
+      .scene-progress {
+        position: absolute;
+        left: 18px;
+        top: 18px;
+        z-index: 5;
+        max-width: 290px;
+      }
+      .scene-progress h3 {
+        margin: 5px 0 4px;
+        font-size: 25px;
+      }
+      .trail-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .trail-card {
+        padding: 15px;
+      }
+      .compact-selection {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+        margin-top: 9px;
+      }
+      .compact-selection .choice-button {
+        padding: 8px;
+      }
+      .return-ribbon {
+        position: absolute;
+        z-index: 7;
+        left: 18px;
+        right: 18px;
+        bottom: 17px;
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 16px;
+        padding: 13px 15px;
+        box-shadow: var(--shadow);
+      }
+      .return-ribbon strong {
+        font-family: Caprasimo, serif;
+        font-size: 20px;
+      }
+      .return-ribbon p {
+        margin: 4px 0 0;
+        font-size: 11px;
+        max-width: 560px;
+      }
 
-    .state-strip {
-      display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 28px;
-    }
-    .state-cell { background: rgba(255,250,240,.78); border: 1px solid var(--line); border-radius: 13px; padding: 11px 12px; min-width: 0; }
-    .state-label { color: var(--ink-soft); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-    .state-value { display: block; margin-top: 4px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      /* Variant C: return-first */
+      .home-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+        gap: 21px;
+      }
+      .homecoming {
+        min-height: 555px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+        background: #fff6dc;
+      }
+      .homecoming::after {
+        content: "";
+        position: absolute;
+        inset: 14px;
+        border: 2px dashed rgba(183, 90, 73, 0.42);
+        border-radius: 17px;
+        pointer-events: none;
+      }
+      .home-top {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      .home-top h3 {
+        margin: 5px 0 0;
+        font-size: clamp(31px, 4vw, 46px);
+      }
+      .home-stamp {
+        width: 78px;
+        height: 88px;
+        border: 2px dashed var(--clay);
+        background: var(--rose-soft);
+        display: grid;
+        place-items: center;
+        transform: rotate(5deg);
+      }
+      .home-stamp img {
+        width: 68px;
+        height: 68px;
+        object-fit: contain;
+      }
+      .home-body {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: 0.88fr 1.12fr;
+        gap: 20px;
+        margin-top: 22px;
+      }
+      .home-photo {
+        min-height: 320px;
+        background: linear-gradient(#c1e5ef 0 57%, #9ac77f 57%);
+        border: 2px solid var(--ink);
+        border-radius: 13px;
+        position: relative;
+        overflow: hidden;
+      }
+      .home-photo img {
+        position: absolute;
+        width: 84%;
+        left: 8%;
+        bottom: -3%;
+      }
+      .home-photo .condition-pill {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        z-index: 2;
+      }
+      .home-report {
+        padding-top: 2px;
+      }
+      .home-report .result-story {
+        font-size: 24px;
+      }
+      .headline-find {
+        border: 2px solid var(--ink);
+        border-radius: 15px;
+        padding: 12px;
+        background: var(--sun-soft);
+        margin: 12px 0;
+      }
+      .headline-find small {
+        display: block;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--clay);
+      }
+      .headline-find strong {
+        display: block;
+        font-family: Caprasimo, serif;
+        font-size: 24px;
+        margin-top: 3px;
+      }
+      .journal-side {
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+      }
+      .journal-card {
+        padding: 16px;
+      }
+      .memory-list {
+        display: grid;
+        gap: 7px;
+        margin-top: 10px;
+      }
+      .memory {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 7px;
+        font-size: 10px;
+      }
+      .hypothesis {
+        background: var(--sky-soft);
+      }
+      .empty-return {
+        display: grid;
+        place-items: center;
+        text-align: center;
+        min-height: 470px;
+        padding: 40px;
+      }
+      .empty-return img {
+        width: 190px;
+      }
+      .empty-return h3 {
+        font-size: 34px;
+        margin: 6px 0;
+      }
 
-    .experiment { min-height: 670px; }
-    .variant-header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-end; margin-bottom: 18px; }
-    .variant-header h2 { font-size: clamp(28px, 4vw, 44px); margin: 0; line-height: 1.04; }
-    .variant-header p { color: var(--ink-soft); margin: 8px 0 0; max-width: 680px; line-height: 1.5; }
-    .question-chip { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; background: rgba(255,255,255,.45); font-size: 12px; max-width: 260px; }
-    .question-chip strong { display: block; margin-bottom: 3px; }
+      .prototype-switcher {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        z-index: 100;
+        display: grid;
+        grid-template-columns: 46px minmax(230px, auto) 46px;
+        align-items: center;
+        background: var(--bark);
+        color: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        padding: 5px;
+        box-shadow: 5px 5px 0 rgba(43, 33, 24, 0.45);
+      }
+      .switch-arrow {
+        border: 0;
+        background: transparent;
+        color: var(--sun-soft);
+        font-size: 27px;
+        cursor: pointer;
+        height: 40px;
+      }
+      .switch-label {
+        text-align: center;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+      .toast {
+        position: fixed;
+        right: 20px;
+        top: 20px;
+        z-index: 120;
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 13px;
+        box-shadow: var(--shadow);
+        padding: 11px 13px;
+        max-width: 320px;
+        opacity: 0;
+        transform: translateY(-12px);
+        pointer-events: none;
+        transition: 0.2s ease;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
 
-    .panel { background: var(--paper); border: 2px solid var(--ink); border-radius: 24px; box-shadow: var(--shadow); }
-    .panel-title { margin: 0 0 6px; font-size: 22px; }
-    .hand { font-family: "Patrick Hand", cursive; }
-    .muted { color: var(--ink-soft); }
+      @media (max-width: 880px) {
+        .lab-header,
+        .variant-header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .state-strip {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .pack-layout,
+        .verge-layout,
+        .home-layout {
+          grid-template-columns: 1fr;
+        }
+        .bag-board,
+        .verge-scene {
+          min-height: 500px;
+        }
+        .trail-controls,
+        .journal-side {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .trail-controls > :last-child,
+        .journal-side > :last-child {
+          grid-column: 1 / -1;
+        }
+      }
+      @media (max-width: 590px) {
+        .shell {
+          width: min(100% - 20px, 1180px);
+          padding-top: 17px;
+        }
+        .prototype-tag {
+          display: none;
+        }
+        .question-bar {
+          grid-template-columns: 1fr;
+        }
+        .state-strip {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .choice-row.three {
+          grid-template-columns: 1fr;
+        }
+        .bag-board {
+          min-height: 530px;
+          padding: 17px;
+        }
+        .rosie-pack {
+          width: 160px;
+          left: 1%;
+        }
+        .bag-shape {
+          min-width: 210px;
+          width: 56%;
+          right: 2%;
+        }
+        .verge-scene {
+          min-height: 520px;
+        }
+        .verge-rosie {
+          width: 145px;
+          left: 35%;
+        }
+        .place-note {
+          max-width: 135px;
+        }
+        .trail-controls,
+        .journal-side {
+          grid-template-columns: 1fr;
+        }
+        .homecoming {
+          padding: 18px;
+        }
+        .home-body {
+          grid-template-columns: 1fr;
+        }
+        .home-photo {
+          min-height: 230px;
+        }
+        .prototype-switcher {
+          width: calc(100% - 22px);
+          grid-template-columns: 42px 1fr 42px;
+          bottom: 11px;
+        }
+        .action-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="lab-header">
+        <div>
+          <div class="brandline">
+            <span class="brand-mark" aria-hidden="true"></span
+            ><span class="kicker">Tickle the Pig · Beyond the Hedge Lab</span>
+          </div>
+          <h1>What did Rosie notice beyond the Barn?</h1>
+          <p class="dek">
+            Three interfaces, one Clover Verge simulation. Change Rosie's
+            preparation, welcome her Home, and decide which interface makes a
+            familiar place feel deepest.
+          </p>
+        </div>
+        <div class="prototype-tag">THROWAWAY PROTOTYPE</div>
+      </header>
 
-    /* Variant A: Living Barn */
-    .living-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, .72fr); gap: 22px; }
-    .barn-scene {
-      min-height: 510px; overflow: hidden; position: relative; isolation: isolate;
-      background: linear-gradient(#bfe6f6 0 58%, #b9d889 58% 100%);
-    }
-    .sun { position: absolute; width: 92px; height: 92px; border: 3px solid var(--ink); border-radius: 50%; background: var(--sun-soft); top: 34px; right: 46px; z-index: -1; }
-    .cloud, .cloud::before, .cloud::after { position: absolute; background: rgba(255,255,255,.85); border-radius: 999px; }
-    .cloud { width: 110px; height: 25px; top: 65px; left: 45px; }
-    .cloud::before { content: ""; width: 42px; height: 42px; left: 17px; bottom: 0; }
-    .cloud::after { content: ""; width: 55px; height: 50px; right: 11px; bottom: 0; }
-    .barn-building { position: absolute; left: 7%; bottom: 24%; width: 43%; height: 47%; background: #bc5d4a; border: 3px solid var(--ink); border-radius: 8px; }
-    .barn-building::before { content: ""; position: absolute; left: -8%; right: -8%; top: -32%; height: 45%; background: #704331; border: 3px solid var(--ink); clip-path: polygon(50% 0,100% 100%,0 100%); }
-    .barn-door { position: absolute; width: 36%; height: 54%; left: 32%; bottom: 0; background: #5d382a; border: 3px solid var(--ink); }
-    .barn-door::before, .barn-door::after { content: ""; position: absolute; left: -5%; width: 110%; height: 3px; background: var(--paper); top: 46%; transform: rotate(38deg); }
-    .barn-door::after { transform: rotate(-38deg); }
-    .scene-rosie { position: absolute; width: min(35%, 245px); left: 39%; bottom: 7%; filter: drop-shadow(4px 5px 0 rgba(42,31,21,.25)); }
-    .station {
-      position: absolute; min-width: 150px; background: rgba(255,250,240,.95); border: 2px solid var(--ink);
-      border-radius: 14px; padding: 10px 12px; box-shadow: var(--shadow-small);
-    }
-    .station strong { display: block; font-size: 13px; }
-    .station span { font-size: 11px; color: var(--ink-soft); }
-    .station-a { left: 5%; bottom: 5%; transform: rotate(-1deg); }
-    .station-b { right: 4%; bottom: 31%; transform: rotate(1deg); }
-    .station-c { right: 7%; top: 23%; transform: rotate(-1deg); }
-    .motion-dots { display: flex; gap: 4px; margin-top: 7px; }
-    .motion-dots i { display: block; width: 8px; height: 8px; background: var(--sage); border: 1px solid var(--ink); border-radius: 50%; animation: bob 1s infinite alternate; }
-    .motion-dots i:nth-child(2) { animation-delay: .2s; }.motion-dots i:nth-child(3) { animation-delay: .4s; }
-    @keyframes bob { to { transform: translateY(-5px); } }
-    .living-sidebar { padding: 20px; display: flex; flex-direction: column; gap: 18px; }
-    .bottleneck { background: var(--rose-soft); border: 2px solid var(--ink); border-radius: 15px; padding: 14px; }
-    .bottleneck-label { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--clay); }
-    .meter { height: 12px; background: rgba(42,31,21,.12); border: 1px solid var(--ink); border-radius: 999px; overflow: hidden; margin: 10px 0 7px; }
-    .meter > span { display: block; height: 100%; background: var(--rose); width: var(--meter, 50%); }
-    .choice-list { display: grid; gap: 9px; }
-    .choice-button { text-align: left; padding: 12px 13px; background: var(--white); box-shadow: var(--shadow-small); }
-    .choice-button[aria-pressed="true"] { background: var(--sun-soft); transform: rotate(-.5deg); }
-    .choice-button strong { display: block; font-size: 13px; }
-    .choice-button span { color: var(--ink-soft); font-size: 11px; }
-    .primary-button { width: 100%; padding: 14px 16px; background: var(--rose); box-shadow: var(--shadow); font-family: Caprasimo, serif; font-size: 16px; }
-    .soft-button { width: 100%; padding: 12px 14px; background: var(--sage-soft); box-shadow: var(--shadow-small); font-weight: 800; }
+      <section class="question-bar" aria-label="Prototype question">
+        <div>
+          <strong>The question</strong>
+          <span
+            >Does one understandable preparation change make you want to send
+            Rosie back—not for better loot, but to learn what else this place
+            contains?</span
+          >
+        </div>
+        <button class="reset-button" data-action="reset">
+          Reset Clover Verge
+        </button>
+      </section>
 
-    /* Variant B: Explorer Road */
-    .road-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, .75fr); gap: 22px; }
-    .map-panel { min-height: 540px; padding: 24px; position: relative; overflow: hidden; background: #f7edcf; }
-    .map-panel::before { content: ""; position: absolute; inset: 0; opacity: .22; background-image: radial-gradient(var(--clay) 1px, transparent 1px); background-size: 18px 18px; }
-    .route-line { position: absolute; left: 15%; right: 12%; top: 48%; height: 7px; background: var(--clay); border: 2px solid var(--ink); border-radius: 999px; transform: rotate(-5deg); }
-    .route-line::after { content: ""; position: absolute; left: 37%; width: 34%; height: 130px; bottom: -20px; border: 7px solid var(--clay); border-left: 0; border-bottom: 0; border-radius: 0 80px 0 0; transform: rotate(30deg); }
-    .map-node { position: absolute; width: 76px; height: 76px; border: 3px solid var(--ink); border-radius: 50%; background: var(--paper); display: grid; place-items: center; text-align: center; font-size: 10px; font-weight: 800; box-shadow: var(--shadow-small); z-index: 2; }
-    .map-node.done { background: var(--sage-soft); }
-    .map-node.current { background: var(--rose-soft); transform: scale(1.12); }
-    .map-node.locked { background: #d8cfc2; color: #7d7167; }
-    .node-1 { left: 7%; top: 58%; }.node-2 { left: 26%; top: 43%; }.node-3 { left: 46%; top: 51%; }.node-4 { left: 61%; top: 30%; }.node-5 { right: 7%; top: 42%; }
-    .map-rosie { position: absolute; width: 120px; left: calc(46% - 24px); top: 30%; z-index: 3; filter: drop-shadow(3px 4px 0 rgba(42,31,21,.22)); }
-    .map-note { position: absolute; left: 24px; top: 22px; max-width: 250px; transform: rotate(-1deg); background: var(--paper); border: 2px solid var(--ink); border-radius: 14px; padding: 13px; box-shadow: var(--shadow-small); }
-    .map-note strong { display: block; font-family: "Patrick Hand", cursive; font-size: 20px; }
-    .road-sidebar { display: flex; flex-direction: column; gap: 14px; }
-    .route-card { padding: 16px; cursor: pointer; }
-    .route-card.selected { background: var(--sky-soft); }
-    .route-card h3 { margin: 0 0 5px; font-size: 19px; }
-    .route-meta { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--ink-soft); }
-    .gear-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .gear-choice { padding: 10px 6px; text-align: center; background: var(--paper); }
-    .gear-choice b { display: block; font-size: 11px; }
-    .gear-icon { width: 38px; height: 38px; border: 2px solid var(--ink); border-radius: 10px; margin: 0 auto 6px; display: grid; place-items: center; background: var(--sun-soft); font-size: 9px; font-weight: 800; }
-    .gear-choice[aria-pressed="true"] { background: var(--sage-soft); }
+      <section
+        class="state-strip"
+        id="state-strip"
+        aria-label="Shared prototype state"
+      ></section>
+      <section class="experiment" id="experiment" aria-live="polite"></section>
+    </main>
 
-    /* Variant C: Postcard Journal */
-    .journal-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); gap: 22px; }
-    .postcard { min-height: 520px; padding: 28px; transform: rotate(-.5deg); position: relative; background: #fff8df; }
-    .postcard::after { content: ""; position: absolute; inset: 16px; border: 2px dashed rgba(201,92,73,.5); border-radius: 16px; pointer-events: none; }
-    .postcard-top { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; }
-    .postcard-label { color: var(--clay); font-size: 11px; letter-spacing: .14em; font-weight: 800; }
-    .postcard h2 { margin: 6px 0 0; font-size: clamp(32px, 4vw, 48px); }
-    .stamp { width: 78px; height: 92px; border: 2px dashed var(--clay); background: var(--rose-soft); display: grid; place-items: center; transform: rotate(5deg); }
-    .stamp img { width: 66px; height: 66px; object-fit: contain; }
-    .postcard-body { position: relative; z-index: 1; display: grid; grid-template-columns: .9fr 1.1fr; gap: 24px; margin-top: 25px; }
-    .postcard-photo { min-height: 280px; background: linear-gradient(#bfe6f6 0 60%, #c8df9a 60%); border: 2px solid var(--ink); border-radius: 12px; position: relative; overflow: hidden; }
-    .postcard-photo img { position: absolute; width: 78%; left: 11%; bottom: -2%; }
-    .photo-caption { position: absolute; left: 12px; top: 12px; background: var(--paper); border: 1px solid var(--ink); border-radius: 999px; padding: 6px 9px; font-size: 10px; font-weight: 800; }
-    .report { padding-top: 3px; }
-    .report p { font-family: "Patrick Hand", cursive; font-size: 21px; line-height: 1.27; margin: 0 0 14px; }
-    .report-line { border-top: 1px solid rgba(42,31,21,.2); padding-top: 12px; margin-top: 12px; }
-    .journal-side { display: flex; flex-direction: column; gap: 16px; }
-    .find-shelf { padding: 18px; }
-    .find-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 12px; }
-    .find { aspect-ratio: 1; border: 2px solid var(--ink); border-radius: 12px; display: grid; place-items: center; text-align: center; background: var(--sun-soft); font-size: 10px; font-weight: 800; }
-    .find.locked { background: #e1d9cd; color: transparent; position: relative; }
-    .find.locked::after { content: "?"; color: var(--ink-soft); font-size: 24px; }
-    .next-card { padding: 18px; background: var(--rose-soft); }
-    .next-card p { margin: 5px 0 14px; color: var(--ink-soft); font-size: 13px; line-height: 1.45; }
+    <nav class="prototype-switcher" aria-label="Prototype variants">
+      <button
+        class="switch-arrow"
+        data-action="previous"
+        aria-label="Previous experiment"
+      >
+        ‹
+      </button>
+      <div class="switch-label" id="switch-label"></div>
+      <button
+        class="switch-arrow"
+        data-action="next"
+        aria-label="Next experiment"
+      >
+        ›
+      </button>
+    </nav>
+    <div class="toast" id="toast" role="status"></div>
 
-    .prototype-switcher {
-      position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 100;
-      display: grid; grid-template-columns: 46px minmax(220px, auto) 46px; align-items: center;
-      background: var(--bark); color: var(--paper); border: 2px solid var(--ink); border-radius: 999px;
-      padding: 5px; box-shadow: 5px 5px 0 rgba(42,31,21,.45);
-    }
-    .switch-arrow { border: 0; background: transparent; color: var(--sun-soft); font-size: 27px; cursor: pointer; height: 40px; }
-    .switch-label { text-align: center; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
-
-    .toast { position: fixed; right: 20px; top: 20px; z-index: 120; background: var(--paper); border: 2px solid var(--ink); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px; max-width: 310px; opacity: 0; transform: translateY(-12px); pointer-events: none; transition: .2s ease; }
-    .toast.show { opacity: 1; transform: translateY(0); }
-
-    @media (max-width: 850px) {
-      .lab-header, .variant-header { align-items: flex-start; flex-direction: column; }
-      .lab-controls { grid-template-columns: 1fr; }
-      .state-strip { grid-template-columns: repeat(3, minmax(0,1fr)); }
-      .living-layout, .road-layout, .journal-layout { grid-template-columns: 1fr; }
-      .living-sidebar, .road-sidebar, .journal-side { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
-      .living-sidebar > :last-child, .road-sidebar > :last-child, .journal-side > :last-child { grid-column: 1 / -1; }
-    }
-    @media (max-width: 570px) {
-      .shell { width: min(100% - 20px, 1160px); padding-top: 18px; }
-      .prototype-tag { display: none; }
-      .state-strip { grid-template-columns: repeat(2, minmax(0,1fr)); }
-      .living-sidebar, .road-sidebar, .journal-side { grid-template-columns: 1fr; }
-      .barn-scene { min-height: 440px; }
-      .station { min-width: 126px; padding: 8px; }
-      .station-c { top: 16%; right: 2%; }
-      .station-b { right: 2%; bottom: 35%; }
-      .scene-rosie { width: 45%; left: 35%; }
-      .map-panel { min-height: 510px; padding: 12px; }
-      .map-node { width: 60px; height: 60px; font-size: 8px; }
-      .map-rosie { width: 92px; }
-      .postcard { padding: 20px; }
-      .postcard-body { grid-template-columns: 1fr; }
-      .postcard-photo { min-height: 230px; }
-      .prototype-switcher { width: calc(100% - 24px); grid-template-columns: 44px 1fr 44px; bottom: 12px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
-    }
-  </style>
-</head>
-<body>
-  <main class="shell">
-    <header class="lab-header">
-      <div>
-        <div class="brandline"><span class="brand-mark" aria-hidden="true"></span><span class="kicker">Tickle the Pig · Idle Lab</span></div>
-        <h1>What should away-time feel like?</h1>
-        <p class="dek">Three interfaces, one shared simulation. Switch between them to judge the emotional center of a TTP idle game—not its final art or production rules.</p>
-      </div>
-      <div class="prototype-tag">THROWAWAY PROTOTYPE</div>
-    </header>
-
-    <section class="lab-controls" aria-label="Prototype time controls">
-      <div class="control-copy">
-        <strong>Simulate Rosie being away</strong>
-        <span>Every button advances the same state in all three experiments.</span>
-      </div>
-      <div class="time-row">
-        <button class="lab-button" data-action="warp" data-hours="1">+1 hour</button>
-        <button class="lab-button" data-action="warp" data-hours="4">+4 hours</button>
-        <button class="lab-button" data-action="warp" data-hours="8">+8 hours</button>
-      </div>
-      <button class="lab-button reset-button" data-action="reset">Reset lab</button>
-    </section>
-
-    <section class="state-strip" id="state-strip" aria-label="Shared prototype state"></section>
-    <section class="experiment" id="experiment" aria-live="polite"></section>
-  </main>
-
-  <nav class="prototype-switcher" aria-label="Prototype variants">
-    <button class="switch-arrow" data-action="previous" aria-label="Previous experiment">‹</button>
-    <div class="switch-label" id="switch-label"></div>
-    <button class="switch-arrow" data-action="next" aria-label="Next experiment">›</button>
-  </nav>
-  <div class="toast" id="toast" role="status"></div>
-
-  <script>
-    const variants = [
-      { key: "A", name: "Living Barn" },
-      { key: "B", name: "Explorer Road" },
-      { key: "C", name: "Postcard Journal" }
-    ];
-
-    const initialState = () => ({
-      variant: normalizeVariant(new URLSearchParams(location.search).get("variant")),
-      awayHours: 0,
-      cycles: 0,
-      snoutlets: 18,
-      finds: 2,
-      stationLevel: 1,
-      automated: false,
-      assignment: "Sort the finds",
-      route: "Meadow Loop",
-      gear: "Saucepan Lid",
-      road: 2,
-      sounder: 14,
-      wall: "Bramble Gate",
-      lastReport: "Rosie reached the Bramble Gate and came home with two curious little finds."
-    });
-
-    let state = initialState();
-    let toastTimer;
-
-    function normalizeVariant(value) {
-      const key = String(value || "A").toUpperCase();
-      return variants.some(v => v.key === key) ? key : "A";
-    }
-
-    function escapeHtml(value) {
-      return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
-    }
-
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      toast.textContent = message;
-      toast.classList.add("show");
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove("show"), 1900);
-    }
-
-    function setVariant(key) {
-      state.variant = normalizeVariant(key);
-      const url = new URL(location.href);
-      url.searchParams.set("variant", state.variant);
-      history.replaceState({}, "", url);
-      render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function moveVariant(delta) {
-      const index = variants.findIndex(v => v.key === state.variant);
-      setVariant(variants[(index + delta + variants.length) % variants.length].key);
-    }
-
-    function simulateAway(hours) {
-      const production = hours * (4 + state.stationLevel * 2 + (state.automated ? 3 : 0));
-      const newFinds = Math.max(1, Math.floor(hours / 3)) + (state.gear === "Lucky Clover" ? 1 : 0);
-      state.awayHours = hours;
-      state.cycles += 1;
-      state.snoutlets += production;
-      state.finds += newFinds;
-      state.road = Math.min(5, state.road + Math.max(1, Math.floor(hours / 4)));
-      state.sounder = Math.min(100, state.sounder + Math.max(2, hours * 2));
-      state.wall = state.road >= 5 ? "Tollbooth Goose" : state.road >= 4 ? "Moonlit Creek" : "Bramble Gate";
-      state.lastReport = reportFor(hours, newFinds, production);
-      render();
-      showToast(`Rosie was away ${hours}h and returned with ${newFinds} find${newFinds === 1 ? "" : "s"}.`);
-    }
-
-    function reportFor(hours, newFinds, production) {
-      const action = state.assignment === "Find something strange"
-        ? "nosed under every glittery leaf"
-        : state.assignment === "Help the Sounder"
-          ? "left a neat little pile for the Sounder"
-          : "sorted the road finds into extremely serious heaps";
-      return `Rosie spent ${hours} hour${hours === 1 ? "" : "s"} on the ${state.route}, ${action}, and brought home ${newFinds} find${newFinds === 1 ? "" : "s"} plus ${production} snoutlets.`;
-    }
-
-    function upgradeStation() {
-      const cost = state.stationLevel * 20;
-      if (state.snoutlets < cost) return showToast(`The next Barn improvement needs ${cost} snoutlets.`);
-      state.snoutlets -= cost;
-      state.stationLevel += 1;
-      if (state.stationLevel >= 2) state.automated = true;
-      render();
-      showToast(state.automated ? "The sorting table now works while Rosie rambles." : "The Barn station improved.");
-    }
-
-    function choose(kind, value) {
-      state[kind] = value;
-      render();
-      showToast(`${value} selected.`);
-    }
-
-    function resetLab() {
-      const variant = state.variant;
-      state = initialState();
-      state.variant = variant;
-      render();
-      showToast("Prototype state reset.");
-    }
-
-    function stateStrip() {
-      const cells = [
-        ["Last trip", state.awayHours ? `${state.awayHours} hours` : "Not sent"],
-        ["Snoutlets", state.snoutlets],
-        ["Finds", state.finds],
-        ["Automation", state.automated ? "Sorting table" : "Manual"],
-        ["Road", `${state.road} / 5`],
-        ["Next obstacle", state.wall]
+    <script>
+      const variants = [
+        { key: "A", name: "Pack the Bag" },
+        { key: "B", name: "Walk the Verge" },
+        { key: "C", name: "Welcome Home" },
       ];
-      return cells.map(([label, value]) => `<div class="state-cell"><span class="state-label">${escapeHtml(label)}</span><span class="state-value">${escapeHtml(value)}</span></div>`).join("");
-    }
 
-    function selected(value, actual) { return value === actual ? "true" : "false"; }
+      const choices = {
+        tool: [
+          ["Wooden Spoon", "Tap, pry, and listen for hollow things."],
+          ["Lantern", "Reveal shadows and reassure curious creatures."],
+        ],
+        pack: [
+          [
+            "Wicker Basket",
+            "Carries one extra sturdy Find; rain gets through.",
+          ],
+          ["Dry Bag", "Preserves wet Finds; sharp things do not fit."],
+        ],
+        intention: [
+          [
+            "Look for something strange",
+            "Rosie follows odd sounds, shapes, and behavior.",
+          ],
+          [
+            "Bring something for the Barn",
+            "Rosie favors objects that can change Home.",
+          ],
+        ],
+        trip: [
+          ["Poke Around", "15 min · One nearby encounter."],
+          ["Good Wander", "2 hr · Reaches the fencepost."],
+          ["Day Out", "8 hr · Follows the deeper clover tunnels."],
+        ],
+      };
 
-    function livingBarn() {
-      const bottleneck = state.automated ? "Packing is the slow step now" : "Rosie is still sorting by hoof";
-      const meter = Math.min(92, 34 + state.stationLevel * 17);
-      return `
-        <div class="variant-header">
-          <div><span class="kicker">Experiment A</span><h2>The Living Barn</h2><p>Progress is a changing place. The primary decision is which visible bottleneck to improve.</p></div>
-          <div class="question-chip"><strong>What this tests</strong>Can the pleasure of watching the Barn evolve carry the idle loop?</div>
-        </div>
-        <div class="living-layout">
-          <section class="panel barn-scene" aria-label="Animated Barn production scene">
-            <div class="sun"></div><div class="cloud"></div>
-            <div class="barn-building"><div class="barn-door"></div></div>
-            <img class="scene-rosie" src="./rosie.png" alt="Rosie happily working outside the Barn" />
-            <div class="station station-a"><strong>Truffle sorting</strong><span>Level ${state.stationLevel} · ${state.automated ? "automatic" : "Rosie-operated"}</span><div class="motion-dots"><i></i><i></i><i></i></div></div>
-            <div class="station station-b"><strong>Road basket</strong><span>${state.finds} finds waiting</span></div>
-            <div class="station station-c"><strong>Sounder crate</strong><span>${state.sounder}% packed together</span></div>
-          </section>
-          <aside class="panel living-sidebar">
-            <div><span class="kicker">Barn manager</span><h3 class="panel-title">One thing needs you</h3><p class="muted">Everything else keeps moving while you decide.</p></div>
-            <div class="bottleneck"><span class="bottleneck-label">Visible bottleneck</span><strong>${bottleneck}</strong><div class="meter" style="--meter:${meter}%"><span></span></div><small>${state.automated ? "Improve packing to raise every return." : "Upgrade once to earn automation."}</small></div>
-            <div class="choice-list" aria-label="Rosie's assignment">
-              ${["Sort the finds","Find something strange","Help the Sounder"].map(value => `<button class="choice-button" data-action="choose" data-kind="assignment" data-value="${value}" aria-pressed="${selected(value,state.assignment)}"><strong>${value}</strong><span>${value === "Sort the finds" ? "More reliable income" : value === "Find something strange" ? "Better discovery chance" : "Adds pooled progress"}</span></button>`).join("")}
-            </div>
-            <button class="primary-button" data-action="upgrade">Improve the Barn · ${state.stationLevel * 20}</button>
-          </aside>
-        </div>`;
-    }
+      function normalizeVariant(value) {
+        const key = String(value || "A").toUpperCase();
+        return variants.some(function (variant) {
+          return variant.key === key;
+        })
+          ? key
+          : "A";
+      }
 
-    function explorerRoad() {
-      const routes = [
-        ["Meadow Loop","Safe · 4 hours","Reliable finds"],
-        ["Bramble Road","Needs Cushion · 8 hours","Better gear chance"],
-        ["Moonlit Hollow","Uncertain · 8 hours","Rare Field Guide page"]
-      ];
-      const gear = ["Saucepan Lid","Wooden Spoon","Lucky Clover"];
-      return `
-        <div class="variant-header">
-          <div><span class="kicker">Experiment B</span><h2>The Explorer Road</h2><p>Progress is a route through remembered places. The primary decision is where Rosie goes and what she carries.</p></div>
-          <div class="question-chip"><strong>What this tests</strong>Does preparation and discovery create stronger authorship than management?</div>
-        </div>
-        <div class="road-layout">
-          <section class="panel map-panel" aria-label="Rosie's expedition map">
-            <div class="map-note"><strong>Rosie's road notes</strong><span class="muted">She is waiting at ${state.wall}. The ${state.gear} changes what happens next.</span></div>
-            <div class="route-line"></div>
-            <div class="map-node done node-1">Barn</div><div class="map-node done node-2">Meadow</div><div class="map-node ${state.road === 2 ? "current" : "done"} node-3">Bramble<br>Gate</div><div class="map-node ${state.road >= 4 ? "current" : "locked"} node-4">Moonlit<br>Creek</div><div class="map-node ${state.road >= 5 ? "current" : "locked"} node-5">Goose<br>Bridge</div>
-            <img class="map-rosie" src="./rosie.png" alt="Rosie standing on the expedition road" />
-          </section>
-          <aside class="road-sidebar">
-            ${routes.map(([name,meta,reward]) => `<button class="panel route-card ${name === state.route ? "selected" : ""}" data-action="choose" data-kind="route" data-value="${name}" aria-pressed="${selected(name,state.route)}"><h3>${name}</h3><div class="route-meta"><span>${meta}</span><strong>${reward}</strong></div></button>`).join("")}
-            <section class="panel" style="padding:16px"><span class="kicker">Carry one thing</span><div class="gear-row">${gear.map(name => `<button class="choice-button gear-choice" data-action="choose" data-kind="gear" data-value="${name}" aria-pressed="${selected(name,state.gear)}"><span class="gear-icon">${name === "Saucepan Lid" ? "LID" : name === "Wooden Spoon" ? "SPOON" : "LUCK"}</span><b>${name.replace("Saucepan ","").replace("Wooden ","").replace("Lucky ","")}</b></button>`).join("")}</div></section>
-            <button class="primary-button" data-action="warp" data-hours="8">Send Rosie for 8 hours</button>
-          </aside>
-        </div>`;
-    }
+      function initialState() {
+        return {
+          variant: normalizeVariant(
+            new URLSearchParams(location.search).get("variant"),
+          ),
+          phase: "prepare",
+          tool: "Wooden Spoon",
+          pack: "Wicker Basket",
+          intention: "Look for something strange",
+          trip: "Poke Around",
+          trips: 0,
+          discoveries: [],
+          flags: {
+            rainGlassClue: false,
+            creekGlass: false,
+            hedgeBell: false,
+            cloverBeetle: false,
+          },
+          lastResult: null,
+        };
+      }
 
-    function postcardJournal() {
-      const next = state.wall === "Tollbooth Goose" ? "The Goose pecks first. A lid would make the next return different." : "The road gets thornier ahead. Cushion or a careful route will help.";
-      return `
-        <div class="variant-header">
-          <div><span class="kicker">Experiment C</span><h2>The Postcard Journal</h2><p>Progress is a story worth remembering. The primary decision comes after the return ceremony.</p></div>
-          <div class="question-chip"><strong>What this tests</strong>Can the return itself become the emotional center of the product?</div>
-        </div>
-        <div class="journal-layout">
-          <article class="panel postcard">
-            <div class="postcard-top"><div><span class="postcard-label">A NOTE FROM THE ROAD</span><h2>Rosie came home.</h2></div><div class="stamp"><img src="./rosie.png" alt="Rosie postage stamp" /></div></div>
-            <div class="postcard-body">
-              <div class="postcard-photo"><span class="photo-caption">${escapeHtml(state.route)}</span><img src="./rosie.png" alt="Rosie on her latest ramble" /></div>
-              <div class="report"><p>${escapeHtml(state.lastReport)}</p><p class="report-line">Her ${escapeHtml(state.gear)} mattered at ${escapeHtml(state.wall)}.</p><p class="report-line">She also spent several minutes trying to organize leaves by personality.</p></div>
-            </div>
-          </article>
-          <aside class="journal-side">
-            <section class="panel find-shelf"><span class="kicker">Today's shelf</span><h3 class="panel-title">Things she remembers</h3><div class="find-grid"><div class="find">Bent<br>Button</div><div class="find">Shiny<br>Acorn</div><div class="find">Goose<br>Receipt</div><div class="find locked"></div><div class="find locked"></div><div class="find locked"></div></div></section>
-            <section class="panel next-card"><span class="kicker">One good decision</span><h3 class="panel-title">What should change?</h3><p>${next}</p><div class="choice-list">${["Saucepan Lid","Wooden Spoon","Lucky Clover"].map(value => `<button class="choice-button" data-action="choose" data-kind="gear" data-value="${value}" aria-pressed="${selected(value,state.gear)}"><strong>${value}</strong></button>`).join("")}</div></section>
-            <button class="primary-button" data-action="warp" data-hours="8">Send her back out</button>
-          </aside>
-        </div>`;
-    }
+      let state = initialState();
+      let toastTimer;
 
-    function render() {
-      document.getElementById("state-strip").innerHTML = stateStrip();
-      document.getElementById("experiment").innerHTML = state.variant === "A" ? livingBarn() : state.variant === "B" ? explorerRoad() : postcardJournal();
-      const current = variants.find(v => v.key === state.variant);
-      document.getElementById("switch-label").textContent = `${current.key} · ${current.name}`;
-      document.title = `${current.name} - Tickle the Pig Idle Lab`;
-    }
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>'"]/g, function (char) {
+          return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "'": "&#39;",
+            '"': "&quot;",
+          }[char];
+        });
+      }
 
-    document.addEventListener("click", event => {
-      const button = event.target.closest("[data-action]");
-      if (!button) return;
-      const action = button.dataset.action;
-      if (action === "warp") simulateAway(Number(button.dataset.hours));
-      if (action === "reset") resetLab();
-      if (action === "upgrade") upgradeStation();
-      if (action === "choose") choose(button.dataset.kind, button.dataset.value);
-      if (action === "previous") moveVariant(-1);
-      if (action === "next") moveVariant(1);
-    });
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove("show");
+        }, 2100);
+      }
 
-    window.addEventListener("keydown", event => {
-      const tag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : "";
-      if (tag === "input" || tag === "textarea" || event.target?.isContentEditable) return;
-      if (event.key === "ArrowLeft") moveVariant(-1);
-      if (event.key === "ArrowRight") moveVariant(1);
-    });
+      function remember(name) {
+        if (!state.discoveries.includes(name)) state.discoveries.push(name);
+      }
 
-    window.addEventListener("popstate", () => {
-      state.variant = normalizeVariant(new URLSearchParams(location.search).get("variant"));
+      function setVariant(key) {
+        state.variant = normalizeVariant(key);
+        const url = new URL(location.href);
+        url.searchParams.set("variant", state.variant);
+        history.replaceState({}, "", url);
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function moveVariant(delta) {
+        const index = variants.findIndex(function (variant) {
+          return variant.key === state.variant;
+        });
+        setVariant(
+          variants[(index + delta + variants.length) % variants.length].key,
+        );
+      }
+
+      function choose(kind, value) {
+        state[kind] = value;
+        state.phase = "prepare";
+        render();
+        showToast(value + " selected.");
+      }
+
+      function resultBase(kind, title, story, equipment, change, next) {
+        return {
+          kind: kind,
+          title: title,
+          story: story,
+          equipment: equipment,
+          change: change,
+          next: next,
+          near: "",
+          supporting: "",
+          suggestion: null,
+        };
+      }
+
+      function resolveAdventure() {
+        let result;
+
+        if (
+          state.flags.creekGlass &&
+          state.tool === "Wooden Spoon" &&
+          state.trip !== "Poke Around" &&
+          !state.flags.hedgeBell
+        ) {
+          result = resultBase(
+            "wonder",
+            "The Hedge Bell",
+            "The fencepost rang back. I tapped the hollow seam, and a little brass bell rolled out with a hedgehog stamped on its side.",
+            "The Wooden Spoon created the verbs tap and pry. The longer wander gave Rosie time to follow the ringing beneath the post.",
+            "The Hedge Bell now hangs beside Rosie's Bag. Hedge-Tunnel Crossing has opened toward Moonlit Creek.",
+            "The open tunnel smells like wet stone and mint. Clover Verge is understood, but it is not exhausted.",
+          );
+          result.supporting =
+            state.pack === "Wicker Basket"
+              ? "Supporting Find: Hedgehog-Crest Token."
+              : "The Dry Bag kept the bell's old ribbon from crumbling.";
+          state.flags.hedgeBell = true;
+          remember("Hedge Bell");
+        } else if (
+          (state.flags.rainGlassClue || state.pack === "Dry Bag") &&
+          state.pack === "Dry Bag" &&
+          !state.flags.creekGlass
+        ) {
+          result = resultBase(
+            "discovery",
+            "Creek Glass",
+            "The puddle was holding a piece of yesterday's sky. I tucked it into the Dry Bag before the rain could remember what it was.",
+            "The Dry Bag preserved a wet, fragile Find that the Wicker Basket could only reveal.",
+            "Rain-Glass Puddle is now marked Familiar. A blue-green shard rests on the Barn's adventure shelf.",
+            "When Rosie held the Creek Glass near the Hollow Fencepost, something beneath the wood rang once.",
+          );
+          result.supporting =
+            "Supporting Find: one rain-dark clover leaf with a perfect round bite.";
+          result.suggestion = {
+            kind: "trip",
+            value: "Good Wander",
+            label: "Wander farther to the fencepost",
+          };
+          state.flags.creekGlass = true;
+          remember("Creek Glass");
+        } else if (
+          !state.flags.rainGlassClue &&
+          state.pack === "Wicker Basket"
+        ) {
+          result = resultBase(
+            "near",
+            "The Blue Button",
+            "I found the blue button beside a puddle that was holding the whole sky. I tried to bring a piece of the reflection too.",
+            "The Wicker Basket carried the sturdy button safely, but the Rain-Glass melted through its weave before Rosie reached Home.",
+            "The Blue Button is stitched onto Rosie's Bag as its first travel mark.",
+            "Something waterproof could preserve the Rain-Glass after the next shower.",
+          );
+          result.near =
+            "Near-Discovery: Rain-Glass Puddle. You learned what it is, why it was lost, and what kind of Pack may change the return.";
+          result.supporting =
+            "Field note: the puddle reflects a dry sky even after rain.";
+          result.suggestion = {
+            kind: "pack",
+            value: "Dry Bag",
+            label: "Swap only the Pack to Dry Bag",
+          };
+          state.flags.rainGlassClue = true;
+          remember("Blue Button");
+        } else if (
+          state.tool === "Lantern" &&
+          state.intention === "Look for something strange" &&
+          !state.flags.cloverBeetle
+        ) {
+          result = resultBase(
+            "discovery",
+            "Clover Beetle",
+            "The Lantern made a warm moon beneath the hedge. A green beetle walked into the light carrying a clover seed like a parcel.",
+            "The Lantern revealed behavior the Wooden Spoon could not. Rosie's Intention made her wait and watch instead of gathering an object.",
+            "Rosie's first Clover Beetle observation is pinned beside the Barn window.",
+            "It returned down a tunnel too small for the Lantern. A quieter way of communicating may reveal where it goes.",
+          );
+          state.flags.cloverBeetle = true;
+          remember("Clover Beetle");
+        } else if (state.intention === "Bring something for the Barn") {
+          result = resultBase(
+            "find",
+            "The Bent Thimble",
+            "It was wedged beneath the hedge like a tiny silver cup. I think it wants to hold the smallest flower we can find.",
+            state.pack === "Wicker Basket"
+              ? "The Wicker Basket had room for a sturdy Barn object."
+              : "The Dry Bag kept the thimble clean, but its shape did not require waterproofing.",
+            "The Bent Thimble becomes a tiny vase on the Barn shelf.",
+            "A tapping sound still follows Rosie past the Hollow Fencepost.",
+          );
+          remember("Bent Thimble");
+        } else {
+          result = resultBase(
+            "find",
+            "Hedgehog-Crest Token",
+            "I tapped the roots until one answered. Underneath was a brass token with a hedgehog wearing a very serious expression.",
+            "The Wooden Spoon uncovered a shallow seam without damaging the token.",
+            "The token hangs from Rosie's Bag as a route charm.",
+            "The same crest appears faintly on the Hollow Fencepost.",
+          );
+          remember("Hedgehog-Crest Token");
+        }
+
+        if (state.trip === "Day Out" && !result.supporting) {
+          result.supporting =
+            "The long clover route added a new landmark sketch without improving the Find's rarity.";
+        }
+
+        state.trips += 1;
+        state.lastResult = result;
+        state.phase = "return";
+        render();
+        showToast("Rosie is Home with " + result.title + ".");
+      }
+
+      function prepareAgain() {
+        state.phase = "prepare";
+        render();
+        showToast("The Bag is open. Change one thing or send Rosie as she is.");
+      }
+
+      function applySuggestion() {
+        if (!state.lastResult || !state.lastResult.suggestion)
+          return prepareAgain();
+        const suggestion = state.lastResult.suggestion;
+        state[suggestion.kind] = suggestion.value;
+        state.phase = "prepare";
+        render();
+        showToast(
+          suggestion.value + " packed. Everything else stayed the same.",
+        );
+      }
+
+      function resetLab() {
+        const variant = state.variant;
+        state = initialState();
+        state.variant = variant;
+        render();
+        showToast("Clover Verge reset to the first send-off.");
+      }
+
+      function stateStrip() {
+        const cells = [
+          [
+            "Moment",
+            state.phase === "return" ? "Rosie is Home" : "Packing at Home",
+          ],
+          ["Condition", "After rain"],
+          ["Tool", state.tool],
+          ["Pack", state.pack],
+          ["Trip shape", state.trip],
+          ["Remembered", state.discoveries.length + " / 6"],
+        ];
+        return cells
+          .map(function (cell) {
+            return (
+              '<div class="state-cell"><span class="state-label">' +
+              escapeHtml(cell[0]) +
+              '</span><span class="state-value">' +
+              escapeHtml(cell[1]) +
+              "</span></div>"
+            );
+          })
+          .join("");
+      }
+
+      function selected(value, actual) {
+        return value === actual ? "true" : "false";
+      }
+
+      function choiceBlock(kind, columns) {
+        const label =
+          kind === "tool"
+            ? "Tool · what Rosie can do"
+            : kind === "pack"
+              ? "Pack · what can come Home"
+              : kind === "intention"
+                ? "Intention · what Rosie notices"
+                : "Trip shape · what kind of story fits today";
+        const buttons = choices[kind]
+          .map(function (choice) {
+            return (
+              '<button class="choice-button" data-action="choose" data-kind="' +
+              kind +
+              '" data-value="' +
+              escapeHtml(choice[0]) +
+              '" aria-pressed="' +
+              selected(choice[0], state[kind]) +
+              '"><strong>' +
+              escapeHtml(choice[0]) +
+              "</strong><span>" +
+              escapeHtml(choice[1]) +
+              "</span></button>"
+            );
+          })
+          .join("");
+        return (
+          '<div class="choice-block"><span>' +
+          label +
+          '</span><div class="choice-row ' +
+          columns +
+          '">' +
+          buttons +
+          "</div></div>"
+        );
+      }
+
+      function compactChoices(kind) {
+        return (
+          '<div class="compact-selection">' +
+          choices[kind]
+            .map(function (choice) {
+              return (
+                '<button class="choice-button" data-action="choose" data-kind="' +
+                kind +
+                '" data-value="' +
+                escapeHtml(choice[0]) +
+                '" aria-pressed="' +
+                selected(choice[0], state[kind]) +
+                '"><strong>' +
+                escapeHtml(choice[0]) +
+                "</strong></button>"
+              );
+            })
+            .join("") +
+          "</div>"
+        );
+      }
+
+      function resultCard() {
+        if (!state.lastResult) return "";
+        const result = state.lastResult;
+        const near = result.near
+          ? '<div class="near-line">' + escapeHtml(result.near) + "</div>"
+          : "";
+        const supporting = result.supporting
+          ? '<div class="truth-line">' +
+            escapeHtml(result.supporting) +
+            "</div>"
+          : "";
+        return [
+          '<section class="result-card ',
+          escapeHtml(result.kind),
+          '">',
+          '<span class="kicker">One memorable thing</span>',
+          '<div class="result-title">',
+          escapeHtml(result.title),
+          "</div>",
+          '<p class="result-story">“',
+          escapeHtml(result.story),
+          "”</p>",
+          '<div class="truth-line"><strong>Your preparation mattered:</strong> ',
+          escapeHtml(result.equipment),
+          "</div>",
+          near,
+          supporting,
+          '<div class="change-line"><strong>Home remembers:</strong> ',
+          escapeHtml(result.change),
+          "</div>",
+          '<div class="near-line"><strong>Next possibility:</strong> ',
+          escapeHtml(result.next),
+          "</div>",
+          "</section>",
+        ].join("");
+      }
+
+      function returnActions() {
+        const suggestion =
+          state.lastResult && state.lastResult.suggestion
+            ? '<button class="soft-button" data-action="suggest">' +
+              escapeHtml(state.lastResult.suggestion.label) +
+              "</button>"
+            : '<button class="soft-button" data-action="prepare">Change the preparation</button>';
+        return (
+          '<div class="action-row">' +
+          suggestion +
+          '<button class="primary-button" data-action="send">Send the same way</button></div>'
+        );
+      }
+
+      function packTheBag() {
+        const result =
+          state.phase === "return" ? resultCard() + returnActions() : "";
+        const send =
+          state.phase === "prepare"
+            ? '<button class="primary-button" data-action="send">Send Rosie to Clover Verge</button>'
+            : "";
+        return [
+          '<div class="variant-header">',
+          '<div><span class="kicker">Experiment A</span><h2>Pack the Bag</h2><p>The Bag is the main interface. The player should feel authorship before Rosie leaves.</p></div>',
+          '<div class="question-chip"><strong>What this tests</strong>Does a tactile preparation surface make cause and effect feel clearest?</div>',
+          "</div>",
+          '<div class="pack-layout">',
+          '<section class="panel bag-board" aria-label="Rosie and her prepared Bag">',
+          '<div class="bag-copy"><span class="condition-pill">After rain · Clover Verge</span><h3>Two things might matter.</h3><p class="muted">A puddle is holding the wrong sky. Something beneath the fencepost has been ringing.</p></div>',
+          '<img class="rosie-pack" src="./rosie.png" alt="Rosie waiting beside her adventure Bag" />',
+          '<div class="bag-shape"><div class="bag-slot tool"><small>Tool</small><strong>',
+          escapeHtml(state.tool),
+          '</strong></div><div class="bag-slot pack"><small>Pack</small><strong>',
+          escapeHtml(state.pack),
+          '</strong></div><div class="bag-mark ',
+          state.discoveries.length ? "" : "hidden",
+          '">',
+          state.discoveries.length
+            ? escapeHtml(state.discoveries[0])
+            : "FIRST MARK",
+          "</div></div>",
+          "</section>",
+          '<aside class="panel pack-controls">',
+          result,
+          state.phase === "prepare"
+            ? '<div><span class="kicker">Rosie is ready</span><h3 class="panel-title">What should she carry?</h3><p class="muted">The preview names possibilities, never odds.</p></div>'
+            : "",
+          state.phase === "prepare"
+            ? choiceBlock("tool", "two") +
+              choiceBlock("pack", "two") +
+              choiceBlock("intention", "two") +
+              choiceBlock("trip", "three") +
+              send
+            : "",
+          "</aside>",
+          "</div>",
+        ].join("");
+      }
+
+      function walkTheVerge() {
+        const ribbon =
+          state.phase === "return" && state.lastResult
+            ? '<div class="return-ribbon"><span class="kicker">Rosie came Home</span><br><strong>' +
+              escapeHtml(state.lastResult.title) +
+              "</strong><p>" +
+              escapeHtml(state.lastResult.story) +
+              "</p></div>"
+            : "";
+        return [
+          '<div class="variant-header">',
+          '<div><span class="kicker">Experiment B</span><h2>Walk the Verge</h2><p>The place is the main interface. Preparation is chosen against visible landmarks and conditions.</p></div>',
+          '<div class="question-chip"><strong>What this tests</strong>Does seeing the destination make equipment feel like a world hypothesis?</div>',
+          "</div>",
+          '<div class="verge-layout">',
+          '<section class="panel verge-scene" aria-label="Clover Verge after rain">',
+          '<div class="verge-sun"></div><div class="hedge"></div><div class="puddle"></div><div class="fencepost"></div>',
+          '<div class="scene-progress"><span class="condition-pill">After rain</span><h3>Clover Verge</h3><p class="muted">The familiar strip beyond the Barn path, seen at pig height.</p></div>',
+          '<div class="place-note note-puddle"><strong>Rain-Glass Puddle</strong><span>',
+          state.flags.creekGlass
+            ? "Familiar · Creek Glass preserved"
+            : state.flags.rainGlassClue
+              ? "Near-Discovery · needs protection from rain"
+              : "The reflection looks too dry",
+          "</span></div>",
+          '<div class="place-note note-post"><strong>Hollow Fencepost</strong><span>',
+          state.flags.hedgeBell
+            ? "Wonder found · tunnel open"
+            : state.flags.creekGlass
+              ? "Something inside rang once"
+              : "A faint tapping under the wood",
+          "</span></div>",
+          '<img class="verge-rosie" src="./rosie.png" alt="Rosie exploring Clover Verge" />',
+          ribbon,
+          "</section>",
+          '<aside class="trail-controls">',
+          state.phase === "return"
+            ? '<section class="panel trail-card">' +
+              resultCard() +
+              returnActions() +
+              "</section>"
+            : "",
+          state.phase === "prepare"
+            ? '<section class="panel trail-card"><span class="kicker">Choose against the place</span><h3 class="panel-title">How will Rosie explore?</h3><span class="condition-pill">Puddle wet · post hollow</span><div class="choice-block"><span>Tool</span>' +
+              compactChoices("tool") +
+              '</div><div class="choice-block"><span>Pack</span>' +
+              compactChoices("pack") +
+              "</div></section>"
+            : "",
+          state.phase === "prepare"
+            ? '<section class="panel trail-card"><span class="kicker">Rosie decides the rest</span><div class="choice-block"><span>Intention</span>' +
+              compactChoices("intention") +
+              '</div><div class="choice-block"><span>Trip shape</span>' +
+              compactChoices("trip") +
+              "</div></section>"
+            : "",
+          state.phase === "prepare"
+            ? '<button class="primary-button" data-action="send">Follow this hypothesis</button>'
+            : "",
+          "</aside>",
+          "</div>",
+        ].join("");
+      }
+
+      function welcomeHome() {
+        const memories = state.discoveries.length
+          ? state.discoveries
+              .slice()
+              .reverse()
+              .map(function (name, index) {
+                return (
+                  '<div class="memory"><strong>' +
+                  escapeHtml(name) +
+                  "</strong><span>" +
+                  (index === 0 ? "latest" : "remembered") +
+                  "</span></div>"
+                );
+              })
+              .join("")
+          : '<div class="memory"><strong>No returns yet</strong><span>the first page is waiting</span></div>';
+
+        if (state.phase === "return" && state.lastResult) {
+          const result = state.lastResult;
+          return [
+            '<div class="variant-header">',
+            '<div><span class="kicker">Experiment C</span><h2>Welcome Home</h2><p>The return is the main interface. Rosie&#39;s story should create the next preparation decision.</p></div>',
+            '<div class="question-chip"><strong>What this tests</strong>Can one memorable homecoming make the resend feel emotionally inevitable?</div>',
+            "</div>",
+            '<div class="home-layout">',
+            '<article class="panel homecoming">',
+            '<div class="home-top"><div><span class="kicker">A note from Clover Verge</span><h3>Rosie came Home.</h3></div><div class="home-stamp"><img src="./rosie.png" alt="Rosie as a return-book stamp" /></div></div>',
+            '<div class="home-body"><div class="home-photo"><span class="condition-pill">After rain · ',
+            escapeHtml(state.trip),
+            '</span><img src="./rosie.png" alt="Rosie after her adventure" /></div>',
+            '<div class="home-report"><p class="result-story">“',
+            escapeHtml(result.story),
+            '”</p><div class="headline-find"><small>One memorable thing</small><strong>',
+            escapeHtml(result.title),
+            "</strong></div>",
+            '<div class="truth-line"><strong>',
+            escapeHtml(state.tool),
+            " + ",
+            escapeHtml(state.pack),
+            ":</strong> ",
+            escapeHtml(result.equipment),
+            "</div>",
+            result.near
+              ? '<div class="near-line">' + escapeHtml(result.near) + "</div>"
+              : "",
+            '<div class="change-line"><strong>Home remembers:</strong> ',
+            escapeHtml(result.change),
+            "</div></div></div>",
+            "</article>",
+            '<aside class="journal-side"><section class="panel journal-card hypothesis"><span class="kicker">Rosie left you a possibility</span><h3 class="panel-title">What changes next?</h3><p class="muted">',
+            escapeHtml(result.next),
+            "</p>",
+            returnActions(),
+            "</section>",
+            '<section class="panel journal-card"><span class="kicker">Return Book</span><h3 class="panel-title">Things with stories</h3><div class="memory-list">',
+            memories,
+            "</div></section></aside>",
+            "</div>",
+          ].join("");
+        }
+
+        const last = state.lastResult
+          ? '<p class="muted">Last time, Rosie found <strong>' +
+            escapeHtml(state.lastResult.title) +
+            "</strong>. Her next possibility is: " +
+            escapeHtml(state.lastResult.next) +
+            "</p>"
+          : '<p class="muted">A blue button appears beside the Barn path after every rain. Nobody at Home owns a blue coat.</p>';
+        return [
+          '<div class="variant-header">',
+          '<div><span class="kicker">Experiment C</span><h2>Welcome Home</h2><p>The return is the main interface. Preparation begins from a remembered story.</p></div>',
+          '<div class="question-chip"><strong>What this tests</strong>Does the last story create a stronger next choice than a map or inventory?</div>',
+          "</div>",
+          '<div class="home-layout">',
+          '<section class="panel empty-return"><div><img src="./rosie.png" alt="Rosie ready to leave Home" /><span class="kicker">The next page is blank</span><h3>What should Rosie notice?</h3>',
+          last,
+          "</div></section>",
+          '<aside class="journal-side"><section class="panel journal-card hypothesis"><span class="kicker">Prepare from the story</span>',
+          choiceBlock("tool", "two"),
+          choiceBlock("pack", "two"),
+          choiceBlock("intention", "two"),
+          choiceBlock("trip", "three"),
+          '<button class="primary-button" data-action="send">Send Rosie and wait for the story</button></section>',
+          '<section class="panel journal-card"><span class="kicker">Return Book</span><div class="memory-list">',
+          memories,
+          "</div></section></aside>",
+          "</div>",
+        ].join("");
+      }
+
+      function render() {
+        document.getElementById("state-strip").innerHTML = stateStrip();
+        document.getElementById("experiment").innerHTML =
+          state.variant === "A"
+            ? packTheBag()
+            : state.variant === "B"
+              ? walkTheVerge()
+              : welcomeHome();
+        const current = variants.find(function (variant) {
+          return variant.key === state.variant;
+        });
+        document.getElementById("switch-label").textContent =
+          current.key + " · " + current.name;
+        document.title = current.name + " - Beyond the Hedge Lab";
+      }
+
+      document.addEventListener("click", function (event) {
+        const button = event.target.closest("[data-action]");
+        if (!button) return;
+        const action = button.dataset.action;
+        if (action === "choose")
+          choose(button.dataset.kind, button.dataset.value);
+        if (action === "send") resolveAdventure();
+        if (action === "prepare") prepareAgain();
+        if (action === "suggest") applySuggestion();
+        if (action === "reset") resetLab();
+        if (action === "previous") moveVariant(-1);
+        if (action === "next") moveVariant(1);
+      });
+
+      window.addEventListener("keydown", function (event) {
+        const tag =
+          event.target && event.target.tagName
+            ? event.target.tagName.toLowerCase()
+            : "";
+        if (
+          tag === "input" ||
+          tag === "textarea" ||
+          (event.target && event.target.isContentEditable)
+        )
+          return;
+        if (event.key === "ArrowLeft") moveVariant(-1);
+        if (event.key === "ArrowRight") moveVariant(1);
+      });
+
+      window.addEventListener("popstate", function () {
+        state.variant = normalizeVariant(
+          new URLSearchParams(location.search).get("variant"),
+        );
+        render();
+      });
+
       render();
-    });
-
-    render();
-  </script>
-</body>
+    </script>
+  </body>
 </html>
