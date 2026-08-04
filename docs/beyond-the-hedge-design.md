@@ -8,6 +8,8 @@
 
 **Playtest protocol:** docs/beyond-the-hedge-playtest-guide.md
 
+**Results ledger:** docs/explorations/beyond-the-hedge-playtest-results.md
+
 Run locally with one command:
 
 ```sh

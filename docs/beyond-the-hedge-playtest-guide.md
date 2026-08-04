@@ -33,6 +33,14 @@ Do not accept button clicks alone as evidence. A tester may comply without carin
 
 This is directional design evidence, not statistical product validation.
 
+## Neutral tester invitation
+
+Send only this before scheduling:
+
+> Would you try a tiny five-to-ten-minute game prototype while I watch? There is no right answer, and I am testing the design—not you. Please wait to open the link until we start so I do not accidentally explain it first.
+
+Do not mention the Dry Bag, Rain-Glass, Hedge Bell, idle-game research, desired interface, or success criteria in the invitation.
+
 ## Before the session
 
 1. Open the assigned variant in a fresh tab.
@@ -194,4 +202,4 @@ Write one verdict:
 - **Promising:** curiosity is present, but one comprehension or memory threshold fails; revise only that link and retest Clover Verge.
 - **Invalidated:** replay is primarily instruction-following or loot optimization; revise the fantasy/causality loop before adding content.
 
-Record the evidence, not only the verdict, in docs/beyond-the-hedge-design.md.
+Record each session in docs/explorations/beyond-the-hedge-playtest-results.md, then record the final evidence and verdict in docs/beyond-the-hedge-design.md.
