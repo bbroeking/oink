@@ -17,6 +17,11 @@ of one fixed 390×844 camera, not three unrelated compositions.
 3. Developed Barn:
    `assets/concepts/homegrown-adventures/03-developed-barn.png`
 
+The corresponding `*-scene-plate.png` files remove only Rosie from those
+approved compositions. Use them behind the transparent Rive artboard so the
+animated rig is the sole Rosie on screen; keep the originals as the visual
+comparison source.
+
 Absolute source directory:
 `/Users/bbroeking/projects/oink/assets/concepts/homegrown-adventures/`
 
@@ -90,11 +95,16 @@ that still communicates the result.
 
 ## Export and automatic integration
 
-1. Export the runtime file as
-   `assets/rive/homegrown-adventures/homegrown-adventures.riv`.
-2. Run `npm run verify:rive-homegrown`.
-3. Run `npm run prototype:homegrown:build`.
-4. Open `docs/homegrown-adventures.html?variant=A` at 390×844 and complete the
+1. Export the editor file as
+   `assets/rive/homegrown-adventures/source/homegrown-adventures-editor-export.riv`.
+2. Ensure the artboard fill is transparent and every required raster asset is
+   `Force Export` + `Embedded`; `pig_skin` must never remain `Prevent Export`.
+3. Run `node scripts/rive/patch-homegrown-rive.mjs` to produce
+   `assets/rive/homegrown-adventures/homegrown-adventures.riv` with the exact
+   runtime contract names.
+4. Run `npm run verify:rive-homegrown`.
+5. Run `npm run prototype:homegrown:build`.
+6. Open `docs/homegrown-adventures.html?variant=A` at 390×844 and complete the
    full loop with Lab tools closed.
 
 The build detects the file and publishes it to

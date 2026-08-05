@@ -1,27 +1,31 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; authored Rive scene blocked
+**Status:** Browser gameplay prototype implemented; Rosie Responds checkpoint validated locally
 
-**Implementation record (August 5, 2026):** The deterministic local prototype,
-three shareable UI variants, approved concept plates, anonymous trace, local
-persistence, responsive DOM controls, and stable GitHub Pages route now live in
+**Implementation record (August 5, 2026):** The deterministic prototype, three
+shareable UI variants, approved concepts, anonymous trace, local persistence,
+responsive DOM controls, and GitHub Pages route live in
 `scripts/prototypes/homegrown-adventures/` and `docs/homegrown-adventures.html`.
-The real `@rive-app/react-webgl2` boundary and View Model contract are present.
-Goal 6 is not complete: the checked-in Rive file is explicitly an official
-runtime probe, not the authored Rosie/Home scene. The existing Rive editor
-account still gates that `.riv` export behind an upgrade, as recorded in
-`docs/rive-pig-rigging.md`. Do not treat the static concept plates or probe as
-completion evidence for Rive-owned motion.
+The first authored Rive checkpoint is now checked in: a transparent 390×844
+artboard, embedded Rosie texture, mesh/bone rig, exact View Model contract, and
+the named `Rosie Tickle` interruptible one-shot. Character-free derivatives of
+the three approved concepts remain the scene plates so the Rive rig is the only
+Rosie rendered. Rapid input, deterministic settling, reduced motion, the real
+rendered route, static Rive verification, prototype tests, and
+`npm run quality:check` pass locally. Continuous breathing, Notice/harvest,
+Bag/equipment, return ceremony, and mobile Safari device acceptance remain the
+next Goal 6 work; do not claim the whole motion sheet complete yet.
 
-**Rive handoff record:** The browser build now detects
+**Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and
 switches its single stable canvas from the official probe to that authored
 scene. Reducer facts are mapped into the exact Data Binding contract in
 `assets/rive/homegrown-adventures/contract.json`. Authoring names, rig layers,
 timings, reduced-motion behavior, visual references, export steps, and manual
 quality gates are locked in `docs/rive-homegrown-adventures-authoring.md`.
-`npm run verify:rive-homegrown` intentionally fails until the real export is
-present and satisfies the static contract.
+The editable Rive source export is retained under
+`assets/rive/homegrown-adventures/source/`; the deterministic metadata patcher
+produces the runtime file and `npm run verify:rive-homegrown` gates its contract.
 
 **Purpose:** Turn the FarmVille-inspired direction into one focused, testable
 web slice inside Tickle the Pig's existing Barn. This document defines outcomes

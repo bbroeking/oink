@@ -29,15 +29,14 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .lab-context span { color: var(--ink-soft); font-size: 11px; line-height: 1.35; }
 .prototype-badge { padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,249,233,.7); white-space: nowrap; }
 .phone { width: 390px; height: 844px; max-width: calc(100vw - 24px); position: relative; overflow: hidden; border: 3px solid var(--ink); border-radius: 34px; background: #b7d6a2; box-shadow: 9px 12px 0 rgba(48,33,22,.24), 0 30px 80px rgba(48,33,22,.2); isolation: isolate; }
-.scene-plate { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center; }
-.homegrown-rive-scene.authored { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.scene-plate { position: absolute; inset: 0; z-index: 0; background-size: cover; background-position: center; }
+.homegrown-rive-scene.authored { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .homegrown-rive-scene.authored canvas { width: 100%; height: 100%; display: block; }
 .homegrown-rive-scene.probe { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
-.phone.rive-authored .scene-plate { opacity: 0; }
-.scene-starting .scene-plate { background-image: url("./assets/homegrown-adventures/01-starting-barn.png"); }
-.scene-payoff .scene-plate { background-image: url("./assets/homegrown-adventures/02-first-payoff.png"); }
-.scene-developed .scene-plate { background-image: url("./assets/homegrown-adventures/03-developed-barn.png"); }
-.phone::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to bottom, rgba(255,255,255,.1), transparent 18%, transparent 72%, rgba(63,35,18,.08)); }
+.scene-starting .scene-plate { background-image: url("./assets/homegrown-adventures/01-starting-barn-scene-plate.png"); }
+.scene-payoff .scene-plate { background-image: url("./assets/homegrown-adventures/02-first-payoff-scene-plate.png"); }
+.scene-developed .scene-plate { background-image: url("./assets/homegrown-adventures/03-developed-barn-scene-plate.png"); }
+.phone::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(to bottom, rgba(255,255,255,.1), transparent 18%, transparent 72%, rgba(63,35,18,.08)); }
 .hud { position: absolute; z-index: 5; top: 12px; left: 12px; right: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .counter { min-height: 65px; padding: 8px 9px; background: rgba(255,249,233,.96); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 2px 3px 0 rgba(48,33,22,.58); display: flex; align-items: center; gap: 8px; transform: rotate(-.5deg); }
 .counter-ready { transform: rotate(.5deg); }

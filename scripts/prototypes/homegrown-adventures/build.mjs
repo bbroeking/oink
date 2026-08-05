@@ -9,7 +9,14 @@ const docsAssets = join(root, "docs/assets/homegrown-adventures");
 mkdirSync(docsAssets, { recursive: true });
 mkdirSync(join(root, "docs/assets/rive"), { recursive: true });
 
-for (const name of ["01-starting-barn.png", "02-first-payoff.png", "03-developed-barn.png"]) {
+for (const name of [
+	"01-starting-barn.png",
+	"01-starting-barn-scene-plate.png",
+	"02-first-payoff.png",
+	"02-first-payoff-scene-plate.png",
+	"03-developed-barn.png",
+	"03-developed-barn-scene-plate.png",
+]) {
 	copyFileSync(join(root, "assets/concepts/homegrown-adventures", name), join(docsAssets, name));
 }
 const authoredRiveSource = join(

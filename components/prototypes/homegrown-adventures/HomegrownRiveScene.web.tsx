@@ -11,6 +11,10 @@ declare const __HOMEGROWN_RIVE_AUTHORED__: boolean;
 
 export const HOMEGROWN_RIVE_ASSET_AUTHORED = __HOMEGROWN_RIVE_AUTHORED__;
 
+const AUTHORED_TRIGGER_ANIMATIONS: Partial<Record<HomegrownRiveTrigger, string>> = {
+	tickle: "Rosie Tickle",
+};
+
 export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
 	model: HomegrownRiveViewModel;
@@ -30,16 +34,16 @@ function HomegrownRiveSceneImpl({
 }: HomegrownRiveSceneProps) {
 	const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 	const lastTriggerNonce = useRef(triggerNonce);
+	const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const { RiveComponent, rive } = useRive({
 		src: __HOMEGROWN_RIVE_ASSET_URL__,
 		...(HOMEGROWN_RIVE_ASSET_AUTHORED
 			? {
 				artboard: HOMEGROWN_RIVE_NAMES.artboard,
-				stateMachines: HOMEGROWN_RIVE_NAMES.stateMachine,
 				autoBind: true,
 			}
 			: {}),
-		autoplay: !reduceMotion,
+		autoplay: false,
 		layout: new Layout({
 			fit: HOMEGROWN_RIVE_ASSET_AUTHORED ? Fit.Cover : Fit.Contain,
 			alignment: Alignment.Center,
@@ -48,14 +52,20 @@ function HomegrownRiveSceneImpl({
 		onLoadError: () => setStatus("error"),
 	}, {
 		useDevicePixelRatio: true,
+		// This scene is the only Rive instance on the page. A dedicated context
+		// preserves canvas alpha so the approved farm concept remains visible.
+		useOffscreenRenderer: false,
 		shouldResizeCanvasToContainer: true,
 	});
 
 	useEffect(() => {
 		if (!rive) return;
 		if (reduceMotion) rive.pause();
-		else rive.play();
 	}, [reduceMotion, rive]);
+
+	useEffect(() => () => {
+		if (settleTimer.current) clearTimeout(settleTimer.current);
+	}, []);
 
 	useEffect(() => {
 		if (!rive || !HOMEGROWN_RIVE_ASSET_AUTHORED) return;
@@ -86,7 +96,18 @@ function HomegrownRiveSceneImpl({
 		const property = rive.viewModelInstance?.trigger(trigger);
 		if (!property) setStatus("error");
 		else property.trigger();
-	}, [rive, trigger, triggerNonce]);
+
+		const animation = AUTHORED_TRIGGER_ANIMATIONS[trigger];
+		if (!reduceMotion && animation) {
+			// Restarting makes rapid tickles deterministic instead of queueing them.
+			if (settleTimer.current) clearTimeout(settleTimer.current);
+			rive.stop(animation);
+			rive.play(animation);
+			settleTimer.current = setTimeout(() => {
+				rive.stop(animation);
+			}, animation === "Rosie Tickle" ? 700 : 900);
+		}
+	}, [reduceMotion, rive, trigger, triggerNonce]);
 
 	return (
 		<div
