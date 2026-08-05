@@ -13,6 +13,16 @@ import { fileURLToPath, URL } from "node:url";
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const outputDirectory = mkdtempSync(join(tmpdir(), "oink-rive-web-smoke-"));
 const forbiddenRuntimeMarkers = ["rive-react-native", "RiveReactNativeView"];
+const approvedWebRuntime = "@rive-app/react-webgl2";
+const nativeImportPattern = /(?:from\s*|require\()\s*["']rive-react-native["']/;
+
+function collectSourceFiles(directory) {
+	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+		const path = join(directory, entry.name);
+		if (entry.isDirectory()) return collectSourceFiles(path);
+		return entry.isFile() && /\.(?:js|mjs|ts|tsx)$/.test(path) ? [path] : [];
+	});
+}
 
 function collectJavaScriptFiles(directory) {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -27,6 +37,37 @@ function collectJavaScriptFiles(directory) {
 }
 
 try {
+	const packageJson = readFileSync(join(repoRoot, "package.json"), "utf8");
+	if (!packageJson.includes(`"${approvedWebRuntime}"`)) {
+		throw new Error(`package.json is missing approved web runtime ${approvedWebRuntime}.`);
+	}
+
+	const guardedRoots = ["app", "components", "hooks", "utils", "scripts/prototypes"]
+		.map((path) => join(repoRoot, path))
+		.filter(existsSync);
+	for (const path of guardedRoots.flatMap(collectSourceFiles)) {
+		const source = readFileSync(path, "utf8");
+		if (source.includes(approvedWebRuntime) && !/\.web\.(?:ts|tsx|js)$/.test(path)) {
+			throw new Error(`Approved web Rive runtime must stay in a .web boundary: ${path}.`);
+		}
+		if (
+			nativeImportPattern.test(source) &&
+			!/\.native\.(?:ts|tsx|js)$/.test(path) &&
+			!path.endsWith("verify-rive-web.mjs")
+		) {
+			throw new Error(`Native Rive import or marker escaped a .native boundary: ${path}.`);
+		}
+	}
+
+	const homegrownBoundary = join(
+		repoRoot,
+		"components/prototypes/homegrown-adventures/HomegrownRiveScene.web.tsx",
+	);
+	const boundarySource = readFileSync(homegrownBoundary, "utf8");
+	if (!boundarySource.includes(approvedWebRuntime) || !boundarySource.includes("useRive")) {
+		throw new Error("Homegrown Adventures web boundary does not isolate the approved useRive runtime.");
+	}
+
 	const result = spawnSync(
 		process.platform === "win32" ? "npx.cmd" : "npx",
 		["expo", "export", "--platform", "web", "--output-dir", outputDirectory],
@@ -71,7 +112,7 @@ try {
 	}
 
 	console.log(
-		`Rive web smoke passed: ${javaScriptFiles.length} bundle(s), no native runtime leakage.`,
+		`Rive web smoke passed: ${javaScriptFiles.length} Expo bundle(s), approved WebGL2 boundary present, no native runtime leakage.`,
 	);
 } finally {
 	rmSync(outputDirectory, { recursive: true, force: true });
