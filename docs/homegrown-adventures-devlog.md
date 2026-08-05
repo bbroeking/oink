@@ -41,6 +41,15 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - `npm run verify:rive-homegrown` — pass; 390×844 header and 36 authored names.
 - `npm run prototype:homegrown:test` — 13/13 pass.
 - `npm run prototype:homegrown:build` — pass with the authored Rive scene.
+- `npm run quality:check` — pass, including TypeScript, 157-file layout gate,
+  324 sprite integrity checks, security contracts, and 280 Jest assertions.
+- GitHub Pages deployed checkpoint `cd82e0c`; the public runtime reported the
+  authored Rive asset `ready` and the companion site exposed the new lab link.
+- Rendered desktop Chrome play at the 390×844 reference layout — reset hid the
+  Bag; Pack equipped it; ten rapid tickles all restarted cleanly and settled to
+  breathing with the Bag registered; Return emphasized it once; reload retained
+  the equipped state; and reduced motion stopped character loops without hiding
+  the Bag or changing accessible DOM state.
 - Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
   manual gates; this browser checkpoint does not claim those device checks.
 
