@@ -56,12 +56,22 @@ The current runtime file also exposes these exact foreground-rig animations:
 - `Rosie Breathing Idle`
 - `Rosie Tickle`
 - `Rosie Notice`
+- `Rosie Pack`
+- `Rosie Return`
+- `Rosie Bag Hidden`
 
 The v0.3 breathing timeline authors a one-second rise and lets the web motion
 controller hold the resting pose for 2.25 seconds before replaying it. The
 notice timeline leans Rosie toward the Kitchen Patch and runs after the tickle
 lift; it may layer over breathing only when Notice wins the shared body keys.
 Legacy duplicate timelines remain editor history and are not runtime names.
+
+The v0.4 equipment checkpoint adds a native `rosie_satchel` vector group. Its
+translation, rotation, and scale constraints target `body` with offset
+preservation, so the Bag remains registered through breathing and tickling.
+`Rosie Pack` reveals and settles the Bag, `Rosie Return` gives it one restrained
+arrival swing, and the static `Rosie Bag Hidden` clip preserves the reducer's
+unequipped state. The reducer—not animation playback—owns whether it is worn.
 
 ## Layer and rig plan
 

@@ -10,7 +10,10 @@
 	"animations": [
 		"Rosie Breathing Idle",
 		"Rosie Tickle",
-		"Rosie Notice"
+		"Rosie Notice",
+		"Rosie Pack",
+		"Rosie Return",
+		"Rosie Bag Hidden"
 	],
 	"viewModel": {
 		"name": "Homegrown Adventures View Model",

@@ -13,17 +13,30 @@ export const HOMEGROWN_RIVE_ASSET_AUTHORED = __HOMEGROWN_RIVE_AUTHORED__;
 
 const AUTHORED_TRIGGER_ANIMATIONS: Partial<Record<HomegrownRiveTrigger, string>> = {
 	tickle: "Rosie Tickle",
+	pack: "Rosie Pack",
+	return: "Rosie Return",
 };
 
 const BREATHING_ANIMATION = "Rosie Breathing Idle";
 const NOTICE_ANIMATION = "Rosie Notice";
+const BAG_HIDDEN_ANIMATION = "Rosie Bag Hidden";
 const CHARACTER_ANIMATIONS = [
 	BREATHING_ANIMATION,
 	AUTHORED_TRIGGER_ANIMATIONS.tickle,
+	AUTHORED_TRIGGER_ANIMATIONS.pack,
+	AUTHORED_TRIGGER_ANIMATIONS.return,
 	NOTICE_ANIMATION,
 ].filter((name): name is string => Boolean(name));
 
-type RosieMotion = "loading" | "idle" | "breathing" | "tickle" | "notice" | "reduced";
+type RosieMotion =
+	| "loading"
+	| "idle"
+	| "breathing"
+	| "tickle"
+	| "notice"
+	| "pack"
+	| "return"
+	| "reduced";
 
 export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
@@ -107,6 +120,15 @@ function HomegrownRiveSceneImpl({
 		const stopCharacterMotion = () => {
 			for (const animation of CHARACTER_ANIMATIONS) rive.stop(animation);
 		};
+		const syncSatchelVisibility = () => {
+			rive.stop(BAG_HIDDEN_ANIMATION);
+			if (model.satchelEquipped) return;
+
+			// The reducer owns equipped state. Scrubbing the authored static clip
+			// keeps an unpacked Rosie bag-free without introducing parallel DOM art.
+			rive.scrub(BAG_HIDDEN_ANIMATION, 0);
+			rive.pause(BAG_HIDDEN_ANIMATION);
+		};
 		const startBreathing = () => {
 			if (reduceMotion) return;
 			rive.stop(BREATHING_ANIMATION);
@@ -123,12 +145,13 @@ function HomegrownRiveSceneImpl({
 
 		clearTimers();
 		stopCharacterMotion();
+		syncSatchelVisibility();
 
 		const isNewTrigger = lastTriggerNonce.current !== triggerNonce;
 		lastTriggerNonce.current = triggerNonce;
 
 		if (reduceMotion) {
-			rive.pause();
+			rive.pause(CHARACTER_ANIMATIONS);
 			setMotion("reduced");
 			return clearTimers;
 		}
@@ -153,7 +176,7 @@ function HomegrownRiveSceneImpl({
 
 		// Restarting makes rapid tickles deterministic instead of queueing them.
 		rive.play(animation);
-		setMotion("tickle");
+		setMotion(trigger === "pack" ? "pack" : trigger === "return" ? "return" : "tickle");
 
 		if (model.rosieAction === "notice") {
 			schedule(() => {
@@ -171,17 +194,19 @@ function HomegrownRiveSceneImpl({
 				startBreathing();
 			}, 1_520);
 		} else {
+			const settleDelay = trigger === "return" ? 900 : trigger === "pack" ? 600 : 700;
 			schedule(() => {
 				rive.stop(animation);
+				syncSatchelVisibility();
 				startBreathing();
-			}, 700);
+			}, settleDelay);
 		}
 
 		return () => {
 			clearTimers();
 			stopCharacterMotion();
 		};
-	}, [model.rosieAction, reduceMotion, rive, trigger, triggerNonce]);
+	}, [model.rosieAction, model.satchelEquipped, reduceMotion, rive, trigger, triggerNonce]);
 
 	return (
 		<div

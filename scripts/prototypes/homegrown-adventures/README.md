@@ -20,8 +20,9 @@ npm run prototype:homegrown:build
 npm run prototype:homegrown:test
 ```
 
-The web-only Rive wrapper is real and uses `@rive-app/react-webgl2`, but the
-checked-in `runtime-sample.riv` is explicitly only a runtime probe. The authored
-Rosie/Home scene remains blocked on an export from the Rive editor. Static
-concept plates keep the gameplay prototype usable without misrepresenting that
-asset as finished.
+The web-only Rive wrapper uses `@rive-app/react-webgl2`. The build now publishes
+the checked-in authored Homegrown Adventures scene: Rosie's mesh/bone rig,
+breathing, tickle and notice motions, plus the registered satchel with pack,
+return, and hidden-state clips. `runtime-sample.riv` remains only the fallback
+runtime probe. Static character-free concept plates provide the scene behind
+the transparent Rive canvas so the animated rig is the only Rosie rendered.

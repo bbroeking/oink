@@ -26,3 +26,9 @@ features, and held objects registered at every extreme pose. The current Rive
 account's export gate is documented in `docs/rive-pig-rigging.md`. The browser
 prototype uses the official `runtime-sample.riv` only to verify the WebGL2
 runtime boundary; it is not completion evidence for this asset.
+
+The first gameplay equipment checkpoint authors `rosie_satchel` as a single
+native Rive group. Offset-preserving translation, rotation, and scale
+constraints bind it to Rosie's `body` rig. `Rosie Pack`, `Rosie Return`, and
+`Rosie Bag Hidden` are the runtime clips for equipping, returning, and the
+unequipped resting state.

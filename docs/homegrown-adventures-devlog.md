@@ -10,15 +10,39 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 2. **v0.3 — Rosie Notices (shipped):** add restrained breathing
    plus a clear Notice pose that points to the Kitchen Patch without obscuring
    the DOM story card.
-3. **v0.4 — Rosie's Bag:** author the registered satchel and held-item anchors,
-   then validate pack, return, and rapid-trigger settling.
-4. **v0.5 — Living Barn:** bind crop beds, residents, the Hedge Bell, and the
-   developed crossing one consequence at a time.
+3. **v0.4 — Rosie's Bag (shipped):** register the satchel to Rosie's rig and
+   make packing and returning visibly change the same persistent character.
+4. **v0.5 — Living Barn:** bind the first crop bed to reducer state, beginning
+   with one readable sprout, ready, and harvest consequence.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.4.0 — Rosie's Bag — 2026-08-05
+
+- Authored the tan clover satchel as one native `rosie_satchel` vector group,
+  matching the approved developed-Barn concept without obscuring Rosie's face.
+- Registered the Bag to Rosie's body with offset-preserving translation,
+  rotation, and scale constraints so it follows breathing and tickle poses.
+- Added exact `Rosie Pack`, `Rosie Return`, and `Rosie Bag Hidden` timelines to
+  the checked Rive contract and retained the editable paid-workspace export.
+- Made the reducer's persisted `satchelEquipped` fact authoritative: the Bag is
+  absent before packing, appears during Pack, survives reload, remains attached
+  through rapid tickles, and receives one warm Return emphasis.
+- Kept all packing choices, inventory facts, controls, and accessible copy in
+  DOM/React. This checkpoint adds no inventory screen, destination, currency,
+  or parallel equipment system.
+- Updated the companion site to link directly to the **Rosie's Bag lab**.
+
+### Local validation evidence
+
+- `npm run verify:rive-homegrown` — pass; 390×844 header and 36 authored names.
+- `npm run prototype:homegrown:test` — 13/13 pass.
+- `npm run prototype:homegrown:build` — pass with the authored Rive scene.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim those device checks.
 
 ### v0.3.0 — Rosie Notices — 2026-08-05
 
@@ -83,7 +107,7 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Next highest-leverage weakness
 
-Rosie can react and direct attention, but she cannot yet look prepared for an
-Adventure. Author Rosie's registered Bag, strap, and held-item anchors, then
-validate pack, return, and rapid-trigger settling before animating crops or
-adding destinations.
+Rosie now reacts, directs attention, and visibly carries her Bag, but the farm
+itself still reads as a static backdrop while the reducer says crops are
+sprouting, ready, and harvested. Bind one Kitchen Patch bed to those three
+meaningful states before adding residents, destinations, or more crop content.

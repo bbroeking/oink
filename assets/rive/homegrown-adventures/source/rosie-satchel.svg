@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="82" viewBox="0 0 96 82">
+  <g id="rosie_satchel" fill="none" stroke="#4c2b1e" stroke-linecap="round" stroke-linejoin="round">
+    <path id="satchel_strap" d="M8 11C31 0 73 14 89 47" stroke="#9b6739" stroke-width="10"/>
+    <path d="M8 11C31 0 73 14 89 47" stroke="#d8a45f" stroke-width="5"/>
+    <path id="satchel_body" d="M15 37Q16 30 24 30H76Q84 30 85 38L88 70Q88 78 80 79H20Q12 78 13 70Z" fill="#c98b43" stroke-width="3"/>
+    <path id="satchel_flap" d="M15 39Q17 32 25 32H76Q82 32 85 39L78 57Q76 61 70 61H29Q23 61 21 57Z" fill="#e3b462" stroke-width="3"/>
+    <path d="M21 69Q49 75 81 68" stroke="#b07135" stroke-width="2" stroke-dasharray="3 4"/>
+    <rect x="44" y="55" width="12" height="11" rx="2.5" fill="#f2cf79" stroke-width="2.5"/>
+    <g id="clover_clasp" fill="#6f9e45" stroke="#36522c" stroke-width="1.7">
+      <circle cx="47.5" cy="50" r="4"/>
+      <circle cx="52.5" cy="50" r="4"/>
+      <circle cx="47.5" cy="55" r="4"/>
+      <circle cx="52.5" cy="55" r="4"/>
+      <path d="M50 57L54 63"/>
+    </g>
+  </g>
+</svg>
