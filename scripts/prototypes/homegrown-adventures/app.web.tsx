@@ -89,6 +89,13 @@ function stageCopy(state) {
 			body: "Welcome Rosie with a tickle and she will point out what happened while you were away.",
 		};
 	}
+	if (state.stage === STAGES.CLOVER_READY && state.cloverHarvested) {
+		return {
+			eyebrow: "Harvest tucked away",
+			title: "Clover Lunch is in Rosie's Bag",
+			body: "The first bed is resting. Pack the picnic and this harvest becomes part of Rosie's Adventure.",
+		};
+	}
 	if (state.stage === STAGES.GLOWROOT_RETURNED && !state.changeRevealed) {
 		return {
 			eyebrow: "Rosie is Home",
