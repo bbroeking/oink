@@ -130,3 +130,26 @@ test("underpreparation returns a kind Near-Discovery and a useful retry clue", (
 	assert.equal(state.stage, STAGES.CLOVER_READY);
 	assert.equal(state.cloverHarvested, true);
 });
+
+test("an empty tickle bank rejects extra taps without changing farm progress", () => {
+	let state = createInitialState({ now: at });
+	for (let index = 0; index < 24; index += 1) {
+		state = reduce(state, { type: ACTIONS.TICKLE });
+	}
+	assert.equal(state.readyToTickle, 0);
+	const empty = state;
+	assert.equal(reduce(state, { type: ACTIONS.TICKLE }), empty);
+	assert.equal(state.ticklesEarned, 1143);
+});
+
+test("reduced motion is a presentation setting and reset preserves it", () => {
+	let state = createInitialState({ now: at });
+	state = reduce(state, { type: ACTIONS.TOGGLE_REDUCED_MOTION });
+	assert.equal(state.reduceMotion, true);
+	assert.equal(state.stage, STAGES.STARTING);
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.RESET });
+	assert.equal(state.reduceMotion, true);
+	assert.equal(state.stage, STAGES.STARTING);
+	assert.equal(state.readyToTickle, 24);
+});

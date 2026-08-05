@@ -39,7 +39,7 @@ const STAGE_COPY = {
 	[STAGES.PACKED]: {
 		eyebrow: "Rosie's Bag",
 		title: "Dusk Picnic is packed",
-		body: "Clover Lunch · Wooden Spoon · Bring something Home. Preparation creates possibility.",
+		body: "Clover Lunch · Wooden Spoon · Wicker Basket · Bring something Home. Preparation creates possibility.",
 	},
 	[STAGES.ADVENTURE]: {
 		eyebrow: "Beyond the hedge",
