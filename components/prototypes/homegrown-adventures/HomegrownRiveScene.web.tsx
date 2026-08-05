@@ -20,6 +20,20 @@ const AUTHORED_TRIGGER_ANIMATIONS: Partial<Record<HomegrownRiveTrigger, string>>
 const BREATHING_ANIMATION = "Rosie Breathing Idle";
 const NOTICE_ANIMATION = "Rosie Notice";
 const BAG_HIDDEN_ANIMATION = "Rosie Bag Hidden";
+const CROP_STATE_ANIMATIONS = {
+	empty: "Clover Bed Empty",
+	sprout: "Clover Bed Growing",
+	growing: "Clover Bed Growing",
+	ready: "Clover Bed Ready",
+} as const;
+const CROP_ACTION_ANIMATIONS = {
+	plant: "Clover Plant",
+	flourish: "Clover Ready Flourish",
+	harvest: "Clover Harvest",
+} as const;
+const CROP_ANIMATIONS = [
+	...new Set([...Object.values(CROP_STATE_ANIMATIONS), ...Object.values(CROP_ACTION_ANIMATIONS)]),
+];
 const CHARACTER_ANIMATIONS = [
 	BREATHING_ANIMATION,
 	AUTHORED_TRIGGER_ANIMATIONS.tickle,
@@ -36,6 +50,16 @@ type RosieMotion =
 	| "notice"
 	| "pack"
 	| "return"
+	| "reduced";
+
+type CropMotion =
+	| "loading"
+	| "empty"
+	| "growing"
+	| "ready"
+	| "plant"
+	| "flourish"
+	| "harvest"
 	| "reduced";
 
 export interface HomegrownRiveSceneProps {
@@ -57,8 +81,12 @@ function HomegrownRiveSceneImpl({
 }: HomegrownRiveSceneProps) {
 	const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 	const [motion, setMotion] = useState<RosieMotion>("loading");
+	const [cropMotion, setCropMotion] = useState<CropMotion>("loading");
 	const lastTriggerNonce = useRef(triggerNonce);
+	const lastCropTriggerNonce = useRef(triggerNonce);
+	const previousBedOneState = useRef(model.bedOneState);
 	const motionTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+	const cropTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const { RiveComponent, rive } = useRive({
 		src: __HOMEGROWN_RIVE_ASSET_URL__,
 		...(HOMEGROWN_RIVE_ASSET_AUTHORED
@@ -208,11 +236,81 @@ function HomegrownRiveSceneImpl({
 		};
 	}, [model.rosieAction, model.satchelEquipped, reduceMotion, rive, trigger, triggerNonce]);
 
+	useEffect(() => {
+		if (!rive || !HOMEGROWN_RIVE_ASSET_AUTHORED) return;
+
+		const clearTimers = () => {
+			for (const timer of cropTimers.current) clearTimeout(timer);
+			cropTimers.current.clear();
+		};
+		const schedule = (callback: () => void, delay: number) => {
+			const timer = setTimeout(() => {
+				cropTimers.current.delete(timer);
+				callback();
+			}, delay);
+			cropTimers.current.add(timer);
+		};
+		const stopCropMotion = () => {
+			for (const animation of CROP_ANIMATIONS) rive.stop(animation);
+		};
+		const syncCropState = () => {
+			stopCropMotion();
+			const animation = CROP_STATE_ANIMATIONS[model.bedOneState];
+			rive.scrub(animation, 0);
+			rive.pause(animation);
+			setCropMotion(
+				reduceMotion
+					? "reduced"
+					: model.bedOneState === "ready"
+						? "ready"
+						: model.bedOneState === "empty"
+							? "empty"
+							: "growing",
+			);
+		};
+
+		clearTimers();
+		stopCropMotion();
+
+		const isNewTrigger = lastCropTriggerNonce.current !== triggerNonce;
+		const previousState = previousBedOneState.current;
+		lastCropTriggerNonce.current = triggerNonce;
+		previousBedOneState.current = model.bedOneState;
+
+		if (reduceMotion) {
+			syncCropState();
+			return clearTimers;
+		}
+
+		if (isNewTrigger && trigger === "plant") {
+			rive.play(CROP_ACTION_ANIMATIONS.plant);
+			setCropMotion("plant");
+			schedule(syncCropState, 560);
+		} else if (isNewTrigger && trigger === "harvest") {
+			rive.play(CROP_ACTION_ANIMATIONS.harvest);
+			setCropMotion("harvest");
+			schedule(syncCropState, 560);
+		} else if (previousState !== "ready" && model.bedOneState === "ready") {
+			rive.play(CROP_ACTION_ANIMATIONS.flourish);
+			setCropMotion("flourish");
+			schedule(syncCropState, 720);
+		} else {
+			syncCropState();
+		}
+
+		return () => {
+			clearTimers();
+			stopCropMotion();
+		};
+	}, [model.bedOneState, reduceMotion, rive, trigger, triggerNonce]);
+
 	return (
 		<div
 			className={`homegrown-rive-scene ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "probe"}`}
 			data-rive-status={status}
 			data-rive-motion={motion}
+			data-rive-crop-motion={cropMotion}
+			data-rive-bed-one={model.bedOneState}
 			data-rive-asset={HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "official-probe"}
 			aria-hidden="true"
 		>

@@ -253,8 +253,8 @@ function VariantSwitcher({ variant, setVariant }) {
 
 function sceneImage(state) {
 	if (state.stage === STAGES.DEVELOPED) return "developed";
-	if ([STAGES.CLOVER_READY, STAGES.PACKED, STAGES.ADVENTURE].includes(state.stage)) return "payoff";
-	if (state.stage === STAGES.NEAR_DISCOVERY) return "payoff";
+	// Crop progress now lives in the authored Rive bed. Keeping the same Barn
+	// plate prevents a ready crop from masquerading as a whole-scene upgrade.
 	return "starting";
 }
 

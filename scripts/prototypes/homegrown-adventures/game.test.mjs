@@ -184,7 +184,7 @@ test("Rive presentation state is derived deterministically from reducer facts", 
 			model.viewModel.bedTwoState,
 			model.viewModel.bedThreeState,
 		],
-		["growing", "sprout", "growing"],
+		["growing", "empty", "empty"],
 	);
 	assert.equal(model.trigger, "plant");
 });

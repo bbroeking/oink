@@ -32,3 +32,10 @@ native Rive group. Offset-preserving translation, rotation, and scale
 constraints bind it to Rosie's `body` rig. `Rosie Pack`, `Rosie Return`, and
 `Rosie Bag Hidden` are the runtime clips for equipping, returning, and the
 unequipped resting state.
+
+The Living Barn checkpoint adds `bed_one_crop_rig` over the first Kitchen
+Patch bed. `Clover Bed Empty`, `Clover Bed Growing`, and `Clover Bed Ready`
+provide deterministic persisted poses; `Clover Plant`,
+`Clover Ready Flourish`, and `Clover Harvest` communicate the three meaningful
+transitions. The other two beds remain empty during the first loop. Crop state
+is reducer-owned and no longer arrives through a whole background-plate swap.

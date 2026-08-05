@@ -117,6 +117,17 @@ replaceOccurrence("idle", 1, "Rosie Breathing Idle", 3);
 replaceOccurrence("jump", 1, "Rosie Tickle", 3);
 replaceOccurrence("wave", 1, "Rosie Notice", 3);
 
+for (const [from, name] of [
+	["Timeline 4", "Clover Bed Empty"],
+	["Timeline 5", "Clover Bed Growing"],
+	["Timeline 6", "Clover Bed Ready"],
+	["Timeline 7", "Clover Plant"],
+	["Timeline 8", "Clover Ready Flourish"],
+	["Timeline 9", "Clover Harvest"],
+]) {
+	replaceOccurrence(from, 0, name, 1);
+}
+
 edits.sort((a, b) => a.start - b.start);
 for (let index = 1; index < edits.length; index += 1) {
 	if (edits[index - 1].end > edits[index].start) {

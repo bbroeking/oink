@@ -13,7 +13,13 @@
 		"Rosie Notice",
 		"Rosie Pack",
 		"Rosie Return",
-		"Rosie Bag Hidden"
+		"Rosie Bag Hidden",
+		"Clover Bed Empty",
+		"Clover Bed Growing",
+		"Clover Bed Ready",
+		"Clover Plant",
+		"Clover Ready Flourish",
+		"Clover Harvest"
 	],
 	"viewModel": {
 		"name": "Homegrown Adventures View Model",

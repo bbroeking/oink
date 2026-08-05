@@ -3,9 +3,9 @@ import { STAGES } from "./game.mjs";
 const EMPTY_BEDS = Object.freeze(["empty", "empty", "empty"]);
 
 function bedStates(state) {
-	if (state.stage === STAGES.CLOVER_GROWING) return ["growing", "sprout", "growing"];
+	if (state.stage === STAGES.CLOVER_GROWING) return ["growing", "empty", "empty"];
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
-		return ["ready", "ready", "ready"];
+		return ["ready", "empty", "empty"];
 	}
 	if (state.stage === STAGES.DEVELOPED) return ["ready", "growing", "sprout"];
 	return EMPTY_BEDS;

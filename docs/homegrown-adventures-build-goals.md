@@ -1,6 +1,6 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; Rosie's Bag checkpoint shipped to the browser lab
+**Status:** Browser gameplay prototype implemented; Living Barn checkpoint prepared for the browser lab
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -10,15 +10,19 @@ The authored Rive scene is checked in: a transparent 390×844 artboard, embedded
 Rosie texture, mesh/bone rig, exact View Model contract, and named breathing,
 tickle, notice, pack, return, and Bag-hidden motions. The tan clover satchel is
 a native vector group registered to Rosie's body with offset-preserving
-translation, rotation, and scale constraints.
+translation, rotation, and scale constraints. Kitchen Patch bed one now has a
+native crop rig with reducer-bound empty, growing, and ready poses plus plant,
+flourish, and harvest one-shots.
 Character-free derivatives of the three approved concepts remain the scene
 plates so the Rive rig is the only Rosie rendered. Breathing uses a calm
 3.25-second cadence; the first meaningful tickle transitions into a clear
 Kitchen Patch notice lean. Packing visibly equips the persisted Bag, return
-emphasizes it once, and rapid input, deterministic settling, reduced motion,
-the real rendered route, and the contract gate pass locally. Harvest, crop and
-resident animation, home consequences, and mobile Safari device acceptance
-remain Goal 6 work; do not claim the whole motion sheet complete yet.
+emphasizes it once, and the first Clover Lunch loop now changes one bed without
+replacing the whole Barn plate. Rapid input, deterministic settling, reduced
+motion, the real rendered route, and the contract gate pass locally. Rosie's
+harvest celebration, resident animation, Home consequences, and mobile Safari
+device acceptance remain Goal 6 work; do not claim the whole motion sheet
+complete yet.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

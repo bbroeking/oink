@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <g id="bed_one_clover">
+    <path id="bed_one_soil" d="M8 548C10 541 16 538 25 538H116C125 538 130 543 132 551L129 609C128 617 123 621 114 622H21C12 621 8 617 7 609Z" fill="#76502E" stroke="#302116" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M15 554C35 548 56 550 72 547C92 544 112 548 125 554" fill="none" stroke="#9A6B3C" stroke-width="2" stroke-linecap="round" opacity=".75"/>
+    <g id="bed_one_soil_marks" fill="#4E321E" opacity=".58">
+      <ellipse cx="25" cy="575" rx="3" ry="2"/><ellipse cx="47" cy="558" rx="2.4" ry="1.7"/><ellipse cx="72" cy="609" rx="3.2" ry="2"/><ellipse cx="103" cy="567" rx="2.7" ry="1.8"/><ellipse cx="118" cy="599" rx="2.5" ry="1.6"/>
+    </g>
+    <g id="bed_one_crop" stroke="#315B31" stroke-width="1.4" stroke-linejoin="round">
+      <path d="M23 595C29 578 40 567 55 557M55 600C59 580 66 564 74 552M86 602C85 580 92 564 104 551M106 600C108 582 113 570 121 562" fill="none" stroke="#527D42" stroke-width="2" stroke-linecap="round"/>
+      <g id="clover_cluster_1" fill="#4C8D53">
+        <ellipse cx="28" cy="583" rx="9" ry="7" transform="rotate(-24 28 583)"/><ellipse cx="39" cy="581" rx="9" ry="7" transform="rotate(24 39 581)"/><ellipse cx="34" cy="572" rx="9" ry="7" transform="rotate(-2 34 572)"/>
+      </g>
+      <g id="clover_cluster_2" fill="#5A9B58">
+        <ellipse cx="51" cy="569" rx="10" ry="8" transform="rotate(-28 51 569)"/><ellipse cx="64" cy="568" rx="10" ry="8" transform="rotate(28 64 568)"/><ellipse cx="58" cy="557" rx="10" ry="8"/>
+      </g>
+      <g id="clover_cluster_3" fill="#447E48">
+        <ellipse cx="69" cy="590" rx="10" ry="8" transform="rotate(-28 69 590)"/><ellipse cx="83" cy="589" rx="10" ry="8" transform="rotate(28 83 589)"/><ellipse cx="76" cy="577" rx="10" ry="8"/>
+      </g>
+      <g id="clover_cluster_4" fill="#559650">
+        <ellipse cx="91" cy="568" rx="10" ry="8" transform="rotate(-28 91 568)"/><ellipse cx="105" cy="568" rx="10" ry="8" transform="rotate(28 105 568)"/><ellipse cx="98" cy="556" rx="10" ry="8"/>
+      </g>
+      <g id="clover_cluster_5" fill="#3F7C46">
+        <ellipse cx="100" cy="590" rx="9" ry="7" transform="rotate(-28 100 590)"/><ellipse cx="113" cy="590" rx="9" ry="7" transform="rotate(28 113 590)"/><ellipse cx="106" cy="579" rx="9" ry="7"/>
+      </g>
+      <g id="clover_cluster_6" fill="#64A35C">
+        <ellipse cx="39" cy="603" rx="8" ry="6" transform="rotate(-26 39 603)"/><ellipse cx="50" cy="602" rx="8" ry="6" transform="rotate(26 50 602)"/><ellipse cx="45" cy="593" rx="8" ry="6"/>
+      </g>
+      <g id="clover_cluster_7" fill="#4B8B4E">
+        <ellipse cx="76" cy="608" rx="8" ry="6" transform="rotate(-26 76 608)"/><ellipse cx="88" cy="607" rx="8" ry="6" transform="rotate(26 88 607)"/><ellipse cx="82" cy="598" rx="8" ry="6"/>
+      </g>
+      <g id="clover_cluster_8" fill="#5A9A55">
+        <ellipse cx="112" cy="609" rx="7" ry="5.5" transform="rotate(-26 112 609)"/><ellipse cx="122" cy="608" rx="7" ry="5.5" transform="rotate(26 122 608)"/><ellipse cx="117" cy="600" rx="7" ry="5.5"/>
+      </g>
+    </g>
+    <g id="bed_one_sparkles" fill="#FFF2A4" opacity="0">
+      <path d="M20 555l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
+      <path d="M112 548l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/>
+      <circle cx="67" cy="544" r="2.5"/>
+    </g>
+  </g>
+</svg>

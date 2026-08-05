@@ -59,6 +59,12 @@ The current runtime file also exposes these exact foreground-rig animations:
 - `Rosie Pack`
 - `Rosie Return`
 - `Rosie Bag Hidden`
+- `Clover Bed Empty`
+- `Clover Bed Growing`
+- `Clover Bed Ready`
+- `Clover Plant`
+- `Clover Ready Flourish`
+- `Clover Harvest`
 
 The v0.3 breathing timeline authors a one-second rise and lets the web motion
 controller hold the resting pose for 2.25 seconds before replaying it. The
@@ -72,6 +78,15 @@ preservation, so the Bag remains registered through breathing and tickling.
 `Rosie Pack` reveals and settles the Bag, `Rosie Return` gives it one restrained
 arrival swing, and the static `Rosie Bag Hidden` clip preserves the reducer's
 unequipped state. The reducer—not animation playback—owns whether it is worn.
+
+The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
+Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
+fixed 390×844 artboard coordinates, so the crop changes without moving the
+camera or replacing the Barn plate. Empty, growing, and ready clips are static
+runtime poses used for reload and reduced-motion correctness. Plant, ready
+flourish, and harvest are short one-shots that always settle back to the
+reducer-selected pose. During the first Clover Lunch loop, beds two and three
+remain empty.
 
 ## Layer and rig plan
 
