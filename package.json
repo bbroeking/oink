@@ -29,6 +29,7 @@
 		"verify:rive-assets": "scripts/rive/build-prototype-mesh-textures.sh",
 		"verify:rive-pig": "node scripts/rive/verify-pig-rive.mjs",
 		"verify:rive-pig:assets": "node scripts/rive/verify-pig-rive.mjs --assets-only",
+		"verify:rive-homegrown": "node scripts/rive/verify-homegrown-rive.mjs",
 		"verify:rive-web": "node scripts/rive/verify-rive-web.mjs",
 		"optimize": "python3 scripts/optimize_assets.py",
 		"db:push": "npx supabase db push",

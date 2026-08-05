@@ -1,7 +1,10 @@
 // @ts-nocheck -- throwaway standalone lab; the reducer and Rive contract are checked separately.
 import React, { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { HomegrownRiveScene } from "../../../components/prototypes/homegrown-adventures/HomegrownRiveScene.web";
+import {
+	HOMEGROWN_RIVE_ASSET_AUTHORED,
+	HomegrownRiveScene,
+} from "../../../components/prototypes/homegrown-adventures/HomegrownRiveScene.web";
 import {
 	ACTIONS,
 	createInitialState,
@@ -12,6 +15,7 @@ import {
 	serializeState,
 	STAGES,
 } from "./game.mjs";
+import { homegrownRiveModel } from "./homegrownRiveModel.mjs";
 import "./styles.css";
 
 const VARIANTS = {
@@ -227,7 +231,7 @@ function DevTools({ state, dispatch, variant }) {
 					<a href="./assets/homegrown-adventures/02-first-payoff.png" target="_blank">First payoff</a>
 					<a href="./assets/homegrown-adventures/03-developed-barn.png" target="_blank">Developed Barn</a>
 				</div>
-				<div className="rive-proof"><HomegrownRiveScene reduceMotion={state.reduceMotion} /><span><strong>Rive WebGL2 runtime connected</strong>Official probe asset only. Rosie scene export still required.</span></div>
+				<div className={`rive-proof ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "probe"}`}><span><strong>{HOMEGROWN_RIVE_ASSET_AUTHORED ? "Authored Rive scene connected" : "Rive WebGL2 runtime connected"}</strong>{HOMEGROWN_RIVE_ASSET_AUTHORED ? "Reducer state is bound to the Homegrown Adventures View Model." : "Official probe asset only. Rosie scene export still required."}</span></div>
 				<ol className="trace" aria-label="Anonymous interaction trace">{state.trace.slice(-8).map((item, index) => <li key={`${item.at}-${index}`}><strong>{item.kind}</strong> {item.detail}</li>)}</ol>
 				<button type="button" onClick={copyTrace}>Copy anonymous trace</button>
 			</div>
@@ -259,6 +263,7 @@ function App() {
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced }));
 	const [variant, setVariant] = useVariant();
 	const action = useMemo(() => primaryAction(state), [state]);
+	const riveModel = useMemo(() => homegrownRiveModel(state), [state]);
 	const image = sceneImage(state);
 	const [feedback, setFeedback] = useState(0);
 
@@ -304,8 +309,14 @@ function App() {
 			<p><strong>Homegrown Adventures</strong><span>{VARIANTS[variant].question}</span></p>
 			<span className="prototype-badge">Prototype · local only</span>
 		</header>
-		<div className={`phone scene-${image} feedback-${feedback % 2}`}>
+		<div className={`phone scene-${image} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}>
 			<div className="scene-plate" role="img" aria-label={`${stageCopy(state).title}. Warm paper-craft Barn exterior with Rosie and a three-bed Kitchen Patch.`} />
+			<HomegrownRiveScene
+				reduceMotion={state.reduceMotion}
+				model={riveModel.viewModel}
+				trigger={riveModel.trigger}
+				triggerNonce={riveModel.triggerNonce}
+			/>
 			<div className="hud">
 				<Counter kind="earned" value={state.ticklesEarned} label="Tickles earned" />
 				<Counter kind="ready" value={`${state.readyToTickle} / 25`} label="Ready to tickle" />

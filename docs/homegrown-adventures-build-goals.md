@@ -13,6 +13,16 @@ account still gates that `.riv` export behind an upgrade, as recorded in
 `docs/rive-pig-rigging.md`. Do not treat the static concept plates or probe as
 completion evidence for Rive-owned motion.
 
+**Rive handoff record:** The browser build now detects
+`assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and
+switches its single stable canvas from the official probe to that authored
+scene. Reducer facts are mapped into the exact Data Binding contract in
+`assets/rive/homegrown-adventures/contract.json`. Authoring names, rig layers,
+timings, reduced-motion behavior, visual references, export steps, and manual
+quality gates are locked in `docs/rive-homegrown-adventures-authoring.md`.
+`npm run verify:rive-homegrown` intentionally fails until the real export is
+present and satisfies the static contract.
+
 **Purpose:** Turn the FarmVille-inspired direction into one focused, testable
 web slice inside Tickle the Pig's existing Barn. This document defines outcomes
 and acceptance criteria. It does not authorize a production database push,
@@ -281,6 +291,12 @@ the existing Rive authoring notes record an editor/export gate. The builder must
 produce and check in an exportable `.riv` source for this slice, or report the
 Rive goal as blocked. A raster fallback may keep development usable, but it does
 not satisfy this goal.
+
+The required drop location is
+`assets/rive/homegrown-adventures/homegrown-adventures.riv`. Follow
+`docs/rive-homegrown-adventures-authoring.md`, then run
+`npm run verify:rive-homegrown` and `npm run prototype:homegrown:build`. No
+React or reducer changes should be needed after export.
 
 ### Animation quality gates
 

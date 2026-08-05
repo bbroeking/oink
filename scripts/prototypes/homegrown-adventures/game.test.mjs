@@ -9,6 +9,7 @@ import {
 	settleState,
 	STAGES,
 } from "./game.mjs";
+import { homegrownRiveModel } from "./homegrownRiveModel.mjs";
 
 const at = 1_000_000;
 const reduce = (state, action) => homegrownReducer(state, { now: at, ...action });
@@ -152,4 +153,55 @@ test("reduced motion is a presentation setting and reset preserves it", () => {
 	assert.equal(state.reduceMotion, true);
 	assert.equal(state.stage, STAGES.STARTING);
 	assert.equal(state.readyToTickle, 24);
+});
+
+test("Rive presentation state is derived deterministically from reducer facts", () => {
+	let state = createInitialState({ now: at });
+	let model = homegrownRiveModel(state);
+	assert.deepEqual(
+		[
+			model.viewModel.bedOneState,
+			model.viewModel.bedTwoState,
+			model.viewModel.bedThreeState,
+		],
+		["empty", "empty", "empty"],
+	);
+	assert.equal(model.viewModel.rosieAction, "idle");
+	assert.equal(model.trigger, null);
+
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	model = homegrownRiveModel(state);
+	assert.equal(model.viewModel.rosieMood, "happy");
+	assert.equal(model.viewModel.rosieAction, "tickle");
+	assert.equal(model.trigger, "tickle");
+
+	state = reduce(state, { type: ACTIONS.CHOOSE_PURPOSE, purpose: "dusk-picnic" });
+	state = reduce(state, { type: ACTIONS.PLANT_CLOVER });
+	model = homegrownRiveModel(state);
+	assert.deepEqual(
+		[
+			model.viewModel.bedOneState,
+			model.viewModel.bedTwoState,
+			model.viewModel.bedThreeState,
+		],
+		["growing", "sprout", "growing"],
+	);
+	assert.equal(model.trigger, "plant");
+});
+
+test("Rive developed state exposes the lasting Home consequences", () => {
+	const state = reduce(createInitialState({ now: at }), {
+		type: ACTIONS.JUMP_TO_STATE,
+		target: "developed",
+	});
+	const { viewModel } = homegrownRiveModel(state);
+	assert.equal(viewModel.hedgehogVisible, true);
+	assert.equal(viewModel.frogVisible, true);
+	assert.equal(viewModel.mothsVisible, true);
+	assert.equal(viewModel.hedgeCrossingOpen, true);
+	assert.equal(viewModel.hedgeBellEarned, true);
+	assert.deepEqual(
+		[viewModel.bedOneState, viewModel.bedTwoState, viewModel.bedThreeState],
+		["ready", "growing", "sprout"],
+	);
 });

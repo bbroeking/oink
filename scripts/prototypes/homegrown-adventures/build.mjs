@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { copyFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,7 +12,25 @@ mkdirSync(join(root, "docs/assets/rive"), { recursive: true });
 for (const name of ["01-starting-barn.png", "02-first-payoff.png", "03-developed-barn.png"]) {
 	copyFileSync(join(root, "assets/concepts/homegrown-adventures", name), join(docsAssets, name));
 }
-copyFileSync(join(root, "assets/rive/prototype/runtime-sample.riv"), join(root, "docs/assets/rive/runtime-sample.riv"));
+const authoredRiveSource = join(
+	root,
+	"assets/rive/homegrown-adventures/homegrown-adventures.riv",
+);
+const authoredRiveOutput = join(root, "docs/assets/rive/homegrown-adventures.riv");
+const authoredRivePresent = existsSync(authoredRiveSource);
+const riveAssetUrl = authoredRivePresent
+	? "./assets/rive/homegrown-adventures.riv"
+	: "./assets/rive/runtime-sample.riv";
+
+if (authoredRivePresent) {
+	copyFileSync(authoredRiveSource, authoredRiveOutput);
+} else {
+	rmSync(authoredRiveOutput, { force: true });
+	copyFileSync(
+		join(root, "assets/rive/prototype/runtime-sample.riv"),
+		join(root, "docs/assets/rive/runtime-sample.riv"),
+	);
+}
 
 await build({
 	entryPoints: [join(here, "app.web.tsx")],
@@ -26,7 +44,15 @@ await build({
 	loader: { ".riv": "file" },
 	external: ["./assets/*"],
 	resolveExtensions: [".web.tsx", ".web.ts", ".tsx", ".ts", ".mjs", ".js"],
-	define: { "process.env.NODE_ENV": '"production"' },
+	define: {
+		"process.env.NODE_ENV": '"production"',
+		__HOMEGROWN_RIVE_ASSET_URL__: JSON.stringify(riveAssetUrl),
+		__HOMEGROWN_RIVE_AUTHORED__: JSON.stringify(authoredRivePresent),
+	},
 });
 
-console.log("Built docs/homegrown-adventures.html assets and bundle.");
+console.log(
+	`Built docs/homegrown-adventures.html with ${
+		authoredRivePresent ? "authored Homegrown Adventures scene" : "official Rive runtime probe"
+	}.`,
+);

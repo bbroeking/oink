@@ -28,3 +28,12 @@ export const HOMEGROWN_RIVE_TRIGGERS = Object.freeze([
 	"return",
 	"plant",
 ] as const);
+
+export type HomegrownRiveTrigger = (typeof HOMEGROWN_RIVE_TRIGGERS)[number];
+
+export const HOMEGROWN_RIVE_NAMES = Object.freeze({
+	artboard: "Homegrown Adventures",
+	stateMachine: "Homegrown Adventures State Machine",
+	viewModel: "Homegrown Adventures View Model",
+	viewModelInstance: "Browser Prototype",
+});

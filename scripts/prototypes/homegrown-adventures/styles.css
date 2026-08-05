@@ -30,6 +30,10 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .prototype-badge { padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,249,233,.7); white-space: nowrap; }
 .phone { width: 390px; height: 844px; max-width: calc(100vw - 24px); position: relative; overflow: hidden; border: 3px solid var(--ink); border-radius: 34px; background: #b7d6a2; box-shadow: 9px 12px 0 rgba(48,33,22,.24), 0 30px 80px rgba(48,33,22,.2); isolation: isolate; }
 .scene-plate { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center; }
+.homegrown-rive-scene.authored { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.homegrown-rive-scene.authored canvas { width: 100%; height: 100%; display: block; }
+.homegrown-rive-scene.probe { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.phone.rive-authored .scene-plate { opacity: 0; }
 .scene-starting .scene-plate { background-image: url("./assets/homegrown-adventures/01-starting-barn.png"); }
 .scene-payoff .scene-plate { background-image: url("./assets/homegrown-adventures/02-first-payoff.png"); }
 .scene-developed .scene-plate { background-image: url("./assets/homegrown-adventures/03-developed-barn.png"); }
@@ -92,8 +96,8 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .reference-links { display: flex; flex-wrap: wrap; gap: 6px 10px; padding: 10px 0; }
 .reference-links strong { width: 100%; }
 .reference-links a { min-height: 44px; display: inline-flex; align-items: center; color: #7c3f32; }
-.rive-proof { display: grid; grid-template-columns: 68px 1fr; gap: 9px; align-items: center; padding: 8px; border: 1px dashed var(--line); border-radius: 9px; }
-.rive-runtime-probe { width: 68px; height: 54px; overflow: hidden; background: #e6f0db; border-radius: 7px; }
+.rive-proof { display: grid; gap: 9px; align-items: center; padding: 8px; border: 1px dashed var(--line); border-radius: 9px; }
+.rive-proof.authored { border-style: solid; background: #e6f0db; }
 .rive-proof span { display: flex; flex-direction: column; color: var(--ink-soft); line-height: 1.3; }
 .rive-proof strong { color: var(--ink); }
 .trace { max-height: 130px; overflow: auto; margin: 10px 0; padding-left: 20px; color: var(--ink-soft); }

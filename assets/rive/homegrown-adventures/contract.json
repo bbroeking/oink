@@ -1,0 +1,36 @@
+{
+	"schemaVersion": 1,
+	"export": "homegrown-adventures.riv",
+	"artboard": {
+		"name": "Homegrown Adventures",
+		"width": 390,
+		"height": 844
+	},
+	"stateMachine": "Homegrown Adventures State Machine",
+	"viewModel": {
+		"name": "Homegrown Adventures View Model",
+		"defaultInstance": "Browser Prototype",
+		"enums": {
+			"rosieMood": ["content", "happy", "sad"],
+			"rosieAction": ["idle", "tickle", "notice", "harvest", "pack", "return"],
+			"bedOneState": ["empty", "sprout", "growing", "ready"],
+			"bedTwoState": ["empty", "sprout", "growing", "ready"],
+			"bedThreeState": ["empty", "sprout", "growing", "ready"]
+		},
+		"booleans": [
+			"satchelEquipped",
+			"hedgehogVisible",
+			"frogVisible",
+			"mothsVisible",
+			"hedgeCrossingOpen",
+			"hedgeBellEarned",
+			"reduceMotion"
+		],
+		"triggers": ["tickle", "harvest", "pack", "return", "plant"]
+	},
+	"visualReferences": [
+		"assets/concepts/homegrown-adventures/01-starting-barn.png",
+		"assets/concepts/homegrown-adventures/02-first-payoff.png",
+		"assets/concepts/homegrown-adventures/03-developed-barn.png"
+	]
+}

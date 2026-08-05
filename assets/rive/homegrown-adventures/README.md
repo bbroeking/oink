@@ -2,6 +2,10 @@
 
 Expected export: `homegrown-adventures.riv`.
 
+Authoring sheet: `docs/rive-homegrown-adventures-authoring.md`.
+Machine-readable contract: `contract.json`.
+Static export gate: `npm run verify:rive-homegrown`.
+
 This directory intentionally does not contain a placeholder renamed as the
 production asset. The Rive editor work must export one portrait scene with a
 Data Binding View Model matching
