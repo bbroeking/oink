@@ -15,6 +15,16 @@ const AUTHORED_TRIGGER_ANIMATIONS: Partial<Record<HomegrownRiveTrigger, string>>
 	tickle: "Rosie Tickle",
 };
 
+const BREATHING_ANIMATION = "Rosie Breathing Idle";
+const NOTICE_ANIMATION = "Rosie Notice";
+const CHARACTER_ANIMATIONS = [
+	BREATHING_ANIMATION,
+	AUTHORED_TRIGGER_ANIMATIONS.tickle,
+	NOTICE_ANIMATION,
+].filter((name): name is string => Boolean(name));
+
+type RosieMotion = "loading" | "idle" | "breathing" | "tickle" | "notice" | "reduced";
+
 export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
 	model: HomegrownRiveViewModel;
@@ -33,8 +43,9 @@ function HomegrownRiveSceneImpl({
 	triggerNonce,
 }: HomegrownRiveSceneProps) {
 	const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+	const [motion, setMotion] = useState<RosieMotion>("loading");
 	const lastTriggerNonce = useRef(triggerNonce);
-	const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const motionTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const { RiveComponent, rive } = useRive({
 		src: __HOMEGROWN_RIVE_ASSET_URL__,
 		...(HOMEGROWN_RIVE_ASSET_AUTHORED
@@ -59,15 +70,6 @@ function HomegrownRiveSceneImpl({
 	});
 
 	useEffect(() => {
-		if (!rive) return;
-		if (reduceMotion) rive.pause();
-	}, [reduceMotion, rive]);
-
-	useEffect(() => () => {
-		if (settleTimer.current) clearTimeout(settleTimer.current);
-	}, []);
-
-	useEffect(() => {
 		if (!rive || !HOMEGROWN_RIVE_ASSET_AUTHORED) return;
 		const instance = rive.viewModelInstance;
 		if (!instance) {
@@ -90,29 +92,102 @@ function HomegrownRiveSceneImpl({
 
 	useEffect(() => {
 		if (!rive || !HOMEGROWN_RIVE_ASSET_AUTHORED) return;
-		if (lastTriggerNonce.current === triggerNonce) return;
+
+		const clearTimers = () => {
+			for (const timer of motionTimers.current) clearTimeout(timer);
+			motionTimers.current.clear();
+		};
+		const schedule = (callback: () => void, delay: number) => {
+			const timer = setTimeout(() => {
+				motionTimers.current.delete(timer);
+				callback();
+			}, delay);
+			motionTimers.current.add(timer);
+		};
+		const stopCharacterMotion = () => {
+			for (const animation of CHARACTER_ANIMATIONS) rive.stop(animation);
+		};
+		const startBreathing = () => {
+			if (reduceMotion) return;
+			rive.stop(BREATHING_ANIMATION);
+			rive.play(BREATHING_ANIMATION);
+			setMotion("breathing");
+			// A restrained authored breath followed by a restful hold keeps the
+			// full cadence calm without changing Rive playback speed globally.
+			schedule(() => {
+				rive.stop(BREATHING_ANIMATION);
+				setMotion("idle");
+				schedule(startBreathing, 2_250);
+			}, 1_000);
+		};
+
+		clearTimers();
+		stopCharacterMotion();
+
+		const isNewTrigger = lastTriggerNonce.current !== triggerNonce;
 		lastTriggerNonce.current = triggerNonce;
-		if (!trigger) return;
+
+		if (reduceMotion) {
+			rive.pause();
+			setMotion("reduced");
+			return clearTimers;
+		}
+
+		if (!isNewTrigger || !trigger) {
+			startBreathing();
+			return () => {
+				clearTimers();
+				stopCharacterMotion();
+			};
+		}
+
 		const property = rive.viewModelInstance?.trigger(trigger);
 		if (!property) setStatus("error");
 		else property.trigger();
 
 		const animation = AUTHORED_TRIGGER_ANIMATIONS[trigger];
-		if (!reduceMotion && animation) {
-			// Restarting makes rapid tickles deterministic instead of queueing them.
-			if (settleTimer.current) clearTimeout(settleTimer.current);
-			rive.stop(animation);
-			rive.play(animation);
-			settleTimer.current = setTimeout(() => {
-				rive.stop(animation);
-			}, animation === "Rosie Tickle" ? 700 : 900);
+		if (!animation) {
+			startBreathing();
+			return clearTimers;
 		}
-	}, [reduceMotion, rive, trigger, triggerNonce]);
+
+		// Restarting makes rapid tickles deterministic instead of queueing them.
+		rive.play(animation);
+		setMotion("tickle");
+
+		if (model.rosieAction === "notice") {
+			schedule(() => {
+				rive.stop(animation);
+				// Layer the authored body-and-leg Notice pose over a clean breathing
+				// base instead of letting it inherit the tickle jump apex.
+				rive.stop(BREATHING_ANIMATION);
+				rive.play(BREATHING_ANIMATION);
+				rive.play(NOTICE_ANIMATION);
+				setMotion("notice");
+			}, 620);
+			schedule(() => {
+				rive.stop(NOTICE_ANIMATION);
+				rive.stop(BREATHING_ANIMATION);
+				startBreathing();
+			}, 1_520);
+		} else {
+			schedule(() => {
+				rive.stop(animation);
+				startBreathing();
+			}, 700);
+		}
+
+		return () => {
+			clearTimers();
+			stopCharacterMotion();
+		};
+	}, [model.rosieAction, reduceMotion, rive, trigger, triggerNonce]);
 
 	return (
 		<div
 			className={`homegrown-rive-scene ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "probe"}`}
 			data-rive-status={status}
+			data-rive-motion={motion}
 			data-rive-asset={HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "official-probe"}
 			aria-hidden="true"
 		>

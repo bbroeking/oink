@@ -1,6 +1,6 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; Rosie Responds checkpoint validated locally
+**Status:** Browser gameplay prototype implemented; Rosie Notices checkpoint shipped to the browser lab
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -8,13 +8,14 @@ responsive DOM controls, and GitHub Pages route live in
 `scripts/prototypes/homegrown-adventures/` and `docs/homegrown-adventures.html`.
 The first authored Rive checkpoint is now checked in: a transparent 390×844
 artboard, embedded Rosie texture, mesh/bone rig, exact View Model contract, and
-the named `Rosie Tickle` interruptible one-shot. Character-free derivatives of
-the three approved concepts remain the scene plates so the Rive rig is the only
-Rosie rendered. Rapid input, deterministic settling, reduced motion, the real
-rendered route, static Rive verification, prototype tests, and
-`npm run quality:check` pass locally. Continuous breathing, Notice/harvest,
-Bag/equipment, return ceremony, and mobile Safari device acceptance remain the
-next Goal 6 work; do not claim the whole motion sheet complete yet.
+the named `Rosie Tickle`, `Rosie Breathing Idle`, and `Rosie Notice` motions.
+Character-free derivatives of the three approved concepts remain the scene
+plates so the Rive rig is the only Rosie rendered. Breathing uses a calm
+3.25-second cadence; the first meaningful tickle transitions into a clear
+Kitchen Patch notice lean; rapid input, deterministic settling, reduced motion,
+the real rendered route, and the contract gate pass locally. Bag/equipment,
+harvest, return ceremony, crop/resident animation, and mobile Safari device
+acceptance remain Goal 6 work; do not claim the whole motion sheet complete yet.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and
@@ -26,6 +27,8 @@ quality gates are locked in `docs/rive-homegrown-adventures-authoring.md`.
 The editable Rive source export is retained under
 `assets/rive/homegrown-adventures/source/`; the deterministic metadata patcher
 produces the runtime file and `npm run verify:rive-homegrown` gates its contract.
+The browser build publishes the binary behind a content-hashed URL so a new
+checkpoint cannot be hidden by a stale cached `.riv` response.
 
 **Purpose:** Turn the FarmVille-inspired direction into one focused, testable
 web slice inside Tickle the Pig's existing Barn. This document defines outcomes

@@ -7,6 +7,11 @@
 		"height": 844
 	},
 	"stateMachine": "Homegrown Adventures State Machine",
+	"animations": [
+		"Rosie Breathing Idle",
+		"Rosie Tickle",
+		"Rosie Notice"
+	],
 	"viewModel": {
 		"name": "Homegrown Adventures View Model",
 		"defaultInstance": "Browser Prototype",

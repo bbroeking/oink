@@ -110,12 +110,12 @@ for (const [index, name] of [
 
 replaceOccurrence("pig", 0, "Homegrown Adventures State Machine", 1);
 
-// The later jump clip is the foreground mesh motion authored for the browser
-// checkpoint. The first idle/wave set remains the source for the other named
-// motions until those timelines receive the same foreground pass.
+// The foreground idle, jump, and later wave clips have each received their
+// browser-stage pass. The remaining duplicate names belong to the recovered
+// legacy rig and stay available only as editor history.
 replaceOccurrence("idle", 1, "Rosie Breathing Idle", 3);
 replaceOccurrence("jump", 1, "Rosie Tickle", 3);
-replaceOccurrence("wave", 0, "Rosie Notice", 3);
+replaceOccurrence("wave", 1, "Rosie Notice", 3);
 
 edits.sort((a, b) => a.start - b.start);
 for (let index = 1; index < edits.length; index += 1) {

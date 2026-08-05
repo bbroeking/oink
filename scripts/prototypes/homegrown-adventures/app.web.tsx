@@ -307,9 +307,9 @@ function App() {
 	return <main className={`lab variant-${variant}`}>
 		<header className="lab-context">
 			<p><strong>Homegrown Adventures</strong><span>{VARIANTS[variant].question}</span></p>
-			<span className="prototype-badge">Prototype · local only</span>
+			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>
-		<div className={`phone scene-${image} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}>
+		<div className={`phone scene-${image} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}>
 			<div className="scene-plate" role="img" aria-label={`${stageCopy(state).title}. Warm paper-craft Barn exterior with Rosie and a three-bed Kitchen Patch.`} />
 			<HomegrownRiveScene
 				reduceMotion={state.reduceMotion}

@@ -23,6 +23,7 @@ if (manifest.artboard?.width !== 390 || manifest.artboard?.height !== 844) {
 const names = [...new Set([
 	manifest.artboard?.name,
 	manifest.stateMachine,
+	...(manifest.animations ?? []),
 	manifest.viewModel?.name,
 	manifest.viewModel?.defaultInstance,
 	...Object.keys(manifest.viewModel?.enums ?? {}),

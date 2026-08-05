@@ -1,5 +1,6 @@
 import { build } from "esbuild";
-import { copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -25,8 +26,11 @@ const authoredRiveSource = join(
 );
 const authoredRiveOutput = join(root, "docs/assets/rive/homegrown-adventures.riv");
 const authoredRivePresent = existsSync(authoredRiveSource);
+const authoredRiveVersion = authoredRivePresent
+	? createHash("sha256").update(readFileSync(authoredRiveSource)).digest("hex").slice(0, 10)
+	: null;
 const riveAssetUrl = authoredRivePresent
-	? "./assets/rive/homegrown-adventures.riv"
+	? `./assets/rive/homegrown-adventures.riv?v=${authoredRiveVersion}`
 	: "./assets/rive/runtime-sample.riv";
 
 if (authoredRivePresent) {

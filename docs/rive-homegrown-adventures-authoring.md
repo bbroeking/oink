@@ -51,6 +51,18 @@ Create the properties in
 The reducer remains authoritative. Data Binding only selects visual state and
 fires one-shot motion.
 
+The current runtime file also exposes these exact foreground-rig animations:
+
+- `Rosie Breathing Idle`
+- `Rosie Tickle`
+- `Rosie Notice`
+
+The v0.3 breathing timeline authors a one-second rise and lets the web motion
+controller hold the resting pose for 2.25 seconds before replaying it. The
+notice timeline leans Rosie toward the Kitchen Patch and runs after the tickle
+lift; it may layer over breathing only when Notice wins the shared body keys.
+Legacy duplicate timelines remain editor history and are not runtime names.
+
 ## Layer and rig plan
 
 Build back to front: sky and distant hills; Barn and hedge; crossing and Hedge
@@ -103,7 +115,8 @@ that still communicates the result.
    `assets/rive/homegrown-adventures/homegrown-adventures.riv` with the exact
    runtime contract names.
 4. Run `npm run verify:rive-homegrown`.
-5. Run `npm run prototype:homegrown:build`.
+5. Run `npm run prototype:homegrown:build`. The build appends a content hash to
+   the `.riv` request; do not remove it when changing the asset.
 6. Open `docs/homegrown-adventures.html?variant=A` at 390×844 and complete the
    full loop with Lab tools closed.
 
@@ -116,6 +129,10 @@ that fallback does not satisfy Goal 6.
 
 - Inspect Rosie at every extreme pose: no silhouette, face, satchel, or held
   item drift.
+- Observe one full idle cycle: the foreground rig rises for roughly one second,
+  rests for 2.25 seconds, and does not slide its feet.
+- Trigger the first meaningful tickle: the joyful lift resolves into the
+  foreground Notice lean before returning to breathing.
 - Rapidly tickle Rosie at least ten times: no broken or additive poses.
 - Traverse harvest, pack, return, and Glowroot planting: every one-shot settles
   into the correct state.
