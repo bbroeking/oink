@@ -39,10 +39,13 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 14. **v0.15 — A Shared Glint (shipped):** add one restrained gold glint at the
     resident during Laugh so its correct but tiny roof response reads at phone
     scale without enlarging it, duplicating it, or competing with Rosie.
-15. **v0.16 — The Moth Finds Its Place (ready for public verification):** move
-    the resident's calm Home pose onto the Barn roofline so the earned
-    relationship remains legible between tickles without making the moth
-    larger or adding a new system.
+15. **v0.16 — The Moth Finds Its Place (shipped):** move the resident's calm
+    Home pose onto the Barn roofline so the earned relationship remains legible
+    between tickles without making the moth larger or adding a new system.
+16. **v0.17 — The Moth Comes Home:** replace the resident's in-place arrival
+    fade with one short authored landing from the Moonberry side to the exact
+    roof perch, making fulfillment feel caused without adding a ceremony or a
+    parallel reward system.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
@@ -95,7 +98,24 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   layout exactly 1,280 pixels, both without horizontal overflow. `npm run
   quality:check` passed the quality contract, 324-sprite integrity, TypeScript,
   78 layout tests, and 202 security tests.
-- Public deployment and exact-route replay remain the final shipment gate.
+- GitHub Pages run
+  [31074046915](https://github.com/bbroeking/oink/actions/runs/31074046915)
+  deployed commit `419216d` successfully. The exact public Rive response
+  matched
+  `daa2e757e6f71c5abc72b89349e89f08ed2978f52f98749c2f974dae1c287914`.
+- A fresh public replay at 390×844 reported authored Rive connected, the
+  persisted resident in Present/Resting on the roofline, one dormant glint,
+  the fulfilled purpose status, the Rosie-first CTA, and no horizontal
+  overflow. Tickle advanced the counter, entered `laugh` with one glint at
+  opacity `1`, then returned to the independent Resting cadence with opacity
+  `0`.
+- The companion page exposed exactly one **Play The Moth Finds Its Place lab**
+  link to canonical variant A.
+- That public replay selected v0.17: the resident now belongs to the Barn once
+  settled, but fulfillment still fades it in at its final coordinates. The
+  next bounded checkpoint will author one short landing from the Moonberry
+  side to the same perch, preserving size, persistence, reduced motion, and
+  every gameplay fact.
 
 ### v0.15.0 — A Shared Glint — 2026-08-06
 
