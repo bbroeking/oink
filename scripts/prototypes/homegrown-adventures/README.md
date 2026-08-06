@@ -36,3 +36,10 @@ reducer's `hedgeCrossingOpen` fact. `runtime-sample.riv` remains only the
 fallback runtime probe. Static
 character-free concept plates provide the scene behind the transparent Rive
 canvas so the animated rig is the only Rosie rendered.
+
+Variant A is canonical. The return story temporarily expands for a 2.4-second
+welcome-home ceremony, then becomes a compact, accessible Home record below the
+HUD. Tickling Rosie dismisses the ceremony immediately; developed reloads are
+compact from their first frame; reduced motion never opens it. The record's
+button exposes the full story and Field Guide on request without permanently
+covering Rosie or the Kitchen Patch.

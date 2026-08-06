@@ -1,5 +1,5 @@
 // @ts-nocheck -- throwaway standalone lab; the reducer and Rive contract are checked separately.
-import React, { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
 	HOMEGROWN_RIVE_ASSET_AUTHORED,
@@ -21,7 +21,7 @@ import "./styles.css";
 const VARIANTS = {
 	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
 	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Rosie's Story", question: "Does the return story create the strongest desire to replant?" },
+	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
 const STAGE_COPY = {
@@ -186,7 +186,7 @@ function BottomNav() {
 }
 
 function PurposeShelf({ state }) {
-	if (state.stage !== STAGES.STARTING && state.stage !== STAGES.DEVELOPED) return null;
+	if (state.stage !== STAGES.STARTING) return null;
 	return (
 		<div className="purpose-shelf" aria-label="What to grow for">
 			{PURPOSES.map((purpose) => (
@@ -200,10 +200,89 @@ function PurposeShelf({ state }) {
 	);
 }
 
+const RETURN_CEREMONY_MS = 2400;
+
+function compactStoryCopy(state) {
+	if (state.stage === STAGES.DEVELOPED) {
+		return { eyebrow: "Home remembers", title: "Glowroot lives at Home" };
+	}
+	if (state.changeRevealed) {
+		return { eyebrow: "A named Discovery", title: "Glowroot Seed · ready to plant" };
+	}
+	return { eyebrow: "Rosie is Home", title: "Something glows in her Bag" };
+}
+
 function StoryCard({ state, variant }) {
 	const copy = stageCopy(state);
+	const [returnCeremony, setReturnCeremony] = useState(false);
+	const [storyExpanded, setStoryExpanded] = useState(false);
+	const previousStage = useRef(state.stage);
+
+	useEffect(() => {
+		const enteredReturn =
+			previousStage.current !== STAGES.GLOWROOT_RETURNED &&
+			state.stage === STAGES.GLOWROOT_RETURNED &&
+			state.lastAction === "return";
+		previousStage.current = state.stage;
+
+		if (!enteredReturn || state.reduceMotion) {
+			setReturnCeremony(false);
+			return undefined;
+		}
+
+		setReturnCeremony(true);
+		const timer = window.setTimeout(() => setReturnCeremony(false), RETURN_CEREMONY_MS);
+		return () => window.clearTimeout(timer);
+	}, [state.lastAction, state.reduceMotion, state.stage]);
+
+	useEffect(() => setStoryExpanded(false), [state.stage]);
+
+	const compact =
+		!returnCeremony &&
+		(state.stage === STAGES.GLOWROOT_RETURNED || state.stage === STAGES.DEVELOPED);
+	const presentation = returnCeremony ? "ceremony" : compact ? "compact" : "standard";
+
+	if (compact) {
+		const compactCopy = compactStoryCopy(state);
+		return (
+			<section
+				className={`story-card story-${variant} story-card-compact ${storyExpanded ? "story-expanded" : ""}`}
+				data-story-presentation={presentation}
+				aria-live="polite"
+			>
+				<button
+					className="story-summary"
+					type="button"
+					aria-expanded={storyExpanded}
+					aria-controls="home-story-details"
+					onClick={() => setStoryExpanded((value) => !value)}
+				>
+					<span className="story-pin" />
+					<span className="story-compact-copy">
+						<span className="eyebrow">{compactCopy.eyebrow}</span>
+						<h1>{compactCopy.title}</h1>
+					</span>
+					<span className="story-open-label" aria-hidden="true">{storyExpanded ? "Close ↗" : "Read ↘"}</span>
+				</button>
+				<div className="story-details" id="home-story-details" hidden={!storyExpanded}>
+					<p>{copy.body}</p>
+					{state.stage === STAGES.DEVELOPED && (
+						<>
+							<div className="field-guide"><strong>Field Guide</strong><span>{state.fieldGuide.join(" · ")}</span></div>
+							<div className="farm-favor">Farm Favor: Mara watered one Moonberry bed. Optional, bounded, no advantage.</div>
+						</>
+					)}
+				</div>
+			</section>
+		);
+	}
+
 	return (
-		<section className={`story-card story-${variant}`} aria-live="polite">
+		<section
+			className={`story-card story-${variant} story-card-${presentation}`}
+			data-story-presentation={presentation}
+			aria-live="polite"
+		>
 			<span className="story-pin" />
 			<p className="eyebrow">{copy.eyebrow}</p>
 			<h1>{copy.title}</h1>

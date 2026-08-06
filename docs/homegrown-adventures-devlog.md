@@ -16,13 +16,53 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
    beginning with one readable sprout, ready, and harvest consequence.
 5. **v0.6 — Home Remembers (shipped):** replace the developed-state plate swap
    with one authored, lasting Glowroot-and-hedge consequence in the same Barn.
-6. **v0.7 — Clear Reward:** keep the return/plant payoff readable by preventing
-   the persistent story card from concealing the new Glowroot bed and reward.
+6. **v0.7 — Clear Reward (shipped):** let the larger return story appear as one
+   short ceremony, then collapse it so Rosie and the Home reward remain clear.
+7. **v0.8 — Purpose Sign:** make the Barn's visible purpose sign agree with the
+   next named crop instead of continuing to request Clover Lunch forever.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.7.0 — Clear Reward — 2026-08-05
+
+- Replayed the public v0.6 developed state at the actual 390×844 viewport and
+  confirmed that the persistent card hid Rosie's right side and all of the new
+  Glowroot bed, unlike `03-developed-barn.png`.
+- Turned the larger story treatment into a 2.4-second welcome-home ceremony.
+  It auto-settles and a tickle dismisses it immediately, preserving tickling as
+  the emotional way Rosie reveals what changed.
+- Replaced the persistent return/developed card with a compact Home record
+  below the HUD. Its real DOM button exposes the full story and Field Guide on
+  request, with explicit expanded state and a 70px touch target.
+- Made persisted developed states compact from the first frame and made reduced
+  motion skip the ceremony entirely. No reducer, reward, timer, or Rive
+  progression ownership moved into the presentation layer.
+- Retired Variant C's persistent large-card styling; its larger treatment is
+  now permitted only during the same bounded welcome-home ceremony.
+- Updated the companion site to link directly to the **Clear Reward lab**.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 13/13 pass.
+- `npm run quality:loop` — pass, including TypeScript, layout, sprite,
+  security, and 280 focused Jest assertions.
+- Rendered Chromium full-loop play at 390×844 — return reported `ceremony`,
+  auto-settled to `compact` after 2.4 seconds, and tickling collapsed it
+  immediately on a second pass. Planting kept the record compact while Home
+  moved through `flourish` to `developed`.
+- Developed reload began `compact` with the Home rig `developed`; ten rapid
+  tickles left both states intact. Reduced motion skipped directly to the
+  compact return record.
+- At 360×780, document width remained 360px and the compact record stayed
+  inside the viewport. Its closed state left Rosie, the Bell, flowering
+  crossing, all three beds, primary action, and navigation readable.
+- Public GitHub Pages and companion-site evidence are added by the shipping
+  commit after deployment.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim those device checks.
 
 ### v0.6.0 — Home Remembers — 2026-08-05
 
@@ -197,8 +237,8 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Next highest-leverage weakness
 
-The Barn now visibly remembers Glowroot, but the persistent developed-state
-story card covers much of the third bed and competes with the reward it
-describes. The next checkpoint should clarify that return/plant payoff and
-preserve a clear view of the earned Home change before adding residents,
+The return reward is now readable, but the illustrated Barn sign still says
+**Grow for: Clover Lunch** after Glowroot has changed Home while the next action
+asks for Moonberries. The next checkpoint should make that one visible purpose
+signal follow the reducer's named intention before adding residents,
 destinations, crops, currencies, or collection UI.

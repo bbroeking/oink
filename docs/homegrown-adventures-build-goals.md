@@ -1,6 +1,6 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; Home Remembers checkpoint shipped to the browser lab
+**Status:** Browser gameplay prototype implemented; Clear Reward checkpoint shipped to the browser lab
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -24,8 +24,11 @@ emphasizes it once, the first Clover Lunch loop changes one bed, and planting
 Glowroot reveals a lasting Home change without replacing the whole Barn plate.
 Rapid input, deterministic settling, reduced motion, the real rendered route,
 and the contract gate pass locally. Rosie's harvest celebration, resident
-animation, payoff-card composition polish, and mobile Safari device acceptance
-remain Goal 6 work; do not claim the whole motion sheet complete yet.
+animation, purpose-sign continuity, and mobile Safari device acceptance remain
+Goal 6 work; do not claim the whole motion sheet complete yet. Rosie's return
+now borrows the larger story treatment for one brief ceremony only, then
+collapses into an optional Home record that leaves Rosie and all three beds
+readable. Developed reloads begin compact and reduced motion skips the ceremony.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and
@@ -91,6 +94,11 @@ The generated images are direction, not pixel-perfect production layouts. Fix
 AI-rendered typography, counter shapes, accessibility, and spacing in code.
 When an image conflicts with the behavioral rules below, the behavioral rules
 win.
+
+Variant A, **Rosie First**, is canonical. Variant C's larger story treatment is
+allowed only as a brief welcome-home ceremony; it must collapse automatically
+or when Rosie is tickled. Persisted and developed states use a compact,
+player-expandable Home record and must not obscure Rosie or the earned crop.
 
 ## Filled game brief
 

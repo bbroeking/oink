@@ -55,7 +55,21 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .story-card .eyebrow { margin: 0 0 4px; color: #9b493d; font-size: 8px; line-height: 1; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
 .story-card h1 { margin: 0; font-family: Caprasimo, Georgia, serif; font-size: 18px; line-height: 1.08; font-weight: 400; }
 .story-card > p:last-of-type { margin: 7px 0 0; font-family: "Patrick Hand", cursive; color: var(--ink-soft); font-size: 13px; line-height: 1.15; }
-.rosie-action-notice .story-card { top: 430px; }
+.rosie-action-notice .story-card:not(.story-card-compact) { top: 430px; }
+.story-card-ceremony { z-index: 10; left: 18px; right: 18px; top: 350px; min-height: 164px; padding: 22px 20px 16px; background: rgba(255,249,233,.985); text-align: left; transform: rotate(-.8deg); animation: story-arrival 420ms cubic-bezier(.2,.8,.2,1) both; }
+.story-card-ceremony h1 { font-size: 24px; }
+.story-card-ceremony > p:last-of-type { font-size: 16px; }
+.story-card-compact { left: auto; right: 10px; top: 132px; width: 164px; min-height: 0; padding: 0; transform: rotate(.6deg); transition: width 180ms ease, transform 180ms ease; }
+.story-summary { position: relative; width: 100%; min-height: 70px; padding: 14px 9px 10px; border: 0; border-radius: 12px; color: inherit; background: transparent; text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 5px; align-items: end; cursor: pointer; }
+.story-card-compact .story-pin { width: 36px; height: 10px; }
+.story-card-compact .eyebrow { display: block; margin-bottom: 4px; }
+.story-card-compact h1 { font-size: 14px; line-height: 1.08; }
+.story-open-label { align-self: end; color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+.story-card-compact.story-expanded { z-index: 9; width: 190px; transform: rotate(0); }
+.story-summary[aria-expanded="true"] { border-bottom: 1px dashed var(--line); border-radius: 12px 12px 0 0; }
+.story-details { padding: 0 10px 11px; }
+.story-details > p { margin: 9px 0 0; font-family: "Patrick Hand", cursive; color: var(--ink-soft); font-size: 12px; line-height: 1.18; }
+@keyframes story-arrival { from { opacity: 0; transform: translateY(18px) rotate(-1.5deg) scale(.97); } to { opacity: 1; transform: translateY(0) rotate(-.8deg) scale(1); } }
 .field-guide { margin-top: 7px; padding-top: 6px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 2px; font-size: 8px; }
 .field-guide span { color: var(--ink-soft); }
 .farm-favor { margin-top: 5px; color: var(--ink-soft); font-size: 7px; line-height: 1.2; }
@@ -75,10 +89,7 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .crop-mark { width: 19px; height: 19px; border: 2px solid var(--ink); border-radius: 60% 40%; background: var(--clover); transform: rotate(18deg); }
 .mark-berry .crop-mark { border-radius: 50%; background: #4d3f8d; }
 .mark-glow .crop-mark { background: #efbd38; box-shadow: 0 0 9px #ffd75b; }
-.variant-B .story-card { left: 24px; right: 24px; top: 450px; min-height: 106px; text-align: center; transform: rotate(-.4deg); }
-.variant-C .story-card { left: 18px; right: 18px; top: 355px; min-height: 164px; padding: 22px 20px 16px; background: rgba(255,249,233,.98); text-align: left; transform: rotate(-.8deg); }
-.variant-C .story-card h1 { font-size: 24px; }
-.variant-C .story-card > p:last-of-type { font-size: 16px; }
+.variant-B .story-card:not(.story-card-compact):not(.story-card-ceremony) { left: 24px; right: 24px; top: 450px; min-height: 106px; text-align: center; transform: rotate(-.4deg); }
 .next-choice { position: absolute; z-index: 9; left: 50%; bottom: 220px; transform: translateX(-50%); white-space: nowrap; background: #e7f1d0; border: 2px solid var(--ink); border-radius: 999px; padding: 6px 10px; font-size: 10px; font-weight: 800; }
 .variant-switcher { position: fixed; z-index: 30; left: 50%; bottom: 88px; transform: translateX(-50%); min-width: 215px; height: 50px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper); box-shadow: 2px 3px 0 var(--ink); display: grid; grid-template-columns: 44px 1fr 44px; overflow: hidden; }
 .variant-switcher button { border: 0; background: #f1e2c7; font-size: 18px; }
@@ -117,6 +128,7 @@ html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, ht
 @media (max-width: 370px) {
 	.counter { padding: 7px 6px; gap: 5px; }
 	.counter strong { font-size: 18px; }
-	.story-card { left: 174px; }
+	.story-card:not(.story-card-compact) { left: 174px; }
+	.story-card-compact { width: 154px; }
 	.primary-action { left: 18px; right: 18px; font-size: 18px; }
 }
