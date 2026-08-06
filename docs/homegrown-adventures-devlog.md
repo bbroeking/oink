@@ -66,6 +66,10 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Rendered Chromium at 360×780 retained exact viewport, body, and document
   dimensions with no overflow. Rosie, moth, crops, Home record, purpose sign,
   terminal action, and navigation remained legible.
+- GitHub Pages shipped commit `c247292` in successful deployment run
+  `31066799154`. The public 390×844 route reported the authored asset `ready`,
+  replayed `hidden` → `arrive` → `resting`, and resumed Resting after reload;
+  the companion site exposed **Play the Moth at Rest lab**.
 - Accessible DOM names, focusable controls, and the existing primary-action
   feedback path are unchanged. Mobile Safari sharpness, haptic feel, and
   audible acceptance remain manual device gates.
