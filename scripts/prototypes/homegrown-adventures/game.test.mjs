@@ -154,6 +154,7 @@ test("Clover's left-right-up rhythm adds one small bonus to the guaranteed harve
 	assert.equal(state.cloverHarvested, true);
 	assert.equal(state.prototypePosition, 6);
 	assert.equal(state.harvestRhythmBonus, true);
+	assert.equal(state.harvestCompletedAt, at + 800);
 	assert.equal(state.lastHarvestYield, 5);
 	assert.equal(state.farmStock["clover-lunch"], 5);
 	assert.match(state.trace.at(-1).detail, /rhythm \+1/);
@@ -193,6 +194,7 @@ test("the accessible normal gather fallback never loses the ready crop", () => {
 	state = reduce(state, { type: ACTIONS.TICKLE });
 	state = reduce(state, { type: ACTIONS.HARVEST_CLOVER });
 	assert.equal(state.cloverHarvested, true);
+	assert.equal(state.harvestCompletedAt, at);
 	assert.equal(state.harvestRhythmBonus, false);
 	assert.equal(state.lastHarvestYield, 4);
 	assert.equal(state.farmStock["clover-lunch"], 4);

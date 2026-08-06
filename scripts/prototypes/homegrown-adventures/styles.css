@@ -74,26 +74,13 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	45% { filter: brightness(1.08) saturate(1.08); transform: scale(1.012); }
 }
 @keyframes painted-patch-harvest {
-	from { opacity: .55; filter: brightness(1.08); }
-	to { opacity: 1; filter: brightness(1); }
+	0% { opacity: .18; filter: brightness(1.08); transform: scale(.985); }
+	72% { opacity: .18; filter: brightness(1.04); transform: scale(.99); }
+	100% { opacity: 1; filter: brightness(1); transform: scale(1); }
 }
-.painted-harvest-burst { position: absolute; z-index: 4; left: 3%; top: 59%; width: 33%; height: 17%; pointer-events: none; }
-.painted-harvest-burst > span { position: absolute; left: 46%; top: 52%; width: 9px; height: 14px; border: 1.5px solid var(--ink); border-radius: 80% 18% 76% 20%; background: var(--clover); opacity: 0; }
-.painted-harvest-burst > span:nth-child(1) { --leaf-x: -35px; --leaf-y: -42px; --leaf-r: -35deg; background: #4c8d53; }
-.painted-harvest-burst > span:nth-child(2) { --leaf-x: -12px; --leaf-y: -55px; --leaf-r: 24deg; background: #64a35c; }
-.painted-harvest-burst > span:nth-child(3) { --leaf-x: 14px; --leaf-y: -48px; --leaf-r: 58deg; background: #559650; }
-.painted-harvest-burst > span:nth-child(4) { --leaf-x: 34px; --leaf-y: -31px; --leaf-r: 92deg; background: #3f7c46; }
-.painted-harvest-burst > span:nth-child(5) { --leaf-x: 52px; --leaf-y: -15px; --leaf-r: 116deg; background: #5a9b58; }
-.homegrown-rive-scene[data-rive-crop-motion="harvest"] .painted-harvest-burst > span { animation: painted-harvest-leaf 620ms cubic-bezier(.16,1,.3,1) both; }
-.homegrown-rive-scene[data-rive-crop-motion="harvest"] .painted-harvest-burst > span:nth-child(2) { animation-delay: 35ms; }
-.homegrown-rive-scene[data-rive-crop-motion="harvest"] .painted-harvest-burst > span:nth-child(3) { animation-delay: 70ms; }
-.homegrown-rive-scene[data-rive-crop-motion="harvest"] .painted-harvest-burst > span:nth-child(4) { animation-delay: 105ms; }
-.homegrown-rive-scene[data-rive-crop-motion="harvest"] .painted-harvest-burst > span:nth-child(5) { animation-delay: 140ms; }
-@keyframes painted-harvest-leaf { 0% { opacity: 0; transform: translate(0,0) rotate(0) scale(.45); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--leaf-x),var(--leaf-y)) rotate(var(--leaf-r)) scale(.9); } }
 .stage-adventure:not(.adventure-vignette-open):not(.departure-in-progress) .homegrown-rive-scene.authored { opacity: 0; transition: opacity 180ms cubic-bezier(.16,1,.3,1); }
 .adventure-vignette-open .scene-plate { opacity: 0; }
 .adventure-vignette-open .painted-kitchen-patch,
-.adventure-vignette-open .painted-harvest-burst,
 .adventure-vignette-open .moth-shared-glint { display: none; }
 .adventure-vignette-backdrop {
 	position: absolute;
@@ -1051,54 +1038,40 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .composted-crop.stage-clover-growing .painted-kitchen-patch {
 	filter: saturate(1.08) brightness(1.035) drop-shadow(0 0 8px rgba(240,193,73,.22));
 }
+.harvest-experiment { position: absolute; inset: 0; z-index: 11; pointer-events: none; }
+.harvest-experiment button,
+.harvest-gesture-zone { pointer-events: auto; }
 .harvest-gesture-zone {
 	position: absolute;
-	z-index: 11;
-	left: 5px;
-	top: 526px;
-	width: 136px;
-	height: 130px;
+	left: 2px;
+	top: 520px;
+	width: 140px;
+	height: 132px;
 	display: grid;
-	align-items: end;
-	justify-items: center;
-	padding: 8px;
+	place-items: center;
 	touch-action: none;
 	user-select: none;
-	border: 3px solid rgba(255,244,183,.9);
-	border-radius: 28px;
-	box-shadow: inset 0 0 0 2px rgba(48,33,22,.36), 0 0 18px rgba(246,199,91,.32);
-	background: radial-gradient(circle at 50% 46%, rgba(255,238,124,.1), transparent 64%);
+	border: 2px solid rgba(255,249,233,.82);
+	border-radius: 25px;
+	box-shadow: inset 0 0 0 1.5px rgba(48,33,22,.4), 0 0 0 5px rgba(246,199,91,.12);
+	background: rgba(255,238,124,.035);
 	cursor: grab;
 }
 .harvest-gesture-zone:active { cursor: grabbing; }
 .harvest-gesture-zone > span {
-	padding: 5px 8px;
-	color: var(--ink);
-	background: rgba(255,249,233,.94);
-	border: 1.5px solid var(--ink);
-	border-radius: 999px;
-	box-shadow: 1px 1px 0 rgba(48,33,22,.55);
-	font-size: 8px;
-	font-weight: 950;
-	line-height: 1;
-	text-transform: uppercase;
-}
-.harvest-rhythm-panel {
-	position: absolute;
-	z-index: 12;
-	right: 9px;
-	top: 456px;
-	width: 226px;
-	padding: 11px;
+	width: 44px;
+	height: 44px;
 	display: grid;
-	gap: 7px;
-	background: rgba(255,249,233,.97);
+	place-items: center;
+	color: var(--ink);
+	background: rgba(255,244,183,.92);
 	border: 2px solid var(--ink);
-	border-radius: 16px;
-	box-shadow: 3px 4px 0 rgba(48,33,22,.72);
-	text-align: center;
+	border-radius: 50%;
+	box-shadow: 2px 2px 0 rgba(48,33,22,.58), 0 0 0 6px rgba(246,199,91,.18);
+	font-family: Georgia, serif;
+	font-size: 25px;
+	font-weight: 900;
 }
-.harvest-eyebrow,
 .harvest-result-eyebrow {
 	color: #8d5c35;
 	font-size: 8px;
@@ -1108,52 +1081,37 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 }
 .harvest-pattern { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .harvest-pattern > span {
-	height: 42px;
+	height: 34px;
 	display: grid;
 	place-items: center;
 	color: #7d613f;
 	background: #ead9b9;
-	border: 2px solid var(--ink);
+	border: 1.5px solid var(--ink);
 	border-radius: 50%;
-	box-shadow: 1px 2px 0 rgba(48,33,22,.58);
+	box-shadow: 1px 1px 0 rgba(48,33,22,.58);
 	font-family: Georgia, serif;
-	font-size: 24px;
+	font-size: 20px;
 	font-weight: 900;
 }
 .harvest-pattern > span.is-complete { color: white; background: #5d8d40; }
 .harvest-pattern > span.is-next { color: #6b491d; background: #f6c75b; box-shadow: 0 0 0 3px rgba(246,199,91,.3), 1px 2px 0 rgba(48,33,22,.58); }
-.harvest-rhythm-panel > strong { font-family: Caprasimo, Georgia, serif; font-size: 14px; font-weight: 400; line-height: 1; }
-.harvest-rhythm-panel > small { color: var(--ink-soft); font-size: 8px; font-weight: 700; line-height: 1.15; }
-.harvest-direction-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.harvest-direction-buttons button {
+.harvest-assist {
 	min-height: 44px;
-	border: 2px solid var(--ink);
-	border-radius: 10px;
-	background: #f2e2c4;
-	box-shadow: 1px 2px 0 rgba(48,33,22,.68);
-	font-family: Georgia, serif;
-	font-size: 24px;
-	font-weight: 900;
-}
-.harvest-direction-buttons button:hover { background: #fff1c5; transform: translateY(-1px); }
-.harvest-direction-buttons button:active { transform: translateY(1px); box-shadow: none; }
-.harvest-direction-buttons button.is-next { background: #f6c75b; }
-.harvest-guarantee {
-	padding: 6px 8px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 7px;
-	background: #e8f1d8;
-	border: 1.5px solid var(--ink);
-	border-radius: 10px;
+	gap: 6px;
+	border: 2px solid var(--ink);
+	border-radius: 11px;
+	background: #f6c75b;
+	box-shadow: 1px 2px 0 rgba(48,33,22,.68);
 }
-.harvest-guarantee > i { width: 23px; height: 23px; display: grid; place-items: center; flex: 0 0 auto; color: white; background: #5d8d40; border: 1.5px solid var(--ink); border-radius: 50%; font-style: normal; font-weight: 950; }
-.harvest-guarantee > span { display: flex; flex-direction: column; text-align: left; }
-.harvest-guarantee b { font-size: 9px; line-height: 1; text-transform: uppercase; }
-.harvest-guarantee small { margin-top: 3px; color: var(--ink-soft); font-size: 8px; line-height: 1; }
+.harvest-assist:hover { background: #ffe18f; transform: translateY(-1px); }
+.harvest-assist:active { transform: translateY(1px); box-shadow: none; }
+.harvest-assist > span { font-family: Georgia, serif; font-size: 22px; font-weight: 900; line-height: 1; }
+.harvest-assist > strong { font-size: 10px; font-weight: 950; line-height: 1; text-transform: uppercase; }
 .harvest-normal {
-	min-height: 30px;
+	min-height: 44px;
 	border: 0;
 	background: transparent;
 	color: var(--ink-soft);
@@ -1161,6 +1119,59 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	font-weight: 900;
 	text-decoration: underline;
 	text-underline-offset: 3px;
+}
+.harvest-bed-ribbon {
+	position: absolute;
+	left: 18px;
+	right: 18px;
+	top: 652px;
+	min-height: 54px;
+	padding: 7px 10px;
+	display: grid;
+	grid-template-columns: 1fr 112px 1fr;
+	align-items: center;
+	gap: 8px;
+	background: rgba(255,249,233,.96);
+	border: 2px solid var(--ink);
+	border-radius: 13px;
+	box-shadow: 2px 3px 0 rgba(48,33,22,.68);
+}
+.harvest-bed-ribbon > strong { font-family: Caprasimo, Georgia, serif; font-size: 13px; font-weight: 400; line-height: 1.05; text-align: center; }
+.harvest-bed-ribbon > small { color: var(--ink-soft); font-size: 8px; font-weight: 900; line-height: 1.1; text-align: center; text-transform: uppercase; }
+.harvest-bed-ribbon .harvest-pattern { gap: 4px; }
+.harvest-bed-ribbon .harvest-pattern > span { height: 29px; font-size: 17px; }
+.harvest-bed-assist {
+	position: absolute;
+	left: 18px;
+	right: 18px;
+	top: 716px;
+	height: 51px;
+	display: grid;
+	grid-template-columns: 104px 1fr 82px;
+	align-items: center;
+	gap: 7px;
+}
+.harvest-bed-assist > span {
+	min-height: 44px;
+	padding: 5px;
+	display: grid;
+	place-items: center;
+	color: var(--ink);
+	background: rgba(255,249,233,.94);
+	border: 1.5px solid var(--ink);
+	border-radius: 10px;
+	box-shadow: 1px 2px 0 rgba(48,33,22,.58);
+	font-size: 8px;
+	font-weight: 950;
+	line-height: 1.15;
+	text-align: center;
+}
+.harvest-bed-assist > span i { font-style: normal; }
+.harvest-bed-assist .harvest-normal {
+	color: var(--ink);
+	background: rgba(255,249,233,.82);
+	border: 1px solid rgba(48,33,22,.48);
+	border-radius: 10px;
 }
 .harvest-result-panel {
 	position: absolute;

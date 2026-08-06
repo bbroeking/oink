@@ -347,6 +347,7 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 	const gestureStart = useRef(null);
 	const beatIndex = state.harvestBeats?.length ?? 0;
 	const nextDirection = HARVEST_PATTERN[beatIndex] ?? null;
+	const nextLabel = nextDirection ? HARVEST_DIRECTION_LABELS[nextDirection] : null;
 	const startGesture = (event) => {
 		gestureStart.current = { x: event.clientX, y: event.clientY };
 		try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch {}
@@ -364,48 +365,53 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 		if (direction) onBeat(direction, "swipe");
 	};
 
+	const pattern = (
+		<div className="harvest-pattern" aria-label="Left, then Right, then Up">
+			{HARVEST_PATTERN.map((direction, index) => (
+				<span
+					key={direction}
+					className={`${index < beatIndex ? "is-complete" : ""} ${index === beatIndex ? "is-next" : ""}`}
+				>
+					{HARVEST_DIRECTION_LABELS[direction].arrow}
+				</span>
+			))}
+		</div>
+	);
+	const assistButton = nextDirection && (
+		<button
+			type="button"
+			className="harvest-assist"
+			onClick={() => onBeat(nextDirection, "button")}
+			aria-label={`Harvest ${nextLabel.name}`}
+		>
+			<span aria-hidden="true">{nextLabel.arrow}</span>
+			<strong>Tap {nextLabel.name}</strong>
+		</button>
+	);
+
 	return (
-		<>
+		<div className="harvest-experiment">
 			<div
 				className="harvest-gesture-zone"
 				onPointerDown={startGesture}
 				onPointerUp={finishGesture}
 				onPointerCancel={() => { gestureStart.current = null; }}
-				aria-hidden="true"
+				role="group"
+				aria-label="Swipe Clover left, right, then up"
 			>
-				<span>Swipe the Clover</span>
+				<span aria-hidden="true">{nextLabel?.arrow}</span>
 			</div>
-			<section className="harvest-rhythm-panel" aria-label="Follow Clover's harvest rhythm">
-				<span className="harvest-eyebrow">Clover’s pattern</span>
-				<div className="harvest-pattern" aria-label="Left, then Right, then Up">
-					{HARVEST_PATTERN.map((direction, index) => (
-						<span
-							key={direction}
-							className={`${index < beatIndex ? "is-complete" : ""} ${index === beatIndex ? "is-next" : ""}`}
-						>
-							{HARVEST_DIRECTION_LABELS[direction].arrow}
-						</span>
-					))}
-				</div>
-				<strong>{nextDirection ? `${HARVEST_DIRECTION_LABELS[nextDirection].name} is next` : "Harvest complete"}</strong>
-				<small>Swipe the crop, or tap the arrows in order.</small>
-				<div className="harvest-direction-buttons" aria-label="Accessible harvest controls">
-					{HARVEST_PATTERN.map((direction) => (
-						<button
-							type="button"
-							key={direction}
-							className={direction === nextDirection ? "is-next" : ""}
-							onClick={() => onBeat(direction, "button")}
-							aria-label={`Harvest ${HARVEST_DIRECTION_LABELS[direction].name}`}
-						>
-							{HARVEST_DIRECTION_LABELS[direction].arrow}
-						</button>
-					))}
-				</div>
-				<div className="harvest-guarantee"><i aria-hidden="true">✓</i><span><b>Harvest guaranteed</b><small>Clean rhythm earns +1</small></span></div>
-				<button type="button" className="harvest-normal" onClick={onGatherNormally}>Gather without rhythm</button>
+			<section className="harvest-bed-ribbon" aria-label="Follow Clover's harvest rhythm">
+				<strong aria-live="polite">{nextLabel ? `Swipe ${nextLabel.name}` : "Harvest complete"}</strong>
+				{pattern}
+				<small>on the flowered bed</small>
 			</section>
-		</>
+			<div className="harvest-bed-assist">
+				{assistButton}
+				<span><i aria-hidden="true">✓</i> Harvest guaranteed · clean rhythm +1</span>
+				<button type="button" className="harvest-normal" onClick={onGatherNormally}>Gather normally</button>
+			</div>
+		</div>
 	);
 }
 
@@ -610,6 +616,7 @@ function PurposeShelf({ state }) {
 const RETURN_CEREMONY_MS = 2400;
 const HOMEGROWN_REVIEW_STORAGE_KEY = `${HOMEGROWN_STORAGE_KEY}.review`;
 const RAPID_TRANSITION_GUARD_MS = 350;
+const HARVEST_CELEBRATION_MS = 560;
 const RAPID_TRANSITION_ACTIONS = new Set([
 	ACTIONS.TICKLE,
 	ACTIONS.SELECT_CROP,
@@ -892,8 +899,15 @@ function App() {
 	const plantingCrop = position === 3 && state.stage === STAGES.STARTING && state.selectedCrop === "clover";
 	const showingGrowth = position === 4 && state.stage === STAGES.CLOVER_GROWING;
 	const showingHarvestRhythm = position === 5 && state.stage === STAGES.CLOVER_READY && !state.cloverHarvested;
-	const showingHarvestResult = position === 6 && state.stage === STAGES.CLOVER_READY && state.cloverHarvested;
-	const showingFarmingPanel = choosingSeed || plantingCrop || showingGrowth || showingHarvestRhythm || showingHarvestResult;
+	const harvestCelebrationEndsAt = (state.harvestCompletedAt ?? 0) + HARVEST_CELEBRATION_MS;
+	const showingHarvestCelebration =
+		position === 6 &&
+		state.stage === STAGES.CLOVER_READY &&
+		state.cloverHarvested &&
+		!state.reduceMotion &&
+		visualNow < harvestCelebrationEndsAt;
+	const showingHarvestResult = position === 6 && state.stage === STAGES.CLOVER_READY && state.cloverHarvested && !showingHarvestCelebration;
+	const showingFarmingPanel = choosingSeed || plantingCrop || showingGrowth || showingHarvestRhythm || showingHarvestCelebration || showingHarvestResult;
 	const choosingBag = position === 7 && state.stage === STAGES.CLOVER_READY && state.cloverHarvested;
 	const departing = position === 8 && state.stage === STAGES.ADVENTURE && !state.departureComplete;
 	const showingAdventureVignette = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && !state.adventureVignetteSeen;
@@ -904,7 +918,11 @@ function App() {
 		state.stage === STAGES.CLOVER_GROWING ||
 		(state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen && !state.adventureComplete)
 	));
-	const visiblePresentation = waiting
+	const visiblePresentation = showingHarvestCelebration
+		? { ...presentation, objective: "Harvesting Clover…" }
+		: showingHarvestRhythm
+		? { ...presentation, objective: "Clover’s rhythm: ← → ↑" }
+		: waiting
 		? {
 			...presentation,
 			label: departing
@@ -958,6 +976,13 @@ function App() {
 
 		return () => timers.forEach((timer) => window.clearTimeout(timer));
 	}, [state.plantedAt, state.readyAt, state.stage]);
+
+	useEffect(() => {
+		if (!showingHarvestCelebration) return undefined;
+		const delay = Math.max(0, harvestCelebrationEndsAt - Date.now());
+		const timer = window.setTimeout(() => setVisualNow(Date.now()), delay + 16);
+		return () => window.clearTimeout(timer);
+	}, [harvestCelebrationEndsAt, showingHarvestCelebration]);
 
 	useEffect(() => {
 		if (!departing || state.departureReadyAt === null) return undefined;

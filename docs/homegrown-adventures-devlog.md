@@ -81,11 +81,75 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 27. **v0.28 — Clover Grows Up (locally verified):** separate newly planted
     sprouts from a lush middle stage, give the living clover one restrained
     authored sway, and keep readiness, reload, and reduced motion reducer-owned.
+28. **v0.29 — Harvest in the Garden (locally verified):** replace the large
+    rhythm card with one bed-anchored swipe cue, let the authored Rive Harvest
+    play unobscured, and reveal Farm stock only after the crop leaves the bed.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.29.0 — Harvest in the Garden — 2026-08-06
+
+- Replayed Position 5 into Position 6 and compared it with
+  `rosie-v3/05-harvest-rhythm.png`. The scoring was already correct, but a
+  large five-section card covered the Farm and made the rhythm feel like form
+  filling instead of harvesting a crop.
+- Prototyped three compositions on the existing `?variant=A|B|C` route: a
+  smaller floating card, a ribbon mapped to the three garden beds, and a Rosie
+  coaching bubble. The bed-mapped ribbon won because Rosie, the ready Clover,
+  and all three beds remain readable. The two losing branches were removed.
+- Reduced the active interface to the flowered-bed swipe target, the exact
+  `← → ↑` pattern, one current-direction cue, one accessible current-direction
+  button, the guaranteed-yield promise, and a quiet normal-gather fallback.
+  React still scores direction and timing and every completed harvest remains
+  safe.
+- Added persisted `harvestCompletedAt` timing. The final beat now clears the
+  controls for 560 ms while the authored `Clover Harvest` clip performs, then
+  reveals the stock result. Reload derives the remaining pause from that fact;
+  reduced motion reveals the result immediately.
+- Removed the CSS-generated leaf burst. During the one-shot, the painterly bed
+  cover briefly yields to the Rive crop rig, so the authored Harvest is the
+  only visible crop motion while React remains the only owner of yield, stock,
+  rhythm eligibility, and progression.
+
+### Observable acceptance criteria
+
+- Position 5 keeps canonical Rosie, the ready flowered bed, and both resting
+  beds visible while presenting one obvious instruction: **Swipe Left**.
+- A left → right → up touch sequence advances the live cue one beat at a time
+  and awards the existing +1 rhythm bonus; the single accessible button does
+  the same without changing the guarantee.
+- The final beat reports `data-rive-crop-motion="harvest"`, shows the authored
+  crop leaving the bed without a competing result card, and reveals the
+  Position 6 stock result after 560 ms.
+- Reload after the first beat resumes at **Swipe Right**. Reload during the
+  bounded celebration cannot duplicate stock and settles to the result.
+- Reduced motion skips the one-shot and delay, and rapid double-final input
+  records one harvest and one stock increase.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 39/39 pass, including the new persisted
+  harvest-completion timestamp plus existing perfect, imperfect, slow, and
+  normal-gather branches.
+- `npm run verify:rive-homegrown` — pass; 390×844 header and all 55 authored
+  names, including `Clover Harvest`, remain valid.
+- `npm run prototype:homegrown:build` — pass; player and animation lab share
+  the same content-hashed authored Rive binary.
+- Rendered Chromium proved the final mobile composition, real touch swipes,
+  accessible buttons, +1 rhythm result, the unobscured Rive-only performance,
+  delayed stock reveal, one-beat reload, reduced-motion immediate reveal, and
+  rapid double-final containment.
+
+### Next highest-leverage weakness
+
+Position 6 now waits politely for the harvest, but its dense floating result
+card still covers much of Rosie and reads as a report rather than the Farm
+stock shelf and full basket shown in `rosie-v3/06-harvest-result-stock.png`.
+The next checkpoint should make that earned stock feel present in the world
+without adding another inventory system.
 
 ### v0.28.0 — Clover Grows Up — 2026-08-06
 

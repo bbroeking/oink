@@ -200,6 +200,7 @@ export function createInitialState({ now = Date.now(), reduceMotion = false } = 
 		selectedCrop: null,
 		compostApplied: false,
 		cloverHarvested: false,
+		harvestCompletedAt: null,
 		lastHarvestYield: null,
 		harvestBeats: [],
 		harvestRhythmEligible: true,
@@ -264,6 +265,7 @@ export function createPrototypeState(position, { now = Date.now(), reduceMotion 
 	const harvested = {
 		...ready,
 		cloverHarvested: true,
+		harvestCompletedAt: now - 1_000,
 		harvestBeats: HARVEST_PATTERN.map((direction, index) => ({
 			direction,
 			correct: true,
@@ -382,6 +384,7 @@ function completeCloverHarvest(state, { rhythmBonus = false } = {}, now) {
 		state,
 		{
 			cloverHarvested: true,
+			harvestCompletedAt: now,
 			harvestRhythmBonus: rhythmBonus,
 			lastHarvestYield: yieldAmount,
 			farmStock: {

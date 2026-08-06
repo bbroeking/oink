@@ -643,9 +643,6 @@ function HomegrownRiveSceneImpl({
 				className="moth-shared-glint"
 				aria-hidden="true"
 			/>
-			<span className="painted-harvest-burst" aria-hidden="true">
-				<span /><span /><span /><span /><span />
-			</span>
 		</div>
 	);
 }

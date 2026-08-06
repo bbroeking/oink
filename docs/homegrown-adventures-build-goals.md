@@ -9,7 +9,9 @@ morning verified locally; authored Rive departure motion now holds Position 8
 before the Adventure vignette, with rendered desktop, touch, reload,
 reduced-motion, and rapid-input validation; Position 4 now derives sparse and
 lush growth from React-owned elapsed time and runs one restrained authored
-`Clover Growing Sway` cadence without giving Rive timer authority
+`Clover Growing Sway` cadence without giving Rive timer authority; Position 5
+now uses a bed-anchored rhythm cue and gives the authored Rive Harvest a clean,
+persisted 560 ms performance before Farm stock appears
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -187,6 +189,20 @@ keeps the soil grounded. Reduced motion holds the same readable lush pose; the
 ready state remains distinct and never spoils. Position 5 is now the next
 visible weakness because its oversized rhythm panel competes with the crop and
 Rosie during the Harvest payoff.
+
+**Harvest-presentation checkpoint (August 6, 2026):** Position 5 now treats
+the flowered bed as the instrument instead of covering the Farm with a rhythm
+form. A compact ribbon names the current swipe and preserves the exact
+`left → right → up` sequence; one current-direction button supplies the same
+accessible path, and normal gathering remains a quiet guaranteed fallback.
+Three local layouts were compared against the approved harvest concept, and
+the bed-mapped composition was folded into every variant. The final beat stores
+`harvestCompletedAt`, clears the interface for the authored `Clover Harvest`
+one-shot, and reveals the Position 6 stock result after 560 ms. Reload derives
+the remaining reveal from React state, reduced motion skips it, and the former
+CSS leaf burst is gone. The next visible weakness is Position 6: its correct
+numbers still sit in a dense floating report instead of feeling like the
+world-anchored stock shelf and basket in the approved concept.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

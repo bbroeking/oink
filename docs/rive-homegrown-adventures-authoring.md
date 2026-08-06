@@ -107,6 +107,15 @@ seconds between plays, and stops it entirely for sprouts, ready crops, and
 reduced motion. React derives the early/middle boundary from persisted crop
 timestamps and remains authoritative for readiness.
 
+The v0.29 harvest-presentation checkpoint makes `Clover Harvest` the only
+visible crop-removal performance. The final rhythm beat stores a React-owned
+completion timestamp, temporarily removes the rhythm and result interfaces,
+and reveals the stock result after the existing 560 ms one-shot. The painterly
+bed cover lowers only while that authored clip plays; the former DOM/CSS leaf
+burst has been removed. Reload and reduced motion still settle directly from
+reducer facts, and Rive never owns yield, timing eligibility, stock, or the
+Position 5 → 6 transition.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the
