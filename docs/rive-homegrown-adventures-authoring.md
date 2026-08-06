@@ -90,6 +90,9 @@ preservation, so the Bag remains registered through breathing and tickling.
 `Rosie Pack` reveals and settles the Bag, `Rosie Return` gives it one restrained
 arrival swing, and the static `Rosie Bag Hidden` clip preserves the reducer's
 unequipped state. The reducer—not animation playback—owns whether it is worn.
+The WebGL2 boundary must start `Rosie Pack` before scrubbing its nested vector
+group to frame 16 (`16 / 60` seconds), then pause it on the next task. Scrubbing
+the never-started group does not reliably paint its keyed blend and transform.
 
 The v0.27 departure checkpoint adds `Rosie Departure` as a one-second direct
 timeline on the existing foreground `body` root. It moves Rosie toward the

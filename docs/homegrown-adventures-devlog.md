@@ -90,11 +90,67 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 30. **v0.31 — The Bag Is Open (locally verified):** replace the tall preparation
     form with a physical open satchel, compact typed choices, and visible packed
     objects that respond to every free selection.
+31. **v0.32 — Rosie Wears the Choice (locally verified):** keep the native Rive
+    satchel visibly equipped through packing, reload, reduced motion, departure,
+    and the Adventure handoff instead of letting preparation collapse back into
+    labels alone.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.32.0 — Rosie Wears the Choice — 2026-08-06
+
+- Replayed Position 8 and compared it with `rosie-v3/08-departure.png`. The
+  chosen Provision, Tool, and Pack were truthful in the ribbon, but Rosie was
+  visibly empty-handed in the ready pose, so the physical preparation created
+  in Position 7 disappeared at the moment it should become equipment.
+- Traced the native `rosie_satchel` group through the checked-in Rive source,
+  the editor timeline, and the rendered WebGL2 runtime. The authored `Rosie
+  Pack` keys were correct; the runtime was scrubbing the nested group before it
+  had been painted and was holding a time beyond its frame-16 settled pose.
+- Fixed the Rive boundary by playing the Pack timeline once, scrubbing to the
+  exact authored frame-16 endpoint, and pausing it on the next task whenever
+  reducer-owned `satchelEquipped` is true. React still owns the fact; Rive owns
+  the visible Bag and its attachment to Rosie.
+- Preserved the existing one-shot Pack and Departure performances. The Bag now
+  appears during confirmation, stays attached while Rosie crosses the Farm,
+  and remains visible in the causal Adventure vignette without a duplicate DOM
+  satchel or any change to Bag rules, timing, stock, or rewards.
+
+### Observable acceptance criteria
+
+- Position 8 shows the native tan clover satchel on Rosie alongside the exact
+  selected Provision, Tool, and Pack.
+- The equipped pose survives direct loading, reload, reduced motion, Previous /
+  Next fast-forward, and the Position 7 **Pack these** handoff.
+- The satchel follows Rosie's authored departure from the Barn and stays visible
+  when Position 9 explains what the three choices enabled.
+- Empty Bag state still uses the authored hidden pose; React remains the only
+  owner of inventory and progression.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 39/39 pass, including deterministic Bag
+  choices, persistence, departure timing, and Adventure carry-through.
+- `npm run verify:rive-homegrown` — pass; the 390×844 artboard and 55 required
+  authored names remain intact.
+- `npm run prototype:homegrown:build` — pass with the authored Rive asset.
+- `npm run quality:loop` and `npm run quality:check` — pass, including 78 layout
+  tests, 202 security tests, TypeScript, sprite integrity, and contract gates.
+- Rendered browser validation proved the equipped pose after Pack, direct
+  Position 8 loading, reload, reduced motion, four sampled departure moments,
+  and the Position 9 handoff. Rapid transition guards still advance once.
+
+### Next highest-leverage weakness
+
+Position 9 explains the deterministic cause and effect correctly, but its
+abstract blurred CSS backdrop and floating report cards do not yet feel like
+the twilight discovery pictured in `rosie-v3/09-adventure-vignette.png`. The
+next checkpoint should bring the existing Glowroot encounter into one tangible
+storybook clearing while preserving the same three causes and one continuation
+action—no new destination, roll, currency, or reward system.
 
 ### v0.31.0 — The Bag Is Open — 2026-08-06
 

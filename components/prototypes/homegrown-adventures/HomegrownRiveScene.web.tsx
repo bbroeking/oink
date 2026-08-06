@@ -22,6 +22,8 @@ const AUTHORED_TRIGGER_ANIMATIONS: Partial<Record<HomegrownRiveMotionTrigger, st
 const BREATHING_ANIMATION = "Rosie Breathing Idle";
 const NOTICE_ANIMATION = "Rosie Notice";
 const BAG_HIDDEN_ANIMATION = "Rosie Bag Hidden";
+const BAG_EQUIPPED_ANIMATION = "Rosie Pack";
+const BAG_EQUIPPED_SETTLE_SECONDS = 16 / 60;
 const CROP_STATE_ANIMATIONS = {
 	empty: "Clover Bed Empty",
 	sprout: "Clover Bed Growing",
@@ -210,12 +212,24 @@ function HomegrownRiveSceneImpl({
 		const stopCharacterMotion = () => {
 			for (const animation of CHARACTER_ANIMATIONS) rive.stop(animation);
 		};
-		const syncSatchelVisibility = () => {
-			rive.stop(BAG_HIDDEN_ANIMATION);
-			if (model.satchelEquipped) return;
+		const syncSatchelVisibility = (deferEquippedPose = false) => {
+			if (model.satchelEquipped) {
+				if (deferEquippedPose) return;
+
+				// A reload has no Pack one-shot underneath it. Rive WebGL2 must first
+				// play the nested vector group before a scrub can commit its keyed pose;
+				// hold the authored frame-16 endpoint on the next task, then layer
+				// breathing or departure over that reducer-owned equipped state.
+				rive.stop(BAG_EQUIPPED_ANIMATION);
+				rive.play(BAG_EQUIPPED_ANIMATION);
+				rive.scrub(BAG_EQUIPPED_ANIMATION, BAG_EQUIPPED_SETTLE_SECONDS);
+				schedule(() => rive.pause(BAG_EQUIPPED_ANIMATION), 0);
+				return;
+			}
 
 			// The reducer owns equipped state. Scrubbing the authored static clip
 			// keeps an unpacked Rosie bag-free without introducing parallel DOM art.
+			rive.stop(BAG_HIDDEN_ANIMATION);
 			rive.scrub(BAG_HIDDEN_ANIMATION, 0);
 			rive.pause(BAG_HIDDEN_ANIMATION);
 		};
@@ -223,6 +237,7 @@ function HomegrownRiveSceneImpl({
 			if (reduceMotion) return;
 			rive.stop(BREATHING_ANIMATION);
 			rive.play(BREATHING_ANIMATION);
+			syncSatchelVisibility();
 			setMotion("breathing");
 			// A restrained authored breath followed by a restful hold keeps the
 			// full cadence calm without changing Rive playback speed globally.
@@ -235,10 +250,10 @@ function HomegrownRiveSceneImpl({
 
 		clearTimers();
 		stopCharacterMotion();
-		syncSatchelVisibility();
 
 		const isNewTrigger = lastTriggerNonce.current !== triggerNonce;
 		lastTriggerNonce.current = triggerNonce;
+		syncSatchelVisibility(!reduceMotion && isNewTrigger && trigger === "pack");
 
 		if (reduceMotion) {
 			rive.pause(CHARACTER_ANIMATIONS);
@@ -276,6 +291,7 @@ function HomegrownRiveSceneImpl({
 		if (trigger === "departure") {
 			rive.stop(BREATHING_ANIMATION);
 			rive.play(BREATHING_ANIMATION);
+			syncSatchelVisibility();
 		}
 		rive.play(animation);
 		setMotion(
@@ -625,6 +641,7 @@ function HomegrownRiveSceneImpl({
 			className={`homegrown-rive-scene ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "probe"}`}
 			data-rive-status={status}
 			data-rive-motion={motion}
+			data-rive-satchel-equipped={model.satchelEquipped}
 			data-rive-crop-motion={cropMotion}
 			data-rive-bed-one={model.bedOneState}
 			data-rive-home-motion={homeMotion}

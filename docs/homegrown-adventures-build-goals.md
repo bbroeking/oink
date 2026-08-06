@@ -14,7 +14,9 @@ now uses a bed-anchored rhythm cue and gives the authored Rive Harvest a clean,
 persisted 560 ms performance before Farm stock appears; Position 6 now turns
 the result into a world-anchored four-compartment Farm Stock shelf and full
 Clover basket while React preserves exact quantities and causes; Position 7
-now centers preparation on a physical open Bag with live visible item choices.
+now centers preparation on a physical open Bag with live visible item choices;
+Position 8 now holds the native Rive satchel on Rosie through packing, reload,
+reduced motion, departure, and the causal Adventure handoff.
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -89,6 +91,14 @@ of a generic failure. The current Rive scene still owns Rosie's shared satchel
 and packing response while React owns choice state, copy, validation, and the
 loadout ribbon. Position 9 is now the highest-leverage gap because those clear
 choices lead to a quiet empty Barn rather than the promised causal vignette.
+
+**Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
+`satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
+reliably in WebGL2: the runtime starts the nested vector group, scrubs to its
+settled frame, then pauses it on the next task. The same native satchel remains
+attached through the existing one-shot Pack, reload, reduced motion, Rosie's
+departure, and the Position 9 handoff. No duplicate DOM Bag, equipment rule,
+timer, inventory fact, or progression branch was added.
 
 **Adventure checkpoint (August 6, 2026):** Position 9 now opens one bounded
 beyond-the-hedge vignette before the ordinary idle wait. Rosie remains visible
