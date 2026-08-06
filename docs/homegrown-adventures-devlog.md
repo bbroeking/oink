@@ -74,6 +74,13 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   sign, Moonberries, and resident.
 - Rendered Chromium at 360×780 retained exact viewport, body, and document
   dimensions with no overflow; the CTA remained readable on one line.
+- GitHub Pages run `31067710330` deployed feature commit `66877c8`. Public
+  Chromium at 390×844 confirmed an enabled **Tickle Rosie with the moths**
+  action, the fulfilled-purpose status, and `data-rive-moths-visible="true"`.
+  One live press moved 1,119 / 24-of-25 to 1,120 / 23-of-25 and triggered the
+  authored Rosie `tickle` motion while the moth remained present.
+- The deployed companion page exposed exactly one **Play the Rosie Shares the
+  Moment lab** handoff to the current public experiment.
 - Motion-enabled primary clicks exercised the unchanged sound/haptic policy.
   Mobile Safari sharpness, haptic feel, and audible acceptance remain manual
   device gates.
