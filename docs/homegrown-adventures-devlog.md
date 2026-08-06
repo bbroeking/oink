@@ -66,6 +66,11 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Rendered Chromium at 360×780 retained exact viewport and document dimensions
   with no horizontal or vertical overflow; Rosie, moth, Moonberries, Home
   record, purpose sign, action, and navigation remained legible.
+- GitHub Pages shipped commit `d2db91d` in successful deployment run
+  `31065874147`. The public 390×844 route reported the authored asset `ready`,
+  replayed moth state from `hidden` through `arrive` to `present`, settled the
+  Moonberries to Growing, and exposed **Play the Dusk Moths Arrive lab** on the
+  companion site.
 - Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
   manual gates; this browser checkpoint does not claim those device checks.
 
