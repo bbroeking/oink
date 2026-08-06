@@ -1,6 +1,6 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; The Moth Finds Its Place checkpoint shipped to the browser lab
+**Status:** Browser gameplay prototype implemented; The Moth Comes Home checkpoint ready for public verification
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -50,6 +50,10 @@ The same resident now keeps its calm Home pose on the Barn roofline instead of
 hovering in empty sky. Present, Arrive, Resting, and Laugh share that one perch;
 the two- and three-pixel body lifts remain intact, and the matching web glint
 follows the resident without changing its scale, reward logic, or persistence.
+Fulfillment now gives that resident one authored landing instead of an in-place
+fade: it appears on the garden-side roof slope, glides up-right, and hands off
+to the same persisted perch. Reduced motion paints the complete final authored
+frame atomically without exposing an intermediate flight pose.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

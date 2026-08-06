@@ -150,6 +150,15 @@ one-shot hands back to Present. The web-mirrored glint now sits to the left of
 that same perch, clear of the compact story card. Hidden, persisted, and
 reduced-motion behavior is unchanged.
 
+The v0.17 The Moth Comes Home checkpoint turns `Dusk Moths Arrive` into a
+21-frame landing. Its three resident groups begin 45 pixels left and 30 pixels
+below their final transforms at zero opacity, then translate and fade together
+to the exact Present roof perch. The endpoint uses the v0.16 `Y = 150` pose for
+all three groups, preventing the old sky-to-roof snap when Arrive hands off.
+For reduced motion, the web boundary atomically plays, scrubs to that authored
+endpoint, and pauses on the next task; this makes Rive WebGL2 commit every
+nested shape without presenting an intermediate motion frame.
+
 ## Layer and rig plan
 
 Build back to front: sky and distant hills; Barn and hedge; crossing and Hedge

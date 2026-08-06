@@ -55,6 +55,7 @@ const MOTH_STATE_ANIMATIONS = {
 	present: "Dusk Moths Present",
 } as const;
 const MOTH_ARRIVE_ANIMATION = "Dusk Moths Arrive";
+const MOTH_ARRIVE_SETTLE_SECONDS = 21 / 60;
 const MOTH_REST_ANIMATION = "Dusk Moths Resting";
 const MOTH_LAUGH_ANIMATION = "Dusk Moths Laugh";
 const MOTH_ANIMATIONS = [
@@ -485,11 +486,28 @@ function HomegrownRiveSceneImpl({
 		};
 		const syncMothState = () => {
 			stopMothMotion();
-			const animation = model.mothsVisible
-				? MOTH_STATE_ANIMATIONS.present
-				: MOTH_STATE_ANIMATIONS.hidden;
-			rive.scrub(animation, 0);
-			rive.pause(animation);
+			const reducedVisiblePose = reduceMotion && model.mothsVisible;
+			const animation = reducedVisiblePose
+				? MOTH_ARRIVE_ANIMATION
+				: model.mothsVisible
+					? MOTH_STATE_ANIMATIONS.present
+					: MOTH_STATE_ANIMATIONS.hidden;
+			// The nested artboard can expose only its first keyed shape when Present
+			// is paused in the same frame that reduced motion becomes active. The
+			// authored Arrive endpoint is the exact same roof perch; the atomic branch
+			// below commits that complete final silhouette before the next paint.
+			const settleSeconds = reducedVisiblePose ? MOTH_ARRIVE_SETTLE_SECONDS : 0;
+			if (reducedVisiblePose) {
+				// A played nested timeline commits all child shapes to WebGL2; scrub
+				// it to the settled frame before the next paint, then pause on the next
+				// task. No intermediate frame is presented to the player.
+				rive.play(animation);
+				rive.scrub(animation, settleSeconds);
+				schedule(() => rive.pause(animation), 0);
+			} else {
+				rive.scrub(animation, settleSeconds);
+				rive.pause(animation);
+			}
 			setMothMotion(
 				reduceMotion ? "reduced" : model.mothsVisible ? "present" : "hidden",
 			);

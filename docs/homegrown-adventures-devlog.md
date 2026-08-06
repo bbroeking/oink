@@ -42,15 +42,62 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 15. **v0.16 — The Moth Finds Its Place (shipped):** move the resident's calm
     Home pose onto the Barn roofline so the earned relationship remains legible
     between tickles without making the moth larger or adding a new system.
-16. **v0.17 — The Moth Comes Home:** replace the resident's in-place arrival
-    fade with one short authored landing from the Moonberry side to the exact
-    roof perch, making fulfillment feel caused without adding a ceremony or a
-    parallel reward system.
+16. **v0.17 — The Moth Comes Home (ready for public verification):** replace
+    the resident's in-place arrival fade with one short authored landing from
+    the garden-side roof slope to the exact perch, making fulfillment feel
+    caused without adding a ceremony or a parallel reward system.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.17.0 — The Moth Comes Home — 2026-08-06
+
+- Replayed the exact public v0.16 route at 390×844. The resident finally felt
+  attached to the Barn once settled, but fulfillment still faded it in at its
+  destination, weakening the visible Moonberry-to-resident causality.
+- Re-authored the 21-frame Arrive clip so the same three-piece resident appears
+  on the left roof slope, glides up-right, and lands on the exact persisted
+  perch. The endpoint also removes a previously hidden sky-to-roof snap.
+- Kept every gameplay fact unchanged: same resident, scale, purpose, reward,
+  persistence, counter, sound, haptic, economy, and fulfilled-state action.
+- Fixed a real Rive WebGL2 reduced-motion edge case. Paused nested scrubs could
+  rasterize one wing; the controller now commits the complete authored endpoint
+  atomically and pauses before an intermediate frame can be painted.
+
+### Observable acceptance criteria
+
+- Fulfillment starts one intact moth on the garden-side roof slope and hands it
+  to Present on the exact v0.16 perch without a sky snap, split shapes, drift,
+  duplication, or collision with Rosie and the HUD.
+- Reduced motion shows the complete static final resident immediately, with no
+  flight or glint; the fulfilled purpose and counter still update normally.
+- Five rapid terminal tickles keep one resident and one glint, restart Laugh,
+  settle to Present, and resume the independent Resting cadence.
+- Reload preserves the resident and fulfilled status. The 360×780 and
+  1280×900 layouts remain free of horizontal overflow.
+
+### Local validation evidence
+
+- `npm run verify:rive-homegrown` passed the 390×844 header and all 53 authored
+  names. Runtime and published-copy checksum:
+  `f3d3e6574660d3ea5304fac149aa59210cb820fff5bf966fe8e9c1915b5f8663`.
+- `npm run prototype:homegrown:test` passed 13/13. `npm run quality:check`
+  passed the quality contract, 324-sprite integrity, TypeScript, 78 layout
+  tests, and 202 security tests.
+- Fresh Chromium at 390×844 captured Arrive beginning on the left roof slope,
+  then Present at the exact roof perch. Five rapid tickles produced one Laugh
+  and one glint at opacity `1`, then one Present resident and opacity `0`.
+- A fulfilled reload retained the resident, purpose status, Rosie-first CTA,
+  and dormant glint. Reduced motion reported `moth="reduced"`, rendered the
+  complete static silhouette, and kept the glint at `display: none`.
+- The 360×780 document measured exactly 360 pixels wide; the 1280×900 document
+  measured exactly 1,280 pixels wide. Neither overflowed horizontally, and the
+  browser console reported no warnings or errors.
+- Mobile Safari motion, silhouette, and attachment acceptance remains a manual
+  device gate; no distributable build is part of this browser checkpoint.
+- Public deployment and exact-route replay remain the final shipment gate.
 
 ### v0.16.0 — The Moth Finds Its Place — 2026-08-06
 
