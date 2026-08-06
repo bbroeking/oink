@@ -47,6 +47,7 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 ### Validation evidence
 
 - `npm run prototype:homegrown:test` — 13/13 pass.
+- `npm run verify:rive-homegrown` — pass; 390×844 header and 45 authored names.
 - `npm run quality:loop` — pass, including TypeScript, layout, sprite,
   security, and 280 focused Jest assertions.
 - Rendered Chromium full-loop play at 390×844 — return reported `ceremony`,
@@ -59,8 +60,11 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - At 360×780, document width remained 360px and the compact record stayed
   inside the viewport. Its closed state left Rosie, the Bell, flowering
   crossing, all three beds, primary action, and navigation readable.
-- Public GitHub Pages and companion-site evidence are added by the shipping
-  commit after deployment.
+- GitHub Pages shipped commit `7d9b0e8`; the public 390×844 route reported the
+  authored Rive asset `ready`, replayed the full return ceremony, collapsed on
+  tickle, planted into compact/developed state, retained that state after
+  reload, and logged no browser errors. The companion site exposes **Play the
+  Clear Reward lab**.
 - Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
   manual gates; this browser checkpoint does not claim those device checks.
 
