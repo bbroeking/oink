@@ -452,6 +452,10 @@ function HarvestResultPanel({ state, onContinue }) {
 	);
 }
 
+function BagItemArt({ itemId }) {
+	return <span className={`bag-item-art bag-item-art-${itemId ?? "empty"}`} aria-hidden="true"><i /><i /><i /><i /></span>;
+}
+
 function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
@@ -465,6 +469,15 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 
 	return (
 		<section className="bag-selection" aria-label="Choose what Rosie carries">
+		<div className="bag-stage" aria-hidden="true">
+			<span className="open-adventure-bag" />
+			<div className="bag-packed-preview">
+				{BAG_SLOT_ORDER.map((slot) => {
+					const selected = bagItem(slot, bag[slot]);
+					return <span className={`bag-preview-${slot} ${selected ? "is-filled" : "is-empty"}`} key={slot}><BagItemArt itemId={selected?.id} /></span>;
+				})}
+			</div>
+		</div>
 		<div className="bag-slot-grid">
 			{BAG_SLOT_ORDER.map((slot) => {
 				const selected = bagItem(slot, bag[slot]);
@@ -474,7 +487,7 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 				return (
 					<div className={`bag-slot-card ${selected ? "is-filled" : "is-empty"} ${unavailable ? "is-unavailable" : ""}`} key={slot}>
 						<span className="bag-slot-kind">{BAG_SLOT_LABELS[slot]}</span>
-						<span className="bag-item-icon" aria-hidden="true">{selected?.icon ?? "·"}</span>
+						<span className="bag-item-icon" aria-hidden="true"><BagItemArt itemId={selected?.id} /></span>
 						<strong>{selected?.name ?? "Empty"}</strong>
 						{selected ? (
 							<small>{slot === "provision"

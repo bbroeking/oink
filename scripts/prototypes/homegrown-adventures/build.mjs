@@ -28,7 +28,7 @@ for (const name of [
 	copyFileSync(join(root, "assets/concepts/homegrown-adventures", name), join(docsAssets, name));
 }
 
-for (const name of ["farm-stock-shelf.webp", "harvest-basket.webp"]) {
+for (const name of ["farm-stock-shelf.webp", "harvest-basket.webp", "open-adventure-bag.webp"]) {
 	copyFileSync(join(here, "assets/homegrown-adventures", name), join(docsAssets, name));
 }
 

@@ -87,11 +87,74 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 29. **v0.30 — The Harvest Has a Home (locally verified):** replace the floating
     stock report with a painterly Farm shelf and full Clover basket while React
     keeps every quantity, cause, and action truthful and accessible.
+30. **v0.31 — The Bag Is Open (locally verified):** replace the tall preparation
+    form with a physical open satchel, compact typed choices, and visible packed
+    objects that respond to every free selection.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.31.0 — The Bag Is Open — 2026-08-06
+
+- Replayed Position 7 and compared it with
+  `rosie-v3/07-free-bag-selection.png`. Provision, Tool, and Pack were already
+  real choices, but three tall cards covered Rosie and the Bag itself was not
+  visible, so preparation read as editing a form.
+- Prototyped three compositions: an open Bag above a horizontal card row, an
+  open Bag beside a compact typed slot stack, and an open Bag below three
+  floating item cards. The side-by-side composition won because it preserves
+  Rosie's face, makes the Bag the destination, and keeps all three **Leave
+  empty** controls. The two losing layouts were removed.
+- Generated one isolated empty tan satchel from the approved concept with the
+  built-in ImageGen workflow, removed the chroma background, and shipped a
+  transparent 52 KB WebP. The build explicitly publishes it with the other
+  Homegrown world assets.
+- Added small CSS-rendered Clover Lunch, Trowel, Lantern, Wicker Basket, and
+  Cloth Wrap objects. Changing a slot immediately changes the matching object
+  resting in the open Bag; empty slots show a quiet vacant token.
+- Preserved React ownership of stock, slot selection, empty choices, packing,
+  and progression. The existing authored Rive Pack response still owns the
+  character's bounded packing motion after confirmation.
+
+### Observable acceptance criteria
+
+- Position 7 keeps canonical Rosie readable beside one open Bag and three
+  concise typed choices rather than a full-width inventory screen.
+- Provision shows the exact `5 → 4` spend and dusk purpose. Tool and Pack remain
+  explicitly reusable and explain their Adventure purpose.
+- Changing Trowel to Lantern or Basket to Cloth Wrap changes both the card and
+  the visible object in the Bag. Any slot may still be left empty.
+- Alternative and empty selections survive reload. **Pack these** advances
+  once under rapid input and carries the same loadout into departure.
+- The same composition remains readable at 390×844 touch size, centered
+  1280×1000 desktop size, and with reduced motion enabled.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 39/39 pass, including free slots,
+  alternative loadouts, one-use Provision spending, persistence, and every
+  empty-slot Adventure branch.
+- `npm run verify:rive-homegrown` — pass; the 390×844 header and 55 authored
+  names, including the existing Pack response, remain valid.
+- `npm run prototype:homegrown:build` — pass; the open Bag asset is copied into
+  `docs/assets/homegrown-adventures/`.
+- `npm run quality:loop` and `npm run quality:check` — pass, including 78 layout
+  tests, 202 security tests, TypeScript, sprite integrity, and contract gates.
+- Rendered Chromium proved the chosen mobile and desktop composition, every
+  alternative, empty Provision, reload, reduced motion, rapid packing, and
+  loadout continuity through the departure handoff.
+
+### Next highest-leverage weakness
+
+Position 8 correctly carries the chosen loadout forward, but it collapses back
+into a thin report ribbon and canonical Rosie does not visibly wear the packed
+satchel in the ready pose. Compared with `rosie-v3/08-departure.png`, the
+physical preparation disappears at the exact moment it should become Rosie's
+equipment. The next checkpoint should make the persisted Rive Bag readable on
+Rosie before and during the existing departure without changing Adventure
+timing or preparation rules.
 
 ### v0.30.0 — The Harvest Has a Home — 2026-08-06
 

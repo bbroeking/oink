@@ -13,7 +13,8 @@ lush growth from React-owned elapsed time and runs one restrained authored
 now uses a bed-anchored rhythm cue and gives the authored Rive Harvest a clean,
 persisted 560 ms performance before Farm stock appears; Position 6 now turns
 the result into a world-anchored four-compartment Farm Stock shelf and full
-Clover basket while React preserves exact quantities and causes.
+Clover basket while React preserves exact quantities and causes; Position 7
+now centers preparation on a physical open Bag with live visible item choices.
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -220,6 +221,22 @@ Clean rhythm, normal gathering, reload, reduced motion, rapid double input,
 is Position 7: its free choices are mechanically correct, but the tall card row
 covers Rosie and makes preparation feel like a form instead of putting Farm
 supplies into her open Bag.
+
+**Bag-presentation checkpoint (August 6, 2026):** Position 7 now treats Rosie's
+open satchel as the destination of preparation instead of covering the Farm
+with three tall cards. Three layouts were compared against
+`rosie-v3/07-free-bag-selection.png`; a compact typed slot stack beside the
+Bag won because canonical Rosie remains readable, Provision stock cost and
+equipment purpose remain explicit, and every empty control stays available.
+The generated transparent Bag is static presentation art. React renders and
+updates the five possible item objects, owns all slot state, stock validation,
+one-use spending, and progression, while the existing authored Rive Pack
+response remains the only character packing motion after confirmation.
+Alternative Tool and Pack, empty Provision, reload, reduced motion, rapid
+packing, fast-forward continuity, 390×844 touch, and centered desktop rendering
+pass. The next visible weakness is Position 8: its loadout is correct, but the
+prepared Bag disappears back into a thin report and is not visibly equipped on
+Rosie's ready pose.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and
