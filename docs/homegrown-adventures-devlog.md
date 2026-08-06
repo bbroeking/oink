@@ -33,7 +33,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 12. **v0.13 — Rosie Shares the Moment (shipped):** return the large terminal action to
     Rosie's tickle heartbeat once the moths arrive instead of ending on a
     permanently disabled acknowledgement.
-13. **v0.14 — Moth Joins the Laugh:** let the existing resident give one
+13. **v0.14 — Moth Joins the Laugh (shipped):** let the existing resident give one
     immediate wing response to the fulfilled-state tickle so “with the moths”
     becomes visible causality, not copy alone.
 
@@ -41,6 +41,57 @@ Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.14.0 — Moth Joins the Laugh — 2026-08-05
+
+- Replayed the public v0.13 fulfilled state at 390×844 and compared it with the
+  approved developed-Barn concept. Rosie entered `tickle`, but the named moth
+  stayed in its ordinary `present` pose throughout, so **with the moths** was
+  copy rather than visible causality.
+- Added the authored `Dusk Moths Laugh` Rive timeline to the existing resident.
+  It starts from Present, lifts three pixels, opens both wings slightly farther
+  than the calm rest pulse, and returns every keyed value to its exact starting
+  pose in 17 frames.
+- A visible moth now restarts that one-shot on Rosie's existing tickle nonce,
+  settles after 600 ms, and resumes its independent Resting cadence. No action,
+  counter, reward, progression state, sound, haptic, or persistent fact changed.
+- Updated the companion site to link directly to the **Moth Joins the Laugh
+  lab**.
+
+### Observable acceptance criteria
+
+- A fulfilled-state press immediately puts Rosie in `tickle` and the resident
+  in `laugh`; the rendered moth visibly reaches the stronger wing-open pose.
+- The one-shot returns to Present without position or rotation drift, then the
+  existing Resting cadence resumes. Rapid presses restart rather than stack.
+- Reduced motion keeps both authored rigs static while the existing tickle
+  counter and ready bank still update.
+- The accessible fulfilled status and CTA survive reload. The 390×844 and
+  360×780 mobile layouts remain exact with no overflow, and desktop Chromium
+  adds no horizontal overflow.
+
+### Validation evidence
+
+- `npm run verify:rive-homegrown` — pass with the 390×844 header and 53 exact
+  authored contract names.
+- `npm run prototype:homegrown:test` — 13/13 pass; `npm run
+  prototype:homegrown:build` — pass with the authored scene.
+- Rendered Chromium at 390×844 — one press moved Rosie to `tickle` and the moth
+  to `laugh` in the first observed frame; the visible moth reached its authored
+  open-wing pose, returned to Present, and resumed Resting.
+- Five rapid presses advanced the existing counter five times, left the final
+  active states at `tickle` / `laugh`, then settled to `breathing` / `present`
+  with `data-rive-moths-visible="true"`.
+- Reduced motion advanced 1,135 / 8-of-25 to 1,136 / 7-of-25 while both rigs
+  remained `reduced`. Reload preserved the fulfilled status, CTA, resident,
+  and static pose.
+- Rendered Chromium at 360×780 retained exact viewport, body, and document
+  dimensions; the CTA kept matching client/scroll dimensions. At 1280×900,
+  the page retained exact horizontal width and both fulfilled surfaces remained
+  visible.
+- Motion-enabled presses exercised the unchanged sound/haptic path. Mobile
+  Safari sharpness, physical haptic feel, and audible acceptance remain manual
+  device gates.
 
 ### v0.13.0 — Rosie Shares the Moment — 2026-08-05
 

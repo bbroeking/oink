@@ -29,7 +29,8 @@
 		"Dusk Moths Hidden",
 		"Dusk Moths Present",
 		"Dusk Moths Arrive",
-		"Dusk Moths Resting"
+		"Dusk Moths Resting",
+		"Dusk Moths Laugh"
 	],
 	"viewModel": {
 		"name": "Homegrown Adventures View Model",

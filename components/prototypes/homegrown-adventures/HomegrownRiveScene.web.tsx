@@ -56,10 +56,12 @@ const MOTH_STATE_ANIMATIONS = {
 } as const;
 const MOTH_ARRIVE_ANIMATION = "Dusk Moths Arrive";
 const MOTH_REST_ANIMATION = "Dusk Moths Resting";
+const MOTH_LAUGH_ANIMATION = "Dusk Moths Laugh";
 const MOTH_ANIMATIONS = [
 	...Object.values(MOTH_STATE_ANIMATIONS),
 	MOTH_ARRIVE_ANIMATION,
 	MOTH_REST_ANIMATION,
+	MOTH_LAUGH_ANIMATION,
 ];
 const CHARACTER_ANIMATIONS = [
 	BREATHING_ANIMATION,
@@ -97,6 +99,7 @@ type MothMotion =
 	| "arrive"
 	| "present"
 	| "resting"
+	| "laugh"
 	| "reduced";
 
 export interface HomegrownRiveSceneProps {
@@ -128,6 +131,9 @@ function HomegrownRiveSceneImpl({
 	const previousHomeDeveloped = useRef(model.hedgeCrossingOpen);
 	const previousBedTwoState = useRef(model.bedTwoState);
 	const previousMothsVisible = useRef(model.mothsVisible);
+	const lastMothTriggerNonce = useRef(triggerNonce);
+	const latestMothTrigger = useRef(trigger);
+	latestMothTrigger.current = trigger;
 	const motionTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const cropTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const homeTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
@@ -511,6 +517,8 @@ function HomegrownRiveSceneImpl({
 
 		const wasVisible = previousMothsVisible.current;
 		previousMothsVisible.current = model.mothsVisible;
+		const isNewTrigger = lastMothTriggerNonce.current !== triggerNonce;
+		lastMothTriggerNonce.current = triggerNonce;
 
 		if (reduceMotion) {
 			syncMothState();
@@ -521,6 +529,16 @@ function HomegrownRiveSceneImpl({
 			rive.play(MOTH_ARRIVE_ANIMATION);
 			setMothMotion("arrive");
 			schedule(settleAndRest, 900);
+		} else if (
+			isNewTrigger &&
+			latestMothTrigger.current === "tickle" &&
+			model.mothsVisible
+		) {
+			// The resident answers Rosie's laugh immediately, then returns to the
+			// reducer-owned Present pose before its independent rest cadence resumes.
+			rive.play(MOTH_LAUGH_ANIMATION);
+			setMothMotion("laugh");
+			schedule(settleAndRest, 600);
 		} else {
 			settleAndRest();
 		}
@@ -529,7 +547,7 @@ function HomegrownRiveSceneImpl({
 			clearTimers();
 			stopMothMotion();
 		};
-	}, [model.mothsVisible, reduceMotion, rive]);
+	}, [model.mothsVisible, reduceMotion, rive, triggerNonce]);
 
 	return (
 		<div

@@ -75,6 +75,7 @@ The current runtime file also exposes these exact foreground-rig animations:
 - `Dusk Moths Present`
 - `Dusk Moths Arrive`
 - `Dusk Moths Resting`
+- `Dusk Moths Laugh`
 
 The v0.3 breathing timeline authors a one-second rise and lets the web motion
 controller hold the resting pose for 2.25 seconds before replaying it. The
@@ -122,6 +123,13 @@ same resident. Its two wing groups rotate from the static Present pose to a
 readable open-wing silhouette while the body lifts two pixels, then every
 property returns to its exact starting value. The web controller plays the
 560ms pulse between 2.25-second holds; reduced motion never starts it.
+
+The v0.14 Moth Joins the Laugh checkpoint adds a separate authored response to
+Rosie's established tickle. It starts from Present, lifts the moth three pixels,
+opens its wings slightly farther than the calm rest pulse, and returns every
+property to the exact Present values in 17 frames. A visible resident restarts
+this response on every tickle, then resumes its independent rest cadence;
+reduced motion remains on the static Present pose.
 
 ## Layer and rig plan
 

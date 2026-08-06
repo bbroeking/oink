@@ -1,6 +1,6 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; Rosie Shares the Moment checkpoint shipped to the browser lab
+**Status:** Browser gameplay prototype implemented; Moth Joins the Laugh checkpoint ready for public verification
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -36,6 +36,11 @@ Choosing that second intention now fills Kitchen Patch bed two with an authored
 purple Moonberry crop. Empty and Growing are persisted Rive poses and Plant is
 one bounded arrival; the reducer remains authoritative and no second timer or
 economy was introduced.
+Moonberries also welcome one persisted dusk moth. Its Present, Arrive, Resting,
+and Laugh clips are authored in the same Rive artboard. A fulfilled-state
+tickle now restarts the short Laugh response alongside Rosie, settles to the
+exact Present pose, and resumes the resident's independent calm cadence without
+adding progression state.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and
