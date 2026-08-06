@@ -63,8 +63,11 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   covering the stale lettering without obscuring Rosie, crops, Bell, crossing,
   primary action, or navigation. Desktop Chromium at DPR 2 had no overflow or
   console errors.
-- Public GitHub Pages and companion-site evidence are added by the shipping
-  commit after deployment.
+- GitHub Pages shipped commit `419f1b0` from an explicitly provenance-checked
+  Pages build. The public 390×844 route reported Rive `ready`, replayed
+  `glowroot-found` through `moonberries-request` to persisted
+  `moonberries-chosen`, settled the primary action, and logged no browser
+  errors. The companion site exposes **Play the Purpose Sign lab**.
 - Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
   manual gates; this browser checkpoint does not claim those device checks.
 
