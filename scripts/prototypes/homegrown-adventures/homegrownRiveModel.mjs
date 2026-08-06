@@ -7,7 +7,13 @@ function bedStates(state) {
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
 		return ["ready", "empty", "empty"];
 	}
-	if (state.stage === STAGES.DEVELOPED) return ["ready", "growing", "sprout"];
+	if (state.stage === STAGES.DEVELOPED) {
+		return [
+			"ready",
+			state.nextPlanting === "moonberries" ? "growing" : "empty",
+			"sprout",
+		];
+	}
 	return EMPTY_BEDS;
 }
 

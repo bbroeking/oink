@@ -68,6 +68,9 @@ The current runtime file also exposes these exact foreground-rig animations:
 - `Home Consequence Hidden`
 - `Home Consequence Developed`
 - `Glowroot Home Flourish`
+- `Moonberry Bed Empty`
+- `Moonberry Bed Growing`
+- `Moonberry Plant`
 
 The v0.3 breathing timeline authors a one-second rise and lets the web motion
 controller hold the resting pose for 2.25 seconds before replaying it. The
@@ -97,6 +100,12 @@ Hedge Bell, and restrained sparkles share the approved 390×844 coordinates.
 Hidden and Developed are static reload/reduced-motion poses; Glowroot Home
 Flourish reveals the same lasting state once when `hedgeCrossingOpen` changes
 from false to true. It does not own progression or replace the scene plate.
+
+The v0.9 Moonberries Take Root checkpoint adds a second crop rig at bed two.
+Its purple Moonberry clusters share the existing paper-cut soil language but
+remain visually distinct from Clover. Empty and Growing are static reload and
+reduced-motion poses; Plant is a short opacity arrival that settles back to
+the reducer-selected Growing pose. It introduces no new timer or economy.
 
 ## Layer and rig plan
 

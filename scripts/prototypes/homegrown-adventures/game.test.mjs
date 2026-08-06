@@ -112,8 +112,10 @@ test("direct review presets are deterministic", () => {
 
 test("developed Barn records the player's next purposeful planting", () => {
 	let state = reduce(createInitialState({ now: at }), { type: ACTIONS.JUMP_TO_STATE, target: "developed" });
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "empty");
 	state = reduce(state, { type: ACTIONS.PLANT_NEXT, crop: "moonberries" });
 	assert.equal(state.nextPlanting, "moonberries");
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "growing");
 	assert.equal(state.trace.at(-1).kind, "next-planting");
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.PLANT_NEXT,
@@ -209,6 +211,6 @@ test("Rive developed state exposes the lasting Home consequences", () => {
 	assert.equal(viewModel.hedgeBellEarned, true);
 	assert.deepEqual(
 		[viewModel.bedOneState, viewModel.bedTwoState, viewModel.bedThreeState],
-		["ready", "growing", "sprout"],
+		["ready", "empty", "sprout"],
 	);
 });

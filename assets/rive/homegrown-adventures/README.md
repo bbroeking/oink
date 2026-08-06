@@ -46,3 +46,10 @@ starting Barn plate. `Home Consequence Hidden` and
 Flourish` reveals the planted Glowroot, flowering hedge crossing, and earned
 Hedge Bell as one bounded Home consequence. React still owns the underlying
 `hedgeCrossingOpen` fact, copy, controls, and persistence.
+
+The Moonberries Take Root checkpoint adds a second native crop rig aligned to
+Kitchen Patch bed two. `Moonberry Bed Empty` and `Moonberry Bed Growing` are
+the reducer-selected persisted poses; `Moonberry Plant` is one restrained
+arrival that always settles to Growing. React still owns `nextPlanting`, so a
+reload and reduced motion select the correct pose without animation-owned
+progression or another farming timer.

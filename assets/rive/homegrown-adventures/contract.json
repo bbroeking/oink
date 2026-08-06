@@ -22,7 +22,10 @@
 		"Clover Harvest",
 		"Home Consequence Hidden",
 		"Home Consequence Developed",
-		"Glowroot Home Flourish"
+		"Glowroot Home Flourish",
+		"Moonberry Bed Empty",
+		"Moonberry Bed Growing",
+		"Moonberry Plant"
 	],
 	"viewModel": {
 		"name": "Homegrown Adventures View Model",

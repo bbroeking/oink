@@ -20,13 +20,54 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
    short ceremony, then collapse it so Rosie and the Home reward remain clear.
 7. **v0.8 — Purpose Sign (shipped):** make the Barn's visible sign follow the
    Discovery and next named crop instead of requesting Clover Lunch forever.
-8. **v0.9 — Moonberries Take Root:** make choosing the second intention visibly
+8. **v0.9 — Moonberries Take Root (shipped):** make choosing the second intention visibly
    plant Moonberries in the second bed instead of ending on an unchanged scene.
+9. **v0.10 — Dusk Moths Arrive:** close the named-purpose promise by letting
+   the planted Moonberries attract one small, authored dusk-moth response at
+   the same Barn.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.9.0 — Moonberries Take Root — 2026-08-05
+
+- Replayed the deployed Purpose Sign build at 390×844 and compared it with
+  `03-developed-barn.png`. The UI named Moonberries, but the second bed stayed
+  a tiny generic sprout and the choice ended without a visible farm response.
+- Added a native second-bed Rive crop rig in the paid **Homegrown Adventures**
+  project. Purple Moonberry clusters use the existing paper-cut soil language
+  while remaining distinct from Clover.
+- Added exact Empty and Growing persisted poses plus one short Plant arrival.
+  The reducer-owned `nextPlanting` fact selects the pose; Rive owns only the
+  bounded visual response and always settles to Growing.
+- Made the developed scene start with bed two empty, fill it only after the
+  named Moonberry choice, retain it on reload, and snap cleanly under reduced
+  motion. No timer, currency, selling, or parallel farming system was added.
+- Updated the companion site to link directly to the **Moonberries Take Root
+  lab**.
+
+### Validation evidence
+
+- `npm run verify:rive-homegrown` — pass; 390×844 header and 48 authored names.
+- `npm run prototype:homegrown:test` — 13/13 pass, including empty-before-choice
+  and growing-after-choice assertions for bed two.
+- `npm run prototype:homegrown:build` — pass with the corrected authored Rive
+  export and content-hashed browser assets.
+- `npm run quality:loop` — pass, including TypeScript, layout, sprite,
+  security, and 280 focused Jest assertions.
+- Rendered Chromium at 390×844 — the choice moved bed two from `empty` through
+  `plant` to `growing`; reload retained the purple crop; ten rapid tickles left
+  it growing while Rosie settled back to breathing; reduced motion snapped to
+  the same readable crop; and browser error logs remained empty.
+- At 360×780 the document width stayed 360px, the purpose sign stayed within
+  x=210–343, and the primary action stayed within x=18–342. Rosie, all three
+  beds, the sign, Home record, primary action, and navigation remained legible.
+- Visual comparison with `03-developed-barn.png` confirmed the fixed camera,
+  full purple middle bed, and preserved Clover/Glowroot crop contrast.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim those device checks.
 
 ### v0.8.0 — Purpose Sign — 2026-08-05
 

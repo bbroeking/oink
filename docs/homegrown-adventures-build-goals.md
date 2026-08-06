@@ -1,6 +1,6 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; Purpose Sign checkpoint shipped to the browser lab
+**Status:** Browser gameplay prototype implemented; Moonberries Take Root checkpoint ready for public verification
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -32,6 +32,10 @@ readable. Developed reloads begin compact and reduced motion skips the ceremony.
 The post-return illustrated sign is now covered by reducer-driven DOM text:
 Glowroot Seed on return, Moonberries as the next named purpose, and a persisted
 chosen state. This keeps product text accessible and out of the Rive binary.
+Choosing that second intention now fills Kitchen Patch bed two with an authored
+purple Moonberry crop. Empty and Growing are persisted Rive poses and Plant is
+one bounded arrival; the reducer remains authoritative and no second timer or
+economy was introduced.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

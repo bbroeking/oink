@@ -40,6 +40,16 @@ const HOME_STATE_ANIMATIONS = {
 } as const;
 const HOME_FLOURISH_ANIMATION = "Glowroot Home Flourish";
 const HOME_ANIMATIONS = [...Object.values(HOME_STATE_ANIMATIONS), HOME_FLOURISH_ANIMATION];
+const MOONBERRY_STATE_ANIMATIONS = {
+	empty: "Moonberry Bed Empty",
+	sprout: "Moonberry Bed Growing",
+	growing: "Moonberry Bed Growing",
+	ready: "Moonberry Bed Growing",
+} as const;
+const MOONBERRY_PLANT_ANIMATION = "Moonberry Plant";
+const MOONBERRY_ANIMATIONS = [
+	...new Set([...Object.values(MOONBERRY_STATE_ANIMATIONS), MOONBERRY_PLANT_ANIMATION]),
+];
 const CHARACTER_ANIMATIONS = [
 	BREATHING_ANIMATION,
 	AUTHORED_TRIGGER_ANIMATIONS.tickle,
@@ -69,6 +79,7 @@ type CropMotion =
 	| "reduced";
 
 type HomeMotion = "loading" | "hidden" | "flourish" | "developed" | "reduced";
+type MoonberryMotion = "loading" | "empty" | "plant" | "growing" | "reduced";
 
 export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
@@ -91,13 +102,16 @@ function HomegrownRiveSceneImpl({
 	const [motion, setMotion] = useState<RosieMotion>("loading");
 	const [cropMotion, setCropMotion] = useState<CropMotion>("loading");
 	const [homeMotion, setHomeMotion] = useState<HomeMotion>("loading");
+	const [moonberryMotion, setMoonberryMotion] = useState<MoonberryMotion>("loading");
 	const lastTriggerNonce = useRef(triggerNonce);
 	const lastCropTriggerNonce = useRef(triggerNonce);
 	const previousBedOneState = useRef(model.bedOneState);
 	const previousHomeDeveloped = useRef(model.hedgeCrossingOpen);
+	const previousBedTwoState = useRef(model.bedTwoState);
 	const motionTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const cropTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const homeTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+	const moonberryTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const { RiveComponent, rive } = useRive({
 		src: __HOMEGROWN_RIVE_ASSET_URL__,
 		...(HOMEGROWN_RIVE_ASSET_AUTHORED
@@ -369,6 +383,62 @@ function HomegrownRiveSceneImpl({
 		};
 	}, [model.hedgeCrossingOpen, reduceMotion, rive]);
 
+	useEffect(() => {
+		if (!rive || !HOMEGROWN_RIVE_ASSET_AUTHORED) return;
+
+		const clearTimers = () => {
+			for (const timer of moonberryTimers.current) clearTimeout(timer);
+			moonberryTimers.current.clear();
+		};
+		const schedule = (callback: () => void, delay: number) => {
+			const timer = setTimeout(() => {
+				moonberryTimers.current.delete(timer);
+				callback();
+			}, delay);
+			moonberryTimers.current.add(timer);
+		};
+		const stopMoonberryMotion = () => {
+			for (const animation of MOONBERRY_ANIMATIONS) rive.stop(animation);
+		};
+		const syncMoonberryState = () => {
+			stopMoonberryMotion();
+			const animation = MOONBERRY_STATE_ANIMATIONS[model.bedTwoState];
+			rive.scrub(animation, 0);
+			rive.pause(animation);
+			setMoonberryMotion(
+				reduceMotion
+					? "reduced"
+					: model.bedTwoState === "empty"
+						? "empty"
+						: "growing",
+			);
+		};
+
+		clearTimers();
+		stopMoonberryMotion();
+
+		const previousState = previousBedTwoState.current;
+		previousBedTwoState.current = model.bedTwoState;
+
+		if (reduceMotion) {
+			syncMoonberryState();
+			return clearTimers;
+		}
+
+		if (previousState === "empty" && model.bedTwoState === "growing") {
+			rive.play(MOONBERRY_PLANT_ANIMATION);
+			setMoonberryMotion("plant");
+			schedule(syncMoonberryState, 760);
+		} else {
+			syncMoonberryState();
+		}
+
+		return () => {
+			clearTimers();
+			stopMoonberryMotion();
+		};
+	}, [model.bedTwoState, reduceMotion, rive]);
+
 	return (
 		<div
 			className={`homegrown-rive-scene ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "probe"}`}
@@ -378,6 +448,8 @@ function HomegrownRiveSceneImpl({
 			data-rive-bed-one={model.bedOneState}
 			data-rive-home-motion={homeMotion}
 			data-rive-home-developed={model.hedgeCrossingOpen}
+			data-rive-bed-two={model.bedTwoState}
+			data-rive-moonberry-motion={moonberryMotion}
 			data-rive-asset={HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "official-probe"}
 			aria-hidden="true"
 		>
