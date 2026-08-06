@@ -70,6 +70,11 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Rendered Chromium at 360×780 retained exact viewport, body, and document
   dimensions with no overflow. The two-line sign eyebrow, title, cause, terminal
   action, Rosie, moth, crops, and navigation remained legible.
+- GitHub Pages shipped commit `3fd644e` in successful deployment run
+  `31067277238`. The public 390×844 route preserved the pre-choice request,
+  changed both existing surfaces to the fulfilled copy after planting, retained
+  the visible moth, and exposed **Play the Purpose Fulfilled lab** on the
+  companion site.
 - The primary planting click exercised the unchanged audio-feedback path.
   Mobile Safari sharpness, haptic feel, and audible acceptance remain manual
   device gates.
