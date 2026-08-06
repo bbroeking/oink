@@ -20,6 +20,10 @@ npm run prototype:homegrown:build
 npm run prototype:homegrown:test
 ```
 
+The build writes a content hash onto the published JavaScript URL and onto the
+authored Rive request. Keep both when changing deployment code; public QA must
+exercise the exact bundle produced for the checkpoint.
+
 The web-only Rive wrapper uses `@rive-app/react-webgl2`. The build now publishes
 the checked-in authored Homegrown Adventures scene: Rosie's mesh/bone rig,
 breathing, tickle and notice motions, plus the registered satchel with pack,

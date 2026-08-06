@@ -12,13 +12,55 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
    the DOM story card.
 3. **v0.4 — Rosie's Bag (shipped):** register the satchel to Rosie's rig and
    make packing and returning visibly change the same persistent character.
-4. **v0.5 — Living Barn:** bind the first crop bed to reducer state, beginning
-   with one readable sprout, ready, and harvest consequence.
+4. **v0.5 — Living Barn (shipped):** bind the first crop bed to reducer state,
+   beginning with one readable sprout, ready, and harvest consequence.
+5. **v0.6 — Home Remembers:** replace the developed-state plate swap with one
+   authored, lasting Glowroot-and-hedge consequence in the same Barn scene.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.5.0 — Living Barn — 2026-08-05
+
+- Added a native `bed_one_crop_rig` to the paid Tickle the Pig Rive workspace
+  and retained its editable source export, vector source, deterministic runtime
+  patch, and checked contract.
+- Authored persisted empty, growing, and ready poses plus Plant, Ready Flourish,
+  and Harvest one-shots. Every one-shot settles back to the reducer-owned pose.
+- Kept the starting Barn plate fixed through the first farming loop so crop
+  progress changes one Kitchen Patch bed instead of swapping the whole scene.
+- Kept beds two and three out of the first loop's progression model and left
+  farming timers, purpose, inventory, controls, and accessible copy in React.
+- Preserved Rosie's breathing, rapid tickle interruption, Notice, Bag, Pack,
+  and Return motion while the crop rig runs independently.
+- Corrected the post-harvest story during rendered QA: once the bed is empty,
+  the UI now says Clover Lunch is in Rosie's Bag and points toward packing.
+- Content-hashed the generated browser bundle URL after rendered QA exposed a
+  stale GitHub Pages script cache, so each shipped checkpoint loads its exact
+  JavaScript as well as its exact Rive binary.
+- Updated the companion site to link directly to the **Living Barn lab**.
+
+### Validation evidence
+
+- `npm run verify:rive-homegrown` — pass; 390×844 header and 42 authored names.
+- `npm run prototype:homegrown:test` — 13/13 pass.
+- `npm run prototype:homegrown:build` — pass with the authored Rive scene.
+- `npm run quality:check` — pass, including TypeScript, 157-file layout gate,
+  324 sprite integrity checks, security contracts, and 280 Jest assertions.
+- Rendered public Chrome play at 390×844 — reset showed the empty first bed;
+  Plant moved through `plant` to `growing`; ten rapid tickles left the crop
+  stable; elapsed time moved through `flourish` to `ready`; reload retained the
+  ready pose; Harvest moved through `harvest` to `empty`; Pack still equipped
+  Rosie's Bag; and reduced motion snapped both Rosie and crop to readable
+  reducer-selected poses.
+- Visual comparison with `02-first-payoff.png` confirmed the same fixed camera,
+  single full Clover Lunch bed, warm paper-cut language, and DOM-owned controls.
+- GitHub Pages shipped commits `ff33c19` and `3fe8258`; the companion site
+  exposes **Play the Living Barn lab**.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim those device checks.
 
 ### v0.4.0 — Rosie's Bag — 2026-08-05
 
@@ -116,7 +158,7 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Next highest-leverage weakness
 
-Rosie now reacts, directs attention, and visibly carries her Bag, but the farm
-itself still reads as a static backdrop while the reducer says crops are
-sprouting, ready, and harvested. Bind one Kitchen Patch bed to those three
-meaningful states before adding residents, destinations, or more crop content.
+Rosie, her Bag, and the first crop bed now respond inside one stable Barn, but
+the developed state still arrives as a whole scene-plate replacement. Author
+one lasting Glowroot-and-hedge consequence in the existing Rive scene before
+adding residents, destinations, additional crops, or collection UI.

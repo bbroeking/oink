@@ -1,6 +1,6 @@
 import { build } from "esbuild";
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,12 +43,14 @@ if (authoredRivePresent) {
 	);
 }
 
+const bundleOutput = join(root, "docs/homegrown-adventures.js");
+
 await build({
 	entryPoints: [join(here, "app.web.tsx")],
 	bundle: true,
 	minify: true,
 	sourcemap: false,
-	outfile: join(root, "docs/homegrown-adventures.js"),
+	outfile: bundleOutput,
 	platform: "browser",
 	format: "iife",
 	target: ["safari16", "chrome110"],
@@ -61,6 +63,17 @@ await build({
 		__HOMEGROWN_RIVE_AUTHORED__: JSON.stringify(authoredRivePresent),
 	},
 });
+
+const bundleVersion = createHash("sha256")
+	.update(readFileSync(bundleOutput))
+	.digest("hex")
+	.slice(0, 10);
+const htmlPath = join(root, "docs/homegrown-adventures.html");
+const html = readFileSync(htmlPath, "utf8").replace(
+	/\.\/homegrown-adventures\.js(?:\?v=[a-f0-9]+)?/,
+	`./homegrown-adventures.js?v=${bundleVersion}`,
+);
+writeFileSync(htmlPath, html);
 
 console.log(
 	`Built docs/homegrown-adventures.html with ${
