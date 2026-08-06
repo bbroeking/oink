@@ -66,6 +66,11 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   beds, the sign, Home record, primary action, and navigation remained legible.
 - Visual comparison with `03-developed-barn.png` confirmed the fixed camera,
   full purple middle bed, and preserved Clover/Glowroot crop contrast.
+- GitHub Pages shipped commit `51c805a` from a provenance-checked Pages build.
+  The public 390×844 route reported the authored Rive asset `ready`, replayed
+  bed two from `empty` through `plant` to `growing`, settled without browser
+  errors, and exposed **Play the Moonberries Take Root lab** on the companion
+  site.
 - Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
   manual gates; this browser checkpoint does not claim those device checks.
 
