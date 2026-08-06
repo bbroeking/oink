@@ -28,7 +28,8 @@
 		"Moonberry Plant",
 		"Dusk Moths Hidden",
 		"Dusk Moths Present",
-		"Dusk Moths Arrive"
+		"Dusk Moths Arrive",
+		"Dusk Moths Resting"
 	],
 	"viewModel": {
 		"name": "Homegrown Adventures View Model",

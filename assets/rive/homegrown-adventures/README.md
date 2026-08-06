@@ -60,3 +60,9 @@ reducer-selected persisted poses; `Dusk Moths Arrive` is a bounded 21-frame
 opacity arrival. React still owns the Moonberry choice and `mothsVisible`, so
 reload and reduced motion select the correct pose without a resident timer,
 collection, or reward system.
+
+The Moth at Rest checkpoint adds `Dusk Moths Resting`, a 28-frame authored
+wing-and-hover pulse on the same resident. The runtime plays it for 560ms
+between 2.25-second static holds, resumes the cadence after reload, and leaves
+the reducer-owned Present pose untouched for reduced motion. It adds no new
+resident or progression fact.

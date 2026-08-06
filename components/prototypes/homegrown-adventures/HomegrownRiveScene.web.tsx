@@ -55,7 +55,12 @@ const MOTH_STATE_ANIMATIONS = {
 	present: "Dusk Moths Present",
 } as const;
 const MOTH_ARRIVE_ANIMATION = "Dusk Moths Arrive";
-const MOTH_ANIMATIONS = [...Object.values(MOTH_STATE_ANIMATIONS), MOTH_ARRIVE_ANIMATION];
+const MOTH_REST_ANIMATION = "Dusk Moths Resting";
+const MOTH_ANIMATIONS = [
+	...Object.values(MOTH_STATE_ANIMATIONS),
+	MOTH_ARRIVE_ANIMATION,
+	MOTH_REST_ANIMATION,
+];
 const CHARACTER_ANIMATIONS = [
 	BREATHING_ANIMATION,
 	AUTHORED_TRIGGER_ANIMATIONS.tickle,
@@ -86,7 +91,13 @@ type CropMotion =
 
 type HomeMotion = "loading" | "hidden" | "flourish" | "developed" | "reduced";
 type MoonberryMotion = "loading" | "empty" | "plant" | "growing" | "reduced";
-type MothMotion = "loading" | "hidden" | "arrive" | "present" | "reduced";
+type MothMotion =
+	| "loading"
+	| "hidden"
+	| "arrive"
+	| "present"
+	| "resting"
+	| "reduced";
 
 export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
@@ -477,6 +488,23 @@ function HomegrownRiveSceneImpl({
 				reduceMotion ? "reduced" : model.mothsVisible ? "present" : "hidden",
 			);
 		};
+		const startMothRest = () => {
+			if (reduceMotion || !model.mothsVisible) return;
+			rive.stop(MOTH_REST_ANIMATION);
+			rive.play(MOTH_REST_ANIMATION);
+			setMothMotion("resting");
+			schedule(() => {
+				rive.stop(MOTH_REST_ANIMATION);
+				rive.scrub(MOTH_STATE_ANIMATIONS.present, 0);
+				rive.pause(MOTH_STATE_ANIMATIONS.present);
+				setMothMotion("present");
+				schedule(startMothRest, 2_250);
+			}, 560);
+		};
+		const settleAndRest = () => {
+			syncMothState();
+			if (model.mothsVisible) schedule(startMothRest, 650);
+		};
 
 		clearTimers();
 		stopMothMotion();
@@ -492,9 +520,9 @@ function HomegrownRiveSceneImpl({
 		if (!wasVisible && model.mothsVisible) {
 			rive.play(MOTH_ARRIVE_ANIMATION);
 			setMothMotion("arrive");
-			schedule(syncMothState, 900);
+			schedule(settleAndRest, 900);
 		} else {
-			syncMothState();
+			settleAndRest();
 		}
 
 		return () => {

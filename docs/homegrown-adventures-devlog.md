@@ -25,13 +25,50 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 9. **v0.10 — Dusk Moths Arrive (shipped):** close the named-purpose promise by letting
    the planted Moonberries attract one small, authored dusk-moth response at
    the same Barn.
-10. **v0.11 — Moth at Rest:** make the new resident feel alive with one calm,
+10. **v0.11 — Moth at Rest (shipped):** make the new resident feel alive with one calm,
     authored hover or wing-rest loop that never competes with Rosie.
+11. **v0.12 — Purpose Fulfilled:** let the Barn sign and terminal action
+    acknowledge that the dusk moths are now here instead of describing
+    Moonberries as a future intention forever.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.11.0 — Moth at Rest — 2026-08-05
+
+- Replayed the public v0.10 settled state at 390×844 and compared it with
+  `03-developed-barn.png`. The moth fulfilled the named purpose but became a
+  completely static gold-and-purple token after its arrival.
+- Authored `Dusk Moths Resting` in the paid **Homegrown Adventures** Rive
+  project. The same three-shape resident now lifts two pixels and opens its
+  wings through a short 28-frame pose before returning exactly to Present.
+- Added a deliberately sparse runtime cadence: one 560ms wing-rest pulse,
+  followed by a 2.25-second calm hold. The moth never competes with Rosie's
+  breathing, tickle, notice, or return motion.
+- Kept the reducer authoritative. The cadence starts only while
+  `mothsVisible` is true, resumes after reload, ignores rapid tickles, and stops
+  on the static Present pose under reduced motion.
+- Added no resident collection, reward, timer, destination, currency, or farm
+  economy. This checkpoint deepens one existing Home consequence only.
+- Updated the companion site to link directly to the **Moth at Rest lab**.
+
+### Validation evidence
+
+- `npm run verify:rive-homegrown` — pass; 390×844 header and 52 authored names.
+- `npm run prototype:homegrown:test` — 13/13 pass.
+- `npm run prototype:homegrown:build` — pass with the authored Rive scene.
+- Rendered Chromium at 390×844 — no moth before the Moonberry choice; Arrive
+  still settled cleanly; the resident cycled through `resting` and `present`;
+  reload resumed Resting; five rapid tickles left it visible and the cadence
+  resumed; reduced motion stayed on the static `reduced` pose for three seconds.
+- Rendered Chromium at 360×780 retained exact viewport, body, and document
+  dimensions with no overflow. Rosie, moth, crops, Home record, purpose sign,
+  terminal action, and navigation remained legible.
+- Accessible DOM names, focusable controls, and the existing primary-action
+  feedback path are unchanged. Mobile Safari sharpness, haptic feel, and
+  audible acceptance remain manual device gates.
 
 ### v0.10.0 — Dusk Moths Arrive — 2026-08-05
 
@@ -375,7 +412,8 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Next highest-leverage weakness
 
-The Moonberries now fulfill their named purpose, but the resident moth settles
-into a completely static pose. The next checkpoint should give that one moth a
-restrained authored hover or wing-rest loop so it feels alive without competing
-with Rosie, adding another reward system, or expanding the farm economy.
+The living consequence now feels present, but the persistent sign and disabled
+terminal action still say **Next crop: Moonberries** and **Moonberries are
+next** after the crop is growing and its moth has arrived. The next checkpoint
+should acknowledge the fulfilled purpose in those existing surfaces—without a
+new collection screen, reward, timer, or second Adventure.

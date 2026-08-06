@@ -74,6 +74,7 @@ The current runtime file also exposes these exact foreground-rig animations:
 - `Dusk Moths Hidden`
 - `Dusk Moths Present`
 - `Dusk Moths Arrive`
+- `Dusk Moths Resting`
 
 The v0.3 breathing timeline authors a one-second rise and lets the web motion
 controller hold the resting pose for 2.25 seconds before replaying it. The
@@ -115,6 +116,12 @@ the Barn roof. Hidden and Present are static persisted poses; Arrive fades the
 gold-winged resident in over 21 frames when reducer-owned `mothsVisible`
 changes from false to true. It remains absent before the Moonberry choice,
 survives reload afterward, and snaps directly to Present under reduced motion.
+
+The v0.11 Moth at Rest checkpoint adds one 28-frame authored pulse to that
+same resident. Its two wing groups rotate from the static Present pose to a
+readable open-wing silhouette while the body lifts two pixels, then every
+property returns to its exact starting value. The web controller plays the
+560ms pulse between 2.25-second holds; reduced motion never starts it.
 
 ## Layer and rig plan
 
