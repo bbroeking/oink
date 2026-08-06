@@ -11,7 +11,9 @@ reduced-motion, and rapid-input validation; Position 4 now derives sparse and
 lush growth from React-owned elapsed time and runs one restrained authored
 `Clover Growing Sway` cadence without giving Rive timer authority; Position 5
 now uses a bed-anchored rhythm cue and gives the authored Rive Harvest a clean,
-persisted 560 ms performance before Farm stock appears
+persisted 560 ms performance before Farm stock appears; Position 6 now turns
+the result into a world-anchored four-compartment Farm Stock shelf and full
+Clover basket while React preserves exact quantities and causes.
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -203,6 +205,21 @@ the remaining reveal from React state, reduced motion skips it, and the former
 CSS leaf burst is gone. The next visible weakness is Position 6: its correct
 numbers still sit in a dense floating report instead of feeling like the
 world-anchored stock shelf and basket in the approved concept.
+
+**Farm-stock presentation checkpoint (August 6, 2026):** Position 6 now makes
+the harvested Clover physically belong to the Farm. Three compositions were
+compared against `rosie-v3/06-harvest-result-stock.png`; the
+four-compartment wooden shelf plus full harvest basket won over a horizontal
+sign and loose-crate row because it preserves Rosie, reads as persistent world
+space, and avoids another inventory screen. The painterly shelf and basket are
+static transparent WebP assets derived from the approved concept, while React
+continues to own and render Clover Lunch, Clover Seed, Compost, Materials,
+base yield, optional Compost, rhythm bonus, and the single preparation action.
+Clean rhythm, normal gathering, reload, reduced motion, rapid double input,
+390×844 touch, and centered desktop rendering pass. The next visible weakness
+is Position 7: its free choices are mechanically correct, but the tall card row
+covers Rosie and makes preparation feel like a form instead of putting Farm
+supplies into her open Bag.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

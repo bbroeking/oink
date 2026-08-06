@@ -27,6 +27,11 @@ for (const name of [
 ]) {
 	copyFileSync(join(root, "assets/concepts/homegrown-adventures", name), join(docsAssets, name));
 }
+
+for (const name of ["farm-stock-shelf.webp", "harvest-basket.webp"]) {
+	copyFileSync(join(here, "assets/homegrown-adventures", name), join(docsAssets, name));
+}
+
 const authoredRiveSource = join(
 	root,
 	"assets/rive/homegrown-adventures/homegrown-adventures.riv",

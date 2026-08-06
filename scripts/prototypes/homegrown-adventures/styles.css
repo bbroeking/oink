@@ -9,6 +9,7 @@
 	--sun: #f1bd4f;
 	--sky: #8cc6db;
 	--wood: #6e3e20;
+	--soil: #6b4b34;
 	--line: rgba(48, 33, 22, .42);
 	--shadow: 3px 4px 0 rgba(48, 33, 22, .86);
 }
@@ -1072,13 +1073,6 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	font-size: 25px;
 	font-weight: 900;
 }
-.harvest-result-eyebrow {
-	color: #8d5c35;
-	font-size: 8px;
-	font-weight: 950;
-	letter-spacing: .08em;
-	text-transform: uppercase;
-}
 .harvest-pattern { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .harvest-pattern > span {
 	height: 34px;
@@ -1173,36 +1167,76 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	border: 1px solid rgba(48,33,22,.48);
 	border-radius: 10px;
 }
-.harvest-result-panel {
+.harvest-result-world { position: absolute; inset: 0; z-index: 12; pointer-events: none; }
+.harvest-result-world button { pointer-events: auto; }
+.farm-stock-shelf {
 	position: absolute;
-	z-index: 12;
-	right: 10px;
-	top: 442px;
-	width: 258px;
-	padding: 12px;
-	display: grid;
-	gap: 9px;
-	background: rgba(255,249,233,.98);
-	border: 3px solid var(--ink);
-	border-radius: 17px;
-	box-shadow: 4px 5px 0 rgba(48,33,22,.72);
+	right: 3px;
+	top: 438px;
+	width: 220px;
+	height: 220px;
+	background: url("./assets/homegrown-adventures/farm-stock-shelf.webp") center / contain no-repeat;
+	filter: drop-shadow(3px 4px 0 rgba(48,33,22,.5));
 }
-.harvest-total { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 9px; }
-.harvest-total > span { width: 52px; height: 52px; display: grid; place-items: center; color: #3d7b41; background: #e5edc6; border: 2px solid var(--ink); border-radius: 50%; font-family: Georgia, serif; font-size: 31px; }
-.harvest-total > strong { display: flex; flex-direction: column; font-family: Caprasimo, Georgia, serif; font-size: 15px; font-weight: 400; line-height: 1.05; }
-.harvest-total b { margin-top: 4px; color: #3d7b41; font-size: 25px; }
-.harvest-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; border: 1.5px solid var(--ink); border-radius: 10px; }
-.harvest-breakdown > span { min-width: 0; padding: 6px 3px; display: flex; flex-direction: column; align-items: center; border-left: 1px solid var(--line); background: #f1e3c8; }
-.harvest-breakdown > span:first-child { border-left: 0; }
-.harvest-breakdown > span.is-bonus { background: #e8f1d8; }
-.harvest-breakdown b { font-size: 14px; line-height: 1; }
-.harvest-breakdown small { margin-top: 3px; color: var(--ink-soft); font-size: 7px; font-weight: 800; line-height: 1; text-align: center; }
-.harvest-stock-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-.harvest-stock-row > span { min-width: 0; padding: 6px 3px; display: flex; flex-direction: column; align-items: center; background: #eef0d6; border: 1.5px solid var(--ink); border-radius: 8px; }
-.harvest-stock-row small { color: var(--ink-soft); font-size: 6px; font-weight: 900; line-height: 1.05; text-align: center; text-transform: uppercase; }
-.harvest-stock-row b { margin-top: 4px; font-family: Caprasimo, Georgia, serif; font-size: 14px; font-weight: 400; }
-.harvest-result-panel > button {
-	min-height: 49px;
+.farm-stock-shelf > strong {
+	position: absolute;
+	left: 49px;
+	right: 49px;
+	top: 36px;
+	height: 22px;
+	display: grid;
+	place-items: center;
+	font-family: Caprasimo, Georgia, serif;
+	font-size: 11px;
+	font-weight: 400;
+	text-transform: uppercase;
+}
+.farm-stock-grid { position: absolute; left: 28px; right: 27px; top: 65px; bottom: 25px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 4px 7px; }
+.farm-stock-item {
+	min-width: 0;
+	position: relative;
+	padding: 0 3px 19px;
+	display: grid;
+	place-items: center;
+}
+.farm-stock-item > small { position: absolute; left: 2px; right: 16px; bottom: 5px; overflow: hidden; font-size: 6px; font-weight: 950; line-height: 1; text-align: center; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.farm-stock-item > strong { position: absolute; right: 5px; bottom: 2px; font-family: Caprasimo, Georgia, serif; font-size: 11px; font-weight: 400; }
+.farm-stock-item > :first-child { transform: scale(.68); transform-origin: center; }
+.stock-clover-art,
+.stock-seed-art,
+.stock-compost-art,
+.stock-material-art { width: 48px; height: 43px; position: relative; display: block; }
+.stock-clover-art > i { position: absolute; width: 22px; height: 19px; background: var(--clover); border: 1.5px solid var(--ink); border-radius: 74% 50% 72% 46%; }
+.stock-clover-art > i:nth-child(1) { left: 13px; top: 1px; transform: rotate(-42deg); }
+.stock-clover-art > i:nth-child(2) { right: 1px; top: 12px; transform: rotate(32deg); }
+.stock-clover-art > i:nth-child(3) { left: 12px; bottom: 1px; transform: rotate(39deg); }
+.stock-clover-art > i:nth-child(4) { left: 0; top: 12px; transform: rotate(-30deg); }
+.stock-seed-art { width: 42px; height: 39px; margin-top: 2px; background: #d7a758; border: 2px solid var(--ink); border-radius: 48% 48% 8px 8px; box-shadow: inset 0 5px 0 rgba(255,235,191,.42); }
+.stock-seed-art::before { content: ""; position: absolute; left: 6px; right: 6px; top: -4px; height: 7px; background: #b47a3d; border: 1.5px solid var(--ink); border-radius: 6px; }
+.stock-seed-art > i { position: absolute; left: 17px; top: 15px; width: 9px; height: 9px; background: var(--clover); border: 1px solid var(--ink); border-radius: 70% 45%; transform: rotate(45deg); }
+.stock-compost-art { width: 49px; height: 35px; margin-top: 6px; background: #9a6a3e; border: 2px solid var(--ink); border-radius: 7px 7px 13px 13px; }
+.stock-compost-art > i { position: absolute; bottom: 18px; width: 17px; height: 14px; background: var(--soil); border: 1.5px solid var(--ink); border-radius: 50% 50% 36% 36%; }
+.stock-compost-art > i:nth-child(1) { left: 2px; }.stock-compost-art > i:nth-child(2) { left: 15px; bottom: 22px; }.stock-compost-art > i:nth-child(3) { right: 2px; }
+.stock-material-art { width: 50px; height: 36px; margin-top: 5px; }
+.stock-material-art > i { position: absolute; bottom: 5px; width: 12px; height: 34px; background: #c38a47; border: 1.5px solid var(--ink); border-radius: 4px; transform: rotate(28deg); }
+.stock-material-art > i:nth-child(1) { left: 7px; }.stock-material-art > i:nth-child(2) { left: 20px; transform: rotate(14deg); }.stock-material-art > i:nth-child(3) { right: 5px; transform: rotate(34deg); }
+.harvest-basket {
+	position: absolute;
+	left: 3px;
+	top: 537px;
+	width: 180px;
+	height: 180px;
+}
+.harvest-basket-image { position: absolute; inset: 0; background: url("./assets/homegrown-adventures/harvest-basket.webp") center / contain no-repeat; filter: drop-shadow(2px 3px 0 rgba(48,33,22,.46)); }
+.harvest-basket-label { position: absolute; z-index: 2; left: 0; right: 0; bottom: -1px; min-height: 40px; padding: 6px 5px; display: grid; place-items: center; background: rgba(255,249,233,.97); border: 2px solid var(--ink); border-radius: 9px; box-shadow: 2px 2px 0 rgba(48,33,22,.58); text-align: center; }
+.harvest-basket-label strong { font-family: Caprasimo, Georgia, serif; font-size: 10px; font-weight: 400; line-height: 1; }
+.harvest-basket-label small { margin-top: 4px; color: var(--ink-soft); font-size: 7px; font-weight: 900; line-height: 1; }
+.harvest-prepare {
+	position: absolute;
+	left: 27px;
+	right: 27px;
+	top: 721px;
+	min-height: 54px;
 	border: 3px solid var(--ink);
 	border-radius: 13px;
 	background: var(--paper);
@@ -1212,8 +1246,8 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	line-height: 1;
 	text-transform: uppercase;
 }
-.harvest-result-panel > button:hover { background: #fff1c5; transform: translateY(-1px); }
-.harvest-result-panel > button:active { transform: translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
+.harvest-prepare:hover { background: #fff1c5; transform: translateY(-1px); }
+.harvest-prepare:active { transform: translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
 .bag-selection {
 	position: absolute;
 	z-index: 12;

@@ -84,11 +84,70 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 28. **v0.29 — Harvest in the Garden (locally verified):** replace the large
     rhythm card with one bed-anchored swipe cue, let the authored Rive Harvest
     play unobscured, and reveal Farm stock only after the crop leaves the bed.
+29. **v0.30 — The Harvest Has a Home (locally verified):** replace the floating
+    stock report with a painterly Farm shelf and full Clover basket while React
+    keeps every quantity, cause, and action truthful and accessible.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.30.0 — The Harvest Has a Home — 2026-08-06
+
+- Replayed Position 6 after both the clean-rhythm and normal-gather branches
+  and compared it with `rosie-v3/06-harvest-result-stock.png`. The values were
+  correct, but the large cream report obscured Rosie and made a harvest feel
+  like reading a dashboard.
+- Prototyped three world-anchored compositions: a four-compartment shelf with
+  a full harvest basket, a basket-first horizontal sign, and a row of loose
+  crates. The shelf won because it turns stock into a place at the Farm while
+  leaving Rosie and the Barn readable. The two losing layouts were removed.
+- Generated an isolated storybook shelf and Clover basket from the approved
+  Position 6 concept, removed the chroma background, and shipped transparent
+  37 KB and 67 KB WebP assets. The build now explicitly publishes both assets
+  beside the browser bundle.
+- Kept all gameplay facts in React. The shelf overlays the real Clover Lunch,
+  Clover Seed, Compost, and Materials values; the basket names the exact yield
+  and only lists Compost or rhythm when that bonus was actually earned.
+- Kept one primary action, **Prepare an Adventure**, and preserved the existing
+  reducer guard so rapid input cannot spend stock or advance twice.
+
+### Observable acceptance criteria
+
+- Position 6 shows canonical Rosie, a full harvest basket, a four-compartment
+  Farm Stock shelf, and one obvious preparation action without a floating
+  inventory card.
+- A clean rhythm shows `Clover Lunch +5` and `3 harvest · +1 Compost · +1
+  rhythm`; normal gathering shows `Clover Lunch +4` and omits the rhythm cause.
+- Reload preserves the same result. Reduced motion renders the same complete
+  static composition without replaying a celebration.
+- Rapid double-activating **Prepare an Adventure** reaches Position 7 once.
+- The composition remains readable at 390×844 touch size and in the centered
+  1280×1000 desktop presentation.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 39/39 pass, including both harvest
+  branches, idempotent settlement, persistence, and reduced motion.
+- `npm run verify:rive-homegrown` — pass; the 390×844 header and 55 authored
+  names remain valid.
+- `npm run prototype:homegrown:build` — pass; both new visual assets are copied
+  into `docs/assets/homegrown-adventures/`.
+- `npm run quality:loop` and `npm run quality:check` — pass, including 78 layout
+  tests, 202 security tests, TypeScript, sprite integrity, and contract gates.
+- Rendered Chromium proved touch and desktop composition, clean and normal
+  yields, Position 7 single advancement under a double click, reload, and the
+  persisted reduced-motion path.
+
+### Next highest-leverage weakness
+
+Position 7 correctly preserves the freely chosen Provision, Tool, and Pack,
+but three tall cards cover Rosie and the Bag itself is not the center of the
+choice. Compared with `rosie-v3/07-free-bag-selection.png`, preparation still
+reads as editing a form instead of physically putting useful Farm things into
+Rosie's open satchel. The next checkpoint should make the Bag the spatial
+anchor without weakening free choice, empty slots, or stock-cost clarity.
 
 ### v0.29.0 — Harvest in the Garden — 2026-08-06
 

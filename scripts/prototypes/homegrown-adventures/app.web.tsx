@@ -415,27 +415,39 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 	);
 }
 
+function HarvestStockIcon({ kind }) {
+	if (kind === "clover") return <span className="stock-clover-art" aria-hidden="true"><i /><i /><i /><i /></span>;
+	if (kind === "seed") return <span className="stock-seed-art" aria-hidden="true"><i /></span>;
+	if (kind === "compost") return <span className="stock-compost-art" aria-hidden="true"><i /><i /><i /></span>;
+	return <span className="stock-material-art" aria-hidden="true"><i /><i /><i /></span>;
+}
+
 function HarvestResultPanel({ state, onContinue }) {
 	const compostBonus = state.compostApplied ? CROP_RULES.clover.compostYieldBonus : 0;
 	const rhythmBonus = state.harvestRhythmBonus ? 1 : 0;
+	const stockItems = [
+		{ id: "clover", name: "Clover Lunch", value: state.farmStock?.["clover-lunch"] ?? 0, kind: "clover" },
+		{ id: "seed", name: "Clover Seed", value: state.farmStock?.[CROP_RULES.clover.seedId] ?? 0, kind: "seed" },
+		{ id: "compost", name: "Compost", value: state.farmStock?.compost ?? 0, kind: "compost" },
+		{ id: "materials", name: "Materials", value: state.farmStock?.["willow-fiber"] ?? 0, kind: "materials" },
+	];
+	const stockGrid = <div className="farm-stock-grid">{stockItems.map((item) => (
+		<div className={`farm-stock-item stock-kind-${item.kind}`} key={item.id}>
+			<HarvestStockIcon kind={item.kind} />
+			<small>{item.name}</small>
+			<strong>{item.value}</strong>
+		</div>
+	))}</div>;
+	const harvestBasket = <div className="harvest-basket" role="status" aria-label={`Clover Lunch plus ${state.lastHarvestYield}`}>
+		<span className="harvest-basket-image" aria-hidden="true" />
+		<div className="harvest-basket-label"><strong>Clover Lunch +{state.lastHarvestYield}</strong><small>{CROP_RULES.clover.baseYield} harvest{compostBonus ? ` · +${compostBonus} Compost` : ""}{rhythmBonus ? " · +1 rhythm" : ""}</small></div>
+	</div>;
+	const continueButton = <button type="button" className="harvest-prepare" onClick={onContinue}>Prepare an Adventure</button>;
 	return (
-		<section className="harvest-result-panel" aria-label="Clover harvest added to Farm stock">
-			<span className="harvest-result-eyebrow">Farm stock grew</span>
-			<div className="harvest-total">
-				<span aria-hidden="true">☘</span>
-				<strong>Clover Lunch <b>+{state.lastHarvestYield}</b></strong>
-			</div>
-			<div className="harvest-breakdown" aria-label="Harvest breakdown">
-				<span><b>{CROP_RULES.clover.baseYield}</b><small>Base harvest</small></span>
-				{compostBonus > 0 && <span><b>+{compostBonus}</b><small>Compost</small></span>}
-				<span className={rhythmBonus ? "is-bonus" : ""}><b>+{rhythmBonus}</b><small>Rhythm</small></span>
-			</div>
-			<div className="harvest-stock-row">
-				<span><small>Clover Seed</small><b>{state.farmStock?.[CROP_RULES.clover.seedId] ?? 0}</b></span>
-				<span><small>Compost</small><b>{state.farmStock?.compost ?? 0}</b></span>
-				<span><small>Clover Lunch</small><b>{state.farmStock?.["clover-lunch"] ?? 0}</b></span>
-			</div>
-			<button type="button" onClick={onContinue}>Prepare an Adventure</button>
+		<section className="harvest-result-world harvest-result-shelf" aria-label="Clover harvest added to Farm stock">
+			<div className="farm-stock-shelf"><strong>Farm stock</strong>{stockGrid}</div>
+			{harvestBasket}
+			{continueButton}
 		</section>
 	);
 }
