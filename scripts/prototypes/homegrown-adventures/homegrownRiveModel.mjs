@@ -2,14 +2,29 @@ import { STAGES } from "./game.mjs";
 
 const EMPTY_BEDS = Object.freeze(["empty", "empty", "empty"]);
 
-function bedStates(state) {
+export const CLOVER_LUSH_THRESHOLD = 0.45;
+
+function cloverGrowthState(state, now) {
+	if (
+		state.plantedAt === null ||
+		state.readyAt === null ||
+		state.readyAt <= state.plantedAt
+	) {
+		return "sprout";
+	}
+
+	const progress = (now - state.plantedAt) / (state.readyAt - state.plantedAt);
+	return progress >= CLOVER_LUSH_THRESHOLD ? "growing" : "sprout";
+}
+
+function bedStates(state, now) {
 	const rememberedBedTwo =
 		state.glowrootPlanted && state.nextPlanting === "moonberries"
 			? "growing"
 			: "empty";
 	const rememberedBedThree = state.glowrootPlanted ? "sprout" : "empty";
 	if (state.stage === STAGES.CLOVER_GROWING) {
-		return ["growing", rememberedBedTwo, rememberedBedThree];
+		return [cloverGrowthState(state, now), rememberedBedTwo, rememberedBedThree];
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
 		return ["ready", rememberedBedTwo, rememberedBedThree];
@@ -52,8 +67,8 @@ function riveTrigger(state) {
  * Pure bridge from reducer facts to the authored Rive Data Binding contract.
  * Rive never owns progression, timers, rewards, or persistence.
  */
-export function homegrownRiveModel(state) {
-	const [bedOneState, bedTwoState, bedThreeState] = bedStates(state);
+export function homegrownRiveModel(state, now = Date.now()) {
+	const [bedOneState, bedTwoState, bedThreeState] = bedStates(state, now);
 	const latest = state.trace.at(-1);
 	const developed = state.stage === STAGES.DEVELOPED || Boolean(state.glowrootPlanted);
 	const satchelEquipped = [

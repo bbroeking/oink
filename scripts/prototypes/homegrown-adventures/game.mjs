@@ -307,8 +307,10 @@ export function createPrototypeState(position, { now = Date.now(), reduceMotion 
 			...purposeful,
 			stage: STAGES.CLOVER_GROWING,
 			farmStock: plantedStock,
-			plantedAt: now,
-			readyAt: now + COMPOSTED_GROWTH_MS,
+			// Position 4 is the approved late-growth review checkpoint, not the
+			// first frame after planting. Real play still begins at plantedAt.
+			plantedAt: now - Math.round(COMPOSTED_GROWTH_MS * 0.66),
+			readyAt: now + Math.round(COMPOSTED_GROWTH_MS * 0.34),
 		},
 		5: ready,
 		6: harvested,

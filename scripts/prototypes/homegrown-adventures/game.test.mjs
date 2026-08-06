@@ -20,7 +20,10 @@ import {
 	STAGES,
 	WORLD_TARGETS,
 } from "./game.mjs";
-import { homegrownRiveModel } from "./homegrownRiveModel.mjs";
+import {
+	CLOVER_LUSH_THRESHOLD,
+	homegrownRiveModel,
+} from "./homegrownRiveModel.mjs";
 
 const at = 1_000_000;
 const reduce = (state, action) => homegrownReducer(state, { now: at, ...action });
@@ -418,16 +421,22 @@ test("Rive presentation state is derived deterministically from reducer facts", 
 
 	state = reduce(state, { type: ACTIONS.CHOOSE_PURPOSE, purpose: "dusk-picnic" });
 	state = reduce(state, { type: ACTIONS.PLANT_CLOVER });
-	model = homegrownRiveModel(state);
+	model = homegrownRiveModel(state, at);
 	assert.deepEqual(
 		[
 			model.viewModel.bedOneState,
 			model.viewModel.bedTwoState,
 			model.viewModel.bedThreeState,
 		],
-		["growing", "empty", "empty"],
+		["sprout", "empty", "empty"],
 	);
 	assert.equal(model.trigger, "plant");
+
+	const lushAt =
+		state.plantedAt +
+		(state.readyAt - state.plantedAt) * CLOVER_LUSH_THRESHOLD;
+	model = homegrownRiveModel(state, lushAt);
+	assert.equal(model.viewModel.bedOneState, "growing");
 });
 
 test("Rive developed state exposes lasting Home consequences after the named crop", () => {

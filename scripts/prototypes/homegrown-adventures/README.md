@@ -37,6 +37,12 @@ fallback runtime probe. Static
 character-free concept plates provide the scene behind the transparent Rive
 canvas so the animated rig is the only Rosie rendered.
 
+Crop growth now has an explicit painterly early-sprout asset and a separate
+flower-free lush-middle asset. React derives that visual boundary from
+`plantedAt` and `readyAt`; the authored `Clover Growing Sway` timeline supplies
+one restrained clover-only cadence during the middle stage. Rive still owns no
+timer, inventory fact, ready transition, or reward.
+
 Variant A is canonical. The return story temporarily expands for a 2.4-second
 welcome-home ceremony, then becomes a compact, accessible Home record below the
 HUD. Tickling Rosie dismisses the ceremony immediately; developed reloads are

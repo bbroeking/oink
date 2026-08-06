@@ -24,7 +24,10 @@ import {
 	STAGES,
 	WORLD_TARGETS,
 } from "./game.mjs";
-import { homegrownRiveModel } from "./homegrownRiveModel.mjs";
+import {
+	CLOVER_LUSH_THRESHOLD,
+	homegrownRiveModel,
+} from "./homegrownRiveModel.mjs";
 import "./styles.css";
 
 const VARIANTS = {
@@ -874,8 +877,12 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
-	const riveModel = useMemo(() => homegrownRiveModel(state), [state]);
+	const riveModel = useMemo(
+		() => homegrownRiveModel(state, visualNow),
+		[state, visualNow],
+	);
 	const image = sceneImage();
 	const [feedback, setFeedback] = useState(0);
 	const transitionLockUntil = useRef(0);
@@ -922,6 +929,35 @@ function App() {
 		url.searchParams.set("position", String(position));
 		window.history.replaceState({}, "", url);
 	}, [position]);
+
+	useEffect(() => {
+		const now = Date.now();
+		setVisualNow(now);
+		if (
+			state.stage !== STAGES.CLOVER_GROWING ||
+			state.plantedAt === null ||
+			state.readyAt === null ||
+			state.readyAt <= state.plantedAt
+		) {
+			return undefined;
+		}
+
+		const lushAt =
+			state.plantedAt +
+			(state.readyAt - state.plantedAt) * CLOVER_LUSH_THRESHOLD;
+		const timers = [];
+		if (lushAt > now) {
+			timers.push(window.setTimeout(() => setVisualNow(Date.now()), lushAt - now + 16));
+		}
+		if (state.readyAt > now) {
+			timers.push(window.setTimeout(
+				() => dispatch({ type: ACTIONS.SETTLE, now: Date.now() }),
+				state.readyAt - now + 16,
+			));
+		}
+
+		return () => timers.forEach((timer) => window.clearTimeout(timer));
+	}, [state.plantedAt, state.readyAt, state.stage]);
 
 	useEffect(() => {
 		if (!departing || state.departureReadyAt === null) return undefined;

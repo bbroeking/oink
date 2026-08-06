@@ -99,6 +99,14 @@ layers the complete foreground pose beneath those root keys so Rosie and the
 equipped Bag never disappear. React owns the departure clock and changes from
 Position 8 to Position 9; the Rive timeline owns only the visible performance.
 
+The v0.28 growth checkpoint adds `Clover Growing Sway` on `bed_one_clover`.
+The one-second timeline keys only a restrained −0.7° → 0.9° → −0.7° rotation;
+it never moves the soil or owns the growth timer. The web controller holds the
+reducer-selected `Clover Bed Growing` pose underneath it, rests for 1.85
+seconds between plays, and stops it entirely for sprouts, ready crops, and
+reduced motion. React derives the early/middle boundary from persisted crop
+timestamps and remains authoritative for readiness.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the

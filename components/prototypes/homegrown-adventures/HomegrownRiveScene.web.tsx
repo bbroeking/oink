@@ -33,8 +33,13 @@ const CROP_ACTION_ANIMATIONS = {
 	flourish: "Clover Ready Flourish",
 	harvest: "Clover Harvest",
 } as const;
+const CLOVER_GROWING_SWAY_ANIMATION = "Clover Growing Sway";
 const CROP_ANIMATIONS = [
-	...new Set([...Object.values(CROP_STATE_ANIMATIONS), ...Object.values(CROP_ACTION_ANIMATIONS)]),
+	...new Set([
+		...Object.values(CROP_STATE_ANIMATIONS),
+		...Object.values(CROP_ACTION_ANIMATIONS),
+		CLOVER_GROWING_SWAY_ANIMATION,
+	]),
 ];
 const HOME_STATE_ANIMATIONS = {
 	hidden: "Home Consequence Hidden",
@@ -89,6 +94,7 @@ type CropMotion =
 	| "loading"
 	| "empty"
 	| "growing"
+	| "swaying"
 	| "ready"
 	| "plant"
 	| "flourish"
@@ -351,6 +357,23 @@ function HomegrownRiveSceneImpl({
 							: "growing",
 			);
 		};
+		const startGrowingSway = () => {
+			if (reduceMotion || model.bedOneState !== "growing") return;
+			rive.stop(CLOVER_GROWING_SWAY_ANIMATION);
+			rive.play(CLOVER_GROWING_SWAY_ANIMATION);
+			setCropMotion("swaying");
+			schedule(() => {
+				rive.stop(CLOVER_GROWING_SWAY_ANIMATION);
+				rive.scrub(CROP_STATE_ANIMATIONS.growing, 0);
+				rive.pause(CROP_STATE_ANIMATIONS.growing);
+				setCropMotion("growing");
+				schedule(startGrowingSway, 1_850);
+			}, 1_000);
+		};
+		const settleCropState = () => {
+			syncCropState();
+			if (model.bedOneState === "growing") schedule(startGrowingSway, 450);
+		};
 
 		clearTimers();
 		stopCropMotion();
@@ -368,17 +391,17 @@ function HomegrownRiveSceneImpl({
 		if (isNewTrigger && trigger === "plant") {
 			rive.play(CROP_ACTION_ANIMATIONS.plant);
 			setCropMotion("plant");
-			schedule(syncCropState, 560);
+			schedule(settleCropState, 560);
 		} else if (isNewTrigger && trigger === "harvest") {
 			rive.play(CROP_ACTION_ANIMATIONS.harvest);
 			setCropMotion("harvest");
-			schedule(syncCropState, 560);
+			schedule(settleCropState, 560);
 		} else if (previousState !== "ready" && model.bedOneState === "ready") {
 			rive.play(CROP_ACTION_ANIMATIONS.flourish);
 			setCropMotion("flourish");
-			schedule(syncCropState, 720);
+			schedule(settleCropState, 720);
 		} else {
-			syncCropState();
+			settleCropState();
 		}
 
 		return () => {
@@ -614,14 +637,7 @@ function HomegrownRiveSceneImpl({
 			aria-hidden="true"
 		>
 			<RiveComponent aria-label="" />
-			<span
-				className="painted-kitchen-patch"
-				aria-hidden="true"
-			>
-				<span className="painted-patch-fragment fragment-a" />
-				<span className="painted-patch-fragment fragment-b" />
-				<span className="painted-patch-fragment fragment-c" />
-			</span>
+			<span className="painted-kitchen-patch" aria-hidden="true" />
 			<span
 				key={`moth-glint-${triggerNonce}`}
 				className="moth-shared-glint"

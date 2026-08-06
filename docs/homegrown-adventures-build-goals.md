@@ -7,7 +7,9 @@ equipment, causal Adventure vignette, exact return reward and Seed planting,
 and a changed Rive Home plus memory-aware Seed tray that survive the next
 morning verified locally; authored Rive departure motion now holds Position 8
 before the Adventure vignette, with rendered desktop, touch, reload,
-reduced-motion, and rapid-input validation
+reduced-motion, and rapid-input validation; Position 4 now derives sparse and
+lush growth from React-owned elapsed time and runs one restrained authored
+`Clover Growing Sway` cadence without giving Rive timer authority
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -174,6 +176,17 @@ one Adventure start. The motion is also exposed as **Cross the hedge** in the
 animation lab. The next visible weakness is Position 4: Clover is mechanically
 growing but still lacks a readable multi-stage growth performance between
 planting and readiness.
+
+**Growth checkpoint (August 6, 2026):** Position 4 now represents the approved
+late-growth moment instead of repeating the first planting frame. React derives
+an early `sprout` and leafy `growing` stage from persisted `plantedAt` /
+`readyAt` facts at a fixed 45% boundary, and schedules the final reducer settle
+when the real timer expires. The paid Rive source adds `Clover Growing Sway`,
+selected from three motion studies because it moves only the living clover and
+keeps the soil grounded. Reduced motion holds the same readable lush pose; the
+ready state remains distinct and never spoils. Position 5 is now the next
+visible weakness because its oversized rhythm panel competes with the crop and
+Rosie during the Harvest payoff.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

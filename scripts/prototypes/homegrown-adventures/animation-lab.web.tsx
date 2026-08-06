@@ -169,6 +169,17 @@ function neutralize(state) {
 	return { ...state, lastAction: "motion-lab-base" };
 }
 
+function studyNow(state, studyId) {
+	if (
+		studyId === "growing" &&
+		state.plantedAt !== null &&
+		state.readyAt !== null
+	) {
+		return state.plantedAt + (state.readyAt - state.plantedAt) * 0.66;
+	}
+	return state.trace.at(-1)?.at ?? BASE_TIME;
+}
+
 function readVariant() {
 	const value = new URLSearchParams(window.location.search).get("variant")?.toUpperCase();
 	return Object.hasOwn(VARIANTS, value) ? value : "A";
@@ -201,7 +212,11 @@ function useVariant() {
 }
 
 function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMotion, sceneState, revision, emphasis = "full" }) {
-	const riveModel = useMemo(() => homegrownRiveModel(sceneState), [sceneState]);
+	const presentationNow = studyNow(sceneState, activeStudy.id);
+	const riveModel = useMemo(
+		() => homegrownRiveModel(sceneState, presentationNow),
+		[presentationNow, sceneState],
+	);
 	const bedState = riveModel.viewModel.bedOneState;
 	const bedLabel = bedBusy
 		? bedState === "ready" ? "Clover Lunch is getting ready" : "Clover Lunch is growing"
@@ -391,8 +406,8 @@ function App() {
 	}, [activateRaw, clearBedTimers, reduceMotion]);
 
 	const currentBedState = useMemo(
-		() => homegrownRiveModel(sceneState).viewModel.bedOneState,
-		[sceneState],
+		() => homegrownRiveModel(sceneState, studyNow(sceneState, activeId)).viewModel.bedOneState,
+		[activeId, sceneState],
 	);
 	const runBedAction = useCallback(() => {
 		if (bedBusy) return;

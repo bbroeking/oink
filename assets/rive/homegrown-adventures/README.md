@@ -40,6 +40,14 @@ provide deterministic persisted poses; `Clover Plant`,
 transitions. The other two beds remain empty during the first loop. Crop state
 is reducer-owned and no longer arrives through a whole background-plate swap.
 
+The v0.28 growth checkpoint adds `Clover Growing Sway`, a one-second
+clover-only lean selected over whole-bed lift and scale-pulse studies. React
+derives `sprout` versus `growing` from persisted planting and ready timestamps;
+the runtime replays the authored sway only during the leafy middle stage, with
+a 1.85-second rest and no playback under reduced motion. The matching
+`patch-growing-lush.webp` keeps the approved painterly bed readable while the
+Rive rig provides restrained living motion.
+
 The Home Remembers checkpoint adds `home_consequence_rig` over the unchanged
 starting Barn plate. `Home Consequence Hidden` and
 `Home Consequence Developed` are the persisted poses; `Glowroot Home

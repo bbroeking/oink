@@ -18,6 +18,7 @@ for (const name of [
 	"01-starting-barn-scene-plate.png",
 	"patch-empty.webp",
 	"patch-growing.webp",
+	"patch-growing-lush.webp",
 	"patch-ready.webp",
 	"02-first-payoff.png",
 	"02-first-payoff-scene-plate.png",

@@ -78,11 +78,78 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 26. **v0.27 — Rosie Crosses the Hedge (locally verified):** hold Position 8
     for one authored Rive departure, keep the chosen Bag visible, and enter the
     causal Adventure vignette only after React's deterministic handoff.
+27. **v0.28 — Clover Grows Up (locally verified):** separate newly planted
+    sprouts from a lush middle stage, give the living clover one restrained
+    authored sway, and keep readiness, reload, and reduced motion reducer-owned.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.28.0 — Clover Grows Up — 2026-08-06
+
+- Replayed Position 3 through Position 5 and compared Position 4 with
+  `rosie-v3/04-growing-fast-forward.png`. The timer and no-spoil promise were
+  correct, but the bed still showed the same tiny sprouts as the first planting
+  frame, so a two-hour crop did not visibly feel as though it was growing.
+- Generated one painterly intermediate bed from the existing early and ready
+  crop assets. It preserves the exact bed crop and camera while replacing only
+  sparse shoots with a lush, flower-free clover middle state.
+- Prototyped three motions in the paid Rive editor: whole-bed lift, breathing
+  scale, and clover-only sunward wave. The clover-only treatment won because it
+  keeps the soil grounded and lets only the living plant move; the two rejected
+  studies were removed from the file.
+- Added `Clover Growing Sway` to the checked Rive contract. The runtime holds
+  the static reducer-selected Growing pose, plays the one-second authored sway,
+  rests for 1.85 seconds, and repeats only while the bed is in the leafy middle
+  stage. Reduced motion never starts the cadence.
+- Made the Rive bridge derive `sprout` versus `growing` from explicit
+  `plantedAt`, `readyAt`, and a 45% threshold supplied by React's presentation
+  clock. Rive still owns no timer or progression fact. React also schedules the
+  real ready settlement, so an open page no longer needs a reload to notice a
+  completed crop.
+- Kept Position 4 as a late-growth review checkpoint at 66% progress while
+  real planting begins at 0%. Fast-forward and reload therefore review the lush
+  state without falsifying the actual farming timeline.
+- Removed the old CSS leaf-fragment loops. The painterly bed provides visual
+  fidelity; the authored clover rig supplies the living cadence.
+
+### Observable acceptance criteria
+
+- Planting Clover first renders the sparse `sprout` bed and reports the Rive
+  Plant response.
+- At 45% elapsed growth, the same save renders the lush, flower-free `growing`
+  bed without changing inventory, yield, or ready time.
+- The authored crop cadence alternates `growing → swaying → growing`; it does
+  not run for sprouts, ready crops, or reduced motion.
+- Fast-forward to Position 5 produces the distinct flowered ready bed and the
+  existing guaranteed Harvest Rhythm.
+- Reloading Position 4 preserves the lush state and a ready Rive runtime.
+- Rapid double fast-forward settles on Position 5 once and never skips to the
+  harvest result.
+
+### Local validation evidence
+
+- `npm run verify:rive-homegrown` — pass; 390×844 header and 55 authored names,
+  including `Clover Growing Sway` and the restored `Clover Bed Ready` pose.
+- `npm run prototype:homegrown:test` — 39/39 pass, including deterministic
+  sprout and threshold-derived lush states.
+- `npm run prototype:homegrown:build` — pass; player and animation lab share
+  the exact content-hashed Rive binary and lush crop asset.
+- Rendered Chromium proved sparse planting, lush Position 4, flowered Position
+  5, `growing / swaying` cadence samples, reload stability, reduced-motion
+  `reduced` pose, and rapid double fast-forward containment.
+- The Growth Focus animation lab renders the lush bed and reports the same
+  reducer-derived `growing` state on its connected authored scene.
+
+### Next highest-leverage weakness
+
+Position 5 now receives a clearly mature crop, but the large Harvest Rhythm
+panel competes with Rosie and the bed, and its reward burst still reads more
+like interface feedback than a farm action. The next checkpoint should simplify
+that composition and make the existing Rive Harvest performance carry the
+moment without changing scoring, guaranteed yield, or the accessible fallback.
 
 ### v0.27.0 — Rosie Crosses the Hedge — 2026-08-06
 
