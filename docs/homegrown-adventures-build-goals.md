@@ -1,6 +1,6 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; A Shared Glint checkpoint shipped to the browser lab
+**Status:** Browser gameplay prototype implemented; The Moth Finds Its Place checkpoint ready for public verification
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -46,6 +46,10 @@ scale. Its authored Rive source remains checked in, while a single web
 presentation token preserves legibility through parent-artboard rasterization.
 It is absent at rest, on reload, and under reduced motion, and rapid tickles
 restart one cue rather than creating parallel elements.
+The same resident now keeps its calm Home pose on the Barn roofline instead of
+hovering in empty sky. Present, Arrive, Resting, and Laugh share that one perch;
+the two- and three-pixel body lifts remain intact, and the matching web glint
+follows the resident without changing its scale, reward logic, or persistence.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

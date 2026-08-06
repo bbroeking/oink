@@ -140,6 +140,16 @@ to `data-rive-moth-motion="laugh"`. That single presentation cue remounts on the
 existing trigger nonce so rapid tickles restart rather than stack. Rest,
 reload, and reduced motion always leave it absent.
 
+The v0.16 The Moth Finds Its Place checkpoint moves the existing resident onto
+the Barn roofline without grouping, duplicating, or resizing its authored
+pieces. Present and Arrive settle 38 pixels lower. Resting keeps its two-pixel
+body lift at frame 14; Laugh keeps its three-pixel lift at frame 7; both return
+to the shared `Y = 150` body perch. The translated wing and body keys remain
+attached across all frames, so the resident does not drift or teleport when a
+one-shot hands back to Present. The web-mirrored glint now sits to the left of
+that same perch, clear of the compact story card. Hidden, persisted, and
+reduced-motion behavior is unchanged.
+
 ## Layer and rig plan
 
 Build back to front: sky and distant hills; Barn and hedge; crossing and Hedge

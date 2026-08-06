@@ -39,14 +39,63 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 14. **v0.15 — A Shared Glint (shipped):** add one restrained gold glint at the
     resident during Laugh so its correct but tiny roof response reads at phone
     scale without enlarging it, duplicating it, or competing with Rosie.
-15. **v0.16 — The Moth Finds Its Place:** move the resident's calm Home pose
-    closer to the Moonberry bed so the earned relationship remains legible
-    between tickles without making the moth larger or adding a new system.
+15. **v0.16 — The Moth Finds Its Place (ready for public verification):** move
+    the resident's calm Home pose onto the Barn roofline so the earned
+    relationship remains legible between tickles without making the moth
+    larger or adding a new system.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.16.0 — The Moth Finds Its Place — 2026-08-06
+
+- Replayed the exact public v0.15 binary at 390×844 and compared it with the
+  approved developed-Barn concept. The resident's Laugh response read clearly,
+  but its calm pose floated beneath the HUD in open sky instead of feeling like
+  a creature that had made the Barn its Home.
+- Moved the same authored resident 38 pixels down onto the Barn roofline across
+  Present, Arrive, Resting, and Laugh. The calm two-pixel Resting lift and the
+  stronger three-pixel Laugh lift are preserved and return to one exact perch.
+- Moved the single mirrored paper glint beside the new perch, away from the
+  compact story card. No resident was enlarged or duplicated, and no action,
+  reward, timer, progression fact, persistence, sound, haptic, currency, or
+  monetization changed.
+
+### Observable acceptance criteria
+
+- The same resident appears at the Barn roofline after Moonberries, at the same
+  scale, and remains completely hidden before fulfillment.
+- Arrive hands off to Present without a teleport; Resting and Laugh return to
+  the same perch without drift. Five rapid tickles restart one Laugh and one
+  glint instead of stacking elements.
+- Reload preserves the fulfilled resident and leaves the glint absent. Reduced
+  motion uses a static resident, hides the glint, and still updates the tickle
+  counter normally.
+- The fulfilled status and Rosie-first CTA remain readable at 390×844 and
+  360×780; desktop Chromium has no horizontal overflow.
+
+### Local validation evidence
+
+- `npm run verify:rive-homegrown` — pass with all 53 exact authored contract
+  names; the runtime binary checksum is
+  `daa2e757e6f71c5abc72b89349e89f08ed2978f52f98749c2f974dae1c287914`.
+- `npm run prototype:homegrown:test` — 13/13 pass; the generated browser build
+  uses the same Rive checksum as the source runtime asset.
+- Rendered Chromium at 390×844 showed the intact resident at the roofline in
+  Present, the 360ms Arrive frame, the Laugh apex, and the later Resting pulse.
+  Arrive settled to Present; five rapid presses kept one glint mounted, then
+  returned to Present with opacity `0`; the independent Resting cadence resumed.
+- A fulfilled reload kept `data-rive-moths-visible="true"`, one dormant glint,
+  and the roof resident. Reset kept the resident hidden before Moonberries.
+  Reduced motion reported `data-rive-moth-motion="reduced"`, hid the glint with
+  `display: none`, and advanced Tickles Earned from 1,125 to 1,126.
+- The 360×780 layout measured exactly 360 pixels wide and the 1280×900 desktop
+  layout exactly 1,280 pixels, both without horizontal overflow. `npm run
+  quality:check` passed the quality contract, 324-sprite integrity, TypeScript,
+  78 layout tests, and 202 security tests.
+- Public deployment and exact-route replay remain the final shipment gate.
 
 ### v0.15.0 — A Shared Glint — 2026-08-06
 

@@ -35,8 +35,8 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .moth-shared-glint {
 	position: absolute;
 	z-index: 2;
-	left: 54%;
-	top: 14.3%;
+	left: 42%;
+	top: 18.8%;
 	width: 22px;
 	height: 22px;
 	background: #f6c75b;
