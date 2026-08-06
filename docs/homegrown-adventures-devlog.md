@@ -36,6 +36,9 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 13. **v0.14 — Moth Joins the Laugh (shipped):** let the existing resident give one
     immediate wing response to the fulfilled-state tickle so “with the moths”
     becomes visible causality, not copy alone.
+14. **v0.15 — A Shared Glint:** add one restrained authored gold glint at the
+    resident during Laugh so its correct but tiny roof response reads at phone
+    scale without enlarging it, duplicating it, or competing with Rosie.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
@@ -92,6 +95,16 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Motion-enabled presses exercised the unchanged sound/haptic path. Mobile
   Safari sharpness, physical haptic feel, and audible acceptance remain manual
   device gates.
+- Feature commit `73c53aa` deployed in GitHub Pages run `31068770009`. Public
+  Chromium at 390×844 confirmed the authored scene was ready with the fulfilled
+  CTA, status, and resident visible. One live press moved 1,121 / 22-of-25 to
+  1,122 / 21-of-25 while the rendered states changed together to `tickle` /
+  `laugh`; the resident later returned to its independent `resting` cadence.
+- The deployed companion page exposed exactly one **Play the Moth Joins the
+  Laugh lab** handoff. Replaying the live response also selected v0.15: the
+  roof resident is intentionally low priority but its wing response is small
+  enough to miss at phone scale, so one temporary authored glint is the next
+  highest-leverage visible polish—not another system or persistent resident.
 
 ### v0.13.0 — Rosie Shares the Moment — 2026-08-05
 

@@ -1,6 +1,6 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; Moth Joins the Laugh checkpoint ready for public verification
+**Status:** Browser gameplay prototype implemented; Moth Joins the Laugh checkpoint shipped to the browser lab
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
