@@ -415,10 +415,8 @@ export function primaryAction(state) {
 	}
 	if (state.nextPlanting === "moonberries") {
 		return {
-			type: ACTIONS.PLANT_NEXT,
-			crop: "moonberries",
-			label: "Dusk moths are here",
-			disabled: true,
+			type: ACTIONS.TICKLE,
+			label: "Tickle Rosie with the moths",
 		};
 	}
 	return { type: ACTIONS.PLANT_NEXT, crop: "moonberries", label: "Grow Moonberries for the moths" };

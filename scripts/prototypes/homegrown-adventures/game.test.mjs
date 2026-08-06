@@ -123,10 +123,8 @@ test("developed Barn records the player's next purposeful planting", () => {
 	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "growing");
 	assert.equal(state.trace.at(-1).kind, "next-planting");
 	assert.deepEqual(primaryAction(state), {
-		type: ACTIONS.PLANT_NEXT,
-		crop: "moonberries",
-		label: "Dusk moths are here",
-		disabled: true,
+		type: ACTIONS.TICKLE,
+		label: "Tickle Rosie with the moths",
 	});
 });
 

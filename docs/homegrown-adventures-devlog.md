@@ -30,14 +30,53 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 11. **v0.12 — Purpose Fulfilled (shipped):** let the Barn sign and terminal action
     acknowledge that the dusk moths are now here instead of describing
     Moonberries as a future intention forever.
-12. **v0.13 — Rosie Shares the Moment:** return the large terminal action to
+12. **v0.13 — Rosie Shares the Moment (shipped):** return the large terminal action to
     Rosie's tickle heartbeat once the moths arrive instead of ending on a
     permanently disabled acknowledgement.
+13. **v0.14 — Moth Joins the Laugh:** let the existing resident give one
+    immediate wing response to the fulfilled-state tickle so “with the moths”
+    becomes visible causality, not copy alone.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.13.0 — Rosie Shares the Moment — 2026-08-05
+
+- Replayed the public v0.12 fulfilled state at 390×844. The Barn copy was now
+  truthful, but the largest action surface ended permanently disabled while
+  Rosie remained the emotional heartbeat elsewhere on screen.
+- Reused the established tickle action. After Moonberries welcome the moths,
+  the primary action is now **Tickle Rosie with the moths** and dispatches the
+  same reducer event, authored Rive trigger, counter update, vibration policy,
+  and sound-feedback path as every other tickle.
+- Added no new reward, trigger, counter, state, or terminal progression. The
+  fulfilled sign, Moonberries, resident visibility, and moth cadence remain
+  reducer-owned and independent.
+- Updated the companion site to link directly to the **Rosie Shares the Moment
+  lab**.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 13/13 pass, including the fulfilled
+  primary action resolving to the existing `TICKLE` event.
+- `npm run prototype:homegrown:build` and `npm run quality:check` — pass.
+- Rendered Chromium at 390×844 — the enabled action was present with the
+  fulfilled sign; one press moved Tickles Earned from 1,119 to 1,120 and Ready
+  to Tickle from 24/25 to 23/25, put Rosie in `tickle`, and left the visible
+  moth in its independent Resting cadence.
+- Five rapid primary-action presses restarted Rosie cleanly, settled her to a
+  valid idle, and left the moth cadence running. The accessible CTA remained
+  enabled and correctly named.
+- Reduced motion still incremented the established counter while holding Rosie
+  and the moth in static `reduced` poses. Reload preserved the CTA, fulfilled
+  sign, Moonberries, and resident.
+- Rendered Chromium at 360×780 retained exact viewport, body, and document
+  dimensions with no overflow; the CTA remained readable on one line.
+- Motion-enabled primary clicks exercised the unchanged sound/haptic policy.
+  Mobile Safari sharpness, haptic feel, and audible acceptance remain manual
+  device gates.
 
 ### v0.12.0 — Purpose Fulfilled — 2026-08-05
 
@@ -459,7 +498,8 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Next highest-leverage weakness
 
-The Barn now acknowledges the fulfilled purpose, but the largest action surface
-ends permanently disabled. The next checkpoint should return that existing
-button to Rosie's tickle heartbeat after the moths arrive, letting the player
-share the quiet payoff with her without adding another progression step.
+The player can now share the fulfilled moment with Rosie, but the copy says
+**with the moths** while the resident continues only its unrelated ambient
+cadence. The next checkpoint should reuse the existing wing-rest motion as one
+immediate, bounded response to that tickle—without adding a reward, trigger,
+resident state, or parallel interaction.
