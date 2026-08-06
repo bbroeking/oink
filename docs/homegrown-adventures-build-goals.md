@@ -1,6 +1,6 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; Moth Joins the Laugh checkpoint shipped to the browser lab
+**Status:** Browser gameplay prototype implemented; A Shared Glint checkpoint ready for public verification
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -41,6 +41,11 @@ and Laugh clips are authored in the same Rive artboard. A fulfilled-state
 tickle now restarts the short Laugh response alongside Rosie, settles to the
 exact Present pose, and resumes the resident's independent calm cadence without
 adding progression state.
+One restrained gold paper glint now mirrors that existing Laugh state at phone
+scale. Its authored Rive source remains checked in, while a single web
+presentation token preserves legibility through parent-artboard rasterization.
+It is absent at rest, on reload, and under reduced motion, and rapid tickles
+restart one cue rather than creating parallel elements.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

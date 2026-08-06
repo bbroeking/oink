@@ -566,6 +566,11 @@ function HomegrownRiveSceneImpl({
 			aria-hidden="true"
 		>
 			<RiveComponent aria-label="" />
+			<span
+				key={`moth-glint-${triggerNonce}`}
+				className="moth-shared-glint"
+				aria-hidden="true"
+			/>
 		</div>
 	);
 }

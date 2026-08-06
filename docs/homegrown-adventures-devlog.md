@@ -36,7 +36,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 13. **v0.14 — Moth Joins the Laugh (shipped):** let the existing resident give one
     immediate wing response to the fulfilled-state tickle so “with the moths”
     becomes visible causality, not copy alone.
-14. **v0.15 — A Shared Glint:** add one restrained authored gold glint at the
+14. **v0.15 — A Shared Glint (ready for public verification):** add one restrained gold glint at the
     resident during Laugh so its correct but tiny roof response reads at phone
     scale without enlarging it, duplicating it, or competing with Rosie.
 
@@ -44,6 +44,44 @@ Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.15.0 — A Shared Glint — 2026-08-06
+
+- Replayed the exact public v0.14 binary at 390×844 and compared the fulfilled
+  Barn with the approved developed-state concept. The resident entered `laugh`,
+  but its roughly 19-pixel roof response was too subtle to read beside Rosie's
+  large tickle bounce.
+- Added one warm gold paper glint beside the existing moth. The Rive source now
+  carries the glint's hidden base and Laugh keys; the web presentation boundary
+  mirrors that same `laugh` state with one crisp 22-pixel star so the cue
+  survives browser rasterization without enlarging or duplicating the resident.
+- The glint is presentation only. It adds no action, counter, reward, timer,
+  progression fact, persistence, sound, haptic, currency, or monetization.
+
+### Observable acceptance criteria
+
+- One gold glint appears beside the visible resident only while the existing
+  fulfilled-state tickle is in `laugh`, and it is readable at 390×844.
+- It disappears completely after settle and reload. Reduced motion never shows
+  it, while the counter and ready bank still update normally.
+- Rapid presses restart one cue rather than stacking elements. The fulfilled
+  status, CTA, Rosie response, moth state, and rest cadence remain intact.
+- The 390×844 and 360×780 mobile layouts remain exact with no horizontal
+  overflow, and desktop Chromium adds no horizontal overflow.
+
+### Local validation evidence
+
+- `npm run verify:rive-homegrown` — pass with the 390×844 header and 53 exact
+  authored contract names; the runtime binary checksum is
+  `5bc5b3cfef36ac42ccfc29f3d86231da21f3b5075877b70f307b69f03a84e9c1`.
+- `npm run prototype:homegrown:test` — 13/13 pass; `npm run
+  prototype:homegrown:build` — pass with the authored scene.
+- Rendered Chromium at 390×844 showed exactly one gold cue at the laugh apex,
+  then opacity `0` after settle and reload. Five rapid presses kept exactly one
+  cue mounted, restarted it visibly, and settled to opacity `0`.
+- Reduced motion reported `data-rive-moth-motion="reduced"` and `display: none`
+  for the cue. The 360×780 layout measured 360 pixels of document width; the
+  1280×900 desktop layout measured 1,280 pixels with no horizontal overflow.
 
 ### v0.14.0 — Moth Joins the Laugh — 2026-08-05
 

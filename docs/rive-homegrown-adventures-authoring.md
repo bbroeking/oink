@@ -131,6 +131,15 @@ property to the exact Present values in 17 frames. A visible resident restarts
 this response on every tickle, then resumes its independent rest cadence;
 reduced motion remains on the static Present pose.
 
+The v0.15 A Shared Glint checkpoint adds one gold paper shape beside the same
+resident. Its Rive base is collapsed and hidden; Laugh keys bring it to full
+scale and opacity before returning it to zero. Because the nested authored
+shape does not remain visible when the parent artboard is rasterized by the web
+runtime, the React boundary also renders one matching 22-pixel paper star keyed
+to `data-rive-moth-motion="laugh"`. That single presentation cue remounts on the
+existing trigger nonce so rapid tickles restart rather than stack. Rest,
+reload, and reduced motion always leave it absent.
+
 ## Layer and rig plan
 
 Build back to front: sky and distant hills; Barn and hedge; crossing and Hedge

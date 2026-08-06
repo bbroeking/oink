@@ -32,6 +32,29 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .scene-plate { position: absolute; inset: 0; z-index: 0; background-size: cover; background-position: center; }
 .homegrown-rive-scene.authored { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .homegrown-rive-scene.authored canvas { width: 100%; height: 100%; display: block; }
+.moth-shared-glint {
+	position: absolute;
+	z-index: 2;
+	left: 54%;
+	top: 14.3%;
+	width: 22px;
+	height: 22px;
+	background: #f6c75b;
+	clip-path: polygon(50% 0, 63% 36%, 100% 50%, 63% 64%, 50% 100%, 37% 64%, 0 50%, 37% 36%);
+	filter: drop-shadow(0 1px 0 #6e3e20) drop-shadow(0 0 4px rgba(246, 199, 91, .72));
+	opacity: 0;
+	transform: translate(-50%, -50%) scale(.15) rotate(-12deg);
+}
+.homegrown-rive-scene[data-rive-moth-motion="laugh"] .moth-shared-glint {
+	animation: moth-shared-glint 600ms cubic-bezier(.2, .8, .2, 1) both;
+}
+.homegrown-rive-scene[data-rive-moth-motion="reduced"] .moth-shared-glint { display: none; }
+@keyframes moth-shared-glint {
+	0% { opacity: 0; transform: translate(-50%, -50%) scale(.15) rotate(-12deg); }
+	18% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(5deg); }
+	72% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+	100% { opacity: 0; transform: translate(-50%, -50%) scale(.35) rotate(10deg); }
+}
 .homegrown-rive-scene.probe { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .scene-starting .scene-plate { background-image: url("./assets/homegrown-adventures/01-starting-barn-scene-plate.png"); }
 .scene-payoff .scene-plate { background-image: url("./assets/homegrown-adventures/02-first-payoff-scene-plate.png"); }
