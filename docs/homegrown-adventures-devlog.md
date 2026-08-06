@@ -54,8 +54,10 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   and developed poses; and twelve rapid tickles did not disturb the Home state.
 - Visual comparison with `03-developed-barn.png` confirmed the fixed camera,
   flowering route, gold Glowroot language, and smaller bell/arch proportions.
-- GitHub Pages and companion-site verification are recorded by the shipping
-  commit for this checkpoint.
+- GitHub Pages shipped commit `0b62bdc`; the public route reported the authored
+  asset `ready`, moved from `hidden` through `flourish` to `developed`, retained
+  that state after reload, and showed no desktop horizontal overflow at DPR 2.
+  The companion site exposes **Play the Home Remembers lab**.
 - Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
   manual gates; this browser checkpoint does not claim those device checks.
 
