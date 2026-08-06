@@ -294,6 +294,55 @@ function StoryCard({ state, variant }) {
 	);
 }
 
+function PurposeSign({ state }) {
+	let copy;
+	if (state.stage === STAGES.GLOWROOT_RETURNED) {
+		copy = {
+			id: "glowroot-found",
+			eyebrow: "Rosie found",
+			title: "Glowroot Seed",
+			detail: "Ready to plant",
+			mark: "glow",
+			label: "Current purpose: Rosie found Glowroot Seed, ready to plant",
+		};
+	} else if (state.stage === STAGES.DEVELOPED && state.nextPlanting) {
+		copy = {
+			id: "moonberries-chosen",
+			eyebrow: "Next crop",
+			title: "Moonberries",
+			detail: "For the dusk moths",
+			mark: "berry",
+			label: "Next crop: Moonberries for the dusk moths",
+		};
+	} else if (state.stage === STAGES.DEVELOPED) {
+		copy = {
+			id: "moonberries-request",
+			eyebrow: "Grow for",
+			title: "Moonberries",
+			detail: "Invite the dusk moths",
+			mark: "berry",
+			label: "Current purpose: Grow Moonberries to invite the dusk moths",
+		};
+	} else {
+		return null;
+	}
+
+	return (
+		<div
+			className={`purpose-sign mark-${copy.mark}`}
+			data-purpose-sign={copy.id}
+			role="status"
+			aria-live="polite"
+			aria-label={copy.label}
+		>
+			<span className="purpose-sign-eyebrow">{copy.eyebrow}</span>
+			<strong>{copy.title}</strong>
+			<span className="crop-mark" aria-hidden="true" />
+			<small>{copy.detail}</small>
+		</div>
+	);
+}
+
 function DevTools({ state, dispatch, variant }) {
 	const [open, setOpen] = useState(false);
 	const copyTrace = async () => {
@@ -409,9 +458,9 @@ function App() {
 			<button className="rosie-hit" type="button" aria-label="Tickle Rosie" onClick={() => act({ type: ACTIONS.TICKLE })}><span>Tickle Rosie</span></button>
 			{variant === "B" && <PurposeShelf state={state} />}
 			<StoryCard state={state} variant={variant} />
+			<PurposeSign state={state} />
 			{state.stage === STAGES.CLOVER_READY && state.cloverHarvested && <button className="near-discovery-action" type="button" onClick={() => act({ type: ACTIONS.PACK_LIGHT })}>Preview kind miss: leave Clover Home</button>}
-			<button className="primary-action" type="button" onClick={() => act()}>{action.label}</button>
-			{state.stage === STAGES.DEVELOPED && state.nextPlanting && <div className="next-choice" role="status">Next: {state.nextPlanting} for a purpose</div>}
+			<button className="primary-action" type="button" disabled={action.disabled} onClick={() => act()}>{action.label}</button>
 			<BottomNav />
 		</div>
 		<DevTools state={state} dispatch={dispatch} variant={variant} />

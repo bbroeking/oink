@@ -5,6 +5,7 @@ import {
 	createInitialState,
 	deserializeState,
 	homegrownReducer,
+	primaryAction,
 	serializeState,
 	settleState,
 	STAGES,
@@ -114,6 +115,12 @@ test("developed Barn records the player's next purposeful planting", () => {
 	state = reduce(state, { type: ACTIONS.PLANT_NEXT, crop: "moonberries" });
 	assert.equal(state.nextPlanting, "moonberries");
 	assert.equal(state.trace.at(-1).kind, "next-planting");
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.PLANT_NEXT,
+		crop: "moonberries",
+		label: "Moonberries are next",
+		disabled: true,
+	});
 });
 
 test("underpreparation returns a kind Near-Discovery and a useful retry clue", () => {

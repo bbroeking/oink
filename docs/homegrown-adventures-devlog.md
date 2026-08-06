@@ -18,13 +18,55 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
    with one authored, lasting Glowroot-and-hedge consequence in the same Barn.
 6. **v0.7 — Clear Reward (shipped):** let the larger return story appear as one
    short ceremony, then collapse it so Rosie and the Home reward remain clear.
-7. **v0.8 — Purpose Sign:** make the Barn's visible purpose sign agree with the
-   next named crop instead of continuing to request Clover Lunch forever.
+7. **v0.8 — Purpose Sign (shipped):** make the Barn's visible sign follow the
+   Discovery and next named crop instead of requesting Clover Lunch forever.
+8. **v0.9 — Moonberries Take Root:** make choosing the second intention visibly
+   plant Moonberries in the second bed instead of ending on an unchanged scene.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.8.0 — Purpose Sign — 2026-08-05
+
+- Replayed the public v0.7 developed state at 390×844 and confirmed a direct
+  contradiction: the visible illustrated sign said **Grow for: Clover Lunch**
+  while the primary action asked the player to grow Moonberries.
+- Added one paper-craft DOM sign aligned over the baked lettering. It reads
+  **Rosie found · Glowroot Seed** on return, **Grow for · Moonberries** after
+  planting, and **Next crop · Moonberries** after the player chooses it.
+- Kept the sign reducer-owned and accessible as a polite live status. Product
+  text remains out of Rive, while the custom Rive rig continues to own Rosie,
+  crops, equipment, and Home motion.
+- Replaced the redundant floating next-choice pill with the in-world sign and
+  settled the terminal prototype action to a disabled **Moonberries are next**
+  state, preventing repeated no-op planting clicks.
+- Added a reducer assertion for the settled action and retained persistence of
+  the chosen crop without adding currency, inventory pressure, or a new timer.
+- Updated the companion site to link directly to the **Purpose Sign lab**.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 13/13 pass, including the settled next
+  crop action.
+- `npm run quality:loop` — pass, including TypeScript, layout, sprite,
+  security, and 280 focused Jest assertions.
+- Rendered Chromium full-loop play at 390×844 — the return ceremony reported
+  `glowroot-found`; its compact settle exposed the matching Glowroot sign;
+  planting switched to `moonberries-request` while Home flourished; choosing
+  switched to `moonberries-chosen` and disabled the settled primary action.
+- Reload retained `moonberries-chosen`. Ten rapid tickles left the purpose sign
+  and developed Home pose intact; reduced motion showed
+  `moonberries-request` with the Rive Home state `reduced`.
+- At 360×780 the sign stayed within x=210–343 with document width 360, fully
+  covering the stale lettering without obscuring Rosie, crops, Bell, crossing,
+  primary action, or navigation. Desktop Chromium at DPR 2 had no overflow or
+  console errors.
+- Public GitHub Pages and companion-site evidence are added by the shipping
+  commit after deployment.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim those device checks.
 
 ### v0.7.0 — Clear Reward — 2026-08-05
 
@@ -241,8 +283,8 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Next highest-leverage weakness
 
-The return reward is now readable, but the illustrated Barn sign still says
-**Grow for: Clover Lunch** after Glowroot has changed Home while the next action
-asks for Moonberries. The next checkpoint should make that one visible purpose
-signal follow the reducer's named intention before adding residents,
-destinations, crops, currencies, or collection UI.
+The purpose sign now agrees with the player's intention, but selecting
+Moonberries ends on a settled label while the second bed does not visibly
+change. The next checkpoint should author one bounded second-bed planting and
+growing response so the new intention changes the same Barn before adding
+residents, destinations, currencies, or collection UI.

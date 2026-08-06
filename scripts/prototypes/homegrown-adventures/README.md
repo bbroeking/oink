@@ -43,3 +43,9 @@ HUD. Tickling Rosie dismisses the ceremony immediately; developed reloads are
 compact from their first frame; reduced motion never opens it. The record's
 button exposes the full story and Field Guide on request without permanently
 covering Rosie or the Kitchen Patch.
+
+The baked Clover instruction becomes visible once that record collapses, so the
+post-return scene covers it with a reducer-bound DOM purpose sign. It reads
+Glowroot Seed on return, requests Moonberries after planting, and persists the
+chosen Moonberries state. Product text remains accessible and outside Rive; the
+sign is not another inventory, order board, or progression system.

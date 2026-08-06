@@ -413,6 +413,14 @@ export function primaryAction(state) {
 	if (state.stage === STAGES.NEAR_DISCOVERY) {
 		return { type: ACTIONS.RETRY_PREP, label: "Pack Clover and try again" };
 	}
+	if (state.nextPlanting === "moonberries") {
+		return {
+			type: ACTIONS.PLANT_NEXT,
+			crop: "moonberries",
+			label: "Moonberries are next",
+			disabled: true,
+		};
+	}
 	return { type: ACTIONS.PLANT_NEXT, crop: "moonberries", label: "Grow Moonberries for the moths" };
 }
 
