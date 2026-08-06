@@ -36,9 +36,12 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 13. **v0.14 — Moth Joins the Laugh (shipped):** let the existing resident give one
     immediate wing response to the fulfilled-state tickle so “with the moths”
     becomes visible causality, not copy alone.
-14. **v0.15 — A Shared Glint (ready for public verification):** add one restrained gold glint at the
+14. **v0.15 — A Shared Glint (shipped):** add one restrained gold glint at the
     resident during Laugh so its correct but tiny roof response reads at phone
     scale without enlarging it, duplicating it, or competing with Rosie.
+15. **v0.16 — The Moth Finds Its Place:** move the resident's calm Home pose
+    closer to the Moonberry bed so the earned relationship remains legible
+    between tickles without making the moth larger or adding a new system.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
@@ -69,7 +72,7 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - The 390×844 and 360×780 mobile layouts remain exact with no horizontal
   overflow, and desktop Chromium adds no horizontal overflow.
 
-### Local validation evidence
+### Validation evidence
 
 - `npm run verify:rive-homegrown` — pass with the 390×844 header and 53 exact
   authored contract names; the runtime binary checksum is
@@ -82,6 +85,19 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Reduced motion reported `data-rive-moth-motion="reduced"` and `display: none`
   for the cue. The 360×780 layout measured 360 pixels of document width; the
   1280×900 desktop layout measured 1,280 pixels with no horizontal overflow.
+- GitHub Pages run
+  [31070573112](https://github.com/bbroeking/oink/actions/runs/31070573112)
+  deployed commit `befd188` successfully. The public Rive binary matched
+  `5bc5b3cfef36ac42ccfc29f3d86231da21f3b5075877b70f307b69f03a84e9c1`
+  and contained the exact `Dusk Moths Laugh` contract name.
+- Replaying the exact public route at 390×844 reported authored Rive `ready`,
+  moth `laugh`, one mounted glint at opacity `1`, 390 pixels of document width,
+  and opacity `0` after settle. The companion page exposed exactly one **Play
+  the A Shared Glint lab** handoff.
+- The public replay selected v0.16: the resident's reaction is now readable,
+  but its calm roof pose still feels disconnected from the Moonberries that
+  earned it. The next bounded checkpoint will test a quiet Moonberry-side perch,
+  preserving Rosie, scale, reward logic, and the existing Laugh response.
 
 ### v0.14.0 — Moth Joins the Laugh — 2026-08-05
 
