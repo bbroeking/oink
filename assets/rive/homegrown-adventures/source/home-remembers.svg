@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <g id="home_consequence_rig">
+    <g id="hedge_crossing_flourish">
+      <path d="M282 399 C285 338 301 286 335 259 C353 245 371 241 389 244" fill="none" stroke="#315b2d" stroke-width="8" stroke-linecap="round"/>
+      <path d="M294 401 C298 344 312 302 341 276 C355 264 372 258 389 260" fill="none" stroke="#6f9b4a" stroke-width="4.5" stroke-linecap="round"/>
+      <g fill="#ef91a6" stroke="#fff4cf" stroke-width="1.5">
+        <circle cx="291" cy="370" r="4"/><circle cx="300" cy="337" r="3.5"/>
+        <circle cx="311" cy="310" r="4"/><circle cx="326" cy="286" r="3.5"/>
+        <circle cx="345" cy="269" r="4"/><circle cx="367" cy="258" r="3.5"/>
+        <circle cx="384" cy="254" r="4"/>
+      </g>
+      <g fill="#fff1c2" opacity="0.95">
+        <circle cx="286" cy="389" r="2"/><circle cx="307" cy="324" r="2"/>
+        <circle cx="335" cy="276" r="2"/><circle cx="376" cy="259" r="2"/>
+      </g>
+    </g>
+    <g id="hedge_bell" transform="translate(48 50) scale(.8)">
+      <path d="M225 250 C225 238 232 231 241 231 C250 231 257 238 257 250 L257 269 L225 269 Z" fill="#f3b834" stroke="#4f351c" stroke-width="3"/>
+      <path d="M220 269 L262 269 L258 277 L224 277 Z" fill="#d58a21" stroke="#4f351c" stroke-width="3"/>
+      <circle cx="241" cy="281" r="5" fill="#8b4d1d" stroke="#4f351c" stroke-width="2"/>
+      <path d="M241 231 L241 220" stroke="#4f351c" stroke-width="4" stroke-linecap="round"/>
+      <path d="M241 220 C249 220 254 224 257 230" fill="none" stroke="#4f351c" stroke-width="3" stroke-linecap="round"/>
+      <path d="M232 247 C235 240 246 238 251 247" fill="none" stroke="#fff1a8" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+    </g>
+    <g id="glowroot_bed_three">
+      <g fill="#e9b52e" stroke="#6c4c1d" stroke-width="1.8" stroke-linejoin="round">
+        <path d="M318 604 C302 589 303 567 321 558 C327 573 329 590 318 604 Z"/>
+        <path d="M328 603 C331 580 345 566 362 569 C360 588 348 601 328 603 Z"/>
+        <path d="M323 591 C310 573 313 550 332 543 C338 562 335 579 323 591 Z"/>
+        <path d="M346 607 C347 588 359 576 375 580 C371 596 361 606 346 607 Z"/>
+        <path d="M297 607 C289 590 294 575 309 570 C314 586 309 600 297 607 Z"/>
+      </g>
+      <g fill="#ffe979">
+        <ellipse cx="321" cy="570" rx="3" ry="8" transform="rotate(-18 321 570)"/>
+        <ellipse cx="350" cy="579" rx="3" ry="7" transform="rotate(42 350 579)"/>
+        <ellipse cx="303" cy="588" rx="2.5" ry="6" transform="rotate(-28 303 588)"/>
+      </g>
+      <path d="M328 607 C326 616 331 621 338 625 C329 628 320 623 318 616 C316 611 319 607 328 607 Z" fill="#d88625" stroke="#6c4c1d" stroke-width="2"/>
+    </g>
+    <g id="home_flourish_sparkles" fill="#fff1a8" stroke="#b87926" stroke-width="1">
+      <path d="M284 319 l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/>
+      <path d="M367 302 l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
+      <path d="M285 569 l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
+      <path d="M370 549 l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/>
+    </g>
+  </g>
+</svg>

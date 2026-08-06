@@ -65,6 +65,9 @@ The current runtime file also exposes these exact foreground-rig animations:
 - `Clover Plant`
 - `Clover Ready Flourish`
 - `Clover Harvest`
+- `Home Consequence Hidden`
+- `Home Consequence Developed`
+- `Glowroot Home Flourish`
 
 The v0.3 breathing timeline authors a one-second rise and lets the web motion
 controller hold the resting pose for 2.25 seconds before replaying it. The
@@ -87,6 +90,13 @@ runtime poses used for reload and reduced-motion correctness. Plant, ready
 flourish, and harvest are short one-shots that always settle back to the
 reducer-selected pose. During the first Clover Lunch loop, beds two and three
 remain empty.
+
+The v0.6 Home Remembers checkpoint adds a native `home_consequence_rig` while
+keeping the starting Barn plate fixed. Its Glowroot bed, flowering hedge arch,
+Hedge Bell, and restrained sparkles share the approved 390×844 coordinates.
+Hidden and Developed are static reload/reduced-motion poses; Glowroot Home
+Flourish reveals the same lasting state once when `hedgeCrossingOpen` changes
+from false to true. It does not own progression or replace the scene plate.
 
 ## Layer and rig plan
 

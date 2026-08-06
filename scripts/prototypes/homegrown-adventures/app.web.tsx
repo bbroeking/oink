@@ -258,10 +258,9 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
-function sceneImage(state) {
-	if (state.stage === STAGES.DEVELOPED) return "developed";
-	// Crop progress now lives in the authored Rive bed. Keeping the same Barn
-	// plate prevents a ready crop from masquerading as a whole-scene upgrade.
+function sceneImage() {
+	// Crop and Home consequences now live in the authored Rive scene. Keeping
+	// one Barn plate makes the player's lasting changes legible and causal.
 	return "starting";
 }
 
@@ -271,7 +270,7 @@ function App() {
 	const [variant, setVariant] = useVariant();
 	const action = useMemo(() => primaryAction(state), [state]);
 	const riveModel = useMemo(() => homegrownRiveModel(state), [state]);
-	const image = sceneImage(state);
+	const image = sceneImage();
 	const [feedback, setFeedback] = useState(0);
 
 	useEffect(() => {

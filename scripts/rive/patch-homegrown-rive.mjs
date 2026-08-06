@@ -124,6 +124,9 @@ for (const [from, name] of [
 	["Timeline 7", "Clover Plant"],
 	["Timeline 8", "Clover Ready Flourish"],
 	["Timeline 9", "Clover Harvest"],
+	["Timeline 10", "Home Consequence Hidden"],
+	["Timeline 11", "Home Consequence Developed"],
+	["Timeline 12", "Glowroot Home Flourish"],
 ]) {
 	replaceOccurrence(from, 0, name, 1);
 }

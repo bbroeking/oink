@@ -34,6 +34,12 @@ const CROP_ACTION_ANIMATIONS = {
 const CROP_ANIMATIONS = [
 	...new Set([...Object.values(CROP_STATE_ANIMATIONS), ...Object.values(CROP_ACTION_ANIMATIONS)]),
 ];
+const HOME_STATE_ANIMATIONS = {
+	hidden: "Home Consequence Hidden",
+	developed: "Home Consequence Developed",
+} as const;
+const HOME_FLOURISH_ANIMATION = "Glowroot Home Flourish";
+const HOME_ANIMATIONS = [...Object.values(HOME_STATE_ANIMATIONS), HOME_FLOURISH_ANIMATION];
 const CHARACTER_ANIMATIONS = [
 	BREATHING_ANIMATION,
 	AUTHORED_TRIGGER_ANIMATIONS.tickle,
@@ -62,6 +68,8 @@ type CropMotion =
 	| "harvest"
 	| "reduced";
 
+type HomeMotion = "loading" | "hidden" | "flourish" | "developed" | "reduced";
+
 export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
 	model: HomegrownRiveViewModel;
@@ -82,11 +90,14 @@ function HomegrownRiveSceneImpl({
 	const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 	const [motion, setMotion] = useState<RosieMotion>("loading");
 	const [cropMotion, setCropMotion] = useState<CropMotion>("loading");
+	const [homeMotion, setHomeMotion] = useState<HomeMotion>("loading");
 	const lastTriggerNonce = useRef(triggerNonce);
 	const lastCropTriggerNonce = useRef(triggerNonce);
 	const previousBedOneState = useRef(model.bedOneState);
+	const previousHomeDeveloped = useRef(model.hedgeCrossingOpen);
 	const motionTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const cropTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+	const homeTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const { RiveComponent, rive } = useRive({
 		src: __HOMEGROWN_RIVE_ASSET_URL__,
 		...(HOMEGROWN_RIVE_ASSET_AUTHORED
@@ -304,6 +315,60 @@ function HomegrownRiveSceneImpl({
 		};
 	}, [model.bedOneState, reduceMotion, rive, trigger, triggerNonce]);
 
+	useEffect(() => {
+		if (!rive || !HOMEGROWN_RIVE_ASSET_AUTHORED) return;
+
+		const clearTimers = () => {
+			for (const timer of homeTimers.current) clearTimeout(timer);
+			homeTimers.current.clear();
+		};
+		const schedule = (callback: () => void, delay: number) => {
+			const timer = setTimeout(() => {
+				homeTimers.current.delete(timer);
+				callback();
+			}, delay);
+			homeTimers.current.add(timer);
+		};
+		const stopHomeMotion = () => {
+			for (const animation of HOME_ANIMATIONS) rive.stop(animation);
+		};
+		const syncHomeState = () => {
+			stopHomeMotion();
+			const animation = model.hedgeCrossingOpen
+				? HOME_STATE_ANIMATIONS.developed
+				: HOME_STATE_ANIMATIONS.hidden;
+			rive.scrub(animation, 0);
+			rive.pause(animation);
+			setHomeMotion(
+				reduceMotion ? "reduced" : model.hedgeCrossingOpen ? "developed" : "hidden",
+			);
+		};
+
+		clearTimers();
+		stopHomeMotion();
+
+		const wasDeveloped = previousHomeDeveloped.current;
+		previousHomeDeveloped.current = model.hedgeCrossingOpen;
+
+		if (reduceMotion) {
+			syncHomeState();
+			return clearTimers;
+		}
+
+		if (!wasDeveloped && model.hedgeCrossingOpen) {
+			rive.play(HOME_FLOURISH_ANIMATION);
+			setHomeMotion("flourish");
+			schedule(syncHomeState, 780);
+		} else {
+			syncHomeState();
+		}
+
+		return () => {
+			clearTimers();
+			stopHomeMotion();
+		};
+	}, [model.hedgeCrossingOpen, reduceMotion, rive]);
+
 	return (
 		<div
 			className={`homegrown-rive-scene ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "probe"}`}
@@ -311,6 +376,8 @@ function HomegrownRiveSceneImpl({
 			data-rive-motion={motion}
 			data-rive-crop-motion={cropMotion}
 			data-rive-bed-one={model.bedOneState}
+			data-rive-home-motion={homeMotion}
+			data-rive-home-developed={model.hedgeCrossingOpen}
 			data-rive-asset={HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "official-probe"}
 			aria-hidden="true"
 		>

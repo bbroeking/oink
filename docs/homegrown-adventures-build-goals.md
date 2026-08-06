@@ -1,6 +1,6 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; Living Barn checkpoint shipped to the browser lab
+**Status:** Browser gameplay prototype implemented; Home Remembers checkpoint shipped to the browser lab
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -13,16 +13,19 @@ a native vector group registered to Rosie's body with offset-preserving
 translation, rotation, and scale constraints. Kitchen Patch bed one now has a
 native crop rig with reducer-bound empty, growing, and ready poses plus plant,
 flourish, and harvest one-shots.
+The same artboard now includes a native Home consequence rig with persisted
+hidden/developed poses and a Glowroot flourish for the planted third bed,
+flowering hedge crossing, and earned Hedge Bell.
 Character-free derivatives of the three approved concepts remain the scene
 plates so the Rive rig is the only Rosie rendered. Breathing uses a calm
 3.25-second cadence; the first meaningful tickle transitions into a clear
 Kitchen Patch notice lean. Packing visibly equips the persisted Bag, return
-emphasizes it once, and the first Clover Lunch loop now changes one bed without
-replacing the whole Barn plate. Rapid input, deterministic settling, reduced
-motion, the real rendered route, and the contract gate pass locally. Rosie's
-harvest celebration, resident animation, Home consequences, and mobile Safari
-device acceptance remain Goal 6 work; do not claim the whole motion sheet
-complete yet.
+emphasizes it once, the first Clover Lunch loop changes one bed, and planting
+Glowroot reveals a lasting Home change without replacing the whole Barn plate.
+Rapid input, deterministic settling, reduced motion, the real rendered route,
+and the contract gate pass locally. Rosie's harvest celebration, resident
+animation, payoff-card composition polish, and mobile Safari device acceptance
+remain Goal 6 work; do not claim the whole motion sheet complete yet.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

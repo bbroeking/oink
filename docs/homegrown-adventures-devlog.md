@@ -14,13 +14,50 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
    make packing and returning visibly change the same persistent character.
 4. **v0.5 — Living Barn (shipped):** bind the first crop bed to reducer state,
    beginning with one readable sprout, ready, and harvest consequence.
-5. **v0.6 — Home Remembers:** replace the developed-state plate swap with one
-   authored, lasting Glowroot-and-hedge consequence in the same Barn scene.
+5. **v0.6 — Home Remembers (shipped):** replace the developed-state plate swap
+   with one authored, lasting Glowroot-and-hedge consequence in the same Barn.
+6. **v0.7 — Clear Reward:** keep the return/plant payoff readable by preventing
+   the persistent story card from concealing the new Glowroot bed and reward.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.6.0 — Home Remembers — 2026-08-05
+
+- Kept the approved starting Barn plate fixed through the developed state and
+  moved the lasting change into the authored Rive scene.
+- Added `home_consequence_rig` with a planted Glowroot, flowering hedge
+  crossing, earned Hedge Bell, and restrained paper sparkle accents aligned to
+  the developed-Barn concept.
+- Added persisted Hidden and Developed poses plus one bounded Glowroot Home
+  Flourish. The reducer's `hedgeCrossingOpen` fact remains authoritative and
+  reload snaps to the correct pose.
+- Preserved Rosie's independent breathing/tickle rig, Bag registration, first
+  crop lifecycle, DOM-owned copy and controls, and reduced-motion behavior.
+- Refined the first render after comparison with `03-developed-barn.png`: the
+  draft arch and bell were too heavy, so both were reduced before export.
+- Updated the companion site to link directly to the **Home Remembers lab**.
+
+### Validation evidence
+
+- `npm run verify:rive-homegrown` — pass; 390×844 header and 45 authored names.
+- `npm run prototype:homegrown:test` — 13/13 pass.
+- `npm run prototype:homegrown:build` — pass with content-hashed JavaScript and
+  the exact refined Rive binary.
+- `npm run quality:check` — pass, including TypeScript, layout, sprite,
+  security, and Jest gates.
+- Rendered local Chromium at the 390×844 reference layout — reset hid the Home
+  rig; the developed transition reported `flourish` then settled to
+  `developed`; reload retained it; reduced motion snapped to readable hidden
+  and developed poses; and twelve rapid tickles did not disturb the Home state.
+- Visual comparison with `03-developed-barn.png` confirmed the fixed camera,
+  flowering route, gold Glowroot language, and smaller bell/arch proportions.
+- GitHub Pages and companion-site verification are recorded by the shipping
+  commit for this checkpoint.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim those device checks.
 
 ### v0.5.0 — Living Barn — 2026-08-05
 
@@ -158,7 +195,8 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Next highest-leverage weakness
 
-Rosie, her Bag, and the first crop bed now respond inside one stable Barn, but
-the developed state still arrives as a whole scene-plate replacement. Author
-one lasting Glowroot-and-hedge consequence in the existing Rive scene before
-adding residents, destinations, additional crops, or collection UI.
+The Barn now visibly remembers Glowroot, but the persistent developed-state
+story card covers much of the third bed and competes with the reward it
+describes. The next checkpoint should clarify that return/plant payoff and
+preserve a clear view of the earned Home change before adding residents,
+destinations, crops, currencies, or collection UI.

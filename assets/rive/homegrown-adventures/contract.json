@@ -19,7 +19,10 @@
 		"Clover Bed Ready",
 		"Clover Plant",
 		"Clover Ready Flourish",
-		"Clover Harvest"
+		"Clover Harvest",
+		"Home Consequence Hidden",
+		"Home Consequence Developed",
+		"Glowroot Home Flourish"
 	],
 	"viewModel": {
 		"name": "Homegrown Adventures View Model",

@@ -39,3 +39,10 @@ provide deterministic persisted poses; `Clover Plant`,
 `Clover Ready Flourish`, and `Clover Harvest` communicate the three meaningful
 transitions. The other two beds remain empty during the first loop. Crop state
 is reducer-owned and no longer arrives through a whole background-plate swap.
+
+The Home Remembers checkpoint adds `home_consequence_rig` over the unchanged
+starting Barn plate. `Home Consequence Hidden` and
+`Home Consequence Developed` are the persisted poses; `Glowroot Home
+Flourish` reveals the planted Glowroot, flowering hedge crossing, and earned
+Hedge Bell as one bounded Home consequence. React still owns the underlying
+`hedgeCrossingOpen` fact, copy, controls, and persistence.
