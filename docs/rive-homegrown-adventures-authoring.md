@@ -71,6 +71,9 @@ The current runtime file also exposes these exact foreground-rig animations:
 - `Moonberry Bed Empty`
 - `Moonberry Bed Growing`
 - `Moonberry Plant`
+- `Dusk Moths Hidden`
+- `Dusk Moths Present`
+- `Dusk Moths Arrive`
 
 The v0.3 breathing timeline authors a one-second rise and lets the web motion
 controller hold the resting pose for 2.25 seconds before replaying it. The
@@ -106,6 +109,12 @@ Its purple Moonberry clusters share the existing paper-cut soil language but
 remain visually distinct from Clover. Empty and Growing are static reload and
 reduced-motion poses; Plant is a short opacity arrival that settles back to
 the reducer-selected Growing pose. It introduces no new timer or economy.
+
+The v0.10 Dusk Moths Arrive checkpoint adds one native three-shape moth above
+the Barn roof. Hidden and Present are static persisted poses; Arrive fades the
+gold-winged resident in over 21 frames when reducer-owned `mothsVisible`
+changes from false to true. It remains absent before the Moonberry choice,
+survives reload afterward, and snaps directly to Present under reduced motion.
 
 ## Layer and rig plan
 

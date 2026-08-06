@@ -25,7 +25,10 @@
 		"Glowroot Home Flourish",
 		"Moonberry Bed Empty",
 		"Moonberry Bed Growing",
-		"Moonberry Plant"
+		"Moonberry Plant",
+		"Dusk Moths Hidden",
+		"Dusk Moths Present",
+		"Dusk Moths Arrive"
 	],
 	"viewModel": {
 		"name": "Homegrown Adventures View Model",

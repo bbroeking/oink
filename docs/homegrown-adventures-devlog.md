@@ -22,14 +22,52 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
    Discovery and next named crop instead of requesting Clover Lunch forever.
 8. **v0.9 — Moonberries Take Root (shipped):** make choosing the second intention visibly
    plant Moonberries in the second bed instead of ending on an unchanged scene.
-9. **v0.10 — Dusk Moths Arrive:** close the named-purpose promise by letting
+9. **v0.10 — Dusk Moths Arrive (shipped):** close the named-purpose promise by letting
    the planted Moonberries attract one small, authored dusk-moth response at
    the same Barn.
+10. **v0.11 — Moth at Rest:** make the new resident feel alive with one calm,
+    authored hover or wing-rest loop that never competes with Rosie.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.10.0 — Dusk Moths Arrive — 2026-08-05
+
+- Replayed the deployed Moonberry payoff at 390×844 and compared it with
+  `03-developed-barn.png`. Bed two changed correctly, but nothing fulfilled the
+  visible promise **Invite the dusk moths**.
+- Added one small native Rive dusk moth in the paid **Homegrown Adventures**
+  project, using golden paper-cut wings and a purple body that relates it to
+  the Moonberry crop.
+- Authored exact Hidden and Present persisted poses plus a 21-frame Arrive
+  one-shot. The moth is absent in the developed pre-choice state, arrives with
+  Moonberry planting, and always settles to the reducer-owned visible pose.
+- Moved the first authored placement after real mobile play showed it hidden
+  beneath the Home record. The final moth sits in open sky above the Barn roof,
+  where it is legible at 390×844 and 360×780 without obscuring Rosie or copy.
+- Kept Rive presentation-only: React still owns `nextPlanting`, persistence,
+  audio policy, controls, and accessible purpose text. No timer, reward,
+  currency, resident collection, or economy was added.
+- Updated the companion site to link directly to the **Dusk Moths Arrive lab**.
+
+### Validation evidence
+
+- `npm run verify:rive-homegrown` — pass; 390×844 header and 51 authored names.
+- `npm run prototype:homegrown:test` — 13/13 pass, including hidden-before-
+  choice and visible-after-Moonberries assertions.
+- `npm run prototype:homegrown:build`, `npm run quality:loop`, and
+  `npm run quality:check` — pass.
+- Rendered Chromium at 390×844 — the moth moved from `hidden` through `arrive`
+  to `present` while bed two moved through Plant to Growing; reload restored
+  both settled states; five rapid tickles did not disturb the moth; reduced
+  motion snapped it to a readable persisted pose.
+- Rendered Chromium at 360×780 retained exact viewport and document dimensions
+  with no horizontal or vertical overflow; Rosie, moth, Moonberries, Home
+  record, purpose sign, action, and navigation remained legible.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim those device checks.
 
 ### v0.9.0 — Moonberries Take Root — 2026-08-05
 
@@ -332,8 +370,7 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Next highest-leverage weakness
 
-The purpose sign now agrees with the player's intention, but selecting
-Moonberries ends on a settled label while the second bed does not visibly
-change. The next checkpoint should author one bounded second-bed planting and
-growing response so the new intention changes the same Barn before adding
-residents, destinations, currencies, or collection UI.
+The Moonberries now fulfill their named purpose, but the resident moth settles
+into a completely static pose. The next checkpoint should give that one moth a
+restrained authored hover or wing-rest loop so it feels alive without competing
+with Rosie, adding another reward system, or expanding the farm economy.

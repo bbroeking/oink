@@ -50,6 +50,12 @@ const MOONBERRY_PLANT_ANIMATION = "Moonberry Plant";
 const MOONBERRY_ANIMATIONS = [
 	...new Set([...Object.values(MOONBERRY_STATE_ANIMATIONS), MOONBERRY_PLANT_ANIMATION]),
 ];
+const MOTH_STATE_ANIMATIONS = {
+	hidden: "Dusk Moths Hidden",
+	present: "Dusk Moths Present",
+} as const;
+const MOTH_ARRIVE_ANIMATION = "Dusk Moths Arrive";
+const MOTH_ANIMATIONS = [...Object.values(MOTH_STATE_ANIMATIONS), MOTH_ARRIVE_ANIMATION];
 const CHARACTER_ANIMATIONS = [
 	BREATHING_ANIMATION,
 	AUTHORED_TRIGGER_ANIMATIONS.tickle,
@@ -80,6 +86,7 @@ type CropMotion =
 
 type HomeMotion = "loading" | "hidden" | "flourish" | "developed" | "reduced";
 type MoonberryMotion = "loading" | "empty" | "plant" | "growing" | "reduced";
+type MothMotion = "loading" | "hidden" | "arrive" | "present" | "reduced";
 
 export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
@@ -103,15 +110,18 @@ function HomegrownRiveSceneImpl({
 	const [cropMotion, setCropMotion] = useState<CropMotion>("loading");
 	const [homeMotion, setHomeMotion] = useState<HomeMotion>("loading");
 	const [moonberryMotion, setMoonberryMotion] = useState<MoonberryMotion>("loading");
+	const [mothMotion, setMothMotion] = useState<MothMotion>("loading");
 	const lastTriggerNonce = useRef(triggerNonce);
 	const lastCropTriggerNonce = useRef(triggerNonce);
 	const previousBedOneState = useRef(model.bedOneState);
 	const previousHomeDeveloped = useRef(model.hedgeCrossingOpen);
 	const previousBedTwoState = useRef(model.bedTwoState);
+	const previousMothsVisible = useRef(model.mothsVisible);
 	const motionTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const cropTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const homeTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const moonberryTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+	const mothTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const { RiveComponent, rive } = useRive({
 		src: __HOMEGROWN_RIVE_ASSET_URL__,
 		...(HOMEGROWN_RIVE_ASSET_AUTHORED
@@ -439,6 +449,60 @@ function HomegrownRiveSceneImpl({
 		};
 	}, [model.bedTwoState, reduceMotion, rive]);
 
+	useEffect(() => {
+		if (!rive || !HOMEGROWN_RIVE_ASSET_AUTHORED) return;
+
+		const clearTimers = () => {
+			for (const timer of mothTimers.current) clearTimeout(timer);
+			mothTimers.current.clear();
+		};
+		const schedule = (callback: () => void, delay: number) => {
+			const timer = setTimeout(() => {
+				mothTimers.current.delete(timer);
+				callback();
+			}, delay);
+			mothTimers.current.add(timer);
+		};
+		const stopMothMotion = () => {
+			for (const animation of MOTH_ANIMATIONS) rive.stop(animation);
+		};
+		const syncMothState = () => {
+			stopMothMotion();
+			const animation = model.mothsVisible
+				? MOTH_STATE_ANIMATIONS.present
+				: MOTH_STATE_ANIMATIONS.hidden;
+			rive.scrub(animation, 0);
+			rive.pause(animation);
+			setMothMotion(
+				reduceMotion ? "reduced" : model.mothsVisible ? "present" : "hidden",
+			);
+		};
+
+		clearTimers();
+		stopMothMotion();
+
+		const wasVisible = previousMothsVisible.current;
+		previousMothsVisible.current = model.mothsVisible;
+
+		if (reduceMotion) {
+			syncMothState();
+			return clearTimers;
+		}
+
+		if (!wasVisible && model.mothsVisible) {
+			rive.play(MOTH_ARRIVE_ANIMATION);
+			setMothMotion("arrive");
+			schedule(syncMothState, 900);
+		} else {
+			syncMothState();
+		}
+
+		return () => {
+			clearTimers();
+			stopMothMotion();
+		};
+	}, [model.mothsVisible, reduceMotion, rive]);
+
 	return (
 		<div
 			className={`homegrown-rive-scene ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "probe"}`}
@@ -450,6 +514,8 @@ function HomegrownRiveSceneImpl({
 			data-rive-home-developed={model.hedgeCrossingOpen}
 			data-rive-bed-two={model.bedTwoState}
 			data-rive-moonberry-motion={moonberryMotion}
+			data-rive-moths-visible={model.mothsVisible}
+			data-rive-moth-motion={mothMotion}
 			data-rive-asset={HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "official-probe"}
 			aria-hidden="true"
 		>

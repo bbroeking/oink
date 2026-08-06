@@ -63,7 +63,9 @@ export function homegrownRiveModel(state) {
 			bedThreeState,
 			hedgehogVisible: developed,
 			frogVisible: developed,
-			mothsVisible: developed || state.stage === STAGES.ADVENTURE,
+			mothsVisible:
+				state.stage === STAGES.ADVENTURE ||
+				(developed && state.nextPlanting === "moonberries"),
 			hedgeCrossingOpen: developed,
 			hedgeBellEarned: developed,
 			reduceMotion: Boolean(state.reduceMotion),

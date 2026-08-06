@@ -53,3 +53,10 @@ the reducer-selected persisted poses; `Moonberry Plant` is one restrained
 arrival that always settles to Growing. React still owns `nextPlanting`, so a
 reload and reduced motion select the correct pose without animation-owned
 progression or another farming timer.
+
+The Dusk Moths Arrive checkpoint adds one native golden-and-purple moth in the
+open sky above the Barn. `Dusk Moths Hidden` and `Dusk Moths Present` are the
+reducer-selected persisted poses; `Dusk Moths Arrive` is a bounded 21-frame
+opacity arrival. React still owns the Moonberry choice and `mothsVisible`, so
+reload and reduced motion select the correct pose without a resident timer,
+collection, or reward system.

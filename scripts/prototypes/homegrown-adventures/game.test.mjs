@@ -198,19 +198,24 @@ test("Rive presentation state is derived deterministically from reducer facts", 
 	assert.equal(model.trigger, "plant");
 });
 
-test("Rive developed state exposes the lasting Home consequences", () => {
-	const state = reduce(createInitialState({ now: at }), {
+test("Rive developed state exposes lasting Home consequences after the named crop", () => {
+	let state = reduce(createInitialState({ now: at }), {
 		type: ACTIONS.JUMP_TO_STATE,
 		target: "developed",
 	});
-	const { viewModel } = homegrownRiveModel(state);
+	let { viewModel } = homegrownRiveModel(state);
 	assert.equal(viewModel.hedgehogVisible, true);
 	assert.equal(viewModel.frogVisible, true);
-	assert.equal(viewModel.mothsVisible, true);
+	assert.equal(viewModel.mothsVisible, false);
 	assert.equal(viewModel.hedgeCrossingOpen, true);
 	assert.equal(viewModel.hedgeBellEarned, true);
 	assert.deepEqual(
 		[viewModel.bedOneState, viewModel.bedTwoState, viewModel.bedThreeState],
 		["ready", "empty", "sprout"],
 	);
+
+	state = reduce(state, { type: ACTIONS.PLANT_NEXT, crop: "moonberries" });
+	({ viewModel } = homegrownRiveModel(state));
+	assert.equal(viewModel.mothsVisible, true);
+	assert.equal(viewModel.bedTwoState, "growing");
 });
