@@ -307,12 +307,12 @@ function PurposeSign({ state }) {
 		};
 	} else if (state.stage === STAGES.DEVELOPED && state.nextPlanting) {
 		copy = {
-			id: "moonberries-chosen",
-			eyebrow: "Next crop",
-			title: "Moonberries",
-			detail: "For the dusk moths",
+			id: "dusk-moths-welcomed",
+			eyebrow: "Purpose fulfilled",
+			title: "Dusk moths",
+			detail: "Moonberries welcomed them",
 			mark: "berry",
-			label: "Next crop: Moonberries for the dusk moths",
+			label: "Purpose fulfilled: Moonberries welcomed the dusk moths",
 		};
 	} else if (state.stage === STAGES.DEVELOPED) {
 		copy = {

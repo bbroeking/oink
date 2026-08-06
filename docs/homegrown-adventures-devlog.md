@@ -27,14 +27,52 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
    the same Barn.
 10. **v0.11 — Moth at Rest (shipped):** make the new resident feel alive with one calm,
     authored hover or wing-rest loop that never competes with Rosie.
-11. **v0.12 — Purpose Fulfilled:** let the Barn sign and terminal action
+11. **v0.12 — Purpose Fulfilled (shipped):** let the Barn sign and terminal action
     acknowledge that the dusk moths are now here instead of describing
     Moonberries as a future intention forever.
+12. **v0.13 — Rosie Shares the Moment:** return the large terminal action to
+    Rosie's tickle heartbeat once the moths arrive instead of ending on a
+    permanently disabled acknowledgement.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.12.0 — Purpose Fulfilled — 2026-08-05
+
+- Replayed the public v0.11 fulfilled state at 390×844. The moth was visibly
+  resting and Moonberries were growing, but the sign still said **Next crop:
+  Moonberries** and the disabled action still said **Moonberries are next**.
+- Kept the exact existing surfaces and made reducer-owned `nextPlanting` close
+  the promise: the sign now reads **Purpose fulfilled · Dusk moths** and says
+  **Moonberries welcomed them**; the terminal action reads **Dusk moths are
+  here**.
+- Preserved the pre-choice request and action verbatim, so causality remains
+  legible before and after the player chooses Moonberries.
+- Added no panel, collection, reward, timer, progression state, or Rive fact.
+  This checkpoint only makes the existing Barn acknowledge the truth it already
+  renders.
+- Updated the companion site to link directly to the **Purpose Fulfilled lab**.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 13/13 pass, including pre-choice and
+  fulfilled primary-action assertions.
+- `npm run prototype:homegrown:build`, `npm run verify:rive-homegrown`, and
+  `npm run quality:check` — pass; the Rive gate retains 52 authored names.
+- Rendered Chromium at 390×844 — before planting, the accessible sign requested
+  Moonberries and the action offered to grow them; after planting, the sign and
+  disabled action acknowledged the fulfilled purpose while the moth remained
+  visible and continued its rest cadence.
+- Reload preserved the fulfilled sign/action; five rapid tickles left them
+  unchanged; reduced motion kept the same copy with the static moth pose.
+- Rendered Chromium at 360×780 retained exact viewport, body, and document
+  dimensions with no overflow. The two-line sign eyebrow, title, cause, terminal
+  action, Rosie, moth, crops, and navigation remained legible.
+- The primary planting click exercised the unchanged audio-feedback path.
+  Mobile Safari sharpness, haptic feel, and audible acceptance remain manual
+  device gates.
 
 ### v0.11.0 — Moth at Rest — 2026-08-05
 
@@ -416,8 +454,7 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Next highest-leverage weakness
 
-The living consequence now feels present, but the persistent sign and disabled
-terminal action still say **Next crop: Moonberries** and **Moonberries are
-next** after the crop is growing and its moth has arrived. The next checkpoint
-should acknowledge the fulfilled purpose in those existing surfaces—without a
-new collection screen, reward, timer, or second Adventure.
+The Barn now acknowledges the fulfilled purpose, but the largest action surface
+ends permanently disabled. The next checkpoint should return that existing
+button to Rosie's tickle heartbeat after the moths arrive, letting the player
+share the quiet payoff with her without adding another progression step.

@@ -417,7 +417,7 @@ export function primaryAction(state) {
 		return {
 			type: ACTIONS.PLANT_NEXT,
 			crop: "moonberries",
-			label: "Moonberries are next",
+			label: "Dusk moths are here",
 			disabled: true,
 		};
 	}
