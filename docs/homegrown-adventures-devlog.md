@@ -95,11 +95,16 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Motion-enabled presses exercised the unchanged sound/haptic path. Mobile
   Safari sharpness, physical haptic feel, and audible acceptance remain manual
   device gates.
-- Feature commit `73c53aa` deployed in GitHub Pages run `31068770009`. Public
-  Chromium at 390×844 confirmed the authored scene was ready with the fulfilled
-  CTA, status, and resident visible. One live press moved 1,121 / 22-of-25 to
-  1,122 / 21-of-25 while the rendered states changed together to `tickle` /
-  `laugh`; the resident later returned to its independent `resting` cadence.
+- Feature commit `73c53aa` deployed in GitHub Pages run `31068770009`; asset
+  copy commit `2e31b52` deployed in run `31069102679`. The final public `.riv`
+  SHA-256 exactly matched the authored runtime at `290a3f187c…` and contained
+  `Dusk Moths Laugh`, closing an initial generated-copy omission before final
+  acceptance.
+- Public Chromium at 390×844 against that exact binary confirmed the authored
+  scene, fulfilled CTA, status, and resident. One live press moved 1,122 /
+  21-of-25 to 1,123 / 20-of-25 while the rendered states changed together to
+  `tickle` / `laugh`; a second capture retained the Laugh pose and the resident
+  later returned to its independent `resting` cadence.
 - The deployed companion page exposed exactly one **Play the Moth Joins the
   Laugh lab** handoff. Replaying the live response also selected v0.15: the
   roof resident is intentionally low priority but its wing response is small
