@@ -30,6 +30,7 @@ export const HOMEGROWN_RIVE_TRIGGERS = Object.freeze([
 ] as const);
 
 export type HomegrownRiveTrigger = (typeof HOMEGROWN_RIVE_TRIGGERS)[number];
+export type HomegrownRiveMotionTrigger = HomegrownRiveTrigger | "departure";
 
 export const HOMEGROWN_RIVE_NAMES = Object.freeze({
 	artboard: "Homegrown Adventures",

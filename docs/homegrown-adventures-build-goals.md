@@ -1,6 +1,13 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
-**Status:** Browser gameplay prototype implemented; The Moth Comes Home checkpoint ready for public verification
+**Status:** Browser gameplay prototype active; eleven-position review loop,
+required Clover Seed, optional predictable Compost, real Clover Harvest
+Rhythm, persistent Farm stock, one-use Provision preparation, reusable
+equipment, causal Adventure vignette, exact return reward and Seed planting,
+and a changed Rive Home plus memory-aware Seed tray that survive the next
+morning verified locally; authored Rive departure motion now holds Position 8
+before the Adventure vignette, with rendered desktop, touch, reload,
+reduced-motion, and rapid-input validation
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -8,7 +15,7 @@ responsive DOM controls, and GitHub Pages route live in
 `scripts/prototypes/homegrown-adventures/` and `docs/homegrown-adventures.html`.
 The authored Rive scene is checked in: a transparent 390×844 artboard, embedded
 Rosie texture, mesh/bone rig, exact View Model contract, and named breathing,
-tickle, notice, pack, return, and Bag-hidden motions. The tan clover satchel is
+tickle, notice, pack, departure, return, and Bag-hidden motions. The tan clover satchel is
 a native vector group registered to Rosie's body with offset-preserving
 translation, rotation, and scale constraints. Kitchen Patch bed one now has a
 native crop rig with reducer-bound empty, growing, and ready poses plus plant,
@@ -54,6 +61,119 @@ Fulfillment now gives that resident one authored landing instead of an in-place
 fade: it appears on the garden-side roof slope, glides up-right, and hands off
 to the same persisted perch. Reduced motion paints the complete final authored
 frame atomically without exposing an intermediate flight pose.
+
+**Direction checkpoint (August 6, 2026):** The browser experiment now exposes
+all eleven approved Homegrown Adventures positions through a prototype-only
+Previous / Next rail outside the game surface. Every position is a real,
+deterministic reducer preset, carries one player-facing objective and action,
+updates the shareable `position` URL parameter, and reloads to the same stable
+state. Farm-stock result and Bag selection are now separate positions instead
+of one ambiguous packing step. The visual surfaces inside positions 2–10 still
+need to be brought up to the `rosie-v3` concept set one bounded checkpoint at a
+time; Position 7 is first because its reducer state exists but its typed
+Provision / Tool / Pack choices are not yet rendered.
+
+**Preparation checkpoint (August 6, 2026):** Position 7 now renders one calm,
+typed Bag surface with Provision, Tool, and Pack slots. Clover Lunch, Hand
+Trowel / Lantern, and Wicker Basket / Cloth Wrap are real persisted choices;
+every slot may be empty. The chosen loadout remains visible at departure, and
+each empty-slot branch returns a specific deterministic Near-Discovery instead
+of a generic failure. The current Rive scene still owns Rosie's shared satchel
+and packing response while React owns choice state, copy, validation, and the
+loadout ribbon. Position 9 is now the highest-leverage gap because those clear
+choices lead to a quiet empty Barn rather than the promised causal vignette.
+
+**Adventure checkpoint (August 6, 2026):** Position 9 now opens one bounded
+beyond-the-hedge vignette before the ordinary idle wait. Rosie remains visible
+with her Bag; three reducer-derived story tags explain exactly what the chosen
+Provision, Tool, and Pack enabled. Complete loadouts produce a sleeping
+Glowroot encounter, while empty slots produce an equally visible
+Near-Discovery clue. `Continue the story` then removes the vignette and returns
+to the quiet Barn waiting state; React retains timing and outcome authority.
+Position 10 is next because the current return still lacks the named Discovery
+and practical Farm-supply reveal promised by the concept.
+
+**Return checkpoint (August 6, 2026):** Position 10 now reveals reducer-owned
+rewards in the Barn: one Glowroot Seed, one Compost, and two Willow Fiber for
+the complete branch, plus the exact preparation recap. The Welcome action
+acknowledges those rewards once and then exposes Glowroot planting. A
+Near-Discovery grants no Seed but still returns Compost and Willow Fiber, so
+an imperfect Bag remains useful. At that checkpoint, Positions 2–4 still did
+not consume required Seeds or offer optional Compost.
+
+**Farming-input checkpoint (August 6, 2026):** Positions 2–4 now make Farm
+stock causal. The player begins with three Clover Seeds and two Compost,
+chooses Clover, and sees every spend before planting. Compost is optional and
+predictable: spending one shortens growth from four hours to two and raises
+the guaranteed Clover Lunch harvest from three to four. Saving it preserves
+both units and the normal result. Both branches persist through reload, ripe
+crops still never spoil, and Farm stock plus Rosie's Bag survive the next day.
+The rendered stock tray and planting panel are React controls over the existing
+Barn and authored Rive crop bed; Rive receives the derived Plant/Growing state
+but owns no inventory, timing, or yield rule. Position 5 is now the next gap:
+it names a Harvest Rhythm but still resolves as one ordinary tap.
+
+**Harvest-rhythm checkpoint (August 6, 2026):** Position 5 now implements
+Clover's `left → right → up` identity as both real swipe input and three labeled
+accessible buttons. Clean rhythm earns one extra item; wrong, slow, or skipped
+rhythm always preserves the full base plus Compost harvest. Position 6 persists
+and explains the result as separate Base / Compost / Rhythm causes before one
+`Prepare an Adventure` action. React owns timing, scoring, inventory, and the
+short rapid-transition guard; Rive owns only the crop's Harvest response. Goal
+2's farming requirements are now represented end to end. Position 7 is the
+next causal gap because its Provision shows owned stock but does not yet preview
+or consume one Clover Lunch when packed.
+
+**Provision checkpoint (August 6, 2026):** Position 7 now converts farming into
+preparation: selected Clover Lunch previews and spends exactly one unit, while
+Tools and Packs are explicitly reusable. Zero stock disables the selected
+Provision but never blocks play; leaving the slot empty retains the existing
+kind Near-Discovery branch. Departure and reload preserve the chosen loadout
+and spent stock, and invisible competing Rosie targets have been removed. Goal
+3's Farm-stock conversion is now real. The next end-to-end gap is Goal 5: the
+actual Glowroot planting path does not yet consume its Seed, advance to Position
+11, or guarantee that the Rive Home upgrade remains visible next morning.
+
+**Home-memory checkpoint (August 6, 2026):** The real return path now spends
+the awarded Glowroot Seed exactly once, advances to Position 11, and records a
+persistent `glowrootPlanted` Home fact. Position 11 mirrors the approved changed
+Barn concept with three concise promises—crops keep growing, Farm stock remains,
+and discoveries stay—plus the actual post-plant stock and one primary action.
+The Rive bridge derives the open hedge, earned bell, visitors, Glowroot sprouts,
+and already-growing Moonberries from persistent reducer facts, so beginning a
+new day resets the active loop without erasing the earned Home. Desktop, touch,
+reload, reduced-motion, and rapid double-Plant validation pass. Goal 5's core
+persistence promise is now real; the next weakness is continuity in the new
+morning Seed tray, which still looks like a first-day discovery state.
+
+**Second-morning checkpoint (August 6, 2026):** Position 2 now distinguishes
+what is already growing from what can be planted next. After a completed loop,
+an **Already growing at Home** ledger names Moonberries in Bed 2 and Glowroot
+in Bed 3; a separate action row shows retained Clover Seed and Compost stock
+and offers one Choose Clover action. The first-day concept remains unchanged.
+Three structural hierarchies were rendered on the existing variant route; the
+ledger won because it made persistent world state legible without making a
+growing crop look like spendable inventory. The prototype rail now preserves
+Home facts and applies each early position's stock delta to a persisted
+`dayStartFarmStock`, so fast-forward no longer resets the second day. The Rive
+bridge simultaneously shows the new Clover state and remembered Moonberry /
+Glowroot beds. Goal 5 now closes cleanly into the next farming loop. Goal 6's
+highest visible gap is departure: the Bag is packed, but Rosie does not yet
+perform an authored walk or hedge crossing before the Adventure vignette.
+
+**Departure checkpoint (August 6, 2026):** The checked-in Rive source now
+contains `Rosie Departure`, a one-second root-bone path with three restrained
+step beats, alternating body lean, perspective scale, and the equipped Bag on
+the canonical foreground Rosie. Sending her no longer swaps directly to the
+Adventure vignette: React keeps Position 8 visible, owns an explicit
+`departureStartedAt` / `departureReadyAt` / `departureComplete` boundary, and
+advances to Position 9 only after the authored performance. Reload restarts a
+safe bounded departure instead of skipping or sticking; reduced motion uses a
+120 ms state handoff without playing the one-shot; rapid double-input produces
+one Adventure start. The motion is also exposed as **Cross the hedge** in the
+animation lab. The next visible weakness is Position 4: Clover is mechanically
+growing but still lacks a readable multi-stage growth performance between
+planting and readiness.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

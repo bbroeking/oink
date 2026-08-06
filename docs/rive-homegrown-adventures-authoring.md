@@ -57,6 +57,7 @@ The current runtime file also exposes these exact foreground-rig animations:
 - `Rosie Tickle`
 - `Rosie Notice`
 - `Rosie Pack`
+- `Rosie Departure`
 - `Rosie Return`
 - `Rosie Bag Hidden`
 - `Clover Bed Empty`
@@ -89,6 +90,14 @@ preservation, so the Bag remains registered through breathing and tickling.
 `Rosie Pack` reveals and settles the Bag, `Rosie Return` gives it one restrained
 arrival swing, and the static `Rosie Bag Hidden` clip preserves the reducer's
 unequipped state. The reducer—not animation playback—owns whether it is worn.
+
+The v0.27 departure checkpoint adds `Rosie Departure` as a one-second direct
+timeline on the existing foreground `body` root. It moves Rosie toward the
+right-side hedge path through three restrained step beats, alternates a small
+body lean, and reduces scale slightly as she travels. The web motion controller
+layers the complete foreground pose beneath those root keys so Rosie and the
+equipped Bag never disappear. React owns the departure clock and changes from
+Position 8 to Position 9; the Rive timeline owns only the visible performance.
 
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
@@ -230,7 +239,7 @@ that fallback does not satisfy Goal 6.
 - Trigger the first meaningful tickle: the joyful lift resolves into the
   foreground Notice lean before returning to breathing.
 - Rapidly tickle Rosie at least ten times: no broken or additive poses.
-- Traverse harvest, pack, return, and Glowroot planting: every one-shot settles
+- Traverse harvest, pack, departure, return, and Glowroot planting: every one-shot settles
   into the correct state.
 - Toggle reduced motion before and during a reaction: loops stop and state stays
   legible.

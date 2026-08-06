@@ -2,13 +2,23 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	ACTIONS,
+	adventureStory,
+	BAG_ITEMS,
+	CROP_RULES,
 	createInitialState,
+	createPrototypeState,
 	deserializeState,
+	DURATIONS,
+	HARVEST_BEAT_MS,
+	HARVEST_PATTERN,
 	homegrownReducer,
+	playerPresentation,
+	PROTOTYPE_POSITIONS,
 	primaryAction,
 	serializeState,
 	settleState,
 	STAGES,
+	WORLD_TARGETS,
 } from "./game.mjs";
 import { homegrownRiveModel } from "./homegrownRiveModel.mjs";
 
@@ -35,14 +45,17 @@ test("the complete happy path reaches a developed Barn", () => {
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
 	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
 	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
-	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
 	state = reduce(state, { type: ACTIONS.PLANT_GLOWROOT });
 
 	assert.equal(state.stage, STAGES.DEVELOPED);
+	assert.equal(state.prototypePosition, 11);
 	assert.equal(state.glowrootKnown, true);
+	assert.equal(state.glowrootPlanted, true);
+	assert.equal(state.farmStock["glowroot-seed"], 0);
 	assert.deepEqual(state.fieldGuide, ["Clover Lunch", "Dusk Picnic", "Glowroot Seed"]);
-	assert.equal(state.readyToTickle, 21);
-	assert.equal(state.ticklesEarned, 1122);
+	assert.equal(state.readyToTickle, 22);
+	assert.equal(state.ticklesEarned, 1121);
 });
 
 test("every gated transition rejects an invalid action without mutation", () => {
@@ -68,6 +81,129 @@ test("purpose is asked before crop and only the named purpose is accepted", () =
 	assert.equal(reduce(state, { type: ACTIONS.CHOOSE_PURPOSE, purpose: "coins" }), state);
 	state = reduce(state, { type: ACTIONS.CHOOSE_PURPOSE, purpose: "dusk-picnic" });
 	assert.equal(state.purpose, "dusk-picnic");
+	assert.equal(state.selectedCrop, "clover");
+});
+
+test("Clover requires a Seed and selecting it makes Compost an optional predictable boost", () => {
+	let state = createInitialState({ now: at });
+	assert.equal(state.farmStock["clover-seed"], 3);
+	assert.equal(state.farmStock.compost, 2);
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.SELECT_CROP, crop: "clover" });
+
+	assert.equal(state.prototypePosition, 3);
+	assert.equal(state.selectedCrop, "clover");
+	assert.equal(state.compostApplied, true);
+	assert.equal(reduce(state, { type: ACTIONS.SELECT_CROP, crop: "clover" }), state);
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.PLANT_CLOVER,
+		label: "Plant with Compost",
+	});
+
+	state = reduce(state, { type: ACTIONS.PLANT_CLOVER });
+	assert.equal(state.farmStock["clover-seed"], 2);
+	assert.equal(state.farmStock.compost, 1);
+	assert.equal(state.readyAt - state.plantedAt, DURATIONS.COMPOSTED_GROWTH_MS);
+});
+
+test("saving Compost keeps the normal duration and normal yield", () => {
+	let state = createInitialState({ now: at });
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.SELECT_CROP, crop: "clover" });
+	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });
+	assert.equal(state.compostApplied, false);
+
+	state = reduce(state, { type: ACTIONS.PLANT_CLOVER });
+	assert.equal(state.farmStock["clover-seed"], 2);
+	assert.equal(state.farmStock.compost, 2);
+	assert.equal(state.readyAt - state.plantedAt, DURATIONS.GROWTH_MS);
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.HARVEST_CLOVER });
+	assert.equal(state.lastHarvestYield, CROP_RULES.clover.baseYield);
+	assert.equal(state.farmStock["clover-lunch"], CROP_RULES.clover.baseYield);
+});
+
+test("Compost shortens growth and adds exactly one guaranteed harvest item", () => {
+	let state = createInitialState({ now: at });
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.SELECT_CROP, crop: "clover" });
+	state = reduce(state, { type: ACTIONS.PLANT_CLOVER });
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.HARVEST_CLOVER });
+
+	assert.equal(state.lastHarvestYield, CROP_RULES.clover.baseYield + 1);
+	assert.equal(state.farmStock["clover-lunch"], CROP_RULES.clover.baseYield + 1);
+});
+
+test("Clover's left-right-up rhythm adds one small bonus to the guaranteed harvest", () => {
+	let state = throughCloverReady();
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	for (const [index, direction] of HARVEST_PATTERN.entries()) {
+		state = reduce(state, {
+			type: ACTIONS.HARVEST_BEAT,
+			direction,
+			now: at + index * 400,
+		});
+	}
+
+	assert.equal(state.cloverHarvested, true);
+	assert.equal(state.prototypePosition, 6);
+	assert.equal(state.harvestRhythmBonus, true);
+	assert.equal(state.lastHarvestYield, 5);
+	assert.equal(state.farmStock["clover-lunch"], 5);
+	assert.match(state.trace.at(-1).detail, /rhythm \+1/);
+	assert.equal(
+		reduce(state, { type: ACTIONS.HARVEST_BEAT, direction: "left", now: at + 1_600 }),
+		state,
+	);
+});
+
+test("an imperfect or slow rhythm still grants the complete base and Compost harvest", () => {
+	for (const beats of [
+		[
+			["left", at],
+			["up", at + 400],
+			["up", at + 800],
+		],
+		[
+			["left", at],
+			["right", at + HARVEST_BEAT_MS + 1],
+			["up", at + HARVEST_BEAT_MS + 401],
+		],
+	]) {
+		let state = throughCloverReady();
+		state = reduce(state, { type: ACTIONS.TICKLE });
+		for (const [direction, now] of beats) {
+			state = reduce(state, { type: ACTIONS.HARVEST_BEAT, direction, now });
+		}
+		assert.equal(state.cloverHarvested, true);
+		assert.equal(state.harvestRhythmBonus, false);
+		assert.equal(state.lastHarvestYield, 4);
+		assert.equal(state.farmStock["clover-lunch"], 4);
+	}
+});
+
+test("the accessible normal gather fallback never loses the ready crop", () => {
+	let state = throughCloverReady();
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.HARVEST_CLOVER });
+	assert.equal(state.cloverHarvested, true);
+	assert.equal(state.harvestRhythmBonus, false);
+	assert.equal(state.lastHarvestYield, 4);
+	assert.equal(state.farmStock["clover-lunch"], 4);
+});
+
+test("planting is rejected without a Seed and Compost cannot be selected when empty", () => {
+	let state = createPrototypeState(3, { now: at });
+	state = {
+		...state,
+		compostApplied: false,
+		farmStock: { ...state.farmStock, "clover-seed": 0, compost: 0 },
+	};
+	assert.equal(reduce(state, { type: ACTIONS.TOGGLE_COMPOST }), state);
+	assert.equal(reduce(state, { type: ACTIONS.PLANT_CLOVER }), state);
 });
 
 test("settlement is idempotent for crops and adventures", () => {
@@ -103,6 +239,14 @@ test("malformed and future persisted data reset safely", () => {
 	assert.equal(deserializeState('{"version":2,"stage":"starting"}', { now: at }).stage, STAGES.STARTING);
 });
 
+test("legacy developed saves infer the lasting Glowroot Home upgrade", () => {
+	const legacy = createPrototypeState(11, { now: at });
+	delete legacy.glowrootPlanted;
+	const restored = deserializeState(serializeState(legacy), { now: at });
+	assert.equal(restored.glowrootPlanted, true);
+	assert.equal(homegrownRiveModel(restored).viewModel.hedgeCrossingOpen, true);
+});
+
 test("direct review presets are deterministic", () => {
 	const initial = createInitialState({ now: at });
 	assert.equal(reduce(initial, { type: ACTIONS.JUMP_TO_STATE, target: "ready" }).stage, STAGES.CLOVER_READY);
@@ -126,6 +270,91 @@ test("developed Barn records the player's next purposeful planting", () => {
 		type: ACTIONS.TICKLE,
 		label: "Tickle Rosie with the moths",
 	});
+});
+
+test("the end-to-end mode completes a Barn day and starts the next one", () => {
+	let state = throughCloverReady();
+	for (const action of [
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.HARVEST_CLOVER },
+		{ type: ACTIONS.PACK_ADVENTURE },
+		{ type: ACTIONS.START_ADVENTURE },
+		{ type: ACTIONS.ADVANCE_TIME },
+		{ type: ACTIONS.WELCOME_HOME },
+		{ type: ACTIONS.ACKNOWLEDGE_RETURN },
+		{ type: ACTIONS.PLANT_GLOWROOT },
+		{ type: ACTIONS.PLANT_NEXT, crop: "moonberries" },
+		{ type: ACTIONS.TICKLE },
+	]) state = reduce(state, action);
+
+	assert.equal(state.cycleComplete, true);
+	assert.ok(state.fieldGuide.includes("Moonberries"));
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.START_NEW_DAY,
+		label: "Begin another day",
+	});
+
+	const tickles = state.ticklesEarned;
+	const stock = { ...state.farmStock };
+	const bag = { ...state.bag };
+	state = reduce(state, { type: ACTIONS.START_NEW_DAY });
+	assert.equal(state.stage, STAGES.STARTING);
+	assert.equal(state.cycleComplete, false);
+	assert.equal(state.daysCompleted, 1);
+	assert.equal(state.ticklesEarned, tickles);
+	assert.deepEqual(state.farmStock, stock);
+	assert.deepEqual(state.bag, bag);
+	assert.equal(state.glowrootPlanted, true);
+	assert.equal(state.nextPlanting, "moonberries");
+	assert.equal(homegrownRiveModel(state).viewModel.hedgeCrossingOpen, true);
+	assert.equal(homegrownRiveModel(state).viewModel.hedgeBellEarned, true);
+	assert.deepEqual(
+		[
+			homegrownRiveModel(state).viewModel.bedOneState,
+			homegrownRiveModel(state).viewModel.bedTwoState,
+			homegrownRiveModel(state).viewModel.bedThreeState,
+		],
+		["empty", "growing", "sprout"],
+	);
+	assert.equal(state.lastAction, "new-day");
+
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	assert.equal(state.prototypePosition, 2);
+	assert.equal(state.daysCompleted, 1);
+	assert.equal(state.glowrootPlanted, true);
+	assert.equal(state.nextPlanting, "moonberries");
+	const secondMorning = deserializeState(serializeState(state), { now: at });
+	assert.equal(secondMorning.prototypePosition, 2);
+	assert.equal(secondMorning.glowrootPlanted, true);
+	assert.equal(secondMorning.nextPlanting, "moonberries");
+
+	const fastForwarded = reduce(secondMorning, {
+		type: ACTIONS.JUMP_TO_POSITION,
+		position: 4,
+	});
+	assert.equal(fastForwarded.prototypePosition, 4);
+	assert.equal(fastForwarded.daysCompleted, 1);
+	assert.equal(fastForwarded.glowrootPlanted, true);
+	assert.equal(
+		fastForwarded.farmStock["clover-seed"],
+		secondMorning.dayStartFarmStock["clover-seed"] - 1,
+	);
+	assert.equal(
+		fastForwarded.farmStock.compost,
+		secondMorning.dayStartFarmStock.compost - 1,
+	);
+	assert.equal(
+		fastForwarded.farmStock["clover-lunch"],
+		secondMorning.dayStartFarmStock["clover-lunch"],
+	);
+	assert.deepEqual(
+		[
+			homegrownRiveModel(fastForwarded).viewModel.bedOneState,
+			homegrownRiveModel(fastForwarded).viewModel.bedTwoState,
+			homegrownRiveModel(fastForwarded).viewModel.bedThreeState,
+		],
+		["growing", "growing", "sprout"],
+	);
 });
 
 test("underpreparation returns a kind Near-Discovery and a useful retry clue", () => {
@@ -221,4 +450,369 @@ test("Rive developed state exposes lasting Home consequences after the named cro
 	({ viewModel } = homegrownRiveModel(state));
 	assert.equal(viewModel.mothsVisible, true);
 	assert.equal(viewModel.bedTwoState, "growing");
+});
+
+test("every happy-path state exposes one short spatial action", () => {
+	let state = createInitialState({ now: at });
+	const observed = [];
+	const capture = () => {
+		const presentation = playerPresentation(state);
+		observed.push(presentation);
+		assert.ok(Object.values(WORLD_TARGETS).includes(presentation.target));
+		assert.ok(presentation.objective.length <= 38);
+		assert.ok(presentation.label.length <= 28);
+		assert.deepEqual(presentation.action, primaryAction(state));
+	};
+
+	capture();
+	for (const action of [
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.CHOOSE_PURPOSE, purpose: "dusk-picnic" },
+		{ type: ACTIONS.PLANT_CLOVER },
+		{ type: ACTIONS.ADVANCE_TIME },
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.HARVEST_CLOVER },
+		{ type: ACTIONS.PACK_ADVENTURE },
+		{ type: ACTIONS.START_ADVENTURE },
+		{ type: ACTIONS.ADVANCE_TIME },
+		{ type: ACTIONS.WELCOME_HOME },
+		{ type: ACTIONS.ACKNOWLEDGE_RETURN },
+		{ type: ACTIONS.PLANT_GLOWROOT },
+		{ type: ACTIONS.PLANT_NEXT, crop: "moonberries" },
+	]) {
+		state = reduce(state, action);
+		capture();
+	}
+
+	assert.equal(observed[0].target, WORLD_TARGETS.ROSIE);
+	assert.equal(observed[1].target, WORLD_TARGETS.PATCH);
+	assert.equal(observed[6].target, WORLD_TARGETS.BAG);
+	assert.equal(observed[7].target, WORLD_TARGETS.HEDGE);
+	assert.equal(observed.at(-1).target, WORLD_TARGETS.ROSIE);
+});
+
+test("all eleven prototype positions are valid reload-stable reducer states", () => {
+	assert.equal(PROTOTYPE_POSITIONS.length, 11);
+
+	for (const position of PROTOTYPE_POSITIONS) {
+		const state = createPrototypeState(position.id, { now: at });
+		assert.equal(state.prototypePosition, position.id);
+		assert.ok(Object.values(STAGES).includes(state.stage));
+
+		const presentation = playerPresentation(state);
+		assert.ok(Object.values(WORLD_TARGETS).includes(presentation.target));
+		assert.ok(presentation.objective.length > 0);
+		assert.ok(presentation.label.length > 0);
+
+		const reloaded = deserializeState(serializeState(state), { now: at });
+		assert.equal(reloaded.prototypePosition, position.id);
+		assert.equal(reloaded.stage, state.stage);
+	}
+});
+
+test("Farm stock opens a distinct Bag-selection position before departure", () => {
+	let state = createPrototypeState(6, { now: at });
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.OPEN_BAG_SELECTION,
+		label: "Prepare an Adventure",
+	});
+
+	state = reduce(state, { type: ACTIONS.OPEN_BAG_SELECTION });
+	assert.equal(state.prototypePosition, 7);
+	assert.equal(playerPresentation(state).objective, "Choose what Rosie carries");
+
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	assert.equal(state.prototypePosition, 8);
+	assert.equal(state.stage, STAGES.PACKED);
+});
+
+test("prototype position jumps reject invalid targets without mutation", () => {
+	const state = createInitialState({ now: at });
+	assert.equal(reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 0 }), state);
+	assert.equal(reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 12 }), state);
+	assert.equal(reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: "2" }), state);
+	assert.equal(
+		reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 10 }).prototypePosition,
+		10,
+	);
+});
+
+test("Bag slots accept owned choices, alternatives, and empty values", () => {
+	let state = createPrototypeState(7, { now: at });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: null });
+
+	assert.deepEqual(state.bag, {
+		provision: null,
+		tool: "lantern",
+		pack: "cloth-wrap",
+	});
+	assert.equal(BAG_ITEMS.tool.length, 2);
+	assert.equal(BAG_ITEMS.pack.length, 2);
+
+	const reloaded = deserializeState(serializeState(state), { now: at });
+	assert.deepEqual(reloaded.bag, state.bag);
+
+	const invalid = reduce(state, {
+		type: ACTIONS.SET_BAG_SLOT,
+		slot: "tool",
+		item: "golden-sword",
+	});
+	assert.equal(invalid, state);
+});
+
+test("packing consumes one Provision exactly once while Tool and Pack remain reusable", () => {
+	let state = createPrototypeState(7, { now: at });
+	assert.equal(state.farmStock["clover-lunch"], 5);
+	const compostBefore = state.farmStock.compost;
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+
+	assert.equal(state.stage, STAGES.PACKED);
+	assert.equal(state.prototypePosition, 8);
+	assert.equal(state.packedProvisionSpent, "clover-lunch");
+	assert.equal(state.farmStock["clover-lunch"], 4);
+	assert.equal(state.farmStock.compost, compostBefore);
+	assert.match(state.trace.at(-1).detail, /spent 1 Provision/);
+	assert.equal(reduce(state, { type: ACTIONS.PACK_ADVENTURE }), state);
+
+	const restored = deserializeState(serializeState(state), { now: at });
+	assert.equal(restored.farmStock["clover-lunch"], 4);
+	assert.equal(restored.packedProvisionSpent, "clover-lunch");
+});
+
+test("an unowned Provision is refused but an empty Provision keeps the Adventure available", () => {
+	let state = createPrototypeState(7, { now: at });
+	state = {
+		...state,
+		farmStock: { ...state.farmStock, "clover-lunch": 0 },
+	};
+	assert.equal(reduce(state, { type: ACTIONS.PACK_ADVENTURE }), state);
+
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: null });
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	assert.equal(state.stage, STAGES.PACKED);
+	assert.equal(state.farmStock["clover-lunch"], 0);
+	assert.equal(state.packedProvisionSpent, null);
+	assert.equal(state.underprepared, true);
+	assert.equal(state.nearDiscoveryReason, "provision");
+});
+
+test("direct review states show Farm stock before and after packing", () => {
+	assert.equal(createPrototypeState(7, { now: at }).farmStock["clover-lunch"], 5);
+	assert.equal(createPrototypeState(8, { now: at }).farmStock["clover-lunch"], 4);
+	assert.equal(createPrototypeState(10, { now: at }).farmStock["glowroot-seed"], 1);
+	assert.equal(createPrototypeState(11, { now: at }).farmStock["glowroot-seed"], 0);
+	assert.equal(createPrototypeState(11, { now: at }).glowrootPlanted, true);
+});
+
+test("every empty Bag slot creates a specific deterministic Near-Discovery", () => {
+	for (const missingSlot of ["provision", "tool", "pack"]) {
+		let state = createPrototypeState(7, { now: at });
+		state = reduce(state, {
+			type: ACTIONS.SET_BAG_SLOT,
+			slot: missingSlot,
+			item: null,
+		});
+		state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+		assert.equal(state.underprepared, true);
+		assert.equal(state.nearDiscoveryReason, missingSlot);
+		assert.equal(state.prototypePosition, 8);
+
+		state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+		state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+		state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+		assert.equal(state.stage, STAGES.NEAR_DISCOVERY);
+		assert.match(state.trace.at(-1).detail, /Rosie|seed|root|leaf-print/);
+		assert.match(playerPresentation(state).objective, /Provision|Tool|Pack/);
+	}
+});
+
+test("a complete alternative loadout remains successful and visible at departure", () => {
+	let state = createPrototypeState(7, { now: at });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+
+	assert.equal(state.stage, STAGES.PACKED);
+	assert.equal(state.underprepared, false);
+	assert.deepEqual(state.bag, {
+		provision: "clover-lunch",
+		tool: "lantern",
+		pack: "cloth-wrap",
+	});
+});
+
+test("the Adventure vignette explains every selected item before idle waiting", () => {
+	let state = createPrototypeState(7, { now: at });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+
+	const story = adventureStory(state);
+	assert.equal(story.kind, "discovery");
+	assert.deepEqual(story.tags.map((tag) => tag.name), [
+		"Clover Lunch",
+		"Lantern",
+		"Cloth Wrap",
+	]);
+	assert.equal(state.prototypePosition, 8);
+	assert.equal(state.departureComplete, false);
+	assert.equal(homegrownRiveModel(state).trigger, "departure");
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.SETTLE,
+		label: "Rosie is heading for the hedge…",
+	});
+
+	state = homegrownReducer(state, {
+		type: ACTIONS.SETTLE,
+		now: at + DURATIONS.DEPARTURE_MS,
+	});
+	assert.equal(state.prototypePosition, 9);
+	assert.equal(state.departureComplete, true);
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.CONTINUE_ADVENTURE_STORY,
+		label: "Continue the story",
+	});
+
+	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+	assert.equal(state.adventureVignetteSeen, true);
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.ADVANCE_TIME,
+		label: "Let dusk pass",
+	});
+});
+
+test("departure timing is reducer-owned, reload-stable, reduced-motion aware, and idempotent", () => {
+	let state = createPrototypeState(8, { now: at });
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	const started = state;
+
+	assert.equal(state.prototypePosition, 8);
+	assert.equal(state.departureReadyAt - state.departureStartedAt, DURATIONS.DEPARTURE_MS);
+	assert.equal(reduce(state, { type: ACTIONS.START_ADVENTURE }), state);
+	assert.equal(
+		settleState(state, state.departureReadyAt - 1),
+		state,
+	);
+
+	state = deserializeState(serializeState(state), { now: at + 200 });
+	assert.equal(state.prototypePosition, 8);
+	assert.equal(state.departureComplete, false);
+	assert.equal(state.departureReadyAt, at + 200 + DURATIONS.DEPARTURE_MS);
+	state = settleState(state, state.departureReadyAt);
+	assert.equal(state.prototypePosition, 9);
+	assert.equal(state.departureComplete, true);
+	assert.equal(settleState(state, state.departureReadyAt), state);
+
+	let reduced = createPrototypeState(8, { now: at, reduceMotion: true });
+	reduced = reduce(reduced, { type: ACTIONS.START_ADVENTURE });
+	assert.ok(reduced.departureReadyAt - reduced.departureStartedAt < DURATIONS.DEPARTURE_MS);
+	assert.equal(reduced.prototypePosition, 8);
+
+	const legacyPositionNine = { ...started, prototypePosition: 9 };
+	delete legacyPositionNine.departureComplete;
+	delete legacyPositionNine.departureStartedAt;
+	delete legacyPositionNine.departureReadyAt;
+	const migrated = deserializeState(JSON.stringify(legacyPositionNine), { now: at });
+	assert.equal(migrated.prototypePosition, 9);
+	assert.equal(migrated.departureComplete, true);
+});
+
+test("an empty Bag slot changes the deterministic vignette instead of removing it", () => {
+	let state = createPrototypeState(7, { now: at });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: null });
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+
+	const story = adventureStory(state);
+	assert.equal(story.kind, "near-discovery");
+	assert.equal(story.tags[2].name, "No Pack");
+	assert.match(story.tags[2].detail, /leaf-print/);
+});
+
+test("prototype navigation carries the selected loadout into the vignette", () => {
+	let state = createPrototypeState(7, { now: at });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
+	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 8 });
+	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 9 });
+
+	assert.equal(state.prototypePosition, 9);
+	assert.deepEqual(state.bag, {
+		provision: "clover-lunch",
+		tool: "lantern",
+		pack: "cloth-wrap",
+	});
+	assert.equal(adventureStory(state).tags[1].name, "Lantern");
+});
+
+test("a successful return adds one named Discovery and practical Farm supplies", () => {
+	let state = createPrototypeState(7, { now: at });
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+
+	assert.equal(state.stage, STAGES.GLOWROOT_RETURNED);
+	assert.equal(state.prototypePosition, 10);
+	assert.equal(state.farmStock["glowroot-seed"], 1);
+	assert.equal(state.farmStock.compost, 2);
+	assert.equal(state.farmStock["willow-fiber"], 2);
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.ACKNOWLEDGE_RETURN,
+		label: "Welcome Rosie Home",
+	});
+
+	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
+	assert.equal(state.returnRewardAcknowledged, true);
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.PLANT_GLOWROOT,
+		label: "Plant Glowroot",
+	});
+	assert.deepEqual(deserializeState(serializeState(state), { now: at }).farmStock, state.farmStock);
+
+	const beforePlant = state;
+	state = reduce(state, { type: ACTIONS.PLANT_GLOWROOT });
+	assert.equal(state.stage, STAGES.DEVELOPED);
+	assert.equal(state.prototypePosition, 11);
+	assert.equal(state.glowrootPlanted, true);
+	assert.equal(state.farmStock["glowroot-seed"], 0);
+	assert.match(state.trace.at(-1).detail, /1 → 0/);
+	assert.equal(reduce(state, { type: ACTIONS.PLANT_GLOWROOT }), state);
+	assert.equal(beforePlant.farmStock["glowroot-seed"], 1);
+	const restored = deserializeState(serializeState(state), { now: at });
+	assert.equal(restored.glowrootPlanted, true);
+	assert.equal(restored.farmStock["glowroot-seed"], 0);
+});
+
+test("Glowroot cannot be planted before the return is acknowledged or without its Seed", () => {
+	let state = createPrototypeState(10, { now: at });
+	assert.equal(reduce(state, { type: ACTIONS.PLANT_GLOWROOT }), state);
+
+	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
+	const noSeed = {
+		...state,
+		farmStock: { ...state.farmStock, "glowroot-seed": 0 },
+	};
+	assert.equal(reduce(noSeed, { type: ACTIONS.PLANT_GLOWROOT }), noSeed);
+});
+
+test("a Near-Discovery still returns useful supplies without granting the Seed", () => {
+	let state = createPrototypeState(7, { now: at });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: null });
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+
+	assert.equal(state.stage, STAGES.NEAR_DISCOVERY);
+	assert.equal(state.prototypePosition, 10);
+	assert.equal(state.farmStock["glowroot-seed"], 0);
+	assert.equal(state.farmStock.compost, 2);
+	assert.equal(state.farmStock["willow-fiber"], 1);
+	assert.equal(playerPresentation(state).label, "Adjust Rosie’s Bag");
 });

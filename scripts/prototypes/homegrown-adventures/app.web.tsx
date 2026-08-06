@@ -7,13 +7,22 @@ import {
 } from "../../../components/prototypes/homegrown-adventures/HomegrownRiveScene.web";
 import {
 	ACTIONS,
+	adventureStory,
+	BAG_ITEMS,
+	BAG_SLOT_ORDER,
+	bagItem,
+	CROP_RULES,
 	createInitialState,
+	createPrototypeState,
 	deserializeState,
 	HOMEGROWN_STORAGE_KEY,
 	homegrownReducer,
-	primaryAction,
+	HARVEST_PATTERN,
+	playerPresentation,
+	PROTOTYPE_POSITIONS,
 	serializeState,
 	STAGES,
+	WORLD_TARGETS,
 } from "./game.mjs";
 import { homegrownRiveModel } from "./homegrownRiveModel.mjs";
 import "./styles.css";
@@ -68,6 +77,23 @@ const STAGE_COPY = {
 };
 
 function stageCopy(state) {
+	if (state.stage === STAGES.NEAR_DISCOVERY) {
+		const copy = {
+			provision: {
+				title: "Rosie followed a warm moth trail",
+				body: "Without a Provision she came Home kindly before the Glowroot seed opened.",
+			},
+			tool: {
+				title: "Rosie found something warm underground",
+				body: "A Tool could uncover the root she felt beneath the soft soil.",
+			},
+			pack: {
+				title: "Rosie brought Home a glowing leaf-print",
+				body: "A Pack could carry the delicate Glowroot Seed safely next time.",
+			},
+		}[state.nearDiscoveryReason];
+		if (copy) return { eyebrow: "Near-Discovery · never failure", ...copy };
+	}
 	if (state.stage === STAGES.STARTING && state.hasTickled && !state.purpose) {
 		return {
 			eyebrow: "A named Request",
@@ -172,6 +198,384 @@ function Counter({ kind, value, label }) {
 	);
 }
 
+function HeartChip({ value }) {
+	return (
+		<div className="heart-chip" aria-label={`Tickles earned: ${value}`}>
+			<Glyph name="heart" />
+			<strong>{value.toLocaleString()}</strong>
+		</div>
+	);
+}
+
+function WorldAction({ presentation, onAction, waiting = false }) {
+	if (presentation.target === WORLD_TARGETS.ROSIE) return null;
+	return (
+		<button
+			className={`world-action world-action-${presentation.target} ${waiting ? "is-waiting" : ""}`}
+			type="button"
+			onClick={onAction}
+			disabled={waiting}
+			aria-describedby="current-objective"
+		>
+			<span className="world-action-pulse" aria-hidden="true" />
+			<span className="world-action-label">{presentation.label}</span>
+		</button>
+	);
+}
+
+const BAG_SLOT_LABELS = {
+	provision: "Provision",
+	tool: "Tool",
+	pack: "Pack",
+};
+
+function SeedChoicePanel({ state, onChoose }) {
+	const farmStock = state.farmStock ?? {};
+	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
+	const compost = farmStock.compost ?? 0;
+	const rememberedMorning = state.daysCompleted > 0 && state.glowrootPlanted;
+
+	if (rememberedMorning) {
+		return (
+			<section className="seed-choice-panel seed-choice-memory" aria-label="Choose the next crop while Home keeps growing">
+				<div className="seed-memory-ledger">
+					<strong>Already growing at Home</strong>
+					<span><i aria-hidden="true">●</i><b>Moonberries</b><small>Bed 2 · growing</small></span>
+					<span><i aria-hidden="true">✦</i><b>Glowroot</b><small>Bed 3 · planted</small></span>
+				</div>
+				<div className="seed-choice-next-row">
+					<button type="button" onClick={onChoose} disabled={cloverSeeds < 1}>
+						<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
+						<span><small>Plant next</small><strong>Clover Seed</strong><b>{cloverSeeds} owned</b></span>
+						<em>{cloverSeeds > 0 ? "Choose Clover" : "Need a Seed"}</em>
+					</button>
+					<div><span className="seed-art seed-art-compost" aria-hidden="true">♣</span><span><small>Optional boost</small><strong>Compost</strong><b>{compost} owned</b></span></div>
+				</div>
+				<p>Your Adventure changed Home. Clover can stock the next one.</p>
+			</section>
+		);
+	}
+
+	return (
+		<section className="seed-choice-panel" aria-label="Choose what to grow from Farm stock">
+			<div className="farm-stock-label"><span aria-hidden="true">⌂</span><strong>Farm stock</strong></div>
+			<div className="seed-choice-grid">
+				<button
+					type="button"
+					className="seed-choice-card is-available"
+					onClick={onChoose}
+					disabled={cloverSeeds < 1}
+				>
+					<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
+					<strong>Clover Seed</strong>
+					<small>{cloverSeeds} owned</small>
+					<b>{cloverSeeds > 0 ? "Choose Clover" : "Need a Seed"}</b>
+				</button>
+				<div className="seed-choice-card is-unknown" aria-label="Moonberry has not been discovered">
+					<span className="seed-art seed-art-moonberry" aria-hidden="true">●</span>
+					<strong>Moonberry</strong>
+					<small>Not discovered</small>
+					<b aria-hidden="true">?</b>
+				</div>
+				<div className="seed-choice-card is-supply" aria-label={`Compost: ${compost} owned`}>
+					<span className="seed-art seed-art-compost" aria-hidden="true">♣</span>
+					<strong>Compost</strong>
+					<small>{compost} owned</small>
+					<b>Optional boost</b>
+				</div>
+			</div>
+			<p>Clover becomes a Provision for Rosie’s dusk Adventure.</p>
+		</section>
+	);
+}
+
+function PlantingPanel({ state, onToggleCompost, onPlant }) {
+	const seeds = state.farmStock?.[CROP_RULES.clover.seedId] ?? 0;
+	const compost = state.farmStock?.compost ?? 0;
+	const boosted = state.compostApplied && compost > 0;
+	return (
+		<section className="planting-panel" aria-label="Plant Clover and choose whether to add Compost">
+			<div className="planting-costs">
+				<div className="planting-cost is-required">
+					<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
+					<span><small>Required Seed</small><strong>Clover</strong><b>{seeds} → {Math.max(0, seeds - 1)}</b></span>
+				</div>
+				<button
+					type="button"
+					className={`planting-cost compost-toggle ${boosted ? "is-selected" : ""}`}
+					onClick={onToggleCompost}
+					disabled={compost < 1 && !boosted}
+					aria-pressed={boosted}
+				>
+					<span className="seed-art seed-art-compost" aria-hidden="true">♣</span>
+					<span><small>Optional Compost</small><strong>{boosted ? "Added" : "Saved"}</strong><b>{boosted ? `${compost} → ${compost - 1}` : `${compost} stays`}</b></span>
+					<i aria-hidden="true">{boosted ? "✓" : "+"}</i>
+				</button>
+			</div>
+			<div className="planting-effect" role="status">
+				<strong>{boosted ? "Ready in 2 hours · Harvest 4" : "Ready in 4 hours · Harvest 3"}</strong>
+				<small>{boosted ? "Compost grows it sooner and gives one extra." : "Nothing is lost. Compost is a choice, not a requirement."}</small>
+			</div>
+			<button type="button" className="plant-confirm" onClick={onPlant} disabled={seeds < 1}>
+				{boosted ? "Plant with Compost" : "Plant Clover"}
+			</button>
+		</section>
+	);
+}
+
+function GrowthStatusPanel({ state, onPreview }) {
+	return (
+		<section className={`growth-status-panel ${state.compostApplied ? "is-composted" : ""}`} aria-label="Clover growth status">
+			<span className="growth-badge"><i aria-hidden="true">{state.compostApplied ? "✓" : "☘"}</i>{state.compostApplied ? "Composted" : "Growing normally"}</span>
+			<strong>Ready in {state.compostApplied ? "2 hours" : "4 hours"}</strong>
+			<small>Once ready, this crop waits safely until you harvest it.</small>
+			<button type="button" onClick={onPreview}>Preview it ready</button>
+		</section>
+	);
+}
+
+const HARVEST_DIRECTION_LABELS = {
+	left: { arrow: "←", name: "Left" },
+	right: { arrow: "→", name: "Right" },
+	up: { arrow: "↑", name: "Up" },
+};
+
+function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
+	const gestureStart = useRef(null);
+	const beatIndex = state.harvestBeats?.length ?? 0;
+	const nextDirection = HARVEST_PATTERN[beatIndex] ?? null;
+	const startGesture = (event) => {
+		gestureStart.current = { x: event.clientX, y: event.clientY };
+		try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch {}
+	};
+	const finishGesture = (event) => {
+		const start = gestureStart.current;
+		gestureStart.current = null;
+		if (!start) return;
+		const dx = event.clientX - start.x;
+		const dy = event.clientY - start.y;
+		if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+		const direction = Math.abs(dx) > Math.abs(dy)
+			? dx < 0 ? "left" : "right"
+			: dy < 0 ? "up" : null;
+		if (direction) onBeat(direction, "swipe");
+	};
+
+	return (
+		<>
+			<div
+				className="harvest-gesture-zone"
+				onPointerDown={startGesture}
+				onPointerUp={finishGesture}
+				onPointerCancel={() => { gestureStart.current = null; }}
+				aria-hidden="true"
+			>
+				<span>Swipe the Clover</span>
+			</div>
+			<section className="harvest-rhythm-panel" aria-label="Follow Clover's harvest rhythm">
+				<span className="harvest-eyebrow">Clover’s pattern</span>
+				<div className="harvest-pattern" aria-label="Left, then Right, then Up">
+					{HARVEST_PATTERN.map((direction, index) => (
+						<span
+							key={direction}
+							className={`${index < beatIndex ? "is-complete" : ""} ${index === beatIndex ? "is-next" : ""}`}
+						>
+							{HARVEST_DIRECTION_LABELS[direction].arrow}
+						</span>
+					))}
+				</div>
+				<strong>{nextDirection ? `${HARVEST_DIRECTION_LABELS[nextDirection].name} is next` : "Harvest complete"}</strong>
+				<small>Swipe the crop, or tap the arrows in order.</small>
+				<div className="harvest-direction-buttons" aria-label="Accessible harvest controls">
+					{HARVEST_PATTERN.map((direction) => (
+						<button
+							type="button"
+							key={direction}
+							className={direction === nextDirection ? "is-next" : ""}
+							onClick={() => onBeat(direction, "button")}
+							aria-label={`Harvest ${HARVEST_DIRECTION_LABELS[direction].name}`}
+						>
+							{HARVEST_DIRECTION_LABELS[direction].arrow}
+						</button>
+					))}
+				</div>
+				<div className="harvest-guarantee"><i aria-hidden="true">✓</i><span><b>Harvest guaranteed</b><small>Clean rhythm earns +1</small></span></div>
+				<button type="button" className="harvest-normal" onClick={onGatherNormally}>Gather without rhythm</button>
+			</section>
+		</>
+	);
+}
+
+function HarvestResultPanel({ state, onContinue }) {
+	const compostBonus = state.compostApplied ? CROP_RULES.clover.compostYieldBonus : 0;
+	const rhythmBonus = state.harvestRhythmBonus ? 1 : 0;
+	return (
+		<section className="harvest-result-panel" aria-label="Clover harvest added to Farm stock">
+			<span className="harvest-result-eyebrow">Farm stock grew</span>
+			<div className="harvest-total">
+				<span aria-hidden="true">☘</span>
+				<strong>Clover Lunch <b>+{state.lastHarvestYield}</b></strong>
+			</div>
+			<div className="harvest-breakdown" aria-label="Harvest breakdown">
+				<span><b>{CROP_RULES.clover.baseYield}</b><small>Base harvest</small></span>
+				{compostBonus > 0 && <span><b>+{compostBonus}</b><small>Compost</small></span>}
+				<span className={rhythmBonus ? "is-bonus" : ""}><b>+{rhythmBonus}</b><small>Rhythm</small></span>
+			</div>
+			<div className="harvest-stock-row">
+				<span><small>Clover Seed</small><b>{state.farmStock?.[CROP_RULES.clover.seedId] ?? 0}</b></span>
+				<span><small>Compost</small><b>{state.farmStock?.compost ?? 0}</b></span>
+				<span><small>Clover Lunch</small><b>{state.farmStock?.["clover-lunch"] ?? 0}</b></span>
+			</div>
+			<button type="button" onClick={onContinue}>Prepare an Adventure</button>
+		</section>
+	);
+}
+
+function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
+	const selectedProvisionId = bag.provision ?? null;
+	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
+	const canPack = selectedProvisionId === null || selectedProvisionOwned > 0;
+	const cycleItem = (slot) => {
+		const choices = BAG_ITEMS[slot];
+		const current = choices.findIndex((item) => item.id === bag[slot]);
+		const next = choices[(current + 1 + choices.length) % choices.length];
+		onSelect(slot, next.id);
+	};
+
+	return (
+		<section className="bag-selection" aria-label="Choose what Rosie carries">
+		<div className="bag-slot-grid">
+			{BAG_SLOT_ORDER.map((slot) => {
+				const selected = bagItem(slot, bag[slot]);
+				const defaultItem = BAG_ITEMS[slot][0];
+				const owned = slot === "provision" ? farmStock?.[selected?.id ?? defaultItem.id] ?? 0 : null;
+				const unavailable = slot === "provision" && selected && owned < 1;
+				return (
+					<div className={`bag-slot-card ${selected ? "is-filled" : "is-empty"} ${unavailable ? "is-unavailable" : ""}`} key={slot}>
+						<span className="bag-slot-kind">{BAG_SLOT_LABELS[slot]}</span>
+						<span className="bag-item-icon" aria-hidden="true">{selected?.icon ?? "·"}</span>
+						<strong>{selected?.name ?? "Empty"}</strong>
+						{selected ? (
+							<small>{slot === "provision"
+								? owned > 0
+									? `${owned} → ${owned - 1} · ${selected.effect}`
+									: `0 owned · Grow more or leave empty`
+								: `Reusable · ${selected.effect}`}</small>
+						) : (
+							<small>Rosie can leave without one</small>
+						)}
+						<button type="button" className="bag-change" onClick={() => cycleItem(slot)}>
+							{selected ? "Change" : `Choose ${defaultItem.name}`}
+						</button>
+						<button
+							type="button"
+							className="bag-empty"
+							disabled={!selected}
+							onClick={() => onSelect(slot, null)}
+						>
+							Leave empty
+						</button>
+					</div>
+				);
+			})}
+		</div>
+		<button type="button" className="bag-confirm" onClick={onConfirm} disabled={!canPack}>
+			{canPack ? "Pack these" : "Need Clover Lunch"}
+		</button>
+		<p>{canPack ? "Provisions are used once. Tools and Packs come Home." : "Leave Provision empty to explore with a useful clue."}</p>
+		</section>
+	);
+}
+
+function PackedLoadoutRibbon({ bag }) {
+	return (
+		<div className="packed-loadout" aria-label="Rosie's packed items">
+		{BAG_SLOT_ORDER.map((slot) => {
+			const selected = bagItem(slot, bag[slot]);
+			return (
+				<span key={slot} className={selected ? "" : "is-empty"}>
+					<i aria-hidden="true">{selected?.icon ?? "·"}</i>
+					<small>{BAG_SLOT_LABELS[slot]}</small>
+					<strong>{selected?.name ?? "Empty"}</strong>
+				</span>
+			);
+		})}
+		</div>
+	);
+}
+
+function AdventureVignetteOverlay({ state, onContinue }) {
+	const story = adventureStory(state);
+	return (
+		<section className="adventure-vignette-overlay" data-story-kind={story.kind} aria-label="Beyond-the-hedge Adventure">
+			<div className="adventure-cause-tags">
+				{story.tags.map((tag) => (
+					<div key={tag.slot} className={tag.name.startsWith("No ") ? "is-empty" : ""}>
+						<i aria-hidden="true">{tag.icon}</i>
+						<strong>{tag.name}</strong>
+						<small>{tag.detail}</small>
+					</div>
+				))}
+			</div>
+			<div className="adventure-find" role="status">
+				<span className="glowroot-token" aria-hidden="true">✦</span>
+				<strong>{story.headline}</strong>
+				<small>{story.result}</small>
+			</div>
+			<button type="button" className="adventure-continue" onClick={onContinue}>Continue the story</button>
+		</section>
+	);
+}
+
+function ReturnRewardPanel({ state, actionLabel, onAction }) {
+	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
+	const story = adventureStory(state);
+	return (
+		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} aria-label="Rosie's return rewards">
+			<div className="return-discovery-card">
+				<span className="return-card-eyebrow">{nearDiscovery ? "Useful clue" : "New Discovery"}</span>
+				<span className="return-seed" aria-hidden="true">✦</span>
+				<strong>{nearDiscovery ? "Glowroot Trail" : "Glowroot Seed  +1"}</strong>
+				<small>{nearDiscovery ? story.result : "A slow Crop that glows after dusk"}</small>
+			</div>
+			<div className="return-preparation-recap" aria-label="How Rosie's preparation helped">
+				{story.tags.map((tag) => <span key={tag.slot}><b>{tag.name}</b><small>{tag.detail}</small></span>)}
+			</div>
+			<div className="return-supplies" aria-label="Farm supplies returned">
+				<span><i aria-hidden="true">♣</i><b>Compost</b><strong>+1</strong></span>
+				<span><i aria-hidden="true">≋</i><b>Willow Fiber</b><strong>+{nearDiscovery ? 1 : 2}</strong></span>
+			</div>
+			<button type="button" className="return-reward-action" onClick={onAction}>{actionLabel}</button>
+		</section>
+	);
+}
+
+function HomeMemoryPanel({ state, actionLabel, onAction }) {
+	const stock = state.farmStock ?? {};
+	return (
+		<section className="home-memory-panel" aria-label="The Barn remembers this Adventure">
+			<div className="home-memory-promise">
+				<strong>The Barn remembers</strong>
+				<div>
+					<span><i aria-hidden="true">☘</i><b>Crops</b><small>keep growing</small></span>
+					<span><i aria-hidden="true">⌂</i><b>Farm stock</b><small>remains</small></span>
+					<span><i aria-hidden="true">✦</i><b>Discoveries</b><small>stay</small></span>
+				</div>
+			</div>
+			<div className="home-memory-stock" aria-label="Farm stock after planting Glowroot">
+				<strong>Farm stock</strong>
+				<div>
+					<span><i aria-hidden="true">☘</i><small>Clover Lunch</small><b>{stock["clover-lunch"] ?? 0}</b></span>
+					<span><i aria-hidden="true">✦</i><small>Glowroot Seed</small><b>{stock["glowroot-seed"] ?? 0}</b></span>
+					<span><i aria-hidden="true">♣</i><small>Compost</small><b>{stock.compost ?? 0}</b></span>
+					<span><i aria-hidden="true">≋</i><small>Materials</small><b>{stock["willow-fiber"] ?? 0}</b></span>
+				</div>
+			</div>
+			<button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>
+		</section>
+	);
+}
+
 function BottomNav() {
 	const items = [["barn", "Barn"], ["friends", "Friends"], ["season", "Season"], ["shop", "Shop"], ["me", "Me"]];
 	return (
@@ -201,6 +605,25 @@ function PurposeShelf({ state }) {
 }
 
 const RETURN_CEREMONY_MS = 2400;
+const HOMEGROWN_REVIEW_STORAGE_KEY = `${HOMEGROWN_STORAGE_KEY}.review`;
+const RAPID_TRANSITION_GUARD_MS = 350;
+const RAPID_TRANSITION_ACTIONS = new Set([
+	ACTIONS.TICKLE,
+	ACTIONS.SELECT_CROP,
+	ACTIONS.PLANT_CLOVER,
+	ACTIONS.ADVANCE_TIME,
+	ACTIONS.HARVEST_CLOVER,
+	ACTIONS.OPEN_BAG_SELECTION,
+	ACTIONS.PACK_ADVENTURE,
+	ACTIONS.START_ADVENTURE,
+	ACTIONS.CONTINUE_ADVENTURE_STORY,
+	ACTIONS.WELCOME_HOME,
+	ACTIONS.ACKNOWLEDGE_RETURN,
+	ACTIONS.PLANT_GLOWROOT,
+	ACTIONS.PLANT_NEXT,
+	ACTIONS.RETRY_PREP,
+	ACTIONS.START_NEW_DAY,
+]);
 
 function compactStoryCopy(state) {
 	if (state.stage === STAGES.DEVELOPED) {
@@ -386,25 +809,137 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function PositionRail({ position, onChange }) {
+	const current = PROTOTYPE_POSITIONS[position - 1];
+	const atStart = position === 1;
+	const atEnd = position === PROTOTYPE_POSITIONS.length;
+	return (
+		<nav className="position-rail" aria-label="Prototype progression positions">
+			<button
+				type="button"
+				disabled={atStart}
+				onClick={() => onChange(position - 1)}
+				aria-label="Previous position"
+			>
+				<span aria-hidden="true">←</span><strong>Previous</strong>
+			</button>
+			<div className="position-readout" role="status" aria-live="polite">
+				<strong>Position {position} / {PROTOTYPE_POSITIONS.length}</strong>
+				<small>{current.name}</small>
+			</div>
+			<button
+				type="button"
+				onClick={() => onChange(atEnd ? 1 : position + 1)}
+				aria-label={atEnd ? "Loop to first position" : "Next position"}
+			>
+				<strong>{atEnd ? "Loop" : "Next"}</strong><span aria-hidden="true">{atEnd ? "↻" : "→"}</span>
+			</button>
+		</nav>
+	);
+}
+
 function sceneImage() {
 	// Crop and Home consequences now live in the authored Rive scene. Keeping
 	// one Barn plate makes the player's lasting changes legible and causal.
 	return "starting";
 }
 
+function sceneLabel(state) {
+	if (state.stage === STAGES.ADVENTURE) {
+		return `${stageCopy(state).title}. The warm paper-craft Barn and Kitchen Patch are quiet while Rosie explores beyond the hedge.`;
+	}
+	const rememberedHome = state.glowrootPlanted
+		? " The open hedge, earned bell, Glowroot bed, and growing crops remain from the last Adventure."
+		: "";
+	return `${stageCopy(state).title}. Warm paper-craft Barn exterior with Rosie and a three-bed Kitchen Patch.${rememberedHome}`;
+}
+
 function App() {
 	const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced }));
+	const initialSearch = new URLSearchParams(window.location.search);
+	const loopMode = initialSearch.get("mode") === "loop";
+	const autoPlay = loopMode && !initialSearch.has("position");
+	const requestedPosition = Number(initialSearch.get("position"));
+	const hasRequestedPosition = Number.isInteger(requestedPosition) && requestedPosition >= 1 && requestedPosition <= PROTOTYPE_POSITIONS.length;
+	const reviewMode = loopMode || hasRequestedPosition;
+	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
+		if (hasRequestedPosition) {
+			const persistedReview = deserializeState(localStorage.getItem(HOMEGROWN_REVIEW_STORAGE_KEY), {
+				reduceMotion: prefersReduced,
+			});
+			if (persistedReview.prototypePosition === requestedPosition) return persistedReview;
+			return createPrototypeState(requestedPosition, { reduceMotion: persistedReview.reduceMotion });
+		}
+		if (loopMode) return createInitialState({ reduceMotion: prefersReduced });
+		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
+	});
 	const [variant, setVariant] = useVariant();
-	const action = useMemo(() => primaryAction(state), [state]);
+	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const riveModel = useMemo(() => homegrownRiveModel(state), [state]);
 	const image = sceneImage();
 	const [feedback, setFeedback] = useState(0);
+	const transitionLockUntil = useRef(0);
+	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
+	const position = state.prototypePosition ?? 1;
+	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop;
+	const plantingCrop = position === 3 && state.stage === STAGES.STARTING && state.selectedCrop === "clover";
+	const showingGrowth = position === 4 && state.stage === STAGES.CLOVER_GROWING;
+	const showingHarvestRhythm = position === 5 && state.stage === STAGES.CLOVER_READY && !state.cloverHarvested;
+	const showingHarvestResult = position === 6 && state.stage === STAGES.CLOVER_READY && state.cloverHarvested;
+	const showingFarmingPanel = choosingSeed || plantingCrop || showingGrowth || showingHarvestRhythm || showingHarvestResult;
+	const choosingBag = position === 7 && state.stage === STAGES.CLOVER_READY && state.cloverHarvested;
+	const departing = position === 8 && state.stage === STAGES.ADVENTURE && !state.departureComplete;
+	const showingAdventureVignette = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && !state.adventureVignetteSeen;
+	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
+	const showingHomeMemory = position === 11 && state.glowrootPlanted;
+	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingReturnReward;
+	const waiting = departing || (autoPlay && (
+		state.stage === STAGES.CLOVER_GROWING ||
+		(state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen && !state.adventureComplete)
+	));
+	const visiblePresentation = waiting
+		? {
+			...presentation,
+			label: departing
+				? "Rosie is heading beyond the hedge…"
+				: state.stage === STAGES.CLOVER_GROWING
+					? "Clover is growing…"
+					: "Rosie is exploring…",
+		}
+		: presentation;
 
 	useEffect(() => {
-		localStorage.setItem(HOMEGROWN_STORAGE_KEY, serializeState(state));
+		localStorage.setItem(
+			reviewMode ? HOMEGROWN_REVIEW_STORAGE_KEY : HOMEGROWN_STORAGE_KEY,
+			serializeState(state),
+		);
 		document.documentElement.dataset.reduceMotion = String(state.reduceMotion);
-	}, [state]);
+	}, [reviewMode, state]);
+
+	useEffect(() => {
+		const url = new URL(window.location.href);
+		if (url.searchParams.get("position") === String(position)) return;
+		url.searchParams.set("position", String(position));
+		window.history.replaceState({}, "", url);
+	}, [position]);
+
+	useEffect(() => {
+		if (!departing || state.departureReadyAt === null) return undefined;
+		const delay = Math.max(0, state.departureReadyAt - Date.now());
+		const timer = window.setTimeout(
+			() => dispatch({ type: ACTIONS.SETTLE, now: Date.now() }),
+			delay,
+		);
+		return () => window.clearTimeout(timer);
+	}, [departing, state.departureReadyAt]);
+
+	useEffect(() => {
+		if (!waiting) return undefined;
+		if (departing) return undefined;
+		const delay = state.reduceMotion ? 120 : 1900;
+		const timer = window.setTimeout(() => dispatch({ type: ACTIONS.ADVANCE_TIME }), delay);
+		return () => window.clearTimeout(timer);
+	}, [departing, state.reduceMotion, state.stage, waiting]);
 
 	useEffect(() => {
 		const onVisibility = () => {
@@ -433,38 +968,115 @@ function App() {
 		} catch {}
 	}, [state.reduceMotion]);
 
-	const act = useCallback((nextAction = action) => {
+	const act = useCallback((nextAction) => {
+		const now = performance.now();
+		const guardsTransition =
+			RAPID_TRANSITION_ACTIONS.has(nextAction.type) ||
+			(nextAction.type === ACTIONS.HARVEST_BEAT && nextAction.finalBeat);
+		if (guardsTransition) {
+			if (now < transitionLockUntil.current) return;
+			transitionLockUntil.current = now + RAPID_TRANSITION_GUARD_MS;
+		}
 		dispatch(nextAction);
 		signalFeedback(nextAction.type);
-	}, [action, signalFeedback]);
+	}, [signalFeedback]);
 
-	return <main className={`lab variant-${variant}`}>
-		<header className="lab-context">
+	const jumpToPosition = useCallback((nextPosition) => {
+		dispatch({ type: ACTIONS.JUMP_TO_POSITION, position: nextPosition });
+	}, []);
+
+	const selectBagItem = useCallback((slot, item) => {
+		dispatch({ type: ACTIONS.SET_BAG_SLOT, slot, item });
+	}, []);
+
+	return <main className={`lab ${debug ? "lab-debug" : "lab-player"} variant-${variant}`}>
+		{debug && <header className="lab-context">
 			<p><strong>Homegrown Adventures</strong><span>{VARIANTS[variant].question}</span></p>
 			<span className="prototype-badge">Prototype · browser lab</span>
-		</header>
-		<div className={`phone scene-${image} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}>
-			<div className="scene-plate" role="img" aria-label={`${stageCopy(state).title}. Warm paper-craft Barn exterior with Rosie and a three-bed Kitchen Patch.`} />
+		</header>}
+		<div className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}>
+			<div className="scene-plate" role="img" aria-label={sceneLabel(state)} />
+			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			<HomegrownRiveScene
 				reduceMotion={state.reduceMotion}
 				model={riveModel.viewModel}
 				trigger={riveModel.trigger}
 				triggerNonce={riveModel.triggerNonce}
 			/>
-			<div className="hud">
-				<Counter kind="earned" value={state.ticklesEarned} label="Tickles earned" />
-				<Counter kind="ready" value={`${state.readyToTickle} / 25`} label="Ready to tickle" />
+			{showingAdventureVignette && <div className="adventure-bed-mask" aria-hidden="true" />}
+			<div className="quiet-hud">
+				<HeartChip value={state.ticklesEarned} />
+				<div className="current-objective" id="current-objective" role="status" aria-live="polite">
+					<span aria-hidden="true" />
+					<strong>{visiblePresentation.objective}</strong>
+				</div>
 			</div>
-			<button className="rosie-hit" type="button" aria-label="Tickle Rosie" onClick={() => act({ type: ACTIONS.TICKLE })}><span>Tickle Rosie</span></button>
-			{variant === "B" && <PurposeShelf state={state} />}
-			<StoryCard state={state} variant={variant} />
-			<PurposeSign state={state} />
-			{state.stage === STAGES.CLOVER_READY && state.cloverHarvested && <button className="near-discovery-action" type="button" onClick={() => act({ type: ACTIONS.PACK_LIGHT })}>Preview kind miss: leave Clover Home</button>}
-			<button className="primary-action" type="button" disabled={action.disabled} onClick={() => act()}>{action.label}</button>
-			<BottomNav />
+			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingHomeMemory && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
+				className={`rosie-hit ${visiblePresentation.target === WORLD_TARGETS.ROSIE ? "is-guided" : ""}`}
+				type="button"
+				aria-label={visiblePresentation.target === WORLD_TARGETS.ROSIE ? visiblePresentation.label : "Tickle Rosie"}
+				onClick={() => act(visiblePresentation.target === WORLD_TARGETS.ROSIE ? visiblePresentation.action : { type: ACTIONS.TICKLE })}
+			>
+				{visiblePresentation.target === WORLD_TARGETS.ROSIE && <span>{visiblePresentation.label}</span>}
+			</button>}
+			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} />}
+			{choosingSeed && <SeedChoicePanel
+				state={state}
+				onChoose={() => act(visiblePresentation.action)}
+			/>}
+			{plantingCrop && <PlantingPanel
+				state={state}
+				onToggleCompost={() => act({ type: ACTIONS.TOGGLE_COMPOST })}
+				onPlant={() => act(visiblePresentation.action)}
+			/>}
+			{showingGrowth && <GrowthStatusPanel
+				state={state}
+				onPreview={() => act(visiblePresentation.action)}
+			/>}
+			{showingHarvestRhythm && <HarvestRhythmPanel
+				state={state}
+				onBeat={(direction, input) => act({
+					type: ACTIONS.HARVEST_BEAT,
+					direction,
+					input,
+					finalBeat: (state.harvestBeats?.length ?? 0) === HARVEST_PATTERN.length - 1,
+				})}
+				onGatherNormally={() => act(visiblePresentation.action)}
+			/>}
+			{showingHarvestResult && <HarvestResultPanel
+				state={state}
+				onContinue={() => act(visiblePresentation.action)}
+			/>}
+			{showingAdventureVignette && <AdventureVignetteOverlay
+				state={state}
+				onContinue={() => act(visiblePresentation.action)}
+			/>}
+			{showingReturnReward && <ReturnRewardPanel
+				state={state}
+				actionLabel={visiblePresentation.label}
+				onAction={() => act(visiblePresentation.action)}
+			/>}
+			{showingHomeMemory && <HomeMemoryPanel
+				state={state}
+				actionLabel={visiblePresentation.label}
+				onAction={() => act(visiblePresentation.action)}
+			/>}
+			{choosingBag && <BagSelectionPanel
+				bag={state.bag}
+				farmStock={state.farmStock}
+				onSelect={selectBagItem}
+				onConfirm={() => act(visiblePresentation.action)}
+			/>}
+			{!showingFarmingPanel && !choosingBag && !showingAdventureVignette && !showingReturnReward && !showingHomeMemory && <WorldAction
+				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}
+				presentation={visiblePresentation}
+				onAction={() => act(visiblePresentation.action)}
+				waiting={waiting}
+			/>}
 		</div>
-		<DevTools state={state} dispatch={dispatch} variant={variant} />
-		<VariantSwitcher variant={variant} setVariant={setVariant} />
+		<PositionRail position={position} onChange={jumpToPosition} />
+		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
+		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
 }
 

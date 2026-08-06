@@ -12,7 +12,13 @@ mkdirSync(join(root, "docs/assets/rive"), { recursive: true });
 
 for (const name of [
 	"01-starting-barn.png",
+	"01-starting-barn-clean-scene-plate.png",
+	"01-starting-barn-growing-clover-scene-plate.png",
+	"01-starting-barn-ready-clover-scene-plate.png",
 	"01-starting-barn-scene-plate.png",
+	"patch-empty.webp",
+	"patch-growing.webp",
+	"patch-ready.webp",
 	"02-first-payoff.png",
 	"02-first-payoff-scene-plate.png",
 	"03-developed-barn.png",
@@ -44,13 +50,12 @@ if (authoredRivePresent) {
 }
 
 const bundleOutput = join(root, "docs/homegrown-adventures.js");
+const animationBundleOutput = join(root, "docs/homegrown-animation-lab.js");
 
-await build({
-	entryPoints: [join(here, "app.web.tsx")],
+const commonBuild = {
 	bundle: true,
 	minify: true,
 	sourcemap: false,
-	outfile: bundleOutput,
 	platform: "browser",
 	format: "iife",
 	target: ["safari16", "chrome110"],
@@ -62,6 +67,18 @@ await build({
 		__HOMEGROWN_RIVE_ASSET_URL__: JSON.stringify(riveAssetUrl),
 		__HOMEGROWN_RIVE_AUTHORED__: JSON.stringify(authoredRivePresent),
 	},
+};
+
+await build({
+	...commonBuild,
+	entryPoints: [join(here, "app.web.tsx")],
+	outfile: bundleOutput,
+});
+
+await build({
+	...commonBuild,
+	entryPoints: [join(here, "animation-lab.web.tsx")],
+	outfile: animationBundleOutput,
 });
 
 const bundleVersion = createHash("sha256")
@@ -75,8 +92,19 @@ const html = readFileSync(htmlPath, "utf8").replace(
 );
 writeFileSync(htmlPath, html);
 
+const animationBundleVersion = createHash("sha256")
+	.update(readFileSync(animationBundleOutput))
+	.digest("hex")
+	.slice(0, 10);
+const animationHtmlPath = join(root, "docs/homegrown-animation-lab.html");
+const animationHtml = readFileSync(animationHtmlPath, "utf8").replace(
+	/\.\/homegrown-animation-lab\.js(?:\?v=[a-f0-9]+)?/,
+	`./homegrown-animation-lab.js?v=${animationBundleVersion}`,
+);
+writeFileSync(animationHtmlPath, animationHtml);
+
 console.log(
-	`Built docs/homegrown-adventures.html with ${
+	`Built Homegrown Adventures player and animation labs with ${
 		authoredRivePresent ? "authored Homegrown Adventures scene" : "official Rive runtime probe"
 	}.`,
 );

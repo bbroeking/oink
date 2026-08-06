@@ -2,6 +2,7 @@ import { Alignment, Fit, Layout, useRive } from "@rive-app/react-webgl2";
 import { memo, useEffect, useRef, useState } from "react";
 import {
 	HOMEGROWN_RIVE_NAMES,
+	type HomegrownRiveMotionTrigger,
 	type HomegrownRiveTrigger,
 	type HomegrownRiveViewModel,
 } from "./homegrownRiveContract";
@@ -11,9 +12,10 @@ declare const __HOMEGROWN_RIVE_AUTHORED__: boolean;
 
 export const HOMEGROWN_RIVE_ASSET_AUTHORED = __HOMEGROWN_RIVE_AUTHORED__;
 
-const AUTHORED_TRIGGER_ANIMATIONS: Partial<Record<HomegrownRiveTrigger, string>> = {
+const AUTHORED_TRIGGER_ANIMATIONS: Partial<Record<HomegrownRiveMotionTrigger, string>> = {
 	tickle: "Rosie Tickle",
 	pack: "Rosie Pack",
+	departure: "Rosie Departure",
 	return: "Rosie Return",
 };
 
@@ -79,6 +81,7 @@ type RosieMotion =
 	| "tickle"
 	| "notice"
 	| "pack"
+	| "departure"
 	| "return"
 	| "reduced";
 
@@ -106,7 +109,7 @@ type MothMotion =
 export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
 	model: HomegrownRiveViewModel;
-	trigger: HomegrownRiveTrigger | null;
+	trigger: HomegrownRiveMotionTrigger | null;
 	triggerNonce: string;
 }
 
@@ -245,9 +248,14 @@ function HomegrownRiveSceneImpl({
 			};
 		}
 
-		const property = rive.viewModelInstance?.trigger(trigger);
-		if (!property) setStatus("error");
-		else property.trigger();
+		// Departure is a named one-shot authored directly on the existing Rosie
+		// rig. It intentionally has no Data Binding trigger because React owns
+		// the one-second presentation boundary and all progression state.
+		if (trigger !== "departure") {
+			const property = rive.viewModelInstance?.trigger(trigger as HomegrownRiveTrigger);
+			if (!property) setStatus("error");
+			else property.trigger();
+		}
 
 		const animation = AUTHORED_TRIGGER_ANIMATIONS[trigger];
 		if (!animation) {
@@ -256,8 +264,23 @@ function HomegrownRiveSceneImpl({
 		}
 
 		// Restarting makes rapid tickles deterministic instead of queueing them.
+		// The departure timeline deliberately keys only the shared root bone. Keep
+		// the complete foreground pose painted underneath it, exactly as Notice
+		// layers its directional lean over the authored breathing base.
+		if (trigger === "departure") {
+			rive.stop(BREATHING_ANIMATION);
+			rive.play(BREATHING_ANIMATION);
+		}
 		rive.play(animation);
-		setMotion(trigger === "pack" ? "pack" : trigger === "return" ? "return" : "tickle");
+		setMotion(
+			trigger === "pack"
+				? "pack"
+				: trigger === "departure"
+					? "departure"
+					: trigger === "return"
+						? "return"
+						: "tickle",
+		);
 
 		if (model.rosieAction === "notice") {
 			schedule(() => {
@@ -275,7 +298,14 @@ function HomegrownRiveSceneImpl({
 				startBreathing();
 			}, 1_520);
 		} else {
-			const settleDelay = trigger === "return" ? 900 : trigger === "pack" ? 600 : 700;
+			const settleDelay =
+				trigger === "departure"
+					? 1_000
+					: trigger === "return"
+						? 900
+						: trigger === "pack"
+							? 600
+							: 700;
 			schedule(() => {
 				rive.stop(animation);
 				syncSatchelVisibility();
@@ -585,10 +615,21 @@ function HomegrownRiveSceneImpl({
 		>
 			<RiveComponent aria-label="" />
 			<span
+				className="painted-kitchen-patch"
+				aria-hidden="true"
+			>
+				<span className="painted-patch-fragment fragment-a" />
+				<span className="painted-patch-fragment fragment-b" />
+				<span className="painted-patch-fragment fragment-c" />
+			</span>
+			<span
 				key={`moth-glint-${triggerNonce}`}
 				className="moth-shared-glint"
 				aria-hidden="true"
 			/>
+			<span className="painted-harvest-burst" aria-hidden="true">
+				<span /><span /><span /><span /><span />
+			</span>
 		</div>
 	);
 }

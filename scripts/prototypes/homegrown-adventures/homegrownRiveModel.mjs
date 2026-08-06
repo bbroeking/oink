@@ -3,16 +3,26 @@ import { STAGES } from "./game.mjs";
 const EMPTY_BEDS = Object.freeze(["empty", "empty", "empty"]);
 
 function bedStates(state) {
-	if (state.stage === STAGES.CLOVER_GROWING) return ["growing", "empty", "empty"];
+	const rememberedBedTwo =
+		state.glowrootPlanted && state.nextPlanting === "moonberries"
+			? "growing"
+			: "empty";
+	const rememberedBedThree = state.glowrootPlanted ? "sprout" : "empty";
+	if (state.stage === STAGES.CLOVER_GROWING) {
+		return ["growing", rememberedBedTwo, rememberedBedThree];
+	}
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
-		return ["ready", "empty", "empty"];
+		return ["ready", rememberedBedTwo, rememberedBedThree];
 	}
 	if (state.stage === STAGES.DEVELOPED) {
 		return [
 			"ready",
-			state.nextPlanting === "moonberries" ? "growing" : "empty",
+			rememberedBedTwo,
 			"sprout",
 		];
+	}
+	if (state.glowrootPlanted) {
+		return ["empty", rememberedBedTwo, rememberedBedThree];
 	}
 	return EMPTY_BEDS;
 }
@@ -32,6 +42,7 @@ function riveTrigger(state) {
 	if (state.lastAction === "tickle") return "tickle";
 	if (state.lastAction === "harvest") return "harvest";
 	if (state.lastAction === "pack") return "pack";
+	if (state.lastAction === "adventure") return "departure";
 	if (["return", "near-discovery"].includes(state.lastAction)) return "return";
 	if (state.lastAction === "plant") return "plant";
 	return null;
@@ -44,7 +55,7 @@ function riveTrigger(state) {
 export function homegrownRiveModel(state) {
 	const [bedOneState, bedTwoState, bedThreeState] = bedStates(state);
 	const latest = state.trace.at(-1);
-	const developed = state.stage === STAGES.DEVELOPED;
+	const developed = state.stage === STAGES.DEVELOPED || Boolean(state.glowrootPlanted);
 	const satchelEquipped = [
 		STAGES.PACKED,
 		STAGES.ADVENTURE,
