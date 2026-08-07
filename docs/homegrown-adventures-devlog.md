@@ -119,7 +119,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 38. **v0.37.1 — One Shared Rive Stage (shipped):** move the persistent
     Farm and temporary Glowroot view onto Rive's shared offscreen WebGL2
     renderer so their handoff cannot tear down a live graphics context.
-39. **v0.38 — The Crops Belong Here (locally verified):** replace the flat
+39. **v0.38 — The Crops Belong Here (shipped):** replace the flat
     remembered Moonberry and Glowroot masses with state-bound painterly bed
     art, and repair the ready-Clover reveal gate found during the complete
     rendered replay.
@@ -194,6 +194,13 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Clean full-loop replay — all eleven positions plus the second morning,
   including the repaired **Welcome Rosie** → harvest-rhythm handoff; zero
   browser warnings or errors.
+- GitHub Pages deployment `31146071952` completed successfully from
+  `6a4d8d9`. The public 375×812 build has zero horizontal overflow, keeps both
+  remembered crop clips registered with Rive status `ready`, preserves them
+  after **Begin another day**, and reports zero browser warnings or errors.
+- Public ready-Clover replay confirms **Preview it ready** advances to Position
+  5 with **Welcome Rosie** as the sole primary action; the rhythm cannot appear
+  until that reveal succeeds.
 
 ### Next highest-leverage weakness
 
