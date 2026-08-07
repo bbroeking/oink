@@ -146,7 +146,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     complete 390x844 game frame inside short desktop viewports so Position 10's
     one Homecoming action and progression rail remain visible without changing
     the full-size phone layout.
-46. **v0.45 — The Stored Seed Stays Visible (locally verified):** carry the
+46. **v0.45 — The Stored Seed Stays Visible (shipped):** carry the
     repeated Glowroot reward into the next morning by showing its retained Seed
     count inside the existing planted-Glowroot tile.
 
@@ -197,11 +197,27 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   1,304 packages offline, reproduced the checked-in player CSS, HTML, and
   JavaScript hashes exactly, and passed `npm run verify:rive-web`.
 
+### Public deployment evidence
+
+- Shipped commit `42317ae` through replacement GitHub Pages run `31179744370`;
+  GitHub cancelled the duplicate trigger and completed the replacement run.
+- The public game loaded `homegrown-adventures.css?v=776adb7e4f` and
+  `homegrown-adventures.js?v=45afb51936`. Both public files and the unchanged
+  297,820-byte Rive scene matched their checked-in SHA-256 values exactly.
+- At the public 390x844 layout, a repeated return retained one Seed, the next
+  morning's Glowroot tile showed **1 Seed stored**, and **Choose Clover**
+  remained the only planting action. The full screen and browser logs were
+  clean.
+
 ### Next highest-leverage weakness
 
-Choose after the public v0.45 replay by following the now-visible stock into
-planting and preparation. Prefer strengthening the existing farming-to-Bag
-cause and effect over a new crop, destination, currency, or parallel system.
+Following the now-visible stock into the next preparation cycle exposes the
+next weak reward: Willow Fiber accumulates under the generic **Materials** count
+but does not affect farming, the Bag, or any Adventure choice. The next bounded
+checkpoint should give that existing practical supply one understandable use
+inside the current Farm-to-Bag loop—preferably through an existing Pack choice—
+without opening a crafting screen, adding a currency, or creating another
+parallel progression system.
 
 ### v0.44 — The Homecoming Stays in Reach — 2026-08-07
 
