@@ -146,6 +146,15 @@ below the story overlay. The reducer's duration, stock spend, branch, and reward
 rules are unchanged. React owns the Provision fact; Rive still owns only the
 canonical character, equipped satchel, and live Glowroot motion.
 
+The v0.52 prototype question follows reusable equipment all the way Home.
+Position 10 now derives a return-only Tool fact from the same Bag: the Hand
+Trowel or Lantern rests at the worktable edge, while an empty Tool leaves that
+space clean. Both compact alpha props are ImageGen studies matched to the
+approved Return concept and registered below the exact reducer-owned reward
+overlay. Their short settle is presentation only. React still owns which Tool
+was packed, the Tool bonus, Return quantities, acknowledgement, persistence,
+and fast-forward; Rive still owns Rosie's authored Return performance.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

@@ -1179,6 +1179,7 @@ function App() {
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
 			data-adventure-pack={showingAdventureVignette ? state.bag?.pack ?? "none" : undefined}
 			data-return-kind={showingReturnReward ? returnKind : undefined}
+			data-return-tool={showingReturnReward ? state.bag?.tool ?? "none" : undefined}
 		>
 			<div className="scene-plate" role="img" aria-label={sceneLabel(state)} />
 			<HomegrownRiveScene
@@ -1194,6 +1195,7 @@ function App() {
 			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-pack-prop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-homecoming-backdrop" aria-hidden="true" />}
+			{showingReturnReward && <div className="return-tool-prop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-bed-mask" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-table-mask" aria-hidden="true" />}
 			{showingAdventureVignette && adventureStory(state).kind === "discovery" && (

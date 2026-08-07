@@ -45,6 +45,8 @@ for (const name of [
 	"adventure-pack-cloth.png",
 	"return-homecoming-discovery.webp",
 	"return-homecoming-clue.webp",
+	"return-tool-trowel.png",
+	"return-tool-lantern.png",
 ]) {
 	copyFileSync(join(here, "assets/homegrown-adventures", name), join(docsAssets, name));
 }
