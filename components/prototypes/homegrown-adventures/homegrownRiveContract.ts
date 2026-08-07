@@ -34,6 +34,7 @@ export type HomegrownRiveMotionTrigger =
 	| HomegrownRiveTrigger
 	| "bag-receive"
 	| "departure"
+	| "plant-composted"
 	| "plant-glowroot";
 
 export const HOMEGROWN_RIVE_NAMES = Object.freeze({

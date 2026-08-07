@@ -114,6 +114,7 @@ type CropMotion =
 	| "swaying"
 	| "ready"
 	| "plant"
+	| "compost-wake"
 	| "flourish"
 	| "harvest"
 	| "reduced";
@@ -333,6 +334,7 @@ function HomegrownRiveSceneImpl({
 		if (
 			trigger !== "departure" &&
 			trigger !== "bag-receive" &&
+			trigger !== "plant-composted" &&
 			trigger !== "plant-glowroot"
 		) {
 			const property = rive.viewModelInstance?.trigger(trigger as HomegrownRiveTrigger);
@@ -488,6 +490,18 @@ function HomegrownRiveSceneImpl({
 
 		if (isNewTrigger && trigger === "plant-glowroot") {
 			settleCropState();
+		} else if (isNewTrigger && trigger === "plant-composted") {
+			// Compost adds one extra authored, bed-local response. The ordinary
+			// planting clip still establishes the crop; the existing clover sway
+			// wakes just behind it and then settles to the reducer-owned state.
+			// No persistent soil overlay or animation-owned boost state is added.
+			rive.play(CROP_ACTION_ANIMATIONS.plant);
+			setCropMotion("plant");
+			schedule(() => {
+				rive.play(CLOVER_GROWING_SWAY_ANIMATION);
+				setCropMotion("compost-wake");
+			}, 160);
+			schedule(settleCropState, 1_160);
 		} else if (isNewTrigger && trigger === "plant") {
 			rive.play(CROP_ACTION_ANIMATIONS.plant);
 			setCropMotion("plant");

@@ -80,12 +80,20 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .homegrown-rive-scene[data-rive-crop-motion="plant"] .painted-kitchen-patch {
 	animation: painted-patch-plant 480ms cubic-bezier(.16,1,.3,1) both;
 }
+.homegrown-rive-scene[data-rive-crop-motion="compost-wake"] .painted-kitchen-patch {
+	animation: painted-patch-compost-wake 1s cubic-bezier(.16,1,.3,1) both;
+}
 .homegrown-rive-scene[data-rive-crop-motion="flourish"] .painted-kitchen-patch,
 .homegrown-rive-scene[data-rive-motion="notice"] .painted-kitchen-patch {
 	animation: painted-patch-notice 520ms cubic-bezier(.16,1,.3,1) both;
 }
 .homegrown-rive-scene[data-rive-crop-motion="harvest"] .painted-kitchen-patch {
 	animation: painted-patch-harvest 420ms cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes painted-patch-compost-wake {
+	0% { transform: translateY(2px) scale(.985); filter: saturate(.96) brightness(.98); }
+	38% { transform: translateY(-3px) scale(1.035); filter: saturate(1.14) brightness(1.11) drop-shadow(0 0 7px rgba(240,193,73,.28)); }
+	100% { transform: translateY(0) scale(1); filter: saturate(1.08) brightness(1.035) drop-shadow(0 0 8px rgba(240,193,73,.22)); }
 }
 .painted-remembered-crop {
 	position: absolute;

@@ -60,7 +60,10 @@ function riveTrigger(state) {
 	if (state.lastAction === "choose-bag-item") return "bag-receive";
 	if (state.lastAction === "adventure") return "departure";
 	if (["return", "near-discovery"].includes(state.lastAction)) return "return";
-	if (state.lastAction === "plant") return state.glowrootPlanted ? "plant-glowroot" : "plant";
+	if (state.lastAction === "plant") {
+		if (state.glowrootPlanted) return "plant-glowroot";
+		return state.compostApplied ? "plant-composted" : "plant";
+	}
 	return null;
 }
 

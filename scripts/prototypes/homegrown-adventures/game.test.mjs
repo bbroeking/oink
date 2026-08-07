@@ -114,6 +114,7 @@ test("Clover requires a Seed and leaves its predictable Compost boost freely cho
 	assert.equal(state.farmStock["clover-seed"], 2);
 	assert.equal(state.farmStock.compost, 1);
 	assert.equal(state.readyAt - state.plantedAt, DURATIONS.COMPOSTED_GROWTH_MS);
+	assert.equal(homegrownRiveModel(state).trigger, "plant-composted");
 });
 
 test("saving Compost keeps the normal duration and normal yield", () => {
@@ -126,6 +127,7 @@ test("saving Compost keeps the normal duration and normal yield", () => {
 	assert.equal(state.farmStock["clover-seed"], 2);
 	assert.equal(state.farmStock.compost, 2);
 	assert.equal(state.readyAt - state.plantedAt, DURATIONS.GROWTH_MS);
+	assert.equal(homegrownRiveModel(state).trigger, "plant");
 	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
 	state = reduce(state, { type: ACTIONS.TICKLE });
 	state = reduce(state, { type: ACTIONS.HARVEST_CLOVER });

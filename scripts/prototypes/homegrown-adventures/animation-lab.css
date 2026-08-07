@@ -62,6 +62,7 @@ button:focus-visible, a:focus-visible { outline: 4px solid #267da2; outline-offs
 .motion-phone .homegrown-rive-scene[data-rive-bed-one="growing"] .painted-kitchen-patch { --painted-patch-image: url("./assets/homegrown-adventures/patch-growing-lush.webp"); opacity: .88; }
 .motion-phone .homegrown-rive-scene[data-rive-bed-one="ready"] .painted-kitchen-patch { --painted-patch-image: url("./assets/homegrown-adventures/patch-ready.webp"); }
 .motion-phone .homegrown-rive-scene[data-rive-crop-motion="plant"] .painted-kitchen-patch { animation: lab-patch-plant 480ms var(--ease-out) both; }
+.motion-phone .homegrown-rive-scene[data-rive-crop-motion="compost-wake"] .painted-kitchen-patch { animation: lab-patch-compost-wake 1s var(--ease-out) both; }
 .motion-phone .homegrown-rive-scene[data-rive-crop-motion="flourish"] .painted-kitchen-patch,
 .motion-phone .homegrown-rive-scene[data-rive-motion="notice"] .painted-kitchen-patch { animation: lab-patch-notice 520ms var(--ease-out) both; }
 .motion-phone .homegrown-rive-scene[data-rive-crop-motion="harvest"] .painted-kitchen-patch { animation: lab-patch-harvest 420ms var(--ease-out) both; }
@@ -70,6 +71,7 @@ button:focus-visible, a:focus-visible { outline: 4px solid #267da2; outline-offs
 .motion-phone .adventure-glowroot-rive-stage canvas { width: 390px; height: 844px; display: block; }
 .motion-phone .motion-return-table-mask { position: absolute; z-index: 2; inset: 0; background: url("./assets/homegrown-adventures/return-homecoming-discovery.webp") center / cover no-repeat; clip-path: inset(60% 0 19%); pointer-events: none; }
 @keyframes lab-patch-plant { from { opacity: .5; transform: scale(.985); filter: saturate(.88); } to { opacity: 1; transform: scale(1); filter: saturate(1); } }
+@keyframes lab-patch-compost-wake { 0% { transform: translateY(2px) scale(.985); filter: saturate(.96) brightness(.98); } 38% { transform: translateY(-3px) scale(1.035); filter: saturate(1.14) brightness(1.11) drop-shadow(0 0 7px rgba(240,193,73,.28)); } 100% { transform: translateY(0) scale(1); filter: saturate(1.08) brightness(1.035) drop-shadow(0 0 8px rgba(240,193,73,.22)); } }
 @keyframes lab-patch-notice { 0%,100% { filter: brightness(1) saturate(1); transform: scale(1); } 45% { filter: brightness(1.08) saturate(1.08); transform: scale(1.012); } }
 @keyframes lab-patch-harvest { from { opacity: .55; filter: brightness(1.08); } to { opacity: 1; filter: brightness(1); } }
 .motion-bed-action {

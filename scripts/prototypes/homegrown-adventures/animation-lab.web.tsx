@@ -20,6 +20,11 @@ const action = (type, extra = {}) => ({ type, ...extra });
 const TICKLED = [action(ACTIONS.TICKLE)];
 const PURPOSED = [...TICKLED, action(ACTIONS.CHOOSE_PURPOSE, { purpose: "dusk-picnic" })];
 const PLANTED = [...PURPOSED, action(ACTIONS.PLANT_CLOVER)];
+const COMPOSTED = [
+	...PURPOSED,
+	action(ACTIONS.TOGGLE_COMPOST),
+	action(ACTIONS.PLANT_CLOVER),
+];
 const READY = [...PLANTED, action(ACTIONS.ADVANCE_TIME)];
 const REVEALED = [...READY, action(ACTIONS.TICKLE)];
 const HARVESTED = [...REVEALED, action(ACTIONS.HARVEST_CLOVER)];
@@ -71,6 +76,14 @@ const STUDIES = [
 		purpose: "Seed arrives in bed one",
 		from: PURPOSED,
 		to: PLANTED,
+	},
+	{
+		id: "compost-wake",
+		group: "Growth",
+		title: "Plant with Compost",
+		purpose: "A chosen boost wakes the bed",
+		from: PURPOSED,
+		to: COMPOSTED,
 	},
 	{
 		id: "growing",
