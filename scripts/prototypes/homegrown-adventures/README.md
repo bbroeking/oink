@@ -88,6 +88,14 @@ the pulse, label, stock, and rail stay separate at 360×780. React still owns
 `nextPlanting`, persistence, moth visibility, rapid-input idempotence, and the
 subsequent Tickle action.
 
+The v0.64 interaction pass returns that subsequent Tickle to Rosie herself.
+Only during the open moth moment, the existing accessible Rosie target gains a
+bounded ring and compact label while Farm stock shifts lower to preserve clear
+spacing. The same React-owned Tickle awards one heart and completes the day;
+the existing Rive Home Admire and moth Laugh respond, then the UI returns to
+the established **Begin another day** action. Rapid input cannot turn that next
+action into an accidental second tap.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

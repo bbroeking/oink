@@ -207,6 +207,18 @@ passed the installed Impeccable review as the available Claude-Design
 substitute. The next visible weakness is the post-plant Tickle button, which is
 still spatially detached from Rosie.
 
+**Rosie-tickle checkpoint (August 7, 2026):** after Moonberries reveal the
+moths, the established Tickle action now returns to Rosie's own accessible hit
+target instead of a detached full-width footer. A bounded ring and short label
+identify canonical Rosie while leaving the beds, residents, Farm stock, and
+rail readable. The same reducer Tickle awards one heart and completes the day;
+the existing Rive Home Admire and moth Laugh provide the response. Rapid input,
+reload, reduced motion, and fast-forward remain deterministic. The first ring
+treatment was rejected for scale and collision; corrected 360×780, 390×844,
+and centered desktop renders passed the installed Impeccable review as the
+available Claude-Design substitute. The next visible weakness is the abrupt
+Begin-another-day cut into Position 2.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

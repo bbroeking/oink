@@ -212,15 +212,73 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     Grow Moonberries choice the same spatial clarity by relating it directly to
     the empty middle bed, while preserving the established moth payoff and
     single-action Home sequence.
-65. **v0.64 — The Tickle Comes Back to Rosie (in progress):** return the
+65. **v0.64 — The Tickle Comes Back to Rosie (shipped):** return the
     post-Moonberry Tickle action from the detached bottom button to Rosie
     herself, so the moth response closes through the game's core affection
     gesture without adding a new ceremony.
+66. **v0.65 — A New Day Arrives (in progress):** replace the abrupt Begin
+    another day cut with one restrained morning handoff that preserves the
+    remembered Farm before Position 2 asks for the next Seed.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.64 — The Tickle Comes Back to Rosie — 2026-08-07
+
+- Replayed the post-Moonberry Position 11 state against
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/11-changed-barn-next-day.png`.
+  Moonberries and moths were both visible, but the core affection gesture had
+  become a detached full-width **Tickle Rosie** footer below Farm stock.
+- Removed only that footer for the open moth moment and restored the existing
+  accessible Rosie hit target. One bounded ring surrounds canonical Rosie and
+  one short label sits directly beneath her; the objective still names **The
+  dusk moths found Home**.
+- Kept the existing reducer Tickle, one-heart reward, Rive Home Admire response,
+  moth Laugh, cycle completion, persistence, and later **Begin another day**
+  action unchanged. Rive remains a presentation layer and receives no new
+  progression fact.
+- Framed three Prototype options: retain the footer, auto-tickle after planting,
+  or restore direct Rosie interaction. The third passed the installed
+  Impeccable review as the available Claude-Design substitute. Its first render
+  failed for an oversized default ring and stock collision; the corrected
+  treatment bounds the target to Rosie and lowers stock only during this beat.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass. The complete loop, direct
+  Position 11 fast-forward, return branches, persistence, and invalid actions
+  remain unchanged.
+- At exact 360×780, Rosie's accessible hit target is 190×238px, its visible
+  label occupies 521–571px, Farm stock begins at 617px and ends at 675px, and
+  navigation begins at 722px. The page remains exactly 360×780 with no
+  overflow, hidden action, or console error.
+- At 390×844, the same hit target and label remain above stock at 681px and the
+  rail at 786px. Centered 1280×720 keeps the complete fitted phone, Rosie,
+  Moonberries, moths, stock, label, and rail visible.
+- Two immediate coordinate clicks on Rosie award exactly one heart (`1,120 →
+  1,121`), run the existing Home response plus moth `laugh`, remove the Tickle
+  target, and expose **Begin another day**. Reload preserves the completed day;
+  Previous → Next fast-forward reaches the same final action without a stray
+  Rosie target.
+- Reduced motion keeps Rive `ready`, awards the same one heart, reports character
+  and moth motion `reduced`, and exposes the same next-day action. Mobile
+  Safari/device sharpness, haptic feel, and audible acceptance remain manual
+  gates; this browser checkpoint does not claim them.
+
+### Observable acceptance criteria
+
+- After Moonberries reveal the moths, the one current action is visibly and
+  accessibly attached to Rosie rather than a detached footer.
+- A single interaction awards one heart, completes the Barn day, plays the
+  existing Rosie/moth response, and reveals **Begin another day**.
+- Rapid input, reload, reduced motion, fast-forward, touch, and desktop retain
+  the same reducer-owned outcome with no overlapping controls.
+- Rosie, both new crops, the moth result, Farm stock, and navigation remain
+  readable throughout the interaction.
+- The next rendered weakness is the next-day handoff itself: **Begin another
+  day** resets directly to Position 2 without a visible morning transition.
 
 ### v0.63 — Moonberries Find Their Bed — 2026-08-07
 
