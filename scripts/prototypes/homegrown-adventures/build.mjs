@@ -33,6 +33,7 @@ for (const name of [
 	"harvest-basket.webp",
 	"open-adventure-bag.webp",
 	"adventure-clearing-discovery.webp",
+	"adventure-clearing-discovery-rive.webp",
 	"adventure-clearing-clue.webp",
 ]) {
 	copyFileSync(join(here, "assets/homegrown-adventures", name), join(docsAssets, name));

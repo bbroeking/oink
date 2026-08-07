@@ -6,6 +6,7 @@ import {
 	HOMEGROWN_RIVE_ASSET_AUTHORED,
 	HomegrownRiveScene,
 } from "../../../components/prototypes/homegrown-adventures/HomegrownRiveScene.web";
+import { AdventureGlowrootRive } from "../../../components/prototypes/homegrown-adventures/AdventureGlowrootRive.web";
 import {
 	ACTIONS,
 	createInitialState,
@@ -111,6 +112,15 @@ const STUDIES = [
 		purpose: "The packed Bag turns into a real departure",
 		from: PACKED,
 		to: DEPARTING,
+	},
+	{
+		id: "glowroot-reveal",
+		group: "Adventure",
+		title: "Reveal Glowroot",
+		purpose: "Preparation becomes a living discovery",
+		static: true,
+		from: ADVENTURE_READY,
+		to: ADVENTURE_READY,
 	},
 	{
 		id: "return",
@@ -221,9 +231,10 @@ function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMo
 	const bedLabel = bedBusy
 		? bedState === "ready" ? "Clover Lunch is getting ready" : "Clover Lunch is growing"
 		: bedState === "ready" ? "Harvest Clover Lunch" : "Plant Clover Lunch";
+	const showingAdventureGlowroot = activeStudy.id === "glowroot-reveal";
 	return (
 		<section className={`motion-stage motion-stage-${emphasis}`} aria-label="Authored animation preview">
-			<div className="motion-phone">
+			<div className={`motion-phone ${showingAdventureGlowroot ? "is-adventure-glowroot" : ""}`}>
 				<div className="motion-world">
 					<div className="motion-scene-plate" />
 					<HomegrownRiveScene
@@ -232,8 +243,11 @@ function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMo
 						trigger={riveModel.trigger}
 						triggerNonce={`${riveModel.triggerNonce}:${revision}`}
 					/>
+					{showingAdventureGlowroot && (
+						<AdventureGlowrootRive key={`adventure-glowroot-${revision}`} reduceMotion={reduceMotion} />
+					)}
 				</div>
-				<button
+				{!showingAdventureGlowroot && <button
 					className={`motion-bed-action bed-${bedState} ${bedBusy ? "is-busy" : ""}`}
 					type="button"
 					onClick={onBedAction}
@@ -241,7 +255,7 @@ function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMo
 					aria-label={bedLabel}
 				>
 					<span>{bedLabel}</span>
-				</button>
+				</button>}
 				{harvestCount > 0 && <div key={harvestCount} className="harvest-reward" role="status">
 					<span aria-hidden="true" />
 					<strong>Clover Lunch gathered</strong>

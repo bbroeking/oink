@@ -59,13 +59,22 @@ try {
 		}
 	}
 
-	const homegrownBoundary = join(
-		repoRoot,
+	const homegrownBoundaries = [
 		"components/prototypes/homegrown-adventures/HomegrownRiveScene.web.tsx",
-	);
-	const boundarySource = readFileSync(homegrownBoundary, "utf8");
-	if (!boundarySource.includes(approvedWebRuntime) || !boundarySource.includes("useRive")) {
-		throw new Error("Homegrown Adventures web boundary does not isolate the approved useRive runtime.");
+		"components/prototypes/homegrown-adventures/AdventureGlowrootRive.web.tsx",
+	];
+	for (const boundary of homegrownBoundaries) {
+		const boundarySource = readFileSync(join(repoRoot, boundary), "utf8");
+		if (!boundarySource.includes(approvedWebRuntime) || !boundarySource.includes("useRive")) {
+			throw new Error(`Homegrown Adventures web boundary does not isolate the approved useRive runtime: ${boundary}`);
+		}
+	}
+	const adventureGlowrootSource = readFileSync(join(repoRoot, homegrownBoundaries[1]), "utf8");
+	if (
+		!adventureGlowrootSource.includes("Glowroot Home Flourish") ||
+		!adventureGlowrootSource.includes("data-rive-glowroot-motion")
+	) {
+		throw new Error("The Adventure Glowroot boundary is missing its authored flourish or observable motion state.");
 	}
 
 	const result = spawnSync(
@@ -112,7 +121,7 @@ try {
 	}
 
 	console.log(
-		`Rive web smoke passed: ${javaScriptFiles.length} Expo bundle(s), approved WebGL2 boundary present, no native runtime leakage.`,
+		`Rive web smoke passed: ${javaScriptFiles.length} Expo bundle(s), approved WebGL2 boundaries present, no native runtime leakage.`,
 	);
 } finally {
 	rmSync(outputDirectory, { recursive: true, force: true });

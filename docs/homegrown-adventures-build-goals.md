@@ -18,7 +18,10 @@ now centers preparation on a physical open Bag with live visible item choices;
 Position 8 now holds the native Rive satchel on Rosie through packing, reload,
 reduced motion, departure, and the causal Adventure handoff; Position 9 now
 places that handoff in one tangible twilight clearing, with separate complete
-Discovery and clue-only Near-Discovery plates beneath live Rive Rosie.
+Discovery and clue-only Near-Discovery plates beneath live Rive Rosie; the
+complete branch now mounts a tightly clipped second Rive view that reveals the
+earned Glowroot and gives it one restrained breathing glow, while the clue
+branch mounts no reward canvas.
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -114,6 +117,20 @@ without falsely showing the successful find. Reload, reduced motion, rapid
 input, touch, and desktop rendering pass. The next Goal 6 weakness is that the
 Glowroot reveal itself remains static presentation art rather than a restrained
 Rive reveal and glow; React must continue to own which branch earns it.
+
+**Glowroot-animation checkpoint (August 6, 2026):** Position 9's successful
+Discovery now removes the baked Glowroot from the clearing plate and paints the
+existing native `glowroot_bed_three` rig at the exact discovery point through a
+small clipped WebGL2 canvas. The authored `Glowroot Home Flourish` supplies one
+bounded reveal, settles to its final pose, and returns for a restrained glow
+beat after quiet rests. React still decides whether the branch is a Discovery
+or Near-Discovery and mounts the Rive boundary only for the earned result; the
+clue branch therefore contains neither the Glowroot art nor an invisible Rive
+canvas. Reduced motion paints the authored final pose atomically. The same
+motion is available as **Reveal Glowroot** in the animation lab. Rendered
+comparison with `rosie-v3/10-return-discovery.png` now makes Position 10 the
+next visible weakness: its quantities and causes are correct, but the stacked
+cards do not yet feel like Rosie physically returned with a Discovery.
 
 **Adventure checkpoint (August 6, 2026):** Position 9 now opens one bounded
 beyond-the-hedge vignette before the ordinary idle wait. Rosie remains visible

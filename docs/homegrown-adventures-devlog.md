@@ -98,11 +98,75 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     abstract blurred backdrop with one tangible twilight root alcove, preserve
     live Rive Rosie and the three deterministic causes, and give incomplete
     Bags a visibly different clue-only version of the same place.
+33. **v0.34 — The Glowroot Wakes (locally verified):** replace the baked
+    successful-branch root with the existing native Rive Glowroot rig, reveal
+    it at the clearing's discovery point, and let it breathe without giving
+    Rive ownership of the reward branch.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.34.0 — The Glowroot Wakes — 2026-08-06
+
+- Replayed both Position 9 outcomes and compared the successful clearing with
+  `rosie-v3/09-adventure-vignette.png`. The place and preparation causes were
+  readable, but the earned Glowroot was permanently baked into the plate, so
+  the discovery itself had no living state change.
+- Used the built-in ImageGen edit workflow to remove only the luminous root and
+  its emitted glow from the successful clearing while retaining the alcove,
+  trowel, basket, vegetation, lighting, framing, and empty discovery space. The
+  versioned character-free result is
+  `adventure-clearing-discovery-rive.webp`; the clue-only plate remains
+  unchanged.
+- Reused the checked-in native `glowroot_bed_three` vector rig and its existing
+  `Glowroot Home Flourish` animation through one tightly clipped 100×78 Rive
+  view at the clearing's discovery point. A bounded reveal settles into a calm
+  final pose, followed by a brief glow beat between long rests.
+- Kept authority explicit: React derives the Adventure result and mounts the
+  Rive boundary only for a successful Discovery. A Near-Discovery mounts no
+  Glowroot canvas. Reduced motion scrubs to the authored final frame and pauses
+  without exposing an intermediate state.
+- Added **Reveal Glowroot** to the animation lab and expanded the web verifier
+  to require both approved WebGL2 boundaries, the native flourish name, and an
+  observable motion state.
+
+### Observable acceptance criteria
+
+- A complete Bag produces one visible Glowroot reveal at the physical find
+  point, then a quiet resting pose and a restrained breathing glow.
+- The clue-only branch contains no Glowroot art and no hidden Rive reward
+  canvas; React remains the sole authority for which outcome was earned.
+- The live result stays aligned at touch and desktop sizes, survives reload,
+  respects reduced motion, and cannot be duplicated or skipped by rapid input.
+- Position 9 retains one primary story action and canonical Rosie remains live
+  above the character-free environment.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 39/39 pass.
+- `npm run verify:rive-homegrown` — pass; the 390×844 artboard and all 55
+  authored names remain intact.
+- `npm run verify:rive-web` — pass from an exact clean-index snapshot; three
+  Expo web bundles load both approved WebGL2 boundaries without native leakage.
+- `npm run prototype:homegrown:build` — pass; the edited WebP publishes with
+  both prototype routes.
+- `npm run quality:loop` and `npm run quality:check` — pass, including 78 layout
+  tests, 202 security tests, TypeScript, sprite integrity, and contract gates.
+- Rendered browser validation proved reveal → rest → glow cadence, the clue
+  branch's absent canvas, reload, reduced motion, rapid input, fast-forward,
+  the 390×844 touch surface, and centered desktop presentation.
+
+### Next highest-leverage weakness
+
+Rendered comparison with `rosie-v3/10-return-discovery.png` shows that Position
+10 has the correct Glowroot Seed, Compost, Willow Fiber, preparation recap, and
+single Welcome action, but presents them as stacked interface cards over the
+Farm. The next checkpoint should make Rosie's return feel physical: use the
+existing Rive Return performance and stage the Seed, Compost, and Willow Fiber
+as one brief Barn-table homecoming before collapsing to the ordinary Farm. Do
+not add a new reward rule, currency, destination, or ceremony screen.
 
 ### v0.33.0 — The Glowroot Clearing — 2026-08-06
 

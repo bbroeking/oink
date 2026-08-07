@@ -37,6 +37,14 @@ fallback runtime probe. Static
 character-free concept plates provide the scene behind the transparent Rive
 canvas so the animated rig is the only Rosie rendered.
 
+Position 9 now uses a second tightly clipped view of the same authored file for
+the physical Glowroot only. The successful branch removes the root from its
+character-free environment plate and lets `Glowroot Home Flourish` reveal and
+gently re-light the native vector rig. React decides whether that component is
+mounted; the Near-Discovery plate contains no reward and instantiates no
+Glowroot Rive canvas. The animation lab exposes the exact motion as **Reveal
+Glowroot**.
+
 Crop growth now has an explicit painterly early-sprout asset and a separate
 flower-free lush-middle asset. React derives that visual boundary from
 `plantedAt` and `readyAt`; the authored `Clover Growing Sway` timeline supplies

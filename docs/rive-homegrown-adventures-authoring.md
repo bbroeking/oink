@@ -119,6 +119,17 @@ burst has been removed. Reload and reduced motion still settle directly from
 reducer facts, and Rive never owns yield, timing eligibility, stock, or the
 Position 5 → 6 transition.
 
+The v0.34 Adventure Glowroot checkpoint reuses the native
+`glowroot_bed_three` vector rig and its `Glowroot Home Flourish` keys through a
+second, tightly clipped 100×78 web canvas over the Position 9 clearing. React
+mounts that canvas only when the deterministic Bag outcome is `discovery`;
+Near-Discovery never instantiates it. The first 780 ms reveal settles at frame
+47, then the final keyed portion replays for 260 ms between 2.35-second rests as
+a restrained breathing glow. Reduced motion starts the nested timeline, scrubs
+to frame 47, and pauses on the next task so the final silhouette paints
+atomically. The Rive rig owns vector appearance and motion; React still owns
+the Bag outcome, reward, persistence, and dismissal.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the
@@ -261,6 +272,9 @@ that fallback does not satisfy Goal 6.
 - Rapidly tickle Rosie at least ten times: no broken or additive poses.
 - Traverse harvest, pack, departure, return, and Glowroot planting: every one-shot settles
   into the correct state.
+- Replay **Reveal Glowroot** in the animation lab: the discovery appears only
+  on the successful clearing, rests between glows, and is absent from the clue
+  branch.
 - Toggle reduced motion before and during a reaction: loops stop and state stays
   legible.
 - Test current mobile Safari and desktop Chrome at device pixel ratio 2 or

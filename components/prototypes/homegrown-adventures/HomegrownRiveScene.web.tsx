@@ -168,8 +168,9 @@ function HomegrownRiveSceneImpl({
 		onLoadError: () => setStatus("error"),
 	}, {
 		useDevicePixelRatio: true,
-		// This scene is the only Rive instance on the page. A dedicated context
-		// preserves canvas alpha so the approved farm concept remains visible.
+		// This is the only full-artboard Rive scene. Position 9 may add one tightly
+		// clipped view of the same Glowroot rig; dedicated contexts preserve alpha
+		// so the approved environment plates remain visible beneath both canvases.
 		useOffscreenRenderer: false,
 		shouldResizeCanvasToContainer: true,
 	});

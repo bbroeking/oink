@@ -55,6 +55,12 @@ Flourish` reveals the planted Glowroot, flowering hedge crossing, and earned
 Hedge Bell as one bounded Home consequence. React still owns the underlying
 `hedgeCrossingOpen` fact, copy, controls, and persistence.
 
+The Adventure Glowroot checkpoint reuses only the native
+`glowroot_bed_three` portion of that rig in a clipped Position 9 canvas.
+`Glowroot Home Flourish` supplies the reveal and quiet keyed glow; React mounts
+the canvas only for a successful deterministic Bag outcome. The clue branch
+does not render a Glowroot canvas, and neither Rive instance owns reward state.
+
 The Moonberries Take Root checkpoint adds a second native crop rig aligned to
 Kitchen Patch bed two. `Moonberry Bed Empty` and `Moonberry Bed Growing` are
 the reducer-selected persisted poses; `Moonberry Plant` is one restrained

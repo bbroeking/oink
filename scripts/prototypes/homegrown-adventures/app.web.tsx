@@ -5,6 +5,7 @@ import {
 	HOMEGROWN_RIVE_ASSET_AUTHORED,
 	HomegrownRiveScene,
 } from "../../../components/prototypes/homegrown-adventures/HomegrownRiveScene.web";
+import { AdventureGlowrootRive } from "../../../components/prototypes/homegrown-adventures/AdventureGlowrootRive.web";
 import {
 	ACTIONS,
 	adventureStory,
@@ -1093,6 +1094,9 @@ function App() {
 				triggerNonce={riveModel.triggerNonce}
 			/>
 			{showingAdventureVignette && <div className="adventure-bed-mask" aria-hidden="true" />}
+			{showingAdventureVignette && adventureStory(state).kind === "discovery" && (
+				<AdventureGlowrootRive reduceMotion={state.reduceMotion} />
+			)}
 			<div className="quiet-hud">
 				<HeartChip value={state.ticklesEarned} />
 				<div className="current-objective" id="current-objective" role="status" aria-live="polite">

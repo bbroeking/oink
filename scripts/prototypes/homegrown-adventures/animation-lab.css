@@ -36,6 +36,9 @@ button:focus-visible, a:focus-visible { outline: 4px solid #267da2; outline-offs
 .motion-phone { width: min(390px, 100%); aspect-ratio: 390 / 844; position: relative; overflow: hidden; border: 3px solid var(--ink); border-radius: 24px; background: #b7d6a2; box-shadow: 8px 10px 0 rgba(48,33,22,.24); isolation: isolate; }
 .motion-world { position: absolute; inset: 0; }
 .motion-scene-plate { position: absolute; inset: 0; background: url("./assets/homegrown-adventures/01-starting-barn-clean-scene-plate.png") center / cover no-repeat; }
+.motion-phone.is-adventure-glowroot .motion-scene-plate { background-image: url("./assets/homegrown-adventures/adventure-clearing-discovery-rive.webp"); }
+.motion-phone.is-adventure-glowroot .painted-kitchen-patch,
+.motion-phone.is-adventure-glowroot .moth-shared-glint { display: none; }
 .motion-phone .homegrown-rive-scene.authored { position: absolute; inset: 0; pointer-events: none; }
 .motion-phone .homegrown-rive-scene.authored canvas { width: 100%; height: 100%; display: block; }
 .motion-phone .painted-kitchen-patch {
@@ -58,6 +61,9 @@ button:focus-visible, a:focus-visible { outline: 4px solid #267da2; outline-offs
 .motion-phone .homegrown-rive-scene[data-rive-crop-motion="flourish"] .painted-kitchen-patch,
 .motion-phone .homegrown-rive-scene[data-rive-motion="notice"] .painted-kitchen-patch { animation: lab-patch-notice 520ms var(--ease-out) both; }
 .motion-phone .homegrown-rive-scene[data-rive-crop-motion="harvest"] .painted-kitchen-patch { animation: lab-patch-harvest 420ms var(--ease-out) both; }
+.motion-phone .adventure-glowroot-rive { position: absolute; z-index: 3; left: 180px; top: 518px; width: 100px; height: 78px; overflow: hidden; pointer-events: none; filter: drop-shadow(0 0 7px rgba(255,210,86,.38)); }
+.motion-phone .adventure-glowroot-rive-stage { position: absolute; left: -202px; top: -382px; width: 390px; height: 844px; transform: scale(.72); transform-origin: top left; }
+.motion-phone .adventure-glowroot-rive-stage canvas { width: 390px; height: 844px; display: block; }
 @keyframes lab-patch-plant { from { opacity: .5; transform: scale(.985); filter: saturate(.88); } to { opacity: 1; transform: scale(1); filter: saturate(1); } }
 @keyframes lab-patch-notice { 0%,100% { filter: brightness(1) saturate(1); transform: scale(1); } 45% { filter: brightness(1.08) saturate(1.08); transform: scale(1.012); } }
 @keyframes lab-patch-harvest { from { opacity: .55; filter: brightness(1.08); } to { opacity: 1; filter: brightness(1); } }
