@@ -5,7 +5,8 @@ required Clover Seed, optional predictable Compost, real Clover Harvest
 Rhythm, persistent Farm stock, one-use Provision preparation, reusable
 equipment, causal Adventure vignette, exact return reward and Seed planting,
 and a changed Rive Home plus memory-aware Seed tray that survive the next
-morning verified locally; authored Rive departure motion now holds Position 8
+morning verified locally; authored Rive departure motion now holds Position 8,
+lets one leaf backing answer at the crossing, and hands the Farm into dusk
 before the Adventure vignette, with rendered desktop, touch, reload,
 reduced-motion, and rapid-input validation; Position 4 now derives sparse and
 lush growth from React-owned elapsed time and runs one restrained authored
@@ -145,6 +146,18 @@ the leg changing contact pose, the Bag staying attached, and the complete UI
 remaining non-overlapping. The Impeccable motion/design gate found no new source
 antipatterns. The next visible weakness is the abrupt final cut: the hedge and
 dusk do not yet answer Rosie's approach before the Adventure vignette appears.
+
+**Hedge-handoff checkpoint (August 7, 2026):** the same `Rosie Departure`
+timeline now reveals and rotates only `hedge_crossing_flourish 3` during its
+final eighteen frames, then hides it at the endpoint. A scene-contained dusk
+wash begins after 56% of the performance and yields to Position 9 at React's
+unchanged one-second boundary. The later flowering Home consequence remains
+unearned and hidden; no destination, loading screen, timer, input, reward, or
+progression state was added. Direct reload remains still, reduced motion keeps
+the existing 120 ms handoff with no performed Rive one-shot, and rapid input is
+idempotent. The next visible weakness is Position 9's hierarchy: its three
+equally weighted Bag-cause cards compete with the named Glowroot Discovery at
+phone scale.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose

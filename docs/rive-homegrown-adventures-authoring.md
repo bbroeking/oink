@@ -228,6 +228,14 @@ The equipped `rosie_satchel` receives rotation-only keys at frames
 around the fitted pose. React still owns timing, progression, reduced motion,
 and the Adventure handoff; the timeline remains presentation-only.
 
+The v0.59 handoff pass keeps that exact duration and adds one scene response
+to the same timeline. `hedge_crossing_flourish 3` receives rotation keys of
+2.6°, -3.8°, 5.2°, and 2.6° plus opacity keys of 0%, 100%, 82%, and 0% at
+frames 42, 49, 55, and 60. The opacity envelope is required: the leaf backing
+must not reveal the later flowering Home reward before or after departure.
+The browser adds only the late dusk wash; React continues to own the transition
+clock and reduced-motion path.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the

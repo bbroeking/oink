@@ -205,6 +205,14 @@ small counter-swing on the fitted satchel. React still owns the departure clock,
 idempotence, Position 8 → 9 transition, persistence, and reduced-motion skip;
 no destination, reward, or parallel movement state was introduced.
 
+The v0.59 prototype question makes the established crossing acknowledge that
+travel. The same Rive timeline reveals one existing green leaf backing only in
+its final eighteen frames, gives it one damped rustle, and hides it again at
+the endpoint. A restrained scene-level dusk wash bridges the final approach to
+the existing clearing. React still owns the exact one-second Position 8 → 9
+boundary, reduced-motion skip, persistence, and rapid-input guard; no new
+screen, destination, or gameplay fact was introduced.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

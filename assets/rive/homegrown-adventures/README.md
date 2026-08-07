@@ -52,6 +52,13 @@ The established root travel, one-second duration, and runtime name stay intact.
 React still owns the departure clock and Position 8 → 9 handoff; Rive owns only
 the visible walk and equipment follow-through.
 
+The v0.59 hedge-handoff checkpoint adds two late properties to that same
+timeline on the existing `hedge_crossing_flourish 3` leaf backing. Rotation
+uses 2.6° → -3.8° → 5.2° → 2.6° at frames 42, 49, 55, and 60; opacity uses
+0% → 100% → 82% → 0% at the same frames. This makes one restrained branch
+answer Rosie's approach without revealing the full later Home consequence.
+React still owns the one-second handoff and reduced-motion skip.
+
 The Living Barn checkpoint adds `bed_one_crop_rig` over the first Kitchen
 Patch bed. `Clover Bed Empty`, `Clover Bed Growing`, and `Clover Bed Ready`
 provide deterministic persisted poses; `Clover Plant`,

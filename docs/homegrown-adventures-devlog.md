@@ -194,14 +194,72 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 59. **v0.58 — Rosie Walks Beyond the Hedge (shipped):** replace the current
     front-facing departure slide with a legible walk toward the hedge path,
     including two restrained step cycles and a fitted-satchel counter-swing.
-60. **v0.59 — The Hedge Receives Rosie (in progress):** give the end of the
+60. **v0.59 — The Hedge Receives Rosie (shipped):** give the end of the
     departure one restrained path or gate response and a readable dusk handoff
     before Position 9 appears, without adding a destination or loading screen.
+61. **v0.60 — The Discovery Leads (in progress):** make the newly found
+    Glowroot the clear first read in Position 9, with the three truthful Bag
+    consequences supporting it instead of competing as equal top cards.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.59 — The Hedge Receives Rosie — 2026-08-07
+
+- Replayed the shipped Position 8 → 9 transition against
+  `rosie-v3/08-departure.png`. Rosie now walked with a fitted Bag, but the Farm
+  still cut directly to the twilight clearing without the crossing answering
+  her approach.
+- Extended the existing one-second `Rosie Departure` timeline with four late
+  rotation keys on `hedge_crossing_flourish 3`: 2.6° at frame 42, -3.8° at
+  frame 49, 5.2° at frame 55, and 2.6° at frame 60. Matching opacity keys use
+  0% → 100% → 82% → 0%, so only that restrained leaf backing appears during
+  the crossing; the later flowering Home reward remains hidden.
+- Added one scene-contained dusk wash tied to the observable Rive `departure`
+  performance. It stays absent for the first 56% of the walk, settles over the
+  lower Farm only as Rosie reaches the path, and yields to the existing
+  Position 9 clearing at React's unchanged one-second boundary.
+- Added no destination, loading screen, input, timer, reward, or progression
+  fact. React still owns departure timing, idempotence, persistence, reduced
+  motion, and the Position 8 → 9 transition; Rive owns the walk and foliage
+  acknowledgement.
+- Ran the rendered transition through the installed Impeccable design gate.
+  Review kept the single action and existing HUD, reused the clearing's dark
+  green atmospheric palette, introduced no new card or layout, and retained a
+  direct reduced-motion handoff.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass, including departure timing,
+  direct review, navigation, reduced motion, and idempotent settlement.
+- `npm run verify:rive-homegrown` — pass; 390×844 header and 60 authored names.
+- `npm run prototype:homegrown:build` — pass with the exact exported Rive scene
+  and content-hashed browser assets.
+- `npm run quality:check` — pass, including TypeScript, 78 layout tests, 202
+  security tests, 324 sprite checks, and the locked quality contracts.
+- Rendered local browser replay — direct Position 8 load held breathing with no
+  dusk; full motion reported `departure`, made the late leaf response visible,
+  and reached one Position 9 vignette; rapid double input stayed idempotent;
+  reduced motion reported no performed departure and used the direct handoff.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim those device checks.
+
+### Observable acceptance criteria
+
+- Full motion exposes the existing `departure` performance, reveals one late
+  foliage response, darkens only after Rosie's approach, and settles exactly
+  once to Position 9.
+- Direct Position 8 load and reload show no departure foliage or dusk veil.
+- Reduced motion performs no Rive departure one-shot and enters Position 9
+  through the existing 120 ms boundary; rapid double input cannot duplicate
+  the vignette.
+- The Bag remains attached and the sole action, objective, and progression rail
+  remain readable without horizontal overflow.
+- The next rendered weakness is Position 9's hierarchy: three equally weighted
+  cause cards arrive before the named Discovery and are too small to reward a
+  phone-scale first read.
 
 ### v0.58 — Rosie Walks Beyond the Hedge — 2026-08-07
 
