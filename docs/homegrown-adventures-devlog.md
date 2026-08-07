@@ -200,15 +200,78 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 61. **v0.60 — The Discovery Leads (shipped):** make the newly found
     Glowroot the clear first read in Position 9, with the three truthful Bag
     consequences supporting it instead of competing as equal top cards.
-62. **v0.61 — The Homecoming Keeps Focus (in progress):** remove the tiny
+62. **v0.61 — The Homecoming Keeps Focus (shipped):** remove the tiny
     repeated preparation recap from Position 10 so the exact returned stock,
     Rosie, and the one welcome-Home action can breathe after Position 9 has
     already explained causality.
+63. **v0.62 — The Seed Finds Its Bed (in progress):** move the existing Plant
+    Glowroot moment out of the Barn worktable and into the changed Farm where
+    the player can see the Seed enter its lasting bed, without auto-spending it
+    or adding another planting system.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.61 — The Homecoming Keeps Focus — 2026-08-07
+
+- Replayed Position 10 against
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/10-return-discovery.png`.
+  The named Find, physical supplies, and exact stock delta were present, but a
+  second three-column preparation recap repeated Position 9 in 9px copy and
+  compressed the actual reward ledger against the welcome action.
+- Removed only that duplicate recap. Position 9 remains the single causal
+  explanation; Position 10 now has one job: show what Rosie physically brought
+  Home and what was added to persistent Farm stock.
+- Promoted the reward surface to one visibly titled **Added to Farm stock**
+  ledger with larger quantities and readable wrapping for complete,
+  Near-Discovery, alternative Tool / Pack, and repeat-Discovery results.
+- Kept canonical Rive Rosie, the authored Return, physical Tool / Pack props,
+  reward calculation, two-step Welcome → Plant decision, persistence, and
+  reducer transitions unchanged.
+- Framed three Prototype options—retain the repeated strip, merge its copy into
+  the stock cells, or remove it after Position 9 and promote the ledger. The
+  third passed the installed Impeccable product-design review as the available
+  Claude-Design substitute: one reward plaque, one stock surface, and one
+  primary action, without nested reward cards.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass, including complete,
+  Near-Discovery, repeat-Discovery, fast-forward, reload, and idempotent reward
+  settlement.
+- `npm run verify:rive-homegrown` — pass; unchanged 390×844 Rive header and 60
+  authored names.
+- `npm run prototype:homegrown:build`, `npm run quality:loop`, and
+  `npm run quality:check` — pass, including TypeScript, 78 layout tests, 202
+  security tests, 324 sprite checks, and the locked quality contracts.
+- Rendered centered 1280×720 replay — complete, missing-Provision, and repeat
+  returns each showed the correct plaque, exact three stock results, branch
+  action, physical props, and zero duplicate causal strips.
+- Exact 360×780 touch emulation initially exposed a 38px ledger/action
+  collision. The compact-height treatment now measures ledger 566–640px,
+  action 652–710px, and rail 722–780px with a 360×780 document and no overflow.
+- Two immediate welcome taps advance only to **Plant Glowroot**; reload retains
+  that acknowledged state; the next deliberate Plant action reaches Position
+  11. Reduced motion reports `true`, keeps Rive `ready`, and exposes the same
+  welcome state. The rendered run reported no console errors.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim those device checks.
+
+### Observable acceptance criteria
+
+- Position 10 contains one named Find, one clearly titled exact stock ledger,
+  and one current primary action; it does not repeat Position 9's cause recap.
+- Complete, Near-Discovery, and repeat returns retain their exact quantities,
+  branch copy, physical objects, and reducer outcomes.
+- At 390×844, 360×780, and centered desktop sizes, the ledger, action, and
+  progression rail have visible gaps and no overflow or overlapping targets.
+- Rapid welcome input cannot skip the explicit Plant decision; acknowledgement
+  and the later planted state both survive reload and reduced motion.
+- The next rendered weakness is spatial: after Welcome, **Plant Glowroot** still
+  appears over the indoor return worktable instead of the outdoor bed that will
+  remember the Seed.
 
 ### v0.60 — The Discovery Leads — 2026-08-07
 

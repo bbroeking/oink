@@ -63,6 +63,14 @@ above the plate, while React owns the branch, quantities, causal copy,
 acknowledgement, and fast-forward stock delta. Reload holds the complete scene
 without replaying the one-shot, and reduced motion skips it.
 
+The v0.61 presentation pass leaves preparation causality in Position 9 and
+turns Position 10 into a focused Homecoming. One larger **Added to Farm stock**
+ledger now carries the exact complete, clue-only, alternative equipment, or
+repeat return quantities; the former three-column cause recap is removed. A
+compact-height treatment keeps that ledger, the current action, and the rail
+separate at 360×780. No reward, branch, persistence, Rive, or reducer contract
+changed.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

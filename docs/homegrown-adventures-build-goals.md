@@ -170,6 +170,19 @@ installed Impeccable review as the available Claude-Design substitute. The next
 visible weakness is Position 10's repeated tiny cause strip, which is now
 redundant and crowds the exact returned supplies and welcome-Home action.
 
+**Homecoming-focus checkpoint (August 7, 2026):** Position 10 now leaves the
+three causal explanations in Position 9 and gives the returned reward one
+larger, visibly titled **Added to Farm stock** ledger. Complete,
+Near-Discovery, alternative equipment, and repeat returns retain their exact
+quantities and physical props. The React reward model, two-step Welcome → Plant
+decision, Rive Return, persistence, and fast-forward transitions are unchanged.
+An exact 360×780 touch render found and resolved a compact-height collision;
+the final ledger, action, and rail have 12px or larger gaps. The installed
+Impeccable review, used as the available Claude-Design substitute, selected the
+single-ledger option over retaining or merging duplicate cause copy. The next
+visible weakness is the indoor Plant Glowroot action: the player cannot yet see
+the Seed enter the outdoor bed that will remember it.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its
