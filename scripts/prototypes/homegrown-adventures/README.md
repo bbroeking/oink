@@ -163,6 +163,13 @@ Adventure are registered at a smaller return scale, so no parallel art variant
 or item state is introduced. React owns the Pack choice, practical-supply
 reward, persistence, and fast-forward; Rive still owns Rosie's Return motion.
 
+The v0.54 prototype question returns to Position 7's one-action hierarchy.
+The approved open Bag, three selected slots, consumable/reusable explanation,
+Pack action, and progression rail now fit as one readable stack at both the
+390x844 reference size and the shorter 360x780 touch check. This is presentation
+only: item choice, material costs, Bag validity, persistence, and fast-forward
+remain reducer-owned, while the existing Rive Pack performance is unchanged.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

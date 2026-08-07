@@ -1573,18 +1573,18 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	left: 8px;
 	top: 442px;
 	width: 176px;
-	height: 270px;
+	height: 252px;
 	display: grid;
 	grid-template-columns: 1fr;
 	grid-template-rows: repeat(3, minmax(0, 1fr));
-	gap: 7px;
+	gap: 6px;
 }
 .bag-slot-card {
 	min-width: 0;
 	padding: 4px 5px;
 	display: grid;
 	grid-template-columns: 42px minmax(0, 1fr) 58px;
-	grid-template-rows: 14px 18px 22px 24px;
+	grid-template-rows: 12px 16px 18px 22px;
 	align-items: center;
 	text-align: left;
 	background: rgba(255,249,233,.97);
@@ -1598,7 +1598,7 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	grid-column: 2 / 4;
 	grid-row: 1;
 	color: #8d5c35;
-	font-size: 8px;
+	font-size: 7.5px;
 	font-weight: 950;
 	letter-spacing: .08em;
 	text-transform: uppercase;
@@ -1618,7 +1618,7 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	place-items: center;
 	justify-items: start;
 	font-family: Caprasimo, Georgia, serif;
-	font-size: 10px;
+	font-size: 9px;
 	font-weight: 400;
 	line-height: 1.08;
 }
@@ -1636,7 +1636,7 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	min-width: 0;
 	border: 1.5px solid var(--ink);
 	border-radius: 8px;
-	font-size: 7px;
+	font-size: 6.5px;
 	font-weight: 900;
 	line-height: 1;
 }
@@ -1648,7 +1648,7 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	position: absolute;
 	left: 27px;
 	right: 27px;
-	top: 721px;
+	top: 714px;
 	min-height: 52px;
 	border: 3px solid var(--ink);
 	border-radius: 14px;
@@ -1666,12 +1666,12 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	position: absolute;
 	left: 20px;
 	right: 20px;
-	top: 779px;
+	top: 698px;
 	margin: 0;
 	color: var(--paper);
 	font-size: 8px;
 	font-weight: 900;
-	line-height: 1;
+	line-height: 1.15;
 	text-align: center;
 	text-shadow: 0 1px 2px var(--ink), 1px 0 1px var(--ink);
 }
@@ -1772,6 +1772,20 @@ html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, ht
 		border-radius: 17px 17px 0 0;
 		box-shadow: 0 -4px 22px rgba(48,33,22,.24);
 	}
+}
+@media (max-width: 700px) and (max-height: 820px) {
+	.bag-stage { top: 394px; }
+	.bag-slot-grid { top: 404px; height: 220px; gap: 5px; }
+	.bag-slot-card {
+		padding: 3px 5px;
+		grid-template-rows: 10px 14px 16px 20px;
+	}
+	.bag-slot-kind { font-size: 7px; }
+	.bag-slot-card > strong { min-height: 14px; font-size: 8.5px; }
+	.bag-slot-card > small { font-size: 6.2px; }
+	.bag-slot-card button { font-size: 6.2px; }
+	.bag-selection > p { top: 631px; }
+	.bag-confirm { top: 657px; min-height: 50px; }
 }
 @media (max-width: 370px) {
 	.counter { padding: 7px 6px; gap: 5px; }

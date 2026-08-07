@@ -553,7 +553,7 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 			{canPack ? "Pack these" : needsProvision ? "Need Clover Lunch" : "Need Willow Fiber"}
 		</button>
 		<p>{canPack
-			? "Provisions and fresh packing material are used once. Tools and Packs come Home."
+			? "Provision and fresh packing are used once. Tool and Pack come Home."
 			: needsProvision
 				? "Leave Provision empty to explore with a useful clue."
 				: "Choose Wicker Basket, leave Pack empty, or bring back Willow Fiber."}</p>
