@@ -156,9 +156,12 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 48. **v0.47 — The Pack Changes the Return (shipped):** make
     Wicker Basket return Compost while Cloth Wrap preserves Clover Seed, keeping
     both existing Packs predictably useful across the next Farm cycle.
-49. **v0.48 — The Tool Changes the Bonus (locally verified):** make Hand
+49. **v0.48 — The Tool Changes the Bonus (shipped):** make Hand
     Trowel return one extra Glowroot Seed while Lantern returns one extra Willow
     Fiber, preserving the same named Adventure and independent Pack choice.
+50. **v0.49 — The Chosen Tool Enters the Story (in progress):** make the
+    physical tool in Position 9 agree with Rosie's selected loadout, so Lantern
+    no longer changes only labels while a baked Hand Trowel remains in view.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
@@ -234,11 +237,26 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Public deployment evidence
 
-- Pending checkpoint deployment and public replay.
+- Feature checkpoint `799ec05` and painterly-object refinement `b90d85f`
+  shipped from `main` in successful Pages runs `31185196877` and
+  `31185857961`.
+- The final public HTML selected CSS `7166175dc2` and player `59e02e4946`;
+  their full SHA-256 hashes exactly matched the isolated build. The authored
+  Rive remained SHA-256
+  `0f2e966d04cb66f8827ee1268eefe44b9b080ba66a963bf9020e4be86b9f2fc1`.
+- At 390x844, the public Trowel branch showed the second painterly Glowroot
+  nest on the table, **Glowroot Seed +2**, **Willow Fiber +2**, and **Compost
+  +1**. The public Lantern branch showed the added painterly Fiber coil,
+  **Glowroot Seed +1**, **Willow Fiber +3**, and **Compost +1**. Both causal
+  recaps agreed with the selected Tool and both browser logs were empty.
 
 ### Next highest-leverage weakness
 
-- Pending the public replay of both Tool branches.
+- Position 9's cause cards correctly say **Lantern**, but the approved clearing
+  plate still physically contains its baked Hand Trowel and never shows the
+  Lantern. The next checkpoint should make the existing Tool choice visible in
+  the scene itself—using registered painterly art and no new reward, item,
+  destination, state field, or Rive-owned progression decision.
 
 ### v0.47 — The Pack Changes the Return — 2026-08-07
 
