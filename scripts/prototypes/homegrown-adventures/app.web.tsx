@@ -674,12 +674,12 @@ function ReturnRewardPanel({ state, actionLabel, onAction }) {
 						: "A slow Crop that glows after dusk"}</small>
 			</div>
 			<div className="return-stock-ledger" aria-label="Farm stock returned">
-				<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
-				<span><b>{nearDiscovery ? "Leaf-print clue" : "Glowroot Seed"}</b><strong>{nearDiscovery ? "Found" : `+${glowrootAmount}`}</strong></span>
-				<span><b>Willow Fiber</b><strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong></span>
-			</div>
-			<div className="return-causal-thread" aria-label="How Rosie's preparation helped">
-				{story.tags.map((tag) => <span key={tag.slot}><i aria-hidden="true">{tag.icon}</i><b>{tag.detail}</b></span>)}
+				<strong className="return-stock-title">Added to Farm stock</strong>
+				<div>
+					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
+					<span><b>{nearDiscovery ? "Leaf-print clue" : "Glowroot Seed"}</b><strong>{nearDiscovery ? "Found" : `+${glowrootAmount}`}</strong></span>
+					<span><b>Willow Fiber</b><strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong></span>
+				</div>
 			</div>
 			<button type="button" className="return-reward-action" onClick={onAction}>{actionLabel}</button>
 		</section>
