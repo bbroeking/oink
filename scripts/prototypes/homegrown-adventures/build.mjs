@@ -1,4 +1,4 @@
-import { build } from "esbuild";
+import { build, transform } from "esbuild";
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -68,6 +68,8 @@ if (authoredRivePresent) {
 
 const bundleOutput = join(root, "docs/homegrown-adventures.js");
 const animationBundleOutput = join(root, "docs/homegrown-animation-lab.js");
+const stylesOutput = join(root, "docs/homegrown-adventures.css");
+const animationStylesOutput = join(root, "docs/homegrown-animation-lab.css");
 
 const commonBuild = {
 	bundle: true,
@@ -98,15 +100,36 @@ await build({
 	outfile: animationBundleOutput,
 });
 
+async function writeStyles(source, output) {
+	const result = await transform(readFileSync(source, "utf8"), {
+		loader: "css",
+		minify: true,
+		target: ["safari16", "chrome110"],
+	});
+	writeFileSync(output, result.code);
+	return createHash("sha256").update(result.code).digest("hex").slice(0, 10);
+}
+
+const stylesVersion = await writeStyles(join(here, "styles.css"), stylesOutput);
+const animationStylesVersion = await writeStyles(
+	join(here, "animation-lab.css"),
+	animationStylesOutput,
+);
+
 const bundleVersion = createHash("sha256")
 	.update(readFileSync(bundleOutput))
 	.digest("hex")
 	.slice(0, 10);
 const htmlPath = join(root, "docs/homegrown-adventures.html");
-const html = readFileSync(htmlPath, "utf8").replace(
-	/\.\/homegrown-adventures\.js(?:\?v=[a-f0-9]+)?/,
-	`./homegrown-adventures.js?v=${bundleVersion}`,
-);
+const html = readFileSync(htmlPath, "utf8")
+	.replace(
+		/\.\/homegrown-adventures\.css(?:\?v=[a-f0-9]+)?/,
+		`./homegrown-adventures.css?v=${stylesVersion}`,
+	)
+	.replace(
+		/\.\/homegrown-adventures\.js(?:\?v=[a-f0-9]+)?/,
+		`./homegrown-adventures.js?v=${bundleVersion}`,
+	);
 writeFileSync(htmlPath, html);
 
 const animationBundleVersion = createHash("sha256")
@@ -114,10 +137,15 @@ const animationBundleVersion = createHash("sha256")
 	.digest("hex")
 	.slice(0, 10);
 const animationHtmlPath = join(root, "docs/homegrown-animation-lab.html");
-const animationHtml = readFileSync(animationHtmlPath, "utf8").replace(
-	/\.\/homegrown-animation-lab\.js(?:\?v=[a-f0-9]+)?/,
-	`./homegrown-animation-lab.js?v=${animationBundleVersion}`,
-);
+const animationHtml = readFileSync(animationHtmlPath, "utf8")
+	.replace(
+		/\.\/homegrown-animation-lab\.css(?:\?v=[a-f0-9]+)?/,
+		`./homegrown-animation-lab.css?v=${animationStylesVersion}`,
+	)
+	.replace(
+		/\.\/homegrown-animation-lab\.js(?:\?v=[a-f0-9]+)?/,
+		`./homegrown-animation-lab.js?v=${animationBundleVersion}`,
+	);
 writeFileSync(animationHtmlPath, animationHtml);
 
 console.log(

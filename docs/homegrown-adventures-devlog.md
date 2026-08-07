@@ -142,11 +142,72 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     repeated Glowroot return, keep its Seed and practical supplies in Farm
     stock, and finish the Barn day instead of offering an unusable second
     planting action.
+45. **v0.44 — The Homecoming Stays in Reach (locally verified):** fit the
+    complete 390x844 game frame inside short desktop viewports so Position 10's
+    one Homecoming action and progression rail remain visible without changing
+    the full-size phone layout.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.44 — The Homecoming Stays in Reach — 2026-08-07
+
+- Replayed the public v0.43 repeated Homecoming at 1280x720. The returned
+  objects, exact reward ledger, and causal thread were readable, but the single
+  **Keep supplies in Farm stock** action began below the first viewport and the
+  prototype rail cut through the bottom of the composition. The DOM action
+  existed, but the player-visible hierarchy violated the one-clear-action rule.
+- Added four restrained short-desktop scale steps for the fixed 390x844 frame.
+  From 930px down to 700px-high laptop viewports, the whole game now stays
+  proportionally registered and fully visible. The smallest desktop scale keeps
+  the 58px primary action above 45px; layouts at 700px wide or below keep the
+  original full-size touch controls and use no desktop transform.
+- Made the browser build emit the minified player and animation-lab stylesheets
+  from their source files and add content hashes to both stylesheet links. A
+  responsive checkpoint can no longer deploy new source CSS while public Pages
+  silently serves the previous generated file or a cached stylesheet.
+- Changed no reducer fact, reward, crop, Adventure, Rive timeline, or visual
+  registration inside the game frame. The approved 9:16 composition is scaled
+  as one unit only when the available desktop height requires it.
+
+### Observable acceptance criteria
+
+- Position 10 shows its full worktable, reward ledger, causal thread, primary
+  action, and Previous / Next rail without scrolling at 1280x700, 1280x720,
+  1280x800, 1280x850, and 1280x900.
+- The 390x844 phone layout remains unscaled and retains the full 58px action.
+- A complete real loop still reaches the next remembered morning; reload,
+  reduced motion, 10 -> 11 fast-forward, and rapid input preserve their prior
+  behavior with no browser warnings or errors.
+
+### Local validation evidence
+
+- Rendered Position 10 at 1280x700, 1280x720, and 1280x900 after the generated
+  stylesheet was rebuilt. Every screenshot contained the complete Homecoming
+  action and progression rail; 390x844 retained the original full-size screen.
+- Played the latest rendered build at 1280x700 from **Tickle Rosie** through
+  farming, accessible guaranteed Harvest, Bag preparation, deterministic
+  Adventure, first Glowroot planting, Changed Home, and the following morning.
+- Reload preserved the remembered morning. Reduced motion retained the repeat
+  Homecoming and its action, 10 -> 11 fast-forward remained correct, and two
+  simultaneous tickles increased 1,119 to 1,120 exactly once. Browser logs were
+  empty throughout.
+- `npm run prototype:homegrown:test` — 42/42 gameplay and persistence tests.
+- `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- An isolated tree reconstructed from `HEAD` plus the staged diff installed all
+  1,304 packages offline, reproduced the checked-in CSS and HTML hashes exactly,
+  passed all 42 prototype tests, and passed `npm run verify:rive-web`.
+
+### Next highest-leverage weakness
+
+Choose after the public v0.44 replay by playing the fitted loop and comparing
+the weakest player-visible moment with the corresponding approved concept.
+Prefer depth in the existing loop over a new crop, destination, currency, or
+parallel system.
 
 ### v0.43 — The Second Seed Has a Home — 2026-08-07
 

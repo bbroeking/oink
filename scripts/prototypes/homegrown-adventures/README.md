@@ -20,9 +20,10 @@ npm run prototype:homegrown:build
 npm run prototype:homegrown:test
 ```
 
-The build writes a content hash onto the published JavaScript URL and onto the
-authored Rive request. Keep both when changing deployment code; public QA must
-exercise the exact bundle produced for the checkpoint.
+The build emits both minified stylesheets from their source files, writes
+content hashes onto the published CSS and JavaScript URLs, and versions the
+authored Rive request. Keep all three boundaries when changing deployment code;
+public QA must exercise the exact bundle produced for the checkpoint.
 
 The web-only Rive wrapper uses `@rive-app/react-webgl2`. The build now publishes
 the checked-in authored Homegrown Adventures scene: Rosie's mesh/bone rig,
@@ -92,6 +93,13 @@ existing green node group read as leaves at the arch edge. The original pink
 blossoms remain in front. The same Home consequence parent still handles
 reveal, developed hold, reload, and reduced motion; React owns every gameplay
 fact.
+
+The v0.44 short-desktop pass treats the fixed 390x844 game as one registered
+composition. Above phone widths but below 930px in height, four bounded scale
+steps keep the complete frame, primary action, and prototype rail inside the
+first viewport. The smallest step still leaves a 58px action above 45px, while
+the `max-width: 700px` phone layout overrides the transform and preserves its
+full-size touch controls.
 
 The remembered Moonberry and Glowroot beds use registered clips from
 `11-changed-home-painted-crops-scene-plate.png` above that same pond plate.
