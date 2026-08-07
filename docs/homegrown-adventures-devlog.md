@@ -135,7 +135,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     restrained native Rive foliage backings behind the existing flowering
     crossing so Changed Home reads as a permanent garden arch instead of a
     thin temporary effect, without changing its earned state or progression.
-43. **v0.42 — Leaves Make the Doorway (locally verified):** break the smooth
+43. **v0.42 — Leaves Make the Doorway (shipped):** break the smooth
     hedge bands into crossed rows of native Rive leaf shapes, keeping the
     established blossom path in front and the same earned Home state beneath.
 
@@ -190,6 +190,18 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
 - `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
   78 layout tests, and 202 security tests passed.
+
+### Public deployment evidence
+
+- Shipped commit `dcd31b9` through GitHub Pages run `31152615186`.
+- The public game loaded `homegrown-adventures.js?v=a48a1c9797`; the animation
+  lab loaded `homegrown-animation-lab.js?v=24a2314ddb`; and the 297,820-byte
+  public Rive file matched the checked-in SHA-256 exactly.
+- Public Position 11 exposed exactly **Begin another day**, **Previous**, and
+  **Loop**, rendered the crossed leaf rows around the flowered doorway, and
+  reported no browser warnings or errors. Beginning another day returned to
+  **Tickle Rosie** while the doorway, bell, crops, pond, frog, and Farm stock
+  remained visible.
 
 ### Next highest-leverage weakness
 
