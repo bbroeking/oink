@@ -40,6 +40,7 @@ for (const name of [
 	"adventure-clearing-clue.webp",
 	"adventure-clearing-trowel-no-pack.webp",
 	"adventure-clearing-lantern-no-pack.webp",
+	"adventure-provision-clover-lunch.png",
 	"adventure-pack-wicker.png",
 	"adventure-pack-cloth.png",
 	"return-homecoming-discovery.webp",

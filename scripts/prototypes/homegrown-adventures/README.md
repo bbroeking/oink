@@ -136,6 +136,16 @@ matched to the approved Position 9 and Position 7 concepts. React owns both
 equipment attributes; Rive still owns only canonical Rosie and the live
 Glowroot performance.
 
+The v0.51 prototype question completes that physical preparation trio: does the
+Provision enter the clearing too? Position 9 now derives a third independent
+presentation fact from the existing Bag. Clover Lunch places one compact open
+travel tin on the ground near Rosie; an empty Provision leaves that part of the
+clearing clean. The alpha prop is an ImageGen object study derived from the
+approved Position 9 concept, cropped for its registered web placement and kept
+below the story overlay. The reducer's duration, stock spend, branch, and reward
+rules are unchanged. React owns the Provision fact; Rive still owns only the
+canonical character, equipped satchel, and live Glowroot motion.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

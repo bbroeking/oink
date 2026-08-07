@@ -1157,6 +1157,9 @@ function App() {
 	}, [signalFeedback]);
 
 	const jumpToPosition = useCallback((nextPosition) => {
+		const now = performance.now();
+		if (now < transitionLockUntil.current) return;
+		transitionLockUntil.current = now + RAPID_TRANSITION_GUARD_MS;
 		dispatch({ type: ACTIONS.JUMP_TO_POSITION, position: nextPosition });
 	}, []);
 
@@ -1172,6 +1175,7 @@ function App() {
 		<div
 			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
+			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
 			data-adventure-pack={showingAdventureVignette ? state.bag?.pack ?? "none" : undefined}
 			data-return-kind={showingReturnReward ? returnKind : undefined}
@@ -1187,6 +1191,7 @@ function App() {
 				triggerNonce={riveModel.triggerNonce}
 			/>
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
+			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-pack-prop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-homecoming-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-bed-mask" aria-hidden="true" />}
