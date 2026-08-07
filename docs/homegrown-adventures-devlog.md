@@ -149,7 +149,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 46. **v0.45 — The Stored Seed Stays Visible (shipped):** carry the
     repeated Glowroot reward into the next morning by showing its retained Seed
     count inside the existing planted-Glowroot tile.
-47. **v0.46 — Willow Fiber Lines the Pack (locally verified):** make
+47. **v0.46 — Willow Fiber Lines the Pack (shipped):** make
     Cloth Wrap spend one Willow Fiber as fresh packing material, preview the
     exact cost, preserve free alternatives, and keep the remaining stock visible
     through departure and Homecoming.
@@ -209,11 +209,25 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Public deployment evidence
 
-- Pending checkpoint deployment and public replay.
+- Shipped commit `3a536ae` through GitHub Pages run `31181286644`.
+- The public game loaded `homegrown-adventures.css?v=bdb4d269f2` and
+  `homegrown-adventures.js?v=b5b3156b19`; both public files matched their
+  checked-in SHA-256 values. The unchanged 297,820-byte Rive scene matched
+  `0f2e966d04cb66f8827ee1268eefe44b9b080ba66a963bf9020e4be86b9f2fc1`.
+- At 390x844, replayed the public first-day zero-Fiber fallback, completed the
+  first return, began another day, selected Cloth Wrap at **2 → 1**, reloaded
+  Departure at **Pack · Fiber 1**, and followed its **protected its delicate
+  glow** cause through the repeated return. Changed Home showed Willow Fiber 3
+  and the public browser recorded no warnings or errors.
 
 ### Next highest-leverage weakness
 
-- Pending the public replay of the complete Fiber-backed loop.
+- Cloth Wrap now has a truthful recurring cost and visible consequence, but its
+  successful return is still materially identical to the free Wicker Basket.
+  The next bounded checkpoint should make those two existing Packs change one
+  useful returned quantity in different, predictable ways. It must stay inside
+  the current reward ledger, avoid a new item or crafting system, and keep both
+  choices valid rather than making one a strict upgrade.
 
 ### v0.45 — The Stored Seed Stays Visible — 2026-08-07
 
