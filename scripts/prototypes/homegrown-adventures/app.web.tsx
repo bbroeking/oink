@@ -620,19 +620,22 @@ function AdventureVignetteOverlay({ state, onContinue }) {
 	const story = adventureStory(state);
 	return (
 		<section className="adventure-vignette-overlay" data-story-kind={story.kind} aria-label="Beyond-the-hedge Adventure">
-			<div className="adventure-cause-tags">
-				{story.tags.map((tag) => (
-					<div key={tag.slot} className={tag.name.startsWith("No ") ? "is-empty" : ""}>
-						<i aria-hidden="true">{tag.icon}</i>
-						<strong>{tag.name}</strong>
-						<small>{tag.detail}</small>
-					</div>
-				))}
-			</div>
 			<div className="adventure-find" role="status">
 				<span className="glowroot-token" aria-hidden="true">✦</span>
 				<strong>{story.headline}</strong>
 				<small>{story.result}</small>
+			</div>
+			<div className="adventure-cause-thread" aria-label="How Rosie's bag helped">
+				<strong className="adventure-cause-title">How Rosie’s bag helped</strong>
+				<ul>
+					{story.tags.map((tag) => (
+						<li key={tag.slot} className={tag.name.startsWith("No ") ? "is-empty" : ""}>
+							<i aria-hidden="true">{tag.icon}</i>
+							<strong>{tag.name}</strong>
+							<small>{tag.detail}</small>
+						</li>
+					))}
+				</ul>
 			</div>
 			<button type="button" className="adventure-continue" onClick={onContinue}>Continue the story</button>
 		</section>
@@ -1067,6 +1070,11 @@ function App() {
 		? { ...presentation, objective: "Harvesting Clover…" }
 		: showingHarvestRhythm
 		? { ...presentation, objective: "Clover’s rhythm: ← → ↑" }
+		: showingAdventureVignette
+		? {
+			...presentation,
+			objective: adventureStory(state).kind === "discovery" ? "A new Discovery!" : "A promising clue!",
+		}
 		: waiting
 		? {
 			...presentation,
