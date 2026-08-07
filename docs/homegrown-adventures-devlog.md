@@ -222,14 +222,70 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 67. **v0.66 — The Next Seed Leads (shipped):** simplify the remembered
     Position 2 hierarchy so the one next Seed choice leads while already-growing
     crops and optional Compost remain useful, quieter context.
-68. **v0.67 — Optional Means Chosen (in progress):** stop preselecting Compost
+68. **v0.67 — Optional Means Chosen (shipped):** stop preselecting Compost
     when the player chooses a Seed, so saving or spending the predictable boost
     is an explicit planting decision rather than an inherited default.
+69. **v0.68 — The Boost Touches the Bed (in progress):** make chosen Compost
+    answer during the existing Rive planting performance with one restrained
+    soil-level cue, without bringing back a persistent special-dirt overlay or
+    giving Rive resource authority.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.67 — Optional Means Chosen — 2026-08-07
+
+- Replayed Position 2 → 3 on the first and remembered mornings against
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/03-plant-and-compost.png`.
+  The comparison was predictable, but choosing Clover silently preselected
+  Compost and would spend one unless the player noticed and turned it off.
+- Changed crop selection and the Position 3 review preset to begin with Compost
+  saved. The objective and confirmation now lead with the baseline **Clover:
+  4h · harvest 3** and **Plant Clover**.
+- Rewrote the optional card as **Add Compost · 2 owned** and made the comparison
+  state the exact benefit: **2 hours · Harvest 4**. Selecting it still shows the
+  existing before/after stock, **Compost added**, and **Plant with Compost**.
+  React remains authoritative for selection, quantities, duration, yield, and
+  persistence.
+- Added the optional toggle to the existing rapid-input guard after the first
+  rendered replay found that a double tap could add and immediately remove the
+  boost. One rapid gesture now records one deliberate choice.
+- Framed three Prototype options: keep auto-selection, hide Compost until later,
+  or default to saving it while exposing the complete comparison. The third
+  passed the installed Impeccable review as the available Claude-Design
+  substitute. It preserves the approved two-card composition while making the
+  optional resource genuinely optional.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass, including freely choosing
+  Compost, saving it for normal duration/yield, spending it for the guaranteed
+  boost, full-loop settlement, persistence, and deterministic review states.
+- At exact 360×780, the complete Position 3 panel is 340×221px and ends at
+  697px, 25px before the rail. At 390×844 it is 370×221px; the centered
+  1280×720 render preserves the same complete phone. No overflow or console
+  errors occur.
+- Position 3 opens with `aria-pressed=false`, **2 owned**, **Plant Clover**, and
+  the 4h/3 baseline. Two immediate Compost coordinate taps produce one
+  `aria-pressed=true` state with 2h/4 and **Plant with Compost**. Reload retains
+  that explicit selection.
+- Turning the boost off and rapidly planting reaches one Position 4 with
+  **Growing normally · Ready in 4 hours**; reload preserves it. Previous returns
+  to the Position 3 saved default. The complete second-morning loop reaches the
+  same unboosted default with both remembered beds intact. Reduced motion shows
+  the same choice. Mobile Safari/device sharpness, haptic feel, and audible
+  acceptance remain manual gates.
+
+### Observable acceptance criteria
+
+- Choosing a Seed never silently commits Compost.
+- The unboosted and boosted outcomes are both visible before planting, and only
+  an explicit Compost tap changes the resource commitment.
+- Rapid input, reload, reduced motion, fast-forward, first-day and remembered
+  play, touch, and desktop preserve the same reducer-owned choice and exact
+  outcome.
 
 ### v0.66 — The Next Seed Leads — 2026-08-07
 

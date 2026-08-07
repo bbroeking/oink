@@ -110,6 +110,13 @@ one quiet continuity receipt beneath it. React owns every fact and transition;
 Rive continues to show the established growing beds without receiving UI or
 inventory authority.
 
+The v0.67 choice pass makes optional Compost require an explicit decision.
+Choosing Clover now begins with Compost saved and compares the normal 4-hour,
+3-yield crop against the 2-hour, 4-yield boost. One guarded tap adds it, reload
+preserves it, and another deliberate tap saves it again. React owns the resource
+commitment and exact outcome; the Rive crop receives only the resulting planted
+state.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

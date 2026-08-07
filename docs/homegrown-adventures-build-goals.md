@@ -244,6 +244,21 @@ the same hierarchy. The next visible weakness is that Position 3 preselects
 optional Compost, making a resource-saving choice feel less freely chosen than
 the product promise.
 
+**Freely-chosen Compost checkpoint (August 7, 2026):** choosing Clover now
+enters Position 3 with Compost saved, **Plant Clover** as the primary action,
+and the truthful baseline **4 hours · Harvest 3**. The optional card explicitly
+offers **Add Compost** and previews **2 hours · Harvest 4** before any resource
+is committed. One tap selects it, changes the exact count and confirmation, and
+persists through reload; another deliberate tap saves it again. Rapid duplicate
+taps are guarded as one choice. The Prototype pass rejected both silent
+preselection and hiding the comparison; exact 360×780, 390×844, and centered
+desktop renders passed the installed Impeccable review as the available
+Claude-Design substitute. Fast-forward returns to the saved default, reduced
+motion is identical, and both normal and boosted planting remain reducer-owned.
+The next visible weakness is feedback: adding Compost changes the UI and later
+growth facts, but the plant performance has no restrained in-bed Compost cue.
+Any solution must avoid restoring the rejected persistent special-dirt layer.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its
