@@ -652,6 +652,12 @@ test("Bag slots accept owned choices, alternatives, and empty values", () => {
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
 	assert.equal(homegrownRiveModel(state).viewModel.rosieAction, "pack");
 	assert.equal(homegrownRiveModel(state).trigger, "bag-receive");
+	assert.deepEqual(homegrownRiveModel(state).bagReceive, {
+		slot: "tool",
+		item: "lantern",
+		previousItem: "hand-trowel",
+		at: state.lastBagSelection.at,
+	});
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: null });
 
@@ -660,11 +666,18 @@ test("Bag slots accept owned choices, alternatives, and empty values", () => {
 		tool: "lantern",
 		pack: "cloth-wrap",
 	});
+	assert.deepEqual(homegrownRiveModel(state).bagReceive, {
+		slot: "provision",
+		item: null,
+		previousItem: "clover-lunch",
+		at: state.lastBagSelection.at,
+	});
 	assert.equal(BAG_ITEMS.tool.length, 2);
 	assert.equal(BAG_ITEMS.pack.length, 2);
 
 	const reloaded = deserializeState(serializeState(state), { now: at });
 	assert.deepEqual(reloaded.bag, state.bag);
+	assert.deepEqual(reloaded.lastBagSelection, state.lastBagSelection);
 
 	const invalid = reduce(state, {
 		type: ACTIONS.SET_BAG_SLOT,

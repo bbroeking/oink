@@ -80,6 +80,10 @@ export function homegrownRiveModel(state, now = Date.now()) {
 	].includes(state.stage);
 
 	return {
+		bagReceive:
+			state.lastAction === "choose-bag-item"
+				? state.lastBagSelection ?? null
+				: null,
 		viewModel: {
 			rosieMood:
 				state.lastAction === "tickle" || developed ? "happy" : "content",

@@ -479,7 +479,7 @@ const BAG_ITEM_EFFECT_LABELS = Object.freeze({
 	"cloth-wrap": "+1 Clover Seed",
 });
 
-function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
+function BagSelectionPanel({ bag, farmStock, activeSelection, onSelect, onConfirm }) {
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
 	const selectedPackCost = bagPackingCost(bag.pack ?? null);
@@ -489,6 +489,8 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 	const needsProvision = selectedProvisionId !== null && selectedProvisionOwned < 1;
 	const needsPackingMaterial = selectedPackCost !== null && selectedPackMaterialOwned < selectedPackCost.amount;
 	const canPack = !needsProvision && !needsPackingMaterial;
+	const flightItemId = activeSelection?.item ?? activeSelection?.previousItem ?? null;
+	const flightIsRemoval = activeSelection?.item === null && activeSelection?.previousItem !== null;
 	const cycleItem = (slot) => {
 		const choices = BAG_ITEMS[slot];
 		const current = choices.findIndex((item) => item.id === bag[slot]);
@@ -498,16 +500,25 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 
 	return (
 		<section className="bag-selection" aria-label="Choose what Rosie carries">
-		<div className="bag-stage" aria-hidden="true">
-			<span className="open-adventure-bag" />
-			<div className="bag-packed-preview">
-				{BAG_SLOT_ORDER.map((slot) => {
-					const selected = bagItem(slot, bag[slot]);
-					return <span className={`bag-preview-${slot} ${selected ? "is-filled" : "is-empty"}`} key={slot}><BagItemArt itemId={selected?.id} /></span>;
-				})}
+			{activeSelection && flightItemId && (
+				<span
+					key={`${activeSelection.slot}-${flightItemId}-${activeSelection.at}`}
+					className={`bag-flight-item bag-flight-${activeSelection.slot} ${flightIsRemoval ? "is-removal" : "is-placement"}`}
+					aria-hidden="true"
+				>
+					<BagItemArt itemId={flightItemId} />
+				</span>
+			)}
+			<div className="bag-stage" aria-hidden="true">
+				<span className="open-adventure-bag" />
+				<div className="bag-packed-preview">
+					{BAG_SLOT_ORDER.map((slot) => {
+						const selected = bagItem(slot, bag[slot]);
+						return <span className={`bag-preview-${slot} ${selected ? "is-filled" : "is-empty"}`} key={slot}><BagItemArt itemId={selected?.id} /></span>;
+					})}
+				</div>
 			</div>
-		</div>
-		<div className="bag-slot-grid">
+			<div className="bag-slot-grid">
 			{BAG_SLOT_ORDER.map((slot) => {
 				const selected = bagItem(slot, bag[slot]);
 				const defaultItem = BAG_ITEMS[slot][0];
@@ -543,8 +554,18 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 						) : (
 							<small>Rosie can leave without one</small>
 						)}
-						<button type="button" className="bag-change" onClick={() => cycleItem(slot)} disabled={changeBlocked}>
-							{changeBlocked ? "Needs Fiber" : selected ? "Change" : `Choose ${defaultItem.name}`}
+						<button
+							type="button"
+							className="bag-change"
+							onClick={() => cycleItem(slot)}
+							disabled={changeBlocked}
+							aria-label={changeBlocked
+								? `Need Willow Fiber to choose ${nextItem.name}`
+								: selected
+									? `Change ${BAG_SLOT_LABELS[slot]}`
+									: `Choose ${defaultItem.name} for ${BAG_SLOT_LABELS[slot]}`}
+						>
+							{changeBlocked ? "Needs Fiber" : selected ? "Change" : "Choose"}
 						</button>
 						<button
 							type="button"
@@ -1201,6 +1222,7 @@ function App() {
 				showHomePose={showingHomeMemory}
 				trigger={riveModel.trigger}
 				triggerNonce={riveModel.triggerNonce}
+				bagReceiveSlot={riveModel.bagReceive?.slot ?? null}
 			/>
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
@@ -1273,6 +1295,7 @@ function App() {
 			{choosingBag && <BagSelectionPanel
 				bag={state.bag}
 				farmStock={state.farmStock}
+				activeSelection={riveModel.bagReceive}
 				onSelect={selectBagItem}
 				onConfirm={() => act(visiblePresentation.action)}
 			/>}

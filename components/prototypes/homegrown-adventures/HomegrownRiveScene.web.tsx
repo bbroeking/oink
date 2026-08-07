@@ -137,6 +137,7 @@ export interface HomegrownRiveSceneProps {
 	showHomePose?: boolean;
 	trigger: HomegrownRiveMotionTrigger | null;
 	triggerNonce: string;
+	bagReceiveSlot?: "provision" | "tool" | "pack" | null;
 }
 
 /**
@@ -150,6 +151,7 @@ function HomegrownRiveSceneImpl({
 	showHomePose = false,
 	trigger,
 	triggerNonce,
+	bagReceiveSlot = null,
 }: HomegrownRiveSceneProps) {
 	const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 	const [motion, setMotion] = useState<RosieMotion>("loading");
@@ -781,6 +783,7 @@ function HomegrownRiveSceneImpl({
 			data-rive-status={status}
 			data-rive-motion={motion}
 			data-rive-last-performed-motion={lastPerformedMotion}
+			data-rive-bag-receive-slot={bagReceiveSlot ?? "none"}
 			data-rive-satchel-equipped={model.satchelEquipped}
 			data-rive-crop-motion={cropMotion}
 			data-rive-bed-one={model.bedOneState}

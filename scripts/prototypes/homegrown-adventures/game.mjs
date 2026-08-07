@@ -273,6 +273,7 @@ export function createInitialState({ now = Date.now(), reduceMotion = false } = 
 		farmStock: { ...STARTING_FARM_STOCK },
 		dayStartFarmStock: { ...STARTING_FARM_STOCK },
 		bag: { ...DEFAULT_BAG },
+		lastBagSelection: null,
 		packedProvisionSpent: null,
 		nearDiscoveryReason: null,
 		returnRewardAcknowledged: false,
@@ -818,7 +819,15 @@ export function homegrownReducer(state, action) {
 			}
 			return changed(
 				state,
-				{ bag: { ...state.bag, [action.slot]: nextItem } },
+				{
+					bag: { ...state.bag, [action.slot]: nextItem },
+					lastBagSelection: {
+						slot: action.slot,
+						item: nextItem,
+						previousItem: state.bag?.[action.slot] ?? null,
+						at: now,
+					},
+				},
 				"choose-bag-item",
 				`${action.slot}: ${bagItem(action.slot, nextItem)?.name ?? "empty"}`,
 				now,
