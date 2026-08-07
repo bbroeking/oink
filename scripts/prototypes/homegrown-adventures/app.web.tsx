@@ -232,7 +232,10 @@ function WorldAction({ presentation, onAction, waiting = false }) {
 			aria-describedby="current-objective"
 		>
 			<span className="world-action-pulse" aria-hidden="true" />
-			<span className="world-action-label">{presentation.label}</span>
+			<span className="world-action-label">
+				{presentation.label}
+				{presentation.detail && <small>{presentation.detail}</small>}
+			</span>
 		</button>
 	);
 }
@@ -993,7 +996,10 @@ function sceneImage() {
 	return "starting";
 }
 
-function sceneLabel(state) {
+function sceneLabel(state, { plantingGlowroot = false } = {}) {
+	if (plantingGlowroot) {
+		return "Glowroot Seed is ready to plant. Rosie waits beside the warm paper-craft Barn and the empty third Kitchen Patch bed.";
+	}
 	if (state.stage === STAGES.ADVENTURE) {
 		return `${stageCopy(state).title}. The warm paper-craft Barn and Kitchen Patch are quiet while Rosie explores beyond the hedge.`;
 	}
@@ -1060,6 +1066,11 @@ function App() {
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
 	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
 	const homeMemoryEarned = state.glowrootPlanted;
+	const showingGlowrootPlanting =
+		position === 11 &&
+		state.stage === STAGES.GLOWROOT_RETURNED &&
+		state.returnRewardAcknowledged &&
+		!state.glowrootPlanted;
 	const showingHomeMemory = position === 11 && homeMemoryEarned;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingReturnReward;
 	const waiting = departing || (autoPlay && (
@@ -1212,7 +1223,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
@@ -1221,7 +1232,7 @@ function App() {
 			data-return-tool={showingReturnReward ? state.bag?.tool ?? "none" : undefined}
 			data-return-pack={showingReturnReward ? state.bag?.pack ?? "none" : undefined}
 		>
-			<div className="scene-plate" role="img" aria-label={sceneLabel(state)} />
+			<div className="scene-plate" role="img" aria-label={sceneLabel(state, { plantingGlowroot: showingGlowrootPlanting })} />
 			<HomegrownRiveScene
 				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}
@@ -1250,7 +1261,7 @@ function App() {
 					<strong>{visiblePresentation.objective}</strong>
 				</div>
 			</div>
-			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingHomeMemory && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
+			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingGlowrootPlanting && !showingHomeMemory && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
 				className={`rosie-hit ${visiblePresentation.target === WORLD_TARGETS.ROSIE ? "is-guided" : ""}`}
 				type="button"
 				aria-label={visiblePresentation.target === WORLD_TARGETS.ROSIE ? visiblePresentation.label : "Tickle Rosie"}

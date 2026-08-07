@@ -50,7 +50,7 @@ export const PROTOTYPE_POSITIONS = Object.freeze([
 	{ id: 8, key: "departure", name: "Departure" },
 	{ id: 9, key: "adventure", name: "Adventure vignette" },
 	{ id: 10, key: "return", name: "Return + Discovery" },
-	{ id: 11, key: "changed-home", name: "Changed Home" },
+	{ id: 11, key: "changed-home", name: "Glowroot at Home" },
 ]);
 
 export const BAG_SLOT_ORDER = Object.freeze(["provision", "tool", "pack"]);
@@ -1012,7 +1012,11 @@ export function homegrownReducer(state, action) {
 			}
 			return changed(
 				state,
-				{ returnRewardAcknowledged: true, meaningfulChangePending: false },
+				{
+					prototypePosition: 11,
+					returnRewardAcknowledged: true,
+					meaningfulChangePending: false,
+				},
 				"acknowledge-return",
 				"Glowroot Seed, Compost, and Willow Fiber joined Farm stock",
 				now,
@@ -1330,6 +1334,7 @@ export function primaryAction(state) {
 export const WORLD_TARGETS = Object.freeze({
 	ROSIE: "rosie",
 	PATCH: "patch",
+	GLOWROOT_BED: "glowroot-bed",
 	BAG: "bag",
 	HEDGE: "hedge",
 });
@@ -1491,9 +1496,10 @@ export function playerPresentation(state) {
 			};
 		}
 		return {
-			target: WORLD_TARGETS.PATCH,
-			objective: "Rosie found a Glowroot Seed",
+			target: WORLD_TARGETS.GLOWROOT_BED,
+			objective: "Bed 3 is ready for Glowroot",
 			label: "Plant Glowroot",
+			detail: `Glowroot Seed ${state.farmStock?.["glowroot-seed"] ?? 0} → ${Math.max(0, (state.farmStock?.["glowroot-seed"] ?? 0) - 1)}`,
 			action,
 		};
 	}

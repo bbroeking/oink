@@ -330,7 +330,11 @@ function HomegrownRiveSceneImpl({
 		// Departure is a named one-shot authored directly on the existing Rosie
 		// rig. It intentionally has no Data Binding trigger because React owns
 		// the one-second presentation boundary and all progression state.
-		if (trigger !== "departure" && trigger !== "bag-receive") {
+		if (
+			trigger !== "departure" &&
+			trigger !== "bag-receive" &&
+			trigger !== "plant-glowroot"
+		) {
 			const property = rive.viewModelInstance?.trigger(trigger as HomegrownRiveTrigger);
 			if (!property) setStatus("error");
 			else property.trigger();
@@ -482,7 +486,9 @@ function HomegrownRiveSceneImpl({
 			return clearTimers;
 		}
 
-		if (isNewTrigger && trigger === "plant") {
+		if (isNewTrigger && trigger === "plant-glowroot") {
+			settleCropState();
+		} else if (isNewTrigger && trigger === "plant") {
 			rive.play(CROP_ACTION_ANIMATIONS.plant);
 			setCropMotion("plant");
 			schedule(settleCropState, 560);

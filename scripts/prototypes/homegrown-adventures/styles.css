@@ -1082,6 +1082,15 @@ html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 	line-height: 1.05;
 	white-space: nowrap;
 }
+.world-action-label small {
+	display: block;
+	margin-top: 4px;
+	color: var(--ink-soft);
+	font-family: Inter, ui-rounded, system-ui, sans-serif;
+	font-size: 9px;
+	font-weight: 900;
+	line-height: 1;
+}
 .world-action:hover .world-action-label { background: #fff1c5; transform: translateX(-50%) translateY(-2px) rotate(.7deg); }
 .world-action:active .world-action-label { transform: translateX(-50%) translateY(2px) rotate(.7deg); box-shadow: 1px 1px 0 var(--wood); }
 .world-action.is-waiting { cursor: progress; }
@@ -1090,6 +1099,12 @@ html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 .world-action:disabled:hover .world-action-label { transform: translateX(-50%) rotate(.7deg); }
 .world-action-patch { left: 20px; top: 490px; height: 126px; }
 .world-action-patch .world-action-pulse { top: 1px; }
+.world-action-glowroot-bed { right: 0; top: 480px; width: 205px; height: 145px; }
+.world-action-glowroot-bed .world-action-pulse {
+	top: 10px;
+	background: rgba(241,189,79,.3);
+	box-shadow: 0 0 0 2px rgba(48,33,22,.54), 0 0 18px rgba(255,216,107,.72);
+}
 .world-action-bag { left: 132px; top: 470px; }
 .world-action-bag .world-action-pulse { left: 28%; }
 .world-action-hedge { right: 28px; top: 218px; width: 230px; }

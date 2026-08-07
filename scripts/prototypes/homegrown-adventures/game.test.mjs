@@ -1052,6 +1052,7 @@ test("a successful return adds one named Discovery and practical Farm supplies",
 
 	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
 	assert.equal(state.returnRewardAcknowledged, true);
+	assert.equal(state.prototypePosition, 11);
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.PLANT_GLOWROOT,
 		label: "Plant Glowroot",
@@ -1063,6 +1064,7 @@ test("a successful return adds one named Discovery and practical Farm supplies",
 	assert.equal(state.stage, STAGES.DEVELOPED);
 	assert.equal(state.prototypePosition, 11);
 	assert.equal(state.glowrootPlanted, true);
+	assert.equal(homegrownRiveModel(state).trigger, "plant-glowroot");
 	assert.equal(state.farmStock["glowroot-seed"], 1);
 	assert.match(state.trace.at(-1).detail, /2 → 1/);
 	assert.equal(reduce(state, { type: ACTIONS.PLANT_GLOWROOT }), state);
