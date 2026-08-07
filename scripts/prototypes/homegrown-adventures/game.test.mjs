@@ -645,6 +645,10 @@ test("fast-forward applies the exact return delta and triggers one Rive homecomi
 
 test("Bag slots accept owned choices, alternatives, and empty values", () => {
 	let state = createPrototypeState(7, { now: at });
+	state = {
+		...state,
+		farmStock: { ...state.farmStock, "willow-fiber": 1 },
+	};
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: null });
@@ -666,6 +670,39 @@ test("Bag slots accept owned choices, alternatives, and empty values", () => {
 		item: "golden-sword",
 	});
 	assert.equal(invalid, state);
+});
+
+test("Cloth Wrap requires and consumes one Willow Fiber as reusable packing material", () => {
+	let state = createPrototypeState(7, { now: at });
+	assert.equal(state.farmStock["willow-fiber"], 0);
+	assert.equal(
+		reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" }),
+		state,
+	);
+	const staleSelection = {
+		...state,
+		bag: { ...state.bag, pack: "cloth-wrap" },
+	};
+	assert.equal(reduce(staleSelection, { type: ACTIONS.PACK_ADVENTURE }), staleSelection);
+
+	state = {
+		...state,
+		farmStock: { ...state.farmStock, "willow-fiber": 2 },
+	};
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
+	assert.equal(state.bag.pack, "cloth-wrap");
+	assert.equal(state.farmStock["willow-fiber"], 2);
+
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	assert.equal(state.stage, STAGES.PACKED);
+	assert.equal(state.bag.pack, "cloth-wrap");
+	assert.equal(state.farmStock["willow-fiber"], 1);
+	assert.match(state.trace.at(-1).detail, /spent 1 Willow Fiber/);
+	assert.equal(reduce(state, { type: ACTIONS.PACK_ADVENTURE }), state);
+
+	const restored = deserializeState(serializeState(state), { now: at });
+	assert.equal(restored.bag.pack, "cloth-wrap");
+	assert.equal(restored.farmStock["willow-fiber"], 1);
 });
 
 test("packing consumes one Provision exactly once while Tool and Pack remain reusable", () => {
@@ -736,6 +773,10 @@ test("every empty Bag slot creates a specific deterministic Near-Discovery", () 
 
 test("a complete alternative loadout remains successful and visible at departure", () => {
 	let state = createPrototypeState(7, { now: at });
+	state = {
+		...state,
+		farmStock: { ...state.farmStock, "willow-fiber": 1 },
+	};
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
 	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
@@ -747,10 +788,15 @@ test("a complete alternative loadout remains successful and visible at departure
 		tool: "lantern",
 		pack: "cloth-wrap",
 	});
+	assert.equal(state.farmStock["willow-fiber"], 0);
 });
 
 test("the Adventure vignette explains every selected item before idle waiting", () => {
 	let state = createPrototypeState(7, { now: at });
+	state = {
+		...state,
+		farmStock: { ...state.farmStock, "willow-fiber": 1 },
+	};
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
 	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
@@ -850,6 +896,10 @@ test("Near-Discovery causes never claim that an unearned Seed came Home", () => 
 
 test("prototype navigation carries the selected loadout into the vignette", () => {
 	let state = createPrototypeState(7, { now: at });
+	state = {
+		...state,
+		farmStock: { ...state.farmStock, "willow-fiber": 1 },
+	};
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
 	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 8 });

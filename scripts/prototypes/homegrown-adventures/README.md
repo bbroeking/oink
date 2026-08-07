@@ -69,6 +69,16 @@ stock reads **1 Seed stored** or its plural equivalent beside **Bed 3 planted**.
 Clover remains the only next planting action, so the count strengthens visible
 continuity without becoming another crop selector or inventory surface.
 
+Willow Fiber now has one recurring use inside that same loop. Cloth Wrap still
+comes Home as reusable Pack equipment, but each departure with it spends one
+Fiber as fresh protective lining. Position 7 names the stock, previews the exact
+before-and-after cost, and refuses an unavailable Wrap without blocking the
+free Wicker Basket or empty-Pack routes. Position 8 keeps the remaining Fiber
+visible in the existing loadout ribbon; the deterministic vignette then explains
+that the Wrap protected the delicate Find. React owns selection, stock,
+consumption, persistence, and refusal. No crafting state, currency, inventory
+screen, or Rive progression input was added.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

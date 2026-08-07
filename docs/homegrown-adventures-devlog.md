@@ -149,11 +149,71 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 46. **v0.45 — The Stored Seed Stays Visible (shipped):** carry the
     repeated Glowroot reward into the next morning by showing its retained Seed
     count inside the existing planted-Glowroot tile.
+47. **v0.46 — Willow Fiber Lines the Pack (locally verified):** make
+    Cloth Wrap spend one Willow Fiber as fresh packing material, preview the
+    exact cost, preserve free alternatives, and keep the remaining stock visible
+    through departure and Homecoming.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.46 — Willow Fiber Lines the Pack — 2026-08-07
+
+- Followed the named Willow Fiber reward from the return worktable into the next
+  Bag cycle. The stock persisted and accumulated, but Position 7 exposed no use
+  for it; Cloth Wrap was a free alternative whose protection copy had no Farm
+  cost or preparation consequence.
+- Kept Cloth Wrap reusable while making each departure spend one Fiber as fresh
+  protective lining. Selection requires available Fiber but consumes nothing;
+  **Pack these** spends exactly one Fiber once. A stale unavailable selection is
+  refused by the reducer rather than silently creating negative stock.
+- Named Willow Fiber in the existing Farm shelf and Home memory, previewed its
+  exact before-and-after quantity on Cloth Wrap, and carried the remaining count
+  into the existing departure ribbon. Wicker Basket stays free, leaving Pack
+  empty stays valid, and no crafting screen, currency, recipe, or new state
+  field was added.
+
+### Observable acceptance criteria
+
+- With zero Willow Fiber, Wicker Basket remains selected, **Needs Fiber** is
+  disabled, and the player may still pack Wicker Basket or leave Pack empty.
+- With two Fiber, selecting Cloth Wrap shows **Willow Fiber 2 → 1**, packing
+  advances to Departure with **Pack · Fiber 1**, and reload does not spend it a
+  second time.
+- The Adventure says Cloth Wrap **protected its delicate glow**; the return adds
+  two Fiber, and Changed Home shows three after the one spent before departure.
+- Touch and short-desktop layouts remain readable; reduced motion, fast-forward,
+  reload, and simultaneous input preserve one deterministic stock change.
+
+### Local validation evidence
+
+- Replayed the first Bag at 390x844 and confirmed the zero-Fiber lock left
+  **Pack these** available with Wicker Basket. Continued through Changed Home,
+  began another day, selected Cloth Wrap at two Fiber, and observed the exact
+  `2 → 1 → +2 → 3` stock thread across Bag, Departure, Adventure, Return, and
+  Home memory.
+- Reload at Departure retained **Pack · Fiber 1**. At 1280x720 the fixed game
+  frame measured 328x709 at x=476/y=0 and kept the complete action and rail in
+  the first viewport. Reduced motion remained active through fast-forward, and
+  two simultaneous Pack clicks both resolved while the rendered trace recorded
+  one Pack action.
+- `npm run prototype:homegrown:test` — 43/43 gameplay and persistence tests.
+- `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- An isolated tree reconstructed from `HEAD` plus the staged diff installed all
+  1,304 packages offline, reproduced the checked-in player and animation-lab
+  artifacts exactly, and passed `npm run verify:rive-web`.
+
+### Public deployment evidence
+
+- Pending checkpoint deployment and public replay.
+
+### Next highest-leverage weakness
+
+- Pending the public replay of the complete Fiber-backed loop.
 
 ### v0.45 — The Stored Seed Stays Visible — 2026-08-07
 

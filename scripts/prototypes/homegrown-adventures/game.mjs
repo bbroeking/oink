@@ -89,9 +89,17 @@ export const BAG_ITEMS = Object.freeze({
 			id: "cloth-wrap",
 			name: "Cloth Wrap",
 			icon: "◇",
-			effect: "Protect delicate Materials",
+			effect: "Protect delicate Finds",
 		}),
 	]),
+});
+
+const PACKING_MATERIAL_COSTS = Object.freeze({
+	"cloth-wrap": Object.freeze({
+		itemId: "willow-fiber",
+		name: "Willow Fiber",
+		amount: 1,
+	}),
 });
 
 export const DEFAULT_BAG = Object.freeze({
@@ -129,6 +137,10 @@ export const HARVEST_BEAT_MS = 900;
 
 export function bagItem(slot, itemId) {
 	return BAG_ITEMS[slot]?.find((item) => item.id === itemId) ?? null;
+}
+
+export function bagPackingCost(itemId) {
+	return PACKING_MATERIAL_COSTS[itemId] ?? null;
 }
 
 export function adventureStory(state) {
@@ -716,6 +728,13 @@ export function homegrownReducer(state, action) {
 			}
 			const nextItem = action.item ?? null;
 			if (nextItem !== null && !bagItem(action.slot, nextItem)) return state;
+			const packingCost = action.slot === "pack" ? bagPackingCost(nextItem) : null;
+			if (
+				packingCost !== null &&
+				(state.farmStock?.[packingCost.itemId] ?? 0) < packingCost.amount
+			) {
+				return state;
+			}
 			return changed(
 				state,
 				{ bag: { ...state.bag, [action.slot]: nextItem } },
@@ -732,26 +751,35 @@ export function homegrownReducer(state, action) {
 			{
 				const emptySlot = BAG_SLOT_ORDER.find((slot) => state.bag?.[slot] == null) ?? null;
 				const provisionId = state.bag?.provision ?? null;
+				const packingCost = bagPackingCost(state.bag?.pack ?? null);
 				if (provisionId !== null && (state.farmStock?.[provisionId] ?? 0) < 1) {
 					return state;
+				}
+				if (
+					packingCost !== null &&
+					(state.farmStock?.[packingCost.itemId] ?? 0) < packingCost.amount
+				) {
+					return state;
+				}
+				const farmStock = { ...state.farmStock };
+				if (provisionId !== null) {
+					farmStock[provisionId] -= 1;
+				}
+				if (packingCost !== null) {
+					farmStock[packingCost.itemId] -= packingCost.amount;
 				}
 			return changed(
 				state,
 				{
 					stage: STAGES.PACKED,
-					farmStock: provisionId === null
-						? state.farmStock
-						: {
-							...state.farmStock,
-							[provisionId]: state.farmStock[provisionId] - 1,
-						},
+					farmStock: provisionId === null && packingCost === null ? state.farmStock : farmStock,
 					packedProvisionSpent: provisionId,
 					underprepared: emptySlot !== null,
 					nearDiscoveryReason: emptySlot,
 					prototypePosition: 8,
 				},
 				"pack",
-				`${BAG_SLOT_ORDER.map((slot) => bagItem(slot, state.bag?.[slot])?.name ?? `Empty ${slot}`).join(" + ")}${provisionId ? " · spent 1 Provision" : ""}`,
+				`${BAG_SLOT_ORDER.map((slot) => bagItem(slot, state.bag?.[slot])?.name ?? `Empty ${slot}`).join(" + ")}${provisionId ? " · spent 1 Provision" : ""}${packingCost ? ` · spent ${packingCost.amount} ${packingCost.name}` : ""}`,
 				now,
 			);
 			}

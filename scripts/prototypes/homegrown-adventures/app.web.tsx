@@ -12,6 +12,7 @@ import {
 	BAG_ITEMS,
 	BAG_SLOT_ORDER,
 	bagItem,
+	bagPackingCost,
 	CROP_RULES,
 	createInitialState,
 	createPrototypeState,
@@ -441,7 +442,7 @@ function HarvestResultPanel({ state, onContinue }) {
 		{ id: "clover", name: "Clover Lunch", value: state.farmStock?.["clover-lunch"] ?? 0, kind: "clover" },
 		{ id: "seed", name: "Clover Seed", value: state.farmStock?.[CROP_RULES.clover.seedId] ?? 0, kind: "seed" },
 		{ id: "compost", name: "Compost", value: state.farmStock?.compost ?? 0, kind: "compost" },
-		{ id: "materials", name: "Materials", value: state.farmStock?.["willow-fiber"] ?? 0, kind: "materials" },
+		{ id: "materials", name: "Willow Fiber", value: state.farmStock?.["willow-fiber"] ?? 0, kind: "materials" },
 	];
 	const stockGrid = <div className="farm-stock-grid">{stockItems.map((item) => (
 		<div className={`farm-stock-item stock-kind-${item.kind}`} key={item.id}>
@@ -471,7 +472,13 @@ function BagItemArt({ itemId }) {
 function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
-	const canPack = selectedProvisionId === null || selectedProvisionOwned > 0;
+	const selectedPackCost = bagPackingCost(bag.pack ?? null);
+	const selectedPackMaterialOwned = selectedPackCost === null
+		? 0
+		: farmStock?.[selectedPackCost.itemId] ?? 0;
+	const needsProvision = selectedProvisionId !== null && selectedProvisionOwned < 1;
+	const needsPackingMaterial = selectedPackCost !== null && selectedPackMaterialOwned < selectedPackCost.amount;
+	const canPack = !needsProvision && !needsPackingMaterial;
 	const cycleItem = (slot) => {
 		const choices = BAG_ITEMS[slot];
 		const current = choices.findIndex((item) => item.id === bag[slot]);
@@ -494,8 +501,19 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 			{BAG_SLOT_ORDER.map((slot) => {
 				const selected = bagItem(slot, bag[slot]);
 				const defaultItem = BAG_ITEMS[slot][0];
+				const choices = BAG_ITEMS[slot];
+				const currentIndex = choices.findIndex((item) => item.id === bag[slot]);
+				const nextItem = choices[(currentIndex + 1 + choices.length) % choices.length];
+				const nextPackingCost = slot === "pack" ? bagPackingCost(nextItem.id) : null;
+				const nextPackingMaterialOwned = nextPackingCost === null
+					? 0
+					: farmStock?.[nextPackingCost.itemId] ?? 0;
+				const changeBlocked = nextPackingCost !== null && nextPackingMaterialOwned < nextPackingCost.amount;
 				const owned = slot === "provision" ? farmStock?.[selected?.id ?? defaultItem.id] ?? 0 : null;
-				const unavailable = slot === "provision" && selected && owned < 1;
+				const packingCost = slot === "pack" ? bagPackingCost(selected?.id ?? null) : null;
+				const packingMaterialOwned = packingCost === null ? 0 : farmStock?.[packingCost.itemId] ?? 0;
+				const unavailable = (slot === "provision" && selected && owned < 1) ||
+					(packingCost !== null && packingMaterialOwned < packingCost.amount);
 				return (
 					<div className={`bag-slot-card ${selected ? "is-filled" : "is-empty"} ${unavailable ? "is-unavailable" : ""}`} key={slot}>
 						<span className="bag-slot-kind">{BAG_SLOT_LABELS[slot]}</span>
@@ -506,12 +524,16 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 								? owned > 0
 									? `${owned} → ${owned - 1} · ${selected.effect}`
 									: `0 owned · Grow more or leave empty`
-								: `Reusable · ${selected.effect}`}</small>
+								: packingCost !== null
+									? packingMaterialOwned >= packingCost.amount
+										? `${packingCost.name} ${packingMaterialOwned} → ${packingMaterialOwned - packingCost.amount} · ${selected.effect}`
+										: `0 ${packingCost.name} · Choose another Pack`
+									: `Reusable · ${selected.effect}`}</small>
 						) : (
 							<small>Rosie can leave without one</small>
 						)}
-						<button type="button" className="bag-change" onClick={() => cycleItem(slot)}>
-							{selected ? "Change" : `Choose ${defaultItem.name}`}
+						<button type="button" className="bag-change" onClick={() => cycleItem(slot)} disabled={changeBlocked}>
+							{changeBlocked ? "Needs Fiber" : selected ? "Change" : `Choose ${defaultItem.name}`}
 						</button>
 						<button
 							type="button"
@@ -526,22 +548,33 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 			})}
 		</div>
 		<button type="button" className="bag-confirm" onClick={onConfirm} disabled={!canPack}>
-			{canPack ? "Pack these" : "Need Clover Lunch"}
+			{canPack ? "Pack these" : needsProvision ? "Need Clover Lunch" : "Need Willow Fiber"}
 		</button>
-		<p>{canPack ? "Provisions are used once. Tools and Packs come Home." : "Leave Provision empty to explore with a useful clue."}</p>
+		<p>{canPack
+			? "Provisions and fresh packing material are used once. Tools and Packs come Home."
+			: needsProvision
+				? "Leave Provision empty to explore with a useful clue."
+				: "Choose Wicker Basket, leave Pack empty, or bring back Willow Fiber."}</p>
 		</section>
 	);
 }
 
-function PackedLoadoutRibbon({ bag }) {
+function PackedLoadoutRibbon({ bag, farmStock }) {
 	return (
 		<div className="packed-loadout" aria-label="Rosie's packed items">
 		{BAG_SLOT_ORDER.map((slot) => {
 			const selected = bagItem(slot, bag[slot]);
+			const packingCost = slot === "pack" ? bagPackingCost(selected?.id ?? null) : null;
+			const remainingPackingMaterial = packingCost === null
+				? null
+				: farmStock?.[packingCost.itemId] ?? 0;
+			const slotLabel = packingCost === null
+				? BAG_SLOT_LABELS[slot]
+				: `${BAG_SLOT_LABELS[slot]} · Fiber ${remainingPackingMaterial}`;
 			return (
 				<span key={slot} className={selected ? "" : "is-empty"}>
 					<i aria-hidden="true">{selected?.icon ?? "·"}</i>
-					<small>{BAG_SLOT_LABELS[slot]}</small>
+					<small>{slotLabel}</small>
 					<strong>{selected?.name ?? "Empty"}</strong>
 				</span>
 			);
@@ -615,7 +648,7 @@ function HomeMemoryPanel({ state, actionLabel, onAction }) {
 					<span><i aria-hidden="true">☘</i><small>Clover Lunch</small><b>{stock["clover-lunch"] ?? 0}</b></span>
 					<span><i aria-hidden="true">✦</i><small>Glowroot Seed</small><b>{stock["glowroot-seed"] ?? 0}</b></span>
 					<span><i aria-hidden="true">♣</i><small>Compost</small><b>{stock.compost ?? 0}</b></span>
-					<span><i aria-hidden="true">≋</i><small>Materials</small><b>{stock["willow-fiber"] ?? 0}</b></span>
+					<span><i aria-hidden="true">≋</i><small>Willow Fiber</small><b>{stock["willow-fiber"] ?? 0}</b></span>
 				</div>
 			</div>
 			<button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>
@@ -1151,7 +1184,7 @@ function App() {
 			>
 				{visiblePresentation.target === WORLD_TARGETS.ROSIE && <span>{visiblePresentation.label}</span>}
 			</button>}
-			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} />}
+			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
 			{choosingSeed && <SeedChoicePanel
 				state={state}
 				onChoose={() => act(visiblePresentation.action)}

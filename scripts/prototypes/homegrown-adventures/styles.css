@@ -1428,6 +1428,7 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	line-height: 1;
 }
 .bag-change { grid-column: 2; grid-row: 4; background: #f3dfaf; box-shadow: 1px 1px 0 var(--ink); }
+.bag-change:disabled { cursor: not-allowed; opacity: .56; box-shadow: none; }
 .bag-empty { grid-column: 3; grid-row: 4; border-color: transparent !important; background: transparent; text-decoration: underline; text-underline-offset: 2px; }
 .bag-empty:disabled { cursor: default; opacity: .32; }
 .bag-confirm {
