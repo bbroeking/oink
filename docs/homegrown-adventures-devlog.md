@@ -243,6 +243,11 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   dusk; full motion reported `departure`, made the late leaf response visible,
   and reached one Position 9 vignette; rapid double input stayed idempotent;
   reduced motion reported no performed departure and used the direct handoff.
+- GitHub Pages run `31205335697` deployed checkpoint `63164b3`. A fresh public
+  replay loaded the authored Rive scene `ready`, held Position 8 with no dusk,
+  reported `departure` and a late dusk opacity during the crossing, then
+  settled to one Position 9 vignette with no horizontal overflow. The companion
+  site exposes **Watch the hedge receive Rosie**.
 - Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
   manual gates; this browser checkpoint does not claim those device checks.
 
