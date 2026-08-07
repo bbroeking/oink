@@ -204,15 +204,78 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     repeated preparation recap from Position 10 so the exact returned stock,
     Rosie, and the one welcome-Home action can breathe after Position 9 has
     already explained causality.
-63. **v0.62 — The Seed Finds Its Bed (in progress):** move the existing Plant
+63. **v0.62 — The Seed Finds Its Bed (shipped):** move the existing Plant
     Glowroot moment out of the Barn worktable and into the changed Farm where
     the player can see the Seed enter its lasting bed, without auto-spending it
     or adding another planting system.
+64. **v0.63 — Moonberries Find Their Bed (in progress):** give the existing
+    Grow Moonberries choice the same spatial clarity by relating it directly to
+    the empty middle bed, while preserving the established moth payoff and
+    single-action Home sequence.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.62 — The Seed Finds Its Bed — 2026-08-07
+
+- Replayed the complete Position 10 Welcome → Plant boundary against
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/10-return-discovery.png`
+  and `11-changed-barn-next-day.png`. The reward was clear, but acknowledging
+  Rosie left **Plant Glowroot** floating over the indoor return worktable even
+  though the Seed's lasting consequence belongs to the outdoor third bed.
+- Kept Welcome as an acknowledgement only, then moved the existing explicit
+  Plant decision to Position 11. The Farm now names **Bed 3 is ready for
+  Glowroot**, anchors one warm action pulse to that empty bed, and previews the
+  exact `Glowroot Seed 2 → 1` cost before the player commits.
+- Reused the existing authored Rive Home flourish for the planting payoff and
+  introduced only a presentation trigger, `plant-glowroot`, so that the
+  Glowroot motion cannot accidentally replay Clover's ready flourish. React
+  remains authoritative for Seed spending, the planted fact, persistence,
+  progression, and the next action.
+- Framed three Prototype options: auto-plant on Welcome, keep planting indoors,
+  or carry the same explicit choice outdoors. The third passed the installed
+  Impeccable product-design review as the available Claude-Design substitute:
+  one bed-aligned target, one cost preview, canonical Rosie unobstructed, and
+  no added inventory or planting system.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass, including first and repeat
+  returns, exact stock deltas, fast-forward, reload, and invalid/rapid input.
+- `npm run verify:rive-homegrown` — pass; the checked-in 390×844 scene and 60
+  authored names remain valid. `npm run prototype:homegrown:build`,
+  `npm run quality:loop`, and `npm run quality:check` also pass, including
+  TypeScript, 78 layout tests, 202 security tests, 324 sprite checks, and the
+  locked quality contracts.
+- Exact 360×780 touch rendering measures a 360×780 document with no overflow.
+  The bed action occupies 155–360px by 480–625px, its visible label ends at
+  626px, and the progression rail begins at 722px. The pulse sits over Bed 3;
+  Rosie, the Farm, cost, action, and rail remain simultaneously readable.
+- Welcome reloads into the unspent outdoor decision. Two immediate Plant taps
+  spend exactly one Seed, reveal Bed 3's sprout, and expose the unchanged next
+  action. Reload preserves the planted Home and exact `2 / 1 / 2 / 2` Farm
+  stock. Reduced motion reports `true`, keeps Rive `ready`, and settles directly
+  to the same sprout without a one-shot. The rendered run reports no console
+  errors.
+- Centered desktop and 390×844 reviews preserve the same hierarchy and Farm
+  composition. Mobile Safari/device sharpness, haptic feel, and audible
+  acceptance remain manual gates; this browser checkpoint does not claim them.
+
+### Observable acceptance criteria
+
+- Welcoming Rosie does not spend Glowroot Seed; it reveals one outdoor Plant
+  decision associated with the visibly empty third bed.
+- Planting spends one Seed exactly once, reveals the lasting Glowroot Home
+  consequence, and survives reload, reduced motion, fast-forward, and rapid
+  input.
+- The Glowroot planting performance does not fire Clover's plant/ready
+  flourish or give Rive ownership of inventory or progression.
+- At touch and desktop sizes there is one primary action, no overlapping hit
+  targets, and enough open Farm space for Rosie and the planting payoff.
+- The next rendered weakness is the existing full-width **Grow Moonberries**
+  action: unlike Glowroot, it does not yet point to the empty bed it will fill.
 
 ### v0.61 — The Homecoming Keeps Focus — 2026-08-07
 

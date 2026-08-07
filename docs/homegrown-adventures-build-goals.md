@@ -183,6 +183,18 @@ single-ledger option over retaining or merging duplicate cause copy. The next
 visible weakness is the indoor Plant Glowroot action: the player cannot yet see
 the Seed enter the outdoor bed that will remember it.
 
+**Outdoor-planting checkpoint (August 7, 2026):** acknowledging the first
+Discovery now carries the same explicit Plant decision from Position 10 into
+the outdoor Farm at Position 11. One warm target sits on the empty third bed,
+names **Plant Glowroot**, and previews the exact Seed cost before React spends
+it. The existing Rive Home flourish reveals the lasting sprout; a dedicated
+presentation-only `plant-glowroot` trigger prevents that action from replaying
+the unrelated Clover-ready flourish. Reload, reduced motion, rapid input, and
+fast-forward remain reducer-owned. Exact 360×780, 390×844, and centered desktop
+renders passed the installed Impeccable review as the available Claude-Design
+substitute. The next visible weakness is the existing **Grow Moonberries**
+action, which still sits apart from the empty middle bed it will fill.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

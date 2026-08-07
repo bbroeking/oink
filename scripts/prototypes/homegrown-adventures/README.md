@@ -71,6 +71,15 @@ compact-height treatment keeps that ledger, the current action, and the rail
 separate at 360×780. No reward, branch, persistence, Rive, or reducer contract
 changed.
 
+The v0.62 interaction pass carries the first explicit **Plant Glowroot** choice
+out of the return worktable and into the outdoor Farm after Welcome. The action
+is registered to the empty third bed, previews the exact Seed spend, and then
+uses the existing authored Rive Home flourish to reveal the lasting sprout.
+`plant-glowroot` is a presentation-only trigger: it settles the unrelated
+Clover crop layer instead of replaying its ready flourish, while React remains
+authoritative for acknowledgement, stock, planting, persistence, and the next
+Moonberry action.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in
