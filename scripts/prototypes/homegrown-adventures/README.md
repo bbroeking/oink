@@ -117,6 +117,13 @@ preserves it, and another deliberate tap saves it again. React owns the resource
 commitment and exact outcome; the Rive crop receives only the resulting planted
 state.
 
+The v0.68 response pass lets that explicit boost touch the bed. Boosted planting
+composes the checked-in native **Clover Plant** and **Clover Growing Sway** Rive
+clips, while the already-cropped painterly bed gives one restrained lift and
+warmth response before settling. Normal planting is unchanged. React still owns
+Compost, duration, yield, persistence, and the resulting growing state; reload,
+fast-forward, and reduced motion never replay the one-shot.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

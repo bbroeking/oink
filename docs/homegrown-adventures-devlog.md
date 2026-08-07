@@ -225,7 +225,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 68. **v0.67 — Optional Means Chosen (shipped):** stop preselecting Compost
     when the player chooses a Seed, so saving or spending the predictable boost
     is an explicit planting decision rather than an inherited default.
-69. **v0.68 — The Boost Touches the Bed (in progress):** make chosen Compost
+69. **v0.68 — The Boost Touches the Bed (shipped):** make chosen Compost
     answer during the existing Rive planting performance with one restrained
     soil-level cue, without bringing back a persistent special-dirt overlay or
     giving Rive resource authority.
@@ -234,6 +234,58 @@ Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.68 — The Boost Touches the Bed — 2026-08-07
+
+- Replayed boosted and unboosted Position 3 → 4 at 390×844 and centered
+  desktop. The explicit Compost choice was clear, but both choices produced the
+  same planting performance before the duration card appeared.
+- Rejected reopening the old special-dirt treatment: it covered the approved
+  painterly crop bed and made the boost read as a foreign UI layer. Boosted
+  planting instead composes the current production Rive asset's native
+  **Clover Plant** and **Clover Growing Sway** clips. The already-cropped
+  painterly bed gives one bounded lift, saturation, and warmth response while
+  the native crop wakes, then returns to its established growing presentation.
+- Kept ordinary planting unchanged and added **Plant with Compost** to the
+  animation lab so the two responses can be compared directly. React remains
+  authoritative for whether Compost was chosen, stock, duration, yield,
+  persistence, and growth state; Rive receives only a presentation trigger.
+- Inspected the editable Rive workspace before changing it. Its latest visible
+  source ends at Timeline 23, while the checked-in production asset contains
+  later approved work through Timeline 28. Exporting the older editor file
+  would regress current Bag, resident, and Home motion, so this checkpoint
+  safely composes the current shipped asset and does not overwrite it.
+- The installed Impeccable motion/design review, used as the available
+  Claude-Design substitute, kept the response bed-local, brief, non-blocking,
+  and absent under reduced motion. It adds no card, currency, persistent
+  effect, animation-owned state, or repeated ambient flourish.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass, including distinct boosted
+  and normal Rive triggers, exact duration/yield, persistence, deterministic
+  positions, and the complete loop.
+- `npm run verify:rive-homegrown` — the 390×844 header and 60 authored names
+  pass against the checked-in production Rive asset.
+- `npm run quality:check` — quality contracts, 157-file layout scan, 324 sprite
+  integrity checks, security contracts, TypeScript, and 280 focused Jest tests
+  pass.
+- Real Chromium play at 390×844 shows `plant` followed by `compost-wake`, then
+  the stable `growing` state in Position 4 with **Composted · Ready in 2
+  hours**. Reload remains `growing` without replay or console errors. A
+  centered 1280×900 fast-forward render lands on the same stable card and bed.
+- Reduced motion reaches Position 4 with `data-rive-crop-motion="reduced"` and
+  no flourish. Immediate duplicate Plant input reaches Position 4 once.
+  Mobile Safari sharpness and feel remain the manual device gate.
+
+### Observable acceptance criteria
+
+- Choosing Compost produces one readable response in the bed during planting;
+  saving Compost preserves the established normal planting response.
+- The response never restores special dirt, obscures the crop art, creates a
+  second crop, or changes the guaranteed resource outcome.
+- Reload, reduced motion, rapid input, and fast-forward all settle from React's
+  reducer facts and never depend on animation completion.
 
 ### v0.67 — Optional Means Chosen — 2026-08-07
 

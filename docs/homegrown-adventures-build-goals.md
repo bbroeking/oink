@@ -25,7 +25,10 @@ earned Glowroot and gives it one restrained breathing glow, while the clue
 branch mounts no reward canvas; Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive
-fast-forward, reload, reduced motion, and rapid input.
+fast-forward, reload, reduced motion, and rapid input; explicitly boosted
+planting now composes the production Rive asset's native Plant and Growing Sway
+clips with one brief bed-level response, while normal planting and all
+React-owned resource rules remain unchanged.
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -258,6 +261,20 @@ motion is identical, and both normal and boosted planting remain reducer-owned.
 The next visible weakness is feedback: adding Compost changes the UI and later
 growth facts, but the plant performance has no restrained in-bed Compost cue.
 Any solution must avoid restoring the rejected persistent special-dirt layer.
+
+**Bed-response checkpoint (August 7, 2026):** an explicit boosted Plant now
+composes the checked-in production Rive asset's native **Clover Plant** and
+**Clover Growing Sway** clips. The existing precisely cropped painterly bed
+answers with one bounded lift and warm saturation response, then settles into
+the same reducer-derived growing presentation; the rejected persistent dirt
+overlay does not return. Ordinary planting keeps its original single clip.
+React remains authoritative for Compost selection and stock, two-hour versus
+four-hour duration, exact yield, persistence, and Position 4. Reload and
+fast-forward paint the settled crop without replay; reduced motion skips the
+response; rapid input produces one transition. The editable online Rive file
+was found to predate later approved production timelines, so it was not
+exported over the current asset. Exact 390×844 play, 1280×900 desktop,
+animation-lab comparison, and the installed Impeccable review passed locally.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
