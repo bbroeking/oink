@@ -169,15 +169,78 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     physical Provision in Position 9 agree with Rosie's selected loadout, so
     Clover Lunch and an empty Provision differ in the world as clearly as their
     cause cards do.
-53. **v0.52 — The Chosen Tool Comes Home (in progress):** keep Rosie's
+53. **v0.52 — The Chosen Tool Comes Home (shipped):** keep Rosie's
     reusable Hand Trowel, Lantern, or empty Tool physically truthful at the
     Position 10 worktable instead of letting the selected gear disappear into
     the preparation recap.
+54. **v0.53 — The Chosen Pack Comes Home (in progress):** keep Rosie's
+    reusable Wicker Basket, Cloth Wrap, or empty Pack physically truthful at
+    the Position 10 worktable instead of letting the selected carrier disappear
+    into the preparation recap.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.52 — The Chosen Tool Comes Home — 2026-08-07
+
+- Replayed the public return against `10-return-discovery.png` after completing
+  the physical preparation trio. Position 10 correctly calculated and named the
+  Trowel or Lantern bonus, but the chosen reusable Tool vanished when Rosie
+  reached the Barn and existed only in the compact recap.
+- Added one return-only Tool placement at the left worktable edge. Hand Trowel,
+  Lantern, and empty Tool now select independent presentation states while the
+  existing Compost, Glowroot Seed, Willow Fiber, reward ledger, recap, and one
+  Welcome action remain untouched.
+- Used the built-in ImageGen path twice with the approved Return concept as the
+  style reference, generating a compact trowel and travel lantern on flat
+  magenta keys. Both keys were removed locally; the final tightly cropped alpha
+  assets are copied byte-for-byte into the public build.
+- React exposes `data-return-tool` from the existing Bag. Rive still owns
+  Rosie's authored Return; the reducer still owns equipment choice, exact Tool
+  bonus, inventory, acknowledgement, persistence, and fast-forward.
+- The next public weakness is the other reusable slot: Wicker Basket or Cloth
+  Wrap changes the practical supply, but the selected Pack still disappears at
+  the worktable.
+
+### Observable acceptance criteria
+
+- Position 10 physically shows the Hand Trowel after a Trowel Adventure, the
+  compact Lantern after a Lantern Adventure, and no Tool prop after an empty
+  Tool Adventure.
+- Both complete Discovery and kind Near-Discovery returns remain truthful. The
+  physical Tool never changes the existing Glowroot Seed / Willow Fiber bonus.
+- Tool presentation survives reload and Previous / Next fast-forward. Reduced
+  motion paints the stable Tool without its settle animation.
+- The Tool remains subordinate to Rosie, the returned supplies, and the one
+  Welcome action at 390x844 touch and fitted 1280x720 desktop sizes.
+
+### Validation evidence
+
+- Rendered Hand Trowel, Lantern, and empty Tool returns locally. Hand Trowel
+  produced Glowroot Seed +2, Lantern produced Glowroot Seed +1 and Willow Fiber
+  +3, and empty Tool stayed on the Near-Discovery branch with no physical prop.
+- Reload retained Lantern and its exact background asset. Under reduced motion,
+  `data-reduce-motion` remained `true` and the return Tool animation computed to
+  `none`. Rapid double Welcome exposed one stable next action; rapid double
+  Plant advanced once to Position 11.
+- At 390x844 touch, the Tool, Rosie, all returned supplies, reward ledger,
+  preparation recap, action, and rail remained visible. At fitted 1280x720, the
+  phone ended at 709 px and the primary action at 629 px.
+- `npm run prototype:homegrown:test` — 47/47 gameplay, navigation, inventory,
+  reward, fast-forward, and persistence tests passed.
+- `npm run verify:rive-homegrown` — the 390x844 artboard and all 59 authored
+  names passed; the existing manual mobile-Safari gate remains unchanged.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- Public Pages run `31193752321` shipped feature commit `a939e09`. The deployed
+  Trowel matched SHA-256
+  `47fec2fd04c93652ab459602cee5274c11cf9e6966b6c47fc5eb458651f1f001`;
+  Lantern matched
+  `4dc75f68bbcc866c626c37ccccb8d9e040cc078bf5f05ddb8e89069a2773bdc3`.
+  Public Trowel, Lantern, and empty Tool replays selected the expected physical
+  state and produced no browser warnings or errors.
 
 ### v0.51 — The Chosen Provision Enters the Story — 2026-08-07
 
