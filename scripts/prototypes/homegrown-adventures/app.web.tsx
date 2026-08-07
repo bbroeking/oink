@@ -25,6 +25,7 @@ import {
 	PROTOTYPE_POSITIONS,
 	serializeState,
 	STAGES,
+	toolReturnBonus,
 	WORLD_TARGETS,
 } from "./game.mjs";
 import {
@@ -612,23 +613,36 @@ function ReturnRewardPanel({ state, actionLabel, onAction }) {
 	const repeatDiscovery = !nearDiscovery && state.glowrootPlanted;
 	const story = adventureStory(state);
 	const packReward = bagReturnReward(state.bag?.pack ?? null);
+	const toolBonus = nearDiscovery ? null : toolReturnBonus(state.bag?.tool ?? null);
+	const glowrootAmount = 1 + (toolBonus?.itemId === "glowroot-seed" ? toolBonus.amount : 0);
+	const willowFiberAmount = 2 + (toolBonus?.itemId === "willow-fiber" ? toolBonus.amount : 0);
 	const practicalReward = nearDiscovery
 		? { name: "Compost", amount: 1 }
 		: packReward ?? { name: "Pack supply", amount: 0 };
 	return (
-		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} aria-label="Rosie's return rewards">
+		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} data-tool-bonus={toolBonus?.itemId ?? "none"} aria-label="Rosie's return rewards">
 			{!nearDiscovery && packReward?.itemId === "clover-seed" && (
 				<span className="return-pack-supply return-pack-supply-seed" aria-hidden="true" />
 			)}
+			{toolBonus?.itemId === "glowroot-seed" && (
+				<span className="return-tool-bonus return-tool-bonus-seed" aria-hidden="true" />
+			)}
+			{toolBonus?.itemId === "willow-fiber" && (
+				<span className="return-tool-bonus return-tool-bonus-fiber" aria-hidden="true" />
+			)}
 			<div className="return-discovery-plaque">
 				<span className="return-card-eyebrow">{nearDiscovery ? "Useful clue" : repeatDiscovery ? "Discovery remembered" : "New Discovery"}</span>
-				<strong>{nearDiscovery ? "Glowroot Trail" : "Glowroot Seed  +1"}</strong>
-				<small>{nearDiscovery ? story.result : repeatDiscovery ? "Glowroot already grows at Home · this Seed stays in Farm stock" : "A slow Crop that glows after dusk"}</small>
+				<strong>{nearDiscovery ? "Glowroot Trail" : `Glowroot Seed  +${glowrootAmount}`}</strong>
+				<small>{nearDiscovery
+					? story.result
+					: repeatDiscovery
+						? `Glowroot already grows at Home · ${glowrootAmount === 1 ? "this Seed stays" : "both Seeds stay"} in Farm stock`
+						: "A slow Crop that glows after dusk"}</small>
 			</div>
 			<div className="return-stock-ledger" aria-label="Farm stock returned">
 				<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
-				<span><b>{nearDiscovery ? "Leaf-print clue" : "Glowroot Seed"}</b><strong>{nearDiscovery ? "Found" : "+1"}</strong></span>
-				<span><b>Willow Fiber</b><strong>+{nearDiscovery ? 1 : 2}</strong></span>
+				<span><b>{nearDiscovery ? "Leaf-print clue" : "Glowroot Seed"}</b><strong>{nearDiscovery ? "Found" : `+${glowrootAmount}`}</strong></span>
+				<span><b>Willow Fiber</b><strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong></span>
 			</div>
 			<div className="return-causal-thread" aria-label="How Rosie's preparation helped">
 				{story.tags.map((tag) => <span key={tag.slot}><i aria-hidden="true">{tag.icon}</i><b>{tag.detail}</b></span>)}

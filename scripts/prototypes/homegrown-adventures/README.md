@@ -89,6 +89,20 @@ table supply when Cloth is chosen; Position 11 and the next Seed choice then
 show the preserved Seed. React derives every quantity from the selected Pack;
 Rive receives no new progression fact.
 
+The v0.48 prototype question is whether the two reusable Tools can create a
+predictable stockpile tradeoff inside that same Glowroot Adventure. The
+validated answer changes one existing bonus quantity: Hand Trowel uncovers one
+extra Glowroot Seed, while Lantern follows the dusk trail to one extra Willow
+Fiber. The selected Pack still decides Compost or Clover Seed independently.
+Bag copy previews the exact bonus, the vignette explains it, Position 10 shows
+the dynamic quantities and one restrained physical bonus marker, and Changed
+Home retains the result. Prototype navigation now applies the chosen Tool,
+Pack reward, and Cloth lining cost both forward and backward instead of
+silently reverting to the default loadout. React owns every reward; Rive gains
+no progression input. The rendered pass also prevents the fitted desktop frame
+from focus-scrolling and explicitly resynchronizes Rive after a live viewport
+change.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

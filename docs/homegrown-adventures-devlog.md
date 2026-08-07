@@ -156,11 +156,85 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 48. **v0.47 — The Pack Changes the Return (shipped):** make
     Wicker Basket return Compost while Cloth Wrap preserves Clover Seed, keeping
     both existing Packs predictably useful across the next Farm cycle.
+49. **v0.48 — The Tool Changes the Bonus (locally verified):** make Hand
+    Trowel return one extra Glowroot Seed while Lantern returns one extra Willow
+    Fiber, preserving the same named Adventure and independent Pack choice.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.48 — The Tool Changes the Bonus — 2026-08-07
+
+- Replayed both Pack branches and found the next dominated choice at Position
+  7: Hand Trowel and Lantern changed the story tag but converged on the same
+  Glowroot Seed, Willow Fiber, and practical Pack supply.
+- Kept the single Glowroot Adventure and changed exactly one existing bonus.
+  Hand Trowel now uncovers a second Glowroot Seed; Lantern follows a trail to a
+  third Willow Fiber. Wicker or Cloth still decides the independent practical
+  supply. No item, crop, destination, currency, state field, or Rive progression
+  input was added.
+- Carried the Tool through the Bag effect, Adventure cause, return plaque,
+  three-column ledger, physical worktable marker, Changed Home stock, and the
+  next retained-Seed state. Prototype Previous/Next navigation now applies the
+  selected Tool, Pack reward, and Cloth lining cost exactly in both directions.
+- Rendered validation also exposed two presentation defects. Short-desktop
+  focus could programmatically scroll the transformed phone, so that container
+  now uses non-scrollable clipping. Rive now resynchronizes its drawing surface
+  on a live viewport change, preventing Rosie from retaining stale geometry
+  after desktop-to-touch resizing.
+
+### Observable acceptance criteria
+
+- Position 7 says **Uncover 1 extra Glowroot Seed** for Hand Trowel and **Follow
+  a trail to 1 extra Willow Fiber** for Lantern.
+- A complete Trowel return shows **Glowroot Seed +2** and **Willow Fiber +2**;
+  planting the first Glowroot leaves one Seed in Farm stock.
+- A complete Lantern return shows **Glowroot Seed +1** and **Willow Fiber +3**;
+  planting consumes that Seed while retaining the extra Fiber.
+- Pack effects remain independent, all quantities survive reload, and
+  fast-forwarding forward or backward preserves the selected loadout exactly.
+- Touch, fitted 1280x720 desktop, reduced motion, live resizing, and rapid
+  duplicate acknowledgement remain safe and visually complete.
+
+### Local validation evidence
+
+- At 390x844, played Trowel from Bag through the live Adventure and Homecoming.
+  The visible thread read **Uncover 1 extra Glowroot Seed → uncovered a second
+  glowing Seed → Glowroot Seed +2 → Glowroot Seed 1** after planting. Reload
+  retained the complete Changed Home stock and the browser log was empty.
+- Selected Lantern at Position 7 and used the prototype rail through Position
+  10. The return read **followed a trail to extra Willow Fiber**, **Glowroot Seed
+  +1**, and **Willow Fiber +3**; Position 11 retained Fiber 3 after planting.
+- At 1280x720, the 328x709 phone and complete prototype rail remained inside the
+  first viewport after Previous/Next focus. Resizing that live scene to 390x844
+  kept canonical Rive Rosie registered without reload.
+- Two simultaneous **Welcome Rosie Home** clicks both fulfilled but advanced to
+  one acknowledged reward and one Plant action. Reduced motion reported the
+  Rosie, Crop, and Home Rive channels as `reduced`; all rendered browser logs
+  were empty.
+- `npm run prototype:homegrown:test` — 45/45 gameplay, navigation, and
+  persistence tests.
+- `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- An isolated tree reconstructed from `HEAD` plus the staged checkpoint
+  installed all 1,304 packages offline, passed 45/45 tests and
+  `npm run verify:rive-web`, and reproduced CSS
+  `a9119f6817f58d11e23dddf49a9eb33c98d77618e2d86af0b0d15a6014d2028e`,
+  player `100f44e4cc1aa16e75502bb98f77edb82ca238c03b81196966fac9248fff444d`,
+  and animation-lab
+  `dc7051a68c5bfb0c9abeec719b4180872b0d26ab6043479d931b43c8fc549a39`
+  exactly.
+
+### Public deployment evidence
+
+- Pending checkpoint deployment and public replay.
+
+### Next highest-leverage weakness
+
+- Pending the public replay of both Tool branches.
 
 ### v0.47 — The Pack Changes the Return — 2026-08-07
 

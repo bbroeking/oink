@@ -69,13 +69,13 @@ export const BAG_ITEMS = Object.freeze({
 			id: "hand-trowel",
 			name: "Hand Trowel",
 			icon: "♠",
-			effect: "Uncover buried Finds",
+			effect: "Uncover 1 extra Glowroot Seed",
 		}),
 		Object.freeze({
 			id: "lantern",
 			name: "Lantern",
 			icon: "✦",
-			effect: "Follow trails after dusk",
+			effect: "Follow a trail to 1 extra Willow Fiber",
 		}),
 	]),
 	pack: Object.freeze([
@@ -111,6 +111,19 @@ const PACK_RETURN_REWARDS = Object.freeze({
 	"cloth-wrap": Object.freeze({
 		itemId: "clover-seed",
 		name: "Clover Seed",
+		amount: 1,
+	}),
+});
+
+const TOOL_RETURN_BONUSES = Object.freeze({
+	"hand-trowel": Object.freeze({
+		itemId: "glowroot-seed",
+		name: "Glowroot Seed",
+		amount: 1,
+	}),
+	lantern: Object.freeze({
+		itemId: "willow-fiber",
+		name: "Willow Fiber",
 		amount: 1,
 	}),
 });
@@ -160,6 +173,10 @@ export function bagReturnReward(itemId) {
 	return PACK_RETURN_REWARDS[itemId] ?? null;
 }
 
+export function toolReturnBonus(itemId) {
+	return TOOL_RETURN_BONUSES[itemId] ?? null;
+}
+
 export function adventureStory(state) {
 	const bag = state.bag ?? DEFAULT_BAG;
 	const missingSlot = BAG_SLOT_ORDER.find((slot) => bag[slot] == null) ?? null;
@@ -169,8 +186,8 @@ export function adventureStory(state) {
 			empty: "came Home before the seed opened",
 		},
 		tool: {
-			"hand-trowel": "uncovered a warm root",
-			lantern: "followed a hidden gold trail",
+			"hand-trowel": "uncovered a second glowing Seed",
+			lantern: "followed a trail to extra Willow Fiber",
 			empty: "felt warmth beneath the soil",
 		},
 		pack: {
@@ -202,7 +219,7 @@ export function adventureStory(state) {
 		headline: missingSlot ? "Rosie found a promising clue" : "Rosie found a sleeping Glowroot",
 		result: missingSlot
 			? "The missing capability changes what Rosie can bring Home."
-			: "Together, the three choices turn the encounter into a Discovery.",
+			: "Her Tool changes the bonus; her Pack changes the practical supply.",
 		tags: BAG_SLOT_ORDER.map((slot) => {
 			const selected = bagItem(slot, bag[slot]);
 			return {
@@ -341,9 +358,17 @@ export function createPrototypeState(position, { now = Date.now(), reduceMotion 
 	const returnedStock = {
 		...packed.farmStock,
 		"glowroot-seed": 1,
-		compost: packed.farmStock.compost + 1,
 		"willow-fiber": 2,
 	};
+	for (const reward of [
+		bagReturnReward(packed.bag?.pack ?? null),
+		toolReturnBonus(packed.bag?.tool ?? null),
+	]) {
+		if (reward !== null) {
+			returnedStock[reward.itemId] =
+				(returnedStock[reward.itemId] ?? 0) + reward.amount;
+		}
+	}
 	const plantedGlowrootStock = {
 		...returnedStock,
 		"glowroot-seed": returnedStock["glowroot-seed"] - 1,
@@ -448,6 +473,27 @@ function completeCloverHarvest(state, { rhythmBonus = false } = {}, now) {
 		rhythmBonus ? `Clover Lunch +${yieldAmount} · rhythm +1` : `Clover Lunch +${yieldAmount}`,
 		now,
 	);
+}
+
+function prototypeBagStockAdjustment(position, bag = DEFAULT_BAG) {
+	const adjustment = { ...EMPTY_FARM_STOCK };
+	const add = (reward, direction = 1) => {
+		if (reward === null) return;
+		adjustment[reward.itemId] += reward.amount * direction;
+	};
+
+	if (position >= 8) {
+		add(bagPackingCost(DEFAULT_BAG.pack), 1);
+		add(bagPackingCost(bag.pack ?? null), -1);
+	}
+	if (position >= 10) {
+		add(bagReturnReward(DEFAULT_BAG.pack), -1);
+		add(bagReturnReward(bag.pack ?? null), 1);
+		add(toolReturnBonus(DEFAULT_BAG.tool), -1);
+		add(toolReturnBonus(bag.tool ?? null), 1);
+	}
+
+	return adjustment;
 }
 
 function jumpState(state, target, now) {
@@ -885,6 +931,7 @@ export function homegrownReducer(state, action) {
 				);
 			}
 			const returnReward = bagReturnReward(state.bag?.pack ?? null);
+			const toolBonus = toolReturnBonus(state.bag?.tool ?? null);
 			const farmStock = {
 				...state.farmStock,
 				"glowroot-seed": (state.farmStock?.["glowroot-seed"] ?? 0) + 1,
@@ -893,6 +940,10 @@ export function homegrownReducer(state, action) {
 			if (returnReward !== null) {
 				farmStock[returnReward.itemId] =
 					(state.farmStock?.[returnReward.itemId] ?? 0) + returnReward.amount;
+			}
+			if (toolBonus !== null) {
+				farmStock[toolBonus.itemId] =
+					(farmStock[toolBonus.itemId] ?? 0) + toolBonus.amount;
 			}
 			return changed(
 				state,
@@ -907,7 +958,7 @@ export function homegrownReducer(state, action) {
 					fieldGuide: [...new Set([...state.fieldGuide, "Dusk Picnic", "Glowroot Seed"])],
 				},
 				"return",
-				`Glowroot Seed — ${returnReward ? `${returnReward.name} +${returnReward.amount}` : "no Pack supply"}`,
+				`Glowroot Seed — ${returnReward ? `${returnReward.name} +${returnReward.amount}` : "no Pack supply"} — ${toolBonus ? `${toolBonus.name} +${toolBonus.amount} Tool bonus` : "no Tool bonus"}`,
 				now,
 			);
 
@@ -916,6 +967,8 @@ export function homegrownReducer(state, action) {
 				return state;
 			}
 			if (state.glowrootPlanted) {
+				const storedPackReward = bagReturnReward(state.bag?.pack ?? null);
+				const storedToolBonus = toolReturnBonus(state.bag?.tool ?? null);
 				return changed(
 					state,
 					{
@@ -926,7 +979,7 @@ export function homegrownReducer(state, action) {
 						cycleComplete: true,
 					},
 					"store-return",
-					"Known Glowroot Seed stays in Farm stock · Compost +1 · Willow Fiber +2",
+					`Known Glowroot Seeds stay in Farm stock · ${storedPackReward ? `${storedPackReward.name} +${storedPackReward.amount}` : "no Pack supply"} · ${storedToolBonus ? `${storedToolBonus.name} +${storedToolBonus.amount} Tool bonus` : "no Tool bonus"}`,
 					now,
 				);
 			}
@@ -960,7 +1013,7 @@ export function homegrownReducer(state, action) {
 					},
 				},
 				"plant",
-				"Glowroot Seed 1 → 0 · the Barn path remembers",
+				`Glowroot Seed ${state.farmStock["glowroot-seed"]} → ${state.farmStock["glowroot-seed"] - 1} · the Barn path remembers`,
 				now,
 			);
 
@@ -1028,6 +1081,8 @@ export function homegrownReducer(state, action) {
 				const next = createPrototypeState(action.position, { now, reduceMotion: state.reduceMotion });
 				const currentPosition = normalizePrototypePosition(state.prototypePosition ?? 1);
 				const currentPreset = createPrototypeState(currentPosition, { now, reduceMotion: state.reduceMotion });
+				const currentBagAdjustment = prototypeBagStockAdjustment(currentPosition, state.bag);
+				const nextBagAdjustment = prototypeBagStockAdjustment(action.position, state.bag);
 				const previewFarmStock = Object.fromEntries(
 					Object.keys(EMPTY_FARM_STOCK).map((itemId) => [
 						itemId,
@@ -1035,7 +1090,9 @@ export function homegrownReducer(state, action) {
 							0,
 							(state.farmStock?.[itemId] ?? 0) +
 								(next.farmStock?.[itemId] ?? 0) -
-								(currentPreset.farmStock?.[itemId] ?? 0),
+								(currentPreset.farmStock?.[itemId] ?? 0) +
+								(nextBagAdjustment[itemId] ?? 0) -
+								(currentBagAdjustment[itemId] ?? 0),
 						),
 					]),
 				);

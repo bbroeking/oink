@@ -55,7 +55,7 @@ test("the complete happy path reaches a developed Barn", () => {
 	assert.equal(state.prototypePosition, 11);
 	assert.equal(state.glowrootKnown, true);
 	assert.equal(state.glowrootPlanted, true);
-	assert.equal(state.farmStock["glowroot-seed"], 0);
+	assert.equal(state.farmStock["glowroot-seed"], 1);
 	assert.deepEqual(state.fieldGuide, ["Clover Lunch", "Dusk Picnic", "Glowroot Seed"]);
 	assert.equal(state.readyToTickle, 22);
 	assert.equal(state.ticklesEarned, 1121);
@@ -392,7 +392,7 @@ test("a known Glowroot return stays in Farm stock and completes the second day",
 
 	assert.equal(state.stage, STAGES.GLOWROOT_RETURNED);
 	assert.equal(state.glowrootPlanted, true);
-	assert.equal(state.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"] + 1);
+	assert.equal(state.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"] + 2);
 	assert.equal(state.farmStock.compost, stockBeforeReturn.compost + 1);
 	assert.equal(state.farmStock["willow-fiber"], stockBeforeReturn["willow-fiber"] + 2);
 	assert.deepEqual(primaryAction(state), {
@@ -411,7 +411,7 @@ test("a known Glowroot return stays in Farm stock and completes the second day",
 	assert.equal(state.prototypePosition, 11);
 	assert.equal(state.cycleComplete, true);
 	assert.equal(state.glowrootPlanted, true);
-	assert.equal(state.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"] + 1);
+	assert.equal(state.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"] + 2);
 	assert.equal(state.trace.at(-1).kind, "store-return");
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.START_NEW_DAY,
@@ -421,7 +421,7 @@ test("a known Glowroot return stays in Farm stock and completes the second day",
 	const restored = deserializeState(serializeState(state), { now: at });
 	assert.equal(restored.stage, STAGES.DEVELOPED);
 	assert.equal(restored.cycleComplete, true);
-	assert.equal(restored.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"] + 1);
+	assert.equal(restored.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"] + 2);
 });
 
 test("underpreparation returns a kind Near-Discovery and a useful retry clue", () => {
@@ -619,7 +619,7 @@ test("fast-forward applies the exact return delta and triggers one Rive homecomi
 		at + 1,
 	);
 
-	assert.equal(returned.farmStock["glowroot-seed"], before["glowroot-seed"] + 1);
+	assert.equal(returned.farmStock["glowroot-seed"], before["glowroot-seed"] + 2);
 	assert.equal(returned.farmStock.compost, before.compost + 1);
 	assert.equal(returned.farmStock["willow-fiber"], before["willow-fiber"] + 2);
 	assert.equal(homegrownRiveModel(returned).trigger, "return");
@@ -633,7 +633,7 @@ test("fast-forward applies the exact return delta and triggers one Rive homecomi
 		{ type: ACTIONS.JUMP_TO_POSITION, position: 11 },
 		at + 3,
 	);
-	assert.equal(changedHome.farmStock["glowroot-seed"], before["glowroot-seed"]);
+	assert.equal(changedHome.farmStock["glowroot-seed"], before["glowroot-seed"] + 1);
 
 	const rewound = reduce(
 		returned,
@@ -737,6 +737,29 @@ test("Wicker Basket returns Compost while Cloth Wrap preserves a Clover Seed", (
 	assert.match(adventureStory(clothReturn).tags[2].detail, /Clover Seed/);
 });
 
+test("Hand Trowel returns an extra Glowroot Seed while Lantern returns extra Willow Fiber", () => {
+	const completeAdventure = (tool) => {
+		let state = createPrototypeState(7, { now: at });
+		state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: tool });
+		const before = { ...state.farmStock };
+		state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+		state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+		state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+		state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+		return { before, returned: reduce(state, { type: ACTIONS.WELCOME_HOME }) };
+	};
+
+	const trowel = completeAdventure("hand-trowel");
+	assert.equal(trowel.returned.farmStock["glowroot-seed"], trowel.before["glowroot-seed"] + 2);
+	assert.equal(trowel.returned.farmStock["willow-fiber"], trowel.before["willow-fiber"] + 2);
+	assert.match(adventureStory(trowel.returned).tags[1].detail, /second glowing Seed/);
+
+	const lantern = completeAdventure("lantern");
+	assert.equal(lantern.returned.farmStock["glowroot-seed"], lantern.before["glowroot-seed"] + 1);
+	assert.equal(lantern.returned.farmStock["willow-fiber"], lantern.before["willow-fiber"] + 3);
+	assert.match(adventureStory(lantern.returned).tags[1].detail, /extra Willow Fiber/);
+});
+
 test("packing consumes one Provision exactly once while Tool and Pack remain reusable", () => {
 	let state = createPrototypeState(7, { now: at });
 	assert.equal(state.farmStock["clover-lunch"], 5);
@@ -776,8 +799,8 @@ test("an unowned Provision is refused but an empty Provision keeps the Adventure
 test("direct review states show Farm stock before and after packing", () => {
 	assert.equal(createPrototypeState(7, { now: at }).farmStock["clover-lunch"], 5);
 	assert.equal(createPrototypeState(8, { now: at }).farmStock["clover-lunch"], 4);
-	assert.equal(createPrototypeState(10, { now: at }).farmStock["glowroot-seed"], 1);
-	assert.equal(createPrototypeState(11, { now: at }).farmStock["glowroot-seed"], 0);
+	assert.equal(createPrototypeState(10, { now: at }).farmStock["glowroot-seed"], 2);
+	assert.equal(createPrototypeState(11, { now: at }).farmStock["glowroot-seed"], 1);
 	assert.equal(createPrototypeState(11, { now: at }).glowrootPlanted, true);
 });
 
@@ -926,15 +949,17 @@ test("Near-Discovery causes never claim that an unearned Seed came Home", () => 
 	assert.doesNotMatch(story.tags[2].detail, /seed Home/);
 });
 
-test("prototype navigation carries the selected loadout into the vignette", () => {
+test("prototype navigation carries the selected loadout and exact rewards forward and backward", () => {
 	let state = createPrototypeState(7, { now: at });
 	state = {
 		...state,
 		farmStock: { ...state.farmStock, "willow-fiber": 1 },
 	};
+	const before = { ...state.farmStock };
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
 	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 8 });
+	assert.equal(state.farmStock["willow-fiber"], before["willow-fiber"] - 1);
 	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 9 });
 
 	assert.equal(state.prototypePosition, 9);
@@ -944,6 +969,15 @@ test("prototype navigation carries the selected loadout into the vignette", () =
 		pack: "cloth-wrap",
 	});
 	assert.equal(adventureStory(state).tags[1].name, "Lantern");
+
+	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 10 });
+	assert.equal(state.farmStock["clover-seed"], before["clover-seed"] + 1);
+	assert.equal(state.farmStock["glowroot-seed"], before["glowroot-seed"] + 1);
+	assert.equal(state.farmStock.compost, before.compost);
+	assert.equal(state.farmStock["willow-fiber"], before["willow-fiber"] + 2);
+
+	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 7 });
+	assert.deepEqual(state.farmStock, before);
 });
 
 test("a successful return adds one named Discovery and practical Farm supplies", () => {
@@ -956,7 +990,7 @@ test("a successful return adds one named Discovery and practical Farm supplies",
 
 	assert.equal(state.stage, STAGES.GLOWROOT_RETURNED);
 	assert.equal(state.prototypePosition, 10);
-	assert.equal(state.farmStock["glowroot-seed"], 1);
+	assert.equal(state.farmStock["glowroot-seed"], 2);
 	assert.equal(state.farmStock.compost, 2);
 	assert.equal(state.farmStock["willow-fiber"], 2);
 	assert.deepEqual(primaryAction(state), {
@@ -977,13 +1011,13 @@ test("a successful return adds one named Discovery and practical Farm supplies",
 	assert.equal(state.stage, STAGES.DEVELOPED);
 	assert.equal(state.prototypePosition, 11);
 	assert.equal(state.glowrootPlanted, true);
-	assert.equal(state.farmStock["glowroot-seed"], 0);
-	assert.match(state.trace.at(-1).detail, /1 → 0/);
+	assert.equal(state.farmStock["glowroot-seed"], 1);
+	assert.match(state.trace.at(-1).detail, /2 → 1/);
 	assert.equal(reduce(state, { type: ACTIONS.PLANT_GLOWROOT }), state);
-	assert.equal(beforePlant.farmStock["glowroot-seed"], 1);
+	assert.equal(beforePlant.farmStock["glowroot-seed"], 2);
 	const restored = deserializeState(serializeState(state), { now: at });
 	assert.equal(restored.glowrootPlanted, true);
-	assert.equal(restored.farmStock["glowroot-seed"], 0);
+	assert.equal(restored.farmStock["glowroot-seed"], 1);
 });
 
 test("Glowroot cannot be planted before the return is acknowledged or without its Seed", () => {

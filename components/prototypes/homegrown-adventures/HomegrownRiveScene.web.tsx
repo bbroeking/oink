@@ -198,6 +198,20 @@ function HomegrownRiveSceneImpl({
 	});
 
 	useEffect(() => {
+		if (!rive) return;
+		let frame = 0;
+		const syncViewport = () => {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => rive.resizeToCanvas());
+		};
+		window.addEventListener("resize", syncViewport);
+		return () => {
+			window.removeEventListener("resize", syncViewport);
+			cancelAnimationFrame(frame);
+		};
+	}, [rive]);
+
+	useEffect(() => {
 		if (!rive || !HOMEGROWN_RIVE_ASSET_AUTHORED) return;
 		const instance = rive.viewModelInstance;
 		if (!instance) {
