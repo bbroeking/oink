@@ -113,10 +113,10 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 36. **v0.36.1 — The Pond Waits for Morning (locally verified):** make Hidden
     the resident group's authored base pose so unrelated crop and character
     input can never reset the pond into an earlier Farm position.
-37. **v0.37 — The Pond Belongs Here (locally verified):** paint the earned
+37. **v0.37 — The Pond Belongs Here (shipped):** paint the earned
     pond into the Farm itself, leave only its living frog in Rive, and preserve
     the complete remembered place after **Begin another day**.
-38. **v0.37.1 — One Shared Rive Stage (locally verified):** move the persistent
+38. **v0.37.1 — One Shared Rive Stage (shipped):** move the persistent
     Farm and temporary Glowroot view onto Rive's shared offscreen WebGL2
     renderer so their handoff cannot tear down a live graphics context.
 
@@ -136,6 +136,11 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   a separate WebGL2 context teardown for the temporary view.
 - The change affects rendering ownership only. The same checked-in `.riv`,
   reducer facts, visible poses, timings, controls, and persistence remain.
+- GitHub Pages deployment `31144629248` completed successfully from `9be68d9`.
+  A fresh public Position 8 → 11 replay kept the Farm Rive status ready, showed
+  the frog only at the earned Home, and produced zero browser errors. Reload
+  plus **Begin another day** preserved the pond and frog at Position 1 while
+  restoring the single **Tickle Rosie** action.
 
 ### Observable acceptance criteria
 
@@ -148,8 +153,12 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Next highest-leverage weakness
 
-Deploy this renderer hotfix and repeat the public Position 8 → 11 handoff plus
-the second-morning persistence check before selecting another polish target.
+The changed Farm now exposes the next visual mismatch: the middle Moonberry
+cluster and right Glowroot foliage still read as flat Rive stickers beside the
+integrated painterly pond. The next bounded checkpoint should compare those
+beds with the approved growth and changed-Home concepts, move their static crop
+mass into matched painterly bed art, and reserve Rive for living sway, growth,
+and glow. Do not add another crop or farming system.
 
 ### v0.37.0 — The Pond Belongs Here — 2026-08-06
 
