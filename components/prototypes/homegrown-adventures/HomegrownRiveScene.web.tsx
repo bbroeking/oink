@@ -15,6 +15,7 @@ export const HOMEGROWN_RIVE_ASSET_AUTHORED = __HOMEGROWN_RIVE_AUTHORED__;
 const AUTHORED_TRIGGER_ANIMATIONS: Partial<Record<HomegrownRiveMotionTrigger, string>> = {
 	tickle: "Rosie Tickle",
 	pack: "Rosie Pack",
+	"bag-receive": "Bag Receive",
 	departure: "Rosie Departure",
 	return: "Rosie Return",
 };
@@ -100,6 +101,7 @@ type RosieMotion =
 	| "tickle"
 	| "notice"
 	| "pack"
+	| "bag-receive"
 	| "departure"
 	| "return"
 	| "home"
@@ -302,7 +304,11 @@ function HomegrownRiveSceneImpl({
 
 		const isNewTrigger = lastTriggerNonce.current !== triggerNonce;
 		lastTriggerNonce.current = triggerNonce;
-		syncSatchelVisibility(!reduceMotion && isNewTrigger && trigger === "pack");
+		syncSatchelVisibility(
+			!reduceMotion &&
+				isNewTrigger &&
+				(trigger === "pack" || trigger === "bag-receive"),
+		);
 
 		if (reduceMotion) {
 			rive.pause(CHARACTER_ANIMATIONS);
@@ -322,7 +328,7 @@ function HomegrownRiveSceneImpl({
 		// Departure is a named one-shot authored directly on the existing Rosie
 		// rig. It intentionally has no Data Binding trigger because React owns
 		// the one-second presentation boundary and all progression state.
-		if (trigger !== "departure") {
+		if (trigger !== "departure" && trigger !== "bag-receive") {
 			const property = rive.viewModelInstance?.trigger(trigger as HomegrownRiveTrigger);
 			if (!property) setStatus("error");
 			else property.trigger();
@@ -353,6 +359,8 @@ function HomegrownRiveSceneImpl({
 				? "home"
 				: trigger === "pack"
 				? "pack"
+				: trigger === "bag-receive"
+					? "bag-receive"
 				: trigger === "departure"
 					? "departure"
 					: trigger === "return"
@@ -385,6 +393,8 @@ function HomegrownRiveSceneImpl({
 						? 900
 						: trigger === "pack"
 							? 600
+							: trigger === "bag-receive"
+								? 600
 							: 700;
 			schedule(() => {
 				rive.stop(animation);

@@ -471,6 +471,14 @@ function BagItemArt({ itemId }) {
 	return <span className={`bag-item-art bag-item-art-${itemId ?? "empty"}`} aria-hidden="true"><i /><i /><i /><i /></span>;
 }
 
+const BAG_ITEM_EFFECT_LABELS = Object.freeze({
+	"clover-lunch": "Explore until dusk",
+	"hand-trowel": "+1 Glowroot Seed",
+	lantern: "+1 Willow Fiber",
+	"wicker-basket": "+1 Compost",
+	"cloth-wrap": "+1 Clover Seed",
+});
+
 function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
@@ -516,6 +524,7 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 				const packingMaterialOwned = packingCost === null ? 0 : farmStock?.[packingCost.itemId] ?? 0;
 				const unavailable = (slot === "provision" && selected && owned < 1) ||
 					(packingCost !== null && packingMaterialOwned < packingCost.amount);
+				const effectLabel = selected ? BAG_ITEM_EFFECT_LABELS[selected.id] ?? selected.effect : null;
 				return (
 					<div className={`bag-slot-card ${selected ? "is-filled" : "is-empty"} ${unavailable ? "is-unavailable" : ""}`} key={slot}>
 						<span className="bag-slot-kind">{BAG_SLOT_LABELS[slot]}</span>
@@ -524,13 +533,13 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 						{selected ? (
 							<small>{slot === "provision"
 								? owned > 0
-									? `${owned} → ${owned - 1} · ${selected.effect}`
+									? `${owned} → ${owned - 1} · ${effectLabel}`
 									: `0 owned · Grow more or leave empty`
 								: packingCost !== null
 									? packingMaterialOwned >= packingCost.amount
-										? `${packingCost.name} ${packingMaterialOwned} → ${packingMaterialOwned - packingCost.amount} · ${selected.effect}`
-										: `0 ${packingCost.name} · Choose another Pack`
-									: `Reusable · ${selected.effect}`}</small>
+										? `${packingMaterialOwned} Fiber → ${packingMaterialOwned - packingCost.amount} · ${effectLabel}`
+										: `Needs ${packingCost.amount} ${packingCost.name}`
+									: effectLabel}</small>
 						) : (
 							<small>Rosie can leave without one</small>
 						)}
@@ -541,9 +550,10 @@ function BagSelectionPanel({ bag, farmStock, onSelect, onConfirm }) {
 							type="button"
 							className="bag-empty"
 							disabled={!selected}
+							aria-label={`Leave ${BAG_SLOT_LABELS[slot]} empty`}
 							onClick={() => onSelect(slot, null)}
 						>
-							Leave empty
+							Empty
 						</button>
 					</div>
 				);

@@ -650,6 +650,8 @@ test("Bag slots accept owned choices, alternatives, and empty values", () => {
 		farmStock: { ...state.farmStock, "willow-fiber": 1 },
 	};
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
+	assert.equal(homegrownRiveModel(state).viewModel.rosieAction, "pack");
+	assert.equal(homegrownRiveModel(state).trigger, "bag-receive");
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: null });
 

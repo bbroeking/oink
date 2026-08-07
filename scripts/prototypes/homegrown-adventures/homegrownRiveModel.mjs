@@ -48,7 +48,7 @@ function rosieAction(state) {
 		return latest?.detail === "Rosie noticed what changed" ? "notice" : "tickle";
 	}
 	if (state.lastAction === "harvest") return "harvest";
-	if (state.lastAction === "pack") return "pack";
+	if (["pack", "choose-bag-item"].includes(state.lastAction)) return "pack";
 	if (["return", "near-discovery"].includes(state.lastAction)) return "return";
 	return "idle";
 }
@@ -57,6 +57,7 @@ function riveTrigger(state) {
 	if (state.lastAction === "tickle") return "tickle";
 	if (state.lastAction === "harvest") return "harvest";
 	if (state.lastAction === "pack") return "pack";
+	if (state.lastAction === "choose-bag-item") return "bag-receive";
 	if (state.lastAction === "adventure") return "departure";
 	if (["return", "near-discovery"].includes(state.lastAction)) return "return";
 	if (state.lastAction === "plant") return "plant";
