@@ -69,14 +69,17 @@ Rive trigger is observable as `data-rive-last-performed-motion="return"` after
 the short performance; direct reloads do not replay it and reduced motion
 holds the final bound pose.
 
-The Position 11 pond-memory checkpoint adds one native `pond-frog` vector group
-to the same artboard. `Pond Frog Hidden` keeps it out of the return ceremony,
-`Pond Frog Present` holds the complete next-morning consequence, and `Pond Frog
-Response` gives only the frog subgroup a brief vertical bob. React decides
-when the earned resident becomes visible and stops the cadence for reduced
-motion; Rive owns no resident progression, reward, or persistence. The group
-also defaults to 0% blend in the editor, making a runtime reset safely hidden
-until React explicitly holds Present.
+The Position 11 pond-memory checkpoint adds one native `pond-frog` group to the
+same artboard. The follow-up painterly-pond checkpoint leaves the imported
+water, highlight, rocks, lily pads, flower, and `frog_rock` in the source for
+authoring history but sets them to 0% base blend. The character-free Farm plate
+now owns that static environment; only the living `frog` subgroup is revealed
+by `Pond Frog Present` and moved by `Pond Frog Response`. Its parent sits at
+`(222, 438)` so the frog lands on the painted foreground rock. React decides
+when the earned resident becomes visible, preserves it into later mornings,
+and stops the cadence for reduced motion; Rive owns no resident progression,
+reward, or persistence. The root group also defaults to 0% blend, making a
+runtime reset safely hidden until React explicitly holds Present.
 
 The Moonberries Take Root checkpoint adds a second native crop rig aligned to
 Kitchen Patch bed two. `Moonberry Bed Empty` and `Moonberry Bed Growing` are

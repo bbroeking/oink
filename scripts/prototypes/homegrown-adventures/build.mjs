@@ -24,6 +24,7 @@ for (const name of [
 	"02-first-payoff-scene-plate.png",
 	"03-developed-barn.png",
 	"03-developed-barn-scene-plate.png",
+	"11-changed-home-pond-scene-plate.png",
 ]) {
 	copyFileSync(join(root, "assets/concepts/homegrown-adventures", name), join(docsAssets, name));
 }

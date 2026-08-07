@@ -54,13 +54,16 @@ above the plate, while React owns the branch, quantities, causal copy,
 acknowledgement, and fast-forward stock delta. Reload holds the complete scene
 without replaying the one-shot, and reduced motion skips it.
 
-Position 11 now adds the earned pond-and-frog resident as native Rive vectors
-over the unchanged Farm plate. React separates the already-earned Position 10
-fact from the Position 11 visible reveal, then holds `Pond Frog Present` across
-reload. `Pond Frog Response` supplies one quiet bob between long rests;
-reduced motion keeps the complete static pose and no resident progression lives
-inside Rive. The animation lab exposes the same state and cadence as **Pond
-remembers**.
+Position 11 now switches to the character-free
+`11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
+the same Farm camera and visual language. The shared Rive artboard contributes
+only the living frog, aligned to the plate's foreground rock; its older vector
+water, rocks, lily pads, flower, and duplicate rock remain hidden. React
+separates the already-earned Position 10 fact from the Position 11 reveal, then
+preserves the plate and `Pond Frog Present` through reload and later mornings.
+`Pond Frog Response` supplies one quiet bob between long rests; reduced motion
+keeps the frog still and no resident progression lives inside Rive. The
+animation lab exposes the same composition as **Pond remembers**.
 
 Crop growth now has an explicit painterly early-sprout asset and a separate
 flower-free lush-middle asset. React derives that visual boundary from

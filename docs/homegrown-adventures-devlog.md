@@ -113,11 +113,69 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 36. **v0.36.1 — The Pond Waits for Morning (locally verified):** make Hidden
     the resident group's authored base pose so unrelated crop and character
     input can never reset the pond into an earlier Farm position.
+37. **v0.37 — The Pond Belongs Here (locally verified):** paint the earned
+    pond into the Farm itself, leave only its living frog in Rive, and preserve
+    the complete remembered place after **Begin another day**.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.37.0 — The Pond Belongs Here — 2026-08-06
+
+- Replayed Position 11 against
+  `rosie-v3/11-changed-barn-next-day.png`. The previous native vector pond was
+  functionally correct but read as a flat sticker laid over the painterly Farm.
+- Used the built-in ImageGen workflow to make one character-free 853×1844
+  scene plate, `11-changed-home-pond-scene-plate.png`. It preserves the Barn,
+  camera, path, beds, crate, and daylight while replacing only the watering-can
+  patch with a painterly pond, lily pads, flower, and foreground frog rock.
+- Kept the original Rive pond source group for edit history but set its water,
+  highlight, rocks, lily pads, flower, and duplicate frog rock to 0% base
+  blend. The living `frog` subgroup remains native Rive and retains its calm
+  response animation. Its parent moved from `(240, 459.07)` to `(222, 438)` so
+  the frog sits on the painted foreground rock.
+- Split earned Home persistence from the Position 11 memory panel. Once
+  Glowroot has been planted, the painted pond and Rive frog now remain through
+  reload and **Begin another day**; the explanatory panel still appears only
+  at Position 11, so the next morning returns to one clear Tickle action.
+- The player and Motion Lab both use the same plate-plus-Rive composition.
+  React still owns whether the memory is earned and visible; Rive owns only the
+  frog's appearance and response.
+
+### Observable acceptance criteria
+
+- A fresh first-day Position 1–10 never paints the future pond or frog.
+- Position 11 paints one integrated storybook pond and one live Rive frog with
+  no duplicate vector water, rocks, lily pads, flower, or frog rock.
+- Reload and **Begin another day** preserve the earned pond and frog while
+  returning the player to the ordinary morning Tickle action.
+- The pinned Motion Lab study uses the same composition, reduced motion holds
+  the frog still, and rapid replay produces no errors or duplicate residents.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 41/41 gameplay and persistence tests.
+- `npm run verify:rive-homegrown` — 390×844 artboard and all 58 authored names.
+- `npm run verify:rive-web` — passed in an exact staged-checkpoint clone; three
+  Expo bundles contain only the approved WebGL2 boundaries.
+- `npm run quality:loop` and `npm run quality:check` — pass, including 78
+  layout tests, 202 security tests, TypeScript, 324 sprite checks, and contract
+  gates.
+- Rendered eleven-position replay — frog hidden through Position 10 and shown
+  on the painted pond at Position 11.
+- Rendered reload/new-day replay — the remembered plate and frog persist at
+  Position 1 while the Home-memory panel closes.
+- The actual game surface remains 390×844; the Motion Lab reduced-motion and
+  five-repeat stress checks keep the frog visible and report no browser errors.
+
+### Next highest-leverage weakness
+
+Replay the public checkpoint from the first Tickle through the remembered
+second morning, then choose the next bounded player-visible weakness from that
+rendered comparison. Do not add a new crop, destination, currency, or system
+merely because this visual gap is closed.
 
 ### v0.36.1 — The Pond Waits for Morning — 2026-08-06
 

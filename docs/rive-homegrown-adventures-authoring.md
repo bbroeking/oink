@@ -141,17 +141,19 @@ reloaded Position 10 holds the bound final pose without replaying, and reduced
 motion skips the one-shot. Rive still owns only Rosie's visible arrival and Bag
 swing—not branch choice, reward quantities, acknowledgement, or persistence.
 
-The v0.36 pond-memory checkpoint imports the native `pond-frog` vector group
-at base position `(240, 459.07)` on the unchanged 390×844 artboard. `Pond Frog
-Present` keys the complete group at 100% blend, `Pond Frog Hidden` keys it at
-0%, and `Pond Frog Response` gives the nested `frog` group a restrained
-32-frame lift and settle. The group's editor base blend is also 0%, so any
-timeline reset safely returns to Hidden instead of leaking the future resident
-into an earlier Farm position. React reveals Present only in the Position 11 Home
-memory presentation even though the reducer has already earned `frogVisible`
-at Position 10. Direct reload holds the correct pose; reduced motion never
-plays Response. The unused editor-history `Timeline 26` is intentionally not
-part of the runtime contract.
+The v0.36 pond-memory checkpoint imports the native `pond-frog` group on the
+unchanged 390×844 artboard. The v0.37 painterly pass moves its parent to
+`(222, 438)` and sets `pond_water`, `pond_light`, `pond_rocks`, `lily_pads`,
+`pond_flower`, and `frog_rock` to 0% base blend. Those static objects remain in
+the editor only as source history because the character-free Farm plate now
+owns the pond environment. `Pond Frog Present` keys the root at 100%, `Pond
+Frog Hidden` keys it at 0%, and `Pond Frog Response` gives only the remaining
+living `frog` subgroup a restrained 32-frame lift and settle. The root's editor
+base blend is also 0%, so any timeline reset safely returns to Hidden instead
+of leaking the future resident into an unearned Farm. React reveals Present
+when the persisted Home memory is earned—including later mornings. Direct
+reload holds the correct pose; reduced motion never plays Response. The unused
+editor-history `Timeline 26` is intentionally not part of the runtime contract.
 
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the

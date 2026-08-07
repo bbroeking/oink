@@ -245,7 +245,7 @@ function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMo
 	const showingPondResident = activeStudy.id === "pond";
 	return (
 		<section className={`motion-stage motion-stage-${emphasis}`} aria-label="Authored animation preview">
-			<div className={`motion-phone ${showingAdventureGlowroot ? "is-adventure-glowroot" : ""} ${showingReturnHomecoming ? "is-return-homecoming" : ""}`}>
+			<div className={`motion-phone ${showingAdventureGlowroot ? "is-adventure-glowroot" : ""} ${showingReturnHomecoming ? "is-return-homecoming" : ""} ${showingPondResident ? "is-pond-memory" : ""}`}>
 				<div className="motion-world">
 					<div className="motion-scene-plate" />
 					<HomegrownRiveScene

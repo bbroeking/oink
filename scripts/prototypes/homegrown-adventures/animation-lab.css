@@ -38,6 +38,7 @@ button:focus-visible, a:focus-visible { outline: 4px solid #267da2; outline-offs
 .motion-scene-plate { position: absolute; inset: 0; background: url("./assets/homegrown-adventures/01-starting-barn-clean-scene-plate.png") center / cover no-repeat; }
 .motion-phone.is-adventure-glowroot .motion-scene-plate { background-image: url("./assets/homegrown-adventures/adventure-clearing-discovery-rive.webp"); }
 .motion-phone.is-return-homecoming .motion-scene-plate { background-image: url("./assets/homegrown-adventures/return-homecoming-discovery.webp"); }
+.motion-phone.is-pond-memory .motion-scene-plate { background-image: url("./assets/homegrown-adventures/11-changed-home-pond-scene-plate.png"); }
 .motion-phone.is-adventure-glowroot .painted-kitchen-patch,
 .motion-phone.is-adventure-glowroot .moth-shared-glint,
 .motion-phone.is-return-homecoming .painted-kitchen-patch,

@@ -942,7 +942,8 @@ function App() {
 	const showingAdventureVignette = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && !state.adventureVignetteSeen;
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
 	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
-	const showingHomeMemory = position === 11 && state.glowrootPlanted;
+	const homeMemoryEarned = state.glowrootPlanted;
+	const showingHomeMemory = position === 11 && homeMemoryEarned;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingReturnReward;
 	const waiting = departing || (autoPlay && (
 		state.stage === STAGES.CLOVER_GROWING ||
@@ -1086,7 +1087,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-return-kind={showingReturnReward ? returnKind : undefined}
 		>
@@ -1095,7 +1096,7 @@ function App() {
 				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}
 				model={riveModel.viewModel}
-				showPondResident={showingHomeMemory && riveModel.viewModel.frogVisible}
+				showPondResident={homeMemoryEarned && riveModel.viewModel.frogVisible}
 				trigger={riveModel.trigger}
 				triggerNonce={riveModel.triggerNonce}
 			/>

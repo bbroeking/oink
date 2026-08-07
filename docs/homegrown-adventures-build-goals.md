@@ -163,6 +163,16 @@ economy, collection screen, destination, currency, or new reward was added.
 The group itself defaults to Hidden, so unrelated shared-artboard playback
 cannot leak the future consequence into an earlier Farm position.
 
+**Painterly-pond checkpoint (August 6, 2026):** the earned pond is now painted
+directly into the persistent Farm plate instead of appearing as a flat vector
+overlay. The Rive source retains the imported group for authoring history, but
+its water, highlight, rocks, lily pads, flower, and duplicate frog rock are
+hidden; only the living frog remains animated and is aligned to the plate's
+foreground rock. React reveals and persists the complete composition once
+Glowroot is planted. **Begin another day** closes the Position 11 explanation
+without erasing the pond, so the second morning visibly proves that Home
+remembers while still presenting one clear Tickle action.
+
 **Adventure checkpoint (August 6, 2026):** Position 9 now opens one bounded
 beyond-the-hedge vignette before the ordinary idle wait. Rosie remains visible
 with her Bag; three reducer-derived story tags explain exactly what the chosen
