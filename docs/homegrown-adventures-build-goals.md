@@ -111,6 +111,18 @@ Reduced motion skips the one-shot, rapid changes restart it, and direct reload
 does not replay it. The next visible weakness is specificity: only the most
 recently changed item should lead the shared token response.
 
+**Chosen-item checkpoint (August 7, 2026):** Position 7 now records the latest
+React-owned slot transition and uses it only for presentation. During the
+existing `Bag Receive` window, the changed card stays legible, one exact item
+travels between that card and the open Bag, and only the matching destination
+token lands. Emptying a slot reverses its previous item outward. Rapid touch
+input replaces the active flight and restarts the one bounded Rive response;
+reduced motion paints the new reducer state without a one-shot. The rendered
+product-design pass also shortens the empty-card action without weakening its
+accessible name. The next visible weakness is Position 8: the correct equipped
+state currently paints as a large flat mustard block that obscures Rosie rather
+than the believable worn satchel established by `rosie-v3/08-departure.png`.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

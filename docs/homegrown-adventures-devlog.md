@@ -185,14 +185,57 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     silent token swap with one bounded Rive-authored satchel rise, enlarge,
     settle, and hide response, while React remains authoritative for the chosen
     slot, costs, validity, persistence, and fast-forward.
-57. **v0.56 — The Chosen Item Leads the Motion (in progress):** make only the
+57. **v0.56 — The Chosen Item Leads the Motion (shipped):** make only the
     most recently changed Provision, Tool, or Pack token lead the shared Bag
     response, so the animation communicates which exact choice just landed.
+58. **v0.57 — The Bag Fits Rosie (in progress):** replace Position 8's large,
+    flat mustard satchel block with a believable worn Bag that preserves
+    canonical Rosie's silhouette and keeps the chosen loadout readable at dusk.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.56 — The Chosen Item Leads the Motion — 2026-08-07
+
+- Compared the shipped Position 7 response with
+  `rosie-v3/07-free-bag-selection.png`. The shared Rive satchel answered, but
+  every filled preview token animated together, so the player still had to
+  infer which card caused the response.
+- Kept slot identity in React as one small `lastBagSelection` fact containing
+  the changed slot, new item, previous item, and action time. It survives
+  serialization but never becomes a Rive progression property, inventory rule,
+  reward branch, or timer.
+- During `Bag Receive`, only the changed card remains fully legible. One exact
+  item token travels from that card into the open Bag and only the matching
+  destination token lands. Choosing Empty reverses the previous item outward
+  instead of showing an empty object being packed.
+- Removed the old 600 ms pointer lock found during rapid touch QA. A second
+  quick choice now replaces the first flight, updates the observable slot, and
+  restarts one bounded Rive response instead of being ignored or queued.
+- Ran the rendered 390x844, 360x780, and centered 1440x900 screens through the
+  installed Impeccable design review. The selected card stays visually awake,
+  other cards recede, and an empty slot now uses the short visible action
+  `Choose` with its complete item name retained in the accessible label.
+- The next concept comparison exposes Position 8 as the highest-leverage gap:
+  the selected facts are correct, but the large flat mustard satchel obscures
+  Rosie and does not resemble the believable worn Bag in
+  `rosie-v3/08-departure.png`.
+
+### Observable acceptance criteria
+
+- Provision, Tool, and Pack changes expose the exact active slot on the Rive
+  scene, animate one flight token, and land only that matching Bag preview.
+- Emptying a filled slot carries the previous item out of the Bag while the
+  reducer-selected empty state appears immediately and remains accessible.
+- Rapid Provision-then-Tool touch input leaves one Tool flight and one restarted
+  `bag-receive` performance; the latest choice wins without queued clips.
+- Reduced motion paints the new selection immediately with no performed
+  one-shot. Position 7→8→7 fast-forward and reload preserve the same loadout
+  without replaying the flight.
+- The complete Position 7 stack remains readable and non-overlapping at
+  390x844, 360x780, and centered desktop sizes.
 
 ### v0.55 — The Bag Receives the Choice — 2026-08-07
 

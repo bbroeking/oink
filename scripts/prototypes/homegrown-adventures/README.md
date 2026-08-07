@@ -180,6 +180,16 @@ a full-card Change target, and a separate 44px Empty action after a rendered
 product-design pass. Reduced motion skips the one-shot and rapid changes restart
 one response.
 
+The v0.56 prototype question makes that response specific. React records only
+the latest slot transition for presentation: the changed card remains clear,
+one exact item travels into the open Bag, and only its matching packed token
+lands while the shared Rive `Bag Receive` performance continues underneath.
+Choosing Empty carries the previous item back out. Rapid touch input replaces
+the active flight and restarts the bounded response; reduced motion, reload,
+and fast-forward preserve the reducer-selected Bag without replaying it. The
+rendered design pass also shortens empty-card copy while keeping complete
+accessible names.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes
