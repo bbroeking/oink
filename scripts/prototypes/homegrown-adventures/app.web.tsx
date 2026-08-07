@@ -715,6 +715,17 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true }) {
 	);
 }
 
+function NewDayHandoff() {
+	return (
+		<div className="new-day-handoff" role="status" aria-live="polite">
+			<div>
+				<strong>A new morning</strong>
+				<small>Your Farm remembers</small>
+			</div>
+		</div>
+	);
+}
+
 function BottomNav() {
 	const items = [["barn", "Barn"], ["friends", "Friends"], ["season", "Season"], ["shop", "Shop"], ["me", "Me"]];
 	return (
@@ -747,6 +758,8 @@ const RETURN_CEREMONY_MS = 2400;
 const HOMEGROWN_REVIEW_STORAGE_KEY = `${HOMEGROWN_STORAGE_KEY}.review`;
 const RAPID_TRANSITION_GUARD_MS = 350;
 const HARVEST_CELEBRATION_MS = 560;
+const NEW_DAY_HANDOFF_MS = 900;
+const REDUCED_NEW_DAY_HANDOFF_MS = 300;
 const RAPID_TRANSITION_ACTIONS = new Set([
 	ACTIONS.TICKLE,
 	ACTIONS.SELECT_CROP,
@@ -1040,7 +1053,9 @@ function App() {
 	);
 	const image = sceneImage();
 	const [feedback, setFeedback] = useState(0);
+	const [startingNewDay, setStartingNewDay] = useState(false);
 	const transitionLockUntil = useRef(0);
+	const newDayTimer = useRef(null);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
 	const position = state.prototypePosition ?? 1;
 	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop;
@@ -1183,6 +1198,8 @@ function App() {
 		return () => document.removeEventListener("visibilitychange", onVisibility);
 	}, []);
 
+	useEffect(() => () => window.clearTimeout(newDayTimer.current), []);
+
 	const signalFeedback = useCallback((type) => {
 		setFeedback((value) => value + 1);
 		if (type === ACTIONS.TICKLE) navigator.vibrate?.(12);
@@ -1211,9 +1228,21 @@ function App() {
 			if (now < transitionLockUntil.current) return;
 			transitionLockUntil.current = now + RAPID_TRANSITION_GUARD_MS;
 		}
+		if (nextAction.type === ACTIONS.START_NEW_DAY) {
+			if (startingNewDay) return;
+			setStartingNewDay(true);
+			dispatch(nextAction);
+			signalFeedback(nextAction.type);
+			window.clearTimeout(newDayTimer.current);
+			newDayTimer.current = window.setTimeout(
+				() => setStartingNewDay(false),
+				state.reduceMotion ? REDUCED_NEW_DAY_HANDOFF_MS : NEW_DAY_HANDOFF_MS,
+			);
+			return;
+		}
 		dispatch(nextAction);
 		signalFeedback(nextAction.type);
-	}, [signalFeedback]);
+	}, [signalFeedback, startingNewDay, state.reduceMotion]);
 
 	const jumpToPosition = useCallback((nextPosition) => {
 		const now = performance.now();
@@ -1232,7 +1261,8 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			aria-busy={startingNewDay}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
@@ -1327,6 +1357,7 @@ function App() {
 				onAction={() => act(visiblePresentation.action)}
 				waiting={waiting}
 			/>}
+			{startingNewDay && <NewDayHandoff />}
 			{choosingBag && <BagSelectionPanel
 				bag={state.bag}
 				farmStock={state.farmStock}
