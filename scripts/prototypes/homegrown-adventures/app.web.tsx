@@ -133,6 +133,13 @@ function stageCopy(state) {
 			body: "Tickle Rosie first. Her return story reveals the named Discovery before any collection screen.",
 		};
 	}
+	if (state.stage === STAGES.GLOWROOT_RETURNED && state.glowrootPlanted) {
+		return {
+			eyebrow: "A familiar Discovery",
+			title: "Rosie brought another Glowroot Seed",
+			body: "Glowroot already grows at Home. This Seed and the supplies can stay in Farm stock.",
+		};
+	}
 	if (state.stage === STAGES.PACKED && state.underprepared) {
 		return {
 			eyebrow: "A light Bag",
@@ -564,13 +571,14 @@ function AdventureVignetteOverlay({ state, onContinue }) {
 
 function ReturnRewardPanel({ state, actionLabel, onAction }) {
 	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
+	const repeatDiscovery = !nearDiscovery && state.glowrootPlanted;
 	const story = adventureStory(state);
 	return (
 		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} aria-label="Rosie's return rewards">
 			<div className="return-discovery-plaque">
-				<span className="return-card-eyebrow">{nearDiscovery ? "Useful clue" : "New Discovery"}</span>
+				<span className="return-card-eyebrow">{nearDiscovery ? "Useful clue" : repeatDiscovery ? "Discovery remembered" : "New Discovery"}</span>
 				<strong>{nearDiscovery ? "Glowroot Trail" : "Glowroot Seed  +1"}</strong>
-				<small>{nearDiscovery ? story.result : "A slow Crop that glows after dusk"}</small>
+				<small>{nearDiscovery ? story.result : repeatDiscovery ? "Glowroot already grows at Home · this Seed stays in Farm stock" : "A slow Crop that glows after dusk"}</small>
 			</div>
 			<div className="return-stock-ledger" aria-label="Farm stock returned">
 				<span><b>Compost</b><strong>+1</strong></span>
@@ -597,7 +605,7 @@ function HomeMemoryPanel({ state, actionLabel, onAction }) {
 					<span><i aria-hidden="true">✦</i><b>Discoveries</b><small>stay</small></span>
 				</div>
 			</div>
-			<div className="home-memory-stock" aria-label="Farm stock after planting Glowroot">
+			<div className="home-memory-stock" aria-label="Current Farm stock">
 				<strong>Farm stock</strong>
 				<div>
 					<span><i aria-hidden="true">☘</i><small>Clover Lunch</small><b>{stock["clover-lunch"] ?? 0}</b></span>
@@ -664,6 +672,9 @@ const RAPID_TRANSITION_ACTIONS = new Set([
 function compactStoryCopy(state) {
 	if (state.stage === STAGES.DEVELOPED) {
 		return { eyebrow: "Home remembers", title: "Glowroot lives at Home" };
+	}
+	if (state.stage === STAGES.GLOWROOT_RETURNED && state.glowrootPlanted) {
+		return { eyebrow: "Home recognizes it", title: "Another Glowroot Seed · stocked" };
 	}
 	if (state.changeRevealed) {
 		return { eyebrow: "A named Discovery", title: "Glowroot Seed · ready to plant" };
@@ -756,14 +767,23 @@ function StoryCard({ state, variant }) {
 function PurposeSign({ state }) {
 	let copy;
 	if (state.stage === STAGES.GLOWROOT_RETURNED) {
-		copy = {
-			id: "glowroot-found",
-			eyebrow: "Rosie found",
-			title: "Glowroot Seed",
-			detail: "Ready to plant",
-			mark: "glow",
-			label: "Current purpose: Rosie found Glowroot Seed, ready to plant",
-		};
+		copy = state.glowrootPlanted
+			? {
+				id: "glowroot-stocked",
+				eyebrow: "Home remembers",
+				title: "Glowroot Seed",
+				detail: "Keeping it in Farm stock",
+				mark: "glow",
+				label: "Current purpose: Keep the returning Glowroot Seed in Farm stock",
+			}
+			: {
+				id: "glowroot-found",
+				eyebrow: "Rosie found",
+				title: "Glowroot Seed",
+				detail: "Ready to plant",
+				mark: "glow",
+				label: "Current purpose: Rosie found Glowroot Seed, ready to plant",
+			};
 	} else if (state.stage === STAGES.DEVELOPED && state.nextPlanting) {
 		copy = {
 			id: "dusk-moths-welcomed",

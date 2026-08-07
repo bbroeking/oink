@@ -138,11 +138,71 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 43. **v0.42 — Leaves Make the Doorway (shipped):** break the smooth
     hedge bands into crossed rows of native Rive leaf shapes, keeping the
     established blossom path in front and the same earned Home state beneath.
+44. **v0.43 — The Second Seed Has a Home (locally verified):** recognize a
+    repeated Glowroot return, keep its Seed and practical supplies in Farm
+    stock, and finish the Barn day instead of offering an unusable second
+    planting action.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.43 — The Second Seed Has a Home — 2026-08-07
+
+- Replayed a complete second Barn day after the shipped v0.42 checkpoint. The
+  deterministic Adventure correctly returned another Glowroot Seed, Compost,
+  and Willow Fiber, but Position 10 still offered **Plant Glowroot**. Because
+  the lasting Glowroot was already planted, the reducer correctly rejected the
+  action and left the player at a dead Homecoming.
+- Kept the first Discovery path unchanged: the first Seed must still be
+  welcomed, planted, and spent exactly once. When Home already remembers
+  Glowroot, the same acknowledgement now stores the returned Seed, advances to
+  Changed Home, and marks the repeated Barn day complete.
+- Made the repeated return explicit in the rendered interface with
+  **Discovery remembered**, the exact +1 Seed / +1 Compost / +2 Willow Fiber
+  ledger, and one **Keep supplies in Farm stock** action. Position 11 then
+  shows the retained Seed and **Begin another day**.
+- Added no crop, destination, currency, reward roll, inventory view, or Rive
+  progression state. React remains authoritative for rewards, stock,
+  persistence, and the one-action transition; the existing authored Return and
+  Changed Home performances remain unchanged.
+
+### Observable acceptance criteria
+
+- A first successful return still requires **Welcome Rosie Home** and
+  **Plant Glowroot**, consuming the first Seed from 1 to 0.
+- A later successful return describes the known Discovery truthfully, keeps the
+  second Seed in Farm stock, and reaches Position 11 with the day complete in
+  one bounded acknowledgement.
+- Reload at the repeated Position 10 and after Position 11 preserves the exact
+  branch and stock. Previous / Next, reduced motion, rapid input, touch, and
+  desktop remain safe and readable.
+
+### Local validation evidence
+
+- Played the rendered loop twice at 390x844. The first return retained its
+  original planting flow; the second showed **Discovery remembered**, exact
+  returned quantities, and **Keep supplies in Farm stock**. The resulting
+  Changed Home held one Glowroot Seed and exposed **Begin another day**.
+- Reload held the repeated Position 10 branch. Fast-forward traversed
+  11 -> 10 -> 11 with repeat-aware copy; reduced motion retained the action and
+  position; simultaneous tickle attempts increased 1,119 to 1,120 exactly
+  once. Desktop 1280x900 and touch renders reported no warnings or errors.
+- `npm run prototype:homegrown:test` — 42/42 gameplay and persistence tests.
+- `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- An isolated tree reconstructed from `HEAD` plus the exact staged diff
+  installed 1,304 packages from the offline lockfile and passed
+  `npm run verify:rive-web`; unrelated worktree changes were not present.
+
+### Next highest-leverage weakness
+
+Choose after the public v0.43 replay by playing from the second morning through
+the following return and comparing the weakest player-visible moment with the
+matching approved 11-screen concept. Prefer depth in the existing loop over a
+new crop, destination, currency, or parallel system.
 
 ### v0.42 — Leaves Make the Doorway — 2026-08-07
 

@@ -865,6 +865,21 @@ export function homegrownReducer(state, action) {
 			if (state.stage !== STAGES.GLOWROOT_RETURNED || state.returnRewardAcknowledged) {
 				return state;
 			}
+			if (state.glowrootPlanted) {
+				return changed(
+					state,
+					{
+						stage: STAGES.DEVELOPED,
+						prototypePosition: 11,
+						returnRewardAcknowledged: true,
+						meaningfulChangePending: false,
+						cycleComplete: true,
+					},
+					"store-return",
+					"Known Glowroot Seed stays in Farm stock · Compost +1 · Willow Fiber +2",
+					now,
+				);
+			}
 			return changed(
 				state,
 				{ returnRewardAcknowledged: true, meaningfulChangePending: false },
@@ -1136,7 +1151,10 @@ export function primaryAction(state) {
 	}
 	if (state.stage === STAGES.GLOWROOT_RETURNED) {
 		if (!state.returnRewardAcknowledged) {
-			return { type: ACTIONS.ACKNOWLEDGE_RETURN, label: "Welcome Rosie Home" };
+			return {
+				type: ACTIONS.ACKNOWLEDGE_RETURN,
+				label: state.glowrootPlanted ? "Keep supplies in Farm stock" : "Welcome Rosie Home",
+			};
 		}
 		return { type: ACTIONS.PLANT_GLOWROOT, label: "Plant Glowroot" };
 	}
@@ -1300,6 +1318,14 @@ export function playerPresentation(state) {
 	}
 	if (state.stage === STAGES.GLOWROOT_RETURNED) {
 		if (!state.returnRewardAcknowledged) {
+			if (state.glowrootPlanted) {
+				return {
+					target: WORLD_TARGETS.BAG,
+					objective: "Another Glowroot Seed came Home",
+					label: "Keep supplies in Farm stock",
+					action,
+				};
+			}
 			return {
 				target: WORLD_TARGETS.ROSIE,
 				objective: "Rosie brought Home a Discovery",

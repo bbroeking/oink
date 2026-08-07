@@ -54,6 +54,14 @@ above the plate, while React owns the branch, quantities, causal copy,
 acknowledgement, and fast-forward stock delta. Reload holds the complete scene
 without replaying the one-shot, and reduced motion skips it.
 
+The same Homecoming is repeat-aware after Glowroot is planted. A later
+successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
+but React labels it **Discovery remembered** and offers one **Keep supplies in
+Farm stock** action. That action retains the Seed, moves directly to Changed
+Home, and completes the Barn day; it never offers a second planting action that
+the reducer must reject. The first Discovery still spends its Seed exactly once
+to establish the lasting Glowroot at Home.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

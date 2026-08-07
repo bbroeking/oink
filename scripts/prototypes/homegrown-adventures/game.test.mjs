@@ -362,6 +362,68 @@ test("the end-to-end mode completes a Barn day and starts the next one", () => {
 	);
 });
 
+test("a known Glowroot return stays in Farm stock and completes the second day", () => {
+	let state = throughCloverReady();
+	for (const action of [
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.HARVEST_CLOVER },
+		{ type: ACTIONS.PACK_ADVENTURE },
+		{ type: ACTIONS.START_ADVENTURE },
+		{ type: ACTIONS.ADVANCE_TIME },
+		{ type: ACTIONS.WELCOME_HOME },
+		{ type: ACTIONS.ACKNOWLEDGE_RETURN },
+		{ type: ACTIONS.PLANT_GLOWROOT },
+		{ type: ACTIONS.PLANT_NEXT, crop: "moonberries" },
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.START_NEW_DAY },
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.CHOOSE_PURPOSE, purpose: "dusk-picnic" },
+		{ type: ACTIONS.PLANT_CLOVER },
+		{ type: ACTIONS.ADVANCE_TIME },
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.HARVEST_CLOVER },
+		{ type: ACTIONS.PACK_ADVENTURE },
+		{ type: ACTIONS.START_ADVENTURE },
+		{ type: ACTIONS.ADVANCE_TIME },
+	]) state = reduce(state, action);
+
+	const stockBeforeReturn = { ...state.farmStock };
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+
+	assert.equal(state.stage, STAGES.GLOWROOT_RETURNED);
+	assert.equal(state.glowrootPlanted, true);
+	assert.equal(state.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"] + 1);
+	assert.equal(state.farmStock.compost, stockBeforeReturn.compost + 1);
+	assert.equal(state.farmStock["willow-fiber"], stockBeforeReturn["willow-fiber"] + 2);
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.ACKNOWLEDGE_RETURN,
+		label: "Keep supplies in Farm stock",
+	});
+
+	state = deserializeState(serializeState(state), { now: at });
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.ACKNOWLEDGE_RETURN,
+		label: "Keep supplies in Farm stock",
+	});
+	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
+
+	assert.equal(state.stage, STAGES.DEVELOPED);
+	assert.equal(state.prototypePosition, 11);
+	assert.equal(state.cycleComplete, true);
+	assert.equal(state.glowrootPlanted, true);
+	assert.equal(state.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"] + 1);
+	assert.equal(state.trace.at(-1).kind, "store-return");
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.START_NEW_DAY,
+		label: "Begin another day",
+	});
+
+	const restored = deserializeState(serializeState(state), { now: at });
+	assert.equal(restored.stage, STAGES.DEVELOPED);
+	assert.equal(restored.cycleComplete, true);
+	assert.equal(restored.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"] + 1);
+});
+
 test("underpreparation returns a kind Near-Discovery and a useful retry clue", () => {
 	let state = throughCloverReady();
 	state = reduce(state, { type: ACTIONS.TICKLE });
