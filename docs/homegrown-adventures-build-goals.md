@@ -135,6 +135,17 @@ duplicate DOM equipment or new inventory state was added. The rendered
 next visible weakness is the departure itself: Rosie still reads as a
 front-facing slide instead of clearly walking toward the hedge path.
 
+**Walking-departure checkpoint (August 7, 2026):** the existing one-second
+`Rosie Departure` now adds two alternating step cycles on Rosie's front-screen
+leg and a restrained counter-swing on the fitted satchel while preserving the
+established up-right root path. React remains authoritative for the departure
+clock, idempotence, persistence, reduced-motion skip, and Position 8 → 9
+handoff. Rendered sequence checks at 390x844, 360x780, and centered desktop show
+the leg changing contact pose, the Bag staying attached, and the complete UI
+remaining non-overlapping. The Impeccable motion/design gate found no new source
+antipatterns. The next visible weakness is the abrupt final cut: the hedge and
+dusk do not yet answer Rosie's approach before the Adventure vignette appears.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

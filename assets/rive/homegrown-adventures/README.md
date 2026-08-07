@@ -45,6 +45,13 @@ introducing another Bag. `Rosie Pack` settles at `(-58, -58)`, 112% scale, and
 leather (`#8b5a32` / `#b97845`) with a quieter ochre strap highlight. React's
 existing `satchelEquipped` fact and selected Bag items remain authoritative.
 
+The v0.58 walk checkpoint deepens the existing `Rosie Departure` timeline.
+The `leg_front_screen_right` bone alternates through six keyed step poses while
+the fitted `rosie_satchel` counter-swings through five restrained rotations.
+The established root travel, one-second duration, and runtime name stay intact.
+React still owns the departure clock and Position 8 → 9 handoff; Rive owns only
+the visible walk and equipment follow-through.
+
 The Living Barn checkpoint adds `bed_one_crop_rig` over the first Kitchen
 Patch bed. `Clover Bed Empty`, `Clover Bed Growing`, and `Clover Bed Ready`
 provide deterministic persisted poses; `Clover Plant`,

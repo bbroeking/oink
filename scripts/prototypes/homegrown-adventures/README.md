@@ -198,6 +198,13 @@ rig. React still owns whether the Bag is equipped and which three choices it
 represents; reload, reduced motion, departure, and return all hold or replay
 that same authored asset without a duplicate DOM satchel.
 
+The v0.58 prototype question makes departure read as travel rather than a
+front-facing slide. The existing one-second `Rosie Departure` timeline keeps
+its root path and adds two alternating steps on Rosie's front-screen leg plus a
+small counter-swing on the fitted satchel. React still owns the departure clock,
+idempotence, Position 8 → 9 transition, persistence, and reduced-motion skip;
+no destination, reward, or parallel movement state was introduced.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

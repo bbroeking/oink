@@ -191,14 +191,55 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 58. **v0.57 — The Bag Fits Rosie (shipped):** replace Position 8's large, flat
     mustard satchel block with a compact warm-brown worn Bag that preserves
     canonical Rosie's silhouette through departure, Return, and reload.
-59. **v0.58 — Rosie Walks Beyond the Hedge (in progress):** replace the current
+59. **v0.58 — Rosie Walks Beyond the Hedge (shipped):** replace the current
     front-facing departure slide with a legible walk toward the hedge path,
-    including restrained leg cadence, satchel bob, and a clear handoff to dusk.
+    including two restrained step cycles and a fitted-satchel counter-swing.
+60. **v0.59 — The Hedge Receives Rosie (in progress):** give the end of the
+    departure one restrained path or gate response and a readable dusk handoff
+    before Position 9 appears, without adding a destination or loading screen.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.58 — Rosie Walks Beyond the Hedge — 2026-08-07
+
+- Replayed the shipped Position 8 against `rosie-v3/08-departure.png`. The new
+  fitted Bag belonged on Rosie, but the departure still relied entirely on root
+  translation and scale, so her feet appeared to slide across the grass.
+- Preserved the existing 60-frame `Rosie Departure` root path and added six
+  keyed rotations to `leg_front_screen_right`: the neutral pose, two alternating
+  forward/back contacts, and a final neutral settle. This produces two readable
+  steps without changing canonical Rosie's face, body mesh, or game position.
+- Added five rotation-only keys to the same native `rosie_satchel`. Its small
+  82° → 86° → 79° → 85° → 82° counter-swing stays centered on the fitted pose
+  instead of introducing a second Bag asset or independent equipment state.
+- Kept the existing one-second reducer boundary, transition copy, and Position
+  8 → 9 handoff. Reduced motion still performs no Rive one-shot; rapid double
+  input remains idempotent; reload holds the equipped start pose; Previous/Next
+  preserves the exact loadout.
+- Ran the rendered sequence at 390x844, 360x780, and centered 1440x900 through
+  the Impeccable design gate. The motion-specific detector returned no findings,
+  and visual review confirmed no overflow, detached Bag, obscured action, or
+  competing UI appeared during any step pose.
+- The next concept comparison isolates the remaining departure gap: Rosie now
+  walks, but the final travel frame cuts directly to dusk without the hedge or
+  path visibly receiving her approach.
+
+### Observable acceptance criteria
+
+- `Rosie Departure` exposes at least three visibly distinct leg-contact poses
+  while moving toward the existing hedge path; it does not read as a static
+  sprite sliding across the Farm.
+- The fitted satchel stays attached and visibly counter-swings without changing
+  the reducer-owned selected Provision, Tool, or Pack.
+- Normal motion exposes one observable `departure` performance and settles once
+  to Position 9; rapid double input cannot queue or duplicate the transition.
+- Reduced motion records no performed one-shot and moves to Position 9 within
+  the existing shortened boundary. Direct Position 8 reload records no replay.
+- The complete departure remains readable and non-overlapping at 390x844,
+  360x780, and centered 1440x900.
 
 ### v0.57 — The Bag Fits Rosie — 2026-08-07
 

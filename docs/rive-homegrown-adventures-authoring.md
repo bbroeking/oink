@@ -219,6 +219,15 @@ to `#8b5a32`, `#b97845`, and `#c28a4b`, preserving the clover clasp. This is
 appearance and attachment polish only: React still owns equipment, item
 identity, progression, persistence, and reduced-motion selection.
 
+The v0.58 walk pass keeps `Rosie Departure` at 60 frames and preserves all five
+existing `body` travel keys. It adds `leg_front_screen_right` rotations at
+frames 0 / 12 / 24 / 36 / 48 / 60 of 145.814° / 158° / 134° / 158° / 134° /
+146°, creating two readable steps without deforming Rosie's face or silhouette.
+The equipped `rosie_satchel` receives rotation-only keys at frames
+0 / 18 / 36 / 54 / 60 of 82° / 86° / 79° / 85° / 82° so it counter-swings
+around the fitted pose. React still owns timing, progression, reduced motion,
+and the Adventure handoff; the timeline remains presentation-only.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the
