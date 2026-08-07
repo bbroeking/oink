@@ -230,6 +230,20 @@ rejected during the installed Impeccable review; corrected 360×780, 390×844,
 and centered desktop renders use only soft Farm light. The next visible weakness
 is Position 2's equal-weight remembered-crop, next-Seed, and Compost stack.
 
+**Next-Seed checkpoint (August 7, 2026):** the remembered Position 2 now leads
+with one full-width **Clover Seed** decision that names its stock and its purpose
+for Rosie's next Adventure. Moonberries and Glowroot remain visible as a quiet
+**Growing** receipt, optional Compost is explicitly deferred until after the
+Seed choice, and the spare Glowroot Seed stays named in Farm stock. No crop,
+inventory, or reducer rule changed. The Prototype pass rejected both the former
+equal-weight stack and hiding remembered crops; the final 360×780, 390×844,
+and centered desktop renders passed the installed Impeccable review as the
+available Claude-Design substitute. Rapid input reaches Position 3 once,
+reload and fast-forward preserve both growing beds, and reduced motion renders
+the same hierarchy. The next visible weakness is that Position 3 preselects
+optional Compost, making a resource-saving choice feel less freely chosen than
+the product promise.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

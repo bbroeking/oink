@@ -103,6 +103,13 @@ remembered Farm. Rive keeps presenting the Home pose and persistent crops; it
 does not own the day, timing, text, or save. Reduced motion uses a static 300ms
 wash, and reload always resumes the already-committed morning.
 
+The v0.66 hierarchy pass makes the following remembered-morning Seed choice
+read as one decision. **Clover Seed** leads with its stock and Adventure purpose;
+Moonberries, Glowroot, the spare Glowroot Seed, and optional Compost remain in
+one quiet continuity receipt beneath it. React owns every fact and transition;
+Rive continues to show the established growing beds without receiving UI or
+inventory authority.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

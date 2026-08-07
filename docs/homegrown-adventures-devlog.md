@@ -219,14 +219,64 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 66. **v0.65 — A New Day Arrives (shipped):** replace the abrupt Begin
     another day cut with one restrained morning handoff that preserves the
     remembered Farm before Position 2 asks for the next Seed.
-67. **v0.66 — The Next Seed Leads (in progress):** simplify the remembered
+67. **v0.66 — The Next Seed Leads (shipped):** simplify the remembered
     Position 2 hierarchy so the one next Seed choice leads while already-growing
     crops and optional Compost remain useful, quieter context.
+68. **v0.67 — Optional Means Chosen (in progress):** stop preselecting Compost
+    when the player chooses a Seed, so saving or spending the predictable boost
+    is an explicit planting decision rather than an inherited default.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.66 — The Next Seed Leads — 2026-08-07
+
+- Replayed the full changed-Home loop into the second-morning Position 2 and
+  compared it with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/02-farm-stock-seed-choice.png`.
+  The reducer remembered both beds and stock correctly, but the crop ledger,
+  next Seed, and Compost presented as three equal decisions.
+- Replaced that equal stack with one large **Plant next · Clover Seed** action.
+  It keeps the exact owned count and names the purpose—stocking Rosie's next
+  Adventure—before the player commits.
+- Compressed Moonberries and Glowroot into a non-interactive **Growing** receipt
+  and made **Optional after Seed · Compost** subordinate context. The spare
+  Glowroot Seed remains visible in Farm stock; no economy or crop state was
+  removed.
+- Framed three Prototype options: retain the equal stack, hide remembered crops,
+  or let the required next Seed lead above a quiet continuity receipt. The
+  third passed the installed Impeccable review as the available Claude-Design
+  substitute. Its first rendered receipt was too tall and truncated crop names;
+  the corrected version names both crops and gives more of the Farm back to the
+  image.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass. The Rive contract and web
+  build also pass, with React still authoritative for Seed choice, stock,
+  persistence, and navigation.
+- At exact 360×780, the panel is 344×178px and ends at 656px, 66px before the
+  navigation rail. At 390×844 it is 374×178px; the centered 1280×720 render
+  preserves the same hierarchy and complete phone. No viewport overflows or
+  console errors occur.
+- The remembered panel contains exactly one interactive button. Two immediate
+  coordinate clicks reach Position 3 once with one planting panel. Reload
+  retains Position 3; Previous returns to the same remembered Position 2 with
+  Bed 2 `growing` and Bed 3 `sprout`.
+- Reduced motion presents the same one-action layout with both beds and stock
+  intact. Mobile Safari/device sharpness, haptic feel, and audible acceptance
+  remain manual gates.
+
+### Observable acceptance criteria
+
+- The next Clover Seed is the unmistakable first and only decision on the
+  remembered-morning Seed screen.
+- Already-growing crops and optional Compost remain legible as context without
+  competing as actions.
+- Rapid input, reload, reduced motion, fast-forward, touch, and desktop preserve
+  the same reducer-owned state without duplicate transitions or overflow.
 
 ### v0.65 — A New Day Arrives — 2026-08-07
 
