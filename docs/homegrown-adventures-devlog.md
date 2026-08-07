@@ -153,11 +153,72 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     Cloth Wrap spend one Willow Fiber as fresh packing material, preview the
     exact cost, preserve free alternatives, and keep the remaining stock visible
     through departure and Homecoming.
+48. **v0.47 — The Pack Changes the Return (locally verified):** make
+    Wicker Basket return Compost while Cloth Wrap preserves Clover Seed, keeping
+    both existing Packs predictably useful across the next Farm cycle.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.47 — The Pack Changes the Return — 2026-08-07
+
+- Replayed the public Fiber-backed loop and found that Cloth Wrap had acquired
+  a truthful cost but still produced the same practical return as free Wicker
+  Basket. The new choice was understandable but materially dominated.
+- Kept Glowroot Seed and Willow Fiber as common successful-Adventure rewards,
+  then changed exactly one existing practical supply. Wicker Basket now brings
+  **Compost +1** for faster growth and a larger guaranteed harvest; Cloth Wrap
+  spends one Fiber and preserves **Clover Seed +1** for another required
+  planting. No new item, currency, recipe, destination, or state field exists.
+- Carried the choice through the existing Bag effect line, causal Adventure
+  tag, three-column return ledger, physical worktable, Home shelf, and next Seed
+  choice. The Cloth branch adds one small painterly seed pouch at the registered
+  table position so the object and quantity agree without changing the Rive
+  scene or replacing the Homecoming plate.
+
+### Observable acceptance criteria
+
+- Wicker Basket says **Bring Home 1 Compost** and a successful return adds one
+  Compost without adding Clover Seed.
+- Cloth Wrap says **Willow Fiber 2 → 1 · Protect 1 Clover Seed** and a successful
+  return adds one Clover Seed without adding Compost; the common Glowroot Seed
+  and Willow Fiber rewards remain unchanged.
+- The chosen supply is named in the Adventure cause, rendered on the worktable,
+  listed in the Return ledger, retained at Home, and visible in the next planting
+  decision.
+- Both branches survive reload, fast-forward, reduced motion, simultaneous
+  input, touch, and the fitted 1280x720 desktop layout.
+
+### Local validation evidence
+
+- At 390x844, replayed the stocked Cloth branch from Bag through Adventure,
+  Return, Changed Home, and the next Seed choice. The visible thread read
+  **Protect 1 Clover Seed → Clover Seed +1 → Clover Seed 2 → 2 owned**; the
+  Home shelf and planting card agreed after reload.
+- Replayed Wicker through the prototype fast-forward rail with reduced motion
+  active. Position 10 showed **Compost +1**, the cause **carried fresh Compost
+  with the seed**, and the unchanged common rewards. At 1280x720 the complete
+  328x709 game frame remained inside the first viewport.
+- Two simultaneous Home acknowledgement clicks resolved to one retained reward,
+  both local browser logs were empty, and the approved Bag, Return, and Changed
+  Home concepts retained their one-action hierarchy.
+- `npm run prototype:homegrown:test` — 44/44 gameplay and persistence tests.
+- `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- An isolated tree reconstructed from `HEAD` plus the staged diff installed all
+  1,304 packages offline, reproduced the checked-in player and animation-lab
+  artifacts exactly, and passed `npm run verify:rive-web`.
+
+### Public deployment evidence
+
+- Pending checkpoint deployment and public replay.
+
+### Next highest-leverage weakness
+
+- Pending the public replay of both Pack branches.
 
 ### v0.46 — Willow Fiber Lines the Pack — 2026-08-07
 

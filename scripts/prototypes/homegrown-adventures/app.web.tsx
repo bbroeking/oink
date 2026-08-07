@@ -13,6 +13,7 @@ import {
 	BAG_SLOT_ORDER,
 	bagItem,
 	bagPackingCost,
+	bagReturnReward,
 	CROP_RULES,
 	createInitialState,
 	createPrototypeState,
@@ -610,15 +611,22 @@ function ReturnRewardPanel({ state, actionLabel, onAction }) {
 	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
 	const repeatDiscovery = !nearDiscovery && state.glowrootPlanted;
 	const story = adventureStory(state);
+	const packReward = bagReturnReward(state.bag?.pack ?? null);
+	const practicalReward = nearDiscovery
+		? { name: "Compost", amount: 1 }
+		: packReward ?? { name: "Pack supply", amount: 0 };
 	return (
 		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} aria-label="Rosie's return rewards">
+			{!nearDiscovery && packReward?.itemId === "clover-seed" && (
+				<span className="return-pack-supply return-pack-supply-seed" aria-hidden="true" />
+			)}
 			<div className="return-discovery-plaque">
 				<span className="return-card-eyebrow">{nearDiscovery ? "Useful clue" : repeatDiscovery ? "Discovery remembered" : "New Discovery"}</span>
 				<strong>{nearDiscovery ? "Glowroot Trail" : "Glowroot Seed  +1"}</strong>
 				<small>{nearDiscovery ? story.result : repeatDiscovery ? "Glowroot already grows at Home · this Seed stays in Farm stock" : "A slow Crop that glows after dusk"}</small>
 			</div>
 			<div className="return-stock-ledger" aria-label="Farm stock returned">
-				<span><b>Compost</b><strong>+1</strong></span>
+				<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
 				<span><b>{nearDiscovery ? "Leaf-print clue" : "Glowroot Seed"}</b><strong>{nearDiscovery ? "Found" : "+1"}</strong></span>
 				<span><b>Willow Fiber</b><strong>+{nearDiscovery ? 1 : 2}</strong></span>
 			</div>
@@ -645,7 +653,7 @@ function HomeMemoryPanel({ state, actionLabel, onAction }) {
 			<div className="home-memory-stock" aria-label="Current Farm stock">
 				<strong>Farm stock</strong>
 				<div>
-					<span><i aria-hidden="true">☘</i><small>Clover Lunch</small><b>{stock["clover-lunch"] ?? 0}</b></span>
+					<span><i aria-hidden="true">☘</i><small>Clover Seed</small><b>{stock["clover-seed"] ?? 0}</b></span>
 					<span><i aria-hidden="true">✦</i><small>Glowroot Seed</small><b>{stock["glowroot-seed"] ?? 0}</b></span>
 					<span><i aria-hidden="true">♣</i><small>Compost</small><b>{stock.compost ?? 0}</b></span>
 					<span><i aria-hidden="true">≋</i><small>Willow Fiber</small><b>{stock["willow-fiber"] ?? 0}</b></span>

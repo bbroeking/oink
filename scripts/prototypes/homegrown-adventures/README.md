@@ -79,6 +79,16 @@ that the Wrap protected the delicate Find. React owns selection, stock,
 consumption, persistence, and refusal. No crafting state, currency, inventory
 screen, or Rive progression input was added.
 
+The v0.47 prototype question is whether those two Packs can remain genuinely
+useful over repeated Farm days without adding another reward system. The
+validated answer changes one existing practical return: Wicker Basket brings
+Home one Compost, while Cloth Wrap spends one Fiber and preserves one Clover
+Seed. Glowroot Seed and Willow Fiber remain common rewards. Position 10 swaps
+the first ledger quantity and places a small seed pouch over the registered
+table supply when Cloth is chosen; Position 11 and the next Seed choice then
+show the preserved Seed. React derives every quantity from the selected Pack;
+Rive receives no new progression fact.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

@@ -705,6 +705,38 @@ test("Cloth Wrap requires and consumes one Willow Fiber as reusable packing mate
 	assert.equal(restored.farmStock["willow-fiber"], 1);
 });
 
+test("Wicker Basket returns Compost while Cloth Wrap preserves a Clover Seed", () => {
+	const completeAdventure = (prepared) => {
+		let state = reduce(prepared, { type: ACTIONS.PACK_ADVENTURE });
+		state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+		state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+		state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+		return reduce(state, { type: ACTIONS.WELCOME_HOME });
+	};
+
+	const wickerStart = createPrototypeState(7, { now: at });
+	const wickerReturn = completeAdventure(wickerStart);
+	assert.equal(wickerReturn.farmStock.compost, wickerStart.farmStock.compost + 1);
+	assert.equal(wickerReturn.farmStock["clover-seed"], wickerStart.farmStock["clover-seed"]);
+	assert.match(adventureStory(wickerReturn).tags[2].detail, /Compost/);
+
+	let clothStart = createPrototypeState(7, { now: at });
+	clothStart = {
+		...clothStart,
+		farmStock: { ...clothStart.farmStock, "willow-fiber": 2 },
+	};
+	clothStart = reduce(clothStart, {
+		type: ACTIONS.SET_BAG_SLOT,
+		slot: "pack",
+		item: "cloth-wrap",
+	});
+	const clothReturn = completeAdventure(clothStart);
+	assert.equal(clothReturn.farmStock.compost, clothStart.farmStock.compost);
+	assert.equal(clothReturn.farmStock["clover-seed"], clothStart.farmStock["clover-seed"] + 1);
+	assert.equal(clothReturn.farmStock["willow-fiber"], clothStart.farmStock["willow-fiber"] + 1);
+	assert.match(adventureStory(clothReturn).tags[2].detail, /Clover Seed/);
+});
+
 test("packing consumes one Provision exactly once while Tool and Pack remain reusable", () => {
 	let state = createPrototypeState(7, { now: at });
 	assert.equal(state.farmStock["clover-lunch"], 5);

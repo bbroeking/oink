@@ -83,13 +83,13 @@ export const BAG_ITEMS = Object.freeze({
 			id: "wicker-basket",
 			name: "Wicker Basket",
 			icon: "⌒",
-			effect: "Carry Seeds and soil care",
+			effect: "Bring Home 1 Compost",
 		}),
 		Object.freeze({
 			id: "cloth-wrap",
 			name: "Cloth Wrap",
 			icon: "◇",
-			effect: "Protect delicate Finds",
+			effect: "Protect 1 Clover Seed",
 		}),
 	]),
 });
@@ -98,6 +98,19 @@ const PACKING_MATERIAL_COSTS = Object.freeze({
 	"cloth-wrap": Object.freeze({
 		itemId: "willow-fiber",
 		name: "Willow Fiber",
+		amount: 1,
+	}),
+});
+
+const PACK_RETURN_REWARDS = Object.freeze({
+	"wicker-basket": Object.freeze({
+		itemId: "compost",
+		name: "Compost",
+		amount: 1,
+	}),
+	"cloth-wrap": Object.freeze({
+		itemId: "clover-seed",
+		name: "Clover Seed",
 		amount: 1,
 	}),
 });
@@ -143,6 +156,10 @@ export function bagPackingCost(itemId) {
 	return PACKING_MATERIAL_COSTS[itemId] ?? null;
 }
 
+export function bagReturnReward(itemId) {
+	return PACK_RETURN_REWARDS[itemId] ?? null;
+}
+
 export function adventureStory(state) {
 	const bag = state.bag ?? DEFAULT_BAG;
 	const missingSlot = BAG_SLOT_ORDER.find((slot) => bag[slot] == null) ?? null;
@@ -157,8 +174,8 @@ export function adventureStory(state) {
 			empty: "felt warmth beneath the soil",
 		},
 		pack: {
-			"wicker-basket": "carried the seed Home safely",
-			"cloth-wrap": "protected its delicate glow",
+			"wicker-basket": "carried fresh Compost with the seed",
+			"cloth-wrap": "protected one Clover Seed beside the glow",
 			empty: "made a glowing leaf-print",
 		},
 	};
@@ -867,6 +884,16 @@ export function homegrownReducer(state, action) {
 					now,
 				);
 			}
+			const returnReward = bagReturnReward(state.bag?.pack ?? null);
+			const farmStock = {
+				...state.farmStock,
+				"glowroot-seed": (state.farmStock?.["glowroot-seed"] ?? 0) + 1,
+				"willow-fiber": (state.farmStock?.["willow-fiber"] ?? 0) + 2,
+			};
+			if (returnReward !== null) {
+				farmStock[returnReward.itemId] =
+					(state.farmStock?.[returnReward.itemId] ?? 0) + returnReward.amount;
+			}
 			return changed(
 				state,
 				{
@@ -876,16 +903,11 @@ export function homegrownReducer(state, action) {
 					meaningfulChangePending: true,
 					changeRevealed: true,
 					returnRewardAcknowledged: false,
-					farmStock: {
-						...state.farmStock,
-						"glowroot-seed": (state.farmStock?.["glowroot-seed"] ?? 0) + 1,
-						compost: (state.farmStock?.compost ?? 0) + 1,
-						"willow-fiber": (state.farmStock?.["willow-fiber"] ?? 0) + 2,
-					},
+					farmStock,
 					fieldGuide: [...new Set([...state.fieldGuide, "Dusk Picnic", "Glowroot Seed"])],
 				},
 				"return",
-				"Glowroot Seed — the Clover Lunch kept Rosie until the moths appeared",
+				`Glowroot Seed — ${returnReward ? `${returnReward.name} +${returnReward.amount}` : "no Pack supply"}`,
 				now,
 			);
 
