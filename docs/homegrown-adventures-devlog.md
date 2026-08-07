@@ -123,7 +123,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     remembered Moonberry and Glowroot masses with state-bound painterly bed
     art, and repair the ready-Clover reveal gate found during the complete
     rendered replay.
-40. **v0.39 — Rosie Makes Room (locally verified):** give Changed Home its
+40. **v0.39 — Rosie Makes Room (shipped):** give Changed Home its
     own authored Rosie pose so the earned crops and pond remain readable,
     while the same canonical rig still reacts to the final tickle and returns
     to its normal morning scale on the next day.
@@ -177,13 +177,24 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Reload, reduced-motion, and rapid-double-input checks preserved Position 11,
   one tickle reward, and the authored Home pose without browser warnings or
   errors.
+- GitHub Pages deployment `31147845527` completed successfully from commit
+  `f343009`. On the public 390×844 build, Changed Home reported Rive `ready`,
+  held motion `home` after the final tickle, preserved all three beds and the
+  pond, and produced no browser warnings or errors.
+- The public Position 10 → 11 path recorded `tickle` as the last performed
+  motion and awarded the final interaction once. **Begin another day** then
+  restored Position 1 with the large canonical Rosie target and motion
+  `breathing`.
 
 ### Next highest-leverage weakness
 
-Replay the locally verified checkpoint beside the approved concept sequence
-and choose the next single player-visible weakness. Do not add a crop,
-destination, currency, or parallel system merely because Rosie now makes room
-for the Farm.
+The shipped-build comparison makes the pond resident the clearest remaining
+visual mismatch: the bright, flat outlined frog reads like a sticker against
+the painterly pond and canonical Rosie. The next checkpoint should improve
+only the existing Rive frog's authored appearance and registration while
+preserving its quiet response, earned timing, and React-owned persistence. Do
+not add a crop, destination, currency, or parallel system merely because Rosie
+now makes room for the Farm.
 
 ### v0.38 — The Crops Belong Here — 2026-08-06
 
