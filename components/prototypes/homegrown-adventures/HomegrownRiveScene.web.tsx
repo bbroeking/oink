@@ -24,6 +24,8 @@ const NOTICE_ANIMATION = "Rosie Notice";
 const BAG_HIDDEN_ANIMATION = "Rosie Bag Hidden";
 const BAG_EQUIPPED_ANIMATION = "Rosie Pack";
 const BAG_EQUIPPED_SETTLE_SECONDS = 16 / 60;
+const HOME_POSE_ANIMATION = "Rosie Home Admire";
+const HOME_POSE_SETTLE_MS = 700;
 const CROP_STATE_ANIMATIONS = {
 	empty: "Clover Bed Empty",
 	sprout: "Clover Bed Growing",
@@ -88,6 +90,7 @@ const CHARACTER_ANIMATIONS = [
 	AUTHORED_TRIGGER_ANIMATIONS.pack,
 	AUTHORED_TRIGGER_ANIMATIONS.return,
 	NOTICE_ANIMATION,
+	HOME_POSE_ANIMATION,
 ].filter((name): name is string => Boolean(name));
 
 type RosieMotion =
@@ -99,6 +102,7 @@ type RosieMotion =
 	| "pack"
 	| "departure"
 	| "return"
+	| "home"
 	| "reduced";
 
 type CropMotion =
@@ -128,6 +132,7 @@ export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
 	model: HomegrownRiveViewModel;
 	showPondResident: boolean;
+	showHomePose?: boolean;
 	trigger: HomegrownRiveMotionTrigger | null;
 	triggerNonce: string;
 }
@@ -140,6 +145,7 @@ function HomegrownRiveSceneImpl({
 	reduceMotion,
 	model,
 	showPondResident,
+	showHomePose = false,
 	trigger,
 	triggerNonce,
 }: HomegrownRiveSceneProps) {
@@ -264,6 +270,18 @@ function HomegrownRiveSceneImpl({
 				schedule(startBreathing, 2_250);
 			}, 1_000);
 		};
+		const holdHomePose = () => {
+			rive.stop(HOME_POSE_ANIMATION);
+			rive.play(HOME_POSE_ANIMATION);
+			rive.scrub(HOME_POSE_ANIMATION, 0);
+			schedule(() => rive.pause(HOME_POSE_ANIMATION), 0);
+			syncSatchelVisibility();
+			setMotion("home");
+		};
+		const settleCharacter = () => {
+			if (showHomePose) holdHomePose();
+			else startBreathing();
+		};
 
 		clearTimers();
 		stopCharacterMotion();
@@ -274,12 +292,13 @@ function HomegrownRiveSceneImpl({
 
 		if (reduceMotion) {
 			rive.pause(CHARACTER_ANIMATIONS);
+			if (showHomePose) holdHomePose();
 			setMotion("reduced");
 			return clearTimers;
 		}
 
 		if (!isNewTrigger || !trigger) {
-			startBreathing();
+			settleCharacter();
 			return () => {
 				clearTimers();
 				stopCharacterMotion();
@@ -295,9 +314,12 @@ function HomegrownRiveSceneImpl({
 			else property.trigger();
 		}
 
-		const animation = AUTHORED_TRIGGER_ANIMATIONS[trigger];
+		const animation =
+			showHomePose && trigger === "tickle"
+				? HOME_POSE_ANIMATION
+				: AUTHORED_TRIGGER_ANIMATIONS[trigger];
 		if (!animation) {
-			startBreathing();
+			settleCharacter();
 			return clearTimers;
 		}
 
@@ -313,7 +335,9 @@ function HomegrownRiveSceneImpl({
 		rive.play(animation);
 		setLastPerformedMotion(trigger);
 		setMotion(
-			trigger === "pack"
+			showHomePose && trigger === "tickle"
+				? "home"
+				: trigger === "pack"
 				? "pack"
 				: trigger === "departure"
 					? "departure"
@@ -339,7 +363,9 @@ function HomegrownRiveSceneImpl({
 			}, 1_520);
 		} else {
 			const settleDelay =
-				trigger === "departure"
+				showHomePose && trigger === "tickle"
+					? HOME_POSE_SETTLE_MS
+					: trigger === "departure"
 					? 1_000
 					: trigger === "return"
 						? 900
@@ -349,7 +375,7 @@ function HomegrownRiveSceneImpl({
 			schedule(() => {
 				rive.stop(animation);
 				syncSatchelVisibility();
-				startBreathing();
+				settleCharacter();
 			}, settleDelay);
 		}
 
@@ -357,7 +383,15 @@ function HomegrownRiveSceneImpl({
 			clearTimers();
 			stopCharacterMotion();
 		};
-	}, [model.rosieAction, model.satchelEquipped, reduceMotion, rive, trigger, triggerNonce]);
+	}, [
+		model.rosieAction,
+		model.satchelEquipped,
+		reduceMotion,
+		rive,
+		showHomePose,
+		trigger,
+		triggerNonce,
+	]);
 
 	useEffect(() => {
 		if (!rive || !HOMEGROWN_RIVE_ASSET_AUTHORED) return;

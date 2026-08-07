@@ -95,6 +95,13 @@ static Moonberry and Glowroot vector masses in the browser composition.
 future crop from appearing early. React still owns visibility and persistence;
 Rive remains responsible for the shared Home flourish, Rosie, and residents.
 
+The Changed Home composition adds `Rosie Home Admire`, a root-bone-only pose
+on the canonical rig. It reduces and shifts Rosie left for Position 11 so the
+remembered crops and pond remain visible, gives the final tickle one small
+lift, and settles to the same ground line. React owns when the pose is active,
+holds it on reload and reduced motion, and returns to ordinary breathing on
+the next morning.
+
 The Dusk Moths Arrive checkpoint adds one native golden-and-purple moth in the
 open sky above the Barn. `Dusk Moths Hidden` and `Dusk Moths Present` are the
 reducer-selected persisted poses; `Dusk Moths Arrive` is a bounded 21-frame

@@ -123,11 +123,67 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     remembered Moonberry and Glowroot masses with state-bound painterly bed
     art, and repair the ready-Clover reveal gate found during the complete
     rendered replay.
+40. **v0.39 — Rosie Makes Room (locally verified):** give Changed Home its
+    own authored Rosie pose so the earned crops and pond remain readable,
+    while the same canonical rig still reacts to the final tickle and returns
+    to its normal morning scale on the next day.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.39 — Rosie Makes Room — 2026-08-07
+
+- Replayed Position 11 beside
+  `rosie-v3/11-changed-barn-next-day.png`. The Farm's new pond and painterly
+  crops were correct, but the unchanged first-morning Rosie pose still filled
+  the center of the phone and covered the world the player had just earned.
+- Authored one new root-bone timeline on the existing canonical Rosie rig.
+  `Rosie Home Admire` holds the body at `(118, 500)` and `50%` scale, gives it
+  one restrained six-pixel lift, and settles to the same pose. No alternate
+  character art, DOM duplicate, new rig, or progression fact was added.
+- React selects that pose only while the Changed Home memory is being shown.
+  The final tickle replays the small authored response instead of jumping to
+  Rosie's full-size first-morning animation; reload and reduced motion hold the
+  correct Rive frame, and **Begin another day** restores the normal breathing
+  pose automatically.
+
+### Observable acceptance criteria
+
+- Position 11 keeps Rosie recognizably canonical, left of the center beds,
+  with all three crops, the crate, pond, and frog readable at once.
+- The final **Tickle Rosie** action changes the earned total exactly once and
+  never pops Rosie back to her larger morning scale.
+- Direct reload and reduced motion hold the smaller Home pose; the next
+  morning restores the large, obvious Rosie tickle target.
+- Fast-forwarding backward and forward does not leak the Home pose into any
+  earlier position, and rapid input cannot skip into a second day.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 41/41 gameplay and persistence tests.
+- `npm run verify:rive-homegrown` — 390×844 artboard and all 59 authored names.
+- `npm run verify:rive-web` — passed from an exact staged-checkpoint clone;
+  three Expo bundles contain only the approved WebGL2 boundaries.
+- `npm run quality:loop` and `npm run quality:check` — pass, including layout,
+  security, TypeScript, sprite, and contract gates.
+- Rendered 390×844 and 375×812 checks keep Rosie at the concept's left-side
+  ground line while every remembered bed and the pond remain unobscured.
+- Clean full-loop replay completed morning tickle, farming, rhythm harvest,
+  Bag preparation, deterministic Adventure, return, Changed Home, and the
+  next morning. Rive reported `ready`; Changed Home settled to `home`, the
+  final input recorded `tickle`, and the next morning resumed `breathing`.
+- Reload, reduced-motion, and rapid-double-input checks preserved Position 11,
+  one tickle reward, and the authored Home pose without browser warnings or
+  errors.
+
+### Next highest-leverage weakness
+
+Replay the locally verified checkpoint beside the approved concept sequence
+and choose the next single player-visible weakness. Do not add a crop,
+destination, currency, or parallel system merely because Rosie now makes room
+for the Farm.
 
 ### v0.38 — The Crops Belong Here — 2026-08-06
 

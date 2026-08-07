@@ -1101,6 +1101,7 @@ function App() {
 				reduceMotion={state.reduceMotion}
 				model={riveModel.viewModel}
 				showPondResident={homeMemoryEarned && riveModel.viewModel.frogVisible}
+				showHomePose={showingHomeMemory}
 				trigger={riveModel.trigger}
 				triggerNonce={riveModel.triggerNonce}
 			/>

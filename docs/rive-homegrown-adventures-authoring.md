@@ -172,6 +172,14 @@ motion source. The browser must never reveal either painted clip while its bed
 state is `empty`; reduced motion holds the final registered art without an
 arrival animation.
 
+The v0.39 Changed Home pose adds `Rosie Home Admire` to the same foreground
+rig. It keys only the shared `body` root: `(118, 500)` at `50%` scale for the
+resting frame, a restrained lift to `(118, 494)` at `51%`, then the exact
+resting pose again. React selects and holds frame zero only at Position 11,
+plays the bounded lift for the final tickle, and restores the ordinary
+full-size breathing pose after **Begin another day**. The new clip never owns
+Home progression, the tickle reward, persistence, or position selection.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the
