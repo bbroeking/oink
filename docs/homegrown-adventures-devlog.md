@@ -131,15 +131,74 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     the existing native Rive frog so it sits quietly inside the painterly pond
     instead of reading as an oversized neon sticker, without changing its
     reveal, response cadence, persistence, or progression ownership.
-42. **v0.41 — The Hedge Becomes a Doorway (locally verified):** layer two
+42. **v0.41 — The Hedge Becomes a Doorway (shipped):** layer two
     restrained native Rive foliage backings behind the existing flowering
     crossing so Changed Home reads as a permanent garden arch instead of a
     thin temporary effect, without changing its earned state or progression.
+43. **v0.42 — Leaves Make the Doorway (locally verified):** break the smooth
+    hedge bands into crossed rows of native Rive leaf shapes, keeping the
+    established blossom path in front and the same earned Home state beneath.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.42 — Leaves Make the Doorway — 2026-08-07
+
+- Replayed the shipped v0.41 Position 11 and next morning beside
+  `rosie-v3/11-changed-barn-next-day.png`. The crossing finally had doorway
+  weight, but its broad, smooth green bands still read as ribbon. The concept
+  gets its garden-arch silhouette from clustered leaves that interrupt the
+  edge, not from another progression object or denser UI.
+- Added two low-opacity native Rive foliage copies with deliberately different
+  X/Y scale, rotation, and offset, then duplicated the existing green node
+  subgroup into two crossed rows of stretched ellipses. Those editable shapes
+  now protrude as leaves while one exact blossom copy remains at the front.
+  All additions stay inside the existing Home consequence hierarchy and use
+  the current olive, sage, leaf-green, and blossom palette.
+- Mirrored the backing and leaf-row construction in
+  `assets/rive/homegrown-adventures/source/home-remembers.svg`. The current
+  `Home Consequence Hidden`, `Home Consequence Developed`, and
+  `Glowroot Home Flourish` timelines still own presentation; React still owns
+  `hedgeCrossingOpen`, persistence, rewards, text, and reduced motion.
+
+### Observable acceptance criteria
+
+- The earned crossing reads as one flowered, leafy garden doorway at 390x844
+  and desktop sizes, with an irregular plant silhouette instead of a smooth
+  translucent band.
+- The Barn, bell, canonical Rosie, crops, pond, frog, Farm stock, and single
+  primary action remain readable and unobscured.
+- Reload, next morning, reduced motion, and 11 -> 10 -> 11 fast-forward hold
+  the same developed pose. No new timeline, state-machine input, reward, crop,
+  destination, resident, currency, or progression fact is introduced.
+
+### Local validation evidence
+
+- A fresh rendered 390x844 loop completed Tickle Rosie, Clover Seed and
+  optional Compost, predictable growth, left-right-up Harvest Rhythm, Farm
+  stock, the full freely chosen Bag, deterministic Adventure, exact return
+  rewards, Glowroot planting, Moonberry follow-through, and Changed Home.
+- Direct reload retained the leafy doorway. Reduced motion toggled from motion
+  back to the held pose, fast-forward traversed 11 -> 10 -> 11, and eight
+  simultaneous tickle attempts increased the total from 1,119 to 1,120
+  exactly once. The browser reported no warnings or errors.
+- Touch 390x844 and desktop 1280x720 renders kept the full composition
+  readable with no horizontal overflow or clipped game controls.
+- `npm run prototype:homegrown:test` — 41/41 gameplay and persistence tests.
+- `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+
+### Next highest-leverage weakness
+
+A rendered second-day replay exposed a progression dead end: after the first
+Glowroot is already planted, the same deterministic Adventure can return
+another Glowroot Seed, but Position 10 still says **Plant Glowroot** and the
+action cannot advance. The next bounded checkpoint should make an already-known
+Discovery join Farm stock and finish the Homecoming without inventing another
+crop, destination, currency, or reward system.
 
 ### v0.41 — The Hedge Becomes a Doorway — 2026-08-07
 
@@ -192,10 +251,21 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
   78 layout tests, and 202 security tests passed.
 
+### Public deployment evidence
+
+- Shipped commit `8944b66` through GitHub Pages run `31151173732`.
+- The public page loaded the exact content-hashed game and animation-lab
+  bundles plus the authored Rive file with HTTP 200 responses and no browser
+  warnings or errors.
+- Public Position 11 exposed exactly **Begin another day**, **Previous**, and
+  **Loop**. Beginning the next day returned to **Tickle Rosie** while the open
+  doorway, bell, crops, pond, frog, and Farm stock remained visible.
+
 ### Next checkpoint selection
 
-Public deployment and replay will determine the next highest-leverage
-player-visible weakness. No parallel system is selected from local inspection.
+The public comparison selected v0.42: replace the smooth ribbon-like edge with
+restrained native leaf clusters while keeping the same doorway and progression
+fact. No parallel system was selected.
 
 ### v0.40 — The Frog Belongs Here — 2026-08-07
 

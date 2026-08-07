@@ -124,6 +124,16 @@ result is one broad flowered doorway instead of a thin pair of vector strokes.
 Flourish` remain unchanged; no new authored name or runtime progression input
 was introduced.
 
+The v0.42 leaf treatment keeps that exact state and timeline contract while
+breaking the backing silhouette into foliage. Two additional muted copies use
+different X/Y scales, offsets, rotations, and restrained blend values. Inside
+one green node subgroup, two editable duplicates stretch the existing circles
+into crossed rows of elliptical leaves; an exact blossom copy remains in
+front. The authored leaves therefore reveal, persist, and stop with the same
+Home consequence parent. React still owns `hedgeCrossingOpen`, save state,
+rewards, copy, and reduced-motion selection, and no new Rive input or gameplay
+fact was added.
+
 The Dusk Moths Arrive checkpoint adds one native golden-and-purple moth in the
 open sky above the Barn. `Dusk Moths Hidden` and `Dusk Moths Present` are the
 reducer-selected persisted poses; `Dusk Moths Arrive` is a bounded 21-frame

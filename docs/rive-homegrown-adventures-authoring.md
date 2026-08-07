@@ -270,6 +270,15 @@ For reduced motion, the web boundary atomically plays, scrubs to that authored
 endpoint, and pauses on the next task; this makes Rive WebGL2 commit every
 nested shape without presenting an intermediate motion frame.
 
+The v0.42 Leaves Make the Doorway checkpoint extends the existing Home
+consequence hierarchy without adding a timeline or input. Two muted copies of
+the flowering crossing diverge in position, X/Y scale, rotation, and blend to
+break the smooth backing edge. Two duplicated green-node subgroups stretch the
+current circles into crossed elliptical leaf rows, while an exact blossom copy
+stays in front. Hidden, Developed, and `Glowroot Home Flourish` therefore
+continue to reveal and hold one parent rig; React still owns the earned hedge
+fact, persistence, rewards, copy, and reduced-motion selection.
+
 ## Layer and rig plan
 
 Build back to front: sky and distant hills; Barn and hedge; crossing and Hedge

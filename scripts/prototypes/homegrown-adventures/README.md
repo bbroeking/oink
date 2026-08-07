@@ -77,6 +77,14 @@ arch instead of two thin temporary strokes. React still owns
 `hedgeCrossingOpen`, reload, next-morning persistence, and reduced motion; the
 Rive edit adds no destination, reward, or progression state.
 
+The v0.42 leaf pass keeps that same doorway but gives its foliage an irregular
+edge. Two more low-opacity native Rive backings diverge slightly in scale,
+rotation, and registration, while crossed elliptical duplicates of the
+existing green node group read as leaves at the arch edge. The original pink
+blossoms remain in front. The same Home consequence parent still handles
+reveal, developed hold, reload, and reduced motion; React owns every gameplay
+fact.
+
 The remembered Moonberry and Glowroot beds use registered clips from
 `11-changed-home-painted-crops-scene-plate.png` above that same pond plate.
 `bedTwoState` and `bedThreeState` independently reveal the middle and right
