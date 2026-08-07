@@ -346,8 +346,8 @@ function HomegrownRiveSceneImpl({
 		}
 
 		// Restarting makes rapid tickles deterministic instead of queueing them.
-		// The departure timeline deliberately keys only the shared root bone. Keep
-		// the complete foreground pose painted underneath it, exactly as Notice
+		// Departure layers its walk, fitted Bag counter-swing, and late hedge
+		// acknowledgement over the complete foreground pose, exactly as Notice
 		// layers its directional lean over the authored breathing base.
 		if (trigger === "departure") {
 			rive.stop(BREATHING_ANIMATION);
@@ -801,6 +801,7 @@ function HomegrownRiveSceneImpl({
 			aria-hidden="true"
 		>
 			<RiveComponent aria-label="" />
+			<span className="departure-dusk-handoff" aria-hidden="true" />
 			<span className="painted-kitchen-patch" aria-hidden="true" />
 			<span
 				className="painted-remembered-crop painted-remembered-crop-moonberry"
