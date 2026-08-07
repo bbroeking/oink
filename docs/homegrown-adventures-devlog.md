@@ -277,6 +277,14 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Reduced motion reaches Position 4 with `data-rive-crop-motion="reduced"` and
   no flourish. Immediate duplicate Plant input reaches Position 4 once.
   Mobile Safari sharpness and feel remain the manual device gate.
+- GitHub Pages run `31217733579` deployed checkpoint `8effae0`. A fresh public
+  fetch returned CSS `0c74353dc0` and JavaScript `d9f95a10bc`, both containing
+  the new bounded response. Real public play at 390×844 recorded `plant` at
+  80ms, `compost-wake` at 240ms and 520ms, then stable `growing` at 1160ms.
+  Reload remained `growing`; reduced motion reported `reduced`; rapid duplicate
+  Plant reached Position 4 once; public fast-forward landed on the stable
+  **Composted · Ready in 2 hours** state. No console errors occurred. The
+  companion site now links **See Compost wake the bed** to Position 3.
 
 ### Observable acceptance criteria
 
