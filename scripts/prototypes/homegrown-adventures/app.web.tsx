@@ -256,23 +256,27 @@ function SeedChoicePanel({ state, onChoose }) {
 	if (rememberedMorning) {
 		return (
 			<section className="seed-choice-panel seed-choice-memory" aria-label="Choose the next crop while Home keeps growing">
-				<div className="seed-memory-ledger">
-					<strong>Already growing at Home</strong>
-					<span><i aria-hidden="true">●</i><b>Moonberries</b><small>Bed 2 · growing</small></span>
-					<span className={glowrootSeeds > 0 ? "has-stored-seed" : undefined}>
-						<i aria-hidden="true">✦</i><b>Glowroot</b><small>Bed 3 · planted</small>
-						{glowrootSeeds > 0 && <em>{glowrootSeeds} Seed{glowrootSeeds === 1 ? "" : "s"} stored</em>}
+				<button className="seed-next-primary" type="button" onClick={onChoose} disabled={cloverSeeds < 1}>
+					<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
+					<span className="seed-next-copy">
+						<small>Plant next</small>
+						<strong>Clover Seed</strong>
+						<b>{cloverSeeds} owned · stocks Rosie’s next Adventure</b>
 					</span>
+					<em>{cloverSeeds > 0 ? "Choose Clover" : "Need a Seed"}</em>
+				</button>
+				<div className="seed-choice-support">
+					<div className="seed-memory-strip" aria-label="Already growing at Home">
+						<strong>Growing</strong>
+						<span><i aria-hidden="true">●</i><b>Moonberries</b><small>Bed 2</small></span>
+						<span><i aria-hidden="true">✦</i><b>Glowroot</b><small>Bed 3</small></span>
+					</div>
+					<div className="seed-compost-note" aria-label={`Compost is an optional boost after choosing a Seed. ${compost} owned.`}>
+						<i aria-hidden="true">♣</i>
+						<span><small>Optional after Seed</small><strong>Compost · {compost} owned</strong></span>
+					</div>
+					{glowrootSeeds > 0 && <p>{glowrootSeeds} Glowroot Seed{glowrootSeeds === 1 ? "" : "s"} safe in Farm stock</p>}
 				</div>
-				<div className="seed-choice-next-row">
-					<button type="button" onClick={onChoose} disabled={cloverSeeds < 1}>
-						<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
-						<span><small>Plant next</small><strong>Clover Seed</strong><b>{cloverSeeds} owned</b></span>
-						<em>{cloverSeeds > 0 ? "Choose Clover" : "Need a Seed"}</em>
-					</button>
-					<div><span className="seed-art seed-art-compost" aria-hidden="true">♣</span><span><small>Optional boost</small><strong>Compost</strong><b>{compost} owned</b></span></div>
-				</div>
-				<p>Your Adventure changed Home. Clover can stock the next one.</p>
 			</section>
 		);
 	}
