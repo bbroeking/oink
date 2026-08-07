@@ -127,7 +127,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     own authored Rosie pose so the earned crops and pond remain readable,
     while the same canonical rig still reacts to the final tickle and returns
     to its normal morning scale on the next day.
-41. **v0.40 — The Frog Belongs Here (locally verified):** restyle and reduce
+41. **v0.40 — The Frog Belongs Here (shipped):** restyle and reduce
     the existing native Rive frog so it sits quietly inside the painterly pond
     instead of reading as an oversized neon sticker, without changing its
     reveal, response cadence, persistence, or progression ownership.
@@ -177,13 +177,24 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Reload preserved Position 11 and the resident. Reduced motion reported
   `frog="reduced"`; rapid double input awarded the final tickle once; and the
   browser produced no warnings or errors.
+- GitHub Pages deployment `31149087659` completed successfully from commit
+  `6bf3b87`. On the public 390×844 build, Position 11 reported Rive `ready`,
+  `frog="present"`, `motion="home"`, exact 390-pixel document width, and no
+  browser warnings or errors.
+- Public **Begin another day** restored Position 1, Rosie's `breathing` motion,
+  and the primary **Tickle Rosie** action while keeping the earned frog visible
+  beside the remembered pond.
 
 ### Next highest-leverage weakness
 
-Replay the locally verified checkpoint beside the approved concept sequence
-and choose the next single player-visible weakness after the public build is
-verified. Do not add a visitor, destination, currency, crop, or parallel
-system merely because the pond resident now belongs in the scene.
+The shipped-build comparison now makes the hedge crossing the clearest visual
+mismatch: its thin green stem, bright pink nodes, and sparkles read like a
+temporary vector effect instead of the lush flowered arch in the approved
+Position 11 concept. The next checkpoint should improve only the existing
+crossing's authored Rive appearance and registration while preserving the
+earned bell, open/hidden state, reduced motion, and React-owned persistence. Do
+not add a visitor, destination, currency, crop, or parallel system merely
+because the pond resident now belongs in the scene.
 
 ### v0.39 — Rosie Makes Room — 2026-08-07
 
