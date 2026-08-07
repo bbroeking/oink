@@ -32,8 +32,9 @@ responsive DOM controls, and GitHub Pages route live in
 `scripts/prototypes/homegrown-adventures/` and `docs/homegrown-adventures.html`.
 The authored Rive scene is checked in: a transparent 390×844 artboard, embedded
 Rosie texture, mesh/bone rig, exact View Model contract, and named breathing,
-tickle, notice, pack, departure, return, and Bag-hidden motions. The tan clover satchel is
-a native vector group registered to Rosie's body with offset-preserving
+tickle, notice, pack, departure, return, and Bag-hidden motions. The compact
+brown clover satchel is a native vector group registered to Rosie's body with
+offset-preserving
 translation, rotation, and scale constraints. Kitchen Patch bed one now has a
 native crop rig with reducer-bound empty, growing, and ready poses plus plant,
 flourish, and harvest one-shots.
@@ -122,6 +123,17 @@ product-design pass also shortens the empty-card action without weakening its
 accessible name. The next visible weakness is Position 8: the correct equipped
 state currently paints as a large flat mustard block that obscures Rosie rather
 than the believable worn satchel established by `rosie-v3/08-departure.png`.
+
+**Fitted-satchel checkpoint (August 7, 2026):** Position 8 now keeps the same
+native `rosie_satchel` but reduces its equipped endpoint to a compact worn pose,
+recolors its body and flap from mustard to warm brown leather, and restrains the
+Return swing around that same endpoint. The Bag remains attached to canonical
+Rosie through Pack, departure, Return, direct reload, and reduced motion; no
+duplicate DOM equipment or new inventory state was added. The rendered
+390x844, 360x780, and centered desktop views were compared with
+`rosie-v3/08-departure.png` through the installed Impeccable design review. The
+next visible weakness is the departure itself: Rosie still reads as a
+front-facing slide instead of clearly walking toward the hedge path.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose

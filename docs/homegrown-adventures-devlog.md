@@ -188,14 +188,56 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 57. **v0.56 — The Chosen Item Leads the Motion (shipped):** make only the
     most recently changed Provision, Tool, or Pack token lead the shared Bag
     response, so the animation communicates which exact choice just landed.
-58. **v0.57 — The Bag Fits Rosie (in progress):** replace Position 8's large,
-    flat mustard satchel block with a believable worn Bag that preserves
-    canonical Rosie's silhouette and keeps the chosen loadout readable at dusk.
+58. **v0.57 — The Bag Fits Rosie (shipped):** replace Position 8's large, flat
+    mustard satchel block with a compact warm-brown worn Bag that preserves
+    canonical Rosie's silhouette through departure, Return, and reload.
+59. **v0.58 — Rosie Walks Beyond the Hedge (in progress):** replace the current
+    front-facing departure slide with a legible walk toward the hedge path,
+    including restrained leg cadence, satchel bob, and a clear handoff to dusk.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.57 — The Bag Fits Rosie — 2026-08-07
+
+- Replayed Position 8 at 390x844 and compared it with
+  `rosie-v3/08-departure.png`. The chosen loadout and equipped fact were correct,
+  but the authored mustard satchel was approximately one and a half times the
+  intended scale and covered Rosie's lower face and chest like a flat tile.
+- Refined the existing native `rosie_satchel` in the paid Rive workspace rather
+  than introducing a parallel asset. `Rosie Pack` now settles at `(-58, -58)`,
+  112% scale, and 82° rotation; `Rosie Return` shares that endpoint with a
+  restrained 112% → 118% → 110% → 112% swing.
+- Recolored the same editable vector body, flap, and strap highlight to warm
+  brown leather (`#8b5a32`, `#b97845`, `#c28a4b`) while retaining the dark edge
+  and clover clasp. The source SVG mirrors those authoring colors.
+- Kept `satchelEquipped`, loadout identity, persistence, and transition timing
+  in React. Rive still owns only the visible Bag pose and movement, and the
+  existing Position 7 `Bag Receive` response remains unchanged.
+- Ran the rendered 390x844, 360x780, and centered desktop screens through the
+  installed Impeccable design review as the available Claude-Design substitute.
+  The Bag now reads as equipment on canonical Rosie, the one-action hierarchy
+  remains clear, and the page has no horizontal or vertical overflow at the
+  compact touch size.
+- Replayed Pack, departure, Adventure, Return, reload, reduced motion, and the
+  prior one-item Bag-selection response in the real browser. The next concept
+  comparison makes the remaining weakness specific: Rosie still leaves as a
+  front-facing slide rather than walking toward the hedge path.
+
+### Observable acceptance criteria
+
+- Position 8 holds one compact warm-brown native Rive satchel on Rosie with the
+  exact selected Provision, Tool, and Pack still readable above the scene.
+- Pack, departure, and Return never detach, duplicate, enlarge, or hide the Bag;
+  direct reload and reduced motion paint the same fitted endpoint without a
+  performed one-shot.
+- Position 7 still emits one exact `bag-receive` item flight after the Rive
+  export changes; the selected slot remains observable and rapid input keeps
+  latest-choice-wins behavior.
+- The complete Position 8 frame remains readable and non-overlapping at
+  390x844, 360x780, and centered desktop sizes.
 
 ### v0.56 — The Chosen Item Leads the Motion — 2026-08-07
 

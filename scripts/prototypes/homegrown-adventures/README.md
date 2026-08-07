@@ -190,6 +190,14 @@ and fast-forward preserve the reducer-selected Bag without replaying it. The
 rendered design pass also shortens empty-card copy while keeping complete
 accessible names.
 
+The v0.57 prototype question makes the equipped Bag belong on Rosie. The same
+native `rosie_satchel` now uses a compact 112% settled pose, a restrained return
+swing, and a warm brown leather palette sampled from the approved Position 8
+concept. It remains one editable Rive group attached to Rosie's existing body
+rig. React still owns whether the Bag is equipped and which three choices it
+represents; reload, reduced motion, departure, and return all hold or replay
+that same authored asset without a duplicate DOM satchel.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

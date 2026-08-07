@@ -38,6 +38,13 @@ It gives every valid React-owned slot change one direct 600 ms rise, enlarge,
 settle, and hide performance. The timeline carries no item identity or gameplay
 state; the accessible open-Bag preview remains reducer-derived.
 
+The v0.57 fitted-satchel checkpoint refines the existing group rather than
+introducing another Bag. `Rosie Pack` settles at `(-58, -58)`, 112% scale, and
+82° rotation. `Rosie Return` uses the same endpoint with a restrained
+112% → 118% → 110% → 112% swing. The mustard body and flap become warm brown
+leather (`#8b5a32` / `#b97845`) with a quieter ochre strap highlight. React's
+existing `satchelEquipped` fact and selected Bag items remain authoritative.
+
 The Living Barn checkpoint adds `bed_one_crop_rig` over the first Kitchen
 Patch bed. `Clover Bed Empty`, `Clover Bed Growing`, and `Clover Bed Ready`
 provide deterministic persisted poses; `Clover Plant`,

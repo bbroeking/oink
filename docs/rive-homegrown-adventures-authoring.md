@@ -209,6 +209,16 @@ change only. React still decides when the crossing is open, and the existing
 Hidden, Developed, and `Glowroot Home Flourish` clips continue to supply every
 persisted and reduced-motion pose.
 
+The v0.57 fitted-satchel pass keeps the same `rosie_satchel` hierarchy,
+constraints, and runtime names. The `Rosie Pack` endpoint moves to
+`(-58, -58)`, 112% scale, and 82° rotation so the Bag reads as worn equipment
+instead of a large foreground tile. `Rosie Return` shares that endpoint and
+uses four restrained keyed scales—112%, 118%, 110%, 112%—with rotations of
+78°, 88°, 80°, and 82°. The body, flap, and strap highlight move from mustard
+to `#8b5a32`, `#b97845`, and `#c28a4b`, preserving the clover clasp. This is
+appearance and attachment polish only: React still owns equipment, item
+identity, progression, persistence, and reduced-motion selection.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the
