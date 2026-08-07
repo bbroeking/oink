@@ -16,7 +16,9 @@ the result into a world-anchored four-compartment Farm Stock shelf and full
 Clover basket while React preserves exact quantities and causes; Position 7
 now centers preparation on a physical open Bag with live visible item choices;
 Position 8 now holds the native Rive satchel on Rosie through packing, reload,
-reduced motion, departure, and the causal Adventure handoff.
+reduced motion, departure, and the causal Adventure handoff; Position 9 now
+places that handoff in one tangible twilight clearing, with separate complete
+Discovery and clue-only Near-Discovery plates beneath live Rive Rosie.
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -99,6 +101,19 @@ settled frame, then pauses it on the next task. The same native satchel remains
 attached through the existing one-shot Pack, reload, reduced motion, Rosie's
 departure, and the Position 9 handoff. No duplicate DOM Bag, equipment rule,
 timer, inventory fact, or progression branch was added.
+
+**Physical-Adventure checkpoint (August 6, 2026):** Position 9 now takes place
+in one character-free twilight root alcove derived from the approved
+`rosie-v3/09-adventure-vignette.png` concept. Canonical Rive Rosie and her
+equipped satchel remain live above the scene; three compact hanging tags expose
+the exact reducer-owned Provision, Tool, and Pack causes, and one result marker
+leads to the existing Continue action. A complete Bag uses the physical
+Glowroot, trowel, and basket plate. Any empty slot selects a matched clue-only
+plate with those reward props removed, so underpreparation is kind and useful
+without falsely showing the successful find. Reload, reduced motion, rapid
+input, touch, and desktop rendering pass. The next Goal 6 weakness is that the
+Glowroot reveal itself remains static presentation art rather than a restrained
+Rive reveal and glow; React must continue to own which branch earns it.
 
 **Adventure checkpoint (August 6, 2026):** Position 9 now opens one bounded
 beyond-the-hedge vignette before the ordinary idle wait. Rosie remains visible

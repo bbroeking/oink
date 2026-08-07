@@ -94,11 +94,68 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     satchel visibly equipped through packing, reload, reduced motion, departure,
     and the Adventure handoff instead of letting preparation collapse back into
     labels alone.
+32. **v0.33 — The Glowroot Clearing (locally verified):** replace Position 9's
+    abstract blurred backdrop with one tangible twilight root alcove, preserve
+    live Rive Rosie and the three deterministic causes, and give incomplete
+    Bags a visibly different clue-only version of the same place.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.33.0 — The Glowroot Clearing — 2026-08-06
+
+- Replayed the complete and empty-Provision Position 9 branches and compared
+  them with `rosie-v3/09-adventure-vignette.png`. The causal copy was truthful,
+  but the CSS blur and floating report cards did not make the Adventure feel
+  like a place where Rosie's preparation physically produced a discovery.
+- Generated three character-free twilight-clearing compositions with the
+  built-in ImageGen workflow. A sheltered root alcove won because it preserves
+  the center-left stage for canonical live Rive Rosie while placing the warm
+  root, trowel, and basket together in the world. The two alternate clearings
+  were not added to the game.
+- Derived a second plate from the same clearing for Near-Discoveries: the root,
+  trowel, and basket are absent, leaving only a faint warm leaf-print and motes.
+  Complete and incomplete Bags therefore share one believable location but no
+  longer share the same reward picture.
+- Reworked the three cause tags as small hanging field labels and moved the
+  result into one compact world-anchored find marker. React still derives every
+  label, branch, reward, and transition; the environment plates contain no
+  character, UI text, inventory fact, timer, or progression logic.
+
+### Observable acceptance criteria
+
+- Position 9 reads as a tangible storybook clearing while canonical Rive Rosie
+  and her equipped satchel remain live and unobscured.
+- Clover Lunch, Hand Trowel, and Wicker Basket each explain one specific cause;
+  the complete branch visibly contains the sleeping Glowroot discovery.
+- Leaving any Bag slot empty keeps the same one-action scene but removes the
+  physical reward and presents the reducer-derived promising clue instead.
+- Both outcomes survive reload and reduced motion. Rapid activation dismisses
+  the vignette once, without skipping the deterministic waiting state.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 39/39 pass, including every empty-slot
+  vignette, successful alternatives, persistence, and rapid-transition guards.
+- `npm run verify:rive-homegrown` — pass; the 390×844 artboard and 55 authored
+  names remain intact.
+- `npm run prototype:homegrown:build` — pass; both 780×1688 WebP clearing plates
+  publish under `docs/assets/homegrown-adventures/`.
+- `npm run quality:loop` and `npm run quality:check` — pass, including 78 layout
+  tests, 202 security tests, TypeScript, sprite integrity, and contract gates.
+- Rendered browser validation proved the complete discovery, an empty-Provision
+  Near-Discovery, reload persistence, reduced motion, rapid input, the 390×844
+  touch surface, and the centered desktop presentation.
+
+### Next highest-leverage weakness
+
+The clearing now matches the approved composition, but the sleeping Glowroot
+is still baked into the environment plate. The next checkpoint should author
+one restrained Rive reveal and breathing glow at the existing discovery point,
+with React continuing to own whether the complete or clue branch is shown. No
+new reward, destination, roll, or progression branch is needed.
 
 ### v0.32.0 — Rosie Wears the Choice — 2026-08-06
 

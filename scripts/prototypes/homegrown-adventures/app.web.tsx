@@ -1080,7 +1080,10 @@ function App() {
 			<p><strong>Homegrown Adventures</strong><span>{VARIANTS[variant].question}</span></p>
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
-		<div className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}>
+		<div
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
+		>
 			<div className="scene-plate" role="img" aria-label={sceneLabel(state)} />
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			<HomegrownRiveScene

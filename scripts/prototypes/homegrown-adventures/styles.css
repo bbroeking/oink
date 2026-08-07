@@ -87,37 +87,16 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	position: absolute;
 	inset: 0;
 	z-index: 0;
-	background:
-		radial-gradient(circle at 52% 24%, rgba(255,177,91,.92) 0 5%, rgba(169,95,104,.72) 18%, transparent 35%),
-		radial-gradient(ellipse at 50% 70%, rgba(239,183,80,.22) 0 15%, transparent 40%),
-		linear-gradient(to bottom, #173b4e 0 28%, #385f48 56%, #2f281c 100%);
+	background: url("./assets/homegrown-adventures/adventure-clearing-discovery.webp") center / cover no-repeat;
 }
-.adventure-vignette-backdrop::before {
-	content: "";
-	position: absolute;
-	inset: 0;
-	background:
-		radial-gradient(circle at 3% 8%, #173c2b 0 11%, transparent 12%),
-		radial-gradient(circle at 15% 2%, #234d31 0 13%, transparent 14%),
-		radial-gradient(circle at 88% 3%, #1d462d 0 15%, transparent 16%),
-		radial-gradient(circle at 100% 17%, #143824 0 16%, transparent 17%),
-		radial-gradient(circle at 8% 48%, rgba(28,73,43,.92) 0 17%, transparent 18%),
-		radial-gradient(circle at 96% 54%, rgba(25,65,39,.94) 0 18%, transparent 19%);
-	filter: drop-shadow(0 6px 8px rgba(8,24,17,.38));
+.phone[data-adventure-kind="near-discovery"] .adventure-vignette-backdrop {
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-clue.webp");
 }
 .adventure-vignette-backdrop::after {
 	content: "";
 	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	height: 45%;
-	background:
-		radial-gradient(ellipse at 46% 32%, rgba(247,197,87,.48) 0 1.5%, transparent 2.4%),
-		radial-gradient(ellipse at 64% 43%, rgba(247,197,87,.36) 0 1.2%, transparent 2.2%),
-		radial-gradient(ellipse at 31% 52%, rgba(247,197,87,.28) 0 1.1%, transparent 2%),
-		linear-gradient(145deg, transparent 20%, rgba(20,35,23,.42) 65%),
-		repeating-linear-gradient(168deg, rgba(89,79,42,.16) 0 2px, transparent 2px 17px);
+	inset: 0;
+	background: linear-gradient(to bottom, rgba(5,17,13,.08), transparent 28%, transparent 76%, rgba(4,12,9,.28));
 }
 .adventure-bed-mask {
 	position: absolute;
@@ -126,14 +105,14 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	top: 60.5%;
 	width: 42%;
 	height: 17%;
-	background:
-		radial-gradient(circle at 26% 28%, #3a6845 0 16%, transparent 17%),
-		radial-gradient(circle at 55% 20%, #365f40 0 19%, transparent 20%),
-		radial-gradient(circle at 78% 39%, #31583b 0 20%, transparent 21%),
-		linear-gradient(155deg, #335d3e, #24442f 78%);
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-discovery.webp");
+	background-position: 12px -511px;
+	background-size: 390px 844px;
 	border-radius: 46% 58% 48% 62% / 54% 47% 61% 50%;
-	filter: drop-shadow(0 5px 5px rgba(10,28,18,.28));
 	pointer-events: none;
+}
+.phone[data-adventure-kind="near-discovery"] .adventure-bed-mask {
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-clue.webp");
 }
 .adventure-vignette-overlay {
 	position: absolute;
@@ -143,7 +122,7 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 }
 .adventure-cause-tags {
 	position: absolute;
-	top: 72px;
+	top: 70px;
 	left: 8px;
 	right: 8px;
 	display: grid;
@@ -151,44 +130,60 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	gap: 6px;
 }
 .adventure-cause-tags > div {
+	position: relative;
 	min-width: 0;
-	min-height: 102px;
-	padding: 8px 6px;
+	min-height: 96px;
+	padding: 11px 6px 8px;
 	display: grid;
-	grid-template-rows: 24px auto 1fr;
+	grid-template-rows: 21px auto 1fr;
 	align-items: center;
 	text-align: center;
-	background: rgba(255,249,233,.96);
-	border: 2px solid var(--ink);
-	border-radius: 12px;
-	box-shadow: 2px 3px 0 rgba(48,33,22,.68);
+	background: linear-gradient(155deg, rgba(235,204,151,.97), rgba(195,147,89,.97));
+	border: 2px solid #4d301d;
+	border-radius: 7px 10px 8px 11px;
+	box-shadow: inset 0 0 0 2px rgba(255,238,191,.28), 2px 3px 0 rgba(22,13,8,.64);
+	transform: rotate(-.8deg);
 }
-.adventure-cause-tags > div.is-empty { background: rgba(238,222,190,.94); }
-.adventure-cause-tags i { font-family: Georgia, serif; color: #7da45b; font-size: 22px; font-style: normal; line-height: 1; }
+.adventure-cause-tags > div:nth-child(2) { transform: rotate(.45deg); }
+.adventure-cause-tags > div:nth-child(3) { transform: rotate(-.25deg); }
+.adventure-cause-tags > div::before {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: -7px;
+	width: 7px;
+	height: 7px;
+	transform: translateX(-50%);
+	background: #ead6a9;
+	border: 2px solid #4d301d;
+	border-radius: 50%;
+}
+.adventure-cause-tags > div.is-empty { background: linear-gradient(155deg, rgba(211,194,157,.96), rgba(164,139,103,.96)); }
+.adventure-cause-tags i { font-family: Georgia, serif; color: #456f3d; font-size: 19px; font-style: normal; line-height: 1; }
 .adventure-cause-tags strong { font-family: Caprasimo, Georgia, serif; font-size: 9px; font-weight: 400; line-height: 1.05; }
-.adventure-cause-tags small { align-self: start; color: var(--ink-soft); font-size: 8px; font-weight: 700; line-height: 1.15; }
+.adventure-cause-tags small { align-self: start; color: #4b3829; font-size: 8px; font-weight: 800; line-height: 1.15; }
 .adventure-find {
 	position: absolute;
-	right: 12px;
-	top: 518px;
-	width: 178px;
-	min-height: 116px;
-	padding: 12px 10px 10px 54px;
+	left: 50%;
+	top: 586px;
+	width: 232px;
+	min-height: 66px;
+	padding: 10px 10px 9px 48px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	background: rgba(255,249,233,.96);
-	border: 2px solid var(--ink);
-	border-radius: 14px;
-	box-shadow: 3px 4px 0 rgba(48,33,22,.72);
-	transform: rotate(.7deg);
+	background: linear-gradient(155deg, rgba(239,211,159,.96), rgba(202,157,96,.96));
+	border: 2px solid #4d301d;
+	border-radius: 10px;
+	box-shadow: inset 0 0 0 2px rgba(255,240,197,.26), 3px 4px 0 rgba(22,13,8,.7);
+	transform: translateX(-50%) rotate(.45deg);
 }
 .glowroot-token {
 	position: absolute;
-	left: 10px;
+	left: 9px;
 	top: 50%;
-	width: 38px;
-	height: 50px;
+	width: 31px;
+	height: 40px;
 	transform: translateY(-50%) rotate(8deg);
 	display: grid;
 	place-items: center;
@@ -197,10 +192,16 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	border: 2px solid var(--ink);
 	border-radius: 75% 35% 72% 34%;
 	box-shadow: 0 0 18px rgba(255,205,78,.88);
-	font-size: 18px;
+	font-size: 15px;
+}
+.adventure-vignette-overlay[data-story-kind="near-discovery"] .glowroot-token {
+	color: #f5d578;
+	background: #5d4930;
+	border-radius: 50% 14% 50% 14%;
+	box-shadow: 0 0 12px rgba(255,205,78,.46);
 }
 .adventure-find strong { font-family: Caprasimo, Georgia, serif; font-size: 12px; font-weight: 400; line-height: 1.08; }
-.adventure-find small { margin-top: 7px; color: var(--ink-soft); font-size: 8px; font-weight: 700; line-height: 1.18; }
+.adventure-find small { margin-top: 4px; color: #4b3829; font-size: 8px; font-weight: 800; line-height: 1.18; }
 .adventure-continue {
 	position: absolute;
 	left: 50%;
