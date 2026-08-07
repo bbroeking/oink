@@ -131,11 +131,71 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     the existing native Rive frog so it sits quietly inside the painterly pond
     instead of reading as an oversized neon sticker, without changing its
     reveal, response cadence, persistence, or progression ownership.
+42. **v0.41 — The Hedge Becomes a Doorway (locally verified):** layer two
+    restrained native Rive foliage backings behind the existing flowering
+    crossing so Changed Home reads as a permanent garden arch instead of a
+    thin temporary effect, without changing its earned state or progression.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.41 — The Hedge Becomes a Doorway — 2026-08-07
+
+- Replayed Position 11 beside
+  `rosie-v3/11-changed-barn-next-day.png`. The earned crops, pond, frog, and
+  smaller Rosie were readable, but the hedge crossing was still two thin
+  bright strokes with regularly spaced nodes. It read like a temporary vector
+  trail rather than the lasting flowered entrance in the approved concept.
+- Duplicated the existing editable `hedge_crossing_flourish` group twice in
+  Rive, kept both copies inside the existing Home consequence hierarchy, and
+  sent them behind the original blossom layer. The two backings sit only a few
+  pixels to either side of the established path, use muted olive, sage, and
+  leaf-green colors, and hold the outer layer at 82% blend. The original pink
+  blossoms remain in front, turning the single line into one broad planted
+  arch without adding a new object, resident, or effect timeline.
+- Mirrored the authored backing construction in
+  `assets/rive/homegrown-adventures/source/home-remembers.svg`. Hidden,
+  Developed, and `Glowroot Home Flourish` still reveal the same parent rig;
+  React remains the sole owner of `hedgeCrossingOpen`, persistence, rewards,
+  and reduced-motion selection.
+
+### Observable acceptance criteria
+
+- The crossing reads as a substantial flowered doorway at 390x844 and desktop
+  sizes while leaving the Barn, bell, Rosie, crops, pond, and primary action
+  unobscured.
+- The added native foliage is absent before the Home memory is earned, appears
+  with the established Home flourish, and holds the same developed pose after
+  reload, fast-forward, reduced motion, and the next morning.
+- No new timeline, state-machine input, reward, crop, destination, resident,
+  or progression fact is introduced.
+
+### Local validation evidence
+
+- A clean rendered loop completed Tickle Rosie, Seed and optional Compost,
+  predictable growth, Clover's left-right-up Harvest Rhythm, Farm stock, the
+  freely chosen Bag, deterministic Adventure, return rewards, Glowroot
+  planting, Changed Home, and the next morning at 390x844.
+- Position 11 retained the flowered doorway after direct reload. Reduced
+  motion held the developed frame, fast-forward traversed 11 -> 10 -> 11, and
+  simultaneous rapid tickle input increased the total from 1,119 to 1,120
+  exactly once. The browser reported no warnings or errors.
+- Desktop 1280x720 and touch 390x844 renders kept the complete Changed Home
+  composition readable with no clipped controls or horizontal overflow.
+- `npm run prototype:homegrown:test` — 41/41 gameplay and persistence tests.
+- `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
+- `npm run verify:rive-web` — passed from an exact staged-checkpoint clone;
+  three Expo bundles kept their approved WebGL2 boundaries with no native
+  runtime leakage.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+
+### Next checkpoint selection
+
+Public deployment and replay will determine the next highest-leverage
+player-visible weakness. No parallel system is selected from local inspection.
 
 ### v0.40 — The Frog Belongs Here — 2026-08-07
 

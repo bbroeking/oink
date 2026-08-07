@@ -1,5 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
   <g id="home_consequence_rig">
+    <g id="hedge_crossing_leaf_back" opacity="0.82" transform="translate(335 330) translate(-3 3) scale(1.03 1.02) translate(-335 -330)">
+      <path d="M282 399 C285 338 301 286 335 259 C353 245 371 241 389 244" fill="none" stroke="#315b2d" stroke-width="8" stroke-linecap="round"/>
+      <path d="M294 401 C298 344 312 302 341 276 C355 264 372 258 389 260" fill="none" stroke="#6f9b4a" stroke-width="4.5" stroke-linecap="round"/>
+      <g fill="#789258" stroke="#4e6f38" stroke-width="1.5">
+        <circle cx="291" cy="370" r="4"/><circle cx="300" cy="337" r="3.5"/>
+        <circle cx="311" cy="310" r="4"/><circle cx="326" cy="286" r="3.5"/>
+        <circle cx="345" cy="269" r="4"/><circle cx="367" cy="258" r="3.5"/>
+        <circle cx="384" cy="254" r="4"/>
+      </g>
+      <g fill="#b6c87a" opacity="0.95">
+        <circle cx="286" cy="389" r="2"/><circle cx="307" cy="324" r="2"/>
+        <circle cx="335" cy="276" r="2"/><circle cx="376" cy="259" r="2"/>
+      </g>
+    </g>
+    <g id="hedge_crossing_leaf_inner" transform="translate(335 330) translate(3 -2) scale(.97 .98) translate(-335 -330)">
+      <path d="M282 399 C285 338 301 286 335 259 C353 245 371 241 389 244" fill="none" stroke="#315b2d" stroke-width="8" stroke-linecap="round"/>
+      <path d="M294 401 C298 344 312 302 341 276 C355 264 372 258 389 260" fill="none" stroke="#6f9b4a" stroke-width="4.5" stroke-linecap="round"/>
+      <g fill="#789258" stroke="#4e6f38" stroke-width="1.5">
+        <circle cx="291" cy="370" r="4"/><circle cx="300" cy="337" r="3.5"/>
+        <circle cx="311" cy="310" r="4"/><circle cx="326" cy="286" r="3.5"/>
+        <circle cx="345" cy="269" r="4"/><circle cx="367" cy="258" r="3.5"/>
+        <circle cx="384" cy="254" r="4"/>
+      </g>
+      <g fill="#b6c87a" opacity="0.95">
+        <circle cx="286" cy="389" r="2"/><circle cx="307" cy="324" r="2"/>
+        <circle cx="335" cy="276" r="2"/><circle cx="376" cy="259" r="2"/>
+      </g>
+    </g>
     <g id="hedge_crossing_flourish">
       <path d="M282 399 C285 338 301 286 335 259 C353 245 371 241 389 244" fill="none" stroke="#315b2d" stroke-width="8" stroke-linecap="round"/>
       <path d="M294 401 C298 344 312 302 341 276 C355 264 372 258 389 260" fill="none" stroke="#6f9b4a" stroke-width="4.5" stroke-linecap="round"/>

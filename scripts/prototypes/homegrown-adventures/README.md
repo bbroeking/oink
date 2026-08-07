@@ -70,6 +70,13 @@ palette with muted olive, moss, and warm-gold colors derived from the approved
 Position 11 concept. The frog remains one editable Rive group; React still owns
 its earned visibility and persistence.
 
+The v0.41 doorway pass retains the existing crossing state and timelines but
+places two close, muted native Rive foliage backings behind its flowering
+front. At Position 11 the earned route now reads as one substantial garden
+arch instead of two thin temporary strokes. React still owns
+`hedgeCrossingOpen`, reload, next-morning persistence, and reduced motion; the
+Rive edit adds no destination, reward, or progression state.
+
 The remembered Moonberry and Glowroot beds use registered clips from
 `11-changed-home-painted-crops-scene-plate.png` above that same pond plate.
 `bedTwoState` and `bedThreeState` independently reveal the middle and right

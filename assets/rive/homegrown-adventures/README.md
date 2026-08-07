@@ -114,6 +114,16 @@ and no rock, pond, UI, text, heavy outline, or neon green. The original
 magenta-key generation was converted locally to alpha, trimmed to the subject,
 and given a 12-pixel transparent authoring margin.
 
+The v0.41 hedge treatment keeps the existing `hedge_crossing_flourish` as the
+front blossom layer and adds two editable duplicates behind it inside the same
+Home consequence hierarchy. The backings are registered within three pixels
+of the established path, use olive, sage, and muted leaf-green in place of the
+pink and cream blossom colors, and hold the outer backing at 82% blend. The
+result is one broad flowered doorway instead of a thin pair of vector strokes.
+`Home Consequence Hidden`, `Home Consequence Developed`, and `Glowroot Home
+Flourish` remain unchanged; no new authored name or runtime progression input
+was introduced.
+
 The Dusk Moths Arrive checkpoint adds one native golden-and-purple moth in the
 open sky above the Barn. `Dusk Moths Hidden` and `Dusk Moths Present` are the
 reducer-selected persisted poses; `Dusk Moths Arrive` is a bounded 21-frame

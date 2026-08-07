@@ -191,6 +191,16 @@ existing parent position `(222, 438)`, hidden root blend, Present pose,
 Response lift, React reveal boundary, and reduced-motion behavior are
 unchanged.
 
+The v0.41 doorway pass keeps the established Home consequence timelines and
+front `hedge_crossing_flourish` intact. Two duplicates remain under the same
+parent and are sent behind the flowering original: an outer backing at
+`(26, -103)`, `103% x 102%`, and 82% blend, plus an inner backing at
+`(32, -108)`, `97% x 98%`. Their cream and pink node colors become muted
+olive, sage, and leaf green. This is an authored appearance and draw-order
+change only. React still decides when the crossing is open, and the existing
+Hidden, Developed, and `Glowroot Home Flourish` clips continue to supply every
+persisted and reduced-motion pose.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the
