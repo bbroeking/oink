@@ -266,6 +266,14 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   and moth motion `reduced`, and exposes the same next-day action. Mobile
   Safari/device sharpness, haptic feel, and audible acceptance remain manual
   gates; this browser checkpoint does not claim them.
+- GitHub Pages run `31210902645` deployed checkpoint `5e31e32`. A fresh public
+  replay fetched CSS `8d888208e1` and JavaScript `9b31f01667`, then exposed one
+  190×238 Rosie target after Moonberries entered `growing`. Two immediate
+  coordinate clicks awarded exactly one heart, reported last Rive motion
+  `tickle` plus moth `laugh`, removed the Rosie target, and exposed **Begin
+  another day**. Reload retained the completed day, both crops, moths, and exact
+  Farm stock with Rive `ready` and no console errors. The companion site now
+  links **Share Rosie’s moth moment**.
 
 ### Observable acceptance criteria
 
