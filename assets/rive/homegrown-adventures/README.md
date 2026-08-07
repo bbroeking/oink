@@ -61,6 +61,14 @@ The Adventure Glowroot checkpoint reuses only the native
 the canvas only for a successful deterministic Bag outcome. The clue branch
 does not render a Glowroot canvas, and neither Rive instance owns reward state.
 
+The Position 10 homecoming checkpoint keeps `Rosie Return` on the same
+foreground rig but replaces the generic Barn underneath it with one physical
+worktable scene. React selects the complete or clue-only plate, applies the
+exact fast-forward stock delta, and exposes the current quantity labels. The
+Rive trigger is observable as `data-rive-last-performed-motion="return"` after
+the short performance; direct reloads do not replay it and reduced motion
+holds the final bound pose.
+
 The Moonberries Take Root checkpoint adds a second native crop rig aligned to
 Kitchen Patch bed two. `Moonberry Bed Empty` and `Moonberry Bed Growing` are
 the reducer-selected persisted poses; `Moonberry Plant` is one restrained

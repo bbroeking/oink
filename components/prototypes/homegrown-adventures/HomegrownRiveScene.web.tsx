@@ -133,6 +133,7 @@ function HomegrownRiveSceneImpl({
 }: HomegrownRiveSceneProps) {
 	const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 	const [motion, setMotion] = useState<RosieMotion>("loading");
+	const [lastPerformedMotion, setLastPerformedMotion] = useState<HomegrownRiveMotionTrigger | "none">("none");
 	const [cropMotion, setCropMotion] = useState<CropMotion>("loading");
 	const [homeMotion, setHomeMotion] = useState<HomeMotion>("loading");
 	const [moonberryMotion, setMoonberryMotion] = useState<MoonberryMotion>("loading");
@@ -295,6 +296,7 @@ function HomegrownRiveSceneImpl({
 			syncSatchelVisibility();
 		}
 		rive.play(animation);
+		setLastPerformedMotion(trigger);
 		setMotion(
 			trigger === "pack"
 				? "pack"
@@ -642,6 +644,7 @@ function HomegrownRiveSceneImpl({
 			className={`homegrown-rive-scene ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "probe"}`}
 			data-rive-status={status}
 			data-rive-motion={motion}
+			data-rive-last-performed-motion={lastPerformedMotion}
 			data-rive-satchel-equipped={model.satchelEquipped}
 			data-rive-crop-motion={cropMotion}
 			data-rive-bed-one={model.bedOneState}

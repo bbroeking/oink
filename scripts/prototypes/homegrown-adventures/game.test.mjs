@@ -548,6 +548,39 @@ test("prototype position jumps reject invalid targets without mutation", () => {
 	);
 });
 
+test("fast-forward applies the exact return delta and triggers one Rive homecoming", () => {
+	const adventure = createPrototypeState(9, { now: at });
+	const before = { ...adventure.farmStock };
+	const returned = reduce(
+		adventure,
+		{ type: ACTIONS.JUMP_TO_POSITION, position: 10 },
+		at + 1,
+	);
+
+	assert.equal(returned.farmStock["glowroot-seed"], before["glowroot-seed"] + 1);
+	assert.equal(returned.farmStock.compost, before.compost + 1);
+	assert.equal(returned.farmStock["willow-fiber"], before["willow-fiber"] + 2);
+	assert.equal(homegrownRiveModel(returned).trigger, "return");
+	assert.equal(
+		reduce(returned, { type: ACTIONS.JUMP_TO_POSITION, position: 10 }, at + 2),
+		returned,
+	);
+
+	const changedHome = reduce(
+		returned,
+		{ type: ACTIONS.JUMP_TO_POSITION, position: 11 },
+		at + 3,
+	);
+	assert.equal(changedHome.farmStock["glowroot-seed"], before["glowroot-seed"]);
+
+	const rewound = reduce(
+		returned,
+		{ type: ACTIONS.JUMP_TO_POSITION, position: 9 },
+		at + 4,
+	);
+	assert.deepEqual(rewound.farmStock, before);
+});
+
 test("Bag slots accept owned choices, alternatives, and empty values", () => {
 	let state = createPrototypeState(7, { now: at });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
@@ -741,6 +774,16 @@ test("an empty Bag slot changes the deterministic vignette instead of removing i
 	assert.equal(story.kind, "near-discovery");
 	assert.equal(story.tags[2].name, "No Pack");
 	assert.match(story.tags[2].detail, /leaf-print/);
+});
+
+test("Near-Discovery causes never claim that an unearned Seed came Home", () => {
+	let state = createPrototypeState(7, { now: at });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: null });
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+
+	const story = adventureStory(state);
+	assert.match(story.tags[2].detail, /leaf-print/);
+	assert.doesNotMatch(story.tags[2].detail, /seed Home/);
 });
 
 test("prototype navigation carries the selected loadout into the vignette", () => {

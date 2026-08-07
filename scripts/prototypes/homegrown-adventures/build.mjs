@@ -35,6 +35,8 @@ for (const name of [
 	"adventure-clearing-discovery.webp",
 	"adventure-clearing-discovery-rive.webp",
 	"adventure-clearing-clue.webp",
+	"return-homecoming-discovery.webp",
+	"return-homecoming-clue.webp",
 ]) {
 	copyFileSync(join(here, "assets/homegrown-adventures", name), join(docsAssets, name));
 }

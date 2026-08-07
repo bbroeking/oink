@@ -102,11 +102,80 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     successful-branch root with the existing native Rive Glowroot rig, reveal
     it at the clearing's discovery point, and let it breathe without giving
     Rive ownership of the reward branch.
+34. **v0.35 — What Rosie Brought Home (locally verified):** replace Position
+    10's stacked return cards with a physical Barn-worktable homecoming,
+    complete and clue-only object sets, and one observable authored Rive Return
+    while React preserves exact rewards and persistence.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.35.0 — What Rosie Brought Home — 2026-08-06
+
+- Replayed both Position 10 outcomes and compared the complete return with
+  `rosie-v3/10-return-discovery.png`. The stock, causes, and Welcome action were
+  truthful, but they appeared as stacked cards over the outdoor Farm, so Rosie
+  never seemed to physically carry anything into the Barn.
+- Used the built-in ImageGen workflow to generate one character-free,
+  lantern-lit Barn-worktable plate with exactly the complete reward set, then
+  made one precise object edit for the Near-Discovery: remove the Seed and its
+  glow, replace it with the pressed leaf-print clue, and reduce the Fiber to one
+  coil while preserving the composition. The two 780×1688 WebP sources are
+  `return-homecoming-discovery.webp` and `return-homecoming-clue.webp`.
+- Composited canonical live Rive Rosie between the full scene plate and its
+  foreground table crop. The existing 900 ms `Rosie Return` timeline now plays
+  exactly once when Position 9 advances to Position 10, and its completed
+  trigger remains observable without letting Rive own progression.
+- Replaced the old return stack with one compact discovery plaque, one stock
+  ledger aligned to the physical props, one three-part causal thread, and one
+  Welcome action. The complete branch shows `+1 / +1 / +2`; the clue branch
+  shows `+1 / Found / +1` and never claims or paints an unearned Seed.
+- Made fast-forward preserve player stock deviations while applying the exact
+  target-position delta. Repeated same-position input is now a no-op, rewind
+  removes the preview delta, Position 11 consumes the Seed once, direct reload
+  does not replay Return, and reduced motion holds the stable result.
+- Added the same **Welcome Home** composition to the animation lab and added a
+  persistent `data-rive-last-performed-motion` marker so rendered validation
+  can prove the short Rive performance after it has settled.
+
+### Observable acceptance criteria
+
+- A complete Adventure visibly places one Glowroot Seed, one Compost bundle,
+  and two Willow Fiber coils on the Barn table; a Near-Discovery visibly places
+  only its leaf-print clue, Compost, and one Fiber.
+- Canonical Rosie performs the authored Return once and remains correctly
+  occluded behind the foreground table. No duplicate character is baked into
+  either plate.
+- The physical rewards, accessible labels, reducer stock, acknowledgement, and
+  following Glowroot planting agree exactly in normal play and fast-forward.
+- Touch, desktop, reload, reduced motion, and rapid activation preserve one
+  primary action and cannot duplicate the Return or its stock delta.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 41/41 pass, including exact return
+  deltas, idempotent fast-forward, rewind, and clue-branch truthfulness.
+- `npm run verify:rive-homegrown` — pass; the 390×844 artboard and all 55
+  authored names remain intact.
+- `npm run prototype:homegrown:build` — pass; both return WebPs publish with the
+  player and animation-lab routes.
+- `npm run quality:loop` and `npm run quality:check` — pass, including 78 layout
+  tests, 202 security tests, TypeScript, 324 sprite checks, and contract gates.
+- Rendered browser validation proved the complete and clue-only returns,
+  Return performance, acknowledgement, Glowroot planting, reload, reduced
+  motion, rapid input, fast-forward, touch framing, and desktop presentation.
+
+### Next highest-leverage weakness
+
+Position 11 correctly preserves Glowroot, growing crops, Farm stock, the open
+hedge, bell, and visitors, but rendered comparison with
+`rosie-v3/11-changed-barn-next-day.png` shows that the pond and resident
+consequence do not yet read as a place Rosie changed. The next checkpoint
+should make one existing earned pond-and-frog detail spatially legible with a
+restrained authored response. Do not add a resident economy, collection screen,
+new reward, or parallel visitor system.
 
 ### v0.34.0 — The Glowroot Wakes — 2026-08-06
 

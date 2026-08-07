@@ -45,6 +45,15 @@ mounted; the Near-Discovery plate contains no reward and instantiates no
 Glowroot Rive canvas. The animation lab exposes the exact motion as **Reveal
 Glowroot**.
 
+Position 10 now replaces the floating return stack with matched, character-free
+Barn-worktable plates derived from the approved return concept. The successful
+plate physically shows the earned Glowroot Seed, Compost, and two Willow Fiber
+coils; the Near-Discovery plate shows a leaf-print clue, Compost, and one Fiber
+coil with no Seed. Canonical Rive Rosie performs the existing `Rosie Return`
+above the plate, while React owns the branch, quantities, causal copy,
+acknowledgement, and fast-forward stock delta. Reload holds the complete scene
+without replaying the one-shot, and reduced motion skips it.
+
 Crop growth now has an explicit painterly early-sprout asset and a separate
 flower-free lush-middle asset. React derives that visual boundary from
 `plantedAt` and `readyAt`; the authored `Clover Growing Sway` timeline supplies

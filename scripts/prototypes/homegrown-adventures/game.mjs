@@ -150,6 +150,23 @@ export function adventureStory(state) {
 			empty: "made a glowing leaf-print",
 		},
 	};
+	const nearDiscoveryDetails = {
+		provision: {
+			provision: "came Home before the seed opened",
+			tool: "traced where the warm root sleeps",
+			pack: "kept the glowing leaf-print safe",
+		},
+		tool: {
+			provision: "stayed exploring until dusk",
+			tool: "could not uncover the warm root",
+			pack: "carried a warm soil sample Home",
+		},
+		pack: {
+			provision: "stayed exploring until dusk",
+			tool: "uncovered the sleeping root",
+			pack: "made a leaf-print and left the seed safe",
+		},
+	};
 
 	return {
 		kind: missingSlot ? "near-discovery" : "discovery",
@@ -163,7 +180,9 @@ export function adventureStory(state) {
 				slot,
 				name: selected?.name ?? `No ${slot[0].toUpperCase()}${slot.slice(1)}`,
 				icon: selected?.icon ?? "·",
-				detail: details[slot][selected?.id ?? "empty"],
+				detail: missingSlot
+					? nearDiscoveryDetails[missingSlot][slot]
+					: details[slot][selected?.id ?? "empty"],
 			};
 		}),
 	};
@@ -939,8 +958,28 @@ export function homegrownReducer(state, action) {
 
 		case ACTIONS.JUMP_TO_POSITION:
 			if (!Number.isInteger(action.position) || normalizePrototypePosition(action.position) !== action.position) return state;
+			if (action.position === state.prototypePosition) return state;
 			{
 				const next = createPrototypeState(action.position, { now, reduceMotion: state.reduceMotion });
+				const currentPosition = normalizePrototypePosition(state.prototypePosition ?? 1);
+				const currentPreset = createPrototypeState(currentPosition, { now, reduceMotion: state.reduceMotion });
+				const previewFarmStock = Object.fromEntries(
+					Object.keys(EMPTY_FARM_STOCK).map((itemId) => [
+						itemId,
+						Math.max(
+							0,
+							(state.farmStock?.[itemId] ?? 0) +
+								(next.farmStock?.[itemId] ?? 0) -
+								(currentPreset.farmStock?.[itemId] ?? 0),
+						),
+					]),
+				);
+				const returnPreview = action.position === 10
+					? {
+						lastAction: "return",
+						trace: appendTrace(state, "return", "Return + Discovery preview", now),
+					}
+					: {};
 				const homeMemory = state.daysCompleted > 0 || state.glowrootPlanted;
 				const persistentHome = homeMemory
 					? {
@@ -973,13 +1012,15 @@ export function homegrownReducer(state, action) {
 						...persistentHome,
 						bag: { ...state.bag },
 						farmStock,
+						...returnPreview,
 					};
 				}
 				return {
 					...next,
 					...persistentHome,
 					bag: { ...state.bag },
-					farmStock: { ...state.farmStock },
+					farmStock: previewFarmStock,
+					...returnPreview,
 				};
 			}
 

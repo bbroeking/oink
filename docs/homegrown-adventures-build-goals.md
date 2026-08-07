@@ -21,7 +21,10 @@ places that handoff in one tangible twilight clearing, with separate complete
 Discovery and clue-only Near-Discovery plates beneath live Rive Rosie; the
 complete branch now mounts a tightly clipped second Rive view that reveals the
 earned Glowroot and gives it one restrained breathing glow, while the clue
-branch mounts no reward canvas.
+branch mounts no reward canvas; Position 10 now brings Rosie into a physical
+Barn-worktable homecoming with exact complete and Near-Discovery objects,
+one existing authored Rive Return, and reducer-owned stock deltas that survive
+fast-forward, reload, reduced motion, and rapid input.
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -131,6 +134,22 @@ motion is available as **Reveal Glowroot** in the animation lab. Rendered
 comparison with `rosie-v3/10-return-discovery.png` now makes Position 10 the
 next visible weakness: its quantities and causes are correct, but the stacked
 cards do not yet feel like Rosie physically returned with a Discovery.
+
+**Physical-homecoming checkpoint (August 6, 2026):** Position 10 now matches
+the approved `rosie-v3/10-return-discovery.png` composition with two
+character-free Barn-worktable plates. A complete Adventure physically places
+one Glowroot Seed, one Compost bundle, and two Willow Fiber coils on the table;
+a Near-Discovery substitutes a pressed glowing leaf-print and shows only the
+one Compost and one Fiber actually earned. Canonical live Rive Rosie performs
+the existing `Rosie Return` above that plate and settles behind the foreground
+table, while one compact plaque, stock ledger, causal thread, and Welcome
+action preserve the one-action hierarchy. React remains authoritative for the
+branch, quantities, acknowledgement, persistence, and exact fast-forward stock
+delta. Jumping from Position 9 emits one observable Return performance;
+repeated jumps are idempotent, direct reload does not replay it, and reduced
+motion paints the stable result. The next Goal 6 weakness is Position 11: the
+earned Home state is correct, but its pond and resident consequence are not yet
+spatially readable against the approved changed-Barn concept.
 
 **Adventure checkpoint (August 6, 2026):** Position 9 now opens one bounded
 beyond-the-hedge vignette before the ordinary idle wait. Rosie remains visible

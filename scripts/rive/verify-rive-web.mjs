@@ -69,6 +69,10 @@ try {
 			throw new Error(`Homegrown Adventures web boundary does not isolate the approved useRive runtime: ${boundary}`);
 		}
 	}
+	const homegrownSceneSource = readFileSync(join(repoRoot, homegrownBoundaries[0]), "utf8");
+	if (!homegrownSceneSource.includes("data-rive-last-performed-motion")) {
+		throw new Error("The Homegrown Adventures Rive boundary is missing its observable completed-motion state.");
+	}
 	const adventureGlowrootSource = readFileSync(join(repoRoot, homegrownBoundaries[1]), "utf8");
 	if (
 		!adventureGlowrootSource.includes("Glowroot Home Flourish") ||

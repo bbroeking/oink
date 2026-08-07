@@ -130,6 +130,17 @@ to frame 47, and pauses on the next task so the final silhouette paints
 atomically. The Rive rig owns vector appearance and motion; React still owns
 the Bag outcome, reward, persistence, and dismissal.
 
+The v0.35 homecoming checkpoint stages the existing `Rosie Return` timeline
+against the approved Position 10 Barn-worktable composition. React switches
+between matched character-free complete and clue-only plates, applies the
+exact `+1` Glowroot Seed / `+1` Compost / `+2` Willow Fiber delta, and renders
+the accessible stock and cause labels. Fast-forwarding from Position 9 emits
+one `return` trigger and records it on
+`data-rive-last-performed-motion`; repeated input is idempotent. A direct or
+reloaded Position 10 holds the bound final pose without replaying, and reduced
+motion skips the one-shot. Rive still owns only Rosie's visible arrival and Bag
+swing—not branch choice, reward quantities, acknowledgement, or persistence.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the

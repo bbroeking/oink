@@ -567,18 +567,18 @@ function ReturnRewardPanel({ state, actionLabel, onAction }) {
 	const story = adventureStory(state);
 	return (
 		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} aria-label="Rosie's return rewards">
-			<div className="return-discovery-card">
+			<div className="return-discovery-plaque">
 				<span className="return-card-eyebrow">{nearDiscovery ? "Useful clue" : "New Discovery"}</span>
-				<span className="return-seed" aria-hidden="true">✦</span>
 				<strong>{nearDiscovery ? "Glowroot Trail" : "Glowroot Seed  +1"}</strong>
 				<small>{nearDiscovery ? story.result : "A slow Crop that glows after dusk"}</small>
 			</div>
-			<div className="return-preparation-recap" aria-label="How Rosie's preparation helped">
-				{story.tags.map((tag) => <span key={tag.slot}><b>{tag.name}</b><small>{tag.detail}</small></span>)}
+			<div className="return-stock-ledger" aria-label="Farm stock returned">
+				<span><b>Compost</b><strong>+1</strong></span>
+				<span><b>{nearDiscovery ? "Leaf-print clue" : "Glowroot Seed"}</b><strong>{nearDiscovery ? "Found" : "+1"}</strong></span>
+				<span><b>Willow Fiber</b><strong>+{nearDiscovery ? 1 : 2}</strong></span>
 			</div>
-			<div className="return-supplies" aria-label="Farm supplies returned">
-				<span><i aria-hidden="true">♣</i><b>Compost</b><strong>+1</strong></span>
-				<span><i aria-hidden="true">≋</i><b>Willow Fiber</b><strong>+{nearDiscovery ? 1 : 2}</strong></span>
+			<div className="return-causal-thread" aria-label="How Rosie's preparation helped">
+				{story.tags.map((tag) => <span key={tag.slot}><i aria-hidden="true">{tag.icon}</i><b>{tag.detail}</b></span>)}
 			</div>
 			<button type="button" className="return-reward-action" onClick={onAction}>{actionLabel}</button>
 		</section>
@@ -884,6 +884,9 @@ function sceneLabel(state) {
 	if (state.stage === STAGES.ADVENTURE) {
 		return `${stageCopy(state).title}. The warm paper-craft Barn and Kitchen Patch are quiet while Rosie explores beyond the hedge.`;
 	}
+	if ([STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage)) {
+		return `${stageCopy(state).title}. Rosie stands in the warm lantern-lit Barn workshop behind a wooden table holding the exact supplies she carried Home.`;
+	}
 	const rememberedHome = state.glowrootPlanted
 		? " The open hedge, earned bell, Glowroot bed, and growing crops remain from the last Adventure."
 		: "";
@@ -938,6 +941,7 @@ function App() {
 	const departing = position === 8 && state.stage === STAGES.ADVENTURE && !state.departureComplete;
 	const showingAdventureVignette = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && !state.adventureVignetteSeen;
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
+	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
 	const showingHomeMemory = position === 11 && state.glowrootPlanted;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingReturnReward;
 	const waiting = departing || (autoPlay && (
@@ -1082,18 +1086,22 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
+			data-return-kind={showingReturnReward ? returnKind : undefined}
 		>
 			<div className="scene-plate" role="img" aria-label={sceneLabel(state)} />
-			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			<HomegrownRiveScene
+				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}
 				model={riveModel.viewModel}
 				trigger={riveModel.trigger}
 				triggerNonce={riveModel.triggerNonce}
 			/>
+			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
+			{showingReturnReward && <div className="return-homecoming-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-bed-mask" aria-hidden="true" />}
+			{showingReturnReward && <div className="return-table-mask" aria-hidden="true" />}
 			{showingAdventureVignette && adventureStory(state).kind === "discovery" && (
 				<AdventureGlowrootRive reduceMotion={state.reduceMotion} />
 			)}

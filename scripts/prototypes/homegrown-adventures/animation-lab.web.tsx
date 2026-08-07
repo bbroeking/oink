@@ -232,9 +232,10 @@ function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMo
 		? bedState === "ready" ? "Clover Lunch is getting ready" : "Clover Lunch is growing"
 		: bedState === "ready" ? "Harvest Clover Lunch" : "Plant Clover Lunch";
 	const showingAdventureGlowroot = activeStudy.id === "glowroot-reveal";
+	const showingReturnHomecoming = activeStudy.id === "return";
 	return (
 		<section className={`motion-stage motion-stage-${emphasis}`} aria-label="Authored animation preview">
-			<div className={`motion-phone ${showingAdventureGlowroot ? "is-adventure-glowroot" : ""}`}>
+			<div className={`motion-phone ${showingAdventureGlowroot ? "is-adventure-glowroot" : ""} ${showingReturnHomecoming ? "is-return-homecoming" : ""}`}>
 				<div className="motion-world">
 					<div className="motion-scene-plate" />
 					<HomegrownRiveScene
@@ -246,8 +247,9 @@ function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMo
 					{showingAdventureGlowroot && (
 						<AdventureGlowrootRive key={`adventure-glowroot-${revision}`} reduceMotion={reduceMotion} />
 					)}
+					{showingReturnHomecoming && <div className="motion-return-table-mask" aria-hidden="true" />}
 				</div>
-				{!showingAdventureGlowroot && <button
+				{!showingAdventureGlowroot && !showingReturnHomecoming && <button
 					className={`motion-bed-action bed-${bedState} ${bedBusy ? "is-busy" : ""}`}
 					type="button"
 					onClick={onBedAction}
