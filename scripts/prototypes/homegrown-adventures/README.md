@@ -63,6 +63,12 @@ Home, and completes the Barn day; it never offers a second planting action that
 the reducer must reject. The first Discovery still spends its Seed exactly once
 to establish the lasting Glowroot at Home.
 
+On the following remembered morning, Position 2 carries that reward forward in
+the existing planted-Glowroot tile. Zero spare Seeds add no claim; positive
+stock reads **1 Seed stored** or its plural equivalent beside **Bed 3 planted**.
+Clover remains the only next planting action, so the count strengthens visible
+continuity without becoming another crop selector or inventory surface.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

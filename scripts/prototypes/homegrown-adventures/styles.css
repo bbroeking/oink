@@ -1009,6 +1009,9 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .seed-memory-ledger span:last-child i { color: #d19c32; }
 .seed-memory-ledger b { font-size: 8px; line-height: 1; }
 .seed-memory-ledger small { color: var(--ink-soft); font-size: 7px; font-weight: 750; line-height: 1; }
+.seed-memory-ledger > span.has-stored-seed { padding-top: 4px; padding-bottom: 4px; grid-template-rows: repeat(3, auto); }
+.seed-memory-ledger > span.has-stored-seed i { grid-row: 1 / 4; }
+.seed-memory-ledger em { color: #496a36; font-size: 7px; font-style: normal; font-weight: 950; line-height: 1; }
 .seed-choice-next-row { display: grid; grid-template-columns: 1.6fr 1fr; gap: 7px; }
 .seed-choice-next-row > button,
 .seed-choice-next-row > div {

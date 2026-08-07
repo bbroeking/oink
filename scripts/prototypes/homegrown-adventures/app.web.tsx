@@ -243,6 +243,7 @@ const BAG_SLOT_LABELS = {
 function SeedChoicePanel({ state, onChoose }) {
 	const farmStock = state.farmStock ?? {};
 	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
+	const glowrootSeeds = farmStock["glowroot-seed"] ?? 0;
 	const compost = farmStock.compost ?? 0;
 	const rememberedMorning = state.daysCompleted > 0 && state.glowrootPlanted;
 
@@ -252,7 +253,10 @@ function SeedChoicePanel({ state, onChoose }) {
 				<div className="seed-memory-ledger">
 					<strong>Already growing at Home</strong>
 					<span><i aria-hidden="true">●</i><b>Moonberries</b><small>Bed 2 · growing</small></span>
-					<span><i aria-hidden="true">✦</i><b>Glowroot</b><small>Bed 3 · planted</small></span>
+					<span className={glowrootSeeds > 0 ? "has-stored-seed" : undefined}>
+						<i aria-hidden="true">✦</i><b>Glowroot</b><small>Bed 3 · planted</small>
+						{glowrootSeeds > 0 && <em>{glowrootSeeds} Seed{glowrootSeeds === 1 ? "" : "s"} stored</em>}
+					</span>
 				</div>
 				<div className="seed-choice-next-row">
 					<button type="button" onClick={onChoose} disabled={cloverSeeds < 1}>

@@ -146,11 +146,62 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     complete 390x844 game frame inside short desktop viewports so Position 10's
     one Homecoming action and progression rail remain visible without changing
     the full-size phone layout.
+46. **v0.45 — The Stored Seed Stays Visible (locally verified):** carry the
+    repeated Glowroot reward into the next morning by showing its retained Seed
+    count inside the existing planted-Glowroot tile.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.45 — The Stored Seed Stays Visible — 2026-08-07
+
+- Continued the fitted public v0.44 replay into Position 2. The prior screen
+  explicitly stored one known Glowroot Seed, and reducer stock retained it, but
+  **Already growing at Home** reduced Glowroot to **Bed 3 · planted**. The named
+  reward disappeared from the visible loop one screen after collection.
+- Added the positive Glowroot Seed count to the existing remembered-crop tile.
+  A first remembered morning with zero spare Seeds remains exactly **Bed 3 ·
+  planted**; a repeated morning now adds **1 Seed stored**. Plural copy follows
+  higher stock counts without creating another selection or state field.
+- Kept Clover as the one next planting action. The stored Seed appears as a
+  quiet Home-memory fact beside the planted crop, not as a selectable fourth
+  card, new bed, order, currency, or full inventory surface.
+
+### Observable acceptance criteria
+
+- Position 2 shows no stored-Seed claim when Glowroot is planted and Farm stock
+  contains zero Glowroot Seeds.
+- After a repeated Homecoming retains one Seed, the following Position 2 shows
+  **Glowroot · Bed 3 planted · 1 Seed stored** while **Choose Clover** remains
+  the only planting action.
+- The stored count survives reload and 2 -> 1 -> 2 fast-forward, stays readable
+  at 390x844 and 1280x720, and does not change reduced-motion or rapid-input
+  behavior.
+
+### Local validation evidence
+
+- Rendered a first remembered morning at 390x844 and confirmed the Glowroot tile
+  made no stored-Seed claim. Replayed a repeated return, began another day, and
+  confirmed the same tile added **1 Seed stored** without another button.
+- Reload and 2 -> 1 -> 2 fast-forward retained the count. The touch and fitted
+  1280x720 compositions remained readable with empty browser logs; reduced
+  motion remained active and simultaneous tickles increased 1,119 to 1,120
+  exactly once.
+- `npm run prototype:homegrown:test` — 42/42 gameplay and persistence tests.
+- `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- An isolated tree reconstructed from `HEAD` plus the staged diff installed all
+  1,304 packages offline, reproduced the checked-in player CSS, HTML, and
+  JavaScript hashes exactly, and passed `npm run verify:rive-web`.
+
+### Next highest-leverage weakness
+
+Choose after the public v0.45 replay by following the now-visible stock into
+planting and preparation. Prefer strengthening the existing farming-to-Bag
+cause and effect over a new crop, destination, currency, or parallel system.
 
 ### v0.44 — The Homecoming Stays in Reach — 2026-08-07
 
