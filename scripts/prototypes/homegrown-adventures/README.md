@@ -80,6 +80,14 @@ Clover crop layer instead of replaying its ready flourish, while React remains
 authoritative for acknowledgement, stock, planting, persistence, and the next
 Moonberry action.
 
+The v0.63 interaction pass gives that next Moonberry choice the same spatial
+grammar. The existing explicit action targets empty Bed 2, names its dusk-moth
+purpose, and then hands off to the existing authored Rive Moonberry Plant and
+growing poses. Farm stock shifts lower only while that bed choice is active so
+the pulse, label, stock, and rail stay separate at 360×780. React still owns
+`nextPlanting`, persistence, moth visibility, rapid-input idempotence, and the
+subsequent Tickle action.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

@@ -208,15 +208,76 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     Glowroot moment out of the Barn worktable and into the changed Farm where
     the player can see the Seed enter its lasting bed, without auto-spending it
     or adding another planting system.
-64. **v0.63 — Moonberries Find Their Bed (in progress):** give the existing
+64. **v0.63 — Moonberries Find Their Bed (shipped):** give the existing
     Grow Moonberries choice the same spatial clarity by relating it directly to
     the empty middle bed, while preserving the established moth payoff and
     single-action Home sequence.
+65. **v0.64 — The Tickle Comes Back to Rosie (in progress):** return the
+    post-Moonberry Tickle action from the detached bottom button to Rosie
+    herself, so the moth response closes through the game's core affection
+    gesture without adding a new ceremony.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.63 — Moonberries Find Their Bed — 2026-08-07
+
+- Replayed the planted Position 11 Home against
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/11-changed-barn-next-day.png`.
+  The remembered Farm, stock, and next purpose were visible, but the existing
+  full-width **Grow Moonberries** button sat apart from the empty middle bed it
+  would change.
+- Kept the existing explicit choice and moved only its presentation into the
+  Farm. The objective now names **Bed 2 is ready for Moonberries**; one violet
+  pulse marks that bed, and the compact action explains **Invite the dusk
+  moths** before the player commits.
+- Reused the established Rive Moonberry Plant and growing states. React still
+  owns the purpose choice, `nextPlanting`, persistence, the moth-visibility
+  fact, and the next Tickle action; no Seed, inventory, timer, or reward rule
+  changed.
+- Framed three Prototype options: retain the detached full-width button,
+  auto-grow Moonberries after Glowroot, or anchor the same explicit choice to
+  Bed 2. The third passed the installed Impeccable review as the available
+  Claude-Design substitute. The first rendered layout failed that gate because
+  its label crossed Farm stock; the corrected layout moves stock down only for
+  this choice and keeps one clear, non-overlapping action.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass, including the exact
+  Moonberry presentation target, complete loop, persistence, fast-forward, and
+  invalid input. `npm run verify:rive-homegrown`,
+  `npm run prototype:homegrown:build`, `npm run quality:loop`, and
+  `npm run quality:check` pass, including TypeScript, 78 layout tests, 202
+  security tests, 324 sprite checks, and the locked quality contracts.
+- At exact 360×780, the action label occupies 546–601px, Farm stock begins at
+  617px and ends at 675px, and navigation begins at 722px. The document remains
+  exactly 360×780 with no overflow, overlapping targets, or console errors.
+- At 390×844, the action ends at 599px, stock begins at 681px, stock ends at
+  739px, and navigation begins at 786px. A centered 1280×720 render preserves
+  the complete fitted phone, Rosie, the bed pulse, stock, action, and rail.
+- Two immediate action-point clicks produce one `nextPlanting` transition:
+  Bed 2 enters `growing`, Rive reports Moonberry `plant`, and the existing
+  Tickle action appears. Reload settles Moonberry motion to `growing` with the
+  moths still present. Reduced motion keeps Rive `ready`, Bed 2 `growing`, and
+  Moonberry motion `reduced` with identical reducer facts.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim them.
+
+### Observable acceptance criteria
+
+- The next crop decision visibly belongs to empty Bed 2 and retains one short
+  explanation of why Moonberries matter.
+- Choosing it once runs the existing Rive plant response, reveals the growing
+  bed and moth result, and remains idempotent under rapid input.
+- Reload, reduced motion, fast-forward, and touch/desktop layouts preserve the
+  same reducer-owned result without page overflow or hidden controls.
+- The Farm-memory panel remains readable but does not compete with the one
+  current action or obscure Rosie and the planting payoff.
+- The next rendered weakness is the resulting full-width **Tickle Rosie**
+  button, which is clear copy but spatially detached from Rosie herself.
 
 ### v0.62 — The Seed Finds Its Bed — 2026-08-07
 

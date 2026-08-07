@@ -195,6 +195,18 @@ renders passed the installed Impeccable review as the available Claude-Design
 substitute. The next visible weakness is the existing **Grow Moonberries**
 action, which still sits apart from the empty middle bed it will fill.
 
+**Moonberry-bed checkpoint (August 7, 2026):** the established Grow
+Moonberries decision now targets the empty middle bed instead of a detached
+full-width button. One violet pulse, the objective **Bed 2 is ready for
+Moonberries**, and the short purpose **Invite the dusk moths** precede the
+existing Rive Moonberry Plant performance. React still owns the choice,
+`nextPlanting`, moth visibility, persistence, rapid-input guard, and next
+action. The initial rendered treatment collided with Farm stock and was
+rejected; the corrected 360×780, 390×844, and centered desktop compositions
+passed the installed Impeccable review as the available Claude-Design
+substitute. The next visible weakness is the post-plant Tickle button, which is
+still spatially detached from Rosie.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its
