@@ -162,14 +162,83 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 50. **v0.49 — The Chosen Tool Enters the Story (shipped):** make the
     physical tool in Position 9 agree with Rosie's selected loadout, so Lantern
     no longer changes only labels while a baked Hand Trowel remains in view.
-51. **v0.50 — The Chosen Pack Enters the Story (in progress):** make the
+51. **v0.50 — The Chosen Pack Enters the Story (shipped):** make the
     physical Pack in Position 9 agree with Rosie's selected loadout, so Cloth
     Wrap and an empty Pack no longer inherit the baked Wicker Basket.
+52. **v0.51 — The Chosen Provision Enters the Story (in progress):** make the
+    physical Provision in Position 9 agree with Rosie's selected loadout, so
+    Clover Lunch and an empty Provision differ in the world as clearly as their
+    cause cards do.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.50 — The Chosen Pack Enters the Story — 2026-08-07
+
+- Replayed the public Position 9 against `09-adventure-vignette.png` after the
+  Tool checkpoint. Hand Trowel, Lantern, and an empty Tool were now truthful,
+  but every physical clearing still contained the same Wicker Basket even when
+  the player chose Cloth Wrap or deliberately left Pack empty.
+- Kept the approved camera, clearing, canonical Rosie, live Glowroot, Bag,
+  cause tags, result, and one-action hierarchy. The selected Tool now chooses a
+  Pack-free painterly clearing plate; the selected Pack independently chooses a
+  registered Wicker Basket, Cloth Wrap, or no overlay. This covers the full
+  three-by-three Tool / Pack matrix without creating nine scene variants.
+- Used ImageGen as a precise asset-production step: two edits remove only the
+  baked Basket and reconstruct the occluded path, and two matched object studies
+  supply transparent Basket and Cloth overlays. The final four source assets
+  live beside the prototype and are copied byte-for-byte into the public build.
+- React exposes `data-adventure-pack` from the existing Bag and mounts one
+  presentation-only prop. Rive ownership is unchanged: canonical Rosie, the
+  equipped satchel, and Glowroot motion remain authored animation; inventory,
+  selection, rewards, persistence, fast-forward, and the Adventure branch stay
+  reducer-owned.
+- The next public weakness is the remaining member of the preparation trio:
+  Provision changes the cause card and duration, but the clearing has no
+  equally clear physical Clover Lunch / empty-Provision distinction yet.
+
+### Observable acceptance criteria
+
+- Position 9 physically shows the Wicker Basket after choosing Wicker Basket,
+  the folded Cloth Wrap after choosing Cloth Wrap, and no Pack prop when the
+  player leaves Pack empty.
+- Pack presentation crosses independently with Hand Trowel, Lantern, and an
+  empty Tool. It never changes the already-approved Pack reward rules.
+- The selected Pack survives reload and Previous / Next fast-forward, remains
+  subordinate to Rosie and the one **Continue the story** action, and fits both
+  390x844 touch and fitted 1280x720 desktop layouts.
+- Reduced motion paints the selected Pack without its settle animation. Rapid
+  duplicate story input remains idempotent, and empty-Pack Adventures remain
+  kind, useful Near-Discoveries.
+
+### Validation evidence
+
+- Played the rendered second-day loop to earn Willow Fiber, then compared
+  Wicker Basket + Hand Trowel, Cloth Wrap + Lantern, empty Pack + Lantern, and
+  Wicker Basket + empty Tool at Position 9. Every DOM presentation fact and
+  physical prop agreed; empty Pack computed to `display: none`.
+- Reload retained Wicker Basket + empty Tool. With reduced motion active,
+  `data-reduce-motion` remained `true` and the Pack animation computed to
+  `none`. Two simultaneous **Continue the story** clicks and two simultaneous
+  **Preview her return** clicks each resolved to one stable next action.
+- At fitted 1280x720 desktop, the complete game frame, primary action, and
+  progression rail remained visible. The earlier 390x844 touch replay kept all
+  three cause cards, the physical Pack, result, action, and rail legible.
+- `npm run prototype:homegrown:test` — 47/47 gameplay, navigation, inventory,
+  reward, fast-forward, and persistence tests passed.
+- `npm run verify:rive-homegrown` — the 390x844 artboard and all 59 authored
+  names passed; the existing manual mobile-Safari gate remains unchanged.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- Public Pages run `31191284325` shipped feature commit `051f4ce`. The deployed
+  Wicker asset matched SHA-256
+  `e87500fd944ff7aa61b0c9c2e51250b25a2e961ba505ef4609701dfa0efa14f4`;
+  Cloth matched
+  `813ba9bc097e903a1dadc34ff0ae89ddf547f895bb895e8488f011c4d1a4e93b`.
+  The public rendered replay selected the new Wicker URL, showed the physical
+  Basket beside the live clearing, and produced no browser warnings or errors.
 
 ### v0.49 — The Chosen Tool Enters the Story — 2026-08-07
 
