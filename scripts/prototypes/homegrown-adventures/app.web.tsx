@@ -1173,6 +1173,7 @@ function App() {
 			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
+			data-adventure-pack={showingAdventureVignette ? state.bag?.pack ?? "none" : undefined}
 			data-return-kind={showingReturnReward ? returnKind : undefined}
 		>
 			<div className="scene-plate" role="img" aria-label={sceneLabel(state)} />
@@ -1186,6 +1187,7 @@ function App() {
 				triggerNonce={riveModel.triggerNonce}
 			/>
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
+			{showingAdventureVignette && <div className="adventure-pack-prop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-homecoming-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-bed-mask" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-table-mask" aria-hidden="true" />}

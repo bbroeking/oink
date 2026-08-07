@@ -127,10 +127,10 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	background: url("./assets/homegrown-adventures/adventure-clearing-clue.webp") center / cover no-repeat;
 }
 .phone[data-adventure-tool="hand-trowel"] .adventure-vignette-backdrop {
-	background-image: url("./assets/homegrown-adventures/adventure-clearing-discovery-rive.webp");
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-trowel-no-pack.webp");
 }
 .phone[data-adventure-tool="lantern"] .adventure-vignette-backdrop {
-	background-image: url("./assets/homegrown-adventures/adventure-clearing-lantern.webp");
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-lantern-no-pack.webp");
 }
 .adventure-vignette-backdrop::after {
 	content: "";
@@ -152,10 +152,37 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	pointer-events: none;
 }
 .phone[data-adventure-tool="hand-trowel"] .adventure-bed-mask {
-	background-image: url("./assets/homegrown-adventures/adventure-clearing-discovery-rive.webp");
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-trowel-no-pack.webp");
 }
 .phone[data-adventure-tool="lantern"] .adventure-bed-mask {
-	background-image: url("./assets/homegrown-adventures/adventure-clearing-lantern.webp");
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-lantern-no-pack.webp");
+}
+.adventure-pack-prop {
+	position: absolute;
+	z-index: 2;
+	left: 244px;
+	top: 452px;
+	width: 170px;
+	height: 170px;
+	pointer-events: none;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: contain;
+	transform-origin: 64% 82%;
+	animation: adventure-pack-settle 420ms cubic-bezier(.16,1,.3,1) both;
+}
+.phone[data-adventure-pack="wicker-basket"] .adventure-pack-prop {
+	background-image: url("./assets/homegrown-adventures/adventure-pack-wicker.png");
+	filter: brightness(.72) saturate(.82) drop-shadow(3px 5px 4px rgba(4,10,7,.58));
+}
+.phone[data-adventure-pack="cloth-wrap"] .adventure-pack-prop {
+	background-image: url("./assets/homegrown-adventures/adventure-pack-cloth.png");
+	filter: brightness(.7) saturate(.76) drop-shadow(3px 5px 4px rgba(4,10,7,.58));
+}
+.phone[data-adventure-pack="none"] .adventure-pack-prop { display: none; }
+@keyframes adventure-pack-settle {
+	from { opacity: 0; transform: translateY(-5px) scale(.96) rotate(-1.5deg); }
+	to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
 }
 .adventure-glowroot-rive {
 	position: absolute;
@@ -178,6 +205,7 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	transform-origin: top left;
 }
 .adventure-glowroot-rive-stage canvas { width: 390px; height: 844px; display: block; }
+html[data-reduce-motion="true"] .adventure-pack-prop { animation: none; }
 .adventure-vignette-overlay {
 	position: absolute;
 	inset: 0;

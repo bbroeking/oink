@@ -123,6 +123,19 @@ continued. Review navigation now derives Provision spending, underpreparation,
 the clue reason, and the exact clue supplies from the carried Bag, so the visual
 branch and Return cannot disagree.
 
+The v0.50 prototype question is whether Pack choice is equally physical instead
+of remaining a causal label over a baked Basket. Position 9 now composes two
+independent presentation facts from the existing Bag: the selected Tool chooses
+a character-free, Pack-free clearing plate, while the selected Pack chooses one
+registered painterly overlay. Wicker Basket, Cloth Wrap, and an empty Pack now
+cross cleanly with Hand Trowel, Lantern, and an empty Tool without multiplying
+gameplay states or changing any reward. The Trowel and Lantern plates are
+precise ImageGen edits that remove only the old Basket and reconstruct its
+occluded ground. The Basket and Cloth Wrap are ImageGen-derived alpha assets
+matched to the approved Position 9 and Position 7 concepts. React owns both
+equipment attributes; Rive still owns only canonical Rosie and the live
+Glowroot performance.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes
