@@ -33,6 +33,11 @@ constraints bind it to Rosie's `body` rig. `Rosie Pack`, `Rosie Return`, and
 `Rosie Bag Hidden` are the runtime clips for equipping, returning, and the
 unequipped resting state.
 
+The v0.55 selection-response checkpoint adds `Bag Receive` to that same group.
+It gives every valid React-owned slot change one direct 600 ms rise, enlarge,
+settle, and hide performance. The timeline carries no item identity or gameplay
+state; the accessible open-Bag preview remains reducer-derived.
+
 The Living Barn checkpoint adds `bed_one_crop_rig` over the first Kitchen
 Patch bed. `Clover Bed Empty`, `Clover Bed Growing`, and `Clover Bed Ready`
 provide deterministic persisted poses; `Clover Plant`,

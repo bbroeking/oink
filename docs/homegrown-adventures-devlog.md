@@ -181,15 +181,55 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     selected slots, one Pack action, and consumable/reusable explanation above
     the progression rail at touch sizes, preserving the open Bag without hiding
     the reason each choice matters.
-56. **v0.55 — The Bag Receives the Choice (in progress):** replace Position
-    7's silent token swap with one bounded Rive-authored Bag opening and item
-    placement response, while React remains authoritative for the chosen slot,
-    costs, validity, persistence, and fast-forward.
+56. **v0.55 — The Bag Receives the Choice (shipped):** replace Position 7's
+    silent token swap with one bounded Rive-authored satchel rise, enlarge,
+    settle, and hide response, while React remains authoritative for the chosen
+    slot, costs, validity, persistence, and fast-forward.
+57. **v0.56 — The Chosen Item Leads the Motion (in progress):** make only the
+    most recently changed Provision, Tool, or Pack token lead the shared Bag
+    response, so the animation communicates which exact choice just landed.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.55 — The Bag Receives the Choice — 2026-08-07
+
+- Replayed Position 7 at 390x844 and proved that reusing `Rosie Pack` was not
+  enough: the selection cards covered the lower-body satchel motion, so a valid
+  choice still looked like an instantaneous token swap.
+- Authored a dedicated `Timeline 28` in the paid Homegrown Adventures Rive
+  workspace. The checked-in patch contract names it `Bag Receive`; it keys the
+  existing native `rosie_satchel` from a hidden compact pose through one clear
+  rise and enlargement, then settles and disappears in 600 ms.
+- Added `bag-receive` as a presentation-only motion trigger. `SET_BAG_SLOT`
+  remains the single source of truth for slot identity and validity; the Rive
+  runtime plays the direct timeline without adding a View Model progression
+  property, inventory fact, timer, or reward branch.
+- Mirrored that same motion window into the existing open-Bag composition: the
+  selector cards step back, the Bag answers, and the currently packed tokens
+  land. This keeps the exact item identity in accessible React while Rive owns
+  Rosie's live satchel performance.
+- Ran the Position 7 surface through the installed Impeccable product-design
+  review. Item effects are now short reward lines, each whole slot card is a
+  large Change target, and Empty is a separate 44px action. The open Bag and
+  one Pack confirmation remain the visual hierarchy.
+- The rendered pass now makes the remaining weakness precise: every filled
+  token answers together. v0.56 should let only the most recently changed slot
+  lead the motion, without adding another selection system.
+
+### Observable acceptance criteria
+
+- Every valid Provision, Tool, Pack, and Empty choice emits exactly one
+  observable `bag-receive` performance and settles to the reducer-selected
+  loadout.
+- Rapid slot changes restart one bounded response rather than queueing clips;
+  reduced motion paints the chosen state immediately with no one-shot.
+- At 390x844 touch and fitted desktop sizes, the slot controls, open Bag, one
+  Pack action, and progression rail remain visible, readable, and non-overlapping.
+- Reload and fast-forward preserve the exact selected Bag without replaying or
+  changing inventory.
 
 ### v0.54 — The Bag Choice Stays in Reach — 2026-08-07
 

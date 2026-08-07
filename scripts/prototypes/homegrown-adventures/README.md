@@ -170,6 +170,16 @@ Pack action, and progression rail now fit as one readable stack at both the
 only: item choice, material costs, Bag validity, persistence, and fast-forward
 remain reducer-owned, while the existing Rive Pack performance is unchanged.
 
+The v0.55 prototype question gives each valid slot choice an immediate physical
+answer. The authored `Bag Receive` timeline moves the existing native satchel
+through one compact rise, enlargement, settle, and hide sequence; the open Bag
+and packed React tokens answer during the same 600 ms window. React still owns
+the exact Provision, Tool, or Pack choice, ownership rules, costs, persistence,
+fast-forward, and accessible labels. The selector now uses concise reward lines,
+a full-card Change target, and a separate 44px Empty action after a rendered
+product-design pass. Reduced motion skips the one-shot and rapid changes restart
+one response.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

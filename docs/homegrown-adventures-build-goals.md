@@ -100,6 +100,17 @@ and packing response while React owns choice state, copy, validation, and the
 loadout ribbon. Position 9 is now the highest-leverage gap because those clear
 choices lead to a quiet empty Barn rather than the promised causal vignette.
 
+**Bag-response checkpoint (August 7, 2026):** Position 7 now gives every valid
+Provision, Tool, Pack, and Empty choice one dedicated Rive-authored `Bag
+Receive` performance on the existing native satchel. The open Bag and packed
+tokens answer during the same bounded 600 ms window, while React remains
+authoritative for exact slot identity, ownership, costs, persistence, and
+fast-forward. A rendered product-design pass shortens reward lines, makes each
+whole slot card a large Change target, and gives Empty its own 44px action.
+Reduced motion skips the one-shot, rapid changes restart it, and direct reload
+does not replay it. The next visible weakness is specificity: only the most
+recently changed item should lead the shared token response.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

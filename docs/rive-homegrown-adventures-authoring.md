@@ -57,6 +57,7 @@ The current runtime file also exposes these exact foreground-rig animations:
 - `Rosie Tickle`
 - `Rosie Notice`
 - `Rosie Pack`
+- `Bag Receive`
 - `Rosie Departure`
 - `Rosie Return`
 - `Rosie Bag Hidden`
@@ -93,6 +94,13 @@ unequipped state. The reducer—not animation playback—owns whether it is worn
 The WebGL2 boundary must start `Rosie Pack` before scrubbing its nested vector
 group to frame 16 (`16 / 60` seconds), then pause it on the next task. Scrubbing
 the never-started group does not reliably paint its keyed blend and transform.
+
+The v0.55 choice-response checkpoint adds direct timeline `Bag Receive` on that
+same `rosie_satchel` group. It starts hidden at 105% scale, rises and enlarges
+to 195%, settles toward the equipped pose, then returns to 0% blend over 36
+frames. React emits the timeline only after a valid `SET_BAG_SLOT`, keeps the
+exact chosen item in the DOM preview, and restarts the one-shot under rapid
+input. The timeline is not a Data Binding trigger and owns no Bag contents.
 
 The v0.27 departure checkpoint adds `Rosie Departure` as a one-second direct
 timeline on the existing foreground `body` root. It moves Rosie toward the
