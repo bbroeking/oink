@@ -159,6 +159,17 @@ idempotent. The next visible weakness is Position 9's hierarchy: its three
 equally weighted Bag-cause cards compete with the named Glowroot Discovery at
 phone scale.
 
+**Discovery-hierarchy checkpoint (August 7, 2026):** Position 9 now leads with
+the exact complete or clue-only Find directly below the HUD. The former three
+equal cause cards have become one supporting **How Rosie’s bag helped** ledger
+that preserves every Provision, Tool, and Pack consequence without competing
+with Glowroot. The physical clearing, canonical Rive Rosie, successful-branch
+Glowroot view, reward branch, one Continue action, persistence, and handoff are
+unchanged. Exact 360×780 touch and fitted 1280×720 desktop renders passed the
+installed Impeccable review as the available Claude-Design substitute. The next
+visible weakness is Position 10's repeated tiny cause strip, which is now
+redundant and crowds the exact returned supplies and welcome-Home action.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

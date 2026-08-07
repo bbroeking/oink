@@ -46,6 +46,14 @@ mounted; the Near-Discovery plate contains no reward and instantiates no
 Glowroot Rive canvas. The animation lab exposes the exact motion as **Reveal
 Glowroot**.
 
+The v0.60 presentation pass makes that deterministic Find the first read. One
+larger complete or clue-only result sits directly below the HUD; a single **How
+Rosie’s bag helped** ledger preserves the exact three Provision / Tool / Pack
+consequences underneath it. This replaces three equally framed top cards but
+does not change the Bag, branch, reward, timer, Rive contract, or Continue
+action. The exact 360×780 touch layout keeps the story, clearing, action, and
+prototype rail visible without page overflow.
+
 Position 10 now replaces the floating return stack with matched, character-free
 Barn-worktable plates derived from the approved return concept. The successful
 plate physically shows the earned Glowroot Seed, Compost, and two Willow Fiber

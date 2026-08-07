@@ -197,14 +197,74 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 60. **v0.59 — The Hedge Receives Rosie (shipped):** give the end of the
     departure one restrained path or gate response and a readable dusk handoff
     before Position 9 appears, without adding a destination or loading screen.
-61. **v0.60 — The Discovery Leads (in progress):** make the newly found
+61. **v0.60 — The Discovery Leads (shipped):** make the newly found
     Glowroot the clear first read in Position 9, with the three truthful Bag
     consequences supporting it instead of competing as equal top cards.
+62. **v0.61 — The Homecoming Keeps Focus (in progress):** remove the tiny
+    repeated preparation recap from Position 10 so the exact returned stock,
+    Rosie, and the one welcome-Home action can breathe after Position 9 has
+    already explained causality.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.60 — The Discovery Leads — 2026-08-07
+
+- Replayed Position 9 against
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/09-adventure-vignette.png`.
+  The deterministic Discovery and three consequences were truthful, but three
+  equally framed cards arrived before the named Find and compressed every
+  explanation to tiny phone-scale copy.
+- Moved the complete or clue-only Find directly below the HUD and increased its
+  headline and result treatment. The objective now announces **A new
+  Discovery!** or **A promising clue!** without changing the underlying branch.
+- Replaced three independent hanging cards with one supporting **How Rosie’s
+  bag helped** thread. Every exact Provision, Tool, and Pack consequence remains
+  visible, including all three empty-slot Near-Discovery explanations.
+- Kept the physical clearing, canonical Rive Rosie, live successful-branch
+  Glowroot, one Continue action, reward calculation, timers, persistence, and
+  Position 9 → 10 handoff unchanged.
+- Framed three hierarchy options through the Prototype skill—equal top cards,
+  one cause-first ledger, and Discovery-first with one supporting ledger—and
+  selected the third. The rendered screen then passed the installed Impeccable
+  product-design review as the available Claude-Design substitute: one first
+  read, one supporting surface, one primary action, and no nested card stack.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass, including complete and
+  Near-Discovery branches, navigation, persistence, and idempotent settlement.
+- `npm run verify:rive-homegrown` — pass; unchanged 390×844 Rive header and 60
+  authored names.
+- `npm run prototype:homegrown:build` — pass with content-hashed browser assets.
+- `npm run quality:loop` and `npm run quality:check` — pass, including
+  TypeScript, 78 layout tests, 202 security tests, 324 sprite checks, and the
+  locked quality contracts.
+- Rendered local browser replay — complete and missing-Provision branches both
+  lead with the correct Find, retain three exact causes, expose one Continue
+  action, survive reload, and remain readable with reduced motion enabled.
+- Exact 360×780 touch emulation measured a 360×780 document with no overflow;
+  the Find, cause thread, Rosie, physical result, Continue action, and
+  progression rail were simultaneously visible. Centered 1280×720 rendered the
+  full fitted phone with the same non-overlapping hierarchy.
+- Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
+  manual gates; this browser checkpoint does not claim those device checks.
+
+### Observable acceptance criteria
+
+- The first large story surface names the earned Glowroot or promising clue;
+  no item consequence has equal visual weight with that result.
+- Provision, Tool, and Pack still expose their exact deterministic consequences
+  in one consolidated supporting ledger, including empty-slot explanations.
+- Complete and Near-Discovery branches retain one Continue action and transition
+  to their existing exact Homecoming outcomes without reward or state changes.
+- Position 9 remains non-overlapping at 390×844, 360×780, and centered desktop
+  sizes, including reduced motion and reload.
+- The next rendered weakness is Position 10's tiny repeated cause strip: after
+  this screen has established causality, the duplicate recap crowds the exact
+  returned stock and welcome-Home action.
 
 ### v0.59 — The Hedge Receives Rosie — 2026-08-07
 
