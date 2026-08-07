@@ -265,6 +265,13 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   Moonberry motion `reduced` with identical reducer facts.
 - Mobile Safari/device sharpness, haptic feel, and audible acceptance remain
   manual gates; this browser checkpoint does not claim them.
+- GitHub Pages run `31210093147` deployed checkpoint `57ac4e7`. A fresh public
+  replay fetched CSS `4fa49cf558` and JavaScript `3f3514656e`, then exposed the
+  exact Bed 2 objective, `world-action-moonberry-bed` target, empty bed, and
+  dusk-moth purpose. Choosing it changed Bed 2 to `growing`, played Moonberry
+  `plant`, revealed the moths, and exposed **Tickle Rosie**. Reload retained the
+  same stock, growing bed, `growing` motion, moths, and action with Rive `ready`
+  and no console errors.
 
 ### Observable acceptance criteria
 
