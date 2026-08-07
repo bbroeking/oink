@@ -271,6 +271,14 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   still `growing`, and Bed 3 still `sprout`. Reduced motion holds the status for
   300ms, then reaches the same Position 1 state. Mobile Safari/device sharpness,
   haptic feel, and audible acceptance remain manual gates.
+- GitHub Pages run `31211832924` deployed checkpoint `d63533a`. A fresh public
+  replay fetched CSS `de7c39048f` and JavaScript `ddcb65004a`, then **Begin
+  another day** entered Position 1 with `aria-busy=true`, the exact morning
+  status, and Rive `ready`. The wash cleared after 900ms; reload retained
+  Position 1, Bed 2 `growing`, and Bed 3 `sprout`. The next Tickle reached
+  Position 2 with the Seed panel and both remembered beds intact. No console
+  errors occurred, and the companion site now links **See the Farm remember
+  tomorrow**.
 
 ### Observable acceptance criteria
 
