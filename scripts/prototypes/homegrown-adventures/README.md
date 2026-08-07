@@ -95,8 +95,9 @@ validated answer changes one existing bonus quantity: Hand Trowel uncovers one
 extra Glowroot Seed, while Lantern follows the dusk trail to one extra Willow
 Fiber. The selected Pack still decides Compost or Clover Seed independently.
 Bag copy previews the exact bonus, the vignette explains it, Position 10 shows
-the dynamic quantities and one restrained physical bonus marker, and Changed
-Home retains the result. Prototype navigation now applies the chosen Tool,
+the dynamic quantities and one tightly registered crop of the existing
+painterly Seed or Fiber art, and Changed Home retains the result. Prototype
+navigation now applies the chosen Tool,
 Pack reward, and Cloth lining cost both forward and backward instead of
 silently reverting to the default loadout. React owns every reward; Rive gains
 no progression input. The rendered pass also prevents the fitted desktop frame

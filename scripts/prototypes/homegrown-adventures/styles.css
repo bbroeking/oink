@@ -361,26 +361,17 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	pointer-events: none;
 }
 .return-tool-bonus-seed {
-	left: 174px;
-	top: 532px;
-	width: 30px;
-	height: 39px;
-	border: 2px solid #6d4920;
-	border-radius: 52% 48% 47% 53%;
-	background: radial-gradient(circle at 42% 33%, #fff6ad 0 9%, #f5c84b 10% 42%, #c98525 70%, #7f4a1d 100%);
-	box-shadow: 0 0 12px 4px rgba(255,215,77,.58), inset 2px 1px rgba(255,255,217,.72), 2px 3px rgba(26,13,7,.42);
-	transform: rotate(-10deg);
+	left: 163px;
+	top: 528px;
+	width: 40px;
+	height: 48px;
+	border-radius: 48%;
+	background: url("./assets/homegrown-adventures/return-homecoming-discovery.webp") -180px -499px / 390px 844px no-repeat;
+	box-shadow: 0 0 10px 2px rgba(255,215,77,.25), 2px 3px rgba(26,13,7,.3);
+	transform: rotate(-7deg) scale(.92);
 }
 .return-tool-bonus-seed::before {
-	content: "";
-	position: absolute;
-	left: 12px;
-	top: 9px;
-	width: 6px;
-	height: 17px;
-	border-left: 2px solid #fff8c8;
-	border-radius: 70%;
-	transform: rotate(12deg);
+	display: none;
 }
 .return-tool-bonus-seed::after {
 	content: "+1";
@@ -399,22 +390,17 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	transform: translateX(-50%) rotate(10deg);
 }
 .return-tool-bonus-fiber {
-	left: 313px;
-	top: 523px;
-	width: 42px;
-	height: 31px;
-	border: 6px double #526c31;
-	border-radius: 52% 48%;
-	box-shadow: inset 0 0 0 2px #9f9b47, 2px 3px rgba(26,13,7,.38);
-	transform: rotate(12deg);
+	left: 309px;
+	top: 521px;
+	width: 45px;
+	height: 40px;
+	border-radius: 50%;
+	background: url("./assets/homegrown-adventures/return-homecoming-discovery.webp") -298px -514px / 390px 844px no-repeat;
+	box-shadow: 2px 3px rgba(26,13,7,.3);
+	transform: rotate(9deg) scale(.94);
 }
 .return-tool-bonus-fiber::before {
-	content: "";
-	position: absolute;
-	inset: 3px -5px -3px 4px;
-	border: 3px solid #799147;
-	border-radius: 50%;
-	transform: rotate(-18deg);
+	display: none;
 }
 .return-tool-bonus-fiber::after {
 	content: "+1";

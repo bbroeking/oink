@@ -176,8 +176,8 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   supply. No item, crop, destination, currency, state field, or Rive progression
   input was added.
 - Carried the Tool through the Bag effect, Adventure cause, return plaque,
-  three-column ledger, physical worktable marker, Changed Home stock, and the
-  next retained-Seed state. Prototype Previous/Next navigation now applies the
+  three-column ledger, physical worktable crop, Changed Home stock, and the next
+  retained-Seed state. Prototype Previous/Next navigation now applies the
   selected Tool, Pack reward, and Cloth lining cost exactly in both directions.
 - Rendered validation also exposed two presentation defects. Short-desktop
   focus could programmatically scroll the transformed phone, so that container
@@ -210,6 +210,10 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - At 1280x720, the 328x709 phone and complete prototype rail remained inside the
   first viewport after Previous/Next focus. Resizing that live scene to 390x844
   kept canonical Rive Rosie registered without reload.
+- The first public visual replay made the vector bonus markers look detached
+  from the painterly worktable. Replacing them with tightly registered crops of
+  the existing Homecoming Seed and Fiber art kept the exact plate texture and
+  made both bonus objects belong to the scene.
 - Two simultaneous **Welcome Rosie Home** clicks both fulfilled but advanced to
   one acknowledged reward and one Plant action. Reduced motion reported the
   Rosie, Crop, and Home Rive channels as `reduced`; all rendered browser logs
@@ -222,8 +226,8 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - An isolated tree reconstructed from `HEAD` plus the staged checkpoint
   installed all 1,304 packages offline, passed 45/45 tests and
   `npm run verify:rive-web`, and reproduced CSS
-  `a9119f6817f58d11e23dddf49a9eb33c98d77618e2d86af0b0d15a6014d2028e`,
-  player `100f44e4cc1aa16e75502bb98f77edb82ca238c03b81196966fac9248fff444d`,
+  `7166175dc2b35571a4d3a9ffd86504c37545495844b04d11536a6a836914edbc`,
+  player `59e02e4946539ccaad4da126da596365d66ddf1f55e514d9a6118758c89b612d`,
   and animation-lab
   `dc7051a68c5bfb0c9abeec719b4180872b0d26ab6043479d931b43c8fc549a39`
   exactly.
