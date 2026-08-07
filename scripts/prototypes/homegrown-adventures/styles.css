@@ -728,6 +728,7 @@ html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 	border-radius: 14px;
 	box-shadow: 3px 4px 0 rgba(48,33,22,.72);
 }
+.moonberry-planting-open .home-memory-stock { bottom: 105px; }
 .home-memory-stock > strong {
 	display: block;
 	padding: 5px 8px 4px;
@@ -1104,6 +1105,12 @@ html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 	top: 10px;
 	background: rgba(241,189,79,.3);
 	box-shadow: 0 0 0 2px rgba(48,33,22,.54), 0 0 18px rgba(255,216,107,.72);
+}
+.world-action-moonberry-bed { left: 90px; top: 470px; width: 210px; height: 130px; }
+.world-action-moonberry-bed .world-action-pulse {
+	top: 34px;
+	background: rgba(132,108,191,.27);
+	box-shadow: 0 0 0 2px rgba(48,33,22,.54), 0 0 18px rgba(189,157,239,.6);
 }
 .world-action-bag { left: 132px; top: 470px; }
 .world-action-bag .world-action-pulse { left: 28%; }

@@ -1335,6 +1335,7 @@ export const WORLD_TARGETS = Object.freeze({
 	ROSIE: "rosie",
 	PATCH: "patch",
 	GLOWROOT_BED: "glowroot-bed",
+	MOONBERRY_BED: "moonberry-bed",
 	BAG: "bag",
 	HEDGE: "hedge",
 });
@@ -1524,9 +1525,10 @@ export function playerPresentation(state) {
 		};
 	}
 	return {
-		target: WORLD_TARGETS.PATCH,
-		objective: "The Barn remembers Glowroot",
+		target: WORLD_TARGETS.MOONBERRY_BED,
+		objective: "Bed 2 is ready for Moonberries",
 		label: "Grow Moonberries",
+		detail: "Invite the dusk moths",
 		action,
 	};
 }

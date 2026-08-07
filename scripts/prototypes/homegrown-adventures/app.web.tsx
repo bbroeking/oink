@@ -689,7 +689,7 @@ function ReturnRewardPanel({ state, actionLabel, onAction }) {
 	);
 }
 
-function HomeMemoryPanel({ state, actionLabel, onAction }) {
+function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true }) {
 	const stock = state.farmStock ?? {};
 	return (
 		<section className="home-memory-panel" aria-label="The Barn remembers this Adventure">
@@ -710,7 +710,7 @@ function HomeMemoryPanel({ state, actionLabel, onAction }) {
 					<span><i aria-hidden="true">≋</i><small>Willow Fiber</small><b>{stock["willow-fiber"] ?? 0}</b></span>
 				</div>
 			</div>
-			<button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>
+			{showAction && <button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>}
 		</section>
 	);
 }
@@ -1072,6 +1072,10 @@ function App() {
 		state.returnRewardAcknowledged &&
 		!state.glowrootPlanted;
 	const showingHomeMemory = position === 11 && homeMemoryEarned;
+	const showingMoonberryPlanting =
+		showingHomeMemory &&
+		state.stage === STAGES.DEVELOPED &&
+		!state.nextPlanting;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingReturnReward;
 	const waiting = departing || (autoPlay && (
 		state.stage === STAGES.CLOVER_GROWING ||
@@ -1223,7 +1227,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
@@ -1310,6 +1314,13 @@ function App() {
 				state={state}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
+				showAction={!showingMoonberryPlanting}
+			/>}
+			{showingMoonberryPlanting && <WorldAction
+				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}
+				presentation={visiblePresentation}
+				onAction={() => act(visiblePresentation.action)}
+				waiting={waiting}
 			/>}
 			{choosingBag && <BagSelectionPanel
 				bag={state.bag}

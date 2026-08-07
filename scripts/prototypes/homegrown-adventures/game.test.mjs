@@ -1066,6 +1066,9 @@ test("a successful return adds one named Discovery and practical Farm supplies",
 	assert.equal(state.glowrootPlanted, true);
 	assert.equal(homegrownRiveModel(state).trigger, "plant-glowroot");
 	assert.equal(state.farmStock["glowroot-seed"], 1);
+	assert.equal(playerPresentation(state).target, WORLD_TARGETS.MOONBERRY_BED);
+	assert.equal(playerPresentation(state).objective, "Bed 2 is ready for Moonberries");
+	assert.equal(playerPresentation(state).detail, "Invite the dusk moths");
 	assert.match(state.trace.at(-1).detail, /2 → 1/);
 	assert.equal(reduce(state, { type: ACTIONS.PLANT_GLOWROOT }), state);
 	assert.equal(beforePlant.farmStock["glowroot-seed"], 2);
