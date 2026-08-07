@@ -159,9 +159,12 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 49. **v0.48 — The Tool Changes the Bonus (shipped):** make Hand
     Trowel return one extra Glowroot Seed while Lantern returns one extra Willow
     Fiber, preserving the same named Adventure and independent Pack choice.
-50. **v0.49 — The Chosen Tool Enters the Story (locally verified):** make the
+50. **v0.49 — The Chosen Tool Enters the Story (shipped):** make the
     physical tool in Position 9 agree with Rosie's selected loadout, so Lantern
     no longer changes only labels while a baked Hand Trowel remains in view.
+51. **v0.50 — The Chosen Pack Enters the Story (in progress):** make the
+    physical Pack in Position 9 agree with Rosie's selected loadout, so Cloth
+    Wrap and an empty Pack no longer inherit the baked Wicker Basket.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
@@ -246,11 +249,33 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Public deployment evidence
 
-- Pending checkpoint deployment and public replay.
+- Feature checkpoint `e8e8581` and review-causality fix `621982c` shipped from
+  `main` in successful Pages runs `31188388511` and `31189221872`.
+- The final public HTML selected CSS `3d7fd732c2` and player `c9346fd606`;
+  their full SHA-256 hashes exactly matched the isolated build. The animation
+  lab matched `033a150905a66502c9eb6eeb74c8d5588a54bebcca1caf67547eb19ed040edc4`,
+  the Lantern plate matched
+  `66bd9f4db30d43712bce816ff7b8121dce9a54d6848fecec0490e519858f0a74`,
+  and the authored Rive remained
+  `0f2e966d04cb66f8827ee1268eefe44b9b080ba66a963bf9020e4be86b9f2fc1`.
+- At 390x844, public Hand Trowel, Lantern, and empty-Tool replays selected the
+  Trowel, Lantern, and clean clearing plates exactly. Lantern also remained
+  physical on a clue-only Adventure and after reload. All public browser logs
+  were empty.
+- The first public clue continuation exposed the successful-preset mismatch;
+  after the fix deployed, the same empty-Provision + Lantern + Wicker path
+  returned **Useful clue**, **Compost +1**, **Leaf-print clue Found**, and
+  **Willow Fiber +1**, with no Glowroot Seed claim.
+- The companion site now exposes **Choose Rosie’s Tool** beside the full-loop
+  link.
 
 ### Next highest-leverage weakness
 
-- Pending the public replay of complete and clue-only Tool branches.
+- With Lantern and Cloth Wrap selected, Position 9's causal cards correctly say
+  **Lantern** and **Cloth Wrap**, but the generated clearing still physically
+  contains its Wicker Basket. The next checkpoint should make Wicker, Cloth,
+  and empty Pack selections agree with the scene using registered painterly
+  art, without changing rewards, inventory, destination, or Rive progression.
 
 ### v0.48 — The Tool Changes the Bonus — 2026-08-07
 
