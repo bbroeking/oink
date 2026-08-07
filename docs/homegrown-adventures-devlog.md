@@ -262,6 +262,13 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Centered desktop and 390×844 reviews preserve the same hierarchy and Farm
   composition. Mobile Safari/device sharpness, haptic feel, and audible
   acceptance remain manual gates; this browser checkpoint does not claim them.
+- GitHub Pages run `31209281643` deployed checkpoint `8a934de`. A fresh public
+  Position 10 replay fetched CSS `356fd3d535` and JavaScript `3acbb626fc`, then
+  Welcome entered **Glowroot at Home** with Rive `ready`, Bed 3 `empty`, and the
+  exact `2 → 1` action. Planting changed Bed 3 to `sprout`, played only the Home
+  flourish, retained exact `2 / 1 / 2 / 2` stock, and exposed **Grow
+  Moonberries**. Reload settled Home to `developed` with the same facts and no
+  console errors. The companion site now links **Bring Glowroot to its bed**.
 
 ### Observable acceptance criteria
 
