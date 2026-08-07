@@ -187,6 +187,11 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   Glowroot remain authored animation; React still owns equipment selection,
   the deterministic Adventure branch, inventory, reward calculation, copy,
   persistence, and fast-forward.
+- The first public replay exposed a review-rail contradiction: an empty
+  Provision showed the correct clue at Position 9, but continuing inherited
+  Position 10's successful preset. Fast-forward now derives Provision spending,
+  underpreparation, clue reason, and exact clue supplies from the selected Bag;
+  two regression tests cover both continued and direct Return review paths.
 - Updated the companion site to send players directly to **Choose Rosie’s
   Tool** in the existing Bag step.
 
@@ -222,18 +227,18 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   Lantern at Position 9. Reduced motion kept the Lantern visible while all Rive
   motion channels reported `reduced`. Two simultaneous story clicks resolved
   to one stable **Preview her return** action.
-- `npm run prototype:homegrown:test` — 45/45 gameplay, navigation, and
+- `npm run prototype:homegrown:test` — 47/47 gameplay, navigation, and
   persistence tests.
 - `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
 - `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
   78 layout tests, and 202 security tests passed.
 - An isolated tree reconstructed from `HEAD` plus the staged checkpoint
-  installed all 1,304 packages offline, passed 45/45 tests and
+  installed all 1,304 packages offline, passed 47/47 tests and
   `npm run verify:rive-web`, and reproduced CSS
   `3d7fd732c217cc0e28a355daea835b269bf347fcb21a6a59f836ff1e2bc6f9e7`,
-  player `5d002cbc4cc4604eaa6a9224d19f1fd9d82405d611555bd9d05ec6df44986a8b`,
+  player `c9346fd606865526bccb3f5544dbbe272175a70438f342583b1aaef3837cc776`,
   animation lab
-  `dc7051a68c5bfb0c9abeec719b4180872b0d26ab6043479d931b43c8fc549a39`,
+  `033a150905a66502c9eb6eeb74c8d5588a54bebcca1caf67547eb19ed040edc4`,
   and Lantern plate
   `66bd9f4db30d43712bce816ff7b8121dce9a54d6848fecec0490e519858f0a74`
   exactly. The authored Rive remained

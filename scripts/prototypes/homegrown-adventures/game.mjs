@@ -477,20 +477,38 @@ function completeCloverHarvest(state, { rhythmBonus = false } = {}, now) {
 
 function prototypeBagStockAdjustment(position, bag = DEFAULT_BAG) {
 	const adjustment = { ...EMPTY_FARM_STOCK };
+	const emptySlot = BAG_SLOT_ORDER.find((slot) => bag?.[slot] == null) ?? null;
 	const add = (reward, direction = 1) => {
 		if (reward === null) return;
 		adjustment[reward.itemId] += reward.amount * direction;
 	};
 
 	if (position >= 8) {
+		add(DEFAULT_BAG.provision === null ? null : {
+			itemId: DEFAULT_BAG.provision,
+			amount: 1,
+		}, 1);
+		add(bag.provision == null ? null : {
+			itemId: bag.provision,
+			amount: 1,
+		}, -1);
 		add(bagPackingCost(DEFAULT_BAG.pack), 1);
 		add(bagPackingCost(bag.pack ?? null), -1);
 	}
 	if (position >= 10) {
-		add(bagReturnReward(DEFAULT_BAG.pack), -1);
-		add(bagReturnReward(bag.pack ?? null), 1);
-		add(toolReturnBonus(DEFAULT_BAG.tool), -1);
-		add(toolReturnBonus(bag.tool ?? null), 1);
+		if (emptySlot !== null) {
+			add(bagReturnReward(DEFAULT_BAG.pack), -1);
+			add(toolReturnBonus(DEFAULT_BAG.tool), -1);
+			add({ itemId: "glowroot-seed", amount: 1 }, -1);
+			add({ itemId: "willow-fiber", amount: 2 }, -1);
+			add({ itemId: "compost", amount: 1 }, 1);
+			add({ itemId: "willow-fiber", amount: 1 }, 1);
+		} else {
+			add(bagReturnReward(DEFAULT_BAG.pack), -1);
+			add(bagReturnReward(bag.pack ?? null), 1);
+			add(toolReturnBonus(DEFAULT_BAG.tool), -1);
+			add(toolReturnBonus(bag.tool ?? null), 1);
+		}
 	}
 
 	return adjustment;
@@ -1079,6 +1097,8 @@ export function homegrownReducer(state, action) {
 			if (action.position === state.prototypePosition) return state;
 			{
 				const next = createPrototypeState(action.position, { now, reduceMotion: state.reduceMotion });
+				const emptySlot = BAG_SLOT_ORDER.find((slot) => state.bag?.[slot] == null) ?? null;
+				const underprepared = emptySlot !== null;
 				const currentPosition = normalizePrototypePosition(state.prototypePosition ?? 1);
 				const currentPreset = createPrototypeState(currentPosition, { now, reduceMotion: state.reduceMotion });
 				const currentBagAdjustment = prototypeBagStockAdjustment(currentPosition, state.bag);
@@ -1098,8 +1118,27 @@ export function homegrownReducer(state, action) {
 				);
 				const returnPreview = action.position === 10
 					? {
-						lastAction: "return",
-						trace: appendTrace(state, "return", "Return + Discovery preview", now),
+						...(underprepared ? {
+							stage: STAGES.NEAR_DISCOVERY,
+							glowrootKnown: state.glowrootKnown,
+							fieldGuide: [...new Set([
+								...state.fieldGuide,
+								"Dusk Picnic",
+								"Glowroot trail (clue)",
+							])],
+							lastAction: "near-discovery",
+							trace: appendTrace(state, "near-discovery", "Useful clue preview", now),
+						} : {
+							lastAction: "return",
+							trace: appendTrace(state, "return", "Return + Discovery preview", now),
+						}),
+					}
+					: {};
+				const preparationPreview = action.position >= 8
+					? {
+						underprepared,
+						nearDiscoveryReason: emptySlot,
+						packedProvisionSpent: state.bag?.provision ?? null,
 					}
 					: {};
 				const homeMemory = state.daysCompleted > 0 || state.glowrootPlanted;
@@ -1135,6 +1174,7 @@ export function homegrownReducer(state, action) {
 						bag: { ...state.bag },
 						farmStock,
 						...returnPreview,
+						...preparationPreview,
 					};
 				}
 				return {
@@ -1143,6 +1183,7 @@ export function homegrownReducer(state, action) {
 					bag: { ...state.bag },
 					farmStock: previewFarmStock,
 					...returnPreview,
+					...preparationPreview,
 				};
 			}
 

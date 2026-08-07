@@ -980,6 +980,43 @@ test("prototype navigation carries the selected loadout and exact rewards forwar
 	assert.deepEqual(state.farmStock, before);
 });
 
+test("prototype navigation keeps an incomplete Bag on the clue branch through Return", () => {
+	let state = createPrototypeState(7, { now: at });
+	const before = { ...state.farmStock };
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: null });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
+	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 9 });
+
+	assert.equal(state.underprepared, true);
+	assert.equal(state.nearDiscoveryReason, "provision");
+	assert.equal(state.farmStock["clover-lunch"], before["clover-lunch"]);
+	assert.equal(adventureStory(state).kind, "near-discovery");
+
+	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+	assert.equal(state.stage, STAGES.NEAR_DISCOVERY);
+	assert.equal(state.farmStock["glowroot-seed"], before["glowroot-seed"]);
+	assert.equal(state.farmStock.compost, before.compost + 1);
+	assert.equal(state.farmStock["willow-fiber"], before["willow-fiber"] + 1);
+
+	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 7 });
+	assert.deepEqual(state.farmStock, before);
+});
+
+test("direct Return review derives the clue reward from an incomplete Bag", () => {
+	let state = createPrototypeState(7, { now: at });
+	const before = { ...state.farmStock };
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: null });
+	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 10 });
+
+	assert.equal(state.stage, STAGES.NEAR_DISCOVERY);
+	assert.equal(state.nearDiscoveryReason, "tool");
+	assert.equal(state.farmStock["glowroot-seed"], before["glowroot-seed"]);
+	assert.equal(state.farmStock.compost, before.compost + 1);
+	assert.equal(state.farmStock["willow-fiber"], before["willow-fiber"] + 1);
+});
+
 test("a successful return adds one named Discovery and practical Farm supplies", () => {
 	let state = createPrototypeState(7, { now: at });
 	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });

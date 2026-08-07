@@ -117,6 +117,11 @@ glow, and add no character, reward, copy, control, or other object. The smaller
 of two generated treatments won because the first Lantern competed with Rosie
 and the Discovery card at phone size. Rive still owns only Rosie and the live
 Glowroot performance; React owns the selected Tool and every gameplay result.
+The public replay also exposed a prototype-rail inconsistency: an empty slot
+could show a clue at Position 9 but inherit the successful preset when the story
+continued. Review navigation now derives Provision spending, underpreparation,
+the clue reason, and the exact clue supplies from the carried Bag, so the visual
+branch and Return cannot disagree.
 
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
