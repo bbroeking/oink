@@ -138,7 +138,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 43. **v0.42 — Leaves Make the Doorway (shipped):** break the smooth
     hedge bands into crossed rows of native Rive leaf shapes, keeping the
     established blossom path in front and the same earned Home state beneath.
-44. **v0.43 — The Second Seed Has a Home (locally verified):** recognize a
+44. **v0.43 — The Second Seed Has a Home (shipped):** recognize a
     repeated Glowroot return, keep its Seed and practical supplies in Farm
     stock, and finish the Barn day instead of offering an unusable second
     planting action.
@@ -197,12 +197,25 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   installed 1,304 packages from the offline lockfile and passed
   `npm run verify:rive-web`; unrelated worktree changes were not present.
 
+### Public deployment evidence
+
+- Shipped commit `3c50dda` through GitHub Pages run `31153727096`.
+- The public game loaded `homegrown-adventures.js?v=6852a4087f`; the animation
+  lab loaded `homegrown-animation-lab.js?v=fdbd7b1e76`; and the 297,820-byte
+  public Rive file matched the checked-in SHA-256 exactly.
+- Starting at the public Changed Home, Previous opened Position 10 with
+  **Discovery remembered** and **Keep supplies in Farm stock**. The action
+  retained one Glowroot Seed, returned to Position 11 with **Begin another
+  day**, and the next morning preserved the remembered Home. The public browser
+  reported no warnings or errors.
+
 ### Next highest-leverage weakness
 
-Choose after the public v0.43 replay by playing from the second morning through
-the following return and comparing the weakest player-visible moment with the
-matching approved 11-screen concept. Prefer depth in the existing loop over a
-new crop, destination, currency, or parallel system.
+The public replay at a 1280x720 laptop viewport exposed the next clarity gap:
+Position 10's physical worktable, reward ledger, and prototype rail can push the
+single Homecoming action below the first viewport. The next bounded checkpoint
+should keep that action visible at short desktop heights without shrinking the
+touch target, hiding returned objects, or adding a second control surface.
 
 ### v0.42 — Leaves Make the Doorway — 2026-08-07
 
