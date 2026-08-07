@@ -249,6 +249,12 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Rendered centered 1280×720 replay — complete, missing-Provision, and repeat
   returns each showed the correct plaque, exact three stock results, branch
   action, physical props, and zero duplicate causal strips.
+- GitHub Pages run `31207905295` deployed checkpoint `0ee44eb`. A fresh public
+  Position 10 load fetched CSS `69e4d553ea` and JavaScript `dd5aa0c880`, reported
+  Rive `ready`, exposed one **Added to Farm stock** ledger with the exact
+  `+1 / +2 / +2` results, zero former cause strips, and one Welcome action.
+  Welcome changed only to **Plant Glowroot**; reload retained that state. The
+  companion site exposes **See what Rosie brought Home**.
 - Exact 360×780 touch emulation initially exposed a 38px ledger/action
   collision. The compact-height treatment now measures ledger 566–640px,
   action 652–710px, and rail 722–780px with a 360×780 document and no overflow.
