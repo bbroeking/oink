@@ -408,6 +408,24 @@ AI-rendered typography, counter shapes, accessibility, and spacing in code.
 When an image conflicts with the behavioral rules below, the behavioral rules
 win.
 
+### Recurring product-design review gate
+
+Every player-facing UI checkpoint must be reviewed as a real rendered screen,
+not as source code alone. Run the phone and desktop layouts through Claude
+Design when that tool is callable. In Codex sessions where Claude Design is not
+available, run the installed Impeccable product-design review instead and record
+that substitution in the devlog. The review must compare 390×844, 360×780, and
+centered desktop renders against the relevant approved concept, then check:
+
+- one obvious primary action and a readable cause-and-effect hierarchy;
+- understandable labels and rewards without dense explanatory copy;
+- 44px minimum touch actions, keyboard focus, and no overlapping hit targets;
+- enough room for Rosie, the farm, and the animated payoff to remain the focus;
+- reduced-motion behavior and responsive layout before the checkpoint ships.
+
+Resolve blocking findings in the same bounded checkpoint. Do not use the design
+review as permission to add parallel systems or change the core player promise.
+
 Variant A, **Rosie First**, is canonical. Variant C's larger story treatment is
 allowed only as a brief welcome-home ceremony; it must collapse automatically
 or when Rosie is tickled. Persisted and developed states use a compact,
