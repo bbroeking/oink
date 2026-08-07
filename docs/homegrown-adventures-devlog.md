@@ -165,15 +165,84 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 51. **v0.50 — The Chosen Pack Enters the Story (shipped):** make the
     physical Pack in Position 9 agree with Rosie's selected loadout, so Cloth
     Wrap and an empty Pack no longer inherit the baked Wicker Basket.
-52. **v0.51 — The Chosen Provision Enters the Story (in progress):** make the
+52. **v0.51 — The Chosen Provision Enters the Story (shipped):** make the
     physical Provision in Position 9 agree with Rosie's selected loadout, so
     Clover Lunch and an empty Provision differ in the world as clearly as their
     cause cards do.
+53. **v0.52 — The Chosen Tool Comes Home (in progress):** keep Rosie's
+    reusable Hand Trowel, Lantern, or empty Tool physically truthful at the
+    Position 10 worktable instead of letting the selected gear disappear into
+    the preparation recap.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.51 — The Chosen Provision Enters the Story — 2026-08-07
+
+- Replayed the shipped Position 9 against `09-adventure-vignette.png` after the
+  Tool and Pack checkpoints. Their cause cards and physical props now agreed,
+  but Clover Lunch still existed only as text even though the approved concept
+  places the packed meal on the clearing floor.
+- Added one compact open Clover Lunch tin at the concept's lower-left ground
+  position. The first integration render was rejected because its 142-pixel
+  treatment competed with Rosie and crowded the result card; the final
+  106-pixel placement stays subordinate and leaves the one-action hierarchy
+  intact. An empty Provision leaves that ground clean.
+- Used the built-in ImageGen path with the approved Position 9 concept as a
+  style reference, generated the opaque lunch tin on a flat magenta key, removed
+  that key locally, then tightly cropped and resized the selected alpha asset.
+  The source and public copies are byte-identical project assets.
+- React exposes `data-adventure-provision` from the existing Bag and mounts one
+  presentation-only prop. Rive ownership is unchanged: canonical Rosie, her
+  equipped satchel, and Glowroot motion remain authored animation; stock spend,
+  duration, branch, rewards, persistence, and fast-forward stay reducer-owned.
+- Rapid QA exposed an existing rail bug: two simultaneous Next presses could
+  skip Position 10 and land on Position 11. Previous and Next now share the
+  existing 350 ms transition guard, so one physical input causes one review
+  transition in either direction.
+- The next public weakness is Position 10: its recap says reusable Tool, but
+  the selected Hand Trowel, Lantern, or empty state is not physically visible
+  on Rosie's return worktable.
+
+### Observable acceptance criteria
+
+- Position 9 physically shows the Clover Lunch tin when Clover Lunch is packed
+  and no Provision prop when the slot is left empty.
+- Provision presentation crosses independently with both Tools, both Packs,
+  and empty equipment without changing the deterministic Adventure outcome.
+- The selected Provision survives reload and fast-forward. Reduced motion shows
+  the stable tin with no settle animation.
+- The scene keeps one obvious **Continue the story** action at 390x844 touch and
+  fitted 1280x720 desktop sizes. The lunch remains smaller than Rosie and does
+  not obscure the live Glowroot, result, or progression rail.
+- Two simultaneous Previous or Next presses move exactly one position.
+
+### Validation evidence
+
+- Compared complete Clover Lunch + Hand Trowel + Wicker Basket, alternate
+  Clover Lunch + Lantern + Cloth Wrap, and empty-Provision branches in the
+  rendered local build. All three independent DOM facts and physical props
+  agreed; empty Provision computed to `display: none`.
+- Reload retained Clover Lunch + Lantern + Cloth Wrap. Under reduced motion,
+  `data-reduce-motion` remained `true` and the Provision animation computed to
+  `none`. Rapid double Next held at Position 10; rapid double Previous held at
+  Position 9; rapid double story input produced one stable next action.
+- The 390x844 touch frame kept the complete cause row, Rosie, lunch tin, Tool,
+  Pack, Glowroot result, primary action, and rail visible. At fitted 1280x720,
+  the phone ended at 709 px and the action at 629 px.
+- `npm run prototype:homegrown:test` — 47/47 gameplay, navigation, inventory,
+  reward, fast-forward, and persistence tests passed.
+- `npm run verify:rive-homegrown` — the 390x844 artboard and all 59 authored
+  names passed; the existing manual mobile-Safari gate remains unchanged.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- Public Pages run `31192668258` shipped feature commit `ac8c4e0`. The deployed
+  lunch asset matched SHA-256
+  `e67197977d87013cbd626a90fbb5fc0aaeb5a35710421021ef1cf6d70ba714fc`.
+  Public complete and empty-Provision replays selected the expected physical
+  state and produced no browser warnings or errors.
 
 ### v0.50 — The Chosen Pack Enters the Story — 2026-08-07
 
