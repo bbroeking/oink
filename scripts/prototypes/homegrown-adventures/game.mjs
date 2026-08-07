@@ -312,15 +312,16 @@ export function createPrototypeState(position, { now = Date.now(), reduceMotion 
 		...tickled,
 		purpose: "dusk-picnic",
 		selectedCrop: "clover",
-		compostApplied: true,
+		compostApplied: false,
 	};
+	const composted = { ...purposeful, compostApplied: true };
 	const plantedStock = {
-		...purposeful.farmStock,
-		"clover-seed": purposeful.farmStock["clover-seed"] - 1,
-		compost: purposeful.farmStock.compost - 1,
+		...composted.farmStock,
+		"clover-seed": composted.farmStock["clover-seed"] - 1,
+		compost: composted.farmStock.compost - 1,
 	};
 	const ready = {
-		...purposeful,
+		...composted,
 		stage: STAGES.CLOVER_READY,
 		farmStock: plantedStock,
 		plantedAt: now - COMPOSTED_GROWTH_MS,
@@ -380,7 +381,7 @@ export function createPrototypeState(position, { now = Date.now(), reduceMotion 
 		2: tickled,
 		3: purposeful,
 		4: {
-			...purposeful,
+			...composted,
 			stage: STAGES.CLOVER_GROWING,
 			farmStock: plantedStock,
 			// Position 4 is the approved late-growth review checkpoint, not the
@@ -668,7 +669,7 @@ export function homegrownReducer(state, action) {
 				{
 					purpose: "dusk-picnic",
 					selectedCrop: "clover",
-					compostApplied: (state.farmStock?.compost ?? 0) > 0,
+					compostApplied: false,
 					prototypePosition: 3,
 				},
 				action.type === ACTIONS.SELECT_CROP ? "select-crop" : "choose-purpose",
@@ -1378,7 +1379,7 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.STARTING) {
 		return {
 			target: WORLD_TARGETS.PATCH,
-			objective: state.compostApplied ? "Compost: 2h · harvest 4" : "No Compost: 4h · harvest 3",
+			objective: state.compostApplied ? "Compost: 2h · harvest 4" : "Clover: 4h · harvest 3",
 			label: state.compostApplied ? "Plant with Compost" : "Plant Clover",
 			action,
 		};

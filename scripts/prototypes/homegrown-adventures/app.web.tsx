@@ -333,13 +333,13 @@ function PlantingPanel({ state, onToggleCompost, onPlant }) {
 					aria-pressed={boosted}
 				>
 					<span className="seed-art seed-art-compost" aria-hidden="true">♣</span>
-					<span><small>Optional Compost</small><strong>{boosted ? "Added" : "Saved"}</strong><b>{boosted ? `${compost} → ${compost - 1}` : `${compost} stays`}</b></span>
+					<span><small>Optional boost</small><strong>{boosted ? "Compost added" : "Add Compost"}</strong><b>{boosted ? `${compost} → ${compost - 1}` : `${compost} owned`}</b></span>
 					<i aria-hidden="true">{boosted ? "✓" : "+"}</i>
 				</button>
 			</div>
 			<div className="planting-effect" role="status">
 				<strong>{boosted ? "Ready in 2 hours · Harvest 4" : "Ready in 4 hours · Harvest 3"}</strong>
-				<small>{boosted ? "Compost grows it sooner and gives one extra." : "Nothing is lost. Compost is a choice, not a requirement."}</small>
+				<small>{boosted ? "Compost grows it sooner and gives one extra." : "Add Compost for 2 hours · Harvest 4."}</small>
 			</div>
 			<button type="button" className="plant-confirm" onClick={onPlant} disabled={seeds < 1}>
 				{boosted ? "Plant with Compost" : "Plant Clover"}
@@ -767,6 +767,7 @@ const REDUCED_NEW_DAY_HANDOFF_MS = 300;
 const RAPID_TRANSITION_ACTIONS = new Set([
 	ACTIONS.TICKLE,
 	ACTIONS.SELECT_CROP,
+	ACTIONS.TOGGLE_COMPOST,
 	ACTIONS.PLANT_CLOVER,
 	ACTIONS.ADVANCE_TIME,
 	ACTIONS.HARVEST_CLOVER,

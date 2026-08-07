@@ -32,6 +32,7 @@ function throughCloverReady() {
 	let state = createInitialState({ now: at });
 	state = reduce(state, { type: ACTIONS.TICKLE });
 	state = reduce(state, { type: ACTIONS.CHOOSE_PURPOSE, purpose: "dusk-picnic" });
+	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });
 	state = reduce(state, { type: ACTIONS.PLANT_CLOVER });
 	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
 	return state;
@@ -87,7 +88,7 @@ test("purpose is asked before crop and only the named purpose is accepted", () =
 	assert.equal(state.selectedCrop, "clover");
 });
 
-test("Clover requires a Seed and selecting it makes Compost an optional predictable boost", () => {
+test("Clover requires a Seed and leaves its predictable Compost boost freely chosen", () => {
 	let state = createInitialState({ now: at });
 	assert.equal(state.farmStock["clover-seed"], 3);
 	assert.equal(state.farmStock.compost, 2);
@@ -96,8 +97,14 @@ test("Clover requires a Seed and selecting it makes Compost an optional predicta
 
 	assert.equal(state.prototypePosition, 3);
 	assert.equal(state.selectedCrop, "clover");
-	assert.equal(state.compostApplied, true);
+	assert.equal(state.compostApplied, false);
 	assert.equal(reduce(state, { type: ACTIONS.SELECT_CROP, crop: "clover" }), state);
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.PLANT_CLOVER,
+		label: "Plant Clover",
+	});
+	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });
+	assert.equal(state.compostApplied, true);
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.PLANT_CLOVER,
 		label: "Plant with Compost",
@@ -113,7 +120,6 @@ test("saving Compost keeps the normal duration and normal yield", () => {
 	let state = createInitialState({ now: at });
 	state = reduce(state, { type: ACTIONS.TICKLE });
 	state = reduce(state, { type: ACTIONS.SELECT_CROP, crop: "clover" });
-	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });
 	assert.equal(state.compostApplied, false);
 
 	state = reduce(state, { type: ACTIONS.PLANT_CLOVER });
@@ -131,6 +137,7 @@ test("Compost shortens growth and adds exactly one guaranteed harvest item", () 
 	let state = createInitialState({ now: at });
 	state = reduce(state, { type: ACTIONS.TICKLE });
 	state = reduce(state, { type: ACTIONS.SELECT_CROP, crop: "clover" });
+	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });
 	state = reduce(state, { type: ACTIONS.PLANT_CLOVER });
 	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
 	state = reduce(state, { type: ACTIONS.TICKLE });
