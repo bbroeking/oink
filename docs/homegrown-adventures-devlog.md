@@ -268,6 +268,15 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Reduced motion presents the same one-action layout with both beds and stock
   intact. Mobile Safari/device sharpness, haptic feel, and audible acceptance
   remain manual gates.
+- GitHub Pages run `31212619703` deployed checkpoint `f84ca5b`. A fresh public
+  replay fetched CSS `800f24a35d` and JavaScript `684457463b`, completed the
+  Homecoming, both lasting plantings, Rosie tickle, and new-morning handoff,
+  then reached the remembered Position 2 with exactly one Seed button. Bed 2
+  remained `growing`, Bed 3 remained `sprout`, and the live receipt named both
+  crops, optional Compost, and one stored Glowroot Seed. Two immediate Seed
+  clicks reached one Position 3 planting panel; reload retained it. No console
+  errors occurred, and the companion site now links **See what the Farm grows
+  next** to the public flow.
 
 ### Observable acceptance criteria
 
