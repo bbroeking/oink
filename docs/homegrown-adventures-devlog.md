@@ -153,7 +153,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     Cloth Wrap spend one Willow Fiber as fresh packing material, preview the
     exact cost, preserve free alternatives, and keep the remaining stock visible
     through departure and Homecoming.
-48. **v0.47 — The Pack Changes the Return (checkpoint committed):** make
+48. **v0.47 — The Pack Changes the Return (shipped):** make
     Wicker Basket return Compost while Cloth Wrap preserves Clover Seed, keeping
     both existing Packs predictably useful across the next Farm cycle.
 
@@ -214,12 +214,29 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Public deployment evidence
 
-- Feature checkpoint `ebd5672` is on `main`; checkpoint deployment and public
-  replay are pending.
+- Feature checkpoint `ebd5672` and its checkpoint record shipped from `main` in
+  successful Pages run `31183119741`.
+- The public HTML selected CSS `972bb245db` and player
+  `019e24d52e`; their full SHA-256 hashes exactly matched the isolated build.
+  The authored Rive remained 297,820 bytes with SHA-256
+  `0f2e966d04cb66f8827ee1268eefe44b9b080ba66a963bf9020e4be86b9f2fc1`.
+- At 390x844, replayed Cloth from the stocked Bag through the live Adventure,
+  Homecoming, reload, Changed Home, and next planting decision. The return
+  showed the seed pouch, **Clover Seed +1**, and **protected one Clover Seed
+  beside the glow**; Home retained the Seed and Position 2 offered it as
+  **1 owned**. The zero-to-one public preset complements the one-to-two local
+  replay and proves both acquisition and accumulation.
+- Replayed Wicker from Position 7 through the public fast-forward rail. The
+  return showed **Compost +1** and **carried fresh Compost with the seed** after
+  reload. Both public browser logs were empty.
 
 ### Next highest-leverage weakness
 
-- Pending the public replay of both Pack branches.
+- The Pack slot now changes a predictable practical supply, but the Tool slot
+  remains mostly flavor: Hand Trowel and Lantern still converge on the same
+  Discovery and reward. The next checkpoint should make the existing Tool
+  choice alter one deterministic part of the Adventure result without adding a
+  destination, currency, or parallel system.
 
 ### v0.46 — Willow Fiber Lines the Pack — 2026-08-07
 
