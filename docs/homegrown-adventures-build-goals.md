@@ -217,7 +217,18 @@ reload, reduced motion, and fast-forward remain deterministic. The first ring
 treatment was rejected for scale and collision; corrected 360×780, 390×844,
 and centered desktop renders passed the installed Impeccable review as the
 available Claude-Design substitute. The next visible weakness is the abrupt
-Begin-another-day cut into Position 2.
+Begin-another-day cut into Position 1's next-morning Tickle.
+
+**New-morning checkpoint (August 7, 2026):** **Begin another day** now commits
+the existing React-owned new-day state immediately, then reveals Position 1
+through one 900ms warm wash and compact **A new morning · Your Farm remembers**
+status. The changed Farm, Rive Home pose, both persistent crops, residents,
+stock, and next Tickle remain visible; the overlay is non-interactive and
+`aria-busy`. Reduced motion uses a static 300ms treatment, and reload always
+restores the already-serialized next morning. A hard-edged sun token was
+rejected during the installed Impeccable review; corrected 360×780, 390×844,
+and centered desktop renders use only soft Farm light. The next visible weakness
+is Position 2's equal-weight remembered-crop, next-Seed, and Compost stack.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose

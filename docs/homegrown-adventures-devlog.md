@@ -216,14 +216,75 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     post-Moonberry Tickle action from the detached bottom button to Rosie
     herself, so the moth response closes through the game's core affection
     gesture without adding a new ceremony.
-66. **v0.65 — A New Day Arrives (in progress):** replace the abrupt Begin
+66. **v0.65 — A New Day Arrives (shipped):** replace the abrupt Begin
     another day cut with one restrained morning handoff that preserves the
     remembered Farm before Position 2 asks for the next Seed.
+67. **v0.66 — The Next Seed Leads (in progress):** simplify the remembered
+    Position 2 hierarchy so the one next Seed choice leads while already-growing
+    crops and optional Compost remain useful, quieter context.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.65 — A New Day Arrives — 2026-08-07
+
+- Replayed **Begin another day** through Position 1 and the following Position
+  2 against
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/11-changed-barn-next-day.png`
+  and `01-morning-tickle.png`. Progress persisted correctly, but the complete
+  Home cut straight into the next morning with no visible handoff.
+- Added one 900ms presentation boundary: React commits the existing
+  reducer-owned new day immediately, then a warm dawn wash and small **A new
+  morning · Your Farm remembers** status reveal Position 1 underneath. The
+  existing Rive Home pose, remembered crops, residents, stock, and next-morning
+  Tickle remain unchanged.
+- Kept the transition non-interactive and `aria-busy`, so rapid input cannot
+  reach the action beneath it. Reduced motion uses the same truthful state with
+  a static 300ms wash. Reload never needs to recover a presentation timer
+  because the next day is serialized before the wash begins.
+- Framed three Prototype options: retain the hard cut, add a long morning
+  ceremony, or bridge the same reducer transition with one restrained wash.
+  The third passed the installed Impeccable review as the available
+  Claude-Design substitute. A bordered sun treatment failed as a pasted-on UI
+  token and was removed; the final version uses only light already present in
+  the Farm art plus one compact status.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass, including the complete loop,
+  persistent second morning, repeated-day stock, fast-forward, and idempotent
+  invalid actions.
+- At exact 360×780, the warm wash fills the existing phone without changing the
+  360×780 document or rail. Position 1, canonical Rosie, remembered Moonberries
+  and Glowroot, pond, crossing, next Tickle, and navigation remain readable
+  beneath the transient status; no console errors occur.
+- At 390×844, the status occupies 100–290px by 88–139px while the rail remains
+  786–844px. A centered 1280×720 render preserves the complete fitted phone and
+  the same quiet hierarchy.
+- Two immediate Begin-another-day coordinate clicks produce one Position 1
+  state. Mid-handoff reports `aria-busy=true`, Rive `ready`, and the exact
+  morning status; after 900ms it reports `aria-busy=false` with no overlay.
+  Reload retains Position 1 with **Rosie wants to play**.
+- The next deliberate Tickle reaches Position 2 with its Seed panel, Bed 2
+  still `growing`, and Bed 3 still `sprout`. Reduced motion holds the status for
+  300ms, then reaches the same Position 1 state. Mobile Safari/device sharpness,
+  haptic feel, and audible acceptance remain manual gates.
+
+### Observable acceptance criteria
+
+- **Begin another day** persists the new day immediately and shows one bounded
+  morning handoff instead of a hard visual cut or a second ceremony.
+- The transition preserves the changed Farm in view and resolves to Position
+  1's core Tickle before Position 2 asks for the next Seed.
+- Rapid input, reload, reduced motion, fast-forward, touch, and desktop retain
+  the same reducer-owned new-day result without duplicate actions or overflow.
+- Rive continues presenting the remembered Home; React alone owns the day
+  transition, persistence, overlay duration, text, and accessibility.
+- The next rendered weakness is Position 2's equal-weight stack of already
+  growing crops, the next Seed, and optional Compost, which weakens the one
+  choice a returning player should make.
 
 ### v0.64 — The Tickle Comes Back to Rosie — 2026-08-07
 
@@ -286,7 +347,8 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Rosie, both new crops, the moth result, Farm stock, and navigation remain
   readable throughout the interaction.
 - The next rendered weakness is the next-day handoff itself: **Begin another
-  day** resets directly to Position 2 without a visible morning transition.
+  day** resets directly to Position 1's next-morning Tickle without a visible
+  morning transition.
 
 ### v0.63 — Moonberries Find Their Bed — 2026-08-07
 

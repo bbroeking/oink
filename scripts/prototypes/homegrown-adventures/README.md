@@ -96,6 +96,13 @@ the existing Rive Home Admire and moth Laugh respond, then the UI returns to
 the established **Begin another day** action. Rapid input cannot turn that next
 action into an accidental second tap.
 
+The v0.65 presentation pass gives **Begin another day** a readable handoff.
+React serializes the existing next-day reducer state immediately, then a short
+non-interactive dawn wash reveals Position 1's next-morning Tickle over the same
+remembered Farm. Rive keeps presenting the Home pose and persistent crops; it
+does not own the day, timing, text, or save. Reduced motion uses a static 300ms
+wash, and reload always resumes the already-committed morning.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in
