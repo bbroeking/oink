@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="104" viewBox="0 0 150 104">
+  <g id="pond_frog_rig">
+    <path id="pond_water" d="M9 62C14 45 39 34 73 34c35 0 61 10 69 28 5 13-5 28-27 35-28 9-73 8-96-3C8 88 5 74 9 62Z" fill="#6fb7c4" stroke="#30473d" stroke-width="3"/>
+    <path id="pond_light" d="M25 58c19-13 68-18 96-4 8 4 12 9 13 14-20-9-75-9-111 4-3-5-2-10 2-14Z" fill="#a7d9cf" opacity="0.72"/>
+    <g id="pond_rocks" fill="#897a59" stroke="#403825" stroke-width="2.5">
+      <ellipse cx="17" cy="67" rx="12" ry="9"/>
+      <ellipse cx="34" cy="47" rx="13" ry="9"/>
+      <ellipse cx="56" cy="40" rx="12" ry="8"/>
+      <ellipse cx="119" cy="43" rx="13" ry="9"/>
+      <ellipse cx="137" cy="62" rx="11" ry="10"/>
+      <ellipse cx="125" cy="89" rx="14" ry="8"/>
+      <ellipse cx="26" cy="91" rx="15" ry="8"/>
+    </g>
+    <g id="lily_pads" fill="#5f8e45" stroke="#30473d" stroke-width="2">
+      <path d="M48 73c0-7 7-11 14-9 3 1 5 3 6 5l-9 2 7 6c-3 4-9 6-14 3-3-1-4-4-4-7Z"/>
+      <path d="M92 82c0-6 6-10 12-8 3 1 5 3 6 5l-8 1 6 6c-3 4-8 5-12 3-3-1-4-4-4-7Z"/>
+    </g>
+    <g id="frog" stroke="#30411f" stroke-width="2.5" stroke-linejoin="round">
+      <ellipse id="frog_rock" cx="101" cy="57" rx="22" ry="12" fill="#71674d" stroke="#403825"/>
+      <path id="frog_feet" d="M84 58c-7 2-10 7-8 10 2 2 9 0 14-4m25-6c7 2 10 7 8 10-2 2-9 0-14-4" fill="#6ca844" stroke-linecap="round"/>
+      <ellipse id="frog_body" cx="100" cy="50" rx="16" ry="18" fill="#77b84d"/>
+      <circle id="frog_eye_left" cx="91" cy="34" r="7" fill="#91cb5e"/>
+      <circle id="frog_eye_right" cx="109" cy="34" r="7" fill="#91cb5e"/>
+      <circle id="frog_pupil_left" cx="92" cy="34" r="2.8" fill="#1f2719" stroke="none"/>
+      <circle id="frog_pupil_right" cx="108" cy="34" r="2.8" fill="#1f2719" stroke="none"/>
+      <path id="frog_smile" d="M93 51c4 4 10 4 14 0" fill="none" stroke-linecap="round"/>
+      <ellipse id="frog_belly" cx="100" cy="55" rx="7" ry="8" fill="#a6d66d" stroke="none" opacity="0.8"/>
+    </g>
+    <g id="pond_flower" stroke="#4d6838" stroke-width="2">
+      <path d="M72 45v14" fill="none"/>
+      <circle cx="72" cy="43" r="4" fill="#fff2c5"/>
+      <circle cx="68" cy="46" r="4" fill="#f6d5df"/>
+      <circle cx="76" cy="46" r="4" fill="#f6d5df"/>
+      <circle cx="72" cy="47" r="3" fill="#edbd4d" stroke="none"/>
+    </g>
+  </g>
+</svg>

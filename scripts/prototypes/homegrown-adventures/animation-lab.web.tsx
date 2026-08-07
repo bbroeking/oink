@@ -139,6 +139,15 @@ const STUDIES = [
 		to: DEVELOPED,
 	},
 	{
+		id: "pond",
+		group: "Home",
+		title: "Pond remembers",
+		purpose: "The new resident answers quietly",
+		static: true,
+		from: DEVELOPED,
+		to: DEVELOPED,
+	},
+	{
 		id: "moonberries",
 		group: "Home",
 		title: "Moonberries grow",
@@ -233,6 +242,7 @@ function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMo
 		: bedState === "ready" ? "Harvest Clover Lunch" : "Plant Clover Lunch";
 	const showingAdventureGlowroot = activeStudy.id === "glowroot-reveal";
 	const showingReturnHomecoming = activeStudy.id === "return";
+	const showingPondResident = activeStudy.id === "pond";
 	return (
 		<section className={`motion-stage motion-stage-${emphasis}`} aria-label="Authored animation preview">
 			<div className={`motion-phone ${showingAdventureGlowroot ? "is-adventure-glowroot" : ""} ${showingReturnHomecoming ? "is-return-homecoming" : ""}`}>
@@ -241,6 +251,7 @@ function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMo
 					<HomegrownRiveScene
 						reduceMotion={reduceMotion}
 						model={riveModel.viewModel}
+						showPondResident={showingPondResident && riveModel.viewModel.frogVisible}
 						trigger={riveModel.trigger}
 						triggerNonce={`${riveModel.triggerNonce}:${revision}`}
 					/>
@@ -272,6 +283,7 @@ function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMo
 				<span>Bed one <strong>{riveModel.viewModel.bedOneState}</strong></span>
 				<span>Bag <strong>{riveModel.viewModel.satchelEquipped ? "equipped" : "hidden"}</strong></span>
 				<span>Home <strong>{riveModel.viewModel.hedgeCrossingOpen ? "developed" : "starting"}</strong></span>
+				<span>Pond <strong>{showingPondResident ? "resident" : "hidden"}</strong></span>
 			</div>
 		</section>
 	);

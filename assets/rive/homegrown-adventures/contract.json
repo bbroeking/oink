@@ -32,7 +32,10 @@
 		"Dusk Moths Present",
 		"Dusk Moths Arrive",
 		"Dusk Moths Resting",
-		"Dusk Moths Laugh"
+		"Dusk Moths Laugh",
+		"Pond Frog Present",
+		"Pond Frog Hidden",
+		"Pond Frog Response"
 	],
 	"viewModel": {
 		"name": "Homegrown Adventures View Model",
@@ -62,6 +65,7 @@
 		"assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/04-growing-fast-forward.png",
 		"assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/08-departure.png",
 		"assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/09-adventure-vignette.png",
-		"assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/10-return-discovery.png"
+		"assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/10-return-discovery.png",
+		"assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/11-changed-barn-next-day.png"
 	]
 }

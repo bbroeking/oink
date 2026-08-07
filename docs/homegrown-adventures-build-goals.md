@@ -151,6 +151,16 @@ motion paints the stable result. The next Goal 6 weakness is Position 11: the
 earned Home state is correct, but its pond and resident consequence are not yet
 spatially readable against the approved changed-Barn concept.
 
+**Pond-memory checkpoint (August 6, 2026):** Position 11 now reveals one native
+paper-cut pond and frog inside the existing Rive artboard after the return is
+acknowledged. `Pond Frog Hidden` keeps the resident out of the Position 10
+homecoming even though the Discovery has already been earned; `Pond Frog
+Present` holds the remembered next-morning pose, and `Pond Frog Response`
+supplies one brief bob between 3.25-second rests. React derives the reveal from
+the explicit next-morning presentation, owns persistence and reduced motion,
+and exposes the earned-versus-visible boundary for rendered QA. No resident
+economy, collection screen, destination, currency, or new reward was added.
+
 **Adventure checkpoint (August 6, 2026):** Position 9 now opens one bounded
 beyond-the-hedge vignette before the ordinary idle wait. Rosie remains visible
 with her Bag; three reducer-derived story tags explain exactly what the chosen

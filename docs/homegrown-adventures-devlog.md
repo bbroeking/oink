@@ -106,11 +106,72 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     10's stacked return cards with a physical Barn-worktable homecoming,
     complete and clue-only object sets, and one observable authored Rive Return
     while React preserves exact rewards and persistence.
+35. **v0.36 — The Pond Remembers (locally verified):** give Position 11 one
+    fully framed native pond-and-frog consequence, reveal it only on the next
+    morning, and keep its calm authored response subordinate to React-owned
+    persistence and reduced motion.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.36.0 — The Pond Remembers — 2026-08-06
+
+- Replayed the Position 10 → 11 handoff and compared the next morning with
+  `rosie-v3/11-changed-barn-next-day.png`. The open hedge, bell, growing beds,
+  and stock were correct, but the earned pond resident was absent, so the Farm
+  did not visibly remember that part of Rosie's Adventure.
+- Imported one compact paper-cut pond-and-frog vector into the existing
+  390×844 Rive artboard and corrected its base position after the first
+  rendered comparison exposed right-edge clipping. The complete pond, rocks,
+  flower, and frog now remain inside the frame without changing the camera or
+  replacing the approved Farm plate.
+- Added `Pond Frog Hidden`, `Pond Frog Present`, and `Pond Frog Response` to
+  the checked-in source, patched runtime export, static contract, and visual
+  reference list. The response is a restrained 560 ms frog bob followed by a
+  3.25-second quiet hold.
+- Kept authority explicit: the reducer still earns `frogVisible`, while React
+  reveals the resident only in the Position 11 next-morning presentation.
+  Position 10 therefore records the earned consequence without painting it
+  over Rosie's homecoming. Rive owns only the vector poses and response.
+- Added observable `data-rive-frog-earned`, `data-rive-frog-visible`, and
+  `data-rive-frog-motion` states so reload, reduced motion, fast-forward, and
+  rapid navigation can prove the handoff in the real rendered game. The
+  companion animation lab exposes the exact runtime study as **Pond remembers**.
+
+### Observable acceptance criteria
+
+- Position 10 contains no pond resident; advancing once reveals the complete
+  pond and readable frog in Position 11 without changing the Farm camera.
+- The resident holds a calm persisted pose, performs one brief response
+  between long rests, and never competes with Rosie or the primary action.
+- Reduced motion holds the same complete visible pose without periodic motion.
+- Reload and rapid Previous / Next input preserve the earned-versus-visible
+  boundary and cannot duplicate progression, rewards, or resident instances.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 41/41 reducer and persistence tests pass.
+- `npm run verify:rive-homegrown` — pass; the 390×844 artboard and all 58
+  authored names, including all three pond/frog clips, are present.
+- `npm run prototype:homegrown:build` — pass; the player and animation lab use
+  the corrected content-hashed export.
+- `npm run verify:rive-web` — pass from an exact checkpoint clone; three Expo
+  bundles contain only the approved WebGL2 boundaries. The live dirty tree's
+  unrelated AdMob web import remains outside this checkpoint.
+- `npm run quality:loop` and `npm run quality:check` — pass, including 78 layout
+  tests, 202 security tests, TypeScript, 324 sprite checks, and contract gates.
+- Rendered desktop and narrow-layout validation proved the corrected framing,
+  one primary action, normal response cadence, reduced-motion hold, reload,
+  Position 10 → 11 reveal, rapid fast-forward input, and zero browser logs.
+
+### Next highest-leverage weakness
+
+The checkpoint closes the last missing spatial consequence in the approved
+11-screen loop. The next cycle must replay the shipped public loop from Tickle
+Rosie through the second morning and compare all positions before selecting a
+new bounded weakness; do not infer a new system from the now-complete pond.
 
 ### v0.35.0 — What Rosie Brought Home — 2026-08-06
 

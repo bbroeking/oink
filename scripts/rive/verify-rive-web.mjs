@@ -73,6 +73,13 @@ try {
 	if (!homegrownSceneSource.includes("data-rive-last-performed-motion")) {
 		throw new Error("The Homegrown Adventures Rive boundary is missing its observable completed-motion state.");
 	}
+	if (
+		!homegrownSceneSource.includes("Pond Frog Response") ||
+		!homegrownSceneSource.includes("data-rive-frog-motion") ||
+		!homegrownSceneSource.includes("showPondResident")
+	) {
+		throw new Error("The Homegrown Adventures Rive boundary is missing its React-gated pond resident state.");
+	}
 	const adventureGlowrootSource = readFileSync(join(repoRoot, homegrownBoundaries[1]), "utf8");
 	if (
 		!adventureGlowrootSource.includes("Glowroot Home Flourish") ||

@@ -1095,6 +1095,7 @@ function App() {
 				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}
 				model={riveModel.viewModel}
+				showPondResident={showingHomeMemory && riveModel.viewModel.frogVisible}
 				trigger={riveModel.trigger}
 				triggerNonce={riveModel.triggerNonce}
 			/>

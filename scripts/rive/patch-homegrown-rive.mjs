@@ -137,6 +137,9 @@ for (const [from, name] of [
 	["Timeline 20", "Dusk Moths Laugh"],
 	["Timeline 21", "Rosie Departure"],
 	["Timeline 22", "Clover Growing Sway"],
+	["Timeline 23", "Pond Frog Present"],
+	["Timeline 24", "Pond Frog Hidden"],
+	["Timeline 25", "Pond Frog Response"],
 ]) {
 	replaceOccurrence(from, 0, name, 1);
 }

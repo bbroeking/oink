@@ -73,6 +73,15 @@ const MOTH_ANIMATIONS = [
 	MOTH_REST_ANIMATION,
 	MOTH_LAUGH_ANIMATION,
 ];
+const FROG_STATE_ANIMATIONS = {
+	hidden: "Pond Frog Hidden",
+	present: "Pond Frog Present",
+} as const;
+const FROG_RESPONSE_ANIMATION = "Pond Frog Response";
+const FROG_ANIMATIONS = [
+	...Object.values(FROG_STATE_ANIMATIONS),
+	FROG_RESPONSE_ANIMATION,
+];
 const CHARACTER_ANIMATIONS = [
 	BREATHING_ANIMATION,
 	AUTHORED_TRIGGER_ANIMATIONS.tickle,
@@ -113,10 +122,12 @@ type MothMotion =
 	| "resting"
 	| "laugh"
 	| "reduced";
+type FrogMotion = "loading" | "hidden" | "present" | "responding" | "reduced";
 
 export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
 	model: HomegrownRiveViewModel;
+	showPondResident: boolean;
 	trigger: HomegrownRiveMotionTrigger | null;
 	triggerNonce: string;
 }
@@ -128,6 +139,7 @@ export interface HomegrownRiveSceneProps {
 function HomegrownRiveSceneImpl({
 	reduceMotion,
 	model,
+	showPondResident,
 	trigger,
 	triggerNonce,
 }: HomegrownRiveSceneProps) {
@@ -138,12 +150,14 @@ function HomegrownRiveSceneImpl({
 	const [homeMotion, setHomeMotion] = useState<HomeMotion>("loading");
 	const [moonberryMotion, setMoonberryMotion] = useState<MoonberryMotion>("loading");
 	const [mothMotion, setMothMotion] = useState<MothMotion>("loading");
+	const [frogMotion, setFrogMotion] = useState<FrogMotion>("loading");
 	const lastTriggerNonce = useRef(triggerNonce);
 	const lastCropTriggerNonce = useRef(triggerNonce);
 	const previousBedOneState = useRef(model.bedOneState);
 	const previousHomeDeveloped = useRef(model.hedgeCrossingOpen);
 	const previousBedTwoState = useRef(model.bedTwoState);
 	const previousMothsVisible = useRef(model.mothsVisible);
+	const previousFrogVisible = useRef(showPondResident);
 	const lastMothTriggerNonce = useRef(triggerNonce);
 	const latestMothTrigger = useRef(trigger);
 	latestMothTrigger.current = trigger;
@@ -152,6 +166,7 @@ function HomegrownRiveSceneImpl({
 	const homeTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const moonberryTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const mothTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+	const frogTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 	const { RiveComponent, rive } = useRive({
 		src: __HOMEGROWN_RIVE_ASSET_URL__,
 		...(HOMEGROWN_RIVE_ASSET_AUTHORED
@@ -639,6 +654,69 @@ function HomegrownRiveSceneImpl({
 		};
 	}, [model.mothsVisible, reduceMotion, rive, triggerNonce]);
 
+	useEffect(() => {
+		if (!rive || !HOMEGROWN_RIVE_ASSET_AUTHORED) return;
+
+		const clearTimers = () => {
+			for (const timer of frogTimers.current) clearTimeout(timer);
+			frogTimers.current.clear();
+		};
+		const schedule = (callback: () => void, delay: number) => {
+			const timer = setTimeout(() => {
+				frogTimers.current.delete(timer);
+				callback();
+			}, delay);
+			frogTimers.current.add(timer);
+		};
+		const stopFrogMotion = () => {
+			for (const animation of FROG_ANIMATIONS) rive.stop(animation);
+		};
+		const syncFrogState = () => {
+			stopFrogMotion();
+			const animation = showPondResident
+				? FROG_STATE_ANIMATIONS.present
+				: FROG_STATE_ANIMATIONS.hidden;
+			rive.scrub(animation, 0);
+			rive.pause(animation);
+			setFrogMotion(
+				reduceMotion ? "reduced" : showPondResident ? "present" : "hidden",
+			);
+		};
+		const startFrogResponse = () => {
+			if (reduceMotion || !showPondResident) return;
+			// The reducer-owned Present pose remains authoritative while the frog's
+			// nested group performs a brief independent bob.
+			rive.scrub(FROG_STATE_ANIMATIONS.present, 0);
+			rive.pause(FROG_STATE_ANIMATIONS.present);
+			rive.stop(FROG_RESPONSE_ANIMATION);
+			rive.play(FROG_RESPONSE_ANIMATION);
+			setFrogMotion("responding");
+			schedule(() => {
+				rive.stop(FROG_RESPONSE_ANIMATION);
+				rive.scrub(FROG_STATE_ANIMATIONS.present, 0);
+				rive.pause(FROG_STATE_ANIMATIONS.present);
+				setFrogMotion("present");
+				schedule(startFrogResponse, 3_250);
+			}, 560);
+		};
+
+		clearTimers();
+		stopFrogMotion();
+
+		const wasVisible = previousFrogVisible.current;
+		previousFrogVisible.current = showPondResident;
+		syncFrogState();
+
+		if (!reduceMotion && showPondResident) {
+			schedule(startFrogResponse, wasVisible ? 2_850 : 850);
+		}
+
+		return () => {
+			clearTimers();
+			stopFrogMotion();
+		};
+	}, [reduceMotion, rive, showPondResident]);
+
 	return (
 		<div
 			className={`homegrown-rive-scene ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "probe"}`}
@@ -654,6 +732,9 @@ function HomegrownRiveSceneImpl({
 			data-rive-moonberry-motion={moonberryMotion}
 			data-rive-moths-visible={model.mothsVisible}
 			data-rive-moth-motion={mothMotion}
+			data-rive-frog-earned={model.frogVisible}
+			data-rive-frog-visible={showPondResident}
+			data-rive-frog-motion={frogMotion}
 			data-rive-asset={HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "official-probe"}
 			aria-hidden="true"
 		>
