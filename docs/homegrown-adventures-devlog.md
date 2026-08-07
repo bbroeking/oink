@@ -245,6 +245,12 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Rendered local browser replay — complete and missing-Provision branches both
   lead with the correct Find, retain three exact causes, expose one Continue
   action, survive reload, and remain readable with reduced motion enabled.
+- GitHub Pages run `31206698856` deployed checkpoint `a8efe42`. A fresh public
+  Position 9 load fetched CSS `765467f0b7` and JavaScript `2d16b9a651`, reported
+  the authored Rive scene `ready`, exposed one Glowroot headline, one three-row
+  cause ledger, zero former equal cause cards, and one Continue action. Continue
+  entered the existing idle wait and reload retained it. The companion site
+  exposes **See Rosie's Glowroot Discovery**.
 - Exact 360×780 touch emulation measured a 360×780 document with no overflow;
   the Find, cause thread, Rosie, physical result, Continue action, and
   progression rail were simultaneously visible. Centered 1280×720 rendered the
