@@ -153,7 +153,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     Cloth Wrap spend one Willow Fiber as fresh packing material, preview the
     exact cost, preserve free alternatives, and keep the remaining stock visible
     through departure and Homecoming.
-48. **v0.47 — The Pack Changes the Return (locally verified):** make
+48. **v0.47 — The Pack Changes the Return (checkpoint committed):** make
     Wicker Basket return Compost while Cloth Wrap preserves Clover Seed, keeping
     both existing Packs predictably useful across the next Farm cycle.
 
@@ -214,7 +214,8 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ### Public deployment evidence
 
-- Pending checkpoint deployment and public replay.
+- Feature checkpoint `ebd5672` is on `main`; checkpoint deployment and public
+  replay are pending.
 
 ### Next highest-leverage weakness
 
