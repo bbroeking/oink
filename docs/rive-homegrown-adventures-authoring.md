@@ -180,6 +180,17 @@ plays the bounded lift for the final tickle, and restores the ordinary
 full-size breathing pose after **Begin another day**. The new clip never owns
 Home progression, the tickle reward, persistence, or position selection.
 
+The v0.40 resident pass keeps the existing pond hierarchy and all three frog
+timelines intact. The native `frog` subgroup is reduced from 100% to 80% scale
+to match the approved Position 11 resident, while the two dark contour colors
+are softened to 48% opacity. Its body, feet, eye bulbs, and belly move to a
+quieter olive, moss, and warm-gold palette derived from the checked-in
+`pond-frog-painterly.png` authoring study. No bitmap was added to the runtime;
+the study remains visual provenance for the editable vector treatment. The
+existing parent position `(222, 438)`, hidden root blend, Present pose,
+Response lift, React reveal boundary, and reduced-motion behavior are
+unchanged.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the

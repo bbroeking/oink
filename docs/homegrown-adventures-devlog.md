@@ -127,11 +127,63 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     own authored Rosie pose so the earned crops and pond remain readable,
     while the same canonical rig still reacts to the final tickle and returns
     to its normal morning scale on the next day.
+41. **v0.40 — The Frog Belongs Here (locally verified):** restyle and reduce
+    the existing native Rive frog so it sits quietly inside the painterly pond
+    instead of reading as an oversized neon sticker, without changing its
+    reveal, response cadence, persistence, or progression ownership.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.40 — The Frog Belongs Here — 2026-08-07
+
+- Replayed Position 11 beside
+  `rosie-v3/11-changed-barn-next-day.png`. The pond, crops, and smaller Rosie
+  now matched the earned Home composition, but the resident was still a large,
+  bright outlined icon that competed with Rosie and sat above the painted
+  world.
+- Used built-in ImageGen with the approved Position 11 concept as the sole
+  style reference to create the tightly cropped transparent authoring study
+  `assets/rive/homegrown-adventures/source/pond-frog-painterly.png`. The study
+  established the target: compact proportions, olive and moss greens, a warm
+  golden belly, and soft low-contrast edges at resident scale.
+- Applied that treatment to the existing editable Rive `frog` subgroup rather
+  than adding a bitmap or parallel resident. The subgroup is now 80% scale;
+  its body, feet, eyes, and belly use the quieter reference palette; and its
+  two dark contour colors are held at 48% opacity. `Pond Frog Present`, `Pond
+  Frog Hidden`, and `Pond Frog Response` remain the same authored timelines.
+
+### Observable acceptance criteria
+
+- The frog is concept-sized, remains registered to the foreground pond rock,
+  and reads behind Rosie instead of competing with her.
+- The resident is visible only after the Home memory is earned, performs the
+  same quiet response between rests, and remains still under reduced motion.
+- Reload, fast-forward, rapid final input, and **Begin another day** preserve
+  the exact React-owned Home state; no resident economy, reward, or progression
+  fact is added.
+
+### Local validation evidence
+
+- Rendered desktop and 390×844 comparisons keep the frog on the pond rock with
+  all three crop beds, the Farm-stock shelf, Rosie, and the primary action
+  readable at once and no horizontal overflow.
+- A clean full-loop replay completed farming, Harvest Rhythm, Bag preparation,
+  deterministic Adventure, return, planting, Changed Home, and the next
+  morning. Rive reported `ready`; the frog held `present`, entered
+  `responding` on its existing cadence, and remained visible after the new day.
+- Reload preserved Position 11 and the resident. Reduced motion reported
+  `frog="reduced"`; rapid double input awarded the final tickle once; and the
+  browser produced no warnings or errors.
+
+### Next highest-leverage weakness
+
+Replay the locally verified checkpoint beside the approved concept sequence
+and choose the next single player-visible weakness after the public build is
+verified. Do not add a visitor, destination, currency, crop, or parallel
+system merely because the pond resident now belongs in the scene.
 
 ### v0.39 — Rosie Makes Room — 2026-08-07
 

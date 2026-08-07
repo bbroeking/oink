@@ -102,6 +102,18 @@ lift, and settles to the same ground line. React owns when the pose is active,
 holds it on reload and reduced motion, and returns to ordinary breathing on
 the next morning.
 
+The v0.40 frog treatment keeps the native `frog` subgroup and its Present,
+Hidden, and Response clips. The subgroup is 80% scale; its two dark contours
+are 48% opacity; and its body, feet, eye bulbs, and belly use muted olive,
+moss, and warm-gold colors. The checked-in
+`source/pond-frog-painterly.png` is a built-in ImageGen authoring reference
+derived from the approved Position 11 concept, not a runtime bitmap. Its final
+prompt requested one compact friendly frog, warm hand-painted storybook
+gouache, natural olive and moss greens, golden highlights, low-contrast edges,
+and no rock, pond, UI, text, heavy outline, or neon green. The original
+magenta-key generation was converted locally to alpha, trimmed to the subject,
+and given a 12-pixel transparent authoring margin.
+
 The Dusk Moths Arrive checkpoint adds one native golden-and-purple moth in the
 open sky above the Barn. `Dusk Moths Hidden` and `Dusk Moths Present` are the
 reducer-selected persisted poses; `Dusk Moths Arrive` is a bounded 21-frame

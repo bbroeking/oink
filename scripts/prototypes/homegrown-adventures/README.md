@@ -64,6 +64,11 @@ preserves the plate and `Pond Frog Present` through reload and later mornings.
 `Pond Frog Response` supplies one quiet bob between long rests; reduced motion
 keeps the frog still and no resident progression lives inside Rive. The
 animation lab exposes the same composition as **Pond remembers**.
+The v0.40 resident pass retains that exact motion contract but reduces the
+native frog to 80% scale, softens its contours, and replaces its bright vector
+palette with muted olive, moss, and warm-gold colors derived from the approved
+Position 11 concept. The frog remains one editable Rive group; React still owns
+its earned visibility and persistence.
 
 The remembered Moonberry and Glowroot beds use registered clips from
 `11-changed-home-painted-crops-scene-plate.png` above that same pond plate.
