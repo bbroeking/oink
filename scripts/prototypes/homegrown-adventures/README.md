@@ -104,6 +104,20 @@ no progression input. The rendered pass also prevents the fitted desktop frame
 from focus-scrolling and explicitly resynchronizes Rive after a live viewport
 change.
 
+The v0.49 prototype question is whether that Tool choice remains legible in the
+physical Adventure scene instead of changing labels alone. React now exposes
+the selected Tool as a presentation-only data attribute while preserving the
+same reducer state and reward branch. Hand Trowel retains the approved clearing
+plate, Lantern selects `adventure-clearing-lantern.webp`, and an empty Tool uses
+the clean clue plate with no stray equipment. The Lantern plate was produced as
+a precise ImageGen edit of `adventure-clearing-discovery-rive.webp`: replace
+only the lower-right Trowel with a small closed brass travel lantern at the same
+scale, preserve the clearing composition and basket, add one restrained warm
+glow, and add no character, reward, copy, control, or other object. The smaller
+of two generated treatments won because the first Lantern competed with Rosie
+and the Discovery card at phone size. Rive still owns only Rosie and the live
+Glowroot performance; React owns the selected Tool and every gameplay result.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

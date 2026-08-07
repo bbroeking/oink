@@ -36,6 +36,7 @@ for (const name of [
 	"open-adventure-bag.webp",
 	"adventure-clearing-discovery.webp",
 	"adventure-clearing-discovery-rive.webp",
+	"adventure-clearing-lantern.webp",
 	"adventure-clearing-clue.webp",
 	"return-homecoming-discovery.webp",
 	"return-homecoming-clue.webp",

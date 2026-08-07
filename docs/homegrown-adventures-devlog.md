@@ -159,7 +159,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 49. **v0.48 — The Tool Changes the Bonus (shipped):** make Hand
     Trowel return one extra Glowroot Seed while Lantern returns one extra Willow
     Fiber, preserving the same named Adventure and independent Pack choice.
-50. **v0.49 — The Chosen Tool Enters the Story (in progress):** make the
+50. **v0.49 — The Chosen Tool Enters the Story (locally verified):** make the
     physical tool in Position 9 agree with Rosie's selected loadout, so Lantern
     no longer changes only labels while a baked Hand Trowel remains in view.
 
@@ -167,6 +167,85 @@ Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.49 — The Chosen Tool Enters the Story — 2026-08-07
+
+- Replayed the public Lantern branch against `09-adventure-vignette.png` and
+  found that its cause card and reward were correct while the physical clearing
+  still showed the baked Hand Trowel. The Tool choice changed numbers and copy,
+  but not the world Rosie occupied.
+- Kept the existing clearing, camera, Glowroot performance, Bag, destination,
+  story branch, and rewards. React now exposes only the selected Tool as a
+  presentation fact: Hand Trowel keeps the approved plate, Lantern selects one
+  matched painterly plate, and an empty Tool selects the clean clue plate.
+- Used ImageGen to replace only the lower-right Trowel with a compact closed
+  brass travel Lantern. The first generated treatment was rejected because it
+  became a large foreground prop; the selected treatment stays at the original
+  Tool footprint with one restrained glow and no added character, reward,
+  control, text, or scene object.
+- Kept Rive ownership unchanged. Canonical Rosie, her Bag, and the live
+  Glowroot remain authored animation; React still owns equipment selection,
+  the deterministic Adventure branch, inventory, reward calculation, copy,
+  persistence, and fast-forward.
+- Updated the companion site to send players directly to **Choose Rosie’s
+  Tool** in the existing Bag step.
+
+### Observable acceptance criteria
+
+- Position 9 physically shows a Hand Trowel after selecting Hand Trowel and a
+  small brass Lantern after selecting Lantern; it never shows both.
+- Leaving Tool empty produces the clean clearing with no stray equipment, and
+  a selected Lantern remains visible in both a complete Discovery and a kind
+  clue-only Adventure.
+- The selected Tool survives reload and Previous/Next fast-forward. Its existing
+  Trowel Seed or Lantern Fiber reward remains unchanged through Return and the
+  remembered next morning.
+- The treatment remains subordinate to Rosie, the live Glowroot, and the one
+  **Continue the story** action at 390x844 touch and fitted 1280x720 desktop.
+- Reduced motion, rapid duplicate input, and all empty-slot routes remain safe;
+  no Rive progression input, item, crop, destination, currency, or state field
+  is added.
+
+### Local validation evidence
+
+- Played a fresh Lantern loop from the first Tickle through Seed choice,
+  Compost planting, growth preview, left-right-up Harvest, Bag selection,
+  authored departure, physical Lantern clearing, Return, Glowroot planting,
+  Changed Home, fulfilled tickle, and **Begin another day**. Position 10 showed
+  **Glowroot Seed +1**, **Willow Fiber +3**, and **Compost +1**; the next morning
+  retained Fiber 3 and every established Home consequence.
+- At 390x844, compared Hand Trowel, Lantern, empty Tool, and a Lantern
+  Near-Discovery. Each DOM presentation fact selected its exact plate; the
+  empty branch used the clean clearing and every browser log was empty.
+- At fitted 1280x720 desktop, the complete Adventure frame, primary action,
+  and prototype rail remained inside the first viewport. Reload retained the
+  Lantern at Position 9. Reduced motion kept the Lantern visible while all Rive
+  motion channels reported `reduced`. Two simultaneous story clicks resolved
+  to one stable **Preview her return** action.
+- `npm run prototype:homegrown:test` — 45/45 gameplay, navigation, and
+  persistence tests.
+- `npm run verify:rive-homegrown` — 390x844 artboard and all 59 authored names.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- An isolated tree reconstructed from `HEAD` plus the staged checkpoint
+  installed all 1,304 packages offline, passed 45/45 tests and
+  `npm run verify:rive-web`, and reproduced CSS
+  `3d7fd732c217cc0e28a355daea835b269bf347fcb21a6a59f836ff1e2bc6f9e7`,
+  player `5d002cbc4cc4604eaa6a9224d19f1fd9d82405d611555bd9d05ec6df44986a8b`,
+  animation lab
+  `dc7051a68c5bfb0c9abeec719b4180872b0d26ab6043479d931b43c8fc549a39`,
+  and Lantern plate
+  `66bd9f4db30d43712bce816ff7b8121dce9a54d6848fecec0490e519858f0a74`
+  exactly. The authored Rive remained
+  `0f2e966d04cb66f8827ee1268eefe44b9b080ba66a963bf9020e4be86b9f2fc1`.
+
+### Public deployment evidence
+
+- Pending checkpoint deployment and public replay.
+
+### Next highest-leverage weakness
+
+- Pending the public replay of complete and clue-only Tool branches.
 
 ### v0.48 — The Tool Changes the Bonus — 2026-08-07
 

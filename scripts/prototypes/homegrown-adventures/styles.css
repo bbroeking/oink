@@ -124,10 +124,13 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	position: absolute;
 	inset: 0;
 	z-index: 0;
-	background: url("./assets/homegrown-adventures/adventure-clearing-discovery-rive.webp") center / cover no-repeat;
+	background: url("./assets/homegrown-adventures/adventure-clearing-clue.webp") center / cover no-repeat;
 }
-.phone[data-adventure-kind="near-discovery"] .adventure-vignette-backdrop {
-	background-image: url("./assets/homegrown-adventures/adventure-clearing-clue.webp");
+.phone[data-adventure-tool="hand-trowel"] .adventure-vignette-backdrop {
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-discovery-rive.webp");
+}
+.phone[data-adventure-tool="lantern"] .adventure-vignette-backdrop {
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-lantern.webp");
 }
 .adventure-vignette-backdrop::after {
 	content: "";
@@ -142,14 +145,17 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	top: 60.5%;
 	width: 42%;
 	height: 17%;
-	background-image: url("./assets/homegrown-adventures/adventure-clearing-discovery-rive.webp");
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-clue.webp");
 	background-position: 12px -511px;
 	background-size: 390px 844px;
 	border-radius: 46% 58% 48% 62% / 54% 47% 61% 50%;
 	pointer-events: none;
 }
-.phone[data-adventure-kind="near-discovery"] .adventure-bed-mask {
-	background-image: url("./assets/homegrown-adventures/adventure-clearing-clue.webp");
+.phone[data-adventure-tool="hand-trowel"] .adventure-bed-mask {
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-discovery-rive.webp");
+}
+.phone[data-adventure-tool="lantern"] .adventure-bed-mask {
+	background-image: url("./assets/homegrown-adventures/adventure-clearing-lantern.webp");
 }
 .adventure-glowroot-rive {
 	position: absolute;
