@@ -729,6 +729,7 @@ function HomegrownRiveSceneImpl({
 			data-rive-home-motion={homeMotion}
 			data-rive-home-developed={model.hedgeCrossingOpen}
 			data-rive-bed-two={model.bedTwoState}
+			data-rive-bed-three={model.bedThreeState}
 			data-rive-moonberry-motion={moonberryMotion}
 			data-rive-moths-visible={model.mothsVisible}
 			data-rive-moth-motion={mothMotion}
@@ -740,6 +741,14 @@ function HomegrownRiveSceneImpl({
 		>
 			<RiveComponent aria-label="" />
 			<span className="painted-kitchen-patch" aria-hidden="true" />
+			<span
+				className="painted-remembered-crop painted-remembered-crop-moonberry"
+				aria-hidden="true"
+			/>
+			<span
+				className="painted-remembered-crop painted-remembered-crop-glowroot"
+				aria-hidden="true"
+			/>
 			<span
 				key={`moth-glint-${triggerNonce}`}
 				className="moth-shared-glint"

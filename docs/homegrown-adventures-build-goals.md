@@ -173,6 +173,17 @@ Glowroot is planted. **Begin another day** closes the Position 11 explanation
 without erasing the pond, so the second morning visibly proves that Home
 remembers while still presenting one clear Tickle action.
 
+**Painterly-crops checkpoint (August 6, 2026):** the same fixed Farm camera now
+uses state-bound painterly clips for the persistent Moonberry and Glowroot
+beds. Glowroot paints only after its returned Seed is planted; Moonberries
+remain absent until the player freely chooses them. React exposes all three bed
+states and owns visibility, inventory, persistence, and the next-morning
+result. The authored Rive timelines remain connected for the shared flourish
+and motion contract, but no flat vector crop mass sits above the lasting soil
+art. The complete rendered replay also repaired the ready-Clover handoff:
+**Welcome Rosie** now reveals the change before the harvest rhythm can accept
+input, preserving one clear action and the reducer's existing gate.
+
 **Adventure checkpoint (August 6, 2026):** Position 9 now opens one bounded
 beyond-the-hedge vignette before the ordinary idle wait. Rosie remains visible
 with her Bag; three reducer-derived story tags explain exactly what the chosen

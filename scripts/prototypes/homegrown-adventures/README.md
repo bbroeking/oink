@@ -65,6 +65,14 @@ preserves the plate and `Pond Frog Present` through reload and later mornings.
 keeps the frog still and no resident progression lives inside Rive. The
 animation lab exposes the same composition as **Pond remembers**.
 
+The remembered Moonberry and Glowroot beds use registered clips from
+`11-changed-home-painted-crops-scene-plate.png` above that same pond plate.
+`bedTwoState` and `bedThreeState` independently reveal the middle and right
+beds, so Glowroot can be present while Moonberries are still a future choice.
+The source Rive timelines remain connected to the reducer-owned states, while
+the painterly clips keep the lasting crop mass rooted in the Farm art instead
+of reading as a flat sticker.
+
 The persistent Farm view and temporary Position 9 Glowroot view share Rive's
 offscreen WebGL2 renderer. They remain separate canvases and React components,
 but the temporary discovery view can unmount without invalidating the Farm's

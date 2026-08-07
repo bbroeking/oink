@@ -119,11 +119,88 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 38. **v0.37.1 — One Shared Rive Stage (shipped):** move the persistent
     Farm and temporary Glowroot view onto Rive's shared offscreen WebGL2
     renderer so their handoff cannot tear down a live graphics context.
+39. **v0.38 — The Crops Belong Here (locally verified):** replace the flat
+    remembered Moonberry and Glowroot masses with state-bound painterly bed
+    art, and repair the ready-Clover reveal gate found during the complete
+    rendered replay.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.38 — The Crops Belong Here — 2026-08-06
+
+- Replayed the changed Farm against
+  `rosie-v3/04-growing-fast-forward.png` and
+  `rosie-v3/11-changed-barn-next-day.png`. The earned pond already belonged to
+  the scene, but the middle Moonberry cluster and right Glowroot still read as
+  flat vector stickers sitting above the painterly soil.
+- Used built-in ImageGen edit mode—not Python—to create the character-free
+  853×1844 plate
+  `assets/concepts/homegrown-adventures/11-changed-home-painted-crops-scene-plate.png`.
+  The production prompt directed ImageGen to: “Edit only the middle and right foreground
+  Kitchen Patch beds in the existing painterly pond plate. Paint a low young
+  Moonberry crop directly into the middle soil bed and three small warm-gold
+  Glowroot sprouts directly into the right soil bed. Preserve the exact
+  camera, crop, pond, barn, paths, lighting, dimensions, bed borders, soil
+  shapes, and empty left bed; match the warm hand-painted storybook texture;
+  add no Rosie, character, UI, text, tools, or extra objects; avoid flat vector
+  shapes, thick outlines, excessive bloom, or sticker-like crops.”
+- React now exposes `bedThreeState` beside the existing bed-one and bed-two
+  attributes. Two full-registration painted clips cover only the corresponding
+  soil beds: Glowroot appears as soon as its Seed is planted, while Moonberries
+  remain absent until the player explicitly chooses them. The authored Rive
+  crop timelines and reducer facts remain connected underneath; the painted
+  layer supplies the lasting mass, while Rive continues to own the shared
+  character, resident, and Home flourish performances.
+- The required clean browser replay found a separate player-visible gate:
+  freshly ready Clover showed the harvest rhythm before Rosie revealed the
+  change, so the reducer correctly rejected every beat. The rhythm now waits
+  for `changeRevealed`; **Welcome Rosie** is the one clear action first, then
+  left → right → up harvest becomes available.
+
+### Observable acceptance criteria
+
+- Fresh Glowroot planting paints only the right bed; the middle bed remains
+  visibly empty until **Grow Moonberries**.
+- Moonberries then arrive in the middle bed without moving the camera,
+  repainting the pond, duplicating crops, or changing inventory rules.
+- Both remembered beds survive reload and **Begin another day**; a fresh first
+  day still shows neither future crop.
+- Reduced motion holds both painted beds without arrival animation. Rapid
+  input remains guarded, and the authored Rive scene stays ready.
+- A clean player-visible run completes morning Tickle, farming, ready reveal,
+  rhythm harvest, Bag preparation, Adventure, return, planting, and the next
+  morning without explanation or browser errors.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` — 41/41 gameplay and persistence tests.
+- `npm run verify:rive-homegrown` — 390×844 artboard and all 58 authored names.
+- `npm run verify:rive-web` — passed from an exact staged-checkpoint clone;
+  three Expo bundles contain only the approved WebGL2 boundaries.
+- `npm run quality:loop` and `npm run quality:check` — pass, including 78
+  layout tests, 202 security tests, TypeScript, 324 sprite checks, and contract
+  gates.
+- Rendered first-plant comparison — `bedTwoState=empty`,
+  `bedThreeState=sprout`, Moonberry opacity `0`, Glowroot opacity `1`.
+- Rendered post-choice and reload comparison — both remembered beds visible,
+  Rive status `ready`, and no duplicate vector crops.
+- Rendered 390×844 and 375×812 touch checks — exact bed registration and zero
+  horizontal overflow.
+- Rendered reduced-motion check — both crop arrival animations `none`, frog
+  and Moonberry Rive motions `reduced`.
+- Clean full-loop replay — all eleven positions plus the second morning,
+  including the repaired **Welcome Rosie** → harvest-rhythm handoff; zero
+  browser warnings or errors.
+
+### Next highest-leverage weakness
+
+Replay the locally verified checkpoint beside the approved concept sequence
+and choose the next single player-visible weakness. Do not add a crop,
+destination, currency, or parallel system merely because the beds now belong
+to the Farm.
 
 ### v0.37.1 — One Shared Rive Stage — 2026-08-06
 

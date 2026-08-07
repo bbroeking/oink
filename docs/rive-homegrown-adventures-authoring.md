@@ -161,6 +161,17 @@ guidance and lets the temporary canvas unmount without tearing down a graphics
 context still used by the Farm. It does not merge their React lifecycles or
 give either Rive instance progression authority.
 
+The v0.38 painterly-crops checkpoint leaves the current Rive export unchanged
+and preserves its Moonberry and Glowroot timelines as the motion/state source.
+In the Farm composition, React exposes both `bedTwoState` and `bedThreeState`
+and registers painted clips from
+`11-changed-home-painted-crops-scene-plate.png` over the corresponding static
+vector masses. This keeps the crops visually rooted in the same soil and light
+as the pond while retaining the authored Home flourish and future editable
+motion source. The browser must never reveal either painted clip while its bed
+state is `empty`; reduced motion holds the final registered art without an
+arrival animation.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the

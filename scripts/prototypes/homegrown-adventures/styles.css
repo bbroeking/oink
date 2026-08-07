@@ -66,6 +66,32 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .homegrown-rive-scene[data-rive-crop-motion="harvest"] .painted-kitchen-patch {
 	animation: painted-patch-harvest 420ms cubic-bezier(.16,1,.3,1) both;
 }
+.painted-remembered-crop {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	pointer-events: none;
+	opacity: 0;
+	background: url("./assets/homegrown-adventures/11-changed-home-painted-crops-scene-plate.png") center / cover no-repeat;
+}
+.painted-remembered-crop-moonberry {
+	clip-path: polygon(32.4% 62.7%, 63.8% 62.7%, 65.2% 73.8%, 32.2% 73.8%);
+	transform-origin: 48.7% 70.8%;
+}
+.painted-remembered-crop-glowroot {
+	clip-path: polygon(63.5% 62.7%, 100% 62.7%, 100% 74.2%, 63.4% 74.2%);
+	transform-origin: 81.5% 70.8%;
+}
+.homegrown-rive-scene:not([data-rive-bed-two="empty"]) .painted-remembered-crop-moonberry,
+.homegrown-rive-scene:not([data-rive-bed-three="empty"]) .painted-remembered-crop-glowroot {
+	opacity: 1;
+}
+.homegrown-rive-scene[data-rive-moonberry-motion="plant"] .painted-remembered-crop-moonberry {
+	animation: painted-memory-crop-arrive 760ms cubic-bezier(.16,1,.3,1) both;
+}
+.homegrown-rive-scene[data-rive-home-motion="flourish"] .painted-remembered-crop-glowroot {
+	animation: painted-memory-glowroot-arrive 780ms cubic-bezier(.16,1,.3,1) both;
+}
 @keyframes painted-patch-plant {
 	from { opacity: .5; transform: scale(.985); filter: saturate(.88); }
 	to { opacity: 1; transform: scale(1); filter: saturate(1); }
@@ -79,9 +105,20 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	72% { opacity: .18; filter: brightness(1.04); transform: scale(.99); }
 	100% { opacity: 1; filter: brightness(1); transform: scale(1); }
 }
+@keyframes painted-memory-crop-arrive {
+	0% { opacity: .34; filter: saturate(.82); transform: translateY(4px) scale(.985); }
+	64% { opacity: 1; filter: saturate(1.08); transform: translateY(-1px) scale(1.008); }
+	100% { opacity: 1; filter: saturate(1); transform: translateY(0) scale(1); }
+}
+@keyframes painted-memory-glowroot-arrive {
+	0% { opacity: .38; filter: brightness(.92) saturate(.88); transform: scale(.98); }
+	58% { opacity: 1; filter: brightness(1.14) saturate(1.08); transform: scale(1.008); }
+	100% { opacity: 1; filter: brightness(1) saturate(1); transform: scale(1); }
+}
 .stage-adventure:not(.adventure-vignette-open):not(.departure-in-progress) .homegrown-rive-scene.authored { opacity: 0; transition: opacity 180ms cubic-bezier(.16,1,.3,1); }
 .adventure-vignette-open .scene-plate { opacity: 0; }
 .adventure-vignette-open .painted-kitchen-patch,
+.adventure-vignette-open .painted-remembered-crop,
 .adventure-vignette-open .moth-shared-glint { display: none; }
 .adventure-vignette-backdrop {
 	position: absolute;
@@ -244,6 +281,7 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .adventure-continue:active { transform: translateX(-50%) translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
 .return-homecoming-open .scene-plate { opacity: 0; }
 .return-homecoming-open .painted-kitchen-patch,
+.return-homecoming-open .painted-remembered-crop,
 .return-homecoming-open .moth-shared-glint { display: none; }
 .return-homecoming-backdrop {
 	position: absolute;

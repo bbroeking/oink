@@ -927,7 +927,11 @@ function App() {
 	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop;
 	const plantingCrop = position === 3 && state.stage === STAGES.STARTING && state.selectedCrop === "clover";
 	const showingGrowth = position === 4 && state.stage === STAGES.CLOVER_GROWING;
-	const showingHarvestRhythm = position === 5 && state.stage === STAGES.CLOVER_READY && !state.cloverHarvested;
+	const showingHarvestRhythm =
+		position === 5 &&
+		state.stage === STAGES.CLOVER_READY &&
+		state.changeRevealed &&
+		!state.cloverHarvested;
 	const harvestCelebrationEndsAt = (state.harvestCompletedAt ?? 0) + HARVEST_CELEBRATION_MS;
 	const showingHarvestCelebration =
 		position === 6 &&
