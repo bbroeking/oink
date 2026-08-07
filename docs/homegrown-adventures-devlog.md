@@ -173,15 +173,69 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     reusable Hand Trowel, Lantern, or empty Tool physically truthful at the
     Position 10 worktable instead of letting the selected gear disappear into
     the preparation recap.
-54. **v0.53 — The Chosen Pack Comes Home (in progress):** keep Rosie's
+54. **v0.53 — The Chosen Pack Comes Home (shipped):** keep Rosie's
     reusable Wicker Basket, Cloth Wrap, or empty Pack physically truthful at
     the Position 10 worktable instead of letting the selected carrier disappear
     into the preparation recap.
+55. **v0.54 — The Bag Choice Stays in Reach (in progress):** fit Position 7's
+    selected slots, one Pack action, and consumable/reusable explanation above
+    the progression rail at touch sizes, preserving the open Bag without hiding
+    the reason each choice matters.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.53 — The Chosen Pack Comes Home — 2026-08-07
+
+- Replayed the public return against `10-return-discovery.png` after making the
+  chosen Tool physically truthful. The Wicker Basket or Cloth Wrap still
+  changed the practical supply correctly, but the reusable carrier disappeared
+  from the Barn and survived only as a line in the preparation recap.
+- Added one return-only Pack placement behind the worktable's right edge.
+  Wicker Basket and Cloth Wrap reuse the exact approved Adventure alpha assets
+  at a smaller, darker return scale; an empty Pack leaves the Barn clean.
+- React exposes `data-return-pack` from the existing Bag. Rive still owns
+  Rosie's authored Return; the reducer still owns Pack choice, practical-supply
+  reward, inventory, acknowledgement, persistence, and fast-forward.
+- The next public weakness is Position 7's vertical hierarchy. Compared with
+  `07-free-bag-selection.png`, the open Bag and three selected slots are present,
+  but the explanation is partially covered by the progression rail at 390x844.
+
+### Observable acceptance criteria
+
+- Position 10 physically shows Wicker Basket after a Wicker Adventure, Cloth
+  Wrap after a Cloth Adventure, and no carrier after an empty-Pack Adventure.
+- Discovery and Near-Discovery branches remain truthful; the physical Pack
+  never changes the reducer's existing Compost or Clover Seed reward.
+- Pack presentation survives reload and Previous / Next fast-forward. Reduced
+  motion paints the stable Pack without its settle animation.
+- The Pack remains subordinate to Rosie, returned supplies, reward ledger,
+  recap, and the one Home action at 390x844 touch and fitted 1280x720 desktop.
+
+### Validation evidence
+
+- Rendered Wicker Basket, Cloth Wrap, and empty-Pack returns locally. Wicker
+  returned Compost, Cloth returned Clover Seed after spending Willow Fiber,
+  and empty Pack stayed on its specific Near-Discovery branch without a prop.
+- Reload retained Cloth Wrap and its exact background asset. Reduced motion
+  computed the Pack animation to `none`; a rapid double Home action advanced
+  only once. The return remained readable at 390x844 touch and fitted 1280x720
+  desktop, with no local browser warnings or errors.
+- `npm run prototype:homegrown:test` — 47/47 gameplay, navigation, inventory,
+  reward, fast-forward, and persistence tests passed.
+- `npm run verify:rive-homegrown` — the 390x844 artboard and all 59 authored
+  names passed; the existing manual mobile-Safari gate remains unchanged.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- Public Pages run `31195386074` shipped feature commit `631c1d7`. A complete
+  public second-day loop earned Willow Fiber, selected Cloth Wrap, and rendered
+  it at Home; Wicker and empty-Pack replays selected their matching physical
+  states. The public console stayed clean. Wicker matched SHA-256
+  `e87500fd944ff7aa61b0c9c2e51250b25a2e961ba505ef4609701dfa0efa14f4`;
+  Cloth matched
+  `813ba9bc097e903a1dadc34ff0ae89ddf547f895bb895e8488f011c4d1a4e93b`.
 
 ### v0.52 — The Chosen Tool Comes Home — 2026-08-07
 
