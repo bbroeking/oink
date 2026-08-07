@@ -155,6 +155,14 @@ overlay. Their short settle is presentation only. React still owns which Tool
 was packed, the Tool bonus, Return quantities, acknowledgement, persistence,
 and fast-forward; Rive still owns Rosie's authored Return performance.
 
+The v0.53 prototype question completes reusable equipment continuity at Home.
+Position 10 now derives a return-only Pack fact from the existing Bag: the
+Wicker Basket or Cloth Wrap rests beside the worktable, while an empty Pack
+leaves that part of the Barn clean. The same approved alpha assets used in the
+Adventure are registered at a smaller return scale, so no parallel art variant
+or item state is introduced. React owns the Pack choice, practical-supply
+reward, persistence, and fast-forward; Rive still owns Rosie's Return motion.
+
 Position 11 now switches to the character-free
 `11-changed-home-pond-scene-plate.png`, where the earned pond is painted into
 the same Farm camera and visual language. The shared Rive artboard contributes

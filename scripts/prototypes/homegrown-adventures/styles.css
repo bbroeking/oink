@@ -231,6 +231,7 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 html[data-reduce-motion="true"] .adventure-pack-prop { animation: none; }
 html[data-reduce-motion="true"] .adventure-provision-prop { animation: none; }
 html[data-reduce-motion="true"] .return-tool-prop { animation: none; }
+html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 .adventure-vignette-overlay {
 	position: absolute;
 	inset: 0;
@@ -382,6 +383,33 @@ html[data-reduce-motion="true"] .return-tool-prop { animation: none; }
 .phone[data-return-tool="none"] .return-tool-prop { display: none; }
 @keyframes return-tool-settle {
 	from { opacity: 0; transform: translateY(-5px) scale(.96) rotate(-1.5deg); }
+	to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+.return-pack-prop {
+	position: absolute;
+	z-index: 4;
+	right: -1px;
+	top: 420px;
+	width: 110px;
+	height: 110px;
+	pointer-events: none;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: contain;
+	transform-origin: 58% 84%;
+	animation: return-pack-settle 420ms cubic-bezier(.16,1,.3,1) both;
+}
+.phone[data-return-pack="wicker-basket"] .return-pack-prop {
+	background-image: url("./assets/homegrown-adventures/adventure-pack-wicker.png");
+	filter: brightness(.7) saturate(.78) drop-shadow(3px 5px 4px rgba(4,10,7,.55));
+}
+.phone[data-return-pack="cloth-wrap"] .return-pack-prop {
+	background-image: url("./assets/homegrown-adventures/adventure-pack-cloth.png");
+	filter: brightness(.68) saturate(.72) drop-shadow(3px 5px 4px rgba(4,10,7,.55));
+}
+.phone[data-return-pack="none"] .return-pack-prop { display: none; }
+@keyframes return-pack-settle {
+	from { opacity: 0; transform: translateY(-5px) scale(.96) rotate(1.5deg); }
 	to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
 }
 .return-table-mask {
