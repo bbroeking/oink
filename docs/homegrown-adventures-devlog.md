@@ -277,6 +277,14 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   same unboosted default with both remembered beds intact. Reduced motion shows
   the same choice. Mobile Safari/device sharpness, haptic feel, and audible
   acceptance remain manual gates.
+- GitHub Pages run `31213342769` deployed checkpoint `2c5f27b`. A fresh public
+  replay fetched CSS `800f24a35d` and JavaScript `3e82a0affb`, entered Position
+  3 with Compost unselected, and used two immediate coordinate taps to reach
+  exactly one selected 2h/4 state. Reload retained it. One deliberate deselect
+  restored the 4h/3 baseline; rapid Plant reached one normal-growth Position 4,
+  and reload retained it with Rive `ready`. No console errors occurred. The
+  companion site now links **Choose whether to use Compost** directly to the
+  public decision.
 
 ### Observable acceptance criteria
 
