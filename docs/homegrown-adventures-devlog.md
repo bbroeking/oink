@@ -142,7 +142,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     repeated Glowroot return, keep its Seed and practical supplies in Farm
     stock, and finish the Barn day instead of offering an unusable second
     planting action.
-45. **v0.44 — The Homecoming Stays in Reach (locally verified):** fit the
+45. **v0.44 — The Homecoming Stays in Reach (shipped):** fit the
     complete 390x844 game frame inside short desktop viewports so Position 10's
     one Homecoming action and progression rail remain visible without changing
     the full-size phone layout.
@@ -202,12 +202,28 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   1,304 packages offline, reproduced the checked-in CSS and HTML hashes exactly,
   passed all 42 prototype tests, and passed `npm run verify:rive-web`.
 
+### Public deployment evidence
+
+- Shipped commit `113c0ef` through GitHub Pages run `31154603848`.
+- The public page loaded `homegrown-adventures.css?v=54c3631644` and
+  `homegrown-adventures.js?v=6852a4087f`; the animation lab loaded its exact
+  `81b9ac5e7a` CSS and `fdbd7b1e76` JavaScript. The public HTML, player CSS,
+  and 297,820-byte Rive file matched the checked-in SHA-256 values exactly.
+- At the public 1280x720 viewport, the repeated Position 10 rendered the full
+  worktable, ledger, causal thread, **Keep supplies in Farm stock**, and the
+  complete Previous / Next rail without scrolling. Keeping the supplies reached
+  Position 11 with one retained Seed; **Begin another day** reached the next
+  remembered morning. Browser logs remained empty.
+
 ### Next highest-leverage weakness
 
-Choose after the public v0.44 replay by playing the fitted loop and comparing
-the weakest player-visible moment with the corresponding approved concept.
-Prefer depth in the existing loop over a new crop, destination, currency, or
-parallel system.
+The fitted public replay exposed the next continuity gap on Position 2. After
+the second return, Farm stock truthfully contains one Glowroot Seed, but the
+**Already growing at Home** tile only says **Glowroot · Bed 3 planted**. The
+named reward disappears from the visible loop one screen after it was stored.
+The next bounded checkpoint should show that retained Seed beside the planted
+Glowroot without making it a selectable crop, adding a new bed, or opening a
+full inventory screen.
 
 ### v0.43 — The Second Seed Has a Home — 2026-08-07
 
