@@ -177,15 +177,74 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     reusable Wicker Basket, Cloth Wrap, or empty Pack physically truthful at
     the Position 10 worktable instead of letting the selected carrier disappear
     into the preparation recap.
-55. **v0.54 — The Bag Choice Stays in Reach (in progress):** fit Position 7's
+55. **v0.54 — The Bag Choice Stays in Reach (shipped):** fit Position 7's
     selected slots, one Pack action, and consumable/reusable explanation above
     the progression rail at touch sizes, preserving the open Bag without hiding
     the reason each choice matters.
+56. **v0.55 — The Bag Receives the Choice (in progress):** replace Position
+    7's silent token swap with one bounded Rive-authored Bag opening and item
+    placement response, while React remains authoritative for the chosen slot,
+    costs, validity, persistence, and fast-forward.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.54 — The Bag Choice Stays in Reach — 2026-08-07
+
+- Replayed the public Position 7 against `07-free-bag-selection.png`. The open
+  Bag, physical item previews, and three freely chosen slots were already
+  present, but the consumable/reusable explanation sat underneath the fixed
+  progression rail at 390x844, and the Pack action collided with that rail on
+  a 360x780 touch viewport.
+- Kept the same one-column slot treatment and open Bag composition, shortened
+  only the redundant explanation, and turned the bottom area into a deliberate
+  stack: selected slots, explanation, one Pack action, then progression rail.
+- Added one short-touch layout for 820-pixel-and-shorter screens. It lifts and
+  compacts the existing Bag stage instead of introducing scrolling, a modal,
+  a second confirmation, or a smaller parallel interface.
+- This checkpoint changes presentation only. React still owns item choice,
+  material costs, Bag validity, inventory, persistence, and fast-forward. The
+  existing Rive Pack performance remains unchanged.
+- The next public weakness is motion: changing a valid slot instantly swaps a
+  static token. The approved concept calls for the Bag to open and receive that
+  choice, so the next checkpoint should author one bounded Rive response rather
+  than adding another inventory system.
+
+### Observable acceptance criteria
+
+- At 390x844 and 360x780 touch sizes, all three selected slots, the complete
+  consumable/reusable explanation, the one Pack action, and the progression
+  rail are simultaneously visible and do not overlap.
+- At fitted 1280x720 desktop size, the Pack action remains visibly separated
+  from the fixed progression rail, with no horizontal overflow.
+- Provision, Tool, Pack, empty choices, ownership costs, disabled states, and
+  the open Bag remain readable and behave exactly as before.
+- Reload, reduced motion, and rapid confirmation preserve one stable Position
+  7 or Position 8 state without changing inventory twice.
+
+### Validation evidence
+
+- Local 390x844 render placed the explanation at y=698–707, the Pack action at
+  y=714–766, and the progression rail at y=786–844. The approved open Bag and
+  all three cards remained visible.
+- Local 360x780 render had document width 360: slots ended at y=624, the full
+  explanation occupied y=631–640, the Pack action y=657–707, and the rail
+  y=722–780. At fitted 1280x720 desktop, the action ended at y=646 and the rail
+  began at y=650.
+- Reload retained Position 7, its exact explanation, and reduced motion. A
+  rapid double Pack attempt advanced exactly once to Position 8 with the same
+  Provision, Tool, and Pack. Local browser logs stayed clean.
+- `npm run prototype:homegrown:test` — 47/47 gameplay, navigation, inventory,
+  reward, fast-forward, and persistence tests passed.
+- `npm run verify:rive-homegrown` — the 390x844 artboard and all 59 authored
+  names passed; the existing manual mobile-Safari gate remains unchanged.
+- `npm run quality:check` — quality contracts, 324 sprite checks, TypeScript,
+  78 layout tests, and 202 security tests passed.
+- Public Pages run `31197119217` shipped feature commit `1b357b8`. The public
+  360x780 and fitted 1280x720 replays retained the complete hierarchy and had
+  no browser warnings or errors.
 
 ### v0.53 — The Chosen Pack Comes Home — 2026-08-07
 
