@@ -110,11 +110,42 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     fully framed native pond-and-frog consequence, reveal it only on the next
     morning, and keep its calm authored response subordinate to React-owned
     persistence and reduced motion.
+36. **v0.36.1 — The Pond Waits for Morning (locally verified):** make Hidden
+    the resident group's authored base pose so unrelated crop and character
+    input can never reset the pond into an earlier Farm position.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.36.1 — The Pond Waits for Morning — 2026-08-06
+
+- The required post-ship public replay exposed a cross-state Rive regression:
+  Position 5 correctly reported `frogVisible=false`, but repeated harvest
+  swipes could release the paused Hidden timeline and reveal the pond at the
+  ready Clover bed.
+- Changed the native `pond-frog` group's editor base blend from 100% to 0%.
+  `Pond Frog Present` remains the sole explicit 100% pose, while `Pond Frog
+  Hidden` remains an explicit 0% pose. A runtime reset is therefore safely
+  hidden instead of leaking a future Home consequence.
+- Cold-load harvest validation completed Clover's left → right → up rhythm and
+  advanced to Farm stock without painting the resident. A separate cold-load
+  Position 11 still paints the complete pond and resumes its calm response.
+
+### Observable acceptance criteria
+
+- Positions 1–10 never paint the pond or frog, even after crop, Rosie, Bag,
+  departure, Return, rapid-input, or reload activity on the shared artboard.
+- Position 11 and the pinned Motion Lab study still paint the complete resident
+  when React explicitly selects `Pond Frog Present`.
+- The visible/hidden data attributes and actual rendered pixels agree.
+
+### Next highest-leverage weakness
+
+Repeat the public eleven-position replay after this hotfix before selecting the
+next polish checkpoint. The false-positive resident takes priority over any
+new visual or gameplay work.
 
 ### v0.36.0 — The Pond Remembers — 2026-08-06
 

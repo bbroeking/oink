@@ -145,7 +145,9 @@ The v0.36 pond-memory checkpoint imports the native `pond-frog` vector group
 at base position `(240, 459.07)` on the unchanged 390×844 artboard. `Pond Frog
 Present` keys the complete group at 100% blend, `Pond Frog Hidden` keys it at
 0%, and `Pond Frog Response` gives the nested `frog` group a restrained
-32-frame lift and settle. React reveals Present only in the Position 11 Home
+32-frame lift and settle. The group's editor base blend is also 0%, so any
+timeline reset safely returns to Hidden instead of leaking the future resident
+into an earlier Farm position. React reveals Present only in the Position 11 Home
 memory presentation even though the reducer has already earned `frogVisible`
 at Position 10. Direct reload holds the correct pose; reduced motion never
 plays Response. The unused editor-history `Timeline 26` is intentionally not

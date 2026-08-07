@@ -160,6 +160,8 @@ supplies one brief bob between 3.25-second rests. React derives the reveal from
 the explicit next-morning presentation, owns persistence and reduced motion,
 and exposes the earned-versus-visible boundary for rendered QA. No resident
 economy, collection screen, destination, currency, or new reward was added.
+The group itself defaults to Hidden, so unrelated shared-artboard playback
+cannot leak the future consequence into an earlier Farm position.
 
 **Adventure checkpoint (August 6, 2026):** Position 9 now opens one bounded
 beyond-the-hedge vignette before the ordinary idle wait. Rosie remains visible

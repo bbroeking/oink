@@ -74,7 +74,9 @@ to the same artboard. `Pond Frog Hidden` keeps it out of the return ceremony,
 `Pond Frog Present` holds the complete next-morning consequence, and `Pond Frog
 Response` gives only the frog subgroup a brief vertical bob. React decides
 when the earned resident becomes visible and stops the cadence for reduced
-motion; Rive owns no resident progression, reward, or persistence.
+motion; Rive owns no resident progression, reward, or persistence. The group
+also defaults to 0% blend in the editor, making a runtime reset safely hidden
+until React explicitly holds Present.
 
 The Moonberries Take Root checkpoint adds a second native crop rig aligned to
 Kitchen Patch bed two. `Moonberry Bed Empty` and `Moonberry Bed Growing` are
