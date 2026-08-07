@@ -116,11 +116,40 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 37. **v0.37 — The Pond Belongs Here (locally verified):** paint the earned
     pond into the Farm itself, leave only its living frog in Rive, and preserve
     the complete remembered place after **Begin another day**.
+38. **v0.37.1 — One Shared Rive Stage (locally verified):** move the persistent
+    Farm and temporary Glowroot view onto Rive's shared offscreen WebGL2
+    renderer so their handoff cannot tear down a live graphics context.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.37.1 — One Shared Rive Stage — 2026-08-06
+
+- The first deployed v0.37 replay rendered correctly but exposed one browser
+  `deleteTexture` error after the temporary Position 9 Glowroot canvas had
+  unmounted and the persistent Farm next revealed its frog at Position 11.
+- Both web-only Rive views had explicitly opted out of the shared offscreen
+  renderer. Changed them to `useOffscreenRenderer: true`, matching Rive's
+  recommendation for pages that display multiple Rive instances and avoiding
+  a separate WebGL2 context teardown for the temporary view.
+- The change affects rendering ownership only. The same checked-in `.riv`,
+  reducer facts, visible poses, timings, controls, and persistence remain.
+
+### Observable acceptance criteria
+
+- Position 8 → 9 → 10 → 11 keeps one ready persistent Farm canvas, reveals the
+  same painterly pond and Rive frog, and reports no browser errors.
+- The Glowroot view remains clipped over its painterly clearing and cleans up
+  without disrupting the Farm renderer.
+- Gameplay, static Rive contract, exact-clone Web bundling, and repository
+  quality gates remain green.
+
+### Next highest-leverage weakness
+
+Deploy this renderer hotfix and repeat the public Position 8 → 11 handoff plus
+the second-morning persistence check before selecting another polish target.
 
 ### v0.37.0 — The Pond Belongs Here — 2026-08-06
 

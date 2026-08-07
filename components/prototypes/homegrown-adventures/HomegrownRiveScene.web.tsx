@@ -184,10 +184,10 @@ function HomegrownRiveSceneImpl({
 		onLoadError: () => setStatus("error"),
 	}, {
 		useDevicePixelRatio: true,
-		// This is the only full-artboard Rive scene. Position 9 may add one tightly
-		// clipped view of the same Glowroot rig; dedicated contexts preserve alpha
-		// so the approved environment plates remain visible beneath both canvases.
-		useOffscreenRenderer: false,
+		// Position 9 briefly mounts a second view of the same artboard. Rive
+		// recommends sharing the offscreen WebGL2 renderer for multiple instances;
+		// that avoids context teardown races while both canvases keep their alpha.
+		useOffscreenRenderer: true,
 		shouldResizeCanvasToContainer: true,
 	});
 

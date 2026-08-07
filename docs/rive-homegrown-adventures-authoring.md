@@ -155,6 +155,12 @@ when the persisted Home memory is earned—including later mornings. Direct
 reload holds the correct pose; reduced motion never plays Response. The unused
 editor-history `Timeline 26` is intentionally not part of the runtime contract.
 
+The persistent Farm canvas and the temporary Position 9 Glowroot canvas both
+use `useOffscreenRenderer: true`. This follows Rive's multiple-instance WebGL2
+guidance and lets the temporary canvas unmount without tearing down a graphics
+context still used by the Farm. It does not merge their React lifecycles or
+give either Rive instance progression authority.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the

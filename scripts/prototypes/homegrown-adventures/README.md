@@ -65,6 +65,11 @@ preserves the plate and `Pond Frog Present` through reload and later mornings.
 keeps the frog still and no resident progression lives inside Rive. The
 animation lab exposes the same composition as **Pond remembers**.
 
+The persistent Farm view and temporary Position 9 Glowroot view share Rive's
+offscreen WebGL2 renderer. They remain separate canvases and React components,
+but the temporary discovery view can unmount without invalidating the Farm's
+live renderer before Position 11 reveals the frog.
+
 Crop growth now has an explicit painterly early-sprout asset and a separate
 flower-free lush-middle asset. React derives that visual boundary from
 `plantedAt` and `readyAt`; the authored `Clover Growing Sway` timeline supplies

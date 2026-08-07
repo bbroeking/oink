@@ -39,7 +39,9 @@ function AdventureGlowrootRiveImpl({ reduceMotion }: AdventureGlowrootRiveProps)
 		onLoadError: () => setStatus("error"),
 	}, {
 		useDevicePixelRatio: true,
-		useOffscreenRenderer: false,
+		// Share the renderer with the persistent Farm canvas. Unmounting this
+		// temporary view must not tear down a context still used by the main scene.
+		useOffscreenRenderer: true,
 		shouldResizeCanvasToContainer: true,
 	});
 
