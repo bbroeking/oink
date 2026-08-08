@@ -39,9 +39,9 @@ import {
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Immediate Handoff", question: "Should memory, stock, and the next purpose appear immediately?" },
+	B: { name: "Bed Remembers", question: "Should one world-anchored confirmation hold the flourish?" },
+	C: { name: "World First", question: "Should the Rive flourish own one quiet beat by itself?" },
 };
 
 const STAGE_COPY = {
@@ -844,6 +844,15 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true }) {
 	);
 }
 
+function GlowrootBedMoment() {
+	return (
+		<div className="glowroot-bed-moment" role="status" aria-live="polite">
+			<strong>Glowroot lives here</strong>
+			<small>Bed 3 remembers</small>
+		</div>
+	);
+}
+
 function NewDayHandoff() {
 	return (
 		<div className="new-day-handoff" role="status" aria-live="polite">
@@ -892,6 +901,7 @@ const NEW_DAY_HANDOFF_MS = 900;
 const REDUCED_NEW_DAY_HANDOFF_MS = 300;
 const SEED_HANDOFF_DEPART_MS = 420;
 const SEED_HANDOFF_ARRIVE_MS = 460;
+const GLOWROOT_PLANT_MOMENT_MS = 900;
 const RAPID_TRANSITION_ACTIONS = new Set([
 	ACTIONS.TICKLE,
 	ACTIONS.SELECT_CROP,
@@ -1193,8 +1203,10 @@ function App() {
 	const [startingNewDay, setStartingNewDay] = useState(false);
 	const [adventureCauseBeat, setAdventureCauseBeat] = useState("provision");
 	const [seedHandoff, setSeedHandoff] = useState(null);
+	const [glowrootPlantMoment, setGlowrootPlantMoment] = useState(false);
 	const transitionLockUntil = useRef(0);
 	const newDayTimer = useRef(null);
+	const glowrootPlantTimer = useRef(null);
 	const seedHandoffTimers = useRef([]);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
 	const position = state.prototypePosition ?? 1;
@@ -1239,6 +1251,7 @@ function App() {
 		state.stage === STAGES.DEVELOPED &&
 		state.nextPlanting === "moonberries" &&
 		!state.cycleComplete;
+	const holdingGlowrootMoment = glowrootPlantMoment && variant !== "A";
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
 	const sceneRiveViewModel = useMemo(() => {
 		if (
@@ -1265,7 +1278,9 @@ function App() {
 		state.stage === STAGES.CLOVER_GROWING ||
 		(state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen && !state.adventureComplete)
 	));
-	const visiblePresentation = showingHarvestCelebration
+	const visiblePresentation = holdingGlowrootMoment
+		? { ...presentation, objective: "Glowroot takes root", detail: "The Farm remembers" }
+		: showingHarvestCelebration
 		? { ...presentation, objective: "Harvesting Clover…" }
 		: showingHarvestRhythm
 		? { ...presentation, objective: "Clover’s rhythm: ← → ↑" }
@@ -1383,6 +1398,7 @@ function App() {
 
 	useEffect(() => () => {
 		window.clearTimeout(newDayTimer.current);
+		window.clearTimeout(glowrootPlantTimer.current);
 		seedHandoffTimers.current.forEach((timer) => window.clearTimeout(timer));
 	}, []);
 
@@ -1426,17 +1442,25 @@ function App() {
 			);
 			return;
 		}
+		if (nextAction.type === ACTIONS.PLANT_GLOWROOT && !state.reduceMotion && variant !== "A") {
+			setGlowrootPlantMoment(true);
+			window.clearTimeout(glowrootPlantTimer.current);
+			glowrootPlantTimer.current = window.setTimeout(
+				() => setGlowrootPlantMoment(false),
+				GLOWROOT_PLANT_MOMENT_MS,
+			);
+		}
 		dispatch(nextAction);
 		signalFeedback(nextAction.type);
-	}, [signalFeedback, startingNewDay, state.reduceMotion]);
+	}, [signalFeedback, startingNewDay, state.reduceMotion, variant]);
 
 	const jumpToPosition = useCallback((nextPosition) => {
-		if (seedHandoff) return;
+		if (seedHandoff || holdingGlowrootMoment) return;
 		const now = performance.now();
 		if (now < transitionLockUntil.current) return;
 		transitionLockUntil.current = now + RAPID_TRANSITION_GUARD_MS;
 		dispatch({ type: ACTIONS.JUMP_TO_POSITION, position: nextPosition });
-	}, [seedHandoff]);
+	}, [holdingGlowrootMoment, seedHandoff]);
 
 	const selectBagItem = useCallback((slot, item) => {
 		dispatch({ type: ACTIONS.SET_BAG_SLOT, slot, item });
@@ -1469,8 +1493,8 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
-			aria-busy={startingNewDay || Boolean(seedHandoff)}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootMoment ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootMoment ? `glowroot-plant-moment glowroot-plant-moment-${variant.toLowerCase()}` : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootMoment}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-opportunity={opportunity.id}
 			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
@@ -1579,13 +1603,14 @@ function App() {
 				onAction={acknowledgeReturn}
 			/>}
 			<SeedHandoff origin={state.bag?.tool === "hand-trowel" ? "bonus" : "base"} phase={seedHandoff} />
-			{showingHomeMemory && <HomeMemoryPanel
+			{holdingGlowrootMoment && variant === "B" && <GlowrootBedMoment />}
+			{showingHomeMemory && !holdingGlowrootMoment && <HomeMemoryPanel
 				state={state}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
 				showAction={!showingMoonberryPlanting && !showingHomeTickle}
 			/>}
-			{showingMoonberryPlanting && <WorldAction
+			{showingMoonberryPlanting && !holdingGlowrootMoment && <WorldAction
 				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}
 				presentation={visiblePresentation}
 				onAction={() => act(visiblePresentation.action)}

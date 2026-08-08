@@ -1,5 +1,19 @@
 # Homegrown Adventures prototype
 
+## v0.80 Glowroot quiet-beat comparison
+
+Question: after **Plant Glowroot**, what should own the authored 780 ms Home
+flourish before Farm memory and the next Moonberry purpose return?
+
+- **A — Immediate Handoff:** current memory, stock, and next action appear at once.
+- **B — Bed Remembers:** one world-anchored confirmation replaces the full stack.
+- **C — World First:** only the compact HUD remains while Rive performs the Farm change.
+
+Verdict: **C**. A covers the new consequence with three simultaneous demands; B
+still covers Bed 3 with explanatory UI. C keeps React's reducer result immediate
+but gives the visible Rive consequence one 900 ms presentation-only beat. Reload
+and reduced motion resolve directly to the stable developed state.
+
 Throwaway browser prototype for the loop in
 `docs/homegrown-adventures-build-goals.md`. It uses one deterministic reducer
 and three UI variants; `?variant=A|B|C` changes presentation without changing
