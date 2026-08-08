@@ -354,8 +354,27 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Fast-forwarding retained the established returned-through-the-gate scene
   description, **Rosie is Home**, **At the gate**, and **Welcome Rosie home**.
 - `npm run prototype:homegrown:test` passes 64/64 and
-  `npm run prototype:homegrown:build` passes. The final repository quality and
-  Rive contract evidence is recorded with the shipped feature commit below.
+  `npm run prototype:homegrown:build` passes. `npx tsc --noEmit` and
+  `npm run verify:rive-homegrown` pass both authored Rive contracts.
+  `npm run quality:check` passes the quality contracts, 157-file layout gate,
+  324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
+  and 202 security tests. Watchman's existing recrawl notice is the only
+  warning.
+
+### Public verification evidence
+
+- Feature commit `e7a0bac` deployed successfully in GitHub Pages run
+  `31268182096`.
+- Fresh public HTML, JavaScript, and CSS matched the verified files byte for
+  byte. Their SHA-256 hashes are `4146b43f7491f03b7646c8910658c1c2252e29031d8dec634c485b10bbc7520c`,
+  `f9fd1e99fb8719d1804a3b436e31622bf93b5e740f3f5d9bf74a3b0b42517c89`,
+  and `d2c78dcf941ce1b214d9eb988b4e9bc4085776f5691ecc113eff4a056b7e47cf`.
+- Replayed both exact public homeward routes. The scene descriptions led with
+  **Rosie is heading Home**, then correctly named warm moth lights or silver
+  reflections while the visible HUD, field note, and rail remained aligned.
+- Public fast-forward retained the returned-through-the-gate description,
+  **Rosie is Home**, **At the gate**, and **Welcome Rosie home**. The companion
+  site now exposes **Follow Rosie's journey Home**.
 
 ### Next highest-leverage weakness
 
