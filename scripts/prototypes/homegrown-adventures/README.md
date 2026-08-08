@@ -234,6 +234,22 @@ the pause. The three comparison treatments remain captured on
 `codex/homegrown-v080-glowroot-quiet-beat-prototypes` at `669b214`; main retains
 only the world-first treatment.
 
+## v0.81 persistent-memory comparison
+
+Question: after the first Glowroot flourish has landed, how should Home memory
+and exact Farm stock remain available without permanently covering the Farm?
+
+- **A — Teaching Stack:** retain the full-width permanence card and stock ledger.
+- **B — Memory Shelf:** merge the promise and all four counts into one shallow shelf.
+- **C — Memory Pocket:** keep one compact secondary control with exact icon counts;
+  reveal the named stock and permanence promise only when the player asks.
+
+Verdict: **C**. B removes the upper obstruction, but still treats inventory as
+always-primary. C leaves Rosie, all three beds, and the current world action as
+the default read while preserving every fact through a clear, inline disclosure.
+The first-time v0.80 HUD remains the acknowledgement; reload and later states
+return to the compact pocket rather than replaying teaching UI.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

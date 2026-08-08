@@ -1095,6 +1095,108 @@ html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 }
 .home-memory-action:hover { background: #87ae65; }
 .home-memory-action:active { transform: translateX(-50%) translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
+.home-memory-shelf {
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	bottom: 94px;
+	overflow: hidden;
+	background: rgba(255,249,233,.97);
+	border: 3px solid var(--ink);
+	border-radius: 13px;
+	box-shadow: 3px 4px 0 rgba(48,33,22,.72);
+}
+.home-memory-panel-shelf.has-action .home-memory-shelf { bottom: 164px; }
+.home-memory-shelf-heading {
+	height: 26px;
+	padding: 4px 8px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	color: var(--paper);
+	background: var(--wood);
+}
+.home-memory-shelf-heading strong { font-family: Caprasimo, Georgia, serif; font-size: 10px; font-weight: 400; line-height: 1; }
+.home-memory-shelf-heading small { font-size: 7px; font-weight: 900; line-height: 1; }
+.home-memory-shelf-stock,
+.home-memory-pocket-detail > div {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0,1fr));
+}
+.home-memory-shelf-stock span,
+.home-memory-pocket-detail span {
+	min-width: 0;
+	padding: 5px 3px 6px;
+	display: grid;
+	grid-template-columns: 14px minmax(0,1fr);
+	align-items: center;
+	column-gap: 2px;
+	border-left: 1px solid var(--line);
+}
+.home-memory-shelf-stock span:first-child,
+.home-memory-pocket-detail span:first-child { border-left: 0; }
+.home-memory-shelf-stock i,
+.home-memory-pocket-detail i { grid-row: 1 / 3; color: var(--clover); font-size: 12px; font-style: normal; text-align: center; }
+.home-memory-shelf-stock small,
+.home-memory-pocket-detail small { overflow: hidden; font-size: 6px; font-weight: 900; line-height: 1; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.home-memory-shelf-stock b,
+.home-memory-pocket-detail b { font-family: Caprasimo, Georgia, serif; font-size: 11px; font-weight: 400; line-height: 1; }
+.home-memory-pocket {
+	position: absolute;
+	left: 14px;
+	right: 14px;
+	bottom: 96px;
+	height: 47px;
+	padding: 0 12px;
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: center;
+	gap: 9px;
+	pointer-events: auto;
+	color: var(--paper);
+	background: var(--wood);
+	border: 3px solid var(--ink);
+	border-radius: 12px;
+	box-shadow: 3px 4px 0 rgba(48,33,22,.72);
+}
+.home-memory-panel-pocket.has-action .home-memory-pocket { bottom: 164px; }
+.home-memory-pocket > strong { font-family: Caprasimo, Georgia, serif; font-size: 11px; font-weight: 400; line-height: 1; white-space: nowrap; }
+.home-memory-pocket > span { color: #f4dda6; font-size: 10px; font-weight: 950; letter-spacing: .02em; text-align: center; white-space: pre; }
+.home-memory-pocket > small { font-size: 7px; font-weight: 900; text-decoration: underline; text-underline-offset: 2px; text-transform: uppercase; white-space: nowrap; }
+.home-memory-pocket:hover { background: #765039; }
+.home-memory-pocket:focus-visible { outline: 4px solid #267da2; outline-offset: 2px; }
+.home-memory-pocket:active { transform: translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
+.home-memory-pocket-detail {
+	position: absolute;
+	left: 14px;
+	right: 14px;
+	bottom: 151px;
+	overflow: hidden;
+	background: rgba(255,249,233,.98);
+	border: 3px solid var(--ink);
+	border-radius: 12px;
+	box-shadow: 3px 4px 0 rgba(48,33,22,.72);
+	animation: memory-pocket-open 180ms cubic-bezier(.16,1,.3,1) both;
+}
+.home-memory-panel-pocket.has-action .home-memory-pocket-detail { bottom: 219px; }
+.home-memory-pocket-detail[hidden] { display: none; }
+.home-memory-pocket-detail > strong {
+	display: block;
+	padding: 7px 8px 6px;
+	color: var(--paper);
+	background: var(--wood);
+	font-size: 8px;
+	font-weight: 900;
+	line-height: 1;
+	text-align: center;
+}
+.home-memory-panel-pocket.is-expanded + .world-action { opacity: 0; pointer-events: none; }
+@keyframes memory-pocket-open {
+	from { opacity: 0; transform: translateY(8px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+html[data-reduce-motion="true"] .home-memory-pocket-detail { animation: none; }
 .moth-shared-glint {
 	position: absolute;
 	z-index: 2;

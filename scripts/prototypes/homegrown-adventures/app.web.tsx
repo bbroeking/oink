@@ -39,9 +39,9 @@ import {
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Teaching Stack", question: "Should memory and stock remain fully open?" },
+	B: { name: "Memory Shelf", question: "Can one always-visible shelf preserve the facts without covering the Barn?" },
+	C: { name: "Memory Pocket", question: "Should one compact pocket reveal the full record only when asked?" },
 };
 
 const STAGE_COPY = {
@@ -818,8 +818,49 @@ function SeedHandoff({ origin, phase }) {
 	);
 }
 
-function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true }) {
+function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, variant = "A" }) {
 	const stock = state.farmStock ?? {};
+	const [expanded, setExpanded] = useState(false);
+	const stockItems = [
+		["☘", "Clover Seed", stock["clover-seed"] ?? 0],
+		["✦", "Glowroot Seed", stock["glowroot-seed"] ?? 0],
+		["♣", "Compost", stock.compost ?? 0],
+		["≋", "Willow Fiber", stock["willow-fiber"] ?? 0],
+	];
+
+	if (variant === "B") {
+		return (
+			<section className={`home-memory-panel home-memory-panel-shelf ${showAction ? "has-action" : ""}`} aria-label="The Farm remembers this Adventure">
+				<div className="home-memory-shelf">
+					<div className="home-memory-shelf-heading"><strong>The Farm remembers</strong><small>Crops grow · Discoveries stay</small></div>
+					<div className="home-memory-shelf-stock" aria-label="Current Farm stock">
+						{stockItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
+					</div>
+				</div>
+				{showAction && <button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>}
+			</section>
+		);
+	}
+
+	if (variant === "C") {
+		return (
+			<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label="The Farm remembers this Adventure">
+				<div className="home-memory-pocket-detail" hidden={!expanded}>
+					<strong>Crops grow · Stock stays · Discoveries stay</strong>
+					<div aria-label="Current Farm stock">
+						{stockItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
+					</div>
+				</div>
+				<button type="button" className="home-memory-pocket" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
+					<strong>The Farm remembers</strong>
+					<span aria-hidden="true">{stockItems.map(([icon, , amount]) => `${icon}${amount}`).join("  ")}</span>
+					<small>{expanded ? "Close" : "See stock"}</small>
+				</button>
+				{showAction && <button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>}
+			</section>
+		);
+	}
+
 	return (
 		<section className="home-memory-panel" aria-label="The Barn remembers this Adventure">
 			<div className="home-memory-promise">
@@ -1596,6 +1637,7 @@ function App() {
 			<SeedHandoff origin={state.bag?.tool === "hand-trowel" ? "bonus" : "base"} phase={seedHandoff} />
 			{showingHomeMemory && !holdingGlowrootHomeReveal && <HomeMemoryPanel
 				state={state}
+				variant={variant}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
 				showAction={!showingMoonberryPlanting && !showingHomeTickle}
