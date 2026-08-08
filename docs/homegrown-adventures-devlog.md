@@ -297,7 +297,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 90. **v0.89 — The Trail Turns Home (shipped):** let the existing
     journey note and route advance once from exploring to heading Home, derived
     from the outing's persisted timestamps rather than a new timer system.
-91. **v0.90 — The Farm Holds the Journey (locally verified):** move the
+91. **v0.90 — The Farm Holds the Journey (shipped):** move the
     browser's fast-forward shortcut beside its external progression rail so the
     waiting Farm stays quiet and Homecoming keeps the only primary action.
 
@@ -359,6 +359,21 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
   and 202 security tests. Watchman's existing recrawl notice is the only
   warning.
+- Feature commit `2a2e045` deployed successfully through GitHub Pages run
+  `31266562930`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `6acdc952638b7170dca76a0857fc9a3d5a8f3214738f194c173a01674fdc715b`,
+  `97cf494019576f3b7c552dd087f306b13d01ccf2e879f5c924892408c5afe76c`, and
+  `d2c78dcf941ce1b214d9eb988b4e9bc4085776f5691ecc113eff4a056b7e47cf`.
+- A fresh public homeward replay rendered the unobstructed Farm, **Rosie is
+  heading Home**, current Homeward, and the compact two-tier review dock. Its
+  44px button retained the accessible name **Fast-forward to Homecoming** and
+  no treatment switcher was present.
+- Fast-forwarding that exact served build removed the review shortcut, restored
+  **Rosie is Home**, **At Home**, and the full **Welcome Rosie home** action,
+  then advanced to Position 10 before revealing **Glowroot Seed**.
+- The public companion page now exposes **Watch Rosie's journey Home** and
+  links directly to Position 9's reviewable homeward beat.
 
 ### Next highest-leverage weakness
 
