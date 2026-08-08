@@ -1419,19 +1419,25 @@ test("the idle journey derives a predictable trail and homeward beat from its pe
 	assert.equal(adventureJourneyPhase(lanternleafReview, at), "homeward");
 });
 
-test("the rendered journey advances one existing note and route without shipping prototype controls", () => {
+test("the rendered journey advances one field note and one physical light route without shipping prototype controls", () => {
 	assert.match(appSource, /data-journey-phase=\{journeyPhase\}/);
 	assert.match(appSource, /The moths turn Home/);
 	assert.match(appSource, /The leaves turn Home/);
 	assert.match(appSource, /Rosie is heading Home/);
+	assert.match(appSource, /const routeStatus = homecomingReady/);
+	assert.match(appSource, /\? "Rosie is at the gate"/);
+	assert.match(appSource, /"Silver leaves turn Home" : "Warm lights turn Home"/);
 	assert.match(appSource, /homecomingReady \|\| homeward \? "is-complete" : "is-current"/);
+	assert.match(appSource, /<div className="journey-watch-lights" aria-hidden="true">[\s\S]*<span>\{routeStatus\}<\/span>[\s\S]*<i \/><i \/><i \/><i \/><i \/>/);
 	assert.match(appSource, /adventureHomewardAt\(state\)/);
 	assert.match(appSource, /initialSearch\.get\("journey"\) === "homeward"/);
 	assert.match(appSource, /initialSearch\.get\("route"\) === "lanternleaf"/);
+	assert.match(stylesSource, /\.journey-watch-route \{[^}]*width: 1px;[^}]*clip-path: inset\(50%\)/s);
+	assert.match(stylesSource, /\.journey-watch-lights span \{[^}]*left: 248px;[^}]*top: 268px/s);
 	assert.match(stylesSource, /\.journey-watch\[data-journey-phase="homeward"\] \.journey-home-dusk i/);
 	assert.match(stylesSource, /\.journey-watch\[data-journey-phase="homeward"\] \.journey-watch-lights i \{[^}]*animation-direction: reverse/s);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.journey-watch-lights i \{ animation: none; \}/);
-	assert.doesNotMatch(appSource, /ProgressionPrototypeSwitcher|progressionTreatment|searchParams\.set\("progression"/);
+	assert.doesNotMatch(appSource, /ProgressionPrototypeSwitcher|JourneyPathPrototypeSwitcher|progressionTreatment|searchParams\.set\("progression"|searchParams\.set\("path"/);
 });
 
 test("the browser fast-forward stays touch-safe beside the review rail while Homecoming remains in the world", () => {
@@ -1497,7 +1503,7 @@ test("an incomplete Bag stays causal throughout the idle journey", () => {
 	assert.match(appSource, /provision: "Marked the glow", tool: "Root clue", pack: "Leaf-print"/);
 	assert.match(appSource, /provision: "Marked reflections", tool: "Path clue", pack: "Trail map"/);
 	assert.match(appSource, /A useful clue is coming Home/);
-	assert.match(stylesSource, /\.journey-watch\.is-near-discovery \.journey-watch-route li:nth-child\(2\) i/);
+	assert.match(stylesSource, /\.journey-watch\.is-near-discovery \.journey-watch-lights i \{[^}]*background: transparent;[^}]*border: 2px dashed[^}]*animation: none;[^}]*opacity: \.78/s);
 	assert.doesNotMatch(appSource, /JourneyTruthSwitcher|journeyTruthTreatment|journeytruth/);
 });
 

@@ -1055,6 +1055,11 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, en
 	const returnPromise = homecomingReady
 		? null
 		: formatAdventureReturnPromise(state.adventureReadyAt, { now });
+	const routeStatus = homecomingReady
+		? "Rosie is at the gate"
+		: homeward
+			? lanternleaf ? "Silver leaves turn Home" : "Warm lights turn Home"
+			: trailLabel;
 
 	return (
 		<section
@@ -1090,7 +1095,10 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, en
 				<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
 				<li className={homecomingReady || homeward ? "is-current" : ""}><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></li>
 			</ol>
-			<div className="journey-watch-lights" aria-hidden="true"><i /><i /><i /><i /></div>
+			<div className="journey-watch-lights" aria-hidden="true">
+				<span>{routeStatus}</span>
+				<i /><i /><i /><i /><i />
+			</div>
 			{homecomingReady && <button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>}
 		</section>
 	);
