@@ -1,5 +1,15 @@
 # Homegrown Adventures prototype
 
+The v0.91 phase-aware review pass makes Position 9's external rail follow the
+journey it is reviewing. Its second line now changes from **Adventure begins**
+to **Following the trail**, **Heading Home**, and **At the gate**, derived from
+the same rendered vignette, journey phase, and reducer-owned completion facts.
+Three treatments were rendered and captured at commit `8a934c2` on
+`codex/homegrown-v091-rail-readout-prototypes`; the single changing title won
+because the phase strip duplicated the in-world route and the route-led title
+crowded the narrow rail. No comparison switcher, state, timer, route, reward,
+persistence field, style rule, or Rive input remains on main.
+
 The v0.90 fast-forward hierarchy pass removes the six-hour skip from the Farm
 while Rosie is away. One compact, 44px **Fast-forward** control now joins the
 browser prototype's external Previous / Next review rail; the field note,

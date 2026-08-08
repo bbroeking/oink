@@ -1147,7 +1147,15 @@ function JourneyReviewRailAction({ actionLabel, onAction }) {
 	);
 }
 
-function PositionRail({ position, onChange }) {
+function positionRailName({ position, showingAdventureVignette, showingJourneyWatch, journeyPhase, adventureComplete }) {
+	if (position !== 9) return PROTOTYPE_POSITIONS[position - 1].name;
+	if (showingAdventureVignette) return "Adventure begins";
+	if (!showingJourneyWatch) return PROTOTYPE_POSITIONS[position - 1].name;
+	if (adventureComplete) return "At the gate";
+	return journeyPhase === "homeward" ? "Heading Home" : "Following the trail";
+}
+
+function PositionRail({ position, onChange, positionName }) {
 	const current = PROTOTYPE_POSITIONS[position - 1];
 	const atStart = position === 1;
 	const atEnd = position === PROTOTYPE_POSITIONS.length;
@@ -1163,7 +1171,7 @@ function PositionRail({ position, onChange }) {
 			</button>
 			<div className="position-readout" role="status" aria-live="polite">
 				<strong>Position {position} / {PROTOTYPE_POSITIONS.length}</strong>
-				<small>{current.name}</small>
+				<small>{positionName ?? current.name}</small>
 			</div>
 			<button
 				type="button"
@@ -1277,6 +1285,13 @@ function App() {
 	const showingJourneyWatch = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen;
 	const gateHomecomingReady = showingJourneyWatch && state.adventureComplete;
 	const journeyPhase = adventureJourneyPhase(state, visualNow) ?? "trail";
+	const currentPositionName = positionRailName({
+		position,
+		showingAdventureVignette,
+		showingJourneyWatch,
+		journeyPhase,
+		adventureComplete: state.adventureComplete,
+	});
 	const adventureEnvironmentRevealed = ["tool", "pack", "resolved"].includes(adventureCauseBeat);
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
 	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
@@ -1723,7 +1738,7 @@ function App() {
 			actionLabel={presentation.label}
 			onAction={() => act(presentation.action)}
 		/>}
-		<PositionRail position={position} onChange={jumpToPosition} />
+		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;

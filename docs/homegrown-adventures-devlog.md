@@ -300,11 +300,68 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 91. **v0.90 — The Farm Holds the Journey (shipped):** move the
     browser's fast-forward shortcut beside its external progression rail so the
     waiting Farm stays quiet and Homecoming keeps the only primary action.
+92. **v0.91 — The Rail Follows Rosie (shipped):** let Position 9's external
+    review readout name the causal story, trail, homeward, and gate states it
+    is actually showing without adding another label inside the Farm.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.91 — The Rail Follows Rosie — 2026-08-08
+
+- Replayed the shipped v0.90 first-route homeward state. The in-world field
+  note correctly said **Rosie is heading Home**, while the persistent external
+  rail contradicted it with **Adventure vignette**.
+- Compared three treatments on the real Position 9 route: one changing phase
+  title, a compact four-step phase strip, and a route-name-plus-current-beat
+  title. The single phase title won. The phase strip duplicated the existing
+  journey tracker; the route-led title repeated story context and crowded the
+  rail's narrow center.
+- Captured all three throwaway treatments at commit `8a934c2` on
+  `codex/homegrown-v091-rail-readout-prototypes`. Main retains only the
+  changing title; no treatment switcher or alternate rail structure ships.
+- The rail now reads **Adventure begins**, **Following the trail**, **Heading
+  Home**, and **At the gate** from the existing rendered state. All other
+  positions retain their established names.
+- No CSS geometry, action, duration, journey state, route, Bag rule, reward,
+  save field, Rive asset, or Rive input changed. This is presentation derived
+  from facts the real screen already owns.
+- The required Impeccable product-design review substituted for unavailable
+  Claude Design. It approved the single changing title because it restores
+  agreement, keeps the world and its primary action dominant, remains within
+  the established ellipsized rail geometry, and adds no duplicate progress
+  component.
+
+### Local validation evidence
+
+- Rendered Position 9's causal vignette and confirmed **Adventure begins**.
+- Let the same real first-route state hand itself into the idle watch and
+  confirmed **Following the trail** with the warm-moth route unchanged.
+- Rendered the persisted first-route homeward state and confirmed **Heading
+  Home**, then used the existing fast-forward and confirmed **At the gate**,
+  the shortcut's removal, and the unchanged **Welcome Rosie home** action.
+- Rendered the Lanternleaf second route at homeward, reloaded it through the
+  causal sequence, and confirmed the rail returned to **Heading Home** while
+  the silver-leaf story remained intact.
+- Enabled reduced motion through the real Lab tools and confirmed the same
+  phase-aware readout with no comparison switcher in production.
+- `npm run prototype:homegrown:test` passes 62/62,
+  `npm run prototype:homegrown:build` passes, `npx tsc --noEmit` passes,
+  `npm run verify:rive-homegrown` passes both authored Rive contracts, and
+  `npm run quality:check` passes the quality contracts, 157-file layout gate,
+  324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
+  and 202 security tests. Watchman's existing recrawl notice is the only
+  warning.
+
+### Next highest-leverage weakness
+
+The external rail now agrees with the journey, but the quiet top HUD still
+says **Rosie is following the moths** or **Rosie is following reflected
+leaves** after the field note and route have advanced to **Heading Home**. The
+next cycle should let that existing HUD objective follow the same derived
+phase without adding another label, timer, or saved state.
 
 ### v0.90 — The Farm Holds the Journey — 2026-08-08
 

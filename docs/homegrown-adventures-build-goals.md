@@ -30,7 +30,10 @@ route-specific **trail → homeward → Home** change from the six-hour timestam
 already persisted by React, with reload-stable copy, route, porch-light, and
 reduced-motion behavior; its prototype-only fast-forward now sits beside the
 external review rail so waiting leaves the Farm clear and Homecoming alone
-restores the large in-world action; Position 10 now brings Rosie into a physical
+restores the large in-world action; that rail now names **Adventure begins →
+Following the trail → Heading Home → At the gate** from those same rendered
+facts instead of calling every Position 9 state an Adventure vignette;
+Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive
 fast-forward, reload, reduced motion, and rapid input; explicitly boosted
@@ -632,6 +635,21 @@ changes no timer, phase, route, Bag, reward, persistence fact, Rive asset, or
 Rive input. Both routes, trail, homeward, Home, Position 10 handoff, reload,
 reduced motion, 61 reducer/source-contract tests, the Rive contracts,
 TypeScript, and repository quality gates pass locally.
+
+**Phase-aware-review checkpoint (August 8, 2026):** Position 9's external
+Previous / Next rail no longer says **Adventure vignette** for the entire
+outing. Its existing second line now reads **Adventure begins** during the
+causal Bag story, **Following the trail** during the first idle phase,
+**Heading Home** after the persisted 75% threshold, and **At the gate** once
+the reducer settles Home. Three treatments were rendered and captured on
+`codex/homegrown-v091-rail-readout-prototypes` at `8a934c2`; the single
+changing title won over a duplicate four-step phase strip and a crowded
+route-name treatment. The rail remains external browser-review chrome and no
+new in-world label, screen, style rule, journey state, timer, route, Bag rule,
+reward, persistence fact, Rive asset, or Rive input was added. Both routes,
+vignette, trail, homeward, Home, reload, reduced motion, 62 reducer/source-
+contract tests, the Rive contracts, TypeScript, and repository quality gates
+pass locally.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose

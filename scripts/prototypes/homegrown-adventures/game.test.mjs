@@ -1155,6 +1155,16 @@ test("the browser fast-forward stays touch-safe beside the review rail while Hom
 	assert.doesNotMatch(appSource, /FastForwardPrototypeSwitcher|fastForwardTreatment|searchParams\.set\("fastforward"/);
 });
 
+test("the review rail names the real Position 9 journey beat", () => {
+	assert.match(appSource, /function positionRailName\(\{ position, showingAdventureVignette, showingJourneyWatch, journeyPhase, adventureComplete \}\)/);
+	assert.match(appSource, /if \(showingAdventureVignette\) return "Adventure begins"/);
+	assert.match(appSource, /if \(adventureComplete\) return "At the gate"/);
+	assert.match(appSource, /journeyPhase === "homeward" \? "Heading Home" : "Following the trail"/);
+	assert.match(appSource, /<small>\{positionName \?\? current\.name\}<\/small>/);
+	assert.match(appSource, /<PositionRail position=\{position\} onChange=\{jumpToPosition\} positionName=\{currentPositionName\} \/>/);
+	assert.doesNotMatch(appSource, /RailReadoutVariant|RailCopySwitcher|railcopy/);
+});
+
 test("the first Hand Trowel cause performs one separable dig", () => {
 	assert.match(appSource, /showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" \/>/);
 	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"\]\[data-adventure-tool="hand-trowel"\]\[data-adventure-beat="tool"\]/);
