@@ -359,11 +359,79 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     first bed visibly empty after its Seed-paid Harvest, through changed Home,
     reload, and the following morning, without adding stubble, a replant prompt,
     or another crop rule.
+110. **v0.109 — Dusk Answers the Provision (shipped):** replace the Adventure's
+    opening Provision receipt with one in-scene use, a delighted Rosie response,
+    route-colored dusk lights, and exact cause text in the existing HUD.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.109 — Dusk Answers the Provision — 2026-08-08
+
+- Began by replaying the deployed complete Glowroot and Lanternleaf routes. Both
+  opened Position 9 with the correct food and time-of-day animation, but a large
+  inventory-like field note claimed attention before Rosie or the clearing.
+- Compared the current receipt, a small Rosie picnic caption, and an
+  environment-led dusk response in the actual Adventure composition. The
+  environment-led treatment won because it keeps the clearing visible and uses
+  the existing quiet HUD instead of adding another surface. The picnic study's
+  single Rosie response was retained because it makes the food feel received.
+- Captured all three treatments and the decision at commit `6d865df` on
+  `codex/homegrown-v109-provision-beat-prototypes`. Main contains no study
+  switcher, extended review timing, or picnic caption.
+- The Provision now moves into Rosie, fades, and stays consumed. Four restrained
+  lights rise with warm gold on the Glowroot route and pale green on the
+  Lanternleaf route. Tool and Pack props remain available for their later
+  deterministic beats.
+- The existing HUD now names the actual outcome for Clover Lunch, Moonberries,
+  and no Provision on each route. The overlay retains the same cause as hidden
+  live-region text, so removing the visible receipt does not remove its
+  accessible explanation.
+- React emits one presentation-only `adventure-provision` motion. The Rive
+  boundary reuses the authored `Rosie Tickle` timeline without firing the
+  reducer-owned Tickle trigger or adding a Rive binary, View Model property,
+  reward, timer, inventory rule, or save fact.
+
+### Local validation evidence
+
+- Replayed the real Position 8 → 9 handoff with WebGL enabled. During Provision,
+  the DOM reported zero field notes, four dusk lights, exact Clover Lunch copy,
+  `data-rive-status=ready`, and both current and last performed motion as
+  `adventure-provision`. Rosie remained the live authored character in the
+  clearing. Direct Lanternleaf playback showed the nightfall copy and four
+  route-colored lights before its existing Tool beat.
+- `npm run prototype:homegrown:test` passes 82/82, including the HUD copy,
+  persistent one-use food, accessible cause, both light treatments, reduced
+  motion, and presentation-only Rive response. `npm run
+  prototype:homegrown:build`, `npm run quality:loop`, `npm run quality:check`,
+  `npm run verify:rive-homegrown`, and `npm run verify:rive-web` pass. The
+  quality gate covers 157 layout files, 324 sprites, security contracts,
+  TypeScript, 78 layout tests, and 202 security tests. Watchman's existing
+  recrawl notice and manual mobile Safari motion checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `abc2ad4` deployed successfully through GitHub Pages run
+  `31281106307`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `dd406546529c611fb4b392b977c9b2de2f7fc98e5df13fe61f0ad1f2daf82d13`
+  - player JavaScript: `f0a1389ad2e13814266eb98e2d578be8e9288e350f0e5f3015a2307d57d5f214`
+  - player CSS: `ad53086bcd18100798b4ff509f4f0b320f2a020acb0417c1cf1d44097299fd89`
+- Public rendered inspection shows the exact dusk HUD cause, zero Provision
+  field-note cards, and four environment lights at the opening beat. The
+  checked-in and public JavaScript and CSS are byte-identical to the real local
+  handoff used for the authored-Rive motion proof.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=9&route=glowroot&v=abc2ad4`
+
+### Next highest-leverage weakness
+
+The following Tool beat already contains a physical Hand Trowel dig and one
+authored Rosie Notice, but its large receipt still covers the clearing. Compare
+one in-scene Tool treatment against that card and remove only the redundant
+reporting; do not add an encounter system, destination, reward table, or screen.
 
 ### v0.108 — Clover Harvest Stays Harvested — 2026-08-08
 

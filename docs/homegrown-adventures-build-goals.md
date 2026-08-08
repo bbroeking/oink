@@ -21,6 +21,12 @@ Position 8 now holds the native Rive satchel on Rosie through packing, reload,
 reduced motion, departure, and the causal Adventure handoff; Position 9 now
 places that handoff in one tangible twilight clearing, with separate complete
 Discovery and clue-only Near-Discovery plates beneath live Rive Rosie; the
+first Provision cause now happens in that clearing instead of inside a large
+receipt: packed food moves into Rosie and remains consumed, one delighted
+authored Rosie response plays without firing the Tickle game action, dusk or
+nightfall lights rise in route-specific color, and the existing HUD names the
+exact Clover Lunch, Moonberry, or empty-Provision consequence; Tool and Pack
+retain their existing later beats;
 second route now adds one dedicated native Rive reflection layer whose
 authored rise, luminous hold, and fade animate only the painted Lanternleaf
 trail, while reduced motion retains the static illustrated clue; the
@@ -321,6 +327,23 @@ choice. The Rive binary, View Model contract, crop economy, timer, reward, and
 save schema are unchanged. The next director cycle returns to both Adventure
 routes and looks for the first causal beat that still reads like a report
 rather than a cozy naturalist outing.
+
+**Dusk-answers-Provision checkpoint (August 8, 2026):** replaying both deployed
+routes found that Position 9 opened by asking the player to read a large
+Provision receipt before watching Rosie. Three real in-scene treatments were
+captured at commit `6d865df` on
+`codex/homegrown-v109-provision-beat-prototypes`: the existing field note, a
+small Rosie picnic caption, and an environment-led dusk response. The clearing
+won because it preserves the illustrated expedition and uses the existing HUD
+for exact cause text; the selected production treatment also borrows the
+picnic study's single Rosie response. Clover Lunch now carries Rosie into dusk
+or nightfall, Moonberries reveal route-specific reflections, and an empty
+Provision truthfully turns her Home before the clue appears. Packed food moves
+to Rosie, fades, and stays consumed; four restrained route-colored lights rise
+without adding a card, timer, reward, save fact, encounter, or Rive binary.
+The next visible weakness is the Tool beat: its physical dig and authored Rosie
+Notice work, but the large field-note receipt still covers the top of the
+clearing and makes the journey feel reported rather than observed.
 
 **Next-Seed checkpoint (August 7, 2026):** the remembered Position 2 now leads
 with one full-width **Clover Seed** decision that names its stock and its purpose
