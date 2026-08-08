@@ -665,6 +665,23 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 	text-transform: uppercase;
 }
 .journey-return-time-ticket strong { font-size: 9px; line-height: 1; }
+.journey-return-time-ticket.return-day-b {
+	grid-template-columns: 62px 1fr;
+	align-items: stretch;
+	align-content: stretch;
+	gap: 0;
+	padding: 0;
+}
+.journey-return-time-ticket.return-day-b b {
+	display: grid;
+	place-items: center;
+	padding: 0 5px;
+	background: var(--rose-soft);
+	border-right: 1px solid color-mix(in srgb, var(--ink) 38%, transparent);
+	font-size: 7px;
+	text-transform: uppercase;
+}
+.journey-return-time-ticket.return-day-b strong { display: grid; place-items: center; font-size: 9px; }
 .journey-watch-route {
 	position: absolute;
 	left: 31px;
@@ -821,6 +838,27 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 .journey-review-rail-action button:hover { background: #fff1c5; }
 .journey-review-rail-action button:focus-visible { outline: 3px solid #267da2; outline-offset: 2px; }
 .journey-review-rail-action button:active { transform: translateY(1px); }
+.return-day-prototype-switcher {
+	position: fixed;
+	z-index: 40;
+	left: 50%;
+	bottom: max(138px, calc(env(safe-area-inset-bottom) + 126px));
+	width: 246px;
+	height: 48px;
+	display: grid;
+	grid-template-columns: 44px 1fr 44px;
+	overflow: hidden;
+	transform: translateX(-50%);
+	background: #302116;
+	border: 2px solid var(--paper);
+	border-radius: 999px;
+	box-shadow: 0 3px 0 rgba(48,33,22,.55);
+}
+.return-day-prototype-switcher button { border: 0; color: var(--paper); background: #4b3424; font-size: 18px; }
+.return-day-prototype-switcher button:focus-visible { outline: 3px solid #79c2df; outline-offset: -4px; }
+.return-day-prototype-switcher span { display: grid; place-content: center; color: var(--paper); text-align: center; }
+.return-day-prototype-switcher strong { font-family: Caprasimo, Georgia, serif; font-size: 12px; font-weight: 400; }
+.return-day-prototype-switcher small { font-size: 8px; font-weight: 850; }
 @keyframes journey-current-step {
 	0%, 100% { transform: scale(.94); filter: brightness(.94); }
 	50% { transform: scale(1.06); filter: brightness(1.08); }
