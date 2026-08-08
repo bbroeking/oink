@@ -270,7 +270,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     the Barn table, through Rosie's hands, and into Bed 3 before planting.
 81. **v0.80 — Glowroot First (shipped):** let the authored Farm change own one
     quiet beat before memory, stock, and Moonberries return.
-82. **v0.81 — Memory in Its Place (shipping):** keep the first memory
+82. **v0.81 — Memory in Its Place (shipped):** keep the first memory
     acknowledgement, then collapse repeat-state teaching and stock into one
     secondary Farm-memory pocket.
 
@@ -324,8 +324,26 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   another day**, the next Morning Tickle, and the remembered Clover choice kept
   Glowroot, dusk moths, frog, Hedge Bell, open path, and stock coherent.
 - `npm run prototype:homegrown:test` passes 51/51; `npx tsc --noEmit` and
-  `npm run verify:rive-homegrown` pass locally. Repository quality and public
-  artifact verification follow this feature commit.
+  `npm run verify:rive-homegrown` pass locally. `npm run quality:check` also
+  passes its quality contracts, 157-file layout inspection, 324-sprite
+  integrity gate, security contracts, TypeScript, 78 layout tests, and 202
+  security tests; Watchman's existing recrawl notice is the only warning.
+- Feature commit `ea7aa12` deployed successfully through GitHub Pages run
+  `31260256885`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `3ab8338f6308667fadbac794302fede4714c9ad17a732e3be54cd800ba2bc11a`,
+  `1db436936bc42f2afa6c5d8ef09e7296b9978929b8676b94c06cb7c8789856c9`, and
+  `27d06ba219b79e14a1f95847b3294cc4fe05372e694fac8d997e9ef23c3e7a43`.
+- Replayed the exact public Position 10 → 11 handoff at 360×780. At 80 ms the
+  phone was busy, and neither the memory pocket nor Moonberry action existed.
+  After the hold, the phone was settled, the collapsed pocket and **Grow
+  Moonberries** were both present, and client/scroll widths remained 360 px.
+- On that public build, **See stock** exposed **Crops grow · Stock stays ·
+  Discoveries stay** plus Clover Seed 2, Glowroot Seed 1, Compost 2, and Willow
+  Fiber 2 while removing the conflicting world and Rosie targets. Reload
+  returned the pocket collapsed and restored the Moonberry action.
+- The deployed companion page now links to Position 10 as **Plant Glowroot,
+  then open the Farm memory pocket**.
 
 ### Next highest-leverage weakness
 
