@@ -276,7 +276,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 83. **v0.82 — One Cause at a Time (shipped):** let Provision, Tool, Pack, and
     the resulting find each own one field note while the illustrated Adventure
     remains primary.
-84. **v0.83 — The Trowel Opens the Roots (shipping):** separate the first
+84. **v0.83 — The Trowel Opens the Roots (shipped):** separate the first
     outing's Tool from its background and let one restrained dig fulfill the
     existing Hand Trowel cause.
 
@@ -331,8 +331,26 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   surrounding Position 9 layout is otherwise unchanged from v0.82's verified
   390×844 render.
 - `npm run prototype:homegrown:test` passes 53/53 and `npx tsc --noEmit`
-  passes locally. Rive and repository quality gates, deployment, and public
-  artifact verification follow this feature commit.
+  passes locally. `npm run verify:rive-homegrown` passes both authored Rive
+  contracts. `npm run quality:check` passes its quality contracts, 157-file
+  layout inspection, 324-sprite integrity gate, security contracts,
+  TypeScript, 78 layout tests, and 202 security tests; Watchman's existing
+  recrawl notice is the only warning.
+- Feature commit `bea16d2` deployed successfully through GitHub Pages run
+  `31261753775`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `ee0c2b2014271cda7e79cbce818f8576afa8b2e533dd48429a7e38728c5840f6`,
+  `a12c30c385cbd799c1c05e9436a2edce8a56852d9dd08896221e5c62593adf8d`, and
+  `86979c4d080f49c18dbf80d58a062e25ac527e7e323837a46f1c4ee633498f3a`.
+- Replayed the exact public Position 8 → 9 handoff at 360×780, then reloaded
+  the active vignette for a timed capture. At 1.12 seconds the page reported
+  `beat=tool`, `animation=adventure-trowel-one-dig`, the correct Hand Trowel
+  field note, equal 360 px client/scroll widths, and no baked Tool background.
+- The captured public frame kept the moving Tool above the primary action and
+  beside the Rive Glowroot reveal; no overlap obscured Rosie, the Basket, or
+  the story note.
+- The deployed companion page links directly to Position 9 as **Watch Rosie's
+  Trowel reveal the Glowroot**.
 
 ### Next highest-leverage weakness
 
