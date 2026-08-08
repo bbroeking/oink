@@ -280,6 +280,13 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   reaches Position 8 once; reduced motion reaches Position 9 with Rive
   `reduced`; fast-forward preserves the named brief across Positions 6–8.
   Mobile Safari sharpness remains the manual device gate.
+- GitHub Pages run `31229341475` deployed checkpoint `bdb7474`. A fresh public
+  fetch returned CSS `31ac870eb7` and JavaScript `a167c5148f`; the latter
+  contains the named opportunity contract. Public reload retained the complete
+  brief, rapid Pack reached Position 8 once, reduced motion reached Position 9
+  with Rive `reduced`, and fast-forward carried the same brief from Position 6
+  through departure without console errors. The companion site now links
+  **Pack for a glow beneath the hedge** directly to Position 7.
 
 ### Observable acceptance criteria
 
