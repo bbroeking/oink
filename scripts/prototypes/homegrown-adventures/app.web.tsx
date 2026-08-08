@@ -528,7 +528,28 @@ function HarvestStockIcon({ kind }) {
 	return <span className="stock-material-art" aria-hidden="true"><i /><i /><i /></span>;
 }
 
-function HarvestResultPanel({ state, actionLabel, onContinue }) {
+function RegrowthTreatment({ variant }) {
+	if (variant === "B") {
+		return <div className="regrowth-prototype regrowth-prototype-overnight" role="note">
+			<span className="regrowth-moon" aria-hidden="true"><i /></span>
+			<div><strong>Bed 2 rests tonight</strong><small>The rooted plant sends up fresh shoots tomorrow morning.</small></div>
+		</div>;
+	}
+	if (variant === "C") {
+		return <fieldset className="regrowth-prototype regrowth-prototype-reserve">
+			<legend>What happens to the roots?</legend>
+			<button type="button">Stock all 5</button>
+			<button type="button" className="is-selected">Save 1 to regrow</button>
+			<small>One Moonberry stays in Bed 2 for the next harvest.</small>
+		</fieldset>;
+	}
+	return <div className="regrowth-prototype regrowth-prototype-rootstock" role="note">
+		<span className="regrowth-sprout" aria-hidden="true"><i /><i /></span>
+		<div><strong>Roots stay in Bed 2</strong><small>New shoots are already growing for a later harvest.</small></div>
+	</div>;
+}
+
+function HarvestResultPanel({ state, actionLabel, onContinue, regrowthVariant = null }) {
 	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
 	const isMoonberries = state.selectedCrop === "moonberries";
 	const compostBonus = state.compostApplied ? rule.compostYieldBonus : 0;
@@ -555,9 +576,40 @@ function HarvestResultPanel({ state, actionLabel, onContinue }) {
 		<section className="harvest-result-world harvest-result-shelf" aria-label={`${rule.outputName} harvest added to Farm stock`}>
 			<div className="farm-stock-shelf"><strong>Farm stock</strong>{stockGrid}</div>
 			{harvestBasket}
+			{isMoonberries && regrowthVariant && <RegrowthTreatment variant={regrowthVariant} />}
 			{continueButton}
 		</section>
 	);
+}
+
+function RegrowthPrototypeSwitcher({ variant }) {
+	const variants = ["A", "B", "C"];
+	const labels = {
+		A: "Rootstock now",
+		B: "Overnight wake",
+		C: "Reserve a berry",
+	};
+	const move = (offset) => {
+		const current = variants.indexOf(variant);
+		const next = variants[(current + offset + variants.length) % variants.length];
+		const url = new URL(window.location.href);
+		url.searchParams.set("regrowth", next);
+		window.location.assign(url);
+	};
+	useEffect(() => {
+		const onKeyDown = (event) => {
+			if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+			if (event.target instanceof HTMLElement && event.target.matches("input, textarea, [contenteditable]")) return;
+			move(event.key === "ArrowLeft" ? -1 : 1);
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [variant]);
+	return <nav className="regrowth-prototype-switcher" aria-label="Regrowth treatment prototypes">
+		<button type="button" aria-label="Previous regrowth treatment" onClick={() => move(-1)}>←</button>
+		<strong>{variant} — {labels[variant]}</strong>
+		<button type="button" aria-label="Next regrowth treatment" onClick={() => move(1)}>→</button>
+	</nav>;
 }
 
 function BagItemArt({ itemId }) {
@@ -1419,6 +1471,11 @@ function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, p
 function App() {
 	const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 	const initialSearch = new URLSearchParams(window.location.search);
+	// Three throwaway treatments for explaining perennial Moonberry regrowth,
+	// switchable with ?regrowth=A|B|C on the existing Homegrown route.
+	const regrowthPrototype = ["A", "B", "C"].includes(initialSearch.get("regrowth"))
+		? initialSearch.get("regrowth")
+		: null;
 	const loopMode = initialSearch.get("mode") === "loop";
 	const autoPlay = loopMode && !initialSearch.has("position");
 	const requestedPosition = Number(initialSearch.get("position"));
@@ -1428,6 +1485,24 @@ function App() {
 	const reviewMode = loopMode || hasRequestedPosition;
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
+			if (requestedPosition === 6 && regrowthPrototype) {
+				const preset = createPrototypeState(6, {
+					reduceMotion: prefersReduced,
+					adventureRoute: "lanternleaf",
+				});
+				return {
+					...preset,
+					selectedCrop: "moonberries",
+					glowrootPlanted: true,
+					nextPlanting: "moonberries",
+					daysCompleted: 1,
+					farmStock: {
+						...preset.farmStock,
+						moonberries: preset.farmStock["clover-lunch"],
+						"clover-lunch": 0,
+					},
+				};
+			}
 			const persistedReview = deserializeState(localStorage.getItem(HOMEGROWN_REVIEW_STORAGE_KEY), {
 				reduceMotion: prefersReduced,
 			});
@@ -1525,6 +1600,12 @@ function App() {
 	const holdingGlowrootHomeReveal = glowrootHomeReveal && !state.reduceMotion;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
 	const sceneRiveViewModel = useMemo(() => {
+		if (showingHarvestResult && state.selectedCrop === "moonberries" && regrowthPrototype) {
+			return {
+				...riveModel.viewModel,
+				bedTwoState: regrowthPrototype === "B" ? "empty" : "sprout",
+			};
+		}
 		if (
 			!showingAdventureVignette ||
 			opportunity.id !== SECOND_ADVENTURE_OPPORTUNITY.id
@@ -1540,7 +1621,7 @@ function App() {
 			hedgeCrossingOpen: false,
 			hedgeBellEarned: false,
 		};
-	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
+	}, [opportunity.id, regrowthPrototype, riveModel.viewModel, showingAdventureVignette, showingHarvestResult, state.selectedCrop]);
 	const adventureAttentionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "tool"
 		? "adventure-attention"
 		: null;
@@ -1906,6 +1987,7 @@ function App() {
 				state={state}
 				actionLabel={visiblePresentation.label}
 				onContinue={() => act(visiblePresentation.action)}
+				regrowthVariant={regrowthPrototype}
 			/>}
 			{showingAdventureVignette && <AdventureVignetteOverlay
 				state={state}
@@ -1965,6 +2047,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{regrowthPrototype && <RegrowthPrototypeSwitcher variant={regrowthPrototype} />}
 	</main>;
 }
 
