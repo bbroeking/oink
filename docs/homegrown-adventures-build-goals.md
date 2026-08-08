@@ -449,6 +449,21 @@ garden bridge remains on main. Default, alternative-Tool, clue, reload,
 reduced-motion, exact 360×780 touch layout, 49 reducer tests, Rive contracts,
 and repository quality gates pass locally.
 
+**Glowroot-first checkpoint (August 8, 2026):** the planted Glowroot now owns
+one quiet first beat before retained memory and the next purpose compete for
+attention. The reducer still commits **Plant Glowroot** immediately and the
+existing Rive scene still performs its authored 780 ms Home flourish; React
+withholds **The Barn remembers**, the full Farm-stock ledger, and **Grow
+Moonberries** for 900 ms while the compact HUD reads **Glowroot takes root ·
+The Farm remembers**. No modal, reward card, reducer state, persisted timer,
+Rive asset, trigger, economy rule, or progression branch was added. Three
+treatments were captured on
+`codex/homegrown-v080-glowroot-quiet-beat-prototypes`; only the world-first
+treatment remains on main. Normal motion, reduced motion, reload during the
+beat, rapid input, exact one-Seed spend, 360×780 touch layout, 50 reducer/source
+contract tests, Rive contracts, TypeScript, and repository quality gates pass
+locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

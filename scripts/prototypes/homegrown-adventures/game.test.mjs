@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
 	ACTIONS,
 	adventureOpportunity,
@@ -30,6 +32,7 @@ import {
 
 const at = 1_000_000;
 const reduce = (state, action) => homegrownReducer(state, { now: at, ...action });
+const appSource = readFileSync(fileURLToPath(new URL("./app.web.tsx", import.meta.url)), "utf8");
 
 function throughCloverReady() {
 	let state = createInitialState({ now: at });
@@ -1244,6 +1247,15 @@ test("Glowroot cannot be planted before the return is acknowledged or without it
 		farmStock: { ...state.farmStock, "glowroot-seed": 0 },
 	};
 	assert.equal(reduce(noSeed, { type: ACTIONS.PLANT_GLOWROOT }), noSeed);
+});
+
+test("the Glowroot flourish owns one quiet beat before memory and Moonberries return", () => {
+	assert.match(appSource, /const GLOWROOT_HOME_REVEAL_MS = 900;/);
+	assert.match(appSource, /objective: "Glowroot takes root", detail: "The Farm remembers"/);
+	assert.match(appSource, /showingHomeMemory && !holdingGlowrootHomeReveal && <HomeMemoryPanel/);
+	assert.match(appSource, /showingMoonberryPlanting && !holdingGlowrootHomeReveal && <WorldAction/);
+	assert.match(appSource, /nextAction\.type === ACTIONS\.PLANT_GLOWROOT && !state\.reduceMotion/);
+	assert.match(appSource, /window\.clearTimeout\(glowrootHomeRevealTimer\.current\)/);
 });
 
 test("a Near-Discovery still returns useful supplies without granting the Seed", () => {

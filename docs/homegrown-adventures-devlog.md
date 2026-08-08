@@ -268,11 +268,65 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     exact total in Farm stock.
 80. **v0.79 — Seed to Soil (shipped):** carry one returned Glowroot Seed from
     the Barn table, through Rosie's hands, and into Bed 3 before planting.
+81. **v0.80 — Glowroot First (shipping):** let the authored Farm change own one
+    quiet beat before memory, stock, and Moonberries return.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.80 — Glowroot First — 2026-08-08
+
+- Began by replaying the exact public v0.79 Position 10 → 11 handoff at
+  360×780. Within 80 ms of **Plant Glowroot**, the correct `sprout` and authored
+  `flourish` were already active, but **The Barn remembers**, four-column Farm
+  stock, **Grow Moonberries**, and the new objective all appeared on top of the
+  same frame.
+- Compared three treatments on the existing `?variant=A|B|C` route: keep the
+  immediate full handoff, replace it with a Bed-3 confirmation, or let the
+  changing Farm own the beat with only the compact HUD. The world-first
+  treatment won: the Bed label still covered the earned crop, while the quiet
+  treatment made the sprout, open hedge, Hedge Bell, frog, and Rosie readable
+  as one consequence.
+- Captured all three throwaway treatments at commit `669b214` on
+  `codex/homegrown-v080-glowroot-quiet-beat-prototypes`. Main retains only a
+  900 ms local presentation hold aligned to the existing 780 ms Rive Home
+  flourish.
+- **Plant Glowroot** still commits the reducer result and spends exactly one
+  Seed immediately. During the hold the accessible HUD reads **Glowroot takes
+  root · The Farm remembers** and the phone reports busy; the memory panel,
+  stock ledger, next action, and review jumps return after the flourish. No
+  gameplay timer or persisted state was introduced.
+- Reload during the hold resumes the stable developed Farm rather than
+  replaying a ceremony. Reduced motion paints that same complete state
+  immediately. Rapid duplicate taps still spend one Seed and leave the
+  Moonberry purpose intact.
+
+### Validation evidence
+
+- At 80 ms after planting, the rendered 360×780 player had no memory panel or
+  Moonberry action; Rive reported `homeMotion=flourish` and `bedThree=sprout`,
+  while the compact HUD carried the only explanation.
+- After 900 ms, Rive reported `homeMotion=developed`; **The Barn remembers**,
+  Farm stock, and **Grow Moonberries** returned with one Glowroot Seed stored.
+- Reloaded 100 ms into the reveal. The restored screen was not busy, did not
+  replay the flourish, retained Bed 3 as `sprout`, and exposed the exact next
+  purpose. Two rapid taps produced the same single Seed spend.
+- With reduced motion enabled, the same plant action exposed the complete
+  memory and Moonberry state within 80 ms and Rive reported `homeMotion=reduced`.
+- `npm run prototype:homegrown:test` passes 50/50; `npx tsc --noEmit`,
+  `npm run verify:rive-homegrown`, and `npm run quality:check` pass. The only
+  warning is Watchman's existing recrawl notice.
+
+### Next highest-leverage weakness
+
+The quiet beat now lets the new world consequence register, but the large
+instructional **The Barn remembers** panel and four-column stock ledger still
+return together and cover the Farm afterward. The next cycle should preserve
+their exact facts while reducing the persistent post-ceremony teaching UI—one
+first-time memory acknowledgement, then a quieter repeat-state treatment—before
+adding another crop, route, resident, or reward system.
 
 ### v0.79 — Seed to Soil — 2026-08-08
 

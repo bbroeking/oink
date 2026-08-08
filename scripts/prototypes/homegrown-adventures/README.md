@@ -223,6 +223,17 @@ unchanged. The three comparison treatments remain captured on
 `codex/homegrown-v079-seed-handoff-prototypes` at `65c34f3`; main retains only
 the continuous garden bridge.
 
+The v0.80 hierarchy pass lets the resulting Glowroot change own one quiet
+first beat. **Plant Glowroot** still commits the reducer state immediately and
+starts the existing 780 ms Rive Home flourish, but React withholds **The Barn
+remembers**, Farm stock, and the Moonberry action for 900 ms. Only the compact
+HUD reads **Glowroot takes root · The Farm remembers** while the sprout, hedge,
+bell, frog, and Rosie settle; the exact retained UI then returns. Reload resumes
+the stable developed Farm, rapid taps spend one Seed, and reduced motion skips
+the pause. The three comparison treatments remain captured on
+`codex/homegrown-v080-glowroot-quiet-beat-prototypes` at `669b214`; main retains
+only the world-first treatment.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in
