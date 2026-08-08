@@ -580,6 +580,20 @@ no-extra-click cinematic bridge remains on main. Both routes, reduced motion,
 57 reducer/source-contract tests, the Rive contracts, TypeScript, and the
 prototype build pass locally.
 
+**Journey-atmosphere checkpoint (August 8, 2026):** the Position 9 causal
+clearing no longer cuts from night into a bright daytime Farm while Rosie is
+still away. The existing journey watch now fades the complete remembered Farm
+into one readable twilight grade, keeps one restrained warm Home light, and
+recolors its existing route mark, current step, and path lights gold for warm
+moths or pale green for reflected leaves. The approved Adventure departure and
+Homecoming concepts remain the color-continuity reference. Three treatments
+were captured on `codex/homegrown-v088-journey-atmosphere-prototypes` at
+`6a2ed6c`; only whole-Farm dusk plus the small Home light remains on main.
+React/reducer journey facts and every route, timer, Bag, result, reward,
+persistence, and Homecoming rule remain unchanged. Both complete two-day
+routes, reduced motion, 58 reducer/source-contract tests, the Rive contracts,
+TypeScript, and the prototype build pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

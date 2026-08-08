@@ -1083,6 +1083,17 @@ test("the resolved cause sequence hands itself into the idle journey without rev
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-auto-handoff \{ animation: none; \}/);
 });
 
+test("the idle journey keeps Home in route-aware dusk without adding another screen", () => {
+	assert.match(appSource, /className="journey-home-dusk" aria-hidden="true"><i \/><\/div>/);
+	assert.match(appSource, /The twilight paper-craft Barn and remembered Kitchen Patch stay visible while Rosie explores beyond the hedge/);
+	assert.match(stylesSource, /\.journey-watch-open \.scene-plate \{[^}]*filter: brightness\(\.62\) saturate\(\.98\)/s);
+	assert.match(stylesSource, /\.journey-watch-open\[data-adventure-opportunity="lights-past-open-gate"\] \{[^}]*--journey-route-light: #c3ead6/s);
+	assert.match(stylesSource, /\.journey-watch-lights i \{[^}]*background: var\(--journey-route-light\)/s);
+	assert.match(stylesSource, /@keyframes journey-home-dusk-enter/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.journey-watch-open \.scene-plate/);
+	assert.doesNotMatch(appSource, /AtmosphereSwitcher|atmospherePrototype|searchParams\.set\("atmosphere"/);
+});
+
 test("the first Hand Trowel cause performs one separable dig", () => {
 	assert.match(appSource, /showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" \/>/);
 	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"\]\[data-adventure-tool="hand-trowel"\]\[data-adventure-beat="tool"\]/);

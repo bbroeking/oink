@@ -715,6 +715,7 @@ function JourneyWatchPanel({ state, actionLabel, onAction }) {
 			aria-label="Rosie's adventure progress"
 		>
 			<div className="journey-watch-tint" aria-hidden="true" />
+			<div className="journey-home-dusk" aria-hidden="true"><i /></div>
 			<div className="journey-watch-note" role="status" aria-live="polite">
 				<span className="journey-watch-mark" aria-hidden="true" />
 				<small>{homecomingReady ? "The gate bell rings" : "Rosie is away"}</small>
@@ -1148,7 +1149,7 @@ function sceneLabel(state, { gateHomecomingReady = false, plantingGlowroot = fal
 		return "Rosie has returned through the warm paper-craft Barn gate and stands in the yard with her packed satchel. Her Discovery remains inside until the player welcomes her Home.";
 	}
 	if (state.stage === STAGES.ADVENTURE) {
-		return `${stageCopy(state).title}. The warm paper-craft Barn and Kitchen Patch are quiet while Rosie explores beyond the hedge.`;
+		return `${stageCopy(state).title}. The twilight paper-craft Barn and remembered Kitchen Patch stay visible while Rosie explores beyond the hedge.`;
 	}
 	if ([STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage)) {
 		return `${stageCopy(state).title}. Rosie stands in the warm lantern-lit Barn workshop behind a wooden table holding the exact supplies she carried Home.`;

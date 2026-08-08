@@ -1,5 +1,15 @@
 # Homegrown Adventures prototype
 
+The v0.88 journey-atmosphere pass keeps the remembered Farm visibly at dusk
+while Rosie is away. The existing journey watch now fades in over one
+scene-wide evening grade, keeps one restrained warm Home light, and recolors
+the existing trail, route marker, and current step for warm moths or reflected
+leaves. Three structures were compared on the real Position 9 watch at commit
+`6a2ed6c` on `codex/homegrown-v088-journey-atmosphere-prototypes`; the whole-
+Farm dusk treatment won, with only the porch-light cue borrowed from the darker
+vigil. No prototype switcher, new journey screen, state, reward, or Rive input
+remains on main.
+
 The v0.87 journey-handoff pass removes the contradictory resolved note and
 redundant **Let Rosie explore** confirmation from Position 9. After Provision,
 Tool, and Pack have each played, one route-specific **Rosie follows…** bridge

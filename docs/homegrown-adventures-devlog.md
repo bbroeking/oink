@@ -291,11 +291,75 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 88. **v0.87 — The Journey Continues (shipped):** replace the contradictory
     pre-journey find announcement and redundant confirmation with one quiet,
     route-specific bridge into Rosie's existing idle journey watch.
+89. **v0.88 — Home Keeps the Dusk (shipped):** carry the Adventure's evening
+    into the existing journey watch so the remembered Farm feels like the same
+    place waiting for Rosie, with route-aware light and no additional screen.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.88 — Home Keeps the Dusk — 2026-08-08
+
+- Replayed the exact shipped v0.87 handoff. **The journey continues…** held a
+  dark beyond-the-hedge clearing, then cut one second later to the bright blue
+  daytime Farm while **Rosie is following the moths** said she was still away
+  after dusk. The 1280 px render had no layout failure; the discontinuity was
+  entirely in time, color, and place.
+- Compared that cut with the approved `04-adventure-departure.png` and
+  `05-welcome-home-discovery.png` concepts. Both keep Home, the path, and the
+  return in one richly colored evening, so the Farm remains a remembered place
+  rather than becoming a generic wait-screen backdrop.
+- Compared three treatments on the real Position 9 watch: whole-Farm dusk, a
+  clipped night window along the hedge route, and a deeper porch-light vigil.
+  The whole-Farm treatment won because it preserved every Farm consequence and
+  the existing one-action hierarchy. The clipped trail looked pasted over the
+  scene; the vigil hid too much of Home. The winner borrows only the vigil's
+  restrained warm Home light.
+- Captured all three throwaway treatments at commit `6a2ed6c` on
+  `codex/homegrown-v088-journey-atmosphere-prototypes`. Main retains one 440 ms
+  twilight arrival, one static evening grade, one warm Home light, and the
+  existing route lights—no prototype switcher or alternate layout.
+- Warm moths retain a gold trail; reflected leaves now tint the existing route
+  mark, current step, and path lights a pale leaf-green. The accessible scene
+  description names the twilight Farm and remembered Kitchen Patch while Rosie
+  is away.
+- React and the existing reducer still own the journey, completion, action,
+  route, Bag, reward, persistence, and Homecoming states. This checkpoint adds
+  no screen, timer fact, destination, Find, save field, Rive asset, or Rive
+  input. Reduced motion paints the final dusk and Home light without their two
+  new CSS animations.
+
+### Validation evidence
+
+- A full-motion first-route replay reported the existing
+  **Rosie is following the moths** watch, gold route light, the 440 ms
+  `journey-home-dusk-enter`, the independent `journey-home-light-breathe`, no
+  atmosphere switcher, and equal 1280 px client/scroll widths.
+- Continued through the actual first Homecoming, planted Glowroot, grew
+  Moonberries, tickled Rosie, began the next day, and used all eight visible
+  review-position advances to reach the second Adventure. Its real watch read
+  **Rosie is following reflected leaves**, showed Set off → Reflected leaves →
+  Homecoming, and colored the existing mark, current step, and path lights
+  `#c3ead6` with no overflow.
+- Reduced motion on that second route retained the same twilight grade and
+  route identity while reporting no scene-entry or Home-light animation.
+- `npm run prototype:homegrown:test` passes 58/58,
+  `npm run prototype:homegrown:build` passes, `npx tsc --noEmit` passes, and
+  `npm run verify:rive-homegrown` passes both authored Rive contracts.
+- `npm run quality:check` passes the quality contracts, 157-file layout
+  inspection, 324-sprite integrity gate, security contracts, TypeScript, 78
+  layout tests, and 202 security tests. Watchman's existing recrawl notice is
+  the only warning.
+
+### Next highest-leverage weakness
+
+Home and the route now belong to the same evening, but the middle of the idle
+journey still communicates only one fixed route step and one large fast-forward
+action. The next cycle should make waiting itself feel alive with one bounded,
+route-specific ambient progression inside the existing watch—without adding a
+new screen, choice, reward, or opaque timer system.
 
 ### v0.87 — The Journey Continues — 2026-08-08
 
