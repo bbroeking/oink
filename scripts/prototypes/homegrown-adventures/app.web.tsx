@@ -1,4 +1,5 @@
 // @ts-nocheck -- throwaway standalone lab; the reducer and Rive contract are checked separately.
+// Prototype question: how should an idle journey keep an incomplete Bag visibly causal without becoming a results screen?
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -45,6 +46,12 @@ const VARIANTS = {
 	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
 	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+};
+
+const JOURNEY_TRUTH_TREATMENTS = {
+	A: { name: "Truthful note", detail: "The field note alone explains what Rosie can reach." },
+	B: { name: "Clue slip", detail: "A separate Bag clue stays attached beneath the field note." },
+	C: { name: "Route branches", detail: "The field note and route both become the Near-Discovery." },
 };
 
 const STAGE_COPY = {
@@ -776,7 +783,7 @@ function AdventureVignetteOverlay({ state, beat }) {
 	);
 }
 
-function journeyWatchCopy(lanternleaf, journeyPhase) {
+function completeJourneyWatchCopy(lanternleaf, journeyPhase) {
 	if (journeyPhase === "homeward") {
 		return lanternleaf
 			? {
@@ -803,6 +810,92 @@ function journeyWatchCopy(lanternleaf, journeyPhase) {
 		};
 }
 
+function nearDiscoveryJourneyCopy(lanternleaf, journeyPhase, missingSlot) {
+	if (journeyPhase === "homeward") {
+		return {
+			eyebrow: "A useful clue is coming Home",
+			title: "Rosie turns toward the porch light",
+			body: "She knows what to pack next time. Home is waiting beyond the old gate.",
+		};
+	}
+
+	const firstRoute = {
+		provision: {
+			eyebrow: "Daylight at the warm roots",
+			title: "Rosie follows as far as daylight allows",
+			body: "Without a Provision, she marks the warm glow and starts Home with a useful trail clue.",
+		},
+		tool: {
+			eyebrow: "Soft roots beneath the hedge",
+			title: "Rosie studies the sleeping root",
+			body: "Without a Tool, she leaves the roots undisturbed and remembers exactly where to return.",
+		},
+		pack: {
+			eyebrow: "A delicate find stays safe",
+			title: "Rosie leaves the Glowroot where it grows",
+			body: "Without a Pack, she traces its glowing leaf-print and remembers the way back.",
+		},
+	};
+	const secondRoute = {
+		provision: {
+			eyebrow: "Dusk at the open gate",
+			title: "Rosie marks the first reflections",
+			body: "Without a Provision, she saves the night route for another outing and starts Home with a clue.",
+		},
+		tool: {
+			eyebrow: "Reflections beyond the gate",
+			title: "Rosie watches the shifting leaves",
+			body: "Without a Tool, she follows their direction but cannot reveal the complete path.",
+		},
+		pack: {
+			eyebrow: "A delicate trail stays safe",
+			title: "Rosie leaves the trail supplies where they belong",
+			body: "Without a Pack, she records the reflected path so she can return prepared.",
+		},
+	};
+	return (lanternleaf ? secondRoute : firstRoute)[missingSlot] ?? {
+		eyebrow: "A useful clue",
+		title: "Rosie learns where to return",
+		body: "The light Bag changes this outing, but Rosie still brings useful knowledge Home.",
+	};
+}
+
+function neutralJourneyWatchCopy(lanternleaf, journeyPhase) {
+	if (journeyPhase === "homeward") return completeJourneyWatchCopy(lanternleaf, journeyPhase);
+	return lanternleaf
+		? {
+			eyebrow: "Beyond the open gate",
+			title: "Reflected leaves reveal a possible route",
+			body: "Rosie follows what her preparation allows while Home waits beyond the hedge.",
+		}
+		: {
+			eyebrow: "Beyond the hedge",
+			title: "Warm moths reveal a possible trail",
+			body: "Rosie follows what her preparation allows while Home waits beyond the hedge.",
+		};
+}
+
+function journeyWatchPresentation({ lanternleaf, journeyPhase, missingSlot, treatment }) {
+	if (!missingSlot) {
+		return {
+			copy: completeJourneyWatchCopy(lanternleaf, journeyPhase),
+			clue: null,
+			routeLabel: lanternleaf ? "Reflected leaves" : "Warm moth trail",
+		};
+	}
+	const truthfulCopy = nearDiscoveryJourneyCopy(lanternleaf, journeyPhase, missingSlot);
+	const routeLabels = lanternleaf
+		? { provision: "Marked reflections", tool: "Path clue", pack: "Trail map" }
+		: { provision: "Marked the glow", tool: "Root clue", pack: "Leaf-print" };
+	return {
+		copy: treatment === "B" ? neutralJourneyWatchCopy(lanternleaf, journeyPhase) : truthfulCopy,
+		clue: treatment === "B" ? truthfulCopy : null,
+		routeLabel: treatment === "C"
+			? routeLabels[missingSlot]
+			: lanternleaf ? "Reflected leaves" : "Warm moth trail",
+	};
+}
+
 function JourneyPackedStamp({ bag }) {
 	const items = BAG_SLOT_ORDER.map((slot) => ({
 		slot,
@@ -815,12 +908,14 @@ function JourneyPackedStamp({ bag }) {
 	</div>;
 }
 
-function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction }) {
+function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, treatment }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const homecomingReady = state.adventureComplete;
-	const trailLabel = lanternleaf ? "Reflected leaves" : "Warm moth trail";
-	const copy = journeyWatchCopy(lanternleaf, journeyPhase);
+	const missingSlot = state.underprepared ? state.nearDiscoveryReason : null;
+	const presentation = journeyWatchPresentation({ lanternleaf, journeyPhase, missingSlot, treatment });
+	const trailLabel = presentation.routeLabel;
+	const copy = presentation.copy;
 	const homeward = journeyPhase === "homeward";
 	const returnPromise = homecomingReady
 		? null
@@ -828,8 +923,9 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction }) 
 
 	return (
 		<section
-			className={`journey-watch ${homecomingReady ? "is-homecoming-ready" : ""}`}
+			className={`journey-watch journey-truth-${treatment.toLowerCase()} ${missingSlot ? "is-near-discovery" : ""} ${homecomingReady ? "is-homecoming-ready" : ""}`}
 			data-journey-phase={journeyPhase}
+			data-missing-capability={missingSlot ?? undefined}
 			aria-label="Rosie's adventure progress"
 		>
 			<div className="journey-watch-tint" aria-hidden="true" />
@@ -842,6 +938,10 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction }) 
 					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
 					: copy.body}</p>
 			</div>
+			{!homecomingReady && presentation.clue && <div className="journey-clue-slip" role="note">
+				<small>Bag clue · No {BAG_SLOT_LABELS[missingSlot]}</small>
+				<strong>{presentation.clue.title}</strong>
+			</div>}
 			{returnPromise && <div className="journey-return-time-ticket" role="group" aria-label={returnPromise.ariaLabel}>
 				<small aria-hidden="true">Expected Home</small>
 				<strong aria-hidden="true">{returnPromise.display}</strong>
@@ -1229,6 +1329,45 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function JourneyTruthSwitcher({ treatment }) {
+	const keys = Object.keys(JOURNEY_TRUTH_TREATMENTS);
+	const index = keys.indexOf(treatment);
+	const choose = useCallback((nextTreatment) => {
+		const search = new URLSearchParams(window.location.search);
+		search.set("journeytruth", nextTreatment);
+		window.location.search = search.toString();
+	}, []);
+	const previous = useCallback(
+		() => choose(keys[(index + keys.length - 1) % keys.length]),
+		[choose, index, keys],
+	);
+	const next = useCallback(
+		() => choose(keys[(index + 1) % keys.length]),
+		[choose, index, keys],
+	);
+
+	useEffect(() => {
+		const onKeyDown = (event) => {
+			if (event.key === "ArrowLeft") previous();
+			if (event.key === "ArrowRight") next();
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [next, previous]);
+
+	return (
+		<div className="journey-truth-switcher" aria-label="Journey truth prototype switcher">
+			<button type="button" aria-label="Previous journey treatment" onClick={previous}>←</button>
+			<span>
+				<small>Journey treatment {treatment} / {keys.length}</small>
+				<strong>{JOURNEY_TRUTH_TREATMENTS[treatment].name}</strong>
+				<em>{JOURNEY_TRUTH_TREATMENTS[treatment].detail}</em>
+			</span>
+			<button type="button" aria-label="Next journey treatment" onClick={next}>→</button>
+		</div>
+	);
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1323,6 +1462,9 @@ function App() {
 	const hasRequestedPosition = Number.isInteger(requestedPosition) && requestedPosition >= 1 && requestedPosition <= PROTOTYPE_POSITIONS.length;
 	const requestedJourneyPhase = initialSearch.get("journey") === "homeward" ? "homeward" : "trail";
 	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
+	const requestedJourneyTruthTreatment = JOURNEY_TRUTH_TREATMENTS[initialSearch.get("journeytruth")]
+		? initialSearch.get("journeytruth")
+		: "A";
 	const reviewMode = loopMode || hasRequestedPosition;
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
@@ -1808,6 +1950,7 @@ function App() {
 				now={visualNow}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
+				treatment={requestedJourneyTruthTreatment}
 			/>}
 			{showingReturnReward && <ReturnRewardPanel
 				state={state}
@@ -1850,6 +1993,7 @@ function App() {
 			actionLabel={presentation.label}
 			onAction={() => act(presentation.action)}
 		/>}
+		{showingJourneyWatch && <JourneyTruthSwitcher treatment={requestedJourneyTruthTreatment} />}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
