@@ -1039,6 +1039,36 @@ function JourneyPackedStamp({ bag }) {
 	</div>;
 }
 
+// Three physical treatments for Position 9's route, switchable with ?path=, on the existing player route.
+const PATH_PROTOTYPE_VARIANTS = ["A", "B", "C"];
+
+function JourneyPathPrototypeSwitcher({ current }) {
+	const select = useCallback((offset) => {
+		const index = PATH_PROTOTYPE_VARIANTS.indexOf(current);
+		const next = PATH_PROTOTYPE_VARIANTS[(index + offset + PATH_PROTOTYPE_VARIANTS.length) % PATH_PROTOTYPE_VARIANTS.length];
+		const url = new URL(window.location.href);
+		url.searchParams.set("path", next);
+		window.location.assign(url);
+	}, [current]);
+
+	useEffect(() => {
+		const onKeyDown = (event) => {
+			if (event.target instanceof HTMLElement && event.target.closest("input, textarea, [contenteditable='true']")) return;
+			if (event.key === "ArrowLeft") select(-1);
+			if (event.key === "ArrowRight") select(1);
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [select]);
+
+	const names = { A: "Path stones", B: "Tied waymarks", C: "Living lights" };
+	return <nav className="journey-path-prototype-switcher" aria-label="Journey path prototype variants">
+		<button type="button" aria-label="Previous journey-path variant" onClick={() => select(-1)}>←</button>
+		<strong>{current} · {names[current]}</strong>
+		<button type="button" aria-label="Next journey-path variant" onClick={() => select(1)}>→</button>
+	</nav>;
+}
+
 function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, entering = false }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
@@ -1055,10 +1085,17 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, en
 	const returnPromise = homecomingReady
 		? null
 		: formatAdventureReturnPromise(state.adventureReadyAt, { now });
+	const requestedPathVariant = new URLSearchParams(window.location.search).get("path")?.toUpperCase();
+	const pathVariant = PATH_PROTOTYPE_VARIANTS.includes(requestedPathVariant) ? requestedPathVariant : "A";
+	const routeStatus = homecomingReady
+		? "Rosie is at the gate"
+		: homeward
+			? "The lights are turning Home"
+			: trailLabel;
 
 	return (
 		<section
-			className={`journey-watch ${missingSlot ? "is-near-discovery" : ""} ${homecomingReady ? "is-homecoming-ready" : ""} ${entering ? "is-entering" : ""}`}
+			className={`journey-watch path-prototype-${pathVariant.toLowerCase()} ${missingSlot ? "is-near-discovery" : ""} ${homecomingReady ? "is-homecoming-ready" : ""} ${entering ? "is-entering" : ""}`}
 			data-journey-phase={journeyPhase}
 			data-missing-capability={missingSlot ?? undefined}
 			aria-label="Rosie's adventure progress"
@@ -1086,12 +1123,17 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, en
 				</div>}
 			</div>
 			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
-				<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
-				<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
-				<li className={homecomingReady || homeward ? "is-current" : ""}><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></li>
+				<li className="is-complete"><i aria-hidden="true">↗</i><span>Set off</span></li>
+				<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">✦</i><span>{trailLabel}</span></li>
+				<li className={homecomingReady || homeward ? "is-current" : ""}><i aria-hidden="true">⌂</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></li>
 			</ol>
+			{pathVariant === "C" && <div className="journey-light-route" aria-hidden="true">
+				<span>{routeStatus}</span>
+				<i /><i /><i /><i /><i />
+			</div>}
 			<div className="journey-watch-lights" aria-hidden="true"><i /><i /><i /><i /></div>
 			{homecomingReady && <button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>}
+			<JourneyPathPrototypeSwitcher current={pathVariant} />
 		</section>
 	);
 }
