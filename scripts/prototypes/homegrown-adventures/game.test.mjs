@@ -1607,11 +1607,16 @@ test("the Glowroot flourish owns one quiet beat before memory and Moonberries re
 test("stable Home memory collapses into one accessible stock pocket", () => {
 	assert.match(appSource, /aria-controls="farm-memory-detail"/);
 	assert.match(appSource, /aria-expanded=\{expanded\}/);
-	assert.match(appSource, /Crops grow · Stock stays · Discoveries stay/);
+	assert.match(appSource, /Glowroot changed Home/);
+	assert.match(appSource, /Bed 3 · Open hedge · Pond frog/);
+	assert.match(appSource, /Farm stock stays useful/);
+	assert.match(appSource, /Open Home changes and Farm stock/);
 	assert.match(appSource, /!homeMemoryExpanded && <WorldAction/);
 	assert.match(appSource, /!homeMemoryExpanded && !showingFarmingPanel/);
 	assert.doesNotMatch(appSource, /className="home-memory-promise"/);
 	assert.doesNotMatch(appSource, /className="home-memory-stock"/);
+	assert.doesNotMatch(appSource, /Crops grow · Stock stays · Discoveries stay/);
+	assert.match(stylesSource, /\.home-memory-pocket > span \{ min-width: 0; overflow: hidden;/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.home-memory-pocket-detail \{ animation: none; \}/);
 });
 

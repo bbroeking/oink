@@ -1225,11 +1225,11 @@ html[data-reduce-motion="true"] .journey-watch-lights i { animation: none; }
 	right: 14px;
 	bottom: 96px;
 	height: 47px;
-	padding: 0 12px;
+	padding: 0 9px;
 	display: grid;
 	grid-template-columns: auto 1fr auto;
 	align-items: center;
-	gap: 9px;
+	gap: 6px;
 	pointer-events: auto;
 	color: var(--paper);
 	background: var(--wood);
@@ -1238,8 +1238,8 @@ html[data-reduce-motion="true"] .journey-watch-lights i { animation: none; }
 	box-shadow: 3px 4px 0 rgba(48,33,22,.72);
 }
 .home-memory-panel-pocket.has-action .home-memory-pocket { bottom: 164px; }
-.home-memory-pocket > strong { font-family: Caprasimo, Georgia, serif; font-size: 11px; font-weight: 400; line-height: 1; white-space: nowrap; }
-.home-memory-pocket > span { color: #f4dda6; font-size: 10px; font-weight: 950; letter-spacing: .02em; text-align: center; white-space: pre; }
+.home-memory-pocket > strong { font-family: Caprasimo, Georgia, serif; font-size: 10px; font-weight: 400; line-height: 1; white-space: nowrap; }
+.home-memory-pocket > span { min-width: 0; overflow: hidden; color: #f4dda6; font-size: 7px; font-weight: 850; letter-spacing: 0; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .home-memory-pocket > small { font-size: 7px; font-weight: 900; text-decoration: underline; text-underline-offset: 2px; text-transform: uppercase; white-space: nowrap; }
 .home-memory-pocket:hover { background: #765039; }
 .home-memory-pocket:focus-visible { outline: 4px solid #267da2; outline-offset: 2px; }

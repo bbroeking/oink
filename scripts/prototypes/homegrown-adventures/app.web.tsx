@@ -1008,9 +1008,9 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 		["≋", "Willow Fiber", stock["willow-fiber"] ?? 0],
 	];
 	return (
-		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label="The Farm remembers this Adventure">
+		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label="Glowroot's lasting Home changes and Farm stock">
 			<div className="home-memory-pocket-detail" id="farm-memory-detail" hidden={!expanded}>
-				<strong>Crops grow · Stock stays · Discoveries stay</strong>
+				<strong>Farm stock stays useful</strong>
 				<div aria-label="Current Farm stock">
 					{stockItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
 				</div>
@@ -1020,11 +1020,11 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 				className="home-memory-pocket"
 				aria-controls="farm-memory-detail"
 				aria-expanded={expanded}
-				aria-label={expanded ? "Close Farm memory and stock" : "Open Farm memory and stock"}
+				aria-label={expanded ? "Close Home changes and Farm stock" : "Open Home changes and Farm stock"}
 				onClick={onToggle}
 			>
-				<strong>The Farm remembers</strong>
-				<span aria-hidden="true">{stockItems.map(([icon, , amount]) => `${icon}${amount}`).join("  ")}</span>
+				<strong>Glowroot changed Home</strong>
+				<span>Bed 3 · Open hedge · Pond frog</span>
 				<small>{expanded ? "Close" : "See stock"}</small>
 			</button>
 			{showAction && <button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>}
