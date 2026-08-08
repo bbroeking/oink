@@ -304,6 +304,15 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   and the page retained its full-width touch composition. With reduced motion,
   the component reported `reduced`, its live layer was hidden, and the static
   illustrated leaves still communicated the route.
+- GitHub Pages run `31232910852` deployed main commit `968a4bd`, which contains
+  v0.72 commit `2c16c0d`. Fresh public fetches returned CSS `bbccab7cef`,
+  JavaScript `28b53f6492`, and the exact 665-byte Rive asset
+  `039413337d`. A public first-return → changed-Home → new-day play-through and
+  eight Next-position fast-forwards reached **Lanternleaf Path** with one
+  `ready` canvas and `Lanternleaf Reflection Pulse` in its luminous hold. A
+  public reduced-motion replay reported `reduced` while preserving the named
+  route, static leaf clue, and complete interface. The companion site now links
+  **Play the Rive-lit Adventure loop**.
 
 ### Observable acceptance criteria
 
