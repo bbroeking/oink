@@ -29,7 +29,11 @@ exact Clover Lunch, Moonberry, or empty-Provision consequence; the following
 Tool cause now uses the same world-first grammar: the existing authored Rosie
 Notice and physical Hand Trowel or Lantern remain primary, route-aware soil,
 light, or undisturbed-leaf responses replace the large receipt, and the HUD
-names every equipped or empty outcome; Pack retains its existing later beat;
+names every equipped or empty outcome; the final Pack cause now finishes the
+same card-free sequence: the existing find enters the Wicker Basket or Cloth
+Wrap, a restrained Pack-aware response completes the transfer, empty Pack
+remains a kind remembered clue, and the HUD names every complete or
+Near-Discovery result;
 second route now adds one dedicated native Rive reflection layer whose
 authored rise, luminous hold, and fade animate only the painted Lanternleaf
 trail, while reduced motion retains the static illustrated clue; the
@@ -362,6 +366,22 @@ leaves. No Rive binary, trigger, reducer outcome, reward, timer, inventory rule,
 save fact, encounter, or screen was added. The next visible weakness is Pack:
 its physical carried-find handoff works, but its remaining large receipt is now
 the only report card inside the three-cause sequence.
+
+**Pack-receives-the-find checkpoint (August 8, 2026):** the last large Bag-cause
+receipt has been removed. Three real treatments were captured at commit
+`f1baaa4` on `codex/homegrown-v111-pack-beat-prototypes`: the existing receipt,
+a smaller Pack-side label, and a card-free physical resolution. The physical
+resolution won because the already-authored find-to-Pack handoff is the payoff;
+both labels made the player read while it happened. Wicker Basket, Cloth Wrap,
+Near-Discovery, and empty-Pack results now receive exact route-aware HUD copy
+and hidden live-region causes. Wicker and Cloth receive distinct restrained
+finishes; empty Pack shows only remembered trail leaves and never mounts a
+collected find. The three Provision / Tool / Pack beats now contain zero field
+note cards. No Rive motion, binary, View Model value, reward, reducer outcome,
+timer, inventory rule, save fact, encounter, destination, or screen was added.
+The next visible weakness is the separate resolved handoff: after the clean
+three-beat story, a centered **The journey continues…** sign briefly returns
+the experience to report UI before the idle trail begins.
 
 **Next-Seed checkpoint (August 7, 2026):** the remembered Position 2 now leads
 with one full-width **Clover Seed** decision that names its stock and its purpose

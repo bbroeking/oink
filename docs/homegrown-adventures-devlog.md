@@ -365,11 +365,71 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 111. **v0.110 — The Ground Answers the Tool (shipped):** remove the next large
     receipt and let Rosie's Notice, the physical Tool, route-aware ground or
     light responses, and the existing HUD explain the cause together.
+112. **v0.111 — The Pack Receives the Find (shipped):** remove the final Bag
+    receipt, keep the physical find-to-Pack handoff primary, and explain every
+    complete, clue, alternative, and empty-Pack outcome in the existing HUD.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.111 — The Pack Receives the Find — 2026-08-08
+
+- Began from the card-free Provision and Tool beats. Pack was the only remaining
+  Bag cause that covered the clearing with a field-note receipt, even though a
+  complete Glowroot find already moved visibly into the selected Pack.
+- Compared the existing receipt, a smaller Pack-side label, and a card-free
+  physical resolution in the real Position 9 composition. The card-free
+  treatment won because both labels redirected attention during the transfer.
+- Captured all three treatments and the decision at commit `f1baaa4` on
+  `codex/homegrown-v111-pack-beat-prototypes`. Main contains no switcher,
+  extended timing, or Pack label, and the now-unused field-note markup and CSS
+  have been removed.
+- Wicker Basket, Cloth Wrap, complete Discovery, Near-Discovery, and no Pack now
+  receive exact route-aware HUD copy plus hidden live-region causes. Wicker and
+  Cloth use distinct restrained finishes. Empty Pack uses remembered trail
+  leaves and never displays the complete-branch find handoff.
+- The existing find-to-Pack animation, 900 ms beat, deterministic reward rules,
+  later journey, reduced-motion behavior, Rive binary, View Model, and authored
+  motions are unchanged. The three Bag causes now contain zero field-note cards.
+
+### Local validation evidence
+
+- Replayed the real Glowroot Pack beat with WebGL enabled. It reported exact
+  Wicker Basket copy, zero field-note cards, three Pack responses, the correct
+  `wicker-basket` visual kind, a visible find handoff, and a ready Rive scene.
+  Lanternleaf rendered its route-specific supply copy; the Near-Discovery state
+  kept the find hidden.
+- `npm run prototype:homegrown:test` passes 82/82, including complete and clue
+  branches, Wicker Basket, Cloth Wrap, no Pack, hidden cause text, reduced
+  motion, the find handoff, and the absence of field-note markup and CSS. `npm
+  run prototype:homegrown:build`, `npm run quality:loop`, `npm run
+  quality:check`, `npm run verify:rive-homegrown`, and `npm run verify:rive-web`
+  pass. The quality gate covers 157 layout files, 324 sprites, security
+  contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
+  existing recrawl notice and manual mobile Safari checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `3fd3fc4` deployed successfully through GitHub Pages run
+  `31281977886`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `0e63b20d9bab7580d54785e1eebee76f7057bf3b5bf6f808de9a6dcced309897`
+  - player JavaScript: `7bae0607b9604d6c809086a6275ac237dd80d84740b54cb20079126f869d549a`
+  - player CSS: `9761695267738c907f3eb34c6abedd85e56635647aa1af239b094b973ec14e67`
+- Public rendered playback at Pack reports exact Wicker Basket copy, zero
+  field-note cards, three Pack responses, `wicker-basket`, a visible find
+  handoff, and a ready authored Rive scene.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=9&route=glowroot&v=3fd3fc4`
+
+### Next highest-leverage weakness
+
+After the clean three-cause story, the separate resolved beat still places a
+centered **The journey continues…** sign over the clearing. Test a world-led
+handoff into the existing idle trail without adding another journey screen,
+timer, encounter, or reward.
 
 ### v0.110 — The Ground Answers the Tool — 2026-08-08
 
