@@ -38,10 +38,11 @@ import {
 } from "./homegrownRiveModel.mjs";
 import "./styles.css";
 
+// PROTOTYPE — three Provision-causality treatments on the existing Adventure route.
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Spotlight", question: "Is highlighting Clover Lunch enough to explain why Rosie can stay until dusk?" },
+	B: { name: "Lunch Lift", question: "Does one physical lift toward Rosie make the one-use Provision legible?" },
+	C: { name: "Lunch to Dusk", question: "Does the same use response plus one restrained dusk shift tell the complete cause?" },
 };
 
 const STAGE_COPY = {
