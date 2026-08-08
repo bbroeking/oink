@@ -313,6 +313,21 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Direct reload retained the new first-return objective and action. Reduced
   motion reported the stable authored Rive pose, kept the same hierarchy at
   360×780, and produced no console warnings or errors.
+- GitHub Pages run
+  [`31257013908`](https://github.com/bbroeking/oink/actions/runs/31257013908)
+  checked out exact feature commit `c323c05` and deployed the resulting player.
+  GitHub's dynamic deployment metadata retained the preceding revision label,
+  so source proof uses the run's checkout log plus the served artifact rather
+  than that lagging label.
+- The exact public player served CSS `f29ae4d7f4` and JavaScript `1ff539fcfc`.
+  Its 360×780 render exposed one **Take Seed to Bed 3** action, retained the
+  12px action-to-rail gap and exact 360px body width, and logged no warning or
+  error.
+- Public reload retained Position 10, **Glowroot can change the Farm**, and the
+  new action. Activating it reached Position 11 with **Bed 3 is ready for
+  Glowroot**, **Glowroot Seed 2 → 1**, and the separate **Plant Glowroot**
+  action. The companion site published **Carry Rosie's Discovery to the
+  garden**.
 
 ### Next highest-leverage weakness
 
