@@ -42,6 +42,10 @@ the completed causal vignette now leaves one compact **Packed** stamp on the
 field note so the chosen Provision, Tool, and Pack remain recognizable during
 the wait, with an exact **Rosie set out with** group label and truthful empty
 slots, while Homecoming removes the reminder before welcoming Rosie;
+that same note now carries one restrained **Expected Home** ticket derived
+from the reducer's already persisted `adventureReadyAt` timestamp, giving the
+idle wait a reload-stable local return promise without a countdown, additional
+timer, or new save fact, and Homecoming removes it at the gate;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive

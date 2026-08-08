@@ -312,11 +312,68 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 95. **v0.94 — The Journey Remembers the Bag (shipped):** keep one quiet,
     truthful stamp of the Provision, Tool, and Pack choices attached to the
     journey note until Rosie reaches the gate.
+96. **v0.95 — Home Has a Time (locally verified):** attach one calm local
+    **Expected Home** promise to the existing journey note, derived from the
+    outing's persisted completion timestamp without adding a countdown or
+    another timer system.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.95 — Home Has a Time — 2026-08-08
+
+- Began by replaying the exact shipped v0.94 homeward watch. The route, current
+  phase, and packed items were visible, but the player still could not answer
+  the basic idle-game question: when will Rosie be Home?
+- Compared three treatments on the real Position 9 Farm: a small ticket
+  attached to the field note, a time sentence inside the note, and a clock
+  folded into the Homeward route endpoint. The ticket won. The sentence was
+  too easy to miss, while the endpoint became cramped and changed a place into
+  a timing label.
+- Captured all three throwaway treatments at commit `3b2a8a6` on
+  `codex/homegrown-v095-return-time-prototypes`. Main retains only the attached
+  ticket; no `returntime` query or comparison switcher ships.
+- **Expected Home · Around [local time]** is formatted from the same persisted
+  `adventureReadyAt` fact that already completes the six-hour journey. It does
+  not tick, create a second timer, or announce repeatedly.
+- The ticket balances the existing **Packed** stamp beneath the note and stays
+  subordinate to **Rosie is heading Home**. Its accessible group label says
+  **Rosie is expected Home around [time]** once, while its visible children are
+  hidden from duplicate screen-reader announcement.
+- The ticket appears during both trail and homeward waiting, survives reload,
+  and leaves before **Rosie is Home** and the Homecoming action. No route,
+  duration, reward, state transition, save field, animation, Rive asset, or
+  Rive input changed.
+- The required Impeccable product-design review substituted for unavailable
+  Claude Design. It selected the attached treatment for preserving the note,
+  route, and Farm hierarchy without adding a panel or converting the scene
+  into a countdown dashboard.
+
+### Local validation evidence
+
+- Rendered the selected treatment at the exact 390×844 game surface and in the
+  fitted desktop frame. The time ticket and Packed stamp remain separate, the
+  route is unobstructed, and there is no page overflow.
+- Reload retained the exact same **Rosie is expected Home around 2:36 PM**
+  label. Fast-forward removed it at the gate while retaining **Rosie is Home**.
+- The Lanternleaf route retained its silver-reflection copy and the same return
+  promise. Toggling reduced motion set `data-reduce-motion="true"` without
+  removing or duplicating the time.
+- The production render contains no return-time prototype switcher.
+  `npm run prototype:homegrown:test` passes 66/66 and
+  `npm run prototype:homegrown:build` passes. `npx tsc --noEmit` and
+  `npm run verify:rive-homegrown` pass both authored Rive contracts.
+  `npm run quality:check` passes the quality contracts, 157-file layout gate,
+  324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
+  and 202 security tests. Watchman's existing recrawl notice is the only
+  warning. Public proof will be recorded after deployment.
+
+### Next highest-leverage weakness
+
+Select the next bounded player-visible weakness only after replaying the exact
+public v0.95 loop; do not infer it from source or add a parallel system.
 
 ### v0.94 — The Journey Remembers the Bag — 2026-08-08
 

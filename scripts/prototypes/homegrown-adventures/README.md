@@ -1,5 +1,18 @@
 # Homegrown Adventures prototype
 
+The v0.95 return-promise pass derives one calm local **Expected Home** time
+from React's already persisted `adventureReadyAt` timestamp and attaches it to
+the left edge of Position 9's existing field note. Three structures were
+rendered at commit `3b2a8a6` on
+`codex/homegrown-v095-return-time-prototypes`: the attached ticket, a sentence
+inside the note, and a timed route endpoint. The ticket won because it balances
+the existing **Packed** stamp, stays glanceable without compressing the story,
+and leaves **Homeward** as a place rather than turning it into a clock. The
+time remains stable across reload, works for both routes and reduced motion,
+and leaves before **Rosie is Home**. No prototype switcher, query parameter,
+new timer, save field, countdown, reward rule, animation, or Rive input remains
+on main.
+
 The v0.94 journey-packing pass keeps one restrained reminder of the player's
 Provision, Tool, and Pack choices attached to the existing Position 9 field
 note after the causal vignette ends. Three structures were rendered at commit

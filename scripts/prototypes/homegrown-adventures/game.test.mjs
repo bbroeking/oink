@@ -1193,6 +1193,17 @@ test("the journey watch keeps a quiet truthful reminder of what Rosie packed", (
 	assert.doesNotMatch(appSource, /JourneyBagPrototypeSwitcher|loadoutTreatment|searchParams\.set\("loadout"/);
 });
 
+test("the journey watch gives the persisted return time one calm stable place", () => {
+	assert.match(appSource, /function formatAdventureReturnTime\(timestamp\)/);
+	assert.match(appSource, /new Intl\.DateTimeFormat\(undefined, \{/);
+	assert.match(appSource, /const returnTime = homecomingReady \? null : formatAdventureReturnTime\(state\.adventureReadyAt\)/);
+	assert.match(appSource, /className="journey-return-time-ticket" role="group" aria-label=\{`Rosie is expected Home around \$\{returnTime\}`\}/);
+	assert.match(appSource, /<small aria-hidden="true">Expected Home<\/small>/);
+	assert.match(appSource, /<strong aria-hidden="true">Around \{returnTime\}<\/strong>/);
+	assert.match(stylesSource, /\.journey-return-time-ticket \{[^}]*left: 31px;[^}]*top: 174px;[^}]*width: 136px;[^}]*height: 39px/s);
+	assert.doesNotMatch(appSource, /ReturnTimePrototypeSwitcher|returnTimeVariant|searchParams\.set\("returntime"/);
+});
+
 test("the first Hand Trowel cause performs one separable dig", () => {
 	assert.match(appSource, /showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" \/>/);
 	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"\]\[data-adventure-tool="hand-trowel"\]\[data-adventure-beat="tool"\]/);

@@ -639,6 +639,32 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 }
 .journey-packed-stamp > span.is-empty { opacity: .46; }
 .journey-packed-stamp .bag-item-art { transform: scale(.68); }
+.journey-return-time-ticket {
+	position: absolute;
+	z-index: 3;
+	left: 31px;
+	top: 174px;
+	width: 136px;
+	height: 39px;
+	padding: 5px 9px;
+	display: grid;
+	align-content: center;
+	gap: 2px;
+	color: var(--ink-soft);
+	background: color-mix(in srgb, var(--paper-deep) 97%, transparent);
+	border: 2px solid var(--ink);
+	border-radius: 8px 8px 9px 11px;
+	box-shadow: 2px 2px 0 color-mix(in srgb, var(--ink) 58%, transparent);
+	transform: rotate(-.65deg);
+}
+.journey-return-time-ticket small {
+	font-size: 7px;
+	font-weight: 950;
+	letter-spacing: .04em;
+	line-height: 1;
+	text-transform: uppercase;
+}
+.journey-return-time-ticket strong { font-size: 9px; line-height: 1; }
 .journey-watch-route {
 	position: absolute;
 	left: 31px;
