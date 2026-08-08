@@ -294,7 +294,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 89. **v0.88 — Home Keeps the Dusk (shipped):** carry the Adventure's evening
     into the existing journey watch so the remembered Farm feels like the same
     place waiting for Rosie, with route-aware light and no additional screen.
-90. **v0.89 — The Trail Turns Home (locally verified):** let the existing
+90. **v0.89 — The Trail Turns Home (shipped):** let the existing
     journey note and route advance once from exploring to heading Home, derived
     from the outing's persisted timestamps rather than a new timer system.
 
@@ -365,6 +365,20 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
   and 202 security tests. Watchman's existing recrawl notice is the only
   warning.
+- Feature commit `3e88199` deployed successfully through GitHub Pages run
+  `31266035078`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `362333a6c48ba63679b2451266ea3e133788a75a9e4ff01099f155fb9955f426`,
+  `d0e56f0017e1cd911a5176c908b013c47c84dbaca48f63cbda06092feaed7306`, and
+  `a924db2d0fc0d3f27643fe7df1b9157a0597f11a11399c258a6574265f058eb4`.
+- A fresh public homeward replay rendered **The moths turn Home · Rosie is
+  heading Home**, completed Warm moth trail, current Homeward, the brighter
+  porch light, and the existing reachable fast-forward action. Fast-forward
+  advanced that exact served build to **The gate bell rings · Rosie is Home**,
+  current **At Home**, and **Welcome Rosie home**, with no journey-progress
+  prototype switcher.
+- The public companion page exposes **Follow Rosie's trail Home** and links
+  directly to the reviewable Position 9 homeward beat.
 
 ### Next highest-leverage weakness
 
