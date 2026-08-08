@@ -426,6 +426,50 @@ export function adventureStory(state) {
 	};
 }
 
+export function nearDiscoveryGuide(state) {
+	const lanternleaf = adventureOpportunity(state).id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const routeCopy = lanternleaf
+		? {
+			provision: {
+				story: "Rosie recorded where the reflected leaves begin before nightfall.",
+				next: "A Provision lets Rosie stay until the silver route appears.",
+				action: "Open the Provision pocket",
+			},
+			tool: {
+				story: "Rosie recorded which leaves turn toward the open gate.",
+				next: "A Tool lets Rosie trace the complete reflected path.",
+				action: "Open the Tool pocket",
+			},
+			pack: {
+				story: "Rosie mapped the Lanternleaf Path and left its supplies safe.",
+				next: "A Pack lets Rosie bring the trail supplies Home.",
+				action: "Open the Pack pocket",
+			},
+		}
+		: {
+			provision: {
+				story: "Rosie recorded where warm moths gather before the Glowroot opens.",
+				next: "A Provision lets Rosie wait for the seed to open at dusk.",
+				action: "Open the Provision pocket",
+			},
+			tool: {
+				story: "Rosie recorded the warm root resting beneath the soft soil.",
+				next: "A Tool lets Rosie work carefully with the sleeping root.",
+				action: "Open the Tool pocket",
+			},
+			pack: {
+				story: "Rosie brought Home the Glowroot's delicate glowing leaf-print.",
+				next: "A Pack lets Rosie protect the Seed on the way Home.",
+				action: "Open the Pack pocket",
+			},
+		};
+	return routeCopy[state.nearDiscoveryReason] ?? {
+		story: "Rosie recorded a promising route in the Field Guide.",
+		next: "A different Bag choice can reveal more on the next outing.",
+		action: "Open Rosie’s Bag",
+	};
+}
+
 export function normalizePrototypePosition(value) {
 	const numeric = Number(value);
 	return Number.isInteger(numeric) && numeric >= 1 && numeric <= PROTOTYPE_POSITIONS.length
@@ -1310,6 +1354,8 @@ export function homegrownReducer(state, action) {
 
 		case ACTIONS.RETRY_PREP:
 			if (state.stage !== STAGES.NEAR_DISCOVERY) return state;
+			{
+				const guide = nearDiscoveryGuide(state);
 			return changed(
 				state,
 				{
@@ -1322,9 +1368,10 @@ export function homegrownReducer(state, action) {
 					packedProvisionSpent: null,
 				},
 				"retry-prep",
-				"The clue suggests packing Clover Lunch",
+				guide.action,
 				now,
 			);
+			}
 
 		case ACTIONS.PLANT_NEXT:
 			if (state.stage !== STAGES.DEVELOPED) return state;
@@ -1597,7 +1644,7 @@ export function primaryAction(state) {
 		return { type: ACTIONS.PLANT_GLOWROOT, label: "Plant Glowroot" };
 	}
 	if (state.stage === STAGES.NEAR_DISCOVERY) {
-		return { type: ACTIONS.RETRY_PREP, label: "Adjust Rosie’s Bag" };
+		return { type: ACTIONS.RETRY_PREP, label: nearDiscoveryGuide(state).action };
 	}
 	if (state.nextPlanting === "moonberries") {
 		return {
@@ -1794,19 +1841,11 @@ export function playerPresentation(state) {
 		};
 	}
 	if (state.stage === STAGES.NEAR_DISCOVERY) {
-		const followingLanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+		const guide = nearDiscoveryGuide(state);
 		return {
 			target: WORLD_TARGETS.BAG,
-			objective: (followingLanternleaf ? {
-				provision: "A Provision reaches nightfall",
-				tool: "A Tool can trace the reflections",
-				pack: "A Pack can carry trail supplies",
-			} : {
-				provision: "A Provision could extend the trip",
-				tool: "A Tool could uncover the Find",
-				pack: "A Pack could carry the Find Home",
-			})[state.nearDiscoveryReason] ?? "Rosie found a useful clue",
-			label: "Adjust Rosie’s Bag",
+			objective: `${opportunity.clueName} · Field Guide`,
+			label: guide.action,
 			action,
 		};
 	}

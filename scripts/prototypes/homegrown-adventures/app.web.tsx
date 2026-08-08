@@ -26,6 +26,7 @@ import {
 	HOMEGROWN_STORAGE_KEY,
 	homegrownReducer,
 	HARVEST_PATTERN,
+	nearDiscoveryGuide,
 	playerPresentation,
 	PROTOTYPE_POSITIONS,
 	serializeState,
@@ -566,8 +567,8 @@ function BagSelectionOption({ slot, item, selected, disabled, detail, onSelect }
 	);
 }
 
-function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, onSelect, onConfirm }) {
-	const [focus, setFocus] = useState("provision");
+function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initialFocus = "provision", onSelect, onConfirm }) {
+	const [focus, setFocus] = useState(initialFocus);
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
 	const selectedPackCost = bagPackingCost(bag.pack ?? null);
@@ -919,7 +920,7 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
 	const opportunity = adventureOpportunity(state);
 	const lanternleafDiscovery = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
-	const story = adventureStory(state);
+	const guide = nearDiscovery ? nearDiscoveryGuide(state) : null;
 	const packReward = bagReturnReward(state.bag?.pack ?? null);
 	const toolBonus = nearDiscovery ? null : toolReturnBonus(state.bag?.tool ?? null);
 	const glowrootAmount = 1 + (toolBonus?.itemId === "glowroot-seed" ? toolBonus.amount : 0);
@@ -938,26 +939,30 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 			{toolBonus?.itemId === "willow-fiber" && (
 				<span className="return-tool-bonus return-tool-bonus-fiber" aria-hidden="true" />
 			)}
-			<div className="return-discovery-plaque">
-				<span className="return-card-eyebrow">{nearDiscovery ? "Useful clue" : lanternleafDiscovery ? "New route" : "New Discovery"}</span>
+			<div className={`return-discovery-plaque ${nearDiscovery ? "is-near-discovery" : ""}`}>
+				<span className="return-card-eyebrow">{nearDiscovery ? "Field Guide updated" : lanternleafDiscovery ? "New route" : "New Discovery"}</span>
 				<strong>{nearDiscovery ? opportunity.clueName : lanternleafDiscovery ? opportunity.discoveryName : `Glowroot Seed  +${glowrootAmount}`}</strong>
 				<small>{nearDiscovery
-					? story.result
+					? guide.story
 					: lanternleafDiscovery
 						? `Glowroot revealed a repeatable path · ${glowrootAmount === 1 ? "one Seed stays" : "two Seeds stay"} in Farm stock`
 						: "A slow Crop that glows after dusk"}</small>
+				{nearDiscovery && <div className="return-guide-next">
+					<span>Try next time</span>
+					<b>{guide.next}</b>
+				</div>}
 			</div>
-			<div className="return-stock-ledger" aria-label="Farm stock returned">
-				<strong className="return-stock-title">Added to Farm stock</strong>
+			<div className={`return-stock-ledger ${nearDiscovery ? "return-stock-ledger-near" : ""}`} aria-label={nearDiscovery ? "Supplies brought Home" : "Farm stock returned"}>
+				<strong className="return-stock-title">{nearDiscovery ? "Supplies brought Home" : "Added to Farm stock"}</strong>
 				<div>
 					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
-					<span>
-						<b>{nearDiscovery ? lanternleafDiscovery ? "Trail clue" : "Leaf-print clue" : "Glowroot Seed"}</b>
-						<strong>{nearDiscovery ? "Found" : `+${glowrootAmount}`}</strong>
-						{!nearDiscovery && toolBonus?.itemId === "glowroot-seed" && (
+					{!nearDiscovery && <span>
+						<b>Glowroot Seed</b>
+						<strong>+{glowrootAmount}</strong>
+						{toolBonus?.itemId === "glowroot-seed" && (
 							<small className="return-stock-cause">Find +1 · Trowel +1</small>
 						)}
-					</span>
+					</span>}
 					<span>
 						<b>Willow Fiber</b>
 						<strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong>
@@ -967,7 +972,7 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 					</span>
 				</div>
 			</div>
-			<button type="button" className="return-reward-action" disabled={handoffActive} onClick={onAction}>{actionLabel}</button>
+			<button type="button" className="return-reward-action" disabled={handoffActive} onClick={onAction}>{nearDiscovery ? guide.action : actionLabel}</button>
 		</section>
 	);
 }
@@ -1893,6 +1898,7 @@ function App() {
 				farmStock={state.farmStock}
 				opportunity={opportunity}
 				activeSelection={riveModel.bagReceive}
+				initialFocus={state.nearDiscoveryReason ?? "provision"}
 				onSelect={selectBagItem}
 				onConfirm={() => act(visiblePresentation.action)}
 			/>}

@@ -21,6 +21,7 @@ import {
 	HARVEST_PATTERN,
 	homegrownReducer,
 	JOURNEY_HOMEWARD_RATIO,
+	nearDiscoveryGuide,
 	playerPresentation,
 	PROTOTYPE_POSITIONS,
 	primaryAction,
@@ -561,7 +562,8 @@ test("an incomplete Bag finds the Lanternleaf clue without granting the route", 
 	assert.equal(state.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"]);
 	assert.equal(state.farmStock.compost, stockBeforeReturn.compost + 1);
 	assert.equal(state.farmStock["willow-fiber"], stockBeforeReturn["willow-fiber"] + 1);
-	assert.equal(playerPresentation(state).objective, "A Pack can carry trail supplies");
+	assert.equal(playerPresentation(state).objective, "Lanternleaf Trail · Field Guide");
+	assert.equal(playerPresentation(state).label, "Open the Pack pocket");
 });
 
 test("a known Glowroot return stays in Farm stock and completes the second day", () => {
@@ -1055,7 +1057,35 @@ test("every empty Bag slot creates a specific deterministic Near-Discovery", () 
 		state = reduce(state, { type: ACTIONS.WELCOME_HOME });
 		assert.equal(state.stage, STAGES.NEAR_DISCOVERY);
 		assert.match(state.trace.at(-1).detail, /Rosie|seed|root|leaf-print/);
-		assert.match(playerPresentation(state).objective, /Provision|Tool|Pack/);
+		assert.match(playerPresentation(state).objective, /Field Guide/);
+		assert.match(playerPresentation(state).label, new RegExp(`Open the ${missingSlot[0].toUpperCase()}${missingSlot.slice(1)} pocket`));
+	}
+});
+
+test("every Near-Discovery records a route-specific lesson and opens the missing pocket", () => {
+	const firstRoute = createPrototypeState(10, { now: at });
+	const secondRoute = throughSecondBag();
+	const expected = {
+		provision: ["seed to open at dusk", "Provision pocket", "silver route appears"],
+		tool: ["sleeping root", "Tool pocket", "complete reflected path"],
+		pack: ["protect the Seed", "Pack pocket", "trail supplies Home"],
+	};
+
+	for (const missingSlot of ["provision", "tool", "pack"]) {
+		const firstGuide = nearDiscoveryGuide({
+			...firstRoute,
+			stage: STAGES.NEAR_DISCOVERY,
+			nearDiscoveryReason: missingSlot,
+		});
+		const secondGuide = nearDiscoveryGuide({
+			...secondRoute,
+			stage: STAGES.NEAR_DISCOVERY,
+			nearDiscoveryReason: missingSlot,
+		});
+		assert.match(firstGuide.next, new RegExp(expected[missingSlot][0]));
+		assert.match(firstGuide.action, new RegExp(expected[missingSlot][1]));
+		assert.match(secondGuide.next, new RegExp(expected[missingSlot][2]));
+		assert.match(secondGuide.action, new RegExp(expected[missingSlot][1]));
 	}
 });
 
@@ -1618,5 +1648,23 @@ test("a Near-Discovery still returns useful supplies without granting the Seed",
 	assert.equal(state.farmStock["glowroot-seed"], 0);
 	assert.equal(state.farmStock.compost, 2);
 	assert.equal(state.farmStock["willow-fiber"], 1);
-	assert.equal(playerPresentation(state).label, "Adjust Rosie’s Bag");
+	assert.equal(playerPresentation(state).objective, "Glowroot Trail · Field Guide");
+	assert.equal(playerPresentation(state).label, "Open the Tool pocket");
+	assert.equal(primaryAction(state).label, "Open the Tool pocket");
+
+	state = reduce(state, { type: ACTIONS.RETRY_PREP });
+	assert.equal(state.prototypePosition, 7);
+	assert.equal(state.nearDiscoveryReason, "tool");
+	assert.equal(state.trace.at(-1).detail, "Open the Tool pocket");
+});
+
+test("the Near-Discovery Homecoming separates Field Guide knowledge from Farm supplies", () => {
+	assert.match(appSource, /<span className="return-card-eyebrow">\{nearDiscovery \? "Field Guide updated"/);
+	assert.match(appSource, /<b>\{guide\.next\}<\/b>/);
+	assert.match(appSource, /nearDiscovery \? "Supplies brought Home" : "Added to Farm stock"/);
+	assert.match(appSource, /\{!nearDiscovery && <span>\s*<b>Glowroot Seed<\/b>/);
+	assert.match(appSource, /nearDiscovery \? guide\.action : actionLabel/);
+	assert.match(appSource, /initialFocus=\{state\.nearDiscoveryReason \?\? "provision"\}/);
+	assert.match(stylesSource, /\.return-stock-ledger-near > div \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/);
+	assert.doesNotMatch(appSource, /NearHomeSwitcher|nearHomeTreatment|nearhome/);
 });
