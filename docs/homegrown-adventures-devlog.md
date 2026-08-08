@@ -316,7 +316,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     **Expected Home** promise to the existing journey note, derived from the
     outing's persisted completion timestamp without adding a countdown or
     another timer system.
-97. **v0.96 — Tomorrow Means Tomorrow (locally verified):** add local calendar
+97. **v0.96 — Tomorrow Means Tomorrow (shipped):** add local calendar
     context to the existing return ticket only when Rosie's persisted return
     crosses midnight, without changing the journey or expanding the surface.
 
@@ -372,12 +372,35 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   `npm run quality:check` passes the quality contracts, 157-file layout gate,
   324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
   and 202 security tests. Watchman's existing recrawl notice is the only
-  warning. Public proof will be recorded after deployment.
+  warning.
+
+### Public verification evidence
+
+- Feature commit `10c5f41` deployed successfully in GitHub Pages run
+  `31270037392`.
+- Fresh public HTML, JavaScript, and CSS matched the verified local files byte
+  for byte. Their SHA-256 hashes are
+  `ef6794e8b72b25f20a9118ba7cda9017d80a2f48b82a8fb4a23f0b780febfaa5`,
+  `8b75f032c14d3a9a88879dcaad556c33330d54fc16997fb89011b446423cfe5a`,
+  and `82d9a848a57aea26e40812d55664959650f498ff240ef84921b79d6ab4150224`.
+- Replayed both exact public homeward routes. The same-day case remained the
+  quiet **Around 2:55 PM** form with no redundant **Today** label; Glowroot and
+  Lanternleaf retained their distinct route copy and no overnight treatment
+  switcher shipped.
+- Public fast-forward removed the promise before **Rosie is Home** and
+  **Welcome Rosie home**. The overnight case is proven by the captured rendered
+  branch plus pure local-calendar and daylight-saving tests; the public clock
+  did not cross midnight during this verification window.
 
 ### Next highest-leverage weakness
 
-Select the next bounded player-visible weakness only after replaying the exact
-public v0.96 loop; do not infer it from source or add a parallel system.
+Replaying the public morning Tickle into Position 2 shows the next disconnect:
+**A Glow Beneath the Hedge** becomes a small HUD line while the Farm Stock
+drawer immediately dominates, and the curiosity's **soft soil · carry it
+Home** clues disappear until much later. The next cycle should compare one
+quiet way to preserve the physical Adventure invitation through Seed choice,
+so the player understands what Rosie noticed before optimizing stock, without
+adding a modal, quest list, or parallel opportunity system.
 
 ### v0.95 — Home Has a Time — 2026-08-08
 
