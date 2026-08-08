@@ -131,6 +131,16 @@ from Seed choice through Harvest, Bag preparation, and departure, with the clues
 instead of spoiling reward quantities, so Clover Lunch, Hand Trowel, and Wicker
 Basket read as answers to the outing rather than three unrelated bonus items.
 
+The v0.70 consequence pass makes the opened hedge lead somewhere on the next
+Farm day. Once Glowroot is planted, Rosie discovers **Lights Past the Open
+Gate** with a new brief—**nightfall · reflected leaves · gentle wrap**. The
+existing Lantern and Cloth Wrap become legible alternate answers, the causal
+vignette maps **Lanternleaf Path**, and a missing capability returns only the
+**Lanternleaf Trail** clue plus useful Farm materials. The opportunity is
+derived from the remembered Home, so reload and prototype fast-forward preserve
+it without a mission board, new currency, parallel state machine, or Rive-owned
+progression.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

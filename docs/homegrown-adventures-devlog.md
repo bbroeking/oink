@@ -233,11 +233,78 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     opportunity after Rosie's Tickle and carry its duration and environmental
     clues through farming, Bag preparation, and departure without adding a
     mission board or another card stack.
+71. **v0.70 — The Open Gate Leads Somewhere (locally verified):** let the
+    planted Glowroot create a distinct second-day opportunity, make alternate
+    Bag capabilities answer its clues, and return either Lanternleaf Path or a
+    useful trail clue without adding another progression system.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.70 — The Open Gate Leads Somewhere — 2026-08-07
+
+- Began by playing through the remembered second morning. The Farm preserved
+  Glowroot, Moonberries, stock, equipment, and the open crossing, but then
+  repeated **A Glow Beneath the Hedge**. The lasting Home consequence changed
+  scenery without changing what Rosie could explore.
+- Made that consequence causal. A planted Glowroot after the first completed
+  day now reveals **Lights Past the Open Gate** with the compact brief
+  **nightfall · reflected leaves · gentle wrap**. The opportunity is derived
+  from existing persistent Home facts rather than stored as a new mission or
+  scheduled event.
+- Carried the new purpose through Seed choice, planting, growth, Harvest, Bag
+  preparation, departure, waiting, and Homecoming. The same freely chosen Bag
+  now reads differently in context: Clover Lunch reaches nightfall, Lantern
+  follows reflected leaves, and Cloth Wrap protects delicate leaves. Existing
+  Hand Trowel and Wicker Basket alternatives remain useful and deterministic.
+- A complete Bag maps **Lanternleaf Path** and adds that route to the Field
+  Guide. An incomplete Bag adds only **Lanternleaf Trail (clue)** plus Compost
+  and Willow Fiber; it never grants the route or an unearned Glowroot Seed.
+  The story and reward ledger explain which capability changed the result.
+- Updated the eleven-position fast-forward reducer so second-day Return review
+  carries the correct route or clue instead of silently restoring the first
+  Glowroot entries. Reload derives the same opportunity from the remembered
+  Farm. No new crop, equipment, currency, destination selector, Rive input, or
+  parallel state machine was added.
+- The Prototype verdict is positive: a second curiosity can feel like genuine
+  progression when it is caused by a visible Home change and reuses the same
+  preparation grammar. The installed Impeccable review kept that distinction
+  in the quiet objective HUD, physical Bag, causal vignette, and one return
+  plaque instead of adding a mission board or another stack of cards.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 49/49 pass, including the full second
+  opportunity, alternate Lantern/Cloth loadout, deterministic stock deltas,
+  clue-only incomplete return, persistence, and fast-forward.
+- `npm run verify:rive-homegrown` — the 390×844 header and all 60 authored Rive
+  names pass. This checkpoint changes no `.riv` asset or progression contract.
+- `npm run quality:check` — quality contracts, the 157-file layout scan, all
+  324 sprite-integrity checks, security contracts, TypeScript, and 280 focused
+  Jest tests pass.
+- A real 390×844 browser session played both complete Farm days from the first
+  Tickle through the Lanternleaf Homecoming with Lantern and Cloth Wrap. The
+  page reported no console or runtime errors; Bag copy and the return ledger
+  agreed on +1 Clover Seed, +1 Glowroot Seed, and +3 Willow Fiber.
+- At 360×780 with reduced motion, the opportunity survived reload and
+  fast-forward. Emptying the Pack and moving from Position 7 to Position 10
+  produced **Lanternleaf Trail**, +1 Compost, and +1 Willow Fiber without
+  granting **Lanternleaf Path**. Body width remained exactly 360px.
+- Public deployment verification is pending the checkpoint push.
+
+### Observable acceptance criteria
+
+- The second opportunity appears only after the first Adventure visibly opens
+  the crossing and a new Farm day begins.
+- Purpose, farming, Bag clues, story, return, and Field Guide all name the same
+  Lanternleaf route rather than falling back to the first Glowroot outing.
+- A complete Bag unlocks the route; an incomplete Bag gives a specific clue and
+  useful materials without punishment or a false Discovery.
+- Reload and fast-forward preserve the route context and exact stock effects.
+- The next depth pass should give Lanternleaf a visually recognizable path;
+  it must not add a third destination or a new selection screen.
 
 ### v0.69 — The Adventure Has a Name — 2026-08-07
 

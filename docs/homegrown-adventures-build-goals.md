@@ -292,6 +292,25 @@ and fast-forward all pass. The next visible Adventure-depth gap is recurrence:
 the next morning currently repeats the same opportunity instead of presenting
 one new curiosity drawn from the Home that now remembers Glowroot.
 
+**Open-gate consequence checkpoint (August 7, 2026):** the planted Glowroot now
+causes a distinct second-day opportunity, **Lights Past the Open Gate**. Its
+brief—**nightfall · reflected leaves · gentle wrap**—reframes the same compact
+farm and Bag loop around a new route instead of replaying the hedge glow. The
+Lantern previews **Follow reflected leaves** and the Cloth Wrap previews
+**Protect delicate leaves**; their existing deterministic material effects do
+not change. A complete Bag maps the named **Lanternleaf Path**, adds it to the
+Field Guide, and keeps the exact Seed/Fiber/Pack return. An incomplete Bag adds
+only the **Lanternleaf Trail** clue plus Compost and Willow Fiber, never the
+route itself. Reload and the eleven-position fast-forward rail derive the same
+opportunity from the persistent planted Glowroot and completed day. No mission
+board, new resource, new equipment, route picker, second economy, or Rive state
+was added. Real 390×844 two-day play and 360×780 reduced-motion review passed
+with no console errors or body overflow. The next visible gap is route identity:
+the Lanternleaf story is mechanically and verbally distinct, but still borrows
+the first expedition's root-clearing plate. The next checkpoint should make the
+opened-gate path visually recognizable without introducing a third route or
+another interface layer.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its
