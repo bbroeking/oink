@@ -48,6 +48,13 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// THROWAWAY UI STUDY — three Pack beats on the existing Adventure route.
+const PACK_BEAT_VARIANTS = {
+	A: { name: "Field note", question: "Does the final Pack receipt earn its space?" },
+	B: { name: "Pack label", question: "Can one small label support the physical handoff?" },
+	C: { name: "Pack answers", question: "Can the find entering the Pack and the HUD carry the cause?" },
+};
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -851,7 +858,43 @@ function adventureToolPresentation(state) {
 	};
 }
 
-function AdventureVignetteOverlay({ state, beat }) {
+function adventurePackPresentation(state) {
+	const story = adventureStory(state);
+	const opportunity = adventureOpportunity(state);
+	const pack = state.bag?.pack ?? null;
+	const detail = story.journeyTags[2].detail;
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const clue = story.kind === "near-discovery";
+
+	if (pack === "wicker-basket") {
+		return {
+			objective: clue
+				? "Wicker Basket keeps the trail clue safe"
+				: lanternleaf
+					? "Wicker Basket gathers the trail supplies"
+					: "Wicker Basket makes the Glowroot find safe",
+			detail,
+		};
+	}
+	if (pack === "cloth-wrap") {
+		return {
+			objective: clue
+				? "Cloth Wrap protects the trail clue"
+				: lanternleaf
+					? "Cloth Wrap protects the Lanternleaf"
+					: "Cloth Wrap protects the delicate find",
+			detail,
+		};
+	}
+	return {
+		objective: lanternleaf
+			? "Rosie maps the route for another visit"
+			: "Rosie records where the find rests",
+		detail,
+	};
+}
+
+function AdventureVignetteOverlay({ state, beat, variant }) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
@@ -884,6 +927,16 @@ function AdventureVignetteOverlay({ state, beat }) {
 					role="status"
 					aria-live="polite"
 				>
+					<span className="sr-only">{activeTag.name} {activeTag.detail}</span>
+					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
+				</div>
+			) : beat === "pack" && variant === "B" ? (
+				<div key={beat} className="adventure-pack-whisper" role="status" aria-live="polite">
+					<small>{activeTag.name}</small>
+					<strong>{state.bag?.pack ? "Safe for Home" : "Remembered for later"}</strong>
+				</div>
+			) : beat === "pack" && variant === "C" ? (
+				<div key={beat} className="adventure-pack-observation" data-pack-kind={state.bag?.pack ?? "none"} role="status" aria-live="polite">
 					<span className="sr-only">{activeTag.name} {activeTag.detail}</span>
 					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
 				</div>
@@ -1188,7 +1241,7 @@ function PurposeShelf({ state }) {
 
 const RETURN_CEREMONY_MS = 2400;
 const HOMEGROWN_REVIEW_STORAGE_KEY = `${HOMEGROWN_STORAGE_KEY}.review`;
-const ADVENTURE_CAUSE_BEAT_MS = 900;
+const ADVENTURE_CAUSE_BEAT_MS = 2_400;
 const ADVENTURE_HANDOFF_MS = 900;
 const REDUCED_ADVENTURE_HANDOFF_MS = 1800;
 const RAPID_TRANSITION_GUARD_MS = 350;
@@ -1410,6 +1463,19 @@ function VariantSwitcher({ variant, setVariant }) {
 			<span><strong>{variant}</strong><small>{VARIANTS[variant].name}</small></span>
 			<button type="button" aria-label="Next variant" onClick={() => setVariant(keys[(index + 1) % keys.length])}>→</button>
 		</div>
+	);
+}
+
+function PackBeatStudySwitcher({ variant, setVariant }) {
+	const keys = Object.keys(PACK_BEAT_VARIANTS);
+	const index = keys.indexOf(variant);
+	const study = PACK_BEAT_VARIANTS[variant];
+	return (
+		<aside className="pack-beat-switcher" aria-label="Pack beat prototype switcher">
+			<button type="button" aria-label="Previous Pack treatment" onClick={() => setVariant(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span><strong>{variant} — {study.name}</strong><small>{study.question}</small></span>
+			<button type="button" aria-label="Next Pack treatment" onClick={() => setVariant(keys[(index + 1) % keys.length])}>→</button>
+		</aside>
 	);
 }
 
@@ -1656,6 +1722,11 @@ function App() {
 		? {
 			...presentation,
 			...adventureToolPresentation(state),
+		}
+		: showingAdventureVignette && adventureCauseBeat === "pack" && variant === "C"
+		? {
+			...presentation,
+			...adventurePackPresentation(state),
 		}
 		: showingAdventureVignette
 		? {
@@ -2009,6 +2080,7 @@ function App() {
 			{showingAdventureVignette && <AdventureVignetteOverlay
 				state={state}
 				beat={adventureCauseBeat}
+				variant={variant}
 			/>}
 			{showingJourneyWatch && <JourneyWatchPanel
 				state={state}
@@ -2062,6 +2134,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{showingAdventureVignette && <PackBeatStudySwitcher variant={variant} setVariant={setVariant} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
