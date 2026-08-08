@@ -234,6 +234,18 @@ the pause. The three comparison treatments remain captured on
 `codex/homegrown-v080-glowroot-quiet-beat-prototypes` at `669b214`; main retains
 only the world-first treatment.
 
+The v0.81 memory pass keeps that first acknowledgement, then replaces the two
+persistent teaching panels with one secondary **The Farm remembers** pocket.
+Its collapsed state leaves Rosie, all three beds, and the current Farm action
+readable; one explicit **See stock** action opens the permanence promise and the
+same four named quantities inline. Opening the pocket temporarily removes the
+overlapping world action and Rosie hit target, and every game action closes it.
+The drawer is presentation state only: reload returns it collapsed, reduced
+motion removes its 180 ms reveal, and no reducer, inventory, persistence, Rive,
+or economy contract changes. Three structural treatments remain captured on
+`codex/homegrown-v081-home-memory-prototypes` at `9c29852`; main retains only
+the compact Memory Pocket.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

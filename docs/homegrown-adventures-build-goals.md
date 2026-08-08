@@ -464,6 +464,23 @@ beat, rapid input, exact one-Seed spend, 360×780 touch layout, 50 reducer/sourc
 contract tests, Rive contracts, TypeScript, and repository quality gates pass
 locally.
 
+**Farm-memory-pocket checkpoint (August 8, 2026):** after the first Glowroot
+acknowledgement, the developed Farm now keeps one compact **The Farm remembers**
+control instead of restoring a large teaching panel and separate four-column
+ledger. The collapsed pocket preserves the exact four quantities in shorthand
+while leaving Rosie, all three beds, and the current action visually primary.
+**See stock** opens one inline drawer with the full named stock and the exact
+promise **Crops grow · Stock stays · Discoveries stay**; conflicting world and
+Rosie targets are unavailable until it closes. The drawer is local presentation
+state, collapses on reload and gameplay actions, and becomes instant under
+reduced motion. No reducer fact, stock quantity, persistence rule, Rive asset,
+timer, route, reward, or economy changed. Three structural treatments were
+captured on `codex/homegrown-v081-home-memory-prototypes` at `9c29852`; only
+the Memory Pocket remains on main. First reveal, settled repeat state, reload,
+rapid toggles, reduced motion, 360×780 and 390×844 touch layouts, centered
+desktop, 51 reducer/source-contract tests, Rive contracts, and TypeScript pass
+locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

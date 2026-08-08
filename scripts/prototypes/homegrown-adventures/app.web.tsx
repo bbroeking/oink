@@ -818,27 +818,34 @@ function SeedHandoff({ origin, phase }) {
 	);
 }
 
-function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true }) {
+function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expanded, onToggle }) {
 	const stock = state.farmStock ?? {};
+	const stockItems = [
+		["☘", "Clover Seed", stock["clover-seed"] ?? 0],
+		["✦", "Glowroot Seed", stock["glowroot-seed"] ?? 0],
+		["♣", "Compost", stock.compost ?? 0],
+		["≋", "Willow Fiber", stock["willow-fiber"] ?? 0],
+	];
 	return (
-		<section className="home-memory-panel" aria-label="The Barn remembers this Adventure">
-			<div className="home-memory-promise">
-				<strong>The Barn remembers</strong>
-				<div>
-					<span><i aria-hidden="true">☘</i><b>Crops</b><small>keep growing</small></span>
-					<span><i aria-hidden="true">⌂</i><b>Farm stock</b><small>remains</small></span>
-					<span><i aria-hidden="true">✦</i><b>Discoveries</b><small>stay</small></span>
+		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label="The Farm remembers this Adventure">
+			<div className="home-memory-pocket-detail" id="farm-memory-detail" hidden={!expanded}>
+				<strong>Crops grow · Stock stays · Discoveries stay</strong>
+				<div aria-label="Current Farm stock">
+					{stockItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
 				</div>
 			</div>
-			<div className="home-memory-stock" aria-label="Current Farm stock">
-				<strong>Farm stock</strong>
-				<div>
-					<span><i aria-hidden="true">☘</i><small>Clover Seed</small><b>{stock["clover-seed"] ?? 0}</b></span>
-					<span><i aria-hidden="true">✦</i><small>Glowroot Seed</small><b>{stock["glowroot-seed"] ?? 0}</b></span>
-					<span><i aria-hidden="true">♣</i><small>Compost</small><b>{stock.compost ?? 0}</b></span>
-					<span><i aria-hidden="true">≋</i><small>Willow Fiber</small><b>{stock["willow-fiber"] ?? 0}</b></span>
-				</div>
-			</div>
+			<button
+				type="button"
+				className="home-memory-pocket"
+				aria-controls="farm-memory-detail"
+				aria-expanded={expanded}
+				aria-label={expanded ? "Close Farm memory and stock" : "Open Farm memory and stock"}
+				onClick={onToggle}
+			>
+				<strong>The Farm remembers</strong>
+				<span aria-hidden="true">{stockItems.map(([icon, , amount]) => `${icon}${amount}`).join("  ")}</span>
+				<small>{expanded ? "Close" : "See stock"}</small>
+			</button>
 			{showAction && <button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>}
 		</section>
 	);
@@ -1195,6 +1202,7 @@ function App() {
 	const [adventureCauseBeat, setAdventureCauseBeat] = useState("provision");
 	const [seedHandoff, setSeedHandoff] = useState(null);
 	const [glowrootHomeReveal, setGlowrootHomeReveal] = useState(false);
+	const [homeMemoryExpanded, setHomeMemoryExpanded] = useState(false);
 	const transitionLockUntil = useRef(0);
 	const newDayTimer = useRef(null);
 	const glowrootHomeRevealTimer = useRef(null);
@@ -1413,6 +1421,7 @@ function App() {
 	}, [state.reduceMotion]);
 
 	const act = useCallback((nextAction) => {
+		setHomeMemoryExpanded(false);
 		const now = performance.now();
 		const guardsTransition =
 			RAPID_TRANSITION_ACTIONS.has(nextAction.type) ||
@@ -1447,6 +1456,7 @@ function App() {
 
 	const jumpToPosition = useCallback((nextPosition) => {
 		if (seedHandoff || holdingGlowrootHomeReveal) return;
+		setHomeMemoryExpanded(false);
 		const now = performance.now();
 		if (now < transitionLockUntil.current) return;
 		transitionLockUntil.current = now + RAPID_TRANSITION_GUARD_MS;
@@ -1540,7 +1550,7 @@ function App() {
 					</span>
 				</div>
 			</div>
-			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingGlowrootPlanting && (!showingHomeMemory || showingHomeTickle) && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
+			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingGlowrootPlanting && (!showingHomeMemory || showingHomeTickle) && !homeMemoryExpanded && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
 				className={`rosie-hit ${visiblePresentation.target === WORLD_TARGETS.ROSIE ? "is-guided" : ""}`}
 				type="button"
 				aria-label={visiblePresentation.target === WORLD_TARGETS.ROSIE ? visiblePresentation.label : "Tickle Rosie"}
@@ -1598,9 +1608,11 @@ function App() {
 				state={state}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
+				expanded={homeMemoryExpanded}
+				onToggle={() => setHomeMemoryExpanded((value) => !value)}
 				showAction={!showingMoonberryPlanting && !showingHomeTickle}
 			/>}
-			{showingMoonberryPlanting && !holdingGlowrootHomeReveal && <WorldAction
+			{showingMoonberryPlanting && !holdingGlowrootHomeReveal && !homeMemoryExpanded && <WorldAction
 				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}
 				presentation={visiblePresentation}
 				onAction={() => act(visiblePresentation.action)}

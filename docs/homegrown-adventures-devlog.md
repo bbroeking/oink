@@ -270,11 +270,71 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     the Barn table, through Rosie's hands, and into Bed 3 before planting.
 81. **v0.80 — Glowroot First (shipped):** let the authored Farm change own one
     quiet beat before memory, stock, and Moonberries return.
+82. **v0.81 — Memory in Its Place (shipping):** keep the first memory
+    acknowledgement, then collapse repeat-state teaching and stock into one
+    secondary Farm-memory pocket.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.81 — Memory in Its Place — 2026-08-08
+
+- Began by replaying the exact public v0.80 settled Position 11 at 360×780.
+  The quiet Glowroot flourish succeeded, but its resolution restored a 336×74
+  teaching panel at the top and a 336×58 stock ledger near the bottom around
+  the 210×130 Moonberry action. The player could read every fact, but the Farm
+  immediately became interface again.
+- Compared three structural treatments on the existing route: keep the full
+  teaching stack, use one permanently visible inventory shelf, or retain one
+  compact **The Farm remembers** pocket with details on demand. The pocket won
+  because it leaves Rosie, all beds, and the current action readable without
+  discarding the permanence promise or exact stock.
+- Captured all three throwaway treatments at commit `9c29852` on
+  `codex/homegrown-v081-home-memory-prototypes`. Main retains only the compact
+  pocket and no prototype switcher.
+- The collapsed pocket shows the four exact counts in shorthand. **See stock**
+  opens one inline drawer containing **Crops grow · Stock stays · Discoveries
+  stay** and the full Clover Seed, Glowroot Seed, Compost, and Willow Fiber
+  names and quantities.
+- While the drawer is open, the overlapping Moonberry action and Rosie hit
+  target are unavailable. Closing it restores the same action; any gameplay or
+  review jump also closes it. The drawer never changes reducer state, stock,
+  persistence, progression, or a Rive input.
+- Reload returns the repeat state collapsed. Reduced motion makes the drawer
+  reveal immediate while retaining the complete result.
+
+### Validation evidence
+
+- The normal-motion Plant Glowroot handoff still held memory and Moonberries
+  for the approved first 900 ms. Once settled, the 360×780 view showed one
+  332×47 secondary pocket instead of two large persistent panels, with no
+  horizontal overflow.
+- Opening the pocket exposed exact stock of Clover Seed 2, Glowroot Seed 1,
+  Compost 2, and Willow Fiber 2, removed the Moonberry action, and retained the
+  named permanence promise. Closing it restored **Grow Moonberries** without a
+  crop, stock, objective, or position change.
+- Three rapid open/close cycles ended collapsed with the same Moonberry action
+  and quantities. Reload also returned collapsed.
+- The 390×844 player kept a 362×47 pocket above its 306×58 terminal action with
+  equal 390 px client and scroll widths. At 1280×720 the complete 328×709 game
+  remained centered with the pocket and action inside the first viewport.
+- A full continuation through Moonberries, Rosie's shared tickle, **Begin
+  another day**, the next Morning Tickle, and the remembered Clover choice kept
+  Glowroot, dusk moths, frog, Hedge Bell, open path, and stock coherent.
+- `npm run prototype:homegrown:test` passes 51/51; `npx tsc --noEmit` and
+  `npm run verify:rive-homegrown` pass locally. Repository quality and public
+  artifact verification follow this feature commit.
+
+### Next highest-leverage weakness
+
+The persistent Farm hierarchy is now quiet enough to replay the Adventure
+itself as the primary experience. The next cycle should compare the existing
+Position 9 journey against the approved naturalist-expedition promise and pick
+one bounded weakness in its curiosity, environmental storytelling, or visible
+Bag causality. It must deepen the existing Glowroot outing before adding a new
+destination, crop, reward class, or parallel system.
 
 ### v0.80 — Glowroot First — 2026-08-08
 

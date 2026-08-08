@@ -33,6 +33,7 @@ import {
 const at = 1_000_000;
 const reduce = (state, action) => homegrownReducer(state, { now: at, ...action });
 const appSource = readFileSync(fileURLToPath(new URL("./app.web.tsx", import.meta.url)), "utf8");
+const stylesSource = readFileSync(fileURLToPath(new URL("./styles.css", import.meta.url)), "utf8");
 
 function throughCloverReady() {
 	let state = createInitialState({ now: at });
@@ -1253,9 +1254,20 @@ test("the Glowroot flourish owns one quiet beat before memory and Moonberries re
 	assert.match(appSource, /const GLOWROOT_HOME_REVEAL_MS = 900;/);
 	assert.match(appSource, /objective: "Glowroot takes root", detail: "The Farm remembers"/);
 	assert.match(appSource, /showingHomeMemory && !holdingGlowrootHomeReveal && <HomeMemoryPanel/);
-	assert.match(appSource, /showingMoonberryPlanting && !holdingGlowrootHomeReveal && <WorldAction/);
+	assert.match(appSource, /showingMoonberryPlanting && !holdingGlowrootHomeReveal/);
 	assert.match(appSource, /nextAction\.type === ACTIONS\.PLANT_GLOWROOT && !state\.reduceMotion/);
 	assert.match(appSource, /window\.clearTimeout\(glowrootHomeRevealTimer\.current\)/);
+});
+
+test("stable Home memory collapses into one accessible stock pocket", () => {
+	assert.match(appSource, /aria-controls="farm-memory-detail"/);
+	assert.match(appSource, /aria-expanded=\{expanded\}/);
+	assert.match(appSource, /Crops grow · Stock stays · Discoveries stay/);
+	assert.match(appSource, /!homeMemoryExpanded && <WorldAction/);
+	assert.match(appSource, /!homeMemoryExpanded && !showingFarmingPanel/);
+	assert.doesNotMatch(appSource, /className="home-memory-promise"/);
+	assert.doesNotMatch(appSource, /className="home-memory-stock"/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.home-memory-pocket-detail \{ animation: none; \}/);
 });
 
 test("a Near-Discovery still returns useful supplies without granting the Seed", () => {
