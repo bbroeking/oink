@@ -245,11 +245,77 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     the established second route rise, hold, and fade through one dedicated
     native Rive timeline, while the first route and reduced-motion presentation
     retain their existing illustrated states.
+74. **v0.73 — The Journey Comes Before the Find (locally verified):** turn
+    Position 9 into the environmental cause-and-effect beat, let Rosie continue
+    exploring afterward, and reserve the named Discovery or clue for
+    Homecoming without changing any outcome.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.73 — The Journey Comes Before the Find — 2026-08-07
+
+- Began with a complete public v0.72 play-through. Position 9 immediately said
+  **A new Discovery!** and **Rosie found the Lanternleaf Path**, then the next
+  action returned Rosie to **following reflected leaves** before Position 10
+  revealed Lanternleaf Path again. The information was correct, but the story
+  order removed anticipation and made Homecoming repetitive.
+- Split the existing deterministic story presentation into two views of the
+  same reducer facts. Position 9 now owns route-specific `journeyObjective`,
+  `journeyHeadline`, `journeyResult`, and present-tense `journeyTags`.
+  Position 10 continues using the established reward headline, clue, exact
+  materials, and named Field Guide result.
+- The first route now opens with **Warm light stirs beneath the hedge**; the
+  second opens with **Reflected leaves lead Rosie onward**. Their ledgers say
+  what the selected items make possible without mentioning a Seed, Compost,
+  Willow Fiber, Glowroot, Lanternleaf Path, or clue before Rosie returns.
+- Replaced **Continue the story** with **Let Rosie explore**. That action hands
+  the causal vignette into the existing idle wait and **Preview her return**;
+  Homecoming is now the first place the named Discovery appears.
+- Empty Bag slots remain kind and specific. The journey explains what became
+  difficult and how Rosie records the place, while the exact Near-Discovery and
+  useful materials remain deferred to Return.
+- The Prototype and Impeccable verdict is positive: Adventure mode now has a
+  readable preparation → environmental response → anticipation → Homecoming
+  order without another screen, timer, route, reward, or state machine.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 49/49 pass. The vignette contract now
+  asserts that journey copy names all three selected items while containing no
+  reward materials or “found” claim; the original reward contract remains
+  intact.
+- `npm run verify:rive-homegrown` — both 390×844 Rive assets and all authored
+  runtime names pass unchanged.
+- `npm run quality:check` — quality contracts, the 157-file layout scan, 324
+  sprite checks, security contracts, TypeScript, and 280 focused Jest
+  assertions pass. Watchman's existing recrawl notice is the only warning.
+- Rendered second-route Position 9 showed **The reflected leaves answer Rosie**,
+  **Reflected leaves lead Rosie onward**, present-tense Bag consequences, and
+  **Let Rosie explore** over the open-gate plate and live Rive cue. The next
+  state read **Rosie is following reflected leaves**; Position 10 alone then
+  mapped **Lanternleaf Path** and returned the exact +1 Compost, +2 Glowroot
+  Seed, and +2 Willow Fiber default loadout.
+- The first route mounted zero Lanternleaf canvases, retained the live Glowroot,
+  and used **Warm light stirs beneath the hedge** without pre-naming its Seed.
+  An empty-Pack route used the same journey order and named no clue before
+  Return.
+- At 360×780, the journey headline, three-row cause ledger, Rosie, selected
+  equipment, one action, and progression rail remained visible without page
+  overflow. Reduced motion kept the exact journey hierarchy and static
+  environmental clues.
+
+### Observable acceptance criteria
+
+- Position 9 never names the earned Discovery, route, clue, or returned
+  materials.
+- Every selected or empty Bag slot still changes one readable journey line.
+- **Let Rosie explore** precedes the idle wait and Homecoming.
+- Position 10 remains the first and only named reward reveal.
+- First/second routes, complete/incomplete Bags, fast-forward, reload, reduced
+  motion, and exact reducer-owned outcomes remain unchanged.
 
 ### v0.72 — Lanternleaf Catches the Light — 2026-08-07
 

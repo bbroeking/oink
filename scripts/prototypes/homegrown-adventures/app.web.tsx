@@ -674,16 +674,16 @@ function PackedLoadoutRibbon({ bag, farmStock }) {
 function AdventureVignetteOverlay({ state, onContinue }) {
 	const story = adventureStory(state);
 	return (
-		<section className="adventure-vignette-overlay" data-story-kind={story.kind} aria-label="Beyond-the-hedge Adventure">
+		<section className="adventure-vignette-overlay" data-story-kind={story.kind} aria-label="Beyond-the-hedge journey">
 			<div className="adventure-find" role="status">
 				<span className="glowroot-token" aria-hidden="true">✦</span>
-				<strong>{story.headline}</strong>
-				<small>{story.result}</small>
+				<strong>{story.journeyHeadline}</strong>
+				<small>{story.journeyResult}</small>
 			</div>
-			<div className="adventure-cause-thread" aria-label="How Rosie's bag helped">
-				<strong className="adventure-cause-title">How Rosie’s bag helped</strong>
+			<div className="adventure-cause-thread" aria-label="What Rosie's bag changes">
+				<strong className="adventure-cause-title">What Rosie’s bag changes</strong>
 				<ul>
-					{story.tags.map((tag) => (
+					{story.journeyTags.map((tag) => (
 						<li key={tag.slot} className={tag.name.startsWith("No ") ? "is-empty" : ""}>
 							<i aria-hidden="true">{tag.icon}</i>
 							<strong>{tag.name}</strong>
@@ -692,7 +692,7 @@ function AdventureVignetteOverlay({ state, onContinue }) {
 					))}
 				</ul>
 			</div>
-			<button type="button" className="adventure-continue" onClick={onContinue}>Continue the story</button>
+			<button type="button" className="adventure-continue" onClick={onContinue}>Let Rosie explore</button>
 		</section>
 	);
 }
@@ -1180,7 +1180,7 @@ function App() {
 		: showingAdventureVignette
 		? {
 			...presentation,
-			objective: adventureStory(state).kind === "discovery" ? "A new Discovery!" : "A promising clue!",
+			objective: adventureStory(state).journeyObjective,
 		}
 		: waiting
 		? {

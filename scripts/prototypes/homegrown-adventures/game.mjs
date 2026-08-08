@@ -263,6 +263,39 @@ export function adventureStory(state) {
 			pack: "made a leaf-print and left the seed safe",
 		},
 	};
+	const firstJourneyDetails = {
+		provision: {
+			"clover-lunch": "keeps Rosie exploring until dusk",
+			empty: "daylight fades before the warm root opens",
+		},
+		tool: {
+			"hand-trowel": "opens a careful way beneath the roots",
+			lantern: "makes the fading glow easier to follow",
+			empty: "leaves the warmth safely beneath the soil",
+		},
+		pack: {
+			"wicker-basket": "waits ready for a sturdy find",
+			"cloth-wrap": "protects anything delicate along the way",
+			empty: "lets Rosie remember the place for later",
+		},
+	};
+	const firstNearJourneyDetails = {
+		provision: {
+			provision: "daylight fades before the warm root opens",
+			tool: "marks the soft soil for another visit",
+			pack: "keeps a warm leaf-print safe",
+		},
+		tool: {
+			provision: "keeps Rosie beside the hedge until dusk",
+			tool: "the warmth stays hidden beneath tangled roots",
+			pack: "keeps a warm soil sample safe",
+		},
+		pack: {
+			provision: "keeps Rosie exploring until dusk",
+			tool: "reveals the sleeping root without disturbing it",
+			pack: "records the place so Rosie can return",
+		},
+	};
 	const lanternleafDetails = {
 		provision: {
 			"clover-lunch": "stayed past the open gate until nightfall",
@@ -296,10 +329,47 @@ export function adventureStory(state) {
 			pack: "mapped the route and left its supplies safe",
 		},
 	};
+	const lanternleafJourneyDetails = {
+		provision: {
+			"clover-lunch": "keeps Rosie on the trail past nightfall",
+			empty: "daylight fades before the leaves catch their light",
+		},
+		tool: {
+			"hand-trowel": "checks what lies beneath the path",
+			lantern: "makes the reflected leaves readable",
+			empty: "leaves the shifting trail difficult to trace",
+		},
+		pack: {
+			"wicker-basket": "waits ready for sturdy trail supplies",
+			"cloth-wrap": "waits ready to protect delicate leaves",
+			empty: "lets Rosie map the route for another visit",
+		},
+	};
+	const lanternleafNearJourneyDetails = {
+		provision: {
+			provision: "daylight fades before the leaves catch their light",
+			tool: "marks the start of the open-gate trail",
+			pack: "keeps one fallen leaf safe",
+		},
+		tool: {
+			provision: "keeps Rosie beside the gate until nightfall",
+			tool: "the reflected trail remains hard to follow",
+			pack: "keeps a fallen leaf safe for another try",
+		},
+		pack: {
+			provision: "keeps Rosie on the trail until nightfall",
+			tool: "follows the reflections deeper beyond the gate",
+			pack: "records the route so Rosie can return",
+		},
+	};
 	const details = followingLanternleaf ? lanternleafDetails : firstDetails;
 	const nearDiscoveryDetails = followingLanternleaf
 		? lanternleafNearDiscoveryDetails
 		: firstNearDiscoveryDetails;
+	const journeyDetails = followingLanternleaf ? lanternleafJourneyDetails : firstJourneyDetails;
+	const nearJourneyDetails = followingLanternleaf
+		? lanternleafNearJourneyDetails
+		: firstNearJourneyDetails;
 
 	return {
 		kind: missingSlot ? "near-discovery" : "discovery",
@@ -316,6 +386,26 @@ export function adventureStory(state) {
 			: followingLanternleaf
 				? "Glowroot opened this route; her Tool and Pack shaped the supplies."
 				: "Her Tool changes the bonus; her Pack changes the practical supply.",
+		journeyObjective: followingLanternleaf
+			? "The reflected leaves answer Rosie"
+			: "A warm glow answers Rosie",
+		journeyHeadline: followingLanternleaf
+			? "Reflected leaves lead Rosie onward"
+			: "Warm light stirs beneath the hedge",
+		journeyResult: missingSlot
+			? "One empty Bag slot changes how far this outing can unfold."
+			: "Each packed choice changes what Rosie can notice and reach.",
+		journeyTags: BAG_SLOT_ORDER.map((slot) => {
+			const selected = bagItem(slot, bag[slot]);
+			return {
+				slot,
+				name: selected?.name ?? `No ${slot[0].toUpperCase()}${slot.slice(1)}`,
+				icon: selected?.icon ?? "·",
+				detail: missingSlot
+					? nearJourneyDetails[missingSlot][slot]
+					: journeyDetails[slot][selected?.id ?? "empty"],
+			};
+		}),
 		tags: BAG_SLOT_ORDER.map((slot) => {
 			const selected = bagItem(slot, bag[slot]);
 			return {
@@ -1410,7 +1500,7 @@ export function primaryAction(state) {
 	}
 	if (state.stage === STAGES.ADVENTURE && !state.adventureComplete) {
 		if (!state.adventureVignetteSeen) {
-			return { type: ACTIONS.CONTINUE_ADVENTURE_STORY, label: "Continue the story" };
+			return { type: ACTIONS.CONTINUE_ADVENTURE_STORY, label: "Let Rosie explore" };
 		}
 		return { type: ACTIONS.ADVANCE_TIME, label: opportunity.waitLabel };
 	}
@@ -1570,8 +1660,8 @@ export function playerPresentation(state) {
 		if (!state.adventureVignetteSeen) {
 			return {
 				target: WORLD_TARGETS.HEDGE,
-				objective: "Your choices shaped the Adventure",
-				label: "Continue the story",
+				objective: adventureStory(state).journeyObjective,
+				label: "Let Rosie explore",
 				action,
 			};
 		}

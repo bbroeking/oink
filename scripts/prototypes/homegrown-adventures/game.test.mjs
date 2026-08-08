@@ -1003,6 +1003,16 @@ test("the Adventure vignette explains every selected item before idle waiting", 
 
 	const story = adventureStory(state);
 	assert.equal(story.kind, "discovery");
+	assert.equal(story.journeyHeadline, "Warm light stirs beneath the hedge");
+	assert.deepEqual(story.journeyTags.map((tag) => tag.name), [
+		"Clover Lunch",
+		"Lantern",
+		"Cloth Wrap",
+	]);
+	assert.doesNotMatch(
+		story.journeyTags.map((tag) => tag.detail).join(" "),
+		/Seed|Compost|Willow Fiber|found/i,
+	);
 	assert.deepEqual(story.tags.map((tag) => tag.name), [
 		"Clover Lunch",
 		"Lantern",
@@ -1024,7 +1034,7 @@ test("the Adventure vignette explains every selected item before idle waiting", 
 	assert.equal(state.departureComplete, true);
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.CONTINUE_ADVENTURE_STORY,
-		label: "Continue the story",
+		label: "Let Rosie explore",
 	});
 
 	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });

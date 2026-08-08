@@ -162,6 +162,14 @@ gap. The first route instantiates no reflection canvas; reduced motion hides
 the live layer and keeps the plate's static leaves. Route choice, story,
 equipment, rewards, persistence, and timing remain reducer-owned.
 
+The v0.73 story-order pass reserves the named Find for Homecoming. Position 9
+now presents one route-specific environmental response and a present-tense
+**What Rosie’s bag changes** ledger. Its copy explains preparation without
+naming reward materials, the Glowroot, Lanternleaf Path, or a clue. **Let Rosie
+explore** hands that beat into the established idle wait; Position 10 remains
+the first named Discovery or Near-Discovery reveal. The same reducer facts,
+routes, exact outcomes, Rive layers, and fast-forward positions remain intact.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

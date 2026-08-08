@@ -349,6 +349,21 @@ reduced-motion, and static Rive contract gates pass; the next cycle should
 begin by playing the shipped loop and choosing the highest-leverage remaining
 player-visible weakness rather than expanding the route catalog.
 
+**Journey-before-reward checkpoint (August 7, 2026):** rendered two-day play
+showed Position 9 announcing **A new Discovery** and naming the Find before
+Rosie entered its idle exploration beat, then repeating the reveal at
+Homecoming. Position 9 now presents a route-specific environmental moment in
+present tense: warm light stirring beneath the hedge or reflected leaves
+leading Rosie onward. Its compact ledger explains what the Provision, Tool,
+and Pack change without naming Seeds, Compost, Willow Fiber, the Glowroot, the
+Lanternleaf Path, or the clue outcome. **Let Rosie explore** hands that causal
+moment into the existing idle wait; Position 10 remains the sole named
+Discovery or Near-Discovery reveal. Empty Bag slots keep kind, actionable
+journey consequences without pre-declaring failure. No reducer transition,
+reward, duration, route, equipment rule, Rive asset, or progression state
+changed. First and second routes, complete and incomplete Bags, direct reload,
+fast-forward, reduced motion, 360×780 touch, and exact Homecoming rewards pass.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its
