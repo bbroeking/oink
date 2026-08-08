@@ -237,11 +237,79 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     planted Glowroot create a distinct second-day opportunity, make alternate
     Bag capabilities answer its clues, and return either Lanternleaf Path or a
     useful trail clue without adding another progression system.
+72. **v0.71 — Lanternleaf Becomes a Place (locally verified):** give the
+    second expedition its own open-gate path, keep its selected Tool physical,
+    and prevent remembered Home layers from leaking through Rosie's shared Rive
+    artboard without changing progression.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.71 — Lanternleaf Becomes a Place — 2026-08-07
+
+- Began with a rendered comparison between the second-route Position 9, the
+  first Glowroot clearing, and the approved `rosie-v3/09-adventure-vignette.png`
+  concept. The concept's useful invariant was a framed, readable path with live
+  Rosie and separable equipment. The current Lanternleaf branch changed every
+  word and reward but could still use the first route's root alcove.
+- Used the built-in ImageGen edit workflow with the existing character-free
+  clue plate as the strict camera, lighting, texture, and palette reference.
+  The resulting 780×1688 plate adds one weathered open gate and a trail of
+  pale-green leaves reflecting soft Glowroot gold. It intentionally contains no
+  character, gear, Discovery, interface, text, or baked animation.
+- Bound that plate to **Lights Past the Open Gate**, independent of Tool or Pack.
+  The selected Hand Trowel or Lantern is now a separate foreground prop; empty
+  Tool renders none. Existing Provision and Pack props remain independent, so
+  every complete and Near-Discovery loadout stays physically truthful.
+- Removed the live Glowroot reveal from the Lanternleaf branch. The native Rive
+  Glowroot still wakes in the first route, but a route Discovery no longer
+  falsely presents another glowing Seed at the path.
+- The render audit exposed a shared-artboard boundary bug: persistent
+  Moonberries, Glowroot, frog, moths, flower arch, bell, and hedge crossing were
+  traveling with Rive Rosie into the second expedition. While the Lanternleaf
+  vignette is visible, React now derives a temporary presentation-only Rive
+  model with empty beds and hidden Home/resident layers. Rosie, her authored
+  breath, and her equipped satchel remain live. Reducer state, saved Home,
+  rewards, and the `.riv` asset are unchanged.
+- The Prototype verdict is positive: a route can feel distinct through one
+  environmental plate and correct compositing, without a map, destination
+  picker, route currency, second Rosie, or duplicated equipment sprites. The
+  installed Impeccable review kept the open gate and reflected leaves behind
+  the established one-action hierarchy rather than adding another label.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 49/49 pass; route/reward state is
+  unchanged and the two-day deterministic contract remains intact.
+- `npm run verify:rive-homegrown` — the 390×844 header and all 60 authored Rive
+  names pass. The checked-in `.riv` file was not changed.
+- `npm run quality:check` — quality contracts, the 157-file layout scan, all
+  324 sprite-integrity checks, security contracts, TypeScript, and 280 focused
+  Jest tests pass.
+- Real 390×844 renders compared the first Glowroot route with Lanternleaf using
+  Lantern/Cloth, Trowel/Basket, empty Tool, and empty Pack. Lanternleaf always
+  used the open-gate plate, selected equipment stayed truthful, no live
+  Glowroot appeared, and Rive reported empty beds, hidden Home, hidden moths,
+  and hidden frog with no console errors.
+- At 360×780 with reduced motion, reload plus Position 7 → 9 fast-forward kept
+  the Lanternleaf plate and hidden Home layers; Position 10 still returned only
+  **Lanternleaf Trail**, +1 Compost, and +1 Willow Fiber for an empty Pack. Body
+  width remained exactly 360px.
+- Public deployment verification is pending the checkpoint push.
+
+### Observable acceptance criteria
+
+- The first expedition remains the root alcove and uses the live Rive Glowroot
+  only for its earned Glowroot Discovery.
+- The second expedition visibly shows an open gate and reflected-leaf path for
+  every Tool and Pack combination.
+- Rosie and her satchel stay live while Farm beds, residents, moths, bell, and
+  hedge arch remain at Home.
+- Selected Tool and Pack remain physical; empty slots remove their props.
+- Reload, fast-forward, reduced motion, and clue-only return preserve the same
+  route identity and exact reducer-owned outcome.
 
 ### v0.70 — The Open Gate Leads Somewhere — 2026-08-07
 

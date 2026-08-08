@@ -311,6 +311,26 @@ the first expedition's root-clearing plate. The next checkpoint should make the
 opened-gate path visually recognizable without introducing a third route or
 another interface layer.
 
+**Lanternleaf-place checkpoint (August 7, 2026):** comparison with the approved
+Position 9 concept showed that the new route had the right deterministic story
+but could still inherit the first Glowroot clearing. The second opportunity now
+uses one dedicated 780×1688 character-free plate: a weathered open gate, a path
+curving beyond it, and pale leaves reflecting restrained gold light. The plate
+was generated with the built-in ImageGen workflow from the existing clue plate,
+then normalized to the established game-asset dimensions. It contains no Rosie,
+gear, reward, UI, or text. Canonical Rive Rosie and her equipped satchel remain
+live; the selected Tool is composited independently; the live Glowroot reveal
+is limited to the first route. The audit also caught remembered Farm beds,
+residents, moths, and the hedge arch leaking from Rosie's shared Rive artboard
+into the second expedition. The vignette now sends a temporary empty/hidden
+presentation model to those Rive layers while leaving reducer state and the
+persisted Home untouched. First route, both Tool choices, empty Tool, both Packs,
+empty Pack, reload, fast-forward, reduced motion, 360×780, and 390×844 renders
+pass. The next visible weakness is motion: the reflected leaves establish the
+route clearly but remain painted into the plate. A future checkpoint should
+animate only a few reflections with a restrained authored Rive loop, keeping
+the gate, route state, and rewards in React.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

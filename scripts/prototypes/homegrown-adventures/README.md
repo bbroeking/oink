@@ -141,6 +141,18 @@ derived from the remembered Home, so reload and prototype fast-forward preserve
 it without a mission board, new currency, parallel state machine, or Rive-owned
 progression.
 
+The v0.71 route pass gives that second opportunity its own physical place. A
+new character-free **Lanternleaf Path** plate preserves the approved portrait
+camera and twilight woodland, but replaces the Glowroot clearing with an open
+wooden gate and a trail of gold-reflecting leaves. Live Rive Rosie and her
+satchel remain above the plate; the selected Tool is a separate prop, and the
+first route's live Glowroot appears only when Glowroot is actually the
+Discovery. Because Rosie shares one Rive artboard with Home, the second-route
+presentation also sends empty beds, hidden residents, hidden moths, and a
+closed Home layer to Rive while the vignette is mounted. That prevents the
+remembered Farm from leaking into the expedition without changing the saved
+Farm or adding a second character rig.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in
