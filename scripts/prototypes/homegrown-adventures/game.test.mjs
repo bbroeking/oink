@@ -1315,16 +1315,15 @@ test("the Adventure vignette explains every selected item before idle waiting", 
 	});
 });
 
-test("the Adventure lets Provision and Tool change the clearing before the Pack field note", () => {
+test("all three Bag causes now happen in the clearing without field-note cards", () => {
 	assert.match(appSource, /const activeTag = resolved \? null : story\.journeyTags\[activeBeatIndex\]/);
 	assert.match(appSource, /beat === "provision" \? \(/);
 	assert.match(appSource, /className="adventure-dusk-observation" role="status" aria-live="polite"/);
 	assert.match(appSource, /<span className="sr-only">\{activeTag\.name\} \{activeTag\.detail\}<\/span>/);
-	assert.match(appSource, /key=\{beat\} className="adventure-field-note" role="status" aria-live="polite"/);
-	assert.match(appSource, /BAG_SLOT_LABELS\[activeTag\.slot\]/);
+	assert.doesNotMatch(appSource, /className="adventure-field-note"/);
+	assert.doesNotMatch(stylesSource, /\.adventure-field-note/);
 	assert.doesNotMatch(appSource, /className="adventure-cause-thread"/);
 	assert.doesNotMatch(appSource, /className="adventure-find"/);
-	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-field-note \{ animation: none; \}/);
 	assert.match(stylesSource, /@keyframes adventure-dusk-answer/);
 	assert.match(stylesSource, /data-adventure-opportunity="lights-past-open-gate"[^\n]+\.adventure-dusk-observation i/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-dusk-observation i \{ animation: none; \}/);
@@ -1335,6 +1334,13 @@ test("the Adventure lets Provision and Tool change the clearing before the Pack 
 	assert.match(stylesSource, /data-tool-kind="lantern"/);
 	assert.match(stylesSource, /data-tool-kind="none"/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-tool-observation i \{ animation: none; \}/);
+	assert.match(appSource, /beat === "pack" \? \(/);
+	assert.match(appSource, /className="adventure-pack-observation"/);
+	assert.match(appSource, /data-pack-kind=\{state\.bag\?\.pack \?\? "none"\}/);
+	assert.match(stylesSource, /@keyframes adventure-pack-answer/);
+	assert.match(stylesSource, /data-pack-kind="cloth-wrap"/);
+	assert.match(stylesSource, /data-pack-kind="none"/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-pack-observation i \{ animation: none; \}/);
 });
 
 test("the resolved cause sequence hands itself into the idle journey without revealing the Find", () => {
@@ -1521,6 +1527,11 @@ test("the first Hand Trowel cause performs one separable dig", () => {
 });
 
 test("the first Adventure visibly settles a carried find into its chosen Pack", () => {
+	assert.match(appSource, /function adventurePackPresentation\(state\)/);
+	assert.match(appSource, /Wicker Basket makes the Glowroot find safe/);
+	assert.match(appSource, /Cloth Wrap protects the Lanternleaf/);
+	assert.match(appSource, /Rosie maps the route for another visit/);
+	assert.match(appSource, /adventureCauseBeat === "pack"[\s\S]+adventurePackPresentation\(state\)/);
 	assert.match(appSource, /className="adventure-find-handoff" aria-hidden="true"><i \/><i \/><\/div>/);
 	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"[^\n]+data-adventure-beat="pack"[^\n]+\.adventure-find-handoff/);
 	assert.match(stylesSource, /@keyframes adventure-find-to-pack/);

@@ -851,6 +851,42 @@ function adventureToolPresentation(state) {
 	};
 }
 
+function adventurePackPresentation(state) {
+	const story = adventureStory(state);
+	const opportunity = adventureOpportunity(state);
+	const pack = state.bag?.pack ?? null;
+	const detail = story.journeyTags[2].detail;
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const clue = story.kind === "near-discovery";
+
+	if (pack === "wicker-basket") {
+		return {
+			objective: clue
+				? "Wicker Basket keeps the trail clue safe"
+				: lanternleaf
+					? "Wicker Basket gathers the trail supplies"
+					: "Wicker Basket makes the Glowroot find safe",
+			detail,
+		};
+	}
+	if (pack === "cloth-wrap") {
+		return {
+			objective: clue
+				? "Cloth Wrap protects the trail clue"
+				: lanternleaf
+					? "Cloth Wrap protects the Lanternleaf"
+					: "Cloth Wrap protects the delicate find",
+			detail,
+		};
+	}
+	return {
+		objective: lanternleaf
+			? "Rosie maps the route for another visit"
+			: "Rosie records where the find rests",
+		detail,
+	};
+}
+
 function AdventureVignetteOverlay({ state, beat }) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
@@ -887,14 +923,18 @@ function AdventureVignetteOverlay({ state, beat }) {
 					<span className="sr-only">{activeTag.name} {activeTag.detail}</span>
 					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
 				</div>
-			) : (
-				<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
-					<i aria-hidden="true">{activeTag.icon}</i>
-					<small>{BAG_SLOT_LABELS[activeTag.slot]}</small>
-					<strong>{activeTag.name}</strong>
-					<p>{activeTag.detail}</p>
+			) : beat === "pack" ? (
+				<div
+					key={beat}
+					className="adventure-pack-observation"
+					data-pack-kind={state.bag?.pack ?? "none"}
+					role="status"
+					aria-live="polite"
+				>
+					<span className="sr-only">{activeTag.name} {activeTag.detail}</span>
+					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
 				</div>
-			)}
+			) : null}
 		</section>
 	);
 }
@@ -1656,6 +1696,11 @@ function App() {
 		? {
 			...presentation,
 			...adventureToolPresentation(state),
+		}
+		: showingAdventureVignette && adventureCauseBeat === "pack"
+		? {
+			...presentation,
+			...adventurePackPresentation(state),
 		}
 		: showingAdventureVignette
 		? {
