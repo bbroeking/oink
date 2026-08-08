@@ -38,10 +38,11 @@ import {
 } from "./homegrownRiveModel.mjs";
 import "./styles.css";
 
+// PROTOTYPE — three Pack-causality treatments on the existing Adventure route.
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Spotlight", question: "Is highlighting the chosen Pack enough to explain what carries the find Home?" },
+	B: { name: "Pack Reaches", question: "Does the chosen Pack leaning toward the find make the causal action clear?" },
+	C: { name: "Find Travels", question: "Does one restrained light mote visibly settling into the Pack tell the clearest story?" },
 };
 
 const STAGE_COPY = {
@@ -1507,6 +1508,7 @@ function App() {
 			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-pack-prop" aria-hidden="true" />}
+			{showingAdventureVignette && <div className="adventure-pack-handoff" aria-hidden="true"><i /><i /></div>}
 			{showingReturnReward && <div className="return-homecoming-backdrop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-tool-prop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-pack-prop" aria-hidden="true" />}
