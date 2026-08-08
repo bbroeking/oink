@@ -791,6 +791,35 @@ function PackedLoadoutRibbon({ bag, farmStock }) {
 	);
 }
 
+function adventureProvisionPresentation(state) {
+	const story = adventureStory(state);
+	const opportunity = adventureOpportunity(state);
+	const provision = state.bag?.provision ?? null;
+	const detail = story.journeyTags[0].detail;
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+
+	if (provision === "clover-lunch") {
+		return {
+			objective: `Clover Lunch carries Rosie into ${lanternleaf ? "nightfall" : "dusk"}`,
+			detail,
+		};
+	}
+	if (provision === "moonberries") {
+		return {
+			objective: lanternleaf
+				? "Moonberries reveal the reflected path"
+				: "Moonberries reveal hidden reflections",
+			detail,
+		};
+	}
+	return {
+		objective: lanternleaf
+			? "Daylight turns Rosie Home before the leaves shine"
+			: "Daylight turns Rosie Home before the root opens",
+		detail,
+	};
+}
+
 function AdventureVignetteOverlay({ state, beat }) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
@@ -810,6 +839,11 @@ function AdventureVignetteOverlay({ state, beat }) {
 					<i aria-hidden="true"><b /><b /><b /></i>
 					<small>Rosie follows the {lanternleaf ? "reflected leaves" : "warm light"}</small>
 					<strong>The journey continues…</strong>
+				</div>
+			) : beat === "provision" ? (
+				<div key={beat} className="adventure-dusk-observation" role="status" aria-live="polite">
+					<span className="sr-only">{activeTag.name} {activeTag.detail}</span>
+					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
 				</div>
 			) : (
 				<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
@@ -1549,12 +1583,17 @@ function App() {
 			hedgeBellEarned: false,
 		};
 	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
+	const adventureProvisionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "provision"
+		? "adventure-provision"
+		: null;
 	const adventureAttentionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "tool"
 		? "adventure-attention"
 		: null;
-	const sceneRiveTrigger = adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
-	const sceneRiveTriggerNonce = adventureAttentionTrigger
-		? `${riveModel.triggerNonce}:adventure-attention:${opportunity.id}`
+	const sceneRiveTrigger = adventureProvisionTrigger ?? adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
+	const sceneRiveTriggerNonce = adventureProvisionTrigger
+		? `${riveModel.triggerNonce}:adventure-provision:${opportunity.id}`
+		: adventureAttentionTrigger
+			? `${riveModel.triggerNonce}:adventure-attention:${opportunity.id}`
 		: gateHomecomingReady
 		? `${riveModel.triggerNonce}:gate-homecoming`
 		: riveModel.triggerNonce;
@@ -1566,6 +1605,11 @@ function App() {
 		? { ...presentation, objective: "Glowroot takes root", detail: "The Farm remembers" }
 		: showingHarvestCelebration
 		? { ...presentation, objective: `Harvesting ${CROP_RULES[state.selectedCrop]?.name ?? "crop"}…` }
+		: showingAdventureVignette && adventureCauseBeat === "provision"
+		? {
+			...presentation,
+			...adventureProvisionPresentation(state),
+		}
 		: showingAdventureVignette
 		? {
 			...presentation,

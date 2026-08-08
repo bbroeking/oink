@@ -262,11 +262,15 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .phone:is([data-adventure-provision="clover-lunch"],[data-adventure-provision="moonberries"]):is([data-adventure-beat="tool"],[data-adventure-beat="pack"],[data-adventure-beat="resolved"]) .adventure-vignette-backdrop::before {
 	opacity: 1;
 }
+.phone:is([data-adventure-provision="clover-lunch"],[data-adventure-provision="moonberries"]):is([data-adventure-beat="tool"],[data-adventure-beat="pack"],[data-adventure-beat="resolved"]) .adventure-provision-prop {
+	opacity: 0;
+	animation: none;
+	transform: translate(86px,-104px) scale(.34);
+}
 @keyframes adventure-provision-one-use {
-	0% { transform: translate(0,0) scale(1) rotate(0); }
-	38% { transform: translate(86px,-105px) scale(.55) rotate(4deg); }
-	62% { transform: translate(86px,-105px) scale(.55) rotate(4deg); }
-	100% { transform: translate(0,0) scale(1) rotate(0); }
+	0% { opacity: 1; transform: translate(0,0) scale(1) rotate(0); }
+	48% { opacity: 1; transform: translate(82px,-102px) scale(.56) rotate(4deg); }
+	100% { opacity: .16; transform: translate(86px,-104px) scale(.34) rotate(1deg); }
 }
 @keyframes adventure-provision-dusk-arrive {
 	from { opacity: 0; }
@@ -512,6 +516,45 @@ html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 	to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 html[data-reduce-motion="true"] .adventure-field-note { animation: none; }
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+.adventure-dusk-observation {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+.adventure-dusk-observation i {
+	position: absolute;
+	width: 7px;
+	height: 9px;
+	border-radius: 52% 48% 44% 56%;
+	background: #ffd76a;
+	box-shadow: 0 0 10px rgba(255,216,96,.92), 0 0 21px rgba(255,177,68,.54);
+	animation: adventure-dusk-answer 760ms cubic-bezier(.16,1,.3,1) both;
+}
+.adventure-dusk-observation i:nth-of-type(1) { left: 276px; top: 336px; animation-delay: 20ms; }
+.adventure-dusk-observation i:nth-of-type(2) { left: 310px; top: 388px; animation-delay: 60ms; }
+.adventure-dusk-observation i:nth-of-type(3) { left: 267px; top: 445px; animation-delay: 100ms; }
+.adventure-dusk-observation i:nth-of-type(4) { left: 328px; top: 502px; animation-delay: 140ms; }
+.phone[data-adventure-opportunity="lights-past-open-gate"] .adventure-dusk-observation i {
+	background: #d8ffd7;
+	box-shadow: 0 0 10px rgba(202,255,210,.9), 0 0 21px rgba(130,231,197,.52);
+}
+@keyframes adventure-dusk-answer {
+	0% { opacity: 0; transform: translateY(12px) scale(.45); }
+	58% { opacity: 1; transform: translateY(-2px) scale(1.08); }
+	100% { opacity: .82; transform: translateY(-8px) scale(.92); }
+}
+html[data-reduce-motion="true"] .adventure-dusk-observation i { animation: none; }
 .adventure-auto-handoff {
 	position: absolute;
 	left: 50%;

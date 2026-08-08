@@ -1315,13 +1315,19 @@ test("the Adventure vignette explains every selected item before idle waiting", 
 	});
 });
 
-test("the Adventure tells one Bag cause at a time without covering the clearing", () => {
+test("the Adventure lets the first Provision change the clearing before later field notes", () => {
 	assert.match(appSource, /const activeTag = resolved \? null : story\.journeyTags\[activeBeatIndex\]/);
+	assert.match(appSource, /beat === "provision" \? \(/);
+	assert.match(appSource, /className="adventure-dusk-observation" role="status" aria-live="polite"/);
+	assert.match(appSource, /<span className="sr-only">\{activeTag\.name\} \{activeTag\.detail\}<\/span>/);
 	assert.match(appSource, /key=\{beat\} className="adventure-field-note" role="status" aria-live="polite"/);
 	assert.match(appSource, /BAG_SLOT_LABELS\[activeTag\.slot\]/);
 	assert.doesNotMatch(appSource, /className="adventure-cause-thread"/);
 	assert.doesNotMatch(appSource, /className="adventure-find"/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-field-note \{ animation: none; \}/);
+	assert.match(stylesSource, /@keyframes adventure-dusk-answer/);
+	assert.match(stylesSource, /data-adventure-opportunity="lights-past-open-gate"[^\n]+\.adventure-dusk-observation i/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-dusk-observation i \{ animation: none; \}/);
 });
 
 test("the resolved cause sequence hands itself into the idle journey without revealing the Find", () => {
@@ -1519,7 +1525,21 @@ test("a packed Provision performs once and leaves the Adventure at dusk", () => 
 	assert.match(stylesSource, /animation: adventure-provision-one-use 760ms cubic-bezier\(\.16,1,\.3,1\) both/);
 	assert.match(stylesSource, /@keyframes adventure-provision-dusk-arrive/);
 	assert.match(stylesSource, /data-adventure-provision="moonberries"[^\n]+data-adventure-beat="tool"[^\n]+\.adventure-vignette-backdrop::before/);
+	assert.match(stylesSource, /data-adventure-provision="moonberries"[^\n]+data-adventure-beat="resolved"[^\n]+\.adventure-provision-prop \{[\s\S]+?opacity: 0;[\s\S]+?animation: none;/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-provision-prop \{ animation: none; \}/);
+	assert.match(stylesSource, /100% \{ opacity: \.16; transform: translate\(86px,-104px\) scale\(\.34\) rotate\(1deg\); \}/);
+});
+
+test("the Provision beat names its cause in the HUD and gives Rosie one authored response", () => {
+	assert.match(appSource, /function adventureProvisionPresentation\(state\)/);
+	assert.match(appSource, /Clover Lunch carries Rosie into \$\{lanternleaf \? "nightfall" : "dusk"\}/);
+	assert.match(appSource, /Moonberries reveal the reflected path/);
+	assert.match(appSource, /Daylight turns Rosie Home before the root opens/);
+	assert.match(appSource, /adventureCauseBeat === "provision"[\s\S]+\? "adventure-provision"/);
+	assert.match(appSource, /adventure-provision:\$\{opportunity\.id\}/);
+	assert.match(riveContractSource, /\| "adventure-provision"/);
+	assert.match(riveSceneSource, /"adventure-provision": "Rosie Tickle"/);
+	assert.match(riveSceneSource, /trigger !== "adventure-provision"/);
 });
 
 test("the Tool beat gives Rosie one authored attention response", () => {

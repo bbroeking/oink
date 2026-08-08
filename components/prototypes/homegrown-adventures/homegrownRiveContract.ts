@@ -32,6 +32,7 @@ export const HOMEGROWN_RIVE_TRIGGERS = Object.freeze([
 export type HomegrownRiveTrigger = (typeof HOMEGROWN_RIVE_TRIGGERS)[number];
 export type HomegrownRiveMotionTrigger =
 	| HomegrownRiveTrigger
+	| "adventure-provision"
 	| "adventure-attention"
 	| "bag-receive"
 	| "departure"
