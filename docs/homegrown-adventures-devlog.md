@@ -319,11 +319,67 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 97. **v0.96 — Tomorrow Means Tomorrow (shipped):** add local calendar
     context to the existing return ticket only when Rosie's persisted return
     crosses midnight, without changing the journey or expanding the surface.
+98. **v0.97 — Grow for Rosie (shipped):** keep the current Adventure's purpose
+    and exact clues attached to Farm Stock through Seed choice, without adding
+    a quest panel or covering more of Rosie.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.97 — Grow for Rosie — 2026-08-08
+
+- Began by playing the exact public morning handoff. After **Tickle Rosie**
+  revealed **A Glow Beneath the Hedge**, the Farm Stock drawer took over and
+  retained only a generic dusk sentence. The player could no longer answer
+  what Rosie noticed: **soft soil** and a need to **carry it Home** had
+  disappeared at the moment they chose a Seed.
+- Compared three real Position 2 structures: a complete invitation ticket
+  above Farm Stock, three spatial clues over the illustrated world, and one
+  purpose receipt attached to the drawer. The attached receipt won. The ticket
+  repeated the HUD and covered more of Rosie; the spatial clues looked like
+  unrelated tooltips and made the quiet Farm busier.
+- Captured the three throwaway treatments at commit `07028a7` on
+  `codex/homegrown-v097-adventure-invitation-prototypes`. Main keeps only the
+  selected receipt; no `invitation` query or comparison switcher ships.
+- The receipt says **Grow for Rosie · Clover becomes a Provision**, followed
+  by the current opportunity's exact clue phrase. The existing HUD continues
+  to own the Adventure name and immediate instruction, so the new element does
+  not repeat a title or create another primary action.
+- The first route renders **Until dusk · soft soil · carry it Home**. The
+  remembered-Farm route renders **Nightfall · reflected leaves · gentle
+  wrap**. Both derive from `adventureOpportunity(state)` rather than static
+  first-day copy, and the accessible note names the current Adventure.
+- Direct Position 2 review now accepts the established `route=lanternleaf`
+  route so the second morning is reproducible and reload-stable without
+  changing live progression.
+- No crop, Compost, inventory, Bag, reward, timer, persistence, transition,
+  animation, Rive asset, or Rive input changed.
+- The required Impeccable review substituted for unavailable Claude Design.
+  It selected the attached receipt for proximity, calm hierarchy, clear cause
+  and effect, and preservation of the illustrated world.
+
+### Local validation evidence
+
+- Played the local loop from **Tickle Rosie** into Seed choice. The resulting
+  screen retained the named opportunity, growth purpose, all three clues, and
+  one obvious **Choose Clover** action.
+- Rendered the first and remembered-Farm Position 2 states at 390×844. Both
+  keep Rosie visible, fit above the external review rail, and ship no prototype
+  comparison control.
+- Reduced motion retained the same second-route clue receipt, and reload
+  preserved both the route and reduced-motion presentation.
+- The receipt is a semantic `role="note"` whose accessible name includes the
+  current Adventure, the Provision purpose, and all three route clues.
+- `npm run prototype:homegrown:test` passes 68/68, including first- and
+  second-route derivation and a guard against shipping the comparison harness.
+  `npm run prototype:homegrown:build`, `npx tsc --noEmit`, and
+  `npm run verify:rive-homegrown` pass both authored Rive contracts.
+- `npm run quality:loop` and `npm run quality:check` pass the quality
+  contracts, 157-file layout gate, 324-sprite integrity gate, security
+  contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
+  existing recrawl notice is the only warning.
 
 ### v0.96 — Tomorrow Means Tomorrow — 2026-08-08
 

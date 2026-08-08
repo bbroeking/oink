@@ -49,6 +49,11 @@ timer, or new save fact; same-day trips remain **Around [time]**, overnight
 trips become **Tomorrow · [time]**, and longer trips use a short weekday, all
 from the player's local calendar, before Homecoming removes the ticket at the
 gate;
+Position 2 now keeps one compact Adventure-purpose receipt physically attached
+to Farm Stock, so **Clover becomes a Provision** remains connected to the
+current opportunity's exact time, interaction, and carrying clues through the
+Seed decision on both established routes, without a quest panel or tooltip
+layer;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive

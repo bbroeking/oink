@@ -1,5 +1,17 @@
 # Homegrown Adventures prototype
 
+The v0.97 purpose-continuity pass keeps Rosie's current Adventure invitation
+attached to the Farm Stock decision. Three real Position 2 structures were
+rendered at commit `07028a7` on
+`codex/homegrown-v097-adventure-invitation-prototypes`: a full invitation card,
+three clues placed in the world, and one receipt attached to Farm Stock. The
+receipt won because it preserves Rosie and the Farm art, avoids floating
+tooltips, and lets the player read **Clover becomes a Provision** beside the
+exact route clues. Both **A Glow Beneath the Hedge** and **Lights Past the Open
+Gate** derive their wording from the current Adventure opportunity. No
+comparison switcher, `invitation` query parameter, new quest surface, reward
+rule, state transition, save field, animation, or Rive input remains on main.
+
 The v0.96 overnight-context pass keeps the v0.95 **Expected Home** ticket but
 adds **Tomorrow** only when the persisted return crosses the player's local
 calendar day. Three structures were rendered at commit `b2f54ac` on

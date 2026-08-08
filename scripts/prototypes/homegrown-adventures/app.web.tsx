@@ -286,7 +286,20 @@ const BAG_SLOT_LABELS = {
 	pack: "Pack",
 };
 
-function SeedChoicePanel({ state, onChoose }) {
+function SeedAdventureReceipt({ opportunity, className = "" }) {
+	return (
+		<div
+			className={`seed-adventure-receipt ${className}`}
+			role="note"
+			aria-label={`For ${opportunity.name}: Clover becomes Rosie’s Provision. ${opportunity.detail}.`}
+		>
+			<span><small>Grow for Rosie</small><strong>Clover becomes a Provision</strong></span>
+			<em>{opportunity.detail}</em>
+		</div>
+	);
+}
+
+function SeedChoicePanel({ state, opportunity, onChoose }) {
 	const farmStock = state.farmStock ?? {};
 	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
 	const glowrootSeeds = farmStock["glowroot-seed"] ?? 0;
@@ -317,6 +330,7 @@ function SeedChoicePanel({ state, onChoose }) {
 					</div>
 					{glowrootSeeds > 0 && <p>{glowrootSeeds} Glowroot Seed{glowrootSeeds === 1 ? "" : "s"} safe in Farm stock</p>}
 				</div>
+				<SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" />
 			</section>
 		);
 	}
@@ -349,7 +363,7 @@ function SeedChoicePanel({ state, onChoose }) {
 					<b>Optional boost</b>
 				</div>
 			</div>
-			<p>Clover becomes a Provision for Rosie’s dusk Adventure.</p>
+			<SeedAdventureReceipt opportunity={opportunity} />
 		</section>
 	);
 }
@@ -1703,6 +1717,7 @@ function App() {
 			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
 			{choosingSeed && <SeedChoicePanel
 				state={state}
+				opportunity={opportunity}
 				onChoose={() => act(visiblePresentation.action)}
 			/>}
 			{plantingCrop && <PlantingPanel

@@ -1479,6 +1479,26 @@ test("stable Home memory collapses into one accessible stock pocket", () => {
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.home-memory-pocket-detail \{ animation: none; \}/);
 });
 
+test("Seed choice keeps the current Adventure purpose and clues attached to Farm stock", () => {
+	const firstMorning = createPrototypeState(2, { now: at });
+	assert.equal(adventureOpportunity(firstMorning), FIRST_ADVENTURE_OPPORTUNITY);
+
+	const secondMorning = createPrototypeState(2, {
+		now: at,
+		adventureRoute: "lanternleaf",
+	});
+	assert.equal(adventureOpportunity(secondMorning), SECOND_ADVENTURE_OPPORTUNITY);
+	assert.equal(secondMorning.glowrootPlanted, true);
+
+	assert.match(appSource, /function SeedAdventureReceipt\(\{ opportunity, className = "" \}\)/);
+	assert.match(appSource, /Clover becomes a Provision/);
+	assert.match(appSource, /<em>\{opportunity\.detail\}<\/em>/);
+	assert.match(appSource, /<SeedAdventureReceipt opportunity=\{opportunity\} className="seed-adventure-memory-receipt" \/>/);
+	assert.match(appSource, /<SeedChoicePanel\s+state=\{state\}\s+opportunity=\{opportunity\}/);
+	assert.match(stylesSource, /\.seed-adventure-receipt \{/);
+	assert.doesNotMatch(appSource, /InvitationSwitcher|invitationTreatment/);
+});
+
 test("a Near-Discovery still returns useful supplies without granting the Seed", () => {
 	let state = createPrototypeState(7, { now: at });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: null });
