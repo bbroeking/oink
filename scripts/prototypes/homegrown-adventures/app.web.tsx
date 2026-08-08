@@ -1155,6 +1155,11 @@ function positionRailName({ position, showingAdventureVignette, showingJourneyWa
 	return journeyPhase === "homeward" ? "Heading Home" : "Following the trail";
 }
 
+function journeyHudObjective({ showingJourneyWatch, journeyPhase, adventureComplete, defaultObjective }) {
+	if (!showingJourneyWatch || adventureComplete || journeyPhase !== "homeward") return defaultObjective;
+	return "Rosie is heading Home";
+}
+
 function PositionRail({ position, onChange, positionName }) {
 	const current = PROTOTYPE_POSITIONS[position - 1];
 	const atStart = position === 1;
@@ -1353,6 +1358,16 @@ function App() {
 		? {
 			...presentation,
 			objective: adventureStory(state).journeyObjective,
+		}
+		: showingJourneyWatch
+		? {
+			...presentation,
+			objective: journeyHudObjective({
+				showingJourneyWatch,
+				journeyPhase,
+				adventureComplete: state.adventureComplete,
+				defaultObjective: presentation.objective,
+			}),
 		}
 		: waiting
 		? {

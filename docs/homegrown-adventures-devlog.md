@@ -303,11 +303,69 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 92. **v0.91 — The Rail Follows Rosie (shipped):** let Position 9's external
     review readout name the causal story, trail, homeward, and gate states it
     is actually showing without adding another label inside the Farm.
+93. **v0.92 — The HUD Turns Home (shipped):** let the persistent top objective
+    follow the same trail, homeward, and Home facts as the story and review rail
+    without adding copy or changing its footprint.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.92 — The HUD Turns Home — 2026-08-08
+
+- Replayed the shipped v0.91 first-route homeward state. Its story note and
+  review rail agreed on **Heading Home**, but the persistent HUD still said
+  **Rosie is following the moths**. The second route had the same contradiction
+  with reflected leaves.
+- Compared three treatments on the real homeward screen: the existing
+  single-line objective following the phase, a two-line route name plus phase
+  summary, and no objective while Rosie was away. The single line won. The
+  route summary duplicated the field note in smaller text; removing the HUD
+  left the heart counter visually stranded and discarded useful orientation.
+- Captured all three throwaway treatments at commit `84c0d70` on
+  `codex/homegrown-v092-journey-hud-prototypes`. Main retains only the derived
+  homeward objective; no treatment switcher or alternate HUD structure ships.
+- The warm-moth and reflected-leaf trail objectives remain route-specific.
+  Both change to **Rosie is heading Home** at the existing homeward threshold,
+  and the settled gate retains **Rosie is Home**.
+- No CSS geometry, action, duration, journey state, route, Bag rule, reward,
+  save field, Rive asset, or Rive input changed. The HUD reads the same phase
+  the real screen already renders.
+- The required Impeccable product-design review substituted for unavailable
+  Claude Design. It approved the single changing line because it restores
+  agreement, preserves orientation and the established compact footprint, and
+  adds no density or competing surface.
+
+### Local validation evidence
+
+- Rendered the first route's causal vignette and confirmed **A warm glow
+  answers Rosie**, then let it hand into the trail and confirmed **Rosie is
+  following the moths** remained route-specific.
+- Rendered the first route at homeward and confirmed the HUD, field note, and
+  rail all agreed that Rosie was heading Home. Fast-forwarding retained the
+  unchanged **Rosie is Home**, **At the gate**, and **Welcome Rosie home**
+  handoff.
+- Rendered the Lanternleaf second route at homeward and confirmed the same HUD
+  agreement while the silver-leaf note and route remained distinct. Reload
+  restored the same phase and copy.
+- Enabled reduced motion through the real Lab tools and confirmed the same
+  journey-aware HUD with no comparison switcher in production.
+- `npm run prototype:homegrown:test` passes 63/63,
+  `npm run prototype:homegrown:build` passes, `npx tsc --noEmit` passes,
+  `npm run verify:rive-homegrown` passes both authored Rive contracts, and
+  `npm run quality:check` passes the quality contracts, 157-file layout gate,
+  324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
+  and 202 security tests. Watchman's existing recrawl notice is the only
+  warning.
+
+### Next highest-leverage weakness
+
+The visible HUD, story note, route, and review rail now agree, but the scene's
+accessible image description still begins **Rosie is following the moths** or
+**Rosie is following reflected leaves** during homeward. The next cycle should
+let that existing description follow the same phase so screen-reader players
+receive one truthful journey state, without changing the visible composition.
 
 ### v0.91 — The Rail Follows Rosie — 2026-08-08
 

@@ -32,7 +32,10 @@ reduced-motion behavior; its prototype-only fast-forward now sits beside the
 external review rail so waiting leaves the Farm clear and Homecoming alone
 restores the large in-world action; that rail now names **Adventure begins →
 Following the trail → Heading Home → At the gate** from those same rendered
-facts instead of calling every Position 9 state an Adventure vignette;
+facts instead of calling every Position 9 state an Adventure vignette; the
+existing quiet HUD now also changes to **Rosie is heading Home** at the
+homeward turn while preserving route-specific trail copy and **Rosie is Home**
+at the gate;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive
@@ -650,6 +653,20 @@ reward, persistence fact, Rive asset, or Rive input was added. Both routes,
 vignette, trail, homeward, Home, reload, reduced motion, 62 reducer/source-
 contract tests, the Rive contracts, TypeScript, and repository quality gates
 pass locally.
+
+**Journey-aware-HUD checkpoint (August 8, 2026):** Position 9's persistent
+top objective no longer says Rosie is still following moths or reflected
+leaves after the story note, route, and review rail have turned Home. During
+each route's trail it retains the established route-specific objective; at the
+same persisted 75% threshold it reads **Rosie is heading Home**; after reducer
+settlement it returns to the established **Rosie is Home**. Three treatments
+were rendered and captured on `codex/homegrown-v092-journey-hud-prototypes` at
+`84c0d70`; the existing single-line objective won over a dense two-line route
+summary and removing the objective entirely. No new surface, CSS geometry,
+screen, journey state, timer, route, Bag rule, reward, persistence fact, Rive
+asset, or Rive input was added. Both routes, vignette, trail, homeward, Home,
+reload, reduced motion, 63 reducer/source-contract tests, the Rive contracts,
+TypeScript, and repository quality gates pass locally.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose

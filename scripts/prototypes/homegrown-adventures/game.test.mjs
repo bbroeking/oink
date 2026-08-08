@@ -1165,6 +1165,14 @@ test("the review rail names the real Position 9 journey beat", () => {
 	assert.doesNotMatch(appSource, /RailReadoutVariant|RailCopySwitcher|railcopy/);
 });
 
+test("the quiet HUD follows Position 9 homeward without adding another journey surface", () => {
+	assert.match(appSource, /function journeyHudObjective\(\{ showingJourneyWatch, journeyPhase, adventureComplete, defaultObjective \}\)/);
+	assert.match(appSource, /if \(!showingJourneyWatch \|\| adventureComplete \|\| journeyPhase !== "homeward"\) return defaultObjective/);
+	assert.match(appSource, /return "Rosie is heading Home"/);
+	assert.match(appSource, /objective: journeyHudObjective\(\{/);
+	assert.doesNotMatch(appSource, /JourneyHudPrototypeSwitcher|hudCopyVariant|hudcopy/);
+});
+
 test("the first Hand Trowel cause performs one separable dig", () => {
 	assert.match(appSource, /showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" \/>/);
 	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"\]\[data-adventure-tool="hand-trowel"\]\[data-adventure-beat="tool"\]/);

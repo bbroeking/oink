@@ -1,5 +1,15 @@
 # Homegrown Adventures prototype
 
+The v0.92 journey-aware HUD pass lets the existing top objective follow the
+same persisted homeward phase as the story note and review rail. It keeps each
+route's established trail copy, changes only to **Rosie is heading Home** at
+the 75% turn, and returns to **Rosie is Home** at the gate. Three structures
+were rendered and captured at commit `84c0d70` on
+`codex/homegrown-v092-journey-hud-prototypes`; the single-line treatment won
+because the two-line route summary added density and removing the objective
+stranded the heart counter. No comparison switcher, layout rule, state, timer,
+route, reward, persistence field, or Rive input remains on main.
+
 The v0.91 phase-aware review pass makes Position 9's external rail follow the
 journey it is reviewing. Its second line now changes from **Adventure begins**
 to **Following the trail**, **Heading Home**, and **At the gate**, derived from
