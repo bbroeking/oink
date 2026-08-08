@@ -762,7 +762,7 @@ function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
 				<li className={homecomingReady || homeward ? "is-current" : ""}><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></li>
 			</ol>
 			<div className="journey-watch-lights" aria-hidden="true"><i /><i /><i /><i /></div>
-			<button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>
+			{homecomingReady && <button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>}
 		</section>
 	);
 }
@@ -1134,6 +1134,15 @@ function VariantSwitcher({ variant, setVariant }) {
 			<button type="button" aria-label="Previous variant" onClick={() => setVariant(keys[(index + keys.length - 1) % keys.length])}>←</button>
 			<span><strong>{variant}</strong><small>{VARIANTS[variant].name}</small></span>
 			<button type="button" aria-label="Next variant" onClick={() => setVariant(keys[(index + 1) % keys.length])}>→</button>
+		</div>
+	);
+}
+
+function JourneyReviewRailAction({ actionLabel, onAction }) {
+	return (
+		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
+			<span><small>Browser prototype</small><strong>Skip the six-hour wait</strong></span>
+			<button type="button" aria-label={actionLabel} onClick={onAction}><span aria-hidden="true">↠</span> Fast-forward</button>
 		</div>
 	);
 }
@@ -1710,6 +1719,10 @@ function App() {
 				waiting={waiting || seedHandoff === "arriving"}
 			/>}
 		</div>
+		{showingJourneyWatch && !state.adventureComplete && <JourneyReviewRailAction
+			actionLabel={presentation.label}
+			onAction={() => act(presentation.action)}
+		/>}
 		<PositionRail position={position} onChange={jumpToPosition} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}

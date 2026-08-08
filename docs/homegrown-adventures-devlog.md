@@ -297,11 +297,76 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 90. **v0.89 — The Trail Turns Home (shipped):** let the existing
     journey note and route advance once from exploring to heading Home, derived
     from the outing's persisted timestamps rather than a new timer system.
+91. **v0.90 — The Farm Holds the Journey (locally verified):** move the
+    browser's fast-forward shortcut beside its external progression rail so the
+    waiting Farm stays quiet and Homecoming keeps the only primary action.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.90 — The Farm Holds the Journey — 2026-08-08
+
+- Replayed the shipped v0.89 homeward state. Its field note, three-step route,
+  reversed lights, and brighter porch made the journey readable, but the
+  294px **Fast-forward to Homecoming** slab remained the strongest object in
+  the lower half of the Farm. A browser-review affordance visually outweighed
+  Rosie's actual outing.
+- Compared three placements on the real Position 9 screen: a secondary action
+  inside the field note, an actionable Homeward route step, and a two-tier
+  external review dock above Previous / Next. The dock won. The field-note
+  treatment grew the story card until it crowded the route; the route treatment
+  confused a progress state with a button and reduced its visible label to the
+  ambiguous **Preview**.
+- Captured all three throwaway treatments at commit `df43a46` on
+  `codex/homegrown-v090-fast-forward-prototypes`. Main retains only the
+  external review dock; neither in-world treatment nor the prototype switcher
+  ships.
+- During trail and homeward, the Farm now contains no fast-forward action. A
+  compact dock immediately above the prototype progression rail identifies
+  itself as **Browser prototype**, explains **Skip the six-hour wait**, and
+  offers one 44px **Fast-forward** button whose accessible name remains
+  **Fast-forward to Homecoming**.
+- When the same reducer-owned `ADVANCE_TIME` reaches Home, the review shortcut
+  disappears and the established full in-world **Welcome Rosie home** action
+  returns. That action still performs `WELCOME_HOME`, advances to Position 10,
+  and alone reveals the named Discovery or Near-Discovery.
+- No action, duration, journey phase, route, Bag rule, reward, save field, Rive
+  asset, or Rive input changed. This is purely hierarchy and placement for the
+  browser prototype.
+
+### Local validation evidence
+
+- Rendered the real first-route homeward state. The entire Farm below the route
+  remained visible; the compact shortcut aligned with the external rail and
+  exposed a 44px target without competing with the story note.
+- Rendered the second route at its earlier trail state. **Rosie follows
+  reflected leaves**, the current route step, and the pale-green light stayed
+  unchanged while the same external shortcut remained reachable.
+- Fast-forwarded that real second route, confirmed the shortcut left the DOM,
+  confirmed **Rosie is Home**, **At Home**, and the full **Welcome Rosie home**
+  action, then welcomed Rosie and reached Position 10 with **Lanternleaf Path**
+  intact.
+- Enabled reduced motion through the real Lab tools on the Lanternleaf
+  homeward state. The correct copy and shortcut remained readable, no
+  fast-forward treatment switcher existed, and the established motion policy
+  remained authoritative.
+- `npm run prototype:homegrown:test` passes 61/61,
+  `npm run prototype:homegrown:build` passes, `npx tsc --noEmit` passes,
+  `npm run verify:rive-homegrown` passes both authored Rive contracts, and
+  `npm run quality:check` passes the quality contracts, 157-file layout gate,
+  324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
+  and 202 security tests. Watchman's existing recrawl notice is the only
+  warning.
+
+### Next highest-leverage weakness
+
+The review shortcut now belongs with the prototype controls, but the rail still
+labels every Position 9 state **Adventure vignette** even after the vignette
+has handed off to trail, homeward, or Home. The next cycle should make that
+external readout agree with the current journey beat—without adding a fourth
+in-world progress label or splitting Position 9 into more screens.
 
 ### v0.89 — The Trail Turns Home — 2026-08-08
 

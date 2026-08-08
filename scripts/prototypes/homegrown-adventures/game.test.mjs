@@ -1143,6 +1143,18 @@ test("the rendered journey advances one existing note and route without shipping
 	assert.doesNotMatch(appSource, /ProgressionPrototypeSwitcher|progressionTreatment|searchParams\.set\("progression"/);
 });
 
+test("the browser fast-forward stays touch-safe beside the review rail while Homecoming remains in the world", () => {
+	assert.match(appSource, /function JourneyReviewRailAction\(\{ actionLabel, onAction \}\)/);
+	assert.match(appSource, /<small>Browser prototype<\/small><strong>Skip the six-hour wait<\/strong>/);
+	assert.match(appSource, /<button type="button" aria-label=\{actionLabel\} onClick=\{onAction\}><span aria-hidden="true">↠<\/span> Fast-forward<\/button>/);
+	assert.match(appSource, /showingJourneyWatch && !state\.adventureComplete && <JourneyReviewRailAction/);
+	assert.match(appSource, /actionLabel=\{presentation\.label\}/);
+	assert.match(appSource, /homecomingReady && <button type="button" className="journey-watch-action"/);
+	assert.match(stylesSource, /\.journey-review-rail-action button \{[^}]*min-height: 44px/s);
+	assert.match(stylesSource, /\.journey-review-rail-action \{[^}]*bottom: max\(76px, calc\(env\(safe-area-inset-bottom\) \+ 64px\)\)/s);
+	assert.doesNotMatch(appSource, /FastForwardPrototypeSwitcher|fastForwardTreatment|searchParams\.set\("fastforward"/);
+});
+
 test("the first Hand Trowel cause performs one separable dig", () => {
 	assert.match(appSource, /showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" \/>/);
 	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"\]\[data-adventure-tool="hand-trowel"\]\[data-adventure-beat="tool"\]/);

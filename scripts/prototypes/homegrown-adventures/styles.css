@@ -716,6 +716,52 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 .journey-watch-action:hover { background: #fff1c5; transform: translateX(-50%) translateY(-2px); }
 .journey-watch-action:focus-visible { outline: 4px solid #267da2; outline-offset: 3px; }
 .journey-watch-action:active { transform: translateX(-50%) translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
+.journey-review-rail-action {
+	position: fixed;
+	z-index: 34;
+	left: 50%;
+	bottom: max(76px, calc(env(safe-area-inset-bottom) + 64px));
+	width: min(350px, calc(100vw - 32px));
+	min-height: 54px;
+	padding: 5px 6px 5px 12px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 8px;
+	transform: translateX(-50%);
+	color: var(--ink-soft);
+	background: rgba(255,249,233,.96);
+	border: 2px solid var(--ink);
+	border-radius: 14px 14px 5px 5px;
+	box-shadow: 2px 3px 0 rgba(48,33,22,.7);
+}
+.journey-review-rail-action > span { display: grid; gap: 2px; min-width: 0; }
+.journey-review-rail-action small {
+	font-size: 7px;
+	font-weight: 950;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+}
+.journey-review-rail-action strong {
+	overflow: hidden;
+	font-size: 9px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.journey-review-rail-action button {
+	min-height: 44px;
+	padding: 0 12px;
+	color: var(--ink);
+	background: var(--paper-deep);
+	border: 1px solid var(--wood);
+	border-radius: 10px;
+	font-size: 9px;
+	font-weight: 950;
+}
+.journey-review-rail-action button span { font-size: 14px; }
+.journey-review-rail-action button:hover { background: #fff1c5; }
+.journey-review-rail-action button:focus-visible { outline: 3px solid #267da2; outline-offset: 2px; }
+.journey-review-rail-action button:active { transform: translateY(1px); }
 @keyframes journey-current-step {
 	0%, 100% { transform: scale(.94); filter: brightness(.94); }
 	50% { transform: scale(1.06); filter: brightness(1.08); }

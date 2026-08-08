@@ -1,5 +1,15 @@
 # Homegrown Adventures prototype
 
+The v0.90 fast-forward hierarchy pass removes the six-hour skip from the Farm
+while Rosie is away. One compact, 44px **Fast-forward** control now joins the
+browser prototype's external Previous / Next review rail; the field note,
+route, Home light, and painted Farm keep the journey hierarchy. At Home, the
+review shortcut disappears and the established full in-world **Welcome Rosie
+home** action returns. Three placements were rendered and captured at commit
+`df43a46` on `codex/homegrown-v090-fast-forward-prototypes`; the external
+review rail won. No switcher, new reducer action, timer, reward, persistence
+field, or Rive input remains on main.
+
 The v0.89 journey-progress pass derives one calm **trail → homeward → Home**
 change from the six-hour timestamps the reducer already persists. At 75%, the
 existing field note becomes route-specific homeward copy, the existing route

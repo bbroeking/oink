@@ -28,7 +28,9 @@ earned Glowroot and gives it one restrained breathing glow, while the clue
 branch mounts no reward canvas; the subsequent idle watch now derives one
 route-specific **trail → homeward → Home** change from the six-hour timestamps
 already persisted by React, with reload-stable copy, route, porch-light, and
-reduced-motion behavior; Position 10 now brings Rosie into a physical
+reduced-motion behavior; its prototype-only fast-forward now sits beside the
+external review rail so waiting leaves the Farm clear and Homecoming alone
+restores the large in-world action; Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive
 fast-forward, reload, reduced motion, and rapid input; explicitly boosted
@@ -612,6 +614,23 @@ and brighter Home light borrowed from the alternatives. No new screen, route,
 choice, reward, opaque countdown, persistence field, Rive asset, or Rive input
 was added. Both routes, the direct homeward review state, reload, Homecoming,
 reduced motion, 60 reducer/source-contract tests, the Rive contracts,
+TypeScript, and repository quality gates pass locally.
+
+**Fast-forward-hierarchy checkpoint (August 8, 2026):** the browser
+prototype's six-hour skip no longer appears as the strongest full-width action
+inside the waiting Farm. During **trail** and **homeward**, one 44px
+**Fast-forward** shortcut is visibly attached to the external Previous / Next
+review rail and explicitly labeled **Browser prototype · Skip the six-hour
+wait**. The story note, route, Home light, and Farm remain free of review
+transport. Once React settles the Adventure to **Home**, that shortcut leaves
+the DOM and the established large **Welcome Rosie home** action returns inside
+the world. Three placements were rendered and captured on
+`codex/homegrown-v090-fast-forward-prototypes` at `df43a46`; the external rail
+won over enlarging the story note or turning Homeward status into a button.
+The production fold uses the same `ADVANCE_TIME` and `WELCOME_HOME` actions and
+changes no timer, phase, route, Bag, reward, persistence fact, Rive asset, or
+Rive input. Both routes, trail, homeward, Home, Position 10 handoff, reload,
+reduced motion, 61 reducer/source-contract tests, the Rive contracts,
 TypeScript, and repository quality gates pass locally.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
