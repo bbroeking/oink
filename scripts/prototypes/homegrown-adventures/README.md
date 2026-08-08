@@ -1,5 +1,19 @@
 # Homegrown Adventures prototype
 
+The v0.105 Discovery-purpose pass makes yesterday's lasting world change the
+cause of today's preparation instead of leaving the new opportunity to feel
+scheduled. Three real Position 2 treatments were rendered at commit `f1fa423`
+on `codex/homegrown-v105-discovery-purpose-prototypes`: the cause in the
+existing purpose receipt, the cause in the primary Seed action, and the cause
+in the quiet HUD. The Seed action won because it places the readable chain
+**Glowroot opened this route → Clover Seed → Grow a Lunch for the lights
+beyond** exactly where the player decides, while preserving the route's
+existing environmental clues below. The first morning remains unchanged.
+React derives the treatment from the established remembered-morning branch;
+no progression state, Seed quantity, crop rule, reward, timer, Rive asset, or
+Rive contract changed. No `purpose` query or comparison switcher remains on
+main.
+
 The v0.104 lasting-Home pass makes the completed Glowroot Discovery readable
 as a world change instead of hiding it behind generic stock counts. Three real
 Position 11 treatments were rendered at commit `d255aff` on

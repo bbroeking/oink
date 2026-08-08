@@ -344,11 +344,89 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 105. **v0.104 — The Farm Names What Changed (shipped):** make the completed
     Glowroot Discovery name its lasting effects at Home while keeping exact
     material quantities in the existing stock drawer.
+106. **v0.105 — Glowroot Opens the Next Route (shipped):** connect the lasting
+    Glowroot Discovery directly to the next morning's Clover preparation in
+    the existing primary Seed action.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.105 — Glowroot Opens the Next Route — 2026-08-08
+
+- Began by replaying the shipped Changed Home through **Begin another day**,
+  **Tickle Rosie**, the next purpose, and Seed choice. The open hedge, Glowroot
+  bed, bell, and frog remained visible, and the new opportunity was correctly
+  named **Lights Past the Open Gate**, but the UI jumped straight to Clover.
+  Nothing said that yesterday's Glowroot Discovery created today's route, so
+  the new purpose felt scheduled rather than caused.
+- Compared three real Position 2 treatments: the cause in the existing purpose
+  receipt, the cause in the primary Seed action, and the cause in the quiet
+  HUD. The Seed action won because the player reads it at the exact decision
+  point. The receipt was easier to overlook, while the HUD put the cause in
+  small copy far from the tap.
+- Captured all three throwaway treatments at commit `f1fa423` on
+  `codex/homegrown-v105-discovery-purpose-prototypes`. Main keeps only the
+  Seed-action treatment; no `purpose` query or comparison switcher ships.
+- On remembered mornings, the existing Clover action now reads **Glowroot
+  opened this route**, **Clover Seed**, and **Grow a Lunch for the lights
+  beyond**. The existing receipt still explains that Clover becomes a
+  Provision and preserves **Nightfall · reflected leaves · gentle wrap**.
+- The required Impeccable product review substituted for unavailable Claude
+  Design. It selected the Seed action because it expresses past cause, present
+  choice, and future use without adding a panel or competing with Rosie and the
+  living Farm.
+- This is presentation derived from existing `daysCompleted`,
+  `glowrootPlanted`, and Adventure-opportunity facts. No progression, Seed,
+  stock, crop, reward, timer, persistence, animation, Rive asset, or Rive
+  contract changed.
+
+### Local validation evidence
+
+- Played the real Changed Home state into a new morning and tickled Rosie. The
+  next Seed action named Glowroot's causal role while the open hedge, frog,
+  bell, Glowroot bed, and Moonberries stayed visible in the rendered Farm.
+- Chose Clover from that action. The next screen retained **Prepare for the
+  gate lights** and the exact three-Lunch promise.
+- Reloaded after the choice and verified the gate-light purpose and Clover
+  quantities persisted through the actual flow rather than a direct review
+  preset.
+- Repeated the flow with reduced motion active; the cause, Seed choice, and
+  route purpose remained fully legible without depending on motion.
+- `npm run prototype:homegrown:test` passes 75/75. `npm run
+  prototype:homegrown:build`, `npm run verify:rive-homegrown`, `npm run
+  quality:loop`, and `npm run quality:check` pass the authored Rive contracts,
+  quality contracts, 157-file layout gate, 324-sprite integrity gate, security
+  contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
+  existing recrawl notice and the verifier's already-required manual mobile
+  Safari checks are the only outstanding warnings.
+
+### Public verification evidence
+
+- Feature commit `bb3b9ec` deployed successfully in GitHub Pages run
+  `31277177336`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `1b59f087db27b81ac5ea6a1df87b1c16e15d7c8f6a657ec8ccde81e51a743921`
+  - player JavaScript: `4e5587677d47ddcff611950952bf6c3743e9ef6e6b124ecd20b9380dc4011861`
+  - player CSS: `14d96904ebdc2264c5587803367b978a6d6e555c3303cf3d8be6d988534b0e93`
+- Replayed the public build from Changed Home through **Begin another day**
+  and **Tickle Rosie**. The live primary action named **Glowroot opened this
+  route** and **Grow a Lunch for the lights beyond** beside the open hedge and
+  remembered Farm.
+- Chose Clover, reached **Prepare for the gate lights**, reloaded the public
+  page, and verified the second-route purpose and exact Lunch quantity stayed
+  intact.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=2&route=lanternleaf&v=bb3b9ec`
+
+### Next highest-leverage weakness
+
+Replay the remembered Seed screen as a decision rather than a guided step.
+Determine whether **Choose a Seed** still feels falsely authored when Clover is
+the only actionable crop; prefer one meaningful alternative inside the
+existing Seed, Farm-stock, purpose, and crop-duration rules over another
+screen, currency, destination, or parallel system.
 
 ### v0.104 — The Farm Names What Changed — 2026-08-08
 
