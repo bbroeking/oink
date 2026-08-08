@@ -1924,6 +1924,54 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	box-shadow: 2px 2px 0 rgba(48,33,22,.6);
 	text-align: center;
 }
+.planting-treatment-B,
+.planting-treatment-C {
+	top: 461px;
+	grid-template-rows: 100px 66px 54px;
+}
+.planting-named-promise strong { font-size: 11px; }
+.planting-output-shelf {
+	min-width: 0;
+	padding: 7px 10px;
+	display: grid;
+	grid-template-columns: 38px minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 8px;
+	color: var(--ink);
+	background: rgba(255,249,233,.97);
+	border: 2px solid var(--ink);
+	border-radius: 12px;
+	box-shadow: 2px 3px 0 rgba(48,33,22,.62);
+}
+.planting-output-tin { width: 36px; height: 45px; display: grid; place-items: center; color: #39783f; background: #ead4a2; border: 2px solid var(--ink); border-radius: 7px 7px 11px 11px; font-size: 22px; }
+.planting-output-shelf > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
+.planting-output-shelf small { color: #8d5c35; font-size: 7px; font-weight: 950; letter-spacing: .05em; text-transform: uppercase; }
+.planting-output-shelf strong { font-family: Caprasimo, Georgia, serif; font-size: 12px; font-weight: 400; line-height: 1; }
+.planting-output-shelf em { padding: 7px 8px; color: #496a36; background: #edf0ce; border: 1px solid rgba(48,33,22,.56); border-radius: 8px; font-size: 8px; font-style: normal; font-weight: 950; white-space: nowrap; }
+.planting-comparison {
+	min-width: 0;
+	padding: 5px 8px;
+	display: grid;
+	grid-template-columns: 1fr 18px 1fr;
+	align-items: center;
+	gap: 4px;
+	color: var(--ink);
+	background: rgba(255,249,233,.97);
+	border: 2px solid var(--ink);
+	border-radius: 12px;
+	box-shadow: 2px 3px 0 rgba(48,33,22,.62);
+}
+.planting-comparison > div { min-width: 0; height: 52px; padding: 5px 7px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 2px 5px; border: 1px solid rgba(48,33,22,.38); border-radius: 8px; }
+.planting-comparison > div.is-selected { background: #edf0ce; border: 2px solid #5d8d40; }
+.planting-comparison small { grid-column: 1 / -1; color: #8d5c35; font-size: 7px; font-weight: 950; text-transform: uppercase; }
+.planting-comparison strong { font-family: Caprasimo, Georgia, serif; font-size: 13px; font-weight: 400; }
+.planting-comparison b { font-size: 8px; text-align: right; }
+.planting-comparison > span { font-size: 14px; font-weight: 950; text-align: center; }
+.compost-switcher { position: fixed; z-index: 42; left: calc(50% + 225px); top: 50%; transform: translateY(-50%); min-width: 228px; height: 50px; display: grid; grid-template-columns: 44px 1fr 44px; overflow: hidden; color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: 999px; box-shadow: 2px 3px 0 var(--ink); }
+.compost-switcher button { border: 0; background: #f1e2c7; font-size: 18px; }
+.compost-switcher span { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.compost-switcher strong { font-family: Caprasimo, serif; font-size: 14px; }
+.compost-switcher small { color: var(--ink-soft); font-size: 9px; }
 .planting-effect strong { font-size: 11px; line-height: 1; }
 .planting-effect small { margin-top: 4px; color: var(--ink-soft); font-size: 8px; font-weight: 700; line-height: 1.1; }
 .plant-confirm,
@@ -2485,6 +2533,7 @@ html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, ht
 	.dev-tools { top: 84px; right: 7px; }
 	.dev-toggle { opacity: .8; }
 	.variant-switcher { bottom: 84px; }
+	.compost-switcher { left: 50%; top: auto; bottom: 84px; transform: translateX(-50%); }
 	.lab-player { height: 100dvh; padding: 0; overflow: hidden; }
 	.position-rail {
 		bottom: 0;

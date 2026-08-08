@@ -199,6 +199,12 @@ const PURPOSES = [
 	{ id: "glowroot", name: "Glowroot", job: "Light and restore Home", mark: "glow" },
 ];
 
+const COMPOST_TREATMENTS = Object.freeze({
+	A: Object.freeze({ name: "Named promise" }),
+	B: Object.freeze({ name: "Lunch shelf" }),
+	C: Object.freeze({ name: "Before and after" }),
+});
+
 function readVariant() {
 	const value = new URLSearchParams(window.location.search).get("variant")?.toUpperCase();
 	return Object.hasOwn(VARIANTS, value) ? value : "A";
@@ -217,6 +223,7 @@ function useVariant() {
 	useEffect(() => {
 		const onKey = (event) => {
 			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (new URLSearchParams(window.location.search).has("compost")) return;
 			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
 			const keys = Object.keys(VARIANTS);
 			const current = keys.indexOf(variant);
@@ -228,6 +235,38 @@ function useVariant() {
 	}, [setVariant, variant]);
 
 	return [variant, setVariant];
+}
+
+function readCompostTreatment() {
+	const value = new URLSearchParams(window.location.search).get("compost")?.toUpperCase();
+	return Object.hasOwn(COMPOST_TREATMENTS, value) ? value : null;
+}
+
+function useCompostTreatment() {
+	const [treatment, setTreatmentState] = useState(readCompostTreatment);
+	const setTreatment = useCallback((next) => {
+		const normalized = Object.hasOwn(COMPOST_TREATMENTS, next) ? next : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("compost", normalized);
+		window.history.replaceState({}, "", url);
+		setTreatmentState(normalized);
+	}, []);
+
+	useEffect(() => {
+		if (!treatment) return undefined;
+		const onKey = (event) => {
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			const keys = Object.keys(COMPOST_TREATMENTS);
+			const current = keys.indexOf(treatment);
+			const delta = event.key === "ArrowRight" ? 1 : -1;
+			setTreatment(keys[(current + delta + keys.length) % keys.length]);
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [setTreatment, treatment]);
+
+	return [treatment, setTreatment];
 }
 
 function Glyph({ name }) {
@@ -368,12 +407,40 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 	);
 }
 
-function PlantingPanel({ state, onToggleCompost, onPlant }) {
+function PlantingPromise({ boosted, treatment }) {
+	const count = boosted ? 4 : 3;
+	if (treatment === "B") {
+		return (
+			<div className="planting-output-shelf" role="status" aria-label={`${count} Clover Lunches, ready in ${boosted ? 2 : 4} hours`}>
+				<span className="planting-output-tin" aria-hidden="true">☘</span>
+				<span><small>Adventure Provision</small><strong>Clover Lunch ×{count}</strong></span>
+				<em>{boosted ? "Ready in 2h" : "Ready in 4h"}</em>
+			</div>
+		);
+	}
+	if (treatment === "C") {
+		return (
+			<div className="planting-comparison" role="status" aria-label={boosted ? "Compost selected: 2 hours, 4 Clover Lunches" : "No Compost selected: 4 hours, 3 Clover Lunches"}>
+				<div className={!boosted ? "is-selected" : ""}><small>No Compost</small><strong>4h</strong><b>3 Lunches</b></div>
+				<span aria-hidden="true">→</span>
+				<div className={boosted ? "is-selected" : ""}><small>With Compost</small><strong>2h</strong><b>4 Lunches</b></div>
+			</div>
+		);
+	}
+	return (
+		<div className="planting-effect planting-named-promise" role="status">
+			<strong>{count} Clover Lunches · ready in {boosted ? 2 : 4} hours</strong>
+			<small>{boosted ? "Compost saves 2 hours and adds 1 Lunch." : "Add Compost: 1 more Lunch, 2 hours sooner."}</small>
+		</div>
+	);
+}
+
+function PlantingPanel({ state, compostTreatment, onToggleCompost, onPlant }) {
 	const seeds = state.farmStock?.[CROP_RULES.clover.seedId] ?? 0;
 	const compost = state.farmStock?.compost ?? 0;
 	const boosted = state.compostApplied && compost > 0;
 	return (
-		<section className="planting-panel" aria-label="Plant Clover and choose whether to add Compost">
+		<section className={`planting-panel planting-treatment-${compostTreatment ?? "control"}`} aria-label="Plant Clover and choose whether to add Compost">
 			<div className="planting-costs">
 				<div className="planting-cost is-required">
 					<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
@@ -391,10 +458,7 @@ function PlantingPanel({ state, onToggleCompost, onPlant }) {
 					<i aria-hidden="true">{boosted ? "✓" : "+"}</i>
 				</button>
 			</div>
-			<div className="planting-effect" role="status">
-				<strong>{boosted ? "Ready in 2 hours · Harvest 4" : "Ready in 4 hours · Harvest 3"}</strong>
-				<small>{boosted ? "Compost grows it sooner and gives one extra." : "Add Compost for 2 hours · Harvest 4."}</small>
-			</div>
+			<PlantingPromise boosted={boosted} treatment={compostTreatment} />
 			<button type="button" className="plant-confirm" onClick={onPlant} disabled={seeds < 1}>
 				{boosted ? "Plant with Compost" : "Plant Clover"}
 			</button>
@@ -1173,6 +1237,18 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function CompostSwitcher({ treatment, setTreatment }) {
+	const keys = Object.keys(COMPOST_TREATMENTS);
+	const index = keys.indexOf(treatment);
+	return (
+		<div className="compost-switcher" aria-label="Compost promise treatment switcher">
+			<button type="button" aria-label="Previous Compost treatment" onClick={() => setTreatment(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span><strong>{treatment}</strong><small>{COMPOST_TREATMENTS[treatment].name}</small></span>
+			<button type="button" aria-label="Next Compost treatment" onClick={() => setTreatment(keys[(index + 1) % keys.length])}>→</button>
+		</div>
+	);
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1288,6 +1364,7 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [compostTreatment, setCompostTreatment] = useCompostTreatment();
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1722,6 +1799,7 @@ function App() {
 			/>}
 			{plantingCrop && <PlantingPanel
 				state={state}
+				compostTreatment={compostTreatment}
 				onToggleCompost={() => act({ type: ACTIONS.TOGGLE_COMPOST })}
 				onPlant={() => act(visiblePresentation.action)}
 			/>}
@@ -1799,6 +1877,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{plantingCrop && compostTreatment && <CompostSwitcher treatment={compostTreatment} setTreatment={setCompostTreatment} />}
 	</main>;
 }
 
