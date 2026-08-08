@@ -48,6 +48,42 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// PROTOTYPE — three Position 11 treatments for naming the lasting world change,
+// switchable with ?homememory=A|B|C.
+const HOME_MEMORY_STUDIES = Object.freeze({
+	A: { name: "World memory" },
+	B: { name: "Field Guide closure" },
+	C: { name: "Split drawer" },
+});
+
+function readHomeMemoryStudy() {
+	const requested = new URLSearchParams(window.location.search).get("homememory")?.toUpperCase();
+	return Object.hasOwn(HOME_MEMORY_STUDIES, requested) ? requested : null;
+}
+
+function HomeMemoryPrototypeSwitcher({ study, setStudy }) {
+	const studies = Object.keys(HOME_MEMORY_STUDIES);
+	const currentIndex = studies.indexOf(study);
+	const cycle = (direction) => setStudy(studies[(currentIndex + direction + studies.length) % studies.length]);
+	return (
+		<div
+			className="home-memory-prototype-switcher"
+			tabIndex={0}
+			aria-label="Home memory prototype switcher"
+			onKeyDown={(event) => {
+				if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+				event.preventDefault();
+				event.stopPropagation();
+				cycle(event.key === "ArrowRight" ? 1 : -1);
+			}}
+		>
+			<button type="button" aria-label="Previous Home memory treatment" onClick={() => cycle(-1)}>←</button>
+			<span><strong>{study}</strong><small>{HOME_MEMORY_STUDIES[study].name}</small></span>
+			<button type="button" aria-label="Next Home memory treatment" onClick={() => cycle(1)}>→</button>
+		</div>
+	);
+}
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -999,7 +1035,7 @@ function SeedHandoff({ origin, phase }) {
 	);
 }
 
-function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expanded, onToggle }) {
+function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expanded, onToggle, memoryStudy = null }) {
 	const stock = state.farmStock ?? {};
 	const stockItems = [
 		["☘", "Clover Seed", stock["clover-seed"] ?? 0],
@@ -1007,10 +1043,26 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 		["♣", "Compost", stock.compost ?? 0],
 		["≋", "Willow Fiber", stock["willow-fiber"] ?? 0],
 	];
+	const memoryTitle = memoryStudy === "A"
+		? "Glowroot changed Home"
+		: memoryStudy === "B"
+			? "Glowroot Trail complete"
+			: "The Farm remembers";
+	const memorySummary = memoryStudy === "A"
+		? "Bed 3 · Open hedge · Pond frog"
+		: memoryStudy === "B"
+			? "Seed planted · Home changed"
+			: stockItems.map(([icon, , amount]) => `${icon}${amount}`).join("  ");
 	return (
-		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label="The Farm remembers this Adventure">
+		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} data-memory-study={memoryStudy ?? undefined} aria-label="The Farm remembers this Adventure">
 			<div className="home-memory-pocket-detail" id="farm-memory-detail" hidden={!expanded}>
-				<strong>Crops grow · Stock stays · Discoveries stay</strong>
+				<strong>{memoryStudy === "C"
+					? "What this Adventure changed"
+					: memoryStudy
+						? "Farm stock stays useful"
+						: "Crops grow · Stock stays · Discoveries stay"}</strong>
+				{memoryStudy === "C" && <p>Glowroot in Bed 3 · Hedge crossing open · Pond frog at Home</p>}
+				{memoryStudy === "C" && <strong>Farm stock</strong>}
 				<div aria-label="Current Farm stock">
 					{stockItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
 				</div>
@@ -1023,8 +1075,8 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 				aria-label={expanded ? "Close Farm memory and stock" : "Open Farm memory and stock"}
 				onClick={onToggle}
 			>
-				<strong>The Farm remembers</strong>
-				<span aria-hidden="true">{stockItems.map(([icon, , amount]) => `${icon}${amount}`).join("  ")}</span>
+				<strong>{memoryTitle}</strong>
+				<span aria-hidden="true">{memorySummary}</span>
 				<small>{expanded ? "Close" : "See stock"}</small>
 			</button>
 			{showAction && <button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>}
@@ -1413,6 +1465,14 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [homeMemoryStudy, setHomeMemoryStudyState] = useState(readHomeMemoryStudy);
+	const setHomeMemoryStudy = useCallback((study) => {
+		const next = Object.hasOwn(HOME_MEMORY_STUDIES, study) ? study : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("homememory", next);
+		window.history.replaceState({}, "", url);
+		setHomeMemoryStudyState(next);
+	}, []);
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1899,6 +1959,7 @@ function App() {
 				expanded={homeMemoryExpanded}
 				onToggle={() => setHomeMemoryExpanded((value) => !value)}
 				showAction={!showingMoonberryPlanting && !showingHomeTickle}
+				memoryStudy={homeMemoryStudy}
 			/>}
 			{showingMoonberryPlanting && !holdingGlowrootHomeReveal && !homeMemoryExpanded && <WorldAction
 				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}
@@ -1932,6 +1993,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{showingHomeMemory && homeMemoryStudy && <HomeMemoryPrototypeSwitcher study={homeMemoryStudy} setStudy={setHomeMemoryStudy} />}
 	</main>;
 }
 
