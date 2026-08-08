@@ -311,6 +311,19 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Rendered second-route Homecoming kept the developed Farm and reported the
   frog visible while Rosie returned. Normal and reduced motion both remained
   legible at 360×780 with no horizontal overflow or console errors.
+- Public GitHub Pages run
+  [`31256394499`](https://github.com/bbroeking/oink/actions/runs/31256394499)
+  deployed feature commit `a2c9e31` successfully. The exact public player
+  referenced CSS `f29ae4d7f4` and JavaScript `8652f9baf5`.
+- Replayed that public bundle from the Position 9 vignette through the idle
+  journey and fast-forward. At the gate, the live scene reported Return as
+  both current and last performed Rive motion, kept the satchel equipped, and
+  exposed the corrected **Rosie is Home** objective and scene description.
+- After settling, Rosie remained visible in her breathing pose. A direct
+  public reload replayed Return without losing the satchel or Homecoming state.
+  **Welcome Rosie home** then advanced to Position 10 and revealed the exact
+  **Glowroot Seed +2**, Compost +1, and Willow Fiber +2 reward for the first
+  time. The companion site also published **Follow Rosie's journey Home**.
 
 ### Next highest-leverage weakness
 
