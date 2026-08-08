@@ -1,5 +1,13 @@
 # Homegrown Adventures prototype
 
+## v0.87 throwaway journey-handoff study
+
+Position 9 exposes three prototype-only handoffs through
+`?debug=1&handoff=A|B|C`: a route-specific path invitation, a compact journey
+seal, and a no-extra-click cinematic transition into the existing journey
+watch. None names the Find before Homecoming. The study changes no Bag rule,
+route, reward, duration, or persistence field.
+
 The v0.86 Adventure-attention pass gives canonical Rive Rosie one restrained
 authored `Rosie Notice` lean when the Tool cause—or a No Tool clue—takes focus
 in Position 9. Provision and Pack keep their physical item actions, Rosie

@@ -44,6 +44,14 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// PROTOTYPE ONLY: three structurally different answers to the question,
+// "How should the cause vignette hand into Rosie's idle journey?"
+const JOURNEY_HANDOFF_VARIANTS = {
+	A: { name: "Path invitation", detail: "A route-specific note and explicit follow action." },
+	B: { name: "Journey seal", detail: "The cause card becomes a compact departure seal." },
+	C: { name: "Cinematic handoff", detail: "The story carries into the wait without another click." },
+};
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -225,6 +233,23 @@ function useVariant() {
 	}, [setVariant, variant]);
 
 	return [variant, setVariant];
+}
+
+function readJourneyHandoffVariant() {
+	const value = new URLSearchParams(window.location.search).get("handoff")?.toUpperCase();
+	return Object.hasOwn(JOURNEY_HANDOFF_VARIANTS, value) ? value : "A";
+}
+
+function useJourneyHandoffVariant() {
+	const [handoffVariant, setHandoffVariantState] = useState(readJourneyHandoffVariant);
+	const setHandoffVariant = useCallback((next) => {
+		const normalized = Object.hasOwn(JOURNEY_HANDOFF_VARIANTS, next) ? next : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("handoff", normalized);
+		window.history.replaceState({}, "", url);
+		setHandoffVariantState(normalized);
+	}, []);
+	return [handoffVariant, setHandoffVariant];
 }
 
 function Glyph({ name }) {
@@ -671,25 +696,62 @@ function PackedLoadoutRibbon({ bag, farmStock }) {
 	);
 }
 
-function AdventureVignetteOverlay({ state, beat, onContinue }) {
+function AdventureVignetteOverlay({ state, beat, handoffVariant, onContinue }) {
 	const story = adventureStory(state);
+	const opportunity = adventureOpportunity(state);
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const activeBeatIndex = BAG_SLOT_ORDER.indexOf(beat);
 	const resolved = beat === "resolved";
 	const activeTag = resolved ? null : story.journeyTags[activeBeatIndex];
+	const trailName = lanternleaf ? "reflected leaves" : "warm light";
+	const resolvedCopy = handoffVariant === "B"
+		? {
+			icon: "→",
+			eyebrow: "Journey begins",
+			headline: lanternleaf ? "The reflected path is open" : "The warm trail is open",
+			detail: "Rosie’s Bag is ready. The exact find stays a surprise until Homecoming.",
+			action: "Send Rosie onward",
+		}
+		: {
+			icon: "↗",
+			eyebrow: "The way ahead",
+			headline: lanternleaf ? "Reflected leaves mark a path" : "Warm light marks a path",
+			detail: `Rosie can follow the ${trailName} while you’re away.`,
+			action: lanternleaf ? "Follow the reflected leaves" : "Follow the warm light",
+		};
 	return (
 		<section
-			className="adventure-vignette-overlay"
+			className={`adventure-vignette-overlay handoff-${handoffVariant.toLowerCase()} ${resolved ? "is-resolved" : ""}`}
 			data-adventure-cause-beat={beat}
 			data-story-kind={story.kind}
 			aria-label="Beyond-the-hedge journey"
 		>
-			<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
-				<i aria-hidden="true">{activeTag?.icon ?? "✦"}</i>
-				<small>{activeTag ? BAG_SLOT_LABELS[activeTag.slot] : "What Rosie found"}</small>
-				<strong>{activeTag?.name ?? story.journeyHeadline}</strong>
-				<p>{activeTag?.detail ?? story.journeyResult}</p>
-			</div>
-			<button type="button" className="adventure-continue" onClick={onContinue}>Let Rosie explore</button>
+			{handoffVariant === "C" ? (
+				resolved ? (
+					<div key={beat} className="adventure-auto-handoff" role="status" aria-live="polite">
+						<i aria-hidden="true"><b /><b /><b /></i>
+						<small>Rosie follows the {trailName}</small>
+						<strong>The journey continues…</strong>
+					</div>
+				) : (
+					<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
+						<i aria-hidden="true">{activeTag?.icon}</i>
+						<small>{BAG_SLOT_LABELS[activeTag.slot]}</small>
+						<strong>{activeTag.name}</strong>
+						<p>{activeTag.detail}</p>
+					</div>
+				)
+			) : (
+				<>
+					<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
+						<i aria-hidden="true">{activeTag?.icon ?? resolvedCopy.icon}</i>
+						<small>{activeTag ? BAG_SLOT_LABELS[activeTag.slot] : resolvedCopy.eyebrow}</small>
+						<strong>{activeTag?.name ?? resolvedCopy.headline}</strong>
+						<p>{activeTag?.detail ?? resolvedCopy.detail}</p>
+					</div>
+					<button type="button" className="adventure-continue" onClick={onContinue}>{resolved ? resolvedCopy.action : "Continue"}</button>
+				</>
+			)}
 		</section>
 	);
 }
@@ -1094,6 +1156,17 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function JourneyHandoffSwitcher({ handoffVariant, setHandoffVariant }) {
+	const keys = Object.keys(JOURNEY_HANDOFF_VARIANTS);
+	return (
+		<div className="journey-handoff-switcher" aria-label="Journey handoff prototype switcher">
+			<strong>Journey handoff</strong>
+			<div>{keys.map((key) => <button key={key} type="button" aria-pressed={handoffVariant === key} onClick={() => setHandoffVariant(key)}>{key}</button>)}</div>
+			<span><b>{JOURNEY_HANDOFF_VARIANTS[handoffVariant].name}</b><small>{JOURNEY_HANDOFF_VARIANTS[handoffVariant].detail}</small></span>
+		</div>
+	);
+}
+
 function PositionRail({ position, onChange }) {
 	const current = PROTOTYPE_POSITIONS[position - 1];
 	const atStart = position === 1;
@@ -1168,6 +1241,7 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [handoffVariant, setHandoffVariant] = useJourneyHandoffVariant();
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1301,6 +1375,12 @@ function App() {
 		];
 		return () => timers.forEach((timer) => window.clearTimeout(timer));
 	}, [showingAdventureVignette, state.reduceMotion]);
+
+	useEffect(() => {
+		if (!showingAdventureVignette || adventureCauseBeat !== "resolved" || handoffVariant !== "C") return undefined;
+		const timer = window.setTimeout(() => dispatch({ type: ACTIONS.CONTINUE_ADVENTURE_STORY }), 900);
+		return () => window.clearTimeout(timer);
+	}, [adventureCauseBeat, handoffVariant, showingAdventureVignette]);
 
 	useEffect(() => {
 		localStorage.setItem(
@@ -1573,6 +1653,7 @@ function App() {
 			{showingAdventureVignette && <AdventureVignetteOverlay
 				state={state}
 				beat={adventureCauseBeat}
+				handoffVariant={handoffVariant}
 				onContinue={() => act(visiblePresentation.action)}
 			/>}
 			{showingJourneyWatch && <JourneyWatchPanel
@@ -1620,6 +1701,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{debug && showingAdventureVignette && <JourneyHandoffSwitcher handoffVariant={handoffVariant} setHandoffVariant={setHandoffVariant} />}
 	</main>;
 }
 
