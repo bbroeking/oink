@@ -312,7 +312,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 95. **v0.94 — The Journey Remembers the Bag (shipped):** keep one quiet,
     truthful stamp of the Provision, Tool, and Pack choices attached to the
     journey note until Rosie reaches the gate.
-96. **v0.95 — Home Has a Time (locally verified):** attach one calm local
+96. **v0.95 — Home Has a Time (shipped):** attach one calm local
     **Expected Home** promise to the existing journey note, derived from the
     outing's persisted completion timestamp without adding a countdown or
     another timer system.
@@ -368,12 +368,31 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   `npm run quality:check` passes the quality contracts, 157-file layout gate,
   324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
   and 202 security tests. Watchman's existing recrawl notice is the only
-  warning. Public proof will be recorded after deployment.
+  warning.
+
+### Public verification evidence
+
+- Feature commit `8f81f33` deployed successfully in GitHub Pages run
+  `31269494902`.
+- Fresh public HTML, JavaScript, and CSS matched the verified local files byte
+  for byte. Their SHA-256 hashes are
+  `48859c8f89e95f76908d70f34eb16966e4710db8b1859b4e0b6937755570cc57`,
+  `fd1bbeffa0016355c7683168b372af9bfb2672a34a5f09a9457dab64c91e9c68`,
+  and `82d9a848a57aea26e40812d55664959650f498ff240ef84921b79d6ab4150224`.
+- Replayed both exact public homeward routes. Glowroot showed warm moths,
+  Lanternleaf showed reflected leaves, and both exposed **Rosie is expected
+  Home around 2:42 PM** beside the exact Packed stamp with no treatment
+  switcher.
+- Public fast-forward removed the time before **Rosie is Home** and **Welcome
+  Rosie home**. The companion site now exposes **See when Rosie will be Home**.
 
 ### Next highest-leverage weakness
 
-Select the next bounded player-visible weakness only after replaying the exact
-public v0.95 loop; do not infer it from source or add a parallel system.
+The public return promise is clear for a same-day outing, but its clock-only
+label becomes ambiguous when a six-hour Adventure crosses midnight. The next
+cycle should compare calm **Today / Tomorrow** treatments derived from the
+same persisted timestamp and local calendar, without adding a countdown,
+another timer, or a larger journey surface.
 
 ### v0.94 — The Journey Remembers the Bag — 2026-08-08
 
