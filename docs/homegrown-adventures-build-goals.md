@@ -529,6 +529,24 @@ second-outing Cloth Wrap, reduced motion, centered 1280×720 desktop, 54
 reducer/source-contract tests, Rive contracts, TypeScript, and repository
 quality gates pass locally.
 
+**Provision-to-dusk checkpoint (August 8, 2026):** the existing Clover Lunch
+now performs the first cause in the Adventure sequence. During its 900 ms field
+note, the registered painterly lunch tin makes one 760 ms lift to Rosie and
+returns before Tool takes focus; a restrained dusk wash arrives over 820 ms and
+persists through the remaining story beats. Leaving Provision empty renders no
+tin, no use response, and no added dusk, preserving the existing useful
+Near-Discovery. The same visual grammar supports **Lights Past the Open Gate**
+while its Lanternleaf Rive layer remains mounted above the environmental wash.
+Reduced motion paints only the resolved darker scene. React still owns the
+one-use spend, selected Provision, branch, outcome, and persistence; the new
+presentation adds no hunger, interaction, timer, reward, save field, Rive
+asset, or Rive input. Three treatments were captured on
+`codex/homegrown-v085-provision-action-prototypes` at `b439995`; only the
+lunch-to-dusk treatment remains on main. Both routes, packed and empty
+Provision, reduced motion, centered 1280×720 desktop, the fitted 328×709 game
+frame, 55 reducer/source-contract tests, Rive contracts, TypeScript, and
+repository quality gates pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

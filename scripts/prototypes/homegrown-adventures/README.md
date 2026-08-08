@@ -283,6 +283,19 @@ still owns the Glowroot reveal. Three treatments remain captured on
 `codex/homegrown-v084-pack-handoff-prototypes` at `bd77edf`; main retains only
 the find-to-Pack handoff.
 
+The v0.85 Provision pass makes the first cause physical too. During the
+existing Provision beat, the selected Clover Lunch tin performs one restrained
+lift to Rosie and returns before Tool takes focus. At the same time, one quiet
+indigo wash settles over the clearing and remains through Tool, Pack, and the
+resolved environmental beat, turning **keeps Rosie exploring until dusk** into
+visible cause and effect. Leaving Provision empty renders no tin, no use
+motion, and no dusk wash. The same response supports the later Lanternleaf
+nightfall brief without covering its Rive reflections. The already-packed
+Provision was still spent exactly once by React before departure; the visual
+response does not spend it again or add hunger. Three treatments remain
+captured on `codex/homegrown-v085-provision-action-prototypes` at `b439995`;
+main retains only the lunch-to-dusk response.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

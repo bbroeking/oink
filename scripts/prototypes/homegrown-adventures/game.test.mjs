@@ -1085,6 +1085,14 @@ test("the first Adventure visibly settles a carried find into its chosen Pack", 
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\][^\n]+\.adventure-find-handoff/);
 });
 
+test("a packed Provision performs once and leaves the Adventure at dusk", () => {
+	assert.match(stylesSource, /data-adventure-provision="clover-lunch"\]\[data-adventure-beat="provision"\] \.adventure-provision-prop/);
+	assert.match(stylesSource, /animation: adventure-provision-one-use 760ms cubic-bezier\(\.16,1,\.3,1\) both/);
+	assert.match(stylesSource, /@keyframes adventure-provision-dusk-arrive/);
+	assert.match(stylesSource, /data-adventure-provision="clover-lunch"\]:is\(\[data-adventure-beat="tool"\],\[data-adventure-beat="pack"\],\[data-adventure-beat="resolved"\]\) \.adventure-vignette-backdrop::before/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-provision-prop \{ animation: none; \}/);
+});
+
 test("departure timing is reducer-owned, reload-stable, reduced-motion aware, and idempotent", () => {
 	let state = createPrototypeState(8, { now: at });
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });

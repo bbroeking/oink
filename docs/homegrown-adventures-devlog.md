@@ -282,11 +282,75 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 85. **v0.84 — The Pack Carries the Find (shipped):** let one
     restrained trace of the Glowroot settle into the selected Pack, while an
     empty Pack visibly leaves the find in the clearing.
+86. **v0.85 — Lunch Until Dusk (locally verified):** let Rosie visibly use
+    the packed Clover Lunch and let that use carry the existing Adventure into
+    evening before Tool and Pack take over.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.85 — Lunch Until Dusk — 2026-08-08
+
+- Replayed the exact shipped v0.84 Provision beat at centered 1280×720. The
+  field note correctly said **Clover Lunch · keeps Rosie exploring until dusk**,
+  and the selected tin brightened on the ground, but neither Rosie nor the
+  clearing changed. The first cause remained a label while Tool and Pack now
+  performed their verbs.
+- Compared three bounded treatments on the existing Position 9 route: retain
+  the spotlight-only tin, lift the tin to Rosie once, or combine that physical
+  use with one restrained dusk transition. The combined treatment won because
+  the lift explains **used** and the environmental handoff explains **until
+  dusk** without another panel, interaction, resource, or status effect.
+- Captured all three throwaway treatments at commit `b439995` on
+  `codex/homegrown-v085-provision-action-prototypes`. Main retains only the
+  lunch-to-dusk treatment and no prototype switcher.
+- During the existing 900 ms Provision beat, the painterly Clover Lunch tin
+  follows one 760 ms lift toward Rosie, holds briefly, and returns to its
+  established ground position before the Tool beat. A quiet indigo wash arrives
+  over 820 ms and remains behind the subsequent Tool, Pack, and resolved beats.
+- Leaving Provision empty renders no tin, no motion, and no added dusk while
+  keeping the exact **No Provision** Near-Discovery text. The later Lanternleaf
+  route receives the same nightfall grammar, with its Rive reflection layer
+  still mounted above the environmental wash. Reduced motion skips the lift and
+  paints the resolved dusk state immediately.
+- React already spent the selected Provision exactly once when the Bag was
+  packed and remains authoritative for the opportunity, branch, outcome, and
+  persistence. The visual use response does not spend again and adds no hunger,
+  timer, reward, input, reducer state, save field, Rive asset, or Rive input.
+
+### Validation evidence
+
+- The first-route replay reported `beat=provision`,
+  `animation=adventure-provision-one-use`, the exact **Clover Lunch** field
+  note, a held mid-use transform, and a visible dusk overlay that remained at
+  opacity 1 after the story advanced.
+- Leaving Provision empty produced `kind=near-discovery`, `provision=none`,
+  `display=none` for the tin, and dusk opacity 0. The lighter clue clearing and
+  **No Provision · daylight fades before the warm root opens** remained
+  readable with the same one continuation action.
+- A complete second-day replay entered **Lights Past the Open Gate**, used the
+  same Clover Lunch response, kept the Lanternleaf Rive layer mounted, and
+  preserved the route's reflected-leaf story above the darker scene.
+- Reduced motion reported `beat=resolved`, `animation=none`, the settled ground
+  tin, and the finished dusk wash. At the full-motion midpoint the 56×55 px tin
+  remained inside the fitted 328×709 game frame, did not overlap the field note
+  or primary action, and the 1280 px client and scroll widths were equal.
+- `npm run prototype:homegrown:test` passes 55/55, `npx tsc --noEmit` passes,
+  and `npm run verify:rive-homegrown` passes both authored Rive contracts.
+  `npm run quality:check` passes its quality contracts, 157-file layout
+  inspection, 324-sprite integrity gate, security contracts, TypeScript, 78
+  layout tests, and the security suite; Watchman's existing recrawl notice is
+  the only warning.
+
+### Next highest-leverage weakness
+
+Provision, Tool, and Pack now perform one readable cause each, but canonical
+Rive Rosie holds the same neutral Adventure pose while those three actions
+happen around her. The next cycle should give Rosie one restrained
+attention-and-discovery response inside the existing vignette, without adding
+dialogue, control, danger, or progression state.
 
 ### v0.84 — The Pack Carries the Find — 2026-08-08
 

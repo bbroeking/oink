@@ -166,6 +166,16 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	inset: 0;
 	background: linear-gradient(to bottom, rgba(5,17,13,.08), transparent 28%, transparent 76%, rgba(4,12,9,.28));
 }
+.adventure-vignette-backdrop::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	background:
+		radial-gradient(circle at 53% 27%, rgba(142,118,219,.1), transparent 17%),
+		linear-gradient(to bottom, rgba(47,32,105,.18), rgba(20,25,66,.22) 58%, rgba(7,15,29,.2));
+	pointer-events: none;
+}
 .adventure-bed-mask {
 	position: absolute;
 	z-index: 2;
@@ -202,6 +212,25 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 @keyframes adventure-provision-settle {
 	from { opacity: 0; transform: translateY(-5px) scale(.96) rotate(1.5deg); }
 	to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+.phone[data-adventure-provision="clover-lunch"][data-adventure-beat="provision"] .adventure-provision-prop {
+	animation: adventure-provision-one-use 760ms cubic-bezier(.16,1,.3,1) both;
+}
+.phone[data-adventure-provision="clover-lunch"][data-adventure-beat="provision"] .adventure-vignette-backdrop::before {
+	animation: adventure-provision-dusk-arrive 820ms cubic-bezier(.16,1,.3,1) both;
+}
+.phone[data-adventure-provision="clover-lunch"]:is([data-adventure-beat="tool"],[data-adventure-beat="pack"],[data-adventure-beat="resolved"]) .adventure-vignette-backdrop::before {
+	opacity: 1;
+}
+@keyframes adventure-provision-one-use {
+	0% { transform: translate(0,0) scale(1) rotate(0); }
+	38% { transform: translate(86px,-105px) scale(.55) rotate(4deg); }
+	62% { transform: translate(86px,-105px) scale(.55) rotate(4deg); }
+	100% { transform: translate(0,0) scale(1) rotate(0); }
+}
+@keyframes adventure-provision-dusk-arrive {
+	from { opacity: 0; }
+	to { opacity: 1; }
 }
 .adventure-tool-prop {
 	position: absolute;
