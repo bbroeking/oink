@@ -1,5 +1,19 @@
 # Homegrown Adventures prototype
 
+The v0.104 lasting-Home pass makes the completed Glowroot Discovery readable
+as a world change instead of hiding it behind generic stock counts. Three real
+Position 11 treatments were rendered at commit `d255aff` on
+`codex/homegrown-v104-home-memory-prototypes`: one named world-memory bar, one
+Field Guide completion bar, and one split changes-and-stock drawer. The named
+world memory won because it reuses the existing collapsed Home-memory pocket,
+stays visible without a tap, and names **Bed 3 · Open hedge · Pond frog**
+without turning the Farm into a checklist. The collapsed pocket now says
+**Glowroot changed Home**; its existing drawer separately preserves the exact
+Farm stock under **Farm stock stays useful**. React derives both presentations
+from the established developed state and inventory. No progression state,
+reward, crop rule, timer, save field, Rive asset, or Rive contract changed. No
+`homememory` query or comparison switcher remains on main.
+
 The v0.103 learned-clue pass keeps an earned Field Guide lesson attached to
 the Bag after the player chooses **Open the Provision / Tool / Pack pocket**.
 Three real Position 7 treatments were rendered at commit `3d043e6` on

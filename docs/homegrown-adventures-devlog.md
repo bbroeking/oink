@@ -341,11 +341,86 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 104. **v0.103 — The Bag Remembers the Clue (shipped):** keep the earned Field
     Guide lesson attached to its Bag pocket and visibly answer it when the
     player packs a capability for the repeated Adventure.
+105. **v0.104 — The Farm Names What Changed (shipped):** make the completed
+    Glowroot Discovery name its lasting effects at Home while keeping exact
+    material quantities in the existing stock drawer.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.104 — The Farm Names What Changed — 2026-08-08
+
+- Began by replaying the shipped answered clue through the complete Discovery,
+  planting, Changed Home, and next morning. The rendered Farm visibly retained
+  the Glowroot bed, open hedge, earned bell, and pond frog, but the stable Home
+  memory called all of that **The Farm remembers** and showed only material
+  glyph counts. Its expanded copy claimed that Discoveries stayed without
+  naming a single lasting Discovery consequence.
+- Compared three real Position 11 treatments: a named world-memory bar, a Field
+  Guide completion bar, and a split changes-and-stock drawer. The named world
+  memory won because it makes the permanent world consequence visible without
+  a tap, reuses one existing surface, and avoids both checklist language and a
+  denser second panel.
+- Captured all three throwaway treatments at commit `d255aff` on
+  `codex/homegrown-v104-home-memory-prototypes`. Main keeps only the named
+  world-memory treatment; no `homememory` query or comparison switcher ships.
+- The existing collapsed pocket now says **Glowroot changed Home** and names
+  **Bed 3 · Open hedge · Pond frog**. Opening that same pocket shows **Farm
+  stock stays useful** and the exact Clover Seed, Glowroot Seed, Compost, and
+  Willow Fiber quantities.
+- The required Impeccable product review substituted for unavailable Claude
+  Design. It selected the named world memory because it gives the completed
+  Adventure one readable consequence while preserving Rosie, the living Farm,
+  and the next action as the composition's primary elements.
+- This is a presentation-only acknowledgement of existing reducer facts. No
+  Discovery, reward, inventory, crop, timer, persistence, animation, Rive
+  asset, or Rive contract changed.
+
+### Local validation evidence
+
+- Played the complete Glowroot return into planting and the stable Changed Home
+  state. The collapsed memory named all three lasting changes without clipping
+  or covering Rosie, the frog, the open hedge, or the growing beds.
+- Opened the same pocket and verified that the exact existing Farm stock stayed
+  readable in one drawer rather than being confused with world Discoveries.
+- Reloaded Position 11 with reduced motion active. The named Home changes and
+  stock drawer contract persisted without depending on animation.
+- Began another day and verified the Glowroot bed, open hedge, earned bell, and
+  pond frog remained visible behind the next **Tickle Rosie** action.
+- `npm run prototype:homegrown:test` passes 75/75. `npm run
+  verify:rive-homegrown`, `npm run quality:loop`, and `npm run quality:check`
+  pass the authored Rive contracts, quality contracts, 157-file layout gate,
+  324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
+  and 202 security tests. Watchman's existing recrawl notice and the verifier's
+  already-required manual mobile Safari checks are the only outstanding
+  warnings.
+
+### Public verification evidence
+
+- Feature commit `d4818f1` deployed successfully in GitHub Pages run
+  `31276593916`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `0d20b1dd79bc5be77500f7a79dc4b97bdcfc6e438d3b10c334045a6bb892aa8e`
+  - player JavaScript: `4c6b4fa8b300def966254573a361f80798b3b4fe5f766f7d3bd457633c330bac`
+  - player CSS: `9f5fe253239f304b89df294b27ff57640cd62171435f40dd278d29c90512c27d`
+- Replayed a clean public Position 11. The collapsed pocket named **Glowroot
+  changed Home** and **Bed 3 · Open hedge · Pond frog**; its accessible drawer
+  preserved the four exact stock quantities.
+- Reloaded that public state, then chose **Begin another day**. The next morning
+  returned to **Tickle Rosie** with the open hedge, earned bell, Glowroot bed,
+  and pond frog still rendered in the living Farm.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=11&v=d4818f1`
+
+### Next highest-leverage weakness
+
+Replay the remembered next morning from **Tickle Rosie** into the new purpose
+and Seed choice. Determine whether a lasting Discovery feels like part of
+Rosie's next curiosity and preparation, or merely like background decoration;
+prefer one causal response in the existing purpose or Farm-stock surface over
+a new map, journal, quest log, crop, destination, or currency.
 
 ### v0.103 — The Bag Remembers the Clue — 2026-08-08
 
