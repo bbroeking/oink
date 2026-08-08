@@ -1,5 +1,31 @@
 # Homegrown Adventures prototype
 
+## v0.90 fast-forward hierarchy study (throwaway branch)
+
+Question: where can the browser prototype's fast-forward stay obvious and
+touch-safe without becoming the Farm's primary action?
+
+Open Position 9 with
+`?position=9&journey=homeward&debug=1&fastforward=A`, then compare:
+
+- **A — Field-note aside:** a 44px secondary action lives inside the current
+  journey note.
+- **B — Route destination:** the Homeward step itself exposes a compact
+  preview action.
+- **C — Review rail:** fast-forward leaves the Farm and joins the prototype's
+  external progression controls.
+
+All three invoke the same existing `ADVANCE_TIME` action. The switcher and
+losing structures stay off main after the rendered decision is captured.
+
+**Rendered verdict:** C — Review rail. A made the current story note taller
+and forced its copy, progress, and shortcut into one competing card. B made a
+route status look tappable and reduced the label to an ambiguous “Preview.” C
+left the Farm and three-step journey completely untouched while keeping one
+44px fast-forward action visibly joined to the browser's existing progression
+rail. Production keeps C's two-tier review dock; the prototype switcher and
+both in-world treatments stay on this branch.
+
 The v0.89 journey-progress pass derives one calm **trail → homeward → Home**
 change from the six-hour timestamps the reducer already persists. At 75%, the
 existing field note becomes route-specific homeward copy, the existing route

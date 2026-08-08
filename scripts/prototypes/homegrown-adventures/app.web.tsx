@@ -46,6 +46,47 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// PROTOTYPE ONLY — three placements for the browser review fast-forward.
+// Question: where can fast-forward stay obvious and touch-safe without becoming the Farm's primary action?
+const FAST_FORWARD_VARIANTS = {
+	A: { name: "Field-note aside", question: "Should the shortcut live with the current story beat?" },
+	B: { name: "Route destination", question: "Should Homeward itself expose the shortcut?" },
+	C: { name: "Review rail", question: "Should prototype transport live outside the game world?" },
+};
+
+function readFastForwardVariant() {
+	const value = new URLSearchParams(window.location.search).get("fastforward")?.toUpperCase();
+	return Object.hasOwn(FAST_FORWARD_VARIANTS, value) ? value : null;
+}
+
+function useFastForwardPrototype() {
+	const [treatment, setTreatmentState] = useState(readFastForwardVariant);
+	const setTreatment = useCallback((next) => {
+		const normalized = Object.hasOwn(FAST_FORWARD_VARIANTS, next) ? next : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("debug", "1");
+		url.searchParams.set("fastforward", normalized);
+		window.history.replaceState({}, "", url);
+		setTreatmentState(normalized);
+	}, []);
+
+	useEffect(() => {
+		if (!treatment) return undefined;
+		const onKey = (event) => {
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			const keys = Object.keys(FAST_FORWARD_VARIANTS);
+			const current = keys.indexOf(treatment);
+			const delta = event.key === "ArrowRight" ? 1 : -1;
+			setTreatment(keys[(current + delta + keys.length) % keys.length]);
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [setTreatment, treatment]);
+
+	return { treatment, setTreatment };
+}
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -732,7 +773,7 @@ function journeyWatchCopy(lanternleaf, journeyPhase) {
 		};
 }
 
-function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
+function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction, fastForwardTreatment = null }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const homecomingReady = state.adventureComplete;
@@ -744,6 +785,7 @@ function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
 		<section
 			className={`journey-watch ${homecomingReady ? "is-homecoming-ready" : ""}`}
 			data-journey-phase={journeyPhase}
+			data-fast-forward-treatment={fastForwardTreatment ?? undefined}
 			aria-label="Rosie's adventure progress"
 		>
 			<div className="journey-watch-tint" aria-hidden="true" />
@@ -755,14 +797,19 @@ function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
 				<p>{homecomingReady
 					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
 					: copy.body}</p>
+				{fastForwardTreatment === "A" && !homecomingReady && <button type="button" className="journey-note-fast-forward" onClick={onAction}><span aria-hidden="true">↠</span> Preview Homecoming</button>}
 			</div>
 			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
 				<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
 				<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
-				<li className={homecomingReady || homeward ? "is-current" : ""}><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></li>
+				<li className={homecomingReady || homeward ? "is-current" : ""}>
+					{fastForwardTreatment === "B" && !homecomingReady ? (
+						<button type="button" className="journey-route-fast-forward" aria-label={actionLabel} onClick={onAction}><i aria-hidden="true">3</i><span>Homeward</span><small>Preview</small></button>
+					) : <><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></>}
+				</li>
 			</ol>
 			<div className="journey-watch-lights" aria-hidden="true"><i /><i /><i /><i /></div>
-			<button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>
+			{(homecomingReady || !fastForwardTreatment) && <button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>}
 		</section>
 	);
 }
@@ -1138,6 +1185,27 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function FastForwardPrototypeSwitcher({ treatment, setTreatment }) {
+	const keys = Object.keys(FAST_FORWARD_VARIANTS);
+	const index = keys.indexOf(treatment);
+	return (
+		<div className="fast-forward-prototype-switcher" aria-label="Fast-forward prototype switcher">
+			<button type="button" aria-label="Previous treatment" onClick={() => setTreatment(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span><small>PROTOTYPE</small><strong>{treatment} — {FAST_FORWARD_VARIANTS[treatment].name}</strong></span>
+			<button type="button" aria-label="Next treatment" onClick={() => setTreatment(keys[(index + 1) % keys.length])}>→</button>
+		</div>
+	);
+}
+
+function JourneyReviewRailAction({ actionLabel, onAction }) {
+	return (
+		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
+			<span><small>Review shortcut</small><strong>Rosie returns at the real Homecoming</strong></span>
+			<button type="button" onClick={onAction}><span aria-hidden="true">↠</span> Fast-forward</button>
+		</div>
+	);
+}
+
 function PositionRail({ position, onChange }) {
 	const current = PROTOTYPE_POSITIONS[position - 1];
 	const atStart = position === 1;
@@ -1225,6 +1293,7 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const fastForwardPrototype = useFastForwardPrototype();
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1672,6 +1741,7 @@ function App() {
 				journeyPhase={journeyPhase}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
+				fastForwardTreatment={fastForwardPrototype.treatment}
 			/>}
 			{showingReturnReward && <ReturnRewardPanel
 				state={state}
@@ -1710,9 +1780,14 @@ function App() {
 				waiting={waiting || seedHandoff === "arriving"}
 			/>}
 		</div>
+		{showingJourneyWatch && fastForwardPrototype.treatment === "C" && !state.adventureComplete && <JourneyReviewRailAction
+			actionLabel={visiblePresentation.label}
+			onAction={() => act(visiblePresentation.action)}
+		/>}
 		<PositionRail position={position} onChange={jumpToPosition} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
-		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{debug && !fastForwardPrototype.treatment && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{debug && fastForwardPrototype.treatment && <FastForwardPrototypeSwitcher {...fastForwardPrototype} />}
 	</main>;
 }
 

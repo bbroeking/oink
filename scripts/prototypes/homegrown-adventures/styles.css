@@ -716,6 +716,116 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 .journey-watch-action:hover { background: #fff1c5; transform: translateX(-50%) translateY(-2px); }
 .journey-watch-action:focus-visible { outline: 4px solid #267da2; outline-offset: 3px; }
 .journey-watch-action:active { transform: translateX(-50%) translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
+.journey-watch[data-fast-forward-treatment="A"] .journey-watch-note {
+	min-height: 154px;
+	padding-bottom: 55px;
+}
+.journey-note-fast-forward {
+	position: absolute;
+	left: 58px;
+	right: 12px;
+	bottom: 8px;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	color: var(--ink-soft);
+	background: color-mix(in srgb, var(--paper-deep) 82%, transparent);
+	border: 1px solid color-mix(in srgb, var(--wood) 72%, transparent);
+	border-radius: 10px;
+	font-size: 10px;
+	font-weight: 950;
+}
+.journey-note-fast-forward span { font-size: 16px; }
+.journey-note-fast-forward:hover { color: var(--ink); background: #fff1c5; }
+.journey-note-fast-forward:focus-visible { outline: 3px solid #267da2; outline-offset: 2px; }
+.journey-route-fast-forward {
+	min-width: 66px;
+	min-height: 58px;
+	padding: 0 4px;
+	display: grid;
+	justify-items: center;
+	gap: 3px;
+	color: inherit;
+	background: transparent;
+	border: 0;
+	font: inherit;
+	text-shadow: inherit;
+}
+.journey-route-fast-forward i { pointer-events: none; }
+.journey-route-fast-forward span { line-height: 1; }
+.journey-route-fast-forward small {
+	padding: 3px 6px;
+	color: var(--ink);
+	background: color-mix(in srgb, var(--paper) 90%, transparent);
+	border: 1px solid var(--ink);
+	border-radius: 999px;
+	font-size: 7px;
+	line-height: 1;
+	text-shadow: none;
+}
+.journey-route-fast-forward:focus-visible { outline: 3px solid #267da2; outline-offset: 2px; border-radius: 10px; }
+.journey-review-rail-action {
+	position: fixed;
+	z-index: 34;
+	left: 50%;
+	bottom: max(76px, calc(env(safe-area-inset-bottom) + 64px));
+	width: min(350px, calc(100vw - 32px));
+	min-height: 54px;
+	padding: 5px 6px 5px 12px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 8px;
+	transform: translateX(-50%);
+	color: var(--ink-soft);
+	background: rgba(255,249,233,.96);
+	border: 2px solid var(--ink);
+	border-radius: 14px 14px 5px 5px;
+	box-shadow: 2px 3px 0 rgba(48,33,22,.7);
+}
+.journey-review-rail-action > span { display: grid; gap: 2px; min-width: 0; }
+.journey-review-rail-action small { font-size: 7px; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+.journey-review-rail-action strong { overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.journey-review-rail-action button {
+	min-height: 44px;
+	padding: 0 12px;
+	color: var(--ink);
+	background: var(--paper-deep);
+	border: 1px solid var(--wood);
+	border-radius: 10px;
+	font-size: 9px;
+	font-weight: 950;
+}
+.journey-review-rail-action button span { font-size: 14px; }
+.journey-review-rail-action button:focus-visible { outline: 3px solid #267da2; outline-offset: 2px; }
+
+.fast-forward-prototype-switcher {
+	position: fixed;
+	z-index: 100;
+	left: 50%;
+	bottom: 12px;
+	width: min(330px, calc(100vw - 24px));
+	min-height: 54px;
+	padding: 5px;
+	display: grid;
+	grid-template-columns: 42px minmax(0, 1fr) 42px;
+	align-items: center;
+	gap: 6px;
+	transform: translateX(-50%);
+	color: #fff;
+	background: #171522;
+	border: 1px solid rgba(255,255,255,.22);
+	border-radius: 16px;
+	box-shadow: 0 10px 28px rgba(0,0,0,.4);
+}
+.fast-forward-prototype-switcher > span { display: grid; gap: 2px; min-width: 0; }
+.fast-forward-prototype-switcher small { color: #b9b4d7; font-size: 8px; font-weight: 900; letter-spacing: .08em; }
+.fast-forward-prototype-switcher strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.fast-forward-prototype-switcher button { min-height: 42px; color: #171522; background: #fff; border: 0; border-radius: 11px; font-size: 18px; font-weight: 950; }
+body:has(.fast-forward-prototype-switcher) .position-rail { bottom: 76px; }
+body:has(.fast-forward-prototype-switcher) .journey-review-rail-action { bottom: 140px; }
 @keyframes journey-current-step {
 	0%, 100% { transform: scale(.94); filter: brightness(.94); }
 	50% { transform: scale(1.06); filter: brightness(1.08); }
