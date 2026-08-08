@@ -1138,6 +1138,18 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+// THROWAWAY UI PROTOTYPE: three structurally different treatments for the
+// persistent HUD during Position 9, switchable with ?hudcopy=A|B|C.
+function JourneyHudPrototypeSwitcher({ variant, setVariant, phaseName }) {
+	const variants = ["A", "B", "C"];
+	const index = variants.indexOf(variant);
+	return <div className="journey-hud-prototype-switcher" aria-label="Throwaway journey HUD treatment switcher">
+		<button type="button" aria-label="Previous journey HUD treatment" onClick={() => setVariant(variants[(index + variants.length - 1) % variants.length])}>←</button>
+		<span><strong>{variant} · Journey HUD</strong><small>Current state: {phaseName}</small></span>
+		<button type="button" aria-label="Next journey HUD treatment" onClick={() => setVariant(variants[(index + 1) % variants.length])}>→</button>
+	</div>;
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1242,6 +1254,16 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [hudCopyVariant, setHudCopyVariantState] = useState(() => {
+		const requested = initialSearch.get("hudcopy")?.toUpperCase();
+		return ["A", "B", "C"].includes(requested) ? requested : "A";
+	});
+	const setHudCopyVariant = useCallback((nextVariant) => {
+		setHudCopyVariantState(nextVariant);
+		const url = new URL(window.location.href);
+		url.searchParams.set("hudcopy", nextVariant);
+		window.history.replaceState({}, "", url);
+	}, []);
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1364,6 +1386,47 @@ function App() {
 					: "Rosie is exploring…",
 		}
 		: presentation;
+	const prototypeJourneyPhaseName = state.adventureComplete
+		? "At the gate"
+		: journeyPhase === "homeward"
+		? "Heading Home"
+		: "Following the trail";
+	const prototypeHudPresentation = !showingJourneyWatch
+		? visiblePresentation
+		: hudCopyVariant === "C" && !state.adventureComplete
+		? null
+		: hudCopyVariant === "B"
+		? {
+			...visiblePresentation,
+			objective: opportunity.name,
+			detail: state.adventureComplete
+				? "At the gate · welcome Rosie"
+				: journeyPhase === "homeward"
+				? "Heading Home · porch light waiting"
+				: "Following the trail",
+		}
+		: {
+			...visiblePresentation,
+			objective: state.adventureComplete
+				? "Rosie is Home"
+				: journeyPhase === "homeward"
+				? "Rosie is heading Home"
+				: opportunity.waitingObjective,
+			detail: null,
+		};
+
+	useEffect(() => {
+		const cycleHudCopy = (event) => {
+			if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+			if (event.target?.matches?.("input, textarea, select, [contenteditable]")) return;
+			const variants = ["A", "B", "C"];
+			const index = variants.indexOf(hudCopyVariant);
+			const offset = event.key === "ArrowRight" ? 1 : -1;
+			setHudCopyVariant(variants[(index + offset + variants.length) % variants.length]);
+		};
+		window.addEventListener("keydown", cycleHudCopy);
+		return () => window.removeEventListener("keydown", cycleHudCopy);
+	}, [hudCopyVariant, setHudCopyVariant]);
 
 	useEffect(() => {
 		if (!showingAdventureVignette) {
@@ -1642,13 +1705,13 @@ function App() {
 			)}
 			<div className="quiet-hud">
 				<HeartChip value={state.ticklesEarned} />
-				<div className={`current-objective ${visiblePresentation.detail ? "has-detail" : ""}`} id="current-objective" role="status" aria-live="polite">
+				{prototypeHudPresentation && <div className={`current-objective ${prototypeHudPresentation.detail ? "has-detail" : ""}`} id="current-objective" role="status" aria-live="polite">
 					<span className="objective-dot" aria-hidden="true" />
 					<span className="objective-copy">
-						<strong>{visiblePresentation.objective}</strong>
-						{visiblePresentation.detail && <small>{visiblePresentation.detail}</small>}
+						<strong>{prototypeHudPresentation.objective}</strong>
+						{prototypeHudPresentation.detail && <small>{prototypeHudPresentation.detail}</small>}
 					</span>
-				</div>
+				</div>}
 			</div>
 			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingGlowrootPlanting && (!showingHomeMemory || showingHomeTickle) && !homeMemoryExpanded && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
 				className={`rosie-hit ${visiblePresentation.target === WORLD_TARGETS.ROSIE ? "is-guided" : ""}`}
@@ -1739,6 +1802,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{reviewMode && <JourneyHudPrototypeSwitcher variant={hudCopyVariant} setVariant={setHudCopyVariant} phaseName={prototypeJourneyPhaseName} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;

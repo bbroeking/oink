@@ -1313,6 +1313,27 @@ html[data-reduce-motion="true"] .home-memory-pocket-detail { animation: none; }
 .variant-switcher span { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .variant-switcher strong { font-family: Caprasimo, serif; font-size: 14px; }
 .variant-switcher small { color: var(--ink-soft); font-size: 9px; }
+.journey-hud-prototype-switcher {
+	position: fixed;
+	z-index: 46;
+	left: 50%;
+	bottom: max(146px, calc(env(safe-area-inset-bottom) + 134px));
+	width: min(278px, calc(100vw - 32px));
+	min-height: 50px;
+	display: grid;
+	grid-template-columns: 44px 1fr 44px;
+	transform: translateX(-50%);
+	overflow: hidden;
+	color: #fff9e9;
+	background: #302116;
+	border: 2px solid #fff9e9;
+	border-radius: 999px;
+	box-shadow: 0 4px 16px rgba(0,0,0,.32);
+}
+.journey-hud-prototype-switcher button { min-width: 44px; min-height: 46px; border: 0; color: #302116; background: #f3dfad; font-size: 18px; }
+.journey-hud-prototype-switcher span { min-width: 0; display: grid; place-content: center; text-align: center; }
+.journey-hud-prototype-switcher strong { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; }
+.journey-hud-prototype-switcher small { margin-top: 2px; overflow: hidden; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 .position-rail {
 	position: fixed;
 	z-index: 35;
