@@ -676,7 +676,7 @@ export function createPrototypeState(position, {
 		},
 	};
 
-	const routePreview = [2, 9].includes(target) && adventureRoute === "lanternleaf"
+	const routePreview = [2, 7, 9].includes(target) && adventureRoute === "lanternleaf"
 		? {
 			daysCompleted: 1,
 			glowrootKnown: true,

@@ -48,6 +48,60 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// PROTOTYPE — three Position 7 treatments for keeping an earned Field Guide
+// clue attached to the Bag decision, switchable with ?bagclue=A|B|C.
+const BAG_CLUE_STUDIES = Object.freeze({
+	A: { name: "Field Guide folio" },
+	B: { name: "Matched item" },
+	C: { name: "Marked pocket" },
+});
+
+const BAG_CLUE_ITEM_MATCHES = Object.freeze({
+	"glow-beneath-hedge": Object.freeze({
+		provision: "clover-lunch",
+		tool: "hand-trowel",
+		pack: "wicker-basket",
+	}),
+	"lights-past-open-gate": Object.freeze({
+		provision: "clover-lunch",
+		tool: "lantern",
+		pack: "cloth-wrap",
+	}),
+});
+
+function readBagClueStudy() {
+	const requested = new URLSearchParams(window.location.search).get("bagclue")?.toUpperCase();
+	return Object.hasOwn(BAG_CLUE_STUDIES, requested) ? requested : null;
+}
+
+function readBagClueSlot() {
+	const requested = new URLSearchParams(window.location.search).get("bagclueslot");
+	return BAG_SLOT_ORDER.includes(requested) ? requested : "provision";
+}
+
+function BagCluePrototypeSwitcher({ study, setStudy }) {
+	const studies = Object.keys(BAG_CLUE_STUDIES);
+	const currentIndex = studies.indexOf(study);
+	const cycle = (direction) => setStudy(studies[(currentIndex + direction + studies.length) % studies.length]);
+	return (
+		<div
+			className="bag-clue-prototype-switcher"
+			tabIndex={0}
+			aria-label="Bag clue prototype switcher"
+			onKeyDown={(event) => {
+				if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+				event.preventDefault();
+				event.stopPropagation();
+				cycle(event.key === 'ArrowRight' ? 1 : -1);
+			}}
+		>
+			<button type="button" aria-label="Previous Bag clue treatment" onClick={() => cycle(-1)}>←</button>
+			<span><strong>{study}</strong><small>{BAG_CLUE_STUDIES[study].name}</small></span>
+			<button type="button" aria-label="Next Bag clue treatment" onClick={() => cycle(1)}>→</button>
+		</div>
+	);
+}
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -551,23 +605,24 @@ const BAG_ITEM_EFFECT_LABELS = Object.freeze({
 	}),
 });
 
-function BagSelectionOption({ slot, item, selected, disabled, detail, onSelect }) {
+function BagSelectionOption({ slot, item, selected, disabled, detail, clueMatch = false, onSelect }) {
 	return (
 		<button
 			type="button"
-			className={`bag-guided-option ${selected ? "is-selected" : ""} ${item ? "" : "is-empty"}`}
+			className={`bag-guided-option ${selected ? "is-selected" : ""} ${item ? "" : "is-empty"} ${clueMatch ? "is-clue-match" : ""}`}
 			disabled={disabled}
 			aria-pressed={selected}
 			onClick={() => onSelect(slot, item?.id ?? null)}
 		>
 			<span aria-hidden="true"><BagItemArt itemId={item?.id} /></span>
+			{clueMatch && <em>Field Guide match</em>}
 			<strong>{item?.name ?? "Leave empty"}</strong>
 			<small>{detail}</small>
 		</button>
 	);
 }
 
-function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initialFocus = "provision", onSelect, onConfirm }) {
+function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initialFocus = "provision", clueGuide = null, clueSlot = null, clueStudy = null, onSelect, onConfirm }) {
 	const [focus, setFocus] = useState(initialFocus);
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
@@ -587,6 +642,12 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 		tool: "What should Rosie try?",
 		pack: "What can Rosie carry Home?",
 	}[focus];
+	const clueMatchItemId = clueSlot === null
+		? null
+		: BAG_CLUE_ITEM_MATCHES[opportunity.id]?.[clueSlot] ?? null;
+	const showingClue = clueGuide !== null && clueSlot !== null;
+	const clueIsFocused = showingClue && focus === clueSlot;
+	const clueIsApplied = showingClue && bag[clueSlot] === clueMatchItemId;
 	const optionDetail = (slot, item) => {
 		if (!item) return "A kind clue still comes Home";
 		const effect = BAG_ITEM_EFFECT_LABELS[opportunity.id]?.[item.id] ?? item.effect;
@@ -612,6 +673,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 				selected={bag[focus] === item.id}
 				disabled={unavailable}
 				detail={optionDetail(focus, item)}
+				clueMatch={clueStudy === "B" && clueIsFocused && item.id === clueMatchItemId}
 				onSelect={onSelect}
 			/>;
 		}),
@@ -649,7 +711,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 	};
 
 	return (
-		<section className="bag-selection bag-selection-guided" aria-label="Choose what Rosie carries">
+		<section className="bag-selection bag-selection-guided" data-clue-study={showingClue ? clueStudy : undefined} aria-label="Choose what Rosie carries">
 			{activeSelection && flightItemId && (
 				<span
 					key={`${activeSelection.slot}-${flightItemId}-${activeSelection.at}`}
@@ -661,7 +723,11 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 			)}
 			<div className="bag-guided-title">
 				<strong>Pack for {opportunity.name}</strong>
-				<small>The Bag begins empty. Every slot is optional.</small>
+				<small>{clueStudy === "C" && showingClue
+					? clueIsApplied
+						? `${bagItem(clueSlot, bag[clueSlot])?.name} answers the ${opportunity.clueName} clue.`
+						: clueGuide.next
+					: "The Bag begins empty. Every slot is optional."}</small>
 			</div>
 			<div className="bag-stage bag-guided-stage" aria-hidden="true">
 				<span className="open-adventure-bag" />
@@ -689,6 +755,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 					>
 						<small>{BAG_SLOT_LABELS[slot]}</small>
 						<strong>{selected?.name ?? "Empty"}</strong>
+						{clueStudy === "C" && slot === clueSlot && <i>{clueIsApplied ? "Answered" : "Clue"}</i>}
 					</button>;
 				})}
 			</div>
@@ -698,7 +765,11 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 				id={`bag-panel-${focus}`}
 				aria-labelledby={`bag-tab-${focus}`}
 			>
-				<div className="bag-guided-question"><small>{BAG_SLOT_LABELS[focus]}</small><strong>{question}</strong></div>
+				{clueStudy === "A" && clueIsFocused && <div className={`bag-clue-folio ${clueIsApplied ? "is-answered" : ""}`}>
+					<small>Field Guide · {opportunity.clueName}</small>
+					<strong>{clueIsApplied ? "Clue answered by this Bag" : clueGuide.next}</strong>
+				</div>}
+				<div className="bag-guided-question"><small>{BAG_SLOT_LABELS[focus]}</small><strong>{clueStudy === "B" && clueIsFocused ? "Which choice answers the clue?" : question}</strong></div>
 				<div className="bag-guided-options">{focusChoices}</div>
 				<button
 					type="button"
@@ -1406,9 +1477,22 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [bagClueStudy, setBagClueStudyState] = useState(readBagClueStudy);
+	const setBagClueStudy = useCallback((study) => {
+		const next = Object.hasOwn(BAG_CLUE_STUDIES, study) ? study : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("bagclue", next);
+		window.history.replaceState({}, "", url);
+		setBagClueStudyState(next);
+	}, []);
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
+	const bagClueSlot = state.nearDiscoveryReason ?? (bagClueStudy ? readBagClueSlot() : null);
+	const bagClueGuide = useMemo(
+		() => bagClueSlot === null ? null : nearDiscoveryGuide({ ...state, nearDiscoveryReason: bagClueSlot }),
+		[state, bagClueSlot],
+	);
 	const riveModel = useMemo(
 		() => homegrownRiveModel(state, visualNow),
 		[state, visualNow],
@@ -1899,6 +1983,9 @@ function App() {
 				opportunity={opportunity}
 				activeSelection={riveModel.bagReceive}
 				initialFocus={state.nearDiscoveryReason ?? "provision"}
+				clueGuide={bagClueGuide}
+				clueSlot={bagClueSlot}
+				clueStudy={bagClueStudy}
 				onSelect={selectBagItem}
 				onConfirm={() => act(visiblePresentation.action)}
 			/>}
@@ -1916,6 +2003,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{choosingBag && bagClueStudy && <BagCluePrototypeSwitcher study={bagClueStudy} setStudy={setBagClueStudy} />}
 	</main>;
 }
 
