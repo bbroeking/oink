@@ -675,6 +675,7 @@ function AdventureVignetteOverlay({ state, beat, onContinue }) {
 	const story = adventureStory(state);
 	const activeBeatIndex = BAG_SLOT_ORDER.indexOf(beat);
 	const resolved = beat === "resolved";
+	const activeTag = resolved ? null : story.journeyTags[activeBeatIndex];
 	return (
 		<section
 			className="adventure-vignette-overlay"
@@ -682,33 +683,11 @@ function AdventureVignetteOverlay({ state, beat, onContinue }) {
 			data-story-kind={story.kind}
 			aria-label="Beyond-the-hedge journey"
 		>
-			<div className="adventure-find" role="status">
-				<span className="glowroot-token" aria-hidden="true">✦</span>
-				<strong>{story.journeyHeadline}</strong>
-				<small>{story.journeyResult}</small>
-			</div>
-			<div className="adventure-cause-thread" aria-label="What Rosie's bag changes">
-				<strong className="adventure-cause-title">Rosie’s Bag in action</strong>
-				<ul>
-					{story.journeyTags.map((tag, index) => {
-						const beatState = resolved
-							? "is-complete"
-							: index === activeBeatIndex
-								? "is-active"
-								: index < activeBeatIndex
-									? "is-complete"
-									: "is-pending";
-						return <li
-							key={tag.slot}
-							className={`${beatState} ${tag.name.startsWith("No ") ? "is-empty" : ""}`}
-							aria-current={beatState === "is-active" ? "step" : undefined}
-						>
-							<i aria-hidden="true">{tag.icon}</i>
-							<strong>{tag.name}</strong>
-							<small>{tag.detail}</small>
-						</li>;
-					})}
-				</ul>
+			<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
+				<i aria-hidden="true">{activeTag?.icon ?? "✦"}</i>
+				<small>{activeTag ? BAG_SLOT_LABELS[activeTag.slot] : "What Rosie found"}</small>
+				<strong>{activeTag?.name ?? story.journeyHeadline}</strong>
+				<p>{activeTag?.detail ?? story.journeyResult}</p>
 			</div>
 			<button type="button" className="adventure-continue" onClick={onContinue}>Let Rosie explore</button>
 		</section>

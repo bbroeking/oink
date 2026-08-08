@@ -1058,6 +1058,16 @@ test("the Adventure vignette explains every selected item before idle waiting", 
 	});
 });
 
+test("the Adventure tells one Bag cause at a time without covering the clearing", () => {
+	assert.match(appSource, /const activeTag = resolved \? null : story\.journeyTags\[activeBeatIndex\]/);
+	assert.match(appSource, /key=\{beat\} className="adventure-field-note" role="status" aria-live="polite"/);
+	assert.match(appSource, /BAG_SLOT_LABELS\[activeTag\.slot\]/);
+	assert.match(appSource, /activeTag\?\.detail \?\? story\.journeyResult/);
+	assert.doesNotMatch(appSource, /className="adventure-cause-thread"/);
+	assert.doesNotMatch(appSource, /className="adventure-find"/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-field-note \{ animation: none; \}/);
+});
+
 test("departure timing is reducer-owned, reload-stable, reduced-motion aware, and idempotent", () => {
 	let state = createPrototypeState(8, { now: at });
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });

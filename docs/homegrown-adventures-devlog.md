@@ -273,11 +273,77 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 82. **v0.81 — Memory in Its Place (shipped):** keep the first memory
     acknowledgement, then collapse repeat-state teaching and stock into one
     secondary Farm-memory pocket.
+83. **v0.82 — One Cause at a Time (shipping):** let Provision, Tool, Pack, and
+    the resulting find each own one field note while the illustrated Adventure
+    remains primary.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.82 — One Cause at a Time — 2026-08-08
+
+- Began by replaying the exact public v0.81 Position 9 at 360×780 beside the
+  approved `rosie-v3/09-adventure-vignette.png` direction. The clearing already
+  contained Rosie, her packed objects, an authored Glowroot response, and
+  deterministic causes, but an 87 px Discovery card and 108 px three-row Bag
+  ledger occupied the first 195 px below the HUD. The outing read as a report
+  before it read as a place.
+- Compared three structural treatments on the existing route: retain the full
+  cause ledger, use one changing field note, or attach a small story bubble to
+  Rosie. The field note won. It removed the ledger without suggesting that
+  Rosie was speaking or covering her face, and left the path and physical Bag
+  props readable throughout the cause sequence.
+- Captured all three throwaway treatments at commit `300fb9e` on
+  `codex/homegrown-v082-adventure-story-prototypes`. Main retains only the
+  single field note and no prototype switcher.
+- Provision, Tool, Pack, and the resolved find each occupy the same 310×92
+  note for one existing 900 ms beat. The exact item name and deterministic
+  `journeyTags` cause remain unchanged; the active physical props and Rive
+  environment keep their existing response.
+- The changing note remounts for one 220 ms state reveal and uses a polite live
+  region. Reload during the vignette restarts the explanation at Provision.
+  Reduced motion exposes the resolved note immediately with no entrance
+  animation. The player can still continue without waiting for ceremony.
+- This checkpoint changes presentation hierarchy only. It adds no dialogue,
+  Bag slot, item, location, discovery, outcome, timer, reward, reducer state,
+  persisted field, Rive asset, or Rive input.
+
+### Validation evidence
+
+- At 360×780 the first field note measured 310×92 at y=80; the 286×56 **Let
+  Rosie explore** action remained at y=632. Client and scroll widths remained
+  equal, and neither legacy explanatory panel existed.
+- Normal motion announced, in order: Clover Lunch keeping Rosie out until
+  dusk; Hand Trowel opening the roots; Wicker Basket waiting for the find; and
+  warm light stirring beneath the hedge. A Lantern alternative instead said
+  it made the fading glow easier to follow.
+- Leaving Pack empty rendered a kind Near-Discovery sequence and explicitly
+  said **No Pack · records the place so Rosie can return**. No unearned find or
+  reward appeared.
+- Replayed a complete remembered second day through Position 9. **Lights Past
+  the Open Gate** used the same field-note hierarchy and resolved to **Reflected
+  leaves lead Rosie onward** without overflow.
+- Reduced motion reported `resolved` within 80 ms with no CSS animation. Reload
+  restarted an unfinished second outing at Provision. A rapid double **Let
+  Rosie explore** produced one journey watch, one Fast-forward action, and no
+  premature Return panel.
+- At 390×844 the note remained 310×96 above the 286×56 action with equal 390 px
+  client/scroll widths. At 1280×720 the complete 328×709 game remained centered
+  and both note and action stayed inside the first viewport.
+- `npm run prototype:homegrown:test` passes 52/52 and `npx tsc --noEmit`
+  passes locally. Rive and repository quality gates, deployment, and public
+  artifact verification follow this feature commit.
+
+### Next highest-leverage weakness
+
+The expedition now reads as an illustrated place with one cause at a time, but
+the first outing's Hand Trowel remains painted and motionless while the field
+note says it opens the roots. The next cycle should compare one bounded,
+technically achievable Tool-action response—preferably using the existing
+separable trowel asset and Rive/DOM motion—before adding another destination,
+item, reward, or explanatory panel.
 
 ### v0.81 — Memory in Its Place — 2026-08-08
 

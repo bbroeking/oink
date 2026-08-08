@@ -246,6 +246,19 @@ or economy contract changes. Three structural treatments remain captured on
 `codex/homegrown-v081-home-memory-prototypes` at `9c29852`; main retains only
 the compact Memory Pocket.
 
+The v0.82 Adventure pass replaces Position 9's simultaneous Discovery card
+and three-row Bag ledger with one changing field note. Provision, Tool, and
+Pack each own one 900 ms beat using the same deterministic `journeyTags`; the
+resolved beat names what Rosie noticed. The active note remounts for a short
+220 ms state reveal and announces itself through one polite live region while
+the existing physical props and Rive environment continue to respond. The
+primary action remains available, reload restarts the readable sequence, and
+reduced motion paints the resolved note immediately. No Bag rule, cause,
+outcome, reward, timer, persistence, or Rive input changes. Three structural
+treatments remain captured on
+`codex/homegrown-v082-adventure-story-prototypes` at `300fb9e`; main retains
+only the single Field Note.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

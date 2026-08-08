@@ -481,6 +481,23 @@ rapid toggles, reduced motion, 360×780 and 390×844 touch layouts, centered
 desktop, 51 reducer/source-contract tests, Rive contracts, and TypeScript pass
 locally.
 
+**Adventure-field-note checkpoint (August 8, 2026):** Position 9 now explains
+one Bag cause at a time instead of covering the expedition with a Discovery
+card and full three-row ledger. One 310×92 field note cycles through Provision,
+Tool, Pack, and the resolved find using the existing deterministic
+`journeyTags`; the clearing, Rosie, packed props, and Rive response remain the
+primary evidence. The note is a polite live region, remounts for a bounded
+220 ms state reveal, restarts from Provision after an in-progress reload, and
+resolves immediately under reduced motion. **Let Rosie explore** remains
+available, and rapid duplicate input still advances only to the existing
+journey watch. No Bag rule, cause text, result, reward, timer, persistence,
+position, Rive asset, or Rive input changed. Three structural treatments were
+captured on `codex/homegrown-v082-adventure-story-prototypes` at `300fb9e`;
+only the Field Note remains on main. Default and Lantern Tools, an empty-Pack
+Near-Discovery, the Lanternleaf second outing, reload, reduced motion, rapid
+input, 360×780 and 390×844 touch layouts, centered desktop, 52 reducer/source
+contract tests, and TypeScript pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its
