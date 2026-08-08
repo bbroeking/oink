@@ -1478,10 +1478,11 @@ test("the journey watch keeps a quiet truthful reminder of what Rosie packed", (
 	assert.match(appSource, /function JourneyPackedStamp\(\{ bag \}\)/);
 	assert.match(appSource, /const label = `Rosie set out with: \$\{items\.map/);
 	assert.match(appSource, /<div className="journey-packed-stamp" role="group" aria-label=\{label\}>/);
-	assert.match(appSource, /!homecomingReady && <JourneyPackedStamp bag=\{state\.bag\} \/>/);
-	assert.match(stylesSource, /\.journey-packed-stamp \{[^}]*top: 174px;[^}]*width: 142px;[^}]*grid-template-columns: 34px repeat\(3, 1fr\)/s);
+	assert.match(appSource, /!homecomingReady && <div className="journey-watch-facts">/);
+	assert.match(appSource, /<JourneyPackedStamp bag=\{state\.bag\} \/>/);
+	assert.match(stylesSource, /\.journey-packed-stamp \{[^}]*position: static;[^}]*flex: 1 1 58%;[^}]*grid-template-columns: 32px repeat\(3, 1fr\)/s);
 	assert.match(stylesSource, /\.journey-packed-stamp > span\.is-empty \{ opacity: \.46; \}/);
-	assert.doesNotMatch(appSource, /JourneyBagPrototypeSwitcher|loadoutTreatment|searchParams\.set\("loadout"/);
+	assert.doesNotMatch(appSource, /JourneyBagPrototypeSwitcher|JourneyWatchPrototypeSwitcher|loadoutTreatment|searchParams\.set\("loadout"|searchParams\.set\("watch"/);
 });
 
 test("an incomplete Bag stays causal throughout the idle journey", () => {
@@ -1506,7 +1507,8 @@ test("the journey watch gives the persisted return time one calm stable place", 
 	assert.match(appSource, /<small aria-hidden="true">Expected Home<\/small>/);
 	assert.match(appSource, /<strong aria-hidden="true">\{returnPromise\.display\}<\/strong>/);
 	assert.match(appSource, /now=\{visualNow\}/);
-	assert.match(stylesSource, /\.journey-return-time-ticket \{[^}]*left: 31px;[^}]*top: 174px;[^}]*width: 136px;[^}]*height: 39px/s);
+	assert.match(stylesSource, /\.journey-watch-facts \{[^}]*display: flex;[^}]*border-top: 1px solid/s);
+	assert.match(stylesSource, /\.journey-return-time-ticket \{[^}]*position: static;[^}]*flex: 1 1 42%;[^}]*height: 35px/s);
 	assert.doesNotMatch(appSource, /ReturnTimePrototypeSwitcher|returnTimeVariant|searchParams\.set\("returntime"/);
 });
 

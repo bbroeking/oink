@@ -1067,18 +1067,24 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, en
 			<div className="journey-watch-tint" aria-hidden="true" />
 			<div className="journey-home-dusk" aria-hidden="true"><i /></div>
 			<div className="journey-watch-note" role="status" aria-live="polite">
-				<span className="journey-watch-mark" aria-hidden="true" />
-				<small>{homecomingReady ? "The gate bell rings" : copy.eyebrow}</small>
-				<strong>{homecomingReady ? "Rosie is Home" : copy.title}</strong>
-				<p>{homecomingReady
-					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
-					: copy.body}</p>
+				<div className="journey-watch-story">
+					<span className="journey-watch-mark" aria-hidden="true" />
+					<div>
+						<small>{homecomingReady ? "The gate bell rings" : copy.eyebrow}</small>
+						<strong>{homecomingReady ? "Rosie is Home" : copy.title}</strong>
+						<p>{homecomingReady
+							? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
+							: copy.body}</p>
+					</div>
+				</div>
+				{!homecomingReady && <div className="journey-watch-facts">
+					{returnPromise && <div className="journey-return-time-ticket" role="group" aria-label={returnPromise.ariaLabel}>
+						<small aria-hidden="true">Expected Home</small>
+						<strong aria-hidden="true">{returnPromise.display}</strong>
+					</div>}
+					<JourneyPackedStamp bag={state.bag} />
+				</div>}
 			</div>
-			{returnPromise && <div className="journey-return-time-ticket" role="group" aria-label={returnPromise.ariaLabel}>
-				<small aria-hidden="true">Expected Home</small>
-				<strong aria-hidden="true">{returnPromise.display}</strong>
-			</div>}
-			{!homecomingReady && <JourneyPackedStamp bag={state.bag} />}
 			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
 				<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
 				<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>

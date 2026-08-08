@@ -709,16 +709,28 @@ html[data-reduce-motion="true"] .adventure-trail-opening i { animation: none; }
 	left: 23px;
 	right: 23px;
 	top: 82px;
-	min-height: 112px;
-	padding: 12px 14px 12px 58px;
+	min-height: 140px;
+	padding: 9px 12px 7px;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: flex-start;
 	background: linear-gradient(155deg, color-mix(in srgb, var(--paper) 97%, transparent), color-mix(in srgb, var(--paper-deep) 97%, transparent));
 	border: 2px solid var(--ink);
 	border-radius: 13px 11px 14px 12px;
 	box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--paper) 32%, transparent), 3px 4px 0 color-mix(in srgb, var(--ink) 68%, transparent);
 	transform: rotate(-.35deg);
+}
+.journey-watch-story {
+	position: relative;
+	min-height: 68px;
+	padding-left: 48px;
+	display: flex;
+	align-items: center;
+}
+.journey-watch-story > div {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
 }
 .journey-watch-note small {
 	color: var(--wood);
@@ -745,7 +757,7 @@ html[data-reduce-motion="true"] .adventure-trail-opening i { animation: none; }
 }
 .journey-watch-mark {
 	position: absolute;
-	left: 15px;
+	left: 5px;
 	top: 50%;
 	width: 29px;
 	height: 37px;
@@ -759,24 +771,35 @@ html[data-reduce-motion="true"] .adventure-trail-opening i { animation: none; }
 	border-radius: 50% 50% 48% 52%;
 	box-shadow: 0 0 20px var(--journey-route-light-soft);
 }
+.journey-watch.is-homecoming-ready .journey-watch-note {
+	min-height: 112px;
+	padding-block: 12px;
+}
+.journey-watch-facts {
+	margin-top: 3px;
+	padding-top: 4px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	border-top: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
+}
 .journey-packed-stamp {
-	position: absolute;
+	position: static;
 	z-index: 3;
-	right: 31px;
-	top: 174px;
-	width: 142px;
-	height: 39px;
-	padding: 3px 5px;
+	flex: 1 1 58%;
+	width: auto;
+	height: 35px;
+	padding: 1px 0 1px 7px;
 	display: grid;
-	grid-template-columns: 34px repeat(3, 1fr);
+	grid-template-columns: 32px repeat(3, 1fr);
 	align-items: center;
 	overflow: hidden;
 	color: var(--ink-soft);
-	background: color-mix(in srgb, var(--paper-deep) 97%, transparent);
-	border: 2px solid var(--ink);
-	border-radius: 8px 8px 11px 9px;
-	box-shadow: 2px 2px 0 color-mix(in srgb, var(--ink) 58%, transparent);
-	transform: rotate(.6deg);
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	transform: none;
 }
 .journey-packed-stamp > small {
 	font-size: 7px;
@@ -785,7 +808,7 @@ html[data-reduce-motion="true"] .adventure-trail-opening i { animation: none; }
 }
 .journey-packed-stamp > span {
 	width: 26px;
-	height: 28px;
+	height: 30px;
 	display: grid;
 	place-items: center;
 	border-left: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
@@ -793,22 +816,21 @@ html[data-reduce-motion="true"] .adventure-trail-opening i { animation: none; }
 .journey-packed-stamp > span.is-empty { opacity: .46; }
 .journey-packed-stamp .bag-item-art { transform: scale(.68); }
 .journey-return-time-ticket {
-	position: absolute;
+	position: static;
 	z-index: 3;
-	left: 31px;
-	top: 174px;
-	width: 136px;
-	height: 39px;
-	padding: 5px 9px;
+	flex: 1 1 42%;
+	width: auto;
+	height: 35px;
+	padding: 4px 2px;
 	display: grid;
 	align-content: center;
 	gap: 2px;
 	color: var(--ink-soft);
-	background: color-mix(in srgb, var(--paper-deep) 97%, transparent);
-	border: 2px solid var(--ink);
-	border-radius: 8px 8px 9px 11px;
-	box-shadow: 2px 2px 0 color-mix(in srgb, var(--ink) 58%, transparent);
-	transform: rotate(-.65deg);
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	transform: none;
 }
 .journey-return-time-ticket small {
 	font-size: 7px;
@@ -822,13 +844,14 @@ html[data-reduce-motion="true"] .adventure-trail-opening i { animation: none; }
 	position: absolute;
 	left: 31px;
 	right: 31px;
-	top: 214px;
+	top: 231px;
 	margin: 0;
 	padding: 0;
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	list-style: none;
 }
+.journey-watch.is-homecoming-ready .journey-watch-route { top: 214px; }
 .journey-watch.is-near-discovery .journey-watch-route li:nth-child(2) i {
 	background: color-mix(in srgb, var(--journey-route-light) 72%, var(--paper-deep));
 	border-style: dashed;
@@ -1025,8 +1048,6 @@ html[data-reduce-motion="true"] .journey-watch-lights i { animation: none; }
 .journey-entry-lights i:nth-child(4) { left: 300px; top: 382px; --entry-x: -40px; --entry-y: -38px; animation-delay: 120ms; }
 .journey-entry-lights i:nth-child(5) { left: 285px; top: 330px; --entry-x: -55px; --entry-y: 10px; animation-delay: 160ms; }
 .journey-watch.is-entering .journey-watch-note,
-.journey-watch.is-entering .journey-return-time-ticket,
-.journey-watch.is-entering .journey-packed-stamp,
 .journey-watch.is-entering .journey-watch-route {
 	animation: journey-entry-ui-arrive 430ms 390ms ease-out both;
 }
@@ -1047,8 +1068,6 @@ html[data-reduce-motion="true"] .journey-watch-lights i { animation: none; }
 html[data-reduce-motion="true"] .journey-entry-lights,
 html[data-reduce-motion="true"] .journey-entry-lights i,
 html[data-reduce-motion="true"] .journey-watch.is-entering .journey-watch-note,
-html[data-reduce-motion="true"] .journey-watch.is-entering .journey-return-time-ticket,
-html[data-reduce-motion="true"] .journey-watch.is-entering .journey-packed-stamp,
 html[data-reduce-motion="true"] .journey-watch.is-entering .journey-watch-route { animation: none; }
 .return-homecoming-open .scene-plate { opacity: 0; }
 .return-homecoming-open .painted-kitchen-patch,
