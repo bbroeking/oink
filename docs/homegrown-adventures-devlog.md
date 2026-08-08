@@ -359,6 +359,21 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   and 202 security tests. Watchman's existing recrawl notice is the only
   warning.
 
+### Public verification evidence
+
+- Feature commit `1a91a9e` deployed successfully in GitHub Pages run
+  `31267669886`.
+- Fresh public HTML, JavaScript, and CSS matched the verified files byte for
+  byte. Their SHA-256 hashes are `e67cf9c6a8618e8ea9c82417366cdd197f60371bc7c6381b43ed33f464fd6944`,
+  `1941368aaff8595c50b120d2c2770db3d69cc1c4fd1f7ee0ad3b781965ce66d3`,
+  and `d2c78dcf941ce1b214d9eb988b4e9bc4085776f5691ecc113eff4a056b7e47cf`.
+- Replayed the exact public Position 9 homeward state. The rendered HUD and
+  field note both read **Rosie is heading Home**, the external rail read
+  **Heading Home**, and no prototype treatment control shipped.
+- Public **Fast-forward to Homecoming** handed the same screen to **Rosie is
+  Home**, **At the gate**, and the single **Welcome Rosie home** action. The
+  companion site exposes **See Rosie heading Home**.
+
 ### Next highest-leverage weakness
 
 The visible HUD, story note, route, and review rail now agree, but the scene's
