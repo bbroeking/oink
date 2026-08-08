@@ -629,6 +629,95 @@ html[data-reduce-motion="true"] .adventure-pack-observation i { animation: none;
 	to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
+.adventure-path-marker {
+	position: absolute;
+	right: 28px;
+	top: 390px;
+	width: 116px;
+	min-height: 64px;
+	padding: 10px 10px 10px 27px;
+	border: 2px solid #4f2e1d;
+	border-radius: 5px 12px 12px 5px;
+	background: linear-gradient(155deg, #e4b66f, #b8783f);
+	box-shadow: 0 4px 0 rgba(53,28,17,.55), 0 8px 18px rgba(13,8,5,.25);
+	color: #3b2116;
+	text-align: left;
+	transform: rotate(2deg);
+	animation: adventure-path-marker-enter 320ms cubic-bezier(.16,1,.3,1) both;
+}
+.adventure-path-marker > span { position: absolute; left: 9px; top: 0; width: 5px; height: 82px; border-radius: 4px; background: #613d25; }
+.adventure-path-marker small { display: block; font-size: 8px; font-weight: 950; letter-spacing: .07em; text-transform: uppercase; }
+.adventure-path-marker strong { display: block; margin-top: 3px; font-family: Caprasimo, Georgia, serif; font-size: 14px; font-weight: 400; line-height: 1.05; }
+@keyframes adventure-path-marker-enter {
+	from { opacity: 0; transform: translateY(9px) rotate(2deg); }
+	to { opacity: 1; transform: translateY(0) rotate(2deg); }
+}
+.adventure-trail-opening {
+	--trail-open-light: #f8d462;
+	--trail-open-glow: rgba(255,206,84,.9);
+	position: absolute;
+	inset: 0;
+}
+.phone[data-adventure-opportunity="lights-past-open-gate"] .adventure-trail-opening {
+	--trail-open-light: #d4f7dc;
+	--trail-open-glow: rgba(170,239,208,.88);
+}
+.adventure-trail-opening::before {
+	content: "";
+	position: absolute;
+	left: 246px;
+	top: 272px;
+	width: 105px;
+	height: 330px;
+	border-radius: 50%;
+	background: radial-gradient(ellipse at 48% 28%, var(--trail-open-glow), transparent 14%), linear-gradient(168deg, transparent 4%, color-mix(in srgb, var(--trail-open-glow) 22%, transparent) 42%, transparent 76%);
+	filter: blur(9px);
+	opacity: .35;
+	animation: adventure-trail-open-wash 820ms ease-out both;
+}
+.adventure-trail-opening i {
+	position: absolute;
+	width: 7px;
+	height: 9px;
+	border-radius: 55% 45% 48% 52%;
+	background: var(--trail-open-light);
+	box-shadow: 0 0 9px var(--trail-open-glow), 0 0 19px var(--trail-open-glow);
+	animation: adventure-trail-open-light 760ms cubic-bezier(.16,1,.3,1) both;
+}
+.adventure-trail-opening i:nth-of-type(1) { left: 320px; top: 545px; animation-delay: 0ms; }
+.adventure-trail-opening i:nth-of-type(2) { left: 302px; top: 495px; animation-delay: 70ms; }
+.adventure-trail-opening i:nth-of-type(3) { left: 322px; top: 438px; animation-delay: 140ms; }
+.adventure-trail-opening i:nth-of-type(4) { left: 300px; top: 382px; animation-delay: 210ms; }
+.adventure-trail-opening i:nth-of-type(5) { left: 285px; top: 330px; animation-delay: 280ms; }
+@keyframes adventure-trail-open-light {
+	0% { opacity: 0; transform: translateY(16px) scale(.38); }
+	55% { opacity: 1; transform: translateY(-3px) scale(1.12); }
+	100% { opacity: .82; transform: translateY(-9px) scale(.9); }
+}
+@keyframes adventure-trail-open-wash {
+	from { opacity: 0; transform: translateY(16px); }
+	to { opacity: .35; transform: translateY(0); }
+}
+html[data-reduce-motion="true"] .adventure-path-marker,
+html[data-reduce-motion="true"] .adventure-trail-opening::before,
+html[data-reduce-motion="true"] .adventure-trail-opening i { animation: none; }
+.handoff-switcher {
+	position: fixed;
+	right: 18px;
+	top: 18px;
+	z-index: 40;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px;
+	border: 2px solid var(--ink);
+	border-radius: 999px;
+	background: var(--paper);
+	box-shadow: 2px 3px 0 var(--ink);
+}
+.handoff-switcher span { padding: 0 5px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+.handoff-switcher a { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--ink); font-weight: 950; text-decoration: none; }
+.handoff-switcher a.is-current { background: var(--ink); color: var(--paper); }
 .journey-watch {
 	position: absolute;
 	inset: 0;

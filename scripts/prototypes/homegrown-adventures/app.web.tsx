@@ -887,7 +887,19 @@ function adventurePackPresentation(state) {
 	};
 }
 
-function AdventureVignetteOverlay({ state, beat }) {
+function adventureHandoffPresentation(state) {
+	const lanternleaf = adventureOpportunity(state).id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	return {
+		objective: lanternleaf
+			? "Silver leaves lead Rosie onward"
+			: "Warm lights lead Rosie onward",
+		detail: lanternleaf
+			? "Past the open gate"
+			: "Beyond the hedge",
+	};
+}
+
+function AdventureVignetteOverlay({ state, beat, handoffVariant }) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
@@ -901,11 +913,22 @@ function AdventureVignetteOverlay({ state, beat }) {
 			data-story-kind={story.kind}
 			aria-label="Beyond-the-hedge journey"
 		>
-			{resolved ? (
+			{resolved && handoffVariant === "A" ? (
 				<div key={beat} className="adventure-auto-handoff" role="status" aria-live="polite">
 					<i aria-hidden="true"><b /><b /><b /></i>
 					<small>Rosie follows the {lanternleaf ? "reflected leaves" : "warm light"}</small>
 					<strong>The journey continues…</strong>
+				</div>
+			) : resolved && handoffVariant === "B" ? (
+				<div key={beat} className="adventure-path-marker" role="status" aria-live="polite">
+					<span aria-hidden="true" />
+					<small>{lanternleaf ? "Silver trail" : "Warm-light trail"}</small>
+					<strong>Rosie follows on</strong>
+				</div>
+			) : resolved ? (
+				<div key={beat} className="adventure-trail-opening" role="status" aria-live="polite">
+					<span className="sr-only">Rosie follows the {lanternleaf ? "reflected leaves beyond the gate" : "warm moth lights beyond the hedge"}. The journey continues.</span>
+					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
 				</div>
 			) : beat === "provision" ? (
 				<div key={beat} className="adventure-dusk-observation" role="status" aria-live="polite">
@@ -937,6 +960,17 @@ function AdventureVignetteOverlay({ state, beat }) {
 			) : null}
 		</section>
 	);
+}
+
+function HandoffSwitcher({ current }) {
+	return <nav className="handoff-switcher" aria-label="Journey handoff prototypes">
+		<span>Handoff</span>
+		{["A", "B", "C"].map((variant) => {
+			const url = new URL(window.location.href);
+			url.searchParams.set("handoff", variant);
+			return <a key={variant} className={variant === current ? "is-current" : ""} href={url.toString()}>{variant}</a>;
+		})}
+	</nav>;
 }
 
 function journeyWatchCopy(lanternleaf, journeyPhase, missingSlot = null) {
@@ -1570,6 +1604,8 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const requestedHandoff = new URLSearchParams(window.location.search).get("handoff");
+	const handoffVariant = ["A", "B", "C"].includes(requestedHandoff) ? requestedHandoff : "A";
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1701,6 +1737,11 @@ function App() {
 		? {
 			...presentation,
 			...adventurePackPresentation(state),
+		}
+		: showingAdventureVignette && adventureCauseBeat === "resolved"
+		? {
+			...presentation,
+			...adventureHandoffPresentation(state),
 		}
 		: showingAdventureVignette
 		? {
@@ -1965,6 +2006,7 @@ function App() {
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
 			data-adventure-pack={showingAdventureVignette ? state.bag?.pack ?? "none" : undefined}
 			data-adventure-beat={showingAdventureVignette ? adventureCauseBeat : undefined}
+			data-handoff-variant={showingAdventureVignette ? handoffVariant : undefined}
 			data-return-kind={showingReturnReward ? returnKind : undefined}
 			data-return-tool={showingReturnReward ? state.bag?.tool ?? "none" : undefined}
 			data-return-pack={showingReturnReward ? state.bag?.pack ?? "none" : undefined}
@@ -2054,6 +2096,7 @@ function App() {
 			{showingAdventureVignette && <AdventureVignetteOverlay
 				state={state}
 				beat={adventureCauseBeat}
+				handoffVariant={handoffVariant}
 			/>}
 			{showingJourneyWatch && <JourneyWatchPanel
 				state={state}
@@ -2107,6 +2150,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{showingAdventureVignette && <HandoffSwitcher current={handoffVariant} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
