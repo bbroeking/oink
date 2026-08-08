@@ -47,6 +47,14 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// PROTOTYPE ONLY: three Position 7 structures answering whether Rosie's first
+// Bag can begin empty, expose every real choice, and remain calm at phone size.
+const BAG_CHOICE_STUDIES = Object.freeze({
+	A: Object.freeze({ name: "All choices open" }),
+	B: Object.freeze({ name: "One question" }),
+	C: Object.freeze({ name: "Bag pockets" }),
+});
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -662,6 +670,140 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, onSel
 	);
 }
 
+function BagChoiceStudyOption({ slot, item, selected, disabled, detail, onSelect }) {
+	const name = item?.name ?? "Leave empty";
+	return (
+		<button
+			type="button"
+			className={`bag-study-option ${selected ? "is-selected" : ""} ${item ? "" : "is-empty"}`}
+			disabled={disabled}
+			aria-pressed={selected}
+			onClick={() => onSelect(slot, item?.id ?? null)}
+		>
+			<span aria-hidden="true"><BagItemArt itemId={item?.id} /></span>
+			<strong>{name}</strong>
+			<small>{detail}</small>
+		</button>
+	);
+}
+
+function BagChoiceStudyPanel({ variant, farmStock, opportunity }) {
+	const [draft, setDraft] = useState({ provision: null, tool: null, pack: null });
+	const [focus, setFocus] = useState("provision");
+	const selectedCount = BAG_SLOT_ORDER.filter((slot) => draft[slot] !== null).length;
+	const select = (slot, itemId) => setDraft((current) => ({ ...current, [slot]: itemId }));
+	const detailFor = (slot, item) => {
+		if (!item) return "A kind clue still comes Home";
+		if (slot === "provision") {
+			const owned = farmStock?.[item.id] ?? 0;
+			return `${owned} owned · ${BAG_ITEM_EFFECT_LABELS[opportunity.id]?.[item.id] ?? item.effect}`;
+		}
+		const cost = slot === "pack" ? bagPackingCost(item.id) : null;
+		if (cost) {
+			const owned = farmStock?.[cost.itemId] ?? 0;
+			return owned >= cost.amount
+				? `${cost.amount} ${cost.name} · ${BAG_ITEM_EFFECT_LABELS[opportunity.id]?.[item.id] ?? item.effect}`
+				: `Needs ${cost.amount} ${cost.name}`;
+		}
+		return BAG_ITEM_EFFECT_LABELS[opportunity.id]?.[item.id] ?? item.effect;
+	};
+	const choicesFor = (slot) => [
+		...BAG_ITEMS[slot].map((item) => {
+			const cost = slot === "pack" ? bagPackingCost(item.id) : null;
+			const disabled = cost !== null && (farmStock?.[cost.itemId] ?? 0) < cost.amount;
+			return <BagChoiceStudyOption
+				key={item.id}
+				slot={slot}
+				item={item}
+				selected={draft[slot] === item.id}
+				disabled={disabled}
+				detail={detailFor(slot, item)}
+				onSelect={select}
+			/>;
+		}),
+		<BagChoiceStudyOption
+			key={`${slot}-empty`}
+			slot={slot}
+			item={null}
+			selected={draft[slot] === null}
+			disabled={false}
+			detail={detailFor(slot, null)}
+			onSelect={select}
+		/>,
+	];
+	const packLabel = selectedCount === 0
+		? "Set out with an empty Bag"
+		: `Pack ${selectedCount} ${selectedCount === 1 ? "choice" : "choices"}`;
+	const question = {
+		provision: "How long should Rosie stay?",
+		tool: "What should Rosie try?",
+		pack: "What can Rosie carry Home?",
+	}[focus];
+
+	if (variant === "A") {
+		return (
+			<section className="bag-choice-study bag-choice-study-a" aria-label="Choose every Bag slot directly">
+				<div className="bag-study-title"><strong>Rosie's Bag starts empty</strong><small>Choose any item—or leave any slot open.</small></div>
+				<div className="bag-study-all-rows">
+					{BAG_SLOT_ORDER.map((slot) => <div className="bag-study-row" key={slot}>
+						<strong>{BAG_SLOT_LABELS[slot]}</strong>
+						<div>{choicesFor(slot)}</div>
+					</div>)}
+				</div>
+				<button className="bag-study-confirm" type="button">{packLabel}</button>
+			</section>
+		);
+	}
+
+	if (variant === "B") {
+		const focusIndex = BAG_SLOT_ORDER.indexOf(focus);
+		return (
+			<section className="bag-choice-study bag-choice-study-b" aria-label="Choose one Bag question at a time">
+				<div className="bag-study-title"><strong>Pack for the hedge glow</strong><small>The Bag begins empty. Every slot is optional.</small></div>
+				<div className="bag-study-progress" role="tablist" aria-label="Bag slots">
+					{BAG_SLOT_ORDER.map((slot) => {
+						const selected = bagItem(slot, draft[slot]);
+						return <button key={slot} type="button" role="tab" aria-selected={focus === slot} onClick={() => setFocus(slot)}>
+							<small>{BAG_SLOT_LABELS[slot]}</small><strong>{selected?.name ?? "Empty"}</strong>
+						</button>;
+					})}
+				</div>
+				<div className="bag-study-question">
+					<div><small>{BAG_SLOT_LABELS[focus]}</small><strong>{question}</strong></div>
+					<div className="bag-study-question-options">{choicesFor(focus)}</div>
+					<button
+						type="button"
+						className="bag-study-next"
+						onClick={() => setFocus(BAG_SLOT_ORDER[Math.min(BAG_SLOT_ORDER.length - 1, focusIndex + 1)])}
+						disabled={focusIndex === BAG_SLOT_ORDER.length - 1}
+					>{focusIndex === BAG_SLOT_ORDER.length - 1 ? "All choices visible" : `Next: ${BAG_SLOT_LABELS[BAG_SLOT_ORDER[focusIndex + 1]]}`}</button>
+				</div>
+				<button className="bag-study-confirm" type="button">{packLabel}</button>
+			</section>
+		);
+	}
+
+	return (
+		<section className="bag-choice-study bag-choice-study-c" aria-label="Choose Bag items from physical pockets">
+			<div className="bag-study-title"><strong>Rosie's open Bag</strong><small>Tap a pocket. Empty is always a kind choice.</small></div>
+			<div className="bag-study-physical" aria-label="Bag pockets">
+				<span className="open-adventure-bag" aria-hidden="true" />
+				{BAG_SLOT_ORDER.map((slot) => {
+					const selected = bagItem(slot, draft[slot]);
+					return <button key={slot} type="button" className={`bag-study-pocket pocket-${slot} ${focus === slot ? "is-active" : ""}`} onClick={() => setFocus(slot)}>
+						<BagItemArt itemId={selected?.id} /><small>{BAG_SLOT_LABELS[slot]}</small><strong>{selected?.name ?? "Empty"}</strong>
+					</button>;
+				})}
+			</div>
+			<div className="bag-study-pocket-picker">
+				<div><small>{BAG_SLOT_LABELS[focus]}</small><strong>{question}</strong></div>
+				<div>{choicesFor(focus)}</div>
+			</div>
+			<button className="bag-study-confirm" type="button">{packLabel}</button>
+		</section>
+	);
+}
+
 function PackedLoadoutRibbon({ bag, farmStock }) {
 	return (
 		<div className="packed-loadout" aria-label="Rosie's packed items">
@@ -1171,6 +1313,28 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function BagChoiceStudySwitcher({ variant, setVariant }) {
+	const keys = Object.keys(BAG_CHOICE_STUDIES);
+	const index = keys.indexOf(variant);
+	useEffect(() => {
+		const onKeyDown = (event) => {
+			const target = event.target;
+			if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable) return;
+			if (event.key === "ArrowLeft") setVariant(keys[(index + keys.length - 1) % keys.length]);
+			if (event.key === "ArrowRight") setVariant(keys[(index + 1) % keys.length]);
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [index, keys, setVariant]);
+	return (
+		<div className="bag-choice-study-switcher" aria-label="First Bag prototype variants">
+			<button type="button" aria-label="Previous Bag variant" onClick={() => setVariant(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span><strong>{variant}</strong><small>{BAG_CHOICE_STUDIES[variant].name}</small></span>
+			<button type="button" aria-label="Next Bag variant" onClick={() => setVariant(keys[(index + 1) % keys.length])}>→</button>
+		</div>
+	);
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1265,6 +1429,9 @@ function App() {
 	const hasRequestedPosition = Number.isInteger(requestedPosition) && requestedPosition >= 1 && requestedPosition <= PROTOTYPE_POSITIONS.length;
 	const requestedJourneyPhase = initialSearch.get("journey") === "homeward" ? "homeward" : "trail";
 	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
+	const requestedBagChoiceVariant = initialSearch.get("bagchoice")?.toUpperCase();
+	const initialBagChoiceVariant = Object.hasOwn(BAG_CHOICE_STUDIES, requestedBagChoiceVariant) ? requestedBagChoiceVariant : "A";
+	const bagChoiceStudy = hasRequestedPosition && requestedPosition === 7 && initialSearch.has("bagchoice");
 	const reviewMode = loopMode || hasRequestedPosition;
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
@@ -1286,6 +1453,7 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [bagChoiceVariant, setBagChoiceVariantState] = useState(initialBagChoiceVariant);
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1305,6 +1473,13 @@ function App() {
 	const glowrootHomeRevealTimer = useRef(null);
 	const seedHandoffTimers = useRef([]);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
+	const setBagChoiceVariant = useCallback((nextVariant) => {
+		const normalized = Object.hasOwn(BAG_CHOICE_STUDIES, nextVariant) ? nextVariant : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("bagchoice", normalized);
+		window.history.replaceState({}, "", url);
+		setBagChoiceVariantState(normalized);
+	}, []);
 	const position = state.prototypePosition ?? 1;
 	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop;
 	const plantingCrop = position === 3 && state.stage === STAGES.STARTING && state.selectedCrop === "clover";
@@ -1773,7 +1948,13 @@ function App() {
 				waiting={waiting}
 			/>}
 			{startingNewDay && <NewDayHandoff />}
-			{choosingBag && <BagSelectionPanel
+			{choosingBag && bagChoiceStudy && <BagChoiceStudyPanel
+				key={bagChoiceVariant}
+				variant={bagChoiceVariant}
+				farmStock={state.farmStock}
+				opportunity={opportunity}
+			/>}
+			{choosingBag && !bagChoiceStudy && <BagSelectionPanel
 				bag={state.bag}
 				farmStock={state.farmStock}
 				opportunity={opportunity}
@@ -1793,6 +1974,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{bagChoiceStudy && <BagChoiceStudySwitcher variant={bagChoiceVariant} setVariant={setBagChoiceVariant} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
