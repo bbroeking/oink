@@ -430,6 +430,7 @@ export function normalizePrototypePosition(value) {
 const GROWTH_MS = CROP_RULES.clover.baseDurationMs;
 const COMPOSTED_GROWTH_MS = CROP_RULES.clover.compostDurationMs;
 const ADVENTURE_MS = 6 * 60 * 60 * 1000;
+export const JOURNEY_HOMEWARD_RATIO = 0.75;
 const DEPARTURE_MS = 1_000;
 const REDUCED_MOTION_DEPARTURE_MS = 120;
 
@@ -485,7 +486,12 @@ export function createInitialState({ now = Date.now(), reduceMotion = false } = 
 	};
 }
 
-export function createPrototypeState(position, { now = Date.now(), reduceMotion = false } = {}) {
+export function createPrototypeState(position, {
+	now = Date.now(),
+	reduceMotion = false,
+	journeyPhase = "trail",
+	adventureRoute = "glowroot",
+} = {}) {
 	const target = normalizePrototypePosition(position);
 	const base = createInitialState({ now, reduceMotion });
 	const tickled = {
@@ -584,8 +590,12 @@ export function createPrototypeState(position, { now = Date.now(), reduceMotion 
 			stage: STAGES.ADVENTURE,
 			prototypePosition: 9,
 			underprepared: false,
-			adventureStartedAt: now,
-			adventureReadyAt: now + ADVENTURE_MS,
+			adventureStartedAt: journeyPhase === "homeward"
+				? now - ADVENTURE_MS * 0.8
+				: now,
+			adventureReadyAt: journeyPhase === "homeward"
+				? now + ADVENTURE_MS * 0.2
+				: now + ADVENTURE_MS,
 			departureStartedAt: now - DEPARTURE_MS,
 			departureReadyAt: now,
 			departureComplete: true,
@@ -615,8 +625,18 @@ export function createPrototypeState(position, { now = Date.now(), reduceMotion 
 		},
 	};
 
+	const routePreview = target === 9 && adventureRoute === "lanternleaf"
+		? {
+			daysCompleted: 1,
+			glowrootKnown: true,
+			glowrootPlanted: true,
+			fieldGuide: ["Clover Lunch", "Dusk Picnic", "Glowroot Seed"],
+		}
+		: {};
+
 	return {
 		...presets[target],
+		...routePreview,
 		prototypePosition: target,
 		lastAction: "jump-to-position",
 		trace: [event("jump-to-position", PROTOTYPE_POSITIONS[target - 1].name, now)],
@@ -795,6 +815,41 @@ export function settleState(state, now = Date.now()) {
 	}
 
 	return state;
+}
+
+export function adventureJourneyProgress(state, now = Date.now()) {
+	if (
+		state.stage !== STAGES.ADVENTURE ||
+		!Number.isFinite(state.adventureStartedAt) ||
+		!Number.isFinite(state.adventureReadyAt) ||
+		state.adventureReadyAt <= state.adventureStartedAt
+	) return 0;
+	return Math.max(
+		0,
+		Math.min(
+			1,
+			(now - state.adventureStartedAt) /
+				(state.adventureReadyAt - state.adventureStartedAt),
+		),
+	);
+}
+
+export function adventureHomewardAt(state) {
+	if (
+		!Number.isFinite(state.adventureStartedAt) ||
+		!Number.isFinite(state.adventureReadyAt) ||
+		state.adventureReadyAt <= state.adventureStartedAt
+	) return null;
+	return state.adventureStartedAt +
+		(state.adventureReadyAt - state.adventureStartedAt) * JOURNEY_HOMEWARD_RATIO;
+}
+
+export function adventureJourneyPhase(state, now = Date.now()) {
+	if (state.stage !== STAGES.ADVENTURE) return null;
+	if (state.adventureComplete || adventureJourneyProgress(state, now) >= 1) return "home";
+	return adventureJourneyProgress(state, now) >= JOURNEY_HOMEWARD_RATIO
+		? "homeward"
+		: "trail";
 }
 
 export function homegrownReducer(state, action) {

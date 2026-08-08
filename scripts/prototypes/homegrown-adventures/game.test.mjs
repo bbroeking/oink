@@ -4,6 +4,9 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
 	ACTIONS,
+	adventureHomewardAt,
+	adventureJourneyPhase,
+	adventureJourneyProgress,
 	adventureOpportunity,
 	adventureStory,
 	BAG_ITEMS,
@@ -16,6 +19,7 @@ import {
 	HARVEST_BEAT_MS,
 	HARVEST_PATTERN,
 	homegrownReducer,
+	JOURNEY_HOMEWARD_RATIO,
 	playerPresentation,
 	PROTOTYPE_POSITIONS,
 	primaryAction,
@@ -1092,6 +1096,51 @@ test("the idle journey keeps Home in route-aware dusk without adding another scr
 	assert.match(stylesSource, /@keyframes journey-home-dusk-enter/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.journey-watch-open \.scene-plate/);
 	assert.doesNotMatch(appSource, /AtmosphereSwitcher|atmospherePrototype|searchParams\.set\("atmosphere"/);
+});
+
+test("the idle journey derives a predictable trail and homeward beat from its persisted timestamps", () => {
+	const journey = {
+		...createPrototypeState(9, { now: at }),
+		adventureVignetteSeen: true,
+	};
+	const homewardAt = adventureHomewardAt(journey);
+	assert.equal(homewardAt, at + DURATIONS.ADVENTURE_MS * JOURNEY_HOMEWARD_RATIO);
+	assert.equal(adventureJourneyProgress(journey, at), 0);
+	assert.equal(adventureJourneyPhase(journey, at), "trail");
+	assert.equal(adventureJourneyPhase(journey, homewardAt - 1), "trail");
+	assert.equal(adventureJourneyPhase(journey, homewardAt), "homeward");
+	assert.equal(adventureJourneyPhase(journey, journey.adventureReadyAt), "home");
+	assert.equal(adventureJourneyProgress(journey, journey.adventureReadyAt + 1), 1);
+
+	const reloaded = deserializeState(serializeState(journey), { now: homewardAt });
+	assert.equal(adventureJourneyPhase(reloaded, homewardAt), "homeward");
+	assert.equal(adventureHomewardAt({ ...journey, adventureStartedAt: null }), null);
+	assert.equal(adventureJourneyPhase(createInitialState({ now: at }), at), null);
+	const homewardReview = createPrototypeState(9, { now: at, journeyPhase: "homeward" });
+	assert.equal(adventureJourneyPhase(homewardReview, at), "homeward");
+	assert.equal(homewardReview.adventureReadyAt - at, DURATIONS.ADVENTURE_MS * 0.2);
+	const lanternleafReview = createPrototypeState(9, {
+		now: at,
+		journeyPhase: "homeward",
+		adventureRoute: "lanternleaf",
+	});
+	assert.equal(adventureOpportunity(lanternleafReview).id, SECOND_ADVENTURE_OPPORTUNITY.id);
+	assert.equal(adventureJourneyPhase(lanternleafReview, at), "homeward");
+});
+
+test("the rendered journey advances one existing note and route without shipping prototype controls", () => {
+	assert.match(appSource, /data-journey-phase=\{journeyPhase\}/);
+	assert.match(appSource, /The moths turn Home/);
+	assert.match(appSource, /The leaves turn Home/);
+	assert.match(appSource, /Rosie is heading Home/);
+	assert.match(appSource, /homecomingReady \|\| homeward \? "is-complete" : "is-current"/);
+	assert.match(appSource, /adventureHomewardAt\(state\)/);
+	assert.match(appSource, /initialSearch\.get\("journey"\) === "homeward"/);
+	assert.match(appSource, /initialSearch\.get\("route"\) === "lanternleaf"/);
+	assert.match(stylesSource, /\.journey-watch\[data-journey-phase="homeward"\] \.journey-home-dusk i/);
+	assert.match(stylesSource, /\.journey-watch\[data-journey-phase="homeward"\] \.journey-watch-lights i \{[^}]*animation-direction: reverse/s);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.journey-watch-lights i \{ animation: none; \}/);
+	assert.doesNotMatch(appSource, /ProgressionPrototypeSwitcher|progressionTreatment|searchParams\.set\("progression"/);
 });
 
 test("the first Hand Trowel cause performs one separable dig", () => {

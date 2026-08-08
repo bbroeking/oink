@@ -294,11 +294,86 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 89. **v0.88 — Home Keeps the Dusk (shipped):** carry the Adventure's evening
     into the existing journey watch so the remembered Farm feels like the same
     place waiting for Rosie, with route-aware light and no additional screen.
+90. **v0.89 — The Trail Turns Home (locally verified):** let the existing
+    journey note and route advance once from exploring to heading Home, derived
+    from the outing's persisted timestamps rather than a new timer system.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.89 — The Trail Turns Home — 2026-08-08
+
+- Replayed the exact shipped v0.88 Position 9 watch. The Farm held the correct
+  dusk and route color, but **Rosie is following the moths**, the middle route
+  step, and the large review fast-forward action remained unchanged for the
+  entire six-hour outing. Nothing in the waiting surface showed that the
+  journey itself was progressing.
+- Compared three treatments inside the real Position 9 screen: a traveler dot
+  on the painted path, one changing field note plus route step, and a
+  Home-centered porch vigil. The field-note treatment won because it made the
+  temporal change immediately understandable using the hierarchy already on
+  screen. The traveler dot felt abstract and detached from Rosie; the porch
+  vigil introduced a second competing message.
+- Captured the complete throwaway comparison at commit `56d1bec` on
+  `codex/homegrown-v089-journey-progress-prototypes`. Main keeps only the
+  winner's existing-note structure, the path treatment's reversed light
+  motion, and the Home treatment's brighter porch light. No comparison
+  switcher or losing layout remains.
+- Added pure `adventureJourneyProgress`, `adventureHomewardAt`, and
+  `adventureJourneyPhase` derivations over the existing six-hour start and
+  ready timestamps. **Trail** holds through the first 75%; **Homeward** then
+  lasts until the reducer-owned **Home** state. No new saved state or opaque
+  countdown can drift from the real Adventure.
+- The warm-moth route changes from **Beyond the hedge · Rosie follows warm
+  moths** to **The moths turn Home · Rosie is heading Home**. The second route
+  changes from reflected leaves to the corresponding silver-leaf homeward
+  copy. Both advance Set off → route → Homeward without revealing the named
+  Discovery before Homecoming.
+- The open page schedules only the next derived beat and the existing reducer
+  settlement. Reload computes the same phase from timestamps. Reduced motion
+  removes the current-step, route-light, and porch animations while preserving
+  the exact readable phase.
+- Added direct review parameters for `journey=homeward` and
+  `route=lanternleaf`; these seed valid Position 9 timestamps and route facts
+  so the real rendered states can be inspected without waiting six hours.
+  They add no player state, production branch, or alternate UI.
+
+### Local validation evidence
+
+- Rendered the real built first route at its earlier trail phase: the scene
+  description named the remembered twilight Farm, the note read **Rosie
+  follows warm moths**, Warm moth trail remained current, and the existing
+  fast-forward action remained reachable.
+- Rendered the same real build at its later phase: the note read **Rosie is
+  heading Home**, Warm moth trail was complete, Homeward was current, route
+  lights reversed, and the porch light strengthened without adding another
+  card or action.
+- Rendered the real Lanternleaf homeward state: the note and route used silver
+  leaf language, the existing route color remained pale green, and the
+  remembered pond stayed visible. Reload retained that same homeward state.
+- Used the real Lab tools to enable reduced motion, then fast-forwarded the
+  second route. The surface advanced to **The gate bell rings · Rosie is
+  Home**, Set off and Reflected leaves were complete, **At Home** was current,
+  canonical Rive Rosie returned with her satchel, and the named Discovery was
+  still withheld until **Welcome Rosie home**.
+- `npm run prototype:homegrown:test` passes 60/60,
+  `npm run prototype:homegrown:build` passes, `npx tsc --noEmit` passes,
+  `npm run verify:rive-homegrown` passes both authored Rive contracts, and
+  `npm run quality:check` passes the quality contracts, 157-file layout gate,
+  324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
+  and 202 security tests. Watchman's existing recrawl notice is the only
+  warning.
+
+### Next highest-leverage weakness
+
+The journey now changes meaningfully while Rosie is away, but the browser
+prototype's large **Fast-forward to Homecoming** action still dominates the
+quiet Farm. The next cycle should replay the complete shipped loop and decide
+whether that review affordance can become visually secondary while remaining
+obvious and touch-accessible—without hiding fast-forward, adding a countdown
+dashboard, or weakening Homecoming.
 
 ### v0.88 — Home Keeps the Dusk — 2026-08-08
 

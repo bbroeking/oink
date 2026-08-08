@@ -548,6 +548,9 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 .gate-homecoming-ready .journey-home-dusk i {
 	box-shadow: 0 0 12px rgba(255,215,116,1), 0 0 32px rgba(255,172,73,.68);
 }
+.journey-watch[data-journey-phase="homeward"] .journey-home-dusk i {
+	box-shadow: 0 0 12px rgba(255,215,116,1), 0 0 32px rgba(255,172,73,.68);
+}
 .journey-watch-note {
 	position: absolute;
 	left: 23px;
@@ -689,6 +692,9 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 	animation: none;
 	opacity: 1;
 }
+.journey-watch[data-journey-phase="homeward"] .journey-watch-lights i {
+	animation-direction: reverse;
+}
 .journey-watch-action {
 	position: absolute;
 	left: 50%;
@@ -727,7 +733,9 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 	45% { opacity: 1; transform: translateY(-3px) scale(1.12); }
 }
 html[data-reduce-motion="true"] .journey-watch-open .scene-plate,
-html[data-reduce-motion="true"] .journey-home-dusk i { animation: none; }
+html[data-reduce-motion="true"] .journey-home-dusk i,
+html[data-reduce-motion="true"] .journey-watch-route li.is-current i,
+html[data-reduce-motion="true"] .journey-watch-lights i { animation: none; }
 .return-homecoming-open .scene-plate { opacity: 0; }
 .return-homecoming-open .painted-kitchen-patch,
 .return-homecoming-open .painted-remembered-crop,

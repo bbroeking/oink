@@ -1,5 +1,16 @@
 # Homegrown Adventures prototype
 
+The v0.89 journey-progress pass derives one calm **trail → homeward → Home**
+change from the six-hour timestamps the reducer already persists. At 75%, the
+existing field note becomes route-specific homeward copy, the existing route
+advances, path lights turn back, and the porch light brightens. Reload derives
+the same beat, completion still belongs to the reducer, and reduced motion
+keeps every state readable without movement. Three structures were rendered
+on the real Position 9 watch and captured at commit `56d1bec` on
+`codex/homegrown-v089-journey-progress-prototypes`; the field-note treatment
+won. No prototype switcher, new screen, reward, timer fact, save field, or Rive
+input remains on main.
+
 The v0.88 journey-atmosphere pass keeps the remembered Farm visibly at dusk
 while Rosie is away. The existing journey watch now fades in over one
 scene-wide evening grade, keeps one restrained warm Home light, and recolors

@@ -9,6 +9,8 @@ import { AdventureGlowrootRive } from "../../../components/prototypes/homegrown-
 import { LanternleafReflectionsRive } from "../../../components/prototypes/homegrown-adventures/LanternleafReflectionsRive.web";
 import {
 	ACTIONS,
+	adventureHomewardAt,
+	adventureJourneyPhase,
 	adventureOpportunity,
 	adventureStory,
 	BAG_ITEMS,
@@ -703,31 +705,61 @@ function AdventureVignetteOverlay({ state, beat }) {
 	);
 }
 
-function JourneyWatchPanel({ state, actionLabel, onAction }) {
+function journeyWatchCopy(lanternleaf, journeyPhase) {
+	if (journeyPhase === "homeward") {
+		return lanternleaf
+			? {
+				eyebrow: "The leaves turn Home",
+				title: "Rosie is heading Home",
+				body: "Silver reflections now point toward the old gate. The porch light is waiting for her.",
+			}
+			: {
+				eyebrow: "The moths turn Home",
+				title: "Rosie is heading Home",
+				body: "Warm lights are drifting toward the old gate. The porch light is waiting for her.",
+			};
+	}
+	return lanternleaf
+		? {
+			eyebrow: "Beyond the open gate",
+			title: "Rosie follows reflected leaves",
+			body: "Her Bag keeps the silver route within reach while Home waits beyond the hedge.",
+		}
+		: {
+			eyebrow: "Beyond the hedge",
+			title: "Rosie follows warm moths",
+			body: "Her Bag keeps the golden trail within reach while Home waits beyond the hedge.",
+		};
+}
+
+function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const homecomingReady = state.adventureComplete;
 	const trailLabel = lanternleaf ? "Reflected leaves" : "Warm moth trail";
+	const copy = journeyWatchCopy(lanternleaf, journeyPhase);
+	const homeward = journeyPhase === "homeward";
 
 	return (
 		<section
 			className={`journey-watch ${homecomingReady ? "is-homecoming-ready" : ""}`}
+			data-journey-phase={journeyPhase}
 			aria-label="Rosie's adventure progress"
 		>
 			<div className="journey-watch-tint" aria-hidden="true" />
 			<div className="journey-home-dusk" aria-hidden="true"><i /></div>
 			<div className="journey-watch-note" role="status" aria-live="polite">
 				<span className="journey-watch-mark" aria-hidden="true" />
-				<small>{homecomingReady ? "The gate bell rings" : "Rosie is away"}</small>
-				<strong>{homecomingReady ? "Rosie is Home" : opportunity.waitingObjective}</strong>
+				<small>{homecomingReady ? "The gate bell rings" : copy.eyebrow}</small>
+				<strong>{homecomingReady ? "Rosie is Home" : copy.title}</strong>
 				<p>{homecomingReady
 					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
-					: "Her Bag is shaping the route beyond the hedge. The exact find stays a surprise until she comes Home."}</p>
+					: copy.body}</p>
 			</div>
 			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
 				<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
-				<li className={homecomingReady ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
-				<li className={homecomingReady ? "is-current" : ""}><i aria-hidden="true">3</i><span>Homecoming</span></li>
+				<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
+				<li className={homecomingReady || homeward ? "is-current" : ""}><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></li>
 			</ol>
 			<div className="journey-watch-lights" aria-hidden="true"><i /><i /><i /><i /></div>
 			<button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>
@@ -1141,7 +1173,7 @@ function sceneImage() {
 	return "starting";
 }
 
-function sceneLabel(state, { gateHomecomingReady = false, plantingGlowroot = false } = {}) {
+function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, plantingGlowroot = false } = {}) {
 	if (plantingGlowroot) {
 		return "Glowroot Seed is ready to plant. Rosie waits beside the warm paper-craft Barn and the empty third Kitchen Patch bed.";
 	}
@@ -1149,7 +1181,10 @@ function sceneLabel(state, { gateHomecomingReady = false, plantingGlowroot = fal
 		return "Rosie has returned through the warm paper-craft Barn gate and stands in the yard with her packed satchel. Her Discovery remains inside until the player welcomes her Home.";
 	}
 	if (state.stage === STAGES.ADVENTURE) {
-		return `${stageCopy(state).title}. The twilight paper-craft Barn and remembered Kitchen Patch stay visible while Rosie explores beyond the hedge.`;
+		const journeyDetail = journeyPhase === "homeward"
+			? "The route lights have turned toward the old gate and the porch light glows brighter as Rosie heads Home."
+			: "Route lights lead beyond the hedge while the porch keeps one small light glowing for Rosie.";
+		return `${stageCopy(state).title}. The twilight paper-craft Barn and remembered Kitchen Patch stay visible while Rosie explores beyond the hedge. ${journeyDetail}`;
 	}
 	if ([STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage)) {
 		return `${stageCopy(state).title}. Rosie stands in the warm lantern-lit Barn workshop behind a wooden table holding the exact supplies she carried Home.`;
@@ -1167,14 +1202,24 @@ function App() {
 	const autoPlay = loopMode && !initialSearch.has("position");
 	const requestedPosition = Number(initialSearch.get("position"));
 	const hasRequestedPosition = Number.isInteger(requestedPosition) && requestedPosition >= 1 && requestedPosition <= PROTOTYPE_POSITIONS.length;
+	const requestedJourneyPhase = initialSearch.get("journey") === "homeward" ? "homeward" : "trail";
+	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
 	const reviewMode = loopMode || hasRequestedPosition;
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
 			const persistedReview = deserializeState(localStorage.getItem(HOMEGROWN_REVIEW_STORAGE_KEY), {
 				reduceMotion: prefersReduced,
 			});
-			if (persistedReview.prototypePosition === requestedPosition) return persistedReview;
-			return createPrototypeState(requestedPosition, { reduceMotion: persistedReview.reduceMotion });
+			if (
+				persistedReview.prototypePosition === requestedPosition &&
+				requestedJourneyPhase === "trail" &&
+				requestedAdventureRoute === "glowroot"
+			) return persistedReview;
+			return createPrototypeState(requestedPosition, {
+				reduceMotion: persistedReview.reduceMotion,
+				journeyPhase: requestedJourneyPhase,
+				adventureRoute: requestedAdventureRoute,
+			});
 		}
 		if (loopMode) return createInitialState({ reduceMotion: prefersReduced });
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
@@ -1222,6 +1267,7 @@ function App() {
 	const showingAdventureVignette = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && !state.adventureVignetteSeen;
 	const showingJourneyWatch = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen;
 	const gateHomecomingReady = showingJourneyWatch && state.adventureComplete;
+	const journeyPhase = adventureJourneyPhase(state, visualNow) ?? "trail";
 	const adventureEnvironmentRevealed = ["tool", "pack", "resolved"].includes(adventureCauseBeat);
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
 	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
@@ -1385,6 +1431,31 @@ function App() {
 	}, [departing, state.departureReadyAt]);
 
 	useEffect(() => {
+		if (!showingJourneyWatch) return undefined;
+		const now = Date.now();
+		setVisualNow(now);
+		const homewardAt = adventureHomewardAt(state);
+		const timers = [];
+		if (!state.adventureComplete && homewardAt !== null && homewardAt > now) {
+			timers.push(window.setTimeout(
+				() => setVisualNow(Date.now()),
+				homewardAt - now + 16,
+			));
+		}
+		if (!state.adventureComplete && state.adventureReadyAt !== null) {
+			if (state.adventureReadyAt <= now) {
+				dispatch({ type: ACTIONS.SETTLE, now });
+			} else {
+				timers.push(window.setTimeout(
+					() => dispatch({ type: ACTIONS.SETTLE, now: Date.now() }),
+					state.adventureReadyAt - now + 16,
+				));
+			}
+		}
+		return () => timers.forEach((timer) => window.clearTimeout(timer));
+	}, [showingJourneyWatch, state.adventureComplete, state.adventureReadyAt, state.adventureStartedAt]);
+
+	useEffect(() => {
 		if (!waiting) return undefined;
 		if (departing) return undefined;
 		const delay = state.reduceMotion ? 120 : 1900;
@@ -1513,6 +1584,7 @@ function App() {
 		>
 			<div className="scene-plate" role="img" aria-label={sceneLabel(state, {
 				gateHomecomingReady,
+				journeyPhase,
 				plantingGlowroot: showingGlowrootPlanting,
 			})} />
 			{showingAdventureVignette && opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id && (
@@ -1597,6 +1669,7 @@ function App() {
 			/>}
 			{showingJourneyWatch && <JourneyWatchPanel
 				state={state}
+				journeyPhase={journeyPhase}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
 			/>}

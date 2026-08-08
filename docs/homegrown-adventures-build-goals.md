@@ -25,7 +25,10 @@ authored rise, luminous hold, and fade animate only the painted Lanternleaf
 trail, while reduced motion retains the static illustrated clue; the
 complete branch now mounts a tightly clipped second Rive view that reveals the
 earned Glowroot and gives it one restrained breathing glow, while the clue
-branch mounts no reward canvas; Position 10 now brings Rosie into a physical
+branch mounts no reward canvas; the subsequent idle watch now derives one
+route-specific **trail → homeward → Home** change from the six-hour timestamps
+already persisted by React, with reload-stable copy, route, porch-light, and
+reduced-motion behavior; Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive
 fast-forward, reload, reduced motion, and rapid input; explicitly boosted
@@ -593,6 +596,23 @@ React/reducer journey facts and every route, timer, Bag, result, reward,
 persistence, and Homecoming rule remain unchanged. Both complete two-day
 routes, reduced motion, 58 reducer/source-contract tests, the Rive contracts,
 TypeScript, and the prototype build pass locally.
+
+**Journey-progress checkpoint (August 8, 2026):** the existing Position 9
+watch now changes once during Rosie's real six-hour outing instead of holding
+one fixed route step until Homecoming. React derives **trail**, **homeward**,
+and **Home** from the already-persisted `adventureStartedAt` and
+`adventureReadyAt` timestamps. At 75%, one route-specific field note changes,
+the existing three-step route advances to **Homeward**, its path lights turn
+back, and the existing porch light grows warmer. Reload recomputes the same
+beat; elapsed completion still settles through the reducer; reduced motion
+changes the readable state without animation. Three treatments were rendered
+and captured on `codex/homegrown-v089-journey-progress-prototypes` at
+`56d1bec`; the field-note treatment won, with only the reversed route lights
+and brighter Home light borrowed from the alternatives. No new screen, route,
+choice, reward, opaque countdown, persistence field, Rive asset, or Rive input
+was added. Both routes, the direct homeward review state, reload, Homecoming,
+reduced motion, 60 reducer/source-contract tests, the Rive contracts,
+TypeScript, and repository quality gates pass locally.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
