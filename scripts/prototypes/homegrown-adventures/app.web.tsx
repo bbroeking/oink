@@ -199,6 +199,12 @@ const PURPOSES = [
 	{ id: "glowroot", name: "Glowroot", job: "Light and restore Home", mark: "glow" },
 ];
 
+const INVITATION_TREATMENTS = Object.freeze({
+	A: Object.freeze({ name: "Tucked invitation" }),
+	B: Object.freeze({ name: "Clues in the world" }),
+	C: Object.freeze({ name: "Purpose receipt" }),
+});
+
 function readVariant() {
 	const value = new URLSearchParams(window.location.search).get("variant")?.toUpperCase();
 	return Object.hasOwn(VARIANTS, value) ? value : "A";
@@ -217,6 +223,7 @@ function useVariant() {
 	useEffect(() => {
 		const onKey = (event) => {
 			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (new URLSearchParams(window.location.search).has("invitation")) return;
 			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
 			const keys = Object.keys(VARIANTS);
 			const current = keys.indexOf(variant);
@@ -228,6 +235,38 @@ function useVariant() {
 	}, [setVariant, variant]);
 
 	return [variant, setVariant];
+}
+
+function readInvitationTreatment() {
+	const value = new URLSearchParams(window.location.search).get("invitation")?.toUpperCase();
+	return Object.hasOwn(INVITATION_TREATMENTS, value) ? value : null;
+}
+
+function useInvitationTreatment() {
+	const [treatment, setTreatmentState] = useState(readInvitationTreatment);
+	const setTreatment = useCallback((next) => {
+		const normalized = Object.hasOwn(INVITATION_TREATMENTS, next) ? next : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("invitation", normalized);
+		window.history.replaceState({}, "", url);
+		setTreatmentState(normalized);
+	}, []);
+
+	useEffect(() => {
+		if (!treatment) return undefined;
+		const onKey = (event) => {
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			const keys = Object.keys(INVITATION_TREATMENTS);
+			const current = keys.indexOf(treatment);
+			const delta = event.key === "ArrowRight" ? 1 : -1;
+			setTreatment(keys[(current + delta + keys.length) % keys.length]);
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [setTreatment, treatment]);
+
+	return [treatment, setTreatment];
 }
 
 function Glyph({ name }) {
@@ -286,7 +325,20 @@ const BAG_SLOT_LABELS = {
 	pack: "Pack",
 };
 
-function SeedChoicePanel({ state, onChoose }) {
+function SeedAdventureReceipt({ opportunity, className = "" }) {
+	return (
+		<div
+			className={`seed-adventure-receipt ${className}`}
+			role="note"
+			aria-label={`For ${opportunity.name}: Clover becomes Rosie’s Provision. ${opportunity.detail}.`}
+		>
+			<span><small>Grow for Rosie</small><strong>Clover becomes a Provision</strong></span>
+			<em>{opportunity.detail}</em>
+		</div>
+	);
+}
+
+function SeedChoicePanel({ state, opportunity, invitationTreatment, onChoose }) {
 	const farmStock = state.farmStock ?? {};
 	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
 	const glowrootSeeds = farmStock["glowroot-seed"] ?? 0;
@@ -317,12 +369,17 @@ function SeedChoicePanel({ state, onChoose }) {
 					</div>
 					{glowrootSeeds > 0 && <p>{glowrootSeeds} Glowroot Seed{glowrootSeeds === 1 ? "" : "s"} safe in Farm stock</p>}
 				</div>
+				{invitationTreatment === "C" && <SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" />}
 			</section>
 		);
 	}
 
 	return (
-		<section className="seed-choice-panel" aria-label="Choose what to grow from Farm stock">
+		<section className={`seed-choice-panel seed-invitation-${invitationTreatment ?? "control"}`} aria-label="Choose what to grow from Farm stock">
+			{invitationTreatment === "A" && <div className="seed-adventure-ticket" role="note">
+				<span><small>Rosie noticed</small><strong>{opportunity.name}</strong></span>
+				<em>{opportunity.detail}</em>
+			</div>}
 			<div className="farm-stock-label"><span aria-hidden="true">⌂</span><strong>Farm stock</strong></div>
 			<div className="seed-choice-grid">
 				<button
@@ -349,8 +406,21 @@ function SeedChoicePanel({ state, onChoose }) {
 					<b>Optional boost</b>
 				</div>
 			</div>
-			<p>Clover becomes a Provision for Rosie’s dusk Adventure.</p>
+			{invitationTreatment === "C"
+				? <SeedAdventureReceipt opportunity={opportunity} />
+				: <p>Clover becomes a Provision for Rosie’s dusk Adventure.</p>}
 		</section>
+	);
+}
+
+function SeedWorldClues({ opportunity }) {
+	const clues = opportunity.detail.split(" · ");
+	return (
+		<div className="seed-world-clues" role="note" aria-label={`${opportunity.name}: ${opportunity.detail}`}>
+			<span className="seed-world-clue seed-world-clue-time"><i aria-hidden="true">◷</i>{clues[0]}</span>
+			<span className="seed-world-clue seed-world-clue-soil"><i aria-hidden="true">⌁</i>{clues[1]}</span>
+			<span className="seed-world-clue seed-world-clue-carry"><i aria-hidden="true">⌂</i>{clues[2]}</span>
+		</div>
 	);
 }
 
@@ -1159,6 +1229,18 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function InvitationSwitcher({ treatment, setTreatment }) {
+	const keys = Object.keys(INVITATION_TREATMENTS);
+	const index = keys.indexOf(treatment);
+	return (
+		<div className="invitation-switcher" aria-label="Adventure invitation treatment switcher">
+			<button type="button" aria-label="Previous invitation treatment" onClick={() => setTreatment(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span><strong>{treatment}</strong><small>{INVITATION_TREATMENTS[treatment].name}</small></span>
+			<button type="button" aria-label="Next invitation treatment" onClick={() => setTreatment(keys[(index + 1) % keys.length])}>→</button>
+		</div>
+	);
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1274,6 +1356,7 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [invitationTreatment, setInvitationTreatment] = useInvitationTreatment();
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1701,8 +1784,11 @@ function App() {
 				{visiblePresentation.target === WORLD_TARGETS.ROSIE && <span>{visiblePresentation.label}</span>}
 			</button>}
 			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
+			{choosingSeed && invitationTreatment === "B" && <SeedWorldClues opportunity={opportunity} />}
 			{choosingSeed && <SeedChoicePanel
 				state={state}
+				opportunity={opportunity}
+				invitationTreatment={invitationTreatment}
 				onChoose={() => act(visiblePresentation.action)}
 			/>}
 			{plantingCrop && <PlantingPanel
@@ -1784,6 +1870,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{choosingSeed && invitationTreatment && <InvitationSwitcher treatment={invitationTreatment} setTreatment={setInvitationTreatment} />}
 	</main>;
 }
 

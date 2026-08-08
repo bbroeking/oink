@@ -1791,10 +1791,99 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	text-align: center;
 	text-shadow: 0 1px 2px var(--ink), 1px 0 1px var(--ink);
 }
+.seed-choice-panel.seed-invitation-A {
+	top: 423px;
+	grid-template-rows: 47px 28px 178px 18px;
+}
+.seed-adventure-ticket {
+	min-width: 0;
+	padding: 7px 11px;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 8px;
+	color: var(--ink);
+	background: rgba(255,249,233,.97);
+	border: 2px solid var(--ink);
+	border-radius: 11px;
+	box-shadow: 2px 3px 0 rgba(48,33,22,.64);
+}
+.seed-adventure-ticket > span { min-width: 0; display: grid; gap: 2px; }
+.seed-adventure-ticket small { color: #8d5c35; font-size: 7px; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
+.seed-adventure-ticket strong { overflow: hidden; font-family: Caprasimo, Georgia, serif; font-size: 11px; font-weight: 400; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.seed-adventure-ticket em { color: var(--ink-soft); font-size: 7px; font-style: normal; font-weight: 900; white-space: nowrap; }
+.seed-choice-panel.seed-invitation-C {
+	top: 454px;
+	grid-template-rows: 28px 178px 53px;
+}
+.seed-adventure-receipt {
+	min-width: 0;
+	padding: 6px 10px 7px;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	grid-template-rows: auto auto;
+	align-items: center;
+	gap: 4px 7px;
+	color: var(--ink);
+	background: rgba(255,249,233,.97);
+	border: 2px solid var(--ink);
+	border-top-style: dashed;
+	border-radius: 4px 4px 11px 11px;
+	box-shadow: 2px 3px 0 rgba(48,33,22,.62);
+}
+.seed-adventure-receipt > span { display: contents; }
+.seed-adventure-receipt small { color: #8d5c35; font-size: 7px; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
+.seed-adventure-receipt strong { min-width: 0; font-family: Caprasimo, Georgia, serif; font-size: 10px; font-weight: 400; line-height: 1; }
+.seed-adventure-receipt em { grid-column: 1 / -1; padding-top: 4px; color: var(--ink-soft); border-top: 1px dashed rgba(48,33,22,.46); font-size: 8px; font-style: normal; font-weight: 900; line-height: 1; text-align: center; white-space: nowrap; }
+.seed-world-clues { position: absolute; z-index: 11; inset: 0; pointer-events: none; }
+.seed-world-clue {
+	position: absolute;
+	min-height: 28px;
+	padding: 5px 8px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	color: var(--ink);
+	background: rgba(255,249,233,.94);
+	border: 1.5px solid var(--ink);
+	border-radius: 999px;
+	box-shadow: 1px 2px 0 rgba(48,33,22,.55);
+	font-size: 8px;
+	font-weight: 950;
+}
+.seed-world-clue i { color: #8d5c35; font-size: 12px; font-style: normal; }
+.seed-world-clue-time { right: 18px; top: 145px; }
+.seed-world-clue-soil { left: 44px; top: 392px; }
+.seed-world-clue-carry { right: 25px; top: 364px; }
+.invitation-switcher {
+	position: fixed;
+	z-index: 42;
+	left: calc(50% + 225px);
+	top: 50%;
+	transform: translateY(-50%);
+	min-width: 228px;
+	height: 50px;
+	display: grid;
+	grid-template-columns: 44px 1fr 44px;
+	overflow: hidden;
+	color: var(--ink);
+	background: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 999px;
+	box-shadow: 2px 3px 0 var(--ink);
+}
+.invitation-switcher button { border: 0; background: #f1e2c7; font-size: 18px; }
+.invitation-switcher span { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.invitation-switcher strong { font-family: Caprasimo, serif; font-size: 14px; }
+.invitation-switcher small { color: var(--ink-soft); font-size: 9px; }
 .seed-choice-memory {
 	top: 478px;
 	grid-template-rows: 98px 72px;
 	gap: 8px;
+}
+.seed-choice-memory:has(.seed-adventure-memory-receipt) {
+	top: 439px;
+	grid-template-rows: 98px 72px 53px;
 }
 .seed-next-primary {
 	min-width: 0;
@@ -2475,6 +2564,7 @@ html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, ht
 	.dev-tools { top: 84px; right: 7px; }
 	.dev-toggle { opacity: .8; }
 	.variant-switcher { bottom: 84px; }
+	.invitation-switcher { left: 50%; top: auto; bottom: 84px; transform: translateX(-50%); }
 	.lab-player { height: 100dvh; padding: 0; overflow: hidden; }
 	.position-rail {
 		bottom: 0;
