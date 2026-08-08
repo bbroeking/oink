@@ -318,6 +318,18 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - Direct reload retained the receipt breakdown. Reduced motion held the stable
   authored Rosie pose, kept the same 360×780 hierarchy, and produced no console
   warnings or errors.
+- Feature commit `926c9eb` deployed successfully through GitHub Pages run
+  `31257675627`. The served HTML, CSS, and JavaScript match the committed
+  artifacts byte-for-byte at SHA-256 `a0e6283382d4934bf98d5d1c585cb91ca83ed8a42a93ce3d9c87cec1ce7b6ed4`,
+  `f075fdcae5cd9fc849c4fd4fe0856609a87a12917d2df0ba2bdac37e099083f9`, and
+  `5a10cfe280704654a2aab913fdde65f24d8ace155579621df010a2ce0c8416d0`.
+- Replayed the exact public feature URL at 360×780. The rendered return showed
+  **Glowroot Seed +2** with **Find +1 · Trowel +1**, no generated bonus marker,
+  a 12px action-to-rail gap, and equal 360px body client/scroll widths. Reload
+  retained the same receipt. **Take Seed to Bed 3** then entered Position 11
+  with **Bed 3 is ready for Glowroot** and **Glowroot Seed 2 → 1**.
+- The deployed companion page links directly to Position 10 as **See how
+  Rosie's Tool shaped the reward**.
 
 ### Next highest-leverage weakness
 
