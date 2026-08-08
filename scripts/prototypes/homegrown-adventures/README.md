@@ -1,5 +1,17 @@
 # Homegrown Adventures prototype
 
+The v0.96 overnight-context pass keeps the v0.95 **Expected Home** ticket but
+adds **Tomorrow** only when the persisted return crosses the player's local
+calendar day. Three structures were rendered at commit `b2f54ac` on
+`codex/homegrown-v096-return-day-prototypes`: day beside time in the existing
+ticket, a split calendar ticket, and the day repeated in the story eyebrow.
+The first treatment won because **Tomorrow · 2:30 AM** answers the ambiguity
+without looking interactive or adding another story fact. Same-day journeys
+remain **Around [time]**; longer future journeys use a short weekday. The
+calendar wording is pure presentation derived from `adventureReadyAt` and the
+current local day. No prototype switcher, query parameter, timer, save field,
+countdown, route rule, animation, or Rive input remains on main.
+
 The v0.95 return-promise pass derives one calm local **Expected Home** time
 from React's already persisted `adventureReadyAt` timestamp and attaches it to
 the left edge of Position 9's existing field note. Three structures were

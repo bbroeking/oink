@@ -316,11 +316,68 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     **Expected Home** promise to the existing journey note, derived from the
     outing's persisted completion timestamp without adding a countdown or
     another timer system.
+97. **v0.96 — Tomorrow Means Tomorrow (locally verified):** add local calendar
+    context to the existing return ticket only when Rosie's persisted return
+    crosses midnight, without changing the journey or expanding the surface.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.96 — Tomorrow Means Tomorrow — 2026-08-08
+
+- Began by replaying the exact public v0.95 journey. Its ticket said only
+  **Around 2:46 PM**; a six-hour Adventure starting late in the day could show
+  an early-morning clock without telling the player that Rosie returns
+  tomorrow.
+- Compared three overnight treatments on the real Position 9 Farm: **Tomorrow
+  · 2:30 AM** inside the existing ticket, a split calendar ticket, and
+  **Tomorrow** repeated in the field-note eyebrow. The existing-ticket
+  treatment won. The calendar version looked interactive, while the eyebrow
+  turned timing into a second story fact.
+- Captured all three throwaway treatments at commit `b2f54ac` on
+  `codex/homegrown-v096-return-day-prototypes`. Main keeps only the local-
+  calendar wording; no `returnday` query or comparison switcher ships.
+- Same-day journeys retain **Around [time]**. The next local calendar day uses
+  **Tomorrow · [time]**. A farther future return uses a short weekday, while
+  the accessible label speaks its full name.
+- A pure formatter receives the persisted `adventureReadyAt` timestamp and
+  React's existing visual time. It compares local calendar dates using
+  normalized date parts, so daylight-saving transitions do not become 23- or
+  25-hour day mistakes.
+- Expired or invalid timestamps render no promise while the reducer settles.
+  No route, duration, timer, reward, state transition, save field, animation,
+  Rive asset, or Rive input changed.
+- The required Impeccable review substituted for unavailable Claude Design. It
+  selected the first treatment because it preserves the existing hierarchy
+  and established ticket vocabulary without suggesting a new control.
+
+### Local validation evidence
+
+- Rendered the selected **Tomorrow · 2:30 AM** treatment on the real 390×844
+  journey surface beside the Packed stamp. The field note and route remain
+  unchanged and unobstructed.
+- Rendered the production same-day path as **Around 7:38 PM** with no redundant
+  **Today** label and no overnight comparison control.
+- Pure tests cover same-day, tomorrow, farther-weekday, expired, and invalid
+  timestamps. A separate America/New_York daylight-saving-boundary check
+  returned **Tomorrow · 3:00 AM** correctly.
+- Reload retained the same promise, the Lanternleaf route retained reflected-
+  leaf copy, reduced motion kept the ticket, and fast-forward removed it before
+  **Rosie is Home**.
+- `npm run prototype:homegrown:test` passes 67/67 and
+  `npm run prototype:homegrown:build` passes. `npx tsc --noEmit` and
+  `npm run verify:rive-homegrown` pass both authored Rive contracts.
+  `npm run quality:check` passes the quality contracts, 157-file layout gate,
+  324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
+  and 202 security tests. Watchman's existing recrawl notice is the only
+  warning. Public proof will be recorded after deployment.
+
+### Next highest-leverage weakness
+
+Select the next bounded player-visible weakness only after replaying the exact
+public v0.96 loop; do not infer it from source or add a parallel system.
 
 ### v0.95 — Home Has a Time — 2026-08-08
 

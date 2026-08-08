@@ -45,7 +45,10 @@ slots, while Homecoming removes the reminder before welcoming Rosie;
 that same note now carries one restrained **Expected Home** ticket derived
 from the reducer's already persisted `adventureReadyAt` timestamp, giving the
 idle wait a reload-stable local return promise without a countdown, additional
-timer, or new save fact, and Homecoming removes it at the gate;
+timer, or new save fact; same-day trips remain **Around [time]**, overnight
+trips become **Tomorrow · [time]**, and longer trips use a short weekday, all
+from the player's local calendar, before Homecoming removes the ticket at the
+gate;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive

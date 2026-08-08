@@ -33,6 +33,7 @@ import {
 	CLOVER_LUSH_THRESHOLD,
 	homegrownRiveModel,
 } from "./homegrownRiveModel.mjs";
+import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 
 const at = 1_000_000;
 const reduce = (state, action) => homegrownReducer(state, { now: at, ...action });
@@ -1194,14 +1195,40 @@ test("the journey watch keeps a quiet truthful reminder of what Rosie packed", (
 });
 
 test("the journey watch gives the persisted return time one calm stable place", () => {
-	assert.match(appSource, /function formatAdventureReturnTime\(timestamp\)/);
-	assert.match(appSource, /new Intl\.DateTimeFormat\(undefined, \{/);
-	assert.match(appSource, /const returnTime = homecomingReady \? null : formatAdventureReturnTime\(state\.adventureReadyAt\)/);
-	assert.match(appSource, /className="journey-return-time-ticket" role="group" aria-label=\{`Rosie is expected Home around \$\{returnTime\}`\}/);
+	assert.match(appSource, /formatAdventureReturnPromise\(state\.adventureReadyAt, \{ now \}\)/);
+	assert.match(appSource, /className="journey-return-time-ticket" role="group" aria-label=\{returnPromise\.ariaLabel\}/);
 	assert.match(appSource, /<small aria-hidden="true">Expected Home<\/small>/);
-	assert.match(appSource, /<strong aria-hidden="true">Around \{returnTime\}<\/strong>/);
+	assert.match(appSource, /<strong aria-hidden="true">\{returnPromise\.display\}<\/strong>/);
+	assert.match(appSource, /now=\{visualNow\}/);
 	assert.match(stylesSource, /\.journey-return-time-ticket \{[^}]*left: 31px;[^}]*top: 174px;[^}]*width: 136px;[^}]*height: 39px/s);
 	assert.doesNotMatch(appSource, /ReturnTimePrototypeSwitcher|returnTimeVariant|searchParams\.set\("returntime"/);
+});
+
+test("the return promise adds local calendar context only when the date changes", () => {
+	const now = Date.UTC(2026, 7, 8, 12, 0);
+	const sameDay = formatAdventureReturnPromise(
+		Date.UTC(2026, 7, 8, 18, 30),
+		{ now, locale: "en-US" },
+	);
+	assert.match(sameDay.display, /^Around /);
+	assert.doesNotMatch(sameDay.display, /Today|Tomorrow/);
+	assert.match(sameDay.ariaLabel, /^Rosie is expected Home around /);
+
+	const tomorrow = formatAdventureReturnPromise(
+		Date.UTC(2026, 7, 9, 18, 30),
+		{ now, locale: "en-US" },
+	);
+	assert.match(tomorrow.display, /^Tomorrow · /);
+	assert.match(tomorrow.ariaLabel, /^Rosie is expected Home tomorrow around /);
+
+	const later = formatAdventureReturnPromise(
+		Date.UTC(2026, 7, 11, 18, 30),
+		{ now, locale: "en-US" },
+	);
+	assert.match(later.display, /^Tue · /);
+	assert.match(later.ariaLabel, /^Rosie is expected Home Tuesday around /);
+	assert.equal(formatAdventureReturnPromise(now, { now }), null);
+	assert.equal(formatAdventureReturnPromise(Number.NaN, { now }), null);
 });
 
 test("the first Hand Trowel cause performs one separable dig", () => {

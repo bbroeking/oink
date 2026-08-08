@@ -38,6 +38,7 @@ import {
 	CLOVER_LUSH_THRESHOLD,
 	homegrownRiveModel,
 } from "./homegrownRiveModel.mjs";
+import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
@@ -744,24 +745,16 @@ function JourneyPackedStamp({ bag }) {
 	</div>;
 }
 
-function formatAdventureReturnTime(timestamp) {
-	if (!Number.isFinite(timestamp)) return null;
-	const returnDate = new Date(timestamp);
-	if (Number.isNaN(returnDate.getTime())) return null;
-	return new Intl.DateTimeFormat(undefined, {
-		hour: "numeric",
-		minute: "2-digit",
-	}).format(returnDate);
-}
-
-function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
+function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const homecomingReady = state.adventureComplete;
 	const trailLabel = lanternleaf ? "Reflected leaves" : "Warm moth trail";
 	const copy = journeyWatchCopy(lanternleaf, journeyPhase);
 	const homeward = journeyPhase === "homeward";
-	const returnTime = homecomingReady ? null : formatAdventureReturnTime(state.adventureReadyAt);
+	const returnPromise = homecomingReady
+		? null
+		: formatAdventureReturnPromise(state.adventureReadyAt, { now });
 
 	return (
 		<section
@@ -779,9 +772,9 @@ function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
 					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
 					: copy.body}</p>
 			</div>
-			{returnTime && <div className="journey-return-time-ticket" role="group" aria-label={`Rosie is expected Home around ${returnTime}`}>
+			{returnPromise && <div className="journey-return-time-ticket" role="group" aria-label={returnPromise.ariaLabel}>
 				<small aria-hidden="true">Expected Home</small>
-				<strong aria-hidden="true">Around {returnTime}</strong>
+				<strong aria-hidden="true">{returnPromise.display}</strong>
 			</div>}
 			{!homecomingReady && <JourneyPackedStamp bag={state.bag} />}
 			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
@@ -1743,6 +1736,7 @@ function App() {
 			{showingJourneyWatch && <JourneyWatchPanel
 				state={state}
 				journeyPhase={journeyPhase}
+				now={visualNow}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
 			/>}
