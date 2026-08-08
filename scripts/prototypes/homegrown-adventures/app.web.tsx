@@ -149,10 +149,13 @@ function stageCopy(state) {
 		};
 	}
 	if (state.stage === STAGES.CLOVER_READY && state.cloverHarvested) {
+		const choosingBag = state.prototypePosition >= 7;
 		return {
-			eyebrow: "Harvest tucked away",
-			title: "Clover Lunch is in Rosie's Bag",
-			body: `The first bed is resting. Pack for ${opportunity.name} and this harvest becomes part of Rosie's journey.`,
+			eyebrow: choosingBag ? "The Bag starts empty" : "Harvest tucked away",
+			title: choosingBag ? "Rosie's Bag is ready to pack" : "Clover Lunch joined Farm stock",
+			body: choosingBag
+				? `Choose what helps with ${opportunity.name}, or leave every slot empty for a useful clue.`
+				: `The first bed is resting. Open Rosie's Bag when you are ready to prepare for ${opportunity.name}.`,
 		};
 	}
 	if (state.stage === STAGES.GLOWROOT_RETURNED && !state.changeRevealed) {
@@ -547,7 +550,24 @@ const BAG_ITEM_EFFECT_LABELS = Object.freeze({
 	}),
 });
 
+function BagSelectionOption({ slot, item, selected, disabled, detail, onSelect }) {
+	return (
+		<button
+			type="button"
+			className={`bag-guided-option ${selected ? "is-selected" : ""} ${item ? "" : "is-empty"}`}
+			disabled={disabled}
+			aria-pressed={selected}
+			onClick={() => onSelect(slot, item?.id ?? null)}
+		>
+			<span aria-hidden="true"><BagItemArt itemId={item?.id} /></span>
+			<strong>{item?.name ?? "Leave empty"}</strong>
+			<small>{detail}</small>
+		</button>
+	);
+}
+
 function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, onSelect, onConfirm }) {
+	const [focus, setFocus] = useState("provision");
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
 	const selectedPackCost = bagPackingCost(bag.pack ?? null);
@@ -559,15 +579,76 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, onSel
 	const canPack = !needsProvision && !needsPackingMaterial;
 	const flightItemId = activeSelection?.item ?? activeSelection?.previousItem ?? null;
 	const flightIsRemoval = activeSelection?.item === null && activeSelection?.previousItem !== null;
-	const cycleItem = (slot) => {
-		const choices = BAG_ITEMS[slot];
-		const current = choices.findIndex((item) => item.id === bag[slot]);
-		const next = choices[(current + 1 + choices.length) % choices.length];
-		onSelect(slot, next.id);
+	const selectedCount = BAG_SLOT_ORDER.filter((slot) => bag[slot] !== null).length;
+	const focusIndex = BAG_SLOT_ORDER.indexOf(focus);
+	const question = {
+		provision: "How long should Rosie stay?",
+		tool: "What should Rosie try?",
+		pack: "What can Rosie carry Home?",
+	}[focus];
+	const optionDetail = (slot, item) => {
+		if (!item) return "A kind clue still comes Home";
+		const effect = BAG_ITEM_EFFECT_LABELS[opportunity.id]?.[item.id] ?? item.effect;
+		if (slot === "provision") {
+			const owned = farmStock?.[item.id] ?? 0;
+			return owned > 0 ? `${owned} owned · ${effect}` : "Grow more before packing";
+		}
+		const cost = slot === "pack" ? bagPackingCost(item.id) : null;
+		if (!cost) return effect;
+		const owned = farmStock?.[cost.itemId] ?? 0;
+		return owned >= cost.amount ? `${cost.amount} ${cost.name} · ${effect}` : `Needs ${cost.amount} ${cost.name}`;
+	};
+	const focusChoices = [
+		...BAG_ITEMS[focus].map((item) => {
+			const packingCost = focus === "pack" ? bagPackingCost(item.id) : null;
+			const unavailable = focus === "provision"
+				? (farmStock?.[item.id] ?? 0) < 1
+				: packingCost !== null && (farmStock?.[packingCost.itemId] ?? 0) < packingCost.amount;
+			return <BagSelectionOption
+				key={item.id}
+				slot={focus}
+				item={item}
+				selected={bag[focus] === item.id}
+				disabled={unavailable}
+				detail={optionDetail(focus, item)}
+				onSelect={onSelect}
+			/>;
+		}),
+		<BagSelectionOption
+			key={`${focus}-empty`}
+			slot={focus}
+			item={null}
+			selected={bag[focus] === null}
+			disabled={false}
+			detail={optionDetail(focus, null)}
+			onSelect={onSelect}
+		/>,
+	];
+	const packLabel = !canPack
+		? needsProvision ? "Need Clover Lunch" : "Need Willow Fiber"
+		: selectedCount === 0
+			? "Set out with an empty Bag"
+			: `Pack ${selectedCount} ${selectedCount === 1 ? "choice" : "choices"}`;
+	const moveFocus = (event, currentIndex) => {
+		const keyDirection = {
+			ArrowRight: 1,
+			ArrowDown: 1,
+			ArrowLeft: -1,
+			ArrowUp: -1,
+		}[event.key];
+		let nextIndex = currentIndex;
+		if (keyDirection) nextIndex = (currentIndex + keyDirection + BAG_SLOT_ORDER.length) % BAG_SLOT_ORDER.length;
+		else if (event.key === "Home") nextIndex = 0;
+		else if (event.key === "End") nextIndex = BAG_SLOT_ORDER.length - 1;
+		else return;
+		event.preventDefault();
+		const nextSlot = BAG_SLOT_ORDER[nextIndex];
+		setFocus(nextSlot);
+		event.currentTarget.parentElement?.querySelector(`[data-bag-tab="${nextSlot}"]`)?.focus();
 	};
 
 	return (
-		<section className="bag-selection" aria-label="Choose what Rosie carries">
+		<section className="bag-selection bag-selection-guided" aria-label="Choose what Rosie carries">
 			{activeSelection && flightItemId && (
 				<span
 					key={`${activeSelection.slot}-${flightItemId}-${activeSelection.at}`}
@@ -577,7 +658,11 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, onSel
 					<BagItemArt itemId={flightItemId} />
 				</span>
 			)}
-			<div className="bag-stage" aria-hidden="true">
+			<div className="bag-guided-title">
+				<strong>Pack for {opportunity.name}</strong>
+				<small>The Bag begins empty. Every slot is optional.</small>
+			</div>
+			<div className="bag-stage bag-guided-stage" aria-hidden="true">
 				<span className="open-adventure-bag" />
 				<div className="bag-packed-preview">
 					{BAG_SLOT_ORDER.map((slot) => {
@@ -586,75 +671,48 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, onSel
 					})}
 				</div>
 			</div>
-			<div className="bag-slot-grid">
-			{BAG_SLOT_ORDER.map((slot) => {
-				const selected = bagItem(slot, bag[slot]);
-				const defaultItem = BAG_ITEMS[slot][0];
-				const choices = BAG_ITEMS[slot];
-				const currentIndex = choices.findIndex((item) => item.id === bag[slot]);
-				const nextItem = choices[(currentIndex + 1 + choices.length) % choices.length];
-				const nextPackingCost = slot === "pack" ? bagPackingCost(nextItem.id) : null;
-				const nextPackingMaterialOwned = nextPackingCost === null
-					? 0
-					: farmStock?.[nextPackingCost.itemId] ?? 0;
-				const changeBlocked = nextPackingCost !== null && nextPackingMaterialOwned < nextPackingCost.amount;
-				const owned = slot === "provision" ? farmStock?.[selected?.id ?? defaultItem.id] ?? 0 : null;
-				const packingCost = slot === "pack" ? bagPackingCost(selected?.id ?? null) : null;
-				const packingMaterialOwned = packingCost === null ? 0 : farmStock?.[packingCost.itemId] ?? 0;
-				const unavailable = (slot === "provision" && selected && owned < 1) ||
-					(packingCost !== null && packingMaterialOwned < packingCost.amount);
-				const effectLabel = selected
-					? BAG_ITEM_EFFECT_LABELS[opportunity.id]?.[selected.id] ?? selected.effect
-					: null;
-				return (
-					<div className={`bag-slot-card ${selected ? "is-filled" : "is-empty"} ${unavailable ? "is-unavailable" : ""}`} key={slot}>
-						<span className="bag-slot-kind">{BAG_SLOT_LABELS[slot]}</span>
-						<span className="bag-item-icon" aria-hidden="true"><BagItemArt itemId={selected?.id} /></span>
+			<div className="bag-guided-tabs" role="tablist" aria-label="Bag slots">
+				{BAG_SLOT_ORDER.map((slot, index) => {
+					const selected = bagItem(slot, bag[slot]);
+					return <button
+						key={slot}
+						type="button"
+						role="tab"
+						id={`bag-tab-${slot}`}
+						data-bag-tab={slot}
+						aria-controls={`bag-panel-${slot}`}
+						aria-selected={focus === slot}
+						tabIndex={focus === slot ? 0 : -1}
+						onClick={() => setFocus(slot)}
+						onKeyDown={(event) => moveFocus(event, index)}
+					>
+						<small>{BAG_SLOT_LABELS[slot]}</small>
 						<strong>{selected?.name ?? "Empty"}</strong>
-						{selected ? (
-							<small>{slot === "provision"
-								? owned > 0
-									? `${owned} → ${owned - 1} · ${effectLabel}`
-									: `0 owned · Grow more or leave empty`
-								: packingCost !== null
-									? packingMaterialOwned >= packingCost.amount
-										? `${packingMaterialOwned} Fiber → ${packingMaterialOwned - packingCost.amount} · ${effectLabel}`
-										: `Needs ${packingCost.amount} ${packingCost.name}`
-									: effectLabel}</small>
-						) : (
-							<small>Rosie can leave without one</small>
-						)}
-						<button
-							type="button"
-							className="bag-change"
-							onClick={() => cycleItem(slot)}
-							disabled={changeBlocked}
-							aria-label={changeBlocked
-								? `Need Willow Fiber to choose ${nextItem.name}`
-								: selected
-									? `Change ${BAG_SLOT_LABELS[slot]}`
-									: `Choose ${defaultItem.name} for ${BAG_SLOT_LABELS[slot]}`}
-						>
-							{changeBlocked ? "Needs Fiber" : selected ? "Change" : "Choose"}
-						</button>
-						<button
-							type="button"
-							className="bag-empty"
-							disabled={!selected}
-							aria-label={`Leave ${BAG_SLOT_LABELS[slot]} empty`}
-							onClick={() => onSelect(slot, null)}
-						>
-							Empty
-						</button>
-					</div>
-				);
-			})}
-		</div>
+					</button>;
+				})}
+			</div>
+			<div
+				className="bag-guided-picker"
+				role="tabpanel"
+				id={`bag-panel-${focus}`}
+				aria-labelledby={`bag-tab-${focus}`}
+			>
+				<div className="bag-guided-question"><small>{BAG_SLOT_LABELS[focus]}</small><strong>{question}</strong></div>
+				<div className="bag-guided-options">{focusChoices}</div>
+				<button
+					type="button"
+					className="bag-guided-next"
+					disabled={focusIndex === BAG_SLOT_ORDER.length - 1}
+					onClick={() => setFocus(BAG_SLOT_ORDER[Math.min(BAG_SLOT_ORDER.length - 1, focusIndex + 1)])}
+				>{focusIndex === BAG_SLOT_ORDER.length - 1 ? "All choices visible" : `Next: ${BAG_SLOT_LABELS[BAG_SLOT_ORDER[focusIndex + 1]]}`}</button>
+			</div>
 		<button type="button" className="bag-confirm" onClick={onConfirm} disabled={!canPack}>
-			{canPack ? "Pack these" : needsProvision ? "Need Clover Lunch" : "Need Willow Fiber"}
+			{packLabel}
 		</button>
 		<p>{canPack
-			? "Provision and fresh packing are used once. Tool and Pack come Home."
+			? selectedCount === 0
+				? "An empty Bag still returns a useful clue. Rosie is always safe."
+				: "Provision and fresh packing are used once. Tool and Pack come Home."
 			: needsProvision
 				? "Leave Provision empty to explore with a useful clue."
 				: "Choose Wicker Basket, leave Pack empty, or bring back Willow Fiber."}</p>

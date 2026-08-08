@@ -176,7 +176,13 @@ const TOOL_RETURN_BONUSES = Object.freeze({
 	}),
 });
 
-export const DEFAULT_BAG = Object.freeze({
+export const EMPTY_BAG = Object.freeze({
+	provision: null,
+	tool: null,
+	pack: null,
+});
+
+const REVIEW_BAG = Object.freeze({
 	provision: "clover-lunch",
 	tool: "hand-trowel",
 	pack: "wicker-basket",
@@ -226,7 +232,7 @@ export function toolReturnBonus(itemId) {
 }
 
 export function adventureStory(state) {
-	const bag = state.bag ?? DEFAULT_BAG;
+	const bag = state.bag ?? EMPTY_BAG;
 	const missingSlot = BAG_SLOT_ORDER.find((slot) => bag[slot] == null) ?? null;
 	const opportunity = adventureOpportunity(state);
 	const followingLanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
@@ -440,7 +446,7 @@ function event(kind, detail, at) {
 
 export function createInitialState({ now = Date.now(), reduceMotion = false } = {}) {
 	return {
-		version: 1,
+		version: 2,
 		prototypePosition: 1,
 		stage: STAGES.STARTING,
 		readyToTickle: 24,
@@ -459,7 +465,7 @@ export function createInitialState({ now = Date.now(), reduceMotion = false } = 
 		harvestRhythmBonus: false,
 		farmStock: { ...STARTING_FARM_STOCK },
 		dayStartFarmStock: { ...STARTING_FARM_STOCK },
-		bag: { ...DEFAULT_BAG },
+		bag: { ...EMPTY_BAG },
 		lastBagSelection: null,
 		packedProvisionSpent: null,
 		nearDiscoveryReason: null,
@@ -542,6 +548,7 @@ export function createPrototypeState(position, {
 	const packed = {
 		...harvested,
 		stage: STAGES.PACKED,
+		bag: { ...REVIEW_BAG },
 		underprepared: false,
 		packedProvisionSpent: "clover-lunch",
 		farmStock: {
@@ -683,7 +690,7 @@ function completeCloverHarvest(state, { rhythmBonus = false } = {}, now) {
 	);
 }
 
-function prototypeBagStockAdjustment(position, bag = DEFAULT_BAG) {
+function prototypeBagStockAdjustment(position, bag = REVIEW_BAG) {
 	const adjustment = { ...EMPTY_FARM_STOCK };
 	const emptySlot = BAG_SLOT_ORDER.find((slot) => bag?.[slot] == null) ?? null;
 	const add = (reward, direction = 1) => {
@@ -692,29 +699,29 @@ function prototypeBagStockAdjustment(position, bag = DEFAULT_BAG) {
 	};
 
 	if (position >= 8) {
-		add(DEFAULT_BAG.provision === null ? null : {
-			itemId: DEFAULT_BAG.provision,
+		add(REVIEW_BAG.provision === null ? null : {
+			itemId: REVIEW_BAG.provision,
 			amount: 1,
 		}, 1);
 		add(bag.provision == null ? null : {
 			itemId: bag.provision,
 			amount: 1,
 		}, -1);
-		add(bagPackingCost(DEFAULT_BAG.pack), 1);
+		add(bagPackingCost(REVIEW_BAG.pack), 1);
 		add(bagPackingCost(bag.pack ?? null), -1);
 	}
 	if (position >= 10) {
 		if (emptySlot !== null) {
-			add(bagReturnReward(DEFAULT_BAG.pack), -1);
-			add(toolReturnBonus(DEFAULT_BAG.tool), -1);
+			add(bagReturnReward(REVIEW_BAG.pack), -1);
+			add(toolReturnBonus(REVIEW_BAG.tool), -1);
 			add({ itemId: "glowroot-seed", amount: 1 }, -1);
 			add({ itemId: "willow-fiber", amount: 2 }, -1);
 			add({ itemId: "compost", amount: 1 }, 1);
 			add({ itemId: "willow-fiber", amount: 1 }, 1);
 		} else {
-			add(bagReturnReward(DEFAULT_BAG.pack), -1);
+			add(bagReturnReward(REVIEW_BAG.pack), -1);
 			add(bagReturnReward(bag.pack ?? null), 1);
-			add(toolReturnBonus(DEFAULT_BAG.tool), -1);
+			add(toolReturnBonus(REVIEW_BAG.tool), -1);
 			add(toolReturnBonus(bag.tool ?? null), 1);
 		}
 	}
@@ -1077,7 +1084,11 @@ export function homegrownReducer(state, action) {
 		}
 
 		case ACTIONS.PACK_ADVENTURE:
-			if (state.stage !== STAGES.CLOVER_READY || !state.cloverHarvested) {
+			if (
+				state.stage !== STAGES.CLOVER_READY ||
+				!state.cloverHarvested ||
+				state.prototypePosition !== 7
+			) {
 				return state;
 			}
 			{
@@ -1473,7 +1484,7 @@ export function deserializeState(value, { now = Date.now(), reduceMotion = false
 	if (!value) return createInitialState({ now, reduceMotion });
 	try {
 		const parsed = JSON.parse(value);
-		if (parsed?.version !== 1 || !Object.values(STAGES).includes(parsed.stage)) {
+		if (![1, 2].includes(parsed?.version) || !Object.values(STAGES).includes(parsed.stage)) {
 			return createInitialState({ now, reduceMotion });
 		}
 		const initial = createInitialState({ now, reduceMotion });
@@ -1486,6 +1497,14 @@ export function deserializeState(value, { now = Date.now(), reduceMotion = false
 		const legacyDepartureComplete =
 			parsed.departureComplete ??
 			(parsed.stage !== STAGES.ADVENTURE || (parsed.prototypePosition ?? 1) >= 9);
+		const legacyUntouchedFirstBag =
+			parsed.version === 1 &&
+			parsed.stage === STAGES.CLOVER_READY &&
+			(parsed.prototypePosition ?? 1) <= 7 &&
+			parsed.lastBagSelection == null &&
+			parsed.bag?.provision === REVIEW_BAG.provision &&
+			parsed.bag?.tool === REVIEW_BAG.tool &&
+			parsed.bag?.pack === REVIEW_BAG.pack;
 		const restored = {
 				...initial,
 				...parsed,
@@ -1505,7 +1524,10 @@ export function deserializeState(value, { now = Date.now(), reduceMotion = false
 					: parsed.daysCompleted > 0
 						? { ...farmStock }
 						: { ...initial.dayStartFarmStock },
-				bag: { ...initial.bag, ...parsed.bag },
+				version: 2,
+				bag: legacyUntouchedFirstBag
+					? { ...EMPTY_BAG }
+					: { ...initial.bag, ...parsed.bag },
 			};
 		return settleState(restored, now);
 	} catch {

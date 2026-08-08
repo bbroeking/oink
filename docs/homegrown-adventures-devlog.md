@@ -328,11 +328,80 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 100. **v0.99 — Swipe the Clover (shipped):** make the flowered bed the
     one obvious Harvest Rhythm surface, integrate the accessible tap fallback
     into its active arrow, and keep the exact guaranteed harvest visible.
+101. **v0.100 — The Bag Belongs to the Player (local verification complete):**
+    begin Position 7 empty, present one direct preparation question at a time,
+    and keep every slot optional without hiding the alternatives or the open
+    Bag.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.100 — The Bag Belongs to the Player — 2026-08-08
+
+- Began by replaying the exact public Harvest → Farm Stock → Bag handoff. Farm
+  Stock explained the harvest clearly, but Position 7 arrived pre-filled with
+  Clover Lunch, Hand Trowel, and Wicker Basket. **Pack these** allowed the
+  player to skip the preparation decision entirely, while Lantern and Cloth
+  Wrap remained hidden behind repeated **Change** actions.
+- Compared three real Position 7 structures: all options visible at once, one
+  guided question at a time, and literal pockets around the open Bag. The
+  guided question won. The first rebuilt the dense choice wall; the third made
+  the pockets compete spatially with Rosie and the Bag art.
+- Captured all three throwaway treatments at commit `dc14425` on
+  `codex/homegrown-v100-first-bag-choice-prototypes`. Main keeps only the
+  guided structure; no `bagchoice` query or comparison switcher ships.
+- The Bag now begins with Provision, Tool, and Pack empty. Each slot tab keeps
+  its current summary visible while the active question shows every owned
+  alternative and **Leave empty** directly. The tabs support arrow, Home, and
+  End keyboard navigation with one roving tab stop.
+- The primary action now says **Set out with an empty Bag**, **Pack 1 choice**,
+  **Pack 2 choices**, or **Pack 3 choices**. The empty state explicitly
+  promises a useful clue and Rosie's safety instead of implying failure.
+- Save version 2 clears only an untouched version-one prescribed first Bag.
+  Progressed departures and later review positions preserve their chosen
+  loadout and exact spent resources.
+- Corrected the Position 7 image description from the false **Clover Lunch is
+  in Rosie's Bag** to **Rosie's Bag is ready to pack**; Position 6 now truthfully
+  says the harvest joined Farm stock.
+- React still owns choices, inventory, costs, validation, persistence,
+  deterministic Discovery and Near-Discovery branches, and accessible DOM.
+  The existing authored Rive `Bag Receive` motion remains the only selection
+  performance. No route, item, reward quantity, timer, currency, crop rule,
+  Rive asset, or Rive contract changed.
+- The required Impeccable product review substituted for unavailable Claude
+  Design. It selected the guided structure for a single clear task, visible
+  alternatives, truthful empty state, and preserved character/world art.
+
+### Local validation evidence
+
+- Rendered Position 7 at the 390×844 reference frame and centered desktop.
+  Rosie, the open Bag, all three empty slot summaries, the active question,
+  direct choices, and the empty departure action remain visible without a
+  comparison switcher.
+- Played a complete alternative Bag: Clover Lunch, Lantern, and Wicker Basket.
+  Each choice updated its summary and physical token; Position 8 retained the
+  exact loadout and spent one Clover Lunch after reload.
+- Played an entirely empty Bag through departure, causal vignette, six-hour
+  prototype fast-forward, and Homecoming. Rosie returned safely with the
+  **Glowroot Trail** clue, Compost +1, and Willow Fiber +1 rather than an
+  unearned Seed.
+- Enabled reduced motion from the rendered lab, selected an item, and confirmed
+  the same readable state with the Rive scene reporting its reduced pose.
+  ArrowRight moved focus and selection from Provision to Tool in the real
+  tablist.
+- `npm run prototype:homegrown:test` passes 71/71. `npm run
+  prototype:homegrown:build` and `npm run verify:rive-homegrown` pass both
+  authored Rive contracts. Repository quality and public deployment evidence
+  are recorded below when those gates complete.
+
+### Next highest-leverage weakness
+
+Replay the shipped Position 8 → 9 handoff with the newly player-authored empty
+and alternative Bags. Choose the next checkpoint from the first player-visible
+moment where Rosie's exact preparation stops being legible; do not add another
+destination, item tier, or progression system by default.
 
 ### v0.99 — Swipe the Clover — 2026-08-08
 

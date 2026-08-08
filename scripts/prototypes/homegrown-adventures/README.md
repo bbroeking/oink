@@ -1,5 +1,20 @@
 # Homegrown Adventures prototype
 
+The v0.100 player-authored Bag pass makes Position 7 begin with all three
+slots empty instead of silently prescribing Clover Lunch, Hand Trowel, and
+Wicker Basket. Three real structures were rendered at commit `dc14425` on
+`codex/homegrown-v100-first-bag-choice-prototypes`: every choice at once, one
+guided question at a time, and physical Bag pockets. The guided question won
+because it keeps the open Bag and all three slot summaries visible while
+presenting every alternative—including **Leave empty**—directly for the one
+active slot. Provision, Tool, and Pack remain freely chosen; an entirely empty
+Bag still leaves safely and returns a useful Near-Discovery. State version 2
+clears only untouched legacy prescribed Bags while preserving progressed
+loadouts. React continues to own inventory, costs, persistence, outcomes, and
+keyboard tab semantics; the existing authored Rive `Bag Receive` response
+continues to visualize each selection. No `bagchoice` query or comparison
+switcher remains on main.
+
 The v0.99 Harvest-Rhythm hierarchy pass keeps the crop itself as the gesture
 surface and replaces the former separate **Tap Left / Right / Up** action with
 the active arrow inside one bed-anchored rhythm ribbon. Three real Position 5

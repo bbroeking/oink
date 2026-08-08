@@ -64,6 +64,12 @@ flowered bed the unmistakable swipe surface, folds the accessible tap fallback
 into the one active rhythm arrow, and names the exact guaranteed Lunch count
 beside **Gather normally** instead of presenting three competing harvest
 actions;
+Position 7 now enters with an explicitly empty Bag, preserves the physical open
+satchel, and asks one preparation question at a time while keeping Provision,
+Tool, and Pack summaries visible. Every owned alternative and **Leave empty**
+choice is direct, the primary action names the number of choices, an empty Bag
+still promises a safe useful clue, and untouched version-one prescribed Bags
+migrate to empty without rewriting progressed journeys;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive
@@ -927,6 +933,23 @@ packing, fast-forward continuity, 390×844 touch, and centered desktop rendering
 pass. The next visible weakness is Position 8: its loadout is correct, but the
 prepared Bag disappears back into a thin report and is not visibly equipped on
 Rosie's ready pose.
+
+**Player-authored Bag checkpoint (August 8, 2026):** replaying the shipped
+Harvest-to-Bag handoff showed Position 7 already filled with Clover Lunch, Hand
+Trowel, and Wicker Basket. The player could continue without preparing Rosie,
+contradicting the rule that every slot is optional and freely chosen. Three
+real structures were compared on throwaway branch
+`codex/homegrown-v100-first-bag-choice-prototypes` at `dc14425`: all choices at
+once, one question at a time, and literal Bag pockets. The guided question won
+because it retains the open Bag and three-slot overview without recreating a
+dense choice wall. Position 7 now begins empty, exposes each owned item and
+**Leave empty** directly, supports click and arrow-key tab navigation, and
+names **Set out with an empty Bag** or the exact number of packed choices.
+Every empty slot still resolves to its deterministic Near-Discovery; a complete
+alternative loadout still earns the named Discovery. React remains authoritative
+for stock, costs, choices, persistence, migration, and outcomes, while the
+existing Rive Bag response visualizes the selected item and honors reduced
+motion. No route, item, reward, timer, currency, or Rive contract changed.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

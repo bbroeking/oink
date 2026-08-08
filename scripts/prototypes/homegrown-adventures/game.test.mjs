@@ -15,6 +15,7 @@ import {
 	createPrototypeState,
 	deserializeState,
 	DURATIONS,
+	EMPTY_BAG,
 	FIRST_ADVENTURE_OPPORTUNITY,
 	HARVEST_BEAT_MS,
 	HARVEST_PATTERN,
@@ -42,6 +43,25 @@ const stylesSource = readFileSync(fileURLToPath(new URL("./styles.css", import.m
 const riveSceneSource = readFileSync(fileURLToPath(new URL("../../../components/prototypes/homegrown-adventures/HomegrownRiveScene.web.tsx", import.meta.url)), "utf8");
 const riveContractSource = readFileSync(fileURLToPath(new URL("../../../components/prototypes/homegrown-adventures/homegrownRiveContract.ts", import.meta.url)), "utf8");
 
+function chooseAdventureBag(state, {
+	provision = "clover-lunch",
+	tool = "hand-trowel",
+	pack = "wicker-basket",
+} = {}) {
+	if (state.prototypePosition === 6) {
+		state = reduce(state, { type: ACTIONS.OPEN_BAG_SELECTION });
+	}
+	for (const [slot, item] of Object.entries({ provision, tool, pack })) {
+		state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot, item });
+	}
+	return state;
+}
+
+function packAdventure(state, bag = {}) {
+	state = chooseAdventureBag(state, bag);
+	return reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+}
+
 function throughCloverReady() {
 	let state = createInitialState({ now: at });
 	state = reduce(state, { type: ACTIONS.TICKLE });
@@ -57,7 +77,9 @@ function throughSecondMorning() {
 	for (const action of [
 		{ type: ACTIONS.TICKLE },
 		{ type: ACTIONS.HARVEST_CLOVER },
-		{ type: ACTIONS.PACK_ADVENTURE },
+	]) state = reduce(state, action);
+	state = packAdventure(state);
+	for (const action of [
 		{ type: ACTIONS.START_ADVENTURE },
 		{ type: ACTIONS.ADVANCE_TIME },
 		{ type: ACTIONS.WELCOME_HOME },
@@ -91,7 +113,7 @@ test("the complete happy path reaches a developed Barn", () => {
 
 	state = reduce(state, { type: ACTIONS.TICKLE });
 	state = reduce(state, { type: ACTIONS.HARVEST_CLOVER });
-	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = packAdventure(state);
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
 	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
 	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
@@ -289,7 +311,7 @@ test("settlement is idempotent for crops and adventures", () => {
 
 	crop = reduce(crop, { type: ACTIONS.TICKLE });
 	crop = reduce(crop, { type: ACTIONS.HARVEST_CLOVER });
-	crop = reduce(crop, { type: ACTIONS.PACK_ADVENTURE });
+	crop = packAdventure(crop);
 	let adventure = reduce(crop, { type: ACTIONS.START_ADVENTURE });
 	adventure = reduce(adventure, { type: ACTIONS.ADVANCE_TIME });
 	assert.equal(settleState(adventure, at + 99_000), adventure);
@@ -313,7 +335,27 @@ test("persisted state resumes and settles elapsed time", () => {
 
 test("malformed and future persisted data reset safely", () => {
 	assert.equal(deserializeState("not-json", { now: at }).stage, STAGES.STARTING);
-	assert.equal(deserializeState('{"version":2,"stage":"starting"}', { now: at }).stage, STAGES.STARTING);
+	assert.equal(deserializeState('{"version":3,"stage":"starting"}', { now: at }).stage, STAGES.STARTING);
+});
+
+test("version-one untouched prescribed Bags migrate to an empty player-authored Bag", () => {
+	const untouched = createPrototypeState(7, { now: at });
+	untouched.version = 1;
+	untouched.bag = {
+		provision: "clover-lunch",
+		tool: "hand-trowel",
+		pack: "wicker-basket",
+	};
+	const migrated = deserializeState(JSON.stringify(untouched), { now: at });
+	assert.equal(migrated.version, 2);
+	assert.deepEqual(migrated.bag, EMPTY_BAG);
+
+	const progressed = createPrototypeState(8, { now: at });
+	progressed.version = 1;
+	assert.deepEqual(
+		deserializeState(JSON.stringify(progressed), { now: at }).bag,
+		progressed.bag,
+	);
 });
 
 test("legacy developed saves infer the lasting Glowroot Home upgrade", () => {
@@ -354,7 +396,9 @@ test("the end-to-end mode completes a Barn day and starts the next one", () => {
 	for (const action of [
 		{ type: ACTIONS.TICKLE },
 		{ type: ACTIONS.HARVEST_CLOVER },
-		{ type: ACTIONS.PACK_ADVENTURE },
+	]) state = reduce(state, action);
+	state = packAdventure(state);
+	for (const action of [
 		{ type: ACTIONS.START_ADVENTURE },
 		{ type: ACTIONS.ADVANCE_TIME },
 		{ type: ACTIONS.WELCOME_HOME },
@@ -451,9 +495,11 @@ test("Glowroot opens a distinct second opportunity across purpose, Bag, journey,
 	});
 	assert.ok(state.farmStock["willow-fiber"] >= 1);
 
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
-	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = packAdventure(state, {
+		provision: "clover-lunch",
+		tool: "lantern",
+		pack: "cloth-wrap",
+	});
 	assert.equal(playerPresentation(state).label, "Follow the gate lights");
 	const stockBeforeReturn = { ...state.farmStock };
 
@@ -494,8 +540,11 @@ test("Glowroot opens a distinct second opportunity across purpose, Bag, journey,
 
 test("an incomplete Bag finds the Lanternleaf clue without granting the route", () => {
 	let state = throughSecondBag();
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: null });
-	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = packAdventure(state, {
+		provision: "clover-lunch",
+		tool: "lantern",
+		pack: null,
+	});
 	const stockBeforeReturn = { ...state.farmStock };
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
 
@@ -516,26 +565,16 @@ test("an incomplete Bag finds the Lanternleaf clue without granting the route", 
 });
 
 test("a known Glowroot return stays in Farm stock and completes the second day", () => {
-	let state = throughCloverReady();
+	let state = throughSecondMorning();
 	for (const action of [
-		{ type: ACTIONS.TICKLE },
-		{ type: ACTIONS.HARVEST_CLOVER },
-		{ type: ACTIONS.PACK_ADVENTURE },
-		{ type: ACTIONS.START_ADVENTURE },
-		{ type: ACTIONS.ADVANCE_TIME },
-		{ type: ACTIONS.WELCOME_HOME },
-		{ type: ACTIONS.ACKNOWLEDGE_RETURN },
-		{ type: ACTIONS.PLANT_GLOWROOT },
-		{ type: ACTIONS.PLANT_NEXT, crop: "moonberries" },
-		{ type: ACTIONS.TICKLE },
-		{ type: ACTIONS.START_NEW_DAY },
-		{ type: ACTIONS.TICKLE },
 		{ type: ACTIONS.CHOOSE_PURPOSE, purpose: "dusk-picnic" },
 		{ type: ACTIONS.PLANT_CLOVER },
 		{ type: ACTIONS.ADVANCE_TIME },
 		{ type: ACTIONS.TICKLE },
 		{ type: ACTIONS.HARVEST_CLOVER },
-		{ type: ACTIONS.PACK_ADVENTURE },
+	]) state = reduce(state, action);
+	state = packAdventure(state);
+	for (const action of [
 		{ type: ACTIONS.START_ADVENTURE },
 		{ type: ACTIONS.ADVANCE_TIME },
 	]) state = reduce(state, action);
@@ -700,7 +739,15 @@ test("every happy-path state exposes one short spatial action", () => {
 		{ type: ACTIONS.ADVANCE_TIME },
 		{ type: ACTIONS.TICKLE },
 		{ type: ACTIONS.HARVEST_CLOVER },
-		{ type: ACTIONS.PACK_ADVENTURE },
+	]) {
+		state = reduce(state, action);
+		capture();
+	}
+	state = chooseAdventureBag(state);
+	capture();
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	capture();
+	for (const action of [
 		{ type: ACTIONS.START_ADVENTURE },
 		{ type: ACTIONS.ADVANCE_TIME },
 		{ type: ACTIONS.WELCOME_HOME },
@@ -714,8 +761,8 @@ test("every happy-path state exposes one short spatial action", () => {
 
 	assert.equal(observed[0].target, WORLD_TARGETS.ROSIE);
 	assert.equal(observed[1].target, WORLD_TARGETS.PATCH);
-	assert.equal(observed[6].target, WORLD_TARGETS.BAG);
-	assert.equal(observed[7].target, WORLD_TARGETS.HEDGE);
+	assert.ok(observed.some(({ target }) => target === WORLD_TARGETS.BAG));
+	assert.ok(observed.some(({ target }) => target === WORLD_TARGETS.HEDGE));
 	assert.equal(observed.at(-1).target, WORLD_TARGETS.ROSIE);
 });
 
@@ -749,11 +796,31 @@ test("Farm stock opens a distinct Bag-selection position before departure", () =
 	assert.equal(state.prototypePosition, 7);
 	assert.equal(playerPresentation(state).objective, FIRST_ADVENTURE_OPPORTUNITY.name);
 	assert.equal(playerPresentation(state).detail, FIRST_ADVENTURE_OPPORTUNITY.detail);
+	assert.deepEqual(state.bag, EMPTY_BAG);
 
 	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
 	assert.equal(state.prototypePosition, 8);
 	assert.equal(state.stage, STAGES.PACKED);
+	assert.equal(state.nearDiscoveryReason, "provision");
 	assert.equal(playerPresentation(state).label, "Follow the glow");
+});
+
+test("the Bag interface starts empty and presents every choice directly", () => {
+	assert.deepEqual(createInitialState({ now: at }).bag, EMPTY_BAG);
+	assert.deepEqual(createPrototypeState(7, { now: at }).bag, EMPTY_BAG);
+	assert.match(appSource, /The Bag begins empty\. Every slot is optional\./);
+	assert.match(appSource, /How long should Rosie stay\?/);
+	assert.match(appSource, /What should Rosie try\?/);
+	assert.match(appSource, /What can Rosie carry Home\?/);
+	assert.match(appSource, /Set out with an empty Bag/);
+	assert.match(appSource, /An empty Bag still returns a useful clue\. Rosie is always safe\./);
+	assert.match(appSource, /Rosie's Bag is ready to pack/);
+	assert.match(appSource, /Clover Lunch joined Farm stock/);
+	assert.match(appSource, /role="tabpanel"/);
+	assert.match(appSource, /tabIndex=\{focus === slot \? 0 : -1\}/);
+	assert.match(appSource, /ArrowRight: 1/);
+	assert.doesNotMatch(appSource, /Clover Lunch is in Rosie's Bag/);
+	assert.doesNotMatch(appSource, /cycleItem|className="bag-change"|Pack these/);
 });
 
 test("prototype position jumps reject invalid targets without mutation", () => {
@@ -806,13 +873,14 @@ test("Bag slots accept owned choices, alternatives, and empty values", () => {
 		...state,
 		farmStock: { ...state.farmStock, "willow-fiber": 1 },
 	};
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: "clover-lunch" });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
 	assert.equal(homegrownRiveModel(state).viewModel.rosieAction, "pack");
 	assert.equal(homegrownRiveModel(state).trigger, "bag-receive");
 	assert.deepEqual(homegrownRiveModel(state).bagReceive, {
 		slot: "tool",
 		item: "lantern",
-		previousItem: "hand-trowel",
+		previousItem: null,
 		at: state.lastBagSelection.at,
 	});
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
@@ -886,7 +954,7 @@ test("Wicker Basket returns Compost while Cloth Wrap preserves a Clover Seed", (
 		return reduce(state, { type: ACTIONS.WELCOME_HOME });
 	};
 
-	const wickerStart = createPrototypeState(7, { now: at });
+	const wickerStart = chooseAdventureBag(createPrototypeState(7, { now: at }));
 	const wickerReturn = completeAdventure(wickerStart);
 	assert.equal(wickerReturn.farmStock.compost, wickerStart.farmStock.compost + 1);
 	assert.equal(wickerReturn.farmStock["clover-seed"], wickerStart.farmStock["clover-seed"]);
@@ -897,11 +965,7 @@ test("Wicker Basket returns Compost while Cloth Wrap preserves a Clover Seed", (
 		...clothStart,
 		farmStock: { ...clothStart.farmStock, "willow-fiber": 2 },
 	};
-	clothStart = reduce(clothStart, {
-		type: ACTIONS.SET_BAG_SLOT,
-		slot: "pack",
-		item: "cloth-wrap",
-	});
+	clothStart = chooseAdventureBag(clothStart, { pack: "cloth-wrap" });
 	const clothReturn = completeAdventure(clothStart);
 	assert.equal(clothReturn.farmStock.compost, clothStart.farmStock.compost);
 	assert.equal(clothReturn.farmStock["clover-seed"], clothStart.farmStock["clover-seed"] + 1);
@@ -912,7 +976,7 @@ test("Wicker Basket returns Compost while Cloth Wrap preserves a Clover Seed", (
 test("Hand Trowel returns an extra Glowroot Seed while Lantern returns extra Willow Fiber", () => {
 	const completeAdventure = (tool) => {
 		let state = createPrototypeState(7, { now: at });
-		state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: tool });
+		state = chooseAdventureBag(state, { tool });
 		const before = { ...state.farmStock };
 		state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
 		state = reduce(state, { type: ACTIONS.START_ADVENTURE });
@@ -936,7 +1000,7 @@ test("packing consumes one Provision exactly once while Tool and Pack remain reu
 	let state = createPrototypeState(7, { now: at });
 	assert.equal(state.farmStock["clover-lunch"], 5);
 	const compostBefore = state.farmStock.compost;
-	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = packAdventure(state);
 
 	assert.equal(state.stage, STAGES.PACKED);
 	assert.equal(state.prototypePosition, 8);
@@ -952,7 +1016,7 @@ test("packing consumes one Provision exactly once while Tool and Pack remain reu
 });
 
 test("an unowned Provision is refused but an empty Provision keeps the Adventure available", () => {
-	let state = createPrototypeState(7, { now: at });
+	let state = chooseAdventureBag(createPrototypeState(7, { now: at }));
 	state = {
 		...state,
 		farmStock: { ...state.farmStock, "clover-lunch": 0 },
@@ -978,11 +1042,8 @@ test("direct review states show Farm stock before and after packing", () => {
 
 test("every empty Bag slot creates a specific deterministic Near-Discovery", () => {
 	for (const missingSlot of ["provision", "tool", "pack"]) {
-		let state = createPrototypeState(7, { now: at });
-		state = reduce(state, {
-			type: ACTIONS.SET_BAG_SLOT,
-			slot: missingSlot,
-			item: null,
+		let state = chooseAdventureBag(createPrototypeState(7, { now: at }), {
+			[missingSlot]: null,
 		});
 		state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
 		assert.equal(state.underprepared, true);
@@ -1004,9 +1065,11 @@ test("a complete alternative loadout remains successful and visible at departure
 		...state,
 		farmStock: { ...state.farmStock, "willow-fiber": 1 },
 	};
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
-	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = packAdventure(state, {
+		provision: "clover-lunch",
+		tool: "lantern",
+		pack: "cloth-wrap",
+	});
 
 	assert.equal(state.stage, STAGES.PACKED);
 	assert.equal(state.underprepared, false);
@@ -1024,9 +1087,11 @@ test("the Adventure vignette explains every selected item before idle waiting", 
 		...state,
 		farmStock: { ...state.farmStock, "willow-fiber": 1 },
 	};
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
-	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = packAdventure(state, {
+		provision: "clover-lunch",
+		tool: "lantern",
+		pack: "cloth-wrap",
+	});
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
 
 	const story = adventureStory(state);
@@ -1321,8 +1386,7 @@ test("departure timing is reducer-owned, reload-stable, reduced-motion aware, an
 });
 
 test("an empty Bag slot changes the deterministic vignette instead of removing it", () => {
-	let state = createPrototypeState(7, { now: at });
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: null });
+	let state = chooseAdventureBag(createPrototypeState(7, { now: at }), { pack: null });
 	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
 
@@ -1333,8 +1397,7 @@ test("an empty Bag slot changes the deterministic vignette instead of removing i
 });
 
 test("Near-Discovery causes never claim that an unearned Seed came Home", () => {
-	let state = createPrototypeState(7, { now: at });
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: null });
+	let state = chooseAdventureBag(createPrototypeState(7, { now: at }), { provision: null });
 	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
 
 	const story = adventureStory(state);
@@ -1349,8 +1412,11 @@ test("prototype navigation carries the selected loadout and exact rewards forwar
 		farmStock: { ...state.farmStock, "willow-fiber": 1 },
 	};
 	const before = { ...state.farmStock };
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
+	state = chooseAdventureBag(state, {
+		provision: "clover-lunch",
+		tool: "lantern",
+		pack: "cloth-wrap",
+	});
 	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 8 });
 	assert.equal(state.farmStock["willow-fiber"], before["willow-fiber"] - 1);
 	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 9 });
@@ -1376,8 +1442,11 @@ test("prototype navigation carries the selected loadout and exact rewards forwar
 test("prototype navigation keeps an incomplete Bag on the clue branch through Return", () => {
 	let state = createPrototypeState(7, { now: at });
 	const before = { ...state.farmStock };
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: null });
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
+	state = chooseAdventureBag(state, {
+		provision: null,
+		tool: "lantern",
+		pack: "wicker-basket",
+	});
 	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 9 });
 
 	assert.equal(state.underprepared, true);
@@ -1400,7 +1469,11 @@ test("prototype navigation keeps an incomplete Bag on the clue branch through Re
 test("direct Return review derives the clue reward from an incomplete Bag", () => {
 	let state = createPrototypeState(7, { now: at });
 	const before = { ...state.farmStock };
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: null });
+	state = chooseAdventureBag(state, {
+		provision: "clover-lunch",
+		tool: null,
+		pack: "wicker-basket",
+	});
 	state = reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 10 });
 
 	assert.equal(state.stage, STAGES.NEAR_DISCOVERY);
@@ -1412,7 +1485,7 @@ test("direct Return review derives the clue reward from an incomplete Bag", () =
 
 test("a successful return adds one named Discovery and practical Farm supplies", () => {
 	let state = createPrototypeState(7, { now: at });
-	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = packAdventure(state);
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
 	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
 	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
@@ -1517,8 +1590,7 @@ test("Seed choice keeps the current Adventure purpose and clues attached to Farm
 });
 
 test("a Near-Discovery still returns useful supplies without granting the Seed", () => {
-	let state = createPrototypeState(7, { now: at });
-	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: null });
+	let state = chooseAdventureBag(createPrototypeState(7, { now: at }), { tool: null });
 	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
 	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
