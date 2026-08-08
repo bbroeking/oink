@@ -38,6 +38,10 @@ homeward turn while preserving route-specific trail copy and **Rosie is Home**
 at the gate; the Barn image description now leads with that same homeward fact
 and names either warm moth lights or silver reflections before retaining the
 stable Home context, without adding another announcement or visible surface;
+the completed causal vignette now leaves one compact **Packed** stamp on the
+field note so the chosen Provision, Tool, and Pack remain recognizable during
+the wait, with an exact **Rosie set out with** group label and truthful empty
+slots, while Homecoming removes the reminder before welcoming Rosie;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive

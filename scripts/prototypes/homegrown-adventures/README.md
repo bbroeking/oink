@@ -1,5 +1,17 @@
 # Homegrown Adventures prototype
 
+The v0.94 journey-packing pass keeps one restrained reminder of the player's
+Provision, Tool, and Pack choices attached to the existing Position 9 field
+note after the causal vignette ends. Three structures were rendered at commit
+`0488e7b` on `codex/homegrown-v094-journey-bag-prototypes`: pinned item stamps,
+a full named strip, and an added note sentence. The stamps won because they use
+the Bag's established item art without adding another card, shrinking story
+copy, or moving the route. **Packed** and the accessible **Rosie set out with**
+label remember the consumed Provision truthfully. Empty slots remain visible,
+and the reminder leaves when Rosie reaches the gate. No prototype switcher,
+new item state, reward rule, timer, persistence field, animation, or Rive input
+remains on main.
+
 The v0.93 route-aware scene-description pass brings the invisible Barn image
 description into the same homeward phase as the visible HUD, field note, and
 review rail. It now leads with **Rosie is heading Home**, keeps warm moth

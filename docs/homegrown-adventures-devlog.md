@@ -309,11 +309,70 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 94. **v0.93 — The Description Turns Home (shipped):** let the existing Barn
     image description lead with Rosie's real journey phase and route so
     screen-reader review no longer begins with a stale trail state.
+95. **v0.94 — The Journey Remembers the Bag (shipped):** keep one quiet,
+    truthful stamp of the Provision, Tool, and Pack choices attached to the
+    journey note until Rosie reaches the gate.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.94 — The Journey Remembers the Bag — 2026-08-08
+
+- Began by replaying the exact shipped v0.93 journey watch. The causal vignette
+  explained the Provision, Tool, and Pack in sequence, but all three choices
+  disappeared for the rest of the six-hour wait. The player could follow the
+  route but could no longer recall what their preparation had authored.
+- Compared three treatments on the real Position 9 Farm: item stamps pinned to
+  the existing field note, a full named strip beneath the route, and a new Bag
+  sentence inside an enlarged note. The pinned stamps won. The named strip
+  created another card in the Farm; the sentence compressed the story and
+  pushed the route down.
+- Captured all three throwaway treatments at commit `0488e7b` on
+  `codex/homegrown-v094-journey-bag-prototypes`. Main retains only the pinned
+  stamp; no treatment switcher or `loadout` query remains.
+- The stamp reuses the established Bag item art and says **Packed**, while its
+  group label says **Rosie set out with** and names the exact Provision, Tool,
+  and Pack. That wording remembers the one-use Provision without claiming it
+  remains unconsumed in Rosie's Bag.
+- Empty slots retain their dashed item marks and are named **empty**. The stamp
+  is present during trail and homeward phases, then leaves before the gate's
+  **Rosie is Home** and **Welcome Rosie home** handoff.
+- No Bag choice, item ownership, consumption, route, duration, reward, journey
+  state, action, save field, animation, Rive asset, or Rive input changed.
+- The required Impeccable product-design review substituted for unavailable
+  Claude Design. It favored the note-attached stamps for preserving the Farm
+  and route hierarchy, using an established visual vocabulary, and avoiding
+  another full-width card, tiny name ledger, interaction, or decorative motion.
+
+### Local validation evidence
+
+- Rendered the first route at trail and homeward and the Lanternleaf route at
+  homeward. All three retained their exact story and route while the stamp
+  named Clover Lunch, Hand Trowel, and Wicker Basket.
+- Replayed preparation with Lantern and confirmed the journey group changed to
+  **Tool Lantern**. Replayed all three empty choices and confirmed both the
+  dashed visual marks and **Provision empty, Tool empty, Pack empty** label.
+- Reload preserved the empty loadout. Reduced motion kept the same reminder
+  with `data-reduce-motion="true"`; the production build exposed no comparison
+  switcher.
+- Fast-forward removed the stamp at the gate and retained **Rosie is Home**,
+  **At the gate**, and the single **Welcome Rosie home** action.
+- `npm run prototype:homegrown:test` passes 65/65 and
+  `npm run prototype:homegrown:build` passes. `npx tsc --noEmit` and
+  `npm run verify:rive-homegrown` pass both authored Rive contracts.
+  `npm run quality:check` passes the quality contracts, 157-file layout gate,
+  324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
+  and 202 security tests. Watchman's existing recrawl notice is the only
+  warning.
+
+### Next highest-leverage weakness
+
+The journey now preserves its route and preparation, but the player still has
+no in-world indication of when Rosie will be Home. The next cycle should derive
+one calm time-to-Home treatment from the already persisted `adventureReadyAt`
+timestamp, avoiding a high-frequency countdown or another competing panel.
 
 ### v0.93 — The Description Turns Home — 2026-08-08
 

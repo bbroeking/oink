@@ -732,6 +732,18 @@ function journeyWatchCopy(lanternleaf, journeyPhase) {
 		};
 }
 
+function JourneyPackedStamp({ bag }) {
+	const items = BAG_SLOT_ORDER.map((slot) => ({
+		slot,
+		item: bagItem(slot, bag?.[slot] ?? null),
+	}));
+	const label = `Rosie set out with: ${items.map(({ slot, item }) => `${BAG_SLOT_LABELS[slot]} ${item?.name ?? "empty"}`).join(", ")}`;
+	return <div className="journey-packed-stamp" role="group" aria-label={label}>
+		<small aria-hidden="true">Packed</small>
+		{items.map(({ slot, item }) => <span key={slot} className={item ? "" : "is-empty"}><BagItemArt itemId={item?.id} /></span>)}
+	</div>;
+}
+
 function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
@@ -756,6 +768,7 @@ function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
 					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
 					: copy.body}</p>
 			</div>
+			{!homecomingReady && <JourneyPackedStamp bag={state.bag} />}
 			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
 				<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
 				<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>

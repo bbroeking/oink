@@ -606,6 +606,39 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 	border-radius: 50% 50% 48% 52%;
 	box-shadow: 0 0 20px var(--journey-route-light-soft);
 }
+.journey-packed-stamp {
+	position: absolute;
+	z-index: 3;
+	right: 31px;
+	top: 174px;
+	width: 142px;
+	height: 39px;
+	padding: 3px 5px;
+	display: grid;
+	grid-template-columns: 34px repeat(3, 1fr);
+	align-items: center;
+	overflow: hidden;
+	color: var(--ink-soft);
+	background: color-mix(in srgb, var(--paper-deep) 97%, transparent);
+	border: 2px solid var(--ink);
+	border-radius: 8px 8px 11px 9px;
+	box-shadow: 2px 2px 0 color-mix(in srgb, var(--ink) 58%, transparent);
+	transform: rotate(.6deg);
+}
+.journey-packed-stamp > small {
+	font-size: 7px;
+	font-weight: 950;
+	text-transform: uppercase;
+}
+.journey-packed-stamp > span {
+	width: 26px;
+	height: 28px;
+	display: grid;
+	place-items: center;
+	border-left: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
+}
+.journey-packed-stamp > span.is-empty { opacity: .46; }
+.journey-packed-stamp .bag-item-art { transform: scale(.68); }
 .journey-watch-route {
 	position: absolute;
 	left: 31px;

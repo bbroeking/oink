@@ -1183,6 +1183,16 @@ test("the scene description follows Rosie Home without changing the visible comp
 	assert.doesNotMatch(appSource, /SceneLabelPrototypeSwitcher|sceneCopyVariant|scenecopy/);
 });
 
+test("the journey watch keeps a quiet truthful reminder of what Rosie packed", () => {
+	assert.match(appSource, /function JourneyPackedStamp\(\{ bag \}\)/);
+	assert.match(appSource, /const label = `Rosie set out with: \$\{items\.map/);
+	assert.match(appSource, /<div className="journey-packed-stamp" role="group" aria-label=\{label\}>/);
+	assert.match(appSource, /!homecomingReady && <JourneyPackedStamp bag=\{state\.bag\} \/>/);
+	assert.match(stylesSource, /\.journey-packed-stamp \{[^}]*top: 174px;[^}]*width: 142px;[^}]*grid-template-columns: 34px repeat\(3, 1fr\)/s);
+	assert.match(stylesSource, /\.journey-packed-stamp > span\.is-empty \{ opacity: \.46; \}/);
+	assert.doesNotMatch(appSource, /JourneyBagPrototypeSwitcher|loadoutTreatment|searchParams\.set\("loadout"/);
+});
+
 test("the first Hand Trowel cause performs one separable dig", () => {
 	assert.match(appSource, /showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" \/>/);
 	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"\]\[data-adventure-tool="hand-trowel"\]\[data-adventure-beat="tool"\]/);
