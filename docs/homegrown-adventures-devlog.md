@@ -328,7 +328,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 100. **v0.99 — Swipe the Clover (shipped):** make the flowered bed the
     one obvious Harvest Rhythm surface, integrate the accessible tap fallback
     into its active arrow, and keep the exact guaranteed harvest visible.
-101. **v0.100 — The Bag Belongs to the Player (local verification complete):**
+101. **v0.100 — The Bag Belongs to the Player (shipped):**
     begin Position 7 empty, present one direct preparation question at a time,
     and keep every slot optional without hiding the alternatives or the open
     Bag.
@@ -393,8 +393,38 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   tablist.
 - `npm run prototype:homegrown:test` passes 71/71. `npm run
   prototype:homegrown:build` and `npm run verify:rive-homegrown` pass both
-  authored Rive contracts. Repository quality and public deployment evidence
-  are recorded below when those gates complete.
+  authored Rive contracts. `npm run quality:loop` and `npm run quality:check`
+  pass the quality contracts, 157-file layout gate, 324-sprite integrity gate,
+  security contracts, TypeScript, 78 layout tests, and 202 security tests.
+  Watchman's existing recrawl notice is the only warning.
+
+### Public verification evidence
+
+- Feature commit `59bfa1c` deployed successfully in GitHub Pages run
+  `31273046909`.
+- The deployed player, animation lab, and companion bytes match the checked-in
+  artifacts exactly:
+  - player HTML: `5385b567566f380d9bc2a729e4563e7fc81fc17868cb89eb15dc18200aa77c3f`
+  - player JavaScript: `b10c17917e4dca9a1244c702407edc114e792c64dbe63cc2dbdf4ca43451f927`
+  - player CSS: `7dcbd9de8b0fdae54028f44daff637f0d4d593ef280fa2f9d91bef7fb88a008d`
+  - animation-lab HTML: `731f997e7803134ced7de42198593f2601ac680de024850dada1c2a88b4c7fde`
+  - animation-lab JavaScript: `e6f5a0277397b22f280040fcb3a318f6527914f80e93cd22e6a2435943280ea1`
+  - companion HTML: `f21f6dbfbbe76b3a38aa87d87b905b713374aad1c41899c0129dc86d801983a1`
+- Replayed the public Position 7. It began with all three slots empty, exposed
+  Clover Lunch and **Leave empty** directly, and described the scene as
+  **Rosie's Bag is ready to pack** instead of claiming the Lunch was already
+  inside.
+- Packed Clover Lunch, Lantern, and Wicker Basket on the public build. Position
+  8 named all three exact choices, spent one Lunch, and retained the same
+  loadout after a live reload.
+- Opened a fresh public Position 7 and sent Rosie with every slot empty. The
+  live departure, causal vignette, prototype fast-forward, and Homecoming
+  returned **Glowroot Trail**, Compost +1, a leaf-print clue, and Willow Fiber
+  +1, with no unearned Seed and no blocked departure.
+- The companion checkpoint link now reads **Choose Rosie's first Bag** and
+  opens Position 7.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=7&v=59bfa1c`
 
 ### Next highest-leverage weakness
 
