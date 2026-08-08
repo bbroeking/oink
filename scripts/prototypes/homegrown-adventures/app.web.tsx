@@ -1147,7 +1147,44 @@ function JourneyReviewRailAction({ actionLabel, onAction }) {
 	);
 }
 
-function PositionRail({ position, onChange }) {
+// THROWAWAY UI PROTOTYPE: three structurally different phase-aware rail
+// treatments, switchable with ?railcopy=A|B|C on the existing game route.
+function RailReadoutVariant({ variant, position, positionName, phaseKey, opportunityTitle }) {
+	if (variant === "B" && position === 9) {
+		const phases = [
+			["vignette", "Story"],
+			["trail", "Trail"],
+			["homeward", "Return"],
+			["home", "Gate"],
+		];
+		return <div className="position-readout position-readout-phases" role="status" aria-live="polite">
+			<strong>Adventure · {position} / {PROTOTYPE_POSITIONS.length}</strong>
+			<ol aria-label={`Current Adventure beat: ${positionName}`}>{phases.map(([key, label]) => <li className={phaseKey === key ? "is-current" : ""} key={key}><i aria-hidden="true" />{label}</li>)}</ol>
+		</div>;
+	}
+	if (variant === "C" && position === 9) {
+		return <div className="position-readout position-readout-route" role="status" aria-live="polite">
+			<strong>{opportunityTitle}</strong>
+			<small>{position} / {PROTOTYPE_POSITIONS.length} · {positionName}</small>
+		</div>;
+	}
+	return <div className="position-readout" role="status" aria-live="polite">
+		<strong>Position {position} / {PROTOTYPE_POSITIONS.length}</strong>
+		<small>{positionName}</small>
+	</div>;
+}
+
+function RailCopySwitcher({ variant, setVariant, phaseName }) {
+	const variants = ["A", "B", "C"];
+	const index = variants.indexOf(variant);
+	return <div className="rail-copy-switcher" aria-label="Throwaway rail treatment switcher">
+		<button type="button" aria-label="Previous rail treatment" onClick={() => setVariant(variants[(index + variants.length - 1) % variants.length])}>←</button>
+		<span><strong>{variant} · Rail treatment</strong><small>Current state: {phaseName}</small></span>
+		<button type="button" aria-label="Next rail treatment" onClick={() => setVariant(variants[(index + 1) % variants.length])}>→</button>
+	</div>;
+}
+
+function PositionRail({ position, onChange, positionName, phaseKey, opportunityTitle, railCopyVariant }) {
 	const current = PROTOTYPE_POSITIONS[position - 1];
 	const atStart = position === 1;
 	const atEnd = position === PROTOTYPE_POSITIONS.length;
@@ -1161,10 +1198,13 @@ function PositionRail({ position, onChange }) {
 			>
 				<span aria-hidden="true">←</span><strong>Previous</strong>
 			</button>
-			<div className="position-readout" role="status" aria-live="polite">
-				<strong>Position {position} / {PROTOTYPE_POSITIONS.length}</strong>
-				<small>{current.name}</small>
-			</div>
+			<RailReadoutVariant
+				variant={railCopyVariant}
+				position={position}
+				positionName={positionName ?? current.name}
+				phaseKey={phaseKey}
+				opportunityTitle={opportunityTitle}
+			/>
 			<button
 				type="button"
 				onClick={() => onChange(atEnd ? 1 : position + 1)}
@@ -1234,6 +1274,16 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [railCopyVariant, setRailCopyVariantState] = useState(() => {
+		const requested = initialSearch.get("railcopy")?.toUpperCase();
+		return ["A", "B", "C"].includes(requested) ? requested : "A";
+	});
+	const setRailCopyVariant = useCallback((nextVariant) => {
+		setRailCopyVariantState(nextVariant);
+		const url = new URL(window.location.href);
+		url.searchParams.set("railcopy", nextVariant);
+		window.history.replaceState({}, "", url);
+	}, []);
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1277,6 +1327,23 @@ function App() {
 	const showingJourneyWatch = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen;
 	const gateHomecomingReady = showingJourneyWatch && state.adventureComplete;
 	const journeyPhase = adventureJourneyPhase(state, visualNow) ?? "trail";
+	const railPhaseKey = showingAdventureVignette
+		? "vignette"
+		: showingJourneyWatch
+		? state.adventureComplete
+			? "home"
+			: journeyPhase === "homeward"
+			? "homeward"
+			: "trail"
+		: null;
+	const positionRailName = position === 9
+		? {
+			vignette: "Adventure begins",
+			trail: "Following the trail",
+			homeward: "Heading Home",
+			home: "At the gate",
+		}[railPhaseKey] ?? PROTOTYPE_POSITIONS[position - 1].name
+		: PROTOTYPE_POSITIONS[position - 1].name;
 	const adventureEnvironmentRevealed = ["tool", "pack", "resolved"].includes(adventureCauseBeat);
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
 	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
@@ -1349,6 +1416,19 @@ function App() {
 					: "Rosie is exploring…",
 		}
 		: presentation;
+
+	useEffect(() => {
+		const cycleRailCopy = (event) => {
+			if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+			if (event.target?.matches?.("input, textarea, select, [contenteditable]")) return;
+			const variants = ["A", "B", "C"];
+			const currentIndex = variants.indexOf(railCopyVariant);
+			const offset = event.key === "ArrowRight" ? 1 : -1;
+			setRailCopyVariant(variants[(currentIndex + offset + variants.length) % variants.length]);
+		};
+		window.addEventListener("keydown", cycleRailCopy);
+		return () => window.removeEventListener("keydown", cycleRailCopy);
+	}, [railCopyVariant, setRailCopyVariant]);
 
 	useEffect(() => {
 		if (!showingAdventureVignette) {
@@ -1723,7 +1803,15 @@ function App() {
 			actionLabel={presentation.label}
 			onAction={() => act(presentation.action)}
 		/>}
-		<PositionRail position={position} onChange={jumpToPosition} />
+		<PositionRail
+			position={position}
+			onChange={jumpToPosition}
+			positionName={positionRailName}
+			phaseKey={railPhaseKey}
+			opportunityTitle={opportunity.name}
+			railCopyVariant={railCopyVariant}
+		/>
+		{reviewMode && <RailCopySwitcher variant={railCopyVariant} setVariant={setRailCopyVariant} phaseName={positionRailName} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;

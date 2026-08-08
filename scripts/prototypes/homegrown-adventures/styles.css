@@ -1377,6 +1377,64 @@ html[data-reduce-motion="true"] .home-memory-pocket-detail { animation: none; }
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
+.position-readout-phases { padding: 6px 4px 5px; }
+.position-readout-phases > strong { font-size: 10px; }
+.position-readout-phases ol {
+	width: 100%;
+	margin: 5px 0 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	list-style: none;
+}
+.position-readout-phases li {
+	min-width: 0;
+	display: grid;
+	justify-items: center;
+	gap: 2px;
+	color: #9a816d;
+	font-size: 6.5px;
+	font-weight: 900;
+	line-height: 1;
+	text-transform: uppercase;
+}
+.position-readout-phases li i {
+	width: 7px;
+	height: 7px;
+	background: #d6c3a9;
+	border: 1px solid var(--wood);
+	border-radius: 50%;
+}
+.position-readout-phases li.is-current { color: var(--ink); }
+.position-readout-phases li.is-current i { background: var(--sun); box-shadow: 0 0 0 2px #f7dea1; }
+.position-readout-route strong {
+	max-width: 100%;
+	overflow: hidden;
+	font-size: 10px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.rail-copy-switcher {
+	position: fixed;
+	z-index: 46;
+	left: 50%;
+	bottom: max(146px, calc(env(safe-area-inset-bottom) + 134px));
+	width: min(278px, calc(100vw - 32px));
+	min-height: 50px;
+	display: grid;
+	grid-template-columns: 44px 1fr 44px;
+	transform: translateX(-50%);
+	overflow: hidden;
+	color: #fff9e9;
+	background: #302116;
+	border: 2px solid #fff9e9;
+	border-radius: 999px;
+	box-shadow: 0 4px 16px rgba(0,0,0,.32);
+}
+.rail-copy-switcher button { min-width: 44px; min-height: 46px; border: 0; color: #302116; background: #f3dfad; font-size: 18px; }
+.rail-copy-switcher span { min-width: 0; display: grid; place-content: center; text-align: center; }
+.rail-copy-switcher strong { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; }
+.rail-copy-switcher small { margin-top: 2px; overflow: hidden; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 .dev-tools { position: fixed; z-index: 40; top: 12px; right: 12px; width: min(360px, calc(100vw - 24px)); }
 .dev-toggle { float: right; min-height: 44px; border: 2px solid var(--ink); border-radius: 999px; padding: 8px 12px; background: var(--paper); box-shadow: 2px 2px 0 var(--ink); font-size: 11px; font-weight: 800; }
 .dev-panel { clear: both; margin-top: 46px; max-height: calc(100vh - 70px); overflow: auto; padding: 14px; background: rgba(255,249,233,.98); border: 2px solid var(--ink); border-radius: 16px; box-shadow: 5px 6px 0 var(--ink); font-size: 11px; }
