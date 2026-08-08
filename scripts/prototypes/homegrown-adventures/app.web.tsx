@@ -48,6 +48,36 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// PROTOTYPE — three Position 2 layouts for two mechanically viable crops,
+// switchable with ?cropchoice=A|B|C.
+const CROP_CHOICE_STUDIES = Object.freeze({
+	A: { name: "Equal crops" },
+	B: { name: "Purpose first" },
+	C: { name: "Time tradeoff" },
+});
+
+function readCropChoiceStudy() {
+	const requested = new URLSearchParams(window.location.search).get("cropchoice")?.toUpperCase();
+	return Object.hasOwn(CROP_CHOICE_STUDIES, requested) ? requested : null;
+}
+
+function CropChoicePrototypeSwitcher({ study, setStudy }) {
+	const studies = Object.keys(CROP_CHOICE_STUDIES);
+	const currentIndex = studies.indexOf(study);
+	const cycle = (direction) => setStudy(studies[(currentIndex + direction + studies.length) % studies.length]);
+	return (
+		<div className="crop-choice-prototype-switcher" tabIndex={0} aria-label="Crop choice prototype switcher" onKeyDown={(event) => {
+			if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+			event.preventDefault();
+			cycle(event.key === "ArrowRight" ? 1 : -1);
+		}}>
+			<button type="button" aria-label="Previous crop layout" onClick={() => cycle(-1)}>←</button>
+			<span><strong>{study}</strong><small>{CROP_CHOICE_STUDIES[study].name}</small></span>
+			<button type="button" aria-label="Next crop layout" onClick={() => cycle(1)}>→</button>
+		</div>
+	);
+}
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -303,7 +333,7 @@ function SeedAdventureReceipt({ opportunity, className = "" }) {
 	);
 }
 
-function SeedChoicePanel({ state, opportunity, onChoose }) {
+function SeedChoicePanel({ state, opportunity, onChoose, cropChoiceStudy = null }) {
 	const farmStock = state.farmStock ?? {};
 	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
 	const glowrootSeeds = farmStock["glowroot-seed"] ?? 0;
@@ -311,6 +341,26 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 	const rememberedMorning = state.daysCompleted > 0 && state.glowrootPlanted;
 
 	if (rememberedMorning) {
+		if (cropChoiceStudy) {
+			const clover = <button className="crop-path crop-path-clover" type="button" onClick={onChoose}>
+				<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
+				<span><small>Clover · 4 hours</small><strong>Clover Lunch</strong><b>3 guaranteed · stay until nightfall</b></span>
+				<em>Grow Clover</em>
+			</button>;
+			const moonberry = <button className="crop-path crop-path-moonberry" type="button" onClick={() => {}}>
+				<span className="seed-art seed-art-moonberry" aria-hidden="true">●</span>
+				<span><small>Moonberry · 8 hours</small><strong>Moonberries</strong><b>4 guaranteed · reveal reflected leaves</b></span>
+				<em>Tend Moonberries</em>
+			</button>;
+			return (
+				<section className={`seed-choice-panel crop-choice-study crop-choice-study-${cropChoiceStudy}`} aria-label="Choose one useful crop for Rosie's next Adventure">
+					<div className="crop-choice-question"><strong>What should Rosie grow for the lights?</strong><small>Both harvests wait safely and fit her Provision pocket.</small></div>
+					<div className="crop-choice-options">{cropChoiceStudy === "B" ? <>{clover}<div className="crop-choice-secondary">{moonberry}</div></> : <>{clover}{moonberry}</>}</div>
+					{cropChoiceStudy === "C" && <div className="crop-time-scale" aria-hidden="true"><span>Leave sooner</span><i /><span>See more at night</span></div>}
+					<SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" />
+				</section>
+			);
+		}
 		return (
 			<section className="seed-choice-panel seed-choice-memory" aria-label="Choose the next crop while Home keeps growing">
 				<button className="seed-next-primary" type="button" onClick={onChoose} disabled={cloverSeeds < 1}>
@@ -1413,6 +1463,14 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [cropChoiceStudy, setCropChoiceStudyState] = useState(readCropChoiceStudy);
+	const setCropChoiceStudy = useCallback((study) => {
+		const next = Object.hasOwn(CROP_CHOICE_STUDIES, study) ? study : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("cropchoice", next);
+		window.history.replaceState({}, "", url);
+		setCropChoiceStudyState(next);
+	}, []);
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1848,6 +1906,7 @@ function App() {
 			{choosingSeed && <SeedChoicePanel
 				state={state}
 				opportunity={opportunity}
+				cropChoiceStudy={cropChoiceStudy}
 				onChoose={() => act(visiblePresentation.action)}
 			/>}
 			{plantingCrop && <PlantingPanel
@@ -1932,6 +1991,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{choosingSeed && cropChoiceStudy && <CropChoicePrototypeSwitcher study={cropChoiceStudy} setStudy={setCropChoiceStudy} />}
 	</main>;
 }
 
