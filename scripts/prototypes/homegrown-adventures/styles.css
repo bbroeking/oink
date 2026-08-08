@@ -108,6 +108,15 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	clip-path: polygon(32.4% 62.7%, 63.8% 62.7%, 65.2% 73.8%, 32.2% 73.8%);
 	transform-origin: 48.7% 70.8%;
 }
+.painted-moonberry-rootstock-base {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	pointer-events: none;
+	opacity: 0;
+	background: url("./assets/homegrown-adventures/11-changed-home-pond-scene-plate.png") center / cover no-repeat;
+	clip-path: polygon(31.8% 62.2%, 64.8% 62.2%, 66% 74%, 31.5% 74%);
+}
 .painted-remembered-crop-glowroot {
 	clip-path: polygon(63.5% 62.7%, 100% 62.7%, 100% 74.2%, 63.4% 74.2%);
 	transform-origin: 81.5% 70.8%;
@@ -116,8 +125,30 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .homegrown-rive-scene:not([data-rive-bed-three="empty"]) .painted-remembered-crop-glowroot {
 	opacity: 1;
 }
+.homegrown-rive-scene[data-rive-bed-two="sprout"] .painted-remembered-crop-moonberry {
+	opacity: .78;
+	filter: saturate(.84);
+	clip-path: polygon(37% 67%, 60% 67%, 61% 73.8%, 36% 73.8%);
+	transform: none;
+}
+.homegrown-rive-scene[data-rive-bed-two="sprout"] .painted-moonberry-rootstock-base {
+	opacity: 1;
+}
+.homegrown-rive-scene[data-rive-bed-two="growing"] .painted-remembered-crop-moonberry {
+	opacity: .9;
+	filter: saturate(.94);
+	transform: translateY(4px) scale(.91);
+}
+.homegrown-rive-scene[data-rive-bed-two="ready"] .painted-remembered-crop-moonberry {
+	opacity: 1;
+	filter: saturate(1.05);
+	transform: translateY(0) scale(1);
+}
 .homegrown-rive-scene[data-rive-moonberry-motion="plant"] .painted-remembered-crop-moonberry {
 	animation: painted-memory-crop-arrive 760ms cubic-bezier(.16,1,.3,1) both;
+}
+.homegrown-rive-scene[data-rive-moonberry-motion="regrow"] .painted-remembered-crop-moonberry {
+	animation: painted-memory-crop-regrow 220ms cubic-bezier(.16,1,.3,1) both;
 }
 .homegrown-rive-scene[data-rive-home-motion="flourish"] .painted-remembered-crop-glowroot {
 	animation: painted-memory-glowroot-arrive 780ms cubic-bezier(.16,1,.3,1) both;
@@ -139,6 +170,11 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	0% { opacity: .34; filter: saturate(.82); transform: translateY(4px) scale(.985); }
 	64% { opacity: 1; filter: saturate(1.08); transform: translateY(-1px) scale(1.008); }
 	100% { opacity: 1; filter: saturate(1); transform: translateY(0) scale(1); }
+}
+@keyframes painted-memory-crop-regrow {
+	0% { opacity: .12; filter: saturate(.68); transform: translateY(5px); }
+	64% { opacity: .84; filter: saturate(.92); transform: translateY(-1px); }
+	100% { opacity: .78; filter: saturate(.84); transform: translateY(0); }
 }
 @keyframes painted-memory-glowroot-arrive {
 	0% { opacity: .38; filter: brightness(.92) saturate(.88); transform: scale(.98); }
@@ -2210,6 +2246,8 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .harvest-basket-label { position: absolute; z-index: 2; left: 0; right: 0; bottom: -1px; min-height: 40px; padding: 6px 5px; display: grid; place-items: center; background: rgba(255,249,233,.97); border: 2px solid var(--ink); border-radius: 9px; box-shadow: 2px 2px 0 rgba(48,33,22,.58); text-align: center; }
 .harvest-basket-label strong { font-family: Caprasimo, Georgia, serif; font-size: 10px; font-weight: 400; line-height: 1; }
 .harvest-basket-label small { margin-top: 4px; color: var(--ink-soft); font-size: 7px; font-weight: 900; line-height: 1; }
+.harvest-basket.is-moonberries .harvest-basket-label { min-height: 49px; padding-bottom: 5px; }
+.harvest-basket-regrowth { margin-top: 3px; color: var(--clover); font-size: 7px; font-weight: 950; line-height: 1; text-transform: uppercase; }
 .harvest-prepare {
 	position: absolute;
 	left: 27px;

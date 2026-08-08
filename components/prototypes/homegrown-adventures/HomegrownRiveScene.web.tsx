@@ -53,13 +53,15 @@ const HOME_STATE_ANIMATIONS = {
 } as const;
 const HOME_FLOURISH_ANIMATION = "Glowroot Home Flourish";
 const HOME_ANIMATIONS = [...Object.values(HOME_STATE_ANIMATIONS), HOME_FLOURISH_ANIMATION];
+const MOONBERRY_PLANT_ANIMATION = "Moonberry Plant";
+const MOONBERRY_SPROUT_SETTLE_SECONDS = 12 / 60;
+const MOONBERRY_SPROUT_SETTLE_MS = 220;
 const MOONBERRY_STATE_ANIMATIONS = {
 	empty: "Moonberry Bed Empty",
-	sprout: "Moonberry Bed Growing",
+	sprout: MOONBERRY_PLANT_ANIMATION,
 	growing: "Moonberry Bed Growing",
 	ready: "Moonberry Bed Growing",
 } as const;
-const MOONBERRY_PLANT_ANIMATION = "Moonberry Plant";
 const MOONBERRY_ANIMATIONS = [
 	...new Set([...Object.values(MOONBERRY_STATE_ANIMATIONS), MOONBERRY_PLANT_ANIMATION]),
 ];
@@ -122,7 +124,7 @@ type CropMotion =
 	| "reduced";
 
 type HomeMotion = "loading" | "hidden" | "flourish" | "developed" | "reduced";
-type MoonberryMotion = "loading" | "empty" | "plant" | "growing" | "reduced";
+type MoonberryMotion = "loading" | "empty" | "plant" | "regrow" | "growing" | "reduced";
 type MothMotion =
 	| "loading"
 	| "hidden"
@@ -605,8 +607,17 @@ function HomegrownRiveSceneImpl({
 		const syncMoonberryState = () => {
 			stopMoonberryMotion();
 			const animation = MOONBERRY_STATE_ANIMATIONS[model.bedTwoState];
-			rive.scrub(animation, 0);
-			rive.pause(animation);
+			if (model.bedTwoState === "sprout") {
+				// The authored Plant timeline is also the youngest honest rootstock
+				// pose. Hold its early keyed frame so a harvested perennial does not
+				// silently jump back to the fully leafy Growing state on reload.
+				rive.play(animation);
+				rive.scrub(animation, MOONBERRY_SPROUT_SETTLE_SECONDS);
+				schedule(() => rive.pause(animation), 0);
+			} else {
+				rive.scrub(animation, 0);
+				rive.pause(animation);
+			}
 			setMoonberryMotion(
 				reduceMotion
 					? "reduced"
@@ -627,10 +638,16 @@ function HomegrownRiveSceneImpl({
 			return clearTimers;
 		}
 
-		if (previousState === "empty" && model.bedTwoState === "growing") {
+		const beginningRootstock =
+			previousState === "empty" &&
+			["sprout", "growing"].includes(model.bedTwoState);
+		const regrowingAfterHarvest =
+			previousState === "ready" && model.bedTwoState === "sprout";
+
+		if (beginningRootstock || regrowingAfterHarvest) {
 			rive.play(MOONBERRY_PLANT_ANIMATION);
-			setMoonberryMotion("plant");
-			schedule(syncMoonberryState, 760);
+			setMoonberryMotion(regrowingAfterHarvest ? "regrow" : "plant");
+			schedule(syncMoonberryState, MOONBERRY_SPROUT_SETTLE_MS);
 		} else {
 			syncMoonberryState();
 		}
@@ -830,6 +847,7 @@ function HomegrownRiveSceneImpl({
 			<RiveComponent aria-label="" />
 			<span className="departure-dusk-handoff" aria-hidden="true" />
 			<span className="painted-kitchen-patch" aria-hidden="true" />
+			<span className="painted-moonberry-rootstock-base" aria-hidden="true" />
 			<span
 				className="painted-remembered-crop painted-remembered-crop-moonberry"
 				aria-hidden="true"

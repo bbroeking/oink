@@ -20,7 +20,7 @@ function cropGrowthState(state, now) {
 function bedStates(state, now) {
 	const rememberedBedTwo =
 		state.glowrootPlanted && state.nextPlanting === "moonberries"
-			? "growing"
+			? "sprout"
 			: "empty";
 	const rememberedBedThree = state.glowrootPlanted ? "sprout" : "empty";
 	if (state.stage === STAGES.CLOVER_GROWING) {
@@ -35,7 +35,7 @@ function bedStates(state, now) {
 			: ["ready", rememberedBedTwo, rememberedBedThree];
 	}
 	if (state.stage === STAGES.CLOVER_READY && state.cloverHarvested && state.selectedCrop === "moonberries") {
-		return ["empty", "empty", rememberedBedThree];
+		return ["empty", "sprout", rememberedBedThree];
 	}
 	if (state.stage === STAGES.DEVELOPED) {
 		return [

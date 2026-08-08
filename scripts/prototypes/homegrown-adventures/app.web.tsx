@@ -173,7 +173,9 @@ function stageCopy(state) {
 			title: choosingBag ? "Rosie's Bag is ready to pack" : `${crop.outputName} joined Farm stock`,
 			body: choosingBag
 				? `Choose what helps with ${opportunity.name}, or leave every slot empty for a useful clue.`
-				: `${state.selectedCrop === "moonberries" ? "Bed 2" : "The first bed"} is resting. Open Rosie's Bag when you are ready to prepare for ${opportunity.name}.`,
+				: state.selectedCrop === "moonberries"
+					? `The harvest is stocked and Moonberry roots stay in Bed 2, ready to grow again. Open Rosie's Bag when you are ready to prepare for ${opportunity.name}.`
+					: `The first bed is resting. Open Rosie's Bag when you are ready to prepare for ${opportunity.name}.`,
 		};
 	}
 	if (state.stage === STAGES.GLOWROOT_RETURNED && !state.changeRevealed) {
@@ -548,7 +550,11 @@ function HarvestResultPanel({ state, actionLabel, onContinue }) {
 	))}</div>;
 	const harvestBasket = <div className={`harvest-basket ${isMoonberries ? "is-moonberries" : ""}`} role="status" aria-label={`${rule.outputName} plus ${state.lastHarvestYield}`}>
 		<span className="harvest-basket-image" aria-hidden="true" />
-		<div className="harvest-basket-label"><strong>{rule.outputName} +{state.lastHarvestYield}</strong><small>{rule.baseYield} harvest{compostBonus ? ` · +${compostBonus} from Compost` : ""}{rhythmBonus ? " · +1 rhythm" : ""}</small></div>
+		<div className="harvest-basket-label">
+			<strong>{rule.outputName} +{state.lastHarvestYield}</strong>
+			<small>{rule.baseYield} harvest{compostBonus ? ` · +${compostBonus} from Compost` : ""}{rhythmBonus ? " · +1 rhythm" : ""}</small>
+			{isMoonberries && <span className="harvest-basket-regrowth">Roots stay in Bed 2</span>}
+		</div>
 	</div>;
 	const continueButton = <button type="button" className="harvest-prepare" onClick={onContinue}>{actionLabel}</button>;
 	return (
@@ -1411,7 +1417,7 @@ function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, p
 		return `${stageCopy(state).title}. Rosie stands in the warm lantern-lit Barn workshop behind a wooden table holding the exact supplies she carried Home.`;
 	}
 	const rememberedHome = state.glowrootPlanted
-		? " The open hedge, earned bell, Glowroot bed, and growing crops remain from the last Adventure."
+		? " The open hedge, earned bell, Glowroot bed, and rooted crops remain from the last Adventure."
 		: "";
 	return `${stageCopy(state).title}. Warm paper-craft Barn exterior with Rosie and a three-bed Kitchen Patch.${rememberedHome}`;
 }

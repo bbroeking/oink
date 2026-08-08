@@ -271,7 +271,7 @@ test("Moonberries complete the full grow, personal rhythm, stockpile, and Bag lo
 	assert.equal(state.lastHarvestYield, 5);
 	assert.equal(state.farmStock.moonberries, 5);
 	assert.equal(state.farmStock["clover-lunch"], cloverLunchesBefore);
-	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "empty");
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "sprout");
 
 	state = reduce(state, { type: ACTIONS.OPEN_BAG_SELECTION });
 	state = chooseAdventureBag(state, { provision: "moonberries", tool: "lantern" });
@@ -280,6 +280,35 @@ test("Moonberries complete the full grow, personal rhythm, stockpile, and Bag lo
 	assert.equal(state.packedProvisionSpent, "moonberries");
 	assert.equal(state.farmStock.moonberries, 4);
 	assert.match(adventureStory(state).tags[0].detail, /revealed silver leaves/);
+});
+
+test("Moonberry rootstock visibly persists from harvest through the next morning", () => {
+	let state = throughSecondMorning();
+	for (const action of [
+		{ type: ACTIONS.SELECT_CROP, crop: "moonberries" },
+		{ type: ACTIONS.PLANT_CROP },
+		{ type: ACTIONS.ADVANCE_TIME },
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.HARVEST_CROP },
+	]) state = reduce(state, action);
+
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "sprout");
+	state = packAdventure(state, {
+		provision: "moonberries",
+		tool: "lantern",
+		pack: "wicker-basket",
+	});
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "sprout");
+
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "sprout");
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "sprout");
+	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "sprout");
+	state = reduce(state, { type: ACTIONS.START_NEW_DAY });
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "sprout");
 });
 
 test("Compost predictably makes Moonberries two hours faster and adds one guaranteed berry", () => {
@@ -330,6 +359,16 @@ test("the rendered Harvest Rhythm keeps the crop gesture primary with one integr
 	assert.match(appSource, /className="harvest-bed-assist is-unified"/);
 	assert.doesNotMatch(appSource, /className="harvest-assist"|objective: "Clover’s rhythm: ← → ↑"/);
 	assert.match(stylesSource, /\.harvest-bed-assist\.is-unified \{/);
+});
+
+test("the rendered Moonberry harvest names and animates its rooted regrowth", () => {
+	assert.match(appSource, /Roots stay in Bed 2/);
+	assert.match(stylesSource, /data-rive-bed-two="sprout"[^}]+clip-path:/s);
+	assert.match(riveSceneSource, /className="painted-moonberry-rootstock-base"/);
+	assert.match(stylesSource, /data-rive-moonberry-motion="regrow"/);
+	assert.match(stylesSource, /@keyframes painted-memory-crop-regrow/);
+	assert.match(riveSceneSource, /previousState === "ready" && model\.bedTwoState === "sprout"/);
+	assert.match(riveSceneSource, /setMoonberryMotion\(regrowingAfterHarvest \? "regrow" : "plant"\)/);
 });
 
 test("an imperfect or slow rhythm still grants the complete base and Compost harvest", () => {
@@ -457,7 +496,7 @@ test("developed Barn records the player's next purposeful planting", () => {
 	});
 	state = reduce(state, { type: ACTIONS.PLANT_NEXT, crop: "moonberries" });
 	assert.equal(state.nextPlanting, "moonberries");
-	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "growing");
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "sprout");
 	assert.equal(state.trace.at(-1).kind, "next-planting");
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.TICKLE,
@@ -509,7 +548,7 @@ test("the end-to-end mode completes a Barn day and starts the next one", () => {
 			homegrownRiveModel(state).viewModel.bedTwoState,
 			homegrownRiveModel(state).viewModel.bedThreeState,
 		],
-		["empty", "growing", "sprout"],
+		["empty", "sprout", "sprout"],
 	);
 	assert.equal(state.lastAction, "new-day");
 
@@ -548,7 +587,7 @@ test("the end-to-end mode completes a Barn day and starts the next one", () => {
 			homegrownRiveModel(fastForwarded).viewModel.bedTwoState,
 			homegrownRiveModel(fastForwarded).viewModel.bedThreeState,
 		],
-		["growing", "growing", "sprout"],
+		["growing", "sprout", "sprout"],
 	);
 });
 
@@ -790,7 +829,7 @@ test("Rive developed state exposes lasting Home consequences after the named cro
 	state = reduce(state, { type: ACTIONS.PLANT_NEXT, crop: "moonberries" });
 	({ viewModel } = homegrownRiveModel(state));
 	assert.equal(viewModel.mothsVisible, true);
-	assert.equal(viewModel.bedTwoState, "growing");
+	assert.equal(viewModel.bedTwoState, "sprout");
 });
 
 test("every happy-path state exposes one short spatial action", () => {
