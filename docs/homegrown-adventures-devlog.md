@@ -268,7 +268,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     exact total in Farm stock.
 80. **v0.79 — Seed to Soil (shipped):** carry one returned Glowroot Seed from
     the Barn table, through Rosie's hands, and into Bed 3 before planting.
-81. **v0.80 — Glowroot First (shipping):** let the authored Farm change own one
+81. **v0.80 — Glowroot First (shipped):** let the authored Farm change own one
     quiet beat before memory, stock, and Moonberries return.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
@@ -318,6 +318,23 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - `npm run prototype:homegrown:test` passes 50/50; `npx tsc --noEmit`,
   `npm run verify:rive-homegrown`, and `npm run quality:check` pass. The only
   warning is Watchman's existing recrawl notice.
+- Feature commit `416611f` deployed successfully through GitHub Pages run
+  `31259432768`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `a86389aca912659b75f818cf4bc7fd30d88b2b24d2793b82dba719f19c722798`,
+  `aaf8a45b1013a5b2e153a37ca5160dd3e979b680979720bb8b1cd86e791e62ba`, and
+  `16fed740dc23cd5865c595b34c3e5edb80dbcdcb33b220d07d2ed80614cd6968`.
+- Replayed the exact public feature URL at 360×780. At 80 ms after planting,
+  the served build reported `aria-busy`, `homeMotion=flourish`, and
+  `bedThree=sprout`; only **Glowroot takes root · The Farm remembers** remained
+  above the scene, with no memory panel, Moonberry action, or horizontal
+  overflow.
+- After the public hold settled, Rive reported `homeMotion=developed`; the
+  retained memory, **Grow Moonberries**, and exact Farm stock returned with one
+  Glowroot Seed. Public reload held that stable state without replaying the
+  flourish and kept equal 360px client/scroll widths.
+- The deployed companion page links directly to Position 10 as **Bring
+  Glowroot Home and watch the Farm remember**.
 
 ### Next highest-leverage weakness
 
