@@ -347,6 +347,20 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   inspection, 324-sprite integrity gate, security contracts, TypeScript, 78
   layout tests, and 202 security tests. Watchman's existing recrawl notice is
   the only warning.
+- Feature commit `3fd68d9` deployed successfully through GitHub Pages run
+  `31264340740`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `3e400a60a4f1727dd3333f0a962e12fe582637e2a8fb26041797378f4b414664`,
+  `868129a2bff0cf6619a01413380e9245dfc17dd8d18eedb143ebc947f6a02e85`, and
+  `a95c15d1b90551d1527cfa249734dd2c52036c8b092df3ae30532e5ed66c7536`.
+- A fresh public Position 8 → 9 replay captured the first route at
+  `beat=resolved` with **Rosie follows the warm light · The journey
+  continues…**, no field note, no confirmation button, no journey watch yet,
+  and equal 1280 px client/scroll widths. After the bounded hold, the bridge
+  disappeared and the existing **Rosie is following the moths** watch exposed
+  Set off → Warm moth trail → Homecoming and **Fast-forward to Homecoming**.
+- The public companion page exposes **Watch the Adventure become a journey**
+  and links directly to Position 9.
 
 ### Next highest-leverage weakness
 
