@@ -279,7 +279,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 84. **v0.83 — The Trowel Opens the Roots (shipped):** separate the first
     outing's Tool from its background and let one restrained dig fulfill the
     existing Hand Trowel cause.
-85. **v0.84 — The Pack Carries the Find (locally verified):** let one
+85. **v0.84 — The Pack Carries the Find (shipped):** let one
     restrained trace of the Glowroot settle into the selected Pack, while an
     empty Pack visibly leaves the find in the clearing.
 
@@ -336,6 +336,19 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   inspection, 324-sprite integrity gate, security contracts, TypeScript, 78
   layout tests, and the security suite; Watchman's existing recrawl notice is
   the only warning.
+- Feature commit `71830a9` deployed successfully through GitHub Pages run
+  `31262426425`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `e7c62659e0e61f9151bb2dc53bcfc32d2a51a13a56740e14d3863381346a2bf9`,
+  `e8b28e93e3164e41d1e302c6c8d61374f2802a28bcfd6e67ec1c617a98f972f1`, and
+  `dc327b8d99c7f07c94b47cfd2c9767c1aefa92e5dcbb2864a14b3774a8f0d8ed`.
+- Replayed the exact public Position 9 at 1280×720. During the Pack beat it
+  reported `opportunity=glow-beneath-hedge`, `pack=wicker-basket`,
+  `animation=adventure-find-to-pack`, a visible mid-arc transform, the exact
+  **Wicker Basket** field note, and equal 1280 px client/scroll widths. The
+  moving light remained inside the game frame and visually joined the Basket.
+- The deployed companion page links directly to Position 9 as **Watch Rosie's
+  find enter the Pack**.
 
 ### Next highest-leverage weakness
 
