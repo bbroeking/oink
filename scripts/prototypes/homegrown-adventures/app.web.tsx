@@ -820,6 +820,37 @@ function adventureProvisionPresentation(state) {
 	};
 }
 
+function adventureToolPresentation(state) {
+	const story = adventureStory(state);
+	const opportunity = adventureOpportunity(state);
+	const tool = state.bag?.tool ?? null;
+	const detail = story.journeyTags[1].detail;
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+
+	if (tool === "hand-trowel") {
+		return {
+			objective: lanternleaf
+				? "Hand Trowel tests the Lanternleaf path"
+				: "Hand Trowel parts the soft roots",
+			detail,
+		};
+	}
+	if (tool === "lantern") {
+		return {
+			objective: lanternleaf
+				? "Lantern light catches the reflected leaves"
+				: "Lantern light follows the fading glow",
+			detail,
+		};
+	}
+	return {
+		objective: lanternleaf
+			? "Rosie leaves the shifting trail undisturbed"
+			: "Rosie leaves the warm roots safely sleeping",
+		detail,
+	};
+}
+
 function AdventureVignetteOverlay({ state, beat }) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
@@ -844,6 +875,17 @@ function AdventureVignetteOverlay({ state, beat }) {
 				<div key={beat} className="adventure-dusk-observation" role="status" aria-live="polite">
 					<span className="sr-only">{activeTag.name} {activeTag.detail}</span>
 					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
+				</div>
+			) : beat === "tool" ? (
+				<div
+					key={beat}
+					className="adventure-tool-observation"
+					data-tool-kind={state.bag?.tool ?? "none"}
+					role="status"
+					aria-live="polite"
+				>
+					<span className="sr-only">{activeTag.name} {activeTag.detail}</span>
+					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
 				</div>
 			) : (
 				<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
@@ -1609,6 +1651,11 @@ function App() {
 		? {
 			...presentation,
 			...adventureProvisionPresentation(state),
+		}
+		: showingAdventureVignette && adventureCauseBeat === "tool"
+		? {
+			...presentation,
+			...adventureToolPresentation(state),
 		}
 		: showingAdventureVignette
 		? {

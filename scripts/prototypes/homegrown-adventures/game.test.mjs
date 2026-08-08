@@ -1315,7 +1315,7 @@ test("the Adventure vignette explains every selected item before idle waiting", 
 	});
 });
 
-test("the Adventure lets the first Provision change the clearing before later field notes", () => {
+test("the Adventure lets Provision and Tool change the clearing before the Pack field note", () => {
 	assert.match(appSource, /const activeTag = resolved \? null : story\.journeyTags\[activeBeatIndex\]/);
 	assert.match(appSource, /beat === "provision" \? \(/);
 	assert.match(appSource, /className="adventure-dusk-observation" role="status" aria-live="polite"/);
@@ -1328,6 +1328,13 @@ test("the Adventure lets the first Provision change the clearing before later fi
 	assert.match(stylesSource, /@keyframes adventure-dusk-answer/);
 	assert.match(stylesSource, /data-adventure-opportunity="lights-past-open-gate"[^\n]+\.adventure-dusk-observation i/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-dusk-observation i \{ animation: none; \}/);
+	assert.match(appSource, /beat === "tool" \? \(/);
+	assert.match(appSource, /className="adventure-tool-observation"/);
+	assert.match(appSource, /data-tool-kind=\{state\.bag\?\.tool \?\? "none"\}/);
+	assert.match(stylesSource, /@keyframes adventure-ground-answer/);
+	assert.match(stylesSource, /data-tool-kind="lantern"/);
+	assert.match(stylesSource, /data-tool-kind="none"/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-tool-observation i \{ animation: none; \}/);
 });
 
 test("the resolved cause sequence hands itself into the idle journey without revealing the Find", () => {
@@ -1543,6 +1550,12 @@ test("the Provision beat names its cause in the HUD and gives Rosie one authored
 });
 
 test("the Tool beat gives Rosie one authored attention response", () => {
+	assert.match(appSource, /function adventureToolPresentation\(state\)/);
+	assert.match(appSource, /Hand Trowel tests the Lanternleaf path/);
+	assert.match(appSource, /Hand Trowel parts the soft roots/);
+	assert.match(appSource, /Lantern light catches the reflected leaves/);
+	assert.match(appSource, /Rosie leaves the warm roots safely sleeping/);
+	assert.match(appSource, /adventureCauseBeat === "tool"[\s\S]+adventureToolPresentation\(state\)/);
 	assert.match(appSource, /showingAdventureVignette && !state\.reduceMotion && adventureCauseBeat === "tool"/);
 	assert.match(appSource, /\? "adventure-attention"/);
 	assert.match(appSource, /adventure-attention:\$\{opportunity\.id\}/);
