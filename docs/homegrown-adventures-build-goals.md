@@ -59,6 +59,11 @@ journey causes. Clover still consumes a Seed and extends the outing;
 Moonberries tend the already-rooted second bed without inventing an unearned
 Seed and reveal reflected leaves. Both wait safely, accept the same predictable
 two-hour Compost boost, and preserve the established Bag and Adventure loop;
+after Moonberry Harvest, Bed 2 now visibly settles to young rootstock and the
+existing receipt says **Roots stay in Bed 2**. The Rive scene holds that
+berry-free sprout through Bag preparation, Adventure, Homecoming, reload, and
+the next morning, while React preserves the complete harvested stock and starts
+the next eight-hour growth only when the player tends the rooted crop again;
 Position 3 now names the exact resulting Provision throughout the optional
 Compost decision: **3 Clover Lunches · ready in 4 hours** normally, or **4
 Clover Lunches · ready in 2 hours** with Compost, with the same vocabulary in
@@ -287,6 +292,18 @@ restores the already-serialized next morning. A hard-edged sun token was
 rejected during the installed Impeccable review; corrected 360×780, 390×844,
 and centered desktop renders use only soft Farm light. The next visible weakness
 is Position 2's equal-weight remembered-crop, next-Seed, and Compost stack.
+
+**Moonberry-rootstock checkpoint (August 8, 2026):** the earned perennial now
+transitions from mature berries to young rooted leaves at Harvest instead of
+silently returning as a full crop during Bag preparation. One compact harvest
+receipt names **Roots stay in Bed 2**; the same physical rootstock survives
+Adventure, Homecoming, end of day, reload, and the following morning. The
+existing authored Rive Moonberry Plant timeline supplies the young hold, while
+an aligned painterly bed mask prevents its previous mature Growing layer from
+contradicting the reducer. No berry, Seed, material, timer, reward, Rive binary,
+or Rive View Model contract was added. The next visible weakness is Bed 1:
+Clover still appears fully flowered after its Seed-paid Harvest and needs an
+equally honest resting or replanting consequence.
 
 **Next-Seed checkpoint (August 7, 2026):** the remembered Position 2 now leads
 with one full-width **Clover Seed** decision that names its stock and its purpose

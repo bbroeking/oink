@@ -351,11 +351,91 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     crop screen into a real Clover-or-Moonberry decision, carry each choice
     through its own timer and Harvest Rhythm, preserve both stockpiles, and let
     the packed harvest visibly change Rosie's existing Lanternleaf journey.
+108. **v0.107 — Moonberry Roots Remember (shipped):** replace the silent
+    post-harvest refill with visible young rootstock, one clear harvest receipt,
+    and continuous Bed 2 state through Adventure, Homecoming, reload, and the
+    following morning.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.107 — Moonberry Roots Remember — 2026-08-08
+
+- Began by replaying the deployed Moonberry route from the second-morning crop
+  choice through Harvest, Lanternleaf Homecoming, and another morning. Bed 2
+  correctly emptied at Harvest but silently returned as a mature leafy crop as
+  soon as Rosie packed. The stock total was honest; the Farm's visual cause was
+  not.
+- Compared three throwaway treatments on the existing Position 6 route:
+  immediate visible rootstock, an empty bed that wakes overnight, and spending
+  one harvested berry to replant. Immediate rootstock won because it answers at
+  the payoff moment, preserves every earned berry, and adds no economy rule.
+- Captured all three treatments and the decision at commit `9dc98bd` on
+  `codex/homegrown-v107-regrowth-prototypes`. Main contains only the selected
+  treatment; no `regrowth` query, switcher, or reserve-a-berry choice ships.
+- A Moonberry Harvest now transitions Bed 2 from mature berries to young rooted
+  leaves instead of empty soil. The result receipt says **Roots stay in Bed 2**
+  once, then the physical bed carries that fact through Bag preparation,
+  departure, Adventure, Homecoming, end of day, reload, and the next morning.
+- The authored Rive **Moonberry Plant** timeline now supplies the honest young
+  rootstock hold instead of reusing the fully leafy Growing pose for every
+  non-empty state. The painterly scene layer masks the mature crop and reveals
+  only its low leafy base while the reducer says `sprout`; Growing and Ready
+  still return at their React-owned elapsed-time thresholds.
+- React continues to own crop choice, the eight-hour timer, Compost, Harvest
+  yield, stock, Bag consumption, persistence, and no-spoilage. The checked-in
+  Rive binary and View Model contract are unchanged; only the existing
+  presentation bridge gained a `ready → sprout` regrowth performance.
+- The required Impeccable product review favored one brief receipt plus visible
+  world state over another card or modal. The first production render was
+  rejected because the underlying Rive layer still looked mature; the corrected
+  scene uses an aligned empty-bed mask and cropped approved crop artwork so the
+  settled rootstock reads clearly at phone scale.
+
+### Local validation evidence
+
+- Played the real second-morning Moonberry path through normal planting,
+  waiting, Tickle, Harvest, Farm stock, a Moonberry/Lantern/Wicker Bag,
+  Lanternleaf Homecoming, **Begin another day**, and reload. Harvest granted all
+  four berries, the receipt named the retained roots, and no berry or other
+  material was spent on regrowth.
+- The rendered Bed 2 changed from mature berries to a small berry-free leafy
+  rootstock. That same young bed remained visible at packed departure, the
+  completed Home screen, and the following morning. Rive reported `ready` with
+  `bedTwoState="sprout"` after reload.
+- `npm run prototype:homegrown:test` passes 80/80, including full-loop
+  rootstock continuity and rendered Rive/copy contracts. `npm run
+  prototype:homegrown:build`, `npm run verify:rive-homegrown`, `npm run
+  quality:loop`, and `npm run quality:check` pass the authored Rive contracts,
+  quality contracts, 157-file layout gate, 324-sprite integrity gate, security
+  contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
+  existing recrawl notice and the verifier's already-required manual mobile
+  Safari checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `0b0c727` deployed successfully through GitHub Pages run
+  `31279453560`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `b89377ffbbc184df39d3273e3cd590e5786fe57cdb6cccb10feb19c94b09decf`
+  - player JavaScript: `1144acb880299ca84b6f38af37e23a3bdf99a11d15cbcd86736e4268654dac66`
+  - player CSS: `76686ea3bde5e33738c1b7238d5df156b7ca9ac10cdfe4196ca141396fbf8c72`
+- Replayed the public Moonberry crop through Harvest, saw **Roots stay in Bed
+  2**, packed Moonberries/Lantern/Wicker Basket, verified the small rooted bed
+  with the live Rive scene ready, completed Lanternleaf Homecoming, and began
+  the following morning with the same rootstock visible.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=2&route=lanternleaf&v=0b0c727`
+
+### Next highest-leverage weakness
+
+Replay the Clover choice across a complete day. Bed 1 currently returns as a
+fully flowered crop after its Harvest, making the Seed-spent annual crop look
+as magically refillable as Moonberries used to. Prefer one honest resting-bed
+or replanting consequence in the existing Seed, timer, and Home-memory model;
+do not introduce another crop, building, or crafting rule.
 
 ### v0.106 — Two Crops, Two Ways Forward — 2026-08-08
 
