@@ -48,6 +48,13 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// THROWAWAY UI STUDY — three Tool beats on the existing Adventure route.
+const TOOL_BEAT_VARIANTS = {
+	A: { name: "Field note", question: "Does the existing Tool receipt earn its space?" },
+	B: { name: "Trail label", question: "Can a small ground-level label support the physical Tool?" },
+	C: { name: "Ground answers", question: "Can Rosie's response, the Tool, and the changed ground carry the cause?" },
+};
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -820,7 +827,38 @@ function adventureProvisionPresentation(state) {
 	};
 }
 
-function AdventureVignetteOverlay({ state, beat }) {
+function adventureToolPresentation(state) {
+	const story = adventureStory(state);
+	const opportunity = adventureOpportunity(state);
+	const tool = state.bag?.tool ?? null;
+	const detail = story.journeyTags[1].detail;
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+
+	if (tool === "hand-trowel") {
+		return {
+			objective: lanternleaf
+				? "Hand Trowel tests the Lanternleaf path"
+				: "Hand Trowel parts the soft roots",
+			detail,
+		};
+	}
+	if (tool === "lantern") {
+		return {
+			objective: lanternleaf
+				? "Lantern light catches the reflected leaves"
+				: "Lantern light follows the fading glow",
+			detail,
+		};
+	}
+	return {
+		objective: lanternleaf
+			? "Rosie leaves the shifting trail undisturbed"
+			: "Rosie leaves the warm roots safely sleeping",
+		detail,
+	};
+}
+
+function AdventureVignetteOverlay({ state, beat, variant }) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
@@ -844,6 +882,16 @@ function AdventureVignetteOverlay({ state, beat }) {
 				<div key={beat} className="adventure-dusk-observation" role="status" aria-live="polite">
 					<span className="sr-only">{activeTag.name} {activeTag.detail}</span>
 					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
+				</div>
+			) : beat === "tool" && variant === "B" ? (
+				<div key={beat} className="adventure-tool-whisper" role="status" aria-live="polite">
+					<small>{activeTag.name}</small>
+					<strong>{lanternleaf ? "The trail shifts" : "Soft soil gives way"}</strong>
+				</div>
+			) : beat === "tool" && variant === "C" ? (
+				<div key={beat} className="adventure-tool-observation" role="status" aria-live="polite">
+					<span className="sr-only">{activeTag.name} {activeTag.detail}</span>
+					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
 				</div>
 			) : (
 				<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
@@ -1146,7 +1194,7 @@ function PurposeShelf({ state }) {
 
 const RETURN_CEREMONY_MS = 2400;
 const HOMEGROWN_REVIEW_STORAGE_KEY = `${HOMEGROWN_STORAGE_KEY}.review`;
-const ADVENTURE_CAUSE_BEAT_MS = 900;
+const ADVENTURE_CAUSE_BEAT_MS = 2_400;
 const ADVENTURE_HANDOFF_MS = 900;
 const REDUCED_ADVENTURE_HANDOFF_MS = 1800;
 const RAPID_TRANSITION_GUARD_MS = 350;
@@ -1368,6 +1416,19 @@ function VariantSwitcher({ variant, setVariant }) {
 			<span><strong>{variant}</strong><small>{VARIANTS[variant].name}</small></span>
 			<button type="button" aria-label="Next variant" onClick={() => setVariant(keys[(index + 1) % keys.length])}>→</button>
 		</div>
+	);
+}
+
+function ToolBeatStudySwitcher({ variant, setVariant }) {
+	const keys = Object.keys(TOOL_BEAT_VARIANTS);
+	const index = keys.indexOf(variant);
+	const study = TOOL_BEAT_VARIANTS[variant];
+	return (
+		<aside className="tool-beat-switcher" aria-label="Tool beat prototype switcher">
+			<button type="button" aria-label="Previous Tool treatment" onClick={() => setVariant(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span><strong>{variant} — {study.name}</strong><small>{study.question}</small></span>
+			<button type="button" aria-label="Next Tool treatment" onClick={() => setVariant(keys[(index + 1) % keys.length])}>→</button>
+		</aside>
 	);
 }
 
@@ -1609,6 +1670,11 @@ function App() {
 		? {
 			...presentation,
 			...adventureProvisionPresentation(state),
+		}
+		: showingAdventureVignette && adventureCauseBeat === "tool" && variant === "C"
+		? {
+			...presentation,
+			...adventureToolPresentation(state),
 		}
 		: showingAdventureVignette
 		? {
@@ -1962,6 +2028,7 @@ function App() {
 			{showingAdventureVignette && <AdventureVignetteOverlay
 				state={state}
 				beat={adventureCauseBeat}
+				variant={variant}
 			/>}
 			{showingJourneyWatch && <JourneyWatchPanel
 				state={state}
@@ -2015,6 +2082,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{showingAdventureVignette && <ToolBeatStudySwitcher variant={variant} setVariant={setVariant} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
