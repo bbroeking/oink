@@ -199,6 +199,12 @@ const PURPOSES = [
 	{ id: "glowroot", name: "Glowroot", job: "Light and restore Home", mark: "glow" },
 ];
 
+const RHYTHM_TREATMENTS = Object.freeze({
+	A: Object.freeze({ name: "One harvest ribbon" }),
+	B: Object.freeze({ name: "Bed callout" }),
+	C: Object.freeze({ name: "Swipe dock" }),
+});
+
 function readVariant() {
 	const value = new URLSearchParams(window.location.search).get("variant")?.toUpperCase();
 	return Object.hasOwn(VARIANTS, value) ? value : "A";
@@ -217,6 +223,7 @@ function useVariant() {
 	useEffect(() => {
 		const onKey = (event) => {
 			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (new URLSearchParams(window.location.search).has("rhythm")) return;
 			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
 			const keys = Object.keys(VARIANTS);
 			const current = keys.indexOf(variant);
@@ -228,6 +235,38 @@ function useVariant() {
 	}, [setVariant, variant]);
 
 	return [variant, setVariant];
+}
+
+function readRhythmTreatment() {
+	const value = new URLSearchParams(window.location.search).get("rhythm")?.toUpperCase();
+	return Object.hasOwn(RHYTHM_TREATMENTS, value) ? value : null;
+}
+
+function useRhythmTreatment() {
+	const [treatment, setTreatmentState] = useState(readRhythmTreatment);
+	const setTreatment = useCallback((next) => {
+		const normalized = Object.hasOwn(RHYTHM_TREATMENTS, next) ? next : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("rhythm", normalized);
+		window.history.replaceState({}, "", url);
+		setTreatmentState(normalized);
+	}, []);
+
+	useEffect(() => {
+		if (!treatment) return undefined;
+		const onKey = (event) => {
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			const keys = Object.keys(RHYTHM_TREATMENTS);
+			const current = keys.indexOf(treatment);
+			const delta = event.key === "ArrowRight" ? 1 : -1;
+			setTreatment(keys[(current + delta + keys.length) % keys.length]);
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [setTreatment, treatment]);
+
+	return [treatment, setTreatment];
 }
 
 function Glyph({ name }) {
@@ -420,7 +459,7 @@ const HARVEST_DIRECTION_LABELS = {
 	up: { arrow: "↑", name: "Up" },
 };
 
-function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
+function HarvestRhythmPanel({ state, rhythmTreatment, onBeat, onGatherNormally }) {
 	const gestureStart = useRef(null);
 	const beatIndex = state.harvestBeats?.length ?? 0;
 	const nextDirection = HARVEST_PATTERN[beatIndex] ?? null;
@@ -443,14 +482,20 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 	};
 
 	const pattern = (
-		<div className="harvest-pattern" aria-label="Left, then Right, then Up">
+		<div className={`harvest-pattern ${rhythmTreatment === "A" ? "is-unified" : ""}`} aria-label="Left, then Right, then Up">
 			{HARVEST_PATTERN.map((direction, index) => (
-				<span
-					key={direction}
-					className={`${index < beatIndex ? "is-complete" : ""} ${index === beatIndex ? "is-next" : ""}`}
-				>
-					{HARVEST_DIRECTION_LABELS[direction].arrow}
-				</span>
+				rhythmTreatment === "A" && index === beatIndex
+					? <button
+						key={direction}
+						type="button"
+						className="is-next"
+						onClick={() => onBeat(direction, "button")}
+						aria-label={`Tap ${HARVEST_DIRECTION_LABELS[direction].name} instead`}
+					>{HARVEST_DIRECTION_LABELS[direction].arrow}</button>
+					: <span
+						key={direction}
+						className={index < beatIndex ? "is-complete" : ""}
+					>{HARVEST_DIRECTION_LABELS[direction].arrow}</span>
 			))}
 		</div>
 	);
@@ -466,26 +511,40 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 		</button>
 	);
 
+	const gestureProps = {
+		onPointerDown: startGesture,
+		onPointerUp: finishGesture,
+		onPointerCancel: () => { gestureStart.current = null; },
+	};
+	const guaranteedYield = CROP_RULES.clover.baseYield + (state.compostApplied ? CROP_RULES.clover.compostYieldBonus : 0);
+
 	return (
 		<div className="harvest-experiment">
-			<div
+			{rhythmTreatment !== "C" && <div
 				className="harvest-gesture-zone"
-				onPointerDown={startGesture}
-				onPointerUp={finishGesture}
-				onPointerCancel={() => { gestureStart.current = null; }}
+				{...gestureProps}
 				role="group"
 				aria-label="Swipe Clover left, right, then up"
 			>
 				<span aria-hidden="true">{nextLabel?.arrow}</span>
-			</div>
-			<section className="harvest-bed-ribbon" aria-label="Follow Clover's harvest rhythm">
+			</div>}
+			{rhythmTreatment === "B" && <section className="harvest-bed-callout" aria-label="Follow Clover's harvest rhythm on the flowered bed">
+				<small>On the Clover</small>
+				<strong>{nextLabel ? `Swipe ${nextLabel.name}` : "Harvest complete"}</strong>
+				{pattern}
+			</section>}
+			{rhythmTreatment === "C" && <section className="harvest-swipe-dock" {...gestureProps} role="group" aria-label="Swipe left, right, then up in this harvest area">
+				<span><small>Swipe here</small><strong>{nextLabel?.name}</strong></span>
+				{pattern}
+			</section>}
+			{rhythmTreatment !== "B" && rhythmTreatment !== "C" && <section className={`harvest-bed-ribbon ${rhythmTreatment === "A" ? "is-unified" : ""}`} aria-label="Follow Clover's harvest rhythm">
 				<strong aria-live="polite">{nextLabel ? `Swipe ${nextLabel.name}` : "Harvest complete"}</strong>
 				{pattern}
-				<small>on the flowered bed</small>
-			</section>
-			<div className="harvest-bed-assist">
-				{assistButton}
-				<span><i aria-hidden="true">✓</i> Harvest guaranteed · clean rhythm +1</span>
+				<small>{rhythmTreatment === "A" ? "Swipe bed · or tap arrow" : "on the flowered bed"}</small>
+			</section>}
+			<div className={`harvest-bed-assist ${rhythmTreatment === "A" ? "is-unified" : ""}`}>
+				{rhythmTreatment !== "A" && assistButton}
+				<span><i aria-hidden="true">✓</i> {guaranteedYield} Lunches guaranteed · clean rhythm +1</span>
 				<button type="button" className="harvest-normal" onClick={onGatherNormally}>Gather normally</button>
 			</div>
 		</div>
@@ -1174,6 +1233,18 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function RhythmSwitcher({ treatment, setTreatment }) {
+	const keys = Object.keys(RHYTHM_TREATMENTS);
+	const index = keys.indexOf(treatment);
+	return (
+		<div className="rhythm-switcher" aria-label="Harvest Rhythm treatment switcher">
+			<button type="button" aria-label="Previous Harvest treatment" onClick={() => setTreatment(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span><strong>{treatment}</strong><small>{RHYTHM_TREATMENTS[treatment].name}</small></span>
+			<button type="button" aria-label="Next Harvest treatment" onClick={() => setTreatment(keys[(index + 1) % keys.length])}>→</button>
+		</div>
+	);
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1289,6 +1360,7 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [rhythmTreatment, setRhythmTreatment] = useRhythmTreatment();
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1394,8 +1466,6 @@ function App() {
 		? { ...presentation, objective: "Glowroot takes root", detail: "The Farm remembers" }
 		: showingHarvestCelebration
 		? { ...presentation, objective: "Harvesting Clover…" }
-		: showingHarvestRhythm
-		? { ...presentation, objective: "Clover’s rhythm: ← → ↑" }
 		: showingAdventureVignette
 		? {
 			...presentation,
@@ -1732,6 +1802,7 @@ function App() {
 			/>}
 			{showingHarvestRhythm && <HarvestRhythmPanel
 				state={state}
+				rhythmTreatment={rhythmTreatment}
 				onBeat={(direction, input) => act({
 					type: ACTIONS.HARVEST_BEAT,
 					direction,
@@ -1800,6 +1871,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{showingHarvestRhythm && rhythmTreatment && <RhythmSwitcher treatment={rhythmTreatment} setTreatment={setRhythmTreatment} />}
 	</main>;
 }
 
