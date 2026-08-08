@@ -48,6 +48,13 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// THROWAWAY UI STUDY — three Provision beats on the existing Adventure route.
+const PROVISION_BEAT_VARIANTS = {
+	A: { name: "Field note", question: "Does the existing cause receipt earn its space?" },
+	B: { name: "Rosie picnic", question: "Can Rosie and the physical food explain the pause together?" },
+	C: { name: "Dusk answers", question: "Can the HUD and changing clearing carry the whole cause?" },
+};
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -791,16 +798,17 @@ function PackedLoadoutRibbon({ bag, farmStock }) {
 	);
 }
 
-function AdventureVignetteOverlay({ state, beat }) {
+function AdventureVignetteOverlay({ state, beat, variant }) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const activeBeatIndex = BAG_SLOT_ORDER.indexOf(beat);
 	const resolved = beat === "resolved";
 	const activeTag = resolved ? null : story.journeyTags[activeBeatIndex];
+	const studyingProvision = beat === "provision";
 	return (
 		<section
-			className="adventure-vignette-overlay"
+			className={`adventure-vignette-overlay provision-study-${variant.toLowerCase()}`}
 			data-adventure-cause-beat={beat}
 			data-story-kind={story.kind}
 			aria-label="Beyond-the-hedge journey"
@@ -810,6 +818,16 @@ function AdventureVignetteOverlay({ state, beat }) {
 					<i aria-hidden="true"><b /><b /><b /></i>
 					<small>Rosie follows the {lanternleaf ? "reflected leaves" : "warm light"}</small>
 					<strong>The journey continues…</strong>
+				</div>
+			) : studyingProvision && variant === "B" ? (
+				<div key={beat} className="adventure-picnic-whisper" role="status" aria-live="polite">
+					<small>{activeTag.name}</small>
+					<strong>{lanternleaf ? "A picnic past nightfall" : "A picnic until dusk"}</strong>
+				</div>
+			) : studyingProvision && variant === "C" ? (
+				<div key={beat} className="adventure-dusk-observation" role="status" aria-live="polite">
+					<span className="sr-only">{activeTag.name} {activeTag.detail}</span>
+					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
 				</div>
 			) : (
 				<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
@@ -1112,7 +1130,7 @@ function PurposeShelf({ state }) {
 
 const RETURN_CEREMONY_MS = 2400;
 const HOMEGROWN_REVIEW_STORAGE_KEY = `${HOMEGROWN_STORAGE_KEY}.review`;
-const ADVENTURE_CAUSE_BEAT_MS = 900;
+const ADVENTURE_CAUSE_BEAT_MS = 2_600;
 const ADVENTURE_HANDOFF_MS = 900;
 const REDUCED_ADVENTURE_HANDOFF_MS = 1800;
 const RAPID_TRANSITION_GUARD_MS = 350;
@@ -1337,6 +1355,19 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function ProvisionBeatStudySwitcher({ variant, setVariant }) {
+	const keys = Object.keys(PROVISION_BEAT_VARIANTS);
+	const index = keys.indexOf(variant);
+	const study = PROVISION_BEAT_VARIANTS[variant];
+	return (
+		<aside className="provision-beat-switcher" aria-label="Provision beat prototype switcher">
+			<button type="button" aria-label="Previous Provision treatment" onClick={() => setVariant(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span><strong>{variant} — {study.name}</strong><small>{study.question}</small></span>
+			<button type="button" aria-label="Next Provision treatment" onClick={() => setVariant(keys[(index + 1) % keys.length])}>→</button>
+		</aside>
+	);
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1549,12 +1580,17 @@ function App() {
 			hedgeBellEarned: false,
 		};
 	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
+	const adventureProvisionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "provision" && variant === "B"
+		? "tickle"
+		: null;
 	const adventureAttentionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "tool"
 		? "adventure-attention"
 		: null;
-	const sceneRiveTrigger = adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
-	const sceneRiveTriggerNonce = adventureAttentionTrigger
-		? `${riveModel.triggerNonce}:adventure-attention:${opportunity.id}`
+	const sceneRiveTrigger = adventureProvisionTrigger ?? adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
+	const sceneRiveTriggerNonce = adventureProvisionTrigger
+		? `${riveModel.triggerNonce}:adventure-provision:${variant}:${opportunity.id}`
+		: adventureAttentionTrigger
+			? `${riveModel.triggerNonce}:adventure-attention:${opportunity.id}`
 		: gateHomecomingReady
 		? `${riveModel.triggerNonce}:gate-homecoming`
 		: riveModel.triggerNonce;
@@ -1566,6 +1602,12 @@ function App() {
 		? { ...presentation, objective: "Glowroot takes root", detail: "The Farm remembers" }
 		: showingHarvestCelebration
 		? { ...presentation, objective: `Harvesting ${CROP_RULES[state.selectedCrop]?.name ?? "crop"}…` }
+		: showingAdventureVignette && adventureCauseBeat === "provision" && variant === "C"
+		? {
+			...presentation,
+			objective: `${adventureStory(state).journeyTags[0].name} carries Rosie into ${opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id ? "nightfall" : "dusk"}`,
+			detail: adventureStory(state).journeyTags[0].detail,
+		}
 		: showingAdventureVignette
 		? {
 			...presentation,
@@ -1918,6 +1960,7 @@ function App() {
 			{showingAdventureVignette && <AdventureVignetteOverlay
 				state={state}
 				beat={adventureCauseBeat}
+				variant={variant}
 			/>}
 			{showingJourneyWatch && <JourneyWatchPanel
 				state={state}
@@ -1971,6 +2014,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{showingAdventureVignette && <ProvisionBeatStudySwitcher variant={variant} setVariant={setVariant} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
