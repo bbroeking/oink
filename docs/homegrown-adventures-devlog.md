@@ -237,7 +237,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     planted Glowroot create a distinct second-day opportunity, make alternate
     Bag capabilities answer its clues, and return either Lanternleaf Path or a
     useful trail clue without adding another progression system.
-72. **v0.71 — Lanternleaf Becomes a Place (locally verified):** give the
+72. **v0.71 — Lanternleaf Becomes a Place (shipped):** give the
     second expedition its own open-gate path, keep its selected Tool physical,
     and prevent remembered Home layers from leaking through Rosie's shared Rive
     artboard without changing progression.
@@ -297,7 +297,15 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   the Lanternleaf plate and hidden Home layers; Position 10 still returned only
   **Lanternleaf Trail**, +1 Compost, and +1 Willow Fiber for an empty Pack. Body
   width remained exactly 360px.
-- Public deployment verification is pending the checkpoint push.
+- GitHub Pages run `31230908768` deployed checkpoint `5f41566`. A fresh public
+  fetch returned CSS `e85e60c9e1`, JavaScript `11da952fc1`, and HTTP 200 WebP
+  `adventure-lanternleaf-path.webp` at 221,702 bytes. Public 390×844 comparison
+  kept the first route on its Trowel clearing with one live Glowroot and moved
+  the second route to the open-gate plate with one selected Tool and no
+  Glowroot. The Lanternleaf Rive boundary reported all three beds `empty`, Home
+  `false`, and frog `false`. Reduced-motion 360×780 produced the same boundary,
+  exact body width, and no console errors. The companion site now links **Play
+  both Adventure routes**.
 
 ### Observable acceptance criteria
 
