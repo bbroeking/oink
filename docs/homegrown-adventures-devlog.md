@@ -233,7 +233,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     opportunity after Rosie's Tickle and carry its duration and environmental
     clues through farming, Bag preparation, and departure without adding a
     mission board or another card stack.
-71. **v0.70 — The Open Gate Leads Somewhere (locally verified):** let the
+71. **v0.70 — The Open Gate Leads Somewhere (shipped):** let the
     planted Glowroot create a distinct second-day opportunity, make alternate
     Bag capabilities answer its clues, and return either Lanternleaf Path or a
     useful trail clue without adding another progression system.
@@ -292,7 +292,15 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   fast-forward. Emptying the Pack and moving from Position 7 to Position 10
   produced **Lanternleaf Trail**, +1 Compost, and +1 Willow Fiber without
   granting **Lanternleaf Path**. Body width remained exactly 360px.
-- Public deployment verification is pending the checkpoint push.
+- GitHub Pages run `31230345776` deployed checkpoint `584d8e2`. A fresh public
+  fetch returned CSS `31ac870eb7` and JavaScript `9f58395fd9`; the latter
+  contains the second-opportunity, Lanternleaf, and contextual clue contract.
+  On the public site at 390×844, reload retained **Lights Past the Open Gate**,
+  Lantern plus Cloth Wrap produced **Lanternleaf Path**, and the ledger returned
+  +1 Clover Seed, +1 Glowroot Seed, and +3 Willow Fiber without console errors.
+  At 360×780, an empty Pack fast-forwarded to **Lanternleaf Trail**, +1 Compost,
+  and +1 Willow Fiber with no route grant, console error, or body overflow. The
+  companion site now names the **two-day Adventure loop** directly.
 
 ### Observable acceptance criteria
 
