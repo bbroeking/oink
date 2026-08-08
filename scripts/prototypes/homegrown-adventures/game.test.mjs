@@ -1173,6 +1173,16 @@ test("the quiet HUD follows Position 9 homeward without adding another journey s
 	assert.doesNotMatch(appSource, /JourneyHudPrototypeSwitcher|hudCopyVariant|hudcopy/);
 });
 
+test("the scene description follows Rosie Home without changing the visible composition", () => {
+	assert.match(appSource, /if \(journeyPhase === "homeward"\) \{/);
+	assert.match(appSource, /\? "Silver reflections turn toward the old gate"/);
+	assert.match(appSource, /: "Warm moth lights turn toward the old gate"/);
+	assert.match(appSource, /return `Rosie is heading Home\. \$\{homewardRoute\} across the twilight paper-craft Barn and remembered Kitchen Patch\. The porch light is waiting for her\.`/);
+	assert.match(appSource, /aria-label=\{sceneLabel\(state, \{/);
+	assert.match(appSource, /journeyPhase,/);
+	assert.doesNotMatch(appSource, /SceneLabelPrototypeSwitcher|sceneCopyVariant|scenecopy/);
+});
+
 test("the first Hand Trowel cause performs one separable dig", () => {
 	assert.match(appSource, /showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" \/>/);
 	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"\]\[data-adventure-tool="hand-trowel"\]\[data-adventure-beat="tool"\]/);

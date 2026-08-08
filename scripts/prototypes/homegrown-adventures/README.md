@@ -1,5 +1,15 @@
 # Homegrown Adventures prototype
 
+The v0.93 route-aware scene-description pass brings the invisible Barn image
+description into the same homeward phase as the visible HUD, field note, and
+review rail. It now leads with **Rosie is heading Home**, keeps warm moth
+lights and silver reflections distinct, and preserves the established trail
+and gate descriptions. Three semantic orders were compared at commit
+`0f55b04` on `codex/homegrown-v093-scene-label-prototypes`; the Rosie-first
+treatment won because it names the character and action before environmental
+context. No prototype parameter, visible element, live region, layout rule,
+state, timer, route, reward, persistence field, or Rive input remains on main.
+
 The v0.92 journey-aware HUD pass lets the existing top objective follow the
 same persisted homeward phase as the story note and review rail. It keeps each
 route's established trail copy, changes only to **Rosie is heading Home** at

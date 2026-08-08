@@ -306,11 +306,64 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 93. **v0.92 — The HUD Turns Home (shipped):** let the persistent top objective
     follow the same trail, homeward, and Home facts as the story and review rail
     without adding copy or changing its footprint.
+94. **v0.93 — The Description Turns Home (shipped):** let the existing Barn
+    image description lead with Rosie's real journey phase and route so
+    screen-reader review no longer begins with a stale trail state.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.93 — The Description Turns Home — 2026-08-08
+
+- Began with the exact shipped v0.92 homeward screen. Its visible HUD, field
+  note, and review rail all said Rosie was heading Home, but the scene's
+  accessible image description still began **Rosie is following the moths** or
+  **Rosie is following reflected leaves**.
+- Compared three semantic orders on the real screen: Rosie and her action
+  first, a terse phase heading first, and the environment first. The
+  Rosie-first treatment won because a player encounters the character and
+  current action before the stable Barn context, matching the visible reading
+  order without becoming another live announcement.
+- Captured the three throwaway treatments at commit `0f55b04` on
+  `codex/homegrown-v093-scene-label-prototypes`. Main retains only the direct
+  description; no query parameter or comparison control ships.
+- The first route now describes warm moth lights turning toward the old gate;
+  the second describes silver reflections. Both lead with **Rosie is heading
+  Home**. Trail descriptions remain route-specific and the completed gate
+  retains its established Homecoming description.
+- No visible element, CSS geometry, live region, action, duration, journey
+  state, route, Bag rule, reward, save field, Rive asset, or Rive input changed.
+  The existing `role="img"` label reads reducer-derived state already visible
+  elsewhere on the screen.
+- The required Impeccable product-design review substituted for unavailable
+  Claude Design. It favored the Rosie-first order for subject/action clarity,
+  exact agreement with the visible hierarchy, retained route texture, and no
+  added density or announcement competition.
+
+### Local validation evidence
+
+- Rendered both the warm-moth and Lanternleaf trail states and confirmed their
+  existing route-specific descriptions remained unchanged.
+- Rendered both routes at homeward. Their descriptions led with **Rosie is
+  heading Home** and then distinguished warm moth lights from silver
+  reflections while the visible HUD and field note retained the same phase.
+- Reload preserved the Lanternleaf homeward description. Reduced motion kept
+  the same text with `data-reduce-motion="true"` and no comparison control.
+- Fast-forwarding retained the established returned-through-the-gate scene
+  description, **Rosie is Home**, **At the gate**, and **Welcome Rosie home**.
+- `npm run prototype:homegrown:test` passes 64/64 and
+  `npm run prototype:homegrown:build` passes. The final repository quality and
+  Rive contract evidence is recorded with the shipped feature commit below.
+
+### Next highest-leverage weakness
+
+After the causal vignette ends, the six-hour journey watch keeps the route and
+Home visible but removes every reminder of the Provision, Tool, and Pack the
+player chose. The next cycle should compare restrained ways to keep one truthful
+loadout reminder in reach during the wait without restoring the dense answer
+ledger or competing with the Homeward story.
 
 ### v0.92 — The HUD Turns Home — 2026-08-08
 

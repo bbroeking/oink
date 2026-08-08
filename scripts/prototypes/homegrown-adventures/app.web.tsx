@@ -1206,6 +1206,12 @@ function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, p
 		const journeyDetail = journeyPhase === "homeward"
 			? "The route lights have turned toward the old gate and the porch light glows brighter as Rosie heads Home."
 			: "Route lights lead beyond the hedge while the porch keeps one small light glowing for Rosie.";
+		if (journeyPhase === "homeward") {
+			const homewardRoute = adventureOpportunity(state).id === SECOND_ADVENTURE_OPPORTUNITY.id
+				? "Silver reflections turn toward the old gate"
+				: "Warm moth lights turn toward the old gate";
+			return `Rosie is heading Home. ${homewardRoute} across the twilight paper-craft Barn and remembered Kitchen Patch. The porch light is waiting for her.`;
+		}
 		return `${stageCopy(state).title}. The twilight paper-craft Barn and remembered Kitchen Patch stay visible while Rosie explores beyond the hedge. ${journeyDetail}`;
 	}
 	if ([STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage)) {

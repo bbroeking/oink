@@ -35,7 +35,9 @@ Following the trail → Heading Home → At the gate** from those same rendered
 facts instead of calling every Position 9 state an Adventure vignette; the
 existing quiet HUD now also changes to **Rosie is heading Home** at the
 homeward turn while preserving route-specific trail copy and **Rosie is Home**
-at the gate;
+at the gate; the Barn image description now leads with that same homeward fact
+and names either warm moth lights or silver reflections before retaining the
+stable Home context, without adding another announcement or visible surface;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive
