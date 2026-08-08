@@ -124,6 +124,13 @@ warmth response before settling. Normal planting is unchanged. React still owns
 Compost, duration, yield, persistence, and the resulting growing state; reload,
 fast-forward, and reduced motion never replay the one-shot.
 
+The v0.69 adventure pass gives the first outing a name before the player farms
+for it: **A Glow Beneath the Hedge**. One quiet HUD line carries that opportunity
+from Seed choice through Harvest, Bag preparation, and departure, with the clues
+**until dusk · soft soil · carry it Home**. Bag copy now previews capabilities
+instead of spoiling reward quantities, so Clover Lunch, Hand Trowel, and Wicker
+Basket read as answers to the outing rather than three unrelated bonus items.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

@@ -229,11 +229,66 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     answer during the existing Rive planting performance with one restrained
     soil-level cue, without bringing back a persistent special-dirt overlay or
     giving Rive resource authority.
+70. **v0.69 — The Adventure Has a Name (shipped):** reveal one named field
+    opportunity after Rosie's Tickle and carry its duration and environmental
+    clues through farming, Bag preparation, and departure without adding a
+    mission board or another card stack.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.69 — The Adventure Has a Name — 2026-08-07
+
+- Audited the complete loop against the approved Adventure-mode direction and
+  replayed Positions 1, 2, 6, 7, 8, and 9 at phone scale. Farming, Bag choice,
+  and the causal vignette worked, but the player packed for an abstract
+  **Adventure** and only learned what the outing was after departure.
+- Named the first field opportunity **A Glow Beneath the Hedge**. The existing
+  quiet objective HUD now carries its compact brief—**until dusk · soft soil ·
+  carry it Home**—from Seed choice through harvested Farm stock, Bag choice,
+  and the final **Follow the glow** departure. No mission board, modal, second
+  HUD, destination selector, or new progression state was added.
+- Reframed Bag effects as capabilities before the result: Clover Lunch helps
+  Rosie stay until dusk, the Hand Trowel digs soft soil, and the Wicker Basket
+  carries a find Home. Exact deterministic rewards remain visible at the
+  Adventure vignette and Homecoming, where they are consequences rather than
+  loadout spoilers.
+- The Prototype question was whether one named opportunity could make farming
+  and packing feel like a single act of preparation. The installed Impeccable
+  review kept the answer inside the existing HUD and rejected another field-note
+  card because Position 7 was already information-dense.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 47/47 pass, including the named brief,
+  Bag handoff, deterministic Adventure, persistence, and all eleven review
+  positions.
+- `npm run verify:rive-homegrown` — the 390×844 header and all 60 authored Rive
+  names pass; no Rive asset or progression contract changed.
+- `npm run quality:check` — quality contracts, the 157-file layout scan, 324
+  sprite integrity checks, security contracts, TypeScript, and 280 focused Jest
+  tests pass.
+- A real 390×844 loop ran from first Tickle through Clover planting, Harvest
+  Rhythm, named Bag preparation, departure, causal vignette, Glowroot return,
+  changed Home, Moonberries, moth Tickle, and the next morning with no console
+  errors. The same opportunity is visible again after the next Tickle.
+- At 360×780, the two-line brief ends at 62px, the Bag action ends at 707px,
+  and the review rail begins at 722px. Centered 1280×900 Bag and departure
+  renders preserve the same hierarchy. Reload retains the brief; rapid Pack
+  reaches Position 8 once; reduced motion reaches Position 9 with Rive
+  `reduced`; fast-forward preserves the named brief across Positions 6–8.
+  Mobile Safari sharpness remains the manual device gate.
+
+### Observable acceptance criteria
+
+- The first post-Tickle Seed choice tells the player what Rosie wants to
+  investigate and why a Provision matters.
+- Bag choices answer readable environmental clues without revealing the exact
+  reward table before departure.
+- Farming, preparation, departure, and the causal vignette read as one journey;
+  reload, rapid input, reduced motion, and fast-forward do not break that thread.
 
 ### v0.68 — The Boost Touches the Bed — 2026-08-07
 

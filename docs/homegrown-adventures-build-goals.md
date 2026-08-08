@@ -28,7 +28,9 @@ one existing authored Rive Return, and reducer-owned stock deltas that survive
 fast-forward, reload, reduced motion, and rapid input; explicitly boosted
 planting now composes the production Rive asset's native Plant and Growing Sway
 clips with one brief bed-level response, while normal planting and all
-React-owned resource rules remain unchanged.
+React-owned resource rules remain unchanged; the first outing is now named **A
+Glow Beneath the Hedge** before farming begins, and its duration and clues stay
+visible through Bag preparation and departure.
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
@@ -275,6 +277,20 @@ response; rapid input produces one transition. The editable online Rive file
 was found to predate later approved production timelines, so it was not
 exported over the current asset. Exact 390×844 play, 1280×900 desktop,
 animation-lab comparison, and the installed Impeccable review passed locally.
+
+**Named-opportunity checkpoint (August 7, 2026):** the first outing is now
+introduced after Rosie's Tickle as **A Glow Beneath the Hedge**, then carried
+through Seed choice, farming, Harvest, Bag preparation, and departure in the
+existing quiet objective HUD. Its brief—**until dusk · soft soil · carry it
+Home**—gives the Clover Lunch, Hand Trowel, and Wicker Basket understandable
+jobs before the deterministic vignette reveals their exact consequences. Bag
+copy therefore describes capabilities instead of reward quantities. No mission
+board, destination selector, modal, new inventory state, or parallel Adventure
+system was added. A full first-day-to-next-morning loop, 360×780 touch,
+390×844 phone, 1280×900 desktop, reload, rapid Pack, reduced-motion departure,
+and fast-forward all pass. The next visible Adventure-depth gap is recurrence:
+the next morning currently repeats the same opportunity instead of presenting
+one new curiosity drawn from the Home that now remembers Glowroot.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
