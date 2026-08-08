@@ -127,6 +127,18 @@ because it preserved story-first reading and exposed more of the Farm. React
 state, timestamps, Bag truth, route phases, rewards, Rive source, and authored
 motions are unchanged.
 
+**Living-route checkpoint (August 8, 2026):** Position 9 no longer lays a
+numbered progress widget over the illustrated Farm. Five warm Glowroot lights
+or silver Lanternleaf reflections now occupy the painted path itself, while one
+short phrase names the current truth: the active trail, the turn toward Home,
+or Rosie at the gate. The lights reverse as Rosie heads Home and settle at
+Homecoming. A Near-Discovery uses five quiet dashed clue rings instead of
+pretending that a complete route has lit. The exact ordered **Set off → route →
+Homeward** semantics remain available to assistive technology in the same DOM;
+only their redundant visual circles are clipped. This is a presentation change
+only: React's route and timestamps, Bag choices, discoveries, rewards, save
+format, Rive source, View Model, and authored motions are unchanged.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

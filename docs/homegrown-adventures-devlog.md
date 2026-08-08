@@ -377,11 +377,85 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 115. **v0.114 — One Field Folio (shipped):** fold the stable journey story,
     **Expected Home** promise, and exact Packed choices into one physical note
     while keeping the three-step route and Farm visible.
+116. **v0.115 — The Lights Carry the Route (shipped):** remove the numbered
+    route widget and let five route-colored lights plus one current phrase
+    carry the same exact path state in the painted world, while preserving the
+    ordered route for assistive technology.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.115 — The Lights Carry the Route — 2026-08-08
+
+- Began from v0.114's verified one-field folio and replayed the stable Glowroot,
+  Lanternleaf, homeward, Homecoming, reduced-motion, and incomplete-Bag states.
+  The folio now read as one object, but the numbered three-node route still
+  looked like a progress widget laid over the Barn instead of part of Rosie's
+  journey.
+- Compared three physical treatments in the real Position 9 composition: path
+  stones, tied waymarks, and living route lights. Living lights won because
+  they reuse the established warm moth and silver reflection language, keep
+  the painted path visible, and require no invented prop vocabulary. Stones
+  still read like board-game tokens; tied waymarks added visual clutter.
+- Captured all three runnable treatments and their verdict at commit `8419a81`
+  on `codex/homegrown-v115-physical-route-prototypes`. Main contains no `path`
+  query parameter, prototype switcher, path stones, or tied-waymark treatment.
+- Five warm Glowroot lights or silver Lanternleaf reflections now live on the
+  painted path. One route-aware phrase names the active trail, the turn toward
+  Home, or Rosie at the gate. Homeward reverses the light cadence; Homecoming
+  settles it. Near-Discovery renders five static dashed clue rings and its
+  exact clue name without implying a completed find.
+- The exact ordered **Set off → named route → Homeward** list, current step,
+  labels, and accessible Adventure status remain in the DOM and are visually
+  clipped rather than removed. Reduced motion keeps all five lights stable.
+  This checkpoint changes no reducer fact, timestamp, Bag choice, reward,
+  save field, Rive source, View Model, or authored motion.
+
+### Local validation evidence
+
+- Played the real stable Glowroot and Lanternleaf watches at 500×844, the
+  Glowroot homeward turn, the gate state, reduced motion, and a deliberately
+  incomplete Pack reached through the actual Position 7 UI. Every complete
+  route shows five correctly colored path lights and the exact phrase;
+  incomplete Pack shows **Leaf-print**, five dashed rings, and no reward Rive
+  canvas.
+- Prototype fast-forward reaches the unchanged Return and **Welcome Rosie
+  home** handoff. Direct reload preserves the same phase and route treatment;
+  Homecoming exposes the large in-world action without restarting the light
+  cadence.
+- `npm run prototype:homegrown:test` passes 83/83. `npm run
+  prototype:homegrown:build`, `npm run quality:loop`, `npm run quality:check`,
+  and `npm run verify:rive-homegrown` pass. The quality gate covers 157 layout
+  files, 324 sprites, security contracts, TypeScript, 78 layout tests, and 202
+  security tests. Watchman's existing recrawl notice and manual mobile Safari
+  checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `72028af` deployed successfully through GitHub Pages run
+  `31284692609`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `b01624cbf7bab4bf240967117c31b9a1b9fea10686e9cc0c9ca28dda2a8bc306`
+  - player JavaScript: `2fb4938fec3e32109ca9a226054434918d9463db138153fc266e1495f4d34077`
+  - player CSS: `305257d0316d43548363f27d51049db1f240b74968929234be90a158f81a0d30`
+- Public CDP playback waited for the production Rive asset, then verified the
+  stable Glowroot watch (**Warm moth trail**), Lanternleaf watch (**Reflected
+  leaves**), and Glowroot homeward turn (**Warm lights turn Home**). Each had
+  five physical lights, the accessible ordered route, a clipped redundant
+  visual list, and no horizontal overflow at 500×844. The away-state Rive
+  canvas remained hidden as intended.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=9&route=glowroot&v=72028af`
+
+### Next highest-leverage weakness
+
+The idle journey watch is now visually coherent. Replay Positions 1–11 as a
+fresh player and choose the first place where the complete **Tickle → purpose
+→ grow → harvest → stock → Bag → Adventure → Home memory** chain becomes
+unclear. Do not add another crop or route until that full-loop weakness is
+visible in the rendered game.
 
 ### v0.114 — One Field Folio — 2026-08-08
 
