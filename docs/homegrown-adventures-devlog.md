@@ -381,6 +381,26 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
   existing recrawl notice is the only warning.
 
+### Public verification evidence
+
+- Feature commit `85c3d79` deployed successfully in GitHub Pages run
+  `31271262756`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - HTML: `2491a8819260da4d52d552243793128d507490a1a544964f25e9154caa3c7021`
+  - JavaScript: `c294d8703c00a33f4b186311e57510c5665d8e42f65ef716f6a6d7cb998e657f`
+  - CSS: `9a9ce063824a329f25735a7613f3481834b0deb204b9b786bbacb874dbc06649`
+- Replayed the public normal and Compost-selected Position 3 states. The
+  normal state promised **3 Clover Lunches · ready in 4 hours** and previewed
+  the exact boost; selecting Compost changed the live promise and HUD to four
+  Lunches in two hours with no prototype switcher.
+- Played the public remembered-Farm route from Seed choice into planting. It
+  retained **Prepare for the gate lights** beside the same named Provision
+  promise.
+- The deployed companion-site bytes match checked-in `docs/index.html`, and
+  its checkpoint link now reads **See what Compost grows for Rosie**.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=3&v=85c3d79`
+
 ### v0.97 — Grow for Rosie — 2026-08-08
 
 - Began by playing the exact public morning handoff. After **Tickle Rosie**
