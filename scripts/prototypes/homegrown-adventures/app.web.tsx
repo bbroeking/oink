@@ -1039,7 +1039,7 @@ function JourneyPackedStamp({ bag }) {
 	</div>;
 }
 
-function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction }) {
+function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, entering = false }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const homecomingReady = state.adventureComplete;
@@ -1058,11 +1058,12 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction }) 
 
 	return (
 		<section
-			className={`journey-watch ${missingSlot ? "is-near-discovery" : ""} ${homecomingReady ? "is-homecoming-ready" : ""}`}
+			className={`journey-watch ${missingSlot ? "is-near-discovery" : ""} ${homecomingReady ? "is-homecoming-ready" : ""} ${entering ? "is-entering" : ""}`}
 			data-journey-phase={journeyPhase}
 			data-missing-capability={missingSlot ?? undefined}
 			aria-label="Rosie's adventure progress"
 		>
+			{entering && <div className="journey-entry-lights" aria-hidden="true"><i /><i /><i /><i /><i /></div>}
 			<div className="journey-watch-tint" aria-hidden="true" />
 			<div className="journey-home-dusk" aria-hidden="true"><i /></div>
 			<div className="journey-watch-note" role="status" aria-live="polite">
@@ -1242,6 +1243,7 @@ const HOMEGROWN_REVIEW_STORAGE_KEY = `${HOMEGROWN_STORAGE_KEY}.review`;
 const ADVENTURE_CAUSE_BEAT_MS = 900;
 const ADVENTURE_HANDOFF_MS = 900;
 const REDUCED_ADVENTURE_HANDOFF_MS = 1800;
+const JOURNEY_ENTRY_BRIDGE_MS = 900;
 const RAPID_TRANSITION_GUARD_MS = 350;
 const HARVEST_CELEBRATION_MS = 560;
 const NEW_DAY_HANDOFF_MS = 900;
@@ -1599,6 +1601,7 @@ function App() {
 	const [feedback, setFeedback] = useState(0);
 	const [startingNewDay, setStartingNewDay] = useState(false);
 	const [adventureCauseBeat, setAdventureCauseBeat] = useState("provision");
+	const [journeyEntryFresh, setJourneyEntryFresh] = useState(false);
 	const [seedHandoff, setSeedHandoff] = useState(null);
 	const [glowrootHomeReveal, setGlowrootHomeReveal] = useState(false);
 	const [homeMemoryExpanded, setHomeMemoryExpanded] = useState(false);
@@ -1766,11 +1769,20 @@ function App() {
 	useEffect(() => {
 		if (!showingAdventureVignette || adventureCauseBeat !== "resolved") return undefined;
 		const timer = window.setTimeout(
-			() => dispatch({ type: ACTIONS.CONTINUE_ADVENTURE_STORY }),
+			() => {
+				if (!state.reduceMotion) setJourneyEntryFresh(true);
+				dispatch({ type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+			},
 			state.reduceMotion ? REDUCED_ADVENTURE_HANDOFF_MS : ADVENTURE_HANDOFF_MS,
 		);
 		return () => window.clearTimeout(timer);
 	}, [adventureCauseBeat, showingAdventureVignette, state.reduceMotion]);
+
+	useEffect(() => {
+		if (!journeyEntryFresh) return undefined;
+		const timer = window.setTimeout(() => setJourneyEntryFresh(false), JOURNEY_ENTRY_BRIDGE_MS);
+		return () => window.clearTimeout(timer);
+	}, [journeyEntryFresh]);
 
 	useEffect(() => {
 		localStorage.setItem(
@@ -2077,6 +2089,7 @@ function App() {
 				now={visualNow}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
+				entering={journeyEntryFresh}
 			/>}
 			{showingReturnReward && <ReturnRewardPanel
 				state={state}
@@ -2118,7 +2131,7 @@ function App() {
 				waiting={waiting || seedHandoff === "arriving"}
 			/>}
 		</div>
-		{showingJourneyWatch && !state.adventureComplete && <JourneyReviewRailAction
+		{showingJourneyWatch && !state.adventureComplete && !journeyEntryFresh && <JourneyReviewRailAction
 			actionLabel={presentation.label}
 			onAction={() => act(presentation.action)}
 		/>}

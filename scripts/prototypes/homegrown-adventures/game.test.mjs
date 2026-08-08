@@ -1374,6 +1374,21 @@ test("the idle journey keeps Home in route-aware dusk without adding another scr
 	assert.doesNotMatch(appSource, /AtmosphereSwitcher|atmospherePrototype|searchParams\.set\("atmosphere"/);
 });
 
+test("the idle journey receives the clearing lights before its information settles", () => {
+	assert.match(appSource, /const JOURNEY_ENTRY_BRIDGE_MS = 900/);
+	assert.match(appSource, /const \[journeyEntryFresh, setJourneyEntryFresh\] = useState\(false\)/);
+	assert.match(appSource, /if \(!state\.reduceMotion\) setJourneyEntryFresh\(true\)/);
+	assert.match(appSource, /setJourneyEntryFresh\(false\), JOURNEY_ENTRY_BRIDGE_MS/);
+	assert.match(appSource, /entering && <div className="journey-entry-lights" aria-hidden="true"><i \/><i \/><i \/><i \/><i \/><\/div>/);
+	assert.match(appSource, /entering=\{journeyEntryFresh\}/);
+	assert.match(appSource, /showingJourneyWatch && !state\.adventureComplete && !journeyEntryFresh/);
+	assert.match(stylesSource, /\.journey-entry-lights \{[\s\S]+--entry-light: var\(--journey-route-light\)/);
+	assert.match(stylesSource, /@keyframes journey-entry-light-travel/);
+	assert.match(stylesSource, /\.journey-watch\.is-entering \.journey-watch-note,[\s\S]+journey-entry-ui-arrive 430ms 390ms/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.journey-entry-lights,[\s\S]+animation: none/);
+	assert.doesNotMatch(appSource, /journeyEntryFresh[^\n]+localStorage|serializeState\([^)]*journeyEntryFresh/);
+});
+
 test("the idle journey derives a predictable trail and homeward beat from its persisted timestamps", () => {
 	const journey = {
 		...createPrototypeState(9, { now: at }),
@@ -1423,7 +1438,7 @@ test("the browser fast-forward stays touch-safe beside the review rail while Hom
 	assert.match(appSource, /function JourneyReviewRailAction\(\{ actionLabel, onAction \}\)/);
 	assert.match(appSource, /<small>Browser prototype<\/small><strong>Skip the six-hour wait<\/strong>/);
 	assert.match(appSource, /<button type="button" aria-label=\{actionLabel\} onClick=\{onAction\}><span aria-hidden="true">↠<\/span> Fast-forward<\/button>/);
-	assert.match(appSource, /showingJourneyWatch && !state\.adventureComplete && <JourneyReviewRailAction/);
+	assert.match(appSource, /showingJourneyWatch && !state\.adventureComplete && !journeyEntryFresh && <JourneyReviewRailAction/);
 	assert.match(appSource, /actionLabel=\{presentation\.label\}/);
 	assert.match(appSource, /homecomingReady && <button type="button" className="journey-watch-action"/);
 	assert.match(stylesSource, /\.journey-review-rail-action button \{[^}]*min-height: 44px/s);
