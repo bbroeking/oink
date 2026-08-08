@@ -1668,3 +1668,27 @@ test("the Near-Discovery Homecoming separates Field Guide knowledge from Farm su
 	assert.match(stylesSource, /\.return-stock-ledger-near > div \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/);
 	assert.doesNotMatch(appSource, /NearHomeSwitcher|nearHomeTreatment|nearhome/);
 });
+
+test("an earned Field Guide clue stays attached to the matching Bag pocket", () => {
+	let state = chooseAdventureBag(createPrototypeState(7, { now: at }), { tool: null });
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+	state = reduce(state, { type: ACTIONS.RETRY_PREP });
+
+	assert.equal(state.nearDiscoveryReason, "tool");
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
+	assert.equal(state.bag.tool, "lantern");
+	assert.equal(state.nearDiscoveryReason, "tool");
+
+	assert.match(appSource, /const bagClueSlot = BAG_SLOT_ORDER\.includes\(state\.nearDiscoveryReason\)/);
+	assert.match(appSource, /\? `\$\{bagItem\(clueSlot, bag\[clueSlot\]\)\?\.name\} answers the \$\{opportunity\.clueName\} clue\.`/);
+	assert.match(appSource, /\{slot === clueSlot && <i>\{clueIsApplied \? "Answered" : "Clue"\}<\/i>\}/);
+	assert.match(appSource, /clueGuide=\{bagClueGuide\}/);
+	assert.match(appSource, /clueSlot=\{bagClueSlot\}/);
+	assert.match(stylesSource, /\.bag-selection\.has-bag-clue \.bag-guided-tabs button \{ grid-template-columns: 52px minmax\(0, 1fr\) auto; \}/);
+	assert.match(stylesSource, /\.bag-guided-tabs i \{/);
+	assert.doesNotMatch(appSource, /BagCluePrototypeSwitcher|bagClueStudy|bagclue/);
+});

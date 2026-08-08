@@ -567,7 +567,7 @@ function BagSelectionOption({ slot, item, selected, disabled, detail, onSelect }
 	);
 }
 
-function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initialFocus = "provision", onSelect, onConfirm }) {
+function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initialFocus = "provision", clueGuide = null, clueSlot = null, onSelect, onConfirm }) {
 	const [focus, setFocus] = useState(initialFocus);
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
@@ -587,6 +587,8 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 		tool: "What should Rosie try?",
 		pack: "What can Rosie carry Home?",
 	}[focus];
+	const showingClue = clueGuide !== null && clueSlot !== null;
+	const clueIsApplied = showingClue && bag[clueSlot] !== null;
 	const optionDetail = (slot, item) => {
 		if (!item) return "A kind clue still comes Home";
 		const effect = BAG_ITEM_EFFECT_LABELS[opportunity.id]?.[item.id] ?? item.effect;
@@ -649,7 +651,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 	};
 
 	return (
-		<section className="bag-selection bag-selection-guided" aria-label="Choose what Rosie carries">
+		<section className={`bag-selection bag-selection-guided ${showingClue ? "has-bag-clue" : ""}`} aria-label="Choose what Rosie carries">
 			{activeSelection && flightItemId && (
 				<span
 					key={`${activeSelection.slot}-${flightItemId}-${activeSelection.at}`}
@@ -661,7 +663,11 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 			)}
 			<div className="bag-guided-title">
 				<strong>Pack for {opportunity.name}</strong>
-				<small>The Bag begins empty. Every slot is optional.</small>
+				<small>{showingClue
+					? clueIsApplied
+						? `${bagItem(clueSlot, bag[clueSlot])?.name} answers the ${opportunity.clueName} clue.`
+						: clueGuide.next
+					: "The Bag begins empty. Every slot is optional."}</small>
 			</div>
 			<div className="bag-stage bag-guided-stage" aria-hidden="true">
 				<span className="open-adventure-bag" />
@@ -689,6 +695,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 					>
 						<small>{BAG_SLOT_LABELS[slot]}</small>
 						<strong>{selected?.name ?? "Empty"}</strong>
+						{slot === clueSlot && <i>{clueIsApplied ? "Answered" : "Clue"}</i>}
 					</button>;
 				})}
 			</div>
@@ -1409,6 +1416,13 @@ function App() {
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
+	const bagClueSlot = BAG_SLOT_ORDER.includes(state.nearDiscoveryReason)
+		? state.nearDiscoveryReason
+		: null;
+	const bagClueGuide = useMemo(
+		() => bagClueSlot === null ? null : nearDiscoveryGuide(state),
+		[state, bagClueSlot],
+	);
 	const riveModel = useMemo(
 		() => homegrownRiveModel(state, visualNow),
 		[state, visualNow],
@@ -1899,6 +1913,8 @@ function App() {
 				opportunity={opportunity}
 				activeSelection={riveModel.bagReceive}
 				initialFocus={state.nearDiscoveryReason ?? "provision"}
+				clueGuide={bagClueGuide}
+				clueSlot={bagClueSlot}
 				onSelect={selectBagItem}
 				onConfirm={() => act(visiblePresentation.action)}
 			/>}
