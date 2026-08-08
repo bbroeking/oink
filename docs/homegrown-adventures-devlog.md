@@ -367,6 +367,21 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   and 202 security tests. Watchman's existing recrawl notice is the only
   warning.
 
+### Public verification evidence
+
+- Feature commit `692c6ec` deployed successfully in GitHub Pages run
+  `31268888209`.
+- Fresh public HTML, JavaScript, and CSS matched the verified files byte for
+  byte. Their SHA-256 hashes are `6008833d25264a628a664abccb8a539d29e4fb1115811e33e2b1f9805cae0ec8`,
+  `76fd14cee152d43a48ad1fbf1eb3ed9a523e7d47dd26994fc6650d056ae23baa`,
+  and `52ecd3e077c79f69dfb83b3aaec8c9f724b4d20e99723e94a1cd5abdaf2903d7`.
+- Replayed both exact public homeward routes. The pinned item stamps remained
+  attached to the field note, the group named Clover Lunch, Hand Trowel, and
+  Wicker Basket, and no treatment switcher shipped.
+- Public fast-forward removed the stamps before **Rosie is Home**, **At the
+  gate**, and **Welcome Rosie home**. The companion site exposes **See what
+  Rosie packed for the journey**.
+
 ### Next highest-leverage weakness
 
 The journey now preserves its route and preparation, but the player still has
