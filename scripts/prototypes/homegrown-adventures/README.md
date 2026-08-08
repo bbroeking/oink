@@ -212,6 +212,17 @@ Lantern +1** for three Willow Fiber. Near-Discoveries display no Tool bonus.
 React continues to own the same deterministic quantities; no Rive motion,
 reward rule, route, or progression state changed.
 
+The v0.79 handoff pass keeps one returned Glowroot Seed physically continuous
+between the Barn worktable and Bed 3. It reaches Rosie in 420 ms, crosses with
+her into the garden, and lands over the correct bed in another 460 ms before
+planting unlocks. Trowel and Lantern returns use truthful two-Seed and
+single-Seed origins; clue and later stock-only returns skip the transfer.
+Reduced motion changes the scene atomically. React still owns acknowledgement,
+Position 10 → 11, and the later Seed spend; the existing Rive Plant trigger is
+unchanged. The three comparison treatments remain captured on
+`codex/homegrown-v079-seed-handoff-prototypes` at `65c34f3`; main retains only
+the continuous garden bridge.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

@@ -746,7 +746,7 @@ function JourneyWatchPanel({ state, actionLabel, onAction }) {
 	);
 }
 
-function ReturnRewardPanel({ state, actionLabel, onAction }) {
+function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false }) {
 	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
 	const opportunity = adventureOpportunity(state);
 	const lanternleafDiscovery = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
@@ -798,8 +798,23 @@ function ReturnRewardPanel({ state, actionLabel, onAction }) {
 					</span>
 				</div>
 			</div>
-			<button type="button" className="return-reward-action" onClick={onAction}>{actionLabel}</button>
+			<button type="button" className="return-reward-action" disabled={handoffActive} onClick={onAction}>{actionLabel}</button>
 		</section>
+	);
+}
+
+function SeedHandoff({ origin, phase }) {
+	if (!phase) return null;
+	return (
+		<div
+			className={`seed-handoff origin-${origin} is-${phase}`}
+			role="status"
+			aria-live="polite"
+			aria-label={phase === "arriving" ? "Glowroot Seed arrives at Bed 3" : "Rosie carries the Glowroot Seed to Bed 3"}
+		>
+			{origin === "base" && phase === "departing" && <span className="seed-handoff-base-mask" aria-hidden="true" />}
+			<span className="seed-handoff-token" aria-hidden="true" />
+		</div>
 	);
 }
 
@@ -875,6 +890,8 @@ const RAPID_TRANSITION_GUARD_MS = 350;
 const HARVEST_CELEBRATION_MS = 560;
 const NEW_DAY_HANDOFF_MS = 900;
 const REDUCED_NEW_DAY_HANDOFF_MS = 300;
+const SEED_HANDOFF_DEPART_MS = 420;
+const SEED_HANDOFF_ARRIVE_MS = 460;
 const RAPID_TRANSITION_ACTIONS = new Set([
 	ACTIONS.TICKLE,
 	ACTIONS.SELECT_CROP,
@@ -1175,8 +1192,10 @@ function App() {
 	const [feedback, setFeedback] = useState(0);
 	const [startingNewDay, setStartingNewDay] = useState(false);
 	const [adventureCauseBeat, setAdventureCauseBeat] = useState("provision");
+	const [seedHandoff, setSeedHandoff] = useState(null);
 	const transitionLockUntil = useRef(0);
 	const newDayTimer = useRef(null);
+	const seedHandoffTimers = useRef([]);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
 	const position = state.prototypePosition ?? 1;
 	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop;
@@ -1362,7 +1381,10 @@ function App() {
 		return () => document.removeEventListener("visibilitychange", onVisibility);
 	}, []);
 
-	useEffect(() => () => window.clearTimeout(newDayTimer.current), []);
+	useEffect(() => () => {
+		window.clearTimeout(newDayTimer.current);
+		seedHandoffTimers.current.forEach((timer) => window.clearTimeout(timer));
+	}, []);
 
 	const signalFeedback = useCallback((type) => {
 		setFeedback((value) => value + 1);
@@ -1409,15 +1431,37 @@ function App() {
 	}, [signalFeedback, startingNewDay, state.reduceMotion]);
 
 	const jumpToPosition = useCallback((nextPosition) => {
+		if (seedHandoff) return;
 		const now = performance.now();
 		if (now < transitionLockUntil.current) return;
 		transitionLockUntil.current = now + RAPID_TRANSITION_GUARD_MS;
 		dispatch({ type: ACTIONS.JUMP_TO_POSITION, position: nextPosition });
-	}, []);
+	}, [seedHandoff]);
 
 	const selectBagItem = useCallback((slot, item) => {
 		dispatch({ type: ACTIONS.SET_BAG_SLOT, slot, item });
 	}, []);
+
+	const acknowledgeReturn = useCallback(() => {
+		const needsSeedHandoff =
+			state.stage === STAGES.GLOWROOT_RETURNED &&
+			!state.glowrootPlanted &&
+			visiblePresentation.action.type === ACTIONS.ACKNOWLEDGE_RETURN;
+		if (!needsSeedHandoff || state.reduceMotion || seedHandoff) {
+			act(visiblePresentation.action);
+			return;
+		}
+
+		seedHandoffTimers.current.forEach((timer) => window.clearTimeout(timer));
+		setSeedHandoff("departing");
+		const departTimer = window.setTimeout(() => {
+			act(visiblePresentation.action);
+			setSeedHandoff("arriving");
+			const arriveTimer = window.setTimeout(() => setSeedHandoff(null), SEED_HANDOFF_ARRIVE_MS);
+			seedHandoffTimers.current.push(arriveTimer);
+		}, SEED_HANDOFF_DEPART_MS);
+		seedHandoffTimers.current = [departTimer];
+	}, [act, seedHandoff, state.glowrootPlanted, state.reduceMotion, state.stage, visiblePresentation.action]);
 
 	return <main className={`lab ${debug ? "lab-debug" : "lab-player"} variant-${variant}`}>
 		{debug && <header className="lab-context">
@@ -1425,8 +1469,8 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
-			aria-busy={startingNewDay}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			aria-busy={startingNewDay || Boolean(seedHandoff)}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-opportunity={opportunity.id}
 			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
@@ -1531,8 +1575,10 @@ function App() {
 			{showingReturnReward && <ReturnRewardPanel
 				state={state}
 				actionLabel={visiblePresentation.label}
-				onAction={() => act(visiblePresentation.action)}
+				handoffActive={Boolean(seedHandoff)}
+				onAction={acknowledgeReturn}
 			/>}
+			<SeedHandoff origin={state.bag?.tool === "hand-trowel" ? "bonus" : "base"} phase={seedHandoff} />
 			{showingHomeMemory && <HomeMemoryPanel
 				state={state}
 				actionLabel={visiblePresentation.label}
@@ -1558,7 +1604,7 @@ function App() {
 				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}
 				presentation={visiblePresentation}
 				onAction={() => act(visiblePresentation.action)}
-				waiting={waiting}
+				waiting={waiting || seedHandoff === "arriving"}
 			/>}
 		</div>
 		<PositionRail position={position} onChange={jumpToPosition} />

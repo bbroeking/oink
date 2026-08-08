@@ -432,6 +432,23 @@ progression state changed. Both Tool branches, Near-Discovery, reload, reduced
 motion, exact 360×780 touch layout, 49 reducer tests, Rive contracts, and
 repository quality gates pass locally.
 
+**Seed-to-soil checkpoint (August 8, 2026):** the first plantable Glowroot no
+longer teleports from the Barn worktable to the outdoor Farm. One physical Seed
+now lifts from its truthful table origin into Rosie's hands, survives the
+indoor-to-outdoor scene change, and lands over Bed 3 before planting becomes
+available. The bridge lasts 880 ms, locks only the conflicting return, rail,
+and planting actions, and announces its two causal phases accessibly. Trowel
+returns carry the earned spare while preserving the base Seed; a successful
+Lantern loadout carries the single base Seed and exposes its table imprint.
+Near-Discoveries, later stock-only returns, and reduced motion never show an
+unearned or unnecessary transfer. React still owns the Position 10 → 11
+transition and Seed spend; no reducer fact, quantity, Rive asset, Rive trigger,
+route, timer economy, or progression rule changed. Three treatments were
+captured on `codex/homegrown-v079-seed-handoff-prototypes`; only the continuous
+garden bridge remains on main. Default, alternative-Tool, clue, reload,
+reduced-motion, exact 360×780 touch layout, 49 reducer tests, Rive contracts,
+and repository quality gates pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

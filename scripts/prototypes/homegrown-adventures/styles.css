@@ -907,6 +907,70 @@ html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 }
 .return-reward-action:hover { background: #87ae65; }
 .return-reward-action:active { transform: translateX(-50%) translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
+.return-reward-action:disabled { cursor: default; filter: saturate(.72); }
+.seed-handoff {
+	position: absolute;
+	inset: 0;
+	z-index: 18;
+	pointer-events: none;
+}
+.seed-handoff-active .return-tool-bonus-seed { opacity: 0; }
+.seed-handoff-token {
+	--seed-lift-x: -18px;
+	--seed-lift-y: -58px;
+	--seed-carry-x: -7px;
+	--seed-carry-y: -98px;
+	--seed-arc-x: 52px;
+	--seed-arc-y: -122px;
+	--seed-bed-x: 107px;
+	--seed-bed-y: -22px;
+	position: absolute;
+	left: 163px;
+	top: 528px;
+	width: 40px;
+	height: 48px;
+	border-radius: 48%;
+	background: url("./assets/homegrown-adventures/return-homecoming-discovery.webp") -180px -499px / 390px 844px no-repeat;
+	box-shadow: 0 0 14px 4px rgba(255,215,77,.5), 2px 3px rgba(26,13,7,.3);
+	transform: rotate(-7deg) scale(.92);
+	will-change: transform, filter;
+}
+.seed-handoff.origin-base .seed-handoff-token {
+	--seed-lift-x: -22px;
+	--seed-lift-y: -42px;
+	--seed-carry-x: -24px;
+	--seed-carry-y: -69px;
+	--seed-arc-x: 50px;
+	--seed-arc-y: -93px;
+	--seed-bed-x: 90px;
+	--seed-bed-y: 7px;
+	left: 180px;
+	top: 499px;
+}
+.seed-handoff-base-mask {
+	position: absolute;
+	left: 165px;
+	top: 492px;
+	width: 70px;
+	height: 76px;
+	background: url("./assets/homegrown-adventures/return-homecoming-clue.webp") -165px -492px / 390px 844px no-repeat;
+}
+.seed-handoff.is-departing .seed-handoff-token {
+	animation: seed-to-rosie 420ms cubic-bezier(.16,1,.3,1) both;
+}
+.seed-handoff.is-arriving .seed-handoff-token {
+	animation: seed-to-bed-three 460ms cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes seed-to-rosie {
+	0% { transform: translate(0,0) rotate(-7deg) scale(.92); filter: brightness(1); }
+	55% { transform: translate(var(--seed-lift-x),var(--seed-lift-y)) rotate(8deg) scale(1.02); filter: brightness(1.18); }
+	100% { transform: translate(var(--seed-carry-x),var(--seed-carry-y)) rotate(2deg) scale(.8); filter: brightness(1.08); }
+}
+@keyframes seed-to-bed-three {
+	0% { transform: translate(var(--seed-carry-x),var(--seed-carry-y)) rotate(2deg) scale(.8); filter: brightness(1.08); }
+	52% { transform: translate(var(--seed-arc-x),var(--seed-arc-y)) rotate(10deg) scale(.9); filter: brightness(1.2); }
+	100% { transform: translate(var(--seed-bed-x),var(--seed-bed-y)) rotate(-5deg) scale(.78); filter: brightness(1); }
+}
 .home-memory-panel {
 	position: absolute;
 	inset: 0;

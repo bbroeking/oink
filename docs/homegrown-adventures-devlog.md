@@ -266,11 +266,68 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 79. **v0.78 — Tool Bonus, Explained (shipped):** remove the orphan reward
     marker and explain the Trowel- or Lantern-earned extra directly beside the
     exact total in Farm stock.
+80. **v0.79 — Seed to Soil (shipped):** carry one returned Glowroot Seed from
+    the Barn table, through Rosie's hands, and into Bed 3 before planting.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.79 — Seed to Soil — 2026-08-08
+
+- Began with the exact public v0.78 Position 10 action. Within 150 ms of **Take
+  Seed to Bed 3**, the full lantern-lit workshop was already replaced by the
+  outdoor Farm. Both screens were truthful, but nothing visibly travelled
+  between them.
+- Compared three treatments on the existing `?variant=A|B|C` route: retain the
+  direct cut, lift the Seed only into Rosie's hands, or keep one glowing Seed
+  continuous across the workshop-to-garden change and land it over Bed 3. The
+  continuous garden bridge won because it supplies both a clear origin and a
+  clear destination without another card, sentence, or long ceremony.
+- Captured all three throwaway treatments at commit `65c34f3` on
+  `codex/homegrown-v079-seed-handoff-prototypes`. Main retains only the winner:
+  420 ms from the table to Rosie and 460 ms from Rosie to Bed 3.
+- The transition is presentation-only. React still acknowledges the return at
+  the exact midpoint, owns Position 10 → 11, and spends no Seed until the
+  player presses **Plant Glowroot**. The existing Rive Plant motion and reducer
+  remain authoritative after that second action.
+- A Trowel return carries the earned spare Seed and leaves the base Seed on the
+  table, matching the later `2 → 1` stock change. A successful Lantern loadout
+  carries the single base Seed and briefly reveals its leaf-shaped table
+  imprint instead of fabricating a second object.
+- Near-Discovery and later **Keep supplies in Farm stock** returns bypass the
+  planting handoff. Reduced motion performs the same state change atomically.
+  The return action, review rail, and planting action remain locked only while
+  the 880 ms bridge is active.
+
+### Validation evidence
+
+- Rendered the current public cut, all three slowed comparison treatments, and
+  the final-speed winner. The final 360×780 departure visibly lifted the exact
+  glowing Seed from the table toward Rosie; the garden phase kept that same
+  token above Bed 3 while the planting action remained disabled.
+- Replayed the alternative Lantern loadout through Position 10. It returned
+  **Glowroot Seed +1** and **Willow Fiber +3**, used the base-Seed origin, and
+  entered Position 11 with the correct `1 → 0` planting preview.
+- Replayed an empty-Tool Near-Discovery. **Adjust Rosie's Bag** returned
+  directly to Position 7 with no handoff token or busy state.
+- Reduced motion entered Position 11 immediately with no transient token,
+  exact 360px client/scroll widths, and the correct `Glowroot Seed 2 → 1`
+  preview. Reload retained Position 11; planting then produced the authored
+  `sprout` Bed 3 state and advanced the purpose to Moonberries.
+- `npm run prototype:homegrown:test` passes 49/49; `npx tsc --noEmit`,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and
+  `npm run quality:check` pass. The only warning is Watchman's existing recrawl
+  notice.
+
+### Next highest-leverage weakness
+
+The Seed now reaches and changes Bed 3, but the completed planting immediately
+competes with **The Barn remembers**, the full Farm-stock strip, and the next
+Moonberry objective. The next cycle should let the new Glowroot sprout own one
+quiet first beat before the retained memory and next purpose return—without a
+modal, another reward ceremony, or a new progression state.
 
 ### v0.78 — Tool Bonus, Explained — 2026-08-08
 
