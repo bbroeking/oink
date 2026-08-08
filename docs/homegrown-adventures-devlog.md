@@ -355,11 +355,81 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     post-harvest refill with visible young rootstock, one clear harvest receipt,
     and continuous Bed 2 state through Adventure, Homecoming, reload, and the
     following morning.
+109. **v0.108 — Clover Harvest Stays Harvested (shipped):** keep annual Clover's
+    first bed visibly empty after its Seed-paid Harvest, through changed Home,
+    reload, and the following morning, without adding stubble, a replant prompt,
+    or another crop rule.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.108 — Clover Harvest Stays Harvested — 2026-08-08
+
+- Began by replaying the deployed first-day Clover route from Seed choice
+  through Harvest, the complete Glowroot Adventure, Homecoming, and changed
+  Home. Bed 1 was correctly empty after Harvest and throughout the Adventure,
+  then silently refilled with fully flowered Clover the instant Glowroot took
+  root.
+- Compared three throwaway endings in the real Position 11 composition:
+  resting soil, low cut stubble, and an immediate **Replant Clover** action.
+  Resting soil won because it preserves the completed annual harvest, keeps
+  Glowroot as the scene's single new event, and defers the next planting choice
+  to the established morning crop flow.
+- Captured all three treatments and the decision at commit `0792629` on
+  `codex/homegrown-v108-clover-bed-prototypes`. Main contains only the selected
+  state; no study switcher, stubble layer, or replant action ships.
+- The React-to-Rive presentation bridge now derives Bed 1 as `empty` in the
+  developed Home state. The same empty bed is visible after Harvest, while
+  Rosie is away, at Homecoming, after Glowroot planting, after Moonberries take
+  root, and the following morning.
+- The scene description now distinguishes the Seed-paid resting first bed from
+  rooted Moonberries. The checked-in Rive binary, View Model values, timer,
+  inventory, crop rules, rewards, and persistence schema are unchanged.
+- The Impeccable product pass favored one honest world state over extra copy or
+  another action. The visual comparison rejected stubble because it resembled
+  unexplained debris or regrowth, and rejected immediate replanting because it
+  competed with the new Discovery.
+
+### Local validation evidence
+
+- Replayed the real browser loop through Clover planting, waiting, Tickle,
+  Harvest, Farm stock, a Clover Lunch / Hand Trowel / Wicker Basket Bag, the
+  complete Glowroot Adventure, Homecoming, Glowroot planting, Moonberry rooting,
+  **Begin another day**, and the next-morning Tickle. Bed 1 stayed empty at
+  every post-Harvest rendered checkpoint while Bed 2 and Bed 3 retained their
+  distinct rooted states.
+- `npm run prototype:homegrown:test` passes 81/81, including one continuity test
+  across Harvest, Adventure, Homecoming, changed Home, and the next morning.
+  `npm run prototype:homegrown:build`, `npm run verify:rive-homegrown`, `npm run
+  quality:loop`, and `npm run quality:check` pass the authored Rive contracts,
+  quality contracts, 157-file layout gate, 324-sprite integrity gate, security
+  contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
+  existing recrawl notice and the verifier's already-required manual mobile
+  Safari checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `2ff21ae` deployed successfully through GitHub Pages run
+  `31280243652`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `179331bfc13be3204ac4b5500f686968b2abfea6119d8c8c54b70e2ddc88f40e`
+  - player JavaScript: `da4f4cd7fb5ee3db0414bc0889621fbab62d7d22a773fd2b78854d2226be6256`
+  - player CSS: `76686ea3bde5e33738c1b7238d5df156b7ca9ac10cdfe4196ca141396fbf8c72`
+- Replayed the public changed-Home checkpoint with the authored Rive scene:
+  Bed 1 is empty, the Moonberry bed and Glowroot remain distinct, and the next
+  primary action still leads into the established second-day loop.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=11&route=glowroot&v=2ff21ae`
+
+### Next highest-leverage weakness
+
+Replay both complete Adventures with the now-honest Farm and identify the first
+moment where the journey feels like a report instead of a cozy naturalist
+outing. Prefer one environmental or Rosie response inside the existing causal
+vignette over a new destination, encounter system, reward table, or parallel
+screen.
 
 ### v0.107 — Moonberry Roots Remember — 2026-08-08
 

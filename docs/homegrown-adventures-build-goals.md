@@ -64,6 +64,10 @@ existing receipt says **Roots stay in Bed 2**. The Rive scene holds that
 berry-free sprout through Bag preparation, Adventure, Homecoming, reload, and
 the next morning, while React preserves the complete harvested stock and starts
 the next eight-hour growth only when the player tends the rooted crop again;
+after Clover Harvest, Seed-paid Bed 1 now stays visibly empty through Adventure,
+changed Home, reload, and the following morning instead of silently refilling
+with mature flowers. The Rive bridge uses the existing `empty` state and the
+next planting decision stays in the established morning flow;
 Position 3 now names the exact resulting Provision throughout the optional
 Compost decision: **3 Clover Lunches · ready in 4 hours** normally, or **4
 Clover Lunches · ready in 2 hours** with Compost, with the same vocabulary in
@@ -304,6 +308,19 @@ contradicting the reducer. No berry, Seed, material, timer, reward, Rive binary,
 or Rive View Model contract was added. The next visible weakness is Bed 1:
 Clover still appears fully flowered after its Seed-paid Harvest and needs an
 equally honest resting or replanting consequence.
+
+**Annual-Clover checkpoint (August 8, 2026):** the Seed-paid first bed now
+remains empty after Harvest through Bag preparation, Adventure, Homecoming,
+Glowroot planting, reload, and the following morning. Three real Position 11
+treatments were rendered at commit `0792629` on
+`codex/homegrown-v108-clover-bed-prototypes`: empty resting soil, cut stubble,
+and an immediate replant action. Resting soil won because it preserves the
+harvest fact and leaves Glowroot as the single changed-Home payoff; stubble
+looked like unexplained regrowth, and replanting duplicated the morning crop
+choice. The Rive binary, View Model contract, crop economy, timer, reward, and
+save schema are unchanged. The next director cycle returns to both Adventure
+routes and looks for the first causal beat that still reads like a report
+rather than a cozy naturalist outing.
 
 **Next-Seed checkpoint (August 7, 2026):** the remembered Position 2 now leads
 with one full-width **Clover Seed** decision that names its stock and its purpose
