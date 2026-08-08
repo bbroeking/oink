@@ -48,6 +48,13 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// THROWAWAY UI STUDY — three annual-crop endings on the existing changed-Home route.
+const CLOVER_ENDING_VARIANTS = {
+	A: { name: "Resting soil", question: "Does honest empty soil make the completed harvest self-evident?" },
+	B: { name: "Cut stubble", question: "Does a low remnant preserve continuity without promising regrowth?" },
+	C: { name: "Replant choice", question: "Does an immediate Clover action help, or compete with the new Discovery?" },
+};
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -1337,6 +1344,19 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function CloverEndingSwitcher({ variant, setVariant }) {
+	const keys = Object.keys(CLOVER_ENDING_VARIANTS);
+	const index = keys.indexOf(variant);
+	const study = CLOVER_ENDING_VARIANTS[variant];
+	return (
+		<aside className="clover-ending-switcher" aria-label="Clover bed ending prototype switcher">
+			<button type="button" aria-label="Previous Clover ending" onClick={() => setVariant(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span><strong>{variant} — {study.name}</strong><small>{study.question}</small></span>
+			<button type="button" aria-label="Next Clover ending" onClick={() => setVariant(keys[(index + 1) % keys.length])}>→</button>
+		</aside>
+	);
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1531,6 +1551,12 @@ function App() {
 	const holdingGlowrootHomeReveal = glowrootHomeReveal && !state.reduceMotion;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
 	const sceneRiveViewModel = useMemo(() => {
+		if (showingHomeMemory) {
+			return {
+				...riveModel.viewModel,
+				bedOneState: "empty",
+			};
+		}
 		if (
 			!showingAdventureVignette ||
 			opportunity.id !== SECOND_ADVENTURE_OPPORTUNITY.id
@@ -1546,7 +1572,7 @@ function App() {
 			hedgeCrossingOpen: false,
 			hedgeBellEarned: false,
 		};
-	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
+	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette, showingHomeMemory]);
 	const adventureAttentionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "tool"
 		? "adventure-attention"
 		: null;
@@ -1819,7 +1845,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${homeMemoryEarned ? "home-memory-earned clover-ending-${variant.toLowerCase()}" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootHomeReveal}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-opportunity={opportunity.id}
@@ -1850,6 +1876,11 @@ function App() {
 				triggerNonce={sceneRiveTriggerNonce}
 				bagReceiveSlot={riveModel.bagReceive?.slot ?? null}
 			/>
+			{showingHomeMemory && variant === "B" && <div className="clover-cut-stubble" role="img" aria-label="Short cut Clover stalks remain in Bed 1 after harvest" />}
+			{showingHomeMemory && variant === "C" && <button className="clover-replant-study" type="button" onClick={() => undefined}>
+				<strong>Replant Clover</strong>
+				<small>Bed 1 · Clover Seed ×2</small>
+			</button>}
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" />}
@@ -1969,6 +2000,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{showingHomeMemory && <CloverEndingSwitcher variant={variant} setVariant={setVariant} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
