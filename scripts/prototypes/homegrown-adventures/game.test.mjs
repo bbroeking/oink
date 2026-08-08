@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	ACTIONS,
+	adventureOpportunity,
 	adventureStory,
 	BAG_ITEMS,
 	CROP_RULES,
@@ -17,6 +18,7 @@ import {
 	PROTOTYPE_POSITIONS,
 	primaryAction,
 	serializeState,
+	SECOND_ADVENTURE_OPPORTUNITY,
 	settleState,
 	STAGES,
 	WORLD_TARGETS,
@@ -36,6 +38,38 @@ function throughCloverReady() {
 	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });
 	state = reduce(state, { type: ACTIONS.PLANT_CLOVER });
 	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	return state;
+}
+
+function throughSecondMorning() {
+	let state = throughCloverReady();
+	for (const action of [
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.HARVEST_CLOVER },
+		{ type: ACTIONS.PACK_ADVENTURE },
+		{ type: ACTIONS.START_ADVENTURE },
+		{ type: ACTIONS.ADVANCE_TIME },
+		{ type: ACTIONS.WELCOME_HOME },
+		{ type: ACTIONS.ACKNOWLEDGE_RETURN },
+		{ type: ACTIONS.PLANT_GLOWROOT },
+		{ type: ACTIONS.PLANT_NEXT, crop: "moonberries" },
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.START_NEW_DAY },
+		{ type: ACTIONS.TICKLE },
+	]) state = reduce(state, action);
+	return state;
+}
+
+function throughSecondBag() {
+	let state = throughSecondMorning();
+	for (const action of [
+		{ type: ACTIONS.CHOOSE_PURPOSE, purpose: "dusk-picnic" },
+		{ type: ACTIONS.PLANT_CLOVER },
+		{ type: ACTIONS.ADVANCE_TIME },
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.HARVEST_CLOVER },
+		{ type: ACTIONS.OPEN_BAG_SELECTION },
+	]) state = reduce(state, action);
 	return state;
 }
 
@@ -372,6 +406,87 @@ test("the end-to-end mode completes a Barn day and starts the next one", () => {
 	);
 });
 
+test("Glowroot opens a distinct second opportunity across purpose, Bag, journey, and return", () => {
+	let state = throughSecondMorning();
+	assert.equal(adventureOpportunity(state), SECOND_ADVENTURE_OPPORTUNITY);
+	assert.equal(playerPresentation(state).objective, SECOND_ADVENTURE_OPPORTUNITY.name);
+	assert.equal(playerPresentation(state).detail, SECOND_ADVENTURE_OPPORTUNITY.growDetail);
+	assert.match(state.fieldGuide.join(" · "), /Glowroot Seed/);
+
+	state = throughSecondBag();
+	assert.equal(state.prototypePosition, 7);
+	assert.equal(playerPresentation(state).objective, "Lights Past the Open Gate");
+	assert.equal(playerPresentation(state).detail, "Nightfall · reflected leaves · gentle wrap");
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.PACK_ADVENTURE,
+		label: "Pack for the gate lights",
+	});
+	assert.ok(state.farmStock["willow-fiber"] >= 1);
+
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: "cloth-wrap" });
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	assert.equal(playerPresentation(state).label, "Follow the gate lights");
+	const stockBeforeReturn = { ...state.farmStock };
+
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	const story = adventureStory(state);
+	assert.equal(story.opportunity, SECOND_ADVENTURE_OPPORTUNITY);
+	assert.equal(story.headline, "Rosie found the Lanternleaf Path");
+	assert.match(story.tags[0].detail, /nightfall/);
+	assert.match(story.tags[1].detail, /reflected leaves/);
+	assert.match(story.tags[2].detail, /delicate leaves/);
+	assert.match(state.trace.at(-1).detail, /Lights Past the Open Gate began/);
+
+	state = settleState(state, state.departureReadyAt);
+	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+	assert.deepEqual(primaryAction(state), {
+		type: ACTIONS.ADVANCE_TIME,
+		label: "Let nightfall pass",
+	});
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+
+	assert.equal(state.stage, STAGES.GLOWROOT_RETURNED);
+	assert.ok(state.fieldGuide.includes("Lanternleaf Path"));
+	assert.equal(state.fieldGuide.filter((entry) => entry === "Lanternleaf Path").length, 1);
+	assert.equal(state.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"] + 1);
+	assert.equal(state.farmStock["willow-fiber"], stockBeforeReturn["willow-fiber"] + 3);
+	assert.equal(state.farmStock["clover-seed"], stockBeforeReturn["clover-seed"] + 1);
+	assert.equal(state.farmStock.compost, stockBeforeReturn.compost);
+	assert.equal(playerPresentation(state).objective, "Lanternleaf Path is mapped");
+
+	const restored = deserializeState(serializeState(state), { now: at });
+	assert.equal(adventureOpportunity(restored), SECOND_ADVENTURE_OPPORTUNITY);
+	assert.ok(restored.fieldGuide.includes("Lanternleaf Path"));
+	state = reduce(restored, { type: ACTIONS.ACKNOWLEDGE_RETURN });
+	assert.equal(state.stage, STAGES.DEVELOPED);
+	assert.equal(state.cycleComplete, true);
+});
+
+test("an incomplete Bag finds the Lanternleaf clue without granting the route", () => {
+	let state = throughSecondBag();
+	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "pack", item: null });
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	const stockBeforeReturn = { ...state.farmStock };
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+
+	const story = adventureStory(state);
+	assert.equal(story.kind, "near-discovery");
+	assert.match(story.headline, /start of a new path/);
+	assert.match(story.tags[2].detail, /left its supplies safe/);
+
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+	assert.equal(state.stage, STAGES.NEAR_DISCOVERY);
+	assert.ok(state.fieldGuide.includes("Lanternleaf trail (clue)"));
+	assert.ok(!state.fieldGuide.includes("Lanternleaf Path"));
+	assert.equal(state.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"]);
+	assert.equal(state.farmStock.compost, stockBeforeReturn.compost + 1);
+	assert.equal(state.farmStock["willow-fiber"], stockBeforeReturn["willow-fiber"] + 1);
+	assert.equal(playerPresentation(state).objective, "A Pack can carry trail supplies");
+});
+
 test("a known Glowroot return stays in Farm stock and completes the second day", () => {
 	let state = throughCloverReady();
 	for (const action of [
@@ -445,6 +560,7 @@ test("underpreparation returns a kind Near-Discovery and a useful retry clue", (
 	assert.equal(state.stage, STAGES.NEAR_DISCOVERY);
 	assert.equal(state.glowrootKnown, false);
 	assert.ok(state.fieldGuide.includes("Glowroot trail (clue)"));
+	assert.ok(!state.fieldGuide.includes("Glowroot Seed"));
 	state = reduce(state, { type: ACTIONS.RETRY_PREP });
 	assert.equal(state.stage, STAGES.CLOVER_READY);
 	assert.equal(state.cloverHarvested, true);

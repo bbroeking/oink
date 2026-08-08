@@ -8,6 +8,7 @@ import {
 import { AdventureGlowrootRive } from "../../../components/prototypes/homegrown-adventures/AdventureGlowrootRive.web";
 import {
 	ACTIONS,
+	adventureOpportunity,
 	adventureStory,
 	BAG_ITEMS,
 	BAG_SLOT_ORDER,
@@ -24,6 +25,7 @@ import {
 	playerPresentation,
 	PROTOTYPE_POSITIONS,
 	serializeState,
+	SECOND_ADVENTURE_OPPORTUNITY,
 	STAGES,
 	toolReturnBonus,
 	WORLD_TARGETS,
@@ -84,8 +86,23 @@ const STAGE_COPY = {
 };
 
 function stageCopy(state) {
+	const opportunity = adventureOpportunity(state);
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	if (state.stage === STAGES.NEAR_DISCOVERY) {
-		const copy = {
+		const copy = (lanternleaf ? {
+			provision: {
+				title: "Rosie found the open-gate trail",
+				body: "Without a Provision she came Home before the Lanternleaves reflected their light.",
+			},
+			tool: {
+				title: "Rosie saw leaves reflecting Glowroot",
+				body: "A Tool could trace which reflections lead past the open gate.",
+			},
+			pack: {
+				title: "Rosie mapped a new path",
+				body: "A Pack could bring the trail's useful supplies Home next time.",
+			},
+		} : {
 			provision: {
 				title: "Rosie followed a warm moth trail",
 				body: "Without a Provision she came Home kindly before the Glowroot seed opened.",
@@ -98,21 +115,25 @@ function stageCopy(state) {
 				title: "Rosie brought Home a glowing leaf-print",
 				body: "A Pack could carry the delicate Glowroot Seed safely next time.",
 			},
-		}[state.nearDiscoveryReason];
+		})[state.nearDiscoveryReason];
 		if (copy) return { eyebrow: "Near-Discovery · never failure", ...copy };
 	}
 	if (state.stage === STAGES.STARTING && state.hasTickled && !state.purpose) {
 		return {
 			eyebrow: "A named Request",
-			title: "The dusk moths need a picnic gift",
-			body: "Choose what to grow for first. Their request makes Clover Lunch meaningful.",
+			title: opportunity.name,
+			body: lanternleaf
+				? "Glowroot opened the crossing. Grow a Provision so Rosie can follow its reflected leaves after dark."
+				: "Choose what to grow for first. The dusk request makes Clover Lunch meaningful.",
 		};
 	}
 	if (state.stage === STAGES.STARTING && state.purpose) {
 		return {
 			eyebrow: "Purpose before crop",
-			title: "Grow Clover Lunch for the Dusk Picnic",
-			body: "This harvest has a job: help Rosie stay beyond the hedge until the moths appear.",
+			title: `Grow Clover Lunch for ${opportunity.name}`,
+			body: lanternleaf
+				? "This harvest has a job: help Rosie stay past the open gate until nightfall."
+				: "This harvest has a job: help Rosie stay beyond the hedge until the moths appear.",
 		};
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.changeRevealed) {
@@ -126,7 +147,7 @@ function stageCopy(state) {
 		return {
 			eyebrow: "Harvest tucked away",
 			title: "Clover Lunch is in Rosie's Bag",
-			body: "The first bed is resting. Pack the picnic and this harvest becomes part of Rosie's Adventure.",
+			body: `The first bed is resting. Pack for ${opportunity.name} and this harvest becomes part of Rosie's journey.`,
 		};
 	}
 	if (state.stage === STAGES.GLOWROOT_RETURNED && !state.changeRevealed) {
@@ -138,9 +159,16 @@ function stageCopy(state) {
 	}
 	if (state.stage === STAGES.GLOWROOT_RETURNED && state.glowrootPlanted) {
 		return {
-			eyebrow: "A familiar Discovery",
-			title: "Rosie brought another Glowroot Seed",
-			body: "Glowroot already grows at Home. This Seed and the supplies can stay in Farm stock.",
+			eyebrow: "A new route",
+			title: "Rosie mapped the Lanternleaf Path",
+			body: "Glowroot already grows at Home. Its light revealed a repeatable path, and the supplies can stay in Farm stock.",
+		};
+	}
+	if (state.stage === STAGES.ADVENTURE && lanternleaf) {
+		return {
+			eyebrow: "Past the open gate",
+			title: opportunity.waitingObjective,
+			body: "The reflected leaves form a route while Rosie is away. Her prepared Bag shapes what comes Home.",
 		};
 	}
 	if (state.stage === STAGES.PACKED && state.underprepared) {
@@ -148,6 +176,13 @@ function stageCopy(state) {
 			eyebrow: "A light Bag",
 			title: "Rosie can still have a kind Adventure",
 			body: "Without Clover Lunch she will return with a specific clue, not a failed mission or an empty reward.",
+		};
+	}
+	if (state.stage === STAGES.PACKED && lanternleaf) {
+		return {
+			eyebrow: "Rosie’s Bag",
+			title: `${opportunity.name} is packed`,
+			body: "Clover Lunch · a chosen Tool · a chosen Pack. Each capability changes what Rosie can notice and carry Home.",
 		};
 	}
 	return STAGE_COPY[state.stage];
@@ -444,7 +479,7 @@ function HarvestStockIcon({ kind }) {
 	return <span className="stock-material-art" aria-hidden="true"><i /><i /><i /></span>;
 }
 
-function HarvestResultPanel({ state, onContinue }) {
+function HarvestResultPanel({ state, actionLabel, onContinue }) {
 	const compostBonus = state.compostApplied ? CROP_RULES.clover.compostYieldBonus : 0;
 	const rhythmBonus = state.harvestRhythmBonus ? 1 : 0;
 	const stockItems = [
@@ -464,7 +499,7 @@ function HarvestResultPanel({ state, onContinue }) {
 		<span className="harvest-basket-image" aria-hidden="true" />
 		<div className="harvest-basket-label"><strong>Clover Lunch +{state.lastHarvestYield}</strong><small>{CROP_RULES.clover.baseYield} harvest{compostBonus ? ` · +${compostBonus} Compost` : ""}{rhythmBonus ? " · +1 rhythm" : ""}</small></div>
 	</div>;
-	const continueButton = <button type="button" className="harvest-prepare" onClick={onContinue}>Prepare for the glow</button>;
+	const continueButton = <button type="button" className="harvest-prepare" onClick={onContinue}>{actionLabel}</button>;
 	return (
 		<section className="harvest-result-world harvest-result-shelf" aria-label="Clover harvest added to Farm stock">
 			<div className="farm-stock-shelf"><strong>Farm stock</strong>{stockGrid}</div>
@@ -479,14 +514,23 @@ function BagItemArt({ itemId }) {
 }
 
 const BAG_ITEM_EFFECT_LABELS = Object.freeze({
-	"clover-lunch": "Stay until dusk",
-	"hand-trowel": "Dig through soft soil",
-	lantern: "Follow a glow after dark",
-	"wicker-basket": "Carry a find Home",
-	"cloth-wrap": "Protect a delicate find",
+	"glow-beneath-hedge": Object.freeze({
+		"clover-lunch": "Stay until dusk",
+		"hand-trowel": "Dig through soft soil",
+		lantern: "Follow a glow after dark",
+		"wicker-basket": "Carry a find Home",
+		"cloth-wrap": "Protect a delicate find",
+	}),
+	"lights-past-open-gate": Object.freeze({
+		"clover-lunch": "Stay until nightfall",
+		"hand-trowel": "Search beneath the path",
+		lantern: "Follow reflected leaves",
+		"wicker-basket": "Carry sturdy supplies Home",
+		"cloth-wrap": "Protect delicate leaves",
+	}),
 });
 
-function BagSelectionPanel({ bag, farmStock, activeSelection, onSelect, onConfirm }) {
+function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, onSelect, onConfirm }) {
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
 	const selectedPackCost = bagPackingCost(bag.pack ?? null);
@@ -542,7 +586,9 @@ function BagSelectionPanel({ bag, farmStock, activeSelection, onSelect, onConfir
 				const packingMaterialOwned = packingCost === null ? 0 : farmStock?.[packingCost.itemId] ?? 0;
 				const unavailable = (slot === "provision" && selected && owned < 1) ||
 					(packingCost !== null && packingMaterialOwned < packingCost.amount);
-				const effectLabel = selected ? BAG_ITEM_EFFECT_LABELS[selected.id] ?? selected.effect : null;
+				const effectLabel = selected
+					? BAG_ITEM_EFFECT_LABELS[opportunity.id]?.[selected.id] ?? selected.effect
+					: null;
 				return (
 					<div className={`bag-slot-card ${selected ? "is-filled" : "is-empty"} ${unavailable ? "is-unavailable" : ""}`} key={slot}>
 						<span className="bag-slot-kind">{BAG_SLOT_LABELS[slot]}</span>
@@ -651,7 +697,8 @@ function AdventureVignetteOverlay({ state, onContinue }) {
 
 function ReturnRewardPanel({ state, actionLabel, onAction }) {
 	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
-	const repeatDiscovery = !nearDiscovery && state.glowrootPlanted;
+	const opportunity = adventureOpportunity(state);
+	const lanternleafDiscovery = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const story = adventureStory(state);
 	const packReward = bagReturnReward(state.bag?.pack ?? null);
 	const toolBonus = nearDiscovery ? null : toolReturnBonus(state.bag?.tool ?? null);
@@ -672,19 +719,19 @@ function ReturnRewardPanel({ state, actionLabel, onAction }) {
 				<span className="return-tool-bonus return-tool-bonus-fiber" aria-hidden="true" />
 			)}
 			<div className="return-discovery-plaque">
-				<span className="return-card-eyebrow">{nearDiscovery ? "Useful clue" : repeatDiscovery ? "Discovery remembered" : "New Discovery"}</span>
-				<strong>{nearDiscovery ? "Glowroot Trail" : `Glowroot Seed  +${glowrootAmount}`}</strong>
+				<span className="return-card-eyebrow">{nearDiscovery ? "Useful clue" : lanternleafDiscovery ? "New route" : "New Discovery"}</span>
+				<strong>{nearDiscovery ? opportunity.clueName : lanternleafDiscovery ? opportunity.discoveryName : `Glowroot Seed  +${glowrootAmount}`}</strong>
 				<small>{nearDiscovery
 					? story.result
-					: repeatDiscovery
-						? `Glowroot already grows at Home · ${glowrootAmount === 1 ? "this Seed stays" : "both Seeds stay"} in Farm stock`
+					: lanternleafDiscovery
+						? `Glowroot revealed a repeatable path · ${glowrootAmount === 1 ? "one Seed stays" : "two Seeds stay"} in Farm stock`
 						: "A slow Crop that glows after dusk"}</small>
 			</div>
 			<div className="return-stock-ledger" aria-label="Farm stock returned">
 				<strong className="return-stock-title">Added to Farm stock</strong>
 				<div>
 					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
-					<span><b>{nearDiscovery ? "Leaf-print clue" : "Glowroot Seed"}</b><strong>{nearDiscovery ? "Found" : `+${glowrootAmount}`}</strong></span>
+					<span><b>{nearDiscovery ? lanternleafDiscovery ? "Trail clue" : "Leaf-print clue" : "Glowroot Seed"}</b><strong>{nearDiscovery ? "Found" : `+${glowrootAmount}`}</strong></span>
 					<span><b>Willow Fiber</b><strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong></span>
 				</div>
 			</div>
@@ -1052,6 +1099,7 @@ function App() {
 	const [variant, setVariant] = useVariant();
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
+	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
 	const riveModel = useMemo(
 		() => homegrownRiveModel(state, visualNow),
 		[state, visualNow],
@@ -1269,6 +1317,7 @@ function App() {
 			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
+			data-adventure-opportunity={opportunity.id}
 			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
 			data-adventure-pack={showingAdventureVignette ? state.bag?.pack ?? "none" : undefined}
@@ -1342,6 +1391,7 @@ function App() {
 			/>}
 			{showingHarvestResult && <HarvestResultPanel
 				state={state}
+				actionLabel={visiblePresentation.label}
 				onContinue={() => act(visiblePresentation.action)}
 			/>}
 			{showingAdventureVignette && <AdventureVignetteOverlay
@@ -1369,6 +1419,7 @@ function App() {
 			{choosingBag && <BagSelectionPanel
 				bag={state.bag}
 				farmStock={state.farmStock}
+				opportunity={opportunity}
 				activeSelection={riveModel.bagReceive}
 				onSelect={selectBagItem}
 				onConfirm={() => act(visiblePresentation.action)}

@@ -57,7 +57,49 @@ export const FIRST_ADVENTURE_OPPORTUNITY = Object.freeze({
 	id: "glow-beneath-hedge",
 	name: "A Glow Beneath the Hedge",
 	detail: "Until dusk · soft soil · carry it Home",
+	growDetail: "Grow a Provision to stay until dusk",
+	plantingObjective: "Prepare for the hedge glow",
+	growingObjective: "Clover for the dusk trail",
+	harvestObjective: "Harvest for Rosie’s journey",
+	packedDetail: "Packed for dusk · soft soil · safe carrying",
+	prepareLabel: "Prepare for the glow",
+	packLabel: "Pack the Dusk Picnic",
+	departLabel: "Follow the glow",
+	waitLabel: "Let dusk pass",
+	waitingObjective: "Rosie is following the moths",
+	discoveryName: "Glowroot Seed",
+	clueName: "Glowroot Trail",
+	clueEntry: "Glowroot trail (clue)",
+	nearFieldGuideEntries: Object.freeze(["Dusk Picnic"]),
+	fieldGuideEntries: Object.freeze(["Dusk Picnic", "Glowroot Seed"]),
 });
+
+export const SECOND_ADVENTURE_OPPORTUNITY = Object.freeze({
+	id: "lights-past-open-gate",
+	name: "Lights Past the Open Gate",
+	detail: "Nightfall · reflected leaves · gentle wrap",
+	growDetail: "Grow a Provision to stay until nightfall",
+	plantingObjective: "Prepare for the gate lights",
+	growingObjective: "Clover for the open-gate trail",
+	harvestObjective: "Harvest for Rosie’s new route",
+	packedDetail: "Packed for nightfall · reflections · safe wrap",
+	prepareLabel: "Prepare for the gate lights",
+	packLabel: "Pack for the gate lights",
+	departLabel: "Follow the gate lights",
+	waitLabel: "Let nightfall pass",
+	waitingObjective: "Rosie is following reflected leaves",
+	discoveryName: "Lanternleaf Path",
+	clueName: "Lanternleaf Trail",
+	clueEntry: "Lanternleaf trail (clue)",
+	nearFieldGuideEntries: Object.freeze([]),
+	fieldGuideEntries: Object.freeze(["Lanternleaf Path"]),
+});
+
+export function adventureOpportunity(state) {
+	return state.daysCompleted > 0 && state.glowrootPlanted
+		? SECOND_ADVENTURE_OPPORTUNITY
+		: FIRST_ADVENTURE_OPPORTUNITY;
+}
 
 export const BAG_SLOT_ORDER = Object.freeze(["provision", "tool", "pack"]);
 
@@ -186,7 +228,9 @@ export function toolReturnBonus(itemId) {
 export function adventureStory(state) {
 	const bag = state.bag ?? DEFAULT_BAG;
 	const missingSlot = BAG_SLOT_ORDER.find((slot) => bag[slot] == null) ?? null;
-	const details = {
+	const opportunity = adventureOpportunity(state);
+	const followingLanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const firstDetails = {
 		provision: {
 			"clover-lunch": "stayed exploring until dusk",
 			empty: "came Home before the seed opened",
@@ -202,7 +246,7 @@ export function adventureStory(state) {
 			empty: "made a glowing leaf-print",
 		},
 	};
-	const nearDiscoveryDetails = {
+	const firstNearDiscoveryDetails = {
 		provision: {
 			provision: "came Home before the seed opened",
 			tool: "traced where the warm root sleeps",
@@ -219,13 +263,59 @@ export function adventureStory(state) {
 			pack: "made a leaf-print and left the seed safe",
 		},
 	};
+	const lanternleafDetails = {
+		provision: {
+			"clover-lunch": "stayed past the open gate until nightfall",
+			empty: "came Home before the leaves reflected their light",
+		},
+		tool: {
+			"hand-trowel": "found a spare Glowroot Seed beneath the path",
+			lantern: "followed reflected leaves to extra Willow Fiber",
+			empty: "saw the lights but could not trace their path",
+		},
+		pack: {
+			"wicker-basket": "carried fresh Compost from the open trail",
+			"cloth-wrap": "protected one Clover Seed among delicate leaves",
+			empty: "mapped the trail and left its supplies safe",
+		},
+	};
+	const lanternleafNearDiscoveryDetails = {
+		provision: {
+			provision: "came Home before the reflected leaves appeared",
+			tool: "marked where the open-gate trail begins",
+			pack: "kept one fallen Lanternleaf safe",
+		},
+		tool: {
+			provision: "stayed beside the open gate until nightfall",
+			tool: "could not trace which leaves reflected the glow",
+			pack: "carried a fallen leaf Home for another try",
+		},
+		pack: {
+			provision: "stayed beside the open gate until nightfall",
+			tool: "followed the reflected leaves into a new path",
+			pack: "mapped the route and left its supplies safe",
+		},
+	};
+	const details = followingLanternleaf ? lanternleafDetails : firstDetails;
+	const nearDiscoveryDetails = followingLanternleaf
+		? lanternleafNearDiscoveryDetails
+		: firstNearDiscoveryDetails;
 
 	return {
 		kind: missingSlot ? "near-discovery" : "discovery",
-		headline: missingSlot ? "Rosie found a promising clue" : "Rosie found a sleeping Glowroot",
+		opportunity,
+		headline: missingSlot
+			? followingLanternleaf
+				? "Rosie found the start of a new path"
+				: "Rosie found a promising clue"
+			: followingLanternleaf
+				? "Rosie found the Lanternleaf Path"
+				: "Rosie found a sleeping Glowroot",
 		result: missingSlot
 			? "The missing capability changes what Rosie can bring Home."
-			: "Her Tool changes the bonus; her Pack changes the practical supply.",
+			: followingLanternleaf
+				? "Glowroot opened this route; her Tool and Pack shaped the supplies."
+				: "Her Tool changes the bonus; her Pack changes the practical supply.",
 		tags: BAG_SLOT_ORDER.map((slot) => {
 			const selected = bagItem(slot, bag[slot]);
 			return {
@@ -903,6 +993,7 @@ export function homegrownReducer(state, action) {
 		case ACTIONS.START_ADVENTURE:
 			if (state.stage !== STAGES.PACKED) return state;
 			{
+				const opportunity = adventureOpportunity(state);
 				const departureDuration = state.reduceMotion
 					? REDUCED_MOTION_DEPARTURE_MS
 					: DEPARTURE_MS;
@@ -920,7 +1011,7 @@ export function homegrownReducer(state, action) {
 					adventureVignetteSeen: false,
 				},
 				"adventure",
-				"Dusk Picnic began",
+				`${opportunity.name} began`,
 				now,
 			);
 			}
@@ -939,12 +1030,18 @@ export function homegrownReducer(state, action) {
 			if (state.stage !== STAGES.ADVENTURE || !state.adventureComplete) {
 				return state;
 			}
+			const opportunity = adventureOpportunity(state);
+			const followingLanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 			if (state.underprepared) {
-				const nearDetail = {
+				const nearDetail = (followingLanternleaf ? {
+					provision: "Rosie found the open-gate trail, but came Home before the reflected leaves appeared",
+					tool: "Rosie stayed until nightfall, but had no Tool to trace the Lanternleaf Path",
+					pack: "Rosie mapped the Lanternleaf Path, but left its supplies safe beyond the gate",
+				} : {
 					provision: "Rosie found the warm moth trail, but came Home kindly before the seed opened",
 					tool: "Rosie stayed until dusk and found a warm root, but had no Tool to uncover it",
 					pack: "Rosie uncovered the warm seed, but brought Home its glowing leaf-print instead",
-				}[state.nearDiscoveryReason] ?? "Rosie brought Home a useful clue for the next Adventure";
+				})[state.nearDiscoveryReason] ?? "Rosie brought Home a useful clue for the next Adventure";
 				return changed(
 					state,
 					{
@@ -957,7 +1054,7 @@ export function homegrownReducer(state, action) {
 							compost: (state.farmStock?.compost ?? 0) + 1,
 							"willow-fiber": (state.farmStock?.["willow-fiber"] ?? 0) + 1,
 						},
-						fieldGuide: [...new Set([...state.fieldGuide, "Dusk Picnic", "Glowroot trail (clue)"])],
+						fieldGuide: [...new Set([...state.fieldGuide, ...opportunity.nearFieldGuideEntries, opportunity.clueEntry])],
 					},
 					"near-discovery",
 					nearDetail,
@@ -989,10 +1086,10 @@ export function homegrownReducer(state, action) {
 					changeRevealed: true,
 					returnRewardAcknowledged: false,
 					farmStock,
-					fieldGuide: [...new Set([...state.fieldGuide, "Dusk Picnic", "Glowroot Seed"])],
+					fieldGuide: [...new Set([...state.fieldGuide, ...opportunity.fieldGuideEntries])],
 				},
 				"return",
-				`Glowroot Seed — ${returnReward ? `${returnReward.name} +${returnReward.amount}` : "no Pack supply"} — ${toolBonus ? `${toolBonus.name} +${toolBonus.amount} Tool bonus` : "no Tool bonus"}`,
+				`${opportunity.discoveryName} — ${returnReward ? `${returnReward.name} +${returnReward.amount}` : "no Pack supply"} — ${toolBonus ? `${toolBonus.name} +${toolBonus.amount} Tool bonus` : "no Tool bonus"}`,
 				now,
 			);
 
@@ -1116,6 +1213,7 @@ export function homegrownReducer(state, action) {
 			if (!Number.isInteger(action.position) || normalizePrototypePosition(action.position) !== action.position) return state;
 			if (action.position === state.prototypePosition) return state;
 			{
+				const previewOpportunity = adventureOpportunity(state);
 				const next = createPrototypeState(action.position, { now, reduceMotion: state.reduceMotion });
 				const emptySlot = BAG_SLOT_ORDER.find((slot) => state.bag?.[slot] == null) ?? null;
 				const underprepared = emptySlot !== null;
@@ -1143,14 +1241,18 @@ export function homegrownReducer(state, action) {
 							glowrootKnown: state.glowrootKnown,
 							fieldGuide: [...new Set([
 								...state.fieldGuide,
-								"Dusk Picnic",
-								"Glowroot trail (clue)",
+								...previewOpportunity.nearFieldGuideEntries,
+								previewOpportunity.clueEntry,
 							])],
 							lastAction: "near-discovery",
 							trace: appendTrace(state, "near-discovery", "Useful clue preview", now),
 						} : {
+							fieldGuide: [...new Set([
+								...state.fieldGuide,
+								...previewOpportunity.fieldGuideEntries,
+							])],
 							lastAction: "return",
-							trace: appendTrace(state, "return", "Return + Discovery preview", now),
+							trace: appendTrace(state, "return", `${previewOpportunity.discoveryName} preview`, now),
 						}),
 					}
 					: {};
@@ -1267,6 +1369,7 @@ export function deserializeState(value, { now = Date.now(), reduceMotion = false
 }
 
 export function primaryAction(state) {
+	const opportunity = adventureOpportunity(state);
 	if (state.cycleComplete) {
 		return { type: ACTIONS.START_NEW_DAY, label: "Begin another day" };
 	}
@@ -1295,12 +1398,12 @@ export function primaryAction(state) {
 	}
 	if (state.stage === STAGES.CLOVER_READY) {
 		if (state.prototypePosition === 6) {
-			return { type: ACTIONS.OPEN_BAG_SELECTION, label: "Prepare for the glow" };
+			return { type: ACTIONS.OPEN_BAG_SELECTION, label: opportunity.prepareLabel };
 		}
-		return { type: ACTIONS.PACK_ADVENTURE, label: "Pack the Dusk Picnic" };
+		return { type: ACTIONS.PACK_ADVENTURE, label: opportunity.packLabel };
 	}
 	if (state.stage === STAGES.PACKED) {
-		return { type: ACTIONS.START_ADVENTURE, label: "Follow the glow" };
+		return { type: ACTIONS.START_ADVENTURE, label: opportunity.departLabel };
 	}
 	if (state.stage === STAGES.ADVENTURE && !state.departureComplete) {
 		return { type: ACTIONS.SETTLE, label: "Rosie is heading for the hedge…" };
@@ -1309,7 +1412,7 @@ export function primaryAction(state) {
 		if (!state.adventureVignetteSeen) {
 			return { type: ACTIONS.CONTINUE_ADVENTURE_STORY, label: "Continue the story" };
 		}
-		return { type: ACTIONS.ADVANCE_TIME, label: "Let dusk pass" };
+		return { type: ACTIONS.ADVANCE_TIME, label: opportunity.waitLabel };
 	}
 	if (state.stage === STAGES.ADVENTURE) {
 		return { type: ACTIONS.WELCOME_HOME, label: "Welcome Rosie Home" };
@@ -1356,6 +1459,7 @@ export const WORLD_TARGETS = Object.freeze({
  */
 export function playerPresentation(state) {
 	const action = primaryAction(state);
+	const opportunity = adventureOpportunity(state);
 
 	if (state.cycleComplete) {
 		return {
@@ -1377,8 +1481,8 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.STARTING && !state.selectedCrop) {
 		return {
 			target: WORLD_TARGETS.PATCH,
-			objective: FIRST_ADVENTURE_OPPORTUNITY.name,
-			detail: "Grow a Provision to stay until dusk",
+			objective: opportunity.name,
+			detail: opportunity.growDetail,
 			label: "Choose Clover Seed",
 			action,
 		};
@@ -1386,7 +1490,7 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.STARTING) {
 		return {
 			target: WORLD_TARGETS.PATCH,
-			objective: "Prepare for the hedge glow",
+			objective: opportunity.plantingObjective,
 			detail: state.compostApplied ? "Compost: 2h · harvest 4" : "Clover: 4h · harvest 3",
 			label: state.compostApplied ? "Plant with Compost" : "Plant Clover",
 			action,
@@ -1395,7 +1499,7 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.CLOVER_GROWING) {
 		return {
 			target: WORLD_TARGETS.PATCH,
-			objective: "Clover for the dusk trail",
+			objective: opportunity.growingObjective,
 			detail: state.compostApplied ? "Composted · ready in 2h" : "Growing · ready in 4h",
 			label: "Preview it ready",
 			action,
@@ -1412,7 +1516,7 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
 		return {
 			target: WORLD_TARGETS.PATCH,
-			objective: "Harvest for Rosie’s journey",
+			objective: opportunity.harvestObjective,
 			detail: "Clover’s rhythm: ← → ↑",
 			label: "Follow the rhythm",
 			action,
@@ -1422,17 +1526,17 @@ export function playerPresentation(state) {
 		if (state.prototypePosition === 6) {
 			return {
 				target: WORLD_TARGETS.BAG,
-				objective: FIRST_ADVENTURE_OPPORTUNITY.name,
-				detail: FIRST_ADVENTURE_OPPORTUNITY.detail,
-				label: "Prepare for the glow",
+				objective: opportunity.name,
+				detail: opportunity.detail,
+				label: opportunity.prepareLabel,
 				action,
 			};
 		}
 		if (state.prototypePosition === 7) {
 			return {
 				target: WORLD_TARGETS.BAG,
-				objective: FIRST_ADVENTURE_OPPORTUNITY.name,
-				detail: FIRST_ADVENTURE_OPPORTUNITY.detail,
+				objective: opportunity.name,
+				detail: opportunity.detail,
 				label: "Pack these",
 				action,
 			};
@@ -1447,10 +1551,10 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.PACKED) {
 		return {
 			target: WORLD_TARGETS.HEDGE,
-			objective: FIRST_ADVENTURE_OPPORTUNITY.name,
-			detail: "Packed for dusk · soft soil · safe carrying",
+			objective: opportunity.name,
+			detail: opportunity.packedDetail,
 			detailInAction: false,
-			label: "Follow the glow",
+			label: opportunity.departLabel,
 			action,
 		};
 	}
@@ -1473,7 +1577,7 @@ export function playerPresentation(state) {
 		}
 		return {
 			target: WORLD_TARGETS.HEDGE,
-			objective: "Rosie is following the moths",
+			objective: opportunity.waitingObjective,
 			label: "Preview her return",
 			action,
 		};
@@ -1499,7 +1603,7 @@ export function playerPresentation(state) {
 			if (state.glowrootPlanted) {
 				return {
 					target: WORLD_TARGETS.BAG,
-					objective: "Another Glowroot Seed came Home",
+					objective: `${opportunity.discoveryName} is mapped`,
 					label: "Keep supplies in Farm stock",
 					action,
 				};
@@ -1520,13 +1624,18 @@ export function playerPresentation(state) {
 		};
 	}
 	if (state.stage === STAGES.NEAR_DISCOVERY) {
+		const followingLanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 		return {
 			target: WORLD_TARGETS.BAG,
-			objective: {
+			objective: (followingLanternleaf ? {
+				provision: "A Provision reaches nightfall",
+				tool: "A Tool can trace the reflections",
+				pack: "A Pack can carry trail supplies",
+			} : {
 				provision: "A Provision could extend the trip",
 				tool: "A Tool could uncover the Find",
 				pack: "A Pack could carry the Find Home",
-			}[state.nearDiscoveryReason] ?? "Rosie found a useful clue",
+			})[state.nearDiscoveryReason] ?? "Rosie found a useful clue",
 			label: "Adjust Rosie’s Bag",
 			action,
 		};
