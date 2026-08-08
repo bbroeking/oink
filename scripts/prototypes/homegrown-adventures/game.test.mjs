@@ -884,7 +884,7 @@ test("the Bag interface starts empty and presents every choice directly", () => 
 	assert.deepEqual(createInitialState({ now: at }).bag, EMPTY_BAG);
 	assert.deepEqual(createPrototypeState(7, { now: at }).bag, EMPTY_BAG);
 	assert.match(appSource, /The Bag begins empty\. Every slot is optional\./);
-	assert.match(appSource, /How long should Rosie stay\?/);
+	assert.match(appSource, /What should help Rosie keep going\?/);
 	assert.match(appSource, /What should Rosie try\?/);
 	assert.match(appSource, /What can Rosie carry Home\?/);
 	assert.match(appSource, /Set out with an empty Bag/);

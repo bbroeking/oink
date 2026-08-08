@@ -615,7 +615,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 	const selectedCount = BAG_SLOT_ORDER.filter((slot) => bag[slot] !== null).length;
 	const focusIndex = BAG_SLOT_ORDER.indexOf(focus);
 	const question = {
-		provision: "How long should Rosie stay?",
+		provision: "What should help Rosie keep going?",
 		tool: "What should Rosie try?",
 		pack: "What can Rosie carry Home?",
 	}[focus];
