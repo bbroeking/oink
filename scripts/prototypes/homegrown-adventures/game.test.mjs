@@ -1344,17 +1344,23 @@ test("all three Bag causes now happen in the clearing without field-note cards",
 });
 
 test("the resolved cause sequence hands itself into the idle journey without revealing the Find", () => {
-	assert.match(appSource, /className="adventure-auto-handoff" role="status" aria-live="polite"/);
-	assert.match(appSource, /Rosie follows the \{lanternleaf \? "reflected leaves" : "warm light"\}/);
-	assert.match(appSource, /<strong>The journey continues…<\/strong>/);
+	assert.match(appSource, /className="adventure-trail-opening" role="status" aria-live="polite"/);
+	assert.match(appSource, /Rosie follows the \{lanternleaf \? "reflected leaves beyond the gate" : "warm moth lights beyond the hedge"\}\. The journey continues\./);
+	assert.match(appSource, /<i aria-hidden="true" \/><i aria-hidden="true" \/><i aria-hidden="true" \/><i aria-hidden="true" \/><i aria-hidden="true" \/>/);
+	assert.match(appSource, /adventureCauseBeat === "resolved"[\s\S]+adventureHandoffPresentation\(state\)/);
+	assert.match(appSource, /"Silver leaves lead Rosie onward"/);
+	assert.match(appSource, /"Warm lights lead Rosie onward"/);
 	assert.match(appSource, /adventureCauseBeat !== "resolved"/);
 	assert.match(appSource, /ACTIONS\.CONTINUE_ADVENTURE_STORY/);
 	assert.match(appSource, /REDUCED_ADVENTURE_HANDOFF_MS = 1800/);
 	assert.doesNotMatch(appSource, /What Rosie found/);
 	assert.doesNotMatch(appSource, /className="adventure-continue"/);
+	assert.doesNotMatch(appSource, /className="adventure-auto-handoff"/);
 	assert.doesNotMatch(appSource, />Let Rosie explore</);
 	assert.doesNotMatch(appSource, /story\.journeyHeadline/);
-	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-auto-handoff \{ animation: none; \}/);
+	assert.match(stylesSource, /\.phone\[data-adventure-opportunity="lights-past-open-gate"\] \.adventure-trail-opening/);
+	assert.match(stylesSource, /@keyframes adventure-trail-open-light/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-trail-opening::before,[\s\S]+\.adventure-trail-opening i \{ animation: none; \}/);
 });
 
 test("the idle journey keeps Home in route-aware dusk without adding another screen", () => {

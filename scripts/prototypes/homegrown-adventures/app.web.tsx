@@ -887,6 +887,18 @@ function adventurePackPresentation(state) {
 	};
 }
 
+function adventureHandoffPresentation(state) {
+	const lanternleaf = adventureOpportunity(state).id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	return {
+		objective: lanternleaf
+			? "Silver leaves lead Rosie onward"
+			: "Warm lights lead Rosie onward",
+		detail: lanternleaf
+			? "Past the open gate"
+			: "Beyond the hedge",
+	};
+}
+
 function AdventureVignetteOverlay({ state, beat }) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
@@ -902,10 +914,9 @@ function AdventureVignetteOverlay({ state, beat }) {
 			aria-label="Beyond-the-hedge journey"
 		>
 			{resolved ? (
-				<div key={beat} className="adventure-auto-handoff" role="status" aria-live="polite">
-					<i aria-hidden="true"><b /><b /><b /></i>
-					<small>Rosie follows the {lanternleaf ? "reflected leaves" : "warm light"}</small>
-					<strong>The journey continues…</strong>
+				<div key={beat} className="adventure-trail-opening" role="status" aria-live="polite">
+					<span className="sr-only">Rosie follows the {lanternleaf ? "reflected leaves beyond the gate" : "warm moth lights beyond the hedge"}. The journey continues.</span>
+					<i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" />
 				</div>
 			) : beat === "provision" ? (
 				<div key={beat} className="adventure-dusk-observation" role="status" aria-live="polite">
@@ -1701,6 +1712,11 @@ function App() {
 		? {
 			...presentation,
 			...adventurePackPresentation(state),
+		}
+		: showingAdventureVignette && adventureCauseBeat === "resolved"
+		? {
+			...presentation,
+			...adventureHandoffPresentation(state),
 		}
 		: showingAdventureVignette
 		? {
