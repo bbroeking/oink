@@ -368,11 +368,74 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 112. **v0.111 — The Pack Receives the Find (shipped):** remove the final Bag
     receipt, keep the physical find-to-Pack handoff primary, and explain every
     complete, clue, alternative, and empty-Pack outcome in the existing HUD.
+113. **v0.112 — The Trail Opens for Rosie (shipped):** remove the final centered
+    journey caption and let route-colored path lights plus the existing HUD
+    carry Rosie automatically into the idle journey.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.112 — The Trail Opens for Rosie — 2026-08-08
+
+- Began from the publicly verified card-free Provision, Tool, and Pack
+  sequence. Its separate resolved beat still placed **The journey continues…**
+  over the clearing, briefly returning the journey to report UI.
+- Compared the existing centered caption, a physical wooden path marker, and a
+  card-free trail opening in the real Position 9 composition. The trail won:
+  the caption repeated the HUD and the marker invented an unexplained object.
+- Captured all three treatments and the decision at commit `5c6a551` on
+  `codex/homegrown-v112-journey-handoff-prototypes`. Main contains no handoff
+  switcher, marker, caption, confirmation, extended timing, or new interaction.
+- Five warm Glowroot lights or silver Lanternleaf lights now rise from the Pack
+  transfer into the path. The existing HUD names the route destination and a
+  polite hidden status preserves the full transition for assistive technology.
+- The 900 ms automatic handoff, 1.8-second reduced-motion hold, idle journey,
+  deterministic outcomes, Rive binary, View Model, and authored motions remain
+  unchanged. Reduced motion paints all five lights statically.
+
+### Local validation evidence
+
+- Played both real rendered routes with WebGL enabled at 500×844. Glowroot
+  rendered **Warm lights lead Rosie onward · Beyond the hedge**; Lanternleaf
+  rendered **Silver leaves lead Rosie onward · Past the open gate**. Each had
+  five route-colored lights, no old handoff card, a ready authored Rive scene,
+  no horizontal overflow, and transitioned automatically into the matching
+  **Following the trail** journey watch.
+- The reduced-motion Lanternleaf route reported `animation-name: none` on all
+  five lights, retained the polite route status, and held the resolved scene
+  before the existing transition.
+- `npm run prototype:homegrown:test` passes 82/82. `npm run
+  prototype:homegrown:build`, `npm run quality:loop`, `npm run quality:check`,
+  and `npm run verify:rive-homegrown` pass. The quality gate covers 157 layout
+  files, 324 sprites, security contracts, TypeScript, 78 layout tests, and 202
+  security tests. Watchman's existing recrawl notice remains a warning.
+- `npm run verify:rive-web` is presently blocked outside this checkpoint by the
+  uncommitted rewarded-ad work importing `react-native-google-mobile-ads`'s
+  native banner component during Expo web export. The Homegrown Rive static
+  contract itself passes; manual mobile Safari checks remain required.
+
+### Public verification evidence
+
+- Feature commits `aa1ef39` and `8a1e267` deployed successfully through GitHub
+  Pages runs `31282565329` and `31282645468`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `f3a749d6eff44386435d2d217d7a0aea6544e703d075f3cfb38b45ec74d04deb`
+  - player JavaScript: `68206eba32eaf8c60fbfd2050b16bd4e8ad6b5fbd0e2ec8fa954c721c93352cc`
+  - player CSS: `b0c430d2c558150bd80139c785ae46239a98b3dde8442013c5b535cebb6d8388`
+- Public rendered playback reproduces both HUD destinations, five lights,
+  route-specific color, hidden status, ready Rive state, absent old caption,
+  and the automatic transition into the existing idle journey.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=9&route=glowroot&v=8a1e267`
+
+### Next highest-leverage weakness
+
+The trail now opens cleanly, but the receiving transition still hard-cuts from
+the enchanted clearing to the information-heavy idle Farm watch. Prototype a
+continuous departure-to-Home watch transition without adding a loading screen,
+new journey state, reward, timer, or confirmation.
 
 ### v0.111 — The Pack Receives the Find — 2026-08-08
 

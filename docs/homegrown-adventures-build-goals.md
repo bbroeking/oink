@@ -33,7 +33,11 @@ names every equipped or empty outcome; the final Pack cause now finishes the
 same card-free sequence: the existing find enters the Wicker Basket or Cloth
 Wrap, a restrained Pack-aware response completes the transfer, empty Pack
 remains a kind remembered clue, and the HUD names every complete or
-Near-Discovery result;
+Near-Discovery result; the resolved handoff now stays in that same world-led
+grammar: the centered **The journey continues…** sign is gone, five
+route-colored lights open the path, the existing HUD names where Rosie is
+going, and one hidden live status preserves the same fact before the unchanged
+automatic idle-journey transition;
 second route now adds one dedicated native Rive reflection layer whose
 authored rise, luminous hold, and fade animate only the painted Lanternleaf
 trail, while reduced motion retains the static illustrated clue; the
@@ -382,6 +386,24 @@ timer, inventory rule, save fact, encounter, destination, or screen was added.
 The next visible weakness is the separate resolved handoff: after the clean
 three-beat story, a centered **The journey continues…** sign briefly returns
 the experience to report UI before the idle trail begins.
+
+**Trail-opens-into-the-journey checkpoint (August 8, 2026):** three real
+resolved-handoff treatments were rendered at commit `5c6a551` on
+`codex/homegrown-v112-journey-handoff-prototypes`: the existing centered story
+caption, a physical wooden path marker, and a card-free trail opening. The
+trail opening won because the other two still asked the player to read another
+explanation after the Provision, Tool, and Pack had already answered. Five
+warm Glowroot lights or silver Lanternleaf lights now rise from the completed
+Pack transfer into the illustrated path. The existing HUD changes to **Warm
+lights lead Rosie onward · Beyond the hedge** or **Silver leaves lead Rosie
+onward · Past the open gate**, while a polite hidden status announces the same
+route fact. The existing 900 ms automatic transition and 1.8-second static
+reduced-motion hold are unchanged. No visible caption, confirmation, reward
+reveal, Rive trigger, binary, View Model value, route rule, reducer outcome,
+timer, save fact, encounter, destination, or screen was added. The next visible
+weakness is the receiving side of the handoff: the enchanted clearing still
+cuts abruptly to the information-heavy idle Farm watch instead of feeling like
+one continuous journey away from Rosie.
 
 **Next-Seed checkpoint (August 7, 2026):** the remembered Position 2 now leads
 with one full-width **Clover Seed** decision that names its stock and its purpose
