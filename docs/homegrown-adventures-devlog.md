@@ -249,7 +249,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     Position 9 into the environmental cause-and-effect beat, let Rosie continue
     exploring afterward, and reserve the named Discovery or clue for
     Homecoming without changing any outcome.
-75. **v0.74 — The Journey Is Worth Watching (locally verified):** replace the
+75. **v0.74 — The Journey Is Worth Watching (shipped):** replace the
     empty Farm spinner after Rosie's causal vignette with one calm route watch,
     an honest prototype fast-forward, and a gate-bell Homecoming handoff while
     keeping the reward hidden.
@@ -303,7 +303,14 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   remained visible with no horizontal overflow. Reduced motion reported
   `0.00001s` for the active-step and trail-light animations while preserving
   every label and action.
-- Public deployment verification is pending for this local checkpoint.
+- GitHub Pages run `31234194198` deployed commit `ec3d950`. Fresh public HTML
+  returned CSS `45a02b3dfa` and JavaScript `0ad0eef441`; the companion site
+  linked **Watch Rosie's journey**.
+- Public 360×780 play showed **Rosie is away**, the active **Warm moth trail**,
+  and **Fast-forward to Homecoming** over the remembered Farm. Fast-forward
+  changed the same route to **The gate bell rings** and **Welcome Rosie home**;
+  only that welcome advanced to Position 10 and revealed **Glowroot Seed +2**
+  with exact +1 Compost and +2 Willow Fiber stock.
 
 ### Observable acceptance criteria
 

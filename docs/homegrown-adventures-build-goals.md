@@ -377,7 +377,8 @@ welcome Rosie before Position 10 reveals the named Discovery or clue. This is a
 presentation of the existing reducer-owned departure, wait, completion, and
 return facts; it adds no timer, destination, reward, mission, currency, or
 progression state. First and second routes, complete and incomplete Bags,
-Homecoming order, 360×780 touch layout, reload, and reduced motion pass locally.
+Homecoming order, 360×780 touch layout, reload, and reduced motion pass locally;
+the exact v0.74 bundle and companion-site link also pass on GitHub Pages.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
