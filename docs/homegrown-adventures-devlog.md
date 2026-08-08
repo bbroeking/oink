@@ -273,7 +273,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 82. **v0.81 — Memory in Its Place (shipped):** keep the first memory
     acknowledgement, then collapse repeat-state teaching and stock into one
     secondary Farm-memory pocket.
-83. **v0.82 — One Cause at a Time (shipping):** let Provision, Tool, Pack, and
+83. **v0.82 — One Cause at a Time (shipped):** let Provision, Tool, Pack, and
     the resulting find each own one field note while the illustrated Adventure
     remains primary.
 
@@ -333,8 +333,26 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   client/scroll widths. At 1280×720 the complete 328×709 game remained centered
   and both note and action stayed inside the first viewport.
 - `npm run prototype:homegrown:test` passes 52/52 and `npx tsc --noEmit`
-  passes locally. Rive and repository quality gates, deployment, and public
-  artifact verification follow this feature commit.
+  passes locally. `npm run verify:rive-homegrown` passes both authored Rive
+  contracts. `npm run quality:check` passes its quality contracts, 157-file
+  layout inspection, 324-sprite integrity gate, security contracts,
+  TypeScript, 78 layout tests, and 202 security tests; Watchman's existing
+  recrawl notice is the only warning.
+- Feature commit `5842b8d` deployed successfully through GitHub Pages run
+  `31261142037`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `c3f67fb1e624f111246a36cab9e5322713fdb5956bd343f52dba7cac8365c059`,
+  `e7ac7b8fdd7ed53002356b52fee9e1b35faf0d4a6ea600c6ae316f9aa8d7b068`, and
+  `8dc157014c57d2c82d056e7657337da75aef717c382546bd07fe069db2d986f6`.
+- Replayed the exact public Position 9 URL at 360×780. One uninterrupted
+  capture reported the four expected notes in order: Clover Lunch at
+  Provision, Hand Trowel at Tool, Wicker Basket at Pack, and **Warm light
+  stirs beneath the hedge** at resolved. Neither legacy panel existed and
+  client/scroll widths remained equal.
+- A rapid public double **Let Rosie explore** produced one journey watch, one
+  **Fast-forward to Homecoming** action, and no premature Return panel.
+- The deployed companion page links directly to Position 9 as **Watch Rosie's
+  Bag shape the Adventure**.
 
 ### Next highest-leverage weakness
 
