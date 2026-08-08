@@ -11,6 +11,7 @@ import {
 	adventureStory,
 	BAG_ITEMS,
 	CROP_RULES,
+	cropHarvestPattern,
 	createInitialState,
 	createPrototypeState,
 	deserializeState,
@@ -169,17 +170,17 @@ test("Clover requires a Seed and leaves its predictable Compost boost freely cho
 	assert.equal(state.compostApplied, false);
 	assert.equal(reduce(state, { type: ACTIONS.SELECT_CROP, crop: "clover" }), state);
 	assert.deepEqual(primaryAction(state), {
-		type: ACTIONS.PLANT_CLOVER,
+		type: ACTIONS.PLANT_CROP,
 		label: "Plant Clover",
 	});
 	assert.equal(playerPresentation(state).detail, "Clover Lunch ×3 · ready in 4h");
-	assert.match(appSource, /\{promisedYield\} Clover Lunches · ready in \{boosted \? 2 : 4\} hours/);
-	assert.match(appSource, /Add Compost: 1 more Lunch, 2 hours sooner\./);
+	assert.match(appSource, /\{promisedYield\} \{rule\.outputName\} · ready in \{boosted \? boostedHours : normalHours\} hours/);
+	assert.match(appSource, /Add Compost: 1 more, \$\{normalHours - boostedHours\} hours sooner\./);
 	assert.doesNotMatch(appSource, /Ready in 4 hours · Harvest 3|Ready in 2 hours · Harvest 4/);
 	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });
 	assert.equal(state.compostApplied, true);
 	assert.deepEqual(primaryAction(state), {
-		type: ACTIONS.PLANT_CLOVER,
+		type: ACTIONS.PLANT_CROP,
 		label: "Plant with Compost",
 	});
 	assert.equal(playerPresentation(state).detail, "Clover Lunch ×4 · ready in 2h");
@@ -223,6 +224,78 @@ test("Compost shortens growth and adds exactly one guaranteed harvest item", () 
 	assert.equal(state.farmStock["clover-lunch"], CROP_RULES.clover.baseYield + 1);
 });
 
+test("Moonberries unlock from Home memory instead of appearing as an unearned Seed", () => {
+	let firstMorning = createInitialState({ now: at });
+	firstMorning = reduce(firstMorning, { type: ACTIONS.TICKLE });
+	assert.equal(
+		reduce(firstMorning, { type: ACTIONS.SELECT_CROP, crop: "moonberries" }),
+		firstMorning,
+	);
+	assert.equal(firstMorning.farmStock.moonberries, 0);
+
+	const secondMorning = throughSecondMorning();
+	assert.equal(secondMorning.daysCompleted, 1);
+	assert.equal(secondMorning.glowrootPlanted, true);
+	assert.equal(secondMorning.nextPlanting, "moonberries");
+	assert.equal(CROP_RULES.moonberries.seedId, null);
+	assert.deepEqual(cropHarvestPattern("moonberries"), ["down", "left", "right", "up"]);
+});
+
+test("Moonberries complete the full grow, personal rhythm, stockpile, and Bag loop", () => {
+	let state = throughSecondMorning();
+	const cloverSeedsBefore = state.farmStock["clover-seed"];
+	const cloverLunchesBefore = state.farmStock["clover-lunch"];
+
+	state = reduce(state, { type: ACTIONS.SELECT_CROP, crop: "moonberries" });
+	assert.equal(state.selectedCrop, "moonberries");
+	assert.equal(playerPresentation(state).target, WORLD_TARGETS.MOONBERRY_BED);
+	assert.equal(playerPresentation(state).detail, "Moonberries ×4 · ready in 8h");
+	state = reduce(state, { type: ACTIONS.PLANT_CROP });
+	assert.equal(state.readyAt - state.plantedAt, CROP_RULES.moonberries.baseDurationMs);
+	assert.equal(state.farmStock["clover-seed"], cloverSeedsBefore);
+	assert.equal(homegrownRiveModel(state, state.plantedAt).viewModel.bedOneState, "empty");
+	assert.equal(homegrownRiveModel(state, state.plantedAt).viewModel.bedTwoState, "sprout");
+
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	assert.equal(settleState(state, state.readyAt + 24 * 60 * 60 * 1000), state);
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	assert.equal(homegrownRiveModel(state, state.readyAt).viewModel.bedTwoState, "ready");
+	for (const [index, direction] of cropHarvestPattern(state).entries()) {
+		state = reduce(state, {
+			type: ACTIONS.HARVEST_BEAT,
+			direction,
+			input: "swipe",
+			now: at + index * 400,
+		});
+	}
+	assert.equal(state.lastHarvestYield, 5);
+	assert.equal(state.farmStock.moonberries, 5);
+	assert.equal(state.farmStock["clover-lunch"], cloverLunchesBefore);
+	assert.equal(homegrownRiveModel(state).viewModel.bedTwoState, "empty");
+
+	state = reduce(state, { type: ACTIONS.OPEN_BAG_SELECTION });
+	state = chooseAdventureBag(state, { provision: "moonberries", tool: "lantern" });
+	assert.equal(adventureStory(state).journeyTags[0].detail, "make the reflected leaves shine against the dark");
+	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
+	assert.equal(state.packedProvisionSpent, "moonberries");
+	assert.equal(state.farmStock.moonberries, 4);
+	assert.match(adventureStory(state).tags[0].detail, /revealed silver leaves/);
+});
+
+test("Compost predictably makes Moonberries two hours faster and adds one guaranteed berry", () => {
+	let state = throughSecondMorning();
+	state = reduce(state, { type: ACTIONS.SELECT_CROP, crop: "moonberries" });
+	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });
+	state = reduce(state, { type: ACTIONS.PLANT_CROP });
+	assert.equal(state.readyAt - state.plantedAt, CROP_RULES.moonberries.compostDurationMs);
+	assert.equal(state.farmStock.compost, 1);
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.HARVEST_CROP });
+	assert.equal(state.lastHarvestYield, 5);
+	assert.equal(state.farmStock.moonberries, 5);
+});
+
 test("Clover's left-right-up rhythm adds one small bonus to the guaranteed harvest", () => {
 	let state = throughCloverReady();
 	state = reduce(state, { type: ACTIONS.TICKLE });
@@ -250,10 +323,10 @@ test("Clover's left-right-up rhythm adds one small bonus to the guaranteed harve
 test("the rendered Harvest Rhythm keeps the crop gesture primary with one integrated tap fallback", () => {
 	const state = createPrototypeState(5, { now: at });
 	assert.equal(playerPresentation(state).objective, "Harvest for Rosie’s journey");
-	assert.equal(playerPresentation(state).detail, "Clover’s rhythm: ← → ↑");
+	assert.equal(playerPresentation(state).detail, "Clover rhythm: ← → ↑");
 	assert.match(appSource, /aria-label=\{`Tap \$\{HARVEST_DIRECTION_LABELS\[direction\]\.name\} instead`\}/);
 	assert.match(appSource, /Swipe bed · or tap arrow/);
-	assert.match(appSource, /\{guaranteedYield\} Lunches guaranteed · clean rhythm \+1/);
+	assert.match(appSource, /\{guaranteedYield\} \{rule\.outputName\} guaranteed · clean rhythm \+1/);
 	assert.match(appSource, /className="harvest-bed-assist is-unified"/);
 	assert.doesNotMatch(appSource, /className="harvest-assist"|objective: "Clover’s rhythm: ← → ↑"/);
 	assert.match(stylesSource, /\.harvest-bed-assist\.is-unified \{/);
@@ -817,7 +890,7 @@ test("the Bag interface starts empty and presents every choice directly", () => 
 	assert.match(appSource, /Set out with an empty Bag/);
 	assert.match(appSource, /An empty Bag still returns a useful clue\. Rosie is always safe\./);
 	assert.match(appSource, /Rosie's Bag is ready to pack/);
-	assert.match(appSource, /Clover Lunch joined Farm stock/);
+	assert.match(appSource, /\$\{crop\.outputName\} joined Farm stock/);
 	assert.match(appSource, /role="tabpanel"/);
 	assert.match(appSource, /tabIndex=\{focus === slot \? 0 : -1\}/);
 	assert.match(appSource, /ArrowRight: 1/);
@@ -1377,10 +1450,10 @@ test("the first Adventure visibly settles a carried find into its chosen Pack", 
 });
 
 test("a packed Provision performs once and leaves the Adventure at dusk", () => {
-	assert.match(stylesSource, /data-adventure-provision="clover-lunch"\]\[data-adventure-beat="provision"\] \.adventure-provision-prop/);
+	assert.match(stylesSource, /data-adventure-provision="clover-lunch"[^\n]+data-adventure-provision="moonberries"[^\n]+\[data-adventure-beat="provision"\] \.adventure-provision-prop/);
 	assert.match(stylesSource, /animation: adventure-provision-one-use 760ms cubic-bezier\(\.16,1,\.3,1\) both/);
 	assert.match(stylesSource, /@keyframes adventure-provision-dusk-arrive/);
-	assert.match(stylesSource, /data-adventure-provision="clover-lunch"\]:is\(\[data-adventure-beat="tool"\],\[data-adventure-beat="pack"\],\[data-adventure-beat="resolved"\]\) \.adventure-vignette-backdrop::before/);
+	assert.match(stylesSource, /data-adventure-provision="moonberries"[^\n]+data-adventure-beat="tool"[^\n]+\.adventure-vignette-backdrop::before/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-provision-prop \{ animation: none; \}/);
 });
 
@@ -1620,7 +1693,7 @@ test("stable Home memory collapses into one accessible stock pocket", () => {
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.home-memory-pocket-detail \{ animation: none; \}/);
 });
 
-test("Seed choice keeps the current Adventure purpose and clues attached to Farm stock", () => {
+test("the earned crop choice keeps Rosie's current Adventure purpose attached to both harvests", () => {
 	const firstMorning = createPrototypeState(2, { now: at });
 	assert.equal(adventureOpportunity(firstMorning), FIRST_ADVENTURE_OPPORTUNITY);
 
@@ -1630,15 +1703,18 @@ test("Seed choice keeps the current Adventure purpose and clues attached to Farm
 	});
 	assert.equal(adventureOpportunity(secondMorning), SECOND_ADVENTURE_OPPORTUNITY);
 	assert.equal(secondMorning.glowrootPlanted, true);
+	assert.equal(secondMorning.nextPlanting, "moonberries");
 
-	assert.match(appSource, /function SeedAdventureReceipt\(\{ opportunity, className = "" \}\)/);
-	assert.match(appSource, /Clover becomes a Provision/);
-	assert.match(appSource, /<em>\{opportunity\.detail\}<\/em>/);
-	assert.match(appSource, /<SeedAdventureReceipt opportunity=\{opportunity\} className="seed-adventure-memory-receipt" \/>/);
+	assert.match(appSource, /function SeedAdventureReceipt\(\{ opportunity, className = "", twoCrops = false \}\)/);
+	assert.match(appSource, /Both harvests help Rosie explore/);
+	assert.match(appSource, /Clover: stay longer · Moonberries: reveal reflections/);
+	assert.match(appSource, /<SeedAdventureReceipt opportunity=\{opportunity\} className="seed-adventure-memory-receipt" twoCrops \/>/);
 	assert.match(appSource, /<SeedChoicePanel\s+state=\{state\}\s+opportunity=\{opportunity\}/);
-	assert.match(appSource, /Glowroot opened this route/);
-	assert.match(appSource, /Grow a Lunch for the lights beyond/);
-	assert.match(stylesSource, /\.seed-choice-memory \.seed-next-copy small \{ color: #496a36; \}/);
+	assert.match(appSource, /What should Rosie grow for the lights\?/);
+	assert.match(appSource, /3 guaranteed · stay until nightfall/);
+	assert.match(appSource, /4 guaranteed · reveal reflected leaves/);
+	assert.match(appSource, /onChoose\("moonberries"\)/);
+	assert.match(stylesSource, /\.crop-choice-options \{ display: grid; grid-template-columns: repeat\(2,minmax\(0,1fr\)\)/);
 	assert.match(stylesSource, /\.seed-adventure-receipt \{/);
 	assert.doesNotMatch(appSource, /InvitationSwitcher|invitationTreatment/);
 });

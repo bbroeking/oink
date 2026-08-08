@@ -33,6 +33,7 @@ for (const name of [
 for (const name of [
 	"farm-stock-shelf.webp",
 	"harvest-basket.webp",
+	"harvest-basket-moonberries.png",
 	"open-adventure-bag.webp",
 	"adventure-clearing-discovery.webp",
 	"adventure-clearing-discovery-rive.webp",

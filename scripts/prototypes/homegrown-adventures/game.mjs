@@ -16,10 +16,12 @@ export const ACTIONS = Object.freeze({
 	SELECT_CROP: "select-crop",
 	CHOOSE_PURPOSE: "choose-purpose",
 	TOGGLE_COMPOST: "toggle-compost",
+	PLANT_CROP: "plant-crop",
 	PLANT_CLOVER: "plant-clover",
 	ADVANCE_TIME: "advance-time",
 	SETTLE: "settle",
 	HARVEST_BEAT: "harvest-beat",
+	HARVEST_CROP: "harvest-crop",
 	HARVEST_CLOVER: "harvest-clover",
 	OPEN_BAG_SELECTION: "open-bag-selection",
 	SET_BAG_SLOT: "set-bag-slot",
@@ -41,7 +43,7 @@ export const ACTIONS = Object.freeze({
 
 export const PROTOTYPE_POSITIONS = Object.freeze([
 	{ id: 1, key: "morning", name: "Morning tickle" },
-	{ id: 2, key: "seed-choice", name: "Choose a Seed" },
+	{ id: 2, key: "crop-choice", name: "Choose what to grow" },
 	{ id: 3, key: "planting", name: "Plant + Compost" },
 	{ id: 4, key: "growing", name: "Growing" },
 	{ id: 5, key: "harvest", name: "Harvest Rhythm" },
@@ -80,7 +82,7 @@ export const SECOND_ADVENTURE_OPPORTUNITY = Object.freeze({
 	detail: "Nightfall · reflected leaves · gentle wrap",
 	growDetail: "Grow a Provision to stay until nightfall",
 	plantingObjective: "Prepare for the gate lights",
-	growingObjective: "Clover for the open-gate trail",
+	growingObjective: "A Provision for the open-gate trail",
 	harvestObjective: "Harvest for Rosie’s new route",
 	packedDetail: "Packed for nightfall · reflections · safe wrap",
 	prepareLabel: "Prepare for the gate lights",
@@ -110,6 +112,12 @@ export const BAG_ITEMS = Object.freeze({
 			name: "Clover Lunch",
 			icon: "☘",
 			effect: "Stay exploring until dusk",
+		}),
+		Object.freeze({
+			id: "moonberries",
+			name: "Moonberries",
+			icon: "●",
+			effect: "Reveal reflected things at night",
 		}),
 	]),
 	tool: Object.freeze([
@@ -191,6 +199,7 @@ const REVIEW_BAG = Object.freeze({
 export const EMPTY_FARM_STOCK = Object.freeze({
 	"clover-seed": 0,
 	"clover-lunch": 0,
+	moonberries: 0,
 	"glowroot-seed": 0,
 	compost: 0,
 	"willow-fiber": 0,
@@ -204,16 +213,62 @@ export const STARTING_FARM_STOCK = Object.freeze({
 
 export const CROP_RULES = Object.freeze({
 	clover: Object.freeze({
+		id: "clover",
+		name: "Clover",
+		outputId: "clover-lunch",
+		outputName: "Clover Lunch",
+		fieldGuideName: "Clover Lunch",
 		seedId: "clover-seed",
 		baseDurationMs: 4 * 60 * 60 * 1000,
 		compostDurationMs: 2 * 60 * 60 * 1000,
 		baseYield: 3,
 		compostYieldBonus: 1,
+		harvestPattern: Object.freeze(["left", "right", "up"]),
+	}),
+	moonberries: Object.freeze({
+		id: "moonberries",
+		name: "Moonberries",
+		outputId: "moonberries",
+		outputName: "Moonberries",
+		fieldGuideName: "Moonberries",
+		seedId: null,
+		baseDurationMs: 8 * 60 * 60 * 1000,
+		compostDurationMs: 6 * 60 * 60 * 1000,
+		baseYield: 4,
+		compostYieldBonus: 1,
+		harvestPattern: Object.freeze(["down", "left", "right", "up"]),
 	}),
 });
 
-export const HARVEST_PATTERN = Object.freeze(["left", "right", "up"]);
+export const HARVEST_PATTERN = CROP_RULES.clover.harvestPattern;
 export const HARVEST_BEAT_MS = 900;
+
+export function cropRule(crop) {
+	return CROP_RULES[crop] ?? null;
+}
+
+export function cropHarvestPattern(stateOrCrop) {
+	const crop = typeof stateOrCrop === "string"
+		? stateOrCrop
+		: stateOrCrop?.selectedCrop;
+	return cropRule(crop)?.harvestPattern ?? HARVEST_PATTERN;
+}
+
+const HARVEST_ARROWS = Object.freeze({ left: "←", right: "→", up: "↑", down: "↓" });
+
+export function cropHarvestPatternLabel(stateOrCrop) {
+	return cropHarvestPattern(stateOrCrop).map((direction) => HARVEST_ARROWS[direction]).join(" ");
+}
+
+export function cropIsAvailable(state, crop) {
+	const rule = cropRule(crop);
+	if (rule === null) return false;
+	if (rule.seedId !== null) return (state.farmStock?.[rule.seedId] ?? 0) > 0;
+	return crop === "moonberries" &&
+		state.daysCompleted > 0 &&
+		state.glowrootPlanted &&
+		state.nextPlanting === "moonberries";
+}
 
 export function bagItem(slot, itemId) {
 	return BAG_ITEMS[slot]?.find((item) => item.id === itemId) ?? null;
@@ -239,6 +294,7 @@ export function adventureStory(state) {
 	const firstDetails = {
 		provision: {
 			"clover-lunch": "stayed exploring until dusk",
+			moonberries: "noticed a warm reflection beneath the hedge",
 			empty: "came Home before the seed opened",
 		},
 		tool: {
@@ -272,6 +328,7 @@ export function adventureStory(state) {
 	const firstJourneyDetails = {
 		provision: {
 			"clover-lunch": "keeps Rosie exploring until dusk",
+			moonberries: "make hidden reflections easier to notice",
 			empty: "daylight fades before the warm root opens",
 		},
 		tool: {
@@ -305,6 +362,7 @@ export function adventureStory(state) {
 	const lanternleafDetails = {
 		provision: {
 			"clover-lunch": "stayed past the open gate until nightfall",
+			moonberries: "revealed silver leaves along the hidden path",
 			empty: "came Home before the leaves reflected their light",
 		},
 		tool: {
@@ -338,6 +396,7 @@ export function adventureStory(state) {
 	const lanternleafJourneyDetails = {
 		provision: {
 			"clover-lunch": "keeps Rosie on the trail past nightfall",
+			moonberries: "make the reflected leaves shine against the dark",
 			empty: "daylight fades before the leaves catch their light",
 		},
 		tool: {
@@ -681,6 +740,7 @@ export function createPrototypeState(position, {
 			daysCompleted: 1,
 			glowrootKnown: true,
 			glowrootPlanted: true,
+			nextPlanting: "moonberries",
 			fieldGuide: ["Clover Lunch", "Dusk Picnic", "Glowroot Seed"],
 		}
 		: {};
@@ -707,10 +767,12 @@ function changed(state, patch, kind, detail, now) {
 	};
 }
 
-function completeCloverHarvest(state, { rhythmBonus = false } = {}, now) {
+function completeCropHarvest(state, { rhythmBonus = false } = {}, now) {
+	const rule = cropRule(state.selectedCrop);
+	if (rule === null) return state;
 	const yieldAmount =
-		CROP_RULES.clover.baseYield +
-		(state.compostApplied ? CROP_RULES.clover.compostYieldBonus : 0) +
+		rule.baseYield +
+		(state.compostApplied ? rule.compostYieldBonus : 0) +
 		(rhythmBonus ? 1 : 0);
 	return changed(
 		state,
@@ -721,15 +783,15 @@ function completeCloverHarvest(state, { rhythmBonus = false } = {}, now) {
 			lastHarvestYield: yieldAmount,
 			farmStock: {
 				...state.farmStock,
-				"clover-lunch": (state.farmStock?.["clover-lunch"] ?? 0) + yieldAmount,
+				[rule.outputId]: (state.farmStock?.[rule.outputId] ?? 0) + yieldAmount,
 			},
 			prototypePosition: 6,
-			fieldGuide: state.fieldGuide.includes("Clover Lunch")
+			fieldGuide: state.fieldGuide.includes(rule.fieldGuideName)
 				? state.fieldGuide
-				: [...state.fieldGuide, "Clover Lunch"],
+				: [...state.fieldGuide, rule.fieldGuideName],
 		},
 		"harvest",
-		rhythmBonus ? `Clover Lunch +${yieldAmount} · rhythm +1` : `Clover Lunch +${yieldAmount}`,
+		rhythmBonus ? `${rule.outputName} +${yieldAmount} · rhythm +1` : `${rule.outputName} +${yieldAmount}`,
 		now,
 	);
 }
@@ -826,7 +888,7 @@ export function settleState(state, now = Date.now()) {
 				changeRevealed: false,
 			},
 			"settle",
-			"Clover Lunch is ready",
+			`${cropRule(state.selectedCrop)?.outputName ?? "Crop"} is ready`,
 			now,
 		);
 	}
@@ -949,31 +1011,35 @@ export function homegrownReducer(state, action) {
 		case ACTIONS.CHOOSE_PURPOSE:
 			if (!state.hasTickled || state.stage !== STAGES.STARTING) return state;
 			if (state.selectedCrop) return state;
-			if (
-				(action.type === ACTIONS.SELECT_CROP && action.crop !== "clover") ||
-				(action.type === ACTIONS.CHOOSE_PURPOSE && action.purpose !== "dusk-picnic") ||
-				(state.farmStock?.[CROP_RULES.clover.seedId] ?? 0) < 1
-			) {
-				return state;
-			}
+			{
+				const selectedCrop = action.type === ACTIONS.SELECT_CROP ? action.crop : "clover";
+				const rule = cropRule(selectedCrop);
+				if (
+					(action.type === ACTIONS.CHOOSE_PURPOSE && action.purpose !== "dusk-picnic") ||
+					rule === null ||
+					!cropIsAvailable(state, selectedCrop)
+				) return state;
 			return changed(
 				state,
 				{
 					purpose: "dusk-picnic",
-					selectedCrop: "clover",
+					selectedCrop,
 					compostApplied: false,
 					prototypePosition: 3,
 				},
 				action.type === ACTIONS.SELECT_CROP ? "select-crop" : "choose-purpose",
-				"Clover Seed for the Dusk Picnic",
+				selectedCrop === "moonberries"
+					? "Moonberries from Bed 2 for the reflected trail"
+					: "Clover Seed for the Dusk Picnic",
 				now,
 			);
+			}
 
 		case ACTIONS.TOGGLE_COMPOST:
 			if (
 				state.stage !== STAGES.STARTING ||
 				state.prototypePosition !== 3 ||
-				state.selectedCrop !== "clover"
+				cropRule(state.selectedCrop) === null
 			) {
 				return state;
 			}
@@ -982,38 +1048,43 @@ export function homegrownReducer(state, action) {
 				state,
 				{ compostApplied: !state.compostApplied },
 				"toggle-compost",
-				state.compostApplied ? "Compost saved for later" : "Compost will help Clover",
+				state.compostApplied
+					? "Compost saved for later"
+					: `Compost will help ${cropRule(state.selectedCrop).name}`,
 				now,
 			);
 
+		case ACTIONS.PLANT_CROP:
 		case ACTIONS.PLANT_CLOVER:
 			if (
 				state.stage !== STAGES.STARTING ||
 				state.purpose !== "dusk-picnic" ||
-				state.selectedCrop !== "clover" ||
-				(state.farmStock?.[CROP_RULES.clover.seedId] ?? 0) < 1
+				cropRule(state.selectedCrop) === null ||
+				!cropIsAvailable(state, state.selectedCrop)
 			) {
 				return state;
 			}
 			{
+				const rule = cropRule(state.selectedCrop);
 				const compostUsed = state.compostApplied && (state.farmStock?.compost ?? 0) > 0;
-				const duration = compostUsed ? COMPOSTED_GROWTH_MS : GROWTH_MS;
+				const duration = compostUsed ? rule.compostDurationMs : rule.baseDurationMs;
+				const farmStock = {
+					...state.farmStock,
+					compost: state.farmStock.compost - (compostUsed ? 1 : 0),
+				};
+				if (rule.seedId !== null) farmStock[rule.seedId] -= 1;
 			return changed(
 				state,
 				{
 					stage: STAGES.CLOVER_GROWING,
 					prototypePosition: 4,
 					compostApplied: compostUsed,
-					farmStock: {
-						...state.farmStock,
-						[CROP_RULES.clover.seedId]: state.farmStock[CROP_RULES.clover.seedId] - 1,
-						compost: state.farmStock.compost - (compostUsed ? 1 : 0),
-					},
+					farmStock,
 					plantedAt: now,
 					readyAt: now + duration,
 				},
 				"plant",
-				compostUsed ? "Clover Lunch with Compost" : "Clover Lunch without Compost",
+				`${rule.outputName}${compostUsed ? " with Compost" : " without Compost"}`,
 				now,
 			);
 			}
@@ -1032,18 +1103,19 @@ export function homegrownReducer(state, action) {
 			return settleState(state, now);
 
 		case ACTIONS.HARVEST_BEAT: {
+			const harvestPattern = cropHarvestPattern(state);
 			if (
 				state.stage !== STAGES.CLOVER_READY ||
 				!state.changeRevealed ||
 				state.cloverHarvested ||
-				!HARVEST_PATTERN.includes(action.direction)
+				!harvestPattern.includes(action.direction)
 			) {
 				return state;
 			}
 			const beatIndex = state.harvestBeats?.length ?? 0;
-			if (beatIndex >= HARVEST_PATTERN.length) return state;
+			if (beatIndex >= harvestPattern.length) return state;
 			const previousBeat = state.harvestBeats?.at(-1) ?? null;
-			const correct = action.direction === HARVEST_PATTERN[beatIndex];
+			const correct = action.direction === harvestPattern[beatIndex];
 			const timely =
 				action.input === "button" ||
 				previousBeat === null ||
@@ -1058,8 +1130,8 @@ export function homegrownReducer(state, action) {
 				harvestBeats,
 				harvestRhythmEligible: eligible,
 			};
-			if (harvestBeats.length === HARVEST_PATTERN.length) {
-				return completeCloverHarvest(beatState, { rhythmBonus: eligible }, now);
+			if (harvestBeats.length === harvestPattern.length) {
+				return completeCropHarvest(beatState, { rhythmBonus: eligible }, now);
 			}
 			return changed(
 				state,
@@ -1070,6 +1142,7 @@ export function homegrownReducer(state, action) {
 			);
 		}
 
+		case ACTIONS.HARVEST_CROP:
 		case ACTIONS.HARVEST_CLOVER:
 			if (
 				state.stage !== STAGES.CLOVER_READY ||
@@ -1078,7 +1151,7 @@ export function homegrownReducer(state, action) {
 			) {
 				return state;
 			}
-			return completeCloverHarvest(state, { rhythmBonus: false }, now);
+			return completeCropHarvest(state, { rhythmBonus: false }, now);
 
 		case ACTIONS.OPEN_BAG_SELECTION:
 			if (state.stage !== STAGES.CLOVER_READY || !state.cloverHarvested) {
@@ -1592,13 +1665,16 @@ export function primaryAction(state) {
 		return {
 			type: ACTIONS.SELECT_CROP,
 			crop: "clover",
-			label: "Choose Clover Seed",
+			label: "Choose what to grow",
 		};
 	}
 	if (state.stage === STAGES.STARTING) {
+		const rule = cropRule(state.selectedCrop);
 		return {
-			type: ACTIONS.PLANT_CLOVER,
-			label: state.compostApplied ? "Plant with Compost" : "Plant Clover",
+			type: ACTIONS.PLANT_CROP,
+			label: state.compostApplied
+				? `${state.selectedCrop === "moonberries" ? "Tend" : "Plant"} with Compost`
+				: `${state.selectedCrop === "moonberries" ? "Tend" : "Plant"} ${rule?.name ?? "crop"}`,
 		};
 	}
 	if (state.stage === STAGES.CLOVER_GROWING) {
@@ -1608,7 +1684,7 @@ export function primaryAction(state) {
 		return { type: ACTIONS.TICKLE, label: "Welcome Rosie" };
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
-		return { type: ACTIONS.HARVEST_CLOVER, label: "Gather normally" };
+		return { type: ACTIONS.HARVEST_CROP, label: "Gather normally" };
 	}
 	if (state.stage === STAGES.CLOVER_READY) {
 		if (state.prototypePosition === 6) {
@@ -1697,27 +1773,31 @@ export function playerPresentation(state) {
 			target: WORLD_TARGETS.PATCH,
 			objective: opportunity.name,
 			detail: opportunity.growDetail,
-			label: "Choose Clover Seed",
+			label: state.daysCompleted > 0 ? "Choose what to grow" : "Choose Clover Seed",
 			action,
 		};
 	}
 	if (state.stage === STAGES.STARTING) {
+		const rule = cropRule(state.selectedCrop);
 		const promisedYield =
-			CROP_RULES.clover.baseYield +
-			(state.compostApplied ? CROP_RULES.clover.compostYieldBonus : 0);
+			rule.baseYield +
+			(state.compostApplied ? rule.compostYieldBonus : 0);
+		const durationHours = (state.compostApplied ? rule.compostDurationMs : rule.baseDurationMs) / (60 * 60 * 1000);
 		return {
-			target: WORLD_TARGETS.PATCH,
+			target: state.selectedCrop === "moonberries" ? WORLD_TARGETS.MOONBERRY_BED : WORLD_TARGETS.PATCH,
 			objective: opportunity.plantingObjective,
-			detail: `Clover Lunch ×${promisedYield} · ready in ${state.compostApplied ? 2 : 4}h`,
-			label: state.compostApplied ? "Plant with Compost" : "Plant Clover",
+			detail: `${rule.outputName} ×${promisedYield} · ready in ${durationHours}h`,
+			label: action.label,
 			action,
 		};
 	}
 	if (state.stage === STAGES.CLOVER_GROWING) {
+		const rule = cropRule(state.selectedCrop);
+		const durationHours = (state.compostApplied ? rule.compostDurationMs : rule.baseDurationMs) / (60 * 60 * 1000);
 		return {
-			target: WORLD_TARGETS.PATCH,
+			target: state.selectedCrop === "moonberries" ? WORLD_TARGETS.MOONBERRY_BED : WORLD_TARGETS.PATCH,
 			objective: opportunity.growingObjective,
-			detail: state.compostApplied ? "Composted · ready in 2h" : "Growing · ready in 4h",
+			detail: `${state.compostApplied ? "Composted" : "Growing"} · ready in ${durationHours}h`,
 			label: "Preview it ready",
 			action,
 		};
@@ -1731,10 +1811,11 @@ export function playerPresentation(state) {
 		};
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
+		const rule = cropRule(state.selectedCrop);
 		return {
-			target: WORLD_TARGETS.PATCH,
+			target: state.selectedCrop === "moonberries" ? WORLD_TARGETS.MOONBERRY_BED : WORLD_TARGETS.PATCH,
 			objective: opportunity.harvestObjective,
-			detail: "Clover’s rhythm: ← → ↑",
+			detail: `${rule.name} rhythm: ${cropHarvestPatternLabel(state)}`,
 			label: "Follow the rhythm",
 			action,
 		};

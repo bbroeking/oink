@@ -4,7 +4,7 @@ const EMPTY_BEDS = Object.freeze(["empty", "empty", "empty"]);
 
 export const CLOVER_LUSH_THRESHOLD = 0.45;
 
-function cloverGrowthState(state, now) {
+function cropGrowthState(state, now) {
 	if (
 		state.plantedAt === null ||
 		state.readyAt === null ||
@@ -24,10 +24,18 @@ function bedStates(state, now) {
 			: "empty";
 	const rememberedBedThree = state.glowrootPlanted ? "sprout" : "empty";
 	if (state.stage === STAGES.CLOVER_GROWING) {
-		return [cloverGrowthState(state, now), rememberedBedTwo, rememberedBedThree];
+		const growthState = cropGrowthState(state, now);
+		return state.selectedCrop === "moonberries"
+			? ["empty", growthState, rememberedBedThree]
+			: [growthState, rememberedBedTwo, rememberedBedThree];
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
-		return ["ready", rememberedBedTwo, rememberedBedThree];
+		return state.selectedCrop === "moonberries"
+			? ["empty", "ready", rememberedBedThree]
+			: ["ready", rememberedBedTwo, rememberedBedThree];
+	}
+	if (state.stage === STAGES.CLOVER_READY && state.cloverHarvested && state.selectedCrop === "moonberries") {
+		return ["empty", "empty", rememberedBedThree];
 	}
 	if (state.stage === STAGES.DEVELOPED) {
 		return [

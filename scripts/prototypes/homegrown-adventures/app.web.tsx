@@ -18,6 +18,7 @@ import {
 	bagItem,
 	bagPackingCost,
 	bagReturnReward,
+	cropHarvestPattern,
 	CROP_RULES,
 	createInitialState,
 	createPrototypeState,
@@ -25,7 +26,6 @@ import {
 	FIRST_ADVENTURE_OPPORTUNITY,
 	HOMEGROWN_STORAGE_KEY,
 	homegrownReducer,
-	HARVEST_PATTERN,
 	nearDiscoveryGuide,
 	playerPresentation,
 	PROTOTYPE_POSITIONS,
@@ -94,6 +94,7 @@ const STAGE_COPY = {
 function stageCopy(state) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const crop = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
 	if (state.stage === STAGES.NEAR_DISCOVERY) {
 		const copy = (lanternleaf ? {
 			provision: {
@@ -136,10 +137,19 @@ function stageCopy(state) {
 	if (state.stage === STAGES.STARTING && state.purpose) {
 		return {
 			eyebrow: "Purpose before crop",
-			title: `Grow Clover Lunch for ${opportunity.name}`,
-			body: lanternleaf
+			title: `${state.selectedCrop === "moonberries" ? "Tend" : "Grow"} ${crop.outputName} for ${opportunity.name}`,
+			body: lanternleaf && state.selectedCrop === "moonberries"
+				? "This harvest has a job: reveal the silver leaves that mark the hidden night path."
+				: lanternleaf
 				? "This harvest has a job: help Rosie stay past the open gate until nightfall."
 				: "This harvest has a job: help Rosie stay beyond the hedge until the moths appear.",
+		};
+	}
+	if (state.stage === STAGES.CLOVER_GROWING) {
+		return {
+			eyebrow: "Growing kindly",
+			title: `${crop.outputName} ${state.selectedCrop === "moonberries" ? "are deepening" : "is taking root"}`,
+			body: "It will wait safely when ready. Nothing is harmed while you are away.",
 		};
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.changeRevealed) {
@@ -149,14 +159,21 @@ function stageCopy(state) {
 			body: "Welcome Rosie with a tickle and she will point out what happened while you were away.",
 		};
 	}
+	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
+		return {
+			eyebrow: "The patch rustles",
+			title: `${crop.outputName} ${state.selectedCrop === "moonberries" ? "are" : "is"} ready`,
+			body: `Follow ${crop.name}'s personal swipe rhythm. The complete harvest is always guaranteed.`,
+		};
+	}
 	if (state.stage === STAGES.CLOVER_READY && state.cloverHarvested) {
 		const choosingBag = state.prototypePosition >= 7;
 		return {
 			eyebrow: choosingBag ? "The Bag starts empty" : "Harvest tucked away",
-			title: choosingBag ? "Rosie's Bag is ready to pack" : "Clover Lunch joined Farm stock",
+			title: choosingBag ? "Rosie's Bag is ready to pack" : `${crop.outputName} joined Farm stock`,
 			body: choosingBag
 				? `Choose what helps with ${opportunity.name}, or leave every slot empty for a useful clue.`
-				: `The first bed is resting. Open Rosie's Bag when you are ready to prepare for ${opportunity.name}.`,
+				: `${state.selectedCrop === "moonberries" ? "Bed 2" : "The first bed"} is resting. Open Rosie's Bag when you are ready to prepare for ${opportunity.name}.`,
 		};
 	}
 	if (state.stage === STAGES.GLOWROOT_RETURNED && !state.changeRevealed) {
@@ -184,14 +201,15 @@ function stageCopy(state) {
 		return {
 			eyebrow: "A light Bag",
 			title: "Rosie can still have a kind Adventure",
-			body: "Without Clover Lunch she will return with a specific clue, not a failed mission or an empty reward.",
+			body: "Without a complete Bag she will return with a specific clue, not a failed mission or an empty reward.",
 		};
 	}
 	if (state.stage === STAGES.PACKED && lanternleaf) {
+		const provisionName = bagItem("provision", state.bag?.provision)?.name ?? "No Provision";
 		return {
 			eyebrow: "Rosie’s Bag",
 			title: `${opportunity.name} is packed`,
-			body: "Clover Lunch · a chosen Tool · a chosen Pack. Each capability changes what Rosie can notice and carry Home.",
+			body: `${provisionName} · a chosen Tool · a chosen Pack. Each capability changes what Rosie can notice and carry Home.`,
 		};
 	}
 	return STAGE_COPY[state.stage];
@@ -290,15 +308,22 @@ const BAG_SLOT_LABELS = {
 	pack: "Pack",
 };
 
-function SeedAdventureReceipt({ opportunity, className = "" }) {
+
+function SeedAdventureReceipt({ opportunity, className = "", twoCrops = false }) {
+	const promise = twoCrops
+		? "Both harvests help Rosie explore"
+		: "Clover becomes a Provision";
+	const detail = twoCrops
+		? "Clover: stay longer · Moonberries: reveal reflections"
+		: opportunity.detail;
 	return (
 		<div
 			className={`seed-adventure-receipt ${className}`}
 			role="note"
-			aria-label={`For ${opportunity.name}: Clover becomes Rosie’s Provision. ${opportunity.detail}.`}
+			aria-label={`For ${opportunity.name}: ${promise}. ${detail}.`}
 		>
-			<span><small>Grow for Rosie</small><strong>Clover becomes a Provision</strong></span>
-			<em>{opportunity.detail}</em>
+			<span><small>{twoCrops ? "Glowroot opened this route" : "Grow for Rosie"}</small><strong>{promise}</strong></span>
+			<em>{detail}</em>
 		</div>
 	);
 }
@@ -306,35 +331,27 @@ function SeedAdventureReceipt({ opportunity, className = "" }) {
 function SeedChoicePanel({ state, opportunity, onChoose }) {
 	const farmStock = state.farmStock ?? {};
 	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
-	const glowrootSeeds = farmStock["glowroot-seed"] ?? 0;
 	const compost = farmStock.compost ?? 0;
 	const rememberedMorning = state.daysCompleted > 0 && state.glowrootPlanted;
+	const moonberriesAvailable = state.nextPlanting === "moonberries";
 
 	if (rememberedMorning) {
 		return (
-			<section className="seed-choice-panel seed-choice-memory" aria-label="Choose the next crop while Home keeps growing">
-				<button className="seed-next-primary" type="button" onClick={onChoose} disabled={cloverSeeds < 1}>
-					<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
-					<span className="seed-next-copy">
-						<small>Glowroot opened this route</small>
-						<strong>Clover Seed</strong>
-						<b>Grow a Lunch for the lights beyond</b>
-					</span>
-					<em>{cloverSeeds > 0 ? "Choose Clover" : "Need a Seed"}</em>
-				</button>
-				<div className="seed-choice-support">
-					<div className="seed-memory-strip" aria-label="Already growing at Home">
-						<strong>Growing</strong>
-						<span><i aria-hidden="true">●</i><b>Moonberries</b><small>Bed 2</small></span>
-						<span><i aria-hidden="true">✦</i><b>Glowroot</b><small>Bed 3</small></span>
-					</div>
-					<div className="seed-compost-note" aria-label={`Compost is an optional boost after choosing a Seed. ${compost} owned.`}>
-						<i aria-hidden="true">♣</i>
-						<span><small>Optional after Seed</small><strong>Compost · {compost} owned</strong></span>
-					</div>
-					{glowrootSeeds > 0 && <p>{glowrootSeeds} Glowroot Seed{glowrootSeeds === 1 ? "" : "s"} safe in Farm stock</p>}
+			<section className="seed-choice-panel crop-choice-study" aria-label="Choose one useful crop for Rosie's next Adventure">
+				<div className="crop-choice-question"><strong>What should Rosie grow for the lights?</strong><small>Both harvests wait safely and fit her Provision pocket.</small></div>
+				<div className="crop-choice-options">
+					<button className="crop-path crop-path-clover" type="button" onClick={() => onChoose("clover")} disabled={cloverSeeds < 1}>
+						<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
+						<span><small>Clover · 4 hours</small><strong>Clover Lunch</strong><b>3 guaranteed · stay until nightfall</b></span>
+						<em>{cloverSeeds > 0 ? "Grow Clover" : "Need a Seed"}</em>
+					</button>
+					<button className="crop-path crop-path-moonberry" type="button" onClick={() => onChoose("moonberries")} disabled={!moonberriesAvailable}>
+						<span className="seed-art seed-art-moonberry" aria-hidden="true">●</span>
+						<span><small>Moonberries · 8 hours</small><strong>Moonberries</strong><b>4 guaranteed · reveal reflected leaves</b></span>
+						<em>{moonberriesAvailable ? "Tend Moonberries" : "Still taking root"}</em>
+					</button>
 				</div>
-				<SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" />
+				<SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" twoCrops />
 			</section>
 		);
 	}
@@ -346,7 +363,7 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 				<button
 					type="button"
 					className="seed-choice-card is-available"
-					onClick={onChoose}
+					onClick={() => onChoose("clover")}
 					disabled={cloverSeeds < 1}
 				>
 					<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
@@ -373,16 +390,20 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 }
 
 function PlantingPanel({ state, onToggleCompost, onPlant }) {
-	const seeds = state.farmStock?.[CROP_RULES.clover.seedId] ?? 0;
+	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
+	const isMoonberries = state.selectedCrop === "moonberries";
+	const seeds = rule.seedId === null ? null : state.farmStock?.[rule.seedId] ?? 0;
 	const compost = state.farmStock?.compost ?? 0;
 	const boosted = state.compostApplied && compost > 0;
-	const promisedYield = CROP_RULES.clover.baseYield + (boosted ? CROP_RULES.clover.compostYieldBonus : 0);
+	const promisedYield = rule.baseYield + (boosted ? rule.compostYieldBonus : 0);
+	const normalHours = rule.baseDurationMs / (60 * 60 * 1000);
+	const boostedHours = rule.compostDurationMs / (60 * 60 * 1000);
 	return (
-		<section className="planting-panel" aria-label="Plant Clover and choose whether to add Compost">
+		<section className="planting-panel" aria-label={`${isMoonberries ? "Tend Moonberries" : "Plant Clover"} and choose whether to add Compost`}>
 			<div className="planting-costs">
 				<div className="planting-cost is-required">
-					<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
-					<span><small>Required Seed</small><strong>Clover</strong><b>{seeds} → {Math.max(0, seeds - 1)}</b></span>
+					<span className={`seed-art ${isMoonberries ? "seed-art-moonberry" : "seed-art-clover"}`} aria-hidden="true">{isMoonberries ? "●" : "☘"}</span>
+					<span><small>{isMoonberries ? "Rooted in Bed 2" : "Required Seed"}</small><strong>{rule.name}</strong><b>{isMoonberries ? "No Seed spent" : `${seeds} → ${Math.max(0, seeds - 1)}`}</b></span>
 				</div>
 				<button
 					type="button"
@@ -397,21 +418,23 @@ function PlantingPanel({ state, onToggleCompost, onPlant }) {
 				</button>
 			</div>
 			<div className="planting-effect" role="status">
-				<strong>{promisedYield} Clover Lunches · ready in {boosted ? 2 : 4} hours</strong>
-				<small>{boosted ? "Compost saves 2 hours and adds 1 Lunch." : "Add Compost: 1 more Lunch, 2 hours sooner."}</small>
+				<strong>{promisedYield} {rule.outputName} · ready in {boosted ? boostedHours : normalHours} hours</strong>
+				<small>{boosted ? `Compost saves ${normalHours - boostedHours} hours and adds 1.` : `Add Compost: 1 more, ${normalHours - boostedHours} hours sooner.`}</small>
 			</div>
-			<button type="button" className="plant-confirm" onClick={onPlant} disabled={seeds < 1}>
-				{boosted ? "Plant with Compost" : "Plant Clover"}
+			<button type="button" className="plant-confirm" onClick={onPlant} disabled={!isMoonberries && seeds < 1}>
+				{boosted ? `${isMoonberries ? "Tend" : "Plant"} with Compost` : `${isMoonberries ? "Tend" : "Plant"} ${rule.name}`}
 			</button>
 		</section>
 	);
 }
 
 function GrowthStatusPanel({ state, onPreview }) {
+	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
+	const hours = (state.compostApplied ? rule.compostDurationMs : rule.baseDurationMs) / (60 * 60 * 1000);
 	return (
-		<section className={`growth-status-panel ${state.compostApplied ? "is-composted" : ""}`} aria-label="Clover growth status">
-			<span className="growth-badge"><i aria-hidden="true">{state.compostApplied ? "✓" : "☘"}</i>{state.compostApplied ? "Composted" : "Growing normally"}</span>
-			<strong>Ready in {state.compostApplied ? "2 hours" : "4 hours"}</strong>
+		<section className={`growth-status-panel ${state.compostApplied ? "is-composted" : ""}`} aria-label={`${rule.name} growth status`}>
+			<span className="growth-badge"><i aria-hidden="true">{state.compostApplied ? "✓" : state.selectedCrop === "moonberries" ? "●" : "☘"}</i>{state.compostApplied ? "Composted" : "Growing normally"}</span>
+			<strong>Ready in {hours} hours</strong>
 			<small>Once ready, this crop waits safely until you harvest it.</small>
 			<button type="button" onClick={onPreview}>Preview it ready</button>
 		</section>
@@ -422,12 +445,16 @@ const HARVEST_DIRECTION_LABELS = {
 	left: { arrow: "←", name: "Left" },
 	right: { arrow: "→", name: "Right" },
 	up: { arrow: "↑", name: "Up" },
+	down: { arrow: "↓", name: "Down" },
 };
 
 function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
+	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
+	const rhythmName = state.selectedCrop === "moonberries" ? "Moonberry" : rule.name;
+	const harvestPattern = cropHarvestPattern(state);
 	const gestureStart = useRef(null);
 	const beatIndex = state.harvestBeats?.length ?? 0;
-	const nextDirection = HARVEST_PATTERN[beatIndex] ?? null;
+	const nextDirection = harvestPattern[beatIndex] ?? null;
 	const nextLabel = nextDirection ? HARVEST_DIRECTION_LABELS[nextDirection] : null;
 	const startGesture = (event) => {
 		gestureStart.current = { x: event.clientX, y: event.clientY };
@@ -442,13 +469,13 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 		if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
 		const direction = Math.abs(dx) > Math.abs(dy)
 			? dx < 0 ? "left" : "right"
-			: dy < 0 ? "up" : null;
+			: dy < 0 ? "up" : "down";
 		if (direction) onBeat(direction, "swipe");
 	};
 
 	const pattern = (
-		<div className="harvest-pattern" aria-label="Left, then Right, then Up">
-			{HARVEST_PATTERN.map((direction, index) => (
+		<div className="harvest-pattern" aria-label={harvestPattern.map((direction) => HARVEST_DIRECTION_LABELS[direction].name).join(", then ")}>
+			{harvestPattern.map((direction, index) => (
 				index === beatIndex
 					? <button
 						key={direction}
@@ -465,8 +492,8 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 		</div>
 	);
 	const guaranteedYield =
-		CROP_RULES.clover.baseYield +
-		(state.compostApplied ? CROP_RULES.clover.compostYieldBonus : 0);
+		rule.baseYield +
+		(state.compostApplied ? rule.compostYieldBonus : 0);
 
 	return (
 		<div className="harvest-experiment">
@@ -476,17 +503,17 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 				onPointerUp={finishGesture}
 				onPointerCancel={() => { gestureStart.current = null; }}
 				role="group"
-				aria-label="Swipe Clover left, right, then up"
+				aria-label={`Swipe ${rhythmName}: ${harvestPattern.map((direction) => HARVEST_DIRECTION_LABELS[direction].name).join(", then ")}`}
 			>
 				<span aria-hidden="true">{nextLabel?.arrow}</span>
 			</div>
-			<section className="harvest-bed-ribbon is-unified" aria-label="Follow Clover's harvest rhythm">
+			<section className="harvest-bed-ribbon is-unified" aria-label={`Follow the ${rhythmName} harvest rhythm`}>
 				<strong aria-live="polite">{nextLabel ? `Swipe ${nextLabel.name}` : "Harvest complete"}</strong>
 				{pattern}
 				<small>Swipe bed · or tap arrow</small>
 			</section>
 			<div className="harvest-bed-assist is-unified">
-				<span><i aria-hidden="true">✓</i> {guaranteedYield} Lunches guaranteed · clean rhythm +1</span>
+				<span><i aria-hidden="true">✓</i> {guaranteedYield} {rule.outputName} guaranteed · clean rhythm +1</span>
 				<button type="button" className="harvest-normal" onClick={onGatherNormally}>Gather normally</button>
 			</div>
 		</div>
@@ -495,16 +522,19 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 
 function HarvestStockIcon({ kind }) {
 	if (kind === "clover") return <span className="stock-clover-art" aria-hidden="true"><i /><i /><i /><i /></span>;
+	if (kind === "moonberries") return <span className="stock-moonberry-art" aria-hidden="true"><i /><i /><i /><i /></span>;
 	if (kind === "seed") return <span className="stock-seed-art" aria-hidden="true"><i /></span>;
 	if (kind === "compost") return <span className="stock-compost-art" aria-hidden="true"><i /><i /><i /></span>;
 	return <span className="stock-material-art" aria-hidden="true"><i /><i /><i /></span>;
 }
 
 function HarvestResultPanel({ state, actionLabel, onContinue }) {
-	const compostBonus = state.compostApplied ? CROP_RULES.clover.compostYieldBonus : 0;
+	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
+	const isMoonberries = state.selectedCrop === "moonberries";
+	const compostBonus = state.compostApplied ? rule.compostYieldBonus : 0;
 	const rhythmBonus = state.harvestRhythmBonus ? 1 : 0;
 	const stockItems = [
-		{ id: "clover", name: "Clover Lunch", value: state.farmStock?.["clover-lunch"] ?? 0, kind: "clover" },
+		{ id: rule.outputId, name: rule.outputName, value: state.farmStock?.[rule.outputId] ?? 0, kind: isMoonberries ? "moonberries" : "clover" },
 		{ id: "seed", name: "Clover Seed", value: state.farmStock?.[CROP_RULES.clover.seedId] ?? 0, kind: "seed" },
 		{ id: "compost", name: "Compost", value: state.farmStock?.compost ?? 0, kind: "compost" },
 		{ id: "materials", name: "Willow Fiber", value: state.farmStock?.["willow-fiber"] ?? 0, kind: "materials" },
@@ -516,13 +546,13 @@ function HarvestResultPanel({ state, actionLabel, onContinue }) {
 			<strong>{item.value}</strong>
 		</div>
 	))}</div>;
-	const harvestBasket = <div className="harvest-basket" role="status" aria-label={`Clover Lunch plus ${state.lastHarvestYield}`}>
+	const harvestBasket = <div className={`harvest-basket ${isMoonberries ? "is-moonberries" : ""}`} role="status" aria-label={`${rule.outputName} plus ${state.lastHarvestYield}`}>
 		<span className="harvest-basket-image" aria-hidden="true" />
-		<div className="harvest-basket-label"><strong>Clover Lunch +{state.lastHarvestYield}</strong><small>{CROP_RULES.clover.baseYield} harvest{compostBonus ? ` · +${compostBonus} Compost` : ""}{rhythmBonus ? " · +1 rhythm" : ""}</small></div>
+		<div className="harvest-basket-label"><strong>{rule.outputName} +{state.lastHarvestYield}</strong><small>{rule.baseYield} harvest{compostBonus ? ` · +${compostBonus} from Compost` : ""}{rhythmBonus ? " · +1 rhythm" : ""}</small></div>
 	</div>;
 	const continueButton = <button type="button" className="harvest-prepare" onClick={onContinue}>{actionLabel}</button>;
 	return (
-		<section className="harvest-result-world harvest-result-shelf" aria-label="Clover harvest added to Farm stock">
+		<section className="harvest-result-world harvest-result-shelf" aria-label={`${rule.outputName} harvest added to Farm stock`}>
 			<div className="farm-stock-shelf"><strong>Farm stock</strong>{stockGrid}</div>
 			{harvestBasket}
 			{continueButton}
@@ -537,6 +567,7 @@ function BagItemArt({ itemId }) {
 const BAG_ITEM_EFFECT_LABELS = Object.freeze({
 	"glow-beneath-hedge": Object.freeze({
 		"clover-lunch": "Stay until dusk",
+		moonberries: "Reveal warm reflections",
 		"hand-trowel": "Dig through soft soil",
 		lantern: "Follow a glow after dark",
 		"wicker-basket": "Carry a find Home",
@@ -544,6 +575,7 @@ const BAG_ITEM_EFFECT_LABELS = Object.freeze({
 	}),
 	"lights-past-open-gate": Object.freeze({
 		"clover-lunch": "Stay until nightfall",
+		moonberries: "Reveal reflected leaves",
 		"hand-trowel": "Search beneath the path",
 		lantern: "Follow reflected leaves",
 		"wicker-basket": "Carry sturdy supplies Home",
@@ -627,8 +659,9 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 			onSelect={onSelect}
 		/>,
 	];
+	const chosenProvision = bagItem("provision", bag.provision);
 	const packLabel = !canPack
-		? needsProvision ? "Need Clover Lunch" : "Need Willow Fiber"
+		? needsProvision ? `Need ${chosenProvision?.name ?? "Provision"}` : "Need Willow Fiber"
 		: selectedCount === 0
 			? "Set out with an empty Bag"
 			: `Pack ${selectedCount} ${selectedCount === 1 ? "choice" : "choices"}`;
@@ -1441,7 +1474,7 @@ function App() {
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
 	const position = state.prototypePosition ?? 1;
 	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop;
-	const plantingCrop = position === 3 && state.stage === STAGES.STARTING && state.selectedCrop === "clover";
+	const plantingCrop = position === 3 && state.stage === STAGES.STARTING && Boolean(CROP_RULES[state.selectedCrop]);
 	const showingGrowth = position === 4 && state.stage === STAGES.CLOVER_GROWING;
 	const showingHarvestRhythm =
 		position === 5 &&
@@ -1524,7 +1557,7 @@ function App() {
 	const visiblePresentation = holdingGlowrootHomeReveal
 		? { ...presentation, objective: "Glowroot takes root", detail: "The Farm remembers" }
 		: showingHarvestCelebration
-		? { ...presentation, objective: "Harvesting Clover…" }
+		? { ...presentation, objective: `Harvesting ${CROP_RULES[state.selectedCrop]?.name ?? "crop"}…` }
 		: showingAdventureVignette
 		? {
 			...presentation,
@@ -1546,7 +1579,7 @@ function App() {
 			label: departing
 				? "Rosie is heading beyond the hedge…"
 				: state.stage === STAGES.CLOVER_GROWING
-					? "Clover is growing…"
+					? `${CROP_RULES[state.selectedCrop]?.name ?? "Crop"} ${state.selectedCrop === "moonberries" ? "are" : "is"} growing…`
 					: "Rosie is exploring…",
 		}
 		: presentation;
@@ -1848,7 +1881,7 @@ function App() {
 			{choosingSeed && <SeedChoicePanel
 				state={state}
 				opportunity={opportunity}
-				onChoose={() => act(visiblePresentation.action)}
+				onChoose={(crop) => act({ type: ACTIONS.SELECT_CROP, crop })}
 			/>}
 			{plantingCrop && <PlantingPanel
 				state={state}
@@ -1865,7 +1898,7 @@ function App() {
 					type: ACTIONS.HARVEST_BEAT,
 					direction,
 					input,
-					finalBeat: (state.harvestBeats?.length ?? 0) === HARVEST_PATTERN.length - 1,
+					finalBeat: (state.harvestBeats?.length ?? 0) === cropHarvestPattern(state).length - 1,
 				})}
 				onGatherNormally={() => act(visiblePresentation.action)}
 			/>}

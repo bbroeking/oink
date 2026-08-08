@@ -208,18 +208,22 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	background-image: url("./assets/homegrown-adventures/adventure-provision-clover-lunch.png");
 	filter: brightness(.68) saturate(.76) drop-shadow(3px 5px 4px rgba(4,10,7,.6));
 }
+.phone[data-adventure-provision="moonberries"] .adventure-provision-prop {
+	background-image: url("./assets/homegrown-adventures/harvest-basket-moonberries.png");
+	filter: brightness(.72) saturate(.82) drop-shadow(3px 5px 4px rgba(4,10,7,.6));
+}
 .phone[data-adventure-provision="none"] .adventure-provision-prop { display: none; }
 @keyframes adventure-provision-settle {
 	from { opacity: 0; transform: translateY(-5px) scale(.96) rotate(1.5deg); }
 	to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
 }
-.phone[data-adventure-provision="clover-lunch"][data-adventure-beat="provision"] .adventure-provision-prop {
+.phone:is([data-adventure-provision="clover-lunch"],[data-adventure-provision="moonberries"])[data-adventure-beat="provision"] .adventure-provision-prop {
 	animation: adventure-provision-one-use 760ms cubic-bezier(.16,1,.3,1) both;
 }
-.phone[data-adventure-provision="clover-lunch"][data-adventure-beat="provision"] .adventure-vignette-backdrop::before {
+.phone:is([data-adventure-provision="clover-lunch"],[data-adventure-provision="moonberries"])[data-adventure-beat="provision"] .adventure-vignette-backdrop::before {
 	animation: adventure-provision-dusk-arrive 820ms cubic-bezier(.16,1,.3,1) both;
 }
-.phone[data-adventure-provision="clover-lunch"]:is([data-adventure-beat="tool"],[data-adventure-beat="pack"],[data-adventure-beat="resolved"]) .adventure-vignette-backdrop::before {
+.phone:is([data-adventure-provision="clover-lunch"],[data-adventure-provision="moonberries"]):is([data-adventure-beat="tool"],[data-adventure-beat="pack"],[data-adventure-beat="resolved"]) .adventure-vignette-backdrop::before {
 	opacity: 1;
 }
 @keyframes adventure-provision-one-use {
@@ -1898,6 +1902,23 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .seed-compost-note small { color: var(--ink-soft); font-size: 6px; font-weight: 900; line-height: 1; text-transform: uppercase; }
 .seed-compost-note strong { font-size: 7px; line-height: 1; }
 .seed-choice-support > p { grid-column: 1 / -1; margin: 0; color: #496a36; font-size: 7px; font-weight: 900; line-height: 1; text-align: center; }
+.crop-choice-study { top: 414px; grid-template-rows: 44px 154px 53px; }
+.crop-choice-question { padding: 7px 10px; display: grid; place-items: center; gap: 2px; color: var(--paper); background: var(--wood); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 2px 3px 0 rgba(48,33,22,.68); text-align: center; }
+.crop-choice-question strong { font-family: Caprasimo, Georgia, serif; font-size: 11px; font-weight: 400; line-height: 1; }
+.crop-choice-question small { color: #f4dda6; font-size: 7px; font-weight: 850; }
+.crop-choice-options { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+.crop-path { min-width: 0; padding: 7px; display: grid; grid-template-rows: 48px 1fr 31px; justify-items: center; gap: 4px; color: var(--ink); background: rgba(255,249,233,.97); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 2px 3px 0 rgba(48,33,22,.72); text-align: center; }
+.crop-path:hover { background: #fff1c5; transform: translateY(-1px); }
+.crop-path:active { transform: translateY(2px); box-shadow: none; }
+.crop-path:disabled { cursor: not-allowed; filter: saturate(.55); opacity: .62; transform: none; }
+.crop-path > .seed-art { width: 45px; height: 45px; font-size: 28px; }
+.crop-path > span:nth-child(2) { min-width: 0; display: grid; gap: 2px; }
+.crop-path small { color: #496a36; font-size: 7px; font-weight: 950; text-transform: uppercase; }
+.crop-path strong { font-family: Caprasimo,Georgia,serif; font-size: 11px; font-weight: 400; line-height: 1; }
+.crop-path b { color: var(--ink-soft); font-size: 7px; line-height: 1.05; }
+.crop-path em { align-self: end; width: 100%; min-height: 28px; display: grid; place-items: center; background: #f4dfac; border: 1.5px solid var(--ink); border-radius: 8px; font-size: 7px; font-style: normal; font-weight: 950; text-transform: uppercase; }
+.crop-path-moonberry { background: #f2edf8; }
+.crop-path-moonberry em { background: #ded2ef; }
 .planting-panel {
 	left: 10px;
 	right: 10px;
@@ -2154,6 +2175,7 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .farm-stock-item > strong { position: absolute; right: 5px; bottom: 2px; font-family: Caprasimo, Georgia, serif; font-size: 11px; font-weight: 400; }
 .farm-stock-item > :first-child { transform: scale(.68); transform-origin: center; }
 .stock-clover-art,
+.stock-moonberry-art,
 .stock-seed-art,
 .stock-compost-art,
 .stock-material-art { width: 48px; height: 43px; position: relative; display: block; }
@@ -2162,6 +2184,11 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .stock-clover-art > i:nth-child(2) { right: 1px; top: 12px; transform: rotate(32deg); }
 .stock-clover-art > i:nth-child(3) { left: 12px; bottom: 1px; transform: rotate(39deg); }
 .stock-clover-art > i:nth-child(4) { left: 0; top: 12px; transform: rotate(-30deg); }
+.stock-moonberry-art > i { position: absolute; width: 23px; height: 23px; background: #55407f; border: 1.5px solid var(--ink); border-radius: 50%; box-shadow: inset 4px 4px 0 rgba(155,126,205,.46); }
+.stock-moonberry-art > i:nth-child(1) { left: 3px; top: 2px; }
+.stock-moonberry-art > i:nth-child(2) { right: 2px; top: 5px; }
+.stock-moonberry-art > i:nth-child(3) { left: 7px; bottom: 1px; }
+.stock-moonberry-art > i:nth-child(4) { right: 6px; bottom: 0; }
 .stock-seed-art { width: 42px; height: 39px; margin-top: 2px; background: #d7a758; border: 2px solid var(--ink); border-radius: 48% 48% 8px 8px; box-shadow: inset 0 5px 0 rgba(255,235,191,.42); }
 .stock-seed-art::before { content: ""; position: absolute; left: 6px; right: 6px; top: -4px; height: 7px; background: #b47a3d; border: 1.5px solid var(--ink); border-radius: 6px; }
 .stock-seed-art > i { position: absolute; left: 17px; top: 15px; width: 9px; height: 9px; background: var(--clover); border: 1px solid var(--ink); border-radius: 70% 45%; transform: rotate(45deg); }
@@ -2179,6 +2206,7 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	height: 180px;
 }
 .harvest-basket-image { position: absolute; inset: 0; background: url("./assets/homegrown-adventures/harvest-basket.webp") center / contain no-repeat; filter: drop-shadow(2px 3px 0 rgba(48,33,22,.46)); }
+.harvest-basket.is-moonberries .harvest-basket-image { background-image: url("./assets/homegrown-adventures/harvest-basket-moonberries.png"); }
 .harvest-basket-label { position: absolute; z-index: 2; left: 0; right: 0; bottom: -1px; min-height: 40px; padding: 6px 5px; display: grid; place-items: center; background: rgba(255,249,233,.97); border: 2px solid var(--ink); border-radius: 9px; box-shadow: 2px 2px 0 rgba(48,33,22,.58); text-align: center; }
 .harvest-basket-label strong { font-family: Caprasimo, Georgia, serif; font-size: 10px; font-weight: 400; line-height: 1; }
 .harvest-basket-label small { margin-top: 4px; color: var(--ink-soft); font-size: 7px; font-weight: 900; line-height: 1; }
@@ -2427,6 +2455,12 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .bag-item-art-clover-lunch > i:nth-child(2) { left: 14px; top: 4px; transform: rotate(30deg); }
 .bag-item-art-clover-lunch > i:nth-child(3) { right: 5px; top: 8px; transform: rotate(48deg); }
 .bag-item-art-clover-lunch > i:nth-child(4) { left: 12px; top: 11px; transform: rotate(-7deg); }
+.bag-item-art-moonberries::before { content: ""; position: absolute; left: 3px; right: 3px; bottom: 1px; height: 13px; background: #b77a3f; border: 1.5px solid var(--ink); border-radius: 3px 3px 13px 13px; }
+.bag-item-art-moonberries > i { position: absolute; width: 10px; height: 10px; background: #55407f; border: 1px solid var(--ink); border-radius: 50%; box-shadow: inset 2px 2px rgba(164,135,211,.55); }
+.bag-item-art-moonberries > i:nth-child(1) { left: 5px; top: 7px; }
+.bag-item-art-moonberries > i:nth-child(2) { left: 12px; top: 3px; }
+.bag-item-art-moonberries > i:nth-child(3) { right: 4px; top: 7px; }
+.bag-item-art-moonberries > i:nth-child(4) { left: 12px; top: 10px; }
 .bag-item-art-hand-trowel::before { content: ""; position: absolute; left: 14px; top: 0; width: 7px; height: 18px; background: #9a6539; border: 1.5px solid var(--ink); border-radius: 5px; transform: rotate(28deg); }
 .bag-item-art-hand-trowel::after { content: ""; position: absolute; left: 7px; bottom: 0; width: 18px; height: 18px; background: #a7a29a; border: 1.5px solid var(--ink); border-radius: 70% 35% 60% 50%; transform: rotate(28deg); }
 .bag-item-art-lantern::before { content: ""; position: absolute; left: 8px; top: 7px; width: 18px; height: 21px; background: #f5c550; border: 2px solid var(--ink); border-radius: 5px 5px 8px 8px; box-shadow: inset 0 0 0 4px rgba(255,241,168,.75); }
