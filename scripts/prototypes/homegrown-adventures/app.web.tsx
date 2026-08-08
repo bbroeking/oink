@@ -19,6 +19,7 @@ import {
 	createInitialState,
 	createPrototypeState,
 	deserializeState,
+	FIRST_ADVENTURE_OPPORTUNITY,
 	HOMEGROWN_STORAGE_KEY,
 	homegrownReducer,
 	HARVEST_PATTERN,
@@ -1150,6 +1151,23 @@ function App() {
 		state.nextPlanting === "moonberries" &&
 		!state.cycleComplete;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingReturnReward;
+	const sceneRiveViewModel = useMemo(() => {
+		if (
+			!showingAdventureVignette ||
+			opportunity.id !== SECOND_ADVENTURE_OPPORTUNITY.id
+		) return riveModel.viewModel;
+		return {
+			...riveModel.viewModel,
+			bedOneState: "empty",
+			bedTwoState: "empty",
+			bedThreeState: "empty",
+			hedgehogVisible: false,
+			frogVisible: false,
+			mothsVisible: false,
+			hedgeCrossingOpen: false,
+			hedgeBellEarned: false,
+		};
+	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
 	const waiting = departing || (autoPlay && (
 		state.stage === STAGES.CLOVER_GROWING ||
 		(state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen && !state.adventureComplete)
@@ -1329,8 +1347,8 @@ function App() {
 			<HomegrownRiveScene
 				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}
-				model={riveModel.viewModel}
-				showPondResident={homeMemoryEarned && riveModel.viewModel.frogVisible}
+				model={sceneRiveViewModel}
+				showPondResident={homeMemoryEarned && sceneRiveViewModel.frogVisible}
 				showHomePose={showingHomeMemory}
 				trigger={riveModel.trigger}
 				triggerNonce={riveModel.triggerNonce}
@@ -1338,13 +1356,18 @@ function App() {
 			/>
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
+			{showingAdventureVignette && opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id && (
+				<div className="adventure-tool-prop" aria-hidden="true" />
+			)}
 			{showingAdventureVignette && <div className="adventure-pack-prop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-homecoming-backdrop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-tool-prop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-pack-prop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-bed-mask" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-table-mask" aria-hidden="true" />}
-			{showingAdventureVignette && adventureStory(state).kind === "discovery" && (
+			{showingAdventureVignette &&
+			adventureStory(state).kind === "discovery" &&
+			opportunity.id === FIRST_ADVENTURE_OPPORTUNITY.id && (
 				<AdventureGlowrootRive reduceMotion={state.reduceMotion} />
 			)}
 			<div className="quiet-hud">

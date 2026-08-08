@@ -161,6 +161,9 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .phone[data-adventure-tool="lantern"] .adventure-vignette-backdrop {
 	background-image: url("./assets/homegrown-adventures/adventure-clearing-lantern-no-pack.webp");
 }
+.phone[data-adventure-opportunity="lights-past-open-gate"] .adventure-vignette-backdrop {
+	background-image: url("./assets/homegrown-adventures/adventure-lanternleaf-path.webp");
+}
 .adventure-vignette-backdrop::after {
 	content: "";
 	position: absolute;
@@ -186,6 +189,7 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .phone[data-adventure-tool="lantern"] .adventure-bed-mask {
 	background-image: url("./assets/homegrown-adventures/adventure-clearing-lantern-no-pack.webp");
 }
+.phone[data-adventure-opportunity="lights-past-open-gate"] .adventure-bed-mask { display: none; }
 .adventure-provision-prop {
 	position: absolute;
 	z-index: 4;
@@ -208,6 +212,34 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 @keyframes adventure-provision-settle {
 	from { opacity: 0; transform: translateY(-5px) scale(.96) rotate(1.5deg); }
 	to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+.adventure-tool-prop {
+	position: absolute;
+	z-index: 3;
+	left: 153px;
+	top: 548px;
+	width: 82px;
+	height: 82px;
+	pointer-events: none;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: contain;
+	transform-origin: 50% 84%;
+	animation: adventure-tool-settle 420ms cubic-bezier(.16,1,.3,1) both;
+}
+.phone[data-adventure-tool="hand-trowel"] .adventure-tool-prop {
+	background-image: url("./assets/homegrown-adventures/return-tool-trowel.png");
+	filter: brightness(.7) saturate(.75) drop-shadow(3px 5px 4px rgba(4,10,7,.58));
+	transform: rotate(-12deg);
+}
+.phone[data-adventure-tool="lantern"] .adventure-tool-prop {
+	background-image: url("./assets/homegrown-adventures/return-tool-lantern.png");
+	filter: brightness(.76) saturate(.86) drop-shadow(3px 5px 4px rgba(4,10,7,.58));
+}
+.phone[data-adventure-tool="none"] .adventure-tool-prop { display: none; }
+@keyframes adventure-tool-settle {
+	from { opacity: 0; translate: 0 -5px; scale: .96; }
+	to { opacity: 1; translate: 0 0; scale: 1; }
 }
 .adventure-pack-prop {
 	position: absolute;
@@ -259,6 +291,7 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .adventure-glowroot-rive-stage canvas { width: 390px; height: 844px; display: block; }
 html[data-reduce-motion="true"] .adventure-pack-prop { animation: none; }
 html[data-reduce-motion="true"] .adventure-provision-prop { animation: none; }
+html[data-reduce-motion="true"] .adventure-tool-prop { animation: none; }
 html[data-reduce-motion="true"] .return-tool-prop { animation: none; }
 html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 .adventure-vignette-overlay {
