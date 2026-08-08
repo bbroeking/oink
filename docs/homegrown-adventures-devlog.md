@@ -344,6 +344,18 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   inspection, 324-sprite integrity gate, security contracts, TypeScript, 78
   layout tests, and the security suite; Watchman's existing recrawl notice is
   the only warning.
+- Feature commit `6d97503` deployed successfully through GitHub Pages run
+  `31263696874`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `f868eb46cb4925a3416f8c6c913361c761ad9566b21e68d4503e3f57176a950e`,
+  `77be609432cdc6c1d0ca6de3b60525c58342cd35d7f53a6f32f1668ad9cb4a32`, and
+  `d388814af585292314aac9eccd6f5fca03c70d8a5f893eba84ca6ca23f9fe089`.
+- A clean public Position 9 replay at 1280×720 reported
+  `opportunity=glow-beneath-hedge`, `beat=tool`, Rive `ready`,
+  `motion=adventure-attention`, `last=adventure-attention`, the exact Hand
+  Trowel field note, and equal 1280 px client/scroll widths. The deployed
+  companion page links directly to the same checkpoint as **Watch Rosie lean
+  into the Adventure clue**.
 
 ### Next highest-leverage weakness
 
