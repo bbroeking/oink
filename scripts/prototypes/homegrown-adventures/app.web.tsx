@@ -38,10 +38,13 @@ import {
 } from "./homegrownRiveModel.mjs";
 import "./styles.css";
 
+// v0.83 throwaway question: how should the first Tool cause become physical?
+// Verdict at 360x780: C uses one bounded dig, then settles before Pack takes
+// focus; it completes the cause without turning the Tool into a minigame.
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Painted Tool", question: "Is the static trowel enough evidence for the Tool cause?" },
+	B: { name: "Tool Spotlight", question: "Does a separable highlighted trowel make the cause tangible?" },
+	C: { name: "One Dig", question: "Does one restrained trowel action complete the cause without stealing focus?" },
 };
 
 const STAGE_COPY = {
@@ -1505,9 +1508,7 @@ function App() {
 			/>
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
-			{showingAdventureVignette && opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id && (
-				<div className="adventure-tool-prop" aria-hidden="true" />
-			)}
+			{showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-pack-prop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-homecoming-backdrop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-tool-prop" aria-hidden="true" />}
