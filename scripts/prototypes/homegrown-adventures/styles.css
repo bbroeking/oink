@@ -1896,6 +1896,30 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .seed-compost-note small { color: var(--ink-soft); font-size: 6px; font-weight: 900; line-height: 1; text-transform: uppercase; }
 .seed-compost-note strong { font-size: 7px; line-height: 1; }
 .seed-choice-support > p { grid-column: 1 / -1; margin: 0; color: #496a36; font-size: 7px; font-weight: 900; line-height: 1; text-align: center; }
+.seed-choice-memory[data-purpose-study="A"] .seed-adventure-receipt small { color: #496a36; }
+.seed-choice-memory[data-purpose-study="A"] .seed-adventure-receipt strong { font-size: 11px; }
+.seed-choice-memory[data-purpose-study="B"] .seed-next-copy small { color: #496a36; }
+.seed-choice-memory[data-purpose-study="B"] .seed-next-copy b { color: #496a36; font-weight: 950; }
+.purpose-continuity-prototype-switcher {
+	position: fixed;
+	z-index: 40;
+	left: 50%;
+	bottom: 24px;
+	width: 248px;
+	height: 50px;
+	display: grid;
+	grid-template-columns: 44px 1fr 44px;
+	overflow: hidden;
+	background: #fff9e9;
+	border: 2px solid #302116;
+	border-radius: 999px;
+	box-shadow: 2px 3px 0 #302116;
+	transform: translateX(-50%);
+}
+.purpose-continuity-prototype-switcher button { border: 0; background: #e5efc4; font-size: 18px; }
+.purpose-continuity-prototype-switcher span { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.purpose-continuity-prototype-switcher strong { font-size: 13px; }
+.purpose-continuity-prototype-switcher small { color: #695548; font-size: 8px; font-weight: 800; }
 .planting-panel {
 	left: 10px;
 	right: 10px;

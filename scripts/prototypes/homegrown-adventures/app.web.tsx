@@ -48,6 +48,42 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// PROTOTYPE — three Position 2 treatments for connecting yesterday's Glowroot
+// Discovery to today's route, switchable with ?purpose=A|B|C.
+const PURPOSE_CONTINUITY_STUDIES = Object.freeze({
+	A: { name: "Purpose receipt" },
+	B: { name: "Seed cause" },
+	C: { name: "HUD cause" },
+});
+
+function readPurposeContinuityStudy() {
+	const requested = new URLSearchParams(window.location.search).get("purpose")?.toUpperCase();
+	return Object.hasOwn(PURPOSE_CONTINUITY_STUDIES, requested) ? requested : null;
+}
+
+function PurposeContinuityPrototypeSwitcher({ study, setStudy }) {
+	const studies = Object.keys(PURPOSE_CONTINUITY_STUDIES);
+	const currentIndex = studies.indexOf(study);
+	const cycle = (direction) => setStudy(studies[(currentIndex + direction + studies.length) % studies.length]);
+	return (
+		<div
+			className="purpose-continuity-prototype-switcher"
+			tabIndex={0}
+			aria-label="Purpose continuity prototype switcher"
+			onKeyDown={(event) => {
+				if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+				event.preventDefault();
+				event.stopPropagation();
+				cycle(event.key === "ArrowRight" ? 1 : -1);
+			}}
+		>
+			<button type="button" aria-label="Previous purpose treatment" onClick={() => cycle(-1)}>←</button>
+			<span><strong>{study}</strong><small>{PURPOSE_CONTINUITY_STUDIES[study].name}</small></span>
+			<button type="button" aria-label="Next purpose treatment" onClick={() => cycle(1)}>→</button>
+		</div>
+	);
+}
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -290,20 +326,26 @@ const BAG_SLOT_LABELS = {
 	pack: "Pack",
 };
 
-function SeedAdventureReceipt({ opportunity, className = "" }) {
+function SeedAdventureReceipt({ opportunity, className = "", purposeStudy = null }) {
+	const namesLastingCause = purposeStudy === "A";
 	return (
 		<div
 			className={`seed-adventure-receipt ${className}`}
 			role="note"
-			aria-label={`For ${opportunity.name}: Clover becomes Rosie’s Provision. ${opportunity.detail}.`}
+			aria-label={namesLastingCause
+				? "Yesterday's Glowroot Discovery opened the gate. Now grow Clover so Rosie can stay for the lights."
+				: `For ${opportunity.name}: Clover becomes Rosie’s Provision. ${opportunity.detail}.`}
 		>
-			<span><small>Grow for Rosie</small><strong>Clover becomes a Provision</strong></span>
-			<em>{opportunity.detail}</em>
+			<span>
+				<small>{namesLastingCause ? "Yesterday’s Discovery" : "Grow for Rosie"}</small>
+				<strong>{namesLastingCause ? "Glowroot opened the gate" : "Clover becomes a Provision"}</strong>
+			</span>
+			<em>{namesLastingCause ? "Now grow Clover · stay for the lights" : opportunity.detail}</em>
 		</div>
 	);
 }
 
-function SeedChoicePanel({ state, opportunity, onChoose }) {
+function SeedChoicePanel({ state, opportunity, onChoose, purposeStudy = null }) {
 	const farmStock = state.farmStock ?? {};
 	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
 	const glowrootSeeds = farmStock["glowroot-seed"] ?? 0;
@@ -312,13 +354,13 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 
 	if (rememberedMorning) {
 		return (
-			<section className="seed-choice-panel seed-choice-memory" aria-label="Choose the next crop while Home keeps growing">
+			<section className="seed-choice-panel seed-choice-memory" data-purpose-study={purposeStudy ?? undefined} aria-label="Choose the next crop while Home keeps growing">
 				<button className="seed-next-primary" type="button" onClick={onChoose} disabled={cloverSeeds < 1}>
 					<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
 					<span className="seed-next-copy">
-						<small>Plant next</small>
+						<small>{purposeStudy === "B" ? "Glowroot opened this route" : "Plant next"}</small>
 						<strong>Clover Seed</strong>
-						<b>{cloverSeeds} owned · stocks Rosie’s next Adventure</b>
+						<b>{purposeStudy === "B" ? "Grow a Lunch for the lights beyond" : `${cloverSeeds} owned · stocks Rosie’s next Adventure`}</b>
 					</span>
 					<em>{cloverSeeds > 0 ? "Choose Clover" : "Need a Seed"}</em>
 				</button>
@@ -334,7 +376,7 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 					</div>
 					{glowrootSeeds > 0 && <p>{glowrootSeeds} Glowroot Seed{glowrootSeeds === 1 ? "" : "s"} safe in Farm stock</p>}
 				</div>
-				<SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" />
+				<SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" purposeStudy={purposeStudy} />
 			</section>
 		);
 	}
@@ -1413,6 +1455,14 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [purposeContinuityStudy, setPurposeContinuityStudyState] = useState(readPurposeContinuityStudy);
+	const setPurposeContinuityStudy = useCallback((study) => {
+		const next = Object.hasOwn(PURPOSE_CONTINUITY_STUDIES, study) ? study : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("purpose", next);
+		window.history.replaceState({}, "", url);
+		setPurposeContinuityStudyState(next);
+	}, []);
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1521,7 +1571,9 @@ function App() {
 		state.stage === STAGES.CLOVER_GROWING ||
 		(state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen && !state.adventureComplete)
 	));
-	const visiblePresentation = holdingGlowrootHomeReveal
+	const visiblePresentation = choosingSeed && purposeContinuityStudy === "C"
+		? { ...presentation, detail: "Glowroot opened the way · grow Clover for nightfall" }
+		: holdingGlowrootHomeReveal
 		? { ...presentation, objective: "Glowroot takes root", detail: "The Farm remembers" }
 		: showingHarvestCelebration
 		? { ...presentation, objective: "Harvesting Clover…" }
@@ -1848,6 +1900,7 @@ function App() {
 			{choosingSeed && <SeedChoicePanel
 				state={state}
 				opportunity={opportunity}
+				purposeStudy={purposeContinuityStudy}
 				onChoose={() => act(visiblePresentation.action)}
 			/>}
 			{plantingCrop && <PlantingPanel
@@ -1932,6 +1985,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{choosingSeed && purposeContinuityStudy && <PurposeContinuityPrototypeSwitcher study={purposeContinuityStudy} setStudy={setPurposeContinuityStudy} />}
 	</main>;
 }
 
