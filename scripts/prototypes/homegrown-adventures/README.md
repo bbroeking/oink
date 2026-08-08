@@ -1,5 +1,20 @@
 # Homegrown Adventures prototype
 
+The v0.102 actionable-clue pass makes an incomplete Adventure feel like a
+useful Field Guide return rather than a failed version of the full Discovery.
+Three real Position 10 treatments were rendered at commit `5b83fe3` on
+`codex/homegrown-v102-homecoming-clue-prototypes`: one enlarged Field Guide
+plaque, a pinned note from Rosie, and a return receipt. The Field Guide plaque
+won because it gives the clue one intentional place, separates it from actual
+Farm supplies, and names the exact Provision, Tool, or Pack capability to try
+next without adding another overlapping object. Its action returns directly to
+that Bag pocket. Prepared Adventures retain the established Glowroot or
+Lanternleaf Discovery ceremony and reward quantities. React derives the copy,
+next capability, and focus target from the existing route and
+`nearDiscoveryReason`; no state transition, reward, inventory rule, Rive
+asset, or Rive contract changed. No `nearhome` query or comparison switcher
+remains on main.
+
 The v0.101 journey-causality pass keeps an incomplete Bag truthful through the
 entire six-hour idle beat instead of reverting to the prepared route's success
 copy after the causal vignette. Three real Position 9 treatments were rendered

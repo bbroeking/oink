@@ -335,11 +335,88 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 102. **v0.101 — The Journey Tells the Truth (shipped):** keep an incomplete
     Bag causal through the idle journey by changing the existing field note and
     route into a specific Near-Discovery, without adding another results card.
+103. **v0.102 — The Clue Comes Home (shipped):** present an incomplete return
+    as a named Field Guide update, separate it from actual Farm supplies, and
+    open the exact Bag pocket that can complete the Discovery next time.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.102 — The Clue Comes Home — 2026-08-08
+
+- Began by replaying the shipped prepared and incomplete journeys through the
+  complete Homecoming. The prepared route had an intentional Discovery
+  ceremony, but the incomplete route looked like a validation error: its Field
+  Guide clue was listed under **Added to Farm stock**, and **Adjust Rosie's
+  Bag** reopened the Provision question even when Tool or Pack was missing.
+- Compared three real Position 10 treatments: an enlarged Field Guide plaque,
+  a pinned note from Rosie, and a return receipt. The Field Guide plaque won.
+  The pinned note covered the physical return objects, while the receipt turned
+  the emotional Homecoming into bookkeeping.
+- Captured all three throwaway treatments at commit `5b83fe3` on
+  `codex/homegrown-v102-homecoming-clue-prototypes`. Main keeps only the Field
+  Guide treatment; no `nearhome` query or comparison switcher ships.
+- Each route and missing slot now records a specific story and names the exact
+  capability to try next. The action says **Open the Provision pocket**,
+  **Open the Tool pocket**, or **Open the Pack pocket**, then returns to
+  Position 7 with that tab selected.
+- The return ledger now says **Supplies brought Home** and contains only real
+  stock: Compost and Willow Fiber. The clue remains in the Field Guide instead
+  of masquerading as a Farm material.
+- Complete Discoveries retain their established named Seed, quantities,
+  preparation bonuses, and **Take Seed to Bed 3** action. No route, reward,
+  Bag rule, inventory quantity, timestamp, save field, animation, Rive asset,
+  or Rive contract changed.
+- The required Impeccable product review substituted for unavailable Claude
+  Design. It selected the plaque because it creates one calm hierarchy with
+  the fewest new surfaces and preserves the worktable composition.
+
+### Local validation evidence
+
+- Played the first route with Provision, Tool, and Pack missing in turn. Each
+  Homecoming rendered distinct Field Guide copy, the correct next capability,
+  only its real supplies, and an action that opened the matching Bag tab.
+- Played the Lanternleaf route without a Tool. Its reflected-leaf clue and
+  Tool-specific follow-up remained route-correct.
+- Reloaded a reduced-motion Near-Discovery. Its exact Field Guide result,
+  supplies, and Bag action persisted.
+- Played a fully prepared journey through departure, the six-hour
+  fast-forward, gate welcome, and Homecoming. It still returned Glowroot Seed
+  +2, Compost +1, Willow Fiber +2, and **Take Seed to Bed 3**.
+- `npm run prototype:homegrown:test` passes 74/74. `npm run
+  prototype:homegrown:build`, `npm run verify:rive-homegrown`, `npm run
+  quality:loop`, and `npm run quality:check` pass the authored Rive contracts,
+  quality contracts, 157-file layout gate, 324-sprite integrity gate, security
+  contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
+  existing recrawl notice is the only warning.
+
+### Public verification evidence
+
+- Feature commit `63afc83` deployed successfully in GitHub Pages run
+  `31274859128`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `802fe7b295b2b863707febfcda0157a16695d9e704ba99d2fd74ed7dfeca5e8a`
+  - player JavaScript: `1e235a1177375e4b23dfb448e4beaad893f2068e74145b42e569ac4ed5f5c068`
+  - player CSS: `ef9ba36a6a65cf8f1a134bc1df6962e846aacaa43c2ae1cc1c38c844cc6fd1a9`
+- Opened a persisted public incomplete Homecoming. It rendered **Field Guide
+  updated**, **Glowroot Trail**, the missing-Provision explanation, Compost
+  +1, Willow Fiber +1, and no unearned Glowroot Seed. **Open the Provision
+  pocket** returned to Position 7 with Provision selected.
+- Opened the public prepared Homecoming separately. It retained **New
+  Discovery**, Glowroot Seed +2, Compost +1, Willow Fiber +2, and **Take Seed
+  to Bed 3**.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=7&v=63afc83`
+
+### Next highest-leverage weakness
+
+Replay the shipped Near-Discovery action through re-packing and the repeated
+Adventure. Find the first moment where the remembered clue fails to help the
+player close the loop into a complete Discovery; prefer one confirmation in
+the existing Bag or journey surface over a new quest, tutorial, or reward
+system.
 
 ### v0.101 — The Journey Tells the Truth — 2026-08-08
 
