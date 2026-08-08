@@ -265,6 +265,28 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	filter: brightness(.7) saturate(.76) drop-shadow(3px 5px 4px rgba(4,10,7,.58));
 }
 .phone[data-adventure-pack="none"] .adventure-pack-prop { display: none; }
+.adventure-provision-prop,
+.adventure-tool-prop,
+.adventure-pack-prop {
+	transition: opacity 240ms cubic-bezier(.16,1,.3,1), filter 240ms cubic-bezier(.16,1,.3,1), scale 240ms cubic-bezier(.16,1,.3,1);
+}
+.phone[data-adventure-beat="provision"] .adventure-tool-prop,
+.phone[data-adventure-beat="provision"] .adventure-pack-prop,
+.phone[data-adventure-beat="tool"] .adventure-provision-prop,
+.phone[data-adventure-beat="tool"] .adventure-pack-prop,
+.phone[data-adventure-beat="pack"] .adventure-provision-prop,
+.phone[data-adventure-beat="pack"] .adventure-tool-prop {
+	opacity: .38;
+	filter: brightness(.46) saturate(.5) drop-shadow(2px 3px 3px rgba(4,10,7,.45));
+	scale: .96;
+}
+.phone[data-adventure-beat="provision"] .adventure-provision-prop,
+.phone[data-adventure-beat="tool"] .adventure-tool-prop,
+.phone[data-adventure-beat="pack"] .adventure-pack-prop {
+	opacity: 1;
+	filter: brightness(.96) saturate(1.08) drop-shadow(0 0 11px color-mix(in srgb, var(--sun) 66%, transparent));
+	scale: 1.08;
+}
 @keyframes adventure-pack-settle {
 	from { opacity: 0; transform: translateY(-5px) scale(.96) rotate(-1.5deg); }
 	to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
@@ -346,9 +368,21 @@ html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 	display: grid;
 	grid-template-columns: 22px 91px minmax(0, 1fr);
 	align-items: center;
+	padding: 0 3px;
 	border-top: 1px solid rgba(77,48,29,.24);
+	border-radius: 5px;
+	transition: opacity 220ms cubic-bezier(.16,1,.3,1), transform 220ms cubic-bezier(.16,1,.3,1), background-color 220ms cubic-bezier(.16,1,.3,1), box-shadow 220ms cubic-bezier(.16,1,.3,1);
 }
 .adventure-cause-thread li.is-empty { color: #624f3d; }
+.adventure-cause-thread li.is-pending { opacity: .42; }
+.adventure-cause-thread li.is-complete { opacity: .76; }
+.adventure-cause-thread li.is-active {
+	opacity: 1;
+	background: color-mix(in srgb, var(--paper) 52%, transparent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--sun) 78%, transparent), 2px 2px 0 color-mix(in srgb, var(--ink) 28%, transparent);
+	transform: translateX(3px);
+}
+.adventure-vignette-overlay[data-adventure-cause-beat="resolved"] .adventure-cause-thread li { opacity: 1; }
 .adventure-cause-thread i { font-family: Georgia, serif; color: #456f3d; font-size: 15px; font-style: normal; line-height: 1; text-align: center; }
 .adventure-cause-thread li > strong { font-family: Caprasimo, Georgia, serif; font-size: 9.5px; font-weight: 400; line-height: 1.05; }
 .adventure-cause-thread small { color: #4b3829; font-size: 8.5px; font-weight: 800; line-height: 1.13; }

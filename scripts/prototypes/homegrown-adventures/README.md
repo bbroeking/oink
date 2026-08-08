@@ -179,6 +179,15 @@ Discovery or Near-Discovery reveal. The visual layer adds no timer, reward,
 route, mission, currency, or persistence authority, and reduced motion keeps a
 static route with the same accessible DOM hierarchy.
 
+The v0.75 causality pass makes the preceding Position 9 vignette enact the Bag
+instead of exposing three answers at once. Provision, Tool, and Pack each
+receive one short focus beat, with the matching physical prop emphasized in the
+scene. The existing Glowroot or Lanternleaf Rive cue waits until the Tool beat,
+so the environment visibly answers Rosie's preparation. React still owns the
+beat order, route, Bag facts, exact outcome, and interruptible Continue action;
+reduced motion resolves directly to the complete ledger, and empty slots keep
+their established useful Near-Discovery paths.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

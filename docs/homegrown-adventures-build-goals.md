@@ -380,6 +380,19 @@ progression state. First and second routes, complete and incomplete Bags,
 Homecoming order, 360×780 touch layout, reload, and reduced motion pass locally;
 the exact v0.74 bundle and companion-site link also pass on GitHub Pages.
 
+**Bag-causality checkpoint (August 7, 2026):** the shipped Position 9 scene had
+the correct deterministic Provision, Tool, and Pack consequences, but exposed
+them simultaneously as a compact answer ledger. The same three reducer-owned
+facts now play as one short authored sequence: the Provision earns the first
+focus, the Tool receives the second and wakes the existing route-specific Rive
+cue, and the Pack closes the explanation with its physical prop. The player can
+continue at any time; no gameplay wait, destination, reward, equipment rule,
+currency, or progression state was added. Reduced motion resolves directly to
+the complete readable explanation. Empty slots remain explicit and kind, keep
+their exact Near-Discovery outcomes, and never mount an unearned reward layer.
+Both routes, complete and incomplete Bags, 360×780 touch, reduced motion, Rive
+contracts, the 49 reducer tests, and repository quality gates pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

@@ -671,25 +671,43 @@ function PackedLoadoutRibbon({ bag, farmStock }) {
 	);
 }
 
-function AdventureVignetteOverlay({ state, onContinue }) {
+function AdventureVignetteOverlay({ state, beat, onContinue }) {
 	const story = adventureStory(state);
+	const activeBeatIndex = BAG_SLOT_ORDER.indexOf(beat);
+	const resolved = beat === "resolved";
 	return (
-		<section className="adventure-vignette-overlay" data-story-kind={story.kind} aria-label="Beyond-the-hedge journey">
+		<section
+			className="adventure-vignette-overlay"
+			data-adventure-cause-beat={beat}
+			data-story-kind={story.kind}
+			aria-label="Beyond-the-hedge journey"
+		>
 			<div className="adventure-find" role="status">
 				<span className="glowroot-token" aria-hidden="true">✦</span>
 				<strong>{story.journeyHeadline}</strong>
 				<small>{story.journeyResult}</small>
 			</div>
 			<div className="adventure-cause-thread" aria-label="What Rosie's bag changes">
-				<strong className="adventure-cause-title">What Rosie’s bag changes</strong>
+				<strong className="adventure-cause-title">Rosie’s Bag in action</strong>
 				<ul>
-					{story.journeyTags.map((tag) => (
-						<li key={tag.slot} className={tag.name.startsWith("No ") ? "is-empty" : ""}>
+					{story.journeyTags.map((tag, index) => {
+						const beatState = resolved
+							? "is-complete"
+							: index === activeBeatIndex
+								? "is-active"
+								: index < activeBeatIndex
+									? "is-complete"
+									: "is-pending";
+						return <li
+							key={tag.slot}
+							className={`${beatState} ${tag.name.startsWith("No ") ? "is-empty" : ""}`}
+							aria-current={beatState === "is-active" ? "step" : undefined}
+						>
 							<i aria-hidden="true">{tag.icon}</i>
 							<strong>{tag.name}</strong>
 							<small>{tag.detail}</small>
-						</li>
-					))}
+						</li>;
+					})}
 				</ul>
 			</div>
 			<button type="button" className="adventure-continue" onClick={onContinue}>Let Rosie explore</button>
@@ -840,6 +858,7 @@ function PurposeShelf({ state }) {
 
 const RETURN_CEREMONY_MS = 2400;
 const HOMEGROWN_REVIEW_STORAGE_KEY = `${HOMEGROWN_STORAGE_KEY}.review`;
+const ADVENTURE_CAUSE_BEAT_MS = 900;
 const RAPID_TRANSITION_GUARD_MS = 350;
 const HARVEST_CELEBRATION_MS = 560;
 const NEW_DAY_HANDOFF_MS = 900;
@@ -1140,6 +1159,7 @@ function App() {
 	const image = sceneImage();
 	const [feedback, setFeedback] = useState(0);
 	const [startingNewDay, setStartingNewDay] = useState(false);
+	const [adventureCauseBeat, setAdventureCauseBeat] = useState("provision");
 	const transitionLockUntil = useRef(0);
 	const newDayTimer = useRef(null);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
@@ -1165,6 +1185,7 @@ function App() {
 	const departing = position === 8 && state.stage === STAGES.ADVENTURE && !state.departureComplete;
 	const showingAdventureVignette = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && !state.adventureVignetteSeen;
 	const showingJourneyWatch = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen;
+	const adventureEnvironmentRevealed = ["tool", "pack", "resolved"].includes(adventureCauseBeat);
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
 	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
 	const homeMemoryEarned = state.glowrootPlanted;
@@ -1224,6 +1245,25 @@ function App() {
 					: "Rosie is exploring…",
 		}
 		: presentation;
+
+	useEffect(() => {
+		if (!showingAdventureVignette) {
+			setAdventureCauseBeat("provision");
+			return undefined;
+		}
+		if (state.reduceMotion) {
+			setAdventureCauseBeat("resolved");
+			return undefined;
+		}
+
+		setAdventureCauseBeat("provision");
+		const timers = [
+			window.setTimeout(() => setAdventureCauseBeat("tool"), ADVENTURE_CAUSE_BEAT_MS),
+			window.setTimeout(() => setAdventureCauseBeat("pack"), ADVENTURE_CAUSE_BEAT_MS * 2),
+			window.setTimeout(() => setAdventureCauseBeat("resolved"), ADVENTURE_CAUSE_BEAT_MS * 3),
+		];
+		return () => timers.forEach((timer) => window.clearTimeout(timer));
+	}, [showingAdventureVignette, state.reduceMotion]);
 
 	useEffect(() => {
 		localStorage.setItem(
@@ -1372,13 +1412,14 @@ function App() {
 			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
 			data-adventure-pack={showingAdventureVignette ? state.bag?.pack ?? "none" : undefined}
+			data-adventure-beat={showingAdventureVignette ? adventureCauseBeat : undefined}
 			data-return-kind={showingReturnReward ? returnKind : undefined}
 			data-return-tool={showingReturnReward ? state.bag?.tool ?? "none" : undefined}
 			data-return-pack={showingReturnReward ? state.bag?.pack ?? "none" : undefined}
 		>
 			<div className="scene-plate" role="img" aria-label={sceneLabel(state, { plantingGlowroot: showingGlowrootPlanting })} />
 			{showingAdventureVignette && opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id && (
-				<LanternleafReflectionsRive reduceMotion={state.reduceMotion} />
+				<LanternleafReflectionsRive active={adventureEnvironmentRevealed} reduceMotion={state.reduceMotion} />
 			)}
 			<HomegrownRiveScene
 				key="homegrown-rive-scene"
@@ -1404,7 +1445,7 @@ function App() {
 			{showingAdventureVignette &&
 			adventureStory(state).kind === "discovery" &&
 			opportunity.id === FIRST_ADVENTURE_OPPORTUNITY.id && (
-				<AdventureGlowrootRive reduceMotion={state.reduceMotion} />
+				<AdventureGlowrootRive active={adventureEnvironmentRevealed} reduceMotion={state.reduceMotion} />
 			)}
 			<div className="quiet-hud">
 				<HeartChip value={state.ticklesEarned} />
@@ -1455,6 +1496,7 @@ function App() {
 			/>}
 			{showingAdventureVignette && <AdventureVignetteOverlay
 				state={state}
+				beat={adventureCauseBeat}
 				onContinue={() => act(visiblePresentation.action)}
 			/>}
 			{showingJourneyWatch && <JourneyWatchPanel

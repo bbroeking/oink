@@ -269,7 +269,7 @@ function MotionStage({ activeStudy, bedBusy, harvestCount, onBedAction, reduceMo
 						triggerNonce={`${riveModel.triggerNonce}:${revision}`}
 					/>
 					{showingAdventureGlowroot && (
-						<AdventureGlowrootRive key={`adventure-glowroot-${revision}`} reduceMotion={reduceMotion} />
+						<AdventureGlowrootRive active key={`adventure-glowroot-${revision}`} reduceMotion={reduceMotion} />
 					)}
 					{showingReturnHomecoming && <div className="motion-return-table-mask" aria-hidden="true" />}
 				</div>

@@ -14,9 +14,10 @@ const REVEAL_MS = 780;
 const GLOW_BREATH_MS = 260;
 const GLOW_REST_MS = 2_350;
 
-type GlowrootMotion = "loading" | "reveal" | "resting" | "glow" | "reduced";
+type GlowrootMotion = "loading" | "waiting" | "reveal" | "resting" | "glow" | "reduced";
 
 interface AdventureGlowrootRiveProps {
+	active: boolean;
 	reduceMotion: boolean;
 }
 
@@ -24,7 +25,7 @@ interface AdventureGlowrootRiveProps {
  * A clipped second view of the existing native Glowroot rig. React decides
  * whether this component exists; Rive owns only its reveal and quiet glow.
  */
-function AdventureGlowrootRiveImpl({ reduceMotion }: AdventureGlowrootRiveProps) {
+function AdventureGlowrootRiveImpl({ active, reduceMotion }: AdventureGlowrootRiveProps) {
 	const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 	const [motion, setMotion] = useState<GlowrootMotion>("loading");
 	const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
@@ -78,6 +79,14 @@ function AdventureGlowrootRiveImpl({ reduceMotion }: AdventureGlowrootRiveProps)
 		clearTimers();
 		rive.stop(GLOWROOT_FLOURISH);
 
+		if (!active) {
+			rive.play(GLOWROOT_FLOURISH);
+			rive.scrub(GLOWROOT_FLOURISH, 0);
+			schedule(() => rive.pause(GLOWROOT_FLOURISH), 0);
+			setMotion("waiting");
+			return clearTimers;
+		}
+
 		if (reduceMotion) {
 			// Starting the nested vector timeline before scrubbing makes the final
 			// silhouette paint atomically in WebGL2 without exposing motion.
@@ -99,7 +108,7 @@ function AdventureGlowrootRiveImpl({ reduceMotion }: AdventureGlowrootRiveProps)
 			clearTimers();
 			rive.stop(GLOWROOT_FLOURISH);
 		};
-	}, [reduceMotion, rive]);
+	}, [active, reduceMotion, rive]);
 
 	return (
 		<div

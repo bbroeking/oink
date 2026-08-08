@@ -14,6 +14,7 @@ const REST_MS = 2_350;
 
 type ReflectionMotion =
 	| "loading"
+	| "waiting"
 	| "rising"
 	| "glowing"
 	| "fading"
@@ -21,6 +22,7 @@ type ReflectionMotion =
 	| "reduced";
 
 interface LanternleafReflectionsRiveProps {
+	active: boolean;
 	reduceMotion: boolean;
 }
 
@@ -29,6 +31,7 @@ interface LanternleafReflectionsRiveProps {
  * decides when this route exists; Rive owns only the quiet reflected-light cue.
  */
 function LanternleafReflectionsRiveImpl({
+	active,
 	reduceMotion,
 }: LanternleafReflectionsRiveProps) {
 	const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -91,6 +94,14 @@ function LanternleafReflectionsRiveImpl({
 		clearTimers();
 		rive.stop(REFLECTION_PULSE);
 
+		if (!active) {
+			rive.play(REFLECTION_PULSE);
+			rive.scrub(REFLECTION_PULSE, RESTING_SECONDS);
+			schedule(() => rive.pause(REFLECTION_PULSE), 0);
+			setMotion("waiting");
+			return clearTimers;
+		}
+
 		if (reduceMotion) {
 			rive.play(REFLECTION_PULSE);
 			rive.scrub(REFLECTION_PULSE, RESTING_SECONDS);
@@ -104,7 +115,7 @@ function LanternleafReflectionsRiveImpl({
 			clearTimers();
 			rive.stop(REFLECTION_PULSE);
 		};
-	}, [reduceMotion, rive]);
+	}, [active, reduceMotion, rive]);
 
 	return (
 		<div

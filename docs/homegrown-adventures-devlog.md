@@ -253,11 +253,70 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     empty Farm spinner after Rosie's causal vignette with one calm route watch,
     an honest prototype fast-forward, and a gate-bell Homecoming handoff while
     keeping the reward hidden.
+76. **v0.75 — The Bag Tells the Story (shipped):** turn the simultaneous
+    Provision / Tool / Pack ledger into three short causal beats, let the Tool
+    wake the route's existing Rive clue, and keep incomplete Bags kind without
+    changing any outcome.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.75 — The Bag Tells the Story — 2026-08-07
+
+- Began with a complete public v0.74 play-through. Position 9 had the correct
+  route, Bag items, physical props, and deterministic result, but presented all
+  three causes at once. The player could read the answer; they did not see the
+  preparation become a story.
+- Compared the gap with the approved
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/09-adventure-vignette.png`
+  concept. Its useful promise was one fixed illustrated scene where Rosie and
+  her physical equipment do the explaining—not another card, reward preview,
+  mission layer, or stat screen.
+- Sequenced the existing causes as **Provision**, **Tool**, and **Pack**. One
+  compact row and its registered physical prop receive focus at a time; prior
+  causes remain visible and future causes stay quiet.
+- Held both route-specific Rive cues until the Tool beat. Glowroot now reveals
+  only when the Hand Trowel gets its moment, and Lanternleaf reflections rise
+  only when the chosen Tool begins investigating the path. React still owns
+  the route, cause order, timing, Bag facts, and outcome.
+- Kept the action available throughout. The player may continue immediately;
+  the sequence is explanatory presentation, never a new gate or timer.
+- Reduced motion resolves directly to the complete readable ledger and static
+  route state. An empty slot keeps its explicit **No Provision**, **No Tool**,
+  or **No Pack** cause and still resolves to the existing useful Near-Discovery.
+- The Prototype verdict is positive: the same deterministic Adventure now
+  reads as “I packed this, so Rosie could do that” without expanding scope.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 49/49 pass across both routes, all empty
+  Bag slots, persistence, fast-forward, and exact Homecoming rewards.
+- `npm run verify:rive-homegrown` — both authored Rive static contracts pass.
+- `npm run quality:loop` and `npm run quality:check` — quality contracts, the
+  157-file layout scan, 324 sprite checks, security contracts, TypeScript, and
+  280 focused Jest assertions pass. Watchman's existing recrawl notice is the
+  only warning.
+- Rendered second-route play showed **Clover Lunch** first, **Hand Trowel**
+  second with the Lanternleaf reflections beginning at that beat, and **Wicker
+  Basket** third with its physical prop emphasized.
+- Rendered first-route play reported the authored Glowroot layer `waiting`
+  during Provision and `resting` after the Tool-triggered reveal. The incomplete
+  Bag route stayed a `near-discovery`, named **No Pack**, and mounted no false
+  Glowroot reward layer.
+- At 360×780 the player-facing frame had no horizontal overflow and kept the
+  complete Bag ledger, Rosie, physical props, **Let Rosie explore**, and the
+  fast-forward rail visible. Reduced motion resolved all three causes at once.
+
+### Next highest-leverage weakness
+
+The causal vignette now makes preparation legible, but it still speaks in
+summary sentences above a largely posed Rosie. The next cycle should begin by
+playing the complete public loop and judge whether Rosie's own reaction during
+the Tool beat—or the Homecoming immediately after the journey watch—is the
+larger emotional gap. It should deepen only the winner, not add a third route,
+resource, or parallel interaction.
 
 ### v0.74 — The Journey Is Worth Watching — 2026-08-07
 
