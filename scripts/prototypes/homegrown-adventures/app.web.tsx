@@ -732,7 +732,36 @@ function journeyWatchCopy(lanternleaf, journeyPhase) {
 		};
 }
 
-function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
+// THROWAWAY UI PROTOTYPE: three structurally different reminders of Rosie's
+// packed loadout during the real Position 9 wait, switchable with ?loadout=A|B|C.
+function JourneyBagReminder({ bag, treatment }) {
+	const items = BAG_SLOT_ORDER.map((slot) => ({
+		slot,
+		item: bagItem(slot, bag?.[slot] ?? null),
+	}));
+	const exactLabel = `Rosie set out with: ${items.map(({ slot, item }) => `${BAG_SLOT_LABELS[slot]} ${item?.name ?? "empty"}`).join(", ")}`;
+	if (treatment === "B") {
+		return <div className="journey-bag-strip" aria-label={exactLabel}>
+			<small>Set out with</small>
+			{items.map(({ slot, item }) => <span key={slot} className={item ? "" : "is-empty"}>
+				<BagItemArt itemId={item?.id} />
+				<strong>{item?.name ?? "Empty"}</strong>
+			</span>)}
+		</div>;
+	}
+	if (treatment === "C") {
+		return <p className="journey-bag-line" aria-label={exactLabel}>
+			<strong>Packed</strong>
+			<span>{items.map(({ item }) => item?.name.replace("Clover ", "").replace("Hand ", "").replace("Wicker ", "") ?? "Empty").join(" · ")}</span>
+		</p>;
+	}
+	return <div className="journey-bag-stamps" aria-label={exactLabel}>
+		<small>Packed</small>
+		{items.map(({ slot, item }) => <span key={slot} className={item ? "" : "is-empty"}><BagItemArt itemId={item?.id} /></span>)}
+	</div>;
+}
+
+function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction, loadoutTreatment = "A" }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const homecomingReady = state.adventureComplete;
@@ -742,7 +771,7 @@ function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
 
 	return (
 		<section
-			className={`journey-watch ${homecomingReady ? "is-homecoming-ready" : ""}`}
+			className={`journey-watch bag-treatment-${loadoutTreatment.toLowerCase()} ${homecomingReady ? "is-homecoming-ready" : ""}`}
 			data-journey-phase={journeyPhase}
 			aria-label="Rosie's adventure progress"
 		>
@@ -756,6 +785,7 @@ function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
 					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
 					: copy.body}</p>
 			</div>
+			{!homecomingReady && <JourneyBagReminder bag={state.bag} treatment={loadoutTreatment} />}
 			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
 				<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
 				<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
@@ -1138,6 +1168,16 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function JourneyBagPrototypeSwitcher({ variant, setVariant }) {
+	const variants = ["A", "B", "C"];
+	const index = variants.indexOf(variant);
+	return <div className="journey-bag-prototype-switcher" aria-label="Throwaway journey Bag treatment switcher">
+		<button type="button" aria-label="Previous journey Bag treatment" onClick={() => setVariant(variants[(index + variants.length - 1) % variants.length])}>←</button>
+		<span><strong>{variant} · Bag reminder</strong><small>{variant === "A" ? "Pinned stamps" : variant === "B" ? "Named strip" : "Note sentence"}</small></span>
+		<button type="button" aria-label="Next journey Bag treatment" onClick={() => setVariant(variants[(index + 1) % variants.length])}>→</button>
+	</div>;
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1253,6 +1293,16 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [loadoutTreatment, setLoadoutTreatmentState] = useState(() => {
+		const requested = initialSearch.get("loadout")?.toUpperCase();
+		return ["A", "B", "C"].includes(requested) ? requested : "A";
+	});
+	const setLoadoutTreatment = useCallback((nextVariant) => {
+		setLoadoutTreatmentState(nextVariant);
+		const url = new URL(window.location.href);
+		url.searchParams.set("loadout", nextVariant);
+		window.history.replaceState({}, "", url);
+	}, []);
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1715,6 +1765,7 @@ function App() {
 			{showingJourneyWatch && <JourneyWatchPanel
 				state={state}
 				journeyPhase={journeyPhase}
+				loadoutTreatment={loadoutTreatment}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
 			/>}
@@ -1760,6 +1811,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{reviewMode && showingJourneyWatch && !state.adventureComplete && <JourneyBagPrototypeSwitcher variant={loadoutTreatment} setVariant={setLoadoutTreatment} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;

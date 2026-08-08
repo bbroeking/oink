@@ -606,6 +606,80 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 	border-radius: 50% 50% 48% 52%;
 	box-shadow: 0 0 20px var(--journey-route-light-soft);
 }
+.journey-bag-stamps {
+	position: absolute;
+	z-index: 3;
+	right: 31px;
+	top: 174px;
+	width: 136px;
+	height: 39px;
+	padding: 3px 5px;
+	display: grid;
+	grid-template-columns: 30px repeat(3, 1fr);
+	align-items: center;
+	overflow: hidden;
+	color: var(--ink-soft);
+	background: color-mix(in srgb, var(--paper-deep) 97%, transparent);
+	border: 2px solid var(--ink);
+	border-radius: 8px 8px 11px 9px;
+	box-shadow: 2px 2px 0 color-mix(in srgb, var(--ink) 58%, transparent);
+	transform: rotate(.6deg);
+}
+.journey-bag-stamps > small {
+	font-size: 6px;
+	font-weight: 950;
+	text-transform: uppercase;
+}
+.journey-bag-stamps > span {
+	width: 26px;
+	height: 28px;
+	display: grid;
+	place-items: center;
+	border-left: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
+}
+.journey-bag-stamps > span.is-empty { opacity: .46; }
+.journey-bag-stamps .bag-item-art { transform: scale(.68); }
+.journey-bag-strip {
+	position: absolute;
+	z-index: 2;
+	left: 31px;
+	right: 31px;
+	top: 269px;
+	min-height: 50px;
+	padding: 5px 7px;
+	display: grid;
+	grid-template-columns: 64px repeat(3, minmax(0, 1fr));
+	align-items: center;
+	background: color-mix(in srgb, var(--paper) 96%, transparent);
+	border: 2px solid var(--ink);
+	border-radius: 11px;
+	box-shadow: 2px 3px 0 color-mix(in srgb, var(--ink) 60%, transparent);
+}
+.journey-bag-strip > small { color: var(--wood); font-size: 7px; font-weight: 950; text-transform: uppercase; }
+.journey-bag-strip > span { min-width: 0; display: grid; grid-template-columns: 22px minmax(0,1fr); align-items: center; gap: 3px; }
+.journey-bag-strip > span.is-empty { opacity: .5; }
+.journey-bag-strip .bag-item-art { transform: scale(.62); transform-origin: center; }
+.journey-bag-strip strong { overflow: hidden; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
+.journey-bag-line {
+	position: absolute;
+	z-index: 3;
+	left: 82px;
+	right: 34px;
+	top: 169px;
+	margin: 0;
+	padding-top: 6px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	border-top: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+	color: var(--ink-soft);
+	font-size: 7px;
+	line-height: 1;
+}
+.journey-bag-line strong { color: var(--wood); font-size: 7px; text-transform: uppercase; }
+.journey-bag-line span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.journey-watch.bag-treatment-c .journey-watch-note { min-height: 132px; padding-bottom: 28px; }
+.journey-watch.bag-treatment-c .journey-watch-route { top: 234px; }
 .journey-watch-route {
 	position: absolute;
 	left: 31px;
@@ -762,6 +836,27 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 .journey-review-rail-action button:hover { background: #fff1c5; }
 .journey-review-rail-action button:focus-visible { outline: 3px solid #267da2; outline-offset: 2px; }
 .journey-review-rail-action button:active { transform: translateY(1px); }
+.journey-bag-prototype-switcher {
+	position: fixed;
+	z-index: 46;
+	left: 50%;
+	bottom: max(146px, calc(env(safe-area-inset-bottom) + 134px));
+	width: min(278px, calc(100vw - 32px));
+	min-height: 50px;
+	display: grid;
+	grid-template-columns: 44px 1fr 44px;
+	transform: translateX(-50%);
+	overflow: hidden;
+	color: #fff9e9;
+	background: #302116;
+	border: 2px solid #fff9e9;
+	border-radius: 999px;
+	box-shadow: 0 4px 12px rgba(0,0,0,.32);
+}
+.journey-bag-prototype-switcher button { min-width: 44px; min-height: 46px; border: 0; color: #302116; background: #f3dfad; font-size: 18px; }
+.journey-bag-prototype-switcher span { min-width: 0; display: grid; place-content: center; text-align: center; }
+.journey-bag-prototype-switcher strong { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; }
+.journey-bag-prototype-switcher small { margin-top: 2px; overflow: hidden; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 @keyframes journey-current-step {
 	0%, 100% { transform: scale(.94); filter: brightness(.94); }
 	50% { transform: scale(1.06); filter: brightness(1.08); }
