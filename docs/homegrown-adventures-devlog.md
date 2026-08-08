@@ -260,11 +260,68 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 77. **v0.76 — Rosie Is Home (shipped):** replace the empty gate-bell yard with
     Rosie's existing authored Return performance and packed satchel, preserving
     the remembered Farm and withholding the reward until she is welcomed.
+78. **v0.77 — Discovery to Garden (shipped):** preserve the one emotional
+    welcome at the gate, then make the first reward action carry Glowroot toward
+    the exact Farm bed it can change.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.77 — Discovery to Garden — 2026-08-08
+
+- Began with the exact public v0.76 Homecoming and reward handoff. Position 9
+  already asked the player to **Welcome Rosie home** in the yard; Position 10
+  then repeated **Welcome Rosie Home** beneath a receipt that already showed
+  Rosie, the named Discovery, and the supplies added to Farm stock. The second
+  action had no distinct meaning.
+- Kept the first welcome at the gate as the sole emotional Homecoming action.
+  The first complete reward now leads with **Glowroot can change the Farm** and
+  offers **Take Seed to Bed 3**. That action moves to the established outdoor
+  Bed 3 planting decision; it does not plant automatically or change reward
+  timing.
+- Preserved the other return meanings. A known Discovery still offers **Keep
+  supplies in Farm stock**, and an incomplete Bag still offers **Adjust Rosie’s
+  Bag**. Neither branch falsely points at Bed 3.
+- The installed Impeccable product-design pass rejected adding another card,
+  tutorial prompt, or transition animation. The existing plaque and stock
+  ledger already explain what came Home; one short objective and one concrete
+  action are enough to connect the Discovery to visible Farm change.
+- No route, reward amount, inventory transition, planting rule, Rive asset,
+  animation, timer, currency, persistence key, or progression fact changed.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 49/49 pass, including the new exact
+  first-return presentation contract and the unchanged repeat and clue routes.
+- `npx tsc --noEmit`, `npm run verify:rive-homegrown`,
+  `npm run quality:loop`, and `npm run quality:check` pass. The quality gates
+  cover 157 layout files, 324 sprites, 78 layout assertions, and 202 security
+  assertions; Watchman's existing recrawl notice is the only warning.
+- Rendered the first complete return at desktop and 360×780. The HUD reads
+  **Glowroot can change the Farm**, the single action reads **Take Seed to Bed
+  3**, the action-to-rail gap is 12px, and body width remains exactly 360px with
+  no horizontal overflow.
+- Clicking the new action reaches Position 11 exactly once with **Bed 3 is ready
+  for Glowroot**, the exact **Glowroot Seed 2 → 1** preview, and the separate
+  **Plant Glowroot** decision.
+- Replayed a second-route return with remembered Home and confirmed
+  **Lanternleaf Path is mapped** still uses **Keep supplies in Farm stock**.
+  Replayed an empty-Tool return and confirmed the useful **Glowroot Trail** clue
+  still uses **Adjust Rosie’s Bag**.
+- Direct reload retained the new first-return objective and action. Reduced
+  motion reported the stable authored Rive pose, kept the same hierarchy at
+  360×780, and produced no console warnings or errors.
+
+### Next highest-leverage weakness
+
+The first reward table shows a small **+1** marker above the physical Glowroot
+while the plaque and stock ledger correctly total **Glowroot Seed +2**. The
+marker represents the Hand Trowel bonus, but that cause is no longer legible on
+the focused Homecoming screen. The next cycle should make that physical bonus
+read as a Trowel-earned extra Seed—or remove the orphan marker—without restoring
+the redundant three-cause ledger.
 
 ### v0.76 — Rosie Is Home — 2026-08-08
 

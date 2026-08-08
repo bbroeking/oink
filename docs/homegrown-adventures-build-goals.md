@@ -409,6 +409,17 @@ equipment rule, Rive asset, currency, or progression state was added. Both
 routes, reload, Position 9 → 10 continuity, 360×780 touch, reduced motion, Rive
 contracts, 49 reducer tests, and repository quality gates pass locally.
 
+**Discovery-to-Garden checkpoint (August 8, 2026):** Position 9 now owns the
+single emotional **Welcome Rosie home** action. The first complete Position 10
+receipt no longer repeats that ritual; its objective is **Glowroot can change
+the Farm** and its one action is **Take Seed to Bed 3**, which hands directly to
+the established outdoor Seed-cost preview and separate Plant action. Known
+Discoveries still store supplies, and Near-Discoveries still return to Bag
+adjustment. No reward timing, quantity, reducer transition, planting rule, Rive
+asset, animation, or progression state changed. Complete, repeat, and clue
+branches, reload, reduced motion, exact 360×780 touch layout, 49 reducer tests,
+Rive contracts, and repository quality gates pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

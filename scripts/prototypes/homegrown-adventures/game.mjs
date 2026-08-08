@@ -1514,7 +1514,7 @@ export function primaryAction(state) {
 		if (!state.returnRewardAcknowledged) {
 			return {
 				type: ACTIONS.ACKNOWLEDGE_RETURN,
-				label: state.glowrootPlanted ? "Keep supplies in Farm stock" : "Welcome Rosie Home",
+				label: state.glowrootPlanted ? "Keep supplies in Farm stock" : "Take Seed to Bed 3",
 			};
 		}
 		return { type: ACTIONS.PLANT_GLOWROOT, label: "Plant Glowroot" };
@@ -1699,9 +1699,9 @@ export function playerPresentation(state) {
 				};
 			}
 			return {
-				target: WORLD_TARGETS.ROSIE,
-				objective: "Rosie brought Home a Discovery",
-				label: "Welcome Rosie Home",
+				target: WORLD_TARGETS.GLOWROOT_BED,
+				objective: "Glowroot can change the Farm",
+				label: "Take Seed to Bed 3",
 				action,
 			};
 		}

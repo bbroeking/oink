@@ -197,6 +197,14 @@ Home pose. The second route keeps its earned crops, residents, pond, hedge, and
 bell. Position 10 still owns the first named Discovery and exact Farm-stock
 reward, so no gameplay state or reward timing moved into Rive.
 
+The v0.77 handoff pass keeps that gate action as the one emotional welcome.
+The first complete reward receipt now says **Glowroot can change the Farm** and
+offers **Take Seed to Bed 3**, moving outdoors to the existing exact Seed-cost
+preview and separate Plant action. Repeat returns still store supplies and
+Near-Discoveries still adjust the Bag. React keeps the same reward timing and
+state transition; no Rive asset, motion, route, quantity, or planting rule was
+added.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

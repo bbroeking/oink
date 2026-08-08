@@ -1195,7 +1195,16 @@ test("a successful return adds one named Discovery and practical Farm supplies",
 	assert.equal(state.farmStock["willow-fiber"], 2);
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.ACKNOWLEDGE_RETURN,
-		label: "Welcome Rosie Home",
+		label: "Take Seed to Bed 3",
+	});
+	assert.deepEqual(playerPresentation(state), {
+		target: WORLD_TARGETS.GLOWROOT_BED,
+		objective: "Glowroot can change the Farm",
+		label: "Take Seed to Bed 3",
+		action: {
+			type: ACTIONS.ACKNOWLEDGE_RETURN,
+			label: "Take Seed to Bed 3",
+		},
 	});
 
 	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
