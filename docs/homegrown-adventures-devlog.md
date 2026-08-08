@@ -347,11 +347,108 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 106. **v0.105 — Glowroot Opens the Next Route (shipped):** connect the lasting
     Glowroot Discovery directly to the next morning's Clover preparation in
     the existing primary Seed action.
+107. **v0.106 — Two Crops, Two Ways Forward (shipped):** turn the remembered
+    crop screen into a real Clover-or-Moonberry decision, carry each choice
+    through its own timer and Harvest Rhythm, preserve both stockpiles, and let
+    the packed harvest visibly change Rosie's existing Lanternleaf journey.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.106 — Two Crops, Two Ways Forward — 2026-08-08
+
+- Began by replaying the shipped remembered morning. Position 2 promised
+  **Choose a Seed**, but every reducer path rejected Moonberries, every growth
+  timer and Harvest Rhythm was Clover-only, Farm stock had no Moonberry
+  quantity, and Rosie's Provision pocket could not accept the crop visibly
+  growing in Bed 2. The choice was decorative rather than authored.
+- Exercised three throwaway logic models: two Adventure-ready crops, a required
+  Clover crop plus a stockpile detour, and two beds planned in parallel. The
+  equal Adventure-crop model won. The detour postponed Rosie's current purpose
+  through another complete Farm cycle; the parallel plan made one timer and
+  one Compost choice govern crops with unlike durations.
+- Compared three rendered Position 2 treatments: equal crop cards, a weighted
+  Clover recommendation, and equal cards plus a separate time scale. Equal
+  cards won because duration, guaranteed yield, and Adventure use already make
+  the tradeoff legible without recommendation pressure or another control.
+- Captured the logic and visual studies at commit `829dbe9` on
+  `codex/homegrown-v106-crop-choice-prototypes`. Main ships only the equal-card
+  winner; no `cropchoice` query, prototype switcher, comparison model, or
+  Moonberry crafting system ships.
+- Clover remains the four-hour, three-Lunch first-day crop and consumes one
+  Clover Seed. On earned mornings, Moonberries become a second complete choice:
+  the already-rooted Bed 2 crop takes eight hours, yields four berries, and
+  consumes no invented Seed. Both crops wait safely forever; Compost
+  predictably removes two hours and adds one guaranteed item.
+- Clover keeps `← → ↑`; Moonberries use their own `↓ ← → ↑` Harvest Rhythm.
+  Every rhythm preserves the full guaranteed harvest and grants only one small
+  clean-rhythm bonus. The result enters a persistent crop-specific Farm-stock
+  compartment before Rosie's Bag opens.
+- Moonberries are now a real one-use Provision alongside Clover Lunch. The Bag
+  previews **Reveal reflected leaves**, spends exactly one berry, preserves the
+  remaining stockpile, and changes both the causal vignette and Lanternleaf
+  journey copy. The shared Provision question now asks **What should help Rosie
+  keep going?** so it truthfully covers both duration and perception.
+- Existing Rive state bindings animate the selected physical bed: Clover uses
+  Bed 1 and Moonberries use Bed 2 through sprout, growing, ready, Harvest, and
+  reduced-motion states. React still owns selection, timers, Compost, yield,
+  stock, Bag validity, story causality, and persistence; the Rive binary and
+  contract did not need a new progression fact.
+- Used the built-in image-generation edit path on the existing approved Clover
+  basket, replacing only its contents with Moonberries. The chroma-keyed result
+  was locally matted, alpha-checked, resized to 640×640, and saved as
+  `scripts/prototypes/homegrown-adventures/assets/homegrown-adventures/harvest-basket-moonberries.png`.
+
+### Local validation evidence
+
+- Played the actual second-morning Position 2 and chose Moonberries. The next
+  rendered states showed **No Seed spent**, optional Compost, **5 Moonberries ·
+  ready in 6 hours**, Bed 2 growing, the ready purple crop, and its four-beat
+  rhythm.
+- Completed the clean rhythm and observed **Moonberries +6**, with **4 harvest
+  · +1 from Compost · +1 rhythm**, while Clover Seed, Compost, and Willow Fiber
+  remained independently visible in Farm stock.
+- Packed Moonberries, Lantern, and Wicker Basket from the real Bag UI. The
+  Provision count changed from six to five, the packed ribbon named all three
+  selections, the journey changed to **Rosie follows reflected leaves**, and
+  Homecoming returned the named **Lanternleaf Path** plus exact materials.
+- Replayed the Clover choice through planting, waiting, normal gathering, and
+  Farm stock. It still produced three Clover Lunches, spent one Seed, preserved
+  Compost, and reached the same existing Bag handoff.
+- `npm run prototype:homegrown:test` passes 78/78, including first-day lock,
+  second-day availability, no-spoilage settling, both timers, both Harvest
+  Rhythms, stockpile preservation, Bag consumption, story causality, and Rive
+  bed selection. `npm run prototype:homegrown:build`, `npm run
+  verify:rive-homegrown`, `npm run quality:loop`, and `npm run quality:check`
+  pass the authored Rive contracts, quality contracts, 157-file layout gate,
+  324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
+  and 202 security tests. Watchman's existing recrawl notice and the verifier's
+  already-required manual mobile Safari checks remain warnings.
+
+### Public verification evidence
+
+- Feature commits `d8cc84d` and `18d19ab` deployed through GitHub Pages run
+  `31278489518`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `848d13c1bef95c82e2c501976e0c0b8c58aad12669f5550d08af03067252797a`
+  - player JavaScript: `990a6e112c9b5d42b631b54d78fb27458f3a8897773ec14057632aa8acfe52f2`
+  - player CSS: `770f74ddf89b0824d1063fa93d9b149d21ede3fcb76d95e30909ab0e6bbbf16c`
+  - Moonberry basket: `644280d5e3ef3eb603ebf917b25c48ff424c472dcb289efdc78df473dc271905`
+- Replayed the public crop choice through Moonberry growth, its personal
+  Harvest Rhythm, Farm stock, Bag selection, the reflected-leaf journey, and
+  Lanternleaf Homecoming. Replayed Clover through its separate stock result.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=2&route=lanternleaf&v=18d19ab`
+
+### Next highest-leverage weakness
+
+Replay the second complete Adventure into another morning. Determine whether
+the rooted Moonberry bed visibly explains its post-harvest regrowth, or appears
+to refill itself for free. Prefer one clear perennial/regrowth consequence in
+the existing Bed 2, timer, and Home-memory model over a new Seed, crafting,
+upgrade, or parallel farming system.
 
 ### v0.105 — Glowroot Opens the Next Route — 2026-08-08
 

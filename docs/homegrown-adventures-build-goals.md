@@ -1,8 +1,9 @@
 # Tickle the Pig: Homegrown Adventures — build goals
 
 **Status:** Browser gameplay prototype active; eleven-position review loop,
-required Clover Seed, optional predictable Compost, real Clover Harvest
-Rhythm, persistent Farm stock, one-use Provision preparation, reusable
+required Clover Seed, earned rooted-Moonberry alternative, optional predictable
+Compost, crop-specific Harvest Rhythms, persistent Farm stock, two one-use
+Provision choices, reusable
 equipment, causal Adventure vignette, exact return reward and Seed planting,
 and a changed Rive Home plus memory-aware Seed tray that survive the next
 morning verified locally; authored Rive departure motion now holds Position 8,
@@ -49,11 +50,15 @@ timer, or new save fact; same-day trips remain **Around [time]**, overnight
 trips become **Tomorrow · [time]**, and longer trips use a short weekday, all
 from the player's local calendar, before Homecoming removes the ticket at the
 gate;
-Position 2 now keeps one compact Adventure-purpose receipt physically attached
-to Farm Stock, so **Clover becomes a Provision** remains connected to the
-current opportunity's exact time, interaction, and carrying clues through the
-Seed decision on both established routes, without a quest panel or tooltip
-layer;
+Position 2 now becomes a real crop decision after Home has earned Moonberries:
+equal Clover and Moonberry choices stay attached to the current Adventure,
+state their distinct four- or eight-hour waits, guaranteed yields, and
+deterministic uses, then run through crop-specific growth in Bed 1 or Bed 2,
+personal Harvest Rhythms, persistent stock, the Provision pocket, and distinct
+journey causes. Clover still consumes a Seed and extends the outing;
+Moonberries tend the already-rooted second bed without inventing an unearned
+Seed and reveal reflected leaves. Both wait safely, accept the same predictable
+two-hour Compost boost, and preserve the established Bag and Adventure loop;
 Position 3 now names the exact resulting Provision throughout the optional
 Compost decision: **3 Clover Lunches · ready in 4 hours** normally, or **4
 Clover Lunches · ready in 2 hours** with Compost, with the same vocabulary in
