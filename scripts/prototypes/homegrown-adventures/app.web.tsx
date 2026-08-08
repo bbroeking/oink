@@ -46,6 +46,12 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+const RETURN_TIME_VARIANTS = {
+	A: "Attached ticket",
+	B: "Inside the note",
+	C: "Route endpoint",
+};
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -744,13 +750,22 @@ function JourneyPackedStamp({ bag }) {
 	</div>;
 }
 
-function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
+function formatAdventureReturnTime(timestamp) {
+	if (!Number.isFinite(timestamp)) return null;
+	return new Intl.DateTimeFormat(undefined, {
+		hour: "numeric",
+		minute: "2-digit",
+	}).format(new Date(timestamp));
+}
+
+function JourneyWatchPanel({ state, journeyPhase, returnTimeVariant, actionLabel, onAction }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const homecomingReady = state.adventureComplete;
 	const trailLabel = lanternleaf ? "Reflected leaves" : "Warm moth trail";
 	const copy = journeyWatchCopy(lanternleaf, journeyPhase);
 	const homeward = journeyPhase === "homeward";
+	const returnTime = homecomingReady ? null : formatAdventureReturnTime(state.adventureReadyAt);
 
 	return (
 		<section
@@ -767,17 +782,45 @@ function JourneyWatchPanel({ state, journeyPhase, actionLabel, onAction }) {
 				<p>{homecomingReady
 					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
 					: copy.body}</p>
+				{returnTime && returnTimeVariant === "B" && <span className="journey-return-time-note">Expected Home around <strong>{returnTime}</strong></span>}
 			</div>
+			{returnTime && returnTimeVariant === "A" && <div className="journey-return-time-ticket" role="group" aria-label={`Rosie is expected Home around ${returnTime}`}>
+				<small aria-hidden="true">Expected Home</small><strong aria-hidden="true">Around {returnTime}</strong>
+			</div>}
 			{!homecomingReady && <JourneyPackedStamp bag={state.bag} />}
 			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
 				<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
 				<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
-				<li className={homecomingReady || homeward ? "is-current" : ""}><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></li>
+				<li className={homecomingReady || homeward ? "is-current" : ""}><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : returnTime && returnTimeVariant === "C" ? <>Home by<br />{returnTime}</> : "Homeward"}</span></li>
 			</ol>
 			<div className="journey-watch-lights" aria-hidden="true"><i /><i /><i /><i /></div>
 			{homecomingReady && <button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>}
 		</section>
 	);
+}
+
+function ReturnTimePrototypeSwitcher({ value }) {
+	const keys = Object.keys(RETURN_TIME_VARIANTS);
+	const index = keys.indexOf(value);
+	const choose = (next) => {
+		const url = new URL(window.location.href);
+		url.searchParams.set("returntime", next);
+		window.location.assign(url);
+	};
+	useEffect(() => {
+		const onKeyDown = (event) => {
+			if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+			if (event.target?.matches?.("input, textarea, [contenteditable]")) return;
+			choose(keys[(index + (event.key === "ArrowLeft" ? -1 : 1) + keys.length) % keys.length]);
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [index]);
+	return <div className="return-time-prototype-switcher" aria-label="Return-time prototype switcher">
+		<button type="button" aria-label="Previous return-time treatment" onClick={() => choose(keys[(index + keys.length - 1) % keys.length])}>←</button>
+		<span><strong>{value}</strong><small>{RETURN_TIME_VARIANTS[value]}</small></span>
+		<button type="button" aria-label="Next return-time treatment" onClick={() => choose(keys[(index + 1) % keys.length])}>→</button>
+	</div>;
 }
 
 function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false }) {
@@ -1245,6 +1288,7 @@ function App() {
 	const hasRequestedPosition = Number.isInteger(requestedPosition) && requestedPosition >= 1 && requestedPosition <= PROTOTYPE_POSITIONS.length;
 	const requestedJourneyPhase = initialSearch.get("journey") === "homeward" ? "homeward" : "trail";
 	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
+	const requestedReturnTimeVariant = RETURN_TIME_VARIANTS[initialSearch.get("returntime")] ? initialSearch.get("returntime") : "A";
 	const reviewMode = loopMode || hasRequestedPosition;
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
@@ -1728,6 +1772,7 @@ function App() {
 			{showingJourneyWatch && <JourneyWatchPanel
 				state={state}
 				journeyPhase={journeyPhase}
+				returnTimeVariant={requestedReturnTimeVariant}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
 			/>}
@@ -1772,6 +1817,7 @@ function App() {
 			actionLabel={presentation.label}
 			onAction={() => act(presentation.action)}
 		/>}
+		{showingJourneyWatch && !state.adventureComplete && <ReturnTimePrototypeSwitcher value={requestedReturnTimeVariant} />}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}

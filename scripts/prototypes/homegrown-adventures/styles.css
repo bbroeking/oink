@@ -639,6 +639,40 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 }
 .journey-packed-stamp > span.is-empty { opacity: .46; }
 .journey-packed-stamp .bag-item-art { transform: scale(.68); }
+.journey-return-time-ticket {
+	position: absolute;
+	z-index: 3;
+	left: 31px;
+	top: 174px;
+	width: 136px;
+	height: 39px;
+	padding: 5px 9px;
+	display: grid;
+	align-content: center;
+	gap: 2px;
+	color: var(--ink-soft);
+	background: color-mix(in srgb, var(--paper-deep) 97%, transparent);
+	border: 2px solid var(--ink);
+	border-radius: 8px 8px 9px 11px;
+	box-shadow: 2px 2px 0 color-mix(in srgb, var(--ink) 58%, transparent);
+	transform: rotate(-.65deg);
+}
+.journey-return-time-ticket small {
+	font-size: 7px;
+	font-weight: 950;
+	letter-spacing: .04em;
+	line-height: 1;
+	text-transform: uppercase;
+}
+.journey-return-time-ticket strong { font-size: 9px; line-height: 1; }
+.journey-return-time-note {
+	margin-top: 5px;
+	color: var(--wood);
+	font-size: 8px;
+	font-weight: 850;
+	line-height: 1;
+}
+.journey-return-time-note strong { margin: 0; font-family: inherit; font-size: inherit; font-weight: 950; }
 .journey-watch-route {
 	position: absolute;
 	left: 31px;
@@ -795,6 +829,27 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 .journey-review-rail-action button:hover { background: #fff1c5; }
 .journey-review-rail-action button:focus-visible { outline: 3px solid #267da2; outline-offset: 2px; }
 .journey-review-rail-action button:active { transform: translateY(1px); }
+.return-time-prototype-switcher {
+	position: fixed;
+	z-index: 40;
+	left: 50%;
+	bottom: max(138px, calc(env(safe-area-inset-bottom) + 126px));
+	width: 246px;
+	height: 48px;
+	display: grid;
+	grid-template-columns: 44px 1fr 44px;
+	overflow: hidden;
+	transform: translateX(-50%);
+	background: #302116;
+	border: 2px solid var(--paper);
+	border-radius: 999px;
+	box-shadow: 0 3px 0 rgba(48,33,22,.55);
+}
+.return-time-prototype-switcher button { border: 0; color: var(--paper); background: #4b3424; font-size: 18px; }
+.return-time-prototype-switcher button:focus-visible { outline: 3px solid #79c2df; outline-offset: -4px; }
+.return-time-prototype-switcher span { display: grid; place-content: center; color: var(--paper); text-align: center; }
+.return-time-prototype-switcher strong { font-family: Caprasimo, Georgia, serif; font-size: 12px; font-weight: 400; }
+.return-time-prototype-switcher small { font-size: 8px; font-weight: 850; }
 @keyframes journey-current-step {
 	0%, 100% { transform: scale(.94); filter: brightness(.94); }
 	50% { transform: scale(1.06); filter: brightness(1.08); }
