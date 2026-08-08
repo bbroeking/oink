@@ -234,7 +234,7 @@ function WorldAction({ presentation, onAction, waiting = false }) {
 			<span className="world-action-pulse" aria-hidden="true" />
 			<span className="world-action-label">
 				{presentation.label}
-				{presentation.detail && <small>{presentation.detail}</small>}
+				{presentation.detail && presentation.detailInAction !== false && <small>{presentation.detail}</small>}
 			</span>
 		</button>
 	);
@@ -464,7 +464,7 @@ function HarvestResultPanel({ state, onContinue }) {
 		<span className="harvest-basket-image" aria-hidden="true" />
 		<div className="harvest-basket-label"><strong>Clover Lunch +{state.lastHarvestYield}</strong><small>{CROP_RULES.clover.baseYield} harvest{compostBonus ? ` · +${compostBonus} Compost` : ""}{rhythmBonus ? " · +1 rhythm" : ""}</small></div>
 	</div>;
-	const continueButton = <button type="button" className="harvest-prepare" onClick={onContinue}>Prepare an Adventure</button>;
+	const continueButton = <button type="button" className="harvest-prepare" onClick={onContinue}>Prepare for the glow</button>;
 	return (
 		<section className="harvest-result-world harvest-result-shelf" aria-label="Clover harvest added to Farm stock">
 			<div className="farm-stock-shelf"><strong>Farm stock</strong>{stockGrid}</div>
@@ -479,11 +479,11 @@ function BagItemArt({ itemId }) {
 }
 
 const BAG_ITEM_EFFECT_LABELS = Object.freeze({
-	"clover-lunch": "Explore until dusk",
-	"hand-trowel": "+1 Glowroot Seed",
-	lantern: "+1 Willow Fiber",
-	"wicker-basket": "+1 Compost",
-	"cloth-wrap": "+1 Clover Seed",
+	"clover-lunch": "Stay until dusk",
+	"hand-trowel": "Dig through soft soil",
+	lantern: "Follow a glow after dark",
+	"wicker-basket": "Carry a find Home",
+	"cloth-wrap": "Protect a delicate find",
 });
 
 function BagSelectionPanel({ bag, farmStock, activeSelection, onSelect, onConfirm }) {
@@ -1300,9 +1300,12 @@ function App() {
 			)}
 			<div className="quiet-hud">
 				<HeartChip value={state.ticklesEarned} />
-				<div className="current-objective" id="current-objective" role="status" aria-live="polite">
-					<span aria-hidden="true" />
-					<strong>{visiblePresentation.objective}</strong>
+				<div className={`current-objective ${visiblePresentation.detail ? "has-detail" : ""}`} id="current-objective" role="status" aria-live="polite">
+					<span className="objective-dot" aria-hidden="true" />
+					<span className="objective-copy">
+						<strong>{visiblePresentation.objective}</strong>
+						{visiblePresentation.detail && <small>{visiblePresentation.detail}</small>}
+					</span>
 				</div>
 			</div>
 			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingGlowrootPlanting && (!showingHomeMemory || showingHomeTickle) && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button

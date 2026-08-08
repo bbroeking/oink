@@ -53,6 +53,12 @@ export const PROTOTYPE_POSITIONS = Object.freeze([
 	{ id: 11, key: "changed-home", name: "Glowroot at Home" },
 ]);
 
+export const FIRST_ADVENTURE_OPPORTUNITY = Object.freeze({
+	id: "glow-beneath-hedge",
+	name: "A Glow Beneath the Hedge",
+	detail: "Until dusk · soft soil · carry it Home",
+});
+
 export const BAG_SLOT_ORDER = Object.freeze(["provision", "tool", "pack"]);
 
 export const BAG_ITEMS = Object.freeze({
@@ -1289,12 +1295,12 @@ export function primaryAction(state) {
 	}
 	if (state.stage === STAGES.CLOVER_READY) {
 		if (state.prototypePosition === 6) {
-			return { type: ACTIONS.OPEN_BAG_SELECTION, label: "Prepare an Adventure" };
+			return { type: ACTIONS.OPEN_BAG_SELECTION, label: "Prepare for the glow" };
 		}
 		return { type: ACTIONS.PACK_ADVENTURE, label: "Pack the Dusk Picnic" };
 	}
 	if (state.stage === STAGES.PACKED) {
-		return { type: ACTIONS.START_ADVENTURE, label: "Send Rosie at dusk" };
+		return { type: ACTIONS.START_ADVENTURE, label: "Follow the glow" };
 	}
 	if (state.stage === STAGES.ADVENTURE && !state.departureComplete) {
 		return { type: ACTIONS.SETTLE, label: "Rosie is heading for the hedge…" };
@@ -1371,7 +1377,8 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.STARTING && !state.selectedCrop) {
 		return {
 			target: WORLD_TARGETS.PATCH,
-			objective: "Choose what to grow",
+			objective: FIRST_ADVENTURE_OPPORTUNITY.name,
+			detail: "Grow a Provision to stay until dusk",
 			label: "Choose Clover Seed",
 			action,
 		};
@@ -1379,7 +1386,8 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.STARTING) {
 		return {
 			target: WORLD_TARGETS.PATCH,
-			objective: state.compostApplied ? "Compost: 2h · harvest 4" : "Clover: 4h · harvest 3",
+			objective: "Prepare for the hedge glow",
+			detail: state.compostApplied ? "Compost: 2h · harvest 4" : "Clover: 4h · harvest 3",
 			label: state.compostApplied ? "Plant with Compost" : "Plant Clover",
 			action,
 		};
@@ -1387,7 +1395,8 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.CLOVER_GROWING) {
 		return {
 			target: WORLD_TARGETS.PATCH,
-			objective: state.compostApplied ? "Composted Clover · ready in 2h" : "Clover · ready in 4h",
+			objective: "Clover for the dusk trail",
+			detail: state.compostApplied ? "Composted · ready in 2h" : "Growing · ready in 4h",
 			label: "Preview it ready",
 			action,
 		};
@@ -1403,7 +1412,8 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
 		return {
 			target: WORLD_TARGETS.PATCH,
-			objective: "Clover’s rhythm: ← → ↑",
+			objective: "Harvest for Rosie’s journey",
+			detail: "Clover’s rhythm: ← → ↑",
 			label: "Follow the rhythm",
 			action,
 		};
@@ -1412,15 +1422,17 @@ export function playerPresentation(state) {
 		if (state.prototypePosition === 6) {
 			return {
 				target: WORLD_TARGETS.BAG,
-				objective: "Farm stock grew",
-				label: "Prepare an Adventure",
+				objective: FIRST_ADVENTURE_OPPORTUNITY.name,
+				detail: FIRST_ADVENTURE_OPPORTUNITY.detail,
+				label: "Prepare for the glow",
 				action,
 			};
 		}
 		if (state.prototypePosition === 7) {
 			return {
 				target: WORLD_TARGETS.BAG,
-				objective: "Choose what Rosie carries",
+				objective: FIRST_ADVENTURE_OPPORTUNITY.name,
+				detail: FIRST_ADVENTURE_OPPORTUNITY.detail,
 				label: "Pack these",
 				action,
 			};
@@ -1435,8 +1447,10 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.PACKED) {
 		return {
 			target: WORLD_TARGETS.HEDGE,
-			objective: "Rosie is ready",
-			label: "Explore beyond the hedge",
+			objective: FIRST_ADVENTURE_OPPORTUNITY.name,
+			detail: "Packed for dusk · soft soil · safe carrying",
+			detailInAction: false,
+			label: "Follow the glow",
 			action,
 		};
 	}

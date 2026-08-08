@@ -9,6 +9,7 @@ import {
 	createPrototypeState,
 	deserializeState,
 	DURATIONS,
+	FIRST_ADVENTURE_OPPORTUNITY,
 	HARVEST_BEAT_MS,
 	HARVEST_PATTERN,
 	homegrownReducer,
@@ -542,6 +543,7 @@ test("every happy-path state exposes one short spatial action", () => {
 		observed.push(presentation);
 		assert.ok(Object.values(WORLD_TARGETS).includes(presentation.target));
 		assert.ok(presentation.objective.length <= 38);
+		if (presentation.detail) assert.ok(presentation.detail.length <= 46);
 		assert.ok(presentation.label.length <= 28);
 		assert.deepEqual(presentation.action, primaryAction(state));
 	};
@@ -596,16 +598,18 @@ test("Farm stock opens a distinct Bag-selection position before departure", () =
 	let state = createPrototypeState(6, { now: at });
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.OPEN_BAG_SELECTION,
-		label: "Prepare an Adventure",
+		label: "Prepare for the glow",
 	});
 
 	state = reduce(state, { type: ACTIONS.OPEN_BAG_SELECTION });
 	assert.equal(state.prototypePosition, 7);
-	assert.equal(playerPresentation(state).objective, "Choose what Rosie carries");
+	assert.equal(playerPresentation(state).objective, FIRST_ADVENTURE_OPPORTUNITY.name);
+	assert.equal(playerPresentation(state).detail, FIRST_ADVENTURE_OPPORTUNITY.detail);
 
 	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });
 	assert.equal(state.prototypePosition, 8);
 	assert.equal(state.stage, STAGES.PACKED);
+	assert.equal(playerPresentation(state).label, "Follow the glow");
 });
 
 test("prototype position jumps reject invalid targets without mutation", () => {

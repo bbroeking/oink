@@ -1005,8 +1005,13 @@ html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 	border-radius: 12px;
 	box-shadow: 2px 2px 0 rgba(48,33,22,.72);
 }
-.current-objective > span { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: var(--rose); box-shadow: 0 0 0 2px var(--ink); }
-.current-objective strong { overflow: hidden; font-size: 12px; line-height: 1.08; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
+.current-objective.has-detail { min-height: 50px; padding-top: 6px; padding-bottom: 6px; }
+.current-objective > .objective-dot { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: var(--rose); box-shadow: 0 0 0 2px var(--ink); }
+.objective-copy { min-width: 0; display: grid; gap: 2px; }
+.current-objective strong,
+.current-objective small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.current-objective strong { font-size: 12px; line-height: 1.08; font-weight: 900; }
+.current-objective small { color: var(--ink-soft); font-size: 8px; font-weight: 850; line-height: 1.05; }
 .lab-player .rosie-hit {
 	left: 43px;
 	top: 308px;
@@ -2022,6 +2027,7 @@ html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, ht
 	.heart-chip { min-width: 76px; padding-right: 8px; }
 	.current-objective { padding-right: 9px; }
 	.current-objective strong { font-size: 11px; }
+	.current-objective small { font-size: 7.5px; }
 	.world-action-patch { left: 10px; transform: none; }
 	.world-action-bag { left: 118px; }
 }
