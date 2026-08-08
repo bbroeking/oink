@@ -296,6 +296,55 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 html[data-reduce-motion="true"] .phone[data-adventure-opportunity="glow-beneath-hedge"] .adventure-tool-prop {
 	animation: none;
 }
+.adventure-find-handoff {
+	display: none;
+	position: absolute;
+	z-index: 4;
+	left: 213px;
+	top: 548px;
+	width: 18px;
+	height: 18px;
+	pointer-events: none;
+	transform-origin: center;
+}
+.adventure-find-handoff > i:first-child {
+	position: absolute;
+	inset: 2px;
+	border-radius: 50%;
+	background: radial-gradient(circle at 42% 38%, #fffbd0 0 18%, #ffd45a 40%, rgba(255,174,41,.2) 72%, transparent 76%);
+	box-shadow: 0 0 7px #ffe477, 0 0 16px rgba(255,190,62,.72);
+}
+.adventure-find-handoff > i:last-child {
+	position: absolute;
+	left: -7px;
+	top: 7px;
+	width: 8px;
+	height: 3px;
+	border-radius: 999px;
+	background: rgba(255,224,121,.68);
+	box-shadow: -7px 1px 5px rgba(255,207,89,.42), -15px 2px 7px rgba(255,207,89,.24);
+}
+.phone[data-adventure-opportunity="glow-beneath-hedge"]:not([data-adventure-pack="none"])[data-adventure-beat="pack"] .adventure-find-handoff {
+	display: block;
+	animation: adventure-find-to-pack 760ms cubic-bezier(.25,.72,.24,1) both;
+}
+.phone[data-adventure-opportunity="glow-beneath-hedge"]:not([data-adventure-pack="none"])[data-adventure-beat="resolved"] .adventure-find-handoff {
+	display: block;
+	opacity: .72;
+	transform: translate(98px,-13px) scale(.62);
+}
+@keyframes adventure-find-to-pack {
+	0% { opacity: 0; transform: translate(0,0) scale(.35); }
+	12% { opacity: 1; transform: translate(0,0) scale(1); }
+	52% { opacity: 1; transform: translate(50px,-20px) scale(.86); }
+	82% { opacity: .92; transform: translate(88px,-18px) scale(.7); }
+	100% { opacity: .72; transform: translate(98px,-13px) scale(.62); }
+}
+html[data-reduce-motion="true"] .phone[data-adventure-beat="pack"] .adventure-find-handoff {
+	animation: none;
+	opacity: .72;
+	transform: translate(98px,-13px) scale(.62);
+}
 @keyframes adventure-pack-settle {
 	from { opacity: 0; transform: translateY(-5px) scale(.96) rotate(-1.5deg); }
 	to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }

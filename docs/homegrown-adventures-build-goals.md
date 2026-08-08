@@ -513,6 +513,22 @@ treatments were captured on `codex/homegrown-v083-tool-action-prototypes` at
 empty-Tool, reduced-motion, 360×780 touch, centered 1280×720 desktop, 53
 reducer/source-contract tests, and TypeScript pass locally.
 
+**Find-to-Pack checkpoint (August 8, 2026):** the first outing's Pack now
+performs the cause its field note describes. During the existing Pack beat, one
+small warm-light mote leaves the Rive-owned Glowroot position and settles into
+the selected nonempty Wicker Basket or Cloth Wrap. Leaving Pack empty renders
+no transfer and preserves the existing useful Near-Discovery. The motion is
+scoped to **A Glow Beneath the Hedge**, so the later Lanternleaf route keeps its
+separate reflected-leaf language. Reduced motion paints the same settled light
+inside the Pack without travel. This is presentation only: no Pack choice,
+packing cost, cause, outcome, reward, timer, input, reducer state, persisted
+field, Rive asset, or Rive input changed. Three treatments were captured on
+`codex/homegrown-v084-pack-handoff-prototypes` at `bd77edf`; only the
+find-to-Pack treatment remains on main. Wicker Basket, empty Pack,
+second-outing Cloth Wrap, reduced motion, centered 1280×720 desktop, 54
+reducer/source-contract tests, Rive contracts, TypeScript, and repository
+quality gates pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

@@ -271,6 +271,18 @@ fact. Three treatments remain captured on
 `codex/homegrown-v083-tool-action-prototypes` at `42a66ab`; main retains only
 the one-dig treatment.
 
+The v0.84 Pack pass completes that physical cause chain. During the existing
+Pack beat, one restrained mote of the Glowroot's established warm light travels
+from the find into Rosie's selected nonempty Pack and stays faintly visible at
+its resting point. An empty Pack receives no mote, so its existing
+Near-Discovery remains visually honest. The handoff is limited to **A Glow
+Beneath the Hedge**; Cloth Wrap on the later Lanternleaf outing keeps that
+route's own reflected-leaf language. Reduced motion paints the same settled
+endpoint without travel. React still owns the Pack, result, and reward; Rive
+still owns the Glowroot reveal. Three treatments remain captured on
+`codex/homegrown-v084-pack-handoff-prototypes` at `bd77edf`; main retains only
+the find-to-Pack handoff.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

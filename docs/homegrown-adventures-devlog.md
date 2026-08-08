@@ -279,11 +279,71 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 84. **v0.83 — The Trowel Opens the Roots (shipped):** separate the first
     outing's Tool from its background and let one restrained dig fulfill the
     existing Hand Trowel cause.
+85. **v0.84 — The Pack Carries the Find (locally verified):** let one
+    restrained trace of the Glowroot settle into the selected Pack, while an
+    empty Pack visibly leaves the find in the clearing.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.84 — The Pack Carries the Find — 2026-08-08
+
+- Replayed the exact shipped v0.83 Pack beat at centered 1280×720. Provision
+  already established dusk and the Trowel physically opened the roots, but the
+  Wicker Basket only brightened while its field note said it waited for the
+  find. The final cause remained an inference.
+- Compared three bounded treatments on the existing Position 9 route: retain
+  the spotlight-only Pack, let the Pack lean toward the find, or move one
+  restrained warm-light mote from the Glowroot into the Pack. The light handoff
+  won because it expresses find → carrier without introducing another panel,
+  literal inventory icon, or repeated Pack motion.
+- Captured all three throwaway treatments at commit `bd77edf` on
+  `codex/homegrown-v084-pack-handoff-prototypes`. Main retains only the
+  find-to-Pack treatment and no prototype switcher.
+- During the existing 900 ms Pack beat, one 760 ms mote leaves the established
+  Glowroot position, follows a short readable arc, and settles faintly inside
+  the selected nonempty Pack. The Glowroot remains Rive-owned; the handoff is a
+  presentation trace rather than a second reward object.
+- Leaving Pack empty renders no transfer and keeps the existing clue-only
+  clearing. The treatment is scoped to **A Glow Beneath the Hedge**, so Cloth
+  Wrap on **Lights Past the Open Gate** does not inherit a Glowroot cue.
+  Reduced motion paints the same settled endpoint immediately.
+- React still derives the exact existing opportunity, Pack, beat, outcome, and
+  reward. No Pack rule, cause copy, reward quantity, Rive asset, Rive input,
+  timer, interaction, reducer state, or persisted field changed.
+
+### Validation evidence
+
+- The full-motion Wicker Basket replay reported `beat=pack`,
+  `animation=adventure-find-to-pack`, and a visible mid-arc transform while the
+  exact **Wicker Basket** field note remained readable. The settled frame kept
+  the light inside the Basket rather than floating over the clearing.
+- Leaving Pack empty produced `kind=near-discovery`, `pack=none`, and
+  `display=none` for the handoff. The clean clue clearing, Rosie, Trowel, note,
+  and one continuation action remained intact.
+- A complete second-day replay selected Cloth Wrap, spent one Willow Fiber,
+  entered **Lights Past the Open Gate**, reached its Pack beat, and reported no
+  Glowroot handoff. Its reflected leaves and Cloth-specific field note remained
+  the only route language.
+- Reduced motion reported `beat=resolved`, `animation=none`, and the same
+  settled Pack transform. The change adds no layout box or interactive target;
+  the established game frame and rail remain unchanged.
+- `npm run prototype:homegrown:test` passes 54/54, `npx tsc --noEmit` passes,
+  and `npm run verify:rive-homegrown` passes both authored Rive contracts.
+  `npm run quality:check` passes its quality contracts, 157-file layout
+  inspection, 324-sprite integrity gate, security contracts, TypeScript, 78
+  layout tests, and the security suite; Watchman's existing recrawl notice is
+  the only warning.
+
+### Next highest-leverage weakness
+
+The Tool and Pack now perform their verbs, but the Provision beat still only
+highlights an open Clover Lunch tin while its note says it keeps Rosie exploring
+until dusk. The next cycle should give that existing Provision one bounded,
+physical use response inside the clearing—without changing its one-use stock
+rule, adding hunger, or adding another interaction.
 
 ### v0.83 — The Trowel Opens the Roots — 2026-08-08
 

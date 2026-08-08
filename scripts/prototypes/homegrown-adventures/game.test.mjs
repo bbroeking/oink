@@ -1078,6 +1078,13 @@ test("the first Hand Trowel cause performs one separable dig", () => {
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.phone\[data-adventure-opportunity="glow-beneath-hedge"\] \.adventure-tool-prop/);
 });
 
+test("the first Adventure visibly settles a carried find into its chosen Pack", () => {
+	assert.match(appSource, /className="adventure-find-handoff" aria-hidden="true"><i \/><i \/><\/div>/);
+	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"[^\n]+data-adventure-beat="pack"[^\n]+\.adventure-find-handoff/);
+	assert.match(stylesSource, /@keyframes adventure-find-to-pack/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\][^\n]+\.adventure-find-handoff/);
+});
+
 test("departure timing is reducer-owned, reload-stable, reduced-motion aware, and idempotent", () => {
 	let state = createPrototypeState(8, { now: at });
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
