@@ -54,6 +54,11 @@ to Farm Stock, so **Clover becomes a Provision** remains connected to the
 current opportunity's exact time, interaction, and carrying clues through the
 Seed decision on both established routes, without a quest panel or tooltip
 layer;
+Position 3 now names the exact resulting Provision throughout the optional
+Compost decision: **3 Clover Lunches · ready in 4 hours** normally, or **4
+Clover Lunches · ready in 2 hours** with Compost, with the same vocabulary in
+the HUD and one plain statement of the boost instead of anonymous Harvest
+numbers;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive

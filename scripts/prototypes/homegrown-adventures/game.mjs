@@ -1633,10 +1633,13 @@ export function playerPresentation(state) {
 		};
 	}
 	if (state.stage === STAGES.STARTING) {
+		const promisedYield =
+			CROP_RULES.clover.baseYield +
+			(state.compostApplied ? CROP_RULES.clover.compostYieldBonus : 0);
 		return {
 			target: WORLD_TARGETS.PATCH,
 			objective: opportunity.plantingObjective,
-			detail: state.compostApplied ? "Compost: 2h · harvest 4" : "Clover: 4h · harvest 3",
+			detail: `Clover Lunch ×${promisedYield} · ready in ${state.compostApplied ? 2 : 4}h`,
 			label: state.compostApplied ? "Plant with Compost" : "Plant Clover",
 			action,
 		};

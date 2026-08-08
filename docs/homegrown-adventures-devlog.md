@@ -322,11 +322,64 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 98. **v0.97 — Grow for Rosie (shipped):** keep the current Adventure's purpose
     and exact clues attached to Farm Stock through Seed choice, without adding
     a quest panel or covering more of Rosie.
+99. **v0.98 — A Lunch, Not a Number (shipped):** name the actual Clover Lunch
+    outcome and exact Compost benefit at planting instead of asking the player
+    to interpret anonymous Harvest 3 / Harvest 4 numbers.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.98 — A Lunch, Not a Number — 2026-08-08
+
+- Began by playing the exact public Seed-to-planting handoff on the remembered
+  Adventure route. Position 3 preserved **Prepare for the gate lights**, but
+  its farming outcome became **Harvest 3** or **Harvest 4**. The only visible
+  mention of **Clover Lunch** was the scene's nonvisual description, so the
+  player could not see what the number represented or connect it to Rosie's
+  Provision.
+- Compared three real Position 3 structures: one named outcome promise, a
+  physical Clover Lunch shelf, and a persistent before/after comparison. The
+  named promise won. The comparison was clearest mathematically but read like
+  a stat screen; the shelf made the item tangible but did not explain the
+  optional benefit until after Compost was selected.
+- Captured all three throwaway treatments plus the selected Compost state at
+  commit `640a844` on
+  `codex/homegrown-v098-compost-promise-prototypes`. Main keeps only the named
+  promise; no `compost` query or comparison switcher ships.
+- Without Compost, the screen now promises **3 Clover Lunches · ready in 4
+  hours** and previews **1 more Lunch, 2 hours sooner**. With Compost selected,
+  it promises **4 Clover Lunches · ready in 2 hours** and explains that Compost
+  saves two hours and adds one Lunch.
+- The quiet HUD now says **Clover Lunch ×3 · ready in 4h** or **Clover Lunch ×4
+  · ready in 2h**, replacing its separate Harvest vocabulary. Both visible
+  surfaces derive yield from the established crop rules.
+- No Seed cost, Compost cost, duration, yield, Harvest Rhythm, stock,
+  persistence, route, state transition, animation, Rive asset, or Rive input
+  changed.
+- The required Impeccable review substituted for unavailable Claude Design.
+  It selected the named promise for plain language, low density, proximity to
+  the decision, and consistent Adventure vocabulary.
+
+### Local validation evidence
+
+- Rendered normal and Compost-selected Position 3 states at 390×844. Both name
+  Clover Lunch, give the exact count and time, keep Rosie visible, preserve one
+  obvious planting action, and expose no prototype comparison control.
+- Played from the remembered-Farm Seed choice into planting. **Prepare for the
+  gate lights**, the named Clover Lunch outcome, and the matching HUD promise
+  remained together.
+- The existing live status announces the full changed promise when Compost is
+  toggled. Reduced motion and reload retain the same truth.
+- `npm run prototype:homegrown:test` passes 68/68, including normal and boosted
+  HUD promises and a guard against the retired Harvest wording.
+  `npm run prototype:homegrown:build`, `npx tsc --noEmit`, and
+  `npm run verify:rive-homegrown` pass both authored Rive contracts.
+- `npm run quality:loop` and `npm run quality:check` pass the quality
+  contracts, 157-file layout gate, 324-sprite integrity gate, security
+  contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
+  existing recrawl notice is the only warning.
 
 ### v0.97 — Grow for Rosie — 2026-08-08
 

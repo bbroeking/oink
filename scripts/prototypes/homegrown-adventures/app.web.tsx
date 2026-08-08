@@ -372,6 +372,7 @@ function PlantingPanel({ state, onToggleCompost, onPlant }) {
 	const seeds = state.farmStock?.[CROP_RULES.clover.seedId] ?? 0;
 	const compost = state.farmStock?.compost ?? 0;
 	const boosted = state.compostApplied && compost > 0;
+	const promisedYield = CROP_RULES.clover.baseYield + (boosted ? CROP_RULES.clover.compostYieldBonus : 0);
 	return (
 		<section className="planting-panel" aria-label="Plant Clover and choose whether to add Compost">
 			<div className="planting-costs">
@@ -392,8 +393,8 @@ function PlantingPanel({ state, onToggleCompost, onPlant }) {
 				</button>
 			</div>
 			<div className="planting-effect" role="status">
-				<strong>{boosted ? "Ready in 2 hours · Harvest 4" : "Ready in 4 hours · Harvest 3"}</strong>
-				<small>{boosted ? "Compost grows it sooner and gives one extra." : "Add Compost for 2 hours · Harvest 4."}</small>
+				<strong>{promisedYield} Clover Lunches · ready in {boosted ? 2 : 4} hours</strong>
+				<small>{boosted ? "Compost saves 2 hours and adds 1 Lunch." : "Add Compost: 1 more Lunch, 2 hours sooner."}</small>
 			</div>
 			<button type="button" className="plant-confirm" onClick={onPlant} disabled={seeds < 1}>
 				{boosted ? "Plant with Compost" : "Plant Clover"}

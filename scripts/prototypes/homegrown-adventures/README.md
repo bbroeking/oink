@@ -1,5 +1,17 @@
 # Homegrown Adventures prototype
 
+The v0.98 Compost-promise pass replaces anonymous **Harvest 3 / Harvest 4**
+copy with the actual Adventure Provision: **3 Clover Lunches** normally or
+**4 Clover Lunches** with Compost. Three real Position 3 structures were
+rendered at commit `640a844` on
+`codex/homegrown-v098-compost-promise-prototypes`: a single named promise, a
+physical lunch shelf, and a before/after comparison. The named promise won
+because it explains the current outcome and the exact optional benefit without
+turning the quiet Farm into a stat table or hiding the benefit until after the
+choice. The HUD now uses the same Clover Lunch vocabulary. No comparison
+switcher, `compost` query parameter, crop rule, timer, reward, save field,
+animation, or Rive input remains on main.
+
 The v0.97 purpose-continuity pass keeps Rosie's current Adventure invitation
 attached to the Farm Stock decision. Three real Position 2 structures were
 rendered at commit `07028a7` on

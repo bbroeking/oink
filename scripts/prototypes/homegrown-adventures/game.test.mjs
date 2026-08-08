@@ -149,12 +149,17 @@ test("Clover requires a Seed and leaves its predictable Compost boost freely cho
 		type: ACTIONS.PLANT_CLOVER,
 		label: "Plant Clover",
 	});
+	assert.equal(playerPresentation(state).detail, "Clover Lunch ×3 · ready in 4h");
+	assert.match(appSource, /\{promisedYield\} Clover Lunches · ready in \{boosted \? 2 : 4\} hours/);
+	assert.match(appSource, /Add Compost: 1 more Lunch, 2 hours sooner\./);
+	assert.doesNotMatch(appSource, /Ready in 4 hours · Harvest 3|Ready in 2 hours · Harvest 4/);
 	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });
 	assert.equal(state.compostApplied, true);
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.PLANT_CLOVER,
 		label: "Plant with Compost",
 	});
+	assert.equal(playerPresentation(state).detail, "Clover Lunch ×4 · ready in 2h");
 
 	state = reduce(state, { type: ACTIONS.PLANT_CLOVER });
 	assert.equal(state.farmStock["clover-seed"], 2);
