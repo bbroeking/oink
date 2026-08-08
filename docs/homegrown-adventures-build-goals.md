@@ -38,8 +38,9 @@ grammar: the centered **The journey continues…** sign is gone, five
 route-colored lights open the path, the existing HUD names where Rosie is
 going, and one hidden live status preserves the same fact before the unchanged
 automatic idle-journey transition; that transition now carries the same five
-warm or silver lights into Home before the existing note, return promise,
-Packed reminder, route, and prototype fast-forward settle in, so the Farm
+warm or silver lights into Home before one consolidated field folio, the route,
+and prototype fast-forward settle in; the folio keeps the story, local return
+promise, and exact Packed choices in one physical read, so the Farm
 receives the Adventure as one continuous visual idea rather than a hard cut;
 second route now adds one dedicated native Rive reflection layer whose
 authored rise, luminous hold, and fade animate only the painted Lanternleaf
@@ -113,6 +114,18 @@ clips with one brief bed-level response, while normal planting and all
 React-owned resource rules remain unchanged; the first outing is now named **A
 Glow Beneath the Hedge** before farming begins, and its duration and clues stay
 visible through Bag preparation and departure.
+
+**One-field-folio checkpoint (August 8, 2026):** Position 9 no longer stacks a
+large story note over two detached paper tickets. The exact existing story,
+reload-stable **Expected Home** promise, and accessible Provision / Tool / Pack
+reminder now share one field folio with a quiet divided footer. The established
+three-step route remains immediately below it, the Farm regains visual space,
+and Homecoming still removes both trip facts before the welcome action. Three
+real structures were rendered on the stable Glowroot watch: a single field
+folio, a route-first layout, and one larger all-in journal. The field folio won
+because it preserved story-first reading and exposed more of the Farm. React
+state, timestamps, Bag truth, route phases, rewards, Rive source, and authored
+motions are unchanged.
 
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
