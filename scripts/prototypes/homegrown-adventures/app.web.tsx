@@ -1195,7 +1195,7 @@ function sceneImage() {
 	return "starting";
 }
 
-function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, plantingGlowroot = false } = {}) {
+function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, plantingGlowroot = false, sceneCopyVariant = "A" } = {}) {
 	if (plantingGlowroot) {
 		return "Glowroot Seed is ready to plant. Rosie waits beside the warm paper-craft Barn and the empty third Kitchen Patch bed.";
 	}
@@ -1206,6 +1206,15 @@ function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, p
 		const journeyDetail = journeyPhase === "homeward"
 			? "The route lights have turned toward the old gate and the porch light glows brighter as Rosie heads Home."
 			: "Route lights lead beyond the hedge while the porch keeps one small light glowing for Rosie.";
+		if (journeyPhase === "homeward") {
+			if (sceneCopyVariant === "B") {
+				return `Heading Home. The twilight paper-craft Barn and remembered Kitchen Patch stay visible while the route lights turn toward the old gate. The porch light is waiting for Rosie.`;
+			}
+			if (sceneCopyVariant === "C") {
+				return `The route lights have turned toward the old gate and the porch light glows brighter. Rosie is heading Home past the twilight paper-craft Barn and remembered Kitchen Patch.`;
+			}
+			return `Rosie is heading Home. The twilight paper-craft Barn and remembered Kitchen Patch stay visible while the route lights turn toward the old gate. The porch light is waiting for her.`;
+		}
 		return `${stageCopy(state).title}. The twilight paper-craft Barn and remembered Kitchen Patch stay visible while Rosie explores beyond the hedge. ${journeyDetail}`;
 	}
 	if ([STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage)) {
@@ -1220,6 +1229,7 @@ function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, p
 function App() {
 	const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 	const initialSearch = new URLSearchParams(window.location.search);
+	const sceneCopyVariant = initialSearch.get("scenecopy") ?? "A";
 	const loopMode = initialSearch.get("mode") === "loop";
 	const autoPlay = loopMode && !initialSearch.has("position");
 	const requestedPosition = Number(initialSearch.get("position"));
@@ -1625,6 +1635,7 @@ function App() {
 				gateHomecomingReady,
 				journeyPhase,
 				plantingGlowroot: showingGlowrootPlanting,
+				sceneCopyVariant,
 			})} />
 			{showingAdventureVignette && opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id && (
 				<LanternleafReflectionsRive active={adventureEnvironmentRevealed} reduceMotion={state.reduceMotion} />
