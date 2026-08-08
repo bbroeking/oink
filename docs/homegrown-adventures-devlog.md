@@ -308,6 +308,12 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
 - At 360×780 the player-facing frame had no horizontal overflow and kept the
   complete Bag ledger, Rosie, physical props, **Let Rosie explore**, and the
   fast-forward rail visible. Reduced motion resolved all three causes at once.
+- GitHub Pages run `31255647663` deployed commit `acf51a0`. Fresh public HTML
+  loaded CSS `f6cfb4d552` and JavaScript `aea0044ffa`; the companion site linked
+  **See Rosie's Bag shape the journey**.
+- Public first-route replay reported **Clover Lunch** / `waiting` at Provision,
+  **Hand Trowel** / `reveal` at Tool, **Wicker Basket** / `resting` at Pack, and
+  retained the complete 360×780 player frame with the action visible.
 
 ### Next highest-leverage weakness
 

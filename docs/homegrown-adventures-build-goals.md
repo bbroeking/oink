@@ -392,6 +392,9 @@ the complete readable explanation. Empty slots remain explicit and kind, keep
 their exact Near-Discovery outcomes, and never mount an unearned reward layer.
 Both routes, complete and incomplete Bags, 360×780 touch, reduced motion, Rive
 contracts, the 49 reducer tests, and repository quality gates pass locally.
+GitHub Pages run `31255647663` then deployed exact commit `acf51a0`; the public
+bundle repeated the Provision → Tool → Pack sequence, Tool-gated Glowroot
+reveal, compact touch layout, and updated companion-site link.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
