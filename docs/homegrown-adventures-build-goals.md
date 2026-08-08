@@ -364,6 +364,21 @@ reward, duration, route, equipment rule, Rive asset, or progression state
 changed. First and second routes, complete and incomplete Bags, direct reload,
 fast-forward, reduced motion, 360×780 touch, and exact Homecoming rewards pass.
 
+**Journey-watch checkpoint (August 7, 2026):** playing the shipped story-order
+pass exposed an abrupt fall in quality immediately after **Let Rosie explore**:
+the living expedition scene disappeared into an almost empty daytime Farm, a
+spinner, and the developer-sounding **Preview her return** action. Position 9
+now keeps the established Farm visible under one restrained twilight wash and
+shows a single three-beat route—Set off, the opportunity-specific trail, and
+Homecoming. The current beat is visually alive, the exact Find remains hidden,
+and **Fast-forward to Homecoming** makes the prototype affordance explicit.
+After fast-forward, the same surface rings the gate bell and asks the player to
+welcome Rosie before Position 10 reveals the named Discovery or clue. This is a
+presentation of the existing reducer-owned departure, wait, completion, and
+return facts; it adds no timer, destination, reward, mission, currency, or
+progression state. First and second routes, complete and incomplete Bags,
+Homecoming order, 360×780 touch layout, reload, and reduced motion pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

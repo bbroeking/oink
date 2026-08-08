@@ -249,11 +249,72 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     Position 9 into the environmental cause-and-effect beat, let Rosie continue
     exploring afterward, and reserve the named Discovery or clue for
     Homecoming without changing any outcome.
+75. **v0.74 — The Journey Is Worth Watching (locally verified):** replace the
+    empty Farm spinner after Rosie's causal vignette with one calm route watch,
+    an honest prototype fast-forward, and a gate-bell Homecoming handoff while
+    keeping the reward hidden.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.74 — The Journey Is Worth Watching — 2026-08-07
+
+- Began with a complete public v0.73 play-through. After **Let Rosie explore**,
+  the twilight expedition disappeared into a nearly empty daytime Farm with a
+  spinner and **Preview her return**. The state was mechanically correct but
+  no longer communicated progress, anticipation, or the pleasure of waiting
+  for Rosie to come Home.
+- Compared that gap with the approved adventure-departure concept. The fixed
+  camera, hedge path, warm dusk light, and one clear action were the useful
+  visual promises; another modal, mission board, or reward preview was not.
+- Added one Position 9 journey-watch surface over the established Farm. It
+  shows three concise beats—**Set off**, **Warm moth trail** or **Reflected
+  leaves**, and **Homecoming**—with only the current location emphasized.
+- Replaced **Preview her return** and the hidden wait action with the explicit
+  prototype control **Fast-forward to Homecoming**. The following state rings
+  the gate bell and offers **Welcome Rosie home** before any Bag reward is
+  shown.
+- The exact Discovery, Near-Discovery, material quantities, and cause ledger
+  still belong to Position 10. The new copy explicitly keeps the Find a
+  surprise and never names Glowroot, Lanternleaf Path, a clue, or stock.
+- One restrained trail-light cadence and current-step pulse make the waiting
+  state feel alive; the existing reduced-motion policy shortens both to a
+  static readable frame. React still owns every timer, route, reward, and
+  persisted fact.
+- The Prototype and Impeccable verdict is positive: the idle beat now explains
+  where Rosie is, what remains unknown, and how to inspect the next prototype
+  position without adding a parallel Adventure system.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 49/49 pass, including both routes,
+  deterministic Bag outcomes, the new fast-forward label, and reward ordering.
+- `npm run quality:loop` — quality contracts, the 157-file layout scan, 324
+  sprite checks, security contracts, TypeScript, and 280 focused Jest
+  assertions pass. Watchman's existing recrawl notice is the only warning.
+- Rendered first-route, incomplete-Bag play kept the three-beat watch and then
+  returned the Glowroot Trail clue without naming it during the wait.
+- Rendered second-route, complete-Bag play used **Reflected leaves** as the
+  active beat and preserved the remembered pond while withholding Lanternleaf
+  Path until Homecoming.
+- At 360×780, the HUD, field note, route, Farm, one action, and progression rail
+  remained visible with no horizontal overflow. Reduced motion reported
+  `0.00001s` for the active-step and trail-light animations while preserving
+  every label and action.
+- Public deployment verification is pending for this local checkpoint.
+
+### Observable acceptance criteria
+
+- After **Let Rosie explore**, the player can identify Rosie's current journey
+  beat and the upcoming Homecoming without seeing the reward.
+- The prototype control is named **Fast-forward to Homecoming**, not framed as
+  an in-world reward preview.
+- Fast-forward produces a separate gate-ready welcome state before Position 10.
+- First/second routes and complete/incomplete Bags keep their existing exact
+  reducer outcomes.
+- The waiting state remains legible at 360×780 and under reduced motion.
 
 ### v0.73 — The Journey Comes Before the Find — 2026-08-07
 

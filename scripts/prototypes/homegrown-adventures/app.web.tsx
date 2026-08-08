@@ -697,6 +697,37 @@ function AdventureVignetteOverlay({ state, onContinue }) {
 	);
 }
 
+function JourneyWatchPanel({ state, actionLabel, onAction }) {
+	const opportunity = adventureOpportunity(state);
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const homecomingReady = state.adventureComplete;
+	const trailLabel = lanternleaf ? "Reflected leaves" : "Warm moth trail";
+
+	return (
+		<section
+			className={`journey-watch ${homecomingReady ? "is-homecoming-ready" : ""}`}
+			aria-label="Rosie's adventure progress"
+		>
+			<div className="journey-watch-tint" aria-hidden="true" />
+			<div className="journey-watch-note" role="status" aria-live="polite">
+				<span className="journey-watch-mark" aria-hidden="true" />
+				<small>{homecomingReady ? "The gate bell rings" : "Rosie is away"}</small>
+				<strong>{homecomingReady ? "Rosie is waiting at the gate" : opportunity.waitingObjective}</strong>
+				<p>{homecomingReady
+					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
+					: "Her Bag is shaping the route beyond the hedge. The exact find stays a surprise until she comes Home."}</p>
+			</div>
+			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
+				<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
+				<li className={homecomingReady ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
+				<li className={homecomingReady ? "is-current" : ""}><i aria-hidden="true">3</i><span>Homecoming</span></li>
+			</ol>
+			<div className="journey-watch-lights" aria-hidden="true"><i /><i /><i /><i /></div>
+			<button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>
+		</section>
+	);
+}
+
 function ReturnRewardPanel({ state, actionLabel, onAction }) {
 	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
 	const opportunity = adventureOpportunity(state);
@@ -1133,6 +1164,7 @@ function App() {
 	const choosingBag = position === 7 && state.stage === STAGES.CLOVER_READY && state.cloverHarvested;
 	const departing = position === 8 && state.stage === STAGES.ADVENTURE && !state.departureComplete;
 	const showingAdventureVignette = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && !state.adventureVignetteSeen;
+	const showingJourneyWatch = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen;
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
 	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
 	const homeMemoryEarned = state.glowrootPlanted;
@@ -1151,7 +1183,7 @@ function App() {
 		state.stage === STAGES.DEVELOPED &&
 		state.nextPlanting === "moonberries" &&
 		!state.cycleComplete;
-	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingReturnReward;
+	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
 	const sceneRiveViewModel = useMemo(() => {
 		if (
 			!showingAdventureVignette ||
@@ -1333,7 +1365,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-opportunity={opportunity.id}
@@ -1425,6 +1457,11 @@ function App() {
 				state={state}
 				onContinue={() => act(visiblePresentation.action)}
 			/>}
+			{showingJourneyWatch && <JourneyWatchPanel
+				state={state}
+				actionLabel={visiblePresentation.label}
+				onAction={() => act(visiblePresentation.action)}
+			/>}
 			{showingReturnReward && <ReturnRewardPanel
 				state={state}
 				actionLabel={visiblePresentation.label}
@@ -1451,7 +1488,7 @@ function App() {
 				onSelect={selectBagItem}
 				onConfirm={() => act(visiblePresentation.action)}
 			/>}
-			{!showingFarmingPanel && !choosingBag && !showingAdventureVignette && !showingReturnReward && !showingHomeMemory && <WorldAction
+			{!showingFarmingPanel && !choosingBag && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward && !showingHomeMemory && <WorldAction
 				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}
 				presentation={visiblePresentation}
 				onAction={() => act(visiblePresentation.action)}

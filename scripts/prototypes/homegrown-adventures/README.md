@@ -170,6 +170,15 @@ explore** hands that beat into the established idle wait; Position 10 remains
 the first named Discovery or Near-Discovery reveal. The same reducer facts,
 routes, exact outcomes, Rive layers, and fast-forward positions remain intact.
 
+The v0.74 waiting pass turns the state after **Let Rosie explore** into one
+calm journey watch instead of an empty Farm spinner. Set off, the route-specific
+trail, and Homecoming form one readable three-beat path; **Fast-forward to
+Homecoming** is explicitly a prototype control. The resulting gate-bell state
+still requires **Welcome Rosie home**, and Position 10 remains the only named
+Discovery or Near-Discovery reveal. The visual layer adds no timer, reward,
+route, mission, currency, or persistence authority, and reduced motion keeps a
+static route with the same accessible DOM hierarchy.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

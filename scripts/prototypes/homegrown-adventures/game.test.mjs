@@ -442,7 +442,7 @@ test("Glowroot opens a distinct second opportunity across purpose, Bag, journey,
 	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.ADVANCE_TIME,
-		label: "Let nightfall pass",
+		label: "Fast-forward to Homecoming",
 	});
 	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
 	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
@@ -1041,7 +1041,16 @@ test("the Adventure vignette explains every selected item before idle waiting", 
 	assert.equal(state.adventureVignetteSeen, true);
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.ADVANCE_TIME,
-		label: "Let dusk pass",
+		label: "Fast-forward to Homecoming",
+	});
+	assert.deepEqual(playerPresentation(state), {
+		target: WORLD_TARGETS.HEDGE,
+		objective: "Rosie is following the moths",
+		label: "Fast-forward to Homecoming",
+		action: {
+			type: ACTIONS.ADVANCE_TIME,
+			label: "Fast-forward to Homecoming",
+		},
 	});
 });
 

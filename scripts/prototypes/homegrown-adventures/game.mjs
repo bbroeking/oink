@@ -1502,7 +1502,7 @@ export function primaryAction(state) {
 		if (!state.adventureVignetteSeen) {
 			return { type: ACTIONS.CONTINUE_ADVENTURE_STORY, label: "Let Rosie explore" };
 		}
-		return { type: ACTIONS.ADVANCE_TIME, label: opportunity.waitLabel };
+		return { type: ACTIONS.ADVANCE_TIME, label: "Fast-forward to Homecoming" };
 	}
 	if (state.stage === STAGES.ADVENTURE) {
 		return { type: ACTIONS.WELCOME_HOME, label: "Welcome Rosie Home" };
@@ -1668,7 +1668,7 @@ export function playerPresentation(state) {
 		return {
 			target: WORLD_TARGETS.HEDGE,
 			objective: opportunity.waitingObjective,
-			label: "Preview her return",
+			label: "Fast-forward to Homecoming",
 			action,
 		};
 	}
