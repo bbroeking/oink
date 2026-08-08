@@ -362,11 +362,73 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 110. **v0.109 — Dusk Answers the Provision (shipped):** replace the Adventure's
     opening Provision receipt with one in-scene use, a delighted Rosie response,
     route-colored dusk lights, and exact cause text in the existing HUD.
+111. **v0.110 — The Ground Answers the Tool (shipped):** remove the next large
+    receipt and let Rosie's Notice, the physical Tool, route-aware ground or
+    light responses, and the existing HUD explain the cause together.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.110 — The Ground Answers the Tool — 2026-08-08
+
+- Began from the publicly verified v0.109 Provision beat. The very next 900 ms
+  Tool beat already contained a physical Hand Trowel dig, the Glowroot or
+  Lanternleaf route response, and an authored `Rosie Notice`, but a large field
+  note still covered the clearing and repeated the same cause.
+- Compared the current receipt, a small ground-level trail label, and a
+  card-free world response in the real Position 9 composition. The card-free
+  treatment won on both routes: the receipt hid the world, and the smaller label
+  still competed with the Tool it explained.
+- Captured all three treatments and the decision at commit `82d8ccc` on
+  `codex/homegrown-v110-tool-beat-prototypes`. Main contains no study switcher,
+  extended timing, or trail label.
+- The existing HUD now names Hand Trowel, Lantern, and no-Tool outcomes on both
+  Glowroot and Lanternleaf. The same exact cause remains in hidden live-region
+  text, while three restrained Tool-aware details read as soil, lantern motes,
+  or falling undisturbed leaves.
+- The existing `adventure-attention` Rive motion remains the only Rosie response.
+  The Rive binary, View Model, triggers, reducer outcomes, rewards, timers,
+  inventory rules, persistence schema, and later Pack beat are unchanged.
+
+### Local validation evidence
+
+- Replayed Glowroot and Lanternleaf at the real 900 ms cadence with WebGL
+  enabled. During Tool, each route reported zero field notes, three ground
+  responses, exact Hand Trowel copy, `data-rive-status=ready`, and current plus
+  last motion as `adventure-attention`. Rosie, the Tool, and the route remained
+  visible together.
+- `npm run prototype:homegrown:test` passes 82/82, including Tool HUD copy,
+  Hand Trowel, Lantern, no Tool, hidden cause text, both routes, reduced motion,
+  and the existing authored Notice. `npm run prototype:homegrown:build`, `npm
+  run quality:loop`, `npm run quality:check`, `npm run verify:rive-homegrown`,
+  and `npm run verify:rive-web` pass. The quality gate covers 157 layout files,
+  324 sprites, security contracts, TypeScript, 78 layout tests, and 202 security
+  tests. Watchman's existing recrawl notice and manual mobile Safari motion
+  checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `f4a0cda` deployed successfully through GitHub Pages run
+  `31281570647`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `b3b2344158ee0cd8a3f70749da2e82bc3ec7cd3f9affbe42150f49a593f95ebb`
+  - player JavaScript: `6e98475a9e12a7b595dc5a0ed0e8e1a6c59cc336f77bd3913629f522316b3cd7`
+  - player CSS: `1212171f65f5be4c5d8706970eba3a152d868b714f863abaac687d47eb43bd8e`
+- Public rendered playback at the Tool beat reports exact Hand Trowel copy,
+  zero field-note cards, three ground responses, the correct `hand-trowel`
+  visual kind, a ready Rive scene, and `adventure-attention` as both current and
+  last performed motion.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=9&route=glowroot&v=f4a0cda`
+
+### Next highest-leverage weakness
+
+Pack is now the only Bag cause still presented as a large receipt. Its physical
+find-to-Pack handoff is already working. Compare a card-free Pack resolution
+against the current receipt, preserve exact empty-Pack and alternative-Pack
+causes, and do not add another reward, encounter, destination, or screen.
 
 ### v0.109 — Dusk Answers the Provision — 2026-08-08
 

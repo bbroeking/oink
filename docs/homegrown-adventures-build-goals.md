@@ -25,8 +25,11 @@ first Provision cause now happens in that clearing instead of inside a large
 receipt: packed food moves into Rosie and remains consumed, one delighted
 authored Rosie response plays without firing the Tickle game action, dusk or
 nightfall lights rise in route-specific color, and the existing HUD names the
-exact Clover Lunch, Moonberry, or empty-Provision consequence; Tool and Pack
-retain their existing later beats;
+exact Clover Lunch, Moonberry, or empty-Provision consequence; the following
+Tool cause now uses the same world-first grammar: the existing authored Rosie
+Notice and physical Hand Trowel or Lantern remain primary, route-aware soil,
+light, or undisturbed-leaf responses replace the large receipt, and the HUD
+names every equipped or empty outcome; Pack retains its existing later beat;
 second route now adds one dedicated native Rive reflection layer whose
 authored rise, luminous hold, and fade animate only the painted Lanternleaf
 trail, while reduced motion retains the static illustrated clue; the
@@ -344,6 +347,21 @@ without adding a card, timer, reward, save fact, encounter, or Rive binary.
 The next visible weakness is the Tool beat: its physical dig and authored Rosie
 Notice work, but the large field-note receipt still covers the top of the
 clearing and makes the journey feel reported rather than observed.
+
+**Ground-answers-Tool checkpoint (August 8, 2026):** three rendered Tool
+treatments were captured at commit `82d8ccc` on
+`codex/homegrown-v110-tool-beat-prototypes`: the existing large receipt, a
+small ground-level label, and a card-free world response. The world response
+won on both Glowroot and Lanternleaf because Rosie's already-authored Notice,
+the physical Hand Trowel or Lantern, and the waking roots or reflected leaves
+already carry the action. The existing HUD now names Hand Trowel, Lantern, and
+no-Tool consequences on both routes; a hidden live region preserves the same
+cause for assistive technology. Three restrained route- and Tool-aware ground
+details distinguish disturbed soil, lantern motes, and safely undisturbed
+leaves. No Rive binary, trigger, reducer outcome, reward, timer, inventory rule,
+save fact, encounter, or screen was added. The next visible weakness is Pack:
+its physical carried-find handoff works, but its remaining large receipt is now
+the only report card inside the three-cause sequence.
 
 **Next-Seed checkpoint (August 7, 2026):** the remembered Position 2 now leads
 with one full-width **Clover Seed** decision that names its stock and its purpose
