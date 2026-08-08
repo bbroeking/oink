@@ -823,13 +823,39 @@ test("Rive developed state exposes lasting Home consequences after the named cro
 	assert.equal(viewModel.hedgeBellEarned, true);
 	assert.deepEqual(
 		[viewModel.bedOneState, viewModel.bedTwoState, viewModel.bedThreeState],
-		["ready", "empty", "sprout"],
+		["empty", "empty", "sprout"],
 	);
 
 	state = reduce(state, { type: ACTIONS.PLANT_NEXT, crop: "moonberries" });
 	({ viewModel } = homegrownRiveModel(state));
 	assert.equal(viewModel.mothsVisible, true);
 	assert.equal(viewModel.bedTwoState, "sprout");
+});
+
+test("annual Clover stays harvested through Homecoming, changed Home, and the next morning", () => {
+	let state = throughCloverReady();
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.HARVEST_CLOVER });
+	assert.equal(homegrownRiveModel(state).viewModel.bedOneState, "empty");
+
+	state = packAdventure(state);
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	assert.equal(homegrownRiveModel(state).viewModel.bedOneState, "empty");
+
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
+	assert.equal(homegrownRiveModel(state).viewModel.bedOneState, "empty");
+
+	state = reduce(state, { type: ACTIONS.PLANT_GLOWROOT });
+	assert.equal(state.stage, STAGES.DEVELOPED);
+	assert.equal(homegrownRiveModel(state).viewModel.bedOneState, "empty");
+
+	state = reduce(state, { type: ACTIONS.PLANT_NEXT, crop: "moonberries" });
+	state = reduce(state, { type: ACTIONS.TICKLE });
+	state = reduce(state, { type: ACTIONS.START_NEW_DAY });
+	assert.equal(state.stage, STAGES.STARTING);
+	assert.equal(homegrownRiveModel(state).viewModel.bedOneState, "empty");
 });
 
 test("every happy-path state exposes one short spatial action", () => {

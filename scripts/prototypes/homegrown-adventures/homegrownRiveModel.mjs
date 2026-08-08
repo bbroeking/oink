@@ -39,7 +39,7 @@ function bedStates(state, now) {
 	}
 	if (state.stage === STAGES.DEVELOPED) {
 		return [
-			"ready",
+			"empty",
 			rememberedBedTwo,
 			"sprout",
 		];

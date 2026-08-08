@@ -1417,7 +1417,9 @@ function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, p
 		return `${stageCopy(state).title}. Rosie stands in the warm lantern-lit Barn workshop behind a wooden table holding the exact supplies she carried Home.`;
 	}
 	const rememberedHome = state.glowrootPlanted
-		? " The open hedge, earned bell, Glowroot bed, and rooted crops remain from the last Adventure."
+		? state.nextPlanting === "moonberries"
+			? " The open hedge, earned bell, Glowroot bed, and rooted Moonberry bed remain from the last Adventure. Harvested Bed 1 rests empty."
+			: " The open hedge, earned bell, and Glowroot bed remain from the last Adventure. Harvested Bed 1 rests empty."
 		: "";
 	return `${stageCopy(state).title}. Warm paper-craft Barn exterior with Rosie and a three-bed Kitchen Patch.${rememberedHome}`;
 }
