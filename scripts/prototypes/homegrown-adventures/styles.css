@@ -1999,7 +1999,8 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	font-weight: 900;
 }
 .harvest-pattern { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.harvest-pattern > span {
+.harvest-pattern > span,
+.harvest-pattern > button {
 	height: 34px;
 	display: grid;
 	place-items: center;
@@ -2012,23 +2013,9 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	font-size: 20px;
 	font-weight: 900;
 }
+.harvest-pattern > button { padding: 0; cursor: pointer; }
 .harvest-pattern > span.is-complete { color: white; background: #5d8d40; }
-.harvest-pattern > span.is-next { color: #6b491d; background: #f6c75b; box-shadow: 0 0 0 3px rgba(246,199,91,.3), 1px 2px 0 rgba(48,33,22,.58); }
-.harvest-assist {
-	min-height: 44px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 6px;
-	border: 2px solid var(--ink);
-	border-radius: 11px;
-	background: #f6c75b;
-	box-shadow: 1px 2px 0 rgba(48,33,22,.68);
-}
-.harvest-assist:hover { background: #ffe18f; transform: translateY(-1px); }
-.harvest-assist:active { transform: translateY(1px); box-shadow: none; }
-.harvest-assist > span { font-family: Georgia, serif; font-size: 22px; font-weight: 900; line-height: 1; }
-.harvest-assist > strong { font-size: 10px; font-weight: 950; line-height: 1; text-transform: uppercase; }
+.harvest-pattern > button.is-next { color: #6b491d; background: #f6c75b; box-shadow: 0 0 0 3px rgba(246,199,91,.3), 1px 2px 0 rgba(48,33,22,.58); }
 .harvest-normal {
 	min-height: 44px;
 	border: 0;
@@ -2058,7 +2045,12 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .harvest-bed-ribbon > strong { font-family: Caprasimo, Georgia, serif; font-size: 13px; font-weight: 400; line-height: 1.05; text-align: center; }
 .harvest-bed-ribbon > small { color: var(--ink-soft); font-size: 8px; font-weight: 900; line-height: 1.1; text-align: center; text-transform: uppercase; }
 .harvest-bed-ribbon .harvest-pattern { gap: 4px; }
-.harvest-bed-ribbon .harvest-pattern > span { height: 29px; font-size: 17px; }
+.harvest-bed-ribbon .harvest-pattern > span,
+.harvest-bed-ribbon .harvest-pattern > button { height: 29px; font-size: 17px; }
+.harvest-bed-ribbon.is-unified { top: 646px; min-height: 62px; grid-template-columns: 92px 126px 1fr; }
+.harvest-bed-ribbon.is-unified .harvest-pattern > span,
+.harvest-bed-ribbon.is-unified .harvest-pattern > button { height: 36px; font-size: 20px; }
+.harvest-bed-ribbon.is-unified > small { text-transform: none; }
 .harvest-bed-assist {
 	position: absolute;
 	left: 18px;
@@ -2092,6 +2084,7 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	border: 1px solid rgba(48,33,22,.48);
 	border-radius: 10px;
 }
+.harvest-bed-assist.is-unified { left: 48px; right: 48px; top: 716px; grid-template-columns: 1fr 92px; }
 .harvest-result-world { position: absolute; inset: 0; z-index: 12; pointer-events: none; }
 .harvest-result-world button { pointer-events: auto; }
 .farm-stock-shelf {

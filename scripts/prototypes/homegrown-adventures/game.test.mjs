@@ -224,6 +224,18 @@ test("Clover's left-right-up rhythm adds one small bonus to the guaranteed harve
 	);
 });
 
+test("the rendered Harvest Rhythm keeps the crop gesture primary with one integrated tap fallback", () => {
+	const state = createPrototypeState(5, { now: at });
+	assert.equal(playerPresentation(state).objective, "Harvest for Rosie’s journey");
+	assert.equal(playerPresentation(state).detail, "Clover’s rhythm: ← → ↑");
+	assert.match(appSource, /aria-label=\{`Tap \$\{HARVEST_DIRECTION_LABELS\[direction\]\.name\} instead`\}/);
+	assert.match(appSource, /Swipe bed · or tap arrow/);
+	assert.match(appSource, /\{guaranteedYield\} Lunches guaranteed · clean rhythm \+1/);
+	assert.match(appSource, /className="harvest-bed-assist is-unified"/);
+	assert.doesNotMatch(appSource, /className="harvest-assist"|objective: "Clover’s rhythm: ← → ↑"/);
+	assert.match(stylesSource, /\.harvest-bed-assist\.is-unified \{/);
+});
+
 test("an imperfect or slow rhythm still grants the complete base and Compost harvest", () => {
 	for (const beats of [
 		[

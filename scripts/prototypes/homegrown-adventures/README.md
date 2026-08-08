@@ -1,5 +1,18 @@
 # Homegrown Adventures prototype
 
+The v0.99 Harvest-Rhythm hierarchy pass keeps the crop itself as the gesture
+surface and replaces the former separate **Tap Left / Right / Up** action with
+the active arrow inside one bed-anchored rhythm ribbon. Three real Position 5
+structures were rendered at commit `1487aca` on
+`codex/homegrown-v099-harvest-focus-prototypes`: a single harvest ribbon, a
+bed callout, and a detached swipe dock. The ribbon won because it preserves
+the direct crop gesture, offers one integrated keyboard/tap fallback, and
+leaves **Gather normally** as the only separate alternate path. The HUD keeps
+the Adventure purpose, while the guarantee now names the exact three or four
+Clover Lunches before the optional clean-rhythm bonus. No `rhythm` query,
+comparison switcher, crop rule, reward, save field, animation, or Rive input
+remains on main.
+
 The v0.98 Compost-promise pass replaces anonymous **Harvest 3 / Harvest 4**
 copy with the actual Adventure Provision: **3 Clover Lunches** normally or
 **4 Clover Lunches** with Compost. Three real Position 3 structures were

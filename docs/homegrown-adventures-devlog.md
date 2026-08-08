@@ -325,11 +325,68 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 99. **v0.98 — A Lunch, Not a Number (shipped):** name the actual Clover Lunch
     outcome and exact Compost benefit at planting instead of asking the player
     to interpret anonymous Harvest 3 / Harvest 4 numbers.
+100. **v0.99 — Swipe the Clover (locally verified):** make the flowered bed the
+    one obvious Harvest Rhythm surface, integrate the accessible tap fallback
+    into its active arrow, and keep the exact guaranteed harvest visible.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.99 — Swipe the Clover — 2026-08-08
+
+- Began by playing the exact public Position 5 return to a ready Clover bed.
+  The HUD repeated **Clover's rhythm: left, right, up** as both objective and
+  detail, while the scene simultaneously offered a swipe zone, a large
+  **Tap Left** button, and **Gather normally**. The crop was visible, but the
+  player had three competing answers to the same immediate question.
+- Compared three real Position 5 structures: one bed-anchored harvest ribbon,
+  a callout laid over the bed, and a detached swipe dock. The single ribbon
+  won. The callout covered the crop; the dock separated the gesture from the
+  thing being harvested; both retained an unnecessary separate tap action.
+- Captured all three throwaway treatments at commit `1487aca` on
+  `codex/homegrown-v099-harvest-focus-prototypes`. Main keeps only the single
+  ribbon; no `rhythm` query or comparison switcher ships.
+- The flowered bed remains the direct swipe target. The active left, right, or
+  up arrow inside the ribbon is now the keyboard and tap fallback, with an
+  exact accessible name such as **Tap Left instead**. Completed and future
+  arrows remain noninteractive.
+- The HUD preserves **Harvest for Rosie's journey** and uses **Clover's rhythm:
+  left, right, up** as supporting detail. The guarantee now says **3 Lunches
+  guaranteed** normally or **4 Lunches guaranteed** with Compost, followed by
+  the established **clean rhythm +1** promise.
+- **Gather normally** remains the only separate alternate path. It grants the
+  complete base and Compost harvest without a rhythm bonus, so the skill
+  gesture stays optional and never becomes a harvesting gate.
+- No crop rule, yield, Compost behavior, rhythm sequence, reward, Farm-stock
+  transition, persistence field, animation, Rive asset, or Rive input changed.
+- The required Impeccable review substituted for unavailable Claude Design.
+  It selected the single-ribbon treatment for direct manipulation, one clear
+  hierarchy, consistent control vocabulary, and preservation of the crop art.
+
+### Local validation evidence
+
+- Rendered the selected Position 5 state at 390x844 with the Adventure purpose,
+  active arrow fallback, exact guaranteed yield, and normal-gather path all
+  visible without covering the ready crop or exposing a prototype switcher.
+- Played the active fallback through left, right, and up. Each accessible name
+  advanced exactly once and the completed rhythm entered Position 6 with the
+  clean-rhythm bonus.
+- Played an unboosted crop through **Gather normally**. It returned **Clover
+  Lunch +3** with no rhythm bonus, proving that the guaranteed path remains
+  complete and independent.
+- After one rhythm beat, reduced motion and reload preserved **Tap Right
+  instead**, the Adventure purpose, and the exact guarantee. Pointer swipe,
+  keyboard/tap fallback, and normal gathering all retain their existing reducer
+  paths.
+- `npm run prototype:homegrown:test` passes 69/69. `npm run
+  prototype:homegrown:build`, `npx tsc --noEmit`, and `npm run
+  verify:rive-homegrown` pass both authored Rive contracts.
+- `npm run quality:loop` and `npm run quality:check` pass the quality
+  contracts, 157-file layout gate, 324-sprite integrity gate, security
+  contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
+  existing recrawl notice is the only warning.
 
 ### v0.98 — A Lunch, Not a Number — 2026-08-08
 

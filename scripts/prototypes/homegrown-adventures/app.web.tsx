@@ -445,26 +445,24 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 	const pattern = (
 		<div className="harvest-pattern" aria-label="Left, then Right, then Up">
 			{HARVEST_PATTERN.map((direction, index) => (
-				<span
-					key={direction}
-					className={`${index < beatIndex ? "is-complete" : ""} ${index === beatIndex ? "is-next" : ""}`}
-				>
-					{HARVEST_DIRECTION_LABELS[direction].arrow}
-				</span>
+				index === beatIndex
+					? <button
+						key={direction}
+						type="button"
+						className="is-next"
+						onClick={() => onBeat(direction, "button")}
+						aria-label={`Tap ${HARVEST_DIRECTION_LABELS[direction].name} instead`}
+					>{HARVEST_DIRECTION_LABELS[direction].arrow}</button>
+					: <span
+						key={direction}
+						className={index < beatIndex ? "is-complete" : ""}
+					>{HARVEST_DIRECTION_LABELS[direction].arrow}</span>
 			))}
 		</div>
 	);
-	const assistButton = nextDirection && (
-		<button
-			type="button"
-			className="harvest-assist"
-			onClick={() => onBeat(nextDirection, "button")}
-			aria-label={`Harvest ${nextLabel.name}`}
-		>
-			<span aria-hidden="true">{nextLabel.arrow}</span>
-			<strong>Tap {nextLabel.name}</strong>
-		</button>
-	);
+	const guaranteedYield =
+		CROP_RULES.clover.baseYield +
+		(state.compostApplied ? CROP_RULES.clover.compostYieldBonus : 0);
 
 	return (
 		<div className="harvest-experiment">
@@ -478,14 +476,13 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 			>
 				<span aria-hidden="true">{nextLabel?.arrow}</span>
 			</div>
-			<section className="harvest-bed-ribbon" aria-label="Follow Clover's harvest rhythm">
+			<section className="harvest-bed-ribbon is-unified" aria-label="Follow Clover's harvest rhythm">
 				<strong aria-live="polite">{nextLabel ? `Swipe ${nextLabel.name}` : "Harvest complete"}</strong>
 				{pattern}
-				<small>on the flowered bed</small>
+				<small>Swipe bed · or tap arrow</small>
 			</section>
-			<div className="harvest-bed-assist">
-				{assistButton}
-				<span><i aria-hidden="true">✓</i> Harvest guaranteed · clean rhythm +1</span>
+			<div className="harvest-bed-assist is-unified">
+				<span><i aria-hidden="true">✓</i> {guaranteedYield} Lunches guaranteed · clean rhythm +1</span>
 				<button type="button" className="harvest-normal" onClick={onGatherNormally}>Gather normally</button>
 			</div>
 		</div>
@@ -1394,8 +1391,6 @@ function App() {
 		? { ...presentation, objective: "Glowroot takes root", detail: "The Farm remembers" }
 		: showingHarvestCelebration
 		? { ...presentation, objective: "Harvesting Clover…" }
-		: showingHarvestRhythm
-		? { ...presentation, objective: "Clover’s rhythm: ← → ↑" }
 		: showingAdventureVignette
 		? {
 			...presentation,

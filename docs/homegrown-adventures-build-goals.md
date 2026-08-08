@@ -59,6 +59,11 @@ Compost decision: **3 Clover Lunches · ready in 4 hours** normally, or **4
 Clover Lunches · ready in 2 hours** with Compost, with the same vocabulary in
 the HUD and one plain statement of the boost instead of anonymous Harvest
 numbers;
+Position 5 now keeps **Harvest for Rosie's journey** in the HUD, makes the
+flowered bed the unmistakable swipe surface, folds the accessible tap fallback
+into the one active rhythm arrow, and names the exact guaranteed Lunch count
+beside **Gather normally** instead of presenting three competing harvest
+actions;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive
