@@ -354,6 +354,19 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   324-sprite integrity gate, security contracts, TypeScript, 78 layout tests,
   and 202 security tests. Watchman's existing recrawl notice is the only
   warning.
+- Feature commit `ac494eb` deployed successfully through GitHub Pages run
+  `31267186453`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `04c5d8f2be34463664f25b85aa21843a71cb6e255b48d19d7d6fc3e9b7a389ae`,
+  `68d292088367fff65a7ba6b8bb94e9db3d8595835b51c5696aa7dde21ba672f7`, and
+  `d2c78dcf941ce1b214d9eb988b4e9bc4085776f5691ecc113eff4a056b7e47cf`.
+- A fresh public homeward replay rendered the correct route note, current
+  Homeward step, external **Heading Home** readout, and no treatment switcher.
+  Fast-forwarding that exact served build changed the readout to **At the
+  gate**, removed the review shortcut, and restored the unchanged in-world
+  **Welcome Rosie home** action.
+- The public companion page now exposes **Follow Rosie's journey Home** and
+  links directly to Position 9's reviewable homeward beat.
 
 ### Next highest-leverage weakness
 
