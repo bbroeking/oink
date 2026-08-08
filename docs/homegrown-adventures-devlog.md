@@ -338,11 +338,93 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 103. **v0.102 — The Clue Comes Home (shipped):** present an incomplete return
     as a named Field Guide update, separate it from actual Farm supplies, and
     open the exact Bag pocket that can complete the Discovery next time.
+104. **v0.103 — The Bag Remembers the Clue (shipped):** keep the earned Field
+    Guide lesson attached to its Bag pocket and visibly answer it when the
+    player packs a capability for the repeated Adventure.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.103 — The Bag Remembers the Clue — 2026-08-08
+
+- Began by replaying the shipped Near-Discovery action through re-packing and a
+  second complete Adventure. The loop worked mechanically, but the Field Guide
+  disappeared as soon as Position 7 opened. The Bag looked identical to a
+  first attempt, and selecting the missing capability gave no sign that the
+  player had applied Rosie's lesson.
+- Compared three real Position 7 treatments: a Field Guide folio inside the
+  picker, a matching-item badge, and a marked Bag pocket. The marked pocket
+  won. The folio added another bordered panel to an already complete decision;
+  the item badge prescribed an answer instead of letting the player interpret
+  the earned capability.
+- Captured all three throwaway treatments at commit `3d043e6` on
+  `codex/homegrown-v103-bag-clue-prototypes`. Main keeps only the marked-pocket
+  treatment; no `bagclue` query or comparison switcher ships.
+- The existing Bag header now repeats the route- and capability-specific Field
+  Guide lesson. The relevant Provision, Tool, or Pack tab says **Clue** while
+  empty, then **Answered** after the player packs any valid item in that
+  capability slot. The header names the chosen item and route clue.
+- First-time packing remains exactly as before: all three slots begin empty,
+  every choice remains optional, and no clue marker appears until Rosie has
+  actually brought one Home.
+- The required Impeccable product review substituted for unavailable Claude
+  Design. It selected the marked pocket because it reuses the current
+  hierarchy, keeps the illustration readable, and makes learned causality
+  visible without adding a quest or recommendation surface.
+- React owns the clue presentation and selection confirmation. No success
+  rule, route, Bag choice, reward, material cost, timestamp, save field,
+  animation, Rive asset, or Rive contract changed.
+
+### Local validation evidence
+
+- Played a first-route Adventure without a Tool, brought **Glowroot Trail**
+  Home, and opened the Tool pocket. The Tool tab was selected, the header kept
+  the sleeping-root lesson visible, and the tab said **Clue**.
+- Packed Lantern as the freely chosen Tool. The existing Rive Bag-receive beat
+  played, the tab changed to **Answered**, the choice survived reload, and the
+  repeated Adventure returned a complete Glowroot Discovery with its existing
+  Lantern bonus.
+- Played **Lights Past the Open Gate** without a Pack. The Lanternleaf lesson
+  returned to the Pack pocket, then Cloth Wrap changed the same marker to
+  **Answered** with route-correct copy.
+- Verified a first-time Position 7 separately; it retained the original empty
+  Bag title and contained no unearned clue marker.
+- Reloaded the answered Tool state with reduced motion enabled. The exact
+  header, selected item, and Answered marker persisted.
+- `npm run prototype:homegrown:test` passes 75/75. `npm run
+  prototype:homegrown:build`, `npm run verify:rive-homegrown`, `npm run
+  quality:loop`, and `npm run quality:check` pass the authored Rive contracts,
+  quality contracts, 157-file layout gate, 324-sprite integrity gate, security
+  contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
+  existing recrawl notice is the only warning.
+
+### Public verification evidence
+
+- Feature commit `69c3483` deployed successfully in GitHub Pages run
+  `31275852677`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `3adc39d659a4174980c87a69ff5fa8a8670ef00df71b040bf80e9d259cb93310`
+  - player JavaScript: `0c4b6a72c6f8564f936a3d2ddb28c95a19fbe35b87a2a6eb46a900b517a118fe`
+  - player CSS: `b7eebe2a6bedae24daebb57413b93d9bbf10b8ce7de2d3bdccce7b7ae15741a3`
+- Ran a fresh public Adventure without a Provision. After the truthful journey
+  and Field Guide Homecoming, **Open the Provision pocket** returned to the
+  selected Provision tab with the dusk lesson and **Clue** marker intact.
+- Packed Clover Lunch. The live public tab changed to **Answered** and said
+  **Clover Lunch answers the Glowroot Trail clue**. Repeated the same Adventure
+  through fast-forward and Homecoming; it returned the established Glowroot
+  Seed +2, Compost +1, and Willow Fiber +2 Discovery.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=7&v=69c3483`
+
+### Next highest-leverage weakness
+
+Replay the answered clue through the complete Discovery ceremony, planting,
+and Changed Home. Find the first moment where the Field Guide lesson fails to
+feel resolved into a lasting world change; prefer one acknowledgement in an
+existing Homecoming or Home-memory surface over a new journal, quest, or
+completion screen.
 
 ### v0.102 — The Clue Comes Home — 2026-08-08
 

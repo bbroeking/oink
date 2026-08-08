@@ -1,5 +1,19 @@
 # Homegrown Adventures prototype
 
+The v0.103 learned-clue pass keeps an earned Field Guide lesson attached to
+the Bag after the player chooses **Open the Provision / Tool / Pack pocket**.
+Three real Position 7 treatments were rendered at commit `3d043e6` on
+`codex/homegrown-v103-bag-clue-prototypes`: a Field Guide folio inside the
+picker, a matching-item badge, and a marked Bag pocket. The marked pocket won
+because it reuses the existing Bag header and slot tab instead of adding a
+panel or revealing one prescribed answer. The header repeats the route-specific
+capability; the relevant pocket says **Clue**, then changes to **Answered** and
+names the item the player chose. A first-time Bag remains unchanged. React
+derives this presentation from the existing `nearDiscoveryReason`, route, and
+Bag selection; no progression state, success rule, reward, timer, inventory
+quantity, Rive asset, or Rive contract changed. No `bagclue` query or
+comparison switcher remains on main.
+
 The v0.102 actionable-clue pass makes an incomplete Adventure feel like a
 useful Field Guide return rather than a failed version of the full Discovery.
 Three real Position 10 treatments were rendered at commit `5b83fe3` on
