@@ -1675,7 +1675,7 @@ export function playerPresentation(state) {
 	if (state.stage === STAGES.ADVENTURE) {
 		return {
 			target: WORLD_TARGETS.HEDGE,
-			objective: "Rosie is waiting at the gate",
+			objective: "Rosie is Home",
 			label: "Welcome Rosie home",
 			action,
 		};

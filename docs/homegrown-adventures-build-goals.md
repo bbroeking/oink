@@ -396,6 +396,19 @@ GitHub Pages run `31255647663` then deployed exact commit `acf51a0`; the public
 bundle repeated the Provision → Tool → Pack sequence, Tool-gated Glowroot
 reveal, compact touch layout, and updated companion-site link.
 
+**Visible-Homecoming checkpoint (August 8, 2026):** the shipped journey watch
+ended with **The gate bell rings** and **Rosie is waiting at the gate**, but the
+rendered Farm was empty until the reward screen appeared. The same reducer-owned
+`adventureComplete` fact now reveals canonical Rive Rosie, plays the existing
+**Rosie Return** timeline once, and keeps her packed satchel attached while the
+named Find remains hidden. A direct reload replays the bounded arrival and then
+holds the ordinary breathing pose; reduced motion presents the same complete
+Home state without movement. The second route retains all earned Farm memory
+instead of substituting an empty first-day yard. No route, timer, reward,
+equipment rule, Rive asset, currency, or progression state was added. Both
+routes, reload, Position 9 → 10 continuity, 360×780 touch, reduced motion, Rive
+contracts, 49 reducer tests, and repository quality gates pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

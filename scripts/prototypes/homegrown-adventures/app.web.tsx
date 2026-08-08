@@ -730,7 +730,7 @@ function JourneyWatchPanel({ state, actionLabel, onAction }) {
 			<div className="journey-watch-note" role="status" aria-live="polite">
 				<span className="journey-watch-mark" aria-hidden="true" />
 				<small>{homecomingReady ? "The gate bell rings" : "Rosie is away"}</small>
-				<strong>{homecomingReady ? "Rosie is waiting at the gate" : opportunity.waitingObjective}</strong>
+				<strong>{homecomingReady ? "Rosie is Home" : opportunity.waitingObjective}</strong>
 				<p>{homecomingReady
 					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
 					: "Her Bag is shaping the route beyond the hedge. The exact find stays a surprise until she comes Home."}</p>
@@ -1113,9 +1113,12 @@ function sceneImage() {
 	return "starting";
 }
 
-function sceneLabel(state, { plantingGlowroot = false } = {}) {
+function sceneLabel(state, { gateHomecomingReady = false, plantingGlowroot = false } = {}) {
 	if (plantingGlowroot) {
 		return "Glowroot Seed is ready to plant. Rosie waits beside the warm paper-craft Barn and the empty third Kitchen Patch bed.";
+	}
+	if (gateHomecomingReady) {
+		return "Rosie has returned through the warm paper-craft Barn gate and stands in the yard with her packed satchel. Her Discovery remains inside until the player welcomes her Home.";
 	}
 	if (state.stage === STAGES.ADVENTURE) {
 		return `${stageCopy(state).title}. The warm paper-craft Barn and Kitchen Patch are quiet while Rosie explores beyond the hedge.`;
@@ -1185,6 +1188,7 @@ function App() {
 	const departing = position === 8 && state.stage === STAGES.ADVENTURE && !state.departureComplete;
 	const showingAdventureVignette = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && !state.adventureVignetteSeen;
 	const showingJourneyWatch = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen;
+	const gateHomecomingReady = showingJourneyWatch && state.adventureComplete;
 	const adventureEnvironmentRevealed = ["tool", "pack", "resolved"].includes(adventureCauseBeat);
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
 	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
@@ -1222,6 +1226,10 @@ function App() {
 			hedgeBellEarned: false,
 		};
 	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
+	const sceneRiveTrigger = gateHomecomingReady ? "return" : riveModel.trigger;
+	const sceneRiveTriggerNonce = gateHomecomingReady
+		? `${riveModel.triggerNonce}:gate-homecoming`
+		: riveModel.triggerNonce;
 	const waiting = departing || (autoPlay && (
 		state.stage === STAGES.CLOVER_GROWING ||
 		(state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen && !state.adventureComplete)
@@ -1405,7 +1413,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-opportunity={opportunity.id}
@@ -1417,7 +1425,10 @@ function App() {
 			data-return-tool={showingReturnReward ? state.bag?.tool ?? "none" : undefined}
 			data-return-pack={showingReturnReward ? state.bag?.pack ?? "none" : undefined}
 		>
-			<div className="scene-plate" role="img" aria-label={sceneLabel(state, { plantingGlowroot: showingGlowrootPlanting })} />
+			<div className="scene-plate" role="img" aria-label={sceneLabel(state, {
+				gateHomecomingReady,
+				plantingGlowroot: showingGlowrootPlanting,
+			})} />
 			{showingAdventureVignette && opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id && (
 				<LanternleafReflectionsRive active={adventureEnvironmentRevealed} reduceMotion={state.reduceMotion} />
 			)}
@@ -1425,10 +1436,11 @@ function App() {
 				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}
 				model={sceneRiveViewModel}
+				playInitialTrigger={gateHomecomingReady}
 				showPondResident={homeMemoryEarned && sceneRiveViewModel.frogVisible}
 				showHomePose={showingHomeMemory}
-				trigger={riveModel.trigger}
-				triggerNonce={riveModel.triggerNonce}
+				trigger={sceneRiveTrigger}
+				triggerNonce={sceneRiveTriggerNonce}
 				bagReceiveSlot={riveModel.bagReceive?.slot ?? null}
 			/>
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}

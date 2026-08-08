@@ -188,6 +188,15 @@ beat order, route, Bag facts, exact outcome, and interruptible Continue action;
 reduced motion resolves directly to the complete ledger, and empty slots keep
 their established useful Near-Discovery paths.
 
+The v0.76 Homecoming pass makes the final journey-watch promise physically
+true. When the gate bell rings, canonical Rive Rosie becomes visible in the
+Farm, performs the existing **Rosie Return** timeline with her reducer-owned
+satchel, and remains for the player's **Welcome Rosie home** action. Reload can
+replay this presentation-only arrival; reduced motion holds the same readable
+Home pose. The second route keeps its earned crops, residents, pond, hedge, and
+bell. Position 10 still owns the first named Discovery and exact Farm-stock
+reward, so no gameplay state or reward timing moved into Rive.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

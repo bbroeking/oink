@@ -257,11 +257,68 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     Provision / Tool / Pack ledger into three short causal beats, let the Tool
     wake the route's existing Rive clue, and keep incomplete Bags kind without
     changing any outcome.
+77. **v0.76 — Rosie Is Home (shipped):** replace the empty gate-bell yard with
+    Rosie's existing authored Return performance and packed satchel, preserving
+    the remembered Farm and withholding the reward until she is welcomed.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.76 — Rosie Is Home — 2026-08-08
+
+- Began with a complete public v0.75 Adventure-to-Homecoming replay. After the
+  journey watch reached **Homecoming**, the interface said **Rosie is waiting at
+  the gate** over an empty Farm. Rosie then appeared abruptly inside the Barn
+  with the reward. The emotional promise and the rendered scene contradicted
+  one another at the exact moment the player was meant to welcome her.
+- Reused the existing authored **Rosie Return** Rive timeline rather than
+  creating another character, cutscene, or animation system. The reducer's
+  established `adventureComplete` fact now reveals the persistent Rosie canvas,
+  runs Return once, and keeps her packed satchel attached.
+- Renamed the visible objective to **Rosie is Home** and corrected the scene's
+  accessible description to say she has returned through the gate into the
+  yard. **Welcome Rosie home** remains the one action, and the named Discovery
+  still stays hidden until Position 10.
+- Made the gate state reload-stable. A direct reload replays the same bounded
+  Return entrance, then settles Rosie into the existing breathing pose instead
+  of reverting to an empty yard.
+- Preserved the developed Farm on the second route. Glowroot, Moonberries, the
+  hedge opening, pond frog, moths, and the earned bell remain visible when Rosie
+  comes back; this checkpoint does not reset Home to make the arrival simpler.
+- Reduced motion skips the entrance while keeping Rosie, her satchel, the Farm,
+  journey labels, and action visible in one stable frame.
+- No reducer transition, route, reward, duration, equipment rule, Rive asset,
+  currency, or progression fact changed. React still owns Homecoming; Rive owns
+  only Rosie's bounded arrival and settled pose.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 49/49 pass, including both routes,
+  incomplete Bags, fast-forward, persistence, and exact reward settlement.
+- `npm run verify:rive-homegrown` — the 390×844 Homegrown contract with 60
+  authored names and the Lanternleaf reflection contract both pass.
+- `npm run quality:loop` and `npm run quality:check` — quality contracts, the
+  157-file layout scan, 324 sprite checks, security contracts, TypeScript, and
+  280 focused Jest assertions pass. Watchman's existing recrawl notice is the
+  only warning.
+- Rendered first-route fast-forward reported Rive motion `return`, last
+  performed motion `return`, the satchel equipped, and the corrected scene
+  description before settling to idle with Rosie still visible.
+- Direct gate reload replayed Return and retained Rosie. The next action moved
+  to Position 10 with the same Rosie and exact **Glowroot Seed +2** reward.
+- Rendered second-route Homecoming kept the developed Farm and reported the
+  frog visible while Rosie returned. Normal and reduced motion both remained
+  legible at 360×780 with no horizontal overflow or console errors.
+
+### Next highest-leverage weakness
+
+The player now welcomes Rosie once at the yard, but Position 10 immediately
+asks them to **Welcome Rosie Home** again to acknowledge the reward. The next
+cycle should make that second action about receiving the Discovery and Farm
+stock—not repeat the Homecoming ritual—and should preserve the single emotional
+welcome established here.
 
 ### v0.75 — The Bag Tells the Story — 2026-08-07
 

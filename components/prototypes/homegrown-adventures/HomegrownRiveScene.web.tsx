@@ -134,6 +134,7 @@ type FrogMotion = "loading" | "hidden" | "present" | "responding" | "reduced";
 export interface HomegrownRiveSceneProps {
 	reduceMotion: boolean;
 	model: HomegrownRiveViewModel;
+	playInitialTrigger?: boolean;
 	showPondResident: boolean;
 	showHomePose?: boolean;
 	trigger: HomegrownRiveMotionTrigger | null;
@@ -148,6 +149,7 @@ export interface HomegrownRiveSceneProps {
 function HomegrownRiveSceneImpl({
 	reduceMotion,
 	model,
+	playInitialTrigger = false,
 	showPondResident,
 	showHomePose = false,
 	trigger,
@@ -162,7 +164,7 @@ function HomegrownRiveSceneImpl({
 	const [moonberryMotion, setMoonberryMotion] = useState<MoonberryMotion>("loading");
 	const [mothMotion, setMothMotion] = useState<MothMotion>("loading");
 	const [frogMotion, setFrogMotion] = useState<FrogMotion>("loading");
-	const lastTriggerNonce = useRef(triggerNonce);
+	const lastTriggerNonce = useRef(playInitialTrigger ? "" : triggerNonce);
 	const lastCropTriggerNonce = useRef(triggerNonce);
 	const previousBedOneState = useRef(model.bedOneState);
 	const previousHomeDeveloped = useRef(model.hedgeCrossingOpen);
