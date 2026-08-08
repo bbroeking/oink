@@ -320,6 +320,21 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   `npm run verify:rive-homegrown`, `npm run quality:loop`, and
   `npm run quality:check` pass. The only warning is Watchman's existing recrawl
   notice.
+- Feature commit `9f03b73` deployed successfully through GitHub Pages run
+  `31258659431`. The served HTML, CSS, and JavaScript match the committed
+  artifacts byte-for-byte at SHA-256 `5978790276df74788e39b3aefa38947ec5e1caa0f1524f8d88ff592a0bffbebe`,
+  `16fed740dc23cd5865c595b34c3e5edb80dbcdcb33b220d07d2ed80614cd6968`, and
+  `a43ff1224379b181ca5ceddbd032abe74ac96731fe397d51ff94f1ce33a000c0`.
+- Replayed the exact public feature URL at 360×780. The captured mid-flight
+  frame remained on Position 10 with `origin-bonus is-departing`, `aria-busy`,
+  a disabled return action, and equal 360px body client/scroll widths. It then
+  settled on Position 11 with **Bed 3 is ready for Glowroot** and **Glowroot
+  Seed 2 → 1**.
+- Public reload retained the settled Position 11 with no transient handoff.
+  **Plant Glowroot** then changed the authored Bed 3 state to `sprout`, left one
+  Glowroot Seed in Farm stock, and advanced the objective to Moonberries.
+- The deployed companion page links directly to Position 10 as **Carry Rosie's
+  Seed all the way to Bed 3**.
 
 ### Next highest-leverage weakness
 
