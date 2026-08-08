@@ -676,6 +676,10 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	list-style: none;
 }
+.journey-watch.is-near-discovery .journey-watch-route li:nth-child(2) i {
+	background: color-mix(in srgb, var(--journey-route-light) 72%, var(--paper-deep));
+	border-style: dashed;
+}
 .journey-watch-route::before {
 	content: "";
 	position: absolute;

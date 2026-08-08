@@ -1276,6 +1276,22 @@ test("the journey watch keeps a quiet truthful reminder of what Rosie packed", (
 	assert.doesNotMatch(appSource, /JourneyBagPrototypeSwitcher|loadoutTreatment|searchParams\.set\("loadout"/);
 });
 
+test("an incomplete Bag stays causal throughout the idle journey", () => {
+	assert.match(appSource, /const missingSlot = state\.underprepared \? state\.nearDiscoveryReason : null/);
+	assert.match(appSource, /data-missing-capability=\{missingSlot \?\? undefined\}/);
+	assert.match(appSource, /Without a Provision, she marks the warm glow/);
+	assert.match(appSource, /Without a Tool, she leaves the roots undisturbed/);
+	assert.match(appSource, /Without a Pack, she traces its glowing leaf-print/);
+	assert.match(appSource, /Without a Provision, she saves the night route/);
+	assert.match(appSource, /Without a Tool, she follows their direction/);
+	assert.match(appSource, /Without a Pack, she records the reflected path/);
+	assert.match(appSource, /provision: "Marked the glow", tool: "Root clue", pack: "Leaf-print"/);
+	assert.match(appSource, /provision: "Marked reflections", tool: "Path clue", pack: "Trail map"/);
+	assert.match(appSource, /A useful clue is coming Home/);
+	assert.match(stylesSource, /\.journey-watch\.is-near-discovery \.journey-watch-route li:nth-child\(2\) i/);
+	assert.doesNotMatch(appSource, /JourneyTruthSwitcher|journeyTruthTreatment|journeytruth/);
+});
+
 test("the journey watch gives the persisted return time one calm stable place", () => {
 	assert.match(appSource, /formatAdventureReturnPromise\(state\.adventureReadyAt, \{ now \}\)/);
 	assert.match(appSource, /className="journey-return-time-ticket" role="group" aria-label=\{returnPromise\.ariaLabel\}/);

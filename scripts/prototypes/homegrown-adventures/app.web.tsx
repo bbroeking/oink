@@ -776,7 +776,57 @@ function AdventureVignetteOverlay({ state, beat }) {
 	);
 }
 
-function journeyWatchCopy(lanternleaf, journeyPhase) {
+function journeyWatchCopy(lanternleaf, journeyPhase, missingSlot = null) {
+	if (missingSlot) {
+		if (journeyPhase === "homeward") {
+			return {
+				eyebrow: "A useful clue is coming Home",
+				title: "Rosie turns toward the porch light",
+				body: "She knows what to pack next time. Home is waiting beyond the old gate.",
+			};
+		}
+
+		const firstRoute = {
+			provision: {
+				eyebrow: "Daylight at the warm roots",
+				title: "Rosie follows as far as daylight allows",
+				body: "Without a Provision, she marks the warm glow and starts Home with a useful trail clue.",
+			},
+			tool: {
+				eyebrow: "Soft roots beneath the hedge",
+				title: "Rosie studies the sleeping root",
+				body: "Without a Tool, she leaves the roots undisturbed and remembers exactly where to return.",
+			},
+			pack: {
+				eyebrow: "A delicate find stays safe",
+				title: "Rosie leaves the Glowroot where it grows",
+				body: "Without a Pack, she traces its glowing leaf-print and remembers the way back.",
+			},
+		};
+		const secondRoute = {
+			provision: {
+				eyebrow: "Dusk at the open gate",
+				title: "Rosie marks the first reflections",
+				body: "Without a Provision, she saves the night route for another outing and starts Home with a clue.",
+			},
+			tool: {
+				eyebrow: "Reflections beyond the gate",
+				title: "Rosie watches the shifting leaves",
+				body: "Without a Tool, she follows their direction but cannot reveal the complete path.",
+			},
+			pack: {
+				eyebrow: "A delicate trail stays safe",
+				title: "Rosie leaves the trail supplies where they belong",
+				body: "Without a Pack, she records the reflected path so she can return prepared.",
+			},
+		};
+		return (lanternleaf ? secondRoute : firstRoute)[missingSlot] ?? {
+			eyebrow: "A useful clue",
+			title: "Rosie learns where to return",
+			body: "The light Bag changes this outing, but Rosie still brings useful knowledge Home.",
+		};
+	}
+
 	if (journeyPhase === "homeward") {
 		return lanternleaf
 			? {
@@ -819,8 +869,14 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction }) 
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const homecomingReady = state.adventureComplete;
-	const trailLabel = lanternleaf ? "Reflected leaves" : "Warm moth trail";
-	const copy = journeyWatchCopy(lanternleaf, journeyPhase);
+	const missingSlot = state.underprepared ? state.nearDiscoveryReason : null;
+	const trailLabels = lanternleaf
+		? { provision: "Marked reflections", tool: "Path clue", pack: "Trail map" }
+		: { provision: "Marked the glow", tool: "Root clue", pack: "Leaf-print" };
+	const trailLabel = missingSlot
+		? trailLabels[missingSlot]
+		: lanternleaf ? "Reflected leaves" : "Warm moth trail";
+	const copy = journeyWatchCopy(lanternleaf, journeyPhase, missingSlot);
 	const homeward = journeyPhase === "homeward";
 	const returnPromise = homecomingReady
 		? null
@@ -828,8 +884,9 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction }) 
 
 	return (
 		<section
-			className={`journey-watch ${homecomingReady ? "is-homecoming-ready" : ""}`}
+			className={`journey-watch ${missingSlot ? "is-near-discovery" : ""} ${homecomingReady ? "is-homecoming-ready" : ""}`}
 			data-journey-phase={journeyPhase}
+			data-missing-capability={missingSlot ?? undefined}
 			aria-label="Rosie's adventure progress"
 		>
 			<div className="journey-watch-tint" aria-hidden="true" />
