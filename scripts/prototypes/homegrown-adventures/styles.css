@@ -1050,6 +1050,150 @@ html[data-reduce-motion="true"] .journey-watch.is-entering .journey-watch-note,
 html[data-reduce-motion="true"] .journey-watch.is-entering .journey-return-time-ticket,
 html[data-reduce-motion="true"] .journey-watch.is-entering .journey-packed-stamp,
 html[data-reduce-motion="true"] .journey-watch.is-entering .journey-watch-route { animation: none; }
+
+/* PROTOTYPE v0.114 — three one-glance structures; throw away after verdict. */
+.journey-watch-story {
+	position: relative;
+	min-height: 68px;
+	padding-left: 48px;
+	display: flex;
+	align-items: center;
+}
+.journey-watch-story > div {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+.journey-watch-story .journey-watch-mark { left: 5px; }
+.journey-watch-facts {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.journey-watch-facts .journey-return-time-ticket,
+.journey-watch-facts .journey-packed-stamp {
+	position: static;
+	transform: none;
+	box-shadow: none;
+}
+.journey-watch-facts .journey-return-time-ticket {
+	flex: 1 1 42%;
+	width: auto;
+	height: 35px;
+	padding: 4px 2px;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+}
+.journey-watch-facts .journey-packed-stamp {
+	flex: 1 1 58%;
+	width: auto;
+	height: 35px;
+	padding: 1px 0 1px 7px;
+	grid-template-columns: 32px repeat(3, 1fr);
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+}
+.journey-watch-facts .journey-packed-stamp > span { height: 30px; }
+.watch-prototype-a .journey-watch-note {
+	min-height: 140px;
+	padding: 9px 12px 7px;
+	justify-content: flex-start;
+}
+.watch-prototype-a .journey-watch-facts {
+	margin-top: 3px;
+	padding-top: 4px;
+	border-top: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
+}
+.watch-prototype-a .journey-watch-route { top: 231px; }
+
+.watch-prototype-b .journey-watch-route { top: 81px; }
+.watch-prototype-b .journey-watch-note {
+	left: 40px;
+	right: 40px;
+	top: 137px;
+	min-height: 128px;
+	padding: 8px 11px 6px;
+	box-shadow: 2px 3px 0 color-mix(in srgb, var(--ink) 60%, transparent);
+}
+.watch-prototype-b .journey-watch-story {
+	min-height: 63px;
+	padding-left: 42px;
+}
+.watch-prototype-b .journey-watch-story .journey-watch-mark {
+	left: 3px;
+	width: 25px;
+	height: 32px;
+}
+.watch-prototype-b .journey-watch-story > div > strong { font-size: 14px; }
+.watch-prototype-b .journey-watch-note p { max-width: 31ch; font-size: 8px; }
+.watch-prototype-b .journey-watch-facts {
+	padding-top: 2px;
+	border-top: 1px solid color-mix(in srgb, var(--ink) 24%, transparent);
+}
+
+.watch-prototype-c .journey-watch-note {
+	left: 28px;
+	right: 28px;
+	top: 82px;
+	min-height: 205px;
+	padding: 9px 12px 8px;
+	justify-content: flex-start;
+}
+.watch-prototype-c .journey-watch-route {
+	position: relative;
+	left: auto;
+	right: auto;
+	top: auto;
+	margin: 5px 0 2px;
+}
+.watch-prototype-c .journey-watch-route li {
+	color: var(--ink-soft);
+	text-shadow: none;
+}
+.watch-prototype-c .journey-watch-route::before {
+	background: color-mix(in srgb, var(--wood) 30%, var(--paper));
+	border-color: color-mix(in srgb, var(--ink) 48%, transparent);
+}
+.watch-prototype-c .journey-watch-route i {
+	width: 26px;
+	height: 26px;
+}
+.watch-prototype-c .journey-watch-route::before { top: 12px; }
+.watch-prototype-c .journey-watch-facts {
+	margin-top: 5px;
+	padding-top: 4px;
+	border-top: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
+}
+.journey-watch-prototype-switcher {
+	position: fixed;
+	z-index: 50;
+	left: 50%;
+	top: 664px;
+	transform: translateX(-50%);
+	height: 34px;
+	display: flex;
+	align-items: center;
+	overflow: hidden;
+	color: #fff;
+	background: #181326;
+	border-radius: 999px;
+	box-shadow: 0 4px 8px rgba(0,0,0,.34);
+	font: 800 10px/1 Inter, system-ui, sans-serif;
+}
+.journey-watch-prototype-switcher strong { min-width: 130px; text-align: center; }
+.journey-watch-prototype-switcher button {
+	width: 38px;
+	height: 34px;
+	color: inherit;
+	background: transparent;
+	border: 0;
+	font: inherit;
+	cursor: pointer;
+}
+.journey-watch-prototype-switcher button:hover,
+.journey-watch-prototype-switcher button:focus-visible { background: rgba(255,255,255,.16); }
 .return-homecoming-open .scene-plate { opacity: 0; }
 .return-homecoming-open .painted-kitchen-patch,
 .return-homecoming-open .painted-remembered-crop,

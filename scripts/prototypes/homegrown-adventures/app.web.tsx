@@ -1039,6 +1039,36 @@ function JourneyPackedStamp({ bag }) {
 	</div>;
 }
 
+// Three structures for Position 9's stable journey watch, switchable with ?watch=, on the existing player route.
+const WATCH_PROTOTYPE_VARIANTS = ["A", "B", "C"];
+
+function JourneyWatchPrototypeSwitcher({ current }) {
+	const select = useCallback((offset) => {
+		const index = WATCH_PROTOTYPE_VARIANTS.indexOf(current);
+		const next = WATCH_PROTOTYPE_VARIANTS[(index + offset + WATCH_PROTOTYPE_VARIANTS.length) % WATCH_PROTOTYPE_VARIANTS.length];
+		const url = new URL(window.location.href);
+		url.searchParams.set("watch", next);
+		window.location.assign(url);
+	}, [current]);
+
+	useEffect(() => {
+		const onKeyDown = (event) => {
+			if (event.target instanceof HTMLElement && event.target.closest("input, textarea, [contenteditable='true']")) return;
+			if (event.key === "ArrowLeft") select(-1);
+			if (event.key === "ArrowRight") select(1);
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [select]);
+
+	const names = { A: "One field folio", B: "Trail leads", C: "Pocket journal" };
+	return <nav className="journey-watch-prototype-switcher" aria-label="Journey watch prototype variants">
+		<button type="button" aria-label="Previous journey-watch variant" onClick={() => select(-1)}>←</button>
+		<strong>{current} · {names[current]}</strong>
+		<button type="button" aria-label="Next journey-watch variant" onClick={() => select(1)}>→</button>
+	</nav>;
+}
+
 function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, entering = false }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
@@ -1055,10 +1085,53 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, en
 	const returnPromise = homecomingReady
 		? null
 		: formatAdventureReturnPromise(state.adventureReadyAt, { now });
+	const watchVariant = WATCH_PROTOTYPE_VARIANTS.includes(new URLSearchParams(window.location.search).get("watch"))
+		? new URLSearchParams(window.location.search).get("watch")
+		: "A";
+	const story = <div className="journey-watch-story">
+		<span className="journey-watch-mark" aria-hidden="true" />
+		<div>
+			<small>{homecomingReady ? "The gate bell rings" : copy.eyebrow}</small>
+			<strong>{homecomingReady ? "Rosie is Home" : copy.title}</strong>
+			<p>{homecomingReady
+				? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
+				: copy.body}</p>
+		</div>
+	</div>;
+	const tripFacts = !homecomingReady && <div className="journey-watch-facts">
+		{returnPromise && <div className="journey-return-time-ticket" role="group" aria-label={returnPromise.ariaLabel}>
+			<small aria-hidden="true">Expected Home</small>
+			<strong aria-hidden="true">{returnPromise.display}</strong>
+		</div>}
+		<JourneyPackedStamp bag={state.bag} />
+	</div>;
+	const route = <ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
+		<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
+		<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
+		<li className={homecomingReady || homeward ? "is-current" : ""}><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></li>
+	</ol>;
+	let watchContent;
+	if (watchVariant === "B") {
+		watchContent = <>
+			{route}
+			<div className="journey-watch-note" role="status" aria-live="polite">{story}{tripFacts}</div>
+		</>;
+	} else if (watchVariant === "C") {
+		watchContent = <div className="journey-watch-note" role="status" aria-live="polite">
+			{story}
+			{route}
+			{tripFacts}
+		</div>;
+	} else {
+		watchContent = <>
+			<div className="journey-watch-note" role="status" aria-live="polite">{story}{tripFacts}</div>
+			{route}
+		</>;
+	}
 
 	return (
 		<section
-			className={`journey-watch ${missingSlot ? "is-near-discovery" : ""} ${homecomingReady ? "is-homecoming-ready" : ""} ${entering ? "is-entering" : ""}`}
+			className={`journey-watch watch-prototype-${watchVariant.toLowerCase()} ${missingSlot ? "is-near-discovery" : ""} ${homecomingReady ? "is-homecoming-ready" : ""} ${entering ? "is-entering" : ""}`}
 			data-journey-phase={journeyPhase}
 			data-missing-capability={missingSlot ?? undefined}
 			aria-label="Rosie's adventure progress"
@@ -1066,26 +1139,10 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, en
 			{entering && <div className="journey-entry-lights" aria-hidden="true"><i /><i /><i /><i /><i /></div>}
 			<div className="journey-watch-tint" aria-hidden="true" />
 			<div className="journey-home-dusk" aria-hidden="true"><i /></div>
-			<div className="journey-watch-note" role="status" aria-live="polite">
-				<span className="journey-watch-mark" aria-hidden="true" />
-				<small>{homecomingReady ? "The gate bell rings" : copy.eyebrow}</small>
-				<strong>{homecomingReady ? "Rosie is Home" : copy.title}</strong>
-				<p>{homecomingReady
-					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
-					: copy.body}</p>
-			</div>
-			{returnPromise && <div className="journey-return-time-ticket" role="group" aria-label={returnPromise.ariaLabel}>
-				<small aria-hidden="true">Expected Home</small>
-				<strong aria-hidden="true">{returnPromise.display}</strong>
-			</div>}
-			{!homecomingReady && <JourneyPackedStamp bag={state.bag} />}
-			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
-				<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
-				<li className={homecomingReady || homeward ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
-				<li className={homecomingReady || homeward ? "is-current" : ""}><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></li>
-			</ol>
+			{watchContent}
 			<div className="journey-watch-lights" aria-hidden="true"><i /><i /><i /><i /></div>
 			{homecomingReady && <button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>}
+			<JourneyWatchPrototypeSwitcher current={watchVariant} />
 		</section>
 	);
 }
