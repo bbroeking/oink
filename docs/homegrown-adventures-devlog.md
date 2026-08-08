@@ -352,6 +352,19 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   inspection, 324-sprite integrity gate, security contracts, TypeScript, 78
   layout tests, and 202 security tests. Watchman's existing recrawl notice is
   the only warning.
+- Feature commit `37e9ae6` deployed successfully through GitHub Pages run
+  `31265289393`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `ae58cbd74837b65af51cb990516a0aa1444b2bd6e159826e63ab865193dadce0`,
+  `6d1621b0e6b718d4b4bc68cbcf45f231ee84f902bd976ecc078b88da3e102bdf`, and
+  `9d6dba00fc34987d3f94e1db29ad57d6133ee7673bd47db06b3ad0e581e29314`.
+- A fresh public Position 8 → 9 replay rendered the full-motion first route
+  with **Rosie is following the moths**, Set off → Warm moth trail →
+  Homecoming, gold `#f7d568` route light, the dusk-entry and Home-light
+  animations, the exact twilight scene description, no prototype switcher,
+  and equal 1280 px client/scroll widths.
+- The public companion page exposes **Wait at dusk while Rosie explores** and
+  links directly to Position 9.
 
 ### Next highest-leverage weakness
 
