@@ -1,5 +1,19 @@
 # Homegrown Adventures prototype
 
+## v0.89 journey-progress UI study (throwaway branch)
+
+Question: which treatment makes Rosie's six-hour outing feel alive without turning waiting into another dashboard?
+
+Open Position 9 with `?position=9&debug=1&progression=A&phase=trail`, then use the floating bar to compare:
+
+- **A — Path-led:** a traveler marker changes position on the painted route; copy stays restrained.
+- **B — Field-note-led:** one route-specific story beat changes from exploring to heading Home; the three-step route confirms it.
+- **C — Home-led:** the porch light and a Home-waits message carry the temporal change while the route recedes.
+
+The phase toggle exposes the full relevant prototype state (`trail` / `homeward`) without waiting six hours. This switcher and all losing treatments stay off main after the decision is captured.
+
+**Rendered verdict:** B — Field-note-led. A's traveler marker read as an abstract progress dot detached from Rosie. C made Home feel warm, but its extra card competed with the journey note. B made the temporal change immediately understandable by changing one existing story surface and advancing the existing route. The production fold keeps B's structure, borrows A's reversed route-light motion and C's brighter porch light for the homeward beat, and keeps all prototype controls off main.
+
 The v0.88 journey-atmosphere pass keeps the remembered Farm visibly at dusk
 while Rosie is away. The existing journey watch now fades in over one
 scene-wide evening grade, keeps one restrained warm Home light, and recolors

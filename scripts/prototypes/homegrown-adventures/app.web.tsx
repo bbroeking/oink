@@ -44,6 +44,55 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// PROTOTYPE ONLY — three journey-progress treatments on the existing Position 9 route.
+// Question: which treatment makes a six-hour outing feel alive without turning waiting into another dashboard?
+const PROGRESSION_VARIANTS = {
+	A: { name: "Path-led", question: "Can the route itself carry the passage of time?" },
+	B: { name: "Field-note-led", question: "Can one changing story beat make the wait understandable?" },
+	C: { name: "Home-led", question: "Can the Barn anticipating Rosie create the strongest feeling?" },
+};
+
+function readProgressionVariant() {
+	const value = new URLSearchParams(window.location.search).get("progression")?.toUpperCase();
+	return Object.hasOwn(PROGRESSION_VARIANTS, value) ? value : null;
+}
+
+function readJourneyPreviewPhase() {
+	return new URLSearchParams(window.location.search).get("phase") === "homeward" ? "homeward" : "trail";
+}
+
+function useJourneyProgressionPrototype() {
+	const [treatment, setTreatmentState] = useState(readProgressionVariant);
+	const [phase, setPhaseState] = useState(readJourneyPreviewPhase);
+	const replaceParams = useCallback((nextTreatment, nextPhase) => {
+		const url = new URL(window.location.href);
+		url.searchParams.set("debug", "1");
+		url.searchParams.set("progression", nextTreatment);
+		url.searchParams.set("phase", nextPhase);
+		window.history.replaceState({}, "", url);
+		setTreatmentState(nextTreatment);
+		setPhaseState(nextPhase);
+	}, []);
+	const setTreatment = useCallback((next) => replaceParams(next, phase), [phase, replaceParams]);
+	const setPhase = useCallback((next) => replaceParams(treatment ?? "A", next), [replaceParams, treatment]);
+
+	useEffect(() => {
+		if (!treatment) return undefined;
+		const onKey = (event) => {
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			const keys = Object.keys(PROGRESSION_VARIANTS);
+			const current = keys.indexOf(treatment);
+			const delta = event.key === "ArrowRight" ? 1 : -1;
+			setTreatment(keys[(current + delta + keys.length) % keys.length]);
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [setTreatment, treatment]);
+
+	return { treatment, phase, setTreatment, setPhase };
+}
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -703,33 +752,67 @@ function AdventureVignetteOverlay({ state, beat }) {
 	);
 }
 
-function JourneyWatchPanel({ state, actionLabel, onAction }) {
+function journeyPrototypeCopy(lanternleaf, phase) {
+	if (phase === "homeward") {
+		return lanternleaf
+			? {
+				eyebrow: "The leaves turn Home",
+				headline: "Rosie is heading back",
+				body: "Silver reflections now point toward the old gate. The porch light is waiting for her.",
+			}
+			: {
+				eyebrow: "The moths turn Home",
+				headline: "Rosie is heading back",
+				body: "Warm lights are drifting toward the old gate. The porch light is waiting for her.",
+			};
+	}
+	return lanternleaf
+		? {
+			eyebrow: "Beyond the open gate",
+			headline: "Rosie follows reflected leaves",
+			body: "Her Bag keeps the silver route within reach while Home waits beyond the hedge.",
+		}
+		: {
+			eyebrow: "Beyond the hedge",
+			headline: "Rosie follows warm moths",
+			body: "Her Bag keeps the golden trail within reach while Home waits beyond the hedge.",
+		};
+}
+
+function JourneyWatchPanel({ state, actionLabel, onAction, progressionTreatment = null, previewPhase = "trail" }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const homecomingReady = state.adventureComplete;
 	const trailLabel = lanternleaf ? "Reflected leaves" : "Warm moth trail";
+	const journeyPhase = homecomingReady ? "home" : previewPhase;
+	const prototypeCopy = journeyPrototypeCopy(lanternleaf, journeyPhase);
+	const showPrototypeCopy = progressionTreatment === "B" || progressionTreatment === "C";
 
 	return (
 		<section
-			className={`journey-watch ${homecomingReady ? "is-homecoming-ready" : ""}`}
+			className={`journey-watch ${homecomingReady ? "is-homecoming-ready" : ""} ${progressionTreatment ? `progression-${progressionTreatment.toLowerCase()}` : ""}`}
+			data-progression-treatment={progressionTreatment ?? undefined}
+			data-preview-phase={journeyPhase}
 			aria-label="Rosie's adventure progress"
 		>
 			<div className="journey-watch-tint" aria-hidden="true" />
 			<div className="journey-home-dusk" aria-hidden="true"><i /></div>
 			<div className="journey-watch-note" role="status" aria-live="polite">
 				<span className="journey-watch-mark" aria-hidden="true" />
-				<small>{homecomingReady ? "The gate bell rings" : "Rosie is away"}</small>
-				<strong>{homecomingReady ? "Rosie is Home" : opportunity.waitingObjective}</strong>
+				<small>{homecomingReady ? "The gate bell rings" : showPrototypeCopy ? prototypeCopy.eyebrow : "Rosie is away"}</small>
+				<strong>{homecomingReady ? "Rosie is Home" : showPrototypeCopy ? prototypeCopy.headline : opportunity.waitingObjective}</strong>
 				<p>{homecomingReady
 					? "Welcome her before opening the Bag. The Discovery still belongs to Homecoming."
-					: "Her Bag is shaping the route beyond the hedge. The exact find stays a surprise until she comes Home."}</p>
+					: showPrototypeCopy ? prototypeCopy.body : "Her Bag is shaping the route beyond the hedge. The exact find stays a surprise until she comes Home."}</p>
 			</div>
 			<ol className="journey-watch-route" aria-label={homecomingReady ? "Adventure complete" : "Adventure in progress"}>
 				<li className="is-complete"><i aria-hidden="true">1</i><span>Set off</span></li>
-				<li className={homecomingReady ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
-				<li className={homecomingReady ? "is-current" : ""}><i aria-hidden="true">3</i><span>Homecoming</span></li>
+				<li className={homecomingReady || journeyPhase === "homeward" ? "is-complete" : "is-current"}><i aria-hidden="true">2</i><span>{trailLabel}</span></li>
+				<li className={homecomingReady || journeyPhase === "homeward" ? "is-current" : ""}><i aria-hidden="true">3</i><span>{homecomingReady ? "At Home" : "Homeward"}</span></li>
 			</ol>
 			<div className="journey-watch-lights" aria-hidden="true"><i /><i /><i /><i /></div>
+			{progressionTreatment === "A" && <div className="journey-path-traveler" aria-hidden="true"><i /></div>}
+			{progressionTreatment === "C" && <div className="journey-porch-vigil" role="status"><small>Home is waiting</small><strong>{journeyPhase === "homeward" ? "The gate path glows brighter" : "A small light stays on for Rosie"}</strong></div>}
 			<button type="button" className="journey-watch-action" onClick={onAction}>{actionLabel}</button>
 		</section>
 	);
@@ -1106,6 +1189,22 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function ProgressionPrototypeSwitcher({ treatment, phase, setTreatment, setPhase }) {
+	const keys = Object.keys(PROGRESSION_VARIANTS);
+	const index = keys.indexOf(treatment);
+	return (
+		<div className="progression-prototype-switcher" aria-label="Journey progress prototype switcher">
+			<button type="button" aria-label="Previous treatment" onClick={() => setTreatment(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span>
+				<small>PROTOTYPE · {phase === "homeward" ? "Later" : "Earlier"}</small>
+				<strong>{treatment} — {PROGRESSION_VARIANTS[treatment].name}</strong>
+			</span>
+			<button className="progression-phase-toggle" type="button" onClick={() => setPhase(phase === "trail" ? "homeward" : "trail")}>{phase === "trail" ? "Show later" : "Show earlier"}</button>
+			<button type="button" aria-label="Next treatment" onClick={() => setTreatment(keys[(index + 1) % keys.length])}>→</button>
+		</div>
+	);
+}
+
 function PositionRail({ position, onChange }) {
 	const current = PROTOTYPE_POSITIONS[position - 1];
 	const atStart = position === 1;
@@ -1180,6 +1279,7 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const progressionPrototype = useJourneyProgressionPrototype();
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1599,6 +1699,8 @@ function App() {
 				state={state}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
+				progressionTreatment={progressionPrototype.treatment}
+				previewPhase={progressionPrototype.phase}
 			/>}
 			{showingReturnReward && <ReturnRewardPanel
 				state={state}
@@ -1639,7 +1741,8 @@ function App() {
 		</div>
 		<PositionRail position={position} onChange={jumpToPosition} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
-		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{debug && !progressionPrototype.treatment && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{debug && progressionPrototype.treatment && <ProgressionPrototypeSwitcher {...progressionPrototype} />}
 	</main>;
 }
 
