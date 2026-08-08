@@ -381,6 +381,25 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
   existing recrawl notice is the only warning.
 
+### Public verification evidence
+
+- Feature commit `58ce989` deployed successfully in GitHub Pages run
+  `31270754169`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - HTML: `b078edeaf5f544e3a27c03117defc6e7413096095c6c9d6b058792be32b8dc80`
+  - JavaScript: `1fb2eb20b3d0d8e8d1deb0c7da1e2515a8e843f20a478cc111b9626af7cb7946`
+  - CSS: `9a9ce063824a329f25735a7613f3481834b0deb204b9b786bbacb874dbc06649`
+- Replayed the public 390×844 route from Position 1. **Tickle Rosie** advanced
+  into Seed choice with **A Glow Beneath the Hedge**, **Clover becomes a
+  Provision**, and **Until dusk · soft soil · carry it Home** all present.
+- The public remembered-Farm route rendered **Lights Past the Open Gate** with
+  **Nightfall · reflected leaves · gentle wrap** and the established growing
+  beds. Neither route exposed the discarded comparison switcher.
+- The deployed companion-site bytes match the checked-in `docs/index.html`,
+  and its checkpoint link now reads **See why Rosie is growing Clover**.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=2&v=58ce989`
+
 ### v0.96 — Tomorrow Means Tomorrow — 2026-08-08
 
 - Began by replaying the exact public v0.95 journey. Its ticket said only
