@@ -282,7 +282,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 85. **v0.84 — The Pack Carries the Find (shipped):** let one
     restrained trace of the Glowroot settle into the selected Pack, while an
     empty Pack visibly leaves the find in the clearing.
-86. **v0.85 — Lunch Until Dusk (locally verified):** let Rosie visibly use
+86. **v0.85 — Lunch Until Dusk (shipped):** let Rosie visibly use
     the packed Clover Lunch and let that use carry the existing Adventure into
     evening before Tool and Pack take over.
 
@@ -343,6 +343,19 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   inspection, 324-sprite integrity gate, security contracts, TypeScript, 78
   layout tests, and the security suite; Watchman's existing recrawl notice is
   the only warning.
+- Feature commit `66ad4c5` deployed successfully through GitHub Pages run
+  `31263008524`. The served HTML, JavaScript, and CSS match the committed
+  artifacts byte-for-byte at SHA-256
+  `2fc453ac8327c5df14ef4636cbee5c848e859b0ec97667528370a429f7d33d4c`,
+  `e8b28e93e3164e41d1e302c6c8d61374f2802a28bcfd6e67ec1c617a98f972f1`, and
+  `d388814af585292314aac9eccd6f5fca03c70d8a5f893eba84ca6ca23f9fe089`.
+- Replayed a clean public Position 8 → 9 handoff at 1280×720. The exact
+  Provision beat reported `opportunity=glow-beneath-hedge`,
+  `provision=clover-lunch`, `animation=adventure-provision-one-use`, the held
+  mid-use transform, dusk opacity `0.956354`, the exact **Clover Lunch** field
+  note, and equal 1280 px client/scroll widths.
+- The deployed companion page links directly to Position 9 as **Watch Clover
+  Lunch carry Rosie to dusk**.
 
 ### Next highest-leverage weakness
 
