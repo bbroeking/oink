@@ -263,11 +263,69 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 78. **v0.77 — Discovery to Garden (shipped):** preserve the one emotional
     welcome at the gate, then make the first reward action carry Glowroot toward
     the exact Farm bed it can change.
+79. **v0.78 — Tool Bonus, Explained (shipped):** remove the orphan reward
+    marker and explain the Trowel- or Lantern-earned extra directly beside the
+    exact total in Farm stock.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.78 — Tool Bonus, Explained — 2026-08-08
+
+- Began with the exact public v0.77 first-return screen. The plaque and stock
+  receipt correctly showed **Glowroot Seed +2**, but a tiny floating **+1** sat
+  above the physical Seed with no visible connection to the Hand Trowel. The
+  math was correct; its cause was not readable.
+- Compared three treatments on the existing Position 10 `?variant=A|B|C`
+  prototype: keep the marker alone, rename it **Trowel +1** on the table, or
+  move the arithmetic into the stock receipt. The receipt treatment won because
+  it places cause beside the exact total and removes an isolated badge from the
+  artwork.
+- Folded only the winner into the shared screen and removed the temporary
+  variant rules. A Hand Trowel return now reads **Find +1 · Trowel +1** below
+  **Glowroot Seed +2**. A Lantern return uses the same grammar—**Find +2 ·
+  Lantern +1** below **Willow Fiber +3**—instead of leaving the same orphan
+  marker on a different material.
+- Near-Discovery returns render neither breakdown because no Tool bonus was
+  earned. Wicker Basket and Cloth Wrap rewards keep their established receipt
+  rows and physical props.
+- The installed Impeccable product-design pass selected the receipt treatment:
+  it clarifies cause without restoring three cause cards, adding a tutorial, or
+  layering another motion cue over Rosie's Homecoming.
+- No Bag rule, route, reward amount, inventory transition, Rive asset, motion,
+  timer, persistence key, currency, or progression fact changed.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 49/49 pass, including exact Trowel and
+  Lantern reward quantities, complete and incomplete Bags, persistence, and
+  both Adventure opportunities.
+- `npx tsc --noEmit`, `npm run verify:rive-homegrown`,
+  `npm run quality:loop`, and `npm run quality:check` pass. The quality gates
+  cover 157 layout files, 324 sprites, 78 layout assertions, and 202 security
+  assertions; Watchman's existing recrawl notice is the only warning.
+- Rendered all three temporary treatments on Position 10, selected the receipt
+  breakdown, removed the losing code, rebuilt, and replayed the final Variant A
+  screen at desktop and 360×780.
+- The first-route mobile render has one **Find +1 · Trowel +1** explanation,
+  no generated marker, a 12px action-to-rail gap, exact 360px body width, and no
+  horizontal overflow.
+- A developed second-route return with Lantern rendered **Willow Fiber +3** and
+  **Find +2 · Lantern +1**. An empty-Tool return rendered the useful Glowroot
+  Trail clue with no bonus explanation.
+- Direct reload retained the receipt breakdown. Reduced motion held the stable
+  authored Rosie pose, kept the same 360×780 hierarchy, and produced no console
+  warnings or errors.
+
+### Next highest-leverage weakness
+
+The receipt now explains why two Seeds came Home, but **Take Seed to Bed 3**
+still cuts instantly from the Barn worktable to the outdoor bed. The next cycle
+should make that one physical handoff continuous—Rosie or the Seed visibly
+leaves the table and arrives at Bed 3—without turning the acknowledgement into
+another long cutscene or moving planting authority into Rive.
 
 ### v0.77 — Discovery to Garden — 2026-08-08
 

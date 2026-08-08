@@ -782,8 +782,20 @@ function ReturnRewardPanel({ state, actionLabel, onAction }) {
 				<strong className="return-stock-title">Added to Farm stock</strong>
 				<div>
 					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
-					<span><b>{nearDiscovery ? lanternleafDiscovery ? "Trail clue" : "Leaf-print clue" : "Glowroot Seed"}</b><strong>{nearDiscovery ? "Found" : `+${glowrootAmount}`}</strong></span>
-					<span><b>Willow Fiber</b><strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong></span>
+					<span>
+						<b>{nearDiscovery ? lanternleafDiscovery ? "Trail clue" : "Leaf-print clue" : "Glowroot Seed"}</b>
+						<strong>{nearDiscovery ? "Found" : `+${glowrootAmount}`}</strong>
+						{!nearDiscovery && toolBonus?.itemId === "glowroot-seed" && (
+							<small className="return-stock-cause">Find +1 · Trowel +1</small>
+						)}
+					</span>
+					<span>
+						<b>Willow Fiber</b>
+						<strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong>
+						{!nearDiscovery && toolBonus?.itemId === "willow-fiber" && (
+							<small className="return-stock-cause">Find +2 · Lantern +1</small>
+						)}
+					</span>
 				</div>
 			</div>
 			<button type="button" className="return-reward-action" onClick={onAction}>{actionLabel}</button>

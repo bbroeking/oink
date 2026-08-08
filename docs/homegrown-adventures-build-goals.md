@@ -420,6 +420,18 @@ asset, animation, or progression state changed. Complete, repeat, and clue
 branches, reload, reduced motion, exact 360×780 touch layout, 49 reducer tests,
 Rive contracts, and repository quality gates pass locally.
 
+**Tool-bonus clarity checkpoint (August 8, 2026):** the physical first-return
+table no longer leaves a context-free **+1** floating over an extra Seed. The
+same exact stock receipt now explains **Glowroot Seed +2** as **Find +1 ·
+Trowel +1**. Lantern follows the same grammar beside **Willow Fiber +3** with
+**Find +2 · Lantern +1**; clue returns receive no unearned explanation. Three
+presentations were compared through the existing Variant route, only the
+receipt treatment was retained, and the losing rules were removed. No route,
+Bag rule, reward quantity, reducer transition, Rive asset, animation, timer, or
+progression state changed. Both Tool branches, Near-Discovery, reload, reduced
+motion, exact 360×780 touch layout, 49 reducer tests, Rive contracts, and
+repository quality gates pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

@@ -205,6 +205,13 @@ Near-Discoveries still adjust the Bag. React keeps the same reward timing and
 state transition; no Rive asset, motion, route, quantity, or planting rule was
 added.
 
+The v0.78 clarity pass removes the isolated **+1** marker from the physical
+return table. The existing Farm-stock receipt now explains the exact Tool bonus
+beside its total: **Find +1 · Trowel +1** for two Glowroot Seeds, or **Find +2 ·
+Lantern +1** for three Willow Fiber. Near-Discoveries display no Tool bonus.
+React continues to own the same deterministic quantities; no Rive motion,
+reward rule, route, or progression state changed.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in
