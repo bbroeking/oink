@@ -44,6 +44,14 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// PROTOTYPE ONLY: three temporal treatments for the question,
+// "How much should Rosie visibly answer the Adventure cause sequence?"
+const ADVENTURE_RESPONSE_VARIANTS = {
+	A: { name: "Follow every cause", detail: "Rosie leans toward Provision, Tool, and Pack." },
+	B: { name: "One turning point", detail: "Rosie leans once when the Tool wakes the mystery." },
+	C: { name: "Notice, then delight", detail: "Rosie notices the first cause and celebrates the resolved Find." },
+};
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -225,6 +233,23 @@ function useVariant() {
 	}, [setVariant, variant]);
 
 	return [variant, setVariant];
+}
+
+function readAdventureResponseVariant() {
+	const value = new URLSearchParams(window.location.search).get("response")?.toUpperCase();
+	return Object.hasOwn(ADVENTURE_RESPONSE_VARIANTS, value) ? value : "B";
+}
+
+function useAdventureResponseVariant() {
+	const [responseVariant, setResponseVariantState] = useState(readAdventureResponseVariant);
+	const setResponseVariant = useCallback((next) => {
+		const normalized = Object.hasOwn(ADVENTURE_RESPONSE_VARIANTS, next) ? next : "B";
+		const url = new URL(window.location.href);
+		url.searchParams.set("response", normalized);
+		window.history.replaceState({}, "", url);
+		setResponseVariantState(normalized);
+	}, []);
+	return [responseVariant, setResponseVariant];
 }
 
 function Glyph({ name }) {
@@ -1094,6 +1119,24 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function AdventureResponseSwitcher({ responseVariant, setResponseVariant }) {
+	const keys = Object.keys(ADVENTURE_RESPONSE_VARIANTS);
+	return (
+		<div className="adventure-response-switcher" aria-label="Adventure Rosie-response prototype switcher">
+			<strong>Rosie response</strong>
+			<div>
+				{keys.map((key) => <button
+					key={key}
+					type="button"
+					aria-pressed={responseVariant === key}
+					onClick={() => setResponseVariant(key)}
+				>{key}</button>)}
+			</div>
+			<span><b>{ADVENTURE_RESPONSE_VARIANTS[responseVariant].name}</b><small>{ADVENTURE_RESPONSE_VARIANTS[responseVariant].detail}</small></span>
+		</div>
+	);
+}
+
 function PositionRail({ position, onChange }) {
 	const current = PROTOTYPE_POSITIONS[position - 1];
 	const atStart = position === 1;
@@ -1168,6 +1211,7 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [responseVariant, setResponseVariant] = useAdventureResponseVariant();
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1248,8 +1292,21 @@ function App() {
 			hedgeBellEarned: false,
 		};
 	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
-	const sceneRiveTrigger = gateHomecomingReady ? "return" : riveModel.trigger;
-	const sceneRiveTriggerNonce = gateHomecomingReady
+	const adventureResponseTrigger = showingAdventureVignette && !state.reduceMotion
+		? responseVariant === "A" && ["provision", "tool", "pack"].includes(adventureCauseBeat)
+			? "adventure-attention"
+			: responseVariant === "B" && adventureCauseBeat === "tool"
+				? "adventure-attention"
+				: responseVariant === "C" && adventureCauseBeat === "provision"
+					? "adventure-attention"
+					: responseVariant === "C" && adventureCauseBeat === "resolved"
+						? "adventure-discovery"
+						: null
+		: null;
+	const sceneRiveTrigger = adventureResponseTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
+	const sceneRiveTriggerNonce = adventureResponseTrigger
+		? `${riveModel.triggerNonce}:adventure-response:${responseVariant}:${adventureCauseBeat}`
+		: gateHomecomingReady
 		? `${riveModel.triggerNonce}:gate-homecoming`
 		: riveModel.triggerNonce;
 	const waiting = departing || (autoPlay && (
@@ -1496,7 +1553,7 @@ function App() {
 				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}
 				model={sceneRiveViewModel}
-				playInitialTrigger={gateHomecomingReady}
+				playInitialTrigger={gateHomecomingReady || Boolean(adventureResponseTrigger)}
 				showPondResident={homeMemoryEarned && sceneRiveViewModel.frogVisible}
 				showHomePose={showingHomeMemory}
 				trigger={sceneRiveTrigger}
@@ -1615,6 +1672,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{debug && showingAdventureVignette && <AdventureResponseSwitcher responseVariant={responseVariant} setResponseVariant={setResponseVariant} />}
 	</main>;
 }
 

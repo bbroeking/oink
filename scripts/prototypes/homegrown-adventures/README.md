@@ -1,5 +1,13 @@
 # Homegrown Adventures prototype
 
+## v0.86 throwaway Rosie-response study
+
+Position 9 exposes three prototype-only response cadences through
+`?debug=1&response=A|B|C`. A repeats the authored `Rosie Notice` lean for all
+three Bag causes; B reserves that lean for the Tool turning point; C pairs an
+early Notice with the existing Tickle delight after the Find resolves. The
+study changes no reducer fact, Bag rule, reward, timer, or persistence state.
+
 Throwaway browser prototype for the loop in
 `docs/homegrown-adventures-build-goals.md`. It uses one deterministic reducer
 and three UI variants; `?variant=A|B|C` changes presentation without changing
