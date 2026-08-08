@@ -316,9 +316,9 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 				<button className="seed-next-primary" type="button" onClick={onChoose} disabled={cloverSeeds < 1}>
 					<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
 					<span className="seed-next-copy">
-						<small>Plant next</small>
+						<small>Glowroot opened this route</small>
 						<strong>Clover Seed</strong>
-						<b>{cloverSeeds} owned · stocks Rosie’s next Adventure</b>
+						<b>Grow a Lunch for the lights beyond</b>
 					</span>
 					<em>{cloverSeeds > 0 ? "Choose Clover" : "Need a Seed"}</em>
 				</button>

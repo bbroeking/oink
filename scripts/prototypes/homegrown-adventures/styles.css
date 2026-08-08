@@ -1858,6 +1858,8 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .seed-next-copy small { color: #8d5c35; font-size: 8px; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
 .seed-next-copy strong { font-family: Caprasimo, Georgia, serif; font-size: 16px; font-weight: 400; line-height: 1; }
 .seed-next-copy b { color: var(--ink-soft); font-size: 8px; line-height: 1.2; }
+.seed-choice-memory .seed-next-copy small { color: #496a36; }
+.seed-choice-memory .seed-next-copy b { color: #496a36; font-weight: 950; }
 .seed-next-primary > em {
 	padding: 9px 7px;
 	background: #f4dfac;

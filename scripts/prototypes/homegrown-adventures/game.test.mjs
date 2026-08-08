@@ -1636,6 +1636,9 @@ test("Seed choice keeps the current Adventure purpose and clues attached to Farm
 	assert.match(appSource, /<em>\{opportunity\.detail\}<\/em>/);
 	assert.match(appSource, /<SeedAdventureReceipt opportunity=\{opportunity\} className="seed-adventure-memory-receipt" \/>/);
 	assert.match(appSource, /<SeedChoicePanel\s+state=\{state\}\s+opportunity=\{opportunity\}/);
+	assert.match(appSource, /Glowroot opened this route/);
+	assert.match(appSource, /Grow a Lunch for the lights beyond/);
+	assert.match(stylesSource, /\.seed-choice-memory \.seed-next-copy small \{ color: #496a36; \}/);
 	assert.match(stylesSource, /\.seed-adventure-receipt \{/);
 	assert.doesNotMatch(appSource, /InvitationSwitcher|invitationTreatment/);
 });
