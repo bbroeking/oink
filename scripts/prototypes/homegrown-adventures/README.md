@@ -1,5 +1,19 @@
 # Homegrown Adventures prototype
 
+The v0.101 journey-causality pass keeps an incomplete Bag truthful through the
+entire six-hour idle beat instead of reverting to the prepared route's success
+copy after the causal vignette. Three real Position 9 treatments were rendered
+at commit `2995aae` on `codex/homegrown-v101-journey-truth-prototypes`: one
+truthful field note, a second attached clue slip, and a truthful field note
+whose existing route also branches. The route treatment won because **Marked
+the glow**, **Root clue**, **Leaf-print**, **Marked reflections**, **Path
+clue**, or **Trail map** makes the current progress legible without adding
+another card. Prepared Bags keep their successful trail. React derives the
+copy and route label from the existing `underprepared` and
+`nearDiscoveryReason` facts; no state transition, reward, timer, inventory
+rule, Rive asset, or Rive contract changed. No `journeytruth` query or
+comparison switcher remains on main.
+
 The v0.100 player-authored Bag pass makes Position 7 begin with all three
 slots empty instead of silently prescribing Clover Lunch, Hand Trowel, and
 Wicker Basket. Three real structures were rendered at commit `dc14425` on

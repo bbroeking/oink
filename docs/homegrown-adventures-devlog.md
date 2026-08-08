@@ -332,11 +332,98 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     begin Position 7 empty, present one direct preparation question at a time,
     and keep every slot optional without hiding the alternatives or the open
     Bag.
+102. **v0.101 — The Journey Tells the Truth (shipped):** keep an incomplete
+    Bag causal through the idle journey by changing the existing field note and
+    route into a specific Near-Discovery, without adding another results card.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.101 — The Journey Tells the Truth — 2026-08-08
+
+- Began by replaying the exact public Position 8 → 9 handoff with the canonical
+  prepared Bag, an alternative prepared Bag, and an entirely empty Bag. Both
+  empty and prepared routes eventually displayed **Her Bag keeps the golden
+  trail within reach**, even though the empty Bag had just shown that daylight
+  ended the outing. Preparation stopped mattering during the longest Adventure
+  beat.
+- Compared three real Position 9 structures: rewriting the existing field
+  note, attaching a separate Bag-clue slip, and rewriting both the note and the
+  existing three-step route. The route treatment won. The note-only treatment
+  left the progress rail claiming a successful trail; the clue slip added a
+  fourth dense information surface beside time, packed items, and progress.
+- Captured all three throwaway treatments at commit `2995aae` on
+  `codex/homegrown-v101-journey-truth-prototypes`. Main keeps only the route
+  treatment; no `journeytruth` query or comparison switcher ships.
+- The first route now names **Marked the glow**, **Root clue**, or
+  **Leaf-print** when Provision, Tool, or Pack is missing. The Lanternleaf route
+  names **Marked reflections**, **Path clue**, or **Trail map**. Each is paired
+  with one route- and capability-specific field note that explains what Rosie
+  safely did and why she is returning with useful knowledge.
+- A prepared Bag retains **Warm moth trail** or **Reflected leaves** and its
+  established success copy. During the homeward phase, an incomplete Bag says
+  that Rosie is bringing a useful clue Home rather than silently becoming a
+  complete Discovery.
+- React derives every presentation fact from the existing `underprepared` and
+  `nearDiscoveryReason` reducer facts. No Bag rule, item, route, reward,
+  timestamp, save field, animation, Rive asset, or Rive contract changed.
+- The required Impeccable product review substituted for unavailable Claude
+  Design. It selected the route treatment because it strengthens hierarchy and
+  causal legibility while reusing the calm composition instead of adding UI.
+
+### Local validation evidence
+
+- Rendered all three treatments at the 390×844 reference frame. The winning
+  treatment preserves the field note, Expected Home ticket, Packed stamp, and
+  three-step route without introducing another panel.
+- Played the first route with Provision, Tool, and Pack missing in turn. The
+  real journey rendered **Marked the glow**, **Root clue**, and **Leaf-print**
+  with the matching explanation for each capability.
+- Played the Lanternleaf route without a Provision. It rendered **Rosie marks
+  the first reflections** and **Marked reflections**, with no claim that the
+  complete night route had been earned.
+- Played a prepared first route. It retained **Rosie follows warm moths** and
+  **Warm moth trail**. Rendered the prepared homeward phase separately; the HUD,
+  note, route, and review rail all turned Home together.
+- Enabled reduced motion on the incomplete Lanternleaf route and reloaded the
+  page. The exact Near-Discovery headline and branched route persisted, and the
+  authored scene remained in its reduced pose.
+- `npm run prototype:homegrown:test` passes 72/72. `npm run
+  prototype:homegrown:build`, `npm run verify:rive-homegrown`, `npm run
+  quality:loop`, and `npm run quality:check` pass the authored Rive contracts,
+  quality contracts, 157-file layout gate, 324-sprite integrity gate, security
+  contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
+  existing recrawl notice is the only warning.
+
+### Public verification evidence
+
+- Feature commit `6e7efd4` deployed successfully in GitHub Pages run
+  `31273960859`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `abc9d5de43059b9ed9fbd45c2c776098c7f3eb75ae4c548b816384e75ff9b2a7`
+  - player JavaScript: `89cd5cf8f6452135383b735aae924601b4cfd394683e3399779ed27dc9e05f48`
+  - player CSS: `6fb009c0638f751729959db88e85cc4ccf8bdfd68c56b0bef289ae5dd0bb24de`
+- Opened a fresh public Position 7 and sent Rosie with Provision, Tool, and
+  Pack all empty. After the three causal beats, the live idle journey rendered
+  **Rosie follows as far as daylight allows**, explicitly named the missing
+  Provision, and changed the route to **Marked the glow**. It did not claim
+  that the empty Bag kept the complete golden trail within reach.
+- Fast-forwarded that exact public journey. The same branched route reached
+  **At Home**, then Homecoming revealed **Glowroot Trail**, Compost +1,
+  Leaf-print clue, and Willow Fiber +1 with no unearned Glowroot Seed.
+- The companion checkpoint link now reads **Pack a Bag, then follow what
+  changes** and opens the freely chosen Position 7 preparation.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=7&v=6e7efd4`
+
+### Next highest-leverage weakness
+
+Replay the shipped incomplete and prepared journeys through the gate and full
+Homecoming. Choose the next checkpoint from the first moment where the named
+Discovery or useful Near-Discovery fails to feel equally intentional; do not
+add another destination, item tier, or reward system by default.
 
 ### v0.100 — The Bag Belongs to the Player — 2026-08-08
 
