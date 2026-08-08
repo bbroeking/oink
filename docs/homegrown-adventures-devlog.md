@@ -325,7 +325,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 99. **v0.98 — A Lunch, Not a Number (shipped):** name the actual Clover Lunch
     outcome and exact Compost benefit at planting instead of asking the player
     to interpret anonymous Harvest 3 / Harvest 4 numbers.
-100. **v0.99 — Swipe the Clover (locally verified):** make the flowered bed the
+100. **v0.99 — Swipe the Clover (shipped):** make the flowered bed the
     one obvious Harvest Rhythm surface, integrate the accessible tap fallback
     into its active arrow, and keep the exact guaranteed harvest visible.
 
@@ -387,6 +387,31 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   contracts, 157-file layout gate, 324-sprite integrity gate, security
   contracts, TypeScript, 78 layout tests, and 202 security tests. Watchman's
   existing recrawl notice is the only warning.
+
+### Public verification evidence
+
+- Feature commit `95994e2` deployed successfully in GitHub Pages run
+  `31271876488`.
+- The deployed player and companion bytes match the checked-in artifacts
+  exactly:
+  - HTML: `a66d5e4d40949174e2c9b3b061a368ca463ac2e98192fd811dc505d98720d19e`
+  - JavaScript: `ad2fa06674c723940d2a894bc89ba09a952fa40885af54e690ceaf8c6e088f28`
+  - CSS: `b322c37a33d9d6c955c44dcba48885b126f461659146bf5d390fb2cade41a0c4`
+  - companion HTML: `a55b889232b951c3109099441cb6831b271419ac4d645bbcb5e12d6cf0ced22c`
+- Replayed the public rendered Position 5. It retained **Harvest for Rosie's
+  journey**, the supporting left-right-up rhythm, **4 Lunches guaranteed**, one
+  active **Tap Left instead** fallback, and **Gather normally**, with no old
+  separate Tap action or prototype comparison control.
+- Played the public active arrows through left, right, and up. The action
+  advanced exactly once per beat and entered Position 6 with **Clover Lunch
+  +5**: three base, one Compost, and one clean-rhythm bonus.
+- Opened a fresh public Position 5 and chose **Gather normally**. It entered
+  Position 6 with **Clover Lunch +4**: three base and one Compost, with no
+  rhythm bonus and no lost yield.
+- The companion checkpoint link now reads **Try Clover's Harvest Rhythm** and
+  opens Position 5.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=5&v=95994e2`
 
 ### v0.98 — A Lunch, Not a Number — 2026-08-08
 
