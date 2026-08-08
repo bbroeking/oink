@@ -1,4 +1,5 @@
 // @ts-nocheck -- throwaway standalone lab; the reducer and Rive contract are checked separately.
+// Prototype question: how should a Near-Discovery feel collectible and lead back to the exact missing Bag pocket?
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -45,6 +46,12 @@ const VARIANTS = {
 	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
 	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+};
+
+const NEAR_HOME_TREATMENTS = {
+	A: { name: "Field Guide plaque", detail: "One reward plaque records the clue and the next capability." },
+	B: { name: "Rosie’s pinned note", detail: "The named clue stays above while Rosie’s advice lives in the world." },
+	C: { name: "Return receipt", detail: "One receipt separates Field Guide knowledge from practical supplies." },
 };
 
 const STAGE_COPY = {
@@ -566,8 +573,8 @@ function BagSelectionOption({ slot, item, selected, disabled, detail, onSelect }
 	);
 }
 
-function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, onSelect, onConfirm }) {
-	const [focus, setFocus] = useState("provision");
+function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initialFocus = "provision", onSelect, onConfirm }) {
+	const [focus, setFocus] = useState(initialFocus);
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
 	const selectedPackCost = bagPackingCost(bag.pack ?? null);
@@ -915,11 +922,56 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction }) 
 	);
 }
 
-function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false }) {
+function nearDiscoveryHomecomingCopy(state) {
+	const lanternleaf = adventureOpportunity(state).id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const routeCopy = lanternleaf
+		? {
+			provision: {
+				story: "Rosie recorded where the reflected leaves begin before nightfall.",
+				next: "A Provision lets Rosie stay until the silver route appears.",
+				action: "Open the Provision pocket",
+			},
+			tool: {
+				story: "Rosie recorded which leaves turn toward the open gate.",
+				next: "A Tool lets Rosie trace the complete reflected path.",
+				action: "Open the Tool pocket",
+			},
+			pack: {
+				story: "Rosie mapped the Lanternleaf Path and left its supplies safe.",
+				next: "A Pack lets Rosie bring the trail supplies Home.",
+				action: "Open the Pack pocket",
+			},
+		}
+		: {
+			provision: {
+				story: "Rosie recorded where warm moths gather before the Glowroot opens.",
+				next: "A Provision lets Rosie wait for the seed to open at dusk.",
+				action: "Open the Provision pocket",
+			},
+			tool: {
+				story: "Rosie recorded the warm root resting beneath the soft soil.",
+				next: "A Tool lets Rosie work carefully with the sleeping root.",
+				action: "Open the Tool pocket",
+			},
+			pack: {
+				story: "Rosie brought Home the Glowroot's delicate glowing leaf-print.",
+				next: "A Pack lets Rosie protect the Seed on the way Home.",
+				action: "Open the Pack pocket",
+			},
+		};
+	return routeCopy[state.nearDiscoveryReason] ?? {
+		story: "Rosie recorded a promising route in the Field Guide.",
+		next: "A different Bag choice can reveal more on the next outing.",
+		action: "Open Rosie’s Bag",
+	};
+}
+
+function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false, nearTreatment = "A" }) {
 	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
 	const opportunity = adventureOpportunity(state);
 	const lanternleafDiscovery = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const story = adventureStory(state);
+	const nearCopy = nearDiscovery ? nearDiscoveryHomecomingCopy(state) : null;
 	const packReward = bagReturnReward(state.bag?.pack ?? null);
 	const toolBonus = nearDiscovery ? null : toolReturnBonus(state.bag?.tool ?? null);
 	const glowrootAmount = 1 + (toolBonus?.itemId === "glowroot-seed" ? toolBonus.amount : 0);
@@ -938,26 +990,40 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 			{toolBonus?.itemId === "willow-fiber" && (
 				<span className="return-tool-bonus return-tool-bonus-fiber" aria-hidden="true" />
 			)}
-			<div className="return-discovery-plaque">
-				<span className="return-card-eyebrow">{nearDiscovery ? "Useful clue" : lanternleafDiscovery ? "New route" : "New Discovery"}</span>
+			<div className={`return-discovery-plaque ${nearDiscovery ? `near-treatment-${nearTreatment.toLowerCase()}` : ""}`}>
+				<span className="return-card-eyebrow">{nearDiscovery
+					? nearTreatment === "A" ? "Field Guide updated" : nearTreatment === "C" ? "Near-Discovery" : "Useful clue"
+					: lanternleafDiscovery ? "New route" : "New Discovery"}</span>
 				<strong>{nearDiscovery ? opportunity.clueName : lanternleafDiscovery ? opportunity.discoveryName : `Glowroot Seed  +${glowrootAmount}`}</strong>
 				<small>{nearDiscovery
-					? story.result
+					? nearCopy.story
 					: lanternleafDiscovery
 						? `Glowroot revealed a repeatable path · ${glowrootAmount === 1 ? "one Seed stays" : "two Seeds stay"} in Farm stock`
 						: "A slow Crop that glows after dusk"}</small>
+				{nearDiscovery && nearTreatment === "A" && <div className="return-guide-next">
+					<span>Try next time</span>
+					<b>{nearCopy.next}</b>
+				</div>}
 			</div>
-			<div className="return-stock-ledger" aria-label="Farm stock returned">
-				<strong className="return-stock-title">Added to Farm stock</strong>
+			{nearDiscovery && nearTreatment === "B" && <div className="return-pinned-note" role="note">
+				<small>Rosie’s field note</small>
+				<strong>{nearCopy.next}</strong>
+			</div>}
+			{nearDiscovery && nearTreatment === "C" ? <div className="return-home-receipt" aria-label="Rosie's return receipt">
+				<div><small>Field Guide</small><strong>{opportunity.clueName} recorded</strong></div>
+				<div><small>Supplies Home</small><span>Compost <b>+1</b></span><span>Willow Fiber <b>+1</b></span></div>
+				<p>{nearCopy.next}</p>
+			</div> : <div className={`return-stock-ledger ${nearDiscovery ? "return-stock-ledger-near" : ""}`} aria-label={nearDiscovery ? "Supplies brought Home" : "Farm stock returned"}>
+				<strong className="return-stock-title">{nearDiscovery ? "Supplies brought Home" : "Added to Farm stock"}</strong>
 				<div>
 					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
-					<span>
-						<b>{nearDiscovery ? lanternleafDiscovery ? "Trail clue" : "Leaf-print clue" : "Glowroot Seed"}</b>
-						<strong>{nearDiscovery ? "Found" : `+${glowrootAmount}`}</strong>
-						{!nearDiscovery && toolBonus?.itemId === "glowroot-seed" && (
+					{!nearDiscovery && <span>
+						<b>Glowroot Seed</b>
+						<strong>+{glowrootAmount}</strong>
+						{toolBonus?.itemId === "glowroot-seed" && (
 							<small className="return-stock-cause">Find +1 · Trowel +1</small>
 						)}
-					</span>
+					</span>}
 					<span>
 						<b>Willow Fiber</b>
 						<strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong>
@@ -966,8 +1032,8 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 						)}
 					</span>
 				</div>
-			</div>
-			<button type="button" className="return-reward-action" disabled={handoffActive} onClick={onAction}>{actionLabel}</button>
+			</div>}
+			<button type="button" className="return-reward-action" disabled={handoffActive} onClick={onAction}>{nearDiscovery ? nearCopy.action : actionLabel}</button>
 		</section>
 	);
 }
@@ -1286,6 +1352,41 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function NearHomeSwitcher({ treatment }) {
+	const keys = Object.keys(NEAR_HOME_TREATMENTS);
+	const index = keys.indexOf(treatment);
+	const choose = useCallback((nextTreatment) => {
+		const search = new URLSearchParams(window.location.search);
+		search.set("nearhome", nextTreatment);
+		window.location.search = search.toString();
+	}, []);
+	const previous = useCallback(
+		() => choose(keys[(index + keys.length - 1) % keys.length]),
+		[choose, index, keys],
+	);
+	const next = useCallback(
+		() => choose(keys[(index + 1) % keys.length]),
+		[choose, index, keys],
+	);
+
+	useEffect(() => {
+		const onKeyDown = (event) => {
+			const target = event.target;
+			if (target?.matches?.("input, textarea, [contenteditable]")) return;
+			if (event.key === "ArrowLeft") previous();
+			if (event.key === "ArrowRight") next();
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [next, previous]);
+
+	return <div className="near-home-switcher" aria-label="Near-Discovery Homecoming prototype switcher">
+		<button type="button" aria-label="Previous Homecoming treatment" onClick={previous}>←</button>
+		<span><small>Treatment {treatment} / {keys.length}</small><strong>{NEAR_HOME_TREATMENTS[treatment].name}</strong><em>{NEAR_HOME_TREATMENTS[treatment].detail}</em></span>
+		<button type="button" aria-label="Next Homecoming treatment" onClick={next}>→</button>
+	</div>;
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1380,6 +1481,9 @@ function App() {
 	const hasRequestedPosition = Number.isInteger(requestedPosition) && requestedPosition >= 1 && requestedPosition <= PROTOTYPE_POSITIONS.length;
 	const requestedJourneyPhase = initialSearch.get("journey") === "homeward" ? "homeward" : "trail";
 	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
+	const requestedNearHomeTreatment = NEAR_HOME_TREATMENTS[initialSearch.get("nearhome")]
+		? initialSearch.get("nearhome")
+		: "A";
 	const reviewMode = loopMode || hasRequestedPosition;
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
@@ -1871,6 +1975,7 @@ function App() {
 				actionLabel={visiblePresentation.label}
 				handoffActive={Boolean(seedHandoff)}
 				onAction={acknowledgeReturn}
+				nearTreatment={requestedNearHomeTreatment}
 			/>}
 			<SeedHandoff origin={state.bag?.tool === "hand-trowel" ? "bonus" : "base"} phase={seedHandoff} />
 			{showingHomeMemory && !holdingGlowrootHomeReveal && <HomeMemoryPanel
@@ -1893,6 +1998,7 @@ function App() {
 				farmStock={state.farmStock}
 				opportunity={opportunity}
 				activeSelection={riveModel.bagReceive}
+				initialFocus={state.nearDiscoveryReason ?? "provision"}
 				onSelect={selectBagItem}
 				onConfirm={() => act(visiblePresentation.action)}
 			/>}
@@ -1907,7 +2013,8 @@ function App() {
 			actionLabel={presentation.label}
 			onAction={() => act(presentation.action)}
 		/>}
-		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{showingReturnReward && state.stage === STAGES.NEAR_DISCOVERY && <NearHomeSwitcher treatment={requestedNearHomeTreatment} />}
+		{!(showingReturnReward && state.stage === STAGES.NEAR_DISCOVERY) && <PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
