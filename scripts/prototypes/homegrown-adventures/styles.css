@@ -513,6 +513,117 @@ html[data-reduce-motion="true"] .adventure-auto-handoff { animation: none; }
 		radial-gradient(circle at 84% 34%, color-mix(in srgb, var(--sun) 16%, transparent), transparent 23%);
 	pointer-events: none;
 }
+.journey-atmosphere-prototype {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+.journey-watch-open.journey-atmosphere-A .scene-plate {
+	filter: brightness(.54) saturate(.88) sepia(.16) hue-rotate(-8deg);
+}
+.journey-atmosphere-A .journey-watch-tint {
+	background:
+		linear-gradient(to bottom, rgba(38,38,83,.52), rgba(110,55,80,.26) 42%, rgba(26,38,38,.38)),
+		radial-gradient(circle at 72% 27%, rgba(255,167,93,.26), transparent 27%);
+}
+.journey-evening-horizon {
+	position: absolute;
+	inset: 0;
+	background:
+		radial-gradient(ellipse at 67% 20%, rgba(255,187,105,.2), transparent 28%),
+		linear-gradient(to bottom, rgba(31,28,73,.22), transparent 48%, rgba(22,36,31,.22));
+}
+.journey-evening-horizon i {
+	position: absolute;
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--sun);
+	box-shadow: 0 0 9px var(--sun);
+	animation: journey-trail-light 2.6s cubic-bezier(.16,1,.3,1) infinite;
+}
+.journey-evening-horizon i:nth-child(1) { right: 55px; top: 290px; }
+.journey-evening-horizon i:nth-child(2) { right: 76px; top: 360px; animation-delay: 330ms; }
+.journey-evening-horizon i:nth-child(3) { right: 95px; top: 430px; animation-delay: 660ms; }
+
+.journey-watch-open.journey-atmosphere-B .scene-plate {
+	filter: brightness(.83) saturate(.92) sepia(.08);
+}
+.journey-atmosphere-B .journey-watch-tint {
+	background: linear-gradient(to bottom, rgba(64,55,93,.2), transparent 44%, rgba(28,47,40,.12));
+}
+.journey-hedge-window {
+	position: absolute;
+	right: -12px;
+	top: 171px;
+	width: 212px;
+	height: 410px;
+	clip-path: polygon(42% 0,100% 0,100% 100%,0 100%,24% 68%,32% 37%);
+	background:
+		radial-gradient(ellipse at 76% 19%, rgba(244,170,91,.34), transparent 29%),
+		linear-gradient(155deg, rgba(34,32,77,.72), rgba(28,50,38,.6));
+	box-shadow: -14px 0 28px rgba(27,30,45,.34);
+}
+.journey-hedge-window::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(to left, transparent 66%, rgba(245,226,185,.18));
+}
+.journey-hedge-window i {
+	position: absolute;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--sun);
+	box-shadow: 0 0 12px var(--sun);
+	animation: journey-trail-light 2.2s cubic-bezier(.16,1,.3,1) infinite;
+}
+.journey-hedge-window i:nth-child(1) { right: 47px; top: 52px; }
+.journey-hedge-window i:nth-child(2) { right: 72px; top: 132px; animation-delay: 220ms; }
+.journey-hedge-window i:nth-child(3) { right: 105px; top: 220px; animation-delay: 440ms; }
+.journey-hedge-window i:nth-child(4) { right: 124px; top: 307px; animation-delay: 660ms; }
+
+.journey-watch-open.journey-atmosphere-C .scene-plate {
+	filter: brightness(.48) saturate(.82) sepia(.12) hue-rotate(-5deg);
+}
+.journey-atmosphere-C .journey-watch-tint {
+	background:
+		linear-gradient(to bottom, rgba(31,34,76,.6), rgba(69,50,74,.25) 39%, rgba(20,39,33,.5)),
+		radial-gradient(circle at 33% 30%, rgba(255,190,83,.18), transparent 18%);
+}
+.journey-home-vigil { position: absolute; inset: 0; }
+.journey-window-light {
+	position: absolute;
+	left: 97px;
+	top: 179px;
+	width: 29px;
+	height: 34px;
+	border-radius: 4px;
+	background: rgba(255,211,106,.72);
+	box-shadow: 0 0 10px rgba(255,201,94,.95), 0 0 32px rgba(255,166,70,.72);
+	animation: journey-window-breathe 2.8s ease-in-out infinite;
+}
+.journey-gate-light {
+	position: absolute;
+	right: 49px;
+	top: 270px;
+	width: 11px;
+	height: 11px;
+	border-radius: 50%;
+	background: var(--sun);
+	box-shadow: 0 0 12px var(--sun), 0 0 30px rgba(255,181,77,.65);
+}
+.journey-vigil-star { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff1bd; box-shadow: 0 0 6px #fff1bd; }
+.journey-vigil-star:nth-child(3) { left: 46px; top: 54px; }
+.journey-vigil-star:nth-child(4) { right: 51px; top: 91px; }
+@keyframes journey-window-breathe {
+	0%, 100% { opacity: .74; filter: brightness(.92); }
+	50% { opacity: 1; filter: brightness(1.12); }
+}
+html[data-reduce-motion="true"] .journey-evening-horizon i,
+html[data-reduce-motion="true"] .journey-hedge-window i,
+html[data-reduce-motion="true"] .journey-window-light { animation: none; }
 .journey-watch-note {
 	position: absolute;
 	left: 23px;
@@ -1214,6 +1325,11 @@ html[data-reduce-motion="true"] .home-memory-pocket-detail { animation: none; }
 .variant-switcher span { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .variant-switcher strong { font-family: Caprasimo, serif; font-size: 14px; }
 .variant-switcher small { color: var(--ink-soft); font-size: 9px; }
+.atmosphere-switcher { position: fixed; z-index: 32; left: 50%; bottom: 76px; width: min(520px, calc(100vw - 24px)); min-height: 58px; transform: translateX(-50%); display: grid; grid-template-columns: 48px minmax(0,1fr) 48px; overflow: hidden; color: #fff8de; background: rgba(28,24,42,.96); border: 2px solid #fff0bf; border-radius: 18px; box-shadow: 0 4px 18px rgba(15,11,24,.42); }
+.atmosphere-switcher button { border: 0; color: #fff8de; background: rgba(255,255,255,.08); font-size: 20px; }
+.atmosphere-switcher span { min-width: 0; padding: 8px 10px; display: grid; align-content: center; gap: 3px; text-align: center; }
+.atmosphere-switcher strong { font-family: Caprasimo, Georgia, serif; font-size: 13px; font-weight: 400; }
+.atmosphere-switcher small { overflow: hidden; color: #e6d8bf; font-size: 8px; font-weight: 800; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
 .position-rail {
 	position: fixed;
 	z-index: 35;
@@ -2316,7 +2432,7 @@ html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, ht
 	.phone { width: min(390px, 100vw); max-width: none; height: min(844px, 100dvh); border: 0; border-radius: 0; box-shadow: none; }
 	.dev-tools { top: 84px; right: 7px; }
 	.dev-toggle { opacity: .8; }
-	.variant-switcher { bottom: 84px; }
+	.variant-switcher, .atmosphere-switcher { bottom: 84px; }
 	.lab-player { height: 100dvh; padding: 0; overflow: hidden; }
 	.position-rail {
 		bottom: 0;

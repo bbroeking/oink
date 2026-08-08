@@ -196,6 +196,45 @@ const PURPOSES = [
 	{ id: "glowroot", name: "Glowroot", job: "Light and restore Home", mark: "glow" },
 ];
 
+// PROTOTYPE — three ways to preserve Adventure time-of-day on the existing
+// Position 9 journey watch, switchable with ?atmosphere=A|B|C.
+const ATMOSPHERE_VARIANTS = {
+	A: { name: "Whole-farm dusk", promise: "The entire remembered Farm stays in the same evening." },
+	B: { name: "Hedge trail", promise: "Daylight Home stays legible while the route itself holds the night." },
+	C: { name: "Porch-light vigil", promise: "The Farm darkens and one warm light waits for Rosie." },
+};
+
+function readAtmosphere() {
+	const value = new URLSearchParams(window.location.search).get("atmosphere")?.toUpperCase();
+	return Object.hasOwn(ATMOSPHERE_VARIANTS, value) ? value : "A";
+}
+
+function useAtmosphere() {
+	const [atmosphere, setAtmosphereState] = useState(readAtmosphere);
+	const setAtmosphere = useCallback((next) => {
+		const normalized = Object.hasOwn(ATMOSPHERE_VARIANTS, next) ? next : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("atmosphere", normalized);
+		window.history.replaceState({}, "", url);
+		setAtmosphereState(normalized);
+	}, []);
+
+	useEffect(() => {
+		const onKey = (event) => {
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			const keys = Object.keys(ATMOSPHERE_VARIANTS);
+			const current = keys.indexOf(atmosphere);
+			const delta = event.key === "ArrowRight" ? 1 : -1;
+			setAtmosphere(keys[(current + delta + keys.length) % keys.length]);
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [atmosphere, setAtmosphere]);
+
+	return [atmosphere, setAtmosphere];
+}
+
 function readVariant() {
 	const value = new URLSearchParams(window.location.search).get("variant")?.toUpperCase();
 	return Object.hasOwn(VARIANTS, value) ? value : "A";
@@ -703,7 +742,7 @@ function AdventureVignetteOverlay({ state, beat }) {
 	);
 }
 
-function JourneyWatchPanel({ state, actionLabel, onAction }) {
+function JourneyWatchPanel({ state, actionLabel, onAction, atmospherePrototype = null }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const homecomingReady = state.adventureComplete;
@@ -715,6 +754,13 @@ function JourneyWatchPanel({ state, actionLabel, onAction }) {
 			aria-label="Rosie's adventure progress"
 		>
 			<div className="journey-watch-tint" aria-hidden="true" />
+			{atmospherePrototype && (
+				<div className={`journey-atmosphere-prototype treatment-${atmospherePrototype}`} aria-hidden="true">
+					{atmospherePrototype === "A" && <div className="journey-evening-horizon"><i /><i /><i /></div>}
+					{atmospherePrototype === "B" && <div className="journey-hedge-window"><i /><i /><i /><i /></div>}
+					{atmospherePrototype === "C" && <div className="journey-home-vigil"><i className="journey-window-light" /><i className="journey-gate-light" /><i className="journey-vigil-star" /><i className="journey-vigil-star" /></div>}
+				</div>
+			)}
 			<div className="journey-watch-note" role="status" aria-live="polite">
 				<span className="journey-watch-mark" aria-hidden="true" />
 				<small>{homecomingReady ? "The gate bell rings" : "Rosie is away"}</small>
@@ -1105,6 +1151,22 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function AtmosphereSwitcher({ atmosphere, setAtmosphere, opportunity }) {
+	const keys = Object.keys(ATMOSPHERE_VARIANTS);
+	const index = keys.indexOf(atmosphere);
+	const route = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id ? "Reflected leaves" : "Warm moth trail";
+	return (
+		<div className="atmosphere-switcher" aria-label="Journey atmosphere prototype switcher">
+			<button type="button" aria-label="Previous atmosphere" onClick={() => setAtmosphere(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span>
+				<strong>{atmosphere} — {ATMOSPHERE_VARIANTS[atmosphere].name}</strong>
+				<small>{route} · dusk held · {ATMOSPHERE_VARIANTS[atmosphere].promise}</small>
+			</span>
+			<button type="button" aria-label="Next atmosphere" onClick={() => setAtmosphere(keys[(index + 1) % keys.length])}>→</button>
+		</div>
+	);
+}
+
 function PositionRail({ position, onChange }) {
 	const current = PROTOTYPE_POSITIONS[position - 1];
 	const atStart = position === 1;
@@ -1179,6 +1241,7 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [atmosphere, setAtmosphere] = useAtmosphere();
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -1198,6 +1261,7 @@ function App() {
 	const glowrootHomeRevealTimer = useRef(null);
 	const seedHandoffTimers = useRef([]);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
+	const atmospherePrototype = debug && initialSearch.has("atmosphere");
 	const position = state.prototypePosition ?? 1;
 	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop;
 	const plantingCrop = position === 3 && state.stage === STAGES.STARTING && state.selectedCrop === "clover";
@@ -1498,7 +1562,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${atmospherePrototype ? `journey-atmosphere-${atmosphere}` : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootHomeReveal}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-opportunity={opportunity.id}
@@ -1598,6 +1662,7 @@ function App() {
 				state={state}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
+				atmospherePrototype={atmospherePrototype ? atmosphere : null}
 			/>}
 			{showingReturnReward && <ReturnRewardPanel
 				state={state}
@@ -1638,7 +1703,9 @@ function App() {
 		</div>
 		<PositionRail position={position} onChange={jumpToPosition} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
-		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{debug && atmospherePrototype
+			? <AtmosphereSwitcher atmosphere={atmosphere} setAtmosphere={setAtmosphere} opportunity={opportunity} />
+			: <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
 }
 

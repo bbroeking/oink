@@ -1,5 +1,29 @@
 # Homegrown Adventures prototype
 
+## v0.88 throwaway — what should Home look like while Rosie is away?
+
+Question: how can the existing Position 9 journey watch preserve the dusk
+established by Rosie's Adventure without hiding the remembered Farm or adding
+another screen?
+
+Run `npm run prototype:homegrown:build`, serve `docs/`, and open Position 9
+with `?debug=1&atmosphere=A`. The fixed prototype bar and Left/Right keys swap
+three treatments on the real journey watch:
+
+- **A — Whole-farm dusk:** one scene-wide evening grade keeps Home, crops, and
+  the route in the same time of day.
+- **B — Hedge trail:** Home remains nearly daytime while a clipped night path
+  carries the route cue.
+- **C — Porch-light vigil:** a deeper night grade leaves one warm light waiting
+  for Rosie.
+
+Verdict: A is the best structure. B looks pasted over the Farm and preserves
+the original daylight contradiction; C loses too much Farm readability. Fold
+the whole-farm dusk from A into the real watch, borrow only C's restrained warm
+home light, and reuse the existing route lights instead of shipping the extra
+prototype motes or switcher. The approved departure/return concepts remain the
+color and continuity reference.
+
 The v0.87 journey-handoff pass removes the contradictory resolved note and
 redundant **Let Rosie explore** confirmation from Position 9. After Provision,
 Tool, and Pack have each played, one route-specific **Rosie follows…** bridge
