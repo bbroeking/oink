@@ -547,6 +547,23 @@ Provision, reduced motion, centered 1280×720 desktop, the fitted 328×709 game
 frame, 55 reducer/source-contract tests, Rive contracts, TypeScript, and
 repository quality gates pass locally.
 
+**Adventure-attention checkpoint (August 8, 2026):** canonical Rive Rosie now
+answers the existing Tool turning point instead of breathing neutrally while
+the cause sequence happens around her. When the Tool field note takes focus,
+React emits one presentation-only `adventure-attention` motion and the Rive
+boundary plays the already-authored `Rosie Notice` lean; Rosie settles before
+Pack takes focus. A No Tool Near-Discovery receives the same honest attention
+without mounting an unearned Tool or reward. Both Adventure routes share the
+response, and Lanternleaf reflections remain independently Rive-authored
+behind Rosie. Reduced motion emits no attention trigger and holds the resolved
+pose immediately. No Tool choice, Bag rule, cause, outcome, timer, reward,
+dialogue, input, persistence, progression fact, Rive asset, or View Model input
+changed. Three treatments were captured on
+`codex/homegrown-v086-rosie-response-prototypes` at `832544f`; only the single
+Tool-turning-point response remains on main. Complete, empty-Tool,
+Lanternleaf, and reduced-motion routes, 56 reducer/source-contract tests, the
+Rive contracts, TypeScript, and the prototype build pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

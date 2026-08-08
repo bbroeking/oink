@@ -14,6 +14,7 @@ export const HOMEGROWN_RIVE_ASSET_AUTHORED = __HOMEGROWN_RIVE_AUTHORED__;
 
 const AUTHORED_TRIGGER_ANIMATIONS: Partial<Record<HomegrownRiveMotionTrigger, string>> = {
 	tickle: "Rosie Tickle",
+	"adventure-attention": "Rosie Notice",
 	pack: "Rosie Pack",
 	"bag-receive": "Bag Receive",
 	departure: "Rosie Departure",
@@ -100,6 +101,7 @@ type RosieMotion =
 	| "breathing"
 	| "tickle"
 	| "notice"
+	| "adventure-attention"
 	| "pack"
 	| "bag-receive"
 	| "departure"
@@ -335,6 +337,7 @@ function HomegrownRiveSceneImpl({
 		// the one-second presentation boundary and all progression state.
 		if (
 			trigger !== "departure" &&
+			trigger !== "adventure-attention" &&
 			trigger !== "bag-receive" &&
 			trigger !== "plant-composted" &&
 			trigger !== "plant-glowroot"
@@ -367,6 +370,8 @@ function HomegrownRiveSceneImpl({
 		setMotion(
 			showHomePose && trigger === "tickle"
 				? "home"
+				: trigger === "adventure-attention"
+					? "adventure-attention"
 				: trigger === "pack"
 				? "pack"
 				: trigger === "bag-receive"

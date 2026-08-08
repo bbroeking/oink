@@ -285,11 +285,73 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 86. **v0.85 — Lunch Until Dusk (shipped):** let Rosie visibly use
     the packed Clover Lunch and let that use carry the existing Adventure into
     evening before Tool and Pack take over.
+87. **v0.86 — Rosie Leans In (shipped):** let canonical Rive Rosie answer the
+    Tool turning point with one restrained authored attention lean, including
+    a useful No Tool clue, before she settles for the Pack beat.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.86 — Rosie Leans In — 2026-08-08
+
+- Replayed the exact shipped v0.85 cause sequence. Clover Lunch reached Rosie
+  and brought dusk, the Tool acted, and the Pack received the find, but the
+  foreground Rive scene reported only ordinary breathing while all three
+  Adventure facts happened around her.
+- Compared three temporal treatments on the real Position 9 scene: repeat the
+  existing authored `Rosie Notice` lean for every cause, reserve it for the
+  Tool turning point, or pair an early Notice with the existing Tickle delight
+  after resolution. The single Tool response won. Repetition felt mechanically
+  cued, while the Tickle jump carried Rosie into the field note and away from
+  the Find.
+- Captured all three throwaway treatments at commit `832544f` on
+  `codex/homegrown-v086-rosie-response-prototypes`. Main retains only the
+  one-turning-point treatment and no prototype switcher.
+- When the existing Tool field note takes focus, React emits one presentation-
+  only `adventure-attention` motion and the Rive boundary plays the already
+  authored `Rosie Notice` timeline. Rosie settles before Pack takes focus. The
+  same response plays for a **No Tool** Near-Discovery, making her visible
+  attention honest even when no Tool object or earned reward is mounted.
+- **A Glow Beneath the Hedge** and **Lights Past the Open Gate** share this
+  grammar. The latter keeps its independent Lanternleaf reflection rise behind
+  Rosie. Reduced motion emits no attention trigger and holds the resolved Rive
+  pose immediately.
+- This is orchestration of an existing Rive performance, not a new game fact.
+  React still owns the selected Tool, route, branch, outcome, timer, reward,
+  persistence, and exact field note; no dialogue, control, danger, stat,
+  progression state, Rive asset, or View Model input was added.
+
+### Validation evidence
+
+- The complete Glowroot route reported `beat=tool`,
+  `motion=adventure-attention`, and
+  `last=adventure-attention` while the Hand Trowel field note and physical dig
+  were visible. The authored lean remained inside the existing clearing and
+  settled before the final Pack/result state.
+- The empty-Tool route reported `kind=near-discovery`, `tool=none`, the exact
+  **No Tool · the warmth stays hidden beneath tangled roots** clue, and the
+  same Rive attention response without mounting a Tool prop.
+- The second route reported `opportunity=lights-past-open-gate`,
+  `beat=tool`, `motion=adventure-attention`, and Lanternleaf reflections
+  `rising` together. A fresh reduced-motion replay reported `beat=resolved`,
+  `motion=reduced`, and `last=none`.
+- `npm run prototype:homegrown:test` passes 56/56,
+  `npm run prototype:homegrown:build` passes, `npx tsc --noEmit` passes, and
+  `npm run verify:rive-homegrown` passes both authored Rive contracts.
+  `npm run quality:check` also passes the quality contracts, 157-file layout
+  inspection, 324-sprite integrity gate, security contracts, TypeScript, 78
+  layout tests, and the security suite; Watchman's existing recrawl notice is
+  the only warning.
+
+### Next highest-leverage weakness
+
+Rosie now answers the Adventure's turning point, but the final field note says
+**What Rosie found** while the primary action still says **Let Rosie explore**.
+That temporal handoff suggests the find happened before exploration begins.
+The next cycle should make the resolved vignette lead cleanly into the quiet
+journey watch without announcing or implying the Homecoming reward early.
 
 ### v0.85 — Lunch Until Dusk — 2026-08-08
 

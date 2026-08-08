@@ -1248,8 +1248,13 @@ function App() {
 			hedgeBellEarned: false,
 		};
 	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
-	const sceneRiveTrigger = gateHomecomingReady ? "return" : riveModel.trigger;
-	const sceneRiveTriggerNonce = gateHomecomingReady
+	const adventureAttentionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "tool"
+		? "adventure-attention"
+		: null;
+	const sceneRiveTrigger = adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
+	const sceneRiveTriggerNonce = adventureAttentionTrigger
+		? `${riveModel.triggerNonce}:adventure-attention:${opportunity.id}`
+		: gateHomecomingReady
 		? `${riveModel.triggerNonce}:gate-homecoming`
 		: riveModel.triggerNonce;
 	const waiting = departing || (autoPlay && (

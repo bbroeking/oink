@@ -1,5 +1,13 @@
 # Homegrown Adventures prototype
 
+The v0.86 Adventure-attention pass gives canonical Rive Rosie one restrained
+authored `Rosie Notice` lean when the Tool cause—or a No Tool clue—takes focus
+in Position 9. Provision and Pack keep their physical item actions, Rosie
+settles before the Pack beat, and reduced motion holds the resolved pose. The
+validated cadence was selected from three treatments captured on
+`codex/homegrown-v086-rosie-response-prototypes` at `832544f`; no reducer fact,
+Bag rule, reward, timer, or persistence state changed.
+
 Throwaway browser prototype for the loop in
 `docs/homegrown-adventures-build-goals.md`. It uses one deterministic reducer
 and three UI variants; `?variant=A|B|C` changes presentation without changing

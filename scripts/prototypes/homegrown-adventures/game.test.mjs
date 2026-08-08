@@ -34,6 +34,8 @@ const at = 1_000_000;
 const reduce = (state, action) => homegrownReducer(state, { now: at, ...action });
 const appSource = readFileSync(fileURLToPath(new URL("./app.web.tsx", import.meta.url)), "utf8");
 const stylesSource = readFileSync(fileURLToPath(new URL("./styles.css", import.meta.url)), "utf8");
+const riveSceneSource = readFileSync(fileURLToPath(new URL("../../../components/prototypes/homegrown-adventures/HomegrownRiveScene.web.tsx", import.meta.url)), "utf8");
+const riveContractSource = readFileSync(fileURLToPath(new URL("../../../components/prototypes/homegrown-adventures/homegrownRiveContract.ts", import.meta.url)), "utf8");
 
 function throughCloverReady() {
 	let state = createInitialState({ now: at });
@@ -1091,6 +1093,17 @@ test("a packed Provision performs once and leaves the Adventure at dusk", () => 
 	assert.match(stylesSource, /@keyframes adventure-provision-dusk-arrive/);
 	assert.match(stylesSource, /data-adventure-provision="clover-lunch"\]:is\(\[data-adventure-beat="tool"\],\[data-adventure-beat="pack"\],\[data-adventure-beat="resolved"\]\) \.adventure-vignette-backdrop::before/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-provision-prop \{ animation: none; \}/);
+});
+
+test("the Tool beat gives Rosie one authored attention response", () => {
+	assert.match(appSource, /showingAdventureVignette && !state\.reduceMotion && adventureCauseBeat === "tool"/);
+	assert.match(appSource, /\? "adventure-attention"/);
+	assert.match(appSource, /adventure-attention:\$\{opportunity\.id\}/);
+	assert.match(riveContractSource, /\| "adventure-attention"/);
+	assert.match(riveSceneSource, /"adventure-attention": "Rosie Notice"/);
+	assert.match(riveSceneSource, /trigger !== "adventure-attention"/);
+	assert.doesNotMatch(appSource, /adventureCauseBeat === "provision"\s*\? "adventure-attention"/);
+	assert.doesNotMatch(appSource, /adventureCauseBeat === "pack"\s*\? "adventure-attention"/);
 });
 
 test("departure timing is reducer-owned, reload-stable, reduced-motion aware, and idempotent", () => {
