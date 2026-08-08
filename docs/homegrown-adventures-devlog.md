@@ -245,7 +245,7 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     the established second route rise, hold, and fade through one dedicated
     native Rive timeline, while the first route and reduced-motion presentation
     retain their existing illustrated states.
-74. **v0.73 — The Journey Comes Before the Find (locally verified):** turn
+74. **v0.73 — The Journey Comes Before the Find (shipped):** turn
     Position 9 into the environmental cause-and-effect beat, let Rosie continue
     exploring afterward, and reserve the named Discovery or clue for
     Homecoming without changing any outcome.
@@ -306,6 +306,14 @@ systems. Each checkpoint starts with play and ships only after rendered proof.
   equipment, one action, and progression rail remained visible without page
   overflow. Reduced motion kept the exact journey hierarchy and static
   environmental clues.
+- GitHub Pages run `31233517913` deployed commit `e1f1e30`. Fresh public HTML
+  returned JavaScript `e819458bc9`; the companion site linked **See Rosie's
+  journey unfold**. Public second-route Position 9 contained **Reflected leaves
+  lead Rosie onward**, did not contain **Rosie found the Lanternleaf Path**,
+  mounted the `ready` Lanternleaf Rive cue, and offered **Let Rosie explore**.
+  The next public state read **Rosie is following reflected leaves**; only the
+  subsequent Homecoming mapped **Lanternleaf Path** and exposed **Added to Farm
+  stock**.
 
 ### Observable acceptance criteria
 
