@@ -153,6 +153,15 @@ closed Home layer to Rive while the vignette is mounted. That prevents the
 remembered Farm from leaking into the expedition without changing the saved
 Farm or adding a second character rig.
 
+The v0.72 motion pass gives only that painted trail one living environmental
+cue. A separate 390×844 **Lanternleaf Reflections** Rive artboard draws seven
+native warm-gold leaves over the existing path and exposes one authored
+`Lanternleaf Reflection Pulse`. React mounts it only for the second route,
+plays its rise, holds the readable glow, plays its fade, and leaves a long calm
+gap. The first route instantiates no reflection canvas; reduced motion hides
+the live layer and keeps the plate's static leaves. Route choice, story,
+equipment, rewards, persistence, and timing remain reducer-owned.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in

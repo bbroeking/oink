@@ -241,11 +241,81 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     second expedition its own open-gate path, keep its selected Tool physical,
     and prevent remembered Home layers from leaking through Rosie's shared Rive
     artboard without changing progression.
+73. **v0.72 — Lanternleaf Catches the Light (shipped):** let a few leaves on
+    the established second route rise, hold, and fade through one dedicated
+    native Rive timeline, while the first route and reduced-motion presentation
+    retain their existing illustrated states.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.72 — Lanternleaf Catches the Light — 2026-08-07
+
+- Began by playing the shipped second-day Position 9 against its dedicated
+  Lanternleaf plate. The open gate and reflected trail established a new place,
+  but the brightest environmental clue was completely static while live Rosie
+  breathed in front of it.
+- Authored a separate paid-workspace Rive file named **Lanternleaf
+  Reflections** at the exact 390×844 game registration. Seven native warm-gold
+  ellipse shapes follow the existing painted trail; `Lanternleaf Reflection
+  Pulse` raises their opacity over 15 frames and returns to the quiet endpoint
+  at frame 32.
+- Added a stable web boundary that mounts only for **Lights Past the Open
+  Gate**. React starts the authored rise, holds its readable luminous frame for
+  720ms, plays the authored fall, then rests for 2.35 seconds. Rive owns the
+  reflected-light performance; React still owns route choice, cadence,
+  progression, rewards, persistence, and accessible UI.
+- Kept the canvas behind canonical Rosie and her fitted Bag, used a tight
+  route-only crop plus screen blend so the editor artboard cannot flatten the
+  woodland plate, and retained the static painted leaves underneath. Reduced
+  motion hides the live layer rather than replacing the clue or outcome.
+- Added a separate checked source export, runtime-name patch, contract, static
+  verifier, content-hashed build copy, and runtime diagnostics. The main
+  Homegrown artboard and first-route Glowroot animation remain unchanged.
+- The Prototype and Impeccable verdict is positive: one small environmental
+  motion makes the second route feel alive without adding a destination,
+  reward, timer, equipment choice, or another character rig.
+
+### Validation evidence
+
+- `npm run prototype:homegrown:test` — 49/49 pass, including the deterministic
+  second opportunity, complete and clue branches, return quantities, new-day
+  state, reload, and all eleven review positions.
+- `npm run verify:rive-homegrown` — the main 390×844 asset and all 60 authored
+  names pass; the separate 390×844 Lanternleaf header, artboard name, and
+  `Lanternleaf Reflection Pulse` name also pass.
+- `npm run quality:check` — quality contracts, the 157-file layout scan, 324
+  sprite-integrity checks, security contracts, TypeScript, and 280 focused Jest
+  assertions pass. The only output warning is Watchman's existing recrawl
+  notice.
+- Real browser play completed the first adventure, Welcome Home, Plant
+  Glowroot, Grow Moonberries, Tickle Rosie, Begin another day, and eight
+  player-visible Next-position fast-forwards into the second Adventure. The
+  Lanternleaf canvas reported `ready`, exposed the exact authored animation,
+  and survived a direct Position 9 reload.
+- The first Glowroot route mounted zero Lanternleaf canvases and retained its
+  existing live Glowroot view. The second route mounted exactly one reflection
+  canvas and kept the open gate, selected equipment, Bag causes, and named
+  Discovery intact.
+- At 360×780, the luminous hold remained registered to the painted trail,
+  Rosie and the primary action stayed fully visible after the normal Rive load,
+  and the page retained its full-width touch composition. With reduced motion,
+  the component reported `reduced`, its live layer was hidden, and the static
+  illustrated leaves still communicated the route.
+
+### Observable acceptance criteria
+
+- Only the second Lanternleaf route receives the live reflection cue.
+- The motion follows the painted path and remains behind Rosie, the Bag, and
+  all DOM-owned story and controls.
+- The cue has a readable rise, hold, fall, and restful gap instead of constant
+  pulsing.
+- Reduced motion leaves the route clue and complete UI legible with no live
+  environmental animation.
+- The complete two-day loop, fast-forward rail, reload, first-route isolation,
+  and exact reducer-owned outcomes remain intact.
 
 ### v0.71 — Lanternleaf Becomes a Place — 2026-08-07
 

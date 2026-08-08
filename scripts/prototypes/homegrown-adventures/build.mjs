@@ -65,6 +65,18 @@ const riveAssetUrl = authoredRivePresent
 	? `./assets/rive/homegrown-adventures.riv?v=${authoredRiveVersion}`
 	: "./assets/rive/runtime-sample.riv";
 
+const lanternleafRiveSource = join(
+	root,
+	"assets/rive/homegrown-adventures/lanternleaf-reflections.riv",
+);
+const lanternleafRiveOutput = join(root, "docs/assets/rive/lanternleaf-reflections.riv");
+const lanternleafRiveVersion = createHash("sha256")
+	.update(readFileSync(lanternleafRiveSource))
+	.digest("hex")
+	.slice(0, 10);
+const lanternleafRiveAssetUrl =
+	`./assets/rive/lanternleaf-reflections.riv?v=${lanternleafRiveVersion}`;
+
 if (authoredRivePresent) {
 	copyFileSync(authoredRiveSource, authoredRiveOutput);
 } else {
@@ -74,6 +86,7 @@ if (authoredRivePresent) {
 		join(root, "docs/assets/rive/runtime-sample.riv"),
 	);
 }
+copyFileSync(lanternleafRiveSource, lanternleafRiveOutput);
 
 const bundleOutput = join(root, "docs/homegrown-adventures.js");
 const animationBundleOutput = join(root, "docs/homegrown-animation-lab.js");
@@ -94,6 +107,7 @@ const commonBuild = {
 		"process.env.NODE_ENV": '"production"',
 		__HOMEGROWN_RIVE_ASSET_URL__: JSON.stringify(riveAssetUrl),
 		__HOMEGROWN_RIVE_AUTHORED__: JSON.stringify(authoredRivePresent),
+		__LANTERNLEAF_RIVE_ASSET_URL__: JSON.stringify(lanternleafRiveAssetUrl),
 	},
 };
 

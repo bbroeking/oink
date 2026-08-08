@@ -67,3 +67,5 @@ console.log(
 console.log(
 	"Manual mobile Safari motion, reduced-motion, silhouette, and attachment checks remain required.",
 );
+
+await import("./verify-lanternleaf-rive.mjs");

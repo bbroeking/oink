@@ -6,6 +6,7 @@ import {
 	HomegrownRiveScene,
 } from "../../../components/prototypes/homegrown-adventures/HomegrownRiveScene.web";
 import { AdventureGlowrootRive } from "../../../components/prototypes/homegrown-adventures/AdventureGlowrootRive.web";
+import { LanternleafReflectionsRive } from "../../../components/prototypes/homegrown-adventures/LanternleafReflectionsRive.web";
 import {
 	ACTIONS,
 	adventureOpportunity,
@@ -1344,6 +1345,9 @@ function App() {
 			data-return-pack={showingReturnReward ? state.bag?.pack ?? "none" : undefined}
 		>
 			<div className="scene-plate" role="img" aria-label={sceneLabel(state, { plantingGlowroot: showingGlowrootPlanting })} />
+			{showingAdventureVignette && opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id && (
+				<LanternleafReflectionsRive reduceMotion={state.reduceMotion} />
+			)}
 			<HomegrownRiveScene
 				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}

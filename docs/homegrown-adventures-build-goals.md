@@ -20,6 +20,9 @@ Position 8 now holds the native Rive satchel on Rosie through packing, reload,
 reduced motion, departure, and the causal Adventure handoff; Position 9 now
 places that handoff in one tangible twilight clearing, with separate complete
 Discovery and clue-only Near-Discovery plates beneath live Rive Rosie; the
+second route now adds one dedicated native Rive reflection layer whose
+authored rise, luminous hold, and fade animate only the painted Lanternleaf
+trail, while reduced motion retains the static illustrated clue; the
 complete branch now mounts a tightly clipped second Rive view that reveals the
 earned Glowroot and gives it one restrained breathing glow, while the clue
 branch mounts no reward canvas; Position 10 now brings Rosie into a physical
@@ -330,6 +333,21 @@ pass. The next visible weakness is motion: the reflected leaves establish the
 route clearly but remain painted into the plate. A future checkpoint should
 animate only a few reflections with a restrained authored Rive loop, keeping
 the gate, route state, and rewards in React.
+
+**Lanternleaf-reflection checkpoint (August 7, 2026):** the painted route now
+receives one separate 390×844 native Rive layer authored in the paid **Tickle
+the Pig** workspace as **Lanternleaf Reflections**. Seven warm elliptical leaf
+reflections follow the exact path registration and use one 32-frame
+`Lanternleaf Reflection Pulse`: a restrained rise, a readable 720ms luminous
+hold, a soft fall, then a 2.35-second rest. React mounts the layer only for
+**Lights Past the Open Gate**, owns its cadence and route boundary, and keeps
+Rosie, the Bag, every reward, persistence, and progression fact unchanged. The
+first Glowroot route mounts no Lanternleaf canvas. Reduced motion hides the
+live cue and leaves the plate's static reflected leaves intact. Real two-day
+play, the eleven-position rail, reload, 360×780 touch, 390×844 phone,
+reduced-motion, and static Rive contract gates pass; the next cycle should
+begin by playing the shipped loop and choosing the highest-leverage remaining
+player-visible weakness rather than expanding the route catalog.
 
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose

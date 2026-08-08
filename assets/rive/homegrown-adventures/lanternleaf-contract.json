@@ -1,0 +1,10 @@
+{
+	"schemaVersion": 1,
+	"export": "lanternleaf-reflections.riv",
+	"artboard": {
+		"name": "Lanternleaf Reflections",
+		"width": 390,
+		"height": 844
+	},
+	"animation": "Lanternleaf Reflection Pulse"
+}

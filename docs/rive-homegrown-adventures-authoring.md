@@ -79,6 +79,42 @@ The current runtime file also exposes these exact foreground-rig animations:
 - `Dusk Moths Resting`
 - `Dusk Moths Laugh`
 
+## Lanternleaf reflection microfile
+
+The second Adventure route uses a deliberately separate, composited Rive
+layer so one environmental clue cannot leak the main Home artboard's beds,
+residents, or hedge consequence into the expedition.
+
+- Paid editor file: **Lanternleaf Reflections** in the **Tickle the Pig**
+  workspace.
+- Artboard: `Lanternleaf Reflections`, 390×844.
+- Direct animation: `Lanternleaf Reflection Pulse`, 32 frames at 60fps.
+- Editable editor export:
+  `assets/rive/homegrown-adventures/source/lanternleaf-reflections-editor-export.riv`.
+- Human-readable placement source:
+  `assets/rive/homegrown-adventures/source/lanternleaf-reflections.svg`.
+- Runtime contract: `assets/rive/homegrown-adventures/lanternleaf-contract.json`.
+- Published runtime: `assets/rive/homegrown-adventures/lanternleaf-reflections.riv`.
+
+The artboard contains seven warm-gold elliptical leaves registered to the
+painted Lanternleaf trail. Their parent blend is 18% at frame 0, 100% at frame
+15, and 18% at frame 32. Do not add a gate, Rosie, equipment, rewards, copy, or
+another route to this file. The web controller plays the authored rise, holds
+frame 15 for 720ms, plays the authored fall, then waits 2.35 seconds. Reduced
+motion keeps only the static leaves already painted into the route plate.
+
+After every editor export:
+
+1. Replace the checked editor export at the path above.
+2. Run `node scripts/rive/patch-lanternleaf-rive.mjs` to restore the exact
+   runtime animation name.
+3. Run `npm run verify:rive-homegrown`; this now verifies both Rive files.
+4. Run `npm run prototype:homegrown:build`; the build publishes and
+   content-hashes `docs/assets/rive/lanternleaf-reflections.riv`.
+5. Play the first and second Position 9 routes. The first must mount no
+   Lanternleaf canvas; the second must report `ready`, animate behind Rosie,
+   and keep the static clue under reduced motion.
+
 The v0.3 breathing timeline authors a one-second rise and lets the web motion
 controller hold the resting pose for 2.25 seconds before replaying it. The
 notice timeline leans Rosie toward the Kitchen Patch and runs after the tickle

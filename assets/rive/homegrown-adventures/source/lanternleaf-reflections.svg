@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <g id="lanternleaf-reflections" fill="#ffe58a" opacity="0.18">
+    <g id="lanternleaf-far">
+      <path d="M-7 0C-3-4.5 3-4.5 7 0C3 4.5-3 4.5-7 0Z" transform="translate(258 357) rotate(14)"/>
+      <path d="M-6 0C-2.5-4 2.5-4 6 0C2.5 4-2.5 4-6 0Z" transform="translate(267 370) rotate(-10)"/>
+    </g>
+    <g id="lanternleaf-middle">
+      <path d="M-8 0C-3.5-5.5 3.5-5.5 8 0C3.5 5.5-3.5 5.5-8 0Z" transform="translate(251 388) rotate(12)"/>
+      <path d="M-9 0C-4-6 4-6 9 0C4 6-4 6-9 0Z" transform="translate(256 405) rotate(-8)"/>
+      <path d="M-10 0C-4.5-6.5 4.5-6.5 10 0C4.5 6.5-4.5 6.5-10 0Z" transform="translate(241 423) rotate(9)"/>
+    </g>
+    <g id="lanternleaf-near">
+      <path d="M-12 0C-5-8 5-8 12 0C5 8-5 8-12 0Z" transform="translate(222 447) rotate(7)"/>
+      <path d="M-13 0C-5.5-8.5 5.5-8.5 13 0C5.5 8.5-5.5 8.5-13 0Z" transform="translate(211 468) rotate(-9)"/>
+    </g>
+  </g>
+</svg>
