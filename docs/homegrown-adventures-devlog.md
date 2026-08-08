@@ -276,11 +276,71 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 83. **v0.82 — One Cause at a Time (shipped):** let Provision, Tool, Pack, and
     the resulting find each own one field note while the illustrated Adventure
     remains primary.
+84. **v0.83 — The Trowel Opens the Roots (shipping):** separate the first
+    outing's Tool from its background and let one restrained dig fulfill the
+    existing Hand Trowel cause.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.83 — The Trowel Opens the Roots — 2026-08-08
+
+- Began with the exact shipped v0.82 Tool beat at 360×780. The new field note
+  clearly said **Hand Trowel · opens a careful way beneath the roots**, but the
+  matching trowel remained painted into the clearing. Its cause was readable
+  yet not performed.
+- Compared three bounded treatments on the existing Position 9 route: retain
+  the baked Tool, replace it with one separable highlighted prop, or let that
+  prop perform one restrained dig during its existing cause beat. The one-dig
+  treatment won because it completed the verb without adding input, repetition,
+  or a Tool minigame.
+- Captured all three throwaway treatments at commit `42a66ab` on
+  `codex/homegrown-v083-tool-action-prototypes`. Main retains only the one-dig
+  treatment and no prototype switcher.
+- The first outing now uses the clean clearing plus the existing separable
+  `return-tool-trowel.png`. At the Tool beat it follows one 680 ms press-and-
+  settle path toward the same Rive Glowroot reveal, then becomes motionless
+  before Pack takes focus.
+- Lantern uses its existing separable prop in the same clearing and does not
+  inherit the trowel motion. Leaving Tool empty renders no prop and no animation;
+  the existing Near-Discovery remains honest. Reduced motion paints the settled
+  trowel and resolved find immediately.
+- React still derives the beat from the same local presentation sequence and
+  Rive still owns Glowroot. No Bag choice, cause copy, encounter, reward,
+  animation input, timer, reducer state, save field, or result changed.
+
+### Validation evidence
+
+- A normal 360×780 replay reported `animation=none` for Provision,
+  `adventure-trowel-one-dig` for Tool, then `none` for Pack and resolved. The
+  motion lasted 680 ms inside the existing 900 ms Tool beat and did not overlap
+  the primary action or create horizontal overflow.
+- The Tool-beat screenshot kept Rosie, Clover Lunch, Basket, field note,
+  Glowroot reveal, and **Let Rosie explore** readable while the trowel crossed
+  the disturbed soil once. Its settled frame remained above the primary action.
+- Choosing Lantern produced `return-tool-lantern.png`, the correct Lantern
+  field note, the clean clearing, and no trowel animation. Leaving Tool empty
+  produced `display=none`, **No Tool · the warmth stays hidden beneath tangled
+  roots**, and a kind Near-Discovery.
+- Reduced motion reported `resolved`, a visible settled Hand Trowel, and
+  `animation=none`. The 360 px client and scroll widths remained equal.
+- At 1280×720 the complete 328×709 game remained centered; the settled Tool,
+  field note, and primary action all remained inside the first viewport. The
+  surrounding Position 9 layout is otherwise unchanged from v0.82's verified
+  390×844 render.
+- `npm run prototype:homegrown:test` passes 53/53 and `npx tsc --noEmit`
+  passes locally. Rive and repository quality gates, deployment, and public
+  artifact verification follow this feature commit.
+
+### Next highest-leverage weakness
+
+The Provision keeps Rosie out until dusk and the Tool now opens the roots, but
+the Pack beat still only highlights an empty Wicker Basket while its note says
+it waits for the find. The next cycle should make the existing Glowroot find
+settle visibly into the selected Pack—or make an empty Pack visibly leave it
+behind—without changing reward logic or adding another inventory panel.
 
 ### v0.82 — One Cause at a Time — 2026-08-08
 

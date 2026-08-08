@@ -1505,9 +1505,7 @@ function App() {
 			/>
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
-			{showingAdventureVignette && opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id && (
-				<div className="adventure-tool-prop" aria-hidden="true" />
-			)}
+			{showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-pack-prop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-homecoming-backdrop" aria-hidden="true" />}
 			{showingReturnReward && <div className="return-tool-prop" aria-hidden="true" />}

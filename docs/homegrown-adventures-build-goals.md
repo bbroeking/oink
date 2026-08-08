@@ -498,6 +498,21 @@ Near-Discovery, the Lanternleaf second outing, reload, reduced motion, rapid
 input, 360×780 and 390×844 touch layouts, centered desktop, 52 reducer/source
 contract tests, and TypeScript pass locally.
 
+**Physical-Trowel checkpoint (August 8, 2026):** the first outing's Hand
+Trowel now performs the cause its field note describes. Position 9 uses the
+clean clearing and the existing separable painterly Tool asset instead of a
+trowel baked into the background. During the existing Tool beat, the trowel
+performs one 680 ms dig toward the Rive-owned Glowroot reveal and settles before
+Pack takes focus. Lantern renders its own separable prop without a dig, while
+an empty Tool renders no object or motion and remains a useful Near-Discovery.
+Reduced motion paints the settled prop and resolved find immediately. This is
+presentation only: no Tool choice, Bag rule, cause, outcome, reward, timer,
+input, reducer state, persisted field, Rive asset, or Rive input changed. Three
+treatments were captured on `codex/homegrown-v083-tool-action-prototypes` at
+`42a66ab`; only the one-dig response remains on main. Hand Trowel, Lantern,
+empty-Tool, reduced-motion, 360×780 touch, centered 1280×720 desktop, 53
+reducer/source-contract tests, and TypeScript pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

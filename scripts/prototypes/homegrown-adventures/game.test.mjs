@@ -1068,6 +1068,16 @@ test("the Adventure tells one Bag cause at a time without covering the clearing"
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-field-note \{ animation: none; \}/);
 });
 
+test("the first Hand Trowel cause performs one separable dig", () => {
+	assert.match(appSource, /showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" \/>/);
+	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"\]\[data-adventure-tool="hand-trowel"\]\[data-adventure-beat="tool"\]/);
+	assert.match(stylesSource, /animation: adventure-trowel-one-dig 680ms cubic-bezier\(\.16,1,\.3,1\) both/);
+	assert.match(stylesSource, /@keyframes adventure-trowel-one-dig/);
+	assert.doesNotMatch(stylesSource, /adventure-clearing-trowel-no-pack\.webp/);
+	assert.doesNotMatch(stylesSource, /adventure-clearing-lantern-no-pack\.webp/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.phone\[data-adventure-opportunity="glow-beneath-hedge"\] \.adventure-tool-prop/);
+});
+
 test("departure timing is reducer-owned, reload-stable, reduced-motion aware, and idempotent", () => {
 	let state = createPrototypeState(8, { now: at });
 	state = reduce(state, { type: ACTIONS.START_ADVENTURE });

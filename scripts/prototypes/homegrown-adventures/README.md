@@ -259,6 +259,18 @@ treatments remain captured on
 `codex/homegrown-v082-adventure-story-prototypes` at `300fb9e`; main retains
 only the single Field Note.
 
+The v0.83 Tool pass makes the first Hand Trowel cause physical. Position 9 now
+uses the clean clearing plus the existing separable painterly Tool asset rather
+than a trowel baked into the background. During the exact 900 ms Tool beat, the
+trowel performs one 680 ms dig toward the authored Rive Glowroot reveal, then
+settles before Pack takes focus. Lantern uses its own separable prop and no dig;
+an empty Tool shows neither object nor motion. Reduced motion paints the settled
+Tool and resolved find immediately. The animation is a presentation response to
+existing Bag state: it adds no interaction, rule, timing, result, or persisted
+fact. Three treatments remain captured on
+`codex/homegrown-v083-tool-action-prototypes` at `42a66ab`; main retains only
+the one-dig treatment.
+
 The same Homecoming is repeat-aware after Glowroot is planted. A later
 successful Adventure still adds one Seed, one Compost, and two Willow Fiber,
 but React labels it **Discovery remembered** and offers one **Keep supplies in
