@@ -1,5 +1,14 @@
 # Homegrown Adventures prototype
 
+The v0.87 journey-handoff pass removes the contradictory resolved note and
+redundant **Let Rosie explore** confirmation from Position 9. After Provision,
+Tool, and Pack have each played, one route-specific **Rosie follows…** bridge
+holds for 900 ms and carries the scene into the existing idle journey watch.
+Reduced motion holds the static bridge for 1.8 seconds. The winning no-extra-
+click treatment was selected from three structures captured on
+`codex/homegrown-v087-journey-handoff-prototypes` at `79ca1ef`; no Bag rule,
+route, reward, duration, or persistence field changed.
+
 The v0.86 Adventure-attention pass gives canonical Rive Rosie one restrained
 authored `Rosie Notice` lean when the Tool cause—or a No Tool clue—takes focus
 in Position 9. Provision and Pack keep their physical item actions, Rosie

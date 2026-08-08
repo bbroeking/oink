@@ -288,11 +288,73 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 87. **v0.86 — Rosie Leans In (shipped):** let canonical Rive Rosie answer the
     Tool turning point with one restrained authored attention lean, including
     a useful No Tool clue, before she settles for the Pack beat.
+88. **v0.87 — The Journey Continues (shipped):** replace the contradictory
+    pre-journey find announcement and redundant confirmation with one quiet,
+    route-specific bridge into Rosie's existing idle journey watch.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.87 — The Journey Continues — 2026-08-08
+
+- Replayed the exact live v0.86 resolved vignette at Position 9. It reported
+  **What Rosie found · Warm light stirs beneath the hedge**, while the only
+  action beneath it still said **Let Rosie explore**. The screen therefore
+  implied that the Find existed before the Adventure it was asking to begin,
+  despite Homecoming correctly owning the named Discovery.
+- Compared three structures on the real clearing: a route-specific path note
+  with an explicit follow action, a compact journey-beginning seal, and a
+  no-extra-click cinematic bridge into the existing wait. The cinematic bridge
+  won because the player had already chosen to send Rosie, the causal sequence
+  was complete, and another confirmation weakened rather than clarified that
+  commitment. The seal became a second card competing with Rosie and the
+  clearing.
+- Captured all three throwaway treatments at commit `79ca1ef` on
+  `codex/homegrown-v087-journey-handoff-prototypes`. Main retains only the
+  automatic handoff and no prototype switcher.
+- Provision, Tool, and Pack still receive their existing 900 ms notes and
+  physical responses. After Pack, the note clears and one short status reads
+  **Rosie follows the warm light** or **Rosie follows the reflected leaves**,
+  followed by **The journey continues…**. After 900 ms it enters the existing
+  idle journey watch without another button.
+- Reduced motion skips the cause animation as before, paints the static bridge,
+  and holds it for 1.8 seconds before continuing. The handoff status remains a
+  polite live region. Reload before settlement safely restarts the bounded
+  vignette; reducer settlement stays idempotent.
+- React still owns the `CONTINUE_ADVENTURE_STORY` transition and all Bag,
+  route, duration, result, reward, persistence, and Homecoming facts. The
+  change adds no Find, dialogue, choice, danger, timer state, save field, Rive
+  asset, or Rive input, and the named Discovery remains reserved for Return.
+
+### Validation evidence
+
+- The complete Lanternleaf route rendered
+  `Rosie follows the reflected leaves · The journey continues…`, mounted no
+  old field note or confirmation button, kept equal 1280 px client/scroll
+  widths, and transitioned after the bounded hold to the existing
+  **Rosie is following reflected leaves** journey watch and its
+  Set off → Reflected leaves → Homecoming route.
+- A reduced-motion first-route replay settled into the existing
+  **Rosie is following the moths** journey watch with Rive `motion=reduced`;
+  the source contract fixes its static bridge hold at 1.8 seconds and removes
+  the old continuation button from every cause beat.
+- `npm run prototype:homegrown:test` passes 57/57,
+  `npm run prototype:homegrown:build` passes, `npx tsc --noEmit` passes, and
+  `npm run verify:rive-homegrown` passes both authored Rive contracts.
+- `npm run quality:check` passes the quality contracts, 157-file layout
+  inspection, 324-sprite integrity gate, security contracts, TypeScript, 78
+  layout tests, and 202 security tests. Watchman's existing recrawl notice is
+  the only warning.
+
+### Next highest-leverage weakness
+
+The causal vignette now hands off in the right order, but its twilight clearing
+still cuts directly to a bright daytime Farm while the journey watch says Rosie
+is away after dusk. The next cycle should preserve the established time and
+route atmosphere across that transition without hiding the remembered Farm or
+adding another journey screen.
 
 ### v0.86 — Rosie Leans In — 2026-08-08
 

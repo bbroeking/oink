@@ -564,6 +564,22 @@ Tool-turning-point response remains on main. Complete, empty-Tool,
 Lanternleaf, and reduced-motion routes, 56 reducer/source-contract tests, the
 Rive contracts, TypeScript, and the prototype build pass locally.
 
+**Journey-handoff checkpoint (August 8, 2026):** Position 9 no longer resolves
+its Bag-cause sequence with **What Rosie found** and then asks the player to
+**Let Rosie explore**. Provision, Tool, and Pack retain their established
+900 ms notes and physical responses; after Pack, one route-specific live status
+reads **Rosie follows the warm light** or **Rosie follows the reflected
+leaves**, followed by **The journey continues…**, and hands automatically into
+the existing idle journey watch after 900 ms. Reduced motion paints the bridge
+without animation and holds it for 1.8 seconds. React still owns the existing
+`CONTINUE_ADVENTURE_STORY` transition; the named Discovery stays reserved for
+Homecoming, and no Bag rule, route, duration, result, reward, persistence fact,
+save field, Rive asset, or Rive input changed. Three structures were captured
+on `codex/homegrown-v087-journey-handoff-prototypes` at `79ca1ef`; only the
+no-extra-click cinematic bridge remains on main. Both routes, reduced motion,
+57 reducer/source-contract tests, the Rive contracts, TypeScript, and the
+prototype build pass locally.
+
 **Equipped-departure checkpoint (August 6, 2026):** The reducer-owned
 `satchelEquipped` fact now paints the exact authored frame-16 `Rosie Pack` pose
 reliably in WebGL2: the runtime starts the nested vector group, scrubs to its

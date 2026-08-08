@@ -1500,7 +1500,7 @@ export function primaryAction(state) {
 	}
 	if (state.stage === STAGES.ADVENTURE && !state.adventureComplete) {
 		if (!state.adventureVignetteSeen) {
-			return { type: ACTIONS.CONTINUE_ADVENTURE_STORY, label: "Let Rosie explore" };
+			return { type: ACTIONS.CONTINUE_ADVENTURE_STORY, label: "The journey continues…" };
 		}
 		return { type: ACTIONS.ADVANCE_TIME, label: "Fast-forward to Homecoming" };
 	}
@@ -1661,7 +1661,7 @@ export function playerPresentation(state) {
 			return {
 				target: WORLD_TARGETS.HEDGE,
 				objective: adventureStory(state).journeyObjective,
-				label: "Let Rosie explore",
+				label: "The journey continues…",
 				action,
 			};
 		}

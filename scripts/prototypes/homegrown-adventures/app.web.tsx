@@ -671,8 +671,10 @@ function PackedLoadoutRibbon({ bag, farmStock }) {
 	);
 }
 
-function AdventureVignetteOverlay({ state, beat, onContinue }) {
+function AdventureVignetteOverlay({ state, beat }) {
 	const story = adventureStory(state);
+	const opportunity = adventureOpportunity(state);
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const activeBeatIndex = BAG_SLOT_ORDER.indexOf(beat);
 	const resolved = beat === "resolved";
 	const activeTag = resolved ? null : story.journeyTags[activeBeatIndex];
@@ -683,13 +685,20 @@ function AdventureVignetteOverlay({ state, beat, onContinue }) {
 			data-story-kind={story.kind}
 			aria-label="Beyond-the-hedge journey"
 		>
-			<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
-				<i aria-hidden="true">{activeTag?.icon ?? "✦"}</i>
-				<small>{activeTag ? BAG_SLOT_LABELS[activeTag.slot] : "What Rosie found"}</small>
-				<strong>{activeTag?.name ?? story.journeyHeadline}</strong>
-				<p>{activeTag?.detail ?? story.journeyResult}</p>
-			</div>
-			<button type="button" className="adventure-continue" onClick={onContinue}>Let Rosie explore</button>
+			{resolved ? (
+				<div key={beat} className="adventure-auto-handoff" role="status" aria-live="polite">
+					<i aria-hidden="true"><b /><b /><b /></i>
+					<small>Rosie follows the {lanternleaf ? "reflected leaves" : "warm light"}</small>
+					<strong>The journey continues…</strong>
+				</div>
+			) : (
+				<div key={beat} className="adventure-field-note" role="status" aria-live="polite">
+					<i aria-hidden="true">{activeTag.icon}</i>
+					<small>{BAG_SLOT_LABELS[activeTag.slot]}</small>
+					<strong>{activeTag.name}</strong>
+					<p>{activeTag.detail}</p>
+				</div>
+			)}
 		</section>
 	);
 }
@@ -872,6 +881,8 @@ function PurposeShelf({ state }) {
 const RETURN_CEREMONY_MS = 2400;
 const HOMEGROWN_REVIEW_STORAGE_KEY = `${HOMEGROWN_STORAGE_KEY}.review`;
 const ADVENTURE_CAUSE_BEAT_MS = 900;
+const ADVENTURE_HANDOFF_MS = 900;
+const REDUCED_ADVENTURE_HANDOFF_MS = 1800;
 const RAPID_TRANSITION_GUARD_MS = 350;
 const HARVEST_CELEBRATION_MS = 560;
 const NEW_DAY_HANDOFF_MS = 900;
@@ -1303,6 +1314,15 @@ function App() {
 	}, [showingAdventureVignette, state.reduceMotion]);
 
 	useEffect(() => {
+		if (!showingAdventureVignette || adventureCauseBeat !== "resolved") return undefined;
+		const timer = window.setTimeout(
+			() => dispatch({ type: ACTIONS.CONTINUE_ADVENTURE_STORY }),
+			state.reduceMotion ? REDUCED_ADVENTURE_HANDOFF_MS : ADVENTURE_HANDOFF_MS,
+		);
+		return () => window.clearTimeout(timer);
+	}, [adventureCauseBeat, showingAdventureVignette, state.reduceMotion]);
+
+	useEffect(() => {
 		localStorage.setItem(
 			reviewMode ? HOMEGROWN_REVIEW_STORAGE_KEY : HOMEGROWN_STORAGE_KEY,
 			serializeState(state),
@@ -1573,7 +1593,6 @@ function App() {
 			{showingAdventureVignette && <AdventureVignetteOverlay
 				state={state}
 				beat={adventureCauseBeat}
-				onContinue={() => act(visiblePresentation.action)}
 			/>}
 			{showingJourneyWatch && <JourneyWatchPanel
 				state={state}

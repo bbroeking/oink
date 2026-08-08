@@ -1040,7 +1040,7 @@ test("the Adventure vignette explains every selected item before idle waiting", 
 	assert.equal(state.departureComplete, true);
 	assert.deepEqual(primaryAction(state), {
 		type: ACTIONS.CONTINUE_ADVENTURE_STORY,
-		label: "Let Rosie explore",
+		label: "The journey continues…",
 	});
 
 	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
@@ -1064,10 +1064,23 @@ test("the Adventure tells one Bag cause at a time without covering the clearing"
 	assert.match(appSource, /const activeTag = resolved \? null : story\.journeyTags\[activeBeatIndex\]/);
 	assert.match(appSource, /key=\{beat\} className="adventure-field-note" role="status" aria-live="polite"/);
 	assert.match(appSource, /BAG_SLOT_LABELS\[activeTag\.slot\]/);
-	assert.match(appSource, /activeTag\?\.detail \?\? story\.journeyResult/);
 	assert.doesNotMatch(appSource, /className="adventure-cause-thread"/);
 	assert.doesNotMatch(appSource, /className="adventure-find"/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-field-note \{ animation: none; \}/);
+});
+
+test("the resolved cause sequence hands itself into the idle journey without revealing the Find", () => {
+	assert.match(appSource, /className="adventure-auto-handoff" role="status" aria-live="polite"/);
+	assert.match(appSource, /Rosie follows the \{lanternleaf \? "reflected leaves" : "warm light"\}/);
+	assert.match(appSource, /<strong>The journey continues…<\/strong>/);
+	assert.match(appSource, /adventureCauseBeat !== "resolved"/);
+	assert.match(appSource, /ACTIONS\.CONTINUE_ADVENTURE_STORY/);
+	assert.match(appSource, /REDUCED_ADVENTURE_HANDOFF_MS = 1800/);
+	assert.doesNotMatch(appSource, /What Rosie found/);
+	assert.doesNotMatch(appSource, /className="adventure-continue"/);
+	assert.doesNotMatch(appSource, />Let Rosie explore</);
+	assert.doesNotMatch(appSource, /story\.journeyHeadline/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-auto-handoff \{ animation: none; \}/);
 });
 
 test("the first Hand Trowel cause performs one separable dig", () => {
