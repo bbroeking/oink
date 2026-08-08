@@ -37,7 +37,10 @@ Near-Discovery result; the resolved handoff now stays in that same world-led
 grammar: the centered **The journey continues…** sign is gone, five
 route-colored lights open the path, the existing HUD names where Rosie is
 going, and one hidden live status preserves the same fact before the unchanged
-automatic idle-journey transition;
+automatic idle-journey transition; that transition now carries the same five
+warm or silver lights into Home before the existing note, return promise,
+Packed reminder, route, and prototype fast-forward settle in, so the Farm
+receives the Adventure as one continuous visual idea rather than a hard cut;
 second route now adds one dedicated native Rive reflection layer whose
 authored rise, luminous hold, and fade animate only the painted Lanternleaf
 trail, while reduced motion retains the static illustrated clue; the
@@ -404,6 +407,24 @@ timer, save fact, encounter, destination, or screen was added. The next visible
 weakness is the receiving side of the handoff: the enchanted clearing still
 cuts abruptly to the information-heavy idle Farm watch instead of feeling like
 one continuous journey away from Rosie.
+
+**Trail-lights-reach-Home checkpoint (August 8, 2026):** three receiving
+transitions were rendered at commit `ad883fe` on
+`codex/homegrown-v113-journey-entry-prototypes`: the existing hard cut, a
+route-tinted dusk dissolve, and a lights-arrive-first bridge. The light bridge
+won because it carries the exact five world objects the player was already
+following across the image change; the generic dissolve softened the edit but
+lost that causal continuity. Warm Glowroot or silver Lanternleaf lights now
+travel into the Farm path for 900 ms. The stable idle watch remains unchanged,
+but its existing note, Expected Home ticket, Packed reminder, route, and
+prototype fast-forward wait until the scene has had one quiet beat. This is
+ephemeral React presentation only: direct reload does not replay it, reduced
+motion paints the stable watch immediately, and no Rive trigger, binary, View
+Model value, reducer state, journey timestamp, route, reward, save fact,
+confirmation, loading screen, encounter, or destination was added. The next
+visible weakness is now the stable idle watch itself: note, return ticket,
+Packed stamp, route, and prototype control still form too many simultaneous
+paper surfaces for a calm at-a-glance wait.
 
 **Next-Seed checkpoint (August 7, 2026):** the remembered Position 2 now leads
 with one full-width **Clover Seed** decision that names its stock and its purpose

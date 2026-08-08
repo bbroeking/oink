@@ -371,11 +371,72 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 113. **v0.112 — The Trail Opens for Rosie (shipped):** remove the final centered
     journey caption and let route-colored path lights plus the existing HUD
     carry Rosie automatically into the idle journey.
+114. **v0.113 — The Trail Lights Reach Home (shipped):** carry those same lights
+    across the scene change, let Home breathe first, then settle the existing
+    idle information and prototype fast-forward into place.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.113 — The Trail Lights Reach Home — 2026-08-08
+
+- Began from v0.112's clean trail opening. The next frame still replaced the
+  clearing with the complete Farm watch, note, ticket, Packed stamp, route, and
+  fast-forward all at once, so the journey felt like a hard screen change.
+- Compared the existing cut, a route-tinted dusk dissolve, and a
+  lights-arrive-first bridge in the real Position 9 sequence. The light bridge
+  won because the same world object now crosses the edit; the dissolve was
+  smoother but generic.
+- Captured all three treatments and the decision at commit `ad883fe` on
+  `codex/homegrown-v113-journey-entry-prototypes`. Main contains no query
+  switcher, generic dissolve, new click, or permanent transition state.
+- Five warm Glowroot lights or silver Lanternleaf lights now travel into the
+  Farm path for 900 ms. The existing note, return time, Packed reminder, route,
+  and prototype fast-forward settle only after Home receives that visual beat.
+- The bridge is ephemeral React presentation. Direct reload and reduced motion
+  show the stable idle watch immediately. The reducer, six-hour timestamps,
+  route, reward, Rive binary, View Model, and authored motions are unchanged.
+
+### Local validation evidence
+
+- Played the real Glowroot transition with WebGL enabled at 500×844. Its early
+  frame had five warm lights, no note, no fast-forward, a ready Rive scene, and
+  no horizontal overflow; the note settled during the bridge, then the lights
+  left and fast-forward returned on the unchanged **Following the trail** watch.
+- Lanternleaf rendered the same bridge in `#c3ead6` and retained **Rosie is
+  following reflected leaves**. Reduced motion mounted no bridge, kept the note
+  fully visible, and kept fast-forward available on the stable watch.
+- `npm run prototype:homegrown:test` passes 83/83. `npm run
+  prototype:homegrown:build`, `npm run quality:loop`, `npm run quality:check`,
+  and `npm run verify:rive-homegrown` pass. The quality gate covers 157 layout
+  files, 324 sprites, security contracts, TypeScript, 78 layout tests, and 202
+  security tests. Watchman's existing recrawl notice and manual mobile Safari
+  checks remain warnings. `npm run verify:rive-web` remains blocked by the
+  separate uncommitted rewarded-ad native web import recorded in v0.112.
+
+### Public verification evidence
+
+- Feature commit `1bc11ce` deployed successfully through GitHub Pages run
+  `31283210770`.
+- The deployed player bytes match the checked-in artifacts exactly:
+  - player HTML: `bd61b1a8015936746c5c6ee7ca98890746c5a89dee9a27132b934c28e93160be`
+  - player JavaScript: `37b019125dd16b0a344b3434ec855e8f31033c8fbd18e6f119e3cf226acdefcc`
+  - player CSS: `bf3a63cc512982ba0d39f10b1c03512cf9b0c06d3c7178fe6497897450d56ecb`
+- Public rendered playback reproduces the quiet early Home frame, five warm or
+  silver route lights, delayed note and fast-forward, ready Rive scene, no
+  overflow, and the unchanged stable journey watch.
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&position=9&route=glowroot&v=1bc11ce`
+
+### Next highest-leverage weakness
+
+After the bridge settles, the stable idle watch still asks the player to parse
+the field note, separate return ticket, separate Packed stamp, three-step route,
+and prototype fast-forward together. Prototype a calmer one-glance hierarchy
+that preserves every fact without adding another drawer, screen, or journey
+state.
 
 ### v0.112 — The Trail Opens for Rosie — 2026-08-08
 
