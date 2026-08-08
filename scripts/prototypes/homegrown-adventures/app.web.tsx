@@ -38,10 +38,13 @@ import {
 } from "./homegrownRiveModel.mjs";
 import "./styles.css";
 
+// v0.82 throwaway question: how much explanatory UI should Position 9 keep?
+// Verdict after 360x780 comparison: B keeps one changing cause in view while
+// leaving Rosie, the path, and the physical Bag props readable.
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Cause Ledger", question: "Does the complete Bag ledger make the Adventure understandable?" },
+	B: { name: "Field Note", question: "Can one changing field note replace the stacked explanation?" },
+	C: { name: "Rosie Notices", question: "Can the story live beside Rosie while the environment stays primary?" },
 };
 
 const STAGE_COPY = {
@@ -671,10 +674,36 @@ function PackedLoadoutRibbon({ bag, farmStock }) {
 	);
 }
 
-function AdventureVignetteOverlay({ state, beat, onContinue }) {
+function AdventureVignetteOverlay({ state, beat, onContinue, variant }) {
 	const story = adventureStory(state);
 	const activeBeatIndex = BAG_SLOT_ORDER.indexOf(beat);
 	const resolved = beat === "resolved";
+	const activeTag = resolved ? null : story.journeyTags[activeBeatIndex];
+	if (variant === "B") {
+		return (
+			<section className="adventure-vignette-overlay adventure-vignette-field-note" data-adventure-cause-beat={beat} data-story-kind={story.kind} aria-label="Beyond-the-hedge journey">
+				<div className="adventure-single-note" role="status" aria-live="polite">
+					<i aria-hidden="true">{activeTag?.icon ?? "✦"}</i>
+					<small>{activeTag ? BAG_SLOT_LABELS[activeTag.slot] : "What Rosie found"}</small>
+					<strong>{activeTag?.name ?? story.journeyHeadline}</strong>
+					<p>{activeTag?.detail ?? story.journeyResult}</p>
+				</div>
+				<button type="button" className="adventure-continue" onClick={onContinue}>Let Rosie explore</button>
+			</section>
+		);
+	}
+	if (variant === "C") {
+		return (
+			<section className="adventure-vignette-overlay adventure-vignette-rosie-note" data-adventure-cause-beat={beat} data-story-kind={story.kind} aria-label="Beyond-the-hedge journey">
+				<div className="adventure-rosie-note" role="status" aria-live="polite">
+					<small>{activeTag ? `${BAG_SLOT_LABELS[activeTag.slot]} in action` : "Rosie notices"}</small>
+					<strong>{activeTag?.name ?? story.journeyHeadline}</strong>
+					<p>{activeTag?.detail ?? story.journeyResult}</p>
+				</div>
+				<button type="button" className="adventure-continue" onClick={onContinue}>Let Rosie explore</button>
+			</section>
+		);
+	}
 	return (
 		<section
 			className="adventure-vignette-overlay"
@@ -1590,6 +1619,7 @@ function App() {
 			{showingAdventureVignette && <AdventureVignetteOverlay
 				state={state}
 				beat={adventureCauseBeat}
+				variant={variant}
 				onContinue={() => act(visiblePresentation.action)}
 			/>}
 			{showingJourneyWatch && <JourneyWatchPanel

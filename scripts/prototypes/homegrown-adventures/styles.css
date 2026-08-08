@@ -339,6 +339,100 @@ html[data-reduce-motion="true"] .return-pack-prop { animation: none; }
 	z-index: 7;
 	pointer-events: none;
 }
+.adventure-single-note {
+	position: absolute;
+	top: 80px;
+	left: 25px;
+	right: 25px;
+	min-height: 92px;
+	padding: 12px 14px 11px 60px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	background: linear-gradient(155deg, rgba(239,211,159,.97), rgba(202,157,96,.97));
+	border: 2px solid #4d301d;
+	border-radius: 10px;
+	box-shadow: inset 0 0 0 2px rgba(255,240,197,.26), 3px 4px 0 rgba(22,13,8,.7);
+}
+.adventure-single-note i {
+	position: absolute;
+	left: 15px;
+	top: 50%;
+	width: 32px;
+	height: 42px;
+	display: grid;
+	place-items: center;
+	transform: translateY(-50%);
+	color: #fff4a2;
+	background: #684729;
+	border-radius: 50%;
+	box-shadow: 0 0 13px rgba(255,205,78,.58);
+	font-family: Georgia, serif;
+	font-size: 18px;
+	font-style: normal;
+}
+.adventure-single-note small,
+.adventure-rosie-note small {
+	color: #624029;
+	font-size: 8px;
+	font-weight: 950;
+	letter-spacing: .05em;
+	text-transform: uppercase;
+}
+.adventure-single-note strong,
+.adventure-rosie-note strong {
+	margin-top: 2px;
+	font-family: Caprasimo, Georgia, serif;
+	font-size: 15px;
+	font-weight: 400;
+	line-height: 1.05;
+}
+.adventure-single-note p,
+.adventure-rosie-note p {
+	margin: 4px 0 0;
+	color: #4b3829;
+	font-size: 9px;
+	font-weight: 800;
+	line-height: 1.18;
+}
+.adventure-rosie-note {
+	position: absolute;
+	top: 265px;
+	right: 16px;
+	width: 166px;
+	min-height: 88px;
+	padding: 10px 11px;
+	background: rgba(246,222,178,.96);
+	border: 2px solid #4d301d;
+	border-radius: 14px;
+	box-shadow: 3px 4px 0 rgba(22,13,8,.65);
+}
+.adventure-rosie-note::after {
+	content: "";
+	position: absolute;
+	left: 14px;
+	bottom: -13px;
+	width: 18px;
+	height: 18px;
+	background: rgba(246,222,178,.96);
+	border-right: 2px solid #4d301d;
+	border-bottom: 2px solid #4d301d;
+	transform: rotate(45deg);
+}
+.adventure-vignette-rosie-note[data-adventure-cause-beat="resolved"] .adventure-rosie-note {
+	top: 420px;
+	right: 20px;
+}
+.adventure-single-note,
+.adventure-rosie-note {
+	animation: adventure-note-beat 220ms cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes adventure-note-beat {
+	from { opacity: 0; transform: translateY(6px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+html[data-reduce-motion="true"] .adventure-single-note,
+html[data-reduce-motion="true"] .adventure-rosie-note { animation: none; }
 .adventure-cause-thread {
 	position: absolute;
 	top: 158px;
