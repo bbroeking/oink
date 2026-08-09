@@ -349,6 +349,21 @@ became a reference panel and the tickets made the map read like a supply order.
 No route recommendation, material rule, Bag cost, reward, save field, Rive
 source, Rive input, destination, or parallel inventory screen changed.
 
+**Provision-stock checkpoint (August 9, 2026):** The returning crop decision
+now shows how many harvested Provisions the Farm already holds at the same
+moment the player chooses what to grow. Each existing crop action keeps its
+verb and adds one quiet second line—**Grow Clover · 4 at Home** or **Tend
+Moonberries · 0 at Home** in the representative third-morning review—while
+duration, guaranteed yield, and route-specific Adventure use remain attached
+to the crop above. The counts come directly from reducer-owned `farmStock`, and
+the direct review now preserves the first complete loop's four remaining
+Clover Lunches instead of resetting both crop outputs to zero. A rendered
+three-treatment study compared crop-corner stamps, a shared pantry shelf, and
+action-attached counts. Action-attached counts won because they preserve crop
+art and the decision hierarchy; the shelf became inventory UI and compressed
+both choices. No crop, yield, timer, reward, route recommendation, Bag rule,
+save field, Rive source, Rive input, or parallel inventory screen changed.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

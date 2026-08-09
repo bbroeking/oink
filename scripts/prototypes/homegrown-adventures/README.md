@@ -1,5 +1,20 @@
 # Homegrown Adventures prototype
 
+The v0.131 Provision-stock pass lets returning crop choice answer **what do I
+already have?** without adding a pantry panel. The existing action band now
+keeps its verb and adds the reducer-owned count directly beneath it: **Grow
+Clover · 4 at Home** or **Tend Moonberries · 0 at Home** in the representative
+returning state. Duration, guaranteed yield, and route-specific Adventure use
+stay in their established hierarchy. The direct third-morning review now
+carries the truthful harvested Provision stock from the completed Glowroot
+loop instead of resetting both crop outputs to zero. A rendered three-treatment
+study at prototype commit `2abd88d` on
+`codex/homegrown-v131-provision-stock-prototypes` compared crop-corner stamps,
+a shared pantry shelf, and this action-plus-stock treatment. The action band
+won because the shelf became inventory UI and the stamps competed with crop
+art. No crop rule, reward, choice recommendation, Bag rule, save field, Rive
+input, or parallel inventory screen changed.
+
 The v0.130 material-use pass lets Rosie's map answer both halves of a useful
 route decision without becoming an inventory screen. Each place still leads
 with its name and time-of-day identity, followed by one replacement sentence:
