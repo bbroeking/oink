@@ -1891,6 +1891,14 @@ test("the completed day names Glowroot's lasting Home promise before the next mo
 });
 
 test("the completed second Adventure replaces the old ceremony with Lanternleaf memory", () => {
+	const directReview = createPrototypeState(11, {
+		now: at,
+		adventureRoute: "lanternleaf",
+	});
+	assert.equal(directReview.prototypePosition, 11);
+	assert.equal(directReview.daysCompleted, 1);
+	assert.ok(directReview.fieldGuide.includes(SECOND_ADVENTURE_OPPORTUNITY.discoveryName));
+
 	let state = throughSecondBag();
 	state = packAdventure(state, {
 		provision: "clover-lunch",
