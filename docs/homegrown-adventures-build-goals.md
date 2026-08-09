@@ -215,6 +215,19 @@ world-first, remembered mornings retain the compact Home pocket, and reducer
 state, rewards, inventory, saves, crop rules, Rive source, View Model, and
 authored motions are unchanged.
 
+**Rosie-first purpose checkpoint (August 8, 2026):** The remembered next
+morning now lets Rosie's authored Tickle introduce the named Adventure before
+the existing crop chooser asks what to grow. A three-treatment study compared
+the immediate chooser, one compact **Rosie's curiosity** promise, and choices
+attached directly to the beds. The Rosie-first promise won because it keeps
+Rosie and the changed Farm visible without weakening the already-validated
+crop duration, yield, and route-cause hierarchy. It clears automatically after
+1.2 seconds (900 ms as a static reduced-motion beat), requires no extra click,
+and does not replay on direct Position 2 reload. Both Adventure routes use
+their existing names and environmental clues; reducer state, saves, crops,
+inventory, rewards, Rive source, View Model, and authored motions are
+unchanged.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

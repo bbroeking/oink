@@ -401,11 +401,84 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 122. **v0.121 — The Barn Remembers (shipped):** let the completed day name
     Glowroot's lasting Home consequence in one calm storybook promise before
     the player begins another day.
+123. **v0.122 — Rosie Reveals the Purpose (shipped):** let the authored morning
+    Tickle and named route own one short Rosie-first beat before the existing
+    crop choice asks the player what to grow.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.122 — Rosie Reveals the Purpose — 2026-08-08
+
+- Continued the chronological replay from completed Position 11 through
+  **Begin another day**, the remembered Home morning, Rosie's Tickle, and both
+  second-day crop choices. The new route, its two crops, their distinct jobs,
+  and the Glowroot cause were already truthful, but the complete crop chooser
+  appeared on the same frame as the authored Tickle. It covered most of Rosie
+  before her response could introduce why the player was farming again.
+- Preserved the route receipt hierarchy already validated by the v0.97 and
+  v0.105 studies, then compared three runnable handoffs on the real completed
+  day: the immediate chooser, **Rosie Introduces It**, and crop choices attached
+  directly to the beds. The Rosie-first handoff won. The baseline erased the
+  character beat; the bed-anchored controls covered Rosie's face and weakened
+  the crops' duration and purpose hierarchy. The isolated study and verdict
+  remain at prototype commit `dbacba7` on
+  `codex/homegrown-v122-rosie-purpose-handoff-prototypes`; no switcher shipped.
+- A valid morning Tickle now reveals one compact **Rosie's curiosity** promise
+  with the exact route name and environmental clues while Rosie and the
+  remembered Farm remain visible. After 1.2 seconds, the unchanged crop chooser
+  arrives automatically. Reduced motion shows the same static promise for 900
+  ms. There is no extra click, quest layer, new reward rule, or persisted state.
+- Both route variants use their existing authored facts: **A Glow Beneath the
+  Hedge · Until dusk · soft soil · carry it Home** and **Lights Past the Open
+  Gate · Nightfall · reflected leaves · gentle wrap**. Direct Position 2 reload
+  does not replay the transient handoff, and position-jump controls cannot
+  interrupt it.
+
+### Local validation evidence
+
+- Replayed completed Position 11 into the second morning. At 220 ms after the
+  Tickle, the rendered screen showed Rosie, the Glowroot bed, open hedge, bell,
+  frog, rooted Moonberries, and **Rosie's curiosity · Lights Past the Open
+  Gate** without the crop chooser. After the handoff, the existing Clover and
+  Moonberry choices plus **Glowroot opened this route** returned unchanged.
+- Replayed the first route and confirmed its different route name and clues.
+  Replayed Clover into **Clover Lunch ×3 · ready in 4h** and Moonberries into
+  **Moonberries ×4 · ready in 8h**. Reloading Position 2 skipped the transient;
+  reduced motion kept the static purpose readable before the chooser.
+- `npm run prototype:homegrown:test` passes 88/88, including the new
+  Rosie-before-choice regression. `npm run verify:rive-homegrown`, `npm run
+  quality:loop`, and `npm run quality:check` pass; the repository gate covers
+  157 layout files, 324 sprites, TypeScript, 78 layout assertions, and 202
+  security assertions. Watchman's existing recrawl notice and manual mobile
+  Safari motion, reduced-motion, silhouette, and attachment checks remain
+  warnings.
+
+### Public verification evidence
+
+- Feature commit `6fe2bed` deployed successfully through GitHub Pages run
+  `31289587465`.
+- Exact checked-in and deployed checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `7be5185df1dae3f8cd9d86ccd5ec042ce4794539c47bc3f4fe98fa57b34dc946`
+  - player JavaScript: `f95b0d0f0a2fe20042028ec6e62326267ac10d022b61cf4e8a0f72cfe50da107`
+  - player CSS: `6aff439552e5f68d6b08115fbe6051259a345d4d5c6d8caaeab000e955f2df14`
+- Direct public fetches match all four hashes. The rendered public Position 11
+  continues into the remembered morning, increments the Tickle, shows the exact
+  **Lights Past the Open Gate** curiosity before the crop controls, and then
+  restores the unchanged two-crop decision without interaction failure.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=11&v=6fe2bed`
+
+### Next highest-leverage weakness
+
+Continue both second-day crop paths through planting, growth, Harvest, and Bag
+preparation. Determine whether Clover's **stay longer** purpose and
+Moonberries' **reveal reflections** purpose remain recognizable when the player
+packs a Provision, rather than assuming the Position 2 explanation survives
+the wait.
 
 ### v0.121 — The Barn Remembers — 2026-08-08
 
