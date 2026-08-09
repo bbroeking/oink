@@ -212,6 +212,9 @@ function HomegrownRiveSceneImpl({
 
 	useEffect(() => {
 		if (!rive) return;
+		if (new URLSearchParams(window.location.search).has("fragmentStudy")) {
+			(window as typeof window & { __homegrownRiveFragmentStudy?: typeof rive }).__homegrownRiveFragmentStudy = rive;
+		}
 		let frame = 0;
 		const syncViewport = () => {
 			cancelAnimationFrame(frame);
@@ -219,6 +222,9 @@ function HomegrownRiveSceneImpl({
 		};
 		window.addEventListener("resize", syncViewport);
 		return () => {
+			if (new URLSearchParams(window.location.search).has("fragmentStudy")) {
+				delete (window as typeof window & { __homegrownRiveFragmentStudy?: typeof rive }).__homegrownRiveFragmentStudy;
+			}
 			window.removeEventListener("resize", syncViewport);
 			cancelAnimationFrame(frame);
 		};

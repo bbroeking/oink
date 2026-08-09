@@ -199,6 +199,14 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 	transform-origin: 0 0;
 	transform: scale(.78);
 }
+/* Throwaway v0.142 study: three bounded treatments for the top-edge Rive fragment. */
+.phone[data-fragment-study="A"].adventure-vignette-open .homegrown-rive-canvas {
+	clip-path: inset(15px 0 0);
+}
+.phone[data-fragment-study="C"].adventure-vignette-open .homegrown-rive-canvas {
+	-webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 10px, #000 18px, #000 100%);
+	mask-image: linear-gradient(to bottom, transparent 0, transparent 10px, #000 18px, #000 100%);
+}
 .adventure-vignette-open .homegrown-rive-scene.authored { z-index: 2; }
 .adventure-vignette-backdrop {
 	position: absolute;
@@ -240,6 +248,18 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 }
 .phone[data-adventure-opportunity="lights-past-open-gate"] .adventure-bed-mask {
 	background-image: url("./assets/homegrown-adventures/adventure-lanternleaf-path.webp");
+}
+.phone[data-fragment-study="B"].adventure-vignette-open .adventure-bed-mask::before {
+	content: "";
+	position: absolute;
+	left: 120px;
+	top: -304px;
+	width: 44px;
+	height: 24px;
+	background-image: inherit;
+	background-position: -140px -194px;
+	background-size: 390px 844px;
+	border-radius: 8px;
 }
 .adventure-provision-prop {
 	position: absolute;

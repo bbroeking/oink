@@ -1,5 +1,8 @@
 # Homegrown Adventures prototype
 
+Rendered Position 9 Rive fragment comparison and the selected authored-source
+repair: [RIVE_FRAGMENT_STUDY.md](./RIVE_FRAGMENT_STUDY.md).
+
 The v0.141 Carrier-consequence pass makes the final prepared-item cause fully
 readable inside the existing quiet HUD. The primary line now states what comes
 Home—**Glowroot is coming Home**, **Lanternleaf is coming Home**, or **Trail

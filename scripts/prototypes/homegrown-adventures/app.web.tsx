@@ -274,6 +274,13 @@ function readVariant() {
 	return Object.hasOwn(VARIANTS, value) ? value : "A";
 }
 
+const FRAGMENT_STUDY_VARIANTS = new Set(["BASELINE", "A", "B", "C"]);
+
+function readFragmentStudyVariant() {
+	const value = new URLSearchParams(window.location.search).get("fragmentStudy")?.toUpperCase();
+	return FRAGMENT_STUDY_VARIANTS.has(value) ? value : "BASELINE";
+}
+
 function useVariant() {
 	const [variant, setVariantState] = useState(readVariant);
 	const setVariant = useCallback((next) => {
@@ -1814,6 +1821,7 @@ function App() {
 	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
 	const repeatAdventure = initialSearch.get("repeat") === "1";
 	const reviewMode = loopMode || hasRequestedPosition;
+	const fragmentStudyVariant = readFragmentStudyVariant();
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
 			const persistedReview = deserializeState(localStorage.getItem(HOMEGROWN_REVIEW_STORAGE_KEY), {
@@ -1945,10 +1953,7 @@ function App() {
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
 	const showDepartureLoadout = showPackedLoadout && position === 8;
 	const sceneRiveViewModel = useMemo(() => {
-		if (
-			!showingAdventureVignette ||
-			opportunity.id !== SECOND_ADVENTURE_OPPORTUNITY.id
-		) return riveModel.viewModel;
+		if (!showingAdventureVignette) return riveModel.viewModel;
 		return {
 			...riveModel.viewModel,
 			bedOneState: "empty",
@@ -1960,7 +1965,7 @@ function App() {
 			hedgeCrossingOpen: false,
 			hedgeBellEarned: false,
 		};
-	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
+	}, [riveModel.viewModel, showingAdventureVignette]);
 	const renderedRiveViewModel = bagHandoff?.phase === "attaching"
 		? { ...sceneRiveViewModel, rosieAction: "pack", satchelEquipped: true }
 		: sceneRiveViewModel;
@@ -2320,6 +2325,7 @@ function App() {
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
 			data-adventure-pack={showingAdventureVignette ? state.bag?.pack ?? "none" : undefined}
 			data-adventure-beat={showingAdventureVignette ? adventureCauseBeat : undefined}
+			data-fragment-study={showingAdventureVignette ? fragmentStudyVariant : undefined}
 			data-return-kind={showingReturnReward ? returnKind : undefined}
 			data-return-tool={showingReturnReward ? state.bag?.tool ?? "none" : undefined}
 			data-return-pack={showingReturnReward ? state.bag?.pack ?? "none" : undefined}
