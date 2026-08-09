@@ -59,6 +59,16 @@ uses 2.6° → -3.8° → 5.2° → 2.6° at frames 42, 49, 55, and 60; opacity 
 answer Rosie's approach without revealing the full later Home consequence.
 React still owns the one-second handoff and reduced-motion skip.
 
+The v0.117 fitted-attachment checkpoint keeps the same `rosie_satchel` group,
+constraints, clover clasp, and runtime names while moving the stable Bag to a
+compact screen-left hip pose. `Rosie Pack` performs a small rise and settles to
+that endpoint, `Rosie Return` gives it one restrained weight shift, and
+`Rosie Departure` counter-swings around the same attachment while Rosie walks.
+The chosen treatment came from a rendered chest / hip / back comparison against
+`end-to-end-flow/rosie-v3/08-departure.png`; the back treatment is intentionally
+deferred until Rosie has a three-quarter pose. React still owns
+`satchelEquipped`, item identity, progression, persistence, and reduced motion.
+
 The Living Barn checkpoint adds `bed_one_crop_rig` over the first Kitchen
 Patch bed. `Clover Bed Empty`, `Clover Bed Growing`, and `Clover Bed Ready`
 provide deterministic persisted poses; `Clover Plant`,

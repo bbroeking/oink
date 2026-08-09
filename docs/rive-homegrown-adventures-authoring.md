@@ -272,6 +272,19 @@ must not reveal the later flowering Home reward before or after departure.
 The browser adds only the late dusk wash; React continues to own the transition
 clock and reduced-motion path.
 
+The v0.117 fitted-attachment pass reuses the exact `rosie_satchel` group and
+runtime contract after a three-treatment rendered study. The stable Design pose
+is `(-72, -18)`, `125% × 100%`, and `90°`; Pack and Return settle at
+`(-72, -43)`, `125% × 100%`, with their existing opacity and bounded emphasis.
+Pack rises from `120% × 90%` through a `140% × 118%` peak before settling.
+Return moves through `132% × 106%` and `120% × 98%` before the same endpoint.
+Departure keeps the established body and hedge keys while the Bag rotates
+through `83° / 87° / 80° / 86° / 83°` at frames `0 / 18 / 36 / 54 / 60`.
+The screen-left hip treatment clears Rosie's face and front legs on the current
+front-facing rig; the rejected back-sling study remains prototype evidence for
+a future three-quarter character pose. React still owns every equipment and
+progression fact.
+
 The v0.5 Living Barn checkpoint adds a native `bed_one_crop_rig` aligned to
 Kitchen Patch bed one. Its soil cover, clover group, and sparkle group share the
 fixed 390×844 artboard coordinates, so the crop changes without moving the

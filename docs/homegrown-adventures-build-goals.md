@@ -150,6 +150,19 @@ authored response, then reveals the guaranteed-yield Harvest Rhythm; crop
 timers, no-spoil behavior, yields, bonuses, stock, save facts, Rive source, and
 authored motions are unchanged.
 
+**Fitted-satchel checkpoint (August 8, 2026):** Position 8 now carries the
+existing native clover Bag at Rosie's screen-left hip instead of laying it
+across her chest. A three-treatment rendered study compared the previous chest
+tile, this compact hip attachment, and a back sling against the approved
+departure concept; the hip treatment alone stayed readable on canonical
+front-facing Rosie without covering her face, front legs, or farming beds.
+The same `rosie_satchel` group now rises and settles during Pack, counter-swings
+through the established hedge crossing, shifts once with Return, survives
+reload, and holds under reduced motion. React's `satchelEquipped` fact, Bag
+choices, resources, Adventure outcome, persistence, and accessibility remain
+authoritative; no second Bag, equipment screen, or animation-owned game state
+was added.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

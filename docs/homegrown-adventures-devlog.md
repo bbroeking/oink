@@ -384,11 +384,88 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 117. **v0.116 — The Ready Crop Leads (shipped):** let the crop announce its
     exact harvest before Rosie's affectionate Tickle opens the established
     personal rhythm, removing a misleading welcome-home beat from Farm growth.
+118. **v0.117 — The Satchel Belongs to Rosie (shipped):**
+    replace the remaining chest-tile attachment with a compact screen-left hip
+    satchel that stays registered through Pack, departure, Return, reload, and
+    reduced motion without changing the Bag system or Rosie's canonical rig.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.117 — The Satchel Belongs to Rosie — 2026-08-08
+
+- Began at the exact weakness left by v0.116: Position 8's Bag was truthful but
+  still read as a flat rectangle laid over Rosie's chest. The stable packed
+  pose, authored Pack one-shot, full departure, Return, reload, and
+  reduced-motion pose were all played before changing the source.
+- Compared three runnable attachment treatments against
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/08-departure.png`:
+  the current chest Bag, a compact screen-left hip satchel, and a back sling.
+  The hip satchel won because it clears Rosie's face, snout, front legs, and
+  farming beds while remaining readable at phone scale. The back sling looked
+  like a loose tail on the current front-facing character and is reserved for
+  a future three-quarter pose. The isolated evidence and verdict remain at
+  prototype commit `0837f9a` on
+  `codex/homegrown-v117-satchel-prototypes`; no experiment switcher shipped.
+- Re-authored the existing native `rosie_satchel` group in the paid Rive file
+  instead of adding a DOM duplicate or another equipment system. Its stable
+  pose now sits at Rosie's screen-left hip; Pack gives it one compact rise and
+  settle, Return gives it one restrained weight shift, and Departure keeps a
+  small counter-swing while the body crosses toward the hedge.
+- React's `satchelEquipped` fact still owns whether the Bag exists. Item
+  identity, inventory, packing costs, deterministic Adventure results,
+  persistence, timers, and accessible controls are unchanged. Reload and
+  reduced motion hold the same equipped endpoint without replaying the
+  one-shots.
+- Rendered QA exposed one separate lab defect: the **Equip the Bag** study had
+  not entered the reducer's newer Position 7 Bag-selection state, so Pack was
+  correctly rejected and the lab falsely showed a hidden Bag. The study now
+  performs `OPEN_BAG_SELECTION` before Pack, with a regression assertion.
+
+### Local validation evidence
+
+- The real Position 8 reload reports the authored asset `ready`,
+  `satchelEquipped=true`, and normal breathing with the compact hip pose. The
+  actual **Follow the glow** action reports `motion=departure` and
+  `lastPerformedMotion=departure`; the animation lab shows the Bag remaining
+  attached through early and late walk frames.
+- The real fast-forward and **Welcome Rosie home** path reports
+  `lastPerformedMotion=return`, keeps the satchel clear of the named Glowroot
+  and returned-material table, and settles without changing rewards. Reduced
+  motion reports `motion=reduced` while retaining the same equipped pose.
+- `npm run prototype:homegrown:test` passes 85/85, including the repaired
+  Pack-study sequence. `npm run verify:rive-homegrown` passes the 390×844
+  header and all 60 authored names. `npm run prototype:homegrown:build`,
+  `npm run quality:loop`, and `npm run quality:check` pass; the repository gate
+  covers 157 layout files, 324 sprites, TypeScript, 78 layout assertions, and
+  202 security assertions. Watchman's existing recrawl notice and manual
+  mobile Safari checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `8a14c8b` deployed successfully through GitHub Pages run
+  `31286926245`.
+- Exact checked-in checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `b9ff0058b840c20e8e530d54bdea9ee31ad292077a6b69121abc1ca972a8abc4`
+  - player JavaScript: `090f0e8883b19d454fc0e24444db8cf465a99f83ca5fb97fbd805466a282e8f8`
+  - player CSS: `305257d0316d43548363f27d51049db1f240b74968929234be90a158f81a0d30`
+- Direct public fetches match all four hashes. The rendered public Position 8
+  reports `asset=authored`, `status=ready`, normal `motion=breathing`, and
+  `satchelEquipped=true`; **Follow the glow** immediately reports
+  `motion=departure` and `lastPerformedMotion=departure` while keeping the Bag
+  equipped.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=8&v=8a14c8b`
+
+### Next highest-leverage weakness
+
+Continue the chronological replay inside the first causal Adventure beat.
+Determine whether the selected Pack remains a legible physical capability once
+Rosie enters the clearing, rather than assuming that the departure pose or HUD
+labels prove the Adventure itself.
 
 ### v0.116 — The Ready Crop Leads — 2026-08-08
 
