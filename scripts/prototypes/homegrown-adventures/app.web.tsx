@@ -9,10 +9,12 @@ import { AdventureGlowrootRive } from "../../../components/prototypes/homegrown-
 import { LanternleafReflectionsRive } from "../../../components/prototypes/homegrown-adventures/LanternleafReflectionsRive.web";
 import {
 	ACTIONS,
+	adventureBaseReturn,
 	adventureHomewardAt,
 	adventureJourneyPhase,
 	adventureOpportunity,
 	adventureStory,
+	adventureToolReturnBonus,
 	BAG_ITEMS,
 	BAG_SLOT_ORDER,
 	bagItem,
@@ -33,7 +35,6 @@ import {
 	serializeState,
 	SECOND_ADVENTURE_OPPORTUNITY,
 	STAGES,
-	toolReturnBonus,
 	WORLD_TARGETS,
 } from "./game.mjs";
 import {
@@ -1186,15 +1187,19 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 	const lanternleafDiscovery = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const revisitingKnownRoute = Boolean(state.selectedAdventureOpportunityId);
 	const guide = nearDiscovery ? nearDiscoveryGuide(state) : null;
+	const baseReturn = nearDiscovery ? null : adventureBaseReturn(state);
 	const packReward = bagReturnReward(state.bag?.pack ?? null);
-	const toolBonus = nearDiscovery ? null : toolReturnBonus(state.bag?.tool ?? null);
-	const glowrootAmount = 1 + (toolBonus?.itemId === "glowroot-seed" ? toolBonus.amount : 0);
+	const toolBonus = nearDiscovery ? null : adventureToolReturnBonus(state, state.bag?.tool ?? null);
+	const primaryReturnAmount = (baseReturn?.amount ?? 0) + (toolBonus?.itemId === baseReturn?.itemId ? toolBonus.amount : 0);
 	const willowFiberAmount = 2 + (toolBonus?.itemId === "willow-fiber" ? toolBonus.amount : 0);
 	const practicalReward = nearDiscovery
 		? { name: "Compost", amount: 1 }
 		: packReward ?? { name: "Carrier supply", amount: 0 };
 	return (
 		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} data-tool-bonus={toolBonus?.itemId ?? "none"} aria-label="Rosie's return rewards">
+			{revisitingKnownRoute && !nearDiscovery && (
+				<span className="return-pack-supply-seed return-familiar-seed" aria-hidden="true" />
+			)}
 			{!nearDiscovery && packReward?.itemId === "clover-seed" && (
 				<span className="return-pack-supply return-pack-supply-seed" aria-hidden="true" />
 			)}
@@ -1210,9 +1215,9 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 				<small>{nearDiscovery
 					? guide.story
 						: revisitingKnownRoute
-							? `${opportunity.discoveryName} is already mapped · this outing added useful Farm supplies`
+							? `${opportunity.name} is familiar · Clover Seed can begin the next Adventure`
 						: lanternleafDiscovery
-							? `Glowroot revealed a repeatable path · ${glowrootAmount === 1 ? "one Seed stays" : "two Seeds stay"} in Farm stock`
+							? `Glowroot revealed a repeatable path · ${primaryReturnAmount === 1 ? "one Seed stays" : "two Seeds stay"} in Farm stock`
 							: "A new living Crop for Home"}</small>
 				{nearDiscovery && <div className="return-guide-next">
 					<span>Try next time</span>
@@ -1223,10 +1228,10 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 				<strong className="return-stock-title">{nearDiscovery ? "Supplies brought Home" : "Added to Farm stock"}</strong>
 				<div>
 					{!nearDiscovery && <span>
-						<b>Glowroot Seed</b>
-						<strong>+{glowrootAmount}</strong>
-						{toolBonus?.itemId === "glowroot-seed" && (
-							<small className="return-stock-cause">Find +1 · Trowel +1</small>
+						<b>{baseReturn.name}</b>
+						<strong>+{primaryReturnAmount}</strong>
+						{toolBonus?.itemId === baseReturn.itemId && (
+							<small className="return-stock-cause">{revisitingKnownRoute ? "Route +1" : "Find +1"} · Trowel +1</small>
 						)}
 					</span>}
 					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>

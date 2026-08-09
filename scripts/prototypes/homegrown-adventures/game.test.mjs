@@ -2030,6 +2030,10 @@ test("the direct repeat-Home review truthfully models either familiar route", ()
 	assert.equal(lanternleaf.selectedAdventureOpportunityId, SECOND_ADVENTURE_OPPORTUNITY.id);
 	assert.equal(adventureOpportunity(glowroot), FIRST_ADVENTURE_OPPORTUNITY);
 	assert.equal(adventureOpportunity(lanternleaf), SECOND_ADVENTURE_OPPORTUNITY);
+	for (const state of [glowroot, lanternleaf]) {
+		assert.equal(state.farmStock["clover-seed"], 4);
+		assert.equal(state.farmStock["glowroot-seed"], 0);
+	}
 
 	assert.match(appSource, /const repeatAdventure = initialSearch\.get\("repeat"\) === "1";/);
 	assert.match(appSource, /const hasRequestedAdventureRoute = initialSearch\.has\("route"\);/);
@@ -2065,14 +2069,19 @@ test("revisiting a known route returns supplies without pretending the Discovery
 	state = settleState(state, state.departureReadyAt);
 	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
 	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	const stockBeforeReturn = { ...state.farmStock };
 	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
 
 	assert.equal(state.stage, STAGES.GLOWROOT_RETURNED);
 	assert.equal(state.selectedAdventureOpportunityId, FIRST_ADVENTURE_OPPORTUNITY.id);
 	assert.equal(playerPresentation(state).objective, "A Glow Beneath the Hedge revisited");
 	assert.equal(state.fieldGuide.filter((entry) => entry === FIRST_ADVENTURE_OPPORTUNITY.discoveryName).length, 1);
+	assert.equal(state.farmStock["clover-seed"], stockBeforeReturn["clover-seed"] + 2);
+	assert.equal(state.farmStock["glowroot-seed"], stockBeforeReturn["glowroot-seed"]);
+	assert.match(adventureStory(state).tags[1].detail, /another Clover Seed/);
 	assert.match(appSource, /revisitingKnownRoute \? "Route revisited"/);
-	assert.match(appSource, /this outing added useful Farm supplies/);
+	assert.match(appSource, /Clover Seed can begin the next Adventure/);
+	assert.match(appSource, /return-pack-supply-seed return-familiar-seed/);
 
 	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
 	assert.equal(state.cycleComplete, true);
@@ -2163,7 +2172,7 @@ test("the Near-Discovery Homecoming separates Field Guide knowledge from Farm su
 	assert.match(appSource, /<span className="return-card-eyebrow">\{nearDiscovery \? "Field Guide updated"/);
 	assert.match(appSource, /<b>\{guide\.next\}<\/b>/);
 	assert.match(appSource, /nearDiscovery \? "Supplies brought Home" : "Added to Farm stock"/);
-	assert.match(appSource, /\{!nearDiscovery && <span>\s*<b>Glowroot Seed<\/b>/);
+	assert.match(appSource, /\{!nearDiscovery && <span>\s*<b>\{baseReturn\.name\}<\/b>/);
 	assert.match(appSource, /nearDiscovery \? guide\.action : actionLabel/);
 	assert.match(appSource, /initialFocus=\{state\.nearDiscoveryReason \?\? "provision"\}/);
 	assert.match(stylesSource, /\.return-stock-ledger-near > div \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/);
@@ -2175,7 +2184,8 @@ test("the complete Homecoming separates the named Discovery from repeatable Farm
 	assert.match(appSource, /lanternleafDiscovery \? opportunity\.discoveryName : "Glowroot"/);
 	assert.match(appSource, /: "A new living Crop for Home"/);
 	assert.doesNotMatch(appSource, /lanternleafDiscovery \? opportunity\.discoveryName : `Glowroot Seed/);
-	assert.match(appSource, /<b>Glowroot Seed<\/b>\s*<strong>\+\{glowrootAmount\}<\/strong>/);
+	assert.match(appSource, /<b>\{baseReturn\.name\}<\/b>\s*<strong>\+\{primaryReturnAmount\}<\/strong>/);
+	assert.match(stylesSource, /\.return-pack-supply-seed\.return-familiar-seed/);
 	assert.match(stylesSource, /\.return-discovery-plaque:not\(\.is-near-discovery\) \{/);
 	assert.match(stylesSource, /\.return-stock-ledger:not\(\.return-stock-ledger-near\) \{/);
 	assert.doesNotMatch(appSource, /HomecomingHierarchySwitcher|returnVariant|homecomingTreatment/);

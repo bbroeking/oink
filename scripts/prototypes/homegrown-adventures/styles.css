@@ -1164,6 +1164,10 @@ html[data-reduce-motion="true"] .journey-watch.is-entering .journey-watch-lights
 	text-align: center;
 	text-shadow: 1px 1px var(--paper);
 }
+.return-pack-supply-seed.return-familiar-seed {
+	left: 160px;
+	transform: rotate(3deg) scale(.9);
+}
 .return-tool-bonus {
 	position: absolute;
 	z-index: 2;

@@ -304,11 +304,26 @@ export function toolReturnBonus(itemId) {
 	return TOOL_RETURN_BONUSES[itemId] ?? null;
 }
 
+export function adventureBaseReturn(state) {
+	return state?.selectedAdventureOpportunityId
+		? { itemId: "clover-seed", name: "Clover Seed", amount: 1 }
+		: { itemId: "glowroot-seed", name: "Glowroot Seed", amount: 1 };
+}
+
+export function adventureToolReturnBonus(state, itemId) {
+	const bonus = toolReturnBonus(itemId);
+	if (state?.selectedAdventureOpportunityId && bonus?.itemId === "glowroot-seed") {
+		return { itemId: "clover-seed", name: "Clover Seed", amount: bonus.amount };
+	}
+	return bonus;
+}
+
 export function adventureStory(state) {
 	const bag = state.bag ?? EMPTY_BAG;
 	const missingSlot = BAG_SLOT_ORDER.find((slot) => bag[slot] == null) ?? null;
 	const opportunity = adventureOpportunity(state);
 	const followingLanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const revisitingKnownRoute = Boolean(state.selectedAdventureOpportunityId);
 	const firstDetails = {
 		provision: {
 			"clover-lunch": "stayed exploring until dusk",
@@ -484,7 +499,9 @@ export function adventureStory(state) {
 				slot,
 				name: selected?.name ?? `No ${BAG_SLOT_PUBLIC_NAMES[slot]}`,
 				icon: selected?.icon ?? "·",
-				detail: missingSlot
+				detail: missingSlot === null && revisitingKnownRoute && slot === "tool" && selected?.id === "hand-trowel"
+					? "looks for Clover Seed that can begin the next Provision crop"
+					: missingSlot
 					? nearJourneyDetails[missingSlot][slot]
 					: journeyDetails[slot][selected?.id ?? "empty"],
 			};
@@ -495,7 +512,11 @@ export function adventureStory(state) {
 				slot,
 				name: selected?.name ?? `No ${BAG_SLOT_PUBLIC_NAMES[slot]}`,
 				icon: selected?.icon ?? "·",
-				detail: missingSlot
+				detail: missingSlot === null && revisitingKnownRoute && slot === "tool" && selected?.id === "hand-trowel"
+					? followingLanternleaf
+						? "found another Clover Seed beside the reflected path"
+						: "found another Clover Seed beside the warm roots"
+					: missingSlot
 					? nearDiscoveryDetails[missingSlot][slot]
 					: details[slot][selected?.id ?? "empty"],
 			};
@@ -697,6 +718,24 @@ export function createPrototypeState(position, {
 		...returnedStock,
 		"glowroot-seed": returnedStock["glowroot-seed"] - 1,
 	};
+	const familiarReviewState = {
+		...packed,
+		selectedAdventureOpportunityId: adventureRoute === "lanternleaf"
+			? SECOND_ADVENTURE_OPPORTUNITY.id
+			: FIRST_ADVENTURE_OPPORTUNITY.id,
+	};
+	const familiarReturnedStock = { ...packed.farmStock };
+	for (const reward of [
+		adventureBaseReturn(familiarReviewState),
+		bagReturnReward(packed.bag?.pack ?? null),
+		adventureToolReturnBonus(familiarReviewState, packed.bag?.tool ?? null),
+		{ itemId: "willow-fiber", amount: 2 },
+	]) {
+		if (reward !== null) {
+			familiarReturnedStock[reward.itemId] =
+				(familiarReturnedStock[reward.itemId] ?? 0) + reward.amount;
+		}
+	}
 
 	const presets = {
 		1: base,
@@ -779,6 +818,7 @@ export function createPrototypeState(position, {
 			selectedAdventureOpportunityId: adventureRoute === "lanternleaf"
 				? SECOND_ADVENTURE_OPPORTUNITY.id
 				: FIRST_ADVENTURE_OPPORTUNITY.id,
+			farmStock: familiarReturnedStock,
 			fieldGuide: [...new Set([
 				...presets[target].fieldGuide,
 				...FIRST_ADVENTURE_OPPORTUNITY.fieldGuideEntries,
@@ -839,9 +879,12 @@ function completeCropHarvest(state, { rhythmBonus = false } = {}, now) {
 	);
 }
 
-function prototypeBagStockAdjustment(position, bag = REVIEW_BAG) {
+function prototypeBagStockAdjustment(position, bag = REVIEW_BAG, familiarRoute = false) {
 	const adjustment = { ...EMPTY_FARM_STOCK };
 	const emptySlot = BAG_SLOT_ORDER.find((slot) => bag?.[slot] == null) ?? null;
+	const previewState = familiarRoute
+		? { selectedAdventureOpportunityId: FIRST_ADVENTURE_OPPORTUNITY.id }
+		: {};
 	const add = (reward, direction = 1) => {
 		if (reward === null) return;
 		adjustment[reward.itemId] += reward.amount * direction;
@@ -862,16 +905,16 @@ function prototypeBagStockAdjustment(position, bag = REVIEW_BAG) {
 	if (position >= 10) {
 		if (emptySlot !== null) {
 			add(bagReturnReward(REVIEW_BAG.pack), -1);
-			add(toolReturnBonus(REVIEW_BAG.tool), -1);
-			add({ itemId: "glowroot-seed", amount: 1 }, -1);
+			add(adventureToolReturnBonus(previewState, REVIEW_BAG.tool), -1);
+			add(adventureBaseReturn(previewState), -1);
 			add({ itemId: "willow-fiber", amount: 2 }, -1);
 			add({ itemId: "compost", amount: 1 }, 1);
 			add({ itemId: "willow-fiber", amount: 1 }, 1);
 		} else {
 			add(bagReturnReward(REVIEW_BAG.pack), -1);
 			add(bagReturnReward(bag.pack ?? null), 1);
-			add(toolReturnBonus(REVIEW_BAG.tool), -1);
-			add(toolReturnBonus(bag.tool ?? null), 1);
+			add(adventureToolReturnBonus(previewState, REVIEW_BAG.tool), -1);
+			add(adventureToolReturnBonus(previewState, bag.tool ?? null), 1);
 		}
 	}
 
@@ -1402,11 +1445,12 @@ export function homegrownReducer(state, action) {
 					now,
 				);
 			}
+			const baseReturn = adventureBaseReturn(state);
 			const returnReward = bagReturnReward(state.bag?.pack ?? null);
-			const toolBonus = toolReturnBonus(state.bag?.tool ?? null);
+			const toolBonus = adventureToolReturnBonus(state, state.bag?.tool ?? null);
 			const farmStock = {
 				...state.farmStock,
-				"glowroot-seed": (state.farmStock?.["glowroot-seed"] ?? 0) + 1,
+				[baseReturn.itemId]: (state.farmStock?.[baseReturn.itemId] ?? 0) + baseReturn.amount,
 				"willow-fiber": (state.farmStock?.["willow-fiber"] ?? 0) + 2,
 			};
 			if (returnReward !== null) {
@@ -1430,7 +1474,7 @@ export function homegrownReducer(state, action) {
 					fieldGuide: [...new Set([...state.fieldGuide, ...opportunity.fieldGuideEntries])],
 				},
 				"return",
-				`${opportunity.discoveryName} — ${returnReward ? `${returnReward.name} +${returnReward.amount}` : "no Carrier supply"} — ${toolBonus ? `${toolBonus.name} +${toolBonus.amount} Tool bonus` : "no Tool bonus"}`,
+				`${baseReturn.name} +${baseReturn.amount} — ${returnReward ? `${returnReward.name} +${returnReward.amount}` : "no Carrier supply"} — ${toolBonus ? `${toolBonus.name} +${toolBonus.amount} Tool bonus` : "no Tool bonus"}`,
 				now,
 			);
 
@@ -1440,7 +1484,8 @@ export function homegrownReducer(state, action) {
 			}
 			if (state.glowrootPlanted) {
 				const storedPackReward = bagReturnReward(state.bag?.pack ?? null);
-				const storedToolBonus = toolReturnBonus(state.bag?.tool ?? null);
+				const storedBaseReturn = adventureBaseReturn(state);
+				const storedToolBonus = adventureToolReturnBonus(state, state.bag?.tool ?? null);
 				return changed(
 					state,
 					{
@@ -1451,7 +1496,7 @@ export function homegrownReducer(state, action) {
 						cycleComplete: true,
 					},
 					"store-return",
-					`Known Glowroot Seeds stay in Farm stock · ${storedPackReward ? `${storedPackReward.name} +${storedPackReward.amount}` : "no Carrier supply"} · ${storedToolBonus ? `${storedToolBonus.name} +${storedToolBonus.amount} Tool bonus` : "no Tool bonus"}`,
+					`${storedBaseReturn.name} can begin the next crop · ${storedPackReward ? `${storedPackReward.name} +${storedPackReward.amount}` : "no Carrier supply"} · ${storedToolBonus ? `${storedToolBonus.name} +${storedToolBonus.amount} Tool bonus` : "no Tool bonus"}`,
 					now,
 				);
 			}
@@ -1563,8 +1608,9 @@ export function homegrownReducer(state, action) {
 				const underprepared = emptySlot !== null;
 				const currentPosition = normalizePrototypePosition(state.prototypePosition ?? 1);
 				const currentPreset = createPrototypeState(currentPosition, { now, reduceMotion: state.reduceMotion });
-				const currentBagAdjustment = prototypeBagStockAdjustment(currentPosition, state.bag);
-				const nextBagAdjustment = prototypeBagStockAdjustment(action.position, state.bag);
+				const familiarRoute = Boolean(state.selectedAdventureOpportunityId);
+				const currentBagAdjustment = prototypeBagStockAdjustment(currentPosition, state.bag, familiarRoute);
+				const nextBagAdjustment = prototypeBagStockAdjustment(action.position, state.bag, familiarRoute);
 				const previewFarmStock = Object.fromEntries(
 					Object.keys(EMPTY_FARM_STOCK).map((itemId) => [
 						itemId,
