@@ -450,7 +450,74 @@ function PurposeHandoff({ opportunity, choosingRoute = false }) {
 	);
 }
 
-function KnownRouteMap({ onChoose }) {
+const MAP_STOCK_VARIANTS = {
+	A: "Counts under each clue",
+	B: "One pantry bookmark",
+	C: "Material tickets",
+};
+
+function prototypeMapStock(farmStock, stockCase) {
+	if (stockCase === "low-compost") return { compost: 0, willowFiber: 4 };
+	if (stockCase === "low-fiber") return { compost: 3, willowFiber: 0 };
+	return {
+		compost: farmStock?.compost ?? 0,
+		willowFiber: farmStock?.["willow-fiber"] ?? 0,
+	};
+}
+
+function KnownRouteMap({ onChoose, farmStock, prototypeVariant = null, stockCase = null }) {
+	const stock = prototypeMapStock(farmStock, stockCase);
+	if (prototypeVariant === "A") {
+		return (
+			<section className="known-route-map map-stock-variant-a" aria-label="Choose one of Rosie's known Adventure routes">
+				<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>Where should Rosie explore today?</strong></div></header>
+				<div className="known-route-map-list">
+					<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)} aria-label={`A Glow Beneath the Hedge. Brings Compost Home. ${stock.compost} held.`}>
+						<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><b>Soft soil · brings Compost Home</b><span className="route-stock-inline"><span aria-hidden="true">♣</span> Compost · {stock.compost} held</span></span><em>Choose</em>
+					</button>
+					<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)} aria-label={`Lights Past the Open Gate. Gathers Willow Fiber. ${stock.willowFiber} held.`}>
+						<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><b>Reflected leaves · gathers Willow Fiber</b><span className="route-stock-inline"><span aria-hidden="true">≋</span> Willow Fiber · {stock.willowFiber} held</span></span><em>Choose</em>
+					</button>
+				</div>
+				<footer>Choose the place whose supplies suit today's Farm.</footer>
+			</section>
+		);
+	}
+	if (prototypeVariant === "B") {
+		return (
+			<section className="known-route-map map-stock-variant-b" aria-label="Choose one of Rosie's known Adventure routes">
+				<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>Where should Rosie explore today?</strong></div></header>
+				<div className="route-pantry-bookmark" aria-label={`Farm stock: ${stock.compost} Compost and ${stock.willowFiber} Willow Fiber`}>
+					<small>Farm stock</small><span><b>Compost</b><strong>{stock.compost}</strong></span><span><b>Willow Fiber</b><strong>{stock.willowFiber}</strong></span>
+				</div>
+				<div className="known-route-map-list">
+					<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)}>
+						<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><b>Soft soil · brings Compost Home</b></span><em>Choose</em>
+					</button>
+					<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)}>
+						<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><b>Reflected leaves · gathers Willow Fiber</b></span><em>Choose</em>
+					</button>
+				</div>
+				<footer>Both routes are safe. Farm stock stays useful.</footer>
+			</section>
+		);
+	}
+	if (prototypeVariant === "C") {
+		return (
+			<section className="known-route-map map-stock-variant-c" aria-label="Choose one of Rosie's known Adventure routes">
+				<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>What should Rosie bring Home?</strong></div></header>
+				<div className="known-route-map-list">
+					<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)} aria-label={`A Glow Beneath the Hedge. Compost, ${stock.compost} held.`}>
+						<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><b>Soft soil among the warm roots</b></span><span className="route-material-ticket"><small>Compost</small><strong>{stock.compost} held</strong><em>Choose</em></span>
+					</button>
+					<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)} aria-label={`Lights Past the Open Gate. Willow Fiber, ${stock.willowFiber} held.`}>
+						<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><b>Fiber among the reflected leaves</b></span><span className="route-material-ticket"><small>Willow Fiber</small><strong>{stock.willowFiber} held</strong><em>Choose</em></span>
+					</button>
+				</div>
+				<footer>Every familiar route still brings the next Clover Seed.</footer>
+			</section>
+		);
+	}
 	return (
 		<section className="known-route-map" aria-label="Choose one of Rosie's known Adventure routes">
 			<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>Where should Rosie explore today?</strong></div></header>
@@ -464,6 +531,27 @@ function KnownRouteMap({ onChoose }) {
 			</div>
 			<footer>Both routes are safe. Preparation changes what Rosie notices and carries Home.</footer>
 		</section>
+	);
+}
+
+function updateMapStockPrototype(nextVariant, nextStockCase) {
+	const next = new URL(window.location.href);
+	next.searchParams.set("mapstock", nextVariant);
+	next.searchParams.set("stockcase", nextStockCase);
+	window.location.assign(next.toString());
+}
+
+function MapStockPrototypeSwitcher({ variant, stockCase }) {
+	const variants = Object.keys(MAP_STOCK_VARIANTS);
+	const currentIndex = variants.indexOf(variant);
+	const cycle = (direction) => variants[(currentIndex + direction + variants.length) % variants.length];
+	return (
+		<nav className="map-stock-prototype-switcher" aria-label="Map stock prototype variants">
+			<button type="button" aria-label="Previous map stock variant" onClick={() => updateMapStockPrototype(cycle(-1), stockCase)}>←</button>
+			<div><small>Prototype</small><strong>{variant} · {MAP_STOCK_VARIANTS[variant]}</strong></div>
+			<button type="button" aria-label="Next map stock variant" onClick={() => updateMapStockPrototype(cycle(1), stockCase)}>→</button>
+			<button type="button" className="map-stock-case" onClick={() => updateMapStockPrototype(variant, stockCase === "low-compost" ? "low-fiber" : "low-compost")}>{stockCase === "low-compost" ? "Low Compost" : "Low Fiber"}</button>
+		</nav>
 	);
 }
 
@@ -1732,6 +1820,11 @@ function App() {
 	const hasRequestedAdventureRoute = initialSearch.has("route");
 	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
 	const repeatAdventure = initialSearch.get("repeat") === "1";
+	const requestedMapStockVariant = initialSearch.get("mapstock");
+	const mapStockPrototypeVariant = Object.hasOwn(MAP_STOCK_VARIANTS, requestedMapStockVariant)
+		? requestedMapStockVariant
+		: null;
+	const mapStockCase = initialSearch.get("stockcase") === "low-compost" ? "low-compost" : "low-fiber";
 	const reviewMode = loopMode || hasRequestedPosition;
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
@@ -1769,6 +1862,19 @@ function App() {
 		() => homegrownRiveModel(state, visualNow),
 		[state, visualNow],
 	);
+	useEffect(() => {
+		if (mapStockPrototypeVariant === null) return undefined;
+		const variants = Object.keys(MAP_STOCK_VARIANTS);
+		const onKeyDown = (event) => {
+			if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+			if (["INPUT", "TEXTAREA"].includes(event.target?.tagName) || event.target?.isContentEditable) return;
+			const currentIndex = variants.indexOf(mapStockPrototypeVariant);
+			const direction = event.key === "ArrowLeft" ? -1 : 1;
+			updateMapStockPrototype(variants[(currentIndex + direction + variants.length) % variants.length], mapStockCase);
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [mapStockCase, mapStockPrototypeVariant]);
 	const image = sceneImage();
 	const [feedback, setFeedback] = useState(0);
 	const [startingNewDay, setStartingNewDay] = useState(false);
@@ -2257,6 +2363,9 @@ function App() {
 			</button>}
 			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
 			{choosingRoute && !holdingPurposeHandoff && <KnownRouteMap
+				farmStock={state.farmStock}
+				prototypeVariant={mapStockPrototypeVariant}
+				stockCase={mapStockCase}
 				onChoose={(opportunityId) => act({ type: ACTIONS.CHOOSE_ADVENTURE_ROUTE, opportunityId })}
 			/>}
 			{choosingSeed && !holdingPurposeHandoff && <SeedChoicePanel
@@ -2347,6 +2456,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{mapStockPrototypeVariant && <MapStockPrototypeSwitcher variant={mapStockPrototypeVariant} stockCase={mapStockCase} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;

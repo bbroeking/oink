@@ -2332,6 +2332,84 @@ html[data-reduce-motion="true"] .purpose-handoff { animation: none; }
 .known-route-map-row b { color: var(--ink-soft); font-size: 8px; line-height: 1; }
 .known-route-map-row > em { padding: 7px 4px; background: #f4dfac; border: 1px solid var(--ink); border-radius: 7px; font-size: 8px; font-style: normal; font-weight: 950; text-align: center; text-transform: uppercase; }
 .known-route-map > footer { color: var(--ink-soft); font-size: 8px; font-weight: 850; line-height: 1.15; text-align: center; }
+.map-stock-variant-a .known-route-map-row { padding-block: 6px; }
+.route-stock-inline {
+	width: max-content;
+	max-width: 100%;
+	margin-top: 2px;
+	padding: 2px 5px;
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	color: #6f4a2e;
+	background: #f4dfac;
+	border-radius: 5px;
+	font-size: 7px;
+	font-weight: 950;
+	line-height: 1;
+}
+.route-stock-inline > span { font-family: Georgia, serif; font-size: 9px; }
+.map-stock-variant-a .route-lanternleaf .route-stock-inline { color: #514263; background: #ded2ef; }
+.known-route-map.map-stock-variant-b { grid-template-rows: 48px 30px 1fr 25px; }
+.route-pantry-bookmark {
+	padding: 4px 7px;
+	display: grid;
+	grid-template-columns: auto 1fr 1fr;
+	align-items: center;
+	gap: 7px;
+	color: #fff9e9;
+	background: #513724;
+	border-radius: 7px;
+	box-shadow: 1px 2px 0 rgba(48,33,22,.5);
+}
+.route-pantry-bookmark > small { color: #e9d7aa; font-size: 7px; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
+.route-pantry-bookmark > span { min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 3px; }
+.route-pantry-bookmark b { overflow: hidden; font-size: 7px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.route-pantry-bookmark strong { color: #ffd86b; font-family: Caprasimo,Georgia,serif; font-size: 12px; font-weight: 400; }
+.map-stock-variant-b .known-route-map-row { padding-block: 5px; }
+.map-stock-variant-c .known-route-map-row { grid-template-columns: 38px minmax(0,1fr) 72px; }
+.route-material-ticket {
+	align-self: stretch;
+	padding: 4px 5px;
+	display: grid;
+	align-content: center;
+	gap: 2px;
+	background: #f4dfac;
+	border: 1px solid var(--ink);
+	border-radius: 7px;
+	text-align: center;
+}
+.route-lanternleaf .route-material-ticket { background: #ded2ef; }
+.route-material-ticket small { color: #6f4a2e; font-size: 6.5px; font-weight: 950; line-height: 1; }
+.route-lanternleaf .route-material-ticket small { color: #514263; }
+.route-material-ticket strong { font-family: Caprasimo,Georgia,serif; font-size: 9px; font-weight: 400; line-height: 1; }
+.route-material-ticket em { color: var(--ink-soft); font-size: 6.5px; font-style: normal; font-weight: 950; line-height: 1; text-transform: uppercase; }
+.map-stock-prototype-switcher {
+	position: fixed;
+	z-index: 80;
+	left: calc(50% + 285px);
+	bottom: 18px;
+	width: 246px;
+	min-height: 52px;
+	display: grid;
+	grid-template-columns: 42px minmax(0,1fr) 42px;
+	color: #fff9e9;
+	background: #302116;
+	border: 2px solid #fff9e9;
+	border-radius: 14px;
+	box-shadow: 3px 4px 0 #302116;
+	overflow: hidden;
+}
+.map-stock-prototype-switcher > button { min-width: 42px; min-height: 48px; border: 0; color: inherit; background: transparent; font-size: 18px; font-weight: 950; }
+.map-stock-prototype-switcher > button:hover { background: #654631; }
+.map-stock-prototype-switcher > button:focus-visible { outline: 3px solid #ffd86b; outline-offset: -4px; }
+.map-stock-prototype-switcher > div { min-width: 0; padding: 7px 4px; display: grid; align-content: center; gap: 2px; text-align: center; }
+.map-stock-prototype-switcher > div small { color: #e9d7aa; font-size: 7px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.map-stock-prototype-switcher > div strong { overflow: hidden; font-size: 9px; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+.map-stock-prototype-switcher .map-stock-case { grid-column: 1 / -1; min-height: 27px; border-top: 1px solid rgba(255,249,233,.32); font-size: 8px; text-transform: uppercase; }
+@media (max-width: 900px) {
+	.map-stock-prototype-switcher { left: 50%; bottom: 76px; transform: translateX(-50%); }
+}
 .planting-panel {
 	left: 10px;
 	right: 10px;
