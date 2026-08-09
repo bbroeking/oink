@@ -95,6 +95,17 @@ function stageCopy(state) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const crop = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
+	if (
+		state.stage === STAGES.DEVELOPED &&
+		state.cycleComplete &&
+		state.fieldGuide.includes(SECOND_ADVENTURE_OPPORTUNITY.discoveryName)
+	) {
+		return {
+			eyebrow: "Home remembers",
+			title: "Lanternleaf Path joined Rosie's map",
+			body: "The reflected route now guides Rosie Home while every earlier Glowroot change remains in the Farm.",
+		};
+	}
 	if (state.stage === STAGES.NEAR_DISCOVERY) {
 		const copy = (lanternleaf ? {
 			provision: {
@@ -1193,7 +1204,28 @@ function SeedHandoff({ origin, phase }) {
 	);
 }
 
-function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expanded, onToggle }) {
+function homeMemoryContent(state) {
+	if (state.fieldGuide.includes(SECOND_ADVENTURE_OPPORTUNITY.discoveryName)) {
+		return {
+			ariaLabel: "Lanternleaf Path's lasting Home memory and Farm stock",
+			pocketTitle: "Lanternleaf Path is mapped",
+			pocketDetail: "Silver trail · Safe return · New route",
+			plaqueLabel: "The Barn remembers the Lanternleaf Path",
+			plaqueDetail: "Lanternleaf Path now guides Rosie Home.",
+			positionName: "Lanternleaf Path at Home",
+		};
+	}
+	return {
+		ariaLabel: "Glowroot's lasting Home changes and Farm stock",
+		pocketTitle: "Glowroot changed Home",
+		pocketDetail: "Bed 3 · Open hedge · Pond frog",
+		plaqueLabel: "The Barn remembers that Glowroot changed Home",
+		plaqueDetail: "Glowroot now lights the open path.",
+		positionName: "Glowroot at Home",
+	};
+}
+
+function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = true, expanded, onToggle }) {
 	const stock = state.farmStock ?? {};
 	const stockItems = [
 		["☘", "Clover Seed", stock["clover-seed"] ?? 0],
@@ -1202,7 +1234,7 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 		["≋", "Willow Fiber", stock["willow-fiber"] ?? 0],
 	];
 	return (
-		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label="Glowroot's lasting Home changes and Farm stock">
+		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label={memory.ariaLabel}>
 			<div className="home-memory-pocket-detail" id="farm-memory-detail" hidden={!expanded}>
 				<strong>Farm stock stays useful</strong>
 				<div aria-label="Current Farm stock">
@@ -1217,8 +1249,8 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 				aria-label={expanded ? "Close Home changes and Farm stock" : "Open Home changes and Farm stock"}
 				onClick={onToggle}
 			>
-				<strong>Glowroot changed Home</strong>
-				<span>Bed 3 · Open hedge · Pond frog</span>
+				<strong>{memory.pocketTitle}</strong>
+				<span>{memory.pocketDetail}</span>
 				<small>{expanded ? "Close" : "See stock"}</small>
 			</button>
 			{showAction && <button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>}
@@ -1226,12 +1258,12 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 	);
 }
 
-function HomeMemoryDayPlaque() {
+function HomeMemoryDayPlaque({ memory }) {
 	return (
-		<div className="home-memory-day-plaque" aria-label="The Barn remembers that Glowroot changed Home">
+		<div className="home-memory-day-plaque" aria-label={memory.plaqueLabel}>
 			<small>Home remembers</small>
 			<strong>The Barn remembers</strong>
-			<span>Glowroot now lights the open path.</span>
+			<span>{memory.plaqueDetail}</span>
 		</div>
 	);
 }
@@ -1675,13 +1707,18 @@ function App() {
 	const showingJourneyWatch = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen;
 	const gateHomecomingReady = showingJourneyWatch && state.adventureComplete;
 	const journeyPhase = adventureJourneyPhase(state, visualNow) ?? "trail";
-	const currentPositionName = positionRailName({
+	const homeMemory = homeMemoryContent(state);
+	const defaultPositionName = positionRailName({
 		position,
 		showingAdventureVignette,
 		showingJourneyWatch,
 		journeyPhase,
 		adventureComplete: state.adventureComplete,
 	});
+	const currentPositionName =
+		position === 11 && state.stage === STAGES.DEVELOPED && state.cycleComplete
+			? homeMemory.positionName
+			: defaultPositionName;
 	const adventureEnvironmentRevealed = ["tool", "pack", "resolved"].includes(adventureCauseBeat);
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
 	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
@@ -2096,7 +2133,7 @@ function App() {
 					</span>
 				</div>
 			</div>
-			{showingHomeMemoryPromise && <HomeMemoryDayPlaque />}
+			{showingHomeMemoryPromise && <HomeMemoryDayPlaque memory={homeMemory} />}
 			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingGlowrootPlanting && (!showingHomeMemory || showingHomeTickle) && !homeMemoryExpanded && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
 				className={`rosie-hit ${visiblePresentation.target === WORLD_TARGETS.ROSIE ? "is-guided" : ""}`}
 				type="button"
@@ -2157,6 +2194,7 @@ function App() {
 			<SeedHandoff origin={state.bag?.tool === "hand-trowel" ? "bonus" : "base"} phase={seedHandoff} />
 			{showingHomeMemory && !holdingGlowrootHomeReveal && <HomeMemoryPanel
 				state={state}
+				memory={homeMemory}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
 				expanded={homeMemoryExpanded}

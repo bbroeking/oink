@@ -1883,11 +1883,38 @@ test("the completed day names Glowroot's lasting Home promise before the next mo
 	assert.equal(state.cycleComplete, false);
 
 	assert.match(appSource, /const showingHomeMemoryPromise =\s*showingHomeMemory &&\s*state\.stage === STAGES\.DEVELOPED &&\s*state\.cycleComplete;/);
-	assert.match(appSource, /showingHomeMemoryPromise && <HomeMemoryDayPlaque \/>/);
+	assert.match(appSource, /showingHomeMemoryPromise && <HomeMemoryDayPlaque memory=\{homeMemory\} \/>/);
 	assert.match(appSource, /The Barn remembers/);
 	assert.match(appSource, /Glowroot now lights the open path\./);
 	assert.match(stylesSource, /\.home-memory-day-plaque \{/);
 	assert.doesNotMatch(appSource, /HomeMemoryPromisePrototype|homeMemoryTreatment/);
+});
+
+test("the completed second Adventure replaces the old ceremony with Lanternleaf memory", () => {
+	let state = throughSecondBag();
+	state = packAdventure(state, {
+		provision: "clover-lunch",
+		tool: "lantern",
+		pack: "cloth-wrap",
+	});
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	state = settleState(state, state.departureReadyAt);
+	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
+
+	assert.equal(state.stage, STAGES.DEVELOPED);
+	assert.equal(state.cycleComplete, true);
+	assert.ok(state.fieldGuide.includes(SECOND_ADVENTURE_OPPORTUNITY.discoveryName));
+	assert.match(appSource, /function homeMemoryContent\(state\)/);
+	assert.match(appSource, /state\.fieldGuide\.includes\(SECOND_ADVENTURE_OPPORTUNITY\.discoveryName\)/);
+	assert.match(appSource, /Lanternleaf Path now guides Rosie Home\./);
+	assert.match(appSource, /Silver trail · Safe return · New route/);
+	assert.match(appSource, /Lanternleaf Path at Home/);
+	assert.match(appSource, /Lanternleaf Path joined Rosie's map/);
+	assert.match(appSource, /<HomeMemoryPanel\s+state=\{state\}\s+memory=\{homeMemory\}/);
+	assert.doesNotMatch(appSource, /LanternleafLivingRoutePrototype|lanternleaf-route-marker/);
 });
 
 test("the morning Tickle gives Rosie one purpose beat before crop choice", () => {
