@@ -2416,3 +2416,17 @@ test("settled departure keeps one quiet truthful loadout receipt", () => {
 	assert.doesNotMatch(appSource, /DEPARTURE_STUDIES|departureStudy|departure-gate-sign|departure-packed-on-rosie|departure-quiet-receipt|One Gate Sign|Packed on Rosie|Quiet Receipt/);
 	assert.doesNotMatch(stylesSource, /departure-gate-sign|departure-packed-on-rosie|departure-quiet-receipt/);
 });
+
+test("canonical Rosie stands in the Adventure clearing behind the prepared causes", () => {
+	assert.match(riveSceneSource, /<span className="homegrown-rive-canvas" aria-hidden="true">\s*<RiveComponent aria-label="" \/>/);
+	assert.match(stylesSource, /\.adventure-vignette-open \.homegrown-rive-canvas \{[^}]*left: 22px;[^}]*top: 200px;[^}]*width: 390px;[^}]*height: 550px;[^}]*overflow: hidden;[^}]*transform-origin: 0 0;[^}]*transform: scale\(\.78\);/s);
+	assert.match(stylesSource, /\.adventure-vignette-open \.homegrown-rive-scene\.authored \{ z-index: 2; \}/);
+	assert.match(stylesSource, /\.adventure-bed-mask \{[^}]*left: 20px;[^}]*top: 498px;[^}]*width: 112px;[^}]*height: 90px;[^}]*background-position: -20px -498px;/s);
+	assert.match(stylesSource, /\.phone\[data-adventure-opportunity="lights-past-open-gate"\] \.adventure-bed-mask \{\s*background-image: url\("\.\/assets\/homegrown-adventures\/adventure-lanternleaf-path\.webp"\);/);
+	assert.match(stylesSource, /\.adventure-provision-prop \{[^}]*z-index: 4;/s);
+	assert.match(stylesSource, /\.adventure-tool-prop \{[^}]*z-index: 3;/s);
+	assert.match(stylesSource, /\.adventure-pack-prop \{[^}]*z-index: 2;/s);
+	assert.match(appSource, /<HomegrownRiveScene[\s\S]*\{showingAdventureVignette && <div className="adventure-vignette-backdrop"/);
+	assert.doesNotMatch(appSource, /GROUNDING_STUDIES|GroundingStudySwitcher|groundStudy|ground-study-/);
+	assert.doesNotMatch(stylesSource, /grounding-study-switcher|ground-study-/);
+});
