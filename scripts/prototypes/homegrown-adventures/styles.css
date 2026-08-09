@@ -2240,6 +2240,109 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 	100% { opacity: 0; transform: translateY(-3px) scale(.995); }
 }
 html[data-reduce-motion="true"] .purpose-handoff { animation: none; }
+.known-route-map-prototype {
+	position: absolute;
+	z-index: 12;
+	left: 9px;
+	right: 9px;
+	top: 350px;
+	padding: 9px;
+	display: grid;
+	grid-template-rows: 48px 1fr 31px;
+	gap: 7px;
+	pointer-events: auto;
+	color: var(--ink);
+	background: linear-gradient(145deg,rgba(255,249,233,.98),rgba(235,217,174,.98));
+	border: 3px solid var(--ink);
+	border-radius: 17px;
+	box-shadow: 3px 4px 0 rgba(48,33,22,.74), inset 0 0 0 3px rgba(255,255,255,.42);
+}
+.known-route-map-prototype > header {
+	min-width: 0;
+	display: grid;
+	grid-template-columns: 38px minmax(0,1fr);
+	align-items: center;
+	gap: 8px;
+	border-bottom: 1px dashed rgba(48,33,22,.48);
+}
+.known-route-map-prototype > header > span { color: #966c36; font-family: Georgia,serif; font-size: 32px; text-align: center; transform: rotate(-10deg); }
+.known-route-map-prototype > header > div { min-width: 0; display: grid; gap: 2px; }
+.known-route-map-prototype header small { color: #866440; font-size: 7px; font-weight: 950; letter-spacing: .09em; text-transform: uppercase; }
+.known-route-map-prototype header strong { font-family: Caprasimo,Georgia,serif; font-size: 13px; font-weight: 400; line-height: 1.05; }
+.known-route-map-list { display: grid; grid-template-rows: repeat(2,minmax(0,1fr)); gap: 7px; }
+.known-route-map-row {
+	min-width: 0;
+	padding: 7px 8px;
+	display: grid;
+	grid-template-columns: 38px minmax(0,1fr) 47px;
+	align-items: center;
+	gap: 7px;
+	color: var(--ink);
+	background: rgba(255,249,233,.92);
+	border: 2px solid var(--ink);
+	border-radius: 11px;
+	box-shadow: 1px 2px 0 rgba(48,33,22,.62);
+	text-align: left;
+}
+.known-route-map-row:hover { background: #fff1c5; transform: translateY(-1px); }
+.known-route-map-row:active { transform: translateY(1px); box-shadow: none; }
+.known-route-map-row > i { display: grid; place-items: center; width: 35px; height: 35px; color: #ba8d31; background: #f4dfac; border: 1.5px solid var(--ink); border-radius: 50%; font-size: 17px; font-style: normal; }
+.known-route-map-row.route-lanternleaf > i { color: #615171; background: #ded2ef; }
+.known-route-map-row > span { min-width: 0; display: grid; gap: 2px; }
+.known-route-map-row small { color: #866440; font-size: 6px; font-weight: 950; letter-spacing: .07em; text-transform: uppercase; }
+.known-route-map-row strong { font-family: Caprasimo,Georgia,serif; font-size: 10px; font-weight: 400; line-height: 1; }
+.known-route-map-row b { color: var(--ink-soft); font-size: 7px; line-height: 1; }
+.known-route-map-row > em { padding: 7px 4px; background: #f4dfac; border: 1px solid var(--ink); border-radius: 7px; font-size: 7px; font-style: normal; font-weight: 950; text-align: center; text-transform: uppercase; }
+.known-route-map-prototype > footer { color: var(--ink-soft); font-size: 7px; font-weight: 850; line-height: 1.15; text-align: center; }
+.known-route-world-prototype {
+	position: absolute;
+	inset: 0;
+	z-index: 12;
+	pointer-events: none;
+}
+.known-route-world-question {
+	position: absolute;
+	left: 62px;
+	right: 62px;
+	top: 83px;
+	min-height: 58px;
+	padding: 8px 12px;
+	display: grid;
+	place-items: center;
+	color: var(--ink);
+	background: rgba(255,249,233,.95);
+	border: 2px solid #bd9560;
+	border-radius: 14px;
+	box-shadow: 0 2px 0 #6f4a2e;
+	text-align: center;
+}
+.known-route-world-question small { color: #866440; font-size: 7px; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
+.known-route-world-question strong { font-family: Caprasimo,Georgia,serif; font-size: 13px; font-weight: 400; }
+.known-route-world-marker {
+	position: absolute;
+	width: 154px;
+	min-height: 78px;
+	padding: 8px 9px;
+	display: grid;
+	gap: 3px;
+	pointer-events: auto;
+	color: var(--ink);
+	background: rgba(255,249,233,.96);
+	border: 2px solid var(--ink);
+	border-radius: 11px;
+	box-shadow: 2px 3px 0 rgba(48,33,22,.7);
+	text-align: left;
+}
+.known-route-world-marker::after { content: ""; position: absolute; width: 32px; height: 2px; background: var(--ink); transform-origin: left center; }
+.known-route-world-marker.route-lanternleaf { right: 14px; top: 226px; transform: rotate(1deg); }
+.known-route-world-marker.route-lanternleaf::after { right: 10px; bottom: -13px; transform: rotate(58deg); }
+.known-route-world-marker.route-glowroot { right: 16px; top: 494px; transform: rotate(-1deg); }
+.known-route-world-marker.route-glowroot::after { left: 31px; top: -9px; transform: rotate(-43deg); }
+.known-route-world-marker small { color: #866440; font-size: 6px; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+.known-route-world-marker strong { font-family: Caprasimo,Georgia,serif; font-size: 10px; font-weight: 400; line-height: 1.05; }
+.known-route-world-marker span { color: var(--ink-soft); font-size: 7px; font-weight: 850; }
+.known-route-world-marker:hover { background: #fff1c5; }
+.known-route-world-marker:active { box-shadow: none; transform: translateY(1px); }
 .planting-panel {
 	left: 10px;
 	right: 10px;

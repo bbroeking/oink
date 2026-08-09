@@ -742,11 +742,11 @@ export function createPrototypeState(position, {
 
 	const routePreview = [2, 9, 11].includes(target) && adventureRoute === "lanternleaf"
 		? {
-			daysCompleted: 1,
+			daysCompleted: target === 2 ? 2 : 1,
 			glowrootKnown: true,
 			glowrootPlanted: true,
 			nextPlanting: "moonberries",
-			fieldGuide: target === 11
+			fieldGuide: [2, 11].includes(target)
 				? [...new Set([...presets[target].fieldGuide, ...SECOND_ADVENTURE_OPPORTUNITY.fieldGuideEntries])]
 				: ["Clover Lunch", "Dusk Picnic", "Glowroot Seed"],
 		}
