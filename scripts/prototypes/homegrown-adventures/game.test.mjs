@@ -8,6 +8,8 @@ import {
 	adventureJourneyPhase,
 	adventureJourneyProgress,
 	adventureOpportunity,
+	adventureReturnLedger,
+	adventureRouteMaterialReturn,
 	adventureStory,
 	BAG_ITEMS,
 	canChooseKnownAdventureRoute,
@@ -2066,6 +2068,43 @@ test("the direct familiar Return review exposes the useful next Seed", () => {
 	}
 });
 
+test("familiar routes keep the next Seed but return different predictable materials", () => {
+	const glowroot = createPrototypeState(10, {
+		now: at,
+		adventureRoute: "glowroot",
+		repeatAdventure: true,
+	});
+	const lanternleaf = createPrototypeState(10, {
+		now: at,
+		adventureRoute: "lanternleaf",
+		repeatAdventure: true,
+	});
+
+	assert.deepEqual(adventureRouteMaterialReturn(glowroot), {
+		itemId: "compost",
+		name: "Compost",
+		amount: 1,
+		cause: "Warm roots +1",
+	});
+	assert.deepEqual(adventureRouteMaterialReturn(lanternleaf), {
+		itemId: "willow-fiber",
+		name: "Willow Fiber",
+		amount: 2,
+		cause: "Reflected leaves +2",
+	});
+	assert.deepEqual(adventureReturnLedger(glowroot), [
+		{ itemId: "clover-seed", name: "Clover Seed", amount: 2, causes: ["Route +1", "Trowel +1"] },
+		{ itemId: "compost", name: "Compost", amount: 2, causes: ["Warm roots +1", "Wicker +1"] },
+	]);
+	assert.deepEqual(adventureReturnLedger(lanternleaf), [
+		{ itemId: "clover-seed", name: "Clover Seed", amount: 2, causes: ["Route +1", "Trowel +1"] },
+		{ itemId: "willow-fiber", name: "Willow Fiber", amount: 2, causes: ["Reflected leaves +2"] },
+		{ itemId: "compost", name: "Compost", amount: 1, causes: ["Wicker +1"] },
+	]);
+	assert.match(adventureStory(glowroot).result, /warm soil gives Compost/);
+	assert.match(adventureStory(lanternleaf).result, /reflected path gives Willow Fiber/);
+});
+
 test("revisiting a known route returns supplies without pretending the Discovery is new", () => {
 	let state = throughThirdMorning();
 	state = reduce(state, {
@@ -2188,7 +2227,8 @@ test("the Near-Discovery Homecoming separates Field Guide knowledge from Farm su
 	assert.match(appSource, /<span className="return-card-eyebrow">\{nearDiscovery \? "Field Guide updated"/);
 	assert.match(appSource, /<b>\{guide\.next\}<\/b>/);
 	assert.match(appSource, /nearDiscovery \? "Supplies brought Home" : "Added to Farm stock"/);
-	assert.match(appSource, /\{!nearDiscovery && <span>\s*<b>\{baseReturn\.name\}<\/b>/);
+	assert.match(appSource, /nearDiscovery \? <>\s*<span><b>Compost<\/b><strong>\+1<\/strong><\/span>/);
+	assert.match(appSource, /returnLedger\.map\(\(row\) =>/);
 	assert.match(appSource, /nearDiscovery \? guide\.action : actionLabel/);
 	assert.match(appSource, /initialFocus=\{state\.nearDiscoveryReason \?\? "provision"\}/);
 	assert.match(stylesSource, /\.return-stock-ledger-near > div \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/);
@@ -2200,7 +2240,8 @@ test("the complete Homecoming separates the named Discovery from repeatable Farm
 	assert.match(appSource, /lanternleafDiscovery \? opportunity\.discoveryName : "Glowroot"/);
 	assert.match(appSource, /: "A new living Crop for Home"/);
 	assert.doesNotMatch(appSource, /lanternleafDiscovery \? opportunity\.discoveryName : `Glowroot Seed/);
-	assert.match(appSource, /<b>\{baseReturn\.name\}<\/b>\s*<strong>\+\{primaryReturnAmount\}<\/strong>/);
+	assert.match(appSource, /<b>\{row\.name\}<\/b>\s*<strong>\+\{row\.amount\}<\/strong>/);
+	assert.match(appSource, /row\.causes\.join\(" · "\)/);
 	assert.match(stylesSource, /\.return-pack-supply-seed\.return-familiar-seed/);
 	assert.match(stylesSource, /\.return-discovery-plaque:not\(\.is-near-discovery\) \{/);
 	assert.match(stylesSource, /\.return-stock-ledger:not\(\.return-stock-ledger-near\) \{/);

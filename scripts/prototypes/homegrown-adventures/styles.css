@@ -1311,7 +1311,7 @@ html[data-reduce-motion="true"] .journey-watch.is-entering .journey-watch-lights
 }
 .return-stock-ledger > div {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(var(--return-stock-columns, 3), minmax(0, 1fr));
 	border-top: 1px solid rgba(255,249,233,.2);
 }
 .return-stock-ledger-near > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }

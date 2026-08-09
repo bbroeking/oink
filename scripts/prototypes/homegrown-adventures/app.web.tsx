@@ -13,6 +13,7 @@ import {
 	adventureHomewardAt,
 	adventureJourneyPhase,
 	adventureOpportunity,
+	adventureReturnLedger,
 	adventureStory,
 	adventureToolReturnBonus,
 	BAG_ITEMS,
@@ -455,10 +456,10 @@ function KnownRouteMap({ onChoose }) {
 			<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>Where should Rosie explore today?</strong></div></header>
 			<div className="known-route-map-list">
 				<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)}>
-					<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><b>Soft soil · careful carrying</b></span><em>Choose</em>
+					<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><b>Soft soil · brings Compost Home</b></span><em>Choose</em>
 				</button>
 				<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)}>
-					<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><b>Reflected leaves · gentle wrap</b></span><em>Choose</em>
+					<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><b>Reflected leaves · gathers Willow Fiber</b></span><em>Choose</em>
 				</button>
 			</div>
 			<footer>Both routes are safe. Preparation changes what Rosie notices and carries Home.</footer>
@@ -1191,10 +1192,7 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 	const packReward = bagReturnReward(state.bag?.pack ?? null);
 	const toolBonus = nearDiscovery ? null : adventureToolReturnBonus(state, state.bag?.tool ?? null);
 	const primaryReturnAmount = (baseReturn?.amount ?? 0) + (toolBonus?.itemId === baseReturn?.itemId ? toolBonus.amount : 0);
-	const willowFiberAmount = 2 + (toolBonus?.itemId === "willow-fiber" ? toolBonus.amount : 0);
-	const practicalReward = nearDiscovery
-		? { name: "Compost", amount: 1 }
-		: packReward ?? { name: "Carrier supply", amount: 0 };
+	const returnLedger = nearDiscovery ? [] : adventureReturnLedger(state);
 	return (
 		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} data-tool-bonus={toolBonus?.itemId ?? "none"} aria-label="Rosie's return rewards">
 			{revisitingKnownRoute && !nearDiscovery && (
@@ -1224,24 +1222,19 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 					<b>{guide.next}</b>
 				</div>}
 			</div>
-			<div className={`return-stock-ledger ${nearDiscovery ? "return-stock-ledger-near" : ""}`} aria-label={nearDiscovery ? "Supplies brought Home" : "Farm stock returned"}>
+			<div className={`return-stock-ledger ${nearDiscovery ? "return-stock-ledger-near" : ""}`} style={{ "--return-stock-columns": nearDiscovery ? 2 : Math.max(1, returnLedger.length) }} aria-label={nearDiscovery ? "Supplies brought Home" : "Farm stock returned"}>
 				<strong className="return-stock-title">{nearDiscovery ? "Supplies brought Home" : "Added to Farm stock"}</strong>
 				<div>
-					{!nearDiscovery && <span>
-						<b>{baseReturn.name}</b>
-						<strong>+{primaryReturnAmount}</strong>
-						{toolBonus?.itemId === baseReturn.itemId && (
-							<small className="return-stock-cause">{revisitingKnownRoute ? "Route +1" : "Find +1"} · Trowel +1</small>
-						)}
-					</span>}
-					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
-					<span>
-						<b>Willow Fiber</b>
-						<strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong>
-						{!nearDiscovery && toolBonus?.itemId === "willow-fiber" && (
-							<small className="return-stock-cause">Find +2 · Lantern +1</small>
-						)}
-					</span>
+					{nearDiscovery ? <>
+						<span><b>Compost</b><strong>+1</strong></span>
+						<span><b>Willow Fiber</b><strong>+1</strong></span>
+					</> : returnLedger.map((row) => (
+						<span key={row.itemId}>
+							<b>{row.name}</b>
+							<strong>+{row.amount}</strong>
+							<small className="return-stock-cause">{row.causes.join(" · ")}</small>
+						</span>
+					))}
 				</div>
 			</div>
 			<button type="button" className="return-reward-action" disabled={handoffActive} onClick={onAction}>{nearDiscovery ? guide.action : actionLabel}</button>
