@@ -53,6 +53,11 @@ for (const name of [
 	copyFileSync(join(here, "assets/homegrown-adventures", name), join(docsAssets, name));
 }
 
+copyFileSync(
+	join(root, "assets/images/tickle-particles/clover.png"),
+	join(docsAssets, "clover-seed-mark.png"),
+);
+
 const authoredRiveSource = join(
 	root,
 	"assets/rive/homegrown-adventures/homegrown-adventures.riv",

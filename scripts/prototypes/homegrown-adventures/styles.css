@@ -2351,68 +2351,101 @@ html[data-reduce-motion="true"] .purpose-handoff { animation: none; }
 .route-use-sentence b { color: inherit; font-size: inherit; white-space: nowrap; }
 .route-use-sentence em { overflow: hidden; color: var(--wood); font-size: 8px; font-style: normal; font-weight: 950; text-overflow: ellipsis; white-space: nowrap; }
 .route-lanternleaf .route-use-sentence em { color: var(--twilight); }
-.planting-panel {
-	left: 10px;
-	right: 10px;
-	top: 476px;
-	display: grid;
-	grid-template-rows: 100px 51px 54px;
-	gap: 8px;
-}
-.planting-costs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.planting-cost {
-	min-width: 0;
-	padding: 8px;
-	display: grid;
-	grid-template-columns: 48px 1fr;
-	align-items: center;
-	gap: 7px;
-	color: var(--ink);
-	background: rgba(255,249,233,.97);
-	border: 2px solid var(--ink);
-	border-radius: 14px;
-	box-shadow: 2px 3px 0 rgba(48,33,22,.68);
-	text-align: left;
-}
-.planting-cost .seed-art { width: 46px; height: 53px; font-size: 27px; }
-.planting-cost > span:last-of-type { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.planting-cost small { color: #8d5c35; font-size: 7px; font-weight: 950; letter-spacing: .05em; text-transform: uppercase; }
-.planting-cost strong { font-family: Caprasimo, Georgia, serif; font-size: 11px; font-weight: 400; line-height: 1; }
-.planting-cost b { font-size: 13px; line-height: 1; }
-.compost-toggle { position: relative; cursor: pointer; }
-.compost-toggle:hover { background: #fff1c5; transform: translateY(-1px); }
-.compost-toggle.is-selected { background: #edf0ce; box-shadow: 2px 3px 0 #526d37; }
-.compost-toggle > i {
+.planting-panel.planting-prototype { inset: 0; top: 0; display: block; pointer-events: none; }
+.planting-prototype button { pointer-events: auto; }
+.planting-bed-focus {
 	position: absolute;
-	right: 5px;
-	top: 5px;
-	width: 21px;
-	height: 21px;
-	display: grid;
-	place-items: center;
-	color: white;
-	background: #5d8d40;
-	border: 1.5px solid var(--ink);
-	border-radius: 50%;
-	font-size: 12px;
-	font-style: normal;
-	font-weight: 950;
+	z-index: 1;
+	left: 5px;
+	top: 520px;
+	width: 130px;
+	height: 112px;
+	border: 4px solid rgba(255,238,133,.96);
+	border-radius: 25% 22% 20% 24%;
+	box-shadow: 0 0 0 3px rgba(48,33,22,.55), 0 0 16px rgba(255,226,92,.64);
+	transform: rotate(-1deg);
+	pointer-events: none;
+	animation: planting-bed-focus 1800ms cubic-bezier(.16,1,.3,1) infinite alternate;
 }
-.planting-effect {
-	padding: 8px 12px;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	background: rgba(255,249,233,.94);
-	border: 2px solid var(--ink);
-	border-radius: 12px;
-	box-shadow: 2px 2px 0 rgba(48,33,22,.6);
-	text-align: center;
-}
-.planting-effect strong { font-size: 11px; line-height: 1; }
-.planting-effect small { margin-top: 4px; color: var(--ink-soft); font-size: 8px; font-weight: 700; line-height: 1.1; }
-.plant-confirm,
+.planting-prototype.is-moonberries .planting-bed-focus { left: 127px; transform: rotate(.4deg); }
+.planting-bed-focus > .planting-bed-label { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); min-width: 66px; padding: 4px 7px; color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: 999px; box-shadow: 1px 2px 0 rgba(48,33,22,.62); font-size: 9px; font-weight: 950; line-height: 1; text-align: center; white-space: nowrap; }
+@keyframes planting-bed-focus { from { filter: brightness(.98); } to { filter: brightness(1.1); box-shadow: 0 0 0 3px rgba(48,33,22,.55), 0 0 22px rgba(255,226,92,.78); } }
+.planting-crop-prop { position: relative; display: block; flex: 0 0 auto; width: 68px; height: 68px; }
+.planting-crop-prop-moonberries img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(1px 2px 0 rgba(48,33,22,.42)); }
+.planting-crop-prop-clover > span { position: absolute; left: 8px; top: 1px; width: 48px; height: 58px; display: grid; place-items: center; background: linear-gradient(#fff6d9,#e9cea0); border: 2px solid var(--ink); border-radius: 4px 4px 7px 7px; box-shadow: 2px 3px 0 rgba(48,33,22,.45); transform: rotate(5deg); }
+.planting-crop-prop-clover img { width: 34px; height: 34px; object-fit: contain; }
+.planting-crop-prop-clover > i { position: absolute; bottom: 5px; width: 10px; height: 8px; background: #b58a4a; border: 1.5px solid var(--ink); border-radius: 50%; }
+.planting-crop-prop-clover > i:nth-of-type(1) { left: 8px; transform: rotate(-12deg); }
+.planting-crop-prop-clover > i:nth-of-type(2) { right: 5px; bottom: 1px; transform: rotate(18deg); }
+.planting-compost-prop { position: relative; display: block; flex: 0 0 auto; width: 58px; height: 50px; margin-top: 4px; background: #738347; border: 2px solid var(--ink); border-radius: 8px 8px 17px 17px; box-shadow: inset 0 0 0 3px rgba(210,222,139,.28), 1px 2px 0 rgba(48,33,22,.42); }
+.planting-compost-prop::before { content: ""; position: absolute; left: 5px; right: 5px; top: -5px; height: 12px; background: #4e5f32; border: 2px solid var(--ink); border-radius: 50%; }
+.planting-compost-prop > i { position: absolute; z-index: 2; top: -10px; width: 20px; height: 15px; background: var(--soil); border: 1.5px solid var(--ink); border-radius: 50% 50% 38% 38%; }
+.planting-compost-prop > i:nth-child(1) { left: 3px; }.planting-compost-prop > i:nth-child(2) { left: 19px; top: -14px; }.planting-compost-prop > i:nth-child(3) { right: 2px; }
+.planting-supply-card,
+.planting-resource,
+.planting-bed-compost { min-width: 0; color: var(--ink); background: rgba(255,249,233,.97); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 2px 3px 0 rgba(48,33,22,.68); text-align: left; }
+.planting-supply-card > span:last-of-type,
+.planting-resource > span:last-of-type,
+.planting-bed-compost > span { min-width: 0; display: grid; gap: 2px; }
+.planting-supply-card small,
+.planting-resource small,
+.planting-bed-compost small { color: #795536; font-size: 9px; font-weight: 950; line-height: 1; text-transform: uppercase; }
+.planting-supply-card strong,
+.planting-resource strong,
+.planting-bed-compost strong { font-family: Caprasimo, Georgia, serif; font-size: 14px; font-weight: 400; line-height: 1; }
+.planting-supply-card b,
+.planting-resource b,
+.planting-bed-compost b { color: var(--ink-soft); font-size: 10px; line-height: 1.05; }
+.planting-supply-card > i,
+.planting-resource > i,
+.planting-bed-compost > i { position: absolute; right: 5px; top: 5px; width: 23px; height: 23px; display: grid; place-items: center; color: #fff; background: #5d8d40; border: 2px solid var(--ink); border-radius: 50%; font-size: 13px; font-style: normal; font-weight: 950; }
+.planting-supply-card:hover,
+.planting-resource:hover,
+.planting-bed-compost:hover { background: #fff1c5; transform: translateY(-1px); }
+.planting-supply-card.is-selected,
+.planting-resource.is-selected,
+.planting-bed-compost.is-selected { background: #edf0ce; box-shadow: 2px 3px 0 #526d37; }
+.planting-supply-card:disabled,
+.planting-resource:disabled,
+.planting-bed-compost:disabled { cursor: not-allowed; opacity: .58; transform: none; }
+.planting-compact-effect,
+.planting-action-promise,
+.planting-ribbon-promise { min-width: 0; display: grid; align-content: center; gap: 3px; color: var(--ink); }
+.planting-compact-effect strong,
+.planting-action-promise strong,
+.planting-ribbon-promise strong { font-size: 11px; line-height: 1; }
+.planting-compact-effect small,
+.planting-action-promise small,
+.planting-ribbon-promise small { color: var(--ink-soft); font-size: 9px; font-weight: 800; line-height: 1.1; }
+.planting-world-confirm { min-width: 0; min-height: 52px; color: var(--ink); background: var(--paper); border: 3px solid var(--ink); border-radius: 13px; box-shadow: 3px 4px 0 var(--wood); font-family: Caprasimo, Georgia, serif; font-size: 16px; line-height: 1; text-transform: uppercase; }
+.planting-world-confirm:hover { background: #fff1c5; transform: translateY(-1px); }
+.planting-world-confirm:active { transform: translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
+.planting-world-confirm:disabled { cursor: not-allowed; opacity: .56; transform: none; }
+.planting-bedside-kit { position: absolute; left: 8px; right: 8px; top: 426px; height: 86px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; pointer-events: auto; }
+.planting-supply-card { position: relative; padding: 7px; display: grid; grid-template-columns: 64px minmax(0,1fr); align-items: center; gap: 5px; }
+.planting-crop-card { pointer-events: none; }
+.planting-bedside-actions { position: absolute; left: 10px; right: 10px; top: 648px; min-height: 112px; padding: 8px; display: grid; grid-template-columns: minmax(0,1fr) 148px; align-items: center; gap: 8px; background: rgba(255,249,233,.97); border: 3px solid var(--ink); border-radius: 15px; box-shadow: 3px 4px 0 rgba(48,33,22,.68); pointer-events: auto; }
+.planting-layout-B > header { position: absolute; left: 20px; right: 20px; top: 386px; min-height: 50px; padding: 7px 12px; display: grid; place-items: center; gap: 2px; color: var(--ink); background: linear-gradient(#fff8df,#efd5a6); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 2px 3px 0 #6b4025, inset 0 0 0 3px rgba(255,255,255,.5); text-align: center; }
+.planting-layout-B > header strong { font-family: Caprasimo,Georgia,serif; font-size: 16px; font-weight: 400; line-height: 1; }
+.planting-layout-B > header small { color: #775535; font-size: 9px; font-weight: 850; line-height: 1; }
+.planting-resource-strip { position: absolute; left: 8px; right: 8px; top: 444px; height: 74px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; pointer-events: auto; }
+.planting-resource { position: relative; padding: 6px 7px; display: grid; grid-template-columns: 58px minmax(0,1fr); align-items: center; gap: 5px; }
+.planting-resource-crop { pointer-events: none; }
+.planting-layout-B .planting-bed-focus { top: 523px; }
+.planting-layout-B .planting-bed-focus > .planting-crop-prop { position: absolute; left: 50%; top: -24px; transform: translateX(-50%); }
+.planting-layout-B .planting-bed-focus > .planting-bed-label { bottom: -14px; }
+.planting-concept-action { position: absolute; left: 10px; right: 10px; top: 649px; min-height: 108px; display: grid; grid-template-columns: 168px minmax(0,1fr); align-items: stretch; gap: 8px; pointer-events: auto; }
+.planting-action-promise { padding: 8px 10px; background: rgba(255,249,233,.96); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 2px 2px 0 rgba(48,33,22,.6); text-align: center; }
+.planting-layout-C .planting-bed-focus { top: 516px; }
+.planting-layout-C .planting-bed-focus > .planting-crop-prop { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); }
+.planting-layout-C .planting-bed-focus > .planting-bed-label { bottom: -30px; min-width: 126px; padding: 5px 7px; display: grid; gap: 2px; }
+.planting-layout-C .planting-bed-focus > .planting-bed-label strong { font-family: Caprasimo,Georgia,serif; font-size: 12px; font-weight: 400; }
+.planting-layout-C .planting-bed-focus > .planting-bed-label small { color: var(--ink-soft); font-size: 8px; }
+.planting-bed-compost { position: absolute; right: 12px; top: 440px; width: 176px; min-height: 76px; padding: 7px 9px; display: grid; grid-template-columns: 58px minmax(0,1fr); align-items: center; gap: 7px; }
+.planting-action-ribbon { position: absolute; left: 10px; right: 10px; top: 650px; min-height: 108px; padding: 8px; display: grid; grid-template-columns: minmax(0,1fr) 150px; align-items: stretch; gap: 8px; background: rgba(255,249,233,.97); border: 3px solid var(--ink); border-radius: 15px; box-shadow: 3px 4px 0 rgba(48,33,22,.68); pointer-events: auto; }
+.planting-ribbon-promise { text-align: left; }
+html[data-reduce-motion="true"] .planting-bed-focus { animation: none; }
+@media (prefers-reduced-motion: reduce) { .planting-bed-focus { animation: none; } }
 .growth-status-panel button {
 	border: 3px solid var(--ink);
 	border-radius: 14px;
@@ -2423,9 +2456,7 @@ html[data-reduce-motion="true"] .purpose-handoff { animation: none; }
 	line-height: 1;
 	text-transform: uppercase;
 }
-.plant-confirm:hover,
 .growth-status-panel button:hover { background: #fff1c5; transform: translateY(-1px); }
-.plant-confirm:active,
 .growth-status-panel button:active { transform: translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
 .growth-status-panel {
 	left: auto;
