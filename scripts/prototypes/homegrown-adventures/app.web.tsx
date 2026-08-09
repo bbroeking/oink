@@ -43,9 +43,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Chest Bag", question: "Does the shipped front-mounted Bag read as worn equipment?" },
+	B: { name: "Hip Satchel", question: "Does a small cross-body satchel preserve Rosie's face and silhouette?" },
+	C: { name: "Back Sling", question: "Does the approved behind-the-shoulder attachment make departure feel most believable?" },
 };
 
 const STAGE_COPY = {
@@ -266,6 +266,30 @@ function Glyph({ name }) {
 		me: <path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm-8 9c0-4.2 3.2-6.7 8-6.7s8 2.5 8 6.7H4Z" />,
 	};
 	return <svg aria-hidden="true" viewBox="0 0 24 24"><g>{paths[name]}</g></svg>;
+}
+
+function DepartureSatchelStudy({ part = "full", className = "" }) {
+	const showBody = part !== "strap";
+	const showStrap = part !== "body";
+	return <svg className={`departure-satchel-study ${className}`} aria-hidden="true" viewBox="0 0 96 82">
+		<g fill="none" stroke="#4c2b1e" strokeLinecap="round" strokeLinejoin="round">
+			{showStrap && <>
+				<path d="M8 11C31 0 73 14 89 47" stroke="#9b6739" strokeWidth="10" />
+				<path d="M8 11C31 0 73 14 89 47" stroke="#c28a4b" strokeWidth="5" />
+			</>}
+			{showBody && <>
+				<path d="M15 37Q16 30 24 30H76Q84 30 85 38L88 70Q88 78 80 79H20Q12 78 13 70Z" fill="#8b5a32" strokeWidth="3" />
+				<path d="M15 39Q17 32 25 32H76Q82 32 85 39L78 57Q76 61 70 61H29Q23 61 21 57Z" fill="#b97845" strokeWidth="3" />
+				<path d="M21 69Q49 75 81 68" stroke="#b07135" strokeWidth="2" strokeDasharray="3 4" />
+				<rect x="44" y="55" width="12" height="11" rx="2.5" fill="#f2cf79" strokeWidth="2.5" />
+				<g fill="#6f9e45" stroke="#36522c" strokeWidth="1.7">
+					<circle cx="47.5" cy="50" r="4" /><circle cx="52.5" cy="50" r="4" />
+					<circle cx="47.5" cy="55" r="4" /><circle cx="52.5" cy="55" r="4" />
+					<path d="M50 57L54 63" />
+				</g>
+			</>}
+		</g>
+	</svg>;
 }
 
 function Counter({ kind, value, label }) {
@@ -1678,22 +1702,26 @@ function App() {
 	const holdingGlowrootHomeReveal = glowrootHomeReveal && !state.reduceMotion;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
 	const sceneRiveViewModel = useMemo(() => {
+		let model = riveModel.viewModel;
 		if (
-			!showingAdventureVignette ||
-			opportunity.id !== SECOND_ADVENTURE_OPPORTUNITY.id
-		) return riveModel.viewModel;
-		return {
-			...riveModel.viewModel,
-			bedOneState: "empty",
-			bedTwoState: "empty",
-			bedThreeState: "empty",
-			hedgehogVisible: false,
-			frogVisible: false,
-			mothsVisible: false,
-			hedgeCrossingOpen: false,
-			hedgeBellEarned: false,
-		};
-	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
+			showingAdventureVignette &&
+			opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id
+		) {
+			model = {
+				...model,
+				bedOneState: "empty",
+				bedTwoState: "empty",
+				bedThreeState: "empty",
+				hedgehogVisible: false,
+				frogVisible: false,
+				mothsVisible: false,
+				hedgeCrossingOpen: false,
+				hedgeBellEarned: false,
+			};
+		}
+		if (position === 8 && variant !== "A") model = { ...model, satchelEquipped: false };
+		return model;
+	}, [opportunity.id, position, riveModel.viewModel, showingAdventureVignette, variant]);
 	const adventureProvisionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "provision"
 		? "adventure-provision"
 		: null;
@@ -2020,6 +2048,7 @@ function App() {
 			{showingAdventureVignette && opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id && (
 				<LanternleafReflectionsRive active={adventureEnvironmentRevealed} reduceMotion={state.reduceMotion} />
 			)}
+			{position === 8 && variant === "C" && <DepartureSatchelStudy part="body" className="is-back-body" />}
 			<HomegrownRiveScene
 				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}
@@ -2031,6 +2060,8 @@ function App() {
 				triggerNonce={sceneRiveTriggerNonce}
 				bagReceiveSlot={riveModel.bagReceive?.slot ?? null}
 			/>
+			{position === 8 && variant === "B" && <DepartureSatchelStudy className="is-hip" />}
+			{position === 8 && variant === "C" && <DepartureSatchelStudy part="strap" className="is-back-strap" />}
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-tool-prop" aria-hidden="true" />}
@@ -2152,7 +2183,7 @@ function App() {
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
-		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{position === 8 && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
 }
 
