@@ -1028,7 +1028,7 @@ function AdventureVignetteOverlay({ state, beat }) {
 	);
 }
 
-function journeyWatchCopy(lanternleaf, journeyPhase, missingSlot = null) {
+function journeyWatchCopy(lanternleaf, journeyPhase, missingSlot = null, revisitingKnownRoute = false) {
 	if (missingSlot) {
 		if (journeyPhase === "homeward") {
 			return {
@@ -1096,12 +1096,16 @@ function journeyWatchCopy(lanternleaf, journeyPhase, missingSlot = null) {
 		? {
 			eyebrow: "Beyond the open gate",
 			title: "Rosie follows reflected leaves",
-			body: "Her Bag keeps the silver route within reach while Home waits beyond the hedge.",
+			body: revisitingKnownRoute
+				? "The reflected leaves gather Willow Fiber. Her Bag keeps the silver route within reach while Home waits."
+				: "Her Bag keeps the silver route within reach while Home waits beyond the hedge.",
 		}
 		: {
 			eyebrow: "Beyond the hedge",
 			title: "Rosie follows warm moths",
-			body: "Her Bag keeps the golden trail within reach while Home waits beyond the hedge.",
+			body: revisitingKnownRoute
+				? "The warm soil gives Rosie Compost. Her Bag keeps the golden trail within reach while Home waits."
+				: "Her Bag keeps the golden trail within reach while Home waits beyond the hedge.",
 		};
 }
 
@@ -1120,6 +1124,7 @@ function JourneyPackedStamp({ bag }) {
 function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, entering = false }) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const revisitingKnownRoute = Boolean(state.selectedAdventureOpportunityId);
 	const homecomingReady = state.adventureComplete;
 	const missingSlot = state.underprepared ? state.nearDiscoveryReason : null;
 	const trailLabels = lanternleaf
@@ -1128,7 +1133,7 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, en
 	const trailLabel = missingSlot
 		? trailLabels[missingSlot]
 		: lanternleaf ? "Reflected leaves" : "Warm moth trail";
-	const copy = journeyWatchCopy(lanternleaf, journeyPhase, missingSlot);
+	const copy = journeyWatchCopy(lanternleaf, journeyPhase, missingSlot, revisitingKnownRoute);
 	const homeward = journeyPhase === "homeward";
 	const returnPromise = homecomingReady
 		? null

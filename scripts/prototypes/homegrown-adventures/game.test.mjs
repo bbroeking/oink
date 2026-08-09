@@ -2103,6 +2103,8 @@ test("familiar routes keep the next Seed but return different predictable materi
 	]);
 	assert.match(adventureStory(glowroot).result, /warm soil gives Compost/);
 	assert.match(adventureStory(lanternleaf).result, /reflected path gives Willow Fiber/);
+	assert.match(appSource, /The warm soil gives Rosie Compost\. Her Bag keeps the golden trail/);
+	assert.match(appSource, /The reflected leaves gather Willow Fiber\. Her Bag keeps the silver route/);
 });
 
 test("revisiting a known route returns supplies without pretending the Discovery is new", () => {
