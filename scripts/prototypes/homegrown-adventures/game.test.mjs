@@ -2400,3 +2400,19 @@ test("the one packed Bag closes, reaches Rosie, and triggers Pack exactly once",
 	assert.doesNotMatch(appSource, /HANDOFF_STUDIES|handoffStudy|bag-handoff-page-turn/);
 	assert.doesNotMatch(stylesSource, /bag-handoff-study-|rosie-collects-stage|storybook-page-turn/);
 });
+
+test("settled departure keeps one quiet truthful loadout receipt", () => {
+	assert.match(appSource, /function DepartureLoadoutReceipt\(\{ bag, farmStock \}\)/);
+	assert.match(appSource, /aria-label="Rosie's packed items"/);
+	assert.match(appSource, /`Carrier · Fiber \$\{remainingPackingMaterial\}`/);
+	assert.match(appSource, /aria-label=\{`\$\{slotLabel\}: \$\{selected\?\.name \?\? "Empty"\}`\}/);
+	assert.match(appSource, /const showDepartureLoadout = showPackedLoadout && position === 8;/);
+	assert.match(appSource, /showDepartureLoadout \? "departure-ready" : ""/);
+	assert.match(appSource, /showDepartureLoadout\s*\? <DepartureLoadoutReceipt bag=\{state\.bag\} farmStock=\{state\.farmStock\} \/>/);
+	assert.match(appSource, /: showPackedLoadout && <PackedLoadoutRibbon bag=\{state\.bag\} farmStock=\{state\.farmStock\} \/>/);
+	assert.match(stylesSource, /\.departure-ready \.current-objective small \{ display: none; \}/);
+	assert.match(stylesSource, /\.departure-loadout-receipt \{[^}]*width: 334px;[^}]*grid-template-columns: repeat\(3,minmax\(0,1fr\)\);/s);
+	assert.match(stylesSource, /\.departure-loadout-item strong \{[^}]*font-size: 9px;/s);
+	assert.doesNotMatch(appSource, /DEPARTURE_STUDIES|departureStudy|departure-gate-sign|departure-packed-on-rosie|departure-quiet-receipt|One Gate Sign|Packed on Rosie|Quiet Receipt/);
+	assert.doesNotMatch(stylesSource, /departure-gate-sign|departure-packed-on-rosie|departure-quiet-receipt/);
+});

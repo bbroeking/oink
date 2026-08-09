@@ -922,6 +922,29 @@ function PackedLoadoutRibbon({ bag, farmStock }) {
 	);
 }
 
+function DepartureLoadoutReceipt({ bag, farmStock }) {
+	return (
+		<div className="departure-loadout-receipt" role="group" aria-label="Rosie's packed items">
+			{BAG_SLOT_ORDER.map((slot) => {
+				const selected = bagItem(slot, bag[slot]);
+				const packingCost = slot === "pack" ? bagPackingCost(selected?.id ?? null) : null;
+				const remainingPackingMaterial = packingCost === null
+					? null
+					: farmStock?.[packingCost.itemId] ?? 0;
+				const slotLabel = packingCost === null
+					? BAG_SLOT_LABELS[slot]
+					: `Carrier · Fiber ${remainingPackingMaterial}`;
+				return (
+					<span key={slot} className={`departure-loadout-item ${selected ? "" : "is-empty"}`} aria-label={`${slotLabel}: ${selected?.name ?? "Empty"}`}>
+						<span aria-hidden="true"><BagItemArt itemId={selected?.id} /></span>
+						<span><small>{slotLabel}</small><strong>{selected?.name ?? "Empty"}</strong></span>
+					</span>
+				);
+			})}
+		</div>
+	);
+}
+
 function adventureProvisionPresentation(state) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
@@ -1919,6 +1942,7 @@ function App() {
 	const holdingGlowrootHomeReveal = glowrootHomeReveal && !state.reduceMotion;
 	const holdingPurposeHandoff = purposeHandoff && (choosingRoute || choosingSeed);
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
+	const showDepartureLoadout = showPackedLoadout && position === 8;
 	const sceneRiveViewModel = useMemo(() => {
 		if (
 			!showingAdventureVignette ||
@@ -2285,7 +2309,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${bagHandoff ? "bag-handoff-active" : ""} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${renderedRiveViewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${showDepartureLoadout ? "departure-ready" : ""} ${bagHandoff ? "bag-handoff-active" : ""} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${renderedRiveViewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootHomeReveal || holdingPurposeHandoff}
 			data-bag-handoff-active={bagHandoff ? "true" : undefined}
 			data-bag-handoff-phase={bagHandoff?.phase}
@@ -2352,7 +2376,9 @@ function App() {
 			>
 				{visiblePresentation.target === WORLD_TARGETS.ROSIE && <span>{visiblePresentation.label}</span>}
 			</button>}
-			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
+			{showDepartureLoadout
+				? <DepartureLoadoutReceipt bag={state.bag} farmStock={state.farmStock} />
+				: showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
 			{choosingRoute && !holdingPurposeHandoff && <KnownRouteMap
 				farmStock={state.farmStock}
 				onChoose={(opportunityId) => act({ type: ACTIONS.CHOOSE_ADVENTURE_ROUTE, opportunityId })}
