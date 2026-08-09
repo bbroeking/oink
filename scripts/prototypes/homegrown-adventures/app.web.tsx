@@ -43,9 +43,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Immediate Choice", question: "Should the crop decision appear on the same frame as Rosie's Tickle?" },
+	B: { name: "Rosie Introduces It", question: "Should Rosie and the new route own one short beat before farming answers it?" },
+	C: { name: "Beds Become Choices", question: "Should the two crops be chosen directly in the remembered Farm?" },
 };
 
 const STAGE_COPY = {
@@ -388,6 +388,32 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 				</div>
 			</div>
 			<SeedAdventureReceipt opportunity={opportunity} />
+		</section>
+	);
+}
+
+function PurposeHandoffPrototype({ opportunity }) {
+	return (
+		<div className="purpose-handoff-prototype" role="status" aria-live="polite">
+			<small>Rosie's curiosity</small>
+			<strong>{opportunity.name}</strong>
+			<span>{opportunity.detail}</span>
+		</div>
+	);
+}
+
+function WorldCropChoicePrototype({ state, opportunity, onChoose }) {
+	const farmStock = state.farmStock ?? {};
+	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
+	return (
+		<section className="world-crop-choice-prototype" aria-label="Choose a crop in the remembered Farm">
+			<div className="world-crop-purpose"><small>Glowroot opened this route</small><strong>{opportunity.name}</strong></div>
+			<button className="world-crop-button world-crop-clover" type="button" onClick={() => onChoose("clover")} disabled={cloverSeeds < 1}>
+				<small>4 hours</small><strong>Clover Lunch</strong><span>Stay until nightfall</span>
+			</button>
+			<button className="world-crop-button world-crop-moonberry" type="button" onClick={() => onChoose("moonberries")}>
+				<small>8 hours</small><strong>Moonberries</strong><span>Reveal reflections</span>
+			</button>
 		</section>
 	);
 }
@@ -1631,10 +1657,12 @@ function App() {
 	const [journeyEntryFresh, setJourneyEntryFresh] = useState(false);
 	const [seedHandoff, setSeedHandoff] = useState(null);
 	const [glowrootHomeReveal, setGlowrootHomeReveal] = useState(false);
+	const [purposeHandoff, setPurposeHandoff] = useState(false);
 	const [homeMemoryExpanded, setHomeMemoryExpanded] = useState(false);
 	const transitionLockUntil = useRef(0);
 	const newDayTimer = useRef(null);
 	const glowrootHomeRevealTimer = useRef(null);
+	const purposeHandoffTimer = useRef(null);
 	const seedHandoffTimers = useRef([]);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
 	const position = state.prototypePosition ?? 1;
@@ -1972,9 +2000,17 @@ function App() {
 				GLOWROOT_HOME_REVEAL_MS,
 			);
 		}
+		if (nextAction.type === ACTIONS.TICKLE && position === 1 && variant === "B") {
+			setPurposeHandoff(true);
+			window.clearTimeout(purposeHandoffTimer.current);
+			purposeHandoffTimer.current = window.setTimeout(
+				() => setPurposeHandoff(false),
+				5000,
+			);
+		}
 		dispatch(nextAction);
 		signalFeedback(nextAction.type);
-	}, [signalFeedback, startingNewDay, state.reduceMotion]);
+	}, [position, signalFeedback, startingNewDay, state.reduceMotion, variant]);
 
 	const jumpToPosition = useCallback((nextPosition) => {
 		if (seedHandoff || holdingGlowrootHomeReveal) return;
@@ -2082,11 +2118,17 @@ function App() {
 				{visiblePresentation.target === WORLD_TARGETS.ROSIE && <span>{visiblePresentation.label}</span>}
 			</button>}
 			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
-			{choosingSeed && <SeedChoicePanel
+			{choosingSeed && variant !== "C" && !purposeHandoff && <SeedChoicePanel
 				state={state}
 				opportunity={opportunity}
 				onChoose={(crop) => act({ type: ACTIONS.SELECT_CROP, crop })}
 			/>}
+			{choosingSeed && variant === "C" && <WorldCropChoicePrototype
+				state={state}
+				opportunity={opportunity}
+				onChoose={(crop) => act({ type: ACTIONS.SELECT_CROP, crop })}
+			/>}
+			{purposeHandoff && <PurposeHandoffPrototype opportunity={opportunity} />}
 			{plantingCrop && <PlantingPanel
 				state={state}
 				onToggleCompost={() => act({ type: ACTIONS.TOGGLE_COMPOST })}
