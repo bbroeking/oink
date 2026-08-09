@@ -1603,6 +1603,45 @@ html[data-reduce-motion="true"] .home-memory-pocket-detail { animation: none; }
 	font-weight: 850;
 	line-height: 1;
 }
+.home-memory-day-plaque.repeat-home-ledger {
+	min-height: 88px;
+	padding: 9px 13px 10px;
+	grid-template-columns: 1fr 1fr;
+	gap: 0;
+	transform: none;
+}
+.home-memory-day-plaque.repeat-home-ledger::before,
+.home-memory-day-plaque.repeat-home-ledger::after { display: none; }
+.repeat-home-ledger > span {
+	min-width: 0;
+	min-height: 64px;
+	padding: 3px 10px;
+	display: grid;
+	align-content: center;
+	gap: 3px;
+}
+.repeat-home-ledger > span + span { border-left: 1px solid rgba(134,100,64,.45); }
+.repeat-home-ledger small {
+	color: #866440;
+	font-size: 7px;
+	font-weight: 950;
+	letter-spacing: .12em;
+	line-height: 1;
+	text-transform: uppercase;
+}
+.repeat-home-ledger strong {
+	font-family: Caprasimo, Georgia, serif;
+	font-size: 13px;
+	font-weight: 400;
+	line-height: 1.08;
+}
+.repeat-home-ledger em {
+	color: var(--ink-soft);
+	font-size: 8px;
+	font-style: normal;
+	font-weight: 850;
+	line-height: 1.2;
+}
 .moth-shared-glint {
 	position: absolute;
 	z-index: 2;

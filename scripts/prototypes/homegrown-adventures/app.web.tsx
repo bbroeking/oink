@@ -44,9 +44,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "New Route Again", question: "Does the existing Lanternleaf memory still read truthfully after a repeat outing?" },
+	B: { name: "Familiar Homecoming", question: "Should the existing storybook memory celebrate Rosie returning from a familiar trail?" },
+	C: { name: "Place + Supplies", question: "Should the completed Home separate the permanent route from today's stocked supplies?" },
 };
 
 const STAGE_COPY = {
@@ -1267,6 +1267,23 @@ function homeMemoryContent(state) {
 	};
 }
 
+function repeatHomeMemoryPrototype(memory, variant) {
+	if (variant === "B") {
+		return {
+			...memory,
+			ariaLabel: "Today's familiar Lanternleaf outing and Farm stock",
+			pocketTitle: "Lanternleaf Path · visited today",
+			pocketDetail: "Known trail · Rosie Home · Supplies stocked",
+			plaqueEyebrow: "Today’s outing",
+			plaqueTitle: "A familiar trail brought Rosie Home",
+			plaqueLabel: "Rosie returned from the familiar Lanternleaf Path",
+			plaqueDetail: "Rosie followed the silver leaves Home again.",
+			positionName: "Lanternleaf Path revisited",
+		};
+	}
+	return memory;
+}
+
 function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = true, expanded, onToggle }) {
 	const stock = state.farmStock ?? {};
 	const stockItems = [
@@ -1300,11 +1317,20 @@ function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = tr
 	);
 }
 
-function HomeMemoryDayPlaque({ memory }) {
+
+function HomeMemoryDayPlaque({ memory, treatment = "A" }) {
+	if (treatment === "C") {
+		return (
+			<div className="home-memory-day-plaque repeat-home-ledger" aria-label="Known Lanternleaf place and today's stocked supplies">
+				<span><small>Known place</small><strong>Lanternleaf Path</strong><em>Still guides Rosie Home</em></span>
+				<span><small>Today’s outing</small><strong>Supplies stocked</strong><em>Seed · Compost · Willow Fiber</em></span>
+			</div>
+		);
+	}
 	return (
 		<div className="home-memory-day-plaque" aria-label={memory.plaqueLabel}>
-			<small>Home remembers</small>
-			<strong>The Barn remembers</strong>
+			<small>{memory.plaqueEyebrow ?? "Home remembers"}</small>
+			<strong>{memory.plaqueTitle ?? "The Barn remembers"}</strong>
 			<span>{memory.plaqueDetail}</span>
 		</div>
 	);
@@ -1685,6 +1711,7 @@ function App() {
 	const hasRequestedPosition = Number.isInteger(requestedPosition) && requestedPosition >= 1 && requestedPosition <= PROTOTYPE_POSITIONS.length;
 	const requestedJourneyPhase = initialSearch.get("journey") === "homeward" ? "homeward" : "trail";
 	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
+	const repeatHomePrototype = initialSearch.get("repeat") === "1";
 	const reviewMode = loopMode || hasRequestedPosition;
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
@@ -1696,11 +1723,18 @@ function App() {
 				requestedJourneyPhase === "trail" &&
 				requestedAdventureRoute === "glowroot"
 			) return persistedReview;
-			return createPrototypeState(requestedPosition, {
+			const reviewState = createPrototypeState(requestedPosition, {
 				reduceMotion: persistedReview.reduceMotion,
 				journeyPhase: requestedJourneyPhase,
 				adventureRoute: requestedAdventureRoute,
 			});
+			return repeatHomePrototype && requestedPosition === 11
+				? {
+					...reviewState,
+					daysCompleted: 2,
+					selectedAdventureOpportunityId: SECOND_ADVENTURE_OPPORTUNITY.id,
+				}
+				: reviewState;
 		}
 		if (loopMode) return createInitialState({ reduceMotion: prefersReduced });
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
@@ -1765,7 +1799,15 @@ function App() {
 	const showingJourneyWatch = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && state.adventureVignetteSeen;
 	const gateHomecomingReady = showingJourneyWatch && state.adventureComplete;
 	const journeyPhase = adventureJourneyPhase(state, visualNow) ?? "trail";
-	const homeMemory = homeMemoryContent(state);
+	const repeatHomeStudy =
+		debug &&
+		repeatHomePrototype &&
+		position === 11 &&
+		state.stage === STAGES.DEVELOPED &&
+		Boolean(state.selectedAdventureOpportunityId);
+	const homeMemory = repeatHomeStudy
+		? repeatHomeMemoryPrototype(homeMemoryContent(state), variant)
+		: homeMemoryContent(state);
 	const defaultPositionName = positionRailName({
 		position,
 		showingAdventureVignette,
@@ -2197,7 +2239,7 @@ function App() {
 					</span>
 				</div>
 			</div>
-			{showingHomeMemoryPromise && <HomeMemoryDayPlaque memory={homeMemory} />}
+			{showingHomeMemoryPromise && <HomeMemoryDayPlaque memory={homeMemory} treatment={repeatHomeStudy ? variant : "A"} />}
 			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingGlowrootPlanting && (!showingHomeMemory || showingHomeTickle) && !homeMemoryExpanded && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
 				className={`rosie-hit ${visiblePresentation.target === WORLD_TARGETS.ROSIE ? "is-guided" : ""}`}
 				type="button"
