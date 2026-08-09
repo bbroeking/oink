@@ -1,5 +1,21 @@
 # Homegrown Adventures prototype
 
+The v0.139 departure-hierarchy pass lets Rosie and the open hedge path lead
+Position 8. The settled screen now keeps the named opportunity in the quiet
+HUD, shows the freely chosen Provision, Tool, and Carrier once in a narrow
+physical receipt, and leaves the existing **Follow the glow** world action
+attached to the route. The former three-cell ribbon and duplicated HUD detail
+are absent only at departure; later packed reminders remain unchanged. Every
+item name, empty slot, and Cloth Wrap Fiber balance is still exact and
+accessible. The existing authored Rive satchel stays equipped, the same
+reducer-owned departure timing performs once, and React still owns every Bag,
+stock, route, and outcome fact. A rendered three-composition study at prototype
+commit `fb1452e` on
+`codex/homegrown-v139-departure-hierarchy-prototypes` compared One Gate Sign,
+Packed on Rosie, and Quiet Receipt. Quiet Receipt won because the gate sign
+became another inventory panel and the physical tags resembled new choices on
+the Farm. Production contains no experiment switcher or losing treatment.
+
 The v0.138 Bag-to-shoulder pass completes the physical preparation sentence.
 After the player packs any freely chosen loadout—including an entirely empty
 Bag—the real open-Bag artwork separates into a body and accurately cropped lid,

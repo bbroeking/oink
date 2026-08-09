@@ -24,7 +24,11 @@ Rosie, and becomes her fitted Rive satchel before Position 8 commits. The Pack
 one-shot fires once at attachment, rapid input cannot spend twice, and reduced
 motion reaches the identical loadout without travel;
 Position 8 now holds the native Rive satchel on Rosie through packing, reload,
-reduced motion, departure, and the causal Adventure handoff; Position 9 now
+reduced motion, departure, and the causal Adventure handoff; the settled
+departure now keeps only one narrow, exact packed-items receipt beneath the named opportunity
+so Rosie, her fitted Bag, the open hedge path, and the existing world action
+lead the settled departure instead of four surfaces repeating preparation;
+Position 9 now
 places that handoff in one tangible twilight clearing, with separate complete
 Discovery and clue-only Near-Discovery plates beneath live Rive Rosie; the
 first Provision cause now happens in that clearing instead of inside a large
@@ -1416,6 +1420,25 @@ and fitted satchel, suppresses the stale per-pocket receive prop, then commits
 the original `PACK_ADVENTURE` action once. Provision, Tool, Carrier, stock,
 costs, safe empty-Bag Near-Discovery, persistence, route, and reward rules are
 unchanged. Reduced motion skips the travel and reaches the same reducer state.
+
+**Departure-hierarchy checkpoint (August 9, 2026):** replaying public v0.138
+against the approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/08-departure.png`
+showed four surfaces repeating the same prepared fact: HUD detail, a second
+three-cell loadout ribbon, Rosie's fitted Bag, and the large path action. Three
+real Position 8 compositions were rendered on throwaway branch
+`codex/homegrown-v139-departure-hierarchy-prototypes` at `fb1452e`: One Gate
+Sign combined the loadout and action into a large sign over the hedge; Packed
+on Rosie placed three physical item tags beside the character; Quiet Receipt
+kept one slim truthful reminder under the HUD. Quiet Receipt won because the
+gate sign became another inventory panel and the tags resembled new choices on
+the crop beds, while the receipt preserved exact preparation without outranking
+Rosie or the path. Production hides duplicated HUD detail only at Position 8,
+shows the exact Provision, Tool, Carrier, empty states, and remaining Cloth Wrap
+Fiber once, and keeps the established **Follow the glow** world action. The
+authored Rive satchel, departure motion, reducer timing, Bag choices, costs,
+routes, Near-Discovery rules, rewards, persistence, and later packed reminders
+are unchanged. No study switcher or losing composition ships.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

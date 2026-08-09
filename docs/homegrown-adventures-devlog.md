@@ -461,11 +461,86 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     Bag, carry it toward Rosie's shoulder, and let the existing authored Rive
     Pack response complete the attachment before the exact Position 8 loadout
     appears.
+140. **v0.139 — Rosie and the Path Lead (shipped):** remove Position 8's
+    repeated preparation hierarchy, keep one narrow exact loadout receipt, and
+    let Rosie, her fitted Bag, the open hedge, and the existing route action
+    carry departure.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.139 — Rosie and the Path Lead — 2026-08-09
+
+- Played public v0.138 at Position 8 against
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/08-departure.png`.
+  The chosen items were accurate, but the quiet HUD detail, three-cell packed
+  ribbon, fitted satchel, and large **Follow the glow** action all repeated the
+  same preparation fact before Rosie moved. The path had no room to lead.
+- Built and drove three real compositions: One Gate Sign, Packed on Rosie, and
+  Quiet Receipt. One Gate Sign became a large inventory panel over the hedge.
+  Packed on Rosie made three item tags resemble new choices on the crop beds.
+  Quiet Receipt won because it keeps exact preparation readable once while
+  preserving the character, route, and action hierarchy. The study and losing
+  treatments remain at prototype commit `fb1452e` on
+  `codex/homegrown-v139-departure-hierarchy-prototypes` and were not merged.
+- Production commit `24cfc79` hides the duplicated HUD detail only on settled
+  Position 8 and replaces the second large ribbon with one 334 px physical
+  receipt. It renders the existing item art plus exact Provision, Tool, and
+  Carrier names; Cloth Wrap reports its live Fiber balance; and every empty
+  slot remains explicit. The later packed ribbon is preserved wherever it
+  still carries a distinct return or journey fact.
+- The authored Rive satchel remains visibly equipped. The existing world action
+  still performs the same reducer-owned departure once, the hedge crossing
+  still answers it, and Position 9 receives the unchanged deterministic causal
+  vignette. No Bag choice, stock cost, route, reward, Near-Discovery,
+  persistence field, Rive contract, or animation timing changed.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` passes 100/100, including the production
+  hierarchy and an explicit no-study-switcher assertion. The production build,
+  `npm run verify:rive-homegrown`, `npm run verify:rive-web`, the first complete
+  `npm run quality:loop` pass, final `npm run quality:check`, and
+  `git diff --check` pass.
+- At 1440×1100 and 390×844, the receipt stayed inside the 390 px game frame
+  without document overflow. Clover Lunch, Hand Trowel, and Wicker Basket each
+  measured `clientWidth=scrollWidth=76`; none clipped. The alternative
+  Moonberries / Lantern / Cloth Wrap loadout showed **Carrier · Fiber 3** with
+  the same fit, and the entirely empty Bag named all three empty slots.
+- A real rapid double activation held Position 8 while Rive reported
+  `motion=departure`, `lastPerformedMotion=departure`, and
+  `satchelEquipped=true`, then advanced exactly once to Position 9. The reduced
+  empty-Bag path reached the same Position 9 state with `motion=reduced`, no
+  performed one-shot, and the satchel fact preserved. Rendered passes logged no
+  runtime errors.
+
+### Public verification evidence
+
+- Feature commit `24cfc79` deployed successfully through GitHub Pages run
+  `31333124026`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `23b21dbd7d03d8af2ca102376d18b189b0ed89eda709252db4d17c78bbfecef6`
+  - player JavaScript: `ce74f48ecf2b3542747508bbd1efc41eff338bd585bfa3a957e49f2c972ff0c8`
+  - player CSS: `f3845a3c1df911568b48bca8d90b7d4743d3084bc4784171c69438f081705e66`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=8&v=24cfc79`
+- The public route reproduced the exact default, alternative, and empty
+  receipts, the authored departure midpoint, single Position 9 transition,
+  reduced-motion result, 390 px fit, and zero runtime errors.
+
+### Next highest-leverage weakness
+
+The public continuation now enters the right cozy clearing, but the live Rive
+Rosie is suspended high above the trail while the Provision, Tool, and Carrier
+act on the ground beneath her. Compared with
+`09-adventure-vignette.png`, this makes the causal story feel composited rather
+than explored. The next cycle should compare bounded ways to ground the same
+canonical Rosie at the find during Position 9—without changing her rig, adding
+direct navigation, restoring dense cause cards, or moving any Adventure fact
+out of React.
 
 ### v0.138 — One Bag, Onto Rosie — 2026-08-09
 
