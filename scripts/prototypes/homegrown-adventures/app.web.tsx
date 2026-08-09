@@ -43,9 +43,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Current Handoff", question: "Is the compact Home record enough to make the Discovery feel permanent?" },
+	B: { name: "Storybook Promise", question: "Should the changed Home state lead with one calm Barn-remembers promise?" },
+	C: { name: "In-world Memory", question: "Should the lasting consequences be labelled directly in the Farm scene?" },
 };
 
 const STAGE_COPY = {
@@ -1216,6 +1216,25 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 	);
 }
 
+function HomeMemoryPromisePrototype({ variant }) {
+	if (variant === "A") return null;
+	if (variant === "C") {
+		return (
+			<div className="home-memory-promise-prototype home-memory-promise-in-world" aria-label="Glowroot's lasting changes labelled in the Farm">
+				<span className="home-memory-world-label home-memory-world-label-path"><small>New route</small><strong>The hedge stays open</strong></span>
+				<span className="home-memory-world-label home-memory-world-label-bed"><small>Bed 3</small><strong>Glowroot lives here</strong></span>
+			</div>
+		);
+	}
+	return (
+		<div className="home-memory-promise-prototype home-memory-promise-storybook" aria-label="The Barn remembers that Glowroot changed Home">
+			<small>Home remembers</small>
+			<strong>The Barn remembers</strong>
+			<span>Glowroot now lights the open path.</span>
+		</div>
+	);
+}
+
 function NewDayHandoff() {
 	return (
 		<div className="new-day-handoff" role="status" aria-live="polite">
@@ -2058,6 +2077,7 @@ function App() {
 					</span>
 				</div>
 			</div>
+			{showingHomeMemory && !holdingGlowrootHomeReveal && <HomeMemoryPromisePrototype variant={variant} />}
 			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingGlowrootPlanting && (!showingHomeMemory || showingHomeTickle) && !homeMemoryExpanded && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
 				className={`rosie-hit ${visiblePresentation.target === WORLD_TARGETS.ROSIE ? "is-guided" : ""}`}
 				type="button"

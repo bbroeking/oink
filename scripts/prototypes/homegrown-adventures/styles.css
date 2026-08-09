@@ -1554,6 +1554,96 @@ html[data-reduce-motion="true"] .home-memory-pocket-detail { animation: none; }
 }
 .home-memory-action:hover { background: #87ae65; }
 .home-memory-action:active { transform: translateX(-50%) translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
+.home-memory-promise-prototype {
+	position: absolute;
+	z-index: 8;
+	pointer-events: none;
+}
+.home-memory-promise-storybook {
+	left: 39px;
+	right: 39px;
+	top: 70px;
+	min-height: 78px;
+	padding: 10px 18px 11px;
+	display: grid;
+	place-items: center;
+	color: var(--ink);
+	background: rgba(255,249,233,.96);
+	border: 3px solid #bd9560;
+	border-radius: 18px;
+	box-shadow: 0 3px 0 #6f4a2e, inset 0 0 0 3px rgba(236,210,158,.6);
+	text-align: center;
+	transform: rotate(-.35deg);
+}
+.home-memory-promise-storybook::before,
+.home-memory-promise-storybook::after {
+	content: "✦";
+	position: absolute;
+	top: 27px;
+	color: #d7b66e;
+	font-size: 13px;
+}
+.home-memory-promise-storybook::before { left: 17px; }
+.home-memory-promise-storybook::after { right: 17px; }
+.home-memory-promise-storybook > small {
+	color: #866440;
+	font-size: 7px;
+	font-weight: 950;
+	letter-spacing: .14em;
+	line-height: 1;
+	text-transform: uppercase;
+}
+.home-memory-promise-storybook > strong {
+	font-family: Caprasimo, Georgia, serif;
+	font-size: 19px;
+	font-weight: 400;
+	line-height: 1.05;
+}
+.home-memory-promise-storybook > span {
+	color: var(--ink-soft);
+	font-size: 9px;
+	font-weight: 850;
+	line-height: 1;
+}
+.home-memory-promise-in-world { inset: 0; }
+.home-memory-world-label {
+	position: absolute;
+	min-width: 114px;
+	padding: 7px 9px 8px;
+	display: grid;
+	gap: 2px;
+	color: var(--ink);
+	background: rgba(255,249,233,.95);
+	border: 2px solid var(--ink);
+	border-radius: 10px;
+	box-shadow: 2px 2px 0 var(--wood);
+}
+.home-memory-world-label::after {
+	content: "";
+	position: absolute;
+	width: 34px;
+	height: 2px;
+	background: var(--ink);
+	transform-origin: left center;
+}
+.home-memory-world-label small {
+	color: #866440;
+	font-size: 7px;
+	font-weight: 950;
+	letter-spacing: .08em;
+	line-height: 1;
+	text-transform: uppercase;
+}
+.home-memory-world-label strong {
+	font-family: Caprasimo, Georgia, serif;
+	font-size: 10px;
+	font-weight: 400;
+	line-height: 1.08;
+}
+.home-memory-world-label-path { right: 18px; top: 252px; transform: rotate(1deg); }
+.home-memory-world-label-path::after { right: 15px; bottom: -15px; transform: rotate(62deg); }
+.home-memory-world-label-bed { right: 15px; top: 465px; transform: rotate(-1deg); }
+.home-memory-world-label-bed::after { left: 26px; bottom: -12px; transform: rotate(51deg); }
 .moth-shared-glint {
 	position: absolute;
 	z-index: 2;
