@@ -404,11 +404,91 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 123. **v0.122 — Rosie Reveals the Purpose (shipped):** let the authored morning
     Tickle and named route own one short Rosie-first beat before the existing
     crop choice asks the player what to grow.
+124. **v0.123 — Home Remembers Lanternleaf (shipped):** let the successful
+    second Adventure replace the stale Glowroot ceremony with one accurate,
+    persisted Lanternleaf Path memory.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.123 — Home Remembers Lanternleaf — 2026-08-09
+
+- Played both second-day crop paths from Rosie's new purpose through planting,
+  growth, Harvest, and Bag preparation. The earlier question resolved cleanly:
+  Clover still says **stay until nightfall** and Moonberries still says
+  **reveal reflected leaves** when the player reaches the Provision pocket.
+  The matched Moonberries, Lantern, and Cloth Wrap loadout then mapped
+  **Lanternleaf Path** exactly as intended. The break came afterward: accepting
+  that Discovery returned to Position 11 and repeated **The Barn remembers ·
+  Glowroot now lights the open path** as though the second Adventure had not
+  happened.
+- Compared three runnable treatments on the real completed endpoint: the stale
+  Glowroot memory, a route-aware **Latest Chapter** in the existing storybook
+  hierarchy, and a **Living Route** that reused the reflected-leaf Rive layer
+  beside an in-world marker. Latest Chapter won. The baseline contradicted the
+  accepted reward; the reused Rive layer was misregistered against the Home
+  plate and the marker covered the open hedge. The isolated study and verdict
+  remain at prototype commit `0a55062` on
+  `codex/homegrown-v123-lanternleaf-home-memory-prototypes`; no comparison code,
+  marker, or misregistered animation shipped.
+- Successful second-Adventure state now derives its latest Home memory from the
+  already-persisted Field Guide. The scene description says **Lanternleaf Path
+  joined Rosie's map**, the plaque promises **Lanternleaf Path now guides Rosie
+  Home**, the compact Home pocket says **Lanternleaf Path is mapped**, and the
+  progression rail says **Lanternleaf Path at Home**. The first completed day
+  still remembers Glowroot, and a Near-Discovery never earns Lanternleaf Path.
+- A review-only `route=lanternleaf` Position 11 preset exposes the exact state
+  to a fresh browser. Normal reducer progression, rewards, inventory, save
+  schema, crop rules, Field Guide rules, Rive source, View Model, and authored
+  motions are unchanged.
+
+### Local validation evidence
+
+- Replayed the successful first endpoint and confirmed its Glowroot plaque,
+  compact Home pocket, scene description, and **Glowroot at Home** rail remain
+  unchanged. Replayed the full second morning with Moonberries, Lantern, and
+  Cloth Wrap through departure, idle fast-forward, Homecoming, reward storage,
+  and Position 11. All four rendered memory surfaces changed to Lanternleaf
+  Path together; reload retained them.
+- Opened a fresh local Position 11 with `route=lanternleaf` and confirmed the
+  direct review preset renders the same persisted facts without relying on
+  browser history. `npm run prototype:homegrown:test` passes 89/89, including
+  successful progression, direct-review, first-day, second-day, and
+  Near-Discovery coverage. `npm run verify:rive-homegrown` passes for the
+  authored Home scene and Lanternleaf asset.
+- `npm run quality:check` passes from a clean worktree at exact feature head
+  `9d5a27f`: 155 layout files, 324 sprites, TypeScript, 78 layout assertions,
+  and 202 security assertions. The shared worktree contains unrelated
+  concurrent edits, so the clean commit—not those uncommitted files—was used as
+  the authoritative checkpoint gate. Manual mobile Safari motion,
+  reduced-motion, silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commits `f655b2a` and `9d5a27f` deployed successfully through
+  GitHub Pages runs `31316163667` and `31316341935`; the latter is the final
+  feature head.
+- Exact checked-in and deployed checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `17dc7f348efce6ccd4407b9815a07bdf584ff8b0ddb9ebc23475be0f0a30dc7e`
+  - player JavaScript: `6881a795f6e2875f919a638370f7608118319b0e2dd6cee28f989a869c188c73`
+  - player CSS: `6aff439552e5f68d6b08115fbe6051259a345d4d5c6d8caaeab000e955f2df14`
+- Direct public fetches match all four hashes. In a fresh public
+  `route=lanternleaf` Position 11 review, Rive settles with Rosie and every
+  earlier physical Glowroot consequence visible while the scene description,
+  plaque, compact pocket, and rail all name Lanternleaf Path.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=11&route=lanternleaf&v=9d5a27f`
+
+### Next highest-leverage weakness
+
+Continue from Lanternleaf Home through **Begin another day** and the third
+morning. Determine whether mapping a repeatable route feels like lasting
+progress or immediately repeats yesterday's purpose with no visible new
+choice. Prefer making the mapped route legible as part of the living world
+before inventing another crop, destination, or parallel system.
 
 ### v0.122 — Rosie Reveals the Purpose — 2026-08-08
 

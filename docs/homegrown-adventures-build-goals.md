@@ -228,6 +228,20 @@ their existing names and environmental clues; reducer state, saves, crops,
 inventory, rewards, Rive source, View Model, and authored motions are
 unchanged.
 
+**Lanternleaf Home-memory checkpoint (August 9, 2026):** Completing the second
+Adventure now replaces the stale Glowroot ceremony with the newest earned
+chapter. A rendered three-treatment study compared the repeated Glowroot
+memory, a route-aware version of the existing storybook hierarchy, and a
+physical reflected-leaf route marker. The route-aware storybook treatment won:
+the baseline contradicted the accepted Lanternleaf Path reward, while the
+reused Adventure Rive layer was misregistered against the Home plate and its
+marker covered the open hedge. The successful second route now derives its
+memory from the persisted Field Guide and aligns the scene description,
+completed-day plaque, compact Home pocket, and Position 11 label on
+**Lanternleaf Path**. First-day Glowroot and clue-only returns remain unchanged;
+no new save field, reward, crop, destination, Rive input, or gameplay rule was
+added.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in
