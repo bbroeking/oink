@@ -2050,6 +2050,22 @@ test("the direct repeat-Home review truthfully models either familiar route", ()
 	assert.doesNotMatch(appSource, /repeatHomeMemoryPrototype|repeatHomeStudy|repeat-home-ledger/);
 });
 
+test("the direct familiar Return review exposes the useful next Seed", () => {
+	for (const adventureRoute of ["glowroot", "lanternleaf"]) {
+		const state = createPrototypeState(10, {
+			now: at,
+			adventureRoute,
+			repeatAdventure: true,
+		});
+		assert.equal(state.stage, STAGES.GLOWROOT_RETURNED);
+		assert.equal(state.prototypePosition, 10);
+		assert.equal(state.glowrootPlanted, true);
+		assert.equal(state.farmStock["clover-seed"], 4);
+		assert.equal(state.farmStock["glowroot-seed"], 0);
+		assert.equal(adventureStory(state).tags[1].detail.includes("another Clover Seed"), true);
+	}
+});
+
 test("revisiting a known route returns supplies without pretending the Discovery is new", () => {
 	let state = throughThirdMorning();
 	state = reduce(state, {

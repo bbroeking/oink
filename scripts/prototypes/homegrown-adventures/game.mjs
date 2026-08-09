@@ -809,7 +809,7 @@ export function createPrototypeState(position, {
 				: ["Clover Lunch", "Dusk Picnic", "Glowroot Seed"],
 		}
 		: {};
-	const repeatRoutePreview = repeatAdventure && target === 11
+	const repeatRoutePreview = repeatAdventure && [10, 11].includes(target)
 		? {
 			daysCompleted: 2,
 			glowrootKnown: true,
