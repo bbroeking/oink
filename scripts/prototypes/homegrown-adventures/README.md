@@ -1,5 +1,20 @@
 # Homegrown Adventures prototype
 
+The v0.127 familiar-reward pass turns a repeat outing's primary return back
+into the beginning of the farming loop. Once Glowroot is planted and a route is
+known, a successful Adventure now brings **Clover Seed** instead of another
+unusable Glowroot Seed; Hand Trowel finds one additional Clover Seed on that
+familiar route. The return plaque says the Seed can begin the next Adventure,
+the ledger separates **Route +1 · Trowel +1**, and one physical Clover Seed
+pouch covers the obsolete Glowroot prop. First-time Glowroot and Lanternleaf
+Discoveries retain Glowroot Seed, their planting ceremony, and their original
+art. A driven three-policy logic study at prototype commit `7666ff6` on
+`codex/homegrown-v127-repeat-reward-prototype` compared keeping the Discovery,
+returning the next Seed, and returning Compost. The next Seed won because it
+kept Clover plantable across three repeats without overlapping the Carrier or
+creating dead stock. No new item, currency, crafting rule, random reward, save
+fact, Rive input, or parallel system remains on main.
+
 The v0.126 complete-stock pass lets the final Home screen remember the crops
 the player actually grew instead of calling a four-item supply strip the
 current Farm stock. The existing calm Home-memory pocket remains collapsed by

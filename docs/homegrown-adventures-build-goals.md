@@ -290,6 +290,23 @@ farm while keeping Rosie and the remembered world primary. No stock rule,
 reward quantity, save fact, Rive source, Rive input, destination, currency, or
 parallel inventory screen changed.
 
+**Next-Seed checkpoint (August 9, 2026):** A successful familiar-route return
+now feeds the next farm → Bag → Adventure cycle instead of accumulating a
+resolved Discovery item. Once Glowroot is planted and the player deliberately
+chooses a known route, its base return is one Clover Seed; Hand Trowel finds a
+second Clover Seed, while Lantern, Wicker Basket, Cloth Wrap, Near-Discovery,
+and first-time rewards keep their established jobs. Position 10 names **Clover
+Seed can begin the next Adventure**, separates **Route +1 · Trowel +1**, and
+places one physical Clover Seed pouch on the worktable. First-time Glowroot and
+Lanternleaf returns still grant Glowroot Seed and preserve the planting
+ceremony. A driven three-policy logic prototype showed that the old rule made
+four unusable Glowroot Seeds and exhausted Clover after two repeats; a Compost
+base return also exhausted Clover while overlapping Wicker Basket; the chosen
+Seed return kept the starting two Clover Seeds stable across three complete
+Lantern / Wicker repeats. No new item, crafting tree, currency, reward roll,
+save field, Rive source, Rive input, destination, or prescribed loadout was
+added.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

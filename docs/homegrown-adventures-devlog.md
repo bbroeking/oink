@@ -417,11 +417,91 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 127. **v0.126 — The Pantry Remembers (shipped):** show harvested Clover Lunches
     and Moonberries with their Adventure uses in the existing Home stock
     pocket, above the quieter Seed and Material supply row.
+128. **v0.127 — Rosie Brings the Next Seed (shipped):** replace a familiar
+    route's dead Glowroot Seed return with Clover Seed that can begin the next
+    Provision crop, while preserving every first-time Discovery.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.127 — Rosie Brings the Next Seed — 2026-08-09
+
+- Replayed the v0.126 familiar Lanternleaf loop through Moonberry farming,
+  freely chosen Bag preparation, Return, and the complete pantry. A repeat
+  Adventure still added Glowroot Seed after Glowroot was planted; the new
+  drawer made that unresolved economy problem visible because the Seed had no
+  action, crop, or future preparation use.
+- Built and drove a throwaway reward-loop simulator across three deterministic
+  policies. Keeping the Discovery exhausted two Clover Seeds after two repeat
+  cycles and accumulated four unusable Glowroot Seeds. Returning Compost also
+  exhausted Clover while accumulating eight boosts and overlapping Wicker
+  Basket. Returning one Clover Seed kept the starting two Seeds stable through
+  three Clover / Lantern / Wicker cycles. The isolated model, terminal shell,
+  and verdict remain at prototype commit `7666ff6` on
+  `codex/homegrown-v127-repeat-reward-prototype`.
+- A successful familiar outing now returns one Clover Seed instead of another
+  Glowroot Seed. Hand Trowel's familiar-route bonus becomes a second Clover
+  Seed; Lantern still returns extra Willow Fiber, Wicker Basket still returns
+  Compost, Cloth Wrap still protects a Clover Seed, and every choice remains
+  free. Near-Discoveries retain their clue supplies.
+- Position 10 says **Clover Seed can begin the next Adventure**, lists **Route
+  +1 · Trowel +1**, and places one physical Clover Seed pouch over the obsolete
+  Glowroot prop. First-time Glowroot and Lanternleaf Discoveries still return
+  Glowroot Seed and preserve their established planting and Home-memory
+  ceremonies. No save migration or Rive change was required.
+- Added a deterministic `repeat=1` Position 10 review for either familiar route
+  so the actual useful return—not only its final pantry total—is directly
+  shareable and reload-stable.
+
+### Local validation evidence
+
+- Played a real rendered familiar Lanternleaf route: tended Moonberries with
+  Compost, completed Down → Left → Right → Up for six berries, packed
+  Moonberries / Hand Trowel / Wicker Basket, finished the journey, and welcomed
+  Rosie. The Return showed a physical Clover Seed pouch, **Clover Seed +2 ·
+  Route +1 · Trowel +1**, Compost +1, and Willow Fiber +2. The final pantry
+  showed five Clover Seeds, five remaining Moonberries, zero Glowroot Seed,
+  two Compost, and two Willow Fiber.
+- A direct first-time Glowroot Return still rendered **New Discovery ·
+  Glowroot**, Glowroot Seed +2, no familiar Clover pouch, and **Take Seed to Bed
+  3**. Direct familiar Return and Home reviews cover both route identities.
+  Reviewed frames had one authored Rive canvas, zero horizontal or vertical
+  page overflow, and the authored runtime ready.
+- `npm run prototype:homegrown:test` passes 95/95, including first-time reward
+  compatibility, both direct familiar returns, exact repeat quantities, route
+  persistence, and next-day reset. `npm run verify:rive-homegrown`,
+  `npm run prototype:homegrown:build`, `npm run quality:loop`, and
+  `npm run quality:check` pass. The quality gate covers 155 layout files, 324
+  sprites, TypeScript, 78 layout assertions, and 202 security assertions.
+  Manual mobile Safari motion, reduced-motion, silhouette, and attachment
+  checks remain warnings.
+
+### Public verification evidence
+
+- Gameplay commit `fe12701` and direct-review commit `10a0a29` deployed through
+  GitHub Pages runs `31320571734` and `31320711381`.
+- Exact checked-in and publicly fetched checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `f11ad53195a51d1700abe59089a0a24106d6acf04e8ab1868bb7e451553ad77a`
+  - player JavaScript: `367b32eb33829b9b3bfed91a2616698734239fa75fd35e77baeaad3d43c0686e`
+  - player CSS: `d5fd605eb8e040cf764276ee0074af07ae4c48ba346efefc6d06c41f3b850d2e`
+- A fresh public familiar-Lanternleaf Return rendered the physical Clover Seed
+  pouch, exact +2 ledger and causes, original familiar-route story, one ready
+  authored Rive canvas, and zero page overflow. It loaded the content-hashed
+  CSS `d5fd605eb8` and JavaScript `367b32eb33` bundles.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=10&route=lanternleaf&repeat=1&v=10a0a29`
+
+### Next highest-leverage weakness
+
+Both familiar routes now return a useful next Seed, but their repeat reward
+packages are otherwise mechanically identical. Rosie's map asks the player to
+choose between two places whose consequences differ mostly in prose. The next
+cycle should give each known route one small, predictable material identity
+using the existing stock and Bag vocabulary—without breaking the guaranteed
+next Seed, adding random loot, or creating route-specific currencies.
 
 ### v0.126 — The Pantry Remembers — 2026-08-09
 
