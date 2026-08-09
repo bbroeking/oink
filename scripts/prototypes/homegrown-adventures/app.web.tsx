@@ -305,10 +305,33 @@ function WorldAction({ presentation, onAction, waiting = false }) {
 	);
 }
 
+const CARRIER_LANGUAGE_STUDIES = Object.freeze({
+	A: Object.freeze({
+		name: "Pack",
+		question: "What can Rosie carry Home?",
+		empty: "A kind clue still comes Home",
+		footer: "Provision and fresh packing are used once. Tool and Pack come Home.",
+	}),
+	B: Object.freeze({
+		name: "Carrier",
+		question: "What should hold Rosie's find?",
+		empty: "Rosie remembers it, but cannot carry it Home",
+		footer: "Provision and fresh lining are used once. Tool and Carrier come Home.",
+	}),
+	C: Object.freeze({
+		name: "Find Kit",
+		question: "How should Rosie protect a discovery?",
+		empty: "Rosie records a clue instead of bringing the find Home",
+		footer: "Provision and fresh lining are used once. Tool and Find Kit come Home.",
+	}),
+});
+const carrierLanguageStudyId = new URLSearchParams(window.location.search).get("carrier")?.toUpperCase();
+const CARRIER_LANGUAGE_STUDY = CARRIER_LANGUAGE_STUDIES[carrierLanguageStudyId] ?? CARRIER_LANGUAGE_STUDIES.A;
+
 const BAG_SLOT_LABELS = {
 	provision: "Provision",
 	tool: "Tool",
-	pack: "Pack",
+	pack: CARRIER_LANGUAGE_STUDY.name,
 };
 
 
@@ -624,12 +647,12 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 	const question = {
 		provision: "What should help Rosie keep going?",
 		tool: "What should Rosie try?",
-		pack: "What can Rosie carry Home?",
+		pack: CARRIER_LANGUAGE_STUDY.question,
 	}[focus];
 	const showingClue = clueGuide !== null && clueSlot !== null;
 	const clueIsApplied = showingClue && bag[clueSlot] !== null;
 	const optionDetail = (slot, item) => {
-		if (!item) return "A kind clue still comes Home";
+		if (!item) return slot === "pack" ? CARRIER_LANGUAGE_STUDY.empty : "A kind clue still comes Home";
 		const effect = BAG_ITEM_EFFECT_LABELS[opportunity.id]?.[item.id] ?? item.effect;
 		if (slot === "provision") {
 			const owned = farmStock?.[item.id] ?? 0;
@@ -691,7 +714,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 	};
 
 	return (
-		<section className={`bag-selection bag-selection-guided ${showingClue ? "has-bag-clue" : ""}`} aria-label="Choose what Rosie carries">
+		<section className={`bag-selection bag-selection-guided ${showingClue ? "has-bag-clue" : ""}`} aria-label="Choose what Rosie carries" data-carrier-study={carrierLanguageStudyId ?? "A"}>
 			{activeSelection && flightItemId && (
 				<span
 					key={`${activeSelection.slot}-${flightItemId}-${activeSelection.at}`}
@@ -760,7 +783,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 		<p>{canPack
 			? selectedCount === 0
 				? "An empty Bag still returns a useful clue. Rosie is always safe."
-				: "Provision and fresh packing are used once. Tool and Pack come Home."
+				: CARRIER_LANGUAGE_STUDY.footer
 			: needsProvision
 				? "Leave Provision empty to explore with a useful clue."
 				: "Choose Wicker Basket, leave Pack empty, or bring back Willow Fiber."}</p>
