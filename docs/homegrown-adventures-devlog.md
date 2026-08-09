@@ -441,11 +441,82 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     packet or Moonberry basket physically attached to its highlighted bed,
     separate optional Compost as one object, and consolidate the exact planting
     promise and action into one ribbon without covering the Farm.
+135. **v0.134 — The Crop Owns the Wait (shipped):** replace Position 4's large
+    status card with one compact sign attached to the selected bed, keep the
+    growing Rive crop and full Farm visible, and move review fast-forward into
+    the external rail without losing the selected crop.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.134 — The Crop Owns the Wait — 2026-08-09
+
+- Played the shipped v0.133 Clover and rooted-Moonberry planting paths into
+  Position 4 and compared the rendered wait with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/04-growing-fast-forward.png`.
+  The React and Rive growth rules were correct, but a 202 × 149 status card
+  covered neighboring beds, repeated the HUD, and added an in-world preview
+  action beside the external review rail.
+- Built and drove three real compositions: a compact staked bed sign, a
+  scene-wide growth ribbon, and an ambient watering-can care scene. The ribbon
+  repeated one passive fact across two surfaces. The care scene duplicated the
+  existing watering can and implied a new chore. The bed sign won because crop,
+  Rosie, and all three beds remain visible while Compost, duration, and the
+  no-spoil promise stay attached to the correct soil. The full comparison and
+  losing treatments remain at prototype commit `f06ffa1` on
+  `codex/homegrown-v134-growth-focus-prototypes` and were not merged.
+- Production commit `f69296b` includes only the selected-bed outline, compact
+  sign, and truthful external **Fast-forward** label. It also fixes Position 4
+  → 5 review settlement to preserve the planted crop, Compost, and stock; a
+  Moonberry wait now reaches its own Down → Left → Right → Up rhythm instead of
+  resetting to Clover. React remains the sole timer and resource authority, and
+  no new Rive input, crop rule, watering action, progress bar, countdown, or
+  inventory surface was added.
+
+### Local validation evidence
+
+- The player-facing 720px browser render keeps the sign fully above the review
+  rail with approximately 80px clearance, one authored Rive canvas, zero
+  horizontal overflow, and no growth experiment class or preview copy. Clover
+  uses Bed 1 and reads **Composted · Clover · 2 hours · Waits safely when
+  ready**. Moonberries use rooted Bed 2 and read the equivalent six-hour wait.
+- The complete alternate route was driven through **Lights Past the Open
+  Gate** → Moonberries → Compost → Tend. Fast-forward reached **Moonberries
+  rhythm: ↓ ← → ↑** and **5 Moonberries guaranteed · clean rhythm +1** while
+  preserving planted stock. Reduced motion reports `animation-name: none` for
+  both sign and outline without removing any status.
+- `npm run prototype:homegrown:test` passes 97/97. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `f69296b` deployed successfully through GitHub Pages run
+  `31327399079`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `d6ba5e2102029379d2dc653c5b457bac8148331408387e33f57e0f2297d20089`
+  - player JavaScript: `c0b86b949449b02917d16097ecb75d38d1a45042bc5241a453dbb484d0248a78`
+  - player CSS: `23cb15bc1d8484cd7e9644bbbce5849ba5e57c26841729124bfd18c965a68349`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=4&route=lanternleaf&repeat=1&v=f69296b`
+- The public route rendered **Clover · 2 hours**, **Waits safely when ready**,
+  one authored canvas, zero overflow, no experiment classes, no in-world
+  preview, and the external **Fast-forward to ready crop** control.
+
+### Next highest-leverage weakness
+
+Position 5 now receives a clean crop-first wait, but the Harvest Rhythm still
+splits one short gesture across a large instruction slab, a separate guaranteed
+yield strip, **Gather normally**, and repeated HUD copy. The next cycle should
+compare it with approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/05-harvest-rhythm.png`
+and make the ripe bed itself carry more of the rhythm and feedback without
+changing guaranteed yield, crop-specific patterns, tap accessibility, or the
+authored Harvest performance.
 
 ### v0.133 — The Crop Reaches Its Bed — 2026-08-09
 

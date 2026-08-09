@@ -98,6 +98,12 @@ object on its highlighted bed: a Clover Seed packet on Bed 1 or the existing
 Moonberry basket on rooted Bed 2. Optional Compost stays one physical choice,
 and one bed-level ribbon owns the exact outcome and Plant / Tend action while
 Rosie and all three beds remain visible;
+Position 4 now removes the large growth card and in-world preview control. One
+small staked sign sits on the selected Bed 1 or rooted Bed 2, names the crop,
+predictable duration, Compost state, and safe no-spoil wait, while the staged
+authored Rive crop remains primary. Prototype fast-forward lives only in the
+external review rail and settles the crop actually planted, preserving
+Moonberry identity, Compost, and stock into its personal Harvest Rhythm;
 Position 5 now keeps **Harvest for Rosie's journey** in the HUD, makes the
 flowered bed the unmistakable swipe surface, folds the accessible tap fallback
 into the one active rhythm arrow, and names the exact guaranteed Lunch count

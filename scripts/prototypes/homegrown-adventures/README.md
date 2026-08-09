@@ -1,5 +1,19 @@
 # Homegrown Adventures prototype
 
+The v0.134 growth-focus pass makes the growing crop—not a status card—the
+subject of Position 4. One compact staked sign now belongs to the selected bed,
+names the crop, predictable duration, Compost state, and no-spoil promise, and
+leaves Rosie plus all three beds visible. Prototype fast-forward moved to the
+external review rail. A rendered three-composition study at prototype commit
+`f06ffa1` on `codex/homegrown-v134-growth-focus-prototypes` compared the chosen
+bed sign, a scene-wide ribbon, and an ambient watering-can treatment. The sign
+won because the ribbon repeated the HUD and the watering can implied a new
+chore. Production contains only the bed sign and selected-bed outline; no
+growth experiment class, alternate composition, extra watering prop, timer,
+resource rule, or Rive input remains. Position 4 → 5 review fast-forward also
+now settles the crop actually planted, so a rooted Moonberry wait reaches the
+Moonberry rhythm without resetting to Clover.
+
 The v0.133 crop-to-bed handoff pass keeps the physical crop selected from the
 Farm tray attached to its actual planting decision. Clover now remains a paper
 Seed packet on highlighted Bed 1; Moonberries remain the harvested basket on
