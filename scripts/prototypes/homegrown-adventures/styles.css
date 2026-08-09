@@ -2241,13 +2241,31 @@ button.seed-choice-card:active { transform: translateY(2px); box-shadow: none; }
 .crop-path:active { transform: translateY(2px); box-shadow: none; }
 .crop-path:disabled { cursor: not-allowed; filter: saturate(.55); opacity: .62; transform: none; }
 .crop-path > .seed-art { width: 45px; height: 45px; font-size: 28px; }
-.crop-path > span:nth-child(2) { min-width: 0; display: grid; gap: 2px; }
+.crop-path-copy { min-width: 0; display: grid; gap: 2px; }
 .crop-path small { color: #496a36; font-size: 7px; font-weight: 950; text-transform: uppercase; }
 .crop-path strong { font-family: Caprasimo,Georgia,serif; font-size: 11px; font-weight: 400; line-height: 1; }
 .crop-path b { color: var(--ink-soft); font-size: 7px; line-height: 1.05; }
 .crop-path em { align-self: end; width: 100%; min-height: 28px; display: grid; place-items: center; background: #f4dfac; border: 1.5px solid var(--ink); border-radius: 8px; font-size: 7px; font-style: normal; font-weight: 950; text-transform: uppercase; }
 .crop-path-moonberry { background: #f2edf8; }
 .crop-path-moonberry em { background: #ded2ef; }
+.crop-stock-variant-a .crop-path { position: relative; }
+.crop-stock-stamp { position: absolute; top: 7px; right: 7px; min-width: 37px; padding: 4px 5px; display: grid; gap: 1px; color: var(--ink); background: #fff9e9; border: 1.5px solid var(--ink); border-radius: 7px; box-shadow: 1px 2px 0 rgba(48,33,22,.52); font-size: 6px; font-style: normal; font-weight: 950; line-height: 1; transform: rotate(2deg); }
+.crop-path-moonberry .crop-stock-stamp { background: #e8ddf4; transform: rotate(-2deg); }
+.crop-stock-stamp b { font-family: Caprasimo,Georgia,serif; font-size: 10px; font-weight: 400; }
+.crop-stock-variant-b { grid-template-rows: 44px 34px 116px 53px; }
+.crop-pantry-shelf { padding: 5px 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 4px; color: var(--ink); background: rgba(255,249,233,.97); border: 2px solid var(--ink); border-radius: 10px; box-shadow: 2px 3px 0 rgba(48,33,22,.58); font-size: 7px; line-height: 1; }
+.crop-pantry-shelf > strong { font-family: Caprasimo,Georgia,serif; font-size: 8px; font-weight: 400; }
+.crop-pantry-shelf > span { padding: 4px 5px; background: #f4dfac; border-radius: 6px; text-align: center; }
+.crop-pantry-shelf > span:last-child { background: #ded2ef; }
+.crop-pantry-shelf b { font-family: Caprasimo,Georgia,serif; font-size: 9px; font-weight: 400; }
+.crop-stock-variant-b .crop-path { grid-template-rows: 38px 1fr 27px; padding-block: 5px; }
+.crop-stock-variant-b .crop-path > .seed-art { width: 36px; height: 36px; font-size: 23px; }
+.crop-stock-variant-c .crop-path em { padding: 3px 4px; grid-template-rows: auto auto; gap: 1px; font-size: 7px; }
+.crop-stock-variant-c .crop-path em .crop-action-stock { color: var(--ink-soft); font-size: 6px; font-weight: 950; line-height: 1; text-transform: none; }
+.provision-stock-prototype-switcher { position: fixed; z-index: 80; left: 50%; bottom: 90px; min-width: 260px; height: 42px; display: grid; grid-template-columns: 44px 1fr 44px; align-items: stretch; overflow: hidden; color: #fff9e9; background: #302116; border: 2px solid #fff9e9; border-radius: 999px; box-shadow: 0 0 0 2px #302116, 2px 4px 0 rgba(48,33,22,.42); transform: translateX(-50%); }
+.provision-stock-prototype-switcher button { min-width: 44px; border: 0; color: inherit; background: transparent; font-size: 16px; }
+.provision-stock-prototype-switcher button:hover { background: rgba(255,255,255,.13); }
+.provision-stock-prototype-switcher strong { align-self: center; font-size: 10px; text-align: center; }
 .purpose-handoff {
 	position: absolute;
 	z-index: 12;

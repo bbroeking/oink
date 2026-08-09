@@ -856,6 +856,8 @@ export function createPrototypeState(position, {
 			farmStock: target === 2
 				? {
 					...presets[target].farmStock,
+					"clover-lunch": plantedGlowrootStock["clover-lunch"],
+					moonberries: plantedGlowrootStock.moonberries,
 					compost: 2,
 					"willow-fiber": 4,
 				}

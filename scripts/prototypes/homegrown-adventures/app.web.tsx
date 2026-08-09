@@ -378,32 +378,89 @@ function SeedAdventureReceipt({ opportunity, className = "", twoCrops = false })
 	);
 }
 
+const PROVISION_STOCK_VARIANTS = Object.freeze({
+	A: "Crop stamps",
+	B: "Shared pantry shelf",
+	C: "Action + stock",
+});
+
+function readProvisionStockVariant() {
+	const value = new URLSearchParams(window.location.search).get("stockhint")?.toUpperCase();
+	return Object.hasOwn(PROVISION_STOCK_VARIANTS, value) ? value : "A";
+}
+
+function ProvisionStockPrototypeSwitcher({ variant, onChange }) {
+	const keys = Object.keys(PROVISION_STOCK_VARIANTS);
+	const move = (delta) => {
+		const current = keys.indexOf(variant);
+		onChange(keys[(current + delta + keys.length) % keys.length]);
+	};
+
+	useEffect(() => {
+		const onKey = (event) => {
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			move(event.key === "ArrowRight" ? 1 : -1);
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [variant]);
+
+	return (
+		<nav className="provision-stock-prototype-switcher" aria-label="Provision stock prototype variants">
+			<button type="button" onClick={() => move(-1)} aria-label="Previous Provision stock variant">←</button>
+			<strong>{variant} · {PROVISION_STOCK_VARIANTS[variant]}</strong>
+			<button type="button" onClick={() => move(1)} aria-label="Next Provision stock variant">→</button>
+		</nav>
+	);
+}
+
 function SeedChoicePanel({ state, opportunity, onChoose }) {
 	const farmStock = state.farmStock ?? {};
 	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
 	const compost = farmStock.compost ?? 0;
+	const cloverLunches = farmStock[CROP_RULES.clover.outputId] ?? 0;
+	const moonberries = farmStock[CROP_RULES.moonberries.outputId] ?? 0;
 	const rememberedMorning = state.daysCompleted > 0 && state.glowrootPlanted;
 	const moonberriesAvailable = state.nextPlanting === "moonberries";
+	const [stockVariant, setStockVariantState] = useState(readProvisionStockVariant);
+	const setStockVariant = useCallback((next) => {
+		const normalized = Object.hasOwn(PROVISION_STOCK_VARIANTS, next) ? next : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("stockhint", normalized);
+		window.history.replaceState({}, "", url);
+		setStockVariantState(normalized);
+	}, []);
 
 	if (rememberedMorning) {
 		const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 		return (
-			<section className="seed-choice-panel crop-choice-study" aria-label="Choose one useful crop for Rosie's next Adventure">
+			<>
+			<section className={`seed-choice-panel crop-choice-study crop-stock-variant-${stockVariant.toLowerCase()}`} aria-label="Choose one useful crop for Rosie's next Adventure">
 				<div className="crop-choice-question"><strong>{lanternleaf ? "What should Rosie grow for the lights?" : "What should Rosie grow for the hedge glow?"}</strong><small>Both harvests wait safely and fit her Provision pocket.</small></div>
+				{stockVariant === "B" && <div className="crop-pantry-shelf" role="note" aria-label={`Provision stock at Home: ${cloverLunches} Clover Lunch and ${moonberries} Moonberries`}>
+					<strong>Rosie’s pantry</strong>
+					<span><b>{cloverLunches}</b> Clover Lunch</span>
+					<span><b>{moonberries}</b> Moonberries</span>
+				</div>}
 				<div className="crop-choice-options">
 					<button className="crop-path crop-path-clover" type="button" onClick={() => onChoose("clover")} disabled={cloverSeeds < 1}>
 						<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
-						<span><small>Clover · 4 hours</small><strong>Clover Lunch</strong><b>3 guaranteed · {lanternleaf ? "stay until nightfall" : "stay until dusk"}</b></span>
-						<em>{cloverSeeds > 0 ? "Grow Clover" : "Need a Seed"}</em>
+						{stockVariant === "A" && <i className="crop-stock-stamp"><b>{cloverLunches}</b> at Home</i>}
+						<span className="crop-path-copy"><small>Clover · 4 hours</small><strong>Clover Lunch</strong><b>3 guaranteed · {lanternleaf ? "stay until nightfall" : "stay until dusk"}</b></span>
+						<em>{stockVariant === "C" ? <><span>{cloverSeeds > 0 ? "Grow Clover" : "Need a Seed"}</span><b className="crop-action-stock">{cloverLunches} at Home</b></> : cloverSeeds > 0 ? "Grow Clover" : "Need a Seed"}</em>
 					</button>
 					<button className="crop-path crop-path-moonberry" type="button" onClick={() => onChoose("moonberries")} disabled={!moonberriesAvailable}>
 						<span className="seed-art seed-art-moonberry" aria-hidden="true">●</span>
-						<span><small>Moonberries · 8 hours</small><strong>Moonberries</strong><b>4 guaranteed · {lanternleaf ? "reveal reflected leaves" : "notice hidden reflections"}</b></span>
-						<em>{moonberriesAvailable ? "Tend Moonberries" : "Still taking root"}</em>
+						{stockVariant === "A" && <i className="crop-stock-stamp"><b>{moonberries}</b> at Home</i>}
+						<span className="crop-path-copy"><small>Moonberries · 8 hours</small><strong>Moonberries</strong><b>4 guaranteed · {lanternleaf ? "reveal reflected leaves" : "notice hidden reflections"}</b></span>
+						<em>{stockVariant === "C" ? <><span>{moonberriesAvailable ? "Tend Moonberries" : "Still taking root"}</span><b className="crop-action-stock">{moonberries} at Home</b></> : moonberriesAvailable ? "Tend Moonberries" : "Still taking root"}</em>
 					</button>
 				</div>
 				<SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" twoCrops />
 			</section>
+			<ProvisionStockPrototypeSwitcher variant={stockVariant} onChange={setStockVariant} />
+			</>
 		);
 	}
 
