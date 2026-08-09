@@ -2436,8 +2436,7 @@ html[data-reduce-motion="true"] .purpose-handoff { animation: none; }
 .planting-ribbon-promise { min-width: 0; display: grid; align-content: center; gap: 3px; color: var(--ink); text-align: left; }
 .planting-ribbon-promise strong { font-size: 12px; line-height: 1.05; text-wrap: balance; }
 .planting-ribbon-promise small { color: var(--ink-soft); font-size: 10px; font-weight: 800; line-height: 1.1; }
-.planting-world-confirm,
-.growth-status-panel button {
+.planting-world-confirm {
 	border: 3px solid var(--ink);
 	border-radius: 14px;
 	background: var(--paper);
@@ -2447,34 +2446,24 @@ html[data-reduce-motion="true"] .purpose-handoff { animation: none; }
 	line-height: 1;
 	text-transform: uppercase;
 }
-.planting-world-confirm:hover,
-.growth-status-panel button:hover { background: #fff1c5; transform: translateY(-1px); }
+.planting-world-confirm:hover { background: #fff1c5; transform: translateY(-1px); }
 .planting-world-confirm:focus-visible { outline: 3px solid #fff9e9; outline-offset: 2px; box-shadow: 0 0 0 5px #6f4a2e; }
-.planting-world-confirm:active,
-.growth-status-panel button:active { transform: translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
+.planting-world-confirm:active { transform: translateY(2px); box-shadow: 1px 1px 0 var(--wood); }
 .planting-world-confirm:disabled { cursor: not-allowed; opacity: .56; transform: none; }
 html[data-reduce-motion="true"] .planting-bed-focus { animation: none; }
 @media (prefers-reduced-motion: reduce) { .planting-bed-focus { animation: none; } }
-.growth-status-panel {
-	left: auto;
-	right: 14px;
-	top: 472px;
-	width: 202px;
-	padding: 10px;
-	display: grid;
-	gap: 6px;
-	background: rgba(255,249,233,.97);
-	border: 2px solid var(--ink);
-	border-radius: 14px;
-	box-shadow: 3px 4px 0 rgba(48,33,22,.68);
-	transform: rotate(-.7deg);
-}
-.growth-status-panel.is-composted { background: #f2f0c9; }
-.growth-badge { justify-self: start; display: flex; align-items: center; gap: 5px; color: #426a32; font-size: 9px; font-weight: 950; letter-spacing: .04em; text-transform: uppercase; }
-.growth-badge i { width: 20px; height: 20px; display: grid; place-items: center; color: white; background: #5d8d40; border: 1.5px solid var(--ink); border-radius: 50%; font-style: normal; }
-.growth-status-panel > strong { font-family: Caprasimo, Georgia, serif; font-size: 16px; font-weight: 400; line-height: 1.05; }
-.growth-status-panel > small { color: var(--ink-soft); font-size: 9px; font-weight: 700; line-height: 1.2; }
-.growth-status-panel button { min-height: 44px; margin-top: 2px; font-size: 12px; }
+.growth-status-panel.growth-bed-status { inset: 0; top: 0; left: 0; right: 0; width: auto; padding: 0; display: block; background: transparent; border: 0; border-radius: 0; box-shadow: none; transform: none; pointer-events: none; }
+.growth-bed-outline { position: absolute; z-index: 1; left: 5px; top: 516px; width: 130px; height: 112px; border: 3px solid rgba(219,240,128,.9); border-radius: 25% 22% 20% 24%; box-shadow: 0 0 0 2px rgba(48,33,22,.46), 0 0 15px rgba(173,208,86,.42); transform: rotate(-1deg); }
+.growth-bed-status.is-moonberries .growth-bed-outline { left: 127px; transform: rotate(.4deg); }
+.growth-badge { justify-self: start; display: flex; align-items: center; gap: 5px; color: #426a32; font-size: 10px; font-weight: 950; letter-spacing: .03em; text-transform: uppercase; }
+.growth-badge i { width: 22px; height: 22px; display: grid; place-items: center; color: white; background: #5d8d40; border: 1.5px solid var(--ink); border-radius: 50%; font-style: normal; }
+.growth-bed-sign { position: absolute; z-index: 2; left: 7px; top: 601px; width: 148px; min-height: 74px; padding: 8px 9px; display: grid; align-content: center; gap: 4px; color: var(--ink); background: rgba(246,240,199,.97); border: 2px solid var(--ink); border-radius: 11px; box-shadow: 2px 3px 0 rgba(48,33,22,.65); transform: rotate(-.7deg); }
+.growth-bed-sign::before { content: ""; position: absolute; left: 28px; top: -14px; width: 6px; height: 16px; background: #725037; border: 1.5px solid var(--ink); border-bottom: 0; }
+.growth-bed-status.is-moonberries .growth-bed-sign { left: 113px; width: 165px; transform: rotate(.5deg); }
+.growth-bed-sign > strong { font-family: Caprasimo,Georgia,serif; font-size: 13px; font-weight: 400; line-height: 1; }
+.growth-bed-sign > small { color: var(--ink-soft); font-size: 10px; font-weight: 800; line-height: 1; }
+.position-rail.is-growth-fast-forward button:last-child { padding-inline: 6px; font-size: 9px; letter-spacing: 0; }
+.position-rail.is-growth-fast-forward button:last-child span { font-size: 17px; }
 .composted-crop.stage-clover-growing .painted-kitchen-patch {
 	filter: saturate(1.08) brightness(1.035) drop-shadow(0 0 8px rgba(240,193,73,.22));
 }

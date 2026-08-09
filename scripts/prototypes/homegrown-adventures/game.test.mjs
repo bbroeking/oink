@@ -203,6 +203,12 @@ test("Clover requires a Seed and leaves its predictable Compost boost freely cho
 	assert.match(stylesSource, /\.planting-bed-focus \{/);
 	assert.match(stylesSource, /\.planting-action-ribbon \{/);
 	assert.doesNotMatch(appSource, /planting-prototype|planting-layout-[ABC]/);
+	assert.match(appSource, /function GrowthStatusPanel\(\{ state \}\)/);
+	assert.match(appSource, /growth-bed-status/);
+	assert.match(appSource, /growth-bed-outline/);
+	assert.match(appSource, /Fast-forward to ready crop/);
+	assert.doesNotMatch(appSource, /growth-prototype|growth-layout-[ABC]|growth-watering-can/);
+	assert.doesNotMatch(appSource, /Preview it ready/);
 	assert.match(appSource, /Add Compost: 1 more, \$\{normalHours - boostedHours\} hours sooner\./);
 	assert.doesNotMatch(appSource, /Ready in 4 hours · Harvest 3|Ready in 2 hours · Harvest 4/);
 	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });
@@ -1041,6 +1047,35 @@ test("prototype position jumps reject invalid targets without mutation", () => {
 		reduce(state, { type: ACTIONS.JUMP_TO_POSITION, position: 10 }).prototypePosition,
 		10,
 	);
+});
+
+test("growth fast-forward preserves the chosen crop, boost, and planted stock", () => {
+	let state = createPrototypeState(2, {
+		now: at,
+		adventureRoute: "lanternleaf",
+	});
+	state = reduce(state, {
+		type: ACTIONS.CHOOSE_ADVENTURE_ROUTE,
+		opportunityId: "lights-past-open-gate",
+	}, at + 1);
+	state = reduce(state, { type: ACTIONS.SELECT_CROP, crop: "moonberries" }, at + 2);
+	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST }, at + 3);
+	state = reduce(state, { type: ACTIONS.PLANT_CLOVER }, at + 4);
+	const plantedStock = { ...state.farmStock };
+
+	const ready = reduce(state, {
+		type: ACTIONS.JUMP_TO_POSITION,
+		position: 5,
+	}, at + 5);
+
+	assert.equal(ready.prototypePosition, 5);
+	assert.equal(ready.stage, STAGES.CLOVER_READY);
+	assert.equal(ready.selectedCrop, "moonberries");
+	assert.equal(ready.compostApplied, true);
+	assert.deepEqual(ready.farmStock, plantedStock);
+	assert.equal(ready.changeRevealed, true);
+	assert.equal(ready.lastAction, "growth-fast-forward");
+	assert.equal(cropHarvestPattern(ready).length, 4);
 });
 
 test("fast-forward applies the exact return delta and triggers one Rive homecoming", () => {
