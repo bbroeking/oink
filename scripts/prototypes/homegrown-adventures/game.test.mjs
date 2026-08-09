@@ -2147,15 +2147,24 @@ test("revisiting a known route returns supplies without pretending the Discovery
 });
 
 test("the rendered third morning uses one production Rosie map without experiment controls", () => {
-	assert.match(appSource, /function KnownRouteMap\(\{ onChoose \}\)/);
+	const state = throughThirdMorning();
+	assert.equal(state.farmStock.compost, 2);
+	assert.equal(state.farmStock["willow-fiber"], 4);
+	assert.match(appSource, /function KnownRouteMap\(\{ onChoose, farmStock \}\)/);
+	assert.match(appSource, /const compost = farmStock\?\.compost \?\? 0;/);
+	assert.match(appSource, /const willowFiber = farmStock\?\.\["willow-fiber"\] \?\? 0;/);
 	assert.match(appSource, /Rosie's map · 2 known routes/);
 	assert.match(appSource, /A Glow Beneath the Hedge/);
 	assert.match(appSource, /Lights Past the Open Gate/);
+	assert.match(appSource, /Farm holds \{compost\} Compost/);
+	assert.match(appSource, /Farm holds \{willowFiber\} Willow Fiber/);
 	assert.match(appSource, /ACTIONS\.CHOOSE_ADVENTURE_ROUTE/);
 	assert.match(appSource, /const choosingRoute =/);
 	assert.match(appSource, /choosingRoute && !holdingPurposeHandoff && <KnownRouteMap/);
+	assert.match(appSource, /farmStock=\{state\.farmStock\}/);
 	assert.match(stylesSource, /\.known-route-map \{/);
-	assert.doesNotMatch(appSource, /KnownRouteChoicePrototype|knownRoutePrototypeChoice|World Trails|Repeat Yesterday/);
+	assert.match(stylesSource, /\.has-route-stock \.known-route-map-row \{ min-height: 54px;/);
+	assert.doesNotMatch(appSource, /KnownRouteChoicePrototype|knownRoutePrototypeChoice|World Trails|Repeat Yesterday|MAP_STOCK_VARIANTS|mapstock|stockcase/);
 	assert.doesNotMatch(stylesSource, /known-route-world-prototype/);
 });
 
@@ -2183,6 +2192,8 @@ test("the earned crop choice keeps Rosie's current Adventure purpose attached to
 	});
 	assert.equal(adventureOpportunity(secondMorning), SECOND_ADVENTURE_OPPORTUNITY);
 	assert.equal(canChooseKnownAdventureRoute(secondMorning), true);
+	assert.equal(secondMorning.farmStock.compost, 2);
+	assert.equal(secondMorning.farmStock["willow-fiber"], 4);
 	assert.equal(secondMorning.daysCompleted, 2);
 	assert.equal(secondMorning.glowrootPlanted, true);
 	assert.equal(secondMorning.nextPlanting, "moonberries");

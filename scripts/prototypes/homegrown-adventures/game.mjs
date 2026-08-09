@@ -853,6 +853,13 @@ export function createPrototypeState(position, {
 	const routePreview = [2, 9, 11].includes(target) && adventureRoute === "lanternleaf"
 		? {
 			daysCompleted: target === 2 ? 2 : 1,
+			farmStock: target === 2
+				? {
+					...presets[target].farmStock,
+					compost: 2,
+					"willow-fiber": 4,
+				}
+				: presets[target].farmStock,
 			glowrootKnown: true,
 			glowrootPlanted: true,
 			nextPlanting: "moonberries",
