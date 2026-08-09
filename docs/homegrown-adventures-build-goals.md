@@ -16,7 +16,9 @@ now uses a bed-anchored rhythm cue and gives the authored Rive Harvest a clean,
 persisted 560 ms performance before Farm stock appears; Position 6 now turns
 the result into a world-anchored four-compartment Farm Stock shelf and full
 Clover basket while React preserves exact quantities and causes; Position 7
-now centers preparation on a physical open Bag with live visible item choices;
+now centers preparation on Rosie and a physical open Bag, with one horizontal
+pocket rail and only the active pocket's question and choices visible at a
+time;
 Position 8 now holds the native Rive satchel on Rosie through packing, reload,
 reduced motion, departure, and the causal Adventure handoff; Position 9 now
 places that handoff in one tangible twilight clearing, with separate complete
@@ -113,10 +115,14 @@ yield, the +1 clean bonus, and **Gather normally**. React preserves exact beat
 order, stock, persistence, and the existing authored Harvest response;
 Position 7 now enters with an explicitly empty Bag, preserves the physical open
 satchel, and asks one preparation question at a time while keeping Provision,
-Tool, and Pack summaries visible. Every owned alternative and **Leave empty**
-choice is direct, the primary action names the number of choices, an empty Bag
-still promises a safe useful clue, and untouched version-one prescribed Bags
-migrate to empty without rewriting progressed journeys;
+Tool, and Pack summaries in one horizontal pocket rail. Every owned alternative
+and **Leave empty** choice is direct, the redundant step control is gone, the
+primary action says **Pack Rosie's Bag** or **Set out with an empty Bag**, an
+empty Bag still promises a safe useful clue, and untouched version-one
+prescribed Bags migrate to empty without rewriting progressed journeys. Its
+Near-Discovery Homecoming now computes a zero primary return safely when no
+Discovery object exists, preserving the established Compost, Willow Fiber,
+and Field Guide clue instead of blanking the rendered game;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive

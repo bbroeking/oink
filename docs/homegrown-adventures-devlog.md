@@ -449,11 +449,83 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     personal harvest beats directly on the Farm, keep one active tap fallback,
     and consolidate guaranteed yield, clean bonus, and normal gather into one
     calm promise row.
+137. **v0.136 — Rosie's Bag Has One Question (shipped):** keep Rosie and the
+    open satchel primary, turn the three optional slots into one horizontal
+    pocket rail, and let only the active pocket ask for a choice before one
+    clear pack-or-empty departure action.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.136 — Rosie's Bag Has One Question — 2026-08-09
+
+- Played public v0.135 from Farm Stock into Position 7 and compared the result
+  with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/07-free-bag-selection.png`.
+  The Bag rules were correct, but a title card, vertical three-row ledger,
+  large picker, redundant step control, safety note, departure action, HUD,
+  and review rail made the screen read like a form and obscured Rosie.
+- Built and drove three real compositions: Pocket Rail, a two-column Packing
+  Bench, and a catalog-like Item Shelf. The bench split attention and covered
+  Rosie's face; the shelf made stock browsing more important than preparing
+  Rosie. Pocket Rail won because Rosie, the open Bag, all three optional
+  pockets, and one current question remain visible in one reading order. The
+  comparison and losing treatments remain at prototype commit `88095a5` on
+  `codex/homegrown-v136-bag-focus-prototypes` and were not merged.
+- Production commit `5b94ced` contains only Pocket Rail. React still owns
+  stock, free item choice, optional empty slots, one-use Provision and lining
+  costs, reusable Tool and Carrier, deterministic outcomes, persistence, and
+  the established Rive handoff. During real empty-Bag play, Homecoming exposed
+  a null return-object crash; the same commit makes that amount null-safe and
+  locks the useful Field Guide, Compost, and Willow Fiber result in a focused
+  regression test.
+
+### Local validation evidence
+
+- At the 720px browser viewport, Rosie and the satchel remain unobstructed,
+  body width and height do not overflow, the three source pocket controls keep
+  a 48px minimum height, item choices keep a 70px minimum height, and one CTA
+  replaces the old step-plus-departure pair.
+- Provision → Tool → Carrier keyboard arrows move selection and focus together.
+  Packing Clover Lunch, Hand Trowel, and Wicker Basket carries those exact
+  objects into Position 8. Reduced motion records the item choice while
+  suppressing the transient receive-motion layer.
+- The empty-Bag path was played through Departure, the causal vignette, the
+  six-hour prototype fast-forward, the gate welcome, Near-Discovery, and back
+  into the Provision pocket. It returns exactly +1 Compost, +1 Willow Fiber,
+  and the Glowroot Trail Field Guide clue without a blank render.
+- `npm run prototype:homegrown:test` passes 98/98. The production build,
+  `npm run verify:rive-homegrown`, `npm run verify:rive-web`,
+  `npm run quality:loop`, and final `npm run quality:check` pass. Manual mobile
+  Safari motion, reduced-motion, silhouette, and attachment checks remain
+  warnings.
+
+### Public verification evidence
+
+- Feature commit `5b94ced` deployed successfully through GitHub Pages run
+  `31329481659`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `550aecaf1f44242f0ec37af929a72c92e6eaead80e5c5932867269852298285e`
+  - player JavaScript: `fdf877103fc2eeddc0369889ecbde1021969d695fd299149330f42da78695f4f`
+  - player CSS: `05b2672b7b71cc4563cd5cace249ed38ef6a481afec805915abd64c80d206c93`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=7&v=5b94ced`
+- The public route reproduced the focused pocket rail and freely packed path.
+  A separate public empty-Bag run reached the same useful Near-Discovery and
+  returned to its earned Provision clue without a render failure.
+
+### Next highest-leverage weakness
+
+The settled Bag now matches the approved composition, but selecting an item
+briefly lets the authored Rive receive satchel enlarge over Rosie while the
+physical open Bag is already present. For the first fraction of a second this
+reads as two Bags and weakens the otherwise clear item-to-pocket handoff. The
+next cycle should compare that exact motion with the same approved Position 7
+concept and refine the Rive receive choreography—scale, crop, or attachment—
+without changing stock, slot, or Adventure rules.
 
 ### v0.135 — The Rhythm Lives in the Beds — 2026-08-09
 

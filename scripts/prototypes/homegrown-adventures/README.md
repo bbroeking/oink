@@ -1,5 +1,20 @@
 # Homegrown Adventures prototype
 
+The v0.136 Bag-focus pass replaces Position 7's title card, vertical slot
+ledger, three-row picker, and redundant **Next** control with one physical
+packing composition. Rosie and the open satchel remain visible; Provision,
+Tool, and Carrier form one horizontal pocket rail; and the current pocket owns
+one short question with every available item and **Leave empty** beside it.
+The primary action now says **Pack Rosie's Bag** or **Set out with an empty
+Bag**, while stock, optional pockets, safe Near-Discovery, keyboard tabs, and
+the physical packed preview remain truthful. A rendered three-composition
+study at prototype commit `88095a5` on
+`codex/homegrown-v136-bag-focus-prototypes` compared Pocket Rail, Packing
+Bench, and Item Shelf. Pocket Rail won because the other two covered Rosie and
+made inventory UI more prominent than the Bag. Production contains no layout
+variant or losing treatment. The same playthrough also exposed and fixed an
+empty-Bag Homecoming crash without changing its useful clue or material return.
+
 The v0.135 bed-first rhythm pass removes Position 5's large instruction slab
 and separate yield strip. Clover's Left → Right → Up beats now sit directly on
 the three beds; rooted Moonberries use a four-beat diamond that begins and ends
