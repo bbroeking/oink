@@ -46,9 +46,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Pocket Rail", question: "Can the open Bag and one horizontal pocket rail make the choice feel physical?" },
+	B: { name: "Packing Bench", question: "Do choices arranged beside the Bag make packing feel like an in-world action?" },
+	C: { name: "Item Shelf", question: "Do larger item cards make the active pocket easiest to understand?" },
 };
 
 const STAGE_COPY = {
@@ -805,7 +805,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 		? needsProvision ? `Need ${chosenProvision?.name ?? "Provision"}` : "Need Willow Fiber"
 		: selectedCount === 0
 			? "Set out with an empty Bag"
-			: `Pack ${selectedCount} ${selectedCount === 1 ? "choice" : "choices"}`;
+			: "Pack Rosie's Bag";
 	const moveFocus = (event, currentIndex) => {
 		const keyDirection = {
 			ArrowRight: 1,
