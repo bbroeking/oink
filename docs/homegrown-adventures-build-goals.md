@@ -122,7 +122,13 @@ empty Bag still promises a safe useful clue, and untouched version-one
 prescribed Bags migrate to empty without rewriting progressed journeys. Its
 Near-Discovery Homecoming now computes a zero primary return safely when no
 Discovery object exists, preserving the established Compost, Willow Fiber,
-and Field Guide clue instead of blanking the rendered game;
+and Field Guide clue instead of blanking the rendered game. Each selected item
+now visibly leaves its real choice and lands in the matching physical pocket;
+the destination appears only on impact, the Bag catches once, and Rosie's
+authored Notice replaces the duplicate oversized receive satchel without
+changing reducer-owned stock, free choice, or departure state. Rapid changes,
+keyboard pocket navigation, removals, and reduced motion preserve the final
+truthful loadout;
 Position 10 now brings Rosie into a physical
 Barn-worktable homecoming with exact complete and Near-Discovery objects,
 one existing authored Rive Return, and reducer-owned stock deltas that survive

@@ -1,5 +1,20 @@
 # Homegrown Adventures prototype
 
+The v0.137 pocket-landing pass makes every freely chosen Provision, Tool, or
+Carrier travel from its real choice into the matching pocket of the one open
+Bag. The destination token stays hidden until impact, the Bag gives one small
+physical catch, and Rosie's authored Rive Notice answers the choice without
+summoning the oversized second satchel that previously covered her. Alternate
+items use their own source positions, removals travel back out, rapid changes
+settle on the final reducer-owned choice, and reduced motion preserves the
+same exact Bag state without the flight. A rendered three-motion study at
+prototype commit `fbb7b27` on
+`codex/homegrown-v137-bag-receive-prototypes` compared Pocket Landing, a quiet
+Bag tug, and a larger Rosie celebration. Pocket Landing won because it alone
+showed unambiguous item-to-pocket cause while keeping Rosie and the approved
+single-Bag composition clear. Production contains no study switcher, alternate
+motion, or Rive-owned inventory state.
+
 The v0.136 Bag-focus pass replaces Position 7's title card, vertical slot
 ledger, three-row picker, and redundant **Next** control with one physical
 packing composition. Rosie and the open satchel remain visible; Provision,

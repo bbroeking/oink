@@ -453,11 +453,90 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     open satchel primary, turn the three optional slots into one horizontal
     pocket rail, and let only the active pocket ask for a choice before one
     clear pack-or-empty departure action.
+138. **v0.137 — Each Item Finds Its Pocket (shipped):** send every chosen
+    Provision, Tool, and Carrier from its real choice into the matching pocket
+    of the one open Bag, with one restrained Rive Rosie response and no second
+    receive satchel covering her.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.137 — Each Item Finds Its Pocket — 2026-08-09
+
+- Played public v0.136 through all three pockets and compared the transient
+  receive motion with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/07-free-bag-selection.png`.
+  The settled layout matched the approved single-Bag composition, but every
+  selection briefly enlarged a second authored satchel over Rosie while the
+  real open Bag stayed beneath her. The item also appeared at its destination
+  before the flight arrived, weakening the preparation cause.
+- Built and drove three real motion treatments: Pocket Landing, a quiet Bag
+  tug, and a larger Rosie celebration. The tug did not explain where the item
+  went; the celebration made Rosie outrank the packing decision. Pocket Landing
+  won because the exact item leaves its real source, arcs into its matching
+  pocket, appears there only on impact, and gives the Bag one small catch while
+  the existing authored Rosie Notice keeps her emotionally present. The study
+  and losing treatments remain at prototype commit `fbb7b27` on
+  `codex/homegrown-v137-bag-receive-prototypes` and were not merged.
+- Production commit `254e8ad` contains only Pocket Landing. React still owns
+  the selected item, stock, free and optional choices, costs, persistence, and
+  departure loadout. Rive owns Rosie's restrained Notice response but no longer
+  renders its separate receive satchel for this action. Second-column items use
+  their real source coordinates, removals travel back out, rapid choices replay
+  from the final reducer action, and reduced motion keeps the same truthful
+  destination without transient movement.
+- The same rendered mobile pass found stale compact-height rules that had
+  reverted Position 7 to a dense vertical control stack. The shipped
+  breakpoint restores the approved horizontal pocket rail, a 104px item
+  picker, readable safety line, and 48px departure action within a 390×800
+  frame without altering any Bag rule.
+
+### Local validation evidence
+
+- At the desktop 1280×720 frame, Clover Lunch, Lantern, Hand Trowel, and Wicker
+  Basket each replayed from the correct source and settled into one open Bag.
+  Rapid Lantern → Hand Trowel replacement preserved Hand Trowel; keyboard
+  Provision → Tool → Carrier arrows kept Variant A stable; and the exact
+  Clover Lunch / Hand Trowel / Wicker Basket loadout entered Position 8.
+- At a real 390×800 embedded viewport, the page remained exactly 390×800: the
+  three 48px pocket tabs stayed on one row, the picker remained below them,
+  the safety promise and 48px CTA stayed above the review rail, and a touch
+  choice updated the selected pocket. Reduced motion suppressed the flight,
+  catch, destination settle, and authored loop while preserving the choice.
+- `npm run prototype:homegrown:test` passes 98/98. The production build,
+  `npm run verify:rive-homegrown`, `npm run verify:rive-web`,
+  `npm run quality:loop`, final `npm run quality:check`, and `git diff --check`
+  pass. Manual mobile Safari motion, reduced-motion, silhouette, and attachment
+  checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `254e8ad` deployed successfully through GitHub Pages run
+  `31330904016`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `02ec2a125c6234d46bc6ac575fa6160ddf1f5a7eb054ccfb137d401f4c4925c3`
+  - player JavaScript: `75fb2bcdcfb9a47bd14794a5597a2d0798788486959fcb8b6dad0dc56adca305`
+  - player CSS: `8cf0d2164a020baf40b3417e322b0587dbcb03242632f6107c064a6e3c23aed5`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=7&v=254e8ad`
+- The public route reported `bag-pocket-flight`, `bag-pocket-catch`, and the
+  authored `adventure-attention` response with zero `bag-receive` canvases.
+  It packed Clover Lunch, Hand Trowel, and Wicker Basket into the exact
+  Position 8 departure loadout with no viewport overflow or browser logs.
+
+### Next highest-leverage weakness
+
+The three items now reach their physical pockets clearly, but **Pack Rosie's
+Bag** cuts directly from the open packing composition to Rosie already wearing
+the departure satchel. The player never sees that one Bag close and transfer
+onto Rosie, so the individual pocket causes do not yet culminate in one physical
+departure action. The next cycle should compare Position 7 with
+`07-free-bag-selection.png` and Position 8 with `08-departure.png`, then prototype
+one bounded close → lift → attach handoff without changing Bag choices,
+consumption, route, timing, or Adventure resolution.
 
 ### v0.136 — Rosie's Bag Has One Question — 2026-08-09
 
