@@ -298,6 +298,13 @@ test("Moonberries complete the full grow, personal rhythm, stockpile, and Bag lo
 	assert.equal(state.packedProvisionSpent, "moonberries");
 	assert.equal(state.farmStock.moonberries, 4);
 	assert.match(adventureStory(state).tags[0].detail, /revealed silver leaves/);
+
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
+	assert.equal(state.prototypePosition, 11);
+	assert.equal(state.farmStock.moonberries, 4);
 });
 
 test("Moonberry rootstock visibly persists from harvest through the next morning", () => {
@@ -1878,14 +1885,24 @@ test("stable Home memory collapses into one accessible stock pocket", () => {
 	assert.match(appSource, /aria-expanded=\{expanded\}/);
 	assert.match(appSource, /Glowroot changed Home/);
 	assert.match(appSource, /Bed 3 · Open hedge · Pond frog/);
-	assert.match(appSource, /Farm stock stays useful/);
+	assert.match(appSource, /Rosie’s pantry and Farm supplies/);
+	assert.match(appSource, /Provisions ready for Rosie’s Bag/);
+	assert.match(appSource, /Clover Lunch/);
+	assert.match(appSource, /Explore until dusk/);
+	assert.match(appSource, /Moonberries/);
+	assert.match(appSource, /Reveal reflections/);
+	assert.match(appSource, /Seeds and Materials/);
 	assert.match(appSource, /Open Home changes and Farm stock/);
 	assert.match(appSource, /!homeMemoryExpanded && <WorldAction/);
 	assert.match(appSource, /!homeMemoryExpanded && !showingFarmingPanel/);
 	assert.doesNotMatch(appSource, /className="home-memory-promise"/);
 	assert.doesNotMatch(appSource, /className="home-memory-stock"/);
 	assert.doesNotMatch(appSource, /Crops grow · Stock stays · Discoveries stay/);
+	assert.doesNotMatch(appSource, /stockpileStudy|stockpilePrototype|Materials Only|Complete Tally/);
 	assert.match(stylesSource, /\.home-memory-pocket > span \{ min-width: 0; overflow: hidden;/);
+	assert.match(stylesSource, /\.home-stock-pantry > \.home-stock-provision-shelf/);
+	assert.match(stylesSource, /\.home-stock-pantry > \.home-stock-supply-shelf/);
+	assert.doesNotMatch(stylesSource, /stockpile-pantry|stockpile-tally/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.home-memory-pocket-detail \{ animation: none; \}/);
 });
 

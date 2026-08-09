@@ -1529,6 +1529,39 @@ html[data-reduce-motion="true"] .journey-watch.is-entering .journey-watch-lights
 .home-memory-pocket-detail i { grid-row: 1 / 3; color: var(--clover); font-size: 12px; font-style: normal; text-align: center; }
 .home-memory-pocket-detail small { overflow: hidden; font-size: 6px; font-weight: 900; line-height: 1; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .home-memory-pocket-detail b { font-family: Caprasimo, Georgia, serif; font-size: 11px; font-weight: 400; line-height: 1; }
+.home-stock-pantry > .home-stock-provision-shelf {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0,1fr));
+	background: #f8edcf;
+}
+.home-stock-pantry .home-stock-provision-shelf span {
+	min-height: 47px;
+	padding: 6px 8px;
+	grid-template-columns: 18px minmax(0,1fr) auto;
+	column-gap: 4px;
+}
+.home-stock-pantry .home-stock-provision-shelf span + span { border-left: 1px solid var(--line); }
+.home-stock-pantry .home-stock-provision-shelf i { grid-row: 1 / 3; font-size: 15px; }
+.home-stock-pantry .home-stock-provision-shelf small { font-size: 7px; }
+.home-stock-pantry .home-stock-provision-shelf b {
+	grid-column: 3;
+	grid-row: 1 / 3;
+	align-self: center;
+	font-size: 17px;
+}
+.home-stock-pantry .home-stock-provision-shelf em {
+	grid-column: 2;
+	color: var(--ink-soft);
+	font-size: 7px;
+	font-style: normal;
+	font-weight: 800;
+	line-height: 1;
+}
+.home-stock-pantry > .home-stock-supply-shelf {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0,1fr));
+	border-top: 1px solid var(--line);
+}
 @keyframes memory-pocket-open {
 	from { opacity: 0; transform: translateY(8px); }
 	to { opacity: 1; transform: translateY(0); }

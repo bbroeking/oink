@@ -1304,7 +1304,11 @@ function homeMemoryContent(state) {
 
 function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = true, expanded, onToggle }) {
 	const stock = state.farmStock ?? {};
-	const stockItems = [
+	const provisionItems = [
+		["☘", "Clover Lunch", stock["clover-lunch"] ?? 0, "Explore until dusk"],
+		["●", "Moonberries", stock.moonberries ?? 0, "Reveal reflections"],
+	];
+	const supplyItems = [
 		["☘", "Clover Seed", stock["clover-seed"] ?? 0],
 		["✦", "Glowroot Seed", stock["glowroot-seed"] ?? 0],
 		["♣", "Compost", stock.compost ?? 0],
@@ -1312,10 +1316,13 @@ function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = tr
 	];
 	return (
 		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label={memory.ariaLabel}>
-			<div className="home-memory-pocket-detail" id="farm-memory-detail" hidden={!expanded}>
-				<strong>Farm stock stays useful</strong>
-				<div aria-label="Current Farm stock">
-					{stockItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
+			<div className="home-memory-pocket-detail home-stock-pantry" id="farm-memory-detail" hidden={!expanded}>
+				<strong>Rosie’s pantry and Farm supplies</strong>
+				<div className="home-stock-provision-shelf" aria-label="Provisions ready for Rosie’s Bag">
+					{provisionItems.map(([icon, name, amount, use]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b><em>{use}</em></span>)}
+				</div>
+				<div className="home-stock-supply-shelf" aria-label="Seeds and Materials">
+					{supplyItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
 				</div>
 			</div>
 			<button
