@@ -1662,11 +1662,31 @@ export function homegrownReducer(state, action) {
 			if (!Number.isInteger(action.position) || normalizePrototypePosition(action.position) !== action.position) return state;
 			if (action.position === state.prototypePosition) return state;
 			{
+				const currentPosition = normalizePrototypePosition(state.prototypePosition ?? 1);
+				if (
+					currentPosition === 4 &&
+					action.position === 5 &&
+					state.stage === STAGES.CLOVER_GROWING &&
+					cropRule(state.selectedCrop) !== null
+				) {
+					return changed(
+						state,
+						{
+							stage: STAGES.CLOVER_READY,
+							prototypePosition: 5,
+							readyAt: now,
+							meaningfulChangePending: false,
+							changeRevealed: true,
+						},
+						"growth-fast-forward",
+						`${cropRule(state.selectedCrop).outputName} ready`,
+						now,
+					);
+				}
 				const previewOpportunity = adventureOpportunity(state);
 				const next = createPrototypeState(action.position, { now, reduceMotion: state.reduceMotion });
 				const emptySlot = BAG_SLOT_ORDER.find((slot) => state.bag?.[slot] == null) ?? null;
 				const underprepared = emptySlot !== null;
-				const currentPosition = normalizePrototypePosition(state.prototypePosition ?? 1);
 				const currentPreset = createPrototypeState(currentPosition, { now, reduceMotion: state.reduceMotion });
 				const selectedAdventureOpportunityId = state.selectedAdventureOpportunityId;
 				const currentBagAdjustment = prototypeBagStockAdjustment(currentPosition, state.bag, selectedAdventureOpportunityId);

@@ -57,6 +57,10 @@ copyFileSync(
 	join(root, "assets/images/tickle-particles/clover.png"),
 	join(docsAssets, "clover-seed-mark.png"),
 );
+copyFileSync(
+	join(root, "assets/images/hats/watering_can_hat.png"),
+	join(docsAssets, "growth-watering-can.png"),
+);
 
 const authoredRiveSource = join(
 	root,

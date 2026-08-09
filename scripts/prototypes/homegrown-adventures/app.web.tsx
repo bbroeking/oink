@@ -46,9 +46,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Bed Sign", question: "Can one sign attached to the growing bed replace the status card?" },
+	B: { name: "Growth Ribbon", question: "Does a scene-wide ribbon explain safe waiting without covering the crop?" },
+	C: { name: "Care Scene", question: "Can one physical watering prop and compact note make waiting feel like farming?" },
 };
 
 const STAGE_COPY = {
@@ -559,15 +559,36 @@ function PlantingPanel({ state, onToggleCompost, onPlant }) {
 	);
 }
 
-function GrowthStatusPanel({ state, onPreview }) {
+function GrowthStatusPanel({ state, variant = "A" }) {
 	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
 	const hours = (state.compostApplied ? rule.compostDurationMs : rule.baseDurationMs) / (60 * 60 * 1000);
+	const isMoonberries = state.selectedCrop === "moonberries";
+	const status = <>
+		<span className="growth-badge"><i aria-hidden="true">{state.compostApplied ? "✓" : isMoonberries ? "●" : "☘"}</i>{state.compostApplied ? "Composted" : "Growing normally"}</span>
+		<strong>{rule.name} · {hours} hours</strong>
+		<small>Waits safely when ready</small>
+	</>;
+
+	if (variant === "A") {
+		return <section className={`growth-status-panel growth-prototype growth-layout-A ${state.compostApplied ? "is-composted" : ""} ${isMoonberries ? "is-moonberries" : "is-clover"}`} aria-label={`${rule.name} growth status`}>
+			<span className="growth-bed-outline" aria-hidden="true" />
+			<div className="growth-bed-sign">{status}</div>
+		</section>;
+	}
+
+	if (variant === "B") {
+		return <section className={`growth-status-panel growth-prototype growth-layout-B ${state.compostApplied ? "is-composted" : ""} ${isMoonberries ? "is-moonberries" : "is-clover"}`} aria-label={`${rule.name} growth status`}>
+			<header>{rule.name} is growing</header>
+			<span className="growth-bed-outline" aria-hidden="true" />
+			<div className="growth-scene-ribbon">{status}</div>
+		</section>;
+	}
+
 	return (
-		<section className={`growth-status-panel ${state.compostApplied ? "is-composted" : ""}`} aria-label={`${rule.name} growth status`}>
-			<span className="growth-badge"><i aria-hidden="true">{state.compostApplied ? "✓" : state.selectedCrop === "moonberries" ? "●" : "☘"}</i>{state.compostApplied ? "Composted" : "Growing normally"}</span>
-			<strong>Ready in {hours} hours</strong>
-			<small>Once ready, this crop waits safely until you harvest it.</small>
-			<button type="button" onClick={onPreview}>Preview it ready</button>
+		<section className={`growth-status-panel growth-prototype growth-layout-C ${state.compostApplied ? "is-composted" : ""} ${isMoonberries ? "is-moonberries" : "is-clover"}`} aria-label={`${rule.name} growth status`}>
+			<span className="growth-bed-outline" aria-hidden="true" />
+			<img className="growth-watering-can" src="./assets/homegrown-adventures/growth-watering-can.png" alt="" aria-hidden="true" />
+			<div className="growth-care-note">{status}</div>
 		</section>
 	);
 }
@@ -1704,8 +1725,9 @@ function PositionRail({ position, onChange, positionName }) {
 	const current = PROTOTYPE_POSITIONS[position - 1];
 	const atStart = position === 1;
 	const atEnd = position === PROTOTYPE_POSITIONS.length;
+	const fastForwardingGrowth = position === 4;
 	return (
-		<nav className="position-rail" aria-label="Prototype progression positions">
+		<nav className={`position-rail ${fastForwardingGrowth ? "is-growth-fast-forward" : ""}`} aria-label="Prototype progression positions">
 			<button
 				type="button"
 				disabled={atStart}
@@ -1721,9 +1743,9 @@ function PositionRail({ position, onChange, positionName }) {
 			<button
 				type="button"
 				onClick={() => onChange(atEnd ? 1 : position + 1)}
-				aria-label={atEnd ? "Loop to first position" : "Next position"}
+				aria-label={atEnd ? "Loop to first position" : fastForwardingGrowth ? "Fast-forward to ready crop" : "Next position"}
 			>
-				<strong>{atEnd ? "Loop" : "Next"}</strong><span aria-hidden="true">{atEnd ? "↻" : "→"}</span>
+				<strong>{atEnd ? "Loop" : fastForwardingGrowth ? "Fast-forward" : "Next"}</strong><span aria-hidden="true">{atEnd ? "↻" : fastForwardingGrowth ? "↠" : "→"}</span>
 			</button>
 		</nav>
 	);
@@ -2324,10 +2346,7 @@ function App() {
 				onToggleCompost={() => act({ type: ACTIONS.TOGGLE_COMPOST })}
 				onPlant={() => act(visiblePresentation.action)}
 			/>}
-			{showingGrowth && <GrowthStatusPanel
-				state={state}
-				onPreview={() => act(visiblePresentation.action)}
-			/>}
+			{showingGrowth && <GrowthStatusPanel state={state} variant={variant} />}
 			{showingHarvestRhythm && <HarvestRhythmPanel
 				state={state}
 				onBeat={(direction, input) => act({
