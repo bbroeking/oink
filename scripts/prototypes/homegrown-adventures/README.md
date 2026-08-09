@@ -1,5 +1,19 @@
 # Homegrown Adventures prototype
 
+The v0.140 grounded-Rosie pass makes Position 9 feel explored instead of
+composited. The same canonical Rive component now sits inside a bounded 550 px
+Adventure viewport, scales to 78%, and stands at the root crossing behind the
+real Provision, Tool, Carrier, and find. Rive still performs the existing
+delighted Provision hop, Notice response, breathing, and reduced pose; React
+still owns every cause and transition. A small route-matched backdrop patch
+below Rosie's feet covers one unrelated offstage artboard group without
+cropping any authored motion. A rendered three-placement study on
+`codex/homegrown-v140-grounded-rosie-prototypes` at `228b911`, refined at
+`014dcf8`, compared Hero Float, Trail Companion, and Close Witness against
+`09-adventure-vignette.png`. Trail Companion won because it grounds Rosie,
+keeps the prepared items in front, and leaves the dusk opening readable.
+Production contains no placement switcher or alternate treatment.
+
 The v0.139 departure-hierarchy pass lets Rosie and the open hedge path lead
 Position 8. The settled screen now keeps the named opportunity in the quiet
 HUD, shows the freely chosen Provision, Tool, and Carrier once in a narrow

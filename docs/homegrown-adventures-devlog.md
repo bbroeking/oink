@@ -465,11 +465,83 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     repeated preparation hierarchy, keep one narrow exact loadout receipt, and
     let Rosie, her fitted Bag, the open hedge, and the existing route action
     carry departure.
+141. **v0.140 — Rosie Finds Her Footing (shipped):** place the same canonical
+    Rive Rosie on the Position 9 root crossing behind the prepared-item causes,
+    preserving every authored response and both Adventure routes.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.140 — Rosie Finds Her Footing — 2026-08-09
+
+- Played public v0.139 through departure and compared the live clearing with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/09-adventure-vignette.png`.
+  The environmental place and deterministic causes were present, but the
+  full-size Rive Rosie floated against the upper sky while her Provision,
+  Tool, Carrier, and find acted on the trail below. The Adventure read as a
+  composited report rather than a place Rosie had entered.
+- Built and drove three real placements: Hero Float, Trail Companion, and
+  Close Witness. Hero Float preserved the mismatch. Close Witness reached the
+  ground but crowded the find. Trail Companion won because a smaller Rosie
+  stands behind the physical causes with her feet at the root crossing while
+  the dusk opening remains visible. The runnable study remains on
+  `codex/homegrown-v140-grounded-rosie-prototypes` at `228b911`, with its final
+  viewport refinement at `014dcf8`; neither the switcher nor losing treatments
+  were merged.
+- Production commit `9daea43` places the existing Rive component inside a
+  bounded 550 px Adventure viewport and scales the complete runtime view to
+  78%. Rive sizes its own canvas, so the existing delighted Provision hop,
+  Notice response, breathing settle, fitted Bag, and reduced pose remain
+  intact. One small route-matched backdrop patch below Rosie's feet covers an
+  unrelated offstage artboard group without masking the character.
+- The same placement holds in the Glowroot and Lanternleaf clearings, across
+  Provision, Tool, Carrier, resolved, empty-Bag, and reduced-motion branches.
+  The checked Rive binary, canonical rig, animation names, timing, reducer,
+  Bag, route, cause, reward, persistence, and accessibility facts are
+  unchanged.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` passes 101/101, including the production
+  viewport, cause-layer order, route-aware mask, and no-study-switcher checks.
+  The production player and animation lab build, `npm run
+  verify:rive-homegrown`, `npm run verify:rive-web`, the first complete `npm run
+  quality:loop` pass, final `npm run quality:check`, and `git diff --check`
+  pass.
+- Rendered 390×844 replay captured the Provision, Tool, Carrier, and resolved
+  beats separately. Rosie's full silhouette remained visible at every authored
+  extreme, her feet settled at the root crossing, and the actual cause props
+  stayed in front. A second-route Moonberries / Lantern / Cloth Wrap replay
+  retained the Lanternleaf path and a reduced-motion empty Bag settled to the
+  same grounded route position. No horizontal overflow or runtime error
+  appeared; rapid departure still advanced once.
+
+### Public verification evidence
+
+- Feature commit `9daea43` deployed successfully through GitHub Pages run
+  `31334221580`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `054cda45dd8390adf519b4bf6258158a3b6572394fd250d4cd28d714230beb14`
+  - player JavaScript: `6bc4e36e296ca51bbc5ae3306f707afe6de0b78ba7744a5a056acee19a5eda86`
+  - player CSS: `2b2df91985a80ac4d550ced4a9dd474ac45ab29d9eafc052ec5133da2f4d4831`
+  - animation-lab HTML: `ffc135f83da0ef31a6af812b6faed8342366a6e8a3c5027eb350cd452b61bf75`
+  - animation-lab JavaScript: `a3a0d87cdae227c63ee7406eab1483906396e6289e3e0db9986a9c6bd294e3a4`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=8&v=9daea43`
+- The public route reproduced the grounded Glowroot and Lanternleaf branches,
+  all four causal beats, alternate and empty Bags, normal and reduced Rive
+  states, single departure transition, 390 px fit, and zero runtime errors.
+
+### Next highest-leverage weakness
+
+Rosie now inhabits the clearing, but the Carrier beat truncates the consequence
+in the quiet HUD—**Wicker Basket makes the Glowroot…**—at the exact moment the
+player should understand why packing mattered. The next cycle should compare
+short, route-aware causal titles that fit the established HUD without enlarging
+it, restoring cause cards, or weakening the physical find-to-Carrier handoff.
 
 ### v0.139 — Rosie and the Path Lead — 2026-08-09
 

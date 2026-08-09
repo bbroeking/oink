@@ -30,7 +30,10 @@ so Rosie, her fitted Bag, the open hedge path, and the existing world action
 lead the settled departure instead of four surfaces repeating preparation;
 Position 9 now
 places that handoff in one tangible twilight clearing, with separate complete
-Discovery and clue-only Near-Discovery plates beneath live Rive Rosie; the
+Discovery and clue-only Near-Discovery plates beneath live Rive Rosie; a
+bounded inner Rive viewport now scales and places the same canonical character
+on the root crossing, behind the physical causes, while preserving her complete
+Provision hop, Tool response, settled pose, and reduced-motion silhouette; the
 first Provision cause now happens in that clearing instead of inside a large
 receipt: packed food moves into Rosie and remains consumed, one delighted
 authored Rosie response plays without firing the Tickle game action, dusk or
@@ -1439,6 +1442,24 @@ Fiber once, and keeps the established **Follow the glow** world action. The
 authored Rive satchel, departure motion, reducer timing, Bag choices, costs,
 routes, Near-Discovery rules, rewards, persistence, and later packed reminders
 are unchanged. No study switcher or losing composition ships.
+
+**Grounded-Rosie checkpoint (August 9, 2026):** replaying public v0.139 into
+the approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/09-adventure-vignette.png`
+showed the live canonical Rosie suspended against the sky while Provision,
+Tool, Carrier, and find acted on the trail below. Three real placements were
+rendered on `codex/homegrown-v140-grounded-rosie-prototypes` at `228b911` and
+refined at `014dcf8`: Hero Float preserved the mismatch, Close Witness crowded
+the find, and Trail Companion placed a smaller Rosie behind the prepared items
+with her feet at the root crossing. Trail Companion won. Production wraps the
+existing Rive component in a bounded 550 px viewport, lets the runtime size its
+own inner canvas, scales that complete view to 78%, and uses one route-matched
+background patch below Rosie's feet to cover an unrelated offstage artboard
+group without clipping any pose. Both Glowroot and Lanternleaf clearings,
+Provision hop, Tool response, Carrier transfer, resolved beat, empty Bag, and
+reduced motion use the same placement. The Rive binary, canonical rig, authored
+timelines, Bag and route facts, cause order, rewards, persistence, and React
+authority are unchanged. No study switcher or alternate placement ships.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and
