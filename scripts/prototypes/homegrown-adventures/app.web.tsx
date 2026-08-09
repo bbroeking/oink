@@ -382,6 +382,8 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 	const farmStock = state.farmStock ?? {};
 	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
 	const compost = farmStock.compost ?? 0;
+	const cloverLunches = farmStock[CROP_RULES.clover.outputId] ?? 0;
+	const moonberries = farmStock[CROP_RULES.moonberries.outputId] ?? 0;
 	const rememberedMorning = state.daysCompleted > 0 && state.glowrootPlanted;
 	const moonberriesAvailable = state.nextPlanting === "moonberries";
 
@@ -393,13 +395,13 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 				<div className="crop-choice-options">
 					<button className="crop-path crop-path-clover" type="button" onClick={() => onChoose("clover")} disabled={cloverSeeds < 1}>
 						<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
-						<span><small>Clover · 4 hours</small><strong>Clover Lunch</strong><b>3 guaranteed · {lanternleaf ? "stay until nightfall" : "stay until dusk"}</b></span>
-						<em>{cloverSeeds > 0 ? "Grow Clover" : "Need a Seed"}</em>
+						<span className="crop-path-copy"><small>Clover · 4 hours</small><strong>Clover Lunch</strong><b>3 guaranteed · {lanternleaf ? "stay until nightfall" : "stay until dusk"}</b></span>
+						<em className="crop-action-with-stock"><span>{cloverSeeds > 0 ? "Grow Clover" : "Need a Seed"}</span><b>{cloverLunches} at Home</b></em>
 					</button>
 					<button className="crop-path crop-path-moonberry" type="button" onClick={() => onChoose("moonberries")} disabled={!moonberriesAvailable}>
 						<span className="seed-art seed-art-moonberry" aria-hidden="true">●</span>
-						<span><small>Moonberries · 8 hours</small><strong>Moonberries</strong><b>4 guaranteed · {lanternleaf ? "reveal reflected leaves" : "notice hidden reflections"}</b></span>
-						<em>{moonberriesAvailable ? "Tend Moonberries" : "Still taking root"}</em>
+						<span className="crop-path-copy"><small>Moonberries · 8 hours</small><strong>Moonberries</strong><b>4 guaranteed · {lanternleaf ? "reveal reflected leaves" : "notice hidden reflections"}</b></span>
+						<em className="crop-action-with-stock"><span>{moonberriesAvailable ? "Tend Moonberries" : "Still taking root"}</span><b>{moonberries} at Home</b></em>
 					</button>
 				</div>
 				<SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" twoCrops />
