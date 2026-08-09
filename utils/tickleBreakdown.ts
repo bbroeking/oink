@@ -15,6 +15,7 @@ export interface TickleBreakdown {
 	total: number;
 	boundary: string | null;
 	home_taps: number;
+	ads: number;
 	visit_taps: number;
 	dig_finds: number;
 	pass_tiers: number;
@@ -24,6 +25,7 @@ export interface TickleBreakdown {
 
 export type TickleLane =
 	| "home_taps"
+	| "ads"
 	| "visit_taps"
 	| "dig_finds"
 	| "pass_tiers"
@@ -40,6 +42,7 @@ export interface TickleRow {
 // ledger; the label is the storybook voice ("tickled at home", not "home_taps").
 const LANE_ROWS: { lane: TickleLane; label: string }[] = [
 	{ lane: "home_taps", label: "tickled at home" },
+	{ lane: "ads", label: "ad refills" },
 	{ lane: "visit_taps", label: "out visiting friends" },
 	{ lane: "dig_finds", label: "truffle digs" },
 	{ lane: "pass_tiers", label: "season pass" },

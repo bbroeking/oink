@@ -33,7 +33,11 @@ import { rpc } from "@/utils/rpc";
 //                     2026-07-06 renumber (greedy/generous era = Season 0,
 //                     The Great Hunger = Season 1). Shipped build 103 reads
 //                     this exact string — never rename it.
-export type FeatureFlagKey = "coop_dig" | "world_boss" | "season1_finale";
+export type FeatureFlagKey =
+	| "coop_dig"
+	| "world_boss"
+	| "season1_finale"
+	| "rewarded_ads";
 
 type FlagMap = Partial<Record<FeatureFlagKey, boolean>>;
 

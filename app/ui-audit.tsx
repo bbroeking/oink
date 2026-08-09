@@ -30,7 +30,12 @@ import {
 } from "@/hooks/useMotionPolicy";
 import { PIGS, type PigId } from "@/utils/pigs";
 
-type Preview = "alignment" | "item" | "friends-member" | "friends-guest" | null;
+type Preview =
+  | "alignment"
+  | "item"
+  | "friends-member"
+  | "friends-guest"
+  | null;
 type MotionMode = "system" | "full" | "reduced";
 
 const ITEM_FIXTURE: HatRow = {

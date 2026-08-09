@@ -76,6 +76,8 @@ interface Props {
 	targetUserId: string;
 	targetName: string;
 	onClose: () => void;
+	/** Development-lab fixture. The player-facing callers never set this. */
+	previewState?: "tickled-out";
 }
 
 interface Barn {
@@ -173,14 +175,32 @@ function lockLabel(nextAtIso: string | null): string {
 	return h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 }
 
-export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
+export function BarnVisitModal({
+	targetUserId,
+	targetName,
+	onClose,
+	previewState,
+}: Props) {
+  const previewingTickledOut = __DEV__ && previewState === "tickled-out";
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const motionPolicy = useMotionPolicy();
-	const [barn, setBarn] = useState<Barn | null>(null);
-	const [loading, setLoading] = useState(true);
+	const [barn, setBarn] = useState<Barn | null>(() =>
+		previewingTickledOut
+			? {
+					username: targetName,
+					tickles_earned: 1268,
+					active_background_id: null,
+				}
+			: null,
+	);
+	const [loading, setLoading] = useState(!previewingTickledOut);
 	const [busy, setBusy] = useState(false);
-	const [hostPigId, setHostPigId] = useState<PigId>("rosie");
-	const [myPigId, setMyPigId] = useState<PigId>("rosie");
+	const [hostPigId, setHostPigId] = useState<PigId>(
+		previewingTickledOut ? "biscuit" : "rosie",
+	);
+	const [myPigId, setMyPigId] = useState<PigId>(
+		previewingTickledOut ? "pickles" : "rosie",
+	);
   const [isVip, setIsVip] = useState(false);
   const [emoteIds, setEmoteIds] = useState<VisitEmoteId[]>(() =>
     visitEmoteIds(),
@@ -209,18 +229,21 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	// then both tick up together by one on every tap. The Barn race is a
 	// this-season surface, so we seed the tallies from the live-season count
 	// alone — never lifetime, which would drag in stale archived seasons.
-	const [youHearts, setYouHearts] = useState(0);
-	const [friendHearts, setFriendHearts] = useState(0);
+	const [youHearts, setYouHearts] = useState(previewingTickledOut ? 1284 : 0);
+	const [friendHearts, setFriendHearts] = useState(
+		previewingTickledOut ? 1268 : 0,
+	);
 	// Hearts shared THIS visit only — for the nap summary.
-	const [gained, setGained] = useState(0);
+	const [gained, setGained] = useState(previewingTickledOut ? 7 : 0);
 
   // Tap-session tired state is driven by the server's remaining-taps result.
-	const [tired, setTired] = useState(false);
+	const [tired, setTired] = useState(previewingTickledOut);
   // Your shared visit budget: 3 different friends per prestige-scaled window.
   // Server-authoritative (barn_visit_status).
-	const [visitsLeft, setVisitsLeft] = useState<number | null>(null);
+	const [visitsLeft, setVisitsLeft] = useState<number | null>(
+		previewingTickledOut ? 0 : null,
+	);
 	const [visitBudget, setVisitBudget] = useState(3);
-  const [visitWindowHours, setVisitWindowHours] = useState(8);
 	// Nap summary visibility. Mid-visit tire-out no longer slams the scrim
 	// over the barn — a small "All tickled out!" bubble pops instead, and
 	// the summary dialog shows when the player taps Leave. Rested-on-arrival
@@ -307,6 +330,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 	};
 
 	useEffect(() => {
+		if (previewingTickledOut) return;
 		let cancelled = false;
 		(async () => {
 			const { data } = await supabase
@@ -412,15 +436,13 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 				// Your 3-visits-per-window budget, for the "visits left" bar.
 				if (st.visits_left != null) setVisitsLeft(st.visits_left);
 				if (st.visit_budget != null) setVisitBudget(st.visit_budget);
-        if (st.visit_window_hours != null)
-          setVisitWindowHours(st.visit_window_hours);
 			}
 			setLoading(false);
 		})();
 		return () => {
 			cancelled = true;
 		};
-	}, [targetUserId]);
+	}, [previewingTickledOut, targetUserId]);
 
   useEffect(() => {
     void refreshVisitEmotes().then(() => setEmoteIds([...visitEmoteIds()]));
@@ -499,10 +521,8 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
       if (!stampOffered) {
         setStampOffered(true);
       }
-			if (r.visits_left != null) setVisitsLeft(r.visits_left);
-      if (r.visit_window_hours != null)
-        setVisitWindowHours(r.visit_window_hours);
-			// Server is authoritative on when the visit is spent: taps_left is the
+				if (r.visits_left != null) setVisitsLeft(r.visits_left);
+				// Server is authoritative on when the visit is spent: taps_left is the
 			// remaining tickles of this visit's 3–7 cap and hits 0 exactly on the
 			// cap-hitting tap. Gate on THAT, not local tapCap state — the cap is
 			// rolled server-side on the first tap, so the freshly-returned value is
@@ -721,9 +741,10 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
     setTimeout(onClose, 650);
   };
 
-  // Your visit budget (display only): how many visits remain this
-  // prestige-scaled window.
+	// Your visit budget (display only): how many visits remain this
+	// prestige-scaled window.
 	const vLeft = visitsLeft ?? visitBudget;
+	const visitsUsed = Math.max(0, visitBudget - vLeft);
   const visitsColor =
     vLeft > 1
       ? COLORS.successText
@@ -764,7 +785,7 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
     ],
 	};
 
-	const napUntil = lockedUntil ? lockLabel(lockedUntil) : "3h";
+	const napUntil = lockedUntil ? lockLabel(lockedUntil) : null;
 	// Arrived to find THIS barn at its hourly tap ceiling, but NOT cross-barn
 	// locked — so you can still visit other friends now; don't claim "3h".
 	const arrivedRested = restingOnArrival && !lockedUntil;
@@ -835,13 +856,8 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 										<IconText left={<Glyph name="sparkle" size={12} />} gap={5}>
 											<Text style={styles.visitsChipText}>
 												{vLeft <= 0 ? (
-                          <Text
-                            style={[
-                              styles.visitsChipNum,
-                              { color: visitsColor },
-                            ]}
-                          >
-														all tickled out — your snout needs a rest
+													<Text style={styles.visitsChipNum}>
+														{visitBudget} of {visitBudget} barns visited
 													</Text>
 												) : (
 													<>
@@ -861,9 +877,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 									</View>
 								</View>
 								<Pressable
+									accessibilityRole="button"
+									accessibilityLabel={`Leave ${targetName}'s barn`}
 									onPress={() => {
 										// Tired out mid-visit: Leave surfaces the nap
-										// summary (hearts shared + next-visit timer)
+									// summary (hearts shared + visiting-round progress)
 										// before actually heading home.
 										if (tired && !restingOnArrival && !napOpen) {
 											setNapOpen(true);
@@ -936,11 +954,11 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 								<View style={styles.ticklesPopWrap} pointerEvents="none">
 									<View style={styles.ticklesPop}>
 										<View style={styles.ticklesPopTail} />
-										<Text style={styles.ticklesPopTitle}>Tickled!</Text>
+										<Text style={styles.ticklesPopTitle}>All tickled out!</Text>
 										<Text style={styles.ticklesPopSub}>
 											{vLeft > 0
 												? "go tickle another friend"
-												: "tap Leave when you're ready"}
+												: "tap Leave for your visit note"}
 										</Text>
 									</View>
 								</View>
@@ -1053,12 +1071,20 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 							<View style={styles.napScrim}>
 								<View style={styles.napCard}>
 									<Glyph name="zzz" size={50} style={styles.napGlyph} />
-									<Text style={styles.napKicker}>nap time</Text>
-									<Text style={styles.napTitle}>All tickled out!</Text>
+									<Text style={styles.napKicker}>
+										{restingOnArrival ? "nap time" : "a cozy visit"}
+									</Text>
+									<Text style={styles.napTitle}>
+										{restingOnArrival ? "Still snoozing!" : "Pigs tucked in!"}
+									</Text>
 									<Text style={styles.napBody}>
 										{arrivedRested
 											? `${targetName}'s pig is worn out from a recent visit — give it a little while. You can still go tickle another friend's pig!`
-                      : `The pigs need a rest! You can visit ${visitBudget} different Barns every ${visitWindowHours} hours — and each friend just once a day. Come back soon to tickle more.`}
+											: lockedUntil
+												? `${targetName}'s pig is resting after your visit. Each friend's barn is ready again tomorrow.`
+												: vLeft > 0
+													? `The pigs are napping after a good visit. You still have ${vLeft} of ${visitBudget} barns left this round.`
+													: `The pigs are napping after a good visit. Your ${visitBudget}-barn round is complete — come back later for more.`}
 									</Text>
 									<View style={styles.napStats}>
 										<View style={styles.napStat}>
@@ -1072,15 +1098,24 @@ export function BarnVisitModal({ targetUserId, targetName, onClose }: Props) {
 											<>
 												<View style={styles.napStatDivider} />
 												<View style={styles.napStat}>
-													<Text style={styles.napStatNum}>{napUntil}</Text>
-                          <Text style={styles.napStatLabel}>
-                            until you can visit again
-                          </Text>
+													<Text style={styles.napStatNum}>
+														{napUntil ?? `${visitsUsed}/${visitBudget}`}
+													</Text>
+													<Text style={styles.napStatLabel}>
+														{napUntil
+															? "until this barn wakes"
+															: "barns visited this round"}
+													</Text>
 												</View>
 											</>
 										)}
 									</View>
-                  <Pressable onPress={requestExit} style={styles.napBtn}>
+									<Pressable
+										accessibilityRole="button"
+										accessibilityLabel="Head home"
+										onPress={requestExit}
+										style={styles.napBtn}
+									>
                     <IconText
                       right={<Glyph name="arrowRight" size={14} />}
                       gap={6}
@@ -1455,8 +1490,9 @@ const styles = StyleSheet.create({
 	},
 	leavePill: {
 		flexShrink: 0,
+		minHeight: 44,
 		paddingHorizontal: SPACE.md,
-		paddingVertical: SPACE.sm,
+		justifyContent: "center",
 		borderRadius: RADII.pill,
 		borderWidth: 2,
 		borderColor: INK,
@@ -1724,7 +1760,7 @@ const styles = StyleSheet.create({
 		...sticker,
 	},
 	visitsChipText: { ...TYPE.label, letterSpacing: 0, color: INK },
-	visitsChipNum: { fontFamily: FONTS.whimsy, fontSize: 14 },
+	visitsChipNum: { ...TYPE.bodySm, color: INK },
 
 	stage: { flex: 1, paddingBottom: 18 },
 	// The depth diorama: two pigs absolutely placed, staggered for a sense of depth.
@@ -1867,10 +1903,9 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		...sticker,
 	},
-	ticklesPopTitle: { fontFamily: FONTS.whimsy, fontSize: 14, color: INK },
+	ticklesPopTitle: { ...TYPE.numeral, color: INK },
   ticklesPopSub: {
     ...TYPE.kicker,
-    fontSize: 11,
     color: WHIMSY.mute,
     marginTop: 1,
   },
@@ -1968,5 +2003,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     ...sticker,
   },
-	napBtnText: { ...TYPE.numeral, fontSize: 17, color: INK },
+	napBtnText: { ...TYPE.cardTitle, color: INK },
 });

@@ -14,22 +14,19 @@
 // "active") can't wedge a queued popup over it (the #50152 bug). Closing lifts
 // the hold and queued popups re-admit after the handoff gap.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-	Modal,
 	View,
 	Text,
 	Image,
 	Pressable,
 	StyleSheet,
-	Animated,
-	Easing,
-	Dimensions,
 	type ImageSourcePropType,
 } from "react-native";
 import { Sticker } from "./ui/Sticker";
 import { SectionHeader } from "./ui/SectionHeader";
 import { LoadingBeat } from "./ui/EmptyState";
+import { SheetGrabber, SlideUpSheet } from "./ui/SlideUpSheet";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
 import {
 	fetchTickleBreakdown,
@@ -40,7 +37,6 @@ import {
 } from "@/utils/tickleBreakdown";
 import {
 	FONTS,
-	MODAL_BACKDROP_BG,
 	RADII,
 	SPACE,
 	STICKER_SHADOW,
@@ -60,18 +56,19 @@ interface Props {
 }
 
 // Receipt-specific art keeps every lane at the same optical scale. These are
-// separate from the general Glyph set because this six-icon family was drawn
+// separate from the general Glyph set because this compact family was drawn
 // together for this compact ledger and should stay visually coherent here.
+const RECEIPT_HEART = require("../assets/images/glyphs/receipt/heart.png");
+
 const RECEIPT_ICONS: Record<TickleLane, ImageSourcePropType> = {
 	home_taps: require("../assets/images/glyphs/receipt/home.png"),
+	ads: RECEIPT_HEART,
 	visit_taps: require("../assets/images/glyphs/receipt/friends.png"),
 	dig_finds: require("../assets/images/glyphs/receipt/truffle.png"),
 	pass_tiers: require("../assets/images/glyphs/receipt/pass.png"),
 	trades: require("../assets/images/glyphs/receipt/trades.png"),
 	lucky: require("../assets/images/glyphs/receipt/lucky.png"),
 };
-
-const RECEIPT_HEART = require("../assets/images/glyphs/receipt/heart.png");
 
 function LaneIcon({ lane }: { lane: TickleLane }) {
 	return (
@@ -133,91 +130,60 @@ export function TickleBreakdownSheet({ userId, fallbackTotal, onClose }: Props) 
 		};
 	}, [userId]);
 
-	// Sheet animation — one Animated.Value drives backdrop opacity AND the sheet
-	// translateY in lockstep so the dim doesn't slide with the card.
-	const screenH = useRef(Dimensions.get("window").height).current;
-	const sheetAnim = useRef(new Animated.Value(0)).current;
-	useEffect(() => {
-		if (!open) return;
-		sheetAnim.setValue(0);
-		Animated.timing(sheetAnim, {
-			toValue: 1,
-			duration: 320,
-			easing: Easing.out(Easing.cubic),
-			useNativeDriver: true,
-		}).start();
-	}, [open, sheetAnim]);
-
 	if (!open) return null;
 
 	const rows = data ? tickleBreakdownRows(data) : [];
 	const total = data ? data.total : (fallbackTotal ?? 0);
-	const backdropOpacity = sheetAnim;
-	const sheetTranslateY = sheetAnim.interpolate({
-		inputRange: [0, 1],
-		outputRange: [screenH, 0],
-	});
 
 	return (
-		<Modal visible transparent animationType="none" onRequestClose={onClose}>
-			<Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
-				<Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-			</Animated.View>
-			<Animated.View
-				pointerEvents="box-none"
-				style={[
-					styles.sheetWrap,
-					{ transform: [{ translateY: sheetTranslateY }] },
-				]}
-			>
-				<Pressable onPress={() => {}}>
-					<Sticker
-						color="paper"
-						rotate={-0.6}
-						radius={RADII.xxl}
-						style={[styles.sheet, STICKER_SHADOW]}
-					>
-						<View style={styles.grabber} />
-						<SectionHeader
-							kicker="the tickle receipt"
-							title="How this pig earned it"
-						/>
+		<SlideUpSheet open={open} onClose={onClose} duration={320}>
+			<Pressable onPress={() => {}}>
+				<Sticker
+					color="paper"
+					rotate={-0.6}
+					radius={RADII.xxl}
+					style={[styles.sheet, STICKER_SHADOW]}
+				>
+					<SheetGrabber />
+					<SectionHeader
+						kicker="the tickle receipt"
+						title="How this pig earned it"
+					/>
 
-						{loading ? (
-							<View style={styles.loadingWrap}>
-								<LoadingBeat label="tallying the ledger" />
+					{loading ? (
+						<View style={styles.loadingWrap}>
+							<LoadingBeat label="tallying the ledger" />
+						</View>
+					) : missing ? (
+						// Fail-soft: the RPC is dark (unpushed). Show the known total and
+						// a quiet line — never an error state (spec 17).
+						<>
+							<Text style={styles.secrets}>
+								the pig keeps its secrets for now
+							</Text>
+							<TotalRow total={total} />
+						</>
+					) : rows.length === 0 ? (
+						// A pig with nothing on its ledger yet (fresh, or all-zero).
+						<>
+							<Text style={styles.secrets}>
+								no tickles reclaimed yet this season
+							</Text>
+							<TotalRow total={total} />
+						</>
+					) : (
+						<>
+							<View style={styles.rows}>
+								{rows.map((row) => (
+									<ReceiptRow key={row.lane} row={row} />
+								))}
 							</View>
-						) : missing ? (
-							// Fail-soft: the RPC is dark (unpushed). Show the known total and
-							// a quiet line — never an error state (spec 17).
-							<>
-								<Text style={styles.secrets}>
-									the pig keeps its secrets for now
-								</Text>
-								<TotalRow total={total} />
-							</>
-						) : rows.length === 0 ? (
-							// A pig with nothing on its ledger yet (fresh, or all-zero).
-							<>
-								<Text style={styles.secrets}>
-									no tickles reclaimed yet this season
-								</Text>
-								<TotalRow total={total} />
-							</>
-						) : (
-							<>
-								<View style={styles.rows}>
-									{rows.map((row) => (
-										<ReceiptRow key={row.lane} row={row} />
-									))}
-								</View>
-								<TotalRow total={total} />
-							</>
-						)}
-					</Sticker>
-				</Pressable>
-			</Animated.View>
-		</Modal>
+							<TotalRow total={total} />
+						</>
+					)}
+				</Sticker>
+			</Pressable>
+		</SlideUpSheet>
 	);
 }
 
@@ -241,29 +207,9 @@ function TotalRow({ total }: { total: number }) {
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		...StyleSheet.absoluteFillObject,
-		backgroundColor: MODAL_BACKDROP_BG,
-	},
-	sheetWrap: {
-		position: "absolute",
-		left: 0,
-		right: 0,
-		bottom: 0,
-		padding: 14,
-		paddingBottom: 28,
-	},
 	sheet: {
 		padding: 18,
 		paddingTop: 10,
-	},
-	grabber: {
-		alignSelf: "center",
-		width: 44,
-		height: 4,
-		borderRadius: 2,
-		backgroundColor: WHIMSY.muteSoft,
-		marginBottom: SPACE.md,
 	},
 	loadingWrap: { paddingVertical: SPACE.xl, alignItems: "center" },
 	rows: { gap: SPACE.sm, marginTop: SPACE.xs },

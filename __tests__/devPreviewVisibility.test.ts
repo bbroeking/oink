@@ -10,6 +10,7 @@ function source(relativePath: string): string {
 describe("development-only previews", () => {
 	test.each([
 		["UI audit", "app/ui-audit.tsx", "/"],
+		["barn visit", "app/barn-visit-preview.tsx", "/"],
 		["idle battler", "app/idle-battler-prototype.tsx", "/"],
 		["member perks", "app/member-perks-prototype.tsx", "/(tabs)/shop"],
 	])("%s route redirects production deep links", (_name, route, fallback) => {
@@ -28,6 +29,19 @@ describe("development-only previews", () => {
 		);
 		expect(leaderboard).toMatch(
 			/\{__DEV__ && \(\s*<Pressable[\s\S]*?Preview Wallow ranks/,
+		);
+	});
+
+	test("the standalone barn route owns the all-tickled-out fixture", () => {
+		const audit = source("app/ui-audit.tsx");
+		const preview = source("app/barn-visit-preview.tsx");
+		const visit = source("components/BarnVisitModal.tsx");
+
+		expect(audit).not.toContain("BarnVisitModal");
+		expect(preview).toContain("<BarnVisitModal");
+		expect(preview).toContain('previewState="tickled-out"');
+		expect(visit).toContain(
+			'__DEV__ && previewState === "tickled-out"',
 		);
 	});
 });

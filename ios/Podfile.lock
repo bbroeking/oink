@@ -286,6 +286,9 @@ PODS:
   - FBLazyVector (0.76.9)
   - fmt (11.1.4)
   - glog (0.3.5)
+  - Google-Mobile-Ads-SDK (12.2.0):
+    - GoogleUserMessagingPlatform (>= 1.1)
+  - GoogleUserMessagingPlatform (2.7.0)
   - hermes-engine (0.76.9):
     - hermes-engine/Pre-built (= 0.76.9)
   - hermes-engine/Pre-built (0.76.9)
@@ -2003,6 +2006,29 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNGoogleMobileAds (14.11.0):
+    - DoubleConversion
+    - glog
+    - Google-Mobile-Ads-SDK (= 12.2.0)
+    - GoogleUserMessagingPlatform (= 2.7.0)
+    - hermes-engine
+    - RCT-Folly (= 2024.10.14.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - RNPaywalls (10.1.0):
     - PurchasesHybridCommonUI (= 18.4.0)
     - React-Core
@@ -2318,6 +2344,7 @@ DEPENDENCIES:
   - rive-react-native (from `../node_modules/rive-react-native`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
+  - RNGoogleMobileAds (from `../node_modules/react-native-google-mobile-ads`)
   - RNPaywalls (from `../node_modules/react-native-purchases-ui`)
   - RNPurchases (from `../node_modules/react-native-purchases`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
@@ -2328,6 +2355,8 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - Google-Mobile-Ads-SDK
+    - GoogleUserMessagingPlatform
     - PurchasesHybridCommon
     - PurchasesHybridCommonUI
     - RevenueCat
@@ -2537,6 +2566,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
+  RNGoogleMobileAds:
+    :path: "../node_modules/react-native-google-mobile-ads"
   RNPaywalls:
     :path: "../node_modules/react-native-purchases-ui"
   RNPurchases:
@@ -2589,6 +2620,8 @@ SPEC CHECKSUMS:
   FBLazyVector: 7605ea4810e0e10ae4815292433c09bf4324ba45
   fmt: e84d543c76cae0774f0803fdabdda451e1985263
   glog: 08b301085f15bcbb6ff8632a8ebaf239aae04e6a
+  Google-Mobile-Ads-SDK: 1dfb0c3cb46c7e2b00b0f4de74a1e06d9ea25d67
+  GoogleUserMessagingPlatform: a8b56893477f67212fbc8411c139e61d463349f5
   hermes-engine: 9e868dc7be781364296d6ee2f56d0c1a9ef0bb11
   PurchasesHybridCommon: 2cd3e4b74c60f5a61603d78e4071274217cd9f6b
   PurchasesHybridCommonUI: 3b62fb69d17b6f8b6855b38d26a4c62c269bff49
@@ -2657,6 +2690,7 @@ SPEC CHECKSUMS:
   RiveRuntime: 55c7a7badd9a8389d20fc8a75b7c6accc851b69a
   RNCAsyncStorage: 66991bb6672ed988a8c56289a08bf4fc3a29d4b3
   RNGestureHandler: fffddeb8af59709c6d8de11b6461a6af63cad532
+  RNGoogleMobileAds: 77f6a4af524e3b941b399139d5325d800372c57f
   RNPaywalls: 651d12fc88480154f47b91877e230e171d531bc2
   RNPurchases: d62a8adb6ab45858042eaedfb8f4933cefcd4b1a
   RNReanimated: 99d7da7ba0420a2f7048434f3a36c506a3a1a29d

@@ -22,6 +22,7 @@ const full: TickleBreakdown = {
 	total: 207,
 	boundary: "2026-07-12T00:00:00Z",
 	home_taps: 9,
+	ads: 3,
 	visit_taps: 2,
 	dig_finds: 15,
 	pass_tiers: 150,
@@ -34,6 +35,7 @@ describe("tickleBreakdownRows", () => {
 		const rows = tickleBreakdownRows(full);
 		expect(rows.map((r) => r.lane)).toEqual([
 			"home_taps",
+			"ads",
 			"visit_taps",
 			"dig_finds",
 			"pass_tiers",
@@ -42,13 +44,14 @@ describe("tickleBreakdownRows", () => {
 		]);
 		expect(rows.map((r) => r.label)).toEqual([
 			"tickled at home",
+			"ad refills",
 			"out visiting friends",
 			"truffle digs",
 			"season pass",
 			"trades repaid",
 			"lucky numbers",
 		]);
-		expect(rows.map((r) => r.value)).toEqual([9, 2, 15, 150, 16, 15]);
+		expect(rows.map((r) => r.value)).toEqual([9, 3, 2, 15, 150, 16, 15]);
 	});
 
 	it("omits zero-value lanes (no 'truffle digs · 0' noise)", () => {
@@ -60,6 +63,7 @@ describe("tickleBreakdownRows", () => {
 		});
 		expect(rows.map((r) => r.lane)).toEqual([
 			"home_taps",
+			"ads",
 			"visit_taps",
 			"pass_tiers",
 		]);
@@ -71,6 +75,7 @@ describe("tickleBreakdownRows", () => {
 				total: 0,
 				boundary: null,
 				home_taps: 0,
+				ads: 0,
 				visit_taps: 0,
 				dig_finds: 0,
 				pass_tiers: 0,
@@ -85,7 +90,7 @@ describe("tickleBreakdownRows", () => {
 		// a negative value never renders a row.
 		const rows = tickleBreakdownRows({ ...full, home_taps: -5 });
 		expect(rows.find((r) => r.lane === "home_taps")).toBeUndefined();
-		expect(rows[0].lane).toBe("visit_taps");
+		expect(rows[0].lane).toBe("ads");
 	});
 
 	it("truncates fractional lane values to whole tickles", () => {
