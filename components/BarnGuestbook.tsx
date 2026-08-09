@@ -1,5 +1,14 @@
 import React, { useCallback, useRef, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  Image,
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import {
@@ -26,7 +35,9 @@ import {
   dismissBarnNotice,
   guestbookNoticeSignature,
   isBarnNoticeDismissed,
+  shouldClearOnRelease,
 } from "@/utils/barnNoticeDismissal";
+import { MOTION_DURATION, useMotionPolicy } from "@/hooks/useMotionPolicy";
 import { Icon } from "./ui/Icon";
 
 export function BarnGuestbook() {
@@ -38,6 +49,51 @@ export function BarnGuestbook() {
     null,
   );
   const openedKindnessCards = useRef(new Set<number>());
+  const { width: screenWidth } = useWindowDimensions();
+  const motion = useMotionPolicy();
+
+  // Swipe-to-clear: the placard follows a horizontal drag and a committed
+  // release clears it exactly like the ✕ (which stays for discoverability and
+  // VoiceOver). Refs keep the PanResponder stable across renders while the
+  // release handler reads the current dismiss/motion state.
+  const translateX = useRef(new Animated.Value(0)).current;
+  const noticeWidth = useRef(screenWidth);
+  const dismissRef = useRef<() => void>(() => {});
+  const motionRef = useRef(motion);
+  motionRef.current = motion;
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_event, gesture) =>
+        Math.abs(gesture.dx) > 8 &&
+        Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
+      onPanResponderMove: (_event, gesture) => {
+        translateX.setValue(gesture.dx);
+      },
+      onPanResponderRelease: (_event, gesture) => {
+        if (shouldClearOnRelease(gesture.dx, gesture.vx, noticeWidth.current)) {
+          Animated.timing(translateX, {
+            toValue: Math.sign(gesture.dx || 1) * noticeWidth.current * 1.2,
+            duration: motionRef.current.duration(MOTION_DURATION.state, 0),
+            useNativeDriver: true,
+          }).start(() => {
+            dismissRef.current();
+            // The component stays mounted (it returns null while dismissed),
+            // so reset for the next stamp's notice.
+            translateX.setValue(0);
+          });
+        } else {
+          Animated.timing(translateX, {
+            toValue: 0,
+            duration: motionRef.current.duration(MOTION_DURATION.feedback, 0),
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        translateX.setValue(0);
+      },
+    }),
+  ).current;
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -73,10 +129,18 @@ export function BarnGuestbook() {
     Haptics.selectionAsync().catch(() => {});
     void dismissBarnNotice("guestbook", noticeSignature);
   };
+  dismissRef.current = dismissNotice;
 
   return (
     <>
-      <View style={styles.launchWrap}>
+      <Animated.View
+        testID="barn-guestbook-swipe"
+        style={[styles.launchWrap, { transform: [{ translateX }] }]}
+        onLayout={(event) => {
+          noticeWidth.current = event.nativeEvent.layout.width;
+        }}
+        {...panResponder.panHandlers}
+      >
         <Tape
           color="peach"
           rotate={-4}
@@ -145,7 +209,7 @@ export function BarnGuestbook() {
         >
           <Icon name="x" size={16} color={WHIMSY.mute} strokeWidth={2.5} />
         </Pressable>
-      </View>
+      </Animated.View>
 
       <AdaptiveModalScaffold
         visible={open}

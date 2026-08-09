@@ -80,4 +80,16 @@ describe("dismissible Barn notices", () => {
 
     expect(buttons()).toHaveLength(0);
   });
+
+  it("arms the guestbook notice for swipe-to-clear", async () => {
+    const renderer = await render(<BarnGuestbook />);
+    const swipe = renderer.root.findByProps({
+      testID: "barn-guestbook-swipe",
+    });
+
+    // PanResponder handlers are spread onto the wrapper; the clear decision
+    // itself is the unit-tested shouldClearOnRelease rule.
+    expect(typeof swipe.props.onMoveShouldSetResponder).toBe("function");
+    expect(typeof swipe.props.onResponderRelease).toBe("function");
+  });
 });

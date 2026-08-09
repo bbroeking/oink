@@ -33,6 +33,20 @@ export async function isBarnNoticeDismissed(
   }
 }
 
+/**
+ * A horizontal release clears the notice when the card has travelled far
+ * enough (40% of its width) or is flung with intent — fast, and past a small
+ * nudge so an accidental flick while scrolling can't clear it.
+ */
+export function shouldClearOnRelease(
+  dx: number,
+  vx: number,
+  width: number,
+): boolean {
+  const travelled = Math.abs(dx);
+  return travelled > width * 0.4 || (Math.abs(vx) > 0.8 && travelled > 24);
+}
+
 export async function dismissBarnNotice(
   kind: BarnNoticeKind,
   signature: string,
