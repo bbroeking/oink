@@ -398,11 +398,87 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 121. **v0.120 — Discovery First at Homecoming (shipped):** present Glowroot as
     the one named world-expanding Discovery, then list Seeds, Compost, and
     Willow Fiber separately as repeatable Farm supplies.
+122. **v0.121 — The Barn Remembers (shipped):** let the completed day name
+    Glowroot's lasting Home consequence in one calm storybook promise before
+    the player begins another day.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.121 — The Barn Remembers — 2026-08-08
+
+- Continued the chronological replay from the successful Homecoming through
+  **Take Seed to Bed 3**, **Plant Glowroot**, Moonberry planting, Rosie's
+  closing Tickle, and **Begin another day**. The physical result was already
+  present—the Glowroot bed, open hedge, bell, frog, and Moonberries all
+  persisted—but the completed-day hierarchy led with the generic **Rosie's
+  Barn day is complete** HUD and a very small stock pocket. The next action
+  carried more visual weight than the named Discovery's lasting consequence.
+- Compared the rendered Position 11 result with the approved
+  `assets/concepts/homegrown-adventures/end-to-end-flow/06-changed-barn-new-day.png`
+  concept, then built three runnable treatments on the real route: the current
+  compact handoff, one storybook **The Barn remembers** promise, and labels
+  attached directly to Bed 3 and the hedge. The storybook promise won. The
+  baseline required inference; the in-world labels covered the physical proof
+  they were meant to explain. The isolated study and verdict remain at
+  prototype commit `d2d3ca5` on
+  `codex/homegrown-v121-home-memory-promise-prototypes`; no comparison switcher
+  shipped.
+- When the first Barn day is complete, Position 11 now says **Home remembers ·
+  The Barn remembers · Glowroot now lights the open path.** The plaque follows
+  the same warm paper, double-border, and restrained storybook language as the
+  approved concept while leaving Rosie, the three beds, pond, frog, open
+  hedge, compact stock disclosure, and **Begin another day** visible.
+- The plaque is deliberately terminal, not persistent UI. It does not appear
+  while Moonberries are still the next choice, and it disappears when the new
+  morning begins. The existing 900 ms world-first Glowroot flourish, remembered
+  Farm art, compact stock pocket, reducer state, rewards, inventory, save data,
+  crop rules, Rive source, View Model, and authored motion are unchanged.
+
+### Local validation evidence
+
+- Replayed the complete successful route from Position 10 into Seed handoff,
+  planting, Moonberries, the closing Tickle, and the completed-day endpoint.
+  Before completion, the screen still leads with **Grow Moonberries** and does
+  not invent a premature permanence plaque. At completion, the plaque is the
+  first clear read; **Begin another day** removes it while every physical Home
+  consequence remains in the next morning's rendered scene.
+- Replayed an empty-Bag Near-Discovery through idle wait, gate welcome, and
+  Homecoming. It still returns **Glowroot Trail · Field Guide**, the Provision
+  lesson, Compost +1, Willow Fiber +1, and no unearned Glowroot Seed or Home
+  promise.
+- Reload and reduced motion retain the completed-day promise without depending
+  on animation. `npm run prototype:homegrown:test` passes 87/87, including new
+  terminal-versus-remembered-morning coverage. `npm run
+  verify:rive-homegrown`, `npm run quality:loop`, and `npm run quality:check`
+  pass; the repository gate covers 157 layout files, 324 sprites, TypeScript,
+  78 layout assertions, and 202 security assertions. Watchman's existing
+  recrawl notice and manual mobile Safari checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `0347730` deployed successfully through GitHub Pages run
+  `31288937179`.
+- Exact checked-in checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `24a264bf75bb7d2aae71d8027e539bda8daab1edb28f6e41b01add9061c909a2`
+  - player JavaScript: `9b3c0042b109126fdaeafeca972e09537fb3ab948b756931ee75be522ada871b`
+  - player CSS: `d8c650c1f8641918072de272ae0a130bf5f3bd3eb4013ed3b71ddf025656f683`
+- Direct public fetches match all four hashes. The rendered public Position 11
+  names **The Barn remembers**, keeps the changed Farm unobstructed, preserves
+  the compact exact-stock disclosure, and exposes **Begin another day** as the
+  only primary action.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=11&v=0347730`
+
+### Next highest-leverage weakness
+
+Continue from the remembered next morning through Rosie's Tickle, the new
+purpose, and crop choice. Determine whether the lasting Glowroot path makes the
+next Adventure opportunity understandable without relying on yesterday's
+receipt or hidden history.
 
 ### v0.120 — Discovery First at Homecoming — 2026-08-08
 

@@ -201,6 +201,20 @@ one glance. The clue-only return keeps its existing Field Guide / supplies / ret
 lesson separation. Reducer facts, reward values, saves, Rive Return, Seed
 handoff, and planting costs are unchanged.
 
+**Barn-remembers checkpoint (August 8, 2026):** The completed Position 11 day
+now gives the named Glowroot Discovery one clear lasting promise before the
+player begins another day. A rendered three-treatment study compared the
+existing compact handoff, a storybook **The Barn remembers** plaque, and labels
+attached directly to Bed 3 and the open hedge against the approved
+`06-changed-barn-new-day.png` concept. The storybook promise won because it
+states permanence without covering Rosie, the beds, pond, frog, or route. It
+appears only after Moonberries and Rosie's closing Tickle complete the day;
+**Begin another day** removes it while the physical Glowroot, open hedge, bell,
+frog, and Moonberries remain visible. The first Glowroot flourish remains
+world-first, remembered mornings retain the compact Home pocket, and reducer
+state, rewards, inventory, saves, crop rules, Rive source, View Model, and
+authored motions are unchanged.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in
