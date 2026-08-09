@@ -176,6 +176,18 @@ physical without competing with the worn Bag. This changes public language
 only: internal `bag.pack` state, saves, material costs, results, Rive art, and
 authored animation remain unchanged.
 
+**Carrier-receive checkpoint (August 8, 2026):** The first clearing now lets
+the selected Carrier physically answer the find. The glowing object follows a
+slightly taller 760 ms arc into the Wicker Basket or Cloth Wrap; its grounded
+recipient dips once under the implied weight, gives a restrained rebound, and
+settles in the same place before the route opens. A runnable three-motion study
+compared the static recipient, this receiving dip, and a Carrier that moved
+toward the find. The dip won because it clarifies the transfer without making
+the basket look self-propelled or competing with Rosie. Empty Carrier keeps its
+clue-only branch, and reduced motion preserves the established final placement
+without travel. Reducer state, saves, causal timing, equipment, rewards, Rive
+source, and accessible text are unchanged.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

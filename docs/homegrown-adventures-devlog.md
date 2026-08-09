@@ -392,11 +392,76 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     permanent Bag from the optional physical Carrier that determines whether a
     delicate find can come Home, while keeping every empty choice safe and
     informative.
+120. **v0.119 — The Carrier Receives the Find (shipped):** let the chosen
+    Carrier answer the clearing with one readable find arc and restrained
+    weight dip, so its job is visible before the HUD explains it.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.119 — The Carrier Receives the Find — 2026-08-08
+
+- Began at the exact visual question left by v0.118. The clearing correctly
+  named **Carrier**, but the glowing find moved toward a completely static
+  Wicker Basket. In motion, that could read as a glow passing in front of a
+  prop rather than the Carrier physically receiving it.
+- Compared three runnable treatments on the real Position 9 clearing: the
+  shipped static recipient, a deliberate find arc with a small receiving dip,
+  and a Carrier that slid toward the find to catch it. The receiving dip won.
+  The sliding Carrier was obvious but looked self-propelled and competed with
+  Rosie. The isolated study, frozen midframes, and verdict remain at prototype
+  commit `00b4e8c` on
+  `codex/homegrown-v119-carrier-receive-prototypes`; no query switcher shipped.
+- The find now follows a slightly taller 760 ms arc into the selected Carrier.
+  The recipient dips seven pixels under the implied weight, gives one small
+  rebound, and returns to its exact resting pose inside the existing beat.
+- The same selector covers Wicker Basket and Cloth Wrap. Empty Carrier remains
+  a clue-only Near-Discovery and never invents a receiving prop. Reduced motion
+  retains the already-established final placement with no dip or travel.
+- This is presentation only. Reducer facts, timings, saves, equipment choices,
+  material costs, deterministic rewards, Rive art, authored motions, and
+  accessible cause text are unchanged.
+
+### Local validation evidence
+
+- Played the real Wicker Basket route from packed Position 8 into Position 9
+  with motion enabled. Frame-by-frame rendered capture showed the find begin at
+  the Glowroot, rise in a clear arc, settle inside the basket, and make the
+  grounded Carrier answer once without moving toward Rosie.
+- The reduced-motion contract still disables both Carrier and find animation;
+  the stable endpoint and exact **Wicker Basket makes the Glowroot find safe**
+  semantics remain reducer-owned.
+- `npm run prototype:homegrown:test` passes 85/85, including explicit receive
+  motion and reduced-motion assertions. `npm run verify:rive-homegrown`, `npm
+  run quality:loop`, and `npm run quality:check` pass; the repository gate
+  covers 157 layout files, 324 sprites, TypeScript, 78 layout assertions, and
+  202 security assertions. Watchman's existing recrawl notice and manual
+  mobile Safari checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `0a797cc` deployed successfully through GitHub Pages run
+  `31287960231`.
+- Exact checked-in checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `ca20a0f4de4c5a82602a679453caac67fbb5615be0be712890244654dfdc1e6b`
+  - player JavaScript: `0f41f7bbfb048ebe556b6cc17c18f8deff5d488d5904475d4b5a30cda5dda3c4`
+  - player CSS: `1387b53240be00757474bfa66ad7525629b9d4232e98995723bb7bebc5180838`
+- Direct public fetches match all four hashes. The rendered public route enters
+  the **Wicker Basket makes the Glowroot find safe** beat, sends the live find
+  into the basket, and shows the Carrier's restrained receiving response before
+  continuing automatically to the unchanged idle journey.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=8&v=0a797cc`
+
+### Next highest-leverage weakness
+
+Continue the chronological replay through the idle wait and Homecoming.
+Determine whether the carried Discovery and practical Farm supplies arrive as
+one coherent payoff, rather than assuming that the clearing's successful
+handoff makes the return ceremony understandable.
 
 ### v0.118 — The Find Has a Carrier — 2026-08-08
 
