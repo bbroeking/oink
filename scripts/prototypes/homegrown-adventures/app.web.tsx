@@ -44,9 +44,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Materials Only", question: "Does the current four-item drawer communicate the stockpile Rosie can use next?" },
+	B: { name: "Pantry + Supplies", question: "Should grown Provisions lead, with Seeds and Materials on one quieter shelf?" },
+	C: { name: "Complete Tally", question: "Should every stock item share one compact two-column ledger?" },
 };
 
 const STAGE_COPY = {
@@ -1302,22 +1302,46 @@ function homeMemoryContent(state) {
 	};
 }
 
-function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = true, expanded, onToggle }) {
+function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = true, expanded, onToggle, treatment = "A" }) {
 	const stock = state.farmStock ?? {};
-	const stockItems = [
+	const supplyItems = [
 		["☘", "Clover Seed", stock["clover-seed"] ?? 0],
 		["✦", "Glowroot Seed", stock["glowroot-seed"] ?? 0],
 		["♣", "Compost", stock.compost ?? 0],
 		["≋", "Willow Fiber", stock["willow-fiber"] ?? 0],
 	];
+	const provisionItems = [
+		["☘", "Clover Lunch", stock["clover-lunch"] ?? 0, "Stay until dusk"],
+		["●", "Moonberries", stock.moonberries ?? 0, "Reveal reflections"],
+	];
+	const allStockItems = [...provisionItems, ...supplyItems];
 	return (
 		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label={memory.ariaLabel}>
-			<div className="home-memory-pocket-detail" id="farm-memory-detail" hidden={!expanded}>
-				<strong>Farm stock stays useful</strong>
-				<div aria-label="Current Farm stock">
-					{stockItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
+			{treatment === "B" ? (
+				<div className="home-memory-pocket-detail stockpile-pantry" id="farm-memory-detail" hidden={!expanded}>
+					<strong>Rosie's pantry and Farm supplies</strong>
+					<div className="stockpile-provision-shelf" aria-label="Provisions ready for Rosie's Bag">
+						{provisionItems.map(([icon, name, amount, use]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b><em>{use}</em></span>)}
+					</div>
+					<div className="stockpile-supply-shelf" aria-label="Seeds and Materials">
+						{supplyItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
+					</div>
 				</div>
-			</div>
+			) : treatment === "C" ? (
+				<div className="home-memory-pocket-detail stockpile-tally" id="farm-memory-detail" hidden={!expanded}>
+					<strong>Everything at Home</strong>
+					<div aria-label="Complete Farm stock">
+						{allStockItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
+					</div>
+				</div>
+			) : (
+				<div className="home-memory-pocket-detail" id="farm-memory-detail" hidden={!expanded}>
+					<strong>Farm stock stays useful</strong>
+					<div aria-label="Current Farm stock">
+						{supplyItems.map(([icon, name, amount]) => <span key={name}><i aria-hidden="true">{icon}</i><small>{name}</small><b>{amount}</b></span>)}
+					</div>
+				</div>
+			)}
 			<button
 				type="button"
 				className="home-memory-pocket"
@@ -1767,7 +1791,9 @@ function App() {
 	const [seedHandoff, setSeedHandoff] = useState(null);
 	const [glowrootHomeReveal, setGlowrootHomeReveal] = useState(false);
 	const [purposeHandoff, setPurposeHandoff] = useState(false);
-	const [homeMemoryExpanded, setHomeMemoryExpanded] = useState(false);
+	const [homeMemoryExpanded, setHomeMemoryExpanded] = useState(
+		() => initialSearch.get("debug") === "1" && initialSearch.get("stockpile") === "1",
+	);
 	const transitionLockUntil = useRef(0);
 	const newDayTimer = useRef(null);
 	const glowrootHomeRevealTimer = useRef(null);
@@ -1775,6 +1801,21 @@ function App() {
 	const seedHandoffTimers = useRef([]);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
 	const position = state.prototypePosition ?? 1;
+	const stockpileStudy =
+		debug &&
+		initialSearch.get("stockpile") === "1" &&
+		position === 11 &&
+		state.stage === STAGES.DEVELOPED;
+	const stockpileState = stockpileStudy
+		? {
+			...state,
+			farmStock: {
+				...state.farmStock,
+				"clover-lunch": 4,
+				moonberries: 5,
+			},
+		}
+		: state;
 	const choosingRoute =
 		position === 2 &&
 		state.stage === STAGES.STARTING &&
@@ -2299,13 +2340,14 @@ function App() {
 			/>}
 			<SeedHandoff origin={state.bag?.tool === "hand-trowel" ? "bonus" : "base"} phase={seedHandoff} />
 			{showingHomeMemory && !holdingGlowrootHomeReveal && <HomeMemoryPanel
-				state={state}
+				state={stockpileState}
 				memory={homeMemory}
 				actionLabel={visiblePresentation.label}
 				onAction={() => act(visiblePresentation.action)}
 				expanded={homeMemoryExpanded}
 				onToggle={() => setHomeMemoryExpanded((value) => !value)}
 				showAction={!showingMoonberryPlanting && !showingHomeTickle}
+				treatment={stockpileStudy ? variant : "A"}
 			/>}
 			{showingMoonberryPlanting && !holdingGlowrootHomeReveal && !homeMemoryExpanded && <WorldAction
 				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}
