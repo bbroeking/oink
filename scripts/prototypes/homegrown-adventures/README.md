@@ -1,5 +1,20 @@
 # Homegrown Adventures prototype
 
+The v0.129 map-stock pass lets Rosie's familiar-route choice use the Farm's
+real accumulated state. Each existing place keeps its name and environmental
+promise first, then attaches one quiet fact: **Farm holds _n_ Compost** or
+**Farm holds _n_ Willow Fiber**. The count comes directly from `farmStock`, so
+spending or returning a material changes the next map without a second
+inventory model. The direct third-morning review now matches the real two-day
+reducer path at **2 Compost** and **4 Willow Fiber**. A rendered three-treatment
+study at prototype commit `326fcb0` on
+`codex/homegrown-v129-map-stock-prototypes` compared attached counts, a shared
+pantry strip, and material tickets. Attached counts won because they preserve
+place and fantasy first, keep both route buttons above the 44px touch floor,
+and avoid turning the map into a dashboard or supply-order screen. The route
+choice remains free: no route recommendation, reward change, save field, Rive
+input, new item, or parallel inventory screen was added.
+
 The v0.128 familiar-route-material pass makes Rosie's two-route map a practical
 stockpile decision instead of a choice between different prose and identical
 supplies. Every successful familiar outing still returns one **Clover Seed**

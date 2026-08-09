@@ -423,11 +423,68 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 129. **v0.128 — Familiar Places, Useful Supplies (shipped):** give the warm
     hedge and reflected open-gate route distinct predictable existing
     materials from map promise through journey and Homecoming.
+130. **v0.129 — The Map Knows the Farm (shipped):** attach each familiar
+    route's live Compost or Willow Fiber stock to its existing place clue, so
+    the player can choose with current Farm context without opening inventory.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.129 — The Map Knows the Farm — 2026-08-09
+
+- Played the shipped v0.128 third-morning map after both routes were known. It
+  truthfully promised Compost or Willow Fiber, but the actual Farm quantities
+  remained inside the previous Home screen's collapsed pantry. Choosing a
+  useful place still required memory outside the decision.
+- Built and drove three isolated rendered treatments: counts attached beneath
+  each route clue, one shared pantry strip, and destination-side material
+  tickets. Attached counts won. Its route buttons measured 54.18px; the pantry
+  treatment fell to about 41px and read like a dashboard, while tickets made
+  supplies outrank place. The switcher, fake low-stock cases, and losing
+  treatments remain isolated at prototype commit `326fcb0` on
+  `codex/homegrown-v129-map-stock-prototypes` and were not merged.
+- The production map now reads Compost and Willow Fiber directly from
+  reducer-owned `farmStock`. Its accessible button names carry the same route,
+  reward, and stock facts shown visually. No route is recommended. The direct
+  third-morning review was also corrected to the real accumulated two-day
+  state: **2 Compost** and **4 Willow Fiber**.
+
+### Local validation evidence
+
+- The rendered third-morning map showed **Farm holds 2 Compost** and **Farm
+  holds 4 Willow Fiber** in both visible copy and accessible names. Both route
+  buttons measured 54.18px, the page had zero horizontal or vertical overflow,
+  and the scene contained exactly one authored Rive canvas.
+- Choosing **Lights Past the Open Gate** advanced through Rosie's purpose beat
+  into its correct route-aware Clover / Moonberry crop choice.
+- `npm run prototype:homegrown:test` passes 96/96. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `b2e3d84` deployed through GitHub Pages run `31322676915`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `4eee8640ac5ae1bb63ebf5c3031ef5f5aa5c397047d6e85610e18eb6b4019fdf`
+  - player JavaScript: `90dd475b719170d39a20ddb43a16883a9b267fe48223e6f0f5154f2f1eca8a81`
+  - player CSS: `2f23fc168ba22bf2bd0b9a89e922b092b1b8ae3b567f7b710ce04b92a96a0387`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&repeat=1&v=b2e3d84`
+- The public route reproduced the two exact stock facts, 54.18px buttons, one
+  authored canvas, zero overflow, and the correct route-choice transition.
+
+### Next highest-leverage weakness
+
+The map now shows the promised material and its live quantity, but a returning
+player must still remember what that material does. **Compost** has an
+established crop-boost use and **Willow Fiber** has an established Cloth Wrap
+use, yet neither use is visible at the moment of route choice. The next cycle
+should test whether one short use phrase can replace—not stack onto—secondary
+route copy, keeping the map place-first and the buttons comfortably touch-safe.
 
 ### v0.128 — Familiar Places, Useful Supplies — 2026-08-09
 

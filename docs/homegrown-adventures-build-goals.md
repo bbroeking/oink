@@ -322,6 +322,20 @@ won because it creates a reason to alternate without inflation or a new
 economy. First-time Discoveries, Near-Discoveries, Bag rules, Field Guide
 entries, crop rules, saves, Rive source, and Rive inputs are unchanged.
 
+**Map-stock checkpoint (August 9, 2026):** Each familiar place now carries one
+quiet live Farm fact beneath its established environmental promise. The warm
+hedge says how much Compost the Farm holds; the reflected open gate says how
+much Willow Fiber it holds. Both counts come from the same reducer-owned
+`farmStock` used by planting, Bag packing, and Homecoming, and the direct third-
+morning review matches the real two-day path at **2 Compost** and **4 Willow
+Fiber**. A rendered three-treatment study compared route-attached counts, a
+shared pantry strip, and destination-side material tickets. Attached counts
+won because they keep the place name and fantasy ahead of inventory while
+maintaining 54px route buttons; the pantry became a dashboard and the tickets
+made the map read like a supply order. No route is recommended, and no reward,
+cost, save field, item, Rive source, Rive input, or parallel inventory screen
+changed.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in
