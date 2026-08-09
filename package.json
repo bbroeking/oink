@@ -13,6 +13,7 @@
 		"prototype:homegrown": "npm run prototype:homegrown:build && python3 -m http.server 4174 --directory docs",
 		"prototype:homegrown:build": "node scripts/prototypes/homegrown-adventures/build.mjs",
 		"prototype:homegrown:test": "node --test scripts/prototypes/homegrown-adventures/game.test.mjs",
+		"prototype:homegrown:repeat-reward": "node scripts/prototypes/homegrown-adventures/repeat-reward-prototype.mjs",
 		"prototype:loadout": "node scripts/prototypes/rosies-loadout-sim/cli.mjs",
 		"prototype:snatch-chain": "node scripts/prototypes/snatch-chain-sim/cli.mjs",
 		"prototype:snatch-chain:web": "python3 -m http.server 4173 --directory scripts/prototypes/snatch-chain-sim",
