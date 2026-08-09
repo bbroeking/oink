@@ -395,11 +395,16 @@ test("the rendered Harvest Rhythm keeps the crop gesture primary with one integr
 	assert.equal(playerPresentation(state).objective, "Harvest for Rosie’s journey");
 	assert.equal(playerPresentation(state).detail, "Clover rhythm: ← → ↑");
 	assert.match(appSource, /aria-label=\{`Tap \$\{HARVEST_DIRECTION_LABELS\[direction\]\.name\} instead`\}/);
-	assert.match(appSource, /Swipe bed · or tap arrow/);
-	assert.match(appSource, /\{guaranteedYield\} \{rule\.outputName\} guaranteed · clean rhythm \+1/);
-	assert.match(appSource, /className="harvest-bed-assist is-unified"/);
+	assert.match(appSource, /harvest-bed-sequence/);
+	assert.match(appSource, /harvest-reward-ribbon/);
+	assert.match(appSource, /\{guaranteedYield\} \{rule\.outputName\}/);
+	assert.match(appSource, /<small>Guaranteed<\/small>/);
+	assert.match(appSource, /<small>clean<\/small>/);
+	assert.match(appSource, /Gather normally/);
+	assert.doesNotMatch(appSource, /harvest-prototype|harvest-layout-[ABC]/);
 	assert.doesNotMatch(appSource, /className="harvest-assist"|objective: "Clover’s rhythm: ← → ↑"/);
-	assert.match(stylesSource, /\.harvest-bed-assist\.is-unified \{/);
+	assert.match(stylesSource, /\.harvest-bed-sequence \.harvest-pattern/);
+	assert.match(stylesSource, /\.harvest-bed-sequence\.is-moonberries \.harvest-gesture-zone \{ left: 126px; \}/);
 });
 
 test("a ready crop announces the harvest before the affectionate Tickle handoff", () => {
