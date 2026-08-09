@@ -2207,20 +2207,26 @@ test("the earned crop choice keeps Rosie's current Adventure purpose attached to
 	assert.match(appSource, /Both harvests help Rosie explore/);
 	assert.match(appSource, /Clover: stay until nightfall · Moonberries: reveal reflected leaves/);
 	assert.match(appSource, /Clover: stay until dusk · Moonberries: notice hidden reflections/);
-	assert.match(appSource, /<SeedAdventureReceipt opportunity=\{opportunity\} className="seed-adventure-memory-receipt" twoCrops \/>/);
 	assert.match(appSource, /<SeedChoicePanel\s+state=\{state\}\s+opportunity=\{opportunity\}/);
 	assert.match(appSource, /What should Rosie grow for the lights\?/);
-	assert.match(appSource, /3 guaranteed · \{lanternleaf \? "stay until nightfall" : "stay until dusk"\}/);
-	assert.match(appSource, /4 guaranteed · \{lanternleaf \? "reveal reflected leaves" : "notice hidden reflections"\}/);
+	assert.match(appSource, /yield: "3 guaranteed"/);
+	assert.match(appSource, /use: lanternleaf \? "Stay until nightfall" : "Stay until dusk"/);
+	assert.match(appSource, /yield: "4 guaranteed"/);
+	assert.match(appSource, /use: lanternleaf \? "Reveal reflected leaves" : "Notice hidden reflections"/);
 	assert.match(appSource, /const cloverLunches = farmStock\[CROP_RULES\.clover\.outputId\] \?\? 0;/);
 	assert.match(appSource, /const moonberries = farmStock\[CROP_RULES\.moonberries\.outputId\] \?\? 0;/);
-	assert.match(appSource, /<em className="crop-action-with-stock"><span>\{cloverSeeds > 0 \? "Grow Clover" : "Need a Seed"\}<\/span><b>\{cloverLunches\} at Home<\/b><\/em>/);
-	assert.match(appSource, /<em className="crop-action-with-stock"><span>\{moonberriesAvailable \? "Tend Moonberries" : "Still taking root"\}<\/span><b>\{moonberries\} at Home<\/b><\/em>/);
-	assert.match(stylesSource, /\.crop-path \.crop-action-with-stock \{/);
-	assert.match(appSource, /onChoose\("moonberries"\)/);
-	assert.match(stylesSource, /\.crop-choice-options \{ display: grid; grid-template-columns: repeat\(2,minmax\(0,1fr\)\)/);
+	assert.match(appSource, /stock: cloverLunches/);
+	assert.match(appSource, /action: cloverSeeds > 0 \? "Grow Clover" : "Need a Seed"/);
+	assert.match(appSource, /stock: moonberries/);
+	assert.match(appSource, /action: moonberriesAvailable \? "Tend Moonberries" : "Still taking root"/);
+	assert.match(appSource, /harvest-basket\.webp/);
+	assert.match(appSource, /harvest-basket-moonberries\.png/);
+	assert.match(appSource, /onChoose\(choice\.id\)/);
+	assert.match(stylesSource, /\.crop-choice-art img \{/);
+	assert.match(stylesSource, /\.crop-choice-tray \{/);
+	assert.match(stylesSource, /\.crop-choice-card \{/);
 	assert.match(stylesSource, /\.seed-adventure-receipt \{/);
-	assert.doesNotMatch(appSource, /InvitationSwitcher|invitationTreatment|PROVISION_STOCK_VARIANTS|stockhint|ProvisionStockPrototypeSwitcher|crop-pantry-shelf|crop-stock-stamp/);
+	assert.doesNotMatch(appSource, /seed-adventure-memory-receipt|Illustrated Tiles|Seed Tray|Field Labels|crop-choice-layout-|crop-choice-tiles|crop-choice-rows|InvitationSwitcher|invitationTreatment|PROVISION_STOCK_VARIANTS|stockhint|ProvisionStockPrototypeSwitcher|crop-pantry-shelf|crop-stock-stamp/);
 });
 
 test("a Near-Discovery still returns useful supplies without granting the Seed", () => {
