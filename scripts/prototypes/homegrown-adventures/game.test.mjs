@@ -1591,7 +1591,7 @@ test("the first Hand Trowel cause performs one separable dig", () => {
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.phone\[data-adventure-opportunity="glow-beneath-hedge"\] \.adventure-tool-prop/);
 });
 
-test("the first Adventure visibly settles a carried find into its chosen Pack", () => {
+test("the first Adventure visibly settles a carried find into its chosen Carrier", () => {
 	assert.match(appSource, /function adventurePackPresentation\(state\)/);
 	assert.match(appSource, /Wicker Basket makes the Glowroot find safe/);
 	assert.match(appSource, /Cloth Wrap protects the Lanternleaf/);
@@ -1599,8 +1599,13 @@ test("the first Adventure visibly settles a carried find into its chosen Pack", 
 	assert.match(appSource, /adventureCauseBeat === "pack"[\s\S]+adventurePackPresentation\(state\)/);
 	assert.match(appSource, /className="adventure-find-handoff" aria-hidden="true"><i \/><i \/><\/div>/);
 	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"[^\n]+data-adventure-beat="pack"[^\n]+\.adventure-find-handoff/);
-	assert.match(stylesSource, /@keyframes adventure-find-to-pack/);
+	assert.match(stylesSource, /animation: adventure-find-to-carrier 760ms cubic-bezier\(\.22,\.72,\.2,1\) both/);
+	assert.match(stylesSource, /@keyframes adventure-find-to-carrier/);
+	assert.match(stylesSource, /animation: adventure-carrier-receive 760ms cubic-bezier\(\.22,\.72,\.2,1\) both/);
+	assert.match(stylesSource, /@keyframes adventure-carrier-receive/);
+	assert.match(stylesSource, /67% \{ transform: translateY\(7px\) scale\(\.97\) rotate\(-1\.8deg\); \}/);
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\][^\n]+\.adventure-find-handoff/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.adventure-pack-prop \{ animation: none; \}/);
 });
 
 test("a packed Provision performs once and leaves the Adventure at dusk", () => {
