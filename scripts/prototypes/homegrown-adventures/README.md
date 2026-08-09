@@ -1,5 +1,20 @@
 # Homegrown Adventures prototype
 
+The v0.126 complete-stock pass lets the final Home screen remember the crops
+the player actually grew instead of calling a four-item supply strip the
+current Farm stock. The existing calm Home-memory pocket remains collapsed by
+default; opening it now gives **Clover Lunch** and **Moonberries** one readable
+Provision shelf with their Adventure uses, followed by the quieter Clover
+Seed, Glowroot Seed, Compost, and Willow Fiber supply shelf. A real boosted
+Moonberry repeat harvested six, packed one, and rendered the five remaining
+berries at Position 11. Three complete Position 11 treatments were compared at
+prototype commit `c72452e` on
+`codex/homegrown-v126-stockpile-prototypes`: the incomplete material-only strip,
+this pantry-plus-supplies hierarchy, and a six-item tally. The pantry won
+because it keeps the farming-to-Bag purpose legible without turning Rosie's
+Homecoming into bookkeeping. No experiment switcher, inventory rule, reward,
+save fact, Rive input, or parallel economy remains on main.
+
 The v0.125 familiar-homecoming pass lets a repeated Adventure end as a
 truthful new day in Rosie's relationship with a known place instead of replaying
 the route's first Discovery ceremony. The completed Position 11 plaque now says

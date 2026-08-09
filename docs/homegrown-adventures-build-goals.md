@@ -275,6 +275,21 @@ inventory report and took emphasis away from Rosie. A deterministic
 route URLs cannot inherit a stale saved review. No reward, stock quantity,
 route rule, save fact, Rive source, Rive input, or authored motion changed.
 
+**Complete-stock checkpoint (August 9, 2026):** Position 11's existing calm
+Home-memory pocket now tells the complete Farm-stock truth. It stays collapsed
+by default, then opens into one primary Provision shelf for **Clover Lunch**
+and **Moonberries**, including the Adventure capability each provides, above a
+quieter supply shelf for Clover Seed, Glowroot Seed, Compost, and Willow Fiber.
+A real rendered Moonberry repeat harvested six, consumed one in Rosie's Bag,
+and showed the five remaining berries after Homecoming. The same structure
+renders for first-time Glowroot, first-time Lanternleaf, and familiar-route
+Home screens without changing any ceremony. A three-treatment runnable study
+compared the old materials-only strip, this pantry-plus-supplies hierarchy,
+and a dense six-item tally; the pantry won because it preserves the reason to
+farm while keeping Rosie and the remembered world primary. No stock rule,
+reward quantity, save fact, Rive source, Rive input, destination, currency, or
+parallel inventory screen changed.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

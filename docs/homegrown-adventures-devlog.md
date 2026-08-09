@@ -414,11 +414,83 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     outing close as a familiar Homecoming instead of replaying **New route**,
     while preserving both first-time Discovery memories and the exact returned
     Farm stock.
+127. **v0.126 — The Pantry Remembers (shipped):** show harvested Clover Lunches
+    and Moonberries with their Adventure uses in the existing Home stock
+    pocket, above the quieter Seed and Material supply row.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.126 — The Pantry Remembers — 2026-08-09
+
+- Replayed the exact v0.125 familiar Lanternleaf route and opened the final
+  stock drawer. The journey had harvested six Moonberries and packed one, but
+  the surface calling itself current Farm stock omitted all five remaining
+  Moonberries and every Clover Lunch. The Farm therefore hid the crops that
+  give Adventures their purpose at the moment the loop was meant to close.
+- Compared three runnable Position 11 structures: the existing four-material
+  strip, a pantry-first hierarchy, and a complete two-column tally. The
+  pantry-first structure won. The baseline was incomplete; the tally was
+  accurate but made Homecoming read as bookkeeping and covered more of Rosie.
+  The isolated study and verdict remain at prototype commit `c72452e` on
+  `codex/homegrown-v126-stockpile-prototypes`; no switcher or losing treatment
+  shipped.
+- The same expandable Home-memory pocket remains collapsed by default. When
+  opened, **Rosie’s pantry and Farm supplies** now gives Clover Lunch and
+  Moonberries a primary two-item Provision shelf, names **Explore until dusk**
+  and **Reveal reflections**, and keeps Clover Seed, Glowroot Seed, Compost,
+  and Willow Fiber in a quieter four-item **Seeds and Materials** shelf.
+- The interface reads directly from the existing `farmStock` quantities. It
+  adds no item, inventory mutation, reward rule, save field, route rule, Rive
+  input, or new screen. First-time Glowroot, first-time Lanternleaf, and both
+  familiar-route ceremonies retain their established story and actions.
+
+### Local validation evidence
+
+- Played a real rendered third-day Lanternleaf loop: chose **Lights Past the
+  Open Gate**, tended Moonberries with Compost, completed Down → Left → Right →
+  Up for six berries, packed Moonberries / Lantern / Wicker Basket, watched the
+  causal journey, fast-forwarded the six-hour wait, welcomed Rosie, and kept
+  the returned supplies. Position 11 began with the pocket collapsed; opening
+  it showed exactly five Moonberries, zero Clover Lunches, three Clover Seeds,
+  one Glowroot Seed, two Compost, and three Willow Fiber.
+- Direct first-time Glowroot and Lanternleaf Home reviews both rendered the new
+  complete drawer while retaining their original **The Barn remembers**
+  ceremonies. **Begin another day** returned to Position 1. Each reviewed
+  frame had one authored Rive canvas, zero horizontal or vertical page
+  overflow, and the authored runtime ready.
+- `npm run prototype:homegrown:test` passes 94/94, including a reducer proof
+  that packed Moonberries remain in Farm stock through acknowledged Return.
+  `npm run verify:rive-homegrown`, `npm run prototype:homegrown:build`,
+  `npm run quality:loop`, and `npm run quality:check` pass. The quality gate
+  covers 155 layout files, 324 sprites, TypeScript, 78 layout assertions, and
+  202 security assertions. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `981a838` deployed through GitHub Pages run `31319726257`.
+- Exact checked-in and publicly fetched checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `68454bf9c0d625624092e07de225509373fe3d7fd0aaaea9f618fb376a11a9f1`
+  - player JavaScript: `c50b1fce3d153736c9232db09ec4b95776a319a402c850b3a1f194a608d9161d`
+  - player CSS: `f970fc7571ceacd6062fca0eeb939bffb3e2abed5737b6a11d0987e6420bbc61`
+- A fresh public familiar-Lanternleaf review rendered the Provision and supply
+  shelves, exact quantities, original familiar Homecoming, one ready authored
+  Rive canvas, and zero page overflow. It loaded the content-hashed CSS
+  `f970fc7571` and JavaScript `c50b1fce3d` bundles.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=11&route=lanternleaf&repeat=1&v=981a838`
+
+### Next highest-leverage weakness
+
+The complete pantry now exposes that repeat Adventures keep adding Glowroot
+Seed after Glowroot is already planted, even though that Seed has no visible
+ongoing use. The next cycle should make a familiar route's primary return
+useful to the next preparation decision—without adding a new currency,
+crafting tree, random reward table, or parallel upgrade system.
 
 ### v0.125 — A Familiar Trail Brings Rosie Home — 2026-08-09
 
