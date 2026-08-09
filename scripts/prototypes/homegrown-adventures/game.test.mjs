@@ -194,7 +194,15 @@ test("Clover requires a Seed and leaves its predictable Compost boost freely cho
 		label: "Plant Clover",
 	});
 	assert.equal(playerPresentation(state).detail, "Clover Lunch ×3 · ready in 4h");
-	assert.match(appSource, /\{promisedYield\} \{rule\.outputName\} · ready in \{boosted \? boostedHours : normalHours\} hours/);
+	assert.match(appSource, /const readyHours = boosted \? boostedHours : normalHours;/);
+	assert.match(appSource, /const outcome = `\$\{promisedYield\} \$\{rule\.outputName\} · ready in \$\{readyHours\} hours`;/);
+	assert.match(appSource, /function PlantingCropProp\(\{ isMoonberries \}\)/);
+	assert.match(appSource, /clover-seed-mark\.png/);
+	assert.match(appSource, /harvest-basket-moonberries\.png/);
+	assert.match(appSource, /function PlantingCompostProp\(\)/);
+	assert.match(stylesSource, /\.planting-bed-focus \{/);
+	assert.match(stylesSource, /\.planting-action-ribbon \{/);
+	assert.doesNotMatch(appSource, /planting-prototype|planting-layout-[ABC]/);
 	assert.match(appSource, /Add Compost: 1 more, \$\{normalHours - boostedHours\} hours sooner\./);
 	assert.doesNotMatch(appSource, /Ready in 4 hours · Harvest 3|Ready in 2 hours · Harvest 4/);
 	state = reduce(state, { type: ACTIONS.TOGGLE_COMPOST });

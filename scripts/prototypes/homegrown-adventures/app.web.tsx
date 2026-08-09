@@ -512,6 +512,17 @@ function KnownRouteMap({ onChoose, farmStock }) {
 	);
 }
 
+function PlantingCropProp({ isMoonberries }) {
+	if (isMoonberries) {
+		return <span className="planting-crop-prop planting-crop-prop-moonberries" aria-hidden="true"><img src="./assets/homegrown-adventures/harvest-basket-moonberries.png" alt="" /></span>;
+	}
+	return <span className="planting-crop-prop planting-crop-prop-clover" aria-hidden="true"><span><img src="./assets/homegrown-adventures/clover-seed-mark.png" alt="" /></span><i /><i /></span>;
+}
+
+function PlantingCompostProp() {
+	return <span className="planting-compost-prop" aria-hidden="true"><i /><i /><i /></span>;
+}
+
 function PlantingPanel({ state, onToggleCompost, onPlant }) {
 	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
 	const isMoonberries = state.selectedCrop === "moonberries";
@@ -521,32 +532,29 @@ function PlantingPanel({ state, onToggleCompost, onPlant }) {
 	const promisedYield = rule.baseYield + (boosted ? rule.compostYieldBonus : 0);
 	const normalHours = rule.baseDurationMs / (60 * 60 * 1000);
 	const boostedHours = rule.compostDurationMs / (60 * 60 * 1000);
+	const verb = isMoonberries ? "Tend" : "Plant";
+	const cropFact = isMoonberries ? "Rooted in Bed 2 · No Seed spent" : `Clover Seed · ${seeds} → ${Math.max(0, seeds - 1)}`;
+	const compostFact = boosted ? `${compost} → ${compost - 1}` : `${compost} at Home`;
+	const readyHours = boosted ? boostedHours : normalHours;
+	const confirmLabel = boosted ? `${verb} with Compost` : `${verb} ${rule.name}`;
+	const outcome = `${promisedYield} ${rule.outputName} · ready in ${readyHours} hours`;
 	return (
-		<section className="planting-panel" aria-label={`${isMoonberries ? "Tend Moonberries" : "Plant Clover"} and choose whether to add Compost`}>
-			<div className="planting-costs">
-				<div className="planting-cost is-required">
-					<span className={`seed-art ${isMoonberries ? "seed-art-moonberry" : "seed-art-clover"}`} aria-hidden="true">{isMoonberries ? "●" : "☘"}</span>
-					<span><small>{isMoonberries ? "Rooted in Bed 2" : "Required Seed"}</small><strong>{rule.name}</strong><b>{isMoonberries ? "No Seed spent" : `${seeds} → ${Math.max(0, seeds - 1)}`}</b></span>
-				</div>
-				<button
-					type="button"
-					className={`planting-cost compost-toggle ${boosted ? "is-selected" : ""}`}
-					onClick={onToggleCompost}
-					disabled={compost < 1 && !boosted}
-					aria-pressed={boosted}
-				>
-					<span className="seed-art seed-art-compost" aria-hidden="true">♣</span>
-					<span><small>Optional boost</small><strong>{boosted ? "Compost added" : "Add Compost"}</strong><b>{boosted ? `${compost} → ${compost - 1}` : `${compost} owned`}</b></span>
-					<i aria-hidden="true">{boosted ? "✓" : "+"}</i>
-				</button>
+		<section className={`planting-panel planting-bedside ${isMoonberries ? "is-moonberries" : "is-clover"}`} aria-label={`${verb} ${rule.name} and choose whether to add Compost`}>
+			<div className="planting-bed-focus">
+				<PlantingCropProp isMoonberries={isMoonberries} />
+				<span className="planting-bed-label"><strong>{rule.name}</strong><small>{cropFact}</small></span>
 			</div>
-			<div className="planting-effect" role="status">
-				<strong>{promisedYield} {rule.outputName} · ready in {boosted ? boostedHours : normalHours} hours</strong>
-				<small>{boosted ? `Compost saves ${normalHours - boostedHours} hours and adds 1.` : `Add Compost: 1 more, ${normalHours - boostedHours} hours sooner.`}</small>
-			</div>
-			<button type="button" className="plant-confirm" onClick={onPlant} disabled={!isMoonberries && seeds < 1}>
-				{boosted ? `${isMoonberries ? "Tend" : "Plant"} with Compost` : `${isMoonberries ? "Tend" : "Plant"} ${rule.name}`}
+			<button type="button" className={`planting-bed-compost ${boosted ? "is-selected" : ""}`} onClick={onToggleCompost} disabled={compost < 1 && !boosted} aria-pressed={boosted} aria-label={`Optional Compost. ${boosted ? "Remove Compost" : "Add Compost"}. ${compostFact}.`}>
+				<PlantingCompostProp />
+				<span><small>Optional boost</small><strong>{boosted ? "Compost added" : "Add Compost"}</strong><b>{compostFact}</b></span>
+				<i aria-hidden="true">{boosted ? "✓" : "+"}</i>
 			</button>
+			<div className="planting-action-ribbon">
+				<div className="planting-ribbon-promise" role="status"><strong>{outcome}</strong>
+				<small>{boosted ? `Compost saves ${normalHours - boostedHours} hours and adds 1.` : `Add Compost: 1 more, ${normalHours - boostedHours} hours sooner.`}</small>
+				</div>
+				<button type="button" className="planting-world-confirm" onClick={onPlant} disabled={!isMoonberries && seeds < 1}>{confirmLabel}</button>
+			</div>
 		</section>
 	);
 }
