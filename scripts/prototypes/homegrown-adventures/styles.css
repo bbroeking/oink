@@ -2855,6 +2855,147 @@ html[data-reduce-motion="true"] .planting-bed-focus { animation: none; }
 	66% { opacity: 1; transform: translate(var(--flight-mid-x), var(--flight-mid-y)) scale(1.04) rotate(-7deg); }
 	100% { opacity: 0; transform: scale(.76) rotate(4deg); }
 }
+
+/* PROTOTYPE — three item-to-Bag motion studies, selected with ?motionStudy=1&variant=A|B|C. */
+.bag-receive-study-active .bag-guided-tabs,
+.bag-receive-study-active .bag-guided-picker {
+	opacity: 1;
+	transform: none;
+}
+body:has(.phone[data-bag-receive-study]) .variant-switcher {
+	left: calc(50% + 335px);
+	bottom: 24px;
+}
+
+/* A · Pocket Landing: one readable object travels to the open Bag while Rive Rosie notices. */
+.bag-receive-study-A .bag-flight-item {
+	--flight-start-x: 22px;
+	--flight-target-x: 219px;
+	--flight-midpoint-x: 126px;
+	--flight-mid-y: -136px;
+	--flight-end-y: -170px;
+	left: var(--flight-start-x);
+	top: 653px;
+	--flight-mid-x: calc(var(--flight-midpoint-x) - var(--flight-start-x));
+	--flight-end-x: calc(var(--flight-target-x) - var(--flight-start-x));
+}
+.bag-receive-study-A .bag-flight-item-moonberries,
+.bag-receive-study-A .bag-flight-item-lantern,
+.bag-receive-study-A .bag-flight-item-cloth-wrap { --flight-start-x: 139px; }
+.bag-receive-study-A .bag-flight-tool {
+	--flight-target-x: 261px;
+	--flight-midpoint-x: 148px;
+}
+.bag-receive-study-A .bag-flight-pack {
+	--flight-target-x: 303px;
+	--flight-midpoint-x: 170px;
+}
+.bag-receive-study-A.bag-receive-study-active .bag-flight-item.is-placement {
+	animation: pocket-landing-flight 520ms cubic-bezier(.2,.76,.18,1) both;
+}
+.bag-receive-study-A.bag-receive-study-active .bag-flight-item.is-removal {
+	animation: pocket-landing-return 440ms cubic-bezier(.2,.76,.18,1) both;
+}
+.bag-receive-study-A.bag-receive-study-active .bag-stage {
+	animation: pocket-landing-catch 520ms cubic-bezier(.2,.76,.18,1) both;
+}
+.bag-receive-study-A[data-bag-receive-slot="provision"] .bag-preview-provision.is-filled,
+.bag-receive-study-A[data-bag-receive-slot="tool"] .bag-preview-tool.is-filled,
+.bag-receive-study-A[data-bag-receive-slot="pack"] .bag-preview-pack.is-filled {
+	animation: pocket-landing-token 520ms cubic-bezier(.2,.76,.18,1) both;
+}
+@keyframes pocket-landing-flight {
+	0% { opacity: 0; transform: scale(.72) rotate(-7deg); }
+	10% { opacity: 1; transform: scale(1) rotate(-3deg); }
+	52% { opacity: 1; transform: translate(var(--flight-mid-x), calc(var(--flight-mid-y) - 12px)) scale(1.04) rotate(7deg); }
+	84% { opacity: 1; transform: translate(var(--flight-end-x), var(--flight-end-y)) scale(.74) rotate(-2deg); }
+	100% { opacity: 0; transform: translate(var(--flight-end-x), calc(var(--flight-end-y) + 6px)) scale(.5); }
+}
+@keyframes pocket-landing-return {
+	0% { opacity: 0; transform: translate(var(--flight-end-x), var(--flight-end-y)) scale(.52); }
+	18% { opacity: 1; transform: translate(var(--flight-end-x), var(--flight-end-y)) scale(.8); }
+	72% { opacity: 1; transform: translate(var(--flight-mid-x), calc(var(--flight-mid-y) - 8px)) scale(1) rotate(-6deg); }
+	100% { opacity: 0; transform: scale(.74) rotate(3deg); }
+}
+@keyframes pocket-landing-catch {
+	0%, 58% { transform: none; filter: none; }
+	78% { transform: translateY(3px) scale(.975); filter: brightness(1.08); }
+	100% { transform: none; filter: none; }
+}
+@keyframes pocket-landing-token {
+	0%, 76% { opacity: 0; transform: translateY(-13px) scale(.65); }
+	90% { opacity: 1; transform: translateY(2px) scale(1.08); }
+	100% { opacity: 1; transform: none; }
+}
+
+/* B · Bag Answers: no flying duplicate; the physical Bag tugs and accepts the item. */
+.bag-receive-study-B .bag-flight-item { display: none; }
+.bag-receive-study-B.bag-receive-study-active .bag-stage {
+	animation: bag-answer-tug 480ms cubic-bezier(.16,1,.3,1) both;
+}
+.bag-receive-study-B.bag-receive-study-active .bag-stage::after {
+	content: "";
+	position: absolute;
+	left: 54px;
+	right: 32px;
+	top: 64px;
+	height: 86px;
+	border: 4px solid rgba(255,225,126,.9);
+	border-radius: 50%;
+	filter: blur(2px);
+	animation: bag-answer-glow 480ms ease-out both;
+}
+.bag-receive-study-B[data-bag-receive-slot="provision"] .bag-preview-provision.is-filled,
+.bag-receive-study-B[data-bag-receive-slot="tool"] .bag-preview-tool.is-filled,
+.bag-receive-study-B[data-bag-receive-slot="pack"] .bag-preview-pack.is-filled {
+	animation: bag-answer-drop 480ms cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes bag-answer-tug {
+	0% { transform: none; }
+	30% { transform: rotate(-2deg) translateY(-2px); }
+	58% { transform: rotate(1.5deg) translateY(1px); }
+	100% { transform: none; }
+}
+@keyframes bag-answer-glow {
+	0% { opacity: 0; transform: scale(.72); }
+	34% { opacity: .92; transform: scale(1); }
+	100% { opacity: 0; transform: scale(1.16); }
+}
+@keyframes bag-answer-drop {
+	0% { opacity: .2; transform: translateY(-28px) scale(.72); }
+	55% { opacity: 1; transform: translateY(3px) scale(1.08); }
+	76% { transform: translateY(-2px) scale(.96); }
+	100% { opacity: 1; transform: none; }
+}
+
+/* C · Rosie Celebrates: the item settles immediately while authored Rive Rosie owns the response. */
+.bag-receive-study-C .bag-flight-item { display: none; }
+.bag-receive-study-C.bag-receive-study-active .bag-stage {
+	animation: rosie-celebration-bag 620ms ease-out both;
+}
+.bag-receive-study-C[data-bag-receive-slot="provision"] .bag-preview-provision.is-filled,
+.bag-receive-study-C[data-bag-receive-slot="tool"] .bag-preview-tool.is-filled,
+.bag-receive-study-C[data-bag-receive-slot="pack"] .bag-preview-pack.is-filled {
+	animation: rosie-celebration-token 300ms cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes rosie-celebration-bag {
+	0%, 62% { filter: none; transform: none; }
+	78% { filter: brightness(1.12); transform: scale(1.018); }
+	100% { filter: none; transform: none; }
+}
+@keyframes rosie-celebration-token {
+	0% { opacity: .3; transform: scale(.7); }
+	70% { opacity: 1; transform: scale(1.12); }
+	100% { opacity: 1; transform: none; }
+}
+
+html[data-reduce-motion="true"] .bag-receive-study-active .bag-flight-item.is-placement,
+html[data-reduce-motion="true"] .bag-receive-study-active .bag-flight-item.is-removal,
+html[data-reduce-motion="true"] .bag-receive-study-active .bag-stage,
+html[data-reduce-motion="true"] .bag-receive-study-active .bag-stage::after,
+html[data-reduce-motion="true"] .bag-receive-study-active[data-bag-receive-slot] .bag-packed-preview > span.is-filled {
+	animation: none;
+}
 .bag-guided-picker {
 	position: absolute;
 	left: 12px;
@@ -3021,6 +3162,7 @@ html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, ht
 	.dev-tools { top: 84px; right: 7px; }
 	.dev-toggle { opacity: .8; }
 	.variant-switcher { bottom: 84px; }
+	body:has(.phone[data-bag-receive-study]) .variant-switcher { left: 50%; bottom: 84px; }
 	.lab-player { height: 100dvh; padding: 0; overflow: hidden; }
 	.position-rail {
 		bottom: 0;

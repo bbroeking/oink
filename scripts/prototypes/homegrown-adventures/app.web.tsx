@@ -47,9 +47,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Pocket Landing", question: "Does one visible item flight make the open Bag feel physical?" },
+	B: { name: "Bag Answers", question: "Can the Bag acknowledge the choice without another flying layer?" },
+	C: { name: "Rosie Celebrates", question: "Should Rosie's authored response own the emotional payoff?" },
 };
 
 const STAGE_COPY = {
@@ -288,6 +288,7 @@ function useVariant() {
 		const onKey = (event) => {
 			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
 			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			if (document.activeElement?.closest?.(".bag-guided-tabs")) return;
 			const keys = Object.keys(VARIANTS);
 			const current = keys.indexOf(variant);
 			const delta = event.key === "ArrowRight" ? 1 : -1;
@@ -830,7 +831,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 			{activeSelection && flightItemId && (
 				<span
 					key={`${activeSelection.slot}-${flightItemId}-${activeSelection.at}`}
-					className={`bag-flight-item bag-flight-${activeSelection.slot} ${flightIsRemoval ? "is-removal" : "is-placement"}`}
+					className={`bag-flight-item bag-flight-${activeSelection.slot} bag-flight-item-${flightItemId} ${flightIsRemoval ? "is-removal" : "is-placement"}`}
 					aria-hidden="true"
 				>
 					<BagItemArt itemId={flightItemId} />
@@ -842,7 +843,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 					? `${bagItem(clueSlot, bag[clueSlot])?.name} answers the ${opportunity.clueName} clue.`
 					: clueGuide.next}</small>
 			</div>}
-			<div className="bag-stage bag-guided-stage" aria-hidden="true">
+			<div key={`bag-stage-${activeSelection?.at ?? "idle"}`} className="bag-stage bag-guided-stage" aria-hidden="true">
 				<span className="open-adventure-bag" />
 				<div className="bag-packed-preview">
 					{BAG_SLOT_ORDER.map((slot) => {
@@ -1835,6 +1836,7 @@ function App() {
 	const purposeHandoffTimer = useRef(null);
 	const seedHandoffTimers = useRef([]);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
+	const motionStudy = new URLSearchParams(window.location.search).get("motionStudy") === "1";
 	const position = state.prototypePosition ?? 1;
 	const choosingRoute =
 		position === 2 &&
@@ -1932,7 +1934,14 @@ function App() {
 	const adventureAttentionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "tool"
 		? "adventure-attention"
 		: null;
-	const sceneRiveTrigger = adventureProvisionTrigger ?? adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
+	const studiedBagReceiveTrigger = choosingBag && riveModel.trigger === "bag-receive"
+		? variant === "A"
+			? "adventure-attention"
+			: variant === "B"
+				? null
+				: "tickle"
+		: riveModel.trigger;
+	const sceneRiveTrigger = adventureProvisionTrigger ?? adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : studiedBagReceiveTrigger);
 	const sceneRiveTriggerNonce = adventureProvisionTrigger
 		? `${riveModel.triggerNonce}:adventure-provision:${opportunity.id}`
 		: adventureAttentionTrigger
@@ -2241,7 +2250,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} bag-receive-study-${variant} ${riveModel.bagReceive ? "bag-receive-study-active" : ""} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootHomeReveal || holdingPurposeHandoff}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-opportunity={opportunity.id}
@@ -2252,6 +2261,8 @@ function App() {
 			data-return-kind={showingReturnReward ? returnKind : undefined}
 			data-return-tool={showingReturnReward ? state.bag?.tool ?? "none" : undefined}
 			data-return-pack={showingReturnReward ? state.bag?.pack ?? "none" : undefined}
+			data-bag-receive-study={motionStudy ? variant : undefined}
+			data-bag-receive-slot={riveModel.bagReceive?.slot ?? undefined}
 		>
 			<div className="scene-plate" role="img" aria-label={sceneLabel(state, {
 				gateHomecomingReady,
@@ -2397,7 +2408,7 @@ function App() {
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
-		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{(debug || motionStudy) && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
 }
 
