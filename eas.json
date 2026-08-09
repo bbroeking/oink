@@ -32,7 +32,9 @@
         "EXPO_PUBLIC_PRIVACY_URL": "https://ticklethepig.com/privacy",
         "EXPO_PUBLIC_SENTRY_DSN": "https://8a094ff0378a99d9a921aad9d57a3b56@o4511452672884736.ingest.us.sentry.io/4511452680749056",
         "EXPO_PUBLIC_IAP_ENABLED": "true",
-        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_TdNIdoTWckBFBhImUHgyXNzZrSx"
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_TdNIdoTWckBFBhImUHgyXNzZrSx",
+        "ADMOB_IOS_APP_ID": "ca-app-pub-1425739013457484~8765193677",
+        "EXPO_PUBLIC_ADMOB_REWARDED_IOS_ID": "ca-app-pub-1425739013457484/2199785324"
       }
     },
     "testflight": {
