@@ -52,6 +52,12 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+const GROUNDING_STUDIES = {
+	A: { name: "Hero Float", detail: "Current full-size centered Rosie" },
+	B: { name: "Trail Companion", detail: "Smaller Rosie standing behind the prepared items" },
+	C: { name: "Close Witness", detail: "Larger Rosie grounded to the left of the find" },
+};
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -1704,6 +1710,25 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function GroundingStudySwitcher({ variant, setVariant }) {
+	return (
+		<div className="grounding-study-switcher" aria-label="Rosie grounding study">
+			<strong>Ground Rosie</strong>
+			{Object.entries(GROUNDING_STUDIES).map(([key, study]) => (
+				<button
+					key={key}
+					type="button"
+					className={variant === key ? "is-active" : ""}
+					onClick={() => setVariant(key)}
+				>
+					<b>{key} · {study.name}</b>
+					<small>{study.detail}</small>
+				</button>
+			))}
+		</div>
+	);
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1805,6 +1830,7 @@ function App() {
 	const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 	const initialSearch = new URLSearchParams(window.location.search);
 	const loopMode = initialSearch.get("mode") === "loop";
+	const groundingStudy = initialSearch.get("groundStudy") === "1";
 	const autoPlay = loopMode && !initialSearch.has("position");
 	const requestedPosition = Number(initialSearch.get("position"));
 	const hasRequestedPosition = Number.isInteger(requestedPosition) && requestedPosition >= 1 && requestedPosition <= PROTOTYPE_POSITIONS.length;
@@ -2309,7 +2335,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${showDepartureLoadout ? "departure-ready" : ""} ${bagHandoff ? "bag-handoff-active" : ""} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${renderedRiveViewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${groundingStudy && showingAdventureVignette ? `ground-study-${variant.toLowerCase()}` : ""} ${showDepartureLoadout ? "departure-ready" : ""} ${bagHandoff ? "bag-handoff-active" : ""} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${renderedRiveViewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootHomeReveal || holdingPurposeHandoff}
 			data-bag-handoff-active={bagHandoff ? "true" : undefined}
 			data-bag-handoff-phase={bagHandoff?.phase}
@@ -2469,6 +2495,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{groundingStudy && <GroundingStudySwitcher variant={variant} setVariant={setVariant} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;

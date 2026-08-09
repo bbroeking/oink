@@ -187,6 +187,45 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 4px solid
 .adventure-vignette-open .painted-kitchen-patch,
 .adventure-vignette-open .painted-remembered-crop,
 .adventure-vignette-open .moth-shared-glint { display: none; }
+.ground-study-b.adventure-vignette-open .homegrown-rive-scene.authored canvas {
+	clip-path: inset(70px 25px 355px 50px);
+	transform-origin: 0 0;
+	transform: translate(22px,200px) scale(.78);
+}
+.ground-study-c.adventure-vignette-open .homegrown-rive-scene.authored canvas {
+	clip-path: inset(70px 25px 355px 50px);
+	transform-origin: 0 0;
+	transform: translate(-35px,165px) scale(.9);
+}
+.grounding-study-switcher {
+	position: fixed;
+	z-index: 40;
+	top: 128px;
+	left: calc(50% + 230px);
+	width: 230px;
+	padding: 10px;
+	display: grid;
+	gap: 7px;
+	background: var(--paper);
+	border: 2px solid var(--ink);
+	border-radius: 14px;
+	box-shadow: 4px 4px 0 rgba(48,33,22,.64);
+}
+.grounding-study-switcher > strong { font-family: Caprasimo, Georgia, serif; font-size: 15px; font-weight: 400; }
+.grounding-study-switcher button {
+	padding: 8px;
+	display: grid;
+	gap: 2px;
+	color: var(--ink);
+	text-align: left;
+	background: rgba(255,255,255,.46);
+	border: 1px solid rgba(48,33,22,.36);
+	border-radius: 9px;
+}
+.grounding-study-switcher button.is-active { background: var(--butter); border-color: var(--ink); }
+.grounding-study-switcher b { font-size: 11px; }
+.grounding-study-switcher small { font-size: 9px; line-height: 1.2; }
+@media (max-width: 720px) { .grounding-study-switcher { display: none; } }
 .adventure-vignette-backdrop {
 	position: absolute;
 	inset: 0;
