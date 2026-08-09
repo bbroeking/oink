@@ -392,6 +392,16 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 	);
 }
 
+function PurposeHandoff({ opportunity }) {
+	return (
+		<div className="purpose-handoff" role="status" aria-live="polite">
+			<small>Rosie's curiosity</small>
+			<strong>{opportunity.name}</strong>
+			<span>{opportunity.detail}</span>
+		</div>
+	);
+}
+
 function PlantingPanel({ state, onToggleCompost, onPlant }) {
 	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
 	const isMoonberries = state.selectedCrop === "moonberries";
@@ -1278,6 +1288,8 @@ const REDUCED_NEW_DAY_HANDOFF_MS = 300;
 const SEED_HANDOFF_DEPART_MS = 420;
 const SEED_HANDOFF_ARRIVE_MS = 460;
 const GLOWROOT_HOME_REVEAL_MS = 900;
+const PURPOSE_HANDOFF_MS = 1200;
+const REDUCED_PURPOSE_HANDOFF_MS = 900;
 const RAPID_TRANSITION_ACTIONS = new Set([
 	ACTIONS.TICKLE,
 	ACTIONS.SELECT_CROP,
@@ -1631,10 +1643,12 @@ function App() {
 	const [journeyEntryFresh, setJourneyEntryFresh] = useState(false);
 	const [seedHandoff, setSeedHandoff] = useState(null);
 	const [glowrootHomeReveal, setGlowrootHomeReveal] = useState(false);
+	const [purposeHandoff, setPurposeHandoff] = useState(false);
 	const [homeMemoryExpanded, setHomeMemoryExpanded] = useState(false);
 	const transitionLockUntil = useRef(0);
 	const newDayTimer = useRef(null);
 	const glowrootHomeRevealTimer = useRef(null);
+	const purposeHandoffTimer = useRef(null);
 	const seedHandoffTimers = useRef([]);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
 	const position = state.prototypePosition ?? 1;
@@ -1692,6 +1706,7 @@ function App() {
 		state.stage === STAGES.DEVELOPED &&
 		state.cycleComplete;
 	const holdingGlowrootHomeReveal = glowrootHomeReveal && !state.reduceMotion;
+	const holdingPurposeHandoff = purposeHandoff && choosingSeed;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
 	const sceneRiveViewModel = useMemo(() => {
 		if (
@@ -1920,6 +1935,7 @@ function App() {
 	useEffect(() => () => {
 		window.clearTimeout(newDayTimer.current);
 		window.clearTimeout(glowrootHomeRevealTimer.current);
+		window.clearTimeout(purposeHandoffTimer.current);
 		seedHandoffTimers.current.forEach((timer) => window.clearTimeout(timer));
 	}, []);
 
@@ -1972,18 +1988,26 @@ function App() {
 				GLOWROOT_HOME_REVEAL_MS,
 			);
 		}
+		if (nextAction.type === ACTIONS.TICKLE && position === 1) {
+			setPurposeHandoff(true);
+			window.clearTimeout(purposeHandoffTimer.current);
+			purposeHandoffTimer.current = window.setTimeout(
+				() => setPurposeHandoff(false),
+				state.reduceMotion ? REDUCED_PURPOSE_HANDOFF_MS : PURPOSE_HANDOFF_MS,
+			);
+		}
 		dispatch(nextAction);
 		signalFeedback(nextAction.type);
-	}, [signalFeedback, startingNewDay, state.reduceMotion]);
+	}, [position, signalFeedback, startingNewDay, state.reduceMotion]);
 
 	const jumpToPosition = useCallback((nextPosition) => {
-		if (seedHandoff || holdingGlowrootHomeReveal) return;
+		if (seedHandoff || holdingGlowrootHomeReveal || holdingPurposeHandoff) return;
 		setHomeMemoryExpanded(false);
 		const now = performance.now();
 		if (now < transitionLockUntil.current) return;
 		transitionLockUntil.current = now + RAPID_TRANSITION_GUARD_MS;
 		dispatch({ type: ACTIONS.JUMP_TO_POSITION, position: nextPosition });
-	}, [holdingGlowrootHomeReveal, seedHandoff]);
+	}, [holdingGlowrootHomeReveal, holdingPurposeHandoff, seedHandoff]);
 
 	const selectBagItem = useCallback((slot, item) => {
 		dispatch({ type: ACTIONS.SET_BAG_SLOT, slot, item });
@@ -2016,8 +2040,8 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
-			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootHomeReveal}
+			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootHomeReveal || holdingPurposeHandoff}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-opportunity={opportunity.id}
 			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
@@ -2082,11 +2106,12 @@ function App() {
 				{visiblePresentation.target === WORLD_TARGETS.ROSIE && <span>{visiblePresentation.label}</span>}
 			</button>}
 			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
-			{choosingSeed && <SeedChoicePanel
+			{choosingSeed && !holdingPurposeHandoff && <SeedChoicePanel
 				state={state}
 				opportunity={opportunity}
 				onChoose={(crop) => act({ type: ACTIONS.SELECT_CROP, crop })}
 			/>}
+			{holdingPurposeHandoff && <PurposeHandoff opportunity={opportunity} />}
 			{plantingCrop && <PlantingPanel
 				state={state}
 				onToggleCompost={() => act({ type: ACTIONS.TOGGLE_COMPOST })}

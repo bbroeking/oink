@@ -1890,6 +1890,20 @@ test("the completed day names Glowroot's lasting Home promise before the next mo
 	assert.doesNotMatch(appSource, /HomeMemoryPromisePrototype|homeMemoryTreatment/);
 });
 
+test("the morning Tickle gives Rosie one purpose beat before crop choice", () => {
+	assert.match(appSource, /const PURPOSE_HANDOFF_MS = 1200;/);
+	assert.match(appSource, /const REDUCED_PURPOSE_HANDOFF_MS = 900;/);
+	assert.match(appSource, /nextAction\.type === ACTIONS\.TICKLE && position === 1/);
+	assert.match(appSource, /const holdingPurposeHandoff = purposeHandoff && choosingSeed;/);
+	assert.match(appSource, /choosingSeed && !holdingPurposeHandoff && <SeedChoicePanel/);
+	assert.match(appSource, /holdingPurposeHandoff && <PurposeHandoff opportunity=\{opportunity\} \/>/);
+	assert.match(appSource, /Rosie's curiosity/);
+	assert.match(appSource, /aria-busy=\{startingNewDay \|\| Boolean\(seedHandoff\) \|\| holdingGlowrootHomeReveal \|\| holdingPurposeHandoff\}/);
+	assert.match(stylesSource, /\.purpose-handoff \{/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.purpose-handoff \{ animation: none; \}/);
+	assert.doesNotMatch(appSource, /PurposeHandoffPrototype|WorldCropChoicePrototype|purposeHandoffTreatment/);
+});
+
 test("the earned crop choice keeps Rosie's current Adventure purpose attached to both harvests", () => {
 	const firstMorning = createPrototypeState(2, { now: at });
 	assert.equal(adventureOpportunity(firstMorning), FIRST_ADVENTURE_OPPORTUNITY);
