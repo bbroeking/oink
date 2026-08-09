@@ -1,5 +1,18 @@
 # Homegrown Adventures prototype
 
+The v0.141 Carrier-consequence pass makes the final prepared-item cause fully
+readable inside the existing quiet HUD. The primary line now states what comes
+Home—**Glowroot is coming Home**, **Lanternleaf is coming Home**, or **Trail
+supplies are coming Home**—while the existing detail line names the exact
+cause: **Carried by the Wicker Basket** or **Protected by the Cloth Wrap**.
+Empty-Carrier branches remain kind and equally explicit. The physical
+find-to-Carrier handoff, canonical Rive Rosie, routes, timing, reducer state,
+HUD dimensions, and rewards are unchanged. A rendered three-treatment study
+on `codex/homegrown-v141-carrier-copy-prototypes` at `9e874b8` compared the
+truncated current sentence, a shortened generic Carrier, and the winning
+outcome-then-exact-cause hierarchy. Production contains no `carrierCopy`
+parameter, switcher, or losing treatment.
+
 The v0.140 grounded-Rosie pass makes Position 9 feel explored instead of
 composited. The same canonical Rive component now sits inside a bounded 550 px
 Adventure viewport, scales to 78%, and stands at the root crossing behind the

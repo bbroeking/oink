@@ -46,7 +46,11 @@ names every equipped or empty outcome; the final Pack cause now finishes the
 same card-free sequence: the existing find enters the Wicker Basket or Cloth
 Wrap, a restrained Pack-aware response completes the transfer, empty Pack
 remains a kind remembered clue, and the HUD names every complete or
-Near-Discovery result; the resolved handoff now stays in that same world-led
+Near-Discovery result; that Carrier HUD now uses its existing two-line
+hierarchy as one complete causal sentence—the named result on top and the
+exact Wicker Basket, Cloth Wrap, or Rosie memory action beneath—so all complete
+and clue outcomes fit at 390 px without ellipsis, a larger HUD, or another
+card; the resolved handoff now stays in that same world-led
 grammar: the centered **The journey continues…** sign is gone, five
 route-colored lights open the path, the existing HUD names where Rosie is
 going, and one hidden live status preserves the same fact before the unchanged

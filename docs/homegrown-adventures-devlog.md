@@ -468,11 +468,80 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 141. **v0.140 — Rosie Finds Her Footing (shipped):** place the same canonical
     Rive Rosie on the Position 9 root crossing behind the prepared-item causes,
     preserving every authored response and both Adventure routes.
+142. **v0.141 — The Carrier Explains the Find (shipped):** use the quiet HUD's
+    existing two lines to name what comes Home first and the exact Carrier
+    cause second, preserving the physical handoff and every route outcome.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.141 — The Carrier Explains the Find — 2026-08-09
+
+- Played public v0.140 through the Carrier beat after grounding Rosie. The
+  physical Glowroot entered the Wicker Basket correctly, but the quiet HUD
+  rendered the 265 px title **Wicker Basket makes the Glowroot find safe**
+  inside a 224 px line. The visible consequence stopped at **Wicker Basket
+  makes the Glowroot…**, precisely where preparation needed to become
+  understandable.
+- Built and rendered three treatments against the same approved Position 9
+  concept and live clearing: Current Sentence, Short Cause, and Outcome Then
+  Exact Cause. The short cause fit but reduced **Wicker Basket** and **Cloth
+  Wrap** to generic nouns while retaining a stale readiness detail. Outcome
+  Then Exact Cause won because **Glowroot is coming Home** / **Carried by the
+  Wicker Basket** states the result before the exact reason, matches the
+  physical handoff, and uses only the HUD hierarchy already present. The
+  runnable study remains on
+  `codex/homegrown-v141-carrier-copy-prototypes` at `9e874b8`; its
+  `carrierCopy` parameter and losing treatments were not merged.
+- Production commit `56f1d7b` applies the same grammar to Glowroot,
+  Lanternleaf, trail-supply, clue, and no-Carrier outcomes. The HUD size,
+  canonical Rive rig, route art, physical cause animation, timers, reducer,
+  Bag choices, reward ledger, persistence, and accessibility behavior are
+  unchanged.
+
+### Local validation evidence
+
+- `npm run prototype:homegrown:test` passes 101/101, including the full
+  outcome/cause copy set and explicit absence of the study parameter. The
+  production player and animation lab build, the first complete `npm run
+  quality:loop` pass, `npm run verify:rive-homegrown`, `npm run
+  verify:rive-web`, final `npm run quality:check`, and `git diff --check` pass.
+- Rendered 390×844 replay covered Glowroot with Wicker Basket, Cloth Wrap, and
+  no Carrier; Lanternleaf with Wicker Basket, Cloth Wrap, and no Carrier; and
+  reduced motion. Every visible title and detail fit, the widest title used
+  188 px, document width remained 390/390, and no runtime error appeared.
+  Reduced motion still reached the same stable journey state without replaying
+  the causal animation.
+
+### Public verification evidence
+
+- Feature commit `56f1d7b` deployed successfully through GitHub Pages run
+  `31334930293`.
+- The public 390×844 route reproduced all six complete/clue Carrier branches
+  with the same fitting copy, physical handoffs, routes, and zero runtime
+  errors. Exact checked-in and publicly fetched checkpoint bytes match:
+  - player HTML: `9906f3046e65bd622c6f373c327ebcf976a7f298eb36065af329d929426cb465`
+  - player JavaScript: `40a78d145f7206fbde02ca41e9b47de25630450d3747a77e1af6e7fbbb0d5d05`
+  - player CSS: `2b2df91985a80ac4d550ced4a9dd474ac45ab29d9eafc052ec5133da2f4d4831`
+  - authored Rosie Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - Lanternleaf Rive: `039413337d40ba5f376d4d1495605780c644d0e12f2cabac45ca1070e452882b`
+  - animation-lab HTML: `ffc135f83da0ef31a6af812b6faed8342366a6e8a3c5027eb350cd452b61bf75`
+  - animation-lab JavaScript: `a3a0d87cdae227c63ee7406eab1483906396e6289e3e0db9986a9c6bd294e3a4`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=8&v=56f1d7b`
+
+### Next highest-leverage weakness
+
+The causal copy is now complete, but a small yellow-and-purple Rive fragment
+floats unexplained above Rosie in every clearing beat and both routes. It is
+absent from the approved Position 9 concept and reads like a broken crop or
+accessory remnant in the sky. The next cycle should isolate its authored
+source and compare the smallest safe viewport, artboard-visibility, or
+route-matched masking treatments that remove only the fragment while
+preserving Rosie's full Provision hop, Tool response, Bag, silhouette, and
+reduced-motion state.
 
 ### v0.140 — Rosie Finds Her Footing — 2026-08-09
 
