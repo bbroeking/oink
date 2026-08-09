@@ -433,11 +433,79 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     existing action verb and attach its live harvested Provision count, so the
     player can build Clover Lunch and Moonberry stockpiles deliberately without
     opening inventory.
+133. **v0.132 — Crops You Can See (shipped):** replace the returning crop
+    choice's abstract marks and repeated receipt with one physical wooden tray,
+    recognizable Clover and Moonberry harvests, and a larger crop-first reading
+    order grounded in the approved Farm concept.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.132 — Crops You Can See — 2026-08-09
+
+- Played the shipped v0.131 third morning, chose **Lights Past the Open Gate**,
+  and compared the resulting crop choice with the approved
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/02-farm-stock-seed-choice.png`
+  Farm composition. The decision contained the correct stock and Adventure
+  facts, but recognizable crops had collapsed into `☘` and `●` marks while
+  duration, yield, use, and Home stock depended on 6–7px copy.
+- Built and drove three real phone compositions: larger illustrated crop tiles,
+  one wooden physical crop tray, and two full-width field labels. The field
+  labels were fastest to scan but read like a settings list; the plain tiles
+  retained a repeated route receipt. The wooden tray won because it translated
+  the approved physical stock language, preserved Rosie and the Farm behind the
+  choice, and let the duplicated receipt disappear. The complete switcher,
+  visual-translation brief, and losing treatments remain at prototype commit
+  `ba7a8d3` on `codex/homegrown-v132-crop-legibility-prototypes` and were not
+  merged.
+- Production now uses the separable Clover and Moonberry harvest-basket assets.
+  Each crop remains one tap and keeps its identity, four- or eight-hour wait,
+  guaranteed yield, route-specific Adventure use, live Home stock, and action
+  in one card. Crop rules, stock quantities, route choice, rewards, saves, and
+  Rive inputs are unchanged.
+
+### Local validation evidence
+
+- In the rendered 384 × 838 phone layout, the tray measured 368 × 278px with
+  `clientWidth === scrollWidth` and `clientHeight === scrollHeight`. Both crop
+  cards measured 162 × 192px with no clipped content. Crop names render at
+  15px; duration, guaranteed yield, Adventure use, and action at 10px; stock at
+  9px. The screen contains one authored Rive canvas, zero experiment controls,
+  and zero horizontal or vertical overflow.
+- Choosing **Moonberries** advances to the established rooted Bed 2 tending
+  state and its optional predictable Compost decision. Clover retains its Seed-
+  paid planting path.
+- `npm run prototype:homegrown:test` passes 96/96. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `c15c4ab` deployed through GitHub Pages run `31325083321`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `4a7ad1a90e1502c3837ec2cd79c22041ebe948322da1058f8499b95393234fcb`
+  - player JavaScript: `676cf47afc54801093602d4ef357090ffb1dd1ccc6473a4e489dbc3208b92f76`
+  - player CSS: `0e9bbfab409aaacd84980f6afeb04afa515bd832d73232de2c95f91e16bae310`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&repeat=1&v=c15c4ab`
+- The public route reproduced the physical crop tray, the same stock-aware
+  accessible names and dimensions, one authored canvas, zero overflow, no
+  experiment labels, and the correct rooted-Moonberry continuation.
+
+### Next highest-leverage weakness
+
+The physical crop tray now makes the choice legible, but the selected crop
+immediately collapses back to an abstract `☘` or `●` mark in the planting and
+optional-Compost step. The next cycle should compare that rendered handoff with
+the approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/03-plant-and-compost.png`
+composition and keep the chosen physical crop visibly connected to its bed and
+Compost decision—without adding a modal, changing the predictable boost, or
+letting UI cover the Farm.
 
 ### v0.131 — The Crop Choice Knows the Pantry — 2026-08-09
 

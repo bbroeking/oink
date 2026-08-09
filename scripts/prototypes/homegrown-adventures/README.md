@@ -1,5 +1,22 @@
 # Homegrown Adventures prototype
 
+The v0.132 physical crop-choice pass makes the returning Farm decision read as
+two things Rosie can actually grow instead of two dense text cards with `☘`
+and `●` marks. The approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/02-farm-stock-seed-choice.png`
+screen remains the composition reference: one cream question sign, one wooden
+crop tray, and recognizable physical crop art while Rosie and the Farm remain
+visible. Production reuses the separable Clover and Moonberry harvest-basket
+assets, raises crop names to 15px and the critical duration, yield, route use,
+and action copy to 10px, and keeps each entire crop card as the tap target. The
+duplicated route receipt is gone because the same facts now live directly on
+the crops. A rendered three-composition study at prototype commit `ba7a8d3` on
+`codex/homegrown-v132-crop-legibility-prototypes` compared illustrated tiles,
+this physical seed tray, and full-width field labels. The tray won because the
+rows read like a settings menu and the plain tiles retained a repeated summary
+layer. No crop rule, reward, stock quantity, choice recommendation, Bag rule,
+save field, Rive input, or parallel inventory screen changed.
+
 The v0.131 Provision-stock pass lets returning crop choice answer **what do I
 already have?** without adding a pantry panel. The existing action band now
 keeps its verb and adds the reducer-owned count directly beneath it: **Grow

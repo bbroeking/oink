@@ -115,6 +115,20 @@ React-owned resource rules remain unchanged; the first outing is now named **A
 Glow Beneath the Hedge** before farming begins, and its duration and clues stay
 visible through Bag preparation and departure.
 
+**Physical crop-choice checkpoint (August 9, 2026):** The returning Farm
+decision now borrows the approved `rosie-v3/02-farm-stock-seed-choice.png`
+composition instead of asking the player to decode abstract crop marks and
+6–7px supporting copy. One cream question sign leads into a wooden crop tray;
+large separable Clover and Moonberry harvest baskets make identity physical,
+while every card keeps duration, guaranteed yield, route-specific Adventure
+use, current Home stock, and its one-tap action. The repeated route receipt is
+gone because those facts already live on each crop. Three rendered structures
+were compared: illustrated tiles, this physical tray, and full-width field
+labels. The tray won because the rows felt like settings and the plain tiles
+kept the redundant summary. Reducer state, crop timings, yields, stock,
+Compost, Bag rules, rewards, saves, Rive source, and authored inputs are
+unchanged.
+
 **One-field-folio checkpoint (August 8, 2026):** Position 9 no longer stacks a
 large story note over two detached paper tickets. The exact existing story,
 reload-stable **Expected Home** promise, and accessible Provision / Tool / Pack
