@@ -307,6 +307,21 @@ Lantern / Wicker repeats. No new item, crafting tree, currency, reward roll,
 save field, Rive source, Rive input, destination, or prescribed loadout was
 added.
 
+**Familiar-route-material checkpoint (August 9, 2026):** Rosie's known-route
+map now tells the player what each familiar place predictably brings Home, and
+the reducer makes that promise real. Every successful repeat still returns one
+Clover Seed; the warm soil beneath the hedge adds one Compost, while the
+reflected leaves beyond the open gate add two Willow Fiber. Tool and Carrier
+returns remain separate and freely chosen, and the Homecoming ledger aggregates
+matching rewards with exact causes—for example **Compost +2 · Warm roots +1 ·
+Wicker +1**. The chosen place's material is repeated in the settled journey
+watch before Rosie returns, keeping the map → Adventure → Homecoming cause
+continuous. A three-policy logic prototype compared the identical baseline, an
+additive route bonus, and one distinct existing material per route; the last
+won because it creates a reason to alternate without inflation or a new
+economy. First-time Discoveries, Near-Discoveries, Bag rules, Field Guide
+entries, crop rules, saves, Rive source, and Rive inputs are unchanged.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

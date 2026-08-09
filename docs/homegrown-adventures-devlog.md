@@ -420,11 +420,85 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 128. **v0.127 — Rosie Brings the Next Seed (shipped):** replace a familiar
     route's dead Glowroot Seed return with Clover Seed that can begin the next
     Provision crop, while preserving every first-time Discovery.
+129. **v0.128 — Familiar Places, Useful Supplies (shipped):** give the warm
+    hedge and reflected open-gate route distinct predictable existing
+    materials from map promise through journey and Homecoming.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.128 — Familiar Places, Useful Supplies — 2026-08-09
+
+- Played both familiar-route choices and their exact Returns on the shipped
+  v0.127 build. **A Glow Beneath the Hedge** and **Lights Past the Open Gate**
+  had different names and environmental clues but produced the same Clover
+  Seed +2, Compost +1, and Willow Fiber +2 ledger with the review Bag. The map
+  therefore asked for player authorship without giving the places different
+  practical consequences.
+- Built and drove an isolated reward-loop simulator across three policies:
+  keep shared Willow Fiber, add one route bonus to the shared package, or give
+  each place one distinct existing material. Two boosted Clover / Trowel /
+  Wicker visits proved the shared policy remained identical, the additive
+  policy inflated both packages, and distinct materials preserved the next
+  Seed while making Compost and Willow Fiber stockpiles route-addressable. The
+  model, terminal shell, four tests, and verdict remain at prototype commit
+  `75d4325` on `codex/homegrown-v128-route-reward-prototype`.
+- Every successful familiar route still returns one Clover Seed. The warm
+  hedge now adds Compost +1; the reflected open-gate route adds Willow Fiber
+  +2. Hand Trowel, Lantern, Wicker Basket, and Cloth Wrap keep their established
+  independently chosen returns. First-time Discoveries and Near-Discoveries
+  retain their original rewards.
+- Rosie's map previews **Soft soil · brings Compost Home** and **Reflected
+  leaves · gathers Willow Fiber**. The settled journey watch repeats the chosen
+  environmental cause after the Provision / Tool / Carrier sequence, and the
+  Return ledger aggregates exact quantities with exact causes instead of
+  presenting a fourth reward surface.
+
+### Local validation evidence
+
+- A real rendered hedge route moved from Rosie's map through Clover farming,
+  the full Clover Lunch / Hand Trowel / Wicker Basket preparation, authored
+  departure, the three causal Adventure beats, and the settled idle watch. The
+  watch said **The warm soil gives Rosie Compost** before Homecoming.
+- Direct familiar Returns rendered:
+  - hedge: Clover Seed +2 (**Route +1 · Trowel +1**) and Compost +2 (**Warm
+    roots +1 · Wicker +1**);
+  - open gate: Clover Seed +2, Willow Fiber +2 (**Reflected leaves +2**), and
+    Compost +1 (**Wicker +1**).
+- The first-time Glowroot Return remained Glowroot Seed +2, Compost +1, and
+  Willow Fiber +2. Reviewed map, journey, and Return states had one authored
+  Rive scene, zero horizontal or vertical page overflow, and readable two- or
+  three-column ledgers.
+- `npm run prototype:homegrown:test` passes 96/96. The four isolated policy
+  tests, `npm run verify:rive-homegrown`, `npm run prototype:homegrown:build`,
+  `npm run quality:loop`, and the final `npm run quality:check` pass. Manual
+  mobile Safari motion, reduced-motion, silhouette, and attachment checks
+  remain warnings.
+
+### Public verification evidence
+
+- Route-material commit `2a9edb0` and journey-continuity commit `b24b785`
+  deployed through GitHub Pages runs `31321509986` and `31321832839`.
+- Exact checked-in final checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `2a81c3e6cbb08d82d74a9e75526533ead55e4aff4abab491ccb38b9e0fef897b`
+  - player JavaScript: `3e40354da1004be2bd384f35e34bcb6c4cf2272300d9d5b5ddcc87b9cfa475d2`
+  - player CSS: `63d347ea516799e6f375fc8abd344bdb5fcc4ae8f8ed9af730788d0643749319`
+- Exact checkpoint routes:
+  - map: `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&repeat=1&v=b24b785`
+  - hedge Return: `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=10&route=glowroot&repeat=1&v=b24b785`
+  - open-gate Return: `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=10&route=lanternleaf&repeat=1&v=b24b785`
+
+### Next highest-leverage weakness
+
+The map now tells the truth about what each route supplies, but it does not
+show how much Compost or Willow Fiber the Farm currently holds. Choosing the
+useful place still depends on remembering a collapsed pantry from the previous
+Home screen. The next cycle should attach one quiet live stock fact to each
+existing map row—without adding an inventory screen, prescribing a route, or
+covering Rosie and the Farm.
 
 ### v0.127 — Rosie Brings the Next Seed — 2026-08-09
 

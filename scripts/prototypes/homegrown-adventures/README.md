@@ -1,5 +1,22 @@
 # Homegrown Adventures prototype
 
+The v0.128 familiar-route-material pass makes Rosie's two-route map a practical
+stockpile decision instead of a choice between different prose and identical
+supplies. Every successful familiar outing still returns one **Clover Seed**
+for the next Provision crop. **A Glow Beneath the Hedge** now finds one
+**Compost** from its warm soil, while **Lights Past the Open Gate** gathers two
+**Willow Fiber** from its reflected leaves; Tool and Carrier returns remain
+freely chosen and aggregate with the route cause in the Homecoming ledger. The
+map previews both material identities and the idle journey repeats the chosen
+environmental cause before Rosie comes Home. A driven three-policy simulator
+at prototype commit `75d4325` on
+`codex/homegrown-v128-route-reward-prototype` compared shared materials,
+additive bonuses, and distinct existing materials. Distinct materials won
+because it gives each place one legible job without inflating the package or
+adding an item. First-time Discoveries and Near-Discoveries are unchanged. No
+random reward, route currency, crafting rule, save fact, Rive input, or
+parallel system remains on main.
+
 The v0.127 familiar-reward pass turns a repeat outing's primary return back
 into the beginning of the farming loop. Once Glowroot is planted and a route is
 known, a successful Adventure now brings **Clover Seed** instead of another
