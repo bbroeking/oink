@@ -2588,6 +2588,55 @@ html[data-reduce-motion="true"] .planting-bed-focus { animation: none; }
 	border-radius: 10px;
 }
 .harvest-bed-assist.is-unified { left: 48px; right: 48px; top: 716px; grid-template-columns: 1fr 92px; }
+.harvest-prototype .harvest-gesture-zone { left: 2px; top: 520px; width: 140px; height: 132px; }
+.harvest-prototype.is-moonberries .harvest-gesture-zone { left: 126px; }
+.harvest-prototype .harvest-gesture-zone > span { display: none; }
+.harvest-rhythm-scene { position: absolute; inset: 0; pointer-events: none; }
+.harvest-next-cue { position: absolute; z-index: 3; min-height: 44px; padding: 6px 12px; display: grid; place-items: center; color: var(--ink); background: rgba(255,249,233,.96); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 2px 3px 0 rgba(48,33,22,.62); text-align: center; }
+.harvest-next-cue small { color: var(--ink-soft); font-size: 8px; font-weight: 950; letter-spacing: .05em; line-height: 1; text-transform: uppercase; }
+.harvest-next-cue strong { font-family: Caprasimo,Georgia,serif; font-size: 14px; font-weight: 400; line-height: 1; }
+.harvest-prototype .harvest-pattern { position: absolute; z-index: 4; left: 8px; right: 8px; top: 520px; height: 122px; display: grid; align-items: start; gap: 6px; pointer-events: none; }
+.harvest-prototype .harvest-pattern.beats-3 { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.harvest-prototype .harvest-pattern.beats-4 { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.harvest-prototype .harvest-pattern > span,
+.harvest-prototype .harvest-pattern > button { justify-self: center; width: 54px; height: 54px; color: #6b491d; background: rgba(238,213,160,.9); border: 2px solid var(--ink); box-shadow: 2px 3px 0 rgba(48,33,22,.58); font-size: 27px; pointer-events: none; }
+.harvest-prototype .harvest-pattern > button { pointer-events: auto; }
+.harvest-prototype .harvest-pattern > span.is-complete { color: white; background: #5d8d40; }
+.harvest-prototype .harvest-pattern > button.is-next { color: #6b491d; background: #f9d168; box-shadow: 0 0 0 5px rgba(255,239,125,.28), 0 0 15px rgba(255,208,68,.7), 2px 3px 0 rgba(48,33,22,.65); }
+.harvest-reward-ribbon { position: absolute; z-index: 3; left: 22px; right: 22px; top: 670px; min-height: 72px; padding: 7px; display: grid; grid-template-columns: minmax(0,1fr) 52px 104px; align-items: stretch; gap: 6px; color: var(--ink); background: rgba(255,249,233,.96); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 2px 3px 0 rgba(48,33,22,.65); }
+.harvest-reward-ribbon > span { min-width: 0; display: grid; grid-template-columns: 26px minmax(0,1fr); grid-template-rows: 1fr 1fr; align-items: center; column-gap: 6px; text-align: left; }
+.harvest-reward-ribbon > span i { grid-row: 1 / 3; width: 26px; height: 26px; display: grid; place-items: center; color: white; background: #5d8d40; border: 1.5px solid var(--ink); border-radius: 50%; font-style: normal; font-weight: 950; }
+.harvest-reward-ribbon > span b { align-self: end; overflow: hidden; font-size: 10px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.harvest-reward-ribbon > span small { align-self: start; color: var(--ink-soft); font-size: 9px; font-weight: 900; line-height: 1; text-transform: uppercase; }
+.harvest-reward-ribbon > em { display: grid; place-items: center; align-content: center; color: #fff; background: #5d8d40; border: 2px solid var(--ink); border-radius: 50%; box-shadow: 1px 2px 0 rgba(48,33,22,.6); font-family: Caprasimo,Georgia,serif; font-size: 17px; font-style: normal; line-height: 1; }
+.harvest-reward-ribbon > em small { display: block; font-family: system-ui,sans-serif; font-size: 7px; font-weight: 900; line-height: 1; text-transform: uppercase; }
+.harvest-reward-ribbon .harvest-normal { min-height: 52px; color: var(--ink); background: #f1e2c7; border: 1.5px solid var(--ink); border-radius: 10px; text-decoration: none; }
+
+.harvest-layout-A .harvest-next-cue { left: 104px; top: 480px; width: 176px; }
+.harvest-layout-A .harvest-pattern > :nth-child(1) { transform: translateY(18px); }
+.harvest-layout-A .harvest-pattern > :nth-child(2) { transform: translateY(42px); }
+.harvest-layout-A .harvest-pattern > :nth-child(3) { transform: translateY(42px); }
+.harvest-layout-A .harvest-pattern.beats-4 { display: block; height: 132px; }
+.harvest-layout-A .harvest-pattern.beats-4 > * { position: absolute; transform: none; }
+.harvest-layout-A .harvest-pattern.beats-4 > :nth-child(1) { left: 157px; top: 8px; }
+.harvest-layout-A .harvest-pattern.beats-4 > :nth-child(2) { left: 30px; top: 54px; }
+.harvest-layout-A .harvest-pattern.beats-4 > :nth-child(3) { right: 30px; top: 54px; }
+.harvest-layout-A .harvest-pattern.beats-4 > :nth-child(4) { left: 157px; top: 70px; }
+
+.harvest-layout-B .harvest-next-cue { left: 14px; top: 492px; width: 126px; transform: rotate(-.8deg); }
+.harvest-layout-B .harvest-pattern { left: 24px; right: 24px; top: 584px; height: 64px; padding: 6px 12px; align-items: center; background: rgba(117,77,41,.72); border: 2px solid rgba(48,33,22,.72); border-radius: 32px 24px 30px 22px; box-shadow: inset 0 0 0 2px rgba(231,198,126,.25); transform: rotate(-.5deg); }
+.harvest-layout-B .harvest-pattern > span,
+.harvest-layout-B .harvest-pattern > button { width: 46px; height: 46px; font-size: 23px; }
+.harvest-layout-B .harvest-reward-ribbon { left: 128px; right: 12px; top: 652px; grid-template-columns: minmax(0,1fr) 48px 92px; }
+
+.harvest-layout-C .harvest-next-cue { left: 18px; top: 440px; width: 150px; transform: rotate(-1deg); }
+.harvest-layout-C .harvest-next-cue::after { content: ""; position: absolute; left: 54px; bottom: -12px; width: 16px; height: 16px; background: rgba(255,249,233,.96); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(45deg); }
+.harvest-layout-C .harvest-pattern { left: 12px; right: 12px; top: 548px; height: 78px; align-items: center; }
+.harvest-layout-C .harvest-pattern > span,
+.harvest-layout-C .harvest-pattern > button { width: 48px; height: 48px; font-size: 24px; opacity: .82; }
+.harvest-layout-C .harvest-pattern > button.is-next { opacity: 1; }
+.harvest-layout-C .harvest-reward-ribbon { top: 650px; }
+.position-rail { z-index: 40; }
 .harvest-result-world { position: absolute; inset: 0; z-index: 12; pointer-events: none; }
 .harvest-result-world button { pointer-events: auto; }
 .farm-stock-shelf {

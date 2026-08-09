@@ -390,16 +390,23 @@ test("Clover's left-right-up rhythm adds one small bonus to the guaranteed harve
 	);
 });
 
-test("the rendered Harvest Rhythm keeps the crop gesture primary with one integrated tap fallback", () => {
+test("the rendered Harvest Rhythm prototypes keep the crop gesture primary with one integrated tap fallback", () => {
 	const state = createPrototypeState(5, { now: at });
 	assert.equal(playerPresentation(state).objective, "Harvest for Rosie’s journey");
 	assert.equal(playerPresentation(state).detail, "Clover rhythm: ← → ↑");
+	assert.match(appSource, /function HarvestRhythmPanel\(\{ state, onBeat, onGatherNormally, variant = "A" \}\)/);
 	assert.match(appSource, /aria-label=\{`Tap \$\{HARVEST_DIRECTION_LABELS\[direction\]\.name\} instead`\}/);
-	assert.match(appSource, /Swipe bed · or tap arrow/);
-	assert.match(appSource, /\{guaranteedYield\} \{rule\.outputName\} guaranteed · clean rhythm \+1/);
-	assert.match(appSource, /className="harvest-bed-assist is-unified"/);
+	assert.match(appSource, /harvest-layout-\$\{variant\}/);
+	assert.match(appSource, /harvest-reward-ribbon/);
+	assert.match(appSource, /\{guaranteedYield\} \{rule\.outputName\}/);
+	assert.match(appSource, /<small>Guaranteed<\/small>/);
+	assert.match(appSource, /<small>clean<\/small>/);
+	assert.match(appSource, /Gather normally/);
 	assert.doesNotMatch(appSource, /className="harvest-assist"|objective: "Clover’s rhythm: ← → ↑"/);
-	assert.match(stylesSource, /\.harvest-bed-assist\.is-unified \{/);
+	assert.match(stylesSource, /\.harvest-layout-A \.harvest-pattern/);
+	assert.match(stylesSource, /\.harvest-layout-B \.harvest-pattern/);
+	assert.match(stylesSource, /\.harvest-layout-C \.harvest-pattern/);
+	assert.match(stylesSource, /\.harvest-prototype\.is-moonberries \.harvest-gesture-zone \{ left: 126px; \}/);
 });
 
 test("a ready crop announces the harvest before the affectionate Tickle handoff", () => {

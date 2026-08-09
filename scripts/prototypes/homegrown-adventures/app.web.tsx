@@ -46,9 +46,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Bed Sequence", question: "Can the three beds own the rhythm and one compact harvest promise?" },
+	B: { name: "Rhythm Furrow", question: "Does one soil-colored path make the gesture feel planted in the Farm?" },
+	C: { name: "Rosie Leads", question: "Can one small Rosie cue warm the rhythm without competing with the crop?" },
 };
 
 const STAGE_COPY = {
@@ -582,8 +582,9 @@ const HARVEST_DIRECTION_LABELS = {
 	down: { arrow: "↓", name: "Down" },
 };
 
-function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
+function HarvestRhythmPanel({ state, onBeat, onGatherNormally, variant = "A" }) {
 	const rule = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
+	const isMoonberries = state.selectedCrop === "moonberries";
 	const rhythmName = state.selectedCrop === "moonberries" ? "Moonberry" : rule.name;
 	const harvestPattern = cropHarvestPattern(state);
 	const gestureStart = useRef(null);
@@ -608,18 +609,18 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 	};
 
 	const pattern = (
-		<div className="harvest-pattern" aria-label={harvestPattern.map((direction) => HARVEST_DIRECTION_LABELS[direction].name).join(", then ")}>
+		<div className={`harvest-pattern beats-${harvestPattern.length}`} aria-label={harvestPattern.map((direction) => HARVEST_DIRECTION_LABELS[direction].name).join(", then ")}>
 			{harvestPattern.map((direction, index) => (
 				index === beatIndex
 					? <button
-						key={direction}
+						key={`${direction}-${index}`}
 						type="button"
 						className="is-next"
 						onClick={() => onBeat(direction, "button")}
 						aria-label={`Tap ${HARVEST_DIRECTION_LABELS[direction].name} instead`}
 					>{HARVEST_DIRECTION_LABELS[direction].arrow}</button>
 					: <span
-						key={direction}
+						key={`${direction}-${index}`}
 						className={index < beatIndex ? "is-complete" : ""}
 					>{HARVEST_DIRECTION_LABELS[direction].arrow}</span>
 			))}
@@ -630,7 +631,7 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 		(state.compostApplied ? rule.compostYieldBonus : 0);
 
 	return (
-		<div className="harvest-experiment">
+		<div className={`harvest-experiment harvest-prototype harvest-layout-${variant} ${isMoonberries ? "is-moonberries" : "is-clover"}`}>
 			<div
 				className="harvest-gesture-zone"
 				onPointerDown={startGesture}
@@ -641,15 +642,15 @@ function HarvestRhythmPanel({ state, onBeat, onGatherNormally }) {
 			>
 				<span aria-hidden="true">{nextLabel?.arrow}</span>
 			</div>
-			<section className="harvest-bed-ribbon is-unified" aria-label={`Follow the ${rhythmName} harvest rhythm`}>
-				<strong aria-live="polite">{nextLabel ? `Swipe ${nextLabel.name}` : "Harvest complete"}</strong>
+			<section className="harvest-rhythm-scene" aria-label={`Follow the ${rhythmName} harvest rhythm`}>
+				<div className="harvest-next-cue"><small>{rhythmName} rhythm</small><strong aria-live="polite">{nextLabel ? `Swipe ${nextLabel.name}` : "Harvest complete"}</strong></div>
 				{pattern}
-				<small>Swipe bed · or tap arrow</small>
+				<div className="harvest-reward-ribbon">
+					<span><i aria-hidden="true">✓</i><b>{guaranteedYield} {rule.outputName}</b><small>Guaranteed</small></span>
+					<em>+1<small>clean</small></em>
+					<button type="button" className="harvest-normal" onClick={onGatherNormally}>Gather normally</button>
+				</div>
 			</section>
-			<div className="harvest-bed-assist is-unified">
-				<span><i aria-hidden="true">✓</i> {guaranteedYield} {rule.outputName} guaranteed · clean rhythm +1</span>
-				<button type="button" className="harvest-normal" onClick={onGatherNormally}>Gather normally</button>
-			</div>
 		</div>
 	);
 }
@@ -2331,6 +2332,7 @@ function App() {
 			{showingGrowth && <GrowthStatusPanel state={state} />}
 			{showingHarvestRhythm && <HarvestRhythmPanel
 				state={state}
+				variant={variant}
 				onBeat={(direction, input) => act({
 					type: ACTIONS.HARVEST_BEAT,
 					direction,
