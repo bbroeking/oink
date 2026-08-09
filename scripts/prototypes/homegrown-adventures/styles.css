@@ -2861,6 +2861,68 @@ html[data-reduce-motion="true"] .phone:has(.bag-flight-item) .bag-stage,
 html[data-reduce-motion="true"] .phone:has(.bag-flight-item) .bag-packed-preview > span.is-filled {
 	animation: none;
 }
+
+/* One physical Bag closes, arcs toward Rosie, then yields to her fitted Rive satchel. */
+.bag-handoff-lid { display: none; }
+.bag-handoff-active .bag-guided-tabs,
+.bag-handoff-active .bag-guided-picker,
+.bag-handoff-active .bag-confirm,
+.bag-handoff-active .bag-selection > p {
+	pointer-events: none;
+	animation: bag-handoff-controls-away 160ms ease-out both;
+}
+.bag-handoff-active .bag-stage {
+	transform-style: preserve-3d;
+	animation: bag-shoulder-handoff 920ms cubic-bezier(.3,.02,.15,1) both;
+}
+.bag-handoff-active .open-adventure-bag {
+	clip-path: polygon(0 0, 28% 0, 28% 47%, 88% 47%, 88% 0, 100% 0, 100% 100%, 0 100%);
+}
+.bag-handoff-active .bag-packed-preview {
+	animation: bag-handoff-items 920ms ease-out both;
+}
+.bag-handoff-active .bag-handoff-lid {
+	position: absolute;
+	inset: 0;
+	display: block;
+	background: url("./assets/homegrown-adventures/open-adventure-bag.webp") center / contain no-repeat;
+	clip-path: polygon(28% 0, 88% 0, 88% 47%, 28% 47%);
+	filter: drop-shadow(1px 2px 0 rgba(48,33,22,.34));
+	transform-origin: 58% 37%;
+	animation: bag-handoff-lid-close 920ms cubic-bezier(.2,.75,.16,1) both;
+}
+@keyframes bag-handoff-controls-away {
+	to { opacity: .14; transform: translateY(5px); }
+}
+@keyframes bag-handoff-items {
+	0%, 18% { opacity: 1; transform: none; }
+	34%, 100% { opacity: 0; transform: translateY(8px) scale(.82); }
+}
+@keyframes bag-handoff-lid-close {
+	0%, 12% { opacity: 1; transform: none; }
+	34%, 100% { opacity: 1; transform: translateY(54px) scaleY(.62) rotate(-1deg); }
+}
+@keyframes bag-shoulder-handoff {
+	0%, 28% { opacity: 1; transform: none; }
+	43% { opacity: 1; transform: translate(-18px, -8px) scale(.9) rotate(-2deg); }
+	68% { opacity: 1; transform: translate(-104px, -37px) scale(.54) rotate(-8deg); }
+	78% { opacity: .2; transform: translate(-128px, -44px) scale(.46) rotate(-10deg); }
+	88% { opacity: 0; transform: translate(-128px, -44px) scale(.46) rotate(-10deg); }
+	100% { opacity: 0; transform: translate(-128px, -44px) scale(.42) rotate(-10deg); }
+}
+
+html[data-reduce-motion="true"] .bag-handoff-active .bag-guided-tabs,
+html[data-reduce-motion="true"] .bag-handoff-active .bag-guided-picker,
+html[data-reduce-motion="true"] .bag-handoff-active .bag-confirm,
+html[data-reduce-motion="true"] .bag-handoff-active .bag-selection > p,
+html[data-reduce-motion="true"] .bag-handoff-active .bag-stage,
+html[data-reduce-motion="true"] .bag-handoff-active .open-adventure-bag,
+html[data-reduce-motion="true"] .bag-handoff-active .bag-packed-preview,
+html[data-reduce-motion="true"] .bag-handoff-active .bag-handoff-lid {
+	animation: none;
+}
+html[data-reduce-motion="true"] .bag-handoff-active .bag-handoff-lid { display: none; }
+html[data-reduce-motion="true"] .bag-handoff-active .open-adventure-bag { clip-path: none; }
 .bag-guided-picker {
 	position: absolute;
 	left: 12px;

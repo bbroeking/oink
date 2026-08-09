@@ -740,7 +740,7 @@ function BagSelectionOption({ slot, item, selected, disabled, detail, onSelect }
 	);
 }
 
-function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initialFocus = "provision", clueGuide = null, clueSlot = null, onSelect, onConfirm }) {
+function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, handoffActive = false, initialFocus = "provision", clueGuide = null, clueSlot = null, onSelect, onConfirm }) {
 	const [focus, setFocus] = useState(initialFocus);
 	const selectedProvisionId = bag.provision ?? null;
 	const selectedProvisionOwned = selectedProvisionId === null ? 0 : farmStock?.[selectedProvisionId] ?? 0;
@@ -826,8 +826,9 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 	};
 
 	return (
-		<section className={`bag-selection bag-selection-guided ${showingClue ? "has-bag-clue" : ""}`} aria-label="Choose what Rosie carries">
+		<section className={`bag-selection bag-selection-guided ${showingClue ? "has-bag-clue" : ""}`} aria-label="Choose what Rosie carries" aria-busy={handoffActive}>
 			<span className="sr-only">The Bag begins empty. Every slot is optional.</span>
+			{handoffActive && <span className="sr-only" role="status">Rosie's packed Bag closes and lifts onto her shoulder.</span>}
 			{activeSelection && flightItemId && (
 				<span
 					key={`${activeSelection.slot}-${flightItemId}-${activeSelection.at}`}
@@ -851,6 +852,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 						return <span className={`bag-preview-${slot} ${selected ? "is-filled" : "is-empty"}`} key={slot}><BagItemArt itemId={selected?.id} /></span>;
 					})}
 				</div>
+				<span className="bag-handoff-lid" />
 			</div>
 			<div className="bag-guided-tabs" role="tablist" aria-label="Bag slots">
 				{BAG_SLOT_ORDER.map((slot, index) => {
@@ -882,8 +884,8 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 					<div className="bag-guided-question"><small>{BAG_SLOT_LABELS[focus]}</small><strong>{question}</strong></div>
 					<div className="bag-guided-options">{focusChoices}</div>
 				</div>
-		<button type="button" className="bag-confirm" onClick={onConfirm} disabled={!canPack}>
-			{packLabel}
+		<button type="button" className="bag-confirm" onClick={onConfirm} disabled={!canPack || handoffActive}>
+			{handoffActive ? "Closing Rosie's Bag…" : packLabel}
 		</button>
 		<p>{canPack
 			? selectedCount === 0
@@ -1460,6 +1462,9 @@ const SEED_HANDOFF_ARRIVE_MS = 460;
 const GLOWROOT_HOME_REVEAL_MS = 900;
 const PURPOSE_HANDOFF_MS = 1200;
 const REDUCED_PURPOSE_HANDOFF_MS = 900;
+const BAG_HANDOFF_ATTACH_MS = 640;
+const BAG_HANDOFF_MS = 920;
+const REDUCED_BAG_HANDOFF_MS = 260;
 const RAPID_TRANSITION_ACTIONS = new Set([
 	ACTIONS.TICKLE,
 	ACTIONS.CHOOSE_ADVENTURE_ROUTE,
@@ -1830,11 +1835,15 @@ function App() {
 	const [glowrootHomeReveal, setGlowrootHomeReveal] = useState(false);
 	const [purposeHandoff, setPurposeHandoff] = useState(false);
 	const [homeMemoryExpanded, setHomeMemoryExpanded] = useState(false);
+	const [bagHandoff, setBagHandoff] = useState(null);
 	const transitionLockUntil = useRef(0);
 	const newDayTimer = useRef(null);
 	const glowrootHomeRevealTimer = useRef(null);
 	const purposeHandoffTimer = useRef(null);
 	const seedHandoffTimers = useRef([]);
+	const bagHandoffAttachTimer = useRef(null);
+	const bagHandoffTimer = useRef(null);
+	const bagHandoffPlayed = useRef(false);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
 	const position = state.prototypePosition ?? 1;
 	const choosingRoute =
@@ -1927,17 +1936,28 @@ function App() {
 			hedgeBellEarned: false,
 		};
 	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
+	const renderedRiveViewModel = bagHandoff?.phase === "attaching"
+		? { ...sceneRiveViewModel, rosieAction: "pack", satchelEquipped: true }
+		: sceneRiveViewModel;
 	const adventureProvisionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "provision"
 		? "adventure-provision"
 		: null;
 	const adventureAttentionTrigger = showingAdventureVignette && !state.reduceMotion && adventureCauseBeat === "tool"
 		? "adventure-attention"
 		: null;
-	const sceneRiveTrigger = adventureProvisionTrigger ?? adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
+	const sceneRiveTrigger = bagHandoff?.phase === "attaching" && !state.reduceMotion
+		? "pack"
+		: state.lastAction === "pack" && bagHandoffPlayed.current
+			? null
+			: adventureProvisionTrigger ?? adventureAttentionTrigger ?? (gateHomecomingReady ? "return" : riveModel.trigger);
 	const sceneRiveTriggerNonce = adventureProvisionTrigger
 		? `${riveModel.triggerNonce}:adventure-provision:${opportunity.id}`
 		: adventureAttentionTrigger
 			? `${riveModel.triggerNonce}:adventure-attention:${opportunity.id}`
+		: bagHandoff?.phase === "attaching"
+			? `${riveModel.triggerNonce}:bag-handoff:${bagHandoff.startedAt}`
+		: state.lastAction === "pack" && bagHandoffPlayed.current
+			? `${riveModel.triggerNonce}:bag-handoff-settled`
 		: gateHomecomingReady
 		? `${riveModel.triggerNonce}:gate-homecoming`
 		: riveModel.triggerNonce;
@@ -2138,6 +2158,8 @@ function App() {
 		window.clearTimeout(newDayTimer.current);
 		window.clearTimeout(glowrootHomeRevealTimer.current);
 		window.clearTimeout(purposeHandoffTimer.current);
+		window.clearTimeout(bagHandoffAttachTimer.current);
+		window.clearTimeout(bagHandoffTimer.current);
 		seedHandoffTimers.current.forEach((timer) => window.clearTimeout(timer));
 	}, []);
 
@@ -2203,17 +2225,38 @@ function App() {
 	}, [position, signalFeedback, startingNewDay, state.reduceMotion]);
 
 	const jumpToPosition = useCallback((nextPosition) => {
-		if (seedHandoff || holdingGlowrootHomeReveal || holdingPurposeHandoff) return;
+		if (bagHandoff || seedHandoff || holdingGlowrootHomeReveal || holdingPurposeHandoff) return;
 		setHomeMemoryExpanded(false);
 		const now = performance.now();
 		if (now < transitionLockUntil.current) return;
 		transitionLockUntil.current = now + RAPID_TRANSITION_GUARD_MS;
 		dispatch({ type: ACTIONS.JUMP_TO_POSITION, position: nextPosition });
-	}, [holdingGlowrootHomeReveal, holdingPurposeHandoff, seedHandoff]);
+	}, [bagHandoff, holdingGlowrootHomeReveal, holdingPurposeHandoff, seedHandoff]);
 
 	const selectBagItem = useCallback((slot, item) => {
 		dispatch({ type: ACTIONS.SET_BAG_SLOT, slot, item });
 	}, []);
+
+	const confirmBag = useCallback(() => {
+		if (bagHandoff) return;
+		const nextHandoff = { startedAt: Date.now(), phase: "closing" };
+		bagHandoffPlayed.current = false;
+		setBagHandoff(nextHandoff);
+		signalFeedback(ACTIONS.PACK_ADVENTURE);
+		window.clearTimeout(bagHandoffAttachTimer.current);
+		window.clearTimeout(bagHandoffTimer.current);
+		if (!state.reduceMotion) {
+			bagHandoffAttachTimer.current = window.setTimeout(
+				() => setBagHandoff({ ...nextHandoff, phase: "attaching" }),
+				BAG_HANDOFF_ATTACH_MS,
+			);
+		}
+		bagHandoffTimer.current = window.setTimeout(() => {
+			bagHandoffPlayed.current = true;
+			dispatch(visiblePresentation.action);
+			setBagHandoff(null);
+		}, state.reduceMotion ? REDUCED_BAG_HANDOFF_MS : BAG_HANDOFF_MS);
+	}, [bagHandoff, signalFeedback, state.reduceMotion, visiblePresentation.action]);
 
 	const acknowledgeReturn = useCallback(() => {
 		const needsSeedHandoff =
@@ -2242,8 +2285,10 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${riveModel.viewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${bagHandoff ? "bag-handoff-active" : ""} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${renderedRiveViewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootHomeReveal || holdingPurposeHandoff}
+			data-bag-handoff-active={bagHandoff ? "true" : undefined}
+			data-bag-handoff-phase={bagHandoff?.phase}
 			data-adventure-kind={showingAdventureVignette ? adventureStory(state).kind : undefined}
 			data-adventure-opportunity={opportunity.id}
 			data-adventure-provision={showingAdventureVignette ? state.bag?.provision ?? "none" : undefined}
@@ -2265,13 +2310,13 @@ function App() {
 			<HomegrownRiveScene
 				key="homegrown-rive-scene"
 				reduceMotion={state.reduceMotion}
-				model={sceneRiveViewModel}
+				model={renderedRiveViewModel}
 				playInitialTrigger={gateHomecomingReady}
 				showPondResident={homeMemoryEarned && sceneRiveViewModel.frogVisible}
 				showHomePose={showingHomeMemory}
 				trigger={sceneRiveTrigger}
 				triggerNonce={sceneRiveTriggerNonce}
-				bagReceiveSlot={riveModel.bagReceive?.slot ?? null}
+				bagReceiveSlot={bagHandoff ? null : riveModel.bagReceive?.slot ?? null}
 			/>
 			{showingAdventureVignette && <div className="adventure-vignette-backdrop" aria-hidden="true" />}
 			{showingAdventureVignette && <div className="adventure-provision-prop" aria-hidden="true" />}
@@ -2379,11 +2424,12 @@ function App() {
 				farmStock={state.farmStock}
 				opportunity={opportunity}
 				activeSelection={riveModel.bagReceive}
+				handoffActive={Boolean(bagHandoff)}
 				initialFocus={state.nearDiscoveryReason ?? "provision"}
 				clueGuide={bagClueGuide}
 				clueSlot={bagClueSlot}
 				onSelect={selectBagItem}
-				onConfirm={() => act(visiblePresentation.action)}
+				onConfirm={confirmBag}
 			/>}
 			{!showingFarmingPanel && !choosingBag && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward && !showingHomeMemory && <WorldAction
 				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}

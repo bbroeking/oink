@@ -2378,3 +2378,25 @@ test("an earned Field Guide clue stays attached to the matching Bag pocket", () 
 	assert.match(stylesSource, /\.bag-guided-tabs i \{[^}]*position: absolute;[^}]*right: 3px;[^}]*top: 3px/s);
 	assert.doesNotMatch(appSource, /BagCluePrototypeSwitcher|bagClueStudy|bagclue/);
 });
+
+test("the one packed Bag closes, reaches Rosie, and triggers Pack exactly once", () => {
+	assert.match(appSource, /const BAG_HANDOFF_ATTACH_MS = 640;/);
+	assert.match(appSource, /const BAG_HANDOFF_MS = 920;/);
+	assert.match(appSource, /const REDUCED_BAG_HANDOFF_MS = 260;/);
+	assert.match(appSource, /const \[bagHandoff, setBagHandoff\] = useState\(null\);/);
+	assert.match(appSource, /phase: "closing"/);
+	assert.match(appSource, /phase: "attaching"/);
+	assert.match(appSource, /rosieAction: "pack", satchelEquipped: true/);
+	assert.match(appSource, /state\.lastAction === "pack" && bagHandoffPlayed\.current/);
+	assert.match(appSource, /bagHandoffPlayed\.current = true;\s*dispatch\(visiblePresentation\.action\);/);
+	assert.match(appSource, /handoffActive=\{Boolean\(bagHandoff\)\}/);
+	assert.match(appSource, /bagReceiveSlot=\{bagHandoff \? null : riveModel\.bagReceive\?\.slot \?\? null\}/);
+	assert.match(appSource, /handoffActive \? "Closing Rosie's Bag…" : packLabel/);
+	assert.match(appSource, /if \(bagHandoff \|\| seedHandoff/);
+	assert.match(stylesSource, /open-adventure-bag\.webp/);
+	assert.match(stylesSource, /@keyframes bag-handoff-lid-close/);
+	assert.match(stylesSource, /@keyframes bag-shoulder-handoff/);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.bag-handoff-active \.bag-stage/);
+	assert.doesNotMatch(appSource, /HANDOFF_STUDIES|handoffStudy|bag-handoff-page-turn/);
+	assert.doesNotMatch(stylesSource, /bag-handoff-study-|rosie-collects-stage|storybook-page-turn/);
+});
