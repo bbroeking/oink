@@ -51,6 +51,12 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+const MATERIAL_USE_VARIANTS = {
+	A: "One useful sentence",
+	B: "Pocket use key",
+	C: "Use-led ticket",
+};
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -285,9 +291,42 @@ function useVariant() {
 
 	useEffect(() => {
 		const onKey = (event) => {
+			if (new URLSearchParams(window.location.search).has("usehint")) return;
 			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName) || document.activeElement?.isContentEditable) return;
 			const keys = Object.keys(VARIANTS);
+			const current = keys.indexOf(variant);
+			const delta = event.key === "ArrowRight" ? 1 : -1;
+			setVariant(keys[(current + delta + keys.length) % keys.length]);
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [setVariant, variant]);
+
+	return [variant, setVariant];
+}
+
+function readMaterialUseVariant() {
+	const value = new URLSearchParams(window.location.search).get("usehint")?.toUpperCase();
+	return Object.hasOwn(MATERIAL_USE_VARIANTS, value) ? value : null;
+}
+
+function useMaterialUseVariant() {
+	const [variant, setVariantState] = useState(readMaterialUseVariant);
+	const setVariant = useCallback((next) => {
+		const normalized = Object.hasOwn(MATERIAL_USE_VARIANTS, next) ? next : "A";
+		const url = new URL(window.location.href);
+		url.searchParams.set("usehint", normalized);
+		window.history.replaceState({}, "", url);
+		setVariantState(normalized);
+	}, []);
+
+	useEffect(() => {
+		if (variant === null) return undefined;
+		const onKey = (event) => {
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName) || document.activeElement?.isContentEditable) return;
+			const keys = Object.keys(MATERIAL_USE_VARIANTS);
 			const current = keys.indexOf(variant);
 			const delta = event.key === "ArrowRight" ? 1 : -1;
 			setVariant(keys[(current + delta + keys.length) % keys.length]);
@@ -450,9 +489,57 @@ function PurposeHandoff({ opportunity, choosingRoute = false }) {
 	);
 }
 
-function KnownRouteMap({ onChoose, farmStock }) {
+function KnownRouteMap({ onChoose, farmStock, materialUseVariant = null }) {
 	const compost = farmStock?.compost ?? 0;
 	const willowFiber = farmStock?.["willow-fiber"] ?? 0;
+	if (materialUseVariant === "A") {
+		return (
+			<section className="known-route-map map-use-variant-a" aria-label="Choose one of Rosie's known Adventure routes">
+				<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>Where should Rosie explore today?</strong></div></header>
+				<div className="known-route-map-list">
+					<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)} aria-label={`A Glow Beneath the Hedge. Compost, ${compost} held. Boosts crops.`}>
+						<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><span className="route-use-sentence"><b>Compost · {compost} held</b><em>Boosts crops</em></span></span><em>Choose</em>
+					</button>
+					<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)} aria-label={`Lights Past the Open Gate. Willow Fiber, ${willowFiber} held. Prepares the Cloth Wrap.`}>
+						<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><span className="route-use-sentence"><b>Willow Fiber · {willowFiber} held</b><em>Prepares Cloth Wrap</em></span></span><em>Choose</em>
+					</button>
+				</div>
+				<footer>Both routes are safe. Preparation changes what Rosie notices and carries Home.</footer>
+			</section>
+		);
+	}
+	if (materialUseVariant === "B") {
+		return (
+			<section className="known-route-map map-use-variant-b" aria-label="Choose one of Rosie's known Adventure routes">
+				<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>Where should Rosie explore today?</strong></div></header>
+				<div className="known-route-map-list">
+					<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)} aria-label={`A Glow Beneath the Hedge. Brings Compost Home. ${compost} held.`}>
+						<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><b>Soft soil · Compost {compost} held</b></span><em>Choose</em>
+					</button>
+					<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)} aria-label={`Lights Past the Open Gate. Gathers Willow Fiber. ${willowFiber} held.`}>
+						<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><b>Reflected leaves · Fiber {willowFiber} held</b></span><em>Choose</em>
+					</button>
+				</div>
+				<footer className="route-use-key" aria-label="What these Farm materials do"><span><b>Compost</b><small>Boosts crops</small></span><span><b>Willow Fiber</b><small>Prepares Cloth Wrap</small></span></footer>
+			</section>
+		);
+	}
+	if (materialUseVariant === "C") {
+		return (
+			<section className="known-route-map map-use-variant-c" aria-label="Choose one of Rosie's known Adventure routes">
+				<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · Farm supplies</small><strong>What should Rosie gather for?</strong></div></header>
+				<div className="known-route-map-list">
+					<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)} aria-label={`A Glow Beneath the Hedge. Compost, ${compost} held. Boosts crops.`}>
+						<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><b>Soft soil among warm roots</b></span><span className="route-use-ticket"><b>Compost</b><strong>{compost} held</strong><small>Boost crops</small></span>
+					</button>
+					<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)} aria-label={`Lights Past the Open Gate. Willow Fiber, ${willowFiber} held. Prepares the Cloth Wrap.`}>
+						<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><b>Fiber among reflected leaves</b></span><span className="route-use-ticket"><b>Willow Fiber</b><strong>{willowFiber} held</strong><small>Cloth Wrap</small></span>
+					</button>
+				</div>
+				<footer>Every familiar route still brings the next Clover Seed.</footer>
+			</section>
+		);
+	}
 	return (
 		<section className="known-route-map has-route-stock" aria-label="Choose one of Rosie's known Adventure routes">
 			<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>Where should Rosie explore today?</strong></div></header>
@@ -1627,6 +1714,18 @@ function VariantSwitcher({ variant, setVariant }) {
 	);
 }
 
+function MaterialUsePrototypeSwitcher({ variant, setVariant }) {
+	const keys = Object.keys(MATERIAL_USE_VARIANTS);
+	const index = keys.indexOf(variant);
+	return (
+		<div className="variant-switcher material-use-switcher" aria-label="Material-use prototype switcher">
+			<button type="button" aria-label="Previous material-use variant" onClick={() => setVariant(keys[(index + keys.length - 1) % keys.length])}>←</button>
+			<span><strong>{variant}</strong><small>{MATERIAL_USE_VARIANTS[variant]}</small></span>
+			<button type="button" aria-label="Next material-use variant" onClick={() => setVariant(keys[(index + 1) % keys.length])}>→</button>
+		</div>
+	);
+}
+
 function JourneyReviewRailAction({ actionLabel, onAction }) {
 	return (
 		<div className="journey-review-rail-action" aria-label="Journey review shortcut">
@@ -1757,6 +1856,7 @@ function App() {
 		return deserializeState(localStorage.getItem(HOMEGROWN_STORAGE_KEY), { reduceMotion: prefersReduced });
 	});
 	const [variant, setVariant] = useVariant();
+	const [materialUseVariant, setMaterialUseVariant] = useMaterialUseVariant();
 	const [visualNow, setVisualNow] = useState(() => Date.now());
 	const presentation = useMemo(() => playerPresentation(state), [state]);
 	const opportunity = useMemo(() => adventureOpportunity(state), [state]);
@@ -2260,6 +2360,7 @@ function App() {
 			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
 			{choosingRoute && !holdingPurposeHandoff && <KnownRouteMap
 				farmStock={state.farmStock}
+				materialUseVariant={materialUseVariant}
 				onChoose={(opportunityId) => act({ type: ACTIONS.CHOOSE_ADVENTURE_ROUTE, opportunityId })}
 			/>}
 			{choosingSeed && !holdingPurposeHandoff && <SeedChoicePanel
@@ -2350,6 +2451,7 @@ function App() {
 			onAction={() => act(presentation.action)}
 		/>}
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
+		{materialUseVariant && <MaterialUsePrototypeSwitcher variant={materialUseVariant} setVariant={setMaterialUseVariant} />}
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
 	</main>;
