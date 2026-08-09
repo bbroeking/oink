@@ -288,6 +288,7 @@ function useVariant() {
 		const onKey = (event) => {
 			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
 			if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+			if (document.activeElement?.closest?.(".bag-guided-tabs")) return;
 			const keys = Object.keys(VARIANTS);
 			const current = keys.indexOf(variant);
 			const delta = event.key === "ArrowRight" ? 1 : -1;
@@ -830,7 +831,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 			{activeSelection && flightItemId && (
 				<span
 					key={`${activeSelection.slot}-${flightItemId}-${activeSelection.at}`}
-					className={`bag-flight-item bag-flight-${activeSelection.slot} ${flightIsRemoval ? "is-removal" : "is-placement"}`}
+					className={`bag-flight-item bag-flight-${activeSelection.slot} bag-flight-item-${flightItemId} ${flightIsRemoval ? "is-removal" : "is-placement"}`}
 					aria-hidden="true"
 				>
 					<BagItemArt itemId={flightItemId} />
@@ -842,7 +843,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 					? `${bagItem(clueSlot, bag[clueSlot])?.name} answers the ${opportunity.clueName} clue.`
 					: clueGuide.next}</small>
 			</div>}
-			<div className="bag-stage bag-guided-stage" aria-hidden="true">
+			<div key={`bag-stage-${activeSelection?.at ?? "idle"}`} className="bag-stage bag-guided-stage" aria-hidden="true">
 				<span className="open-adventure-bag" />
 				<div className="bag-packed-preview">
 					{BAG_SLOT_ORDER.map((slot) => {

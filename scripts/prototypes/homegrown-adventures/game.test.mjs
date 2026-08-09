@@ -1047,6 +1047,16 @@ test("the Bag interface starts empty and presents every choice directly", () => 
 	assert.match(stylesSource, /\.bag-guided-tabs \{[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/s);
 	assert.match(stylesSource, /\.bag-guided-picker \{[^}]*top: 601px;[^}]*height: 110px/s);
 	assert.match(stylesSource, /\.bag-guided-option > small \{[^}]*-webkit-line-clamp: 3/s);
+	assert.match(appSource, /bag-flight-item-\$\{flightItemId\}/);
+	assert.match(appSource, /bag-stage-\$\{activeSelection\?\.at \?\? "idle"\}/);
+	assert.match(appSource, /document\.activeElement\?\.closest\?\.\("\.bag-guided-tabs"\)/);
+	assert.match(stylesSource, /@keyframes bag-pocket-flight/);
+	assert.match(stylesSource, /@keyframes bag-pocket-catch/);
+	assert.match(stylesSource, /\.bag-flight-item-lantern,[^}]*--flight-start-x: 139px/s);
+	assert.match(stylesSource, /@keyframes bag-pocket-settle \{[^}]*0%, 76% \{ opacity: 0/s);
+	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.phone:has\(\.bag-flight-item\)/);
+	assert.match(stylesSource, /\.bag-guided-tabs \{ left: 16px; top: 502px; width: 356px; height: 48px; grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+	assert.doesNotMatch(stylesSource, /homegrown-rive-scene\[data-rive-motion="bag-receive"\][^\n]*\.bag/);
 	assert.doesNotMatch(stylesSource, /\.variant-[ABC] \.bag-guided/);
 	assert.doesNotMatch(appSource, /Clover Lunch is in Rosie's Bag/);
 	assert.doesNotMatch(appSource, /cycleItem|className="bag-change"|Pack these/);
@@ -1145,7 +1155,7 @@ test("Bag slots accept owned choices, alternatives, and empty values", () => {
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "provision", item: "clover-lunch" });
 	state = reduce(state, { type: ACTIONS.SET_BAG_SLOT, slot: "tool", item: "lantern" });
 	assert.equal(homegrownRiveModel(state).viewModel.rosieAction, "pack");
-	assert.equal(homegrownRiveModel(state).trigger, "bag-receive");
+	assert.equal(homegrownRiveModel(state).trigger, "adventure-attention");
 	assert.deepEqual(homegrownRiveModel(state).bagReceive, {
 		slot: "tool",
 		item: "lantern",
