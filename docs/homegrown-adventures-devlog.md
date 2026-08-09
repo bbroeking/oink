@@ -407,11 +407,99 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 124. **v0.123 — Home Remembers Lanternleaf (shipped):** let the successful
     second Adventure replace the stale Glowroot ceremony with one accurate,
     persisted Lanternleaf Path memory.
+125. **v0.124 — Rosie Chooses the Trail (shipped):** after both routes are
+    mapped, let Rosie's Tickle open one compact map where the player freely
+    chooses either familiar Adventure before growing and packing for it.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.124 — Rosie Chooses the Trail — 2026-08-09
+
+- Continued the exact v0.123 endpoint through **Begin another day** and the
+  third morning. The new Lanternleaf memory persisted, but Rosie's Tickle
+  immediately repeated **Lights Past the Open Gate** and its crop chooser as
+  though the player had learned a route without gaining any authorship over
+  it. That made the second Discovery feel like a scripted second level rather
+  than a lasting addition to Rosie's world.
+- Compared three runnable treatments on the real third-morning Position 2:
+  automatic repetition, a compact **Rosie's map** with both routes together,
+  and route labels attached directly to the Farm. The map won. The baseline
+  offered no choice; the world labels covered the Barn door, open hedge, frog,
+  and Glowroot bed while separating clues the player needed to compare. The
+  isolated study and verdict remain at prototype commit `8d09791` on
+  `codex/homegrown-v124-known-route-choice-prototypes`; no comparison switcher
+  or losing treatment shipped.
+- Once both **Glowroot Seed** and **Lanternleaf Path** are in the Field Guide,
+  Rosie's morning Tickle now introduces two familiar trails and opens one
+  storybook map above Rosie. The player freely chooses **A Glow Beneath the
+  Hedge** or **Lights Past the Open Gate** before selecting Clover or
+  Moonberries. First and second mornings retain their guided route, and a
+  clue-only Lanternleaf return does not unlock the map.
+- Added one validated, optional `selectedAdventureOpportunityId` save fact.
+  The reducer blocks crop selection until the earned route choice is made,
+  persists that choice through reload and the complete farming / Bag /
+  Adventure / Homecoming sequence, preserves it in prototype position review,
+  and clears it only on the next day. Existing version-two saves remain
+  compatible and malformed route IDs are discarded.
+- Repeat outings keep the established deterministic Farm supplies but now say
+  **Route revisited** and name the familiar destination instead of presenting
+  Glowroot or Lanternleaf as another New Discovery. Route-aware crop promises
+  also remain truthful: Clover stays until dusk or nightfall, while
+  Moonberries notice hidden reflections or reveal Lanternleaf's reflected
+  leaves.
+- Rendered play found one problem after the prototype verdict: the first map
+  placement covered nearly all of Rosie. The production parchment moved into
+  the upper scene and its route type was enlarged, leaving canonical Rive
+  Rosie, the three beds, frog, and remembered Farm readable beneath it.
+
+### Local validation evidence
+
+- Opened a fresh local third-morning review and confirmed one semantic map,
+  both enabled route buttons, route-neutral HUD and scene description, the
+  **Choose today's route** rail label, and Rosie visible below the parchment.
+  Both choices opened route-specific crop promises; switching to the normal
+  review URL proved the selected Lanternleaf route survived reload.
+- Played the rendered Lanternleaf repeat from map choice through composted
+  Moonberries, its Down → Left → Right → Up rhythm, Farm stock, a freely chosen
+  Moonberries / Lantern / Wicker Basket loadout, departure, causal vignette,
+  idle fast-forward, Homecoming, reward storage, **Begin another day**, and
+  Rosie's next Tickle. The return said **Route revisited**, awarded the exact
+  expected supplies, and the following morning offered both routes again.
+  Browser logs contained no warnings or errors.
+- `npm run prototype:homegrown:test` passes 93/93, including first- and
+  second-morning compatibility, the third-morning gate, invalid route
+  rejection, reload, both route IDs, repeat rewards, direct review state, and
+  next-day reset. `npm run verify:rive-homegrown` passes for the unchanged Home
+  and Lanternleaf binaries.
+- `npm run quality:loop` and `npm run quality:check` pass from the clean feature
+  worktree: 155 layout files, 324 sprites, TypeScript, 78 layout assertions,
+  and 202 security assertions. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `387e3b5` deployed through GitHub Pages run `31317780005`.
+- Exact checked-in and publicly fetched checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `db243a1283fb71a1190ad499dbe49cd8a8fcb4d594a66b51f0c07ace698e069a`
+  - player JavaScript: `c734731c094bfe92d7cf89b4bc5d986fb7f961cb283945486d8f90f952a7bb78`
+  - player CSS: `f8f56bc9f344edbf264183a391812af89934946551199e6244e9a41763e70a9b`
+- A fresh public Position 2 review rendered both enabled routes, the
+  route-neutral HUD and rail, canonical Rosie below the parchment, and every
+  remembered Farm detail with no browser warnings or errors.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&v=387e3b5`
+
+### Next highest-leverage weakness
+
+The repeat Homecoming is now truthful, but accepting its supplies still lands
+on a completed-Home memory that says **New route** and **Lanternleaf Path joined
+Rosie's map**. The next cycle should make Position 11 acknowledge a familiar
+outing without erasing the already-earned Lanternleaf memory or inventing a
+new reward, destination, or progression layer.
 
 ### v0.123 — Home Remembers Lanternleaf — 2026-08-09
 

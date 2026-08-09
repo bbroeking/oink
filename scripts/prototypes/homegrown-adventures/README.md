@@ -1,5 +1,23 @@
 # Homegrown Adventures prototype
 
+The v0.124 known-route pass turns Lanternleaf Path from a one-time ending into
+a real player choice on the third morning. After both existing routes are in
+the Field Guide, Rosie's Tickle now opens one compact **Rosie's map** parchment
+with **A Glow Beneath the Hedge** and **Lights Past the Open Gate** together.
+The selected route is reducer-owned, persisted across reload, carried through
+crop choice, Bag preparation, Adventure, and Homecoming, and cleared only when
+the next day begins. Revisited routes keep the established deterministic
+materials but return as **Route revisited** rather than pretending their named
+Discovery is new. Three real Position 2 structures were compared at prototype
+commit `8d09791` on
+`codex/homegrown-v124-known-route-choice-prototypes`: automatic repetition,
+this compact map, and labels attached to the Farm. The map won because the
+baseline removed player authorship and the world labels covered the Barn,
+frog, Glowroot bed, and open hedge. The production map was moved above Rosie
+after rendered play exposed that its first placement hid her. No experiment
+switcher, new crop, destination, currency, reward roll, Rive input, or parallel
+system remains on main.
+
 The v0.105 Discovery-purpose pass makes yesterday's lasting world change the
 cause of today's preparation instead of leaving the new opportunity to feel
 scheduled. Three real Position 2 treatments were rendered at commit `f1fa423`

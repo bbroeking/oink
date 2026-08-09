@@ -242,6 +242,23 @@ completed-day plaque, compact Home pocket, and Position 11 label on
 no new save field, reward, crop, destination, Rive input, or gameplay rule was
 added.
 
+**Rosie's known-route map checkpoint (August 9, 2026):** Once Glowroot Seed and
+Lanternleaf Path are both mapped, the next morning no longer silently repeats
+yesterday's route. Rosie's Tickle now hands into one compact storybook map that
+offers the two earned destinations together, names their dusk or nightfall
+conditions, and keeps Rosie visible below the parchment. The player's route is
+stored as one validated reducer fact, survives reload and prototype position
+review, determines the route-aware crop promise and every later Adventure
+beat, then clears at the next new day. First and second mornings remain guided;
+a Lanternleaf Near-Discovery does not unlock the map. A return to an already
+known route grants the same deterministic practical supplies but is presented
+as **Route revisited**, never as another New Discovery. A three-treatment
+runnable study compared automatic repetition, the compact map, and route
+labels attached directly to the Farm; the map won because it preserved free
+choice and kept both routes comparable without covering the Barn's remembered
+details. No new destination, crop, equipment slot, currency, random reward,
+Rive input, or parallel activity was added.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in
