@@ -43,9 +43,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Old Memory", question: "Does the existing Glowroot memory still work after Lanternleaf Path is mapped?" },
+	B: { name: "Latest Chapter", question: "Should Home name the newest route in the existing storybook hierarchy?" },
+	C: { name: "Living Route", question: "Should the mapped path remain as a quiet animated landmark in the Farm?" },
 };
 
 const STAGE_COPY = {
@@ -1193,7 +1193,7 @@ function SeedHandoff({ origin, phase }) {
 	);
 }
 
-function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expanded, onToggle }) {
+function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expanded, onToggle, lanternleafRemembered = false }) {
 	const stock = state.farmStock ?? {};
 	const stockItems = [
 		["☘", "Clover Seed", stock["clover-seed"] ?? 0],
@@ -1202,7 +1202,7 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 		["≋", "Willow Fiber", stock["willow-fiber"] ?? 0],
 	];
 	return (
-		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label="Glowroot's lasting Home changes and Farm stock">
+		<section className={`home-memory-panel home-memory-panel-pocket ${expanded ? "is-expanded" : ""} ${showAction ? "has-action" : ""}`} aria-label={`${lanternleafRemembered ? "Lanternleaf Path's" : "Glowroot's"} lasting Home changes and Farm stock`}>
 			<div className="home-memory-pocket-detail" id="farm-memory-detail" hidden={!expanded}>
 				<strong>Farm stock stays useful</strong>
 				<div aria-label="Current Farm stock">
@@ -1217,8 +1217,8 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 				aria-label={expanded ? "Close Home changes and Farm stock" : "Open Home changes and Farm stock"}
 				onClick={onToggle}
 			>
-				<strong>Glowroot changed Home</strong>
-				<span>Bed 3 · Open hedge · Pond frog</span>
+				<strong>{lanternleafRemembered ? "Lanternleaf Path is mapped" : "Glowroot changed Home"}</strong>
+				<span>{lanternleafRemembered ? "Silver trail · Safe return · New route" : "Bed 3 · Open hedge · Pond frog"}</span>
 				<small>{expanded ? "Close" : "See stock"}</small>
 			</button>
 			{showAction && <button type="button" className="home-memory-action" onClick={onAction}>{actionLabel}</button>}
@@ -1226,12 +1226,23 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 	);
 }
 
-function HomeMemoryDayPlaque() {
+function HomeMemoryDayPlaque({ lanternleafRemembered = false }) {
 	return (
-		<div className="home-memory-day-plaque" aria-label="The Barn remembers that Glowroot changed Home">
+		<div className="home-memory-day-plaque" aria-label={`The Barn remembers ${lanternleafRemembered ? "the Lanternleaf Path" : "that Glowroot changed Home"}`}>
 			<small>Home remembers</small>
 			<strong>The Barn remembers</strong>
-			<span>Glowroot now lights the open path.</span>
+			<span>{lanternleafRemembered ? "Lanternleaf Path now guides Rosie Home." : "Glowroot now lights the open path."}</span>
+		</div>
+	);
+}
+
+function LanternleafLivingRoutePrototype() {
+	return (
+		<div className="lanternleaf-living-route-prototype" aria-label="Lanternleaf Path remains mapped beside the open hedge">
+			<span className="lanternleaf-route-marker"><small>New route</small><strong>Lanternleaf Path</strong></span>
+			<span className="lanternleaf-route-leaf leaf-one" aria-hidden="true" />
+			<span className="lanternleaf-route-leaf leaf-two" aria-hidden="true" />
+			<span className="lanternleaf-route-leaf leaf-three" aria-hidden="true" />
 		</div>
 	);
 }
@@ -1705,6 +1716,7 @@ function App() {
 		showingHomeMemory &&
 		state.stage === STAGES.DEVELOPED &&
 		state.cycleComplete;
+	const lanternleafMemoryPrototype = showingHomeMemoryPromise && state.fieldGuide.includes("Lanternleaf Path");
 	const holdingGlowrootHomeReveal = glowrootHomeReveal && !state.reduceMotion;
 	const holdingPurposeHandoff = purposeHandoff && choosingSeed;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
@@ -2096,7 +2108,11 @@ function App() {
 					</span>
 				</div>
 			</div>
-			{showingHomeMemoryPromise && <HomeMemoryDayPlaque />}
+			{showingHomeMemoryPromise && variant !== "C" && <HomeMemoryDayPlaque lanternleafRemembered={lanternleafMemoryPrototype && variant === "B"} />}
+			{lanternleafMemoryPrototype && variant === "C" && <>
+				<LanternleafReflectionsRive active reduceMotion={state.reduceMotion} />
+				<LanternleafLivingRoutePrototype />
+			</>}
 			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingGlowrootPlanting && (!showingHomeMemory || showingHomeTickle) && !homeMemoryExpanded && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
 				className={`rosie-hit ${visiblePresentation.target === WORLD_TARGETS.ROSIE ? "is-guided" : ""}`}
 				type="button"
@@ -2162,6 +2178,7 @@ function App() {
 				expanded={homeMemoryExpanded}
 				onToggle={() => setHomeMemoryExpanded((value) => !value)}
 				showAction={!showingMoonberryPlanting && !showingHomeTickle}
+				lanternleafRemembered={lanternleafMemoryPrototype && variant !== "A"}
 			/>}
 			{showingMoonberryPlanting && !holdingGlowrootHomeReveal && !homeMemoryExpanded && <WorldAction
 				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}

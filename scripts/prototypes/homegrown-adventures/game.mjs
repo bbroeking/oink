@@ -740,13 +740,15 @@ export function createPrototypeState(position, {
 		},
 	};
 
-	const routePreview = [2, 9].includes(target) && adventureRoute === "lanternleaf"
+	const routePreview = [2, 9, 11].includes(target) && adventureRoute === "lanternleaf"
 		? {
 			daysCompleted: 1,
 			glowrootKnown: true,
 			glowrootPlanted: true,
 			nextPlanting: "moonberries",
-			fieldGuide: ["Clover Lunch", "Dusk Picnic", "Glowroot Seed"],
+			fieldGuide: target === 11
+				? [...new Set([...presets[target].fieldGuide, ...SECOND_ADVENTURE_OPPORTUNITY.fieldGuideEntries])]
+				: ["Clover Lunch", "Dusk Picnic", "Glowroot Seed"],
 		}
 		: {};
 
