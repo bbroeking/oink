@@ -318,6 +318,11 @@ export function adventureToolReturnBonus(state, itemId) {
 	return bonus;
 }
 
+export function primaryAdventureReturnAmount(baseReturn, toolBonus) {
+	if (baseReturn === null) return 0;
+	return baseReturn.amount + (toolBonus?.itemId === baseReturn.itemId ? toolBonus.amount : 0);
+}
+
 export function adventureRouteMaterialReturn(state) {
 	const revisitingKnownRoute = Boolean(state?.selectedAdventureOpportunityId);
 	const followingLanternleaf = adventureOpportunity(state).id === SECOND_ADVENTURE_OPPORTUNITY.id;

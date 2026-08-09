@@ -27,6 +27,7 @@ import {
 	JOURNEY_HOMEWARD_RATIO,
 	nearDiscoveryGuide,
 	playerPresentation,
+	primaryAdventureReturnAmount,
 	PROTOTYPE_POSITIONS,
 	primaryAction,
 	serializeState,
@@ -1033,14 +1034,33 @@ test("the Bag interface starts empty and presents every choice directly", () => 
 	assert.match(appSource, /What should hold Rosie's find\?/);
 	assert.match(appSource, /Rosie remembers it, but cannot carry it Home/);
 	assert.match(appSource, /Set out with an empty Bag/);
+	assert.match(appSource, /Pack Rosie's Bag/);
 	assert.match(appSource, /An empty Bag still returns a useful clue\. Rosie is always safe\./);
 	assert.match(appSource, /Rosie's Bag is ready to pack/);
 	assert.match(appSource, /\$\{crop\.outputName\} joined Farm stock/);
 	assert.match(appSource, /role="tabpanel"/);
 	assert.match(appSource, /tabIndex=\{focus === slot \? 0 : -1\}/);
 	assert.match(appSource, /ArrowRight: 1/);
+	assert.doesNotMatch(appSource, /bag-guided-next/);
+	assert.match(stylesSource, /\.bag-guided-stage \{ left: 158px; top: 386px; width: 230px; height: 230px; \}/);
+	assert.match(stylesSource, /\.bag-guided-title \{[^}]*top: 72px/s);
+	assert.match(stylesSource, /\.bag-guided-tabs \{[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/s);
+	assert.match(stylesSource, /\.bag-guided-picker \{[^}]*top: 601px;[^}]*height: 110px/s);
+	assert.match(stylesSource, /\.bag-guided-option > small \{[^}]*-webkit-line-clamp: 3/s);
+	assert.doesNotMatch(stylesSource, /\.variant-[ABC] \.bag-guided/);
 	assert.doesNotMatch(appSource, /Clover Lunch is in Rosie's Bag/);
 	assert.doesNotMatch(appSource, /cycleItem|className="bag-change"|Pack these/);
+});
+
+test("an empty-Bag Near-Discovery has no primary return amount", () => {
+	assert.equal(primaryAdventureReturnAmount(null, null), 0);
+	assert.equal(
+		primaryAdventureReturnAmount(
+			{ itemId: "glowroot-seed", amount: 1 },
+			{ itemId: "glowroot-seed", amount: 1 },
+		),
+		2,
+	);
 });
 
 test("prototype position jumps reject invalid targets without mutation", () => {
@@ -2344,7 +2364,7 @@ test("an earned Field Guide clue stays attached to the matching Bag pocket", () 
 	assert.match(appSource, /\{slot === clueSlot && <i>\{clueIsApplied \? "Answered" : "Clue"\}<\/i>\}/);
 	assert.match(appSource, /clueGuide=\{bagClueGuide\}/);
 	assert.match(appSource, /clueSlot=\{bagClueSlot\}/);
-	assert.match(stylesSource, /\.bag-selection\.has-bag-clue \.bag-guided-tabs button \{ grid-template-columns: 52px minmax\(0, 1fr\) auto; \}/);
-	assert.match(stylesSource, /\.bag-guided-tabs i \{/);
+	assert.match(stylesSource, /\.bag-selection\.has-bag-clue \.bag-guided-tabs button \{ grid-template-columns: 1fr; \}/);
+	assert.match(stylesSource, /\.bag-guided-tabs i \{[^}]*position: absolute;[^}]*right: 3px;[^}]*top: 3px/s);
 	assert.doesNotMatch(appSource, /BagCluePrototypeSwitcher|bagClueStudy|bagclue/);
 });

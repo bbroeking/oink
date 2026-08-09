@@ -32,6 +32,7 @@ import {
 	homegrownReducer,
 	nearDiscoveryGuide,
 	playerPresentation,
+	primaryAdventureReturnAmount,
 	PROTOTYPE_POSITIONS,
 	serializeState,
 	SECOND_ADVENTURE_OPPORTUNITY,
@@ -752,7 +753,6 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 	const flightItemId = activeSelection?.item ?? activeSelection?.previousItem ?? null;
 	const flightIsRemoval = activeSelection?.item === null && activeSelection?.previousItem !== null;
 	const selectedCount = BAG_SLOT_ORDER.filter((slot) => bag[slot] !== null).length;
-	const focusIndex = BAG_SLOT_ORDER.indexOf(focus);
 	const question = {
 		provision: "What should help Rosie keep going?",
 		tool: "What should Rosie try?",
@@ -805,7 +805,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 		? needsProvision ? `Need ${chosenProvision?.name ?? "Provision"}` : "Need Willow Fiber"
 		: selectedCount === 0
 			? "Set out with an empty Bag"
-			: `Pack ${selectedCount} ${selectedCount === 1 ? "choice" : "choices"}`;
+			: "Pack Rosie's Bag";
 	const moveFocus = (event, currentIndex) => {
 		const keyDirection = {
 			ArrowRight: 1,
@@ -826,6 +826,7 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 
 	return (
 		<section className={`bag-selection bag-selection-guided ${showingClue ? "has-bag-clue" : ""}`} aria-label="Choose what Rosie carries">
+			<span className="sr-only">The Bag begins empty. Every slot is optional.</span>
 			{activeSelection && flightItemId && (
 				<span
 					key={`${activeSelection.slot}-${flightItemId}-${activeSelection.at}`}
@@ -835,14 +836,12 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 					<BagItemArt itemId={flightItemId} />
 				</span>
 			)}
-			<div className="bag-guided-title">
-				<strong>Pack for {opportunity.name}</strong>
-				<small>{showingClue
-					? clueIsApplied
-						? `${bagItem(clueSlot, bag[clueSlot])?.name} answers the ${opportunity.clueName} clue.`
-						: clueGuide.next
-					: "The Bag begins empty. Every slot is optional."}</small>
-			</div>
+			{showingClue && <div className="bag-guided-title">
+				<strong>{opportunity.clueName}</strong>
+				<small>{clueIsApplied
+					? `${bagItem(clueSlot, bag[clueSlot])?.name} answers the ${opportunity.clueName} clue.`
+					: clueGuide.next}</small>
+			</div>}
 			<div className="bag-stage bag-guided-stage" aria-hidden="true">
 				<span className="open-adventure-bag" />
 				<div className="bag-packed-preview">
@@ -878,16 +877,10 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 				role="tabpanel"
 				id={`bag-panel-${focus}`}
 				aria-labelledby={`bag-tab-${focus}`}
-			>
-				<div className="bag-guided-question"><small>{BAG_SLOT_LABELS[focus]}</small><strong>{question}</strong></div>
-				<div className="bag-guided-options">{focusChoices}</div>
-				<button
-					type="button"
-					className="bag-guided-next"
-					disabled={focusIndex === BAG_SLOT_ORDER.length - 1}
-					onClick={() => setFocus(BAG_SLOT_ORDER[Math.min(BAG_SLOT_ORDER.length - 1, focusIndex + 1)])}
-				>{focusIndex === BAG_SLOT_ORDER.length - 1 ? "All choices visible" : `Next: ${BAG_SLOT_LABELS[BAG_SLOT_ORDER[focusIndex + 1]]}`}</button>
-			</div>
+				>
+					<div className="bag-guided-question"><small>{BAG_SLOT_LABELS[focus]}</small><strong>{question}</strong></div>
+					<div className="bag-guided-options">{focusChoices}</div>
+				</div>
 		<button type="button" className="bag-confirm" onClick={onConfirm} disabled={!canPack}>
 			{packLabel}
 		</button>
@@ -1253,7 +1246,7 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 	const baseReturn = nearDiscovery ? null : adventureBaseReturn(state);
 	const packReward = bagReturnReward(state.bag?.pack ?? null);
 	const toolBonus = nearDiscovery ? null : adventureToolReturnBonus(state, state.bag?.tool ?? null);
-	const primaryReturnAmount = (baseReturn?.amount ?? 0) + (toolBonus?.itemId === baseReturn?.itemId ? toolBonus.amount : 0);
+	const primaryReturnAmount = primaryAdventureReturnAmount(baseReturn, toolBonus);
 	const returnLedger = nearDiscovery ? [] : adventureReturnLedger(state);
 	return (
 		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} data-tool-bonus={toolBonus?.itemId ?? "none"} aria-label="Rosie's return rewards">

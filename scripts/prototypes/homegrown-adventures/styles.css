@@ -2725,10 +2725,10 @@ html[data-reduce-motion="true"] .planting-bed-focus { animation: none; }
 .bag-packed-preview > span.is-empty { opacity: .42; }
 .bag-guided-title {
 	position: absolute;
-	left: 22px;
-	right: 22px;
-	top: 366px;
-	min-height: 48px;
+	left: 42px;
+	right: 42px;
+	top: 72px;
+	min-height: 42px;
 	padding: 8px 12px;
 	display: flex;
 	flex-direction: column;
@@ -2742,39 +2742,45 @@ html[data-reduce-motion="true"] .planting-bed-focus { animation: none; }
 .bag-guided-title strong { font-family: Caprasimo, Georgia, serif; font-size: 12px; font-weight: 400; line-height: 1.05; }
 .bag-guided-title small { margin-top: 4px; color: var(--ink-soft); font-size: 8px; font-weight: 800; line-height: 1.1; }
 .bag-selection.has-bag-clue .bag-guided-title small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-.bag-guided-stage { left: 158px; top: 402px; width: 230px; height: 230px; }
+.bag-guided-stage { left: 158px; top: 386px; width: 230px; height: 230px; }
 .bag-guided-tabs {
 	position: absolute;
-	left: 8px;
-	top: 421px;
-	width: 174px;
-	height: 147px;
+	left: 16px;
+	top: 544px;
+	width: 356px;
+	height: 50px;
 	display: grid;
-	grid-template-rows: repeat(3, minmax(0, 1fr));
-	overflow: hidden;
-	background: rgba(255,249,233,.96);
-	border: 2px solid var(--ink);
-	border-radius: 11px;
-	box-shadow: 2px 3px 0 rgba(48,33,22,.58);
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 5px;
+	overflow: visible;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
 }
 .bag-guided-tabs button {
 	min-width: 0;
-	padding: 5px 8px;
+	min-height: 48px;
+	padding: 5px 7px;
 	display: grid;
-	grid-template-columns: 52px minmax(0, 1fr);
-	align-items: center;
-	border: 0;
-	border-bottom: 1px solid var(--line);
-	background: transparent;
-	text-align: left;
+	grid-template-columns: 1fr;
+	grid-template-rows: auto auto;
+	place-content: center;
+	position: relative;
+	border: 2px solid var(--ink);
+	border-radius: 11px;
+	background: rgba(255,249,233,.96);
+	box-shadow: 2px 3px 0 rgba(48,33,22,.58);
+	text-align: center;
 }
-.bag-selection.has-bag-clue .bag-guided-tabs button { grid-template-columns: 52px minmax(0, 1fr) auto; }
-.bag-guided-tabs button:last-child { border-bottom: 0; }
-.bag-guided-tabs button[aria-selected="true"] { background: #fff4cf; box-shadow: inset 4px 0 0 #5d8d40; }
-.bag-guided-tabs small { color: #7a4f2d; font-size: 7px; font-weight: 950; text-transform: uppercase; }
-.bag-guided-tabs strong { min-width: 0; overflow: hidden; font-size: 8px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.bag-selection.has-bag-clue .bag-guided-tabs button { grid-template-columns: 1fr; }
+.bag-guided-tabs button[aria-selected="true"] { background: #fff4cf; box-shadow: inset 0 -4px 0 #5d8d40, 2px 3px 0 rgba(48,33,22,.58); }
+.bag-guided-tabs small { color: #7a4f2d; font-size: 7.5px; font-weight: 950; text-transform: uppercase; }
+.bag-guided-tabs strong { min-width: 0; overflow: hidden; font-size: 9px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
 .bag-guided-tabs i {
-	padding: 3px 5px;
+	position: absolute;
+	right: 3px;
+	top: 3px;
+	padding: 2px 4px;
 	border-radius: 999px;
 	background: #4f7c3e;
 	color: #fff9e9;
@@ -2851,13 +2857,13 @@ html[data-reduce-motion="true"] .planting-bed-focus { animation: none; }
 }
 .bag-guided-picker {
 	position: absolute;
-	left: 8px;
-	right: 8px;
-	top: 574px;
-	height: 139px;
-	padding: 7px;
+	left: 12px;
+	right: 12px;
+	top: 601px;
+	height: 110px;
+	padding: 6px;
 	display: grid;
-	grid-template-rows: 32px 64px 28px;
+	grid-template-rows: 25px 71px;
 	gap: 4px;
 	background: rgba(255,249,233,.97);
 	border: 2px solid var(--ink);
@@ -2865,16 +2871,16 @@ html[data-reduce-motion="true"] .planting-bed-focus { animation: none; }
 	box-shadow: 2px 3px 0 rgba(48,33,22,.62);
 	transition: opacity 140ms ease, transform 180ms cubic-bezier(.16,1,.3,1);
 }
-.bag-guided-question { display: flex; flex-direction: column; justify-content: center; text-align: center; }
+.bag-guided-question { display: flex; align-items: center; justify-content: center; gap: 6px; text-align: center; }
 .bag-guided-question small { color: #7a4f2d; font-size: 7px; font-weight: 950; text-transform: uppercase; }
-.bag-guided-question strong { margin-top: 2px; font-family: Caprasimo, Georgia, serif; font-size: 12px; font-weight: 400; line-height: 1.05; }
+.bag-guided-question strong { font-family: Caprasimo, Georgia, serif; font-size: 12px; font-weight: 400; line-height: 1.05; }
 .bag-guided-options { min-width: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 5px; }
 .bag-guided-option {
 	min-width: 0;
-	min-height: 64px;
+	min-height: 70px;
 	padding: 3px;
 	display: grid;
-	grid-template-columns: 31px minmax(0, 1fr);
+	grid-template-columns: 34px minmax(0, 1fr);
 	grid-template-rows: 22px 1fr;
 	align-items: center;
 	border: 1.5px solid rgba(48,33,22,.78);
@@ -2889,17 +2895,8 @@ html[data-reduce-motion="true"] .planting-bed-focus { animation: none; }
 .bag-guided-option.is-empty { background: rgba(243,228,201,.94); }
 .bag-guided-option:disabled { cursor: not-allowed; opacity: .48; }
 .bag-guided-option > span { grid-row: 1 / 3; display: grid; place-items: center; transform: scale(.72); }
-.bag-guided-option > strong { min-width: 0; overflow: hidden; font-size: 7.5px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
-.bag-guided-option > small { min-width: 0; overflow: hidden; color: var(--ink-soft); font-size: 6.5px; font-weight: 750; line-height: 1.05; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.bag-guided-next {
-	min-height: 28px;
-	border: 1.5px solid var(--ink);
-	border-radius: 7px;
-	background: var(--paper-deep);
-	font-size: 8px;
-	font-weight: 950;
-}
-.bag-guided-next:disabled { cursor: default; opacity: .5; }
+.bag-guided-option > strong { min-width: 0; overflow: hidden; font-size: 8.5px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.bag-guided-option > small { min-width: 0; overflow: hidden; color: var(--ink-soft); font-size: 7.25px; font-weight: 750; line-height: 1.05; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .bag-confirm {
 	position: absolute;
 	left: 27px;
@@ -2922,7 +2919,7 @@ html[data-reduce-motion="true"] .planting-bed-focus { animation: none; }
 	position: absolute;
 	left: 20px;
 	right: 20px;
-	top: 714px;
+	top: 713px;
 	margin: 0;
 	color: var(--paper);
 	font-size: 8px;
