@@ -1,5 +1,23 @@
 # Homegrown Adventures prototype
 
+The v0.133 crop-to-bed handoff pass keeps the physical crop selected from the
+Farm tray attached to its actual planting decision. Clover now remains a paper
+Seed packet on highlighted Bed 1; Moonberries remain the harvested basket on
+highlighted rooted Bed 2; optional Compost is a separate physical sack; and one
+bottom ribbon owns the deterministic yield, duration, and Plant / Tend action.
+This translates the approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/03-plant-and-compost.png`
+composition without importing a full-screen bitmap or covering all three beds.
+A rendered three-structure study at prototype commit `df1c3b9` on
+`codex/homegrown-v133-planting-handoff-prototypes` compared a two-card bedside
+kit, a literal concept split, and the selected bed-first ribbon. Bed-first won
+because it left Rosie and every bed visible with one fewer information layer;
+the split treatment required five bordered surfaces. Production preserves the
+existing React-owned Seed/root cost, optional two-hour/+1 Compost rule, crop
+timers, yields, persistence, and Rive planting response. No experiment class,
+variant-specific planting markup, new Rive input, drag-and-drop rule, modal, or
+parallel inventory screen remains on main.
+
 The v0.132 physical crop-choice pass makes the returning Farm decision read as
 two things Rosie can actually grow instead of two dense text cards with `☘`
 and `●` marks. The approved

@@ -93,7 +93,11 @@ Position 3 now names the exact resulting Provision throughout the optional
 Compost decision: **3 Clover Lunches · ready in 4 hours** normally, or **4
 Clover Lunches · ready in 2 hours** with Compost, with the same vocabulary in
 the HUD and one plain statement of the boost instead of anonymous Harvest
-numbers;
+numbers. The crop selected from the physical Farm tray now remains a separable
+object on its highlighted bed: a Clover Seed packet on Bed 1 or the existing
+Moonberry basket on rooted Bed 2. Optional Compost stays one physical choice,
+and one bed-level ribbon owns the exact outcome and Plant / Tend action while
+Rosie and all three beds remain visible;
 Position 5 now keeps **Harvest for Rosie's journey** in the HUD, makes the
 flowered bed the unmistakable swipe surface, folds the accessible tap fallback
 into the one active rhythm arrow, and names the exact guaranteed Lunch count
@@ -114,6 +118,20 @@ clips with one brief bed-level response, while normal planting and all
 React-owned resource rules remain unchanged; the first outing is now named **A
 Glow Beneath the Hedge** before farming begins, and its duration and clues stay
 visible through Bag preparation and departure.
+
+**Crop-to-bed handoff checkpoint (August 9, 2026):** Position 3 no longer
+collapses the selected crop and Compost into `☘`, `●`, and `♣` marks inside
+three floating panels. Clover remains a physical paper Seed packet on
+highlighted Bed 1, Moonberries remain the existing basket on highlighted
+rooted Bed 2, and Compost becomes one separable sack whose selected state still
+shows the exact spend. One bottom ribbon names the promised yield and duration
+beside the Plant / Tend action. Three rendered structures were compared against
+the approved `rosie-v3/03-plant-and-compost.png` composition: a two-card bedside
+kit, a literal concept split, and this bed-first ribbon. Bed-first won because
+it preserved Rosie and all three beds while the concept split divided one
+decision across five bordered surfaces. React state, Seed/root costs, the
+optional two-hour/+1 Compost rule, crop timers, yields, saves, Rive source, and
+authored planting motions are unchanged.
 
 **Physical crop-choice checkpoint (August 9, 2026):** The returning Farm
 decision now borrows the approved `rosie-v3/02-farm-stock-seed-choice.png`

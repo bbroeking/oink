@@ -437,11 +437,85 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     choice's abstract marks and repeated receipt with one physical wooden tray,
     recognizable Clover and Moonberry harvests, and a larger crop-first reading
     order grounded in the approved Farm concept.
+134. **v0.133 — The Crop Reaches Its Bed (shipped):** keep the chosen Clover
+    packet or Moonberry basket physically attached to its highlighted bed,
+    separate optional Compost as one object, and consolidate the exact planting
+    promise and action into one ribbon without covering the Farm.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.133 — The Crop Reaches Its Bed — 2026-08-09
+
+- Played the shipped v0.132 crop tray through Clover and Moonberry selection,
+  then compared Position 3 with the approved
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/03-plant-and-compost.png`
+  composition. The rules remained correct, but the physical crop immediately
+  collapsed into `☘` or `●`, Compost became `♣`, and three floating slabs hid
+  the planting beds before confirmation.
+- Built and drove three real phone compositions: a paired bedside supply kit, a
+  literal resource/bed/action split, and a bed-first ribbon. The split matched
+  the concept most literally but used five bordered surfaces; the bedside kit
+  still made cards the subject. Bed-first won because the Clover packet or
+  Moonberry basket sits on the selected soil, Compost remains one separate
+  choice, one ribbon owns the deterministic result and action, and Rosie plus
+  all three beds remain visible. The complete switcher, visual-translation
+  brief, and losing treatments remain at prototype commit `df1c3b9` on
+  `codex/homegrown-v133-planting-handoff-prototypes` and were not merged.
+- Production commit `185cdce` rewrites only the winner. React still owns Seed
+  spending, rooted-Moonberry behavior, Compost, duration, yield, persistence,
+  and transition. The existing authored Rive planting and growth motions remain
+  the response; no new Rive input, gameplay rule, modal, drag interaction, or
+  inventory surface was added.
+
+### Local validation evidence
+
+- The rendered phone content remains exactly 384 × 838 with one authored Rive
+  canvas and zero horizontal overflow. Compost is 176 × 76px; Plant / Tend is
+  150 × 86px at 17px; both exceed the 44px touch minimum. No prototype planting
+  class, experiment label, or A/B/C-specific markup remains on the player route.
+- Clover stays a physical Seed packet on highlighted Bed 1 and shows **3 → 2**.
+  Moonberries stay the existing basket on highlighted rooted Bed 2 and show
+  **No Seed spent**. Toggling Compost changes Moonberries from **4 · 8 hours**
+  to **5 · 6 hours**, shows **2 → 1**, and confirming reaches the existing
+  Composted growth state. The equivalent Clover branch reaches **4 · 2 hours**.
+- Reduced motion sets the bed-focus animation to `none` while keeping the
+  outline, crop prop, labels, and controls readable.
+- `npm run prototype:homegrown:test` passes 96/96. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `185cdce` deployed through GitHub Pages run `31326197853`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `df2086f1e7f3ef37bbf105e84ceec70eeb22530835c55ab9efb9ae85b7adb264`
+  - player JavaScript: `dd5ef4ad1ece3b7b9b9f5098043f1c39631f9b1ae2130dc906d4fee44dda3367`
+  - player CSS: `06c08daa41c3b98292ec0c39241b4f963a2b07b6fa3a2e159886eb38c75e452d`
+  - Clover Seed mark: `d86a932ca6e5b8c6143d883c9af72e94468d79f3c45c874232ebf16246464b64`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=3&route=lanternleaf&repeat=1&v=185cdce`
+- The public route reproduced the selected Bed 1 crop prop, physical Compost,
+  exact quantities, 384 × 838 layout, one authored canvas, zero overflow, and
+  no experiment language. Publicly toggling Compost produced **4 Clover Lunch
+  · ready in 2 hours**, spent **2 → 1**, and confirmed into the two-hour
+  Composted growth state.
+
+### Next highest-leverage weakness
+
+Position 4 now receives a clear physical planting handoff, but its large growth
+status card immediately covers the neighboring beds and repeats the same
+Composted/time facts already in the HUD. The next cycle should compare the
+rendered growth state with approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/04-growing-fast-forward.png`,
+anchor growth status to the selected bed, and keep the staged Rive crop as the
+subject. Prototype fast-forward should move out of the Farm composition or
+become secondary without changing React-owned timers, no-spoil behavior,
+growth poses, or the authored sway.
 
 ### v0.132 — Crops You Can See — 2026-08-09
 
