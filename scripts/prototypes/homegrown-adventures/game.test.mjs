@@ -361,6 +361,32 @@ test("the rendered Harvest Rhythm keeps the crop gesture primary with one integr
 	assert.match(stylesSource, /\.harvest-bed-assist\.is-unified \{/);
 });
 
+test("a ready crop announces the harvest before the affectionate Tickle handoff", () => {
+	const state = throughCloverReady();
+	assert.equal(state.changeRevealed, false);
+	assert.equal(primaryAction(state).label, "Tickle Rosie");
+	assert.deepEqual(playerPresentation(state), {
+		target: "rosie",
+		objective: "Clover Lunch is ready",
+		detail: "Tickle Rosie to begin Clover's harvest rhythm",
+		label: "Tickle Rosie",
+		action: primaryAction(state),
+	});
+	assert.match(appSource, /eyebrow: "Ready to harvest"/);
+	assert.match(appSource, /Tickle Rosie to begin \$\{cropPossessive\} personal harvest rhythm/);
+	assert.doesNotMatch(appSource, /Welcome Rosie with a tickle|title: "The Kitchen Patch is rustling"/);
+
+	let moonberries = throughSecondMorning();
+	moonberries = reduce(moonberries, { type: ACTIONS.SELECT_CROP, crop: "moonberries" });
+	moonberries = reduce(moonberries, { type: ACTIONS.PLANT_CROP });
+	moonberries = reduce(moonberries, { type: ACTIONS.ADVANCE_TIME });
+	assert.equal(playerPresentation(moonberries).objective, "Moonberries are ready");
+	assert.equal(
+		playerPresentation(moonberries).detail,
+		"Tickle Rosie to begin Moonberries’ harvest rhythm",
+	);
+});
+
 test("the rendered Moonberry harvest names and animates its rooted regrowth", () => {
 	assert.match(appSource, /Roots stay in Bed 2/);
 	assert.match(stylesSource, /data-rive-bed-two="sprout"[^}]+clip-path:/s);

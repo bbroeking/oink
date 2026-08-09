@@ -153,10 +153,11 @@ function stageCopy(state) {
 		};
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.changeRevealed) {
+		const cropPossessive = `${crop.name}${crop.name.endsWith("s") ? "’" : "'s"}`;
 		return {
-			eyebrow: "Something changed",
-			title: "The Kitchen Patch is rustling",
-			body: "Welcome Rosie with a tickle and she will point out what happened while you were away.",
+			eyebrow: "Ready to harvest",
+			title: `${crop.outputName} ${state.selectedCrop === "moonberries" ? "are" : "is"} ready`,
+			body: `Tickle Rosie to begin ${cropPossessive} personal harvest rhythm. The crop will keep waiting safely.`,
 		};
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {

@@ -1681,7 +1681,7 @@ export function primaryAction(state) {
 		return { type: ACTIONS.ADVANCE_TIME, label: "Let the afternoon pass" };
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.changeRevealed) {
-		return { type: ACTIONS.TICKLE, label: "Welcome Rosie" };
+		return { type: ACTIONS.TICKLE, label: "Tickle Rosie" };
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.cloverHarvested) {
 		return { type: ACTIONS.HARVEST_CROP, label: "Gather normally" };
@@ -1803,10 +1803,14 @@ export function playerPresentation(state) {
 		};
 	}
 	if (state.stage === STAGES.CLOVER_READY && !state.changeRevealed) {
+		const rule = cropRule(state.selectedCrop);
+		const cropName = rule?.name ?? "the crop";
+		const cropPossessive = `${cropName}${cropName.endsWith("s") ? "’" : "'s"}`;
 		return {
 			target: WORLD_TARGETS.ROSIE,
-			objective: "Rosie noticed something",
-			label: "Welcome Rosie",
+			objective: `${rule?.outputName ?? "Crop"} ${state.selectedCrop === "moonberries" ? "are" : "is"} ready`,
+			detail: `Tickle Rosie to begin ${cropPossessive} harvest rhythm`,
+			label: "Tickle Rosie",
 			action,
 		};
 	}
