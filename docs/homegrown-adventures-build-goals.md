@@ -163,6 +163,19 @@ choices, resources, Adventure outcome, persistence, and accessibility remain
 authoritative; no second Bag, equipment screen, or animation-owned game state
 was added.
 
+**Carrier-language checkpoint (August 8, 2026):** Rosie's fitted satchel is
+now consistently her permanent **Bag**, while the former Pack slot is presented
+as the optional **Carrier** that holds a delicate find. Position 7 asks what
+should hold Rosie's find; leaving the slot empty explicitly promises that she
+will remember it but cannot carry it Home. The complete branch carries
+**Carrier · Wicker Basket** through departure and the idle folio, while the
+empty branch leaves the object safe, records a route-specific clue, and opens
+the Carrier pocket for a later attempt. A three-vocabulary runnable study
+compared Pack, Carrier, and Find Kit; Carrier was the only term that stayed
+physical without competing with the worn Bag. This changes public language
+only: internal `bag.pack` state, saves, material costs, results, Rive art, and
+authored animation remain unchanged.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

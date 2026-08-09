@@ -388,11 +388,80 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     replace the remaining chest-tile attachment with a compact screen-left hip
     satchel that stays registered through Pack, departure, Return, reload, and
     reduced motion without changing the Bag system or Rosie's canonical rig.
+119. **v0.118 — The Find Has a Carrier (shipped):** distinguish Rosie's
+    permanent Bag from the optional physical Carrier that determines whether a
+    delicate find can come Home, while keeping every empty choice safe and
+    informative.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.118 — The Find Has a Carrier — 2026-08-08
+
+- Began with the required chronological replay after v0.117. The fitted native
+  satchel now clearly belonged to Rosie, but the third loadout slot still said
+  **Pack**. **Pack: Empty** contradicted the visibly worn Bag, while choosing a
+  Wicker Basket could read as equipping a second competing bag.
+- Compared three runnable vocabularies across Position 7, packed departure,
+  and the idle field folio: **Pack**, **Carrier**, and **Find Kit**. **Carrier**
+  won because it gives the third item one concrete job: it holds the find Rosie
+  may bring Home. **Find Kit** was abstract and **Pack** remained visually
+  ambiguous. The isolated study and verdict remain at prototype commit
+  `63b33ad` on `codex/homegrown-v118-carrier-prototypes`; no experiment
+  switcher shipped.
+- The Bag now asks **What should hold Rosie's find?** Wicker Basket and Cloth
+  Wrap remain the same reusable material choices. Leaving Carrier empty says
+  exactly what happens: Rosie remembers the find but cannot carry it Home.
+- Complete Adventures now name **Provision / Tool / Carrier** from preparation
+  through departure and the idle folio. The empty-Carrier journey says Rosie
+  leaves the delicate object where it grows, records its leaf-print, and opens
+  the Carrier pocket for the next attempt. It remains a useful Near-Discovery,
+  never a failure.
+- This is a vocabulary-only clarification. The internal `bag.pack` field,
+  versioned saves, migration behavior, material costs, deterministic rewards,
+  Rive asset, authored motions, and physical props are unchanged.
+
+### Local validation evidence
+
+- Played the complete Wicker Basket branch from Position 7 through packed
+  departure and the idle field folio. All three surfaces report **Carrier ·
+  Wicker Basket** while the fitted native satchel stays on Rosie's hip.
+- Played the empty-Carrier branch into the actual idle Near-Discovery. The
+  folio reports **Carrier · Empty**, **Rosie leaves the Glowroot where it
+  grows**, and the exact leaf-print lesson without granting the Seed.
+- Reload and reduced motion preserve the same empty-Carrier truth and the
+  stable fitted-satchel endpoint. `npm run prototype:homegrown:test` passes
+  85/85. `npm run verify:rive-homegrown`, `npm run quality:loop`, and `npm run
+  quality:check` pass; the repository gate covers 157 layout files, 324
+  sprites, TypeScript, 78 layout assertions, and 202 security assertions.
+  Watchman's existing recrawl notice and manual mobile Safari checks remain
+  warnings.
+
+### Public verification evidence
+
+- Feature commit `b35f63b` deployed successfully through GitHub Pages run
+  `31287461834`.
+- Exact checked-in checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `1e0d68723381737a2145977eb823ad7b3f24118c26ef519d32d51d134f7cbca1`
+  - player JavaScript: `0f41f7bbfb048ebe556b6cc17c18f8deff5d488d5904475d4b5a30cda5dda3c4`
+  - player CSS: `305257d0316d43548363f27d51049db1f240b74968929234be90a158f81a0d30`
+- Direct public fetches match all four hashes. The rendered public Position 7
+  exposes the **Carrier** tab, asks what should hold Rosie's find, offers Wicker
+  Basket and Cloth Wrap, and truthfully explains leaving it empty. Public
+  Position 8 reports **Provision Clover Lunch / Tool Hand Trowel / Carrier
+  Wicker Basket** before the established departure action.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=7&v=b35f63b`
+
+### Next highest-leverage weakness
+
+Continue the chronological replay from packed departure into the first causal
+clearing. Compare the physical Wicker Basket or Cloth Wrap against Rosie's
+fitted Bag and verify that the Carrier's one job—receiving the find—reads from
+the world action itself before relying on the HUD.
 
 ### v0.117 — The Satchel Belongs to Rosie — 2026-08-08
 
