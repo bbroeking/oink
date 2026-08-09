@@ -426,11 +426,69 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 130. **v0.129 — The Map Knows the Farm (shipped):** attach each familiar
     route's live Compost or Willow Fiber stock to its existing place clue, so
     the player can choose with current Farm context without opening inventory.
+131. **v0.130 — Every Material Has a Job (shipped):** replace each route's
+    stacked promise and stock badge with one place-first sentence that names
+    the material, live quantity, and established use.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.130 — Every Material Has a Job — 2026-08-09
+
+- Played the shipped v0.129 map and its open-gate continuation. The live stock
+  quantities made the routes comparable, but **Compost** and **Willow Fiber**
+  still assumed the player remembered their established farming and Bag uses
+  from other screens.
+- Built and drove three isolated rendered structures: one replacement sentence
+  inside each route, a shared two-material use key, and right-side use tickets.
+  The replacement sentence won because it removed a reading layer while
+  keeping the destination name strongest. The shared key became a miniature
+  reference panel; tickets made supplies outrank the place. The complete
+  switcher and losing treatments remain at prototype commit `8fce2f7` on
+  `codex/homegrown-v130-material-use-prototypes` and were not merged.
+- Production now says **Compost · 2 held · Boosts crops** and **Willow Fiber ·
+  4 held · Prepares Cloth Wrap** in the real third-morning state. Accessible
+  route names retain the place, promised return, quantity, and full use. No
+  route recommendation or economy rule changed.
+
+### Local validation evidence
+
+- Both production route actions measured 47.04px in the scaled desktop review
+  viewport, both 223px use sentences fit with no clipping, and the page had no
+  horizontal or vertical overflow. The screen contained exactly one authored
+  Rive canvas and no prototype switcher.
+- Choosing **Lights Past the Open Gate** advanced through Rosie's purpose beat
+  into the correct route-aware Clover / Moonberry decision.
+- `npm run prototype:homegrown:test` passes 96/96. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `38ac239` deployed through GitHub Pages run `31323347906`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `51f65dad98f77984e4de774186e30e1eafea12c8470364d07b5c240371786386`
+  - player JavaScript: `cf267c09843d84441dc63ab9ac41415be2df3bd98a90bcc0a3dae35c37afefde`
+  - player CSS: `305ccd3df221d86eb2badf6222f83bb479c8c7645a55b5f3537a1f1923f63411`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=2&route=lanternleaf&repeat=1&v=38ac239`
+- The public route reproduced both exact material-use sentences, 47.04px
+  actions, full text fit, one authored canvas, zero overflow, and no prototype
+  controls.
+
+### Next highest-leverage weakness
+
+The route decision now explains both material stockpiles, but the next crop
+choice does not show the harvested Provision stockpile it is asking the player
+to grow. A returning player sees duration, guaranteed yield, and Adventure use
+for Clover Lunch and Moonberries, but not how many of either the Farm already
+holds. The next cycle should test one quiet, route-aware stock cue inside the
+existing crop decision—without turning farming into an inventory grid or
+prescribing which crop to choose.
 
 ### v0.129 — The Map Knows the Farm — 2026-08-09
 

@@ -336,6 +336,19 @@ made the map read like a supply order. No route is recommended, and no reward,
 cost, save field, item, Rive source, Rive input, or parallel inventory screen
 changed.
 
+**Material-use checkpoint (August 9, 2026):** Rosie's map now explains what
+each established route material is for at the moment the player chooses a
+place. The former environmental-promise line and separate stock badge have
+been replaced—not stacked—with one compact sentence: **Compost · _n_ held ·
+Boosts crops** or **Willow Fiber · _n_ held · Prepares Cloth Wrap**. Place name
+and time-of-day identity remain first, and the complete reward / quantity / use
+fact remains in each route's accessible name. A rendered three-treatment study
+compared this replacement sentence, a shared two-material key, and right-side
+use tickets. The sentence won because it removes a reading layer; the key
+became a reference panel and the tickets made the map read like a supply order.
+No route recommendation, material rule, Bag cost, reward, save field, Rive
+source, Rive input, destination, or parallel inventory screen changed.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

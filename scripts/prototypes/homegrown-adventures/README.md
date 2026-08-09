@@ -1,5 +1,18 @@
 # Homegrown Adventures prototype
 
+The v0.130 material-use pass lets Rosie's map answer both halves of a useful
+route decision without becoming an inventory screen. Each place still leads
+with its name and time-of-day identity, followed by one replacement sentence:
+**Compost · _n_ held · Boosts crops** or **Willow Fiber · _n_ held · Prepares
+Cloth Wrap**. The same reducer-owned stock counts and established uses remain;
+the earlier environmental-promise line and separate stock badge have been
+distilled into one layer. A rendered three-treatment study at prototype commit
+`8fce2f7` on `codex/homegrown-v130-material-use-prototypes` compared that
+replacement sentence, a shared use key, and use-led material tickets. The
+replacement won because it reduced hierarchy while the key became a reference
+panel and the tickets made supplies outrank the place. No route recommendation,
+reward, cost, save fact, item, Rive input, or parallel system changed.
+
 The v0.129 map-stock pass lets Rosie's familiar-route choice use the Farm's
 real accumulated state. Each existing place keeps its name and environmental
 promise first, then attaches one quiet fact: **Farm holds _n_ Compost** or
