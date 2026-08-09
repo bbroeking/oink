@@ -43,9 +43,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Reward Ledger", question: "Does the current reward ledger explain Homecoming?" },
+	B: { name: "Discovery First", question: "Can one clear Discovery lead into separate Farm supplies?" },
+	C: { name: "Unpacking Story", question: "Should each packed cause receive its own physical return label?" },
 };
 
 const STAGE_COPY = {
@@ -1107,7 +1107,7 @@ function JourneyWatchPanel({ state, journeyPhase, now, actionLabel, onAction, en
 	);
 }
 
-function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false }) {
+function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false, variant = "A" }) {
 	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
 	const opportunity = adventureOpportunity(state);
 	const lanternleafDiscovery = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
@@ -1130,7 +1130,7 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 			{toolBonus?.itemId === "willow-fiber" && (
 				<span className="return-tool-bonus return-tool-bonus-fiber" aria-hidden="true" />
 			)}
-			<div className={`return-discovery-plaque ${nearDiscovery ? "is-near-discovery" : ""}`}>
+			{(nearDiscovery || variant === "A") && <div className={`return-discovery-plaque ${nearDiscovery ? "is-near-discovery" : ""}`}>
 				<span className="return-card-eyebrow">{nearDiscovery ? "Field Guide updated" : lanternleafDiscovery ? "New route" : "New Discovery"}</span>
 				<strong>{nearDiscovery ? opportunity.clueName : lanternleafDiscovery ? opportunity.discoveryName : `Glowroot Seed  +${glowrootAmount}`}</strong>
 				<small>{nearDiscovery
@@ -1142,8 +1142,30 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 					<span>Try next time</span>
 					<b>{guide.next}</b>
 				</div>}
-			</div>
-			<div className={`return-stock-ledger ${nearDiscovery ? "return-stock-ledger-near" : ""}`} aria-label={nearDiscovery ? "Supplies brought Home" : "Farm stock returned"}>
+			</div>}
+			{!nearDiscovery && variant === "B" && <div className="return-discovery-first" aria-label="Discovery and Farm supplies">
+				<div className="return-discovery-first-hero">
+					<span>Rosie discovered</span>
+					<strong>{lanternleafDiscovery ? opportunity.discoveryName : "Glowroot"}</strong>
+					<small>{lanternleafDiscovery ? "A repeatable path beyond the old gate" : "A new living Crop for Home"}</small>
+				</div>
+				<div className="return-discovery-first-supplies">
+					<b>Added to Farm stock</b>
+					<span><strong>Glowroot Seeds +{glowrootAmount}</strong><small>{toolBonus?.itemId === "glowroot-seed" ? "Discovery +1 · Trowel +1" : "From the Discovery"}</small></span>
+					<span><strong>{practicalReward.name} +{practicalReward.amount}</strong><small>Carried Home</small></span>
+					<span><strong>Willow Fiber +{willowFiberAmount}</strong><small>For future packing</small></span>
+				</div>
+			</div>}
+			{!nearDiscovery && variant === "C" && <div className="return-unpacking-story" aria-label="How Rosie's choices shaped the return">
+				<div className="return-unpacking-title"><span>New to Home</span><strong>{lanternleafDiscovery ? opportunity.discoveryName : "Glowroot"}</strong></div>
+				<div className="return-unpacking-causes">
+					<span><small>Carrier</small><strong>{practicalReward.name} +{practicalReward.amount}</strong></span>
+					<span><small>Discovery</small><strong>Seed +1</strong></span>
+					<span><small>{toolBonus?.itemId === "glowroot-seed" ? "Hand Trowel" : "Tool"}</small><strong>{toolBonus ? `${toolBonus.name} +${toolBonus.amount}` : "No bonus"}</strong></span>
+					<span><small>Trail supplies</small><strong>Willow Fiber +{willowFiberAmount}</strong></span>
+				</div>
+			</div>}
+			{(nearDiscovery || variant === "A") && <div className={`return-stock-ledger ${nearDiscovery ? "return-stock-ledger-near" : ""}`} aria-label={nearDiscovery ? "Supplies brought Home" : "Farm stock returned"}>
 				<strong className="return-stock-title">{nearDiscovery ? "Supplies brought Home" : "Added to Farm stock"}</strong>
 				<div>
 					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
@@ -1162,7 +1184,7 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 						)}
 					</span>
 				</div>
-			</div>
+			</div>}
 			<button type="button" className="return-reward-action" disabled={handoffActive} onClick={onAction}>{nearDiscovery ? guide.action : actionLabel}</button>
 		</section>
 	);
@@ -2110,6 +2132,7 @@ function App() {
 			/>}
 			{showingReturnReward && <ReturnRewardPanel
 				state={state}
+				variant={variant}
 				actionLabel={visiblePresentation.label}
 				handoffActive={Boolean(seedHandoff)}
 				onAction={acknowledgeReturn}
