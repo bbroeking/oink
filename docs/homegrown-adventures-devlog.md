@@ -445,11 +445,81 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     status card with one compact sign attached to the selected bed, keep the
     growing Rive crop and full Farm visible, and move review fast-forward into
     the external rail without losing the selected crop.
+136. **v0.135 — The Rhythm Lives in the Beds (shipped):** place each crop's
+    personal harvest beats directly on the Farm, keep one active tap fallback,
+    and consolidate guaranteed yield, clean bonus, and normal gather into one
+    calm promise row.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.135 — The Rhythm Lives in the Beds — 2026-08-09
+
+- Played the public v0.134 crop-first wait into Position 5 and compared it with
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/05-harvest-rhythm.png`.
+  The crop-specific rules and Rive Harvest remained correct, but one three-beat
+  gesture was split across a large instruction slab, a separate guaranteed-
+  yield strip, **Gather normally**, an active bed arrow, and repeated HUD copy.
+- Built and drove three real compositions: direction medallions placed on the
+  beds, one soil-colored rhythm furrow, and a Rosie-led speech cue. The furrow
+  read as another toolbar and covered the crop row; the speech cue covered
+  Rosie and repeated the HUD. Bed Sequence won because the ripe bed remains the
+  interaction, only the current beat glows, and one row owns guarantee, +1
+  clean bonus, and fallback. The full comparison and losing treatments remain
+  at prototype commit `078d201` on
+  `codex/homegrown-v135-rhythm-bed-prototypes` and were not merged.
+- Production commit `ab0b608` contains only the bed sequence. Clover uses one
+  medallion per bed. Moonberries use a four-beat diamond whose first Down and
+  final Up align with rooted Bed 2. React remains authoritative for beat order,
+  correctness, performance timing, exact yield, settlement, and persistence;
+  the existing 560ms authored Rive Harvest response remains the only crop
+  animation. No score, combo meter, miss punishment, countdown, currency, or
+  Rive input was added.
+
+### Local validation evidence
+
+- The player-facing render has one authored Rive canvas, zero horizontal
+  overflow, no `harvest-prototype` or `harvest-layout-*` class, and no losing
+  composition. The active beat renders approximately 45 × 45px and **Gather
+  normally** approximately 87 × 45px at the 720px browser height.
+- The complete Moonberry route renders **↓ ← → ↑**, centers Down within roughly
+  4px of selected Bed 2's gesture zone, accepts the four active fallback taps
+  in order, and reaches **Moonberries +6**: four base, one Compost, and one
+  clean-rhythm bonus. Root persistence and Farm stock remain exact.
+- Reduced motion preserves the gold current beat, muted future beats, current
+  direction, guaranteed quantity, +1 clean bonus, and normal-gather fallback.
+- `npm run prototype:homegrown:test` passes 97/97. The production build,
+  `npm run verify:rive-homegrown`, `npm run quality:loop`, and final
+  `npm run quality:check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `ab0b608` deployed successfully through GitHub Pages run
+  `31328184941`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `a7193b835b26c260e84b71d5ed988eda3346760d9550c89715554176c72c3a00`
+  - player JavaScript: `33af8188aac98d191126edd9e1051d460eaddd36d9dd1a82dceefa448ace4815`
+  - player CSS: `0a8ae75cfe81dcbb991b235573fdafd1ea6cfaaff7bd88b3aba4f98056e95e8d`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=5&route=lanternleaf&repeat=1&v=ab0b608`
+- The public route reproduced the bed medallions, one active fallback, combined
+  reward promise, 45px+ controls, one canvas, zero overflow, and no experiment
+  classes. Completing Clover reached exact Position 6 Farm stock.
+
+### Next highest-leverage weakness
+
+The harvest result remains legible, but continuing into Position 7 abruptly
+returns to a dense form: a title card, three-row pocket summary, large satchel,
+three tiny choice cards, step button, safety note, departure button, HUD, and
+review rail cover most of Rosie and the Farm at once. The next cycle should
+compare the real screen with approved
+`assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/07-free-bag-selection.png`
+and make one physical Bag pocket the unmistakable current choice while keeping
+all alternatives, **Leave empty**, exact stock, safety, and free authorship.
 
 ### v0.134 — The Crop Owns the Wait — 2026-08-09
 

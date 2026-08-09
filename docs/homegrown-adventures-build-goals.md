@@ -104,11 +104,13 @@ predictable duration, Compost state, and safe no-spoil wait, while the staged
 authored Rive crop remains primary. Prototype fast-forward lives only in the
 external review rail and settles the crop actually planted, preserving
 Moonberry identity, Compost, and stock into its personal Harvest Rhythm;
-Position 5 now keeps **Harvest for Rosie's journey** in the HUD, makes the
-flowered bed the unmistakable swipe surface, folds the accessible tap fallback
-into the one active rhythm arrow, and names the exact guaranteed Lunch count
-beside **Gather normally** instead of presenting three competing harvest
-actions;
+Position 5 now keeps **Harvest for Rosie's journey** in the HUD and lets the
+Farm itself carry the rhythm: Clover's Left → Right → Up medallions occupy the
+three beds, while Moonberries begin and end their Down → Left → Right → Up
+diamond on rooted Bed 2. Only the current beat glows and acts as the accessible
+tap fallback; completed beats turn green; and one compact row joins guaranteed
+yield, the +1 clean bonus, and **Gather normally**. React preserves exact beat
+order, stock, persistence, and the existing authored Harvest response;
 Position 7 now enters with an explicitly empty Bag, preserves the physical open
 satchel, and asks one preparation question at a time while keeping Provision,
 Tool, and Pack summaries visible. Every owned alternative and **Leave empty**

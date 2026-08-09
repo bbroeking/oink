@@ -1,5 +1,18 @@
 # Homegrown Adventures prototype
 
+The v0.135 bed-first rhythm pass removes Position 5's large instruction slab
+and separate yield strip. Clover's Left → Right → Up beats now sit directly on
+the three beds; rooted Moonberries use a four-beat diamond that begins and ends
+on selected Bed 2. The current beat is the only gold tap fallback, completed
+beats turn green, and one compact row combines guaranteed yield, the +1 clean
+bonus, and **Gather normally**. A rendered three-composition study at prototype
+commit `078d201` on `codex/homegrown-v135-rhythm-bed-prototypes` compared this
+Bed Sequence with a soil-colored toolbar and a Rosie speech cue. Bed Sequence
+won because the toolbar covered the crops and the speech cue covered Rosie.
+Production contains no prototype variant class or losing treatment; React still
+owns beat order, timing, exact stock settlement, persistence, and the existing
+560ms authored Rive Harvest response.
+
 The v0.134 growth-focus pass makes the growing crop—not a status card—the
 subject of Position 4. One compact staked sign now belongs to the selected bed,
 names the crop, predictable duration, Compost state, and no-spoil promise, and
