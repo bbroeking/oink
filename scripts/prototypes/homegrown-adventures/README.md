@@ -1,5 +1,20 @@
 # Homegrown Adventures prototype
 
+The v0.138 Bag-to-shoulder pass completes the physical preparation sentence.
+After the player packs any freely chosen loadout—including an entirely empty
+Bag—the real open-Bag artwork separates into a body and accurately cropped lid,
+closes, travels toward Rosie, and yields to the fitted authored Rive satchel.
+Rive's Pack one-shot begins only at attachment, its earlier per-pocket receive
+prop is suppressed during the handoff, and the reducer commits the same
+Provision spend and Position 8 loadout only after the bounded motion ends.
+Rapid input schedules one result; reduced motion skips travel and reaches the
+same state in 260 ms. A rendered three-treatment study at prototype commit
+`9cdc4e9` on `codex/homegrown-v138-bag-handoff-prototypes` compared Shoulder
+Handoff, Rosie Collects It, and Storybook Fold. Shoulder Handoff won because it
+alone preserved the identity of the approved single Bag without prolonging a
+two-Bag overlap or covering the cause with a page transition. Production keeps
+no experiment switcher, alternate transition, or Rive-owned inventory fact.
+
 The v0.137 pocket-landing pass makes every freely chosen Provision, Tool, or
 Carrier travel from its real choice into the matching pocket of the one open
 Bag. The destination token stays hidden until impact, the Bag gives one small

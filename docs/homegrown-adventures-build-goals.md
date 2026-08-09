@@ -18,7 +18,11 @@ the result into a world-anchored four-compartment Farm Stock shelf and full
 Clover basket while React preserves exact quantities and causes; Position 7
 now centers preparation on Rosie and a physical open Bag, with one horizontal
 pocket rail and only the active pocket's question and choices visible at a
-time;
+time; every chosen item now lands in its matching physical pocket, then the
+same open Bag closes from accurately cropped approved artwork, arcs toward
+Rosie, and becomes her fitted Rive satchel before Position 8 commits. The Pack
+one-shot fires once at attachment, rapid input cannot spend twice, and reduced
+motion reaches the identical loadout without travel;
 Position 8 now holds the native Rive satchel on Rosie through packing, reload,
 reduced motion, departure, and the causal Adventure handoff; Position 9 now
 places that handoff in one tangible twilight clearing, with separate complete
@@ -1395,6 +1399,23 @@ alternative loadout still earns the named Discovery. React remains authoritative
 for stock, costs, choices, persistence, migration, and outcomes, while the
 existing Rive Bag response visualizes the selected item and honors reduced
 motion. No route, item, reward, timer, currency, or Rive contract changed.
+
+**Bag-to-shoulder checkpoint (August 9, 2026):** the approved Position 7 Bag
+composition and Position 8 departure composition were compared directly after
+public v0.137. The individual items reached their pockets, but **Pack Rosie's
+Bag** still cut from an open physical Bag to an already-equipped Rive satchel.
+Three rendered handoffs were tested on throwaway branch
+`codex/homegrown-v138-bag-handoff-prototypes` at `9cdc4e9`: a direct Shoulder
+Handoff, a longer Rosie-led pickup, and a storybook page fold. The direct
+handoff won because the same object visibly closes and travels toward Rosie;
+the pickup prolonged a two-Bag overlap, while the page fold hid the cause.
+Production uses the existing `open-adventure-bag.webp` twice with complementary
+clip paths so its real lid closes instead of drawing replacement artwork. At
+the shoulder threshold, React exposes the already-authored Rive Pack response
+and fitted satchel, suppresses the stale per-pocket receive prop, then commits
+the original `PACK_ADVENTURE` action once. Provision, Tool, Carrier, stock,
+costs, safe empty-Bag Near-Discovery, persistence, route, and reward rules are
+unchanged. Reduced motion skips the travel and reaches the same reducer state.
 
 **Rive handoff record:** The browser build detects
 `assets/rive/homegrown-adventures/homegrown-adventures.riv` automatically and

@@ -457,11 +457,91 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     Provision, Tool, and Carrier from its real choice into the matching pocket
     of the one open Bag, with one restrained Rive Rosie response and no second
     receive satchel covering her.
+139. **v0.138 — One Bag, Onto Rosie (shipped):** close the one physical packed
+    Bag, carry it toward Rosie's shoulder, and let the existing authored Rive
+    Pack response complete the attachment before the exact Position 8 loadout
+    appears.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.138 — One Bag, Onto Rosie — 2026-08-09
+
+- Played public v0.137 from all three physical pockets into departure and
+  compared the cut with both approved references:
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/07-free-bag-selection.png`
+  and
+  `assets/concepts/homegrown-adventures/end-to-end-flow/rosie-v3/08-departure.png`.
+  The item landings were clear, but the open Bag disappeared on confirmation
+  and Position 8 began with Rosie's fitted satchel already present. The player
+  never saw the three pocket choices become equipment.
+- Built and drove three real transition treatments: Shoulder Handoff, Rosie
+  Collects It, and Storybook Fold. Rosie Collects It left a large physical Bag
+  beside the attached satchel for too long. Storybook Fold made the transition
+  deliberate but hid the cause behind a page turn. Shoulder Handoff won because
+  it preserves one Bag from open packing object to shoulder-bound equipment.
+  The study and losing treatments remain at prototype commit `9cdc4e9` on
+  `codex/homegrown-v138-bag-handoff-prototypes` and were not merged.
+- Production commit `d9f4e16` keeps only Shoulder Handoff. It crops the actual
+  `open-adventure-bag.webp` into complementary body and lid regions, closes the
+  real illustrated lid, and carries the resulting Bag toward Rosie. At the
+  overlap threshold it performs the existing authored Rive Pack one-shot with
+  the fitted satchel already bound to reducer truth. The prior per-pocket Rive
+  receive prop is suppressed for this handoff, and the Pack trigger is
+  suppressed after the reducer action commits, so neither transient plays
+  twice.
+- React still owns all Bag choices, ownership, costs, the one-use Provision,
+  reusable Tool and Carrier, deterministic Adventure branch, persistence, and
+  Position 8 loadout. The gameplay action remains delayed until the 920 ms
+  presentation ends. Rapid double activation schedules one result; reduced
+  motion skips travel and reaches the same state after a short 260 ms handoff.
+
+### Local validation evidence
+
+- Desktop rendered play showed the cropped Bag close, travel, and crossfade at
+  the authored attachment threshold. Rive reported `status=ready`, performed
+  `pack` once, held `satchelEquipped=true`, cleared `bagReceiveSlot`, and
+  settled to breathing at Position 8 with Clover Lunch, Hand Trowel, and Wicker
+  Basket unchanged.
+- At 390×844, the full motion remained exactly 390×844 with no overflow. A
+  synchronous double click spent Clover Lunch only once (`5 → 4`) and produced
+  one Pack trace. The empty-Bag reduced-motion path used no CSS animation,
+  advanced once to Position 8, preserved five Clover Lunches, and retained its
+  useful Provision Near-Discovery.
+- `npm run prototype:homegrown:test` passes 99/99. The production build,
+  `npm run verify:rive-homegrown`, `npm run verify:rive-web`, the first complete
+  `npm run quality:loop` pass, final `npm run quality:check`, and
+  `git diff --check` pass. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `d9f4e16` deployed successfully through GitHub Pages run
+  `31332196657`.
+- Exact checked-in and publicly fetched checkpoint bytes match:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `05d154c432e1340841becbf8e5e317a60b78d33ea91cf6eeef254568cc01d52b`
+  - player JavaScript: `45c6e5c179f25792919e40c6cafd12a1401237386edb0b660fc27d0505f2b858`
+  - player CSS: `071460ae32ccb3ad128dc16cac06cffa187ab9741e60631e2f8e410c0a540a84`
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=7&route=lanternleaf&repeat=1&v=d9f4e16`
+- The public route performed the authored Pack once, settled with
+  `satchelEquipped=true`, retained the exact three-item Position 8 loadout,
+  spent one Provision once, emitted no browser errors, and fit the 1440×1100
+  rendered frame without overflow.
+
+### Next highest-leverage weakness
+
+The physical packing sentence now reaches Rosie cleanly. The next crowded
+moment is the settled Position 8 departure: the quiet HUD, a second three-cell
+loadout ribbon, the fitted satchel, and the large **Follow the glow** action all
+repeat the same preparation fact before the path becomes primary. The next
+cycle should replay Position 8 against `08-departure.png` and compare bounded
+ways to let Rosie plus the hedge path lead while keeping one concise, truthful
+loadout reminder and the existing authored departure timing. No Bag rule,
+Adventure cause, route, reward, or new navigation surface is needed.
 
 ### v0.137 — Each Item Finds Its Pocket — 2026-08-09
 
