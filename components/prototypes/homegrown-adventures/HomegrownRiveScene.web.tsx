@@ -849,7 +849,9 @@ function HomegrownRiveSceneImpl({
 			data-rive-asset={HOMEGROWN_RIVE_ASSET_AUTHORED ? "authored" : "official-probe"}
 			aria-hidden="true"
 		>
-			<RiveComponent aria-label="" />
+			<span className="homegrown-rive-canvas" aria-hidden="true">
+				<RiveComponent aria-label="" />
+			</span>
 			<span className="departure-dusk-handoff" aria-hidden="true" />
 			<span className="painted-kitchen-patch" aria-hidden="true" />
 			<span className="painted-moonberry-rootstock-base" aria-hidden="true" />

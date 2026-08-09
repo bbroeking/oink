@@ -30,6 +30,8 @@ Position 9 causal vignette is mounted.
 sky with no relationship to the trail. Close Witness restores ground contact
 but keeps enough scale that Rosie crowds the find. Trail Companion gives the
 prepared objects a clear foreground, places Rosie's feet at the root crossing,
-and reveals the dusk opening above her. The transform must target and clip the
-Rive canvas—not its wrapper—so offstage authored shapes cannot enter the
-clearing.
+and reveals the dusk opening above her. The final treatment places a dedicated
+550 px viewport around the existing Rive component, lets Rive size its own
+canvas, and covers the one offstage bed fragment with a route-matched patch
+below Rosie's feet. That preserves every authored pose without moving the
+scene's other DOM layers or leaking an unrelated Rive group into the clearing.
