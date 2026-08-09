@@ -454,14 +454,14 @@ function KnownRouteMap({ onChoose, farmStock }) {
 	const compost = farmStock?.compost ?? 0;
 	const willowFiber = farmStock?.["willow-fiber"] ?? 0;
 	return (
-		<section className="known-route-map has-route-stock" aria-label="Choose one of Rosie's known Adventure routes">
+		<section className="known-route-map has-route-use" aria-label="Choose one of Rosie's known Adventure routes">
 			<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>Where should Rosie explore today?</strong></div></header>
 			<div className="known-route-map-list">
-				<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)} aria-label={`A Glow Beneath the Hedge. Brings Compost Home. Farm holds ${compost} Compost.`}>
-					<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><b>Soft soil · brings Compost Home</b><span className="route-stock-inline"><span aria-hidden="true">♣</span> Farm holds {compost} Compost</span></span><em>Choose</em>
+				<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)} aria-label={`A Glow Beneath the Hedge. Brings Compost Home. ${compost} held. Compost boosts crops.`}>
+					<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><span className="route-use-sentence"><b>Compost · {compost} held</b><em>Boosts crops</em></span></span><em>Choose</em>
 				</button>
-				<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)} aria-label={`Lights Past the Open Gate. Gathers Willow Fiber. Farm holds ${willowFiber} Willow Fiber.`}>
-					<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><b>Reflected leaves · gathers Willow Fiber</b><span className="route-stock-inline"><span aria-hidden="true">≋</span> Farm holds {willowFiber} Willow Fiber</span></span><em>Choose</em>
+				<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)} aria-label={`Lights Past the Open Gate. Gathers Willow Fiber. ${willowFiber} held. Willow Fiber prepares the Cloth Wrap.`}>
+					<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><span className="route-use-sentence"><b>Willow Fiber · {willowFiber} held</b><em>Prepares Cloth Wrap</em></span></span><em>Choose</em>
 				</button>
 			</div>
 			<footer>Both routes are safe. Preparation changes what Rosie notices and carries Home.</footer>

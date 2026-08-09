@@ -2332,24 +2332,19 @@ html[data-reduce-motion="true"] .purpose-handoff { animation: none; }
 .known-route-map-row b { color: var(--ink-soft); font-size: 8px; line-height: 1; }
 .known-route-map-row > em { padding: 7px 4px; background: #f4dfac; border: 1px solid var(--ink); border-radius: 7px; font-size: 8px; font-style: normal; font-weight: 950; text-align: center; text-transform: uppercase; }
 .known-route-map > footer { color: var(--ink-soft); font-size: 8px; font-weight: 850; line-height: 1.15; text-align: center; }
-.has-route-stock .known-route-map-row { min-height: 54px; padding-block: 6px; }
-.route-stock-inline {
-	width: max-content;
-	max-width: 100%;
-	margin-top: 2px;
-	padding: 2px 5px;
-	display: inline-flex;
-	align-items: center;
-	gap: 3px;
-	color: var(--wood);
-	background: #f4dfac;
-	border-radius: 5px;
-	font-size: 7px;
-	font-weight: 950;
+.has-route-use .known-route-map-row { min-height: 56px; padding-block: 6px; }
+.route-use-sentence {
+	min-width: 0;
+	display: flex;
+	align-items: baseline;
+	gap: 5px;
+	color: var(--ink-soft);
+	font-size: 8px;
 	line-height: 1;
 }
-.route-stock-inline > span { font-family: Georgia,serif; font-size: 9px; }
-.route-lanternleaf .route-stock-inline { color: var(--twilight); background: #ded2ef; }
+.route-use-sentence b { color: inherit; font-size: inherit; white-space: nowrap; }
+.route-use-sentence em { overflow: hidden; color: var(--wood); font-size: 8px; font-style: normal; font-weight: 950; text-overflow: ellipsis; white-space: nowrap; }
+.route-lanternleaf .route-use-sentence em { color: var(--twilight); }
 .planting-panel {
 	left: 10px;
 	right: 10px;

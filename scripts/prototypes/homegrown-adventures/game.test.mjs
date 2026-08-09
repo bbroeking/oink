@@ -2156,15 +2156,18 @@ test("the rendered third morning uses one production Rosie map without experimen
 	assert.match(appSource, /Rosie's map · 2 known routes/);
 	assert.match(appSource, /A Glow Beneath the Hedge/);
 	assert.match(appSource, /Lights Past the Open Gate/);
-	assert.match(appSource, /Farm holds \{compost\} Compost/);
-	assert.match(appSource, /Farm holds \{willowFiber\} Willow Fiber/);
+	assert.match(appSource, /Compost · \{compost\} held/);
+	assert.match(appSource, /Boosts crops/);
+	assert.match(appSource, /Willow Fiber · \{willowFiber\} held/);
+	assert.match(appSource, /Prepares Cloth Wrap/);
 	assert.match(appSource, /ACTIONS\.CHOOSE_ADVENTURE_ROUTE/);
 	assert.match(appSource, /const choosingRoute =/);
 	assert.match(appSource, /choosingRoute && !holdingPurposeHandoff && <KnownRouteMap/);
 	assert.match(appSource, /farmStock=\{state\.farmStock\}/);
 	assert.match(stylesSource, /\.known-route-map \{/);
-	assert.match(stylesSource, /\.has-route-stock \.known-route-map-row \{ min-height: 54px;/);
-	assert.doesNotMatch(appSource, /KnownRouteChoicePrototype|knownRoutePrototypeChoice|World Trails|Repeat Yesterday|MAP_STOCK_VARIANTS|mapstock|stockcase/);
+	assert.match(stylesSource, /\.has-route-use \.known-route-map-row \{ min-height: 56px;/);
+	assert.match(stylesSource, /\.route-use-sentence \{/);
+	assert.doesNotMatch(appSource, /KnownRouteChoicePrototype|knownRoutePrototypeChoice|World Trails|Repeat Yesterday|MAP_STOCK_VARIANTS|mapstock|stockcase|MATERIAL_USE_VARIANTS|usehint|materialUseVariant/);
 	assert.doesNotMatch(stylesSource, /known-route-world-prototype/);
 });
 
