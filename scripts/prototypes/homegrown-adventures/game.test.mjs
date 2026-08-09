@@ -1697,9 +1697,16 @@ test("the first Hand Trowel cause performs one separable dig", () => {
 
 test("the first Adventure visibly settles a carried find into its chosen Carrier", () => {
 	assert.match(appSource, /function adventurePackPresentation\(state\)/);
-	assert.match(appSource, /Wicker Basket makes the Glowroot find safe/);
-	assert.match(appSource, /Cloth Wrap protects the Lanternleaf/);
-	assert.match(appSource, /Rosie maps the route for another visit/);
+	assert.match(appSource, /Glowroot is coming Home/);
+	assert.match(appSource, /Carried by the Wicker Basket/);
+	assert.match(appSource, /Lanternleaf is coming Home/);
+	assert.match(appSource, /Protected by the Cloth Wrap/);
+	assert.match(appSource, /The find stays here safely/);
+	assert.match(appSource, /Rosie remembers the way/);
+	assert.match(appSource, /The route is saved for later/);
+	assert.match(appSource, /Rosie maps the way Home/);
+	assert.doesNotMatch(appSource, /Wicker Basket makes the Glowroot find safe/);
+	assert.doesNotMatch(appSource, /carrierCopy|CARRIER_COPY_STUDY/);
 	assert.match(appSource, /adventureCauseBeat === "pack"[\s\S]+adventurePackPresentation\(state\)/);
 	assert.match(appSource, /className="adventure-find-handoff" aria-hidden="true"><i \/><i \/><\/div>/);
 	assert.match(stylesSource, /data-adventure-opportunity="glow-beneath-hedge"[^\n]+data-adventure-beat="pack"[^\n]+\.adventure-find-handoff/);

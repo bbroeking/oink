@@ -1009,35 +1009,36 @@ function adventurePackPresentation(state) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
 	const pack = state.bag?.pack ?? null;
-	const detail = story.journeyTags[2].detail;
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const clue = story.kind === "near-discovery";
 
 	if (pack === "wicker-basket") {
 		return {
 			objective: clue
-				? "Wicker Basket keeps the trail clue safe"
+				? "The trail clue is safe"
 				: lanternleaf
-					? "Wicker Basket gathers the trail supplies"
-					: "Wicker Basket makes the Glowroot find safe",
-			detail,
+					? "Trail supplies are coming Home"
+					: "Glowroot is coming Home",
+			detail: "Carried by the Wicker Basket",
 		};
 	}
 	if (pack === "cloth-wrap") {
 		return {
 			objective: clue
-				? "Cloth Wrap protects the trail clue"
+				? "The trail clue is safe"
 				: lanternleaf
-					? "Cloth Wrap protects the Lanternleaf"
-					: "Cloth Wrap protects the delicate find",
-			detail,
+					? "Lanternleaf is coming Home"
+					: "Glowroot is coming Home",
+			detail: "Protected by the Cloth Wrap",
 		};
 	}
 	return {
 		objective: lanternleaf
-			? "Rosie maps the route for another visit"
-			: "Rosie records where the find rests",
-		detail,
+			? "The route is saved for later"
+			: "The find stays here safely",
+		detail: lanternleaf
+			? "Rosie maps the way Home"
+			: "Rosie remembers the way",
 	};
 }
 
