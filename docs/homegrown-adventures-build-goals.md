@@ -188,6 +188,19 @@ clue-only branch, and reduced motion preserves the established final placement
 without travel. Reducer state, saves, causal timing, equipment, rewards, Rive
 source, and accessible text are unchanged.
 
+**Discovery-first Homecoming checkpoint (August 8, 2026):** The successful
+return now separates the two reward classes the loop depends on. **Glowroot**
+is presented once as the New Discovery—a living Crop that can change Home—while
+a distinct **Added to Farm stock** receipt lists Glowroot Seeds, Compost, and
+Willow Fiber with exact quantities and the existing Tool-bonus cause. A
+three-hierarchy study compared the duplicated reward ledger, this
+Discovery-first composition, and labels attached to every unpacked prop. The
+Discovery-first treatment won because it preserves Rosie and the physical
+table while making world expansion and repeatable materials understandable in
+one glance. The clue-only return keeps its existing Field Guide / supplies / retry
+lesson separation. Reducer facts, reward values, saves, Rive Return, Seed
+handoff, and planting costs are unchanged.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

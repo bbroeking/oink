@@ -395,11 +395,84 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 120. **v0.119 — The Carrier Receives the Find (shipped):** let the chosen
     Carrier answer the clearing with one readable find arc and restrained
     weight dip, so its job is visible before the HUD explains it.
+121. **v0.120 — Discovery First at Homecoming (shipped):** present Glowroot as
+    the one named world-expanding Discovery, then list Seeds, Compost, and
+    Willow Fiber separately as repeatable Farm supplies.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.120 — Discovery First at Homecoming — 2026-08-08
+
+- Replayed the complete idle wait, gate welcome, successful return, and
+  clue-only Near-Discovery after v0.119. The Near-Discovery already separated
+  **Field Guide updated** from **Supplies brought Home**. The complete return
+  did not: it called **Glowroot Seed +2** the New Discovery, then repeated
+  **Glowroot Seed +2** immediately in Farm stock. The player could not tell
+  whether they discovered a living thing or merely received two inventory
+  units.
+- Compared three runnable hierarchies on the real Position 10 return: the
+  shipped reward ledger, **Discovery First**, and a causal unpacking layout
+  with individual labels on every physical prop. Discovery First won because
+  it gives the world-changing fact one calm read without covering Rosie, then
+  keeps exact material quantities together in a separate receipt. The causal
+  layout was informative but recreated the busy label problem. The isolated
+  evidence and verdict remain at prototype commit `c5e2e8c` on
+  `codex/homegrown-v120-homecoming-hierarchy-prototypes`; no variant switcher
+  shipped.
+- Successful Homecoming now says **New Discovery · Glowroot · A new living
+  Crop for Home**. The separate **Added to Farm stock** receipt contains
+  **Glowroot Seed +2**, **Compost +1**, and **Willow Fiber +2**, including the
+  existing **Find +1 · Trowel +1** cause for the second Seed.
+- The action remains **Take Seed to Bed 3**, so the supply receipt directly
+  explains what the player can do next. The existing physical return table,
+  Rive Return, Seed handoff, and planting transition remain visible.
+- The Near-Discovery hierarchy is intentionally unchanged: Field Guide
+  knowledge, retry lesson, practical supplies, and the matching Carrier pocket
+  remain distinct. Reward amounts, reducer state, save data, equipment,
+  persistence, and authored animation are unchanged.
+
+### Local validation evidence
+
+- Played the complete Wicker Basket / Hand Trowel return from idle wait through
+  **Welcome Rosie home**, the new Discovery-first receipt, **Take Seed to Bed
+  3**, and the live Seed handoff. The resulting position retains the exact
+  **Glowroot Seed 2 → 1** planting cost.
+- Played the empty-Carrier route through its real Near-Discovery return. It
+  still reports **Glowroot Trail · Field Guide**, the exact Carrier lesson,
+  Compost +1, Willow Fiber +1, and no unearned Glowroot Seed.
+- Reload and reduced motion retain the same complete hierarchy without replay
+  dependence. `npm run prototype:homegrown:test` passes 86/86, including new
+  complete-versus-material separation coverage. `npm run
+  verify:rive-homegrown`, `npm run quality:loop`, and `npm run quality:check`
+  pass; the repository gate covers 157 layout files, 324 sprites, TypeScript,
+  78 layout assertions, and 202 security assertions. Watchman's existing
+  recrawl notice and manual mobile Safari checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `8c488c7` deployed successfully through GitHub Pages run
+  `31288442714`.
+- Exact checked-in checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `31eaf7ccf0d12d5d1f892e2202b08bdc253b2d443d331d7fd74fee8d3a397ffa`
+  - player JavaScript: `0d79bdeb5809c2150ce95a00efba6eac3761afae5bdc8e479f25498673a042b2`
+  - player CSS: `83fe6edefb5364520b5efa1349970909bf24f4a2eac9abd6281df0a380341ede`
+- Direct public fetches match all four hashes. The rendered public Position 10
+  names **Glowroot** once as the New Discovery, lists all three exact Farm
+  supplies in a separate receipt, keeps Rosie and the physical return table
+  readable, and exposes **Take Seed to Bed 3** as the only primary action.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=10&v=8c488c7`
+
+### Next highest-leverage weakness
+
+Continue the chronological replay through **Take Seed to Bed 3**, planting,
+and changed Home. Determine whether the named Glowroot Discovery becomes an
+obvious lasting Farm memory, rather than assuming that a clear return receipt
+proves the final consequence feels earned.
 
 ### v0.119 — The Carrier Receives the Find — 2026-08-08
 
