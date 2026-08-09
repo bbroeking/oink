@@ -1627,6 +1627,9 @@ function App() {
 	const glowrootHomeRevealTimer = useRef(null);
 	const seedHandoffTimers = useRef([]);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
+	const carrierMotion = new URLSearchParams(window.location.search).get("carrierMotion") ?? "A";
+	const carrierStudy = new URLSearchParams(window.location.search).get("carrierStudy") === "1";
+	const carrierFrame = new URLSearchParams(window.location.search).get("carrierFrame") ?? "live";
 	const position = state.prototypePosition ?? 1;
 	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop;
 	const plantingCrop = position === 3 && state.stage === STAGES.STARTING && Boolean(CROP_RULES[state.selectedCrop]);
@@ -1769,6 +1772,10 @@ function App() {
 			setAdventureCauseBeat("provision");
 			return undefined;
 		}
+		if (carrierStudy) {
+			setAdventureCauseBeat("pack");
+			return undefined;
+		}
 		if (state.reduceMotion) {
 			setAdventureCauseBeat("resolved");
 			return undefined;
@@ -1781,7 +1788,7 @@ function App() {
 			window.setTimeout(() => setAdventureCauseBeat("resolved"), ADVENTURE_CAUSE_BEAT_MS * 3),
 		];
 		return () => timers.forEach((timer) => window.clearTimeout(timer));
-	}, [showingAdventureVignette, state.reduceMotion]);
+	}, [carrierStudy, showingAdventureVignette, state.reduceMotion]);
 
 	useEffect(() => {
 		if (!showingAdventureVignette || adventureCauseBeat !== "resolved") return undefined;
@@ -1806,8 +1813,8 @@ function App() {
 			reviewMode ? HOMEGROWN_REVIEW_STORAGE_KEY : HOMEGROWN_STORAGE_KEY,
 			serializeState(state),
 		);
-		document.documentElement.dataset.reduceMotion = String(state.reduceMotion);
-	}, [reviewMode, state]);
+		document.documentElement.dataset.reduceMotion = String(carrierStudy ? false : state.reduceMotion);
+	}, [carrierStudy, reviewMode, state]);
 
 	useEffect(() => {
 		const url = new URL(window.location.href);
@@ -2010,6 +2017,8 @@ function App() {
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
 			data-adventure-pack={showingAdventureVignette ? state.bag?.pack ?? "none" : undefined}
 			data-adventure-beat={showingAdventureVignette ? adventureCauseBeat : undefined}
+			data-carrier-motion={carrierMotion}
+			data-carrier-frame={carrierFrame}
 			data-return-kind={showingReturnReward ? returnKind : undefined}
 			data-return-tool={showingReturnReward ? state.bag?.tool ?? "none" : undefined}
 			data-return-pack={showingReturnReward ? state.bag?.pack ?? "none" : undefined}

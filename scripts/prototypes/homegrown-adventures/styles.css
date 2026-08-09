@@ -413,6 +413,51 @@ html[data-reduce-motion="true"] .phone[data-adventure-opportunity="glow-beneath-
 	82% { opacity: .92; transform: translate(88px,-18px) scale(.7); }
 	100% { opacity: .72; transform: translate(98px,-13px) scale(.62); }
 }
+
+/* v0.119 throwaway study — A is the shipped baseline. */
+.phone[data-carrier-motion="B"][data-adventure-beat="pack"] .adventure-pack-prop {
+	animation: carrier-receive-dip 760ms cubic-bezier(.22,.72,.2,1) both;
+}
+.phone[data-carrier-motion="B"][data-adventure-opportunity="glow-beneath-hedge"]:not([data-adventure-pack="none"])[data-adventure-beat="pack"] .adventure-find-handoff {
+	animation: carrier-find-deliberate-arc 760ms cubic-bezier(.22,.72,.2,1) both;
+}
+@keyframes carrier-receive-dip {
+	0%, 42% { transform: translateY(0) scale(1) rotate(0); }
+	67% { transform: translateY(7px) scale(.97) rotate(-1.8deg); }
+	84% { transform: translateY(2px) scale(1.025) rotate(.7deg); }
+	100% { transform: translateY(0) scale(1) rotate(0); }
+}
+@keyframes carrier-find-deliberate-arc {
+	0% { opacity: 0; transform: translate(0,0) scale(.35); }
+	12% { opacity: 1; transform: translate(0,0) scale(1); }
+	40% { opacity: 1; transform: translate(38px,-34px) scale(.92); }
+	72% { opacity: .96; transform: translate(82px,-25px) scale(.76); }
+	100% { opacity: .72; transform: translate(102px,-10px) scale(.58); }
+}
+
+.phone[data-carrier-motion="C"][data-adventure-beat="pack"] .adventure-pack-prop {
+	animation: carrier-catches-find 760ms cubic-bezier(.2,.8,.2,1) both;
+}
+.phone[data-carrier-motion="C"][data-adventure-opportunity="glow-beneath-hedge"]:not([data-adventure-pack="none"])[data-adventure-beat="pack"] .adventure-find-handoff {
+	animation: carrier-find-short-catch 760ms cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes carrier-catches-find {
+	0%, 14% { transform: translate(0,0) scale(1) rotate(0); }
+	44% { transform: translate(-32px,4px) scale(1.02) rotate(-3deg); }
+	72% { transform: translate(-20px,5px) scale(.98) rotate(1deg); }
+	100% { transform: translate(0,0) scale(1) rotate(0); }
+}
+@keyframes carrier-find-short-catch {
+	0% { opacity: 0; transform: translate(0,0) scale(.35); }
+	14% { opacity: 1; transform: translate(0,0) scale(1); }
+	48% { opacity: 1; transform: translate(44px,-15px) scale(.82); }
+	72% { opacity: .86; transform: translate(68px,-12px) scale(.68); }
+	100% { opacity: .72; transform: translate(98px,-13px) scale(.62); }
+}
+.phone[data-carrier-frame="mid"][data-adventure-beat="pack"] :is(.adventure-pack-prop,.adventure-find-handoff) {
+	animation-delay: -380ms !important;
+	animation-play-state: paused !important;
+}
 html[data-reduce-motion="true"] .phone[data-adventure-beat="pack"] .adventure-find-handoff {
 	animation: none;
 	opacity: .72;
