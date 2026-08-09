@@ -381,11 +381,69 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
     route widget and let five route-colored lights plus one current phrase
     carry the same exact path state in the painted world, while preserving the
     ordered route for assistive technology.
+117. **v0.116 — The Ready Crop Leads (shipped):** let the crop announce its
+    exact harvest before Rosie's affectionate Tickle opens the established
+    personal rhythm, removing a misleading welcome-home beat from Farm growth.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.116 — The Ready Crop Leads — 2026-08-08
+
+- Began with the required fresh-player replay of all eleven positions after
+  v0.115. Purpose, planting, stock, Bag, causal Adventure, waiting, Homecoming,
+  and lasting Home memory formed one understandable chain. The first break was
+  earlier: **Preview it ready** produced **Rosie noticed something / Welcome
+  Rosie**, even though Rosie had never left Home and the player needed to
+  understand that a harvest was ready.
+- The settled crop now leads with **Clover Lunch is ready** or **Moonberries are
+  ready**. The supporting line says that Tickle begins that crop's Harvest
+  Rhythm, Rosie's in-world action is the familiar **Tickle Rosie**, and the
+  scene description names the same ready crop.
+- Tickle remains a real affection action: it increments the same earned count,
+  plays the existing authored Rosie response, and then exposes the unchanged
+  crop-specific rhythm, guaranteed yield, optional normal-gather fallback, and
+  small clean-rhythm bonus. Only the misleading handoff language changed.
+- A Moonberry branch assertion caught and fixed **Moonberries's** before ship;
+  the final plural copy uses **Moonberries’ harvest rhythm**. Crop duration,
+  Compost rules, readiness, no-spoil behavior, yield, Farm stock, save format,
+  Rive source, View Model, and authored motions are unchanged.
+
+### Local validation evidence
+
+- Played Position 4 into the real settled Clover-ready state at 1280×720. The
+  rendered HUD, scene description, and only in-world action all named the ready
+  Clover before interaction. Tickle increased affection from 1,120 to 1,121
+  and immediately exposed **Harvest for Rosie’s journey**, **Clover rhythm: ←
+  → ↑**, and the accessible **Tap Left instead** fallback with no horizontal
+  overflow or console warnings.
+- `npm run prototype:homegrown:test` passes 84/84, including both Clover and
+  Moonberry ready-copy branches. `npm run prototype:homegrown:build`, `npm run
+  quality:check`, and `npm run verify:rive-homegrown` pass. The quality gate
+  covers 157 layout files, 324 sprites, security contracts, TypeScript, 78
+  layout tests, and 202 security tests. Watchman's existing recrawl notice and
+  manual mobile Safari checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `4d70005` deployed successfully through GitHub Pages run
+  `31285295681`.
+- The deployed player bytes match the locally rendered checked-in artifacts
+  exactly:
+  - player HTML: `2a8b96e5d03663247a492da418a77c75dbf8cd2e1e648b34b8f30c369956b0c5`
+  - player JavaScript: `ecda8ed74a59e14aa604778b11f378ea8b47f403c7d3432e914a683d646f5fa6`
+  - player CSS: `305257d0316d43548363f27d51049db1f240b74968929234be90a158f81a0d30`
+- Exact public checkpoint:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=4&v=4d70005`
+
+### Next highest-leverage weakness
+
+Continue the chronological replay at departure after the production Rive scene
+is fully ready. Determine whether Rosie's packed satchel reads as worn
+equipment or as a flat UI tile over her body; distinguish the stable pose from
+the intentional Bag-receive transition before choosing a checkpoint.
 
 ### v0.115 — The Lights Carry the Route — 2026-08-08
 

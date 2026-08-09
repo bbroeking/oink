@@ -139,6 +139,17 @@ only their redundant visual circles are clipped. This is a presentation change
 only: React's route and timestamps, Bag choices, discoveries, rewards, save
 format, Rive source, View Model, and authored motions are unchanged.
 
+**Ready-crop checkpoint (August 8, 2026):** The complete fresh-player replay
+now keeps farming's payoff explicit before the affectionate Tickle handoff.
+When elapsed time makes a crop ready, the HUD and scene description name
+**Clover Lunch is ready** or **Moonberries are ready**, and Rosie's action says
+**Tickle Rosie** with the exact crop rhythm promised next. The previous
+**Rosie noticed something / Welcome Rosie** wording is gone because Rosie never
+left Home during crop growth. Tickle still grants affection and plays the same
+authored response, then reveals the guaranteed-yield Harvest Rhythm; crop
+timers, no-spoil behavior, yields, bonuses, stock, save facts, Rive source, and
+authored motions are unchanged.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in
