@@ -1005,6 +1005,13 @@ function adventureToolPresentation(state) {
 	};
 }
 
+const CARRIER_COPY_STUDY_VARIANTS = new Set(["A", "B", "C"]);
+
+function readCarrierCopyStudyVariant() {
+	const value = new URLSearchParams(window.location.search).get("carrierCopy")?.toUpperCase();
+	return CARRIER_COPY_STUDY_VARIANTS.has(value) ? value : "A";
+}
+
 function adventurePackPresentation(state) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
@@ -1012,6 +1019,61 @@ function adventurePackPresentation(state) {
 	const detail = story.journeyTags[2].detail;
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const clue = story.kind === "near-discovery";
+	const copyVariant = readCarrierCopyStudyVariant();
+
+	if (copyVariant === "B") {
+		if (pack === "wicker-basket") {
+			return {
+				objective: clue
+					? "Basket carries the trail clue Home"
+					: lanternleaf
+						? "Basket carries trail supplies Home"
+						: "Basket carries Glowroot Home",
+				detail,
+			};
+		}
+		if (pack === "cloth-wrap") {
+			return {
+				objective: clue
+					? "Wrap carries the trail clue Home"
+					: lanternleaf
+						? "Wrap carries Lanternleaf Home"
+						: "Wrap carries Glowroot Home",
+				detail,
+			};
+		}
+	}
+
+	if (copyVariant === "C") {
+		if (pack === "wicker-basket") {
+			return {
+				objective: clue
+					? "The trail clue is safe"
+					: lanternleaf
+						? "Trail supplies are coming Home"
+						: "Glowroot is coming Home",
+				detail: "Carried by the Wicker Basket",
+			};
+		}
+		if (pack === "cloth-wrap") {
+			return {
+				objective: clue
+					? "The trail clue is safe"
+					: lanternleaf
+						? "Lanternleaf is coming Home"
+						: "Glowroot is coming Home",
+				detail: "Protected by the Cloth Wrap",
+			};
+		}
+		return {
+			objective: lanternleaf
+				? "The route is saved for later"
+				: "The find stays here safely",
+			detail: lanternleaf
+				? "Rosie maps the way Home"
+				: "Rosie remembers the way",
+		};
+	}
 
 	if (pack === "wicker-basket") {
 		return {
@@ -1813,6 +1875,7 @@ function App() {
 	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
 	const repeatAdventure = initialSearch.get("repeat") === "1";
 	const reviewMode = loopMode || hasRequestedPosition;
+	const carrierCopyStudyVariant = readCarrierCopyStudyVariant();
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
 			const persistedReview = deserializeState(localStorage.getItem(HOMEGROWN_REVIEW_STORAGE_KEY), {
@@ -2319,6 +2382,7 @@ function App() {
 			data-adventure-tool={showingAdventureVignette ? state.bag?.tool ?? "none" : undefined}
 			data-adventure-pack={showingAdventureVignette ? state.bag?.pack ?? "none" : undefined}
 			data-adventure-beat={showingAdventureVignette ? adventureCauseBeat : undefined}
+			data-carrier-copy-study={showingAdventureVignette ? carrierCopyStudyVariant : undefined}
 			data-return-kind={showingReturnReward ? returnKind : undefined}
 			data-return-tool={showingReturnReward ? state.bag?.tool ?? "none" : undefined}
 			data-return-pack={showingReturnReward ? state.bag?.pack ?? "none" : undefined}
