@@ -104,6 +104,11 @@ export function adventureOpportunity(state) {
 }
 
 export const BAG_SLOT_ORDER = Object.freeze(["provision", "tool", "pack"]);
+const BAG_SLOT_PUBLIC_NAMES = Object.freeze({
+	provision: "Provision",
+	tool: "Tool",
+	pack: "Carrier",
+});
 
 export const BAG_ITEMS = Object.freeze({
 	provision: Object.freeze([
@@ -449,8 +454,8 @@ export function adventureStory(state) {
 		result: missingSlot
 			? "The missing capability changes what Rosie can bring Home."
 			: followingLanternleaf
-				? "Glowroot opened this route; her Tool and Pack shaped the supplies."
-				: "Her Tool changes the bonus; her Pack changes the practical supply.",
+				? "Glowroot opened this route; her Tool and Carrier shaped the supplies."
+				: "Her Tool changes the bonus; her Carrier changes the practical supply.",
 		journeyObjective: followingLanternleaf
 			? "The reflected leaves answer Rosie"
 			: "A warm glow answers Rosie",
@@ -464,7 +469,7 @@ export function adventureStory(state) {
 			const selected = bagItem(slot, bag[slot]);
 			return {
 				slot,
-				name: selected?.name ?? `No ${slot[0].toUpperCase()}${slot.slice(1)}`,
+				name: selected?.name ?? `No ${BAG_SLOT_PUBLIC_NAMES[slot]}`,
 				icon: selected?.icon ?? "·",
 				detail: missingSlot
 					? nearJourneyDetails[missingSlot][slot]
@@ -475,7 +480,7 @@ export function adventureStory(state) {
 			const selected = bagItem(slot, bag[slot]);
 			return {
 				slot,
-				name: selected?.name ?? `No ${slot[0].toUpperCase()}${slot.slice(1)}`,
+				name: selected?.name ?? `No ${BAG_SLOT_PUBLIC_NAMES[slot]}`,
 				icon: selected?.icon ?? "·",
 				detail: missingSlot
 					? nearDiscoveryDetails[missingSlot][slot]
@@ -501,8 +506,8 @@ export function nearDiscoveryGuide(state) {
 			},
 			pack: {
 				story: "Rosie mapped the Lanternleaf Path and left its supplies safe.",
-				next: "A Pack lets Rosie bring the trail supplies Home.",
-				action: "Open the Pack pocket",
+				next: "A Carrier lets Rosie bring the trail supplies Home.",
+				action: "Open the Carrier pocket",
 			},
 		}
 		: {
@@ -518,8 +523,8 @@ export function nearDiscoveryGuide(state) {
 			},
 			pack: {
 				story: "Rosie brought Home the Glowroot's delicate glowing leaf-print.",
-				next: "A Pack lets Rosie protect the Seed on the way Home.",
-				action: "Open the Pack pocket",
+				next: "A Carrier lets Rosie protect the Seed on the way Home.",
+				action: "Open the Carrier pocket",
 			},
 		};
 	return routeCopy[state.nearDiscoveryReason] ?? {
@@ -1161,7 +1166,7 @@ export function homegrownReducer(state, action) {
 				state,
 				{ prototypePosition: 7 },
 				"open-bag-selection",
-				"Choose one Provision, Tool, and Pack",
+				"Choose one Provision, Tool, and Carrier",
 				now,
 			);
 
@@ -1239,7 +1244,7 @@ export function homegrownReducer(state, action) {
 					prototypePosition: 8,
 				},
 				"pack",
-				`${BAG_SLOT_ORDER.map((slot) => bagItem(slot, state.bag?.[slot])?.name ?? `Empty ${slot}`).join(" + ")}${provisionId ? " · spent 1 Provision" : ""}${packingCost ? ` · spent ${packingCost.amount} ${packingCost.name}` : ""}`,
+				`${BAG_SLOT_ORDER.map((slot) => bagItem(slot, state.bag?.[slot])?.name ?? `Empty ${BAG_SLOT_PUBLIC_NAMES[slot]}`).join(" + ")}${provisionId ? " · spent 1 Provision" : ""}${packingCost ? ` · spent ${packingCost.amount} ${packingCost.name}` : ""}`,
 				now,
 			);
 			}
@@ -1362,7 +1367,7 @@ export function homegrownReducer(state, action) {
 					fieldGuide: [...new Set([...state.fieldGuide, ...opportunity.fieldGuideEntries])],
 				},
 				"return",
-				`${opportunity.discoveryName} — ${returnReward ? `${returnReward.name} +${returnReward.amount}` : "no Pack supply"} — ${toolBonus ? `${toolBonus.name} +${toolBonus.amount} Tool bonus` : "no Tool bonus"}`,
+				`${opportunity.discoveryName} — ${returnReward ? `${returnReward.name} +${returnReward.amount}` : "no Carrier supply"} — ${toolBonus ? `${toolBonus.name} +${toolBonus.amount} Tool bonus` : "no Tool bonus"}`,
 				now,
 			);
 
@@ -1383,7 +1388,7 @@ export function homegrownReducer(state, action) {
 						cycleComplete: true,
 					},
 					"store-return",
-					`Known Glowroot Seeds stay in Farm stock · ${storedPackReward ? `${storedPackReward.name} +${storedPackReward.amount}` : "no Pack supply"} · ${storedToolBonus ? `${storedToolBonus.name} +${storedToolBonus.amount} Tool bonus` : "no Tool bonus"}`,
+					`Known Glowroot Seeds stay in Farm stock · ${storedPackReward ? `${storedPackReward.name} +${storedPackReward.amount}` : "no Carrier supply"} · ${storedToolBonus ? `${storedToolBonus.name} +${storedToolBonus.amount} Tool bonus` : "no Tool bonus"}`,
 					now,
 				);
 			}

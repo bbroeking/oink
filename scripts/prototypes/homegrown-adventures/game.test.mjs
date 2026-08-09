@@ -702,7 +702,7 @@ test("an incomplete Bag finds the Lanternleaf clue without granting the route", 
 	assert.equal(state.farmStock.compost, stockBeforeReturn.compost + 1);
 	assert.equal(state.farmStock["willow-fiber"], stockBeforeReturn["willow-fiber"] + 1);
 	assert.equal(playerPresentation(state).objective, "Lanternleaf Trail · Field Guide");
-	assert.equal(playerPresentation(state).label, "Open the Pack pocket");
+	assert.equal(playerPresentation(state).label, "Open the Carrier pocket");
 });
 
 test("a known Glowroot return stays in Farm stock and completes the second day", () => {
@@ -985,7 +985,8 @@ test("the Bag interface starts empty and presents every choice directly", () => 
 	assert.match(appSource, /The Bag begins empty\. Every slot is optional\./);
 	assert.match(appSource, /What should help Rosie keep going\?/);
 	assert.match(appSource, /What should Rosie try\?/);
-	assert.match(appSource, /What can Rosie carry Home\?/);
+	assert.match(appSource, /What should hold Rosie's find\?/);
+	assert.match(appSource, /Rosie remembers it, but cannot carry it Home/);
 	assert.match(appSource, /Set out with an empty Bag/);
 	assert.match(appSource, /An empty Bag still returns a useful clue\. Rosie is always safe\./);
 	assert.match(appSource, /Rosie's Bag is ready to pack/);
@@ -1170,7 +1171,7 @@ test("Hand Trowel returns an extra Glowroot Seed while Lantern returns extra Wil
 	assert.match(adventureStory(lantern.returned).tags[1].detail, /extra Willow Fiber/);
 });
 
-test("packing consumes one Provision exactly once while Tool and Pack remain reusable", () => {
+test("packing consumes one Provision exactly once while Tool and Carrier remain reusable", () => {
 	let state = createPrototypeState(7, { now: at });
 	assert.equal(state.farmStock["clover-lunch"], 5);
 	const compostBefore = state.farmStock.compost;
@@ -1215,6 +1216,7 @@ test("direct review states show Farm stock before and after packing", () => {
 });
 
 test("every empty Bag slot creates a specific deterministic Near-Discovery", () => {
+	const pocketNames = { provision: "Provision", tool: "Tool", pack: "Carrier" };
 	for (const missingSlot of ["provision", "tool", "pack"]) {
 		let state = chooseAdventureBag(createPrototypeState(7, { now: at }), {
 			[missingSlot]: null,
@@ -1230,7 +1232,7 @@ test("every empty Bag slot creates a specific deterministic Near-Discovery", () 
 		assert.equal(state.stage, STAGES.NEAR_DISCOVERY);
 		assert.match(state.trace.at(-1).detail, /Rosie|seed|root|leaf-print/);
 		assert.match(playerPresentation(state).objective, /Field Guide/);
-		assert.match(playerPresentation(state).label, new RegExp(`Open the ${missingSlot[0].toUpperCase()}${missingSlot.slice(1)} pocket`));
+		assert.match(playerPresentation(state).label, new RegExp(`Open the ${pocketNames[missingSlot]} pocket`));
 	}
 });
 
@@ -1240,7 +1242,7 @@ test("every Near-Discovery records a route-specific lesson and opens the missing
 	const expected = {
 		provision: ["seed to open at dusk", "Provision pocket", "silver route appears"],
 		tool: ["sleeping root", "Tool pocket", "complete reflected path"],
-		pack: ["protect the Seed", "Pack pocket", "trail supplies Home"],
+		pack: ["protect the Seed", "Carrier pocket", "trail supplies Home"],
 	};
 
 	for (const missingSlot of ["provision", "tool", "pack"]) {
@@ -1530,10 +1532,10 @@ test("an incomplete Bag stays causal throughout the idle journey", () => {
 	assert.match(appSource, /data-missing-capability=\{missingSlot \?\? undefined\}/);
 	assert.match(appSource, /Without a Provision, she marks the warm glow/);
 	assert.match(appSource, /Without a Tool, she leaves the roots undisturbed/);
-	assert.match(appSource, /Without a Pack, she traces its glowing leaf-print/);
+	assert.match(appSource, /Without a Carrier, she traces its glowing leaf-print/);
 	assert.match(appSource, /Without a Provision, she saves the night route/);
 	assert.match(appSource, /Without a Tool, she follows their direction/);
-	assert.match(appSource, /Without a Pack, she records the reflected path/);
+	assert.match(appSource, /Without a Carrier, she records the reflected path/);
 	assert.match(appSource, /provision: "Marked the glow", tool: "Root clue", pack: "Leaf-print"/);
 	assert.match(appSource, /provision: "Marked reflections", tool: "Path clue", pack: "Trail map"/);
 	assert.match(appSource, /A useful clue is coming Home/);
@@ -1683,7 +1685,7 @@ test("an empty Bag slot changes the deterministic vignette instead of removing i
 
 	const story = adventureStory(state);
 	assert.equal(story.kind, "near-discovery");
-	assert.equal(story.tags[2].name, "No Pack");
+	assert.equal(story.tags[2].name, "No Carrier");
 	assert.match(story.tags[2].detail, /leaf-print/);
 });
 

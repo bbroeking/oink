@@ -107,7 +107,7 @@ function stageCopy(state) {
 			},
 			pack: {
 				title: "Rosie mapped a new path",
-				body: "A Pack could bring the trail's useful supplies Home next time.",
+				body: "A Carrier could bring the trail's useful supplies Home next time.",
 			},
 		} : {
 			provision: {
@@ -120,7 +120,7 @@ function stageCopy(state) {
 			},
 			pack: {
 				title: "Rosie brought Home a glowing leaf-print",
-				body: "A Pack could carry the delicate Glowroot Seed safely next time.",
+				body: "A Carrier could bring the delicate Glowroot Seed safely Home next time.",
 			},
 		})[state.nearDiscoveryReason];
 		if (copy) return { eyebrow: "Near-Discovery · never failure", ...copy };
@@ -212,7 +212,7 @@ function stageCopy(state) {
 		return {
 			eyebrow: "Rosie’s Bag",
 			title: `${opportunity.name} is packed`,
-			body: `${provisionName} · a chosen Tool · a chosen Pack. Each capability changes what Rosie can notice and carry Home.`,
+			body: `${provisionName} · a chosen Tool · a chosen Carrier. Each capability changes what Rosie can notice and carry Home.`,
 		};
 	}
 	return STAGE_COPY[state.stage];
@@ -308,7 +308,7 @@ function WorldAction({ presentation, onAction, waiting = false }) {
 const BAG_SLOT_LABELS = {
 	provision: "Provision",
 	tool: "Tool",
-	pack: "Pack",
+	pack: "Carrier",
 };
 
 
@@ -624,12 +624,14 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 	const question = {
 		provision: "What should help Rosie keep going?",
 		tool: "What should Rosie try?",
-		pack: "What can Rosie carry Home?",
+		pack: "What should hold Rosie's find?",
 	}[focus];
 	const showingClue = clueGuide !== null && clueSlot !== null;
 	const clueIsApplied = showingClue && bag[clueSlot] !== null;
 	const optionDetail = (slot, item) => {
-		if (!item) return "A kind clue still comes Home";
+		if (!item) return slot === "pack"
+			? "Rosie remembers it, but cannot carry it Home"
+			: "A kind clue still comes Home";
 		const effect = BAG_ITEM_EFFECT_LABELS[opportunity.id]?.[item.id] ?? item.effect;
 		if (slot === "provision") {
 			const owned = farmStock?.[item.id] ?? 0;
@@ -760,10 +762,10 @@ function BagSelectionPanel({ bag, farmStock, opportunity, activeSelection, initi
 		<p>{canPack
 			? selectedCount === 0
 				? "An empty Bag still returns a useful clue. Rosie is always safe."
-				: "Provision and fresh packing are used once. Tool and Pack come Home."
+				: "Provision and fresh lining are used once. Tool and Carrier come Home."
 			: needsProvision
 				? "Leave Provision empty to explore with a useful clue."
-				: "Choose Wicker Basket, leave Pack empty, or bring back Willow Fiber."}</p>
+				: "Choose Wicker Basket, leave Carrier empty, or bring back Willow Fiber."}</p>
 		</section>
 	);
 }
@@ -975,7 +977,7 @@ function journeyWatchCopy(lanternleaf, journeyPhase, missingSlot = null) {
 			pack: {
 				eyebrow: "A delicate find stays safe",
 				title: "Rosie leaves the Glowroot where it grows",
-				body: "Without a Pack, she traces its glowing leaf-print and remembers the way back.",
+				body: "Without a Carrier, she traces its glowing leaf-print and remembers the way back.",
 			},
 		};
 		const secondRoute = {
@@ -992,7 +994,7 @@ function journeyWatchCopy(lanternleaf, journeyPhase, missingSlot = null) {
 			pack: {
 				eyebrow: "A delicate trail stays safe",
 				title: "Rosie leaves the trail supplies where they belong",
-				body: "Without a Pack, she records the reflected path so she can return prepared.",
+				body: "Without a Carrier, she records the reflected path so she can return prepared.",
 			},
 		};
 		return (lanternleaf ? secondRoute : firstRoute)[missingSlot] ?? {
@@ -1116,7 +1118,7 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 	const willowFiberAmount = 2 + (toolBonus?.itemId === "willow-fiber" ? toolBonus.amount : 0);
 	const practicalReward = nearDiscovery
 		? { name: "Compost", amount: 1 }
-		: packReward ?? { name: "Pack supply", amount: 0 };
+		: packReward ?? { name: "Carrier supply", amount: 0 };
 	return (
 		<section className="return-reward-panel" data-return-kind={nearDiscovery ? "near-discovery" : "discovery"} data-tool-bonus={toolBonus?.itemId ?? "none"} aria-label="Rosie's return rewards">
 			{!nearDiscovery && packReward?.itemId === "clover-seed" && (
