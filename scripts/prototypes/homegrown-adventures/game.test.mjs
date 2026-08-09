@@ -1872,6 +1872,24 @@ test("stable Home memory collapses into one accessible stock pocket", () => {
 	assert.match(stylesSource, /html\[data-reduce-motion="true"\] \.home-memory-pocket-detail \{ animation: none; \}/);
 });
 
+test("the completed day names Glowroot's lasting Home promise before the next morning", () => {
+	let state = createPrototypeState(11, { now: at });
+	assert.equal(state.glowrootPlanted, true);
+	assert.equal(state.cycleComplete, true);
+
+	state = reduce(state, { type: ACTIONS.START_NEW_DAY });
+	assert.equal(state.stage, STAGES.STARTING);
+	assert.equal(state.glowrootPlanted, true);
+	assert.equal(state.cycleComplete, false);
+
+	assert.match(appSource, /const showingHomeMemoryPromise =\s*showingHomeMemory &&\s*state\.stage === STAGES\.DEVELOPED &&\s*state\.cycleComplete;/);
+	assert.match(appSource, /showingHomeMemoryPromise && <HomeMemoryDayPlaque \/>/);
+	assert.match(appSource, /The Barn remembers/);
+	assert.match(appSource, /Glowroot now lights the open path\./);
+	assert.match(stylesSource, /\.home-memory-day-plaque \{/);
+	assert.doesNotMatch(appSource, /HomeMemoryPromisePrototype|homeMemoryTreatment/);
+});
+
 test("the earned crop choice keeps Rosie's current Adventure purpose attached to both harvests", () => {
 	const firstMorning = createPrototypeState(2, { now: at });
 	assert.equal(adventureOpportunity(firstMorning), FIRST_ADVENTURE_OPPORTUNITY);

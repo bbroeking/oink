@@ -1216,6 +1216,16 @@ function HomeMemoryPanel({ state, actionLabel, onAction, showAction = true, expa
 	);
 }
 
+function HomeMemoryDayPlaque() {
+	return (
+		<div className="home-memory-day-plaque" aria-label="The Barn remembers that Glowroot changed Home">
+			<small>Home remembers</small>
+			<strong>The Barn remembers</strong>
+			<span>Glowroot now lights the open path.</span>
+		</div>
+	);
+}
+
 function NewDayHandoff() {
 	return (
 		<div className="new-day-handoff" role="status" aria-live="polite">
@@ -1677,6 +1687,10 @@ function App() {
 		state.stage === STAGES.DEVELOPED &&
 		state.nextPlanting === "moonberries" &&
 		!state.cycleComplete;
+	const showingHomeMemoryPromise =
+		showingHomeMemory &&
+		state.stage === STAGES.DEVELOPED &&
+		state.cycleComplete;
 	const holdingGlowrootHomeReveal = glowrootHomeReveal && !state.reduceMotion;
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
 	const sceneRiveViewModel = useMemo(() => {
@@ -2058,6 +2072,7 @@ function App() {
 					</span>
 				</div>
 			</div>
+			{showingHomeMemoryPromise && <HomeMemoryDayPlaque />}
 			{state.stage !== STAGES.ADVENTURE && !showingReturnReward && !showingGlowrootPlanting && (!showingHomeMemory || showingHomeTickle) && !homeMemoryExpanded && !showingFarmingPanel && !choosingBag && !showPackedLoadout && <button
 				className={`rosie-hit ${visiblePresentation.target === WORLD_TARGETS.ROSIE ? "is-guided" : ""}`}
 				type="button"
