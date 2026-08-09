@@ -259,6 +259,22 @@ choice and kept both routes comparable without covering the Barn's remembered
 details. No new destination, crop, equipment slot, currency, random reward,
 Rive input, or parallel activity was added.
 
+**Familiar Homecoming checkpoint (August 9, 2026):** A repeated known-route
+Adventure no longer falls back to **New route** or claims Lanternleaf Path just
+joined Rosie's map. Position 11 derives one familiar-return presentation from
+the already persisted route choice: its storybook plaque says **Today's outing
+· A familiar trail brought Rosie Home**, its compact pocket names the route as
+visited today and reports that supplies were stocked, and its review rail says
+either **Lanternleaf Path revisited** or **Hedge glow revisited**. First-time
+Glowroot and Lanternleaf memories retain their established permanence
+ceremonies. A rendered three-treatment study compared the contradictory
+baseline, this familiar Homecoming, and a split place-plus-supplies ledger; the
+familiar treatment won because the ledger turned the emotional close into an
+inventory report and took emphasis away from Rosie. A deterministic
+`repeat=1` Position 11 review path now covers either route, while explicit
+route URLs cannot inherit a stale saved review. No reward, stock quantity,
+route rule, save fact, Rive source, Rive input, or authored motion changed.
+
 **Implementation record (August 5, 2026):** The deterministic prototype, three
 shareable UI variants, approved concepts, anonymous trace, local persistence,
 responsive DOM controls, and GitHub Pages route live in

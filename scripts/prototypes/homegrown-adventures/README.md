@@ -1,5 +1,22 @@
 # Homegrown Adventures prototype
 
+The v0.125 familiar-homecoming pass lets a repeated Adventure end as a
+truthful new day in Rosie's relationship with a known place instead of replaying
+the route's first Discovery ceremony. The completed Position 11 plaque now says
+**Today's outing · A familiar trail brought Rosie Home**, names either the
+silver Lanternleaf route or the warm hedge glow, and keeps exact quantities in
+the existing Farm-stock drawer. Its compact pocket says the chosen route was
+visited today and that supplies were stocked; first-time Glowroot and
+Lanternleaf memories remain unchanged. Three real Position 11 structures were
+compared at prototype commit `67307c3` on
+`codex/homegrown-v125-repeat-home-prototypes`: the contradictory new-route
+baseline, this familiar Homecoming, and a split place-plus-supplies ledger. The
+familiar Homecoming won because it preserved the calm storybook hierarchy and
+kept Rosie and the living Farm primary. The direct `repeat=1` review path
+supports both routes and explicit route URLs no longer inherit a stale saved
+review. No experiment switcher, new reward, progression fact, Rive input, or
+parallel system remains on main.
+
 The v0.124 known-route pass turns Lanternleaf Path from a one-time ending into
 a real player choice on the third morning. After both existing routes are in
 the Field Guide, Rosie's Tickle now opens one compact **Rosie's map** parchment

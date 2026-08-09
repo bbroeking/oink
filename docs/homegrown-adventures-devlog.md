@@ -410,11 +410,95 @@ product contract remains in `docs/homegrown-adventures-build-goals.md`.
 125. **v0.124 — Rosie Chooses the Trail (shipped):** after both routes are
     mapped, let Rosie's Tickle open one compact map where the player freely
     chooses either familiar Adventure before growing and packing for it.
+126. **v0.125 — A Familiar Trail Brings Rosie Home (shipped):** let a repeat
+    outing close as a familiar Homecoming instead of replaying **New route**,
+    while preserving both first-time Discovery memories and the exact returned
+    Farm stock.
 
 Depth and polish win over new crops, destinations, currencies, or parallel
 systems. Each checkpoint starts with play and ships only after rendered proof.
 
 ## Version history
+
+### v0.125 — A Familiar Trail Brings Rosie Home — 2026-08-09
+
+- Replayed the exact v0.124 third-day Lanternleaf route through Moonberry
+  farming, Compost, Harvest Rhythm, freely chosen Bag preparation, Adventure,
+  Homecoming, and returned supplies. Position 10 correctly said **Route
+  revisited**, but accepting those supplies landed on **Home remembers · The
+  Barn remembers**, **Lanternleaf Path is mapped**, and **New route**. The same
+  outing therefore became new again at the final screen.
+- Compared three runnable Position 11 treatments against one reducer-owned
+  repeat state: the contradictory new-route baseline, a calm familiar
+  Homecoming in the existing storybook hierarchy, and a split ledger for the
+  permanent place and today's supplies. The familiar Homecoming won. The
+  baseline was false; the ledger was accurate but made the emotional close
+  read like inventory bookkeeping. The isolated study and verdict remain at
+  prototype commit `67307c3` on
+  `codex/homegrown-v125-repeat-home-prototypes`; no switcher or losing treatment
+  shipped.
+- A completed repeat now says **Today's outing · A familiar trail brought Rosie
+  Home**. It names either silver Lanternleaf leaves or the warm moth lights,
+  marks the chosen route **visited today**, reports **Known trail · Supplies
+  stocked**, and gives Position 11 the matching **revisited** label. Exact
+  quantities remain in the existing expandable Farm-stock drawer.
+- The presentation derives from the already persisted
+  `selectedAdventureOpportunityId`, which still clears at the next day. It adds
+  no history flag or save migration. First-time Glowroot and Lanternleaf
+  Discovery memories remain byte-for-byte in the production source and render
+  with their established **The Barn remembers** promise.
+- Added a deterministic `repeat=1` direct Position 11 review for both route
+  identities. Rendered QA exposed that an explicit `route=glowroot` URL could
+  otherwise inherit the prior saved Lanternleaf review because Glowroot was the
+  default; explicit route URLs now always create the requested review state.
+
+### Local validation evidence
+
+- Played a real rendered third-day Lanternleaf loop from Rosie's two-route map:
+  selected **Lights Past the Open Gate**, tended Moonberries with Compost,
+  completed Down → Left → Right → Up for six berries, packed Moonberries /
+  Lantern / Wicker Basket, watched all three causal beats, fast-forwarded the
+  six-hour wait, welcomed Rosie, and kept the returned Seed, Compost, and three
+  Willow Fiber. The completed Home then showed **Lanternleaf Path · visited
+  today** and the familiar storybook plaque; its drawer exposed the exact
+  returned supply totals. **Begin another day** cleared the chosen route and
+  Rosie's next Tickle opened both familiar routes again.
+- Rendered direct reviews proved both **Lanternleaf Path revisited** and **Hedge
+  glow revisited**. Separate first-time reviews retained **Glowroot changed
+  Home** and **Lanternleaf Path is mapped** without repeat language or stale
+  persisted-route leakage.
+- `npm run prototype:homegrown:test` passes 94/94, including both direct repeat
+  routes, first-time compatibility, route persistence, and next-day reset.
+  `npm run verify:rive-homegrown` passes for the unchanged Home and Lanternleaf
+  binaries.
+- `npm run quality:loop` and `npm run quality:check` pass from the clean feature
+  worktree: 155 layout files, 324 sprites, TypeScript, 78 layout assertions,
+  and 202 security assertions. Manual mobile Safari motion, reduced-motion,
+  silhouette, and attachment checks remain warnings.
+
+### Public verification evidence
+
+- Feature commit `0797c4b` deployed through GitHub Pages run `31318728967`.
+- Exact checked-in and publicly fetched checkpoint bytes:
+  - authored runtime Rive: `b71059e81f9949ad7001901e26dd0e9d8f3bfd6ce65e2f7371c1a4ba1cf871a2`
+  - player HTML: `e1b457a155b429e6c528cc0c2a9ad8316911531dcdacc6bfeaf7e6fbb20451aa`
+  - player JavaScript: `a841fdb95bb9aa25b1b70d331ca80449f14bd252d9d3a5b536b76a252b59d08b`
+  - player CSS: `f8f56bc9f344edbf264183a391812af89934946551199e6244e9a41763e70a9b`
+- A fresh public familiar-Lanternleaf review rendered the new plaque, compact
+  stock pocket, route-specific scene description, and **revisited** rail. The
+  authored Rive runtime reported `ready` with one live canvas at the 390×844
+  reference frame and zero horizontal overflow.
+- Exact checkpoint route:
+  `https://bbroeking.github.io/oink/homegrown-adventures.html?variant=A&mode=loop&position=11&route=lanternleaf&repeat=1&v=0797c4b`
+
+### Next highest-leverage weakness
+
+The complete repeat replay built a real Moonberry stockpile—six harvested and
+one packed—but Position 11's drawer omitted the five remaining Moonberries and
+all Clover Lunches while calling itself current Farm stock. The next cycle
+should make accumulated crop Provisions visible in that existing Home stock
+surface without turning the calm close into a dense inventory grid or adding a
+new economy screen.
 
 ### v0.124 — Rosie Chooses the Trail — 2026-08-09
 
