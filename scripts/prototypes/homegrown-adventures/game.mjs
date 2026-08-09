@@ -13,6 +13,7 @@ export const STAGES = Object.freeze({
 
 export const ACTIONS = Object.freeze({
 	TICKLE: "tickle",
+	CHOOSE_ADVENTURE_ROUTE: "choose-adventure-route",
 	SELECT_CROP: "select-crop",
 	CHOOSE_PURPOSE: "choose-purpose",
 	TOGGLE_COMPOST: "toggle-compost",
@@ -98,9 +99,21 @@ export const SECOND_ADVENTURE_OPPORTUNITY = Object.freeze({
 });
 
 export function adventureOpportunity(state) {
+	if (state.selectedAdventureOpportunityId === FIRST_ADVENTURE_OPPORTUNITY.id) {
+		return FIRST_ADVENTURE_OPPORTUNITY;
+	}
+	if (state.selectedAdventureOpportunityId === SECOND_ADVENTURE_OPPORTUNITY.id) {
+		return SECOND_ADVENTURE_OPPORTUNITY;
+	}
 	return state.daysCompleted > 0 && state.glowrootPlanted
 		? SECOND_ADVENTURE_OPPORTUNITY
 		: FIRST_ADVENTURE_OPPORTUNITY;
+}
+
+export function canChooseKnownAdventureRoute(state) {
+	const fieldGuide = Array.isArray(state.fieldGuide) ? state.fieldGuide : [];
+	return fieldGuide.includes(FIRST_ADVENTURE_OPPORTUNITY.discoveryName) &&
+		fieldGuide.includes(SECOND_ADVENTURE_OPPORTUNITY.discoveryName);
 }
 
 export const BAG_SLOT_ORDER = Object.freeze(["provision", "tool", "pack"]);
@@ -563,6 +576,7 @@ export function createInitialState({ now = Date.now(), reduceMotion = false } = 
 		meaningfulChangePending: false,
 		changeRevealed: false,
 		purpose: null,
+		selectedAdventureOpportunityId: null,
 		selectedCrop: null,
 		compostApplied: false,
 		cloverHarvested: false,
@@ -742,12 +756,16 @@ export function createPrototypeState(position, {
 
 	const routePreview = [2, 9, 11].includes(target) && adventureRoute === "lanternleaf"
 		? {
-			daysCompleted: 1,
+			daysCompleted: target === 2 ? 2 : 1,
 			glowrootKnown: true,
 			glowrootPlanted: true,
 			nextPlanting: "moonberries",
-			fieldGuide: target === 11
-				? [...new Set([...presets[target].fieldGuide, ...SECOND_ADVENTURE_OPPORTUNITY.fieldGuideEntries])]
+			fieldGuide: [2, 11].includes(target)
+				? [...new Set([
+					...presets[target].fieldGuide,
+					...FIRST_ADVENTURE_OPPORTUNITY.fieldGuideEntries,
+					...SECOND_ADVENTURE_OPPORTUNITY.fieldGuideEntries,
+				])]
 				: ["Clover Lunch", "Dusk Picnic", "Glowroot Seed"],
 		}
 		: {};
@@ -1014,10 +1032,35 @@ export function homegrownReducer(state, action) {
 			);
 			}
 
+		case ACTIONS.CHOOSE_ADVENTURE_ROUTE:
+			if (
+				!state.hasTickled ||
+				state.stage !== STAGES.STARTING ||
+				state.selectedCrop ||
+				state.selectedAdventureOpportunityId ||
+				!canChooseKnownAdventureRoute(state)
+			) return state;
+			if (![FIRST_ADVENTURE_OPPORTUNITY.id, SECOND_ADVENTURE_OPPORTUNITY.id].includes(action.opportunityId)) {
+				return state;
+			}
+			{
+				const selectedOpportunity = action.opportunityId === FIRST_ADVENTURE_OPPORTUNITY.id
+					? FIRST_ADVENTURE_OPPORTUNITY
+					: SECOND_ADVENTURE_OPPORTUNITY;
+				return changed(
+					state,
+					{ selectedAdventureOpportunityId: selectedOpportunity.id },
+					"choose-route",
+					selectedOpportunity.name,
+					now,
+				);
+			}
+
 		case ACTIONS.SELECT_CROP:
 		case ACTIONS.CHOOSE_PURPOSE:
 			if (!state.hasTickled || state.stage !== STAGES.STARTING) return state;
 			if (state.selectedCrop) return state;
+			if (canChooseKnownAdventureRoute(state) && !state.selectedAdventureOpportunityId) return state;
 			{
 				const selectedCrop = action.type === ACTIONS.SELECT_CROP ? action.crop : "clover";
 				const rule = cropRule(selectedCrop);
@@ -1554,6 +1597,7 @@ export function homegrownReducer(state, action) {
 						glowrootKnown: state.glowrootKnown,
 						glowrootPlanted: state.glowrootPlanted,
 						fieldGuide: [...state.fieldGuide],
+						selectedAdventureOpportunityId: state.selectedAdventureOpportunityId,
 						nextPlanting: state.nextPlanting,
 						daysCompleted: state.daysCompleted,
 						dayStartFarmStock: { ...state.dayStartFarmStock },
@@ -1652,6 +1696,12 @@ export function deserializeState(value, { now = Date.now(), reduceMotion = false
 						? { ...farmStock }
 						: { ...initial.dayStartFarmStock },
 				version: 2,
+				selectedAdventureOpportunityId: [
+					FIRST_ADVENTURE_OPPORTUNITY.id,
+					SECOND_ADVENTURE_OPPORTUNITY.id,
+				].includes(parsed.selectedAdventureOpportunityId)
+					? parsed.selectedAdventureOpportunityId
+					: null,
 				bag: legacyUntouchedFirstBag
 					? { ...EMPTY_BAG }
 					: { ...initial.bag, ...parsed.bag },
@@ -1669,6 +1719,13 @@ export function primaryAction(state) {
 	}
 	if (!state.hasTickled) return { type: ACTIONS.TICKLE, label: "Tickle Rosie" };
 	if (state.stage === STAGES.STARTING && !state.selectedCrop) {
+		if (canChooseKnownAdventureRoute(state) && !state.selectedAdventureOpportunityId) {
+			return {
+				type: ACTIONS.CHOOSE_ADVENTURE_ROUTE,
+				opportunityId: FIRST_ADVENTURE_OPPORTUNITY.id,
+				label: "Choose today’s route",
+			};
+		}
 		return {
 			type: ACTIONS.SELECT_CROP,
 			crop: "clover",
@@ -1776,6 +1833,15 @@ export function playerPresentation(state) {
 		};
 	}
 	if (state.stage === STAGES.STARTING && !state.selectedCrop) {
+		if (canChooseKnownAdventureRoute(state) && !state.selectedAdventureOpportunityId) {
+			return {
+				target: WORLD_TARGETS.HEDGE,
+				objective: "Rosie’s map",
+				detail: "Choose a familiar route",
+				label: "Choose today’s route",
+				action,
+			};
+		}
 		return {
 			target: WORLD_TARGETS.PATCH,
 			objective: opportunity.name,
@@ -1912,7 +1978,9 @@ export function playerPresentation(state) {
 			if (state.glowrootPlanted) {
 				return {
 					target: WORLD_TARGETS.BAG,
-					objective: `${opportunity.discoveryName} is mapped`,
+					objective: state.selectedAdventureOpportunityId
+						? `${opportunity.name} revisited`
+						: `${opportunity.discoveryName} is mapped`,
 					label: "Keep supplies in Farm stock",
 					action,
 				};

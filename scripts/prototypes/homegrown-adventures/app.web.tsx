@@ -18,6 +18,7 @@ import {
 	bagItem,
 	bagPackingCost,
 	bagReturnReward,
+	canChooseKnownAdventureRoute,
 	cropHarvestPattern,
 	CROP_RULES,
 	createInitialState,
@@ -94,6 +95,7 @@ const STAGE_COPY = {
 function stageCopy(state) {
 	const opportunity = adventureOpportunity(state);
 	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const revisitingKnownRoute = Boolean(state.selectedAdventureOpportunityId);
 	const crop = CROP_RULES[state.selectedCrop] ?? CROP_RULES.clover;
 	if (
 		state.stage === STAGES.DEVELOPED &&
@@ -137,6 +139,13 @@ function stageCopy(state) {
 		if (copy) return { eyebrow: "Near-Discovery · never failure", ...copy };
 	}
 	if (state.stage === STAGES.STARTING && state.hasTickled && !state.purpose) {
+		if (canChooseKnownAdventureRoute(state) && !state.selectedAdventureOpportunityId) {
+			return {
+				eyebrow: "Rosie’s map",
+				title: "Two familiar trails are waiting",
+				body: "Choose where Rosie explores today. Both routes are safe, and preparation changes what she notices and carries Home.",
+			};
+		}
 		return {
 			eyebrow: "A named Request",
 			title: opportunity.name,
@@ -198,6 +207,15 @@ function stageCopy(state) {
 		};
 	}
 	if (state.stage === STAGES.GLOWROOT_RETURNED && state.glowrootPlanted) {
+		if (revisitingKnownRoute) {
+			return {
+				eyebrow: "A familiar route",
+				title: lanternleaf
+					? "Rosie followed Lanternleaf Path again"
+					: "Rosie revisited the hedge glow",
+				body: "The route was already mapped. This outing deepened Rosie’s knowledge and brought useful supplies back to Farm stock.",
+			};
+		}
 		return {
 			eyebrow: "A new route",
 			title: "Rosie mapped the Lanternleaf Path",
@@ -324,11 +342,14 @@ const BAG_SLOT_LABELS = {
 
 
 function SeedAdventureReceipt({ opportunity, className = "", twoCrops = false }) {
+	const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 	const promise = twoCrops
 		? "Both harvests help Rosie explore"
 		: "Clover becomes a Provision";
 	const detail = twoCrops
-		? "Clover: stay longer · Moonberries: reveal reflections"
+		? lanternleaf
+			? "Clover: stay until nightfall · Moonberries: reveal reflected leaves"
+			: "Clover: stay until dusk · Moonberries: notice hidden reflections"
 		: opportunity.detail;
 	return (
 		<div
@@ -336,7 +357,7 @@ function SeedAdventureReceipt({ opportunity, className = "", twoCrops = false })
 			role="note"
 			aria-label={`For ${opportunity.name}: ${promise}. ${detail}.`}
 		>
-			<span><small>{twoCrops ? "Glowroot opened this route" : "Grow for Rosie"}</small><strong>{promise}</strong></span>
+			<span><small>{twoCrops ? "Known route" : "Grow for Rosie"}</small><strong>{promise}</strong></span>
 			<em>{detail}</em>
 		</div>
 	);
@@ -350,18 +371,19 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 	const moonberriesAvailable = state.nextPlanting === "moonberries";
 
 	if (rememberedMorning) {
+		const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
 		return (
 			<section className="seed-choice-panel crop-choice-study" aria-label="Choose one useful crop for Rosie's next Adventure">
-				<div className="crop-choice-question"><strong>What should Rosie grow for the lights?</strong><small>Both harvests wait safely and fit her Provision pocket.</small></div>
+				<div className="crop-choice-question"><strong>{lanternleaf ? "What should Rosie grow for the lights?" : "What should Rosie grow for the hedge glow?"}</strong><small>Both harvests wait safely and fit her Provision pocket.</small></div>
 				<div className="crop-choice-options">
 					<button className="crop-path crop-path-clover" type="button" onClick={() => onChoose("clover")} disabled={cloverSeeds < 1}>
 						<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
-						<span><small>Clover · 4 hours</small><strong>Clover Lunch</strong><b>3 guaranteed · stay until nightfall</b></span>
+						<span><small>Clover · 4 hours</small><strong>Clover Lunch</strong><b>3 guaranteed · {lanternleaf ? "stay until nightfall" : "stay until dusk"}</b></span>
 						<em>{cloverSeeds > 0 ? "Grow Clover" : "Need a Seed"}</em>
 					</button>
 					<button className="crop-path crop-path-moonberry" type="button" onClick={() => onChoose("moonberries")} disabled={!moonberriesAvailable}>
 						<span className="seed-art seed-art-moonberry" aria-hidden="true">●</span>
-						<span><small>Moonberries · 8 hours</small><strong>Moonberries</strong><b>4 guaranteed · reveal reflected leaves</b></span>
+						<span><small>Moonberries · 8 hours</small><strong>Moonberries</strong><b>4 guaranteed · {lanternleaf ? "reveal reflected leaves" : "notice hidden reflections"}</b></span>
 						<em>{moonberriesAvailable ? "Tend Moonberries" : "Still taking root"}</em>
 					</button>
 				</div>
@@ -403,13 +425,30 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 	);
 }
 
-function PurposeHandoff({ opportunity }) {
+function PurposeHandoff({ opportunity, choosingRoute = false }) {
 	return (
 		<div className="purpose-handoff" role="status" aria-live="polite">
-			<small>Rosie's curiosity</small>
-			<strong>{opportunity.name}</strong>
-			<span>{opportunity.detail}</span>
+			<small>{choosingRoute ? "Rosie’s map" : "Rosie's curiosity"}</small>
+			<strong>{choosingRoute ? "Two familiar trails are waiting" : opportunity.name}</strong>
+			<span>{choosingRoute ? "Choose where she explores today" : opportunity.detail}</span>
 		</div>
+	);
+}
+
+function KnownRouteMap({ onChoose }) {
+	return (
+		<section className="known-route-map" aria-label="Choose one of Rosie's known Adventure routes">
+			<header><span aria-hidden="true">⌁</span><div><small>Rosie's map · 2 known routes</small><strong>Where should Rosie explore today?</strong></div></header>
+			<div className="known-route-map-list">
+				<button type="button" className="known-route-map-row route-glowroot" onClick={() => onChoose(FIRST_ADVENTURE_OPPORTUNITY.id)}>
+					<i aria-hidden="true">✦</i><span><small>Known clearing · dusk</small><strong>A Glow Beneath the Hedge</strong><b>Soft soil · careful carrying</b></span><em>Choose</em>
+				</button>
+				<button type="button" className="known-route-map-row route-lanternleaf" onClick={() => onChoose(SECOND_ADVENTURE_OPPORTUNITY.id)}>
+					<i aria-hidden="true">◇</i><span><small>Mapped path · nightfall</small><strong>Lights Past the Open Gate</strong><b>Reflected leaves · gentle wrap</b></span><em>Choose</em>
+				</button>
+			</div>
+			<footer>Both routes are safe. Preparation changes what Rosie notices and carries Home.</footer>
+		</section>
 	);
 }
 
@@ -1132,6 +1171,7 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 	const nearDiscovery = state.stage === STAGES.NEAR_DISCOVERY;
 	const opportunity = adventureOpportunity(state);
 	const lanternleafDiscovery = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+	const revisitingKnownRoute = Boolean(state.selectedAdventureOpportunityId);
 	const guide = nearDiscovery ? nearDiscoveryGuide(state) : null;
 	const packReward = bagReturnReward(state.bag?.pack ?? null);
 	const toolBonus = nearDiscovery ? null : toolReturnBonus(state.bag?.tool ?? null);
@@ -1152,10 +1192,12 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 				<span className="return-tool-bonus return-tool-bonus-fiber" aria-hidden="true" />
 			)}
 			<div className={`return-discovery-plaque ${nearDiscovery ? "is-near-discovery" : ""}`}>
-				<span className="return-card-eyebrow">{nearDiscovery ? "Field Guide updated" : lanternleafDiscovery ? "New route" : "New Discovery"}</span>
-				<strong>{nearDiscovery ? opportunity.clueName : lanternleafDiscovery ? opportunity.discoveryName : "Glowroot"}</strong>
+				<span className="return-card-eyebrow">{nearDiscovery ? "Field Guide updated" : revisitingKnownRoute ? "Route revisited" : lanternleafDiscovery ? "New route" : "New Discovery"}</span>
+				<strong>{nearDiscovery ? opportunity.clueName : revisitingKnownRoute ? opportunity.name : lanternleafDiscovery ? opportunity.discoveryName : "Glowroot"}</strong>
 				<small>{nearDiscovery
 					? guide.story
+						: revisitingKnownRoute
+							? `${opportunity.discoveryName} is already mapped · this outing added useful Farm supplies`
 						: lanternleafDiscovery
 							? `Glowroot revealed a repeatable path · ${glowrootAmount === 1 ? "one Seed stays" : "two Seeds stay"} in Farm stock`
 							: "A new living Crop for Home"}</small>
@@ -1324,6 +1366,7 @@ const PURPOSE_HANDOFF_MS = 1200;
 const REDUCED_PURPOSE_HANDOFF_MS = 900;
 const RAPID_TRANSITION_ACTIONS = new Set([
 	ACTIONS.TICKLE,
+	ACTIONS.CHOOSE_ADVENTURE_ROUTE,
 	ACTIONS.SELECT_CROP,
 	ACTIONS.TOGGLE_COMPOST,
 	ACTIONS.PLANT_CLOVER,
@@ -1616,6 +1659,15 @@ function sceneLabel(state, { gateHomecomingReady = false, journeyPhase = null, p
 	if ([STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage)) {
 		return `${stageCopy(state).title}. Rosie stands in the warm lantern-lit Barn workshop behind a wooden table holding the exact supplies she carried Home.`;
 	}
+	if (
+		state.stage === STAGES.STARTING &&
+		state.hasTickled &&
+		!state.selectedCrop &&
+		!state.selectedAdventureOpportunityId &&
+		canChooseKnownAdventureRoute(state)
+	) {
+		return "Rosie is choosing between two familiar routes. The warm paper-craft Barn, open hedge, Glowroot bed, rooted Moonberry bed, pond frog, and mapped gate remain visible behind her storybook map.";
+	}
 	const rememberedHome = state.glowrootPlanted
 		? state.nextPlanting === "moonberries"
 			? " The open hedge, earned bell, Glowroot bed, and rooted Moonberry bed remain from the last Adventure. Harvested Bed 1 rests empty."
@@ -1684,7 +1736,13 @@ function App() {
 	const seedHandoffTimers = useRef([]);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
 	const position = state.prototypePosition ?? 1;
-	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop;
+	const choosingRoute =
+		position === 2 &&
+		state.stage === STAGES.STARTING &&
+		!state.selectedCrop &&
+		canChooseKnownAdventureRoute(state) &&
+		!state.selectedAdventureOpportunityId;
+	const choosingSeed = position === 2 && state.stage === STAGES.STARTING && !state.selectedCrop && !choosingRoute;
 	const plantingCrop = position === 3 && state.stage === STAGES.STARTING && Boolean(CROP_RULES[state.selectedCrop]);
 	const showingGrowth = position === 4 && state.stage === STAGES.CLOVER_GROWING;
 	const showingHarvestRhythm =
@@ -1700,7 +1758,7 @@ function App() {
 		!state.reduceMotion &&
 		visualNow < harvestCelebrationEndsAt;
 	const showingHarvestResult = position === 6 && state.stage === STAGES.CLOVER_READY && state.cloverHarvested && !showingHarvestCelebration;
-	const showingFarmingPanel = choosingSeed || plantingCrop || showingGrowth || showingHarvestRhythm || showingHarvestCelebration || showingHarvestResult;
+	const showingFarmingPanel = choosingRoute || choosingSeed || plantingCrop || showingGrowth || showingHarvestRhythm || showingHarvestCelebration || showingHarvestResult;
 	const choosingBag = position === 7 && state.stage === STAGES.CLOVER_READY && state.cloverHarvested;
 	const departing = position === 8 && state.stage === STAGES.ADVENTURE && !state.departureComplete;
 	const showingAdventureVignette = position === 9 && state.stage === STAGES.ADVENTURE && state.departureComplete && !state.adventureVignetteSeen;
@@ -1716,12 +1774,18 @@ function App() {
 		adventureComplete: state.adventureComplete,
 	});
 	const currentPositionName =
-		position === 11 && state.stage === STAGES.DEVELOPED && state.cycleComplete
+		choosingRoute
+			? "Choose today’s route"
+			: position === 11 && state.stage === STAGES.DEVELOPED && state.cycleComplete
 			? homeMemory.positionName
 			: defaultPositionName;
 	const adventureEnvironmentRevealed = ["tool", "pack", "resolved"].includes(adventureCauseBeat);
 	const showingReturnReward = position === 10 && [STAGES.GLOWROOT_RETURNED, STAGES.NEAR_DISCOVERY].includes(state.stage);
-	const returnKind = state.stage === STAGES.NEAR_DISCOVERY ? "near-discovery" : "discovery";
+	const returnKind = state.stage === STAGES.NEAR_DISCOVERY
+		? "near-discovery"
+		: state.selectedAdventureOpportunityId
+			? "revisit"
+			: "discovery";
 	const homeMemoryEarned = state.glowrootPlanted;
 	const showingGlowrootPlanting =
 		position === 11 &&
@@ -1743,7 +1807,7 @@ function App() {
 		state.stage === STAGES.DEVELOPED &&
 		state.cycleComplete;
 	const holdingGlowrootHomeReveal = glowrootHomeReveal && !state.reduceMotion;
-	const holdingPurposeHandoff = purposeHandoff && choosingSeed;
+	const holdingPurposeHandoff = purposeHandoff && (choosingRoute || choosingSeed);
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
 	const sceneRiveViewModel = useMemo(() => {
 		if (
@@ -2143,12 +2207,15 @@ function App() {
 				{visiblePresentation.target === WORLD_TARGETS.ROSIE && <span>{visiblePresentation.label}</span>}
 			</button>}
 			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
+			{choosingRoute && !holdingPurposeHandoff && <KnownRouteMap
+				onChoose={(opportunityId) => act({ type: ACTIONS.CHOOSE_ADVENTURE_ROUTE, opportunityId })}
+			/>}
 			{choosingSeed && !holdingPurposeHandoff && <SeedChoicePanel
 				state={state}
 				opportunity={opportunity}
 				onChoose={(crop) => act({ type: ACTIONS.SELECT_CROP, crop })}
 			/>}
-			{holdingPurposeHandoff && <PurposeHandoff opportunity={opportunity} />}
+			{holdingPurposeHandoff && <PurposeHandoff opportunity={opportunity} choosingRoute={choosingRoute} />}
 			{plantingCrop && <PlantingPanel
 				state={state}
 				onToggleCompost={() => act({ type: ACTIONS.TOGGLE_COMPOST })}

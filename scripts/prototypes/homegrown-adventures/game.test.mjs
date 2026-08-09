@@ -10,6 +10,7 @@ import {
 	adventureOpportunity,
 	adventureStory,
 	BAG_ITEMS,
+	canChooseKnownAdventureRoute,
 	CROP_RULES,
 	cropHarvestPattern,
 	createInitialState,
@@ -107,6 +108,22 @@ function throughSecondBag() {
 		{ type: ACTIONS.OPEN_BAG_SELECTION },
 	]) state = reduce(state, action);
 	return state;
+}
+
+function throughThirdMorning() {
+	let state = packAdventure(throughSecondBag(), {
+		provision: "clover-lunch",
+		tool: "lantern",
+		pack: "cloth-wrap",
+	});
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	state = settleState(state, state.departureReadyAt);
+	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
+	state = reduce(state, { type: ACTIONS.START_NEW_DAY });
+	return reduce(state, { type: ACTIONS.TICKLE });
 }
 
 test("the complete happy path reaches a developed Barn", () => {
@@ -1925,13 +1942,107 @@ test("the completed second Adventure replaces the old ceremony with Lanternleaf 
 	assert.doesNotMatch(appSource, /LanternleafLivingRoutePrototype|lanternleaf-route-marker/);
 });
 
+test("the third morning asks the player to choose either known route before growing", () => {
+	const state = throughThirdMorning();
+	assert.equal(state.prototypePosition, 2);
+	assert.equal(state.daysCompleted, 2);
+	assert.equal(canChooseKnownAdventureRoute(state), true);
+	assert.equal(state.selectedAdventureOpportunityId, null);
+	assert.deepEqual(playerPresentation(state), {
+		target: WORLD_TARGETS.HEDGE,
+		objective: "Rosie’s map",
+		detail: "Choose a familiar route",
+		label: "Choose today’s route",
+		action: {
+			type: ACTIONS.CHOOSE_ADVENTURE_ROUTE,
+			opportunityId: FIRST_ADVENTURE_OPPORTUNITY.id,
+			label: "Choose today’s route",
+		},
+	});
+	assert.equal(reduce(state, { type: ACTIONS.SELECT_CROP, crop: "clover" }), state);
+	assert.equal(reduce(state, { type: ACTIONS.CHOOSE_ADVENTURE_ROUTE, opportunityId: "unknown" }), state);
+
+	const chosen = reduce(state, {
+		type: ACTIONS.CHOOSE_ADVENTURE_ROUTE,
+		opportunityId: FIRST_ADVENTURE_OPPORTUNITY.id,
+	});
+	assert.equal(chosen.selectedAdventureOpportunityId, FIRST_ADVENTURE_OPPORTUNITY.id);
+	assert.equal(adventureOpportunity(chosen), FIRST_ADVENTURE_OPPORTUNITY);
+	assert.equal(reduce(chosen, { type: ACTIONS.SELECT_CROP, crop: "moonberries" }).selectedCrop, "moonberries");
+});
+
+test("a freely chosen known route survives reload and resets only on the next day", () => {
+	let state = throughThirdMorning();
+	state = reduce(state, {
+		type: ACTIONS.CHOOSE_ADVENTURE_ROUTE,
+		opportunityId: SECOND_ADVENTURE_OPPORTUNITY.id,
+	});
+	const restored = deserializeState(serializeState(state), { now: at });
+	assert.equal(restored.selectedAdventureOpportunityId, SECOND_ADVENTURE_OPPORTUNITY.id);
+	assert.equal(adventureOpportunity(restored), SECOND_ADVENTURE_OPPORTUNITY);
+
+	const malformed = deserializeState(JSON.stringify({
+		...restored,
+		selectedAdventureOpportunityId: "not-a-route",
+	}), { now: at });
+	assert.equal(malformed.selectedAdventureOpportunityId, null);
+	assert.equal(canChooseKnownAdventureRoute(throughSecondMorning()), false);
+});
+
+test("revisiting a known route returns supplies without pretending the Discovery is new", () => {
+	let state = throughThirdMorning();
+	state = reduce(state, {
+		type: ACTIONS.CHOOSE_ADVENTURE_ROUTE,
+		opportunityId: FIRST_ADVENTURE_OPPORTUNITY.id,
+	});
+	for (const action of [
+		{ type: ACTIONS.SELECT_CROP, crop: "clover" },
+		{ type: ACTIONS.PLANT_CROP },
+		{ type: ACTIONS.ADVANCE_TIME },
+		{ type: ACTIONS.TICKLE },
+		{ type: ACTIONS.HARVEST_CROP },
+		{ type: ACTIONS.OPEN_BAG_SELECTION },
+	]) state = reduce(state, action);
+	state = packAdventure(state);
+	state = reduce(state, { type: ACTIONS.START_ADVENTURE });
+	state = settleState(state, state.departureReadyAt);
+	state = reduce(state, { type: ACTIONS.CONTINUE_ADVENTURE_STORY });
+	state = reduce(state, { type: ACTIONS.ADVANCE_TIME });
+	state = reduce(state, { type: ACTIONS.WELCOME_HOME });
+
+	assert.equal(state.stage, STAGES.GLOWROOT_RETURNED);
+	assert.equal(state.selectedAdventureOpportunityId, FIRST_ADVENTURE_OPPORTUNITY.id);
+	assert.equal(playerPresentation(state).objective, "A Glow Beneath the Hedge revisited");
+	assert.equal(state.fieldGuide.filter((entry) => entry === FIRST_ADVENTURE_OPPORTUNITY.discoveryName).length, 1);
+	assert.match(appSource, /revisitingKnownRoute \? "Route revisited"/);
+	assert.match(appSource, /this outing added useful Farm supplies/);
+
+	state = reduce(state, { type: ACTIONS.ACKNOWLEDGE_RETURN });
+	assert.equal(state.cycleComplete, true);
+	state = reduce(state, { type: ACTIONS.START_NEW_DAY });
+	assert.equal(state.selectedAdventureOpportunityId, null);
+});
+
+test("the rendered third morning uses one production Rosie map without experiment controls", () => {
+	assert.match(appSource, /function KnownRouteMap\(\{ onChoose \}\)/);
+	assert.match(appSource, /Rosie's map · 2 known routes/);
+	assert.match(appSource, /A Glow Beneath the Hedge/);
+	assert.match(appSource, /Lights Past the Open Gate/);
+	assert.match(appSource, /ACTIONS\.CHOOSE_ADVENTURE_ROUTE/);
+	assert.match(appSource, /const choosingRoute =/);
+	assert.match(appSource, /choosingRoute && !holdingPurposeHandoff && <KnownRouteMap/);
+	assert.match(stylesSource, /\.known-route-map \{/);
+	assert.doesNotMatch(appSource, /KnownRouteChoicePrototype|knownRoutePrototypeChoice|World Trails|Repeat Yesterday/);
+	assert.doesNotMatch(stylesSource, /known-route-world-prototype/);
+});
+
 test("the morning Tickle gives Rosie one purpose beat before crop choice", () => {
 	assert.match(appSource, /const PURPOSE_HANDOFF_MS = 1200;/);
 	assert.match(appSource, /const REDUCED_PURPOSE_HANDOFF_MS = 900;/);
 	assert.match(appSource, /nextAction\.type === ACTIONS\.TICKLE && position === 1/);
-	assert.match(appSource, /const holdingPurposeHandoff = purposeHandoff && choosingSeed;/);
+	assert.match(appSource, /const holdingPurposeHandoff = purposeHandoff && \(choosingRoute \|\| choosingSeed\);/);
 	assert.match(appSource, /choosingSeed && !holdingPurposeHandoff && <SeedChoicePanel/);
-	assert.match(appSource, /holdingPurposeHandoff && <PurposeHandoff opportunity=\{opportunity\} \/>/);
+	assert.match(appSource, /holdingPurposeHandoff && <PurposeHandoff opportunity=\{opportunity\} choosingRoute=\{choosingRoute\} \/>/);
 	assert.match(appSource, /Rosie's curiosity/);
 	assert.match(appSource, /aria-busy=\{startingNewDay \|\| Boolean\(seedHandoff\) \|\| holdingGlowrootHomeReveal \|\| holdingPurposeHandoff\}/);
 	assert.match(stylesSource, /\.purpose-handoff \{/);
@@ -1948,17 +2059,20 @@ test("the earned crop choice keeps Rosie's current Adventure purpose attached to
 		adventureRoute: "lanternleaf",
 	});
 	assert.equal(adventureOpportunity(secondMorning), SECOND_ADVENTURE_OPPORTUNITY);
+	assert.equal(canChooseKnownAdventureRoute(secondMorning), true);
+	assert.equal(secondMorning.daysCompleted, 2);
 	assert.equal(secondMorning.glowrootPlanted, true);
 	assert.equal(secondMorning.nextPlanting, "moonberries");
 
 	assert.match(appSource, /function SeedAdventureReceipt\(\{ opportunity, className = "", twoCrops = false \}\)/);
 	assert.match(appSource, /Both harvests help Rosie explore/);
-	assert.match(appSource, /Clover: stay longer · Moonberries: reveal reflections/);
+	assert.match(appSource, /Clover: stay until nightfall · Moonberries: reveal reflected leaves/);
+	assert.match(appSource, /Clover: stay until dusk · Moonberries: notice hidden reflections/);
 	assert.match(appSource, /<SeedAdventureReceipt opportunity=\{opportunity\} className="seed-adventure-memory-receipt" twoCrops \/>/);
 	assert.match(appSource, /<SeedChoicePanel\s+state=\{state\}\s+opportunity=\{opportunity\}/);
 	assert.match(appSource, /What should Rosie grow for the lights\?/);
-	assert.match(appSource, /3 guaranteed · stay until nightfall/);
-	assert.match(appSource, /4 guaranteed · reveal reflected leaves/);
+	assert.match(appSource, /3 guaranteed · \{lanternleaf \? "stay until nightfall" : "stay until dusk"\}/);
+	assert.match(appSource, /4 guaranteed · \{lanternleaf \? "reveal reflected leaves" : "notice hidden reflections"\}/);
 	assert.match(appSource, /onChoose\("moonberries"\)/);
 	assert.match(stylesSource, /\.crop-choice-options \{ display: grid; grid-template-columns: repeat\(2,minmax\(0,1fr\)\)/);
 	assert.match(stylesSource, /\.seed-adventure-receipt \{/);
