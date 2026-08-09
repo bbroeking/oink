@@ -100,6 +100,19 @@ function stageCopy(state) {
 	if (
 		state.stage === STAGES.DEVELOPED &&
 		state.cycleComplete &&
+		revisitingKnownRoute
+	) {
+		return {
+			eyebrow: "Today’s outing",
+			title: lanternleaf
+				? "Rosie followed Lanternleaf Path again"
+				: "Rosie revisited the hedge glow",
+			body: "The trail was already known. This outing deepened Rosie’s knowledge and brought useful supplies back to Farm stock.",
+		};
+	}
+	if (
+		state.stage === STAGES.DEVELOPED &&
+		state.cycleComplete &&
 		state.fieldGuide.includes(SECOND_ADVENTURE_OPPORTUNITY.discoveryName)
 	) {
 		return {
@@ -1247,6 +1260,28 @@ function SeedHandoff({ origin, phase }) {
 }
 
 function homeMemoryContent(state) {
+	const revisitingOpportunity = state.selectedAdventureOpportunityId
+		? adventureOpportunity(state)
+		: null;
+	if (revisitingOpportunity) {
+		const lanternleaf = revisitingOpportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+		return {
+			ariaLabel: `Today's familiar ${lanternleaf ? "Lanternleaf" : "hedge-glow"} outing and Farm stock`,
+			pocketTitle: lanternleaf
+				? "Lanternleaf Path · visited today"
+				: "Hedge glow · visited today",
+			pocketDetail: "Known trail · Supplies stocked",
+			plaqueEyebrow: "Today’s outing",
+			plaqueTitle: "A familiar trail brought Rosie Home",
+			plaqueLabel: `Rosie returned from the familiar ${lanternleaf ? "Lanternleaf Path" : "hedge glow"}`,
+			plaqueDetail: lanternleaf
+				? "Rosie followed the silver leaves Home again."
+				: "Rosie followed the warm moth lights Home again.",
+			positionName: lanternleaf
+				? "Lanternleaf Path revisited"
+				: "Hedge glow revisited",
+		};
+	}
 	if (state.fieldGuide.includes(SECOND_ADVENTURE_OPPORTUNITY.discoveryName)) {
 		return {
 			ariaLabel: "Lanternleaf Path's lasting Home memory and Farm stock",
@@ -1303,8 +1338,8 @@ function HomeMemoryPanel({ state, memory, actionLabel, onAction, showAction = tr
 function HomeMemoryDayPlaque({ memory }) {
 	return (
 		<div className="home-memory-day-plaque" aria-label={memory.plaqueLabel}>
-			<small>Home remembers</small>
-			<strong>The Barn remembers</strong>
+			<small>{memory.plaqueEyebrow ?? "Home remembers"}</small>
+			<strong>{memory.plaqueTitle ?? "The Barn remembers"}</strong>
 			<span>{memory.plaqueDetail}</span>
 		</div>
 	);
@@ -1684,7 +1719,9 @@ function App() {
 	const requestedPosition = Number(initialSearch.get("position"));
 	const hasRequestedPosition = Number.isInteger(requestedPosition) && requestedPosition >= 1 && requestedPosition <= PROTOTYPE_POSITIONS.length;
 	const requestedJourneyPhase = initialSearch.get("journey") === "homeward" ? "homeward" : "trail";
+	const hasRequestedAdventureRoute = initialSearch.has("route");
 	const requestedAdventureRoute = initialSearch.get("route") === "lanternleaf" ? "lanternleaf" : "glowroot";
+	const repeatAdventure = initialSearch.get("repeat") === "1";
 	const reviewMode = loopMode || hasRequestedPosition;
 	const [state, dispatch] = useReducer(homegrownReducer, undefined, () => {
 		if (hasRequestedPosition) {
@@ -1694,12 +1731,14 @@ function App() {
 			if (
 				persistedReview.prototypePosition === requestedPosition &&
 				requestedJourneyPhase === "trail" &&
-				requestedAdventureRoute === "glowroot"
+				!hasRequestedAdventureRoute &&
+				!repeatAdventure
 			) return persistedReview;
 			return createPrototypeState(requestedPosition, {
 				reduceMotion: persistedReview.reduceMotion,
 				journeyPhase: requestedJourneyPhase,
 				adventureRoute: requestedAdventureRoute,
+				repeatAdventure,
 			});
 		}
 		if (loopMode) return createInitialState({ reduceMotion: prefersReduced });

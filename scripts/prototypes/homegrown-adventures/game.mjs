@@ -619,6 +619,7 @@ export function createPrototypeState(position, {
 	reduceMotion = false,
 	journeyPhase = "trail",
 	adventureRoute = "glowroot",
+	repeatAdventure = false,
 } = {}) {
 	const target = normalizePrototypePosition(position);
 	const base = createInitialState({ now, reduceMotion });
@@ -769,10 +770,27 @@ export function createPrototypeState(position, {
 				: ["Clover Lunch", "Dusk Picnic", "Glowroot Seed"],
 		}
 		: {};
+	const repeatRoutePreview = repeatAdventure && target === 11
+		? {
+			daysCompleted: 2,
+			glowrootKnown: true,
+			glowrootPlanted: true,
+			nextPlanting: "moonberries",
+			selectedAdventureOpportunityId: adventureRoute === "lanternleaf"
+				? SECOND_ADVENTURE_OPPORTUNITY.id
+				: FIRST_ADVENTURE_OPPORTUNITY.id,
+			fieldGuide: [...new Set([
+				...presets[target].fieldGuide,
+				...FIRST_ADVENTURE_OPPORTUNITY.fieldGuideEntries,
+				...SECOND_ADVENTURE_OPPORTUNITY.fieldGuideEntries,
+			])],
+		}
+		: {};
 
 	return {
 		...presets[target],
 		...routePreview,
+		...repeatRoutePreview,
 		prototypePosition: target,
 		lastAction: "jump-to-position",
 		trace: [event("jump-to-position", PROTOTYPE_POSITIONS[target - 1].name, now)],

@@ -1914,6 +1914,7 @@ test("the completed second Adventure replaces the old ceremony with Lanternleaf 
 	});
 	assert.equal(directReview.prototypePosition, 11);
 	assert.equal(directReview.daysCompleted, 1);
+	assert.equal(directReview.selectedAdventureOpportunityId, null);
 	assert.ok(directReview.fieldGuide.includes(SECOND_ADVENTURE_OPPORTUNITY.discoveryName));
 
 	let state = throughSecondBag();
@@ -1987,6 +1988,45 @@ test("a freely chosen known route survives reload and resets only on the next da
 	}), { now: at });
 	assert.equal(malformed.selectedAdventureOpportunityId, null);
 	assert.equal(canChooseKnownAdventureRoute(throughSecondMorning()), false);
+});
+
+test("the direct repeat-Home review truthfully models either familiar route", () => {
+	const glowroot = createPrototypeState(11, {
+		now: at,
+		adventureRoute: "glowroot",
+		repeatAdventure: true,
+	});
+	const lanternleaf = createPrototypeState(11, {
+		now: at,
+		adventureRoute: "lanternleaf",
+		repeatAdventure: true,
+	});
+
+	for (const state of [glowroot, lanternleaf]) {
+		assert.equal(state.prototypePosition, 11);
+		assert.equal(state.daysCompleted, 2);
+		assert.equal(canChooseKnownAdventureRoute(state), true);
+		assert.ok(state.fieldGuide.includes(FIRST_ADVENTURE_OPPORTUNITY.discoveryName));
+		assert.ok(state.fieldGuide.includes(SECOND_ADVENTURE_OPPORTUNITY.discoveryName));
+	}
+	assert.equal(glowroot.selectedAdventureOpportunityId, FIRST_ADVENTURE_OPPORTUNITY.id);
+	assert.equal(lanternleaf.selectedAdventureOpportunityId, SECOND_ADVENTURE_OPPORTUNITY.id);
+	assert.equal(adventureOpportunity(glowroot), FIRST_ADVENTURE_OPPORTUNITY);
+	assert.equal(adventureOpportunity(lanternleaf), SECOND_ADVENTURE_OPPORTUNITY);
+
+	assert.match(appSource, /const repeatAdventure = initialSearch\.get\("repeat"\) === "1";/);
+	assert.match(appSource, /const hasRequestedAdventureRoute = initialSearch\.has\("route"\);/);
+	assert.match(appSource, /!hasRequestedAdventureRoute &&\s*!repeatAdventure/);
+	assert.match(appSource, /repeatAdventure,/);
+	assert.match(appSource, /A familiar trail brought Rosie Home/);
+	assert.match(appSource, /Lanternleaf Path · visited today/);
+	assert.match(appSource, /Hedge glow · visited today/);
+	assert.match(appSource, /Rosie followed the silver leaves Home again\./);
+	assert.match(appSource, /Rosie followed the warm moth lights Home again\./);
+	assert.match(appSource, /Known trail · Supplies stocked/);
+	assert.match(appSource, /Lanternleaf Path revisited/);
+	assert.match(appSource, /Hedge glow revisited/);
+	assert.doesNotMatch(appSource, /repeatHomeMemoryPrototype|repeatHomeStudy|repeat-home-ledger/);
 });
 
 test("revisiting a known route returns supplies without pretending the Discovery is new", () => {
