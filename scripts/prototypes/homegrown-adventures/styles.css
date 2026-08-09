@@ -1230,6 +1230,30 @@ html[data-reduce-motion="true"] .journey-watch.is-entering .journey-watch-lights
 }
 .return-discovery-plaque > strong { font-family: Caprasimo, Georgia, serif; font-size: 22px; font-weight: 400; line-height: 1.04; }
 .return-discovery-plaque > small { margin-top: 6px; color: var(--ink-soft); font-size: 11px; font-weight: 800; line-height: 1.2; }
+.return-discovery-plaque:not(.is-near-discovery) {
+	left: 36px;
+	right: 36px;
+	top: 82px;
+	min-height: 0;
+	padding: 15px 18px 14px;
+	display: grid;
+	gap: 4px;
+	justify-content: stretch;
+	background: rgba(255,249,233,.96);
+	border-radius: 24px 9px 22px 10px;
+	box-shadow: 3px 4px rgba(31,18,10,.72);
+	text-align: left;
+}
+.return-discovery-plaque:not(.is-near-discovery) .return-card-eyebrow {
+	position: static;
+	padding: 0;
+	transform: none;
+	color: var(--clover);
+	background: transparent;
+	font-size: 9px;
+}
+.return-discovery-plaque:not(.is-near-discovery) > strong { font-size: 30px; }
+.return-discovery-plaque:not(.is-near-discovery) > small { margin-top: 0; }
 .return-discovery-plaque.is-near-discovery {
 	min-height: 154px;
 	padding-top: 34px;
@@ -1287,6 +1311,40 @@ html[data-reduce-motion="true"] .journey-watch.is-entering .journey-watch-lights
 	border-top: 1px solid rgba(255,249,233,.2);
 }
 .return-stock-ledger-near > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.return-stock-ledger:not(.return-stock-ledger-near) {
+	top: 570px;
+	min-height: 96px;
+	padding: 8px 10px 10px;
+	color: var(--ink);
+	background: rgba(255,249,233,.94);
+	border: 2px solid var(--ink);
+	border-radius: 12px;
+	box-shadow: 2px 3px rgba(31,18,10,.7);
+}
+.return-stock-ledger:not(.return-stock-ledger-near) .return-stock-title {
+	padding: 0 0 7px;
+	color: var(--wood);
+	text-align: left;
+}
+.return-stock-ledger:not(.return-stock-ledger-near) > div {
+	gap: 7px;
+	border-top: 0;
+}
+.return-stock-ledger:not(.return-stock-ledger-near) > div > span {
+	min-height: 0;
+	padding: 0;
+	align-items: start;
+	text-align: left;
+	border-left: 0;
+}
+.return-stock-ledger:not(.return-stock-ledger-near) > div > span > strong {
+	margin-top: 3px;
+	color: var(--ink);
+	font-size: 15px;
+}
+.return-stock-ledger:not(.return-stock-ledger-near) .return-stock-cause {
+	color: var(--ink-soft);
+}
 .return-stock-ledger > div > span {
 	min-width: 0;
 	min-height: 58px;

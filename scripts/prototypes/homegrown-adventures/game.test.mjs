@@ -1932,6 +1932,17 @@ test("the Near-Discovery Homecoming separates Field Guide knowledge from Farm su
 	assert.doesNotMatch(appSource, /NearHomeSwitcher|nearHomeTreatment|nearhome/);
 });
 
+test("the complete Homecoming separates the named Discovery from repeatable Farm supplies", () => {
+	assert.match(appSource, /title: "Rosie discovered Glowroot"/);
+	assert.match(appSource, /lanternleafDiscovery \? opportunity\.discoveryName : "Glowroot"/);
+	assert.match(appSource, /: "A new living Crop for Home"/);
+	assert.doesNotMatch(appSource, /lanternleafDiscovery \? opportunity\.discoveryName : `Glowroot Seed/);
+	assert.match(appSource, /<b>Glowroot Seed<\/b>\s*<strong>\+\{glowrootAmount\}<\/strong>/);
+	assert.match(stylesSource, /\.return-discovery-plaque:not\(\.is-near-discovery\) \{/);
+	assert.match(stylesSource, /\.return-stock-ledger:not\(\.return-stock-ledger-near\) \{/);
+	assert.doesNotMatch(appSource, /HomecomingHierarchySwitcher|returnVariant|homecomingTreatment/);
+});
+
 test("an earned Field Guide clue stays attached to the matching Bag pocket", () => {
 	let state = chooseAdventureBag(createPrototypeState(7, { now: at }), { tool: null });
 	state = reduce(state, { type: ACTIONS.PACK_ADVENTURE });

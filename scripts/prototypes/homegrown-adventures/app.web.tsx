@@ -76,7 +76,7 @@ const STAGE_COPY = {
 	},
 	[STAGES.GLOWROOT_RETURNED]: {
 		eyebrow: "A named Discovery",
-		title: "Rosie found: Glowroot Seed",
+		title: "Rosie discovered Glowroot",
 		body: "The Clover Lunch let Rosie stay until dusk, when the moths revealed a warm gold seed.",
 	},
 	[STAGES.NEAR_DISCOVERY]: {
@@ -1132,12 +1132,12 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 			)}
 			<div className={`return-discovery-plaque ${nearDiscovery ? "is-near-discovery" : ""}`}>
 				<span className="return-card-eyebrow">{nearDiscovery ? "Field Guide updated" : lanternleafDiscovery ? "New route" : "New Discovery"}</span>
-				<strong>{nearDiscovery ? opportunity.clueName : lanternleafDiscovery ? opportunity.discoveryName : `Glowroot Seed  +${glowrootAmount}`}</strong>
+				<strong>{nearDiscovery ? opportunity.clueName : lanternleafDiscovery ? opportunity.discoveryName : "Glowroot"}</strong>
 				<small>{nearDiscovery
 					? guide.story
-					: lanternleafDiscovery
-						? `Glowroot revealed a repeatable path · ${glowrootAmount === 1 ? "one Seed stays" : "two Seeds stay"} in Farm stock`
-						: "A slow Crop that glows after dusk"}</small>
+						: lanternleafDiscovery
+							? `Glowroot revealed a repeatable path · ${glowrootAmount === 1 ? "one Seed stays" : "two Seeds stay"} in Farm stock`
+							: "A new living Crop for Home"}</small>
 				{nearDiscovery && <div className="return-guide-next">
 					<span>Try next time</span>
 					<b>{guide.next}</b>
@@ -1146,7 +1146,6 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 			<div className={`return-stock-ledger ${nearDiscovery ? "return-stock-ledger-near" : ""}`} aria-label={nearDiscovery ? "Supplies brought Home" : "Farm stock returned"}>
 				<strong className="return-stock-title">{nearDiscovery ? "Supplies brought Home" : "Added to Farm stock"}</strong>
 				<div>
-					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
 					{!nearDiscovery && <span>
 						<b>Glowroot Seed</b>
 						<strong>+{glowrootAmount}</strong>
@@ -1154,6 +1153,7 @@ function ReturnRewardPanel({ state, actionLabel, onAction, handoffActive = false
 							<small className="return-stock-cause">Find +1 · Trowel +1</small>
 						)}
 					</span>}
+					<span><b>{practicalReward.name}</b><strong>+{practicalReward.amount}</strong></span>
 					<span>
 						<b>Willow Fiber</b>
 						<strong>+{nearDiscovery ? 1 : willowFiberAmount}</strong>
