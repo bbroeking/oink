@@ -46,9 +46,9 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 import "./styles.css";
 
 const VARIANTS = {
-	A: { name: "Rosie First", question: "Does the living Barn explain the loop by itself?" },
-	B: { name: "Purpose Cards", question: "Does naming the purpose make farming click sooner?" },
-	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
+	A: { name: "Illustrated Tiles", question: "Do larger physical harvests make both crop choices legible without hiding the Farm?" },
+	B: { name: "Seed Tray", question: "Does the approved wooden-tray language make choosing a crop feel like farming?" },
+	C: { name: "Field Labels", question: "Do full-width crop rows create the clearest phone-scale reading order?" },
 };
 
 const STAGE_COPY = {
@@ -378,7 +378,20 @@ function SeedAdventureReceipt({ opportunity, className = "", twoCrops = false })
 	);
 }
 
-function SeedChoicePanel({ state, opportunity, onChoose }) {
+const CROP_CHOICE_ART = {
+	clover: "./assets/homegrown-adventures/harvest-basket.webp",
+	moonberries: "./assets/homegrown-adventures/harvest-basket-moonberries.png",
+};
+
+function CropChoiceArt({ crop }) {
+	return (
+		<span className={`crop-choice-art crop-choice-art-${crop}`} aria-hidden="true">
+			<img src={CROP_CHOICE_ART[crop]} alt="" />
+		</span>
+	);
+}
+
+function SeedChoicePanel({ state, opportunity, onChoose, variant = "A" }) {
 	const farmStock = state.farmStock ?? {};
 	const cloverSeeds = farmStock[CROP_RULES.clover.seedId] ?? 0;
 	const compost = farmStock.compost ?? 0;
@@ -389,22 +402,52 @@ function SeedChoicePanel({ state, opportunity, onChoose }) {
 
 	if (rememberedMorning) {
 		const lanternleaf = opportunity.id === SECOND_ADVENTURE_OPPORTUNITY.id;
+		const choices = [
+			{
+				id: "clover",
+				crop: "Clover",
+				output: "Clover Lunch",
+				duration: "4 hours",
+				yield: "3 guaranteed",
+				use: lanternleaf ? "Stay until nightfall" : "Stay until dusk",
+				stock: cloverLunches,
+				action: cloverSeeds > 0 ? "Grow Clover" : "Need a Seed",
+				disabled: cloverSeeds < 1,
+			},
+			{
+				id: "moonberries",
+				crop: "Moonberries",
+				output: "Moonberries",
+				duration: "8 hours",
+				yield: "4 guaranteed",
+				use: lanternleaf ? "Reveal reflected leaves" : "Notice hidden reflections",
+				stock: moonberries,
+				action: moonberriesAvailable ? "Tend Moonberries" : "Still taking root",
+				disabled: !moonberriesAvailable,
+			},
+		];
+		const choiceButton = (choice, layout) => (
+			<button
+				key={choice.id}
+				className={`crop-choice-${layout} crop-choice-${layout}-${choice.id}`}
+				type="button"
+				onClick={() => onChoose(choice.id)}
+				disabled={choice.disabled}
+				aria-label={`${choice.output}, ${choice.duration}, ${choice.yield}, ${choice.use}, ${choice.stock} at Home. ${choice.action}.`}
+			>
+				<CropChoiceArt crop={choice.id} />
+				<span className="crop-choice-identity"><small>{choice.crop} · {choice.duration}</small><strong>{choice.output}</strong></span>
+				<span className="crop-choice-facts"><b>{choice.yield}</b><span>{choice.use}</span></span>
+				<em className="crop-choice-action"><span>{choice.action}</span><b>{choice.stock} at Home</b></em>
+			</button>
+		);
 		return (
-			<section className="seed-choice-panel crop-choice-study" aria-label="Choose one useful crop for Rosie's next Adventure">
+			<section className={`seed-choice-panel crop-choice-study crop-choice-layout-${variant}`} aria-label="Choose one useful crop for Rosie's next Adventure">
 				<div className="crop-choice-question"><strong>{lanternleaf ? "What should Rosie grow for the lights?" : "What should Rosie grow for the hedge glow?"}</strong><small>Both harvests wait safely and fit her Provision pocket.</small></div>
-				<div className="crop-choice-options">
-					<button className="crop-path crop-path-clover" type="button" onClick={() => onChoose("clover")} disabled={cloverSeeds < 1}>
-						<span className="seed-art seed-art-clover" aria-hidden="true">☘</span>
-						<span className="crop-path-copy"><small>Clover · 4 hours</small><strong>Clover Lunch</strong><b>3 guaranteed · {lanternleaf ? "stay until nightfall" : "stay until dusk"}</b></span>
-						<em className="crop-action-with-stock"><span>{cloverSeeds > 0 ? "Grow Clover" : "Need a Seed"}</span><b>{cloverLunches} at Home</b></em>
-					</button>
-					<button className="crop-path crop-path-moonberry" type="button" onClick={() => onChoose("moonberries")} disabled={!moonberriesAvailable}>
-						<span className="seed-art seed-art-moonberry" aria-hidden="true">●</span>
-						<span className="crop-path-copy"><small>Moonberries · 8 hours</small><strong>Moonberries</strong><b>4 guaranteed · {lanternleaf ? "reveal reflected leaves" : "notice hidden reflections"}</b></span>
-						<em className="crop-action-with-stock"><span>{moonberriesAvailable ? "Tend Moonberries" : "Still taking root"}</span><b>{moonberries} at Home</b></em>
-					</button>
-				</div>
-				<SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" twoCrops />
+				{variant === "A" && <div className="crop-choice-options crop-choice-tiles">{choices.map((choice) => choiceButton(choice, "tile"))}</div>}
+				{variant === "B" && <div className="crop-choice-options crop-choice-tray" aria-label="Wooden crop tray">{choices.map((choice) => choiceButton(choice, "tray-card"))}</div>}
+				{variant === "C" && <div className="crop-choice-options crop-choice-rows">{choices.map((choice) => choiceButton(choice, "row"))}</div>}
+				{variant !== "B" && <SeedAdventureReceipt opportunity={opportunity} className="seed-adventure-memory-receipt" twoCrops />}
 			</section>
 		);
 	}
@@ -2267,6 +2310,7 @@ function App() {
 			{choosingSeed && !holdingPurposeHandoff && <SeedChoicePanel
 				state={state}
 				opportunity={opportunity}
+				variant={variant}
 				onChoose={(crop) => act({ type: ACTIONS.SELECT_CROP, crop })}
 			/>}
 			{holdingPurposeHandoff && <PurposeHandoff opportunity={opportunity} choosingRoute={choosingRoute} />}
