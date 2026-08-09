@@ -35,7 +35,6 @@ import { pigDefinition, type PigId } from "@/utils/pigs";
 interface SwipeElementProps {
 	onLuckySwipe: () => void;
 	pigId?: PigId;
-	hatId?: string | null;
 	restingAnim?: PigAnimation;
 	equipped?: EquippedItem | null;
 	equippedGlasses?: EquippedItem | null;
@@ -50,7 +49,6 @@ interface SwipeElementProps {
 	equippedAura?: EquippedItem | null;
 	equippedBackground?: EquippedItem | null;
 	equippedHeld?: EquippedItem | null;
-	equippedFlag?: EquippedItem | null;
 	canTickle?: boolean;
 	playSixSeven?: number; // increment to re-trigger
 	prestigeLevel?: number;
@@ -61,7 +59,6 @@ const sixSevenSound = require("../assets/sounds/sixseven.m4a");
 export default function SwipeElement({
 	onLuckySwipe,
 	pigId = "rosie",
-	hatId,
 	restingAnim = "idle",
 	equipped,
 	equippedGlasses,
@@ -70,7 +67,6 @@ export default function SwipeElement({
 	equippedAura,
 	equippedBackground,
 	equippedHeld,
-	equippedFlag,
 	canTickle = true,
 	playSixSeven,
 	prestigeLevel = 0,
@@ -277,10 +273,7 @@ export default function SwipeElement({
 		return () => clearTimeout(safetyTimer);
 	}, [playSixSeven, canTickle]);
 
-	// Back-compat: callers can still pass hatId for the main slot.
-	const mainEquipped: EquippedItem | null =
-		equipped ??
-		(hatId ? { id: hatId, category: "hat", emoji: null } : null);
+	const mainEquipped: EquippedItem | null = equipped ?? null;
 
 	// resolveSlot lives in PigStage now (single source of truth shared
 	// with the preview modal). SwipeElement still computes the main
@@ -362,7 +355,6 @@ export default function SwipeElement({
 						equippedNeck={equippedNeck}
 						equippedAura={equippedAura}
 						equippedHeld={equippedHeld}
-						equippedFlag={equippedFlag}
 						relOverrides={relOverrides}
 						prestigeLevel={prestigeLevel}
 					/>

@@ -6,34 +6,12 @@
 // re-fetched only when the roster's id set changes.
 
 import { useEffect, useState } from "react";
-import { fetchMemberHats, fetchMemberProfiles, type RosterProfile } from "@/utils/crews";
-
-export function useRosterHats(userIds: string[]): Map<string, string | null> {
-	const [hats, setHats] = useState<Map<string, string | null>>(new Map());
-	// Order-independent cache key so a re-render with the same members (new
-	// array identity) doesn't refetch; only a real join/leave does.
-	const key = [...userIds].sort().join(",");
-
-	useEffect(() => {
-		if (userIds.length === 0) {
-			setHats(new Map());
-			return;
-		}
-		let cancelled = false;
-		fetchMemberHats(userIds).then((m) => {
-			if (!cancelled) setHats(m);
-		});
-		return () => {
-			cancelled = true;
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [key]);
-
-	return hats;
-}
+import { fetchMemberProfiles, type RosterProfile } from "@/utils/crews";
 
 export function useRosterProfiles(userIds: string[]): Map<string, RosterProfile> {
 	const [profiles, setProfiles] = useState<Map<string, RosterProfile>>(new Map());
+	// Order-independent cache key so a re-render with the same members (new
+	// array identity) doesn't refetch; only a real join/leave does.
 	const key = [...userIds].sort().join(",");
 
 	useEffect(() => {

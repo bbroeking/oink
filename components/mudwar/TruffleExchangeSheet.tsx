@@ -22,7 +22,7 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Icon } from "@/components/ui/Icon";
-import { HAT_IMAGES, RARITY_COLORS, type Rarity } from "@/constants/hats";
+import { HAT_IMAGES, RARITY_COLORS } from "@/constants/hats";
 import {
 	RARITY_TO_TIER,
 	EXCHANGE_TIER_LABEL,
@@ -130,7 +130,7 @@ export function TruffleExchangeSheet({ open, onClose, truffles }: Props) {
 						<ScrollView style={{ flexGrow: 0 }} showsVerticalScrollIndicator={false}>
 							<View style={styles.shelf}>
 								{truffles.items.map((item) => {
-									const rarityColor = RARITY_COLORS[item.rarity as Rarity] ?? WHIMSY.muteSoft;
+									const rarityColor = RARITY_COLORS[item.rarity] ?? WHIMSY.muteSoft;
 									const thumbFill = RARITY_BG_SOLID[item.rarity] ?? WHIMSY.cream;
 									const tier = RARITY_TO_TIER[item.rarity] ?? "muddy";
 									const img = HAT_IMAGES[item.id];

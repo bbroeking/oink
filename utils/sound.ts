@@ -133,6 +133,8 @@ function fadeAmbience(target: number, ms: number, stopAtEnd = false): void {
 	const steps = Math.max(1, Math.round(ms / 60));
 	let start = 0;
 	try {
+		// expo-audio players are native-backed: even a property read throws once
+		// the player has been released (teardown racing a fade). Start from 0.
 		start = p.volume ?? 0;
 	} catch {}
 	let step = 0;

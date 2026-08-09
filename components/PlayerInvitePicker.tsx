@@ -15,7 +15,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, TextInput } from "react-native";
-import * as Haptics from "expo-haptics";
 import { CrewSheet } from "./CrewSheet";
 import {
 	AccentNote,
@@ -27,9 +26,8 @@ import {
 	SunPill,
 } from "./CrewRow";
 import { EmptyState, LoadingBeat } from "./ui/EmptyState";
-import type { UseCrew } from "@/hooks/useCrew";
+import { useInviteActions, type UseCrew } from "@/hooks/useCrew";
 import { fetchInviteCandidates, type InviteCandidate } from "@/utils/crews";
-import { CREW_CAP } from "@/constants/crews";
 import { FONTS, RADII, SPACE, TYPE, WHIMSY } from "@/constants/theme";
 
 function inviteError(reason?: string): string {
@@ -60,8 +58,10 @@ export function PlayerInvitePicker({
 }) {
 	const [search, setSearch] = useState("");
 	const [rows, setRows] = useState<InviteCandidate[] | null>(null);
-	const [note, setNote] = useState<string | null>(null);
-	const [busyId, setBusyId] = useState<string | null>(null);
+	const { note, busyId, invite, cancel, seatsFull } = useInviteActions(
+		crewHook,
+		inviteError
+	);
 
 	// Debounced fetch: default (empty) → the leaderboard; typing → username match.
 	useEffect(() => {
@@ -91,33 +91,6 @@ export function PlayerInvitePicker({
 		() => new Map(crewHook.crew.invitesOut.map((i) => [i.invitee_id, i.id])),
 		[crewHook.crew.invitesOut]
 	);
-	// Members + pending-out fill the roster (the server's combined cap); once full
-	// every remaining Invite is dead — disable with a quiet hint.
-	const seatsFull =
-		crewHook.crew.members.length + crewHook.crew.invitesOut.length >= CREW_CAP;
-
-	const invite = async (playerId: string) => {
-		if (busyId) return;
-		setBusyId(playerId);
-		setNote(null);
-		const r = await crewHook.invite(playerId);
-		setBusyId(null);
-		if (r.ok) {
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-		} else {
-			setNote(inviteError(r.reason));
-		}
-	};
-
-	const cancel = async (inviteId: string) => {
-		if (busyId) return;
-		setBusyId(inviteId);
-		setNote(null);
-		const r = await crewHook.cancel(inviteId);
-		setBusyId(null);
-		if (!r.ok) setNote("Couldn't take that ask back — try again.");
-	};
-
 	return (
 		<CrewSheet
 			visible={visible}

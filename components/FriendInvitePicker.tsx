@@ -11,7 +11,6 @@
 
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
-import * as Haptics from "expo-haptics";
 import { supabase } from "@/utils/supabase";
 import { CrewSheet } from "./CrewSheet";
 import {
@@ -24,10 +23,9 @@ import {
 	SunPill,
 } from "./CrewRow";
 import { EmptyState, LoadingBeat } from "./ui/EmptyState";
-import type { UseCrew } from "@/hooks/useCrew";
+import { useInviteActions, type UseCrew } from "@/hooks/useCrew";
 import { fetchFriendsCrews, type FriendCrew } from "@/utils/crews";
 import { getFriendIds, FRIEND_CAP_LIMIT, type Profile } from "@/utils/friendships";
-import { CREW_CAP } from "@/constants/crews";
 import { SPACE } from "@/constants/theme";
 
 function inviteError(reason?: string): string {
@@ -56,8 +54,10 @@ export function FriendInvitePicker({
 }) {
 	const [friends, setFriends] = useState<Profile[] | null>(null);
 	const [crewsByFriend, setCrewsByFriend] = useState<Map<string, FriendCrew>>(new Map());
-	const [note, setNote] = useState<string | null>(null);
-	const [busyId, setBusyId] = useState<string | null>(null);
+	const { note, busyId, invite, cancel, seatsFull } = useInviteActions(
+		crewHook,
+		inviteError
+	);
 
 	useEffect(() => {
 		if (!visible) return;
@@ -70,8 +70,8 @@ export function FriendInvitePicker({
 							.from("profiles")
 							.select("id, username, discriminator, active_hat_id")
 							.in("id", ids)
-							.then(({ data }) => (data as Profile[]) ?? [])
-					: Promise.resolve([] as Profile[]),
+							.then(({ data }) => data ?? [])
+					: Promise.resolve([]),
 				fetchFriendsCrews(),
 			]);
 			if (cancelled) return;
@@ -91,34 +91,6 @@ export function FriendInvitePicker({
 	const waitingInviteByFriend = new Map(
 		crewHook.crew.invitesOut.map((i) => [i.invitee_id, i.id])
 	);
-	// Members + pending-out invites fill the roster (server's combined cap), so
-	// once they hit CREW_CAP every remaining Invite is dead — disable them with a
-	// quiet "full" hint rather than let the server bounce each ask.
-	const seatsFull =
-		crewHook.crew.members.length + crewHook.crew.invitesOut.length >= CREW_CAP;
-
-	const invite = async (friendId: string) => {
-		if (busyId) return;
-		setBusyId(friendId);
-		setNote(null);
-		const r = await crewHook.invite(friendId);
-		setBusyId(null);
-		if (r.ok) {
-			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-		} else {
-			setNote(inviteError(r.reason));
-		}
-	};
-
-	const cancel = async (inviteId: string) => {
-		if (busyId) return;
-		setBusyId(inviteId);
-		setNote(null);
-		const r = await crewHook.cancel(inviteId);
-		setBusyId(null);
-		if (!r.ok) setNote("Couldn't take that ask back — try again.");
-	};
-
 	return (
 		<CrewSheet
 			visible={visible}

@@ -6,7 +6,7 @@ import {
   type RpcResult,
 } from "@/utils/rpc";
 import { supabase } from "@/utils/supabase";
-import { getFriendIds, type Profile } from "@/utils/friendships";
+import { getFriendIds } from "@/utils/friendships";
 
 export interface PostcardFriend {
   id: string;
@@ -99,7 +99,7 @@ export async function fetchPostcardFriends(): Promise<PostcardFriend[]> {
     .select("id, username, discriminator")
     .in("id", ids.slice(0, 100));
   if (error) return [];
-  return ((data ?? []) as Profile[])
+  return (data ?? [])
     .map((profile) => ({
       id: profile.id,
       username: profile.username ?? null,

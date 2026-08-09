@@ -1,16 +1,11 @@
 import React from "react";
 import { SpritePig } from "./SpritePig";
-import {
-	resolvePigAnimation,
-	type PigRendererProps,
-} from "./pigRendererContract";
+import { resolvePigAnimation } from "./pigRendererContract";
+// The props shape is shared with the native renderer — one declaration lives on
+// the Rive contract so the platform split can't drift.
+import type { RivePigProps } from "./rivePigContract";
 
-export interface RivePigProps extends PigRendererProps {
-	source: number;
-	skinSource?: number;
-	artboardName?: string;
-	stateMachineName?: string;
-}
+export type { RivePigProps };
 
 /**
  * Web-safe renderer until the authored pig.riv and web runtime adapter exist.

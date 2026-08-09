@@ -25,7 +25,7 @@ import {
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Sticker } from "../components/ui/Sticker";
 import { EmptyState, LoadingBeat } from "../components/ui/EmptyState";
-import { useRace } from "@/hooks/useRace";
+import { useCrewLedger, useRace } from "@/hooks/useRace";
 import {
 	RaceCrewDetail,
 	RaceHistoryWeek,
@@ -33,7 +33,6 @@ import {
 	StandingsRow,
 	allSeasonRows,
 	allWeeklyRows,
-	fetchRaceCrewDetail,
 	fetchRaceHistory,
 	perSnoutLabel,
 	pinNeeded,
@@ -88,36 +87,19 @@ export default function RaceStandingsScreen() {
 		fetchRaceHistory().then(setHistory);
 	}, [board, history]);
 
-	// One crew's ledger open at a time; each crew's detail is fetched once and
-	// cached ("dark" when the RPC resolves null pre-push) — same as the tab card.
-	const [expandedCrew, setExpandedCrew] = useState<string | null>(null);
-	const [detailCache, setDetailCache] = useState<
-		Record<string, RaceCrewDetail | "dark">
-	>({});
-	const toggleCrew = useCallback(
-		(crewId: string) => {
-			const willExpand = expandedCrew !== crewId;
-			setExpandedCrew(willExpand ? crewId : null);
-			if (willExpand && detailCache[crewId] === undefined) {
-				fetchRaceCrewDetail(crewId).then((d) => {
-					if (d) {
-						setDetailCache((c) => ({ ...c, [crewId]: d }));
-					} else {
-						setDetailCache((c) => ({ ...c, [crewId]: "dark" }));
-						setExpandedCrew((cur) => (cur === crewId ? null : cur));
-					}
-				});
-			}
-		},
-		[expandedCrew, detailCache],
-	);
+	// One crew's ledger open at a time — same machine the tab card runs.
+	const { expandedCrew, setExpandedCrew, detailCache, toggleCrew } =
+		useCrewLedger();
 
 	// Flip boards → collapse back to the first page (the header shows the new count).
-	const switchBoard = useCallback((next: Board) => {
-		setBoard(next);
-		setPages(1);
-		setExpandedCrew(null);
-	}, []);
+	const switchBoard = useCallback(
+		(next: Board) => {
+			setBoard(next);
+			setPages(1);
+			setExpandedCrew(null);
+		},
+		[setExpandedCrew],
+	);
 
 	if (state === undefined) {
 		return (

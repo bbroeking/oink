@@ -178,5 +178,8 @@ export async function scheduleOpenReminder(
 export async function cancelOpenReminder(): Promise<void> {
 	try {
 		await Notifications.cancelScheduledNotificationAsync(OPEN_REMINDER_ID);
-	} catch {}
+	} catch {
+		// Native notifications module missing (web / a build without the module)
+		// or nothing pending — either way there is no reminder left to cancel.
+	}
 }

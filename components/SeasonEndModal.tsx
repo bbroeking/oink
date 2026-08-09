@@ -64,7 +64,7 @@ const HUNGER = require("../assets/images/hunger/great_hungerer_hero.png");
 
 // Dev-preview stand-ins so the __DEV__ chip can show the full flow without a
 // server grant. One per tier so every reward tier (chip count + copy) is
-// testable on-device; DEV_PREVIEW_REWARD keeps the old top-3 default.
+// testable on-device.
 export const DEV_PREVIEW_REWARDS: BetaReward[] = (
 	["founding_herd", "trough_table", "bog_royalty", "snoutfather"] as BetaTier[]
 ).map((tier, i) => ({
@@ -73,9 +73,6 @@ export const DEV_PREVIEW_REWARDS: BetaReward[] = (
 	titleName: BETA_TIER_TITLE[tier],
 	snouts: BETA_TIER_SNOUTS[tier],
 }));
-
-export const DEV_PREVIEW_REWARD: BetaReward =
-	DEV_PREVIEW_REWARDS.find((r) => r.tier === "bog_royalty") ?? DEV_PREVIEW_REWARDS[0];
 
 type Beat = {
 	key: string;

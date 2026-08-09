@@ -17,24 +17,8 @@ import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { Redirect } from "expo-router";
 import * as Linking from "expo-linking";
 import { supabase } from "@/utils/supabase";
+import { paramsFromUrl } from "@/utils/authCallback";
 import { WHIMSY } from "@/constants/theme";
-
-// Pull auth params from either the query string or the fragment — the same
-// defensive read GoogleAuth uses (implicit flow returns tokens in the
-// fragment; PKCE returns `code` in the query).
-function paramsFromUrl(url: string): URLSearchParams {
-	const merged = new URLSearchParams();
-	try {
-		const u = new URL(url);
-		u.searchParams.forEach((v, k) => merged.set(k, v));
-		const frag = u.hash.startsWith("#") ? u.hash.slice(1) : u.hash;
-		if (frag) new URLSearchParams(frag).forEach((v, k) => merged.set(k, v));
-	} catch {
-		// Malformed callback URL — fall through; the caller redirects home and
-		// the login screen shows again rather than crashing.
-	}
-	return merged;
-}
 
 export default function AuthCallback() {
 	const url = Linking.useURL();

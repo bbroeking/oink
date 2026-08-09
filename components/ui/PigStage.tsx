@@ -80,6 +80,9 @@ export function resolvePigStageAssetAspect(
 		if (!resolved?.width || !resolved.height) return 1;
 		return resolved.height / resolved.width;
 	} catch {
+		// RN's resolveAssetSource throws on an asset handle Metro didn't register
+		// (stale bundle / missing require). A square fallback keeps the pig on
+		// screen rather than tearing down the whole stage.
 		return 1;
 	}
 }
@@ -126,7 +129,6 @@ export interface PigStageProps {
 	equippedNeck?: EquippedItem | null;    // neck (scarf / necklace)
 	equippedAura?: EquippedItem | null;
 	equippedHeld?: EquippedItem | null;
-	equippedFlag?: EquippedItem | null;   // country flag — corner sticker
 
 	// Dev-only: overrides written by the /item-anchor tool. Pass an
 	// empty map (or omit) in non-dev contexts.
@@ -174,6 +176,10 @@ export function resolveSlot(
 	overlay: HatOverlay | null;
 } | null {
 	if (!slot) return null;
+	// PigAnimation carries one key the anchor tables don't: "bounce", which is a
+	// looping re-use of the jump frames (PIG_ANIMATION_SPECS), so it shares
+	// jump's per-frame anchors. Every other PigAnimation IS a PigAnimationKey.
+	const anchorAnim: PigAnimationKey = pigAnim === "bounce" ? "jump" : pigAnim;
 	const itemId = slot.id;
 	const category = slot.category ?? null;
 	const emoji = slot.emoji ?? null;
@@ -194,7 +200,7 @@ export function resolveSlot(
 			(category ? CATEGORY_ANCHORS[category] : undefined) ??
 			"head";
 		const a = resolveAnchor(
-			pigAnim as PigAnimationKey,
+			anchorAnim,
 			pigFrameIdx,
 			anchorName,
 		);
@@ -205,7 +211,7 @@ export function resolveSlot(
 				: undefined,
 		);
 		const pose = resolveWearablePose(
-			pigAnim as PigAnimationKey,
+			anchorAnim,
 			pigFrameIdx,
 			anchorName,
 		);
@@ -253,7 +259,7 @@ export function resolveSlot(
 	const baseOverlay = rawBase
 		? {
 				...rawBase,
-				...(rawBase.perAnim?.[pigAnim as PigAnimationKey] ?? {}),
+				...(rawBase.perAnim?.[anchorAnim] ?? {}),
 			}
 		: null;
 
@@ -261,14 +267,14 @@ export function resolveSlot(
 	const delta = isFullCanvas
 		? { dx: 0, dy: 0 }
 		: frameDelta(
-				pigAnim as PigAnimationKey,
+				anchorAnim,
 				pigFrameIdx,
 				category,
 				baseOverlay?.anchor,
 			);
 	const catShift =
 		(category &&
-			CATEGORY_PERANIM_SHIFTS[category]?.[pigAnim as PigAnimationKey]) ||
+			CATEGORY_PERANIM_SHIFTS[category]?.[anchorAnim]) ||
 		null;
 	const overlay = baseOverlay
 		? isFullCanvas
@@ -371,7 +377,6 @@ export function PigStage({
 	equippedNeck,
 	equippedAura,
 	equippedHeld,
-	equippedFlag,
 	relOverrides = {},
 	hideAccessory = false,
 	tints = {},
@@ -391,8 +396,8 @@ export function PigStage({
 	// Regeneration power caps at rank two, but the earned aura keeps evolving
 	// through five visual stages so later ranks still look more legendary.
 	const prestigeVisualStage = Math.min(5, Math.max(0, Math.floor(prestigeLevel)));
-	// Dye Vat: resolve a worn item's chosen member palette (or undefined). Auras,
-	// backgrounds and flags are intentionally not dyeable.
+	// Dye Vat: resolve a worn item's chosen member palette (or undefined). Auras
+	// and backgrounds are intentionally not dyeable.
 	const tintFor = (id: string | undefined) => (id ? tints[id] : undefined);
 	const main = resolveSlot(equipped, pigAnimation, pigFrameIdx, relOverrides);
 	const glassesSlot = resolveSlot(equippedGlasses, pigAnimation, pigFrameIdx, relOverrides);
@@ -400,7 +405,6 @@ export function PigStage({
 	const neckSlot = resolveSlot(equippedNeck, pigAnimation, pigFrameIdx, relOverrides);
 	const auraSlot = resolveSlot(equippedAura, pigAnimation, pigFrameIdx, relOverrides);
 	const heldSlot = resolveSlot(equippedHeld, pigAnimation, pigFrameIdx, relOverrides);
-	const flagSlot = resolveSlot(equippedFlag, pigAnimation, pigFrameIdx, relOverrides);
 	const equipment = {
 		headId: equipped?.id,
 		faceId: equippedGlasses?.id,
@@ -626,14 +630,6 @@ export function PigStage({
 					category={heldSlot.category}
 					zIndex={11}
 					tint={tintFor(heldSlot.itemId)}
-				/>
-			)}
-			{flagSlot?.overlay && !hideAccessory && (
-				<ItemOverlay
-					overlay={flagSlot.overlay}
-					imageSrc={flagSlot.imageSrc}
-					category={flagSlot.category}
-					zIndex={12}
 				/>
 			)}
 		</View>

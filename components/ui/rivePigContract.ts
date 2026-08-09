@@ -1,6 +1,7 @@
 import type {
 	PigAnimation,
 	PigEquipmentSelection,
+	PigRendererProps,
 } from "./pigRendererContract";
 import { PIG_IDS, type PigId } from "@/utils/pigs";
 
@@ -44,6 +45,18 @@ export const RIVE_PIG_INPUTS = Object.freeze({
 	face: "equip_face",
 	held: "equip_held",
 } as const);
+
+// The Rive renderer's props: the renderer-neutral contract plus the .riv sources
+// and artboard/state-machine names only a Rive renderer needs. Declared here so
+// the native renderer and the web fallback share ONE shape — they are two
+// implementations of the same component, and the platform split used to carry
+// two hand-copied declarations that could drift apart silently.
+export interface RivePigProps extends PigRendererProps {
+	source: number;
+	skinSource?: number;
+	artboardName?: string;
+	stateMachineName?: string;
+}
 
 export type RivePigRestState = 0 | 1 | 2;
 

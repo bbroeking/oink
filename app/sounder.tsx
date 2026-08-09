@@ -15,13 +15,12 @@ import {
 	SafeAreaView,
 	Pressable,
 } from "react-native";
-import { Stack, router, Redirect } from "expo-router";
+import { Stack, router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { rpc } from "@/utils/rpc";
 import { Sticker } from "../components/ui/Sticker";
 import { EmptyState, LoadingBeat } from "../components/ui/EmptyState";
 import { FONTS, PAGE_PAD, RADII, ROW_TILTS, SPACE, TYPE, WHIMSY } from "@/constants/theme";
-import { SOUNDER_VISIBLE } from "@/constants/featureFlags";
 
 interface SounderRow {
 	rank: number;
@@ -39,22 +38,12 @@ export default function SounderScreen() {
 
 	useFocusEffect(
 		useCallback(() => {
-			// Sounder UI is hidden — skip the fetch while the flag is
-			// off; the redirect below bounces the user out anyway.
-			if (!SOUNDER_VISIBLE) return;
 			rpc<SounderRow[]>("sounder_leaderboard", { limit_n: 50 }).then((data) => {
 				setRows(data ?? []);
 				setLoading(false);
 			});
 		}, [])
 	);
-
-	// Hooks above run unconditionally (rules-of-hooks); the gate is
-	// here, after all hooks. If a stale deep-link lands here while
-	// the Sounder is hidden, bounce back to the home tab.
-	if (!SOUNDER_VISIBLE) {
-		return <Redirect href="/" />;
-	}
 
 	const champ = rows[0];
 	const rest = rows.slice(1);

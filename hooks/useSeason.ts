@@ -23,15 +23,12 @@
 // RawClaim → ClaimResult mapping below is unchanged; claim_ready_tiers returns a
 // jsonb tally that tallyFromRpc folds into the existing ClaimAllTally.
 //
-// LEGACY FALLBACK: rpc() returns null when the new function is absent (a dev/
-// staging DB not yet migrated → PostgREST PGRST202) — AND on any transport blip.
-// Both collapse to the same null, so on null we fall back to the OLD per-tier
-// path: claimRpc's prestige branch for a single claim, the sequential loop
-// (claimAllLegacy) for claim-all. Retrying a claim after a null is SAFE because
-// every per-tier claimer is idempotent (a tier that already landed re-reports
-// already_claimed → counted as a failure, never double-granted) and the legacy
-// path returns the same {ok, reason, current_tier, mystery-grant} surface. This
-// mirrors useRooting's MISSING_RPC_REASONS fail-soft convention.
+// A null from rpc() is an ordinary FAILURE (transport blip, or a refusal that
+// didn't reach us) — not a signal to re-derive the claim client-side. A single
+// claim surfaces {ok:false, reason:"network"}, which the screen already renders
+// as its "Couldn't claim / give it another tap" fallback; claim-all folds the
+// null through tallyFromRpc into a zeroed tally, so nothing is reported as
+// claimed. Both are safe to retry: every claimer is idempotent server-side.
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
@@ -124,9 +121,8 @@ export interface UseSeason {
 	wallowClaimedSet: Set<string>;
 	wallowTiersByNumber: TiersByNumber;
 	nextReward: NextReward | null;
-	// Actions over the consolidation RPCs (legacy per-tier fallback on a null).
-	// null = the in-flight guard skipped (or, for claimAll, nothing to claim) —
-	// the screen shows nothing, exactly as before.
+	// Actions over the consolidation RPCs. null = the in-flight guard skipped
+	// (or, for claimAll, nothing to claim) — the screen shows nothing.
 	claim: (tier: number, track: "free" | "premium") => Promise<ClaimResult | null>;
 	claimAll: (
 		tiers: number[],
@@ -199,86 +195,27 @@ export function useSeason(): UseSeason {
 		[state, prestigeMode, tiersByNumber, claimedSet, wallowTiersByNumber, wallowClaimedSet]
 	);
 
-	// LEGACY per-tier claim round-trip — prestige vs normal picks the OLD RPC. This
-	// is the fail-soft fallback for BOTH claim actions when the consolidation RPCs
-	// are absent (un-migrated DB → rpc() null) or a transport blip returns null.
-	// Kept verbatim so the legacy path stays byte-for-byte the pre-refactor call.
-	const claimRpc = useCallback(
-		(tier: number, track: "free" | "premium", prestige: boolean): Promise<RawClaim> =>
-			prestige
-				? rpc<RawClaim>("claim_wallow_tier", { target_tier: tier })
-				: rpc<RawClaim>("claim_tier_reward", { target_tier: tier, target_track: track }),
-		[]
-	);
-
-	// LEGACY claim-all sweep — the pre-consolidation client-side sequential loop,
-	// kept as the un-migrated-server fallback. Folds the SAME ClaimAllTally the new
-	// claim_ready_tiers returns (tickles/items off the local catalog rows, last
-	// mystery grant carried through). Never returns null; the guards live in the
-	// caller.
-	const claimAllLegacy = useCallback(
-		async (
-			tiers: number[],
-			track: "free" | "premium",
-			prestige: boolean
-		): Promise<ClaimAllTally> => {
-			const source = prestige ? wallowTiersByNumber : tiersByNumber;
-			let tickles = 0;
-			const items: string[] = [];
-			let lastMystery: MysteryBoxRevealPayload | null = null;
-			let failed = 0;
-			// Sequential — the legacy RPC is per-tier.
-			for (const t of tiers) {
-				const row = source[t]?.[track];
-				const r = await claimRpc(t, track, prestige);
-				if (!r || !r.ok) {
-					failed++;
-					continue;
-				}
-				if (r.granted_hat_id || r.fallback_snouts) {
-					lastMystery = r;
-				}
-				if (row) {
-					if (row.reward_type === "tickles") {
-						tickles += row.reward_value?.amount ?? row.reward_value?.count ?? 0;
-					} else {
-						items.push(row.display_label);
-					}
-				}
-			}
-			return { claimedCount: tiers.length - failed, failed, tickles, items, lastMystery };
-		},
-		[tiersByNumber, wallowTiersByNumber, claimRpc]
-	);
-
 	const claim = useCallback(
 		async (tier: number, track: "free" | "premium"): Promise<ClaimResult | null> => {
 			if (busyRef.current) return null;
 			busyRef.current = true;
 			setBusy(true);
-			// NEW: server resolves prestige-vs-normal + track. We pass the screen's
+			// The server resolves prestige-vs-normal + track. We pass the screen's
 			// resolved track as a hint (prestige forces free server-side; a normal claim
 			// derives premium-vs-free server-side).
-			let r = await rpc<RawClaim>("claim_season_tier", {
+			const r = await rpc<RawClaim>("claim_season_tier", {
 				target_tier: tier,
 				target_track: track,
 			});
-			if (r == null) {
-				// LEGACY FALLBACK — claim_season_tier absent (un-migrated DB) or a transport
-				// blip both surface as null. Re-derive prestige on the client and hit the OLD
-				// per-tier claimer. Safe to retry after a null: the per-tier claim is
-				// idempotent (already_claimed) and returns the same {ok, reason, current_tier,
-				// mystery-grant} surface the new RPC does, so the mapping below is unchanged.
-				const prestige = seasonPass.prestigeMode(state);
-				r = await claimRpc(tier, track, prestige);
-			}
 			busyRef.current = false;
 			setBusy(false);
+			// A null is an ordinary failure — reason "network", which the screen's
+			// dialog maps don't key on, so it renders the generic retry copy.
 			if (!r) return { ok: false, reason: "network" };
 			if (!r.ok) return { ok: false, reason: r.reason ?? "", current_tier: r.current_tier };
 			return { ...r, ok: true };
 		},
-		[state, claimRpc]
+		[]
 	);
 
 	const claimAll = useCallback(
@@ -289,25 +226,17 @@ export function useSeason(): UseSeason {
 			if (tiers.length === 0) return null;
 			busyRef.current = true;
 			setBusy(true);
-			// NEW: ONE transaction claims every ready tier server-side. Track is a hint;
+			// ONE transaction claims every ready tier server-side. Track is a hint;
 			// prestige + track resolve server-side exactly as claim_season_tier.
 			const raw = await rpc<RawClaimAll>("claim_ready_tiers", { target_track: track });
-			let tally: ClaimAllTally;
-			if (raw) {
-				tally = tallyFromRpc(raw);
-			} else {
-				// LEGACY FALLBACK — claim_ready_tiers absent or a transport blip (both null).
-				// Re-run the OLD sequential loop. Safe after a null even if the sweep
-				// partially committed before the response was lost: each per-tier claim is
-				// idempotent (already_claimed → counted as a failure, never double-granted).
-				const prestige = seasonPass.prestigeMode(state);
-				tally = await claimAllLegacy(tiers, track, prestige);
-			}
+			// tallyFromRpc fail-softs a null (transport miss) into a zeroed tally, so a
+			// failed sweep reports nothing claimed rather than a phantom haul.
+			const tally = tallyFromRpc(raw);
 			busyRef.current = false;
 			setBusy(false);
 			return tally;
 		},
-		[state, claimAllLegacy]
+		[]
 	);
 
 	const wallow = useCallback(async (): Promise<RpcResult<WallowFields> | null> => {

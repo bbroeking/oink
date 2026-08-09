@@ -10,6 +10,7 @@
 
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import * as Haptics from "expo-haptics";
 import { supabase } from "@/utils/supabase";
 import { usePostgresChanges } from "./usePostgresChanges";
 import {
@@ -30,6 +31,7 @@ import {
 } from "@/utils/crews";
 import { markSounderLeft } from "@/utils/sounderPath";
 import { RpcResult } from "@/utils/rpc";
+import { CREW_CAP } from "@/constants/crews";
 
 const EMPTY: CrewState = {
 	crew: null,
@@ -282,4 +284,48 @@ export function useJoinableCrews(enabled = true) {
 	);
 
 	return { crews, loading, refresh };
+}
+
+// The invite-picker action machine, shared by FriendInvitePicker and
+// PlayerInvitePicker: one at a time (busyId latches the row that's working), a
+// single note line for whatever the server bounced, and take-it-back for an ask
+// that's already out. The two pickers reach different candidate pools but push
+// the exact same buttons, so the machine lives here and each picker supplies
+// only its own reason→copy map.
+export function useInviteActions(
+	crewHook: UseCrew,
+	inviteError: (reason?: string) => string,
+) {
+	const [note, setNote] = useState<string | null>(null);
+	const [busyId, setBusyId] = useState<string | null>(null);
+
+	const invite = async (userId: string) => {
+		if (busyId) return;
+		setBusyId(userId);
+		setNote(null);
+		const r = await crewHook.invite(userId);
+		setBusyId(null);
+		if (r.ok) {
+			Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+		} else {
+			setNote(inviteError(r.reason));
+		}
+	};
+
+	const cancel = async (inviteId: string) => {
+		if (busyId) return;
+		setBusyId(inviteId);
+		setNote(null);
+		const r = await crewHook.cancel(inviteId);
+		setBusyId(null);
+		if (!r.ok) setNote("Couldn't take that ask back — try again.");
+	};
+
+	// Members + pending-out invites fill the roster (the server's combined cap),
+	// so once they hit CREW_CAP every remaining Invite is dead — callers disable
+	// them with a quiet hint rather than let the server bounce each ask.
+	const seatsFull =
+		crewHook.crew.members.length + crewHook.crew.invitesOut.length >= CREW_CAP;
+
+	return { note, busyId, invite, cancel, seatsFull };
 }

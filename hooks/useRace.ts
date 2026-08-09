@@ -8,7 +8,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { RaceStandings, fetchRaceStandings } from "@/utils/race";
+import {
+	RaceCrewDetail,
+	RaceStandings,
+	fetchRaceCrewDetail,
+	fetchRaceStandings,
+} from "@/utils/race";
 import { ensurePushPermission } from "@/utils/pushNotifications";
 
 // How often to refetch during the closing hour of a cycle (the standings +
@@ -80,4 +85,34 @@ export function useRace(enabled = true): UseRace {
 		featureDark: state === null,
 		refresh,
 	};
+}
+
+// The expandable per-Sounder member ledger, shared by the season tab's Dig-Off
+// card and the full-field standings page (both render the same CrewLedger under
+// a tapped row). One crew open at a time; each crew's detail is fetched once and
+// cached — "dark" when the RPC resolves null pre-push, which also collapses the
+// row so a tap never opens an empty drawer.
+export function useCrewLedger() {
+	const [expandedCrew, setExpandedCrew] = useState<string | null>(null);
+	const [detailCache, setDetailCache] = useState<
+		Record<string, RaceCrewDetail | "dark">
+	>({});
+	const toggleCrew = useCallback(
+		(crewId: string) => {
+			const willExpand = expandedCrew !== crewId;
+			setExpandedCrew(willExpand ? crewId : null);
+			if (willExpand && detailCache[crewId] === undefined) {
+				fetchRaceCrewDetail(crewId).then((d) => {
+					if (d) {
+						setDetailCache((c) => ({ ...c, [crewId]: d }));
+					} else {
+						setDetailCache((c) => ({ ...c, [crewId]: "dark" }));
+						setExpandedCrew((cur) => (cur === crewId ? null : cur));
+					}
+				});
+			}
+		},
+		[expandedCrew, detailCache],
+	);
+	return { expandedCrew, setExpandedCrew, detailCache, toggleCrew };
 }

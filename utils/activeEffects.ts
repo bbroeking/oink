@@ -12,6 +12,7 @@ import {
 	CURSE_META,
 	type BlessingKind,
 	type CurseKind,
+	type RitualMeta,
 } from "./rituals";
 
 export interface Effect {
@@ -29,7 +30,9 @@ export interface Effect {
 // the sender label with its blessing/curse fallback, and the avatar initial.
 export function effectMeta(e: Effect) {
 	const blessed = e.source === "blessing";
-	const meta = blessed
+	// `kind` arrives as a raw server string, so the lookup can miss — the
+	// annotation keeps that honest and forces the `meta?.` guards below.
+	const meta: RitualMeta | undefined = blessed
 		? BLESSING_META[e.kind as BlessingKind]
 		: CURSE_META[e.kind as CurseKind];
 	const senderName = e.sender_username ?? (blessed ? "a friend" : "someone");

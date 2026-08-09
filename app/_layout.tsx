@@ -227,7 +227,7 @@ function RootLayoutInner() {
 				supabase.from("profiles").select("is_vip").eq("id", sessionUserId).maybeSingle(),
 			]);
 			if (cancelled || seen) return;
-			setPigFriendsMember((profile.data as { is_vip?: boolean } | null)?.is_vip === true);
+			setPigFriendsMember(profile.data?.is_vip === true);
 			setPigFriendsLaunchUid(sessionUserId);
 			setPigFriendsLaunch(true);
 		})();
@@ -255,7 +255,7 @@ function RootLayoutInner() {
 				.maybeSingle();
 			Sentry.setUser({
 				id: data.user.id,
-				username: (prof as { username?: string | null } | null)?.username ?? undefined,
+				username: prof?.username ?? undefined,
 			});
 		})();
 		return () => {
@@ -371,14 +371,7 @@ function RootLayoutInner() {
 					.gt("sent_at", since)
 					.order("sent_at", { ascending: false })
 					.limit(20);
-				return {
-					rows: (data ?? []) as {
-						kind: string;
-						sender_id: string;
-						sent_at: string;
-					}[],
-					error,
-				};
+				return { rows: data ?? [], error };
 			};
 
 			// Trades you requested that got fulfilled while you were
@@ -395,15 +388,14 @@ function RootLayoutInner() {
 					.gt("fulfilled_at", since)
 					.order("fulfilled_at", { ascending: false })
 					.limit(20);
-				return {
-					rows: (data ?? []) as {
-						id: string;
-						amount: number;
-						target_id: string;
-						fulfilled_at: string;
-					}[],
-					error,
-				};
+				// `fulfilled_at` is nullable in the schema, but this query already
+				// filters status='fulfilled' AND fulfilled_at > since, so every row
+				// that comes back has one. Narrow here — where the guarantee is
+				// visible — rather than assert it away at the mapping site.
+				const rows = (data ?? []).filter(
+					(r): r is typeof r & { fulfilled_at: string } => r.fulfilled_at !== null
+				);
+				return { rows, error };
 			};
 
 			// System announcements — admin-issued messages that
@@ -502,12 +494,7 @@ function RootLayoutInner() {
 					.select("id, username")
 					.in("id", actorIds);
 				if (cancelled) return;
-				byId = new Map(
-					((profs ?? []) as { id: string; username: string | null }[]).map((p) => [
-						p.id,
-						p.username,
-					])
-				);
+				byId = new Map((profs ?? []).map((p) => [p.id, p.username]));
 			}
 			all.sort((a, b) => (a.ts < b.ts ? 1 : -1));
 			// Marker semantics: newest ritual/trade ts when present (system

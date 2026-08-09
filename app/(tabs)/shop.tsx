@@ -672,7 +672,7 @@ export default function ShopScreen() {
 			equipPlayer.seekTo(0);
 			equipPlayer.play();
 		} catch {}
-		const update = await equipCosmetic(user.id, itemId, category);
+		const update = await equipCosmetic(itemId, category);
 		patchActiveIds(update);
 	};
 

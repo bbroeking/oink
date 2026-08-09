@@ -7,7 +7,6 @@
 
 import { rpc, rpcAction, RpcResult } from "./rpc";
 import { supabase } from "./supabase";
-import { log } from "./log";
 import { nonneg, coerceIntArray } from "./jsonb";
 import type { TitlePlacement } from "@/constants/title_types";
 
@@ -169,25 +168,6 @@ export async function fetchInviteCandidates(
 			p_limit: limit,
 		})) ?? []
 	);
-}
-
-// crew_state's member payload carries no avatar fields, so this fills that gap:
-// one profiles read keyed by member id → a map of user_id → equipped hat, so
-// crew surfaces render the SAME PigAvatar look a Leaderboard row does.
-export async function fetchMemberHats(
-	userIds: string[]
-): Promise<Map<string, string | null>> {
-	if (userIds.length === 0) return new Map();
-	// This read reaches past the rpc() seam, so its failure won't self-report —
-	// route it through log.error the same way rpc() does (→ Sentry), then fall
-	// back to an empty map (crew surfaces render the neutral avatar) as before.
-	const { data, error } = await supabase
-		.from("profiles")
-		.select("id, active_hat_id")
-		.in("id", userIds);
-	if (error) log.error("[crews:fetchMemberHats]", error.message);
-	const rows = (data as { id: string; active_hat_id: string | null }[] | null) ?? [];
-	return new Map(rows.map((r) => [r.id, r.active_hat_id]));
 }
 
 export interface RosterProfile {

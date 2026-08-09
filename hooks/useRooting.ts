@@ -39,34 +39,11 @@ import {
 // owns this shape; re-exported here so existing `import { CrewDug } from
 // "@/hooks/useRooting"` call sites (if any) keep resolving.
 import type { CrewDug } from "@/utils/dig";
+// The session/carry shapes live with the state machine that stores them
+// (utils/digSession) — re-exported here so existing call sites keep resolving.
+import type { RootingSession, RootingCarry } from "@/utils/digSession";
 
-export type { CrewDug };
-
-export interface RootingSession {
-	seed: number;
-	windowIndex: number;
-	windowEndsAtMs: number;
-	practice: boolean;
-	// Co-op depth: a crewmate already dug this feeding → the patch lets you dig
-	// deeper (bigger stir budget); an active blessing makes digs luckier.
-	coop: boolean;
-	blessed: boolean;
-	crewDug: CrewDug[];
-	// The unique relic the server rolled onto this board (~2 in 5), or null.
-	// Practice mode + a server that hasn't migrated → null → no unique on the board.
-	uniqueId: string | null;
-	// "The One That Got Away": the caller's carry slot re-buried on this board, or
-	// null (empty slot / server not migrated → feature-dark). kind is the missed
-	// find (truffle_l/truffle_d/unique); a unique carry pins THIS board's relic.
-	carry: RootingCarry | null;
-}
-
-// The carried miss the server re-buries next feeding (gilded).
-export interface RootingCarry {
-	kind: "truffle_l" | "truffle_d" | "unique";
-	uniqueId: string | null;
-	gild: number;
-}
+export type { CrewDug, RootingSession, RootingCarry };
 
 export interface RootingOutcome {
 	// Meter drain this dig banked (finds-denominated). Was: `mud`.
@@ -330,14 +307,14 @@ export function useRooting() {
 			const board = generateBoard(session.seed, session.uniqueId);
 			const safeFinds = claimableFinds(
 				board,
-				normalizePouch(finds as unknown as Parameters<typeof normalizePouch>[0])
+				normalizePouch(finds)
 			);
 			// p_missed is board-intersected the same way (a forged/foreign id can
 			// never leave the client) and stripped of anything actually caught.
 			const caught = new Set(safeFinds);
 			const safeMissed = claimableFinds(
 				board,
-				normalizePouch(missed as unknown as Parameters<typeof normalizePouch>[0])
+				normalizePouch(missed)
 			).filter((f) => !caught.has(f));
 			const markDug = async () => {
 				// Route through the reducer's single lockout gate — a real submit records

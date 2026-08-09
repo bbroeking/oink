@@ -12,29 +12,20 @@
 // off-screen → resting at the bottom, so the dim doesn't drag with
 // the card. Data + cleanse live in useActiveEffects.
 
-import React, { useEffect, useRef, useState } from "react";
-import {
-	Modal,
-	View,
-	Text,
-	Pressable,
-	StyleSheet,
-	Animated,
-	Easing,
-	Dimensions,
-} from "react-native";
+import React, { useState } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { RitualIconWell } from "./ui/RitualIconWell";
 import { SectionHeader } from "./ui/SectionHeader";
 import { EmptyState } from "./ui/EmptyState";
+import { SheetGrabber, SlideUpSheet } from "./ui/SlideUpSheet";
 import { CleanseModal } from "./CleanseModal";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
 import { useActiveEffectsContext } from "../hooks/ActiveEffectsProvider";
 import { effectMeta, formatLeft, type Effect } from "../utils/activeEffects";
 import {
 	FONTS,
-	MODAL_BACKDROP_BG,
 	RADII,
 	SPACE,
 	STICKER_SHADOW,
@@ -61,118 +52,90 @@ export function HoofprintsSheet({ open, onClose }: Props) {
 	// lifts it, so queued popups re-admit after the handoff gap.
 	useUnmanagedModalHold(open);
 
-	// Sheet animation. One Animated.Value drives backdrop opacity AND
-	// sheet translateY in lockstep, so the dim doesn't slide with the
-	// card.
-	const screenH = useRef(Dimensions.get("window").height).current;
-	const sheetAnim = useRef(new Animated.Value(0)).current;
-	useEffect(() => {
-		if (!open) return;
-		sheetAnim.setValue(0);
-		Animated.timing(sheetAnim, {
-			toValue: 1,
-			duration: 320,
-			easing: Easing.out(Easing.cubic),
-			useNativeDriver: true,
-		}).start();
-	}, [open, sheetAnim]);
-
 	if (!open) return null;
 
 	const total = blessings.length + curses.length;
-	const backdropOpacity = sheetAnim;
-	const sheetTranslateY = sheetAnim.interpolate({
-		inputRange: [0, 1],
-		outputRange: [screenH, 0],
-	});
 
 	return (
-		<Modal visible transparent animationType="none" onRequestClose={onClose}>
-			<Animated.View
-				style={[styles.backdrop, { opacity: backdropOpacity }]}
-			>
-				<Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-			</Animated.View>
-			<Animated.View
-				pointerEvents="box-none"
-				style={[
-					styles.sheetWrap,
-					{ transform: [{ translateY: sheetTranslateY }] },
-				]}
-			>
-				<Pressable onPress={() => {}}>
-					<Sticker
-						color="paper"
-						rotate={-0.6}
-						radius={22}
-						style={[styles.sheet, STICKER_SHADOW]}
-					>
-						<View style={styles.grabber} />
-						<SectionHeader kicker="left by your friends" title="Hoofprints on you" />
+		<SlideUpSheet
+			open={open}
+			onClose={onClose}
+			duration={320}
+			overlay={
+				cleanseOpen ? (
+					<CleanseModal
+						curses={curses}
+						onDismiss={() => setCleanseOpen(false)}
+						onConfirm={cleanse}
+					/>
+				) : null
+			}
+		>
+			<Pressable onPress={() => {}}>
+				<Sticker
+					color="paper"
+					rotate={-0.6}
+					radius={RADII.xxl}
+					style={[styles.sheet, STICKER_SHADOW]}
+				>
+					<SheetGrabber />
+					<SectionHeader kicker="left by your friends" title="Hoofprints on you" />
 
-						{total === 0 && (
-							<EmptyState
-								glyph="pigface"
-								title="Nothing on your snout right now."
-								sub="Blessings and curses left by your friends show up here."
-							/>
-						)}
+					{total === 0 && (
+						<EmptyState
+							glyph="pigface"
+							title="Nothing on your snout right now."
+							sub="Blessings and curses left by your friends show up here."
+						/>
+					)}
 
-						{blessings.length > 0 && (
-							<>
-								<Text style={[styles.sectionLabel, styles.sectionBless]}>
-									BLESSINGS · +{blessings.length}
+					{blessings.length > 0 && (
+						<>
+							<Text style={[styles.sectionLabel, styles.sectionBless]}>
+								BLESSINGS · +{blessings.length}
+							</Text>
+							<View style={{ gap: 8 }}>
+								{blessings.map((e, i) => (
+									<EffectCard key={`b-${i}`} effect={e} />
+								))}
+							</View>
+						</>
+					)}
+
+					{curses.length > 0 && (
+						<>
+							<View style={styles.cursesHeaderRow}>
+								<Text style={[styles.sectionLabel, styles.sectionCurse]}>
+									CURSES · −{curses.length}
 								</Text>
-								<View style={{ gap: 8 }}>
-									{blessings.map((e, i) => (
-										<EffectCard key={`b-${i}`} effect={e} />
-									))}
-								</View>
-							</>
-						)}
-
-						{curses.length > 0 && (
-							<>
-								<View style={styles.cursesHeaderRow}>
-									<Text style={[styles.sectionLabel, styles.sectionCurse]}>
-										CURSES · −{curses.length}
+								<Pressable
+									onPress={() => setCleanseOpen(true)}
+									hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+									style={({ pressed }) => [
+										styles.cleansePill,
+										pressed && { opacity: 0.7 },
+									]}
+								>
+									<SnoutCoin size={13} />
+									<Text style={styles.cleansePillText}>
+										Cleanse · 5
 									</Text>
-									<Pressable
-										onPress={() => setCleanseOpen(true)}
-										hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-										style={({ pressed }) => [
-											styles.cleansePill,
-											pressed && { opacity: 0.7 },
-										]}
-									>
-										<SnoutCoin size={13} />
-										<Text style={styles.cleansePillText}>
-											Cleanse · 5
-										</Text>
-									</Pressable>
-								</View>
-								<View style={{ gap: 8 }}>
-									{curses.map((e, i) => (
-										<EffectCard key={`c-${i}`} effect={e} />
-									))}
-								</View>
-							</>
-						)}
+								</Pressable>
+							</View>
+							<View style={{ gap: 8 }}>
+								{curses.map((e, i) => (
+									<EffectCard key={`c-${i}`} effect={e} />
+								))}
+							</View>
+						</>
+					)}
 
-						<Text style={styles.footer}>
-							★ a blessing received clears all active curses ★
-						</Text>
-					</Sticker>
-				</Pressable>
-			</Animated.View>
-			{cleanseOpen && (
-				<CleanseModal
-					curses={curses}
-					onDismiss={() => setCleanseOpen(false)}
-					onConfirm={cleanse}
-				/>
-			)}
-		</Modal>
+					<Text style={styles.footer}>
+						★ a blessing received clears all active curses ★
+					</Text>
+				</Sticker>
+			</Pressable>
+		</SlideUpSheet>
 	);
 }
 
@@ -210,29 +173,9 @@ function EffectCard({ effect }: { effect: Effect }) {
 }
 
 const styles = StyleSheet.create({
-	backdrop: {
-		...StyleSheet.absoluteFillObject,
-		backgroundColor: MODAL_BACKDROP_BG,
-	},
-	sheetWrap: {
-		position: "absolute",
-		left: 0,
-		right: 0,
-		bottom: 0,
-		padding: 14,
-		paddingBottom: 28,
-	},
 	sheet: {
 		padding: 18,
 		paddingTop: 10,
-	},
-	grabber: {
-		alignSelf: "center",
-		width: 44,
-		height: 4,
-		borderRadius: 2,
-		backgroundColor: WHIMSY.muteSoft,
-		marginBottom: SPACE.md,
 	},
 	sectionLabel: {
 		...TYPE.kickerPill,

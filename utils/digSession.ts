@@ -20,9 +20,40 @@
 //     window index reconciles the local flag.
 
 import { dugInCurrentWindow } from "@/utils/rooting";
-// Type-only (erased at compile) — no runtime import cycle with the hook, which
-// still OWNS these session/carry types and re-exports them for its callers.
-import type { RootingSession } from "@/hooks/useRooting";
+// A crewmate who has already dug this feeding — the feeding-state read module
+// owns that shape.
+import type { CrewDug } from "@/utils/dig";
+
+// The open Truffle Patch session. It lives HERE, next to the state machine that
+// stores it, so the pure reducer never has to reach back up into the React hook
+// for its own state's type (that import was a module cycle). hooks/useRooting
+// re-exports both types, so existing `from "@/hooks/useRooting"` call sites keep
+// resolving.
+export interface RootingSession {
+	seed: number;
+	windowIndex: number;
+	windowEndsAtMs: number;
+	practice: boolean;
+	// Co-op depth: a crewmate already dug this feeding → the patch lets you dig
+	// deeper (bigger stir budget); an active blessing makes digs luckier.
+	coop: boolean;
+	blessed: boolean;
+	crewDug: CrewDug[];
+	// The unique relic the server rolled onto this board (~2 in 5), or null.
+	// Practice mode + a server that hasn't migrated → null → no unique on the board.
+	uniqueId: string | null;
+	// "The One That Got Away": the caller's carry slot re-buried on this board, or
+	// null (empty slot / server not migrated → feature-dark). kind is the missed
+	// find (truffle_l/truffle_d/unique); a unique carry pins THIS board's relic.
+	carry: RootingCarry | null;
+}
+
+// The carried miss the server re-buries next feeding (gilded).
+export interface RootingCarry {
+	kind: "truffle_l" | "truffle_d" | "unique";
+	uniqueId: string | null;
+	gild: number;
+}
 
 export interface DigSessionState {
 	/** The open Truffle Patch session (server, practice, or dev), or null. */

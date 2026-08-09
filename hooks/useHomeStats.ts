@@ -52,7 +52,6 @@ export interface Stats {
 	activeBackground: EquipSlot | null;
 	activeHeld: EquipSlot | null;
 	activeTickleParticle: EquipSlot | null;
-	activeFlag: EquipSlot | null;
 	currentTier: number;
 	totalTiers: number;
 	// Server-side "already saw the 6 7 egg" stamp — null until first sight.
@@ -79,7 +78,6 @@ const INITIAL_STATS: Stats = {
 	activeBackground: null,
 	activeHeld: null,
 	activeTickleParticle: null,
-	activeFlag: null,
 	currentTier: 1,
 	totalTiers: 30,
 	seen67At: null,
@@ -101,11 +99,9 @@ export interface UseHomeStats {
 	// shows only on a genuine failure, not during the normal load beat.
 	statsError: boolean;
 	refresh: () => Promise<void>;
-	// Optimistic slot patch — apply a locally-known change (e.g. an equip that
-	// just succeeded server-side) to the stats immediately, before the refetch
-	// round-trips. Refresh reconciles after. Currently used by the allegiance
-	// flow so the newly-picked flag mounts on the very first paint instead of
-	// waiting for the meta blob to land.
+	// Optimistic slot patch — apply a locally-known change (e.g. the 6-7 egg's
+	// seen stamp) to the stats immediately, before the refetch round-trips.
+	// Refresh reconciles after.
 	applyOptimistic: (patch: Partial<Stats>) => void;
 }
 
@@ -118,17 +114,6 @@ function toSlot(id: string | null, meta: SlotBlob): EquipSlot | null {
 	return id
 		? { id, category: meta?.category ?? null, emoji: meta?.emoji ?? null }
 		: null;
-}
-
-// Cross-tree nudge — the login-popup Hog Cup picker lives in _layout, far
-// from any mounted Barn's hook state, so a chosen flag there never reached
-// the Barn until an unrelated refresh. Module-level listeners let that path
-// push the same optimistic patch + refetch every mounted instance gets from
-// the Barn's own picker. (A Set, not a context: _layout renders above the
-// tab tree and must not re-render it.)
-const homeStatsListeners = new Set<(patch?: Partial<Stats>) => void>();
-export function bumpHomeStats(patch?: Partial<Stats>) {
-	homeStatsListeners.forEach((l) => l(patch));
 }
 
 export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
@@ -188,8 +173,6 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				active_held?: SlotBlob;
 				active_tickle_particle_id?: string | null;
 				active_tickle_particle?: SlotBlob;
-				active_flag_id?: string | null;
-				active_flag?: SlotBlob;
 				balance: number;
 				cap: number;
 				next_regen_seconds: number | null;
@@ -219,7 +202,6 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 						r.active_tickle_particle_id ?? null,
 						r.active_tickle_particle ?? null
 					),
-					activeFlag: toSlot(r.active_flag_id ?? null, r.active_flag ?? null),
 					currentTier: r.current_tier,
 					totalTiers: r.total_tiers,
 					seen67At: r.seen_67_at ?? null,
@@ -239,7 +221,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				supabase
 					.from("profiles")
 					.select(
-						"counter, tickles_earned, happiness, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, active_flag_id, alignment_score, seen_67_at"
+						"counter, tickles_earned, happiness, active_hat_id, active_glasses_id, active_mask_id, active_neck_id, active_aura_id, active_background_id, active_held_id, active_tickle_particle_id, alignment_score, seen_67_at"
 					)
 					.eq("id", user.id)
 					.single(),
@@ -256,22 +238,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 
 			if (profileResult.error) throw profileResult.error;
 
-			const prof = profileResult.data as {
-				counter?: number;
-				tickles_earned?: number;
-				happiness?: number;
-				active_hat_id?: string | null;
-				active_glasses_id?: string | null;
-				active_mask_id?: string | null;
-				active_neck_id?: string | null;
-				active_aura_id?: string | null;
-				active_background_id?: string | null;
-				active_held_id?: string | null;
-				active_tickle_particle_id?: string | null;
-				active_flag_id?: string | null;
-				alignment_score?: number | null;
-				seen_67_at?: string | null;
-			} | null;
+			const prof = profileResult.data;
 
 			onAlignmentLoadedRef.current?.(alignmentLabel(prof?.alignment_score ?? 0));
 
@@ -322,7 +289,6 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 				activeBackground: slotFromId(prof?.active_background_id ?? null),
 				activeHeld: slotFromId(prof?.active_held_id ?? null),
 				activeTickleParticle: slotFromId(prof?.active_tickle_particle_id ?? null),
-				activeFlag: slotFromId(prof?.active_flag_id ?? null),
 				currentTier: season?.current_tier ?? 1,
 				totalTiers: season?.season?.total_tiers ?? 30,
 				seen67At: prof?.seen_67_at ?? null,
@@ -383,18 +349,6 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 	const applyOptimistic = useCallback((patch: Partial<Stats>) => {
 		setStats((prev) => ({ ...prev, ...patch }));
 	}, []);
-
-	// Subscribe to cross-tree bumps (see homeStatsListeners above).
-	useEffect(() => {
-		const listener = (patch?: Partial<Stats>) => {
-			if (patch) applyOptimistic(patch);
-			void refresh();
-		};
-		homeStatsListeners.add(listener);
-		return () => {
-			homeStatsListeners.delete(listener);
-		};
-	}, [applyOptimistic, refresh]);
 
 	return { stats, statsLoaded, statsError, refresh, applyOptimistic };
 }

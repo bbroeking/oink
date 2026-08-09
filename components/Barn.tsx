@@ -59,6 +59,10 @@ import { useLuckyPig } from "@/hooks/useLuckyPig";
 import { useActiveEffectsContext } from "@/hooks/ActiveEffectsProvider";
 import { usePigRoster } from "@/hooks/usePigRoster";
 import { BarnGuestbook } from "./BarnGuestbook";
+import { useFeatureFlag } from "@/hooks/useFeatureFlags";
+import { AdRefillOffer } from "@/features/rewarded-ads/AdRefillOffer";
+import { createAdMobRewardedProvider } from "@/features/rewarded-ads/admobAdapter";
+import { createSupabaseRewardedAdBackend } from "@/features/rewarded-ads/supabaseAdapter";
 
 // Lucky Pig tunables live in utils/luckyPig.ts (extracted to the
 // useLuckyPig hook). Phantom-itch is the only ritual-effect tunable
@@ -267,6 +271,9 @@ function PaperTicket({
 }
 
 export default function Barn() {
+	const rewardedAdsEnabled = useFeatureFlag("rewarded_ads");
+	const rewardedAdBackend = React.useMemo(createSupabaseRewardedAdBackend, []);
+	const rewardedAdProvider = React.useMemo(createAdMobRewardedProvider, []);
 	const [sixSevenTick, setSixSevenTick] = useState(0);
 	// Last counter value we celebrated a six-seven for (in-session guard; the
 	// cross-launch guard is AsyncStorage seen_67_at). Number, not boolean,
@@ -472,26 +479,16 @@ export default function Barn() {
 		const { data: ures } = await supabase.auth.getUser();
 		const uid = ures?.user?.id;
 		if (!uid) return;
-		const withWallow = await supabase
+		const { data, error } = await supabase
 			.from("profiles")
 			.select("alignment_score, wallow_count")
 			.eq("id", uid)
 			.single();
-		let prof = withWallow.data as {
-			alignment_score?: number;
-			wallow_count?: number | null;
-		} | null;
-		// Client and migration can ship in either order. On a pre-Wallow server,
-		// retry today's projection so alignment/member state still hydrates and the
-		// earned aura simply stays dark.
-		if (withWallow.error) {
-			const legacy = await supabase
-				.from("profiles")
-				.select("alignment_score")
-				.eq("id", uid)
-				.single();
-			prof = legacy.data as typeof prof;
-		}
+		// A failed read is not a neutral alignment — leave the last known state
+		// alone rather than snapping the placard (and toasting a phantom shift)
+		// off a transport blip. The next focus/foreground pass retries.
+		if (error) return;
+		const prof = data;
 		setWallowCount(prof?.wallow_count ?? 0);
 		const score = prof?.alignment_score ?? 0;
 		// Hydrate the alignment state — drives BarnOverlay theming. The
@@ -619,7 +616,7 @@ export default function Barn() {
 				balance: number;
 				lucky_won: number | null;
 				global_counter: number;
-			}>("update_profile_and_item_count", {
+			}>(rewardedAdsEnabled ? "update_home_tickle" : "update_profile_and_item_count", {
 				uid: user.id,
 			});
 			// rpc() returns null when the server errored (already logged to
@@ -772,22 +769,6 @@ export default function Barn() {
 				</Pressable>
 			) : null}
 
-			{/* Generous radial puffs — two soft white clouds that fade
-			    in at the top-left/right when alignment crosses into
-			    angel territory. "Angel-coded" overlay from the design. */}
-			{alignment === "angel" && (
-				<>
-          <View
-            pointerEvents="none"
-            style={[styles.generousPuff, styles.generousPuffL]}
-          />
-          <View
-            pointerEvents="none"
-            style={[styles.generousPuff, styles.generousPuffR]}
-          />
-				</>
-			)}
-
 			<SafeAreaView style={styles.contentContainer}>
 				<View style={styles.statsRow}>
 					<PaperTicket
@@ -817,6 +798,17 @@ export default function Barn() {
 						}
 					/>
 				</View>
+
+				{rewardedAdsEnabled && statsLoaded && stats.itemCount === 0 ? (
+					<View style={styles.adRefillOffer}>
+						<AdRefillOffer
+							homeBalance={stats.itemCount}
+							onBalanceChanged={fetchStats}
+							backend={rewardedAdBackend}
+							provider={rewardedAdProvider}
+						/>
+					</View>
+				) : null}
 
 				{/* Live effects and the recurring Patch action share one collapsed
 				    tray. They remain available without taking over Rosie's stage. */}
@@ -936,15 +928,27 @@ export default function Barn() {
 				doublePercent={luckyPig.doublePercent}
 				unlockedTitle={luckyPig.unlockedTitle}
 				onEquipTitle={async (id) => {
+					// The failure toast used to hang off a catch alone, which never
+					// fired: rpc() resolves null on a transport error and equip_title
+					// answers { ok:false, reason } for a title the player doesn't own
+					// — so every miss claimed success. Branch on the RESULT (the shape
+					// TitlesSection already reads); the catch stays as the transport
+					// backstop only.
+					let ok = false;
 					try {
-						await rpc("equip_title", { target_title_id: id });
-						showToast(
-							"Title equipped",
-							"Visible on your account + leaderboard.",
-						);
+						const r = await rpc<{ ok?: boolean }>("equip_title", {
+							target_title_id: id,
+						});
+						ok = r?.ok === true;
 					} catch {
-						showToast("Couldn't equip title", "It is still saved in Me.");
+						ok = false;
 					}
+					showToast(
+						ok ? "Title equipped" : "Couldn't equip title",
+						ok
+							? "Visible on your account + leaderboard."
+							: "It is still saved in Me.",
+					);
 				}}
 				onDismiss={() => {
 					// Two-phase (PopupQueue TIMING CONTRACT): release() hides the
@@ -1005,6 +1009,13 @@ const styles = StyleSheet.create({
 		// the conditional effects strip / truffle / lucky bands render.
 		marginBottom: SPACE.lg,
 		zIndex: 1,
+	},
+	adRefillOffer: {
+		alignSelf: "center",
+		maxWidth: 360,
+		paddingHorizontal: PAGE_PAD,
+		marginBottom: SPACE.sm,
+		zIndex: 2,
 	},
   // Mirrored in-flow corner controls just below the stat cards.
   cornerControls: {
@@ -1146,32 +1157,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
 		color: WHIMSY.ink,
 		textAlign: "center",
-	},
-	// Generous (angel-coded) radial puffs — soft white clouds that
-	// fade in at top-left + top-right when alignment >= angel
-	// threshold. The radial-gradient via View isn't possible in RN;
-	// a translucent white circle with low-opacity edges via a single
-	// background gets us close.
-	generousPuff: {
-		position: "absolute",
-		// Sanctioned scene-wash: a translucent pure-white cloud tuned to sit over
-		// the painted Barn (same exception family as BarnOverlay's washes). Not a
-		// WHIMSY surface hue, so it stays raw rgba on purpose — not token leak.
-		backgroundColor: "rgba(255,255,255,0.45)",
-		borderRadius: RADII.pill,
-		zIndex: 1,
-	},
-	generousPuffL: {
-		top: 130,
-		left: -10,
-		width: 90,
-		height: 50,
-	},
-	generousPuffR: {
-		top: 240,
-		right: -20,
-		width: 110,
-		height: 60,
 	},
 	dev67: {
 		position: "absolute",

@@ -2,12 +2,13 @@
 // truffle is left and which visitors have been digging it up, plus two host
 // actions: top up the pot, or dig it back up (reclaim the unspent remainder).
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Modal, Animated, Easing, StyleSheet, Dimensions, ScrollView } from "react-native";
+import { View, Text, Pressable, StyleSheet, Dimensions, ScrollView } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Glyph, IconText } from "./ui/Glyph";
-import { WHIMSY, FONTS, SHADOW_SM, MODAL_BACKDROP_BG, RADII, SPACE, TYPE, PAGE_PAD } from "@/constants/theme";
+import { SheetGrabber, SlideUpSheet } from "./ui/SlideUpSheet";
+import { WHIMSY, FONTS, SHADOW_SM, RADII, SPACE, TYPE, PAGE_PAD } from "@/constants/theme";
 import { maxTopUp, POT_CAP } from "@/utils/burySnouts";
 import { usePotStake } from "@/hooks/usePotStake";
 import type { TruffleStatus } from "@/hooks/useBuriedTruffle";
@@ -42,8 +43,6 @@ function ago(iso: string): string {
 }
 
 export function BuriedTruffleSheet({ open, balance, visible, onClose, status, onChanged }: Props) {
-	const screenH = useRef(Dimensions.get("window").height).current;
-	const anim = useRef(new Animated.Value(0)).current;
 	const [confirmReclaim, setConfirmReclaim] = useState(false);
 	// Fires onClose exactly once per open-session so the two-phase teardown
 	// below isn't re-triggered every render while `open` lingers through the beat.
@@ -65,9 +64,7 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 		if (!open) return;
 		setNote(null);
 		setConfirmReclaim(false);
-		anim.setValue(0);
-		Animated.timing(anim, { toValue: 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-	}, [open, anim]);
+	}, [open]);
 
 	// The slot (id 'truffleSheet', pri 5 — highest in the app) may never sit
 	// PRESENTED while this sheet renders null: that wedges the queue and silently
@@ -92,7 +89,6 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 
 	const pct = status.total > 0 ? Math.max(0, Math.min(1, status.remaining / status.total)) : 0;
 	const dugTotal = status.total - status.remaining;
-	const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [screenH, 0] });
 
 	const topUp = async () => {
 		if (busy) return;
@@ -150,128 +146,123 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 	};
 
 	return (
-		<Modal visible={visible ?? open} transparent animationType="none" onRequestClose={onClose}>
-			<Animated.View style={[styles.backdrop, { opacity: anim }]}>
-				<Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-			</Animated.View>
-			<Animated.View pointerEvents="box-none" style={[styles.sheetWrap, { transform: [{ translateY }] }]}>
-				<View style={styles.sheet}>
-					<View style={styles.grabber} />
-					<IconText right={<Glyph name="pigface" size={20} />} gap={6} style={styles.titleRow}>
-						<Text style={styles.title}>Your buried truffle</Text>
-					</IconText>
+		<SlideUpSheet open={open} onClose={onClose} modalVisible={visible ?? open}>
+			<View style={styles.sheet}>
+				<SheetGrabber />
+				<IconText right={<Glyph name="pigface" size={20} />} gap={6} style={styles.titleRow}>
+					<Text style={styles.title}>Your buried truffle</Text>
+				</IconText>
 
-					{/* remaining pot — one glanceable line + bar */}
-					<View style={styles.potRow}>
-						<SnoutCoin size={22} />
-						<Text style={styles.potNum}>{status.remaining}</Text>
-						<Text style={styles.potCap}>of {status.total} snouts left</Text>
-					</View>
-					<View style={styles.track}>
-						<View style={[styles.fill, { width: `${pct * 100}%` }]} />
-					</View>
-					<Text style={styles.sub}>
-						{dugTotal > 0
-							? `Visitors have dug up ${dugTotal} snout${dugTotal === 1 ? "" : "s"} so far.`
-							: "No one's dug it up yet — waiting for a visitor."}
-					</Text>
-
-					{/* diggers — capped + scrollable so a long list (re-digs pile up
-					    over days) can't push the action buttons off-screen */}
-					{status.diggers.length > 0 && (
-						<ScrollView style={styles.list} contentContainerStyle={styles.listInner} nestedScrollEnabled>
-							{status.diggers.map((d, i) => (
-								<View key={i} style={styles.digRow}>
-									<Text style={styles.digName} numberOfLines={1}>
-										{d.username}
-									</Text>
-									<Text style={styles.digWhen}>{ago(d.dug_at)}</Text>
-									<View style={styles.digAmt}>
-										<SnoutCoin size={14} />
-										<Text style={styles.digAmtText}>+{d.amount}</Text>
-									</View>
-								</View>
-							))}
-						</ScrollView>
-					)}
-
-					{/* Top up — add more snouts to the pot, capped at 50 */}
-					<View style={styles.divider} />
-					{headroom < 1 ? (
-						<Text style={styles.maxNote}>Pot's at the {POT_CAP}-snout max.</Text>
-					) : (
-						<>
-							<Text style={styles.actLabel}>Add to the pot · up to {POT_CAP}</Text>
-							<View style={styles.stakes}>
-								{FIXED_STAKES.map((s) => {
-									const on = sel === s;
-									const tooMuch = s > headroom || s > balance; // past the cap, or can't afford
-									return (
-										<Pressable
-											key={s}
-											disabled={tooMuch}
-											onPress={() => {
-												select(s); // select clears any stale note
-												setConfirmReclaim(false); // disarm a pending reclaim
-											}}
-											style={[styles.chip, on && styles.chipOn, tooMuch && styles.chipOff]}
-										>
-											<SnoutCoin size={14} />
-											<Text style={[styles.chipText, on && styles.chipTextOn, tooMuch && styles.chipTextOff]}>{s}</Text>
-										</Pressable>
-									);
-								})}
-								{/* Max — tops the pot to exactly 50, bounded by balance; dims
-								    when there's nothing to add. */}
-								<Pressable
-									disabled={!maxOk}
-									onPress={() => {
-										select("max");
-										setConfirmReclaim(false);
-									}}
-									style={[styles.chip, sel === "max" && styles.chipOn, !maxOk && styles.chipOff]}
-								>
-									<SnoutCoin size={14} />
-									<Text style={[styles.chipText, sel === "max" && styles.chipTextOn, !maxOk && styles.chipTextOff]}>Max</Text>
-								</Pressable>
-							</View>
-
-							<Pressable
-								onPress={topUp}
-								disabled={busy || !canTopUp}
-								style={({ pressed }) => [
-									styles.topUpBtn,
-									!canTopUp && styles.topUpBtnOff,
-									pressed && { opacity: 0.9 },
-								]}
-							>
-								<Text style={styles.topUpText}>{busy ? "…" : `Top up · ${topUpStake} snouts`}</Text>
-							</Pressable>
-						</>
-					)}
-
-					{note && <Text style={styles.note}>{note}</Text>}
-
-					{/* Dig it back up — reclaim the unspent remainder + close the
-					    truffle (two-tap; armed state turns red to read as destructive) */}
-					<Pressable
-						onPress={reclaim}
-						disabled={busy}
-						style={({ pressed }) => [
-							styles.reclaimBtn,
-							confirmReclaim && styles.reclaimBtnArmed,
-							pressed && { opacity: 0.85 },
-						]}
-					>
-						<Text style={[styles.reclaimText, confirmReclaim && styles.reclaimTextArmed]}>
-							{confirmReclaim
-								? `Tap again · refund ${status.remaining}, no bury for 12h`
-								: `Dig it back up · refund ${status.remaining}`}
-						</Text>
-					</Pressable>
+				{/* remaining pot — one glanceable line + bar */}
+				<View style={styles.potRow}>
+					<SnoutCoin size={22} />
+					<Text style={styles.potNum}>{status.remaining}</Text>
+					<Text style={styles.potCap}>of {status.total} snouts left</Text>
 				</View>
-			</Animated.View>
-		</Modal>
+				<View style={styles.track}>
+					<View style={[styles.fill, { width: `${pct * 100}%` }]} />
+				</View>
+				<Text style={styles.sub}>
+					{dugTotal > 0
+						? `Visitors have dug up ${dugTotal} snout${dugTotal === 1 ? "" : "s"} so far.`
+						: "No one's dug it up yet — waiting for a visitor."}
+				</Text>
+
+				{/* diggers — capped + scrollable so a long list (re-digs pile up
+				    over days) can't push the action buttons off-screen */}
+				{status.diggers.length > 0 && (
+					<ScrollView style={styles.list} contentContainerStyle={styles.listInner} nestedScrollEnabled>
+						{status.diggers.map((d, i) => (
+							<View key={i} style={styles.digRow}>
+								<Text style={styles.digName} numberOfLines={1}>
+									{d.username}
+								</Text>
+								<Text style={styles.digWhen}>{ago(d.dug_at)}</Text>
+								<View style={styles.digAmt}>
+									<SnoutCoin size={14} />
+									<Text style={styles.digAmtText}>+{d.amount}</Text>
+								</View>
+							</View>
+						))}
+					</ScrollView>
+				)}
+
+				{/* Top up — add more snouts to the pot, capped at 50 */}
+				<View style={styles.divider} />
+				{headroom < 1 ? (
+					<Text style={styles.maxNote}>Pot's at the {POT_CAP}-snout max.</Text>
+				) : (
+					<>
+						<Text style={styles.actLabel}>Add to the pot · up to {POT_CAP}</Text>
+						<View style={styles.stakes}>
+							{FIXED_STAKES.map((s) => {
+								const on = sel === s;
+								const tooMuch = s > headroom || s > balance; // past the cap, or can't afford
+								return (
+									<Pressable
+										key={s}
+										disabled={tooMuch}
+										onPress={() => {
+											select(s); // select clears any stale note
+											setConfirmReclaim(false); // disarm a pending reclaim
+										}}
+										style={[styles.chip, on && styles.chipOn, tooMuch && styles.chipOff]}
+									>
+										<SnoutCoin size={14} />
+										<Text style={[styles.chipText, on && styles.chipTextOn, tooMuch && styles.chipTextOff]}>{s}</Text>
+									</Pressable>
+								);
+							})}
+							{/* Max — tops the pot to exactly 50, bounded by balance; dims
+							    when there's nothing to add. */}
+							<Pressable
+								disabled={!maxOk}
+								onPress={() => {
+									select("max");
+									setConfirmReclaim(false);
+								}}
+								style={[styles.chip, sel === "max" && styles.chipOn, !maxOk && styles.chipOff]}
+							>
+								<SnoutCoin size={14} />
+								<Text style={[styles.chipText, sel === "max" && styles.chipTextOn, !maxOk && styles.chipTextOff]}>Max</Text>
+							</Pressable>
+						</View>
+
+						<Pressable
+							onPress={topUp}
+							disabled={busy || !canTopUp}
+							style={({ pressed }) => [
+								styles.topUpBtn,
+								!canTopUp && styles.topUpBtnOff,
+								pressed && { opacity: 0.9 },
+							]}
+						>
+							<Text style={styles.topUpText}>{busy ? "…" : `Top up · ${topUpStake} snouts`}</Text>
+						</Pressable>
+					</>
+				)}
+
+				{note && <Text style={styles.note}>{note}</Text>}
+
+				{/* Dig it back up — reclaim the unspent remainder + close the
+				    truffle (two-tap; armed state turns red to read as destructive) */}
+				<Pressable
+					onPress={reclaim}
+					disabled={busy}
+					style={({ pressed }) => [
+						styles.reclaimBtn,
+						confirmReclaim && styles.reclaimBtnArmed,
+						pressed && { opacity: 0.85 },
+					]}
+				>
+					<Text style={[styles.reclaimText, confirmReclaim && styles.reclaimTextArmed]}>
+						{confirmReclaim
+							? `Tap again · refund ${status.remaining}, no bury for 12h`
+							: `Dig it back up · refund ${status.remaining}`}
+					</Text>
+				</Pressable>
+			</View>
+		</SlideUpSheet>
 	);
 }
 
@@ -279,8 +270,6 @@ const INK = WHIMSY.ink;
 const sticker = SHADOW_SM;
 const SCREEN_H = Dimensions.get("window").height;
 const styles = StyleSheet.create({
-	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: MODAL_BACKDROP_BG },
-	sheetWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: SPACE.md + 2, paddingBottom: SPACE.xl + 4 },
 	sheet: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
@@ -291,7 +280,6 @@ const styles = StyleSheet.create({
 		maxHeight: SCREEN_H * 0.9, // never taller than the screen
 		...sticker,
 	},
-	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: SPACE.md },
 	titleRow: { marginBottom: SPACE.lg - 2 },
 	title: { ...TYPE.pageTitle, color: INK },
 

@@ -1,22 +1,15 @@
 // Locks the pure equip rule (utils/cosmetics computeEquip): column routing per
 // category, the Face-slot exclusivity invariant in BOTH directions (glasses
 // clears mask, mask clears glasses), and that non-face categories never touch a
-// sibling column. Also covers the equipCosmetic effect wrapper's server-first /
-// legacy-fallback dispatch (issue #35): rpc-success uses the server's patch,
-// only a missing-function outcome falls back to the direct profiles write,
-// other failures fail closed, and a server refusal returns an empty no-op patch.
+// sibling column. Also covers the equipCosmetic effect wrapper's server-only
+// dispatch (issue #35): rpc-success uses the server's patch, EVERY rpc failure
+// fails closed (no direct profiles write exists to fall back to), and a server
+// refusal returns an empty no-op patch.
 
 // Mocked at the module boundary (same style as feedingConfig.test.ts).
 const mockRpcOutcome = jest.fn();
 jest.mock("../utils/rpc", () => ({
 	rpcOutcome: (...a: unknown[]) => mockRpcOutcome(...a),
-}));
-
-const mockEq = jest.fn();
-const mockUpdate = jest.fn((..._a: unknown[]) => ({ eq: mockEq }));
-const mockFrom = jest.fn((..._a: unknown[]) => ({ update: mockUpdate }));
-jest.mock("../utils/supabase", () => ({
-	supabase: { from: (...a: unknown[]) => mockFrom(...a) },
 }));
 
 import { computeEquip, equipCosmetic } from "../utils/cosmetics";
@@ -113,14 +106,9 @@ describe("computeEquip — non-face categories never touch a sibling", () => {
 	});
 });
 
-describe("equipCosmetic — server-first dispatch (issue #35)", () => {
-	const USER = "user-1";
-
+describe("equipCosmetic — server-only dispatch (issue #35)", () => {
 	beforeEach(() => {
 		mockRpcOutcome.mockReset();
-		mockEq.mockReset().mockResolvedValue({ error: null });
-		mockUpdate.mockClear();
-		mockFrom.mockClear();
 	});
 
 	it("calls equip_cosmetic with the item id + category and returns the server's patch", async () => {
@@ -128,15 +116,13 @@ describe("equipCosmetic — server-first dispatch (issue #35)", () => {
 			ok: true,
 			data: { ok: true, update: { active_hat_id: "tophat" } },
 		});
-		const patch = await equipCosmetic(USER, "tophat", "hat");
+		const patch = await equipCosmetic("tophat", "hat");
 		expect(mockRpcOutcome).toHaveBeenCalledWith("equip_cosmetic", {
 			p_item_id: "tophat",
 			p_category: "hat",
 		});
 		// Server's patch is returned verbatim — the client trusts the server answer.
 		expect(patch).toEqual({ active_hat_id: "tophat" });
-		// No legacy direct write on the happy path.
-		expect(mockFrom).not.toHaveBeenCalled();
 	});
 
 	it("passes p_category null for an unequip (item id null)", async () => {
@@ -144,7 +130,7 @@ describe("equipCosmetic — server-first dispatch (issue #35)", () => {
 			ok: true,
 			data: { ok: true, update: { active_mask_id: null } },
 		});
-		const patch = await equipCosmetic(USER, null, "mask");
+		const patch = await equipCosmetic(null, "mask");
 		expect(mockRpcOutcome).toHaveBeenCalledWith("equip_cosmetic", {
 			p_item_id: null,
 			p_category: "mask",
@@ -152,25 +138,7 @@ describe("equipCosmetic — server-first dispatch (issue #35)", () => {
 		expect(patch).toEqual({ active_mask_id: null });
 	});
 
-	it("falls back to the direct profiles write only when the RPC function is missing", async () => {
-		mockRpcOutcome.mockResolvedValue({
-			ok: false,
-			kind: "missing_function",
-			error: { code: "PGRST202", message: "Could not find the function" },
-		});
-		const patch = await equipCosmetic(USER, "shades", "glasses");
-		// The legacy write path runs: profiles.update(computeEquip patch).eq(id, user).
-		expect(mockFrom).toHaveBeenCalledWith("profiles");
-		expect(mockUpdate).toHaveBeenCalledWith({
-			active_glasses_id: "shades",
-			active_mask_id: null,
-		});
-		expect(mockEq).toHaveBeenCalledWith("id", USER);
-		// And it returns the same computeEquip patch that was written.
-		expect(patch).toEqual({ active_glasses_id: "shades", active_mask_id: null });
-	});
-
-	it.each(["network", "rpc_error"] as const)(
+	it.each(["network", "rpc_error", "missing_function"] as const)(
 		"fails closed on a %s RPC failure",
 		async (kind) => {
 			mockRpcOutcome.mockResolvedValue({
@@ -178,32 +146,25 @@ describe("equipCosmetic — server-first dispatch (issue #35)", () => {
 				kind,
 				error: { message: "permission or transport failure" },
 			});
-			await expect(equipCosmetic(USER, "shades", "glasses")).rejects.toThrow(
+			await expect(equipCosmetic("shades", "glasses")).rejects.toThrow(
 				"equip_cosmetic failed"
 			);
-			expect(mockFrom).not.toHaveBeenCalled();
 		}
 	);
 
-	it("surfaces a legacy direct-write failure instead of returning an optimistic patch", async () => {
-		mockRpcOutcome.mockResolvedValue({
-			ok: false,
-			kind: "missing_function",
-			error: { code: "PGRST202", message: "Could not find the function" },
-		});
-		mockEq.mockResolvedValue({ error: { message: "permission denied" } });
-		await expect(equipCosmetic(USER, "tophat", "hat")).rejects.toThrow(
-			"legacy cosmetic equip failed: permission denied"
+	it("throws when the RPC succeeds but hands back no data", async () => {
+		mockRpcOutcome.mockResolvedValue({ ok: true, data: null });
+		await expect(equipCosmetic("tophat", "hat")).rejects.toThrow(
+			"equip_cosmetic failed: no data"
 		);
 	});
 
-	it("returns an empty no-op patch (and skips the direct write) on a server refusal", async () => {
+	it("returns an empty no-op patch on a server refusal", async () => {
 		mockRpcOutcome.mockResolvedValue({
 			ok: true,
 			data: { ok: false, reason: "not_owned" },
 		});
-		const patch = await equipCosmetic(USER, "unowned_hat", "hat");
+		const patch = await equipCosmetic("unowned_hat", "hat");
 		expect(patch).toEqual({});
-		expect(mockFrom).not.toHaveBeenCalled();
 	});
 });

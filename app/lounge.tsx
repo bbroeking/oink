@@ -487,9 +487,13 @@ export function LoungePrototype() {
 			: null;
 	// Mirror seesaw occupancy into UI-thread values for the plank worklet.
 	useEffect(() => {
-		const sitters: SeesawStation[] = peers
-			.filter((pr) => pr.station?.id === "seesaw")
-			.map((pr) => pr.station as SeesawStation);
+		// A peer's station arrives over presence with `id: string` (it's another
+		// client's payload), so build the narrowed station rather than assert it.
+		const sitters: SeesawStation[] = peers.flatMap((pr) =>
+			pr.station?.id === "seesaw"
+				? [{ id: "seesaw", slot: pr.station.slot, since: pr.station.since }]
+				: []
+		);
 		if (myStation) sitters.push({ id: "seesaw", ...myStation });
 		if (practiceSlot !== null) {
 			sitters.push({
@@ -521,9 +525,11 @@ export function LoungePrototype() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [peers, myStation, practiceSlot]);
 
-	const visibleSitters: SeesawStation[] = peers
-		.filter((peer) => peer.station?.id === "seesaw")
-		.map((peer) => peer.station as SeesawStation);
+	const visibleSitters: SeesawStation[] = peers.flatMap((peer) =>
+		peer.station?.id === "seesaw"
+			? [{ id: "seesaw", slot: peer.station.slot, since: peer.station.since }]
+			: []
+	);
 	if (myStation) visibleSitters.push({ id: "seesaw", ...myStation });
 	if (practiceSlot !== null) {
 		visibleSitters.push({

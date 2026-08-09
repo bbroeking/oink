@@ -273,7 +273,8 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 		// Keepsake — the caller's bond with this friend. Fail-soft: a null
 		// result (unpushed migration / refusal) leaves the line hidden.
 		pairBondWith(targetUserId).then((d) => {
-			setBond(d && (d as PairBondWith).ok ? (d as PairBondWith) : null);
+			// The envelope discriminates on `ok`, so the check narrows it directly.
+			setBond(d?.ok ? d : null);
 		});
 		// Can a visit to this person succeed right now? (gates the Visit button)
 		rpcAction<{
@@ -310,14 +311,16 @@ export function UserSheet({ targetUserId, onDismiss, onFriendshipChanged }: Prop
 			.eq("id", targetUserId)
 			.maybeSingle()
 			.then(async ({ data, error }) => {
-				let row = data as { tickles_earned?: number; wallow_count?: number } | null;
+				// Projection spanning BOTH selects below: the fallback drops
+				// wallow_count, so it stays optional here.
+				let row: { tickles_earned: number; wallow_count?: number } | null = data;
 				if (error) {
 					const fallback = await supabase
 						.from("profiles")
 						.select("tickles_earned")
 						.eq("id", targetUserId)
 						.maybeSingle();
-					row = fallback.data as { tickles_earned?: number } | null;
+					row = fallback.data;
 				}
 				setTargetTickles(row ? (row.tickles_earned ?? 0) : null);
 				setTargetWallowCount(row?.wallow_count ?? 0);

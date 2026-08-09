@@ -16,21 +16,16 @@ import {
 	resolveRivePigEquipment,
 	rivePigSkinIndex,
 	rivePigSkinSource,
+	type RivePigProps,
 } from "./rivePigContract";
 import {
 	PIG_ANIMATION_SPECS,
 	pigAnimationDurationMs,
 	resolvePigAnimation,
-	type PigRendererProps,
 } from "./pigRendererContract";
 import { recordRivePigRendererFailure } from "@/utils/rivePigRollout";
 
-export interface RivePigProps extends PigRendererProps {
-	source: number;
-	skinSource?: number;
-	artboardName?: string;
-	stateMachineName?: string;
-}
+export type { RivePigProps };
 
 /**
  * Renderer-compatible Rive pig. The raster pig is mounted immediately if the

@@ -14,7 +14,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { Sticker } from "./ui/Sticker";
 import { SnoutCoin } from "./ui/SnoutCoin";
-import { CURSE_META, type CurseKind } from "../utils/rituals";
+import { CURSE_META, type CurseKind, type RitualMeta } from "../utils/rituals";
 import { type Effect } from "../utils/activeEffects";
 import { type CleanseResult } from "../hooks/useActiveEffects";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
@@ -75,10 +75,16 @@ export function CleanseModal({ curses, onDismiss, onConfirm }: Props) {
 
 						<View style={styles.list}>
 							{curses.map((c, i) => {
-								const meta = CURSE_META[c.kind as CurseKind];
+								// Raw server string → the lookup can miss; annotated so the
+								// `meta?.` guards below stay type-enforced.
+								const meta: RitualMeta | undefined = CURSE_META[c.kind as CurseKind];
 								return (
 									<View key={i} style={styles.curseRow}>
-										<Image source={meta?.icon} style={styles.curseIcon} />
+										{meta ? (
+											<Image source={meta.icon} style={styles.curseIcon} />
+										) : (
+											<View style={styles.curseIcon} />
+										)}
 										<View style={{ flex: 1, minWidth: 0 }}>
 											<Text style={styles.curseName}>{meta?.name ?? c.kind}</Text>
 											<Text style={styles.curseBlurb}>{meta?.blurb ?? ""}</Text>

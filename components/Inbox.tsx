@@ -32,7 +32,13 @@ import { Icon } from "./ui/Icon";
 import { Glyph } from "./ui/Glyph";
 import { EmptyState, LoadingBeat } from "./ui/EmptyState";
 import { FRIEND_CAP_LIMIT } from "@/utils/friendships";
-import { BLESSING_META, CURSE_META, type BlessingKind, type CurseKind } from "../utils/rituals";
+import {
+	BLESSING_META,
+	CURSE_META,
+	type BlessingKind,
+	type CurseKind,
+	type RitualMeta,
+} from "../utils/rituals";
 import { DigPostcardInbox } from "./DigPostcardInbox";
 
 interface FriendReq {
@@ -78,11 +84,13 @@ type PassiveEvent = {
 // vague poetry while every other surface showed the actual rule
 // the effect was applying. Source of truth: utils/rituals.ts.
 function blessingDescription(kind: string): string {
-	const m = BLESSING_META[kind as BlessingKind];
+	// Raw server string → the lookup can miss; annotate so the fallback below
+	// is type-visible instead of looking like dead code.
+	const m: RitualMeta | undefined = BLESSING_META[kind as BlessingKind];
 	return m ? `${m.name} — ${m.blurb}` : kind;
 }
 function curseDescription(kind: string): string {
-	const m = CURSE_META[kind as CurseKind];
+	const m: RitualMeta | undefined = CURSE_META[kind as CurseKind];
 	return m ? `${m.name} — ${m.blurb}` : kind;
 }
 
@@ -129,15 +137,13 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			.select("requester_id")
 			.eq("receiver_id", userId)
 			.eq("status", "pending");
-		const incIds = ((incRows ?? []) as { requester_id: string }[]).map((r) => r.requester_id);
+		const incIds = (incRows ?? []).map((r) => r.requester_id);
 		if (incIds.length > 0) {
 			const { data: profs } = await supabase
 				.from("profiles")
 				.select("id, username")
 				.in("id", incIds);
-			const byId = new Map(
-				((profs ?? []) as { id: string; username: string | null }[]).map((p) => [p.id, p.username])
-			);
+			const byId = new Map((profs ?? []).map((p) => [p.id, p.username]));
 			setFriendReqs(
 				incIds.map((id) => ({
 					requester_id: id,
@@ -158,12 +164,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 				// Pull up to 100 so the What-happened feed's "load more up to
 				// 100" has enough history (was 40 — capped what could be paged).
 				.limit(100);
-			const rows = (data ?? []) as {
-				id: string;
-				kind: string;
-				sent_at: string;
-				sender_id: string;
-			}[];
+			const rows = data ?? [];
 			if (rows.length === 0) return [];
 			const { data: profs } = await supabase
 				.from("profiles")
@@ -172,9 +173,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 					"id",
 					rows.map((r) => r.sender_id)
 				);
-			const byId = new Map(
-				((profs ?? []) as { id: string; username: string | null }[]).map((p) => [p.id, p.username])
-			);
+			const byId = new Map((profs ?? []).map((p) => [p.id, p.username]));
 			return rows.map((r) => ({
 				id: r.id,
 				kind: r.kind,
@@ -207,10 +206,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 			.gt("updated_at", sevenDaysAgo)
 			.order("updated_at", { ascending: false })
 			.limit(10);
-		const accList = (accRows ?? []) as {
-			receiver_id: string;
-			updated_at: string;
-		}[];
+		const accList = accRows ?? [];
 		if (accList.length === 0) {
 			setAcceptedFriends([]);
 		} else {
@@ -221,12 +217,7 @@ export function Inbox({ userId, onActionableCount }: Props) {
 					"id",
 					accList.map((r) => r.receiver_id)
 				);
-			const accById = new Map(
-				((accProfs ?? []) as { id: string; username: string | null }[]).map((p) => [
-					p.id,
-					p.username
-				])
-			);
+			const accById = new Map((accProfs ?? []).map((p) => [p.id, p.username]));
 			setAcceptedFriends(
 				accList.map((r) => ({
 					receiver_id: r.receiver_id,

@@ -52,7 +52,7 @@ export const CURSE_ROTATION: CurseKind[] = [
 	"coin_pinch",
 ];
 
-interface RitualMeta {
+export interface RitualMeta {
 	name: string;
 	// require()'d art asset — the only rendered ritual icon.
 	icon: number;

@@ -102,7 +102,10 @@ export function JudgementDayModal({ result, visible = true, onDismiss }: Props) 
 				target_season_key: result.season_key,
 			});
 		} catch {
-			// best-effort; the modal can re-show on next focus if this fails
+			// best-effort; the modal can re-show on next focus if this fails.
+			// Belt-and-braces: rpc() resolves null rather than rejecting today, but
+			// dismissing must survive ANY seen-marking failure (contract pinned by
+			// __tests__/JudgementDayModal.test.tsx).
 		}
 		onDismiss();
 	};

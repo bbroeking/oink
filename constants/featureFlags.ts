@@ -6,16 +6,9 @@
 // server-driven feature-flag system instead (hooks/useFeatureFlags.tsx) —
 // see the `mud_wars` note below.
 
-// The Sounder (referral program) UI is hidden for now — the
-// `my_sounder` / `sounder_leaderboard` RPCs are still live, the
-// Account "Your Sounder" card and the /sounder route just don't
-// render until this flips to true.
-//
-// NOTE: the player-facing word "Sounder" has been reclaimed for the
-// war crew (Sounder Mud Fights). This flag now refers to the *referral
-// downline* surfaces specifically; the referral feature is effectively
-// backend-only while these stay hidden.
-export const SOUNDER_VISIBLE = true; // opened with Season 1 (2026-07-11) — the referral downline page is public
+// The referral-downline surfaces (Account recruiter strip + the /sounder
+// route) shipped dark behind SOUNDER_VISIBLE and opened with Season 1
+// (2026-07-11). The flag is gone — those surfaces render unconditionally.
 
 // Season 1 co-op dig (Sounder crews + the Truffle Patch feeding) visibility is
 // a server flag, not a compile-time constant — the crew card on the Friends hub
@@ -36,9 +29,7 @@ export const SOUNDER_VISIBLE = true; // opened with Season 1 (2026-07-11) — th
 export const PURCHASES_LIVE = true;
 
 // Spotlight coach-marks (components/ui/Spotlight.tsx) — the dim-the-screen /
-// cut-a-hole onboarding nudge. Lit for everyone as of 1.3 (build 149): the
-// join-door target, hole placement, touch fall-through, and dismissal were all
-// verified live, and the founder signed off on the tightened hole. It fires
-// once per install (AsyncStorage seen-key), only on the Season-tab "join a
-// Sounder" step; see hooks/useJoinSpotlight.ts.
-export const SPOTLIGHT_ENABLED = true;
+// cut-a-hole onboarding nudge — shipped dark behind SPOTLIGHT_ENABLED and were
+// lit for everyone in 1.3 (build 149). The flag is gone; the coach-mark's only
+// remaining gates are the per-install seen-stamp and the Season-tab "join a
+// Sounder" step. See hooks/useJoinSpotlight.ts.

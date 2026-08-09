@@ -3,16 +3,17 @@
 // reads on ANY equipped background, unlike the old inline band. Opened from the
 // truffle spot by the pig's feet. On a successful bury it fires onBuried (the
 // parent plays the mound's dig animation + refreshes) and closes itself.
-import { useEffect, useRef } from "react";
-import { View, Text, Pressable, Modal, Animated, Easing, StyleSheet, Dimensions } from "react-native";
+import { useEffect } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { rpcAction } from "@/utils/rpc";
 import { SnoutCoin } from "./ui/SnoutCoin";
 import { Glyph, IconText } from "./ui/Glyph";
-import { WHIMSY, SHADOW_SM, MODAL_BACKDROP_BG, RADII, SPACE, TYPE, PAGE_PAD } from "@/constants/theme";
+import { WHIMSY, SHADOW_SM, RADII, SPACE, TYPE, PAGE_PAD } from "@/constants/theme";
 import { maxBuryStake, MIN_STAKE } from "@/utils/burySnouts";
 import { usePotStake } from "@/hooks/usePotStake";
 import { useUnmanagedModalHold } from "./ui/PopupQueue";
+import { SheetGrabber, SlideUpSheet } from "./ui/SlideUpSheet";
 
 // The two fixed chips; the third chip is "Max" (fills to the 50-snout pot cap,
 // bounded by the host's balance — resolved live in maxBuryStake).
@@ -31,8 +32,6 @@ export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced 
 	// while open so a foreground poll (schism/finale/achievements on AppState
 	// "active") can't present a queued popup over it — the #50152 wedge (issue #4).
 	useUnmanagedModalHold(open);
-	const screenH = useRef(Dimensions.get("window").height).current;
-	const anim = useRef(new Animated.Value(0)).current;
 	// A chip is either a fixed amount or "max" (resolves to a concrete number
 	// against the live balance) — the confirm button always restates the number.
 	// The shared stake machine: floor = server min, ceiling = live balance, Max
@@ -43,9 +42,7 @@ export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced 
 	useEffect(() => {
 		if (!open) return;
 		setNote(null);
-		anim.setValue(0);
-		Animated.timing(anim, { toValue: 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-	}, [open, anim]);
+	}, [open]);
 
 	if (!open) return null;
 
@@ -90,79 +87,70 @@ export function BuryTruffleSheet({ open, balance, onClose, onBuried, onResynced 
 		}
 	};
 
-	const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [screenH, 0] });
-
 	return (
-		<Modal visible transparent animationType="none" onRequestClose={onClose}>
-			<Animated.View style={[styles.backdrop, { opacity: anim }]}>
-				<Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-			</Animated.View>
-			<Animated.View pointerEvents="box-none" style={[styles.sheetWrap, { transform: [{ translateY }] }]}>
-				<View style={styles.sheet}>
-					<View style={styles.grabber} />
-					<IconText left={<Glyph name="star" size={12} />} gap={4}>
-						<Text style={styles.kicker}>YOUR TRUFFLE</Text>
-					</IconText>
-					<IconText right={<Glyph name="pigface" size={20} />} gap={6} style={styles.titleRow}>
-						<Text style={styles.title}>Bury a truffle</Text>
-					</IconText>
+		<SlideUpSheet open={open} onClose={onClose}>
+			<View style={styles.sheet}>
+				<SheetGrabber />
+				<IconText left={<Glyph name="star" size={12} />} gap={4}>
+					<Text style={styles.kicker}>YOUR TRUFFLE</Text>
+				</IconText>
+				<IconText right={<Glyph name="pigface" size={20} />} gap={6} style={styles.titleRow}>
+					<Text style={styles.title}>Bury a truffle</Text>
+				</IconText>
 
-					<Text style={styles.blurb}>
-						Leave a truffle on your barn for visitors. The stake becomes a shared pot
-						— friends who drop by dig shares of it for snouts.
-					</Text>
+				<Text style={styles.blurb}>
+					Leave a truffle on your barn for visitors. The stake becomes a shared pot
+					— friends who drop by dig shares of it for snouts.
+				</Text>
 
-					<Text style={styles.label}>Stake</Text>
-					<View style={styles.stakes}>
-						{FIXED_STAKES.map((s) => {
-							const on = sel === s;
-							const tooPoor = balance < s; // can't afford this chip
-							return (
-								<Pressable
-									key={s}
-									disabled={tooPoor}
-									onPress={() => select(s)} // select clears any stale "need N snouts" note
-									style={[styles.chip, on && styles.chipOn, tooPoor && styles.chipOff]}
-								>
-									<SnoutCoin size={16} />
-									<Text style={[styles.chipText, on && styles.chipTextOn, tooPoor && styles.chipTextOff]}>{s}</Text>
-								</Pressable>
-							);
-						})}
-						{/* Max — fills to the 50-snout pot cap, bounded by balance; dims
-						    below the server min stake. */}
-						<Pressable
-							disabled={!maxOk}
-							onPress={() => select("max")}
-							style={[styles.chip, sel === "max" && styles.chipOn, !maxOk && styles.chipOff]}
-						>
-							<SnoutCoin size={16} />
-							<Text style={[styles.chipText, sel === "max" && styles.chipTextOn, !maxOk && styles.chipTextOff]}>Max</Text>
-						</Pressable>
-					</View>
-
-					{note && <Text style={styles.note}>{note}</Text>}
-
+				<Text style={styles.label}>Stake</Text>
+				<View style={styles.stakes}>
+					{FIXED_STAKES.map((s) => {
+						const on = sel === s;
+						const tooPoor = balance < s; // can't afford this chip
+						return (
+							<Pressable
+								key={s}
+								disabled={tooPoor}
+								onPress={() => select(s)} // select clears any stale "need N snouts" note
+								style={[styles.chip, on && styles.chipOn, tooPoor && styles.chipOff]}
+							>
+								<SnoutCoin size={16} />
+								<Text style={[styles.chipText, on && styles.chipTextOn, tooPoor && styles.chipTextOff]}>{s}</Text>
+							</Pressable>
+						);
+					})}
+					{/* Max — fills to the 50-snout pot cap, bounded by balance; dims
+					    below the server min stake. */}
 					<Pressable
-						onPress={bury}
-						disabled={busy || !canBury}
-						style={({ pressed }) => [styles.buryBtn, !canBury && styles.buryBtnOff, pressed && { opacity: 0.9 }]}
+						disabled={!maxOk}
+						onPress={() => select("max")}
+						style={[styles.chip, sel === "max" && styles.chipOn, !maxOk && styles.chipOff]}
 					>
-						<Text style={styles.buryText}>
-							{busy ? "burying…" : `Bury for visitors · ${stake} snouts`}
-						</Text>
+						<SnoutCoin size={16} />
+						<Text style={[styles.chipText, sel === "max" && styles.chipTextOn, !maxOk && styles.chipTextOff]}>Max</Text>
 					</Pressable>
 				</View>
-			</Animated.View>
-		</Modal>
+
+				{note && <Text style={styles.note}>{note}</Text>}
+
+				<Pressable
+					onPress={bury}
+					disabled={busy || !canBury}
+					style={({ pressed }) => [styles.buryBtn, !canBury && styles.buryBtnOff, pressed && { opacity: 0.9 }]}
+				>
+					<Text style={styles.buryText}>
+						{busy ? "burying…" : `Bury for visitors · ${stake} snouts`}
+					</Text>
+				</Pressable>
+			</View>
+		</SlideUpSheet>
 	);
 }
 
 const INK = WHIMSY.ink;
 const sticker = SHADOW_SM;
 const styles = StyleSheet.create({
-	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: MODAL_BACKDROP_BG },
-	sheetWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: SPACE.md + 2, paddingBottom: SPACE.xl + 4 },
 	sheet: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
@@ -172,7 +160,6 @@ const styles = StyleSheet.create({
 		paddingTop: SPACE.md - 2,
 		...sticker,
 	},
-	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: SPACE.md },
 	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
 	titleRow: { marginBottom: SPACE.sm + 2 },
 	title: { ...TYPE.pageTitle, color: INK },

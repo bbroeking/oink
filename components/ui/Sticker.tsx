@@ -18,7 +18,9 @@ type StickerColor =
 
 interface Props {
 	children?: React.ReactNode;
-	color?: StickerColor | string;
+	// A named theme token OR a raw color string. `string & {}` keeps the token
+	// names in autocomplete instead of letting the bare `string` swallow them.
+	color?: StickerColor | (string & {});
 	rotate?: number; // degrees
 	radius?: number;
 	border?: number;
@@ -51,7 +53,7 @@ export function Sticker({
 	style,
 }: Props) {
 	const bg =
-		(color in COLOR_MAP ? COLOR_MAP[color as StickerColor] : color) as string;
+		color in COLOR_MAP ? COLOR_MAP[color as StickerColor] : color;
 	return (
 		<View
 			style={[
@@ -79,14 +81,16 @@ export function Tape({
 	height = 14,
 	style,
 }: {
-	color?: StickerColor | string;
+	// A named theme token OR a raw color string. `string & {}` keeps the token
+	// names in autocomplete instead of letting the bare `string` swallow them.
+	color?: StickerColor | (string & {});
 	rotate?: number;
 	width?: number;
 	height?: number;
 	style?: StyleProp<ViewStyle>;
 }) {
 	const bg =
-		(color in COLOR_MAP ? COLOR_MAP[color as StickerColor] : color) as string;
+		color in COLOR_MAP ? COLOR_MAP[color as StickerColor] : color;
 	return (
 		<View
 			style={[

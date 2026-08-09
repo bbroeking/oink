@@ -5,7 +5,6 @@
 // product decision of "should THIS spotlight show right now."
 //
 // Show conditions, all of which must hold:
-//   • the master flag is on (SPOTLIGHT_ENABLED — __DEV__ for now, ships dark),
 //   • the Sounder path is on the `join` step (crewless, past the taste dig),
 //   • the seen-stamp is absent (never shown on this install).
 //
@@ -15,7 +14,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SPOTLIGHT_ENABLED } from "@/constants/featureFlags";
 import type { SounderStep } from "@/hooks/useSounderPath";
 
 // Per-install stamp — versioned so a future copy/target revision can re-arm the
@@ -39,10 +37,6 @@ export function useJoinSpotlight(step: SounderStep | null): JoinSpotlight {
 	const [seen, setSeen] = useState<boolean | null>(null);
 
 	useEffect(() => {
-		if (!SPOTLIGHT_ENABLED) {
-			setSeen(true); // short-circuit: nothing to read, never shows.
-			return;
-		}
 		let alive = true;
 		AsyncStorage.getItem(JOIN_SPOTLIGHT_SEEN_KEY)
 			.then((v) => alive && setSeen(!!v))
@@ -60,7 +54,7 @@ export function useJoinSpotlight(step: SounderStep | null): JoinSpotlight {
 		});
 	}, []);
 
-	const show = SPOTLIGHT_ENABLED && step === "join" && seen === false;
+	const show = step === "join" && seen === false;
 
 	return { show, dismiss };
 }

@@ -355,9 +355,7 @@ export function ClosetView({
 
 	// Paper-doll arrangement: every equip slot is a chip split into two columns
 	// that flank Rosie left + right.
-	// Retired flags never enter visibleOwned, but keep this compatibility filter
-	// until the legacy flag slot is removed from the shared slot schema.
-	const flankSlots = visibleSlots.filter((s) => s !== "flag");
+	const flankSlots = visibleSlots;
 
 	// The equipped background, rendered as the scene inside the preview window —
 	// a scoped version of the Barn's full-page background so you can preview it

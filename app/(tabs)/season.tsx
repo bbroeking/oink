@@ -998,8 +998,7 @@ export default function SeasonScreen() {
 	const [devSeasonSheetOpen, setDevSeasonSheetOpen] = useState(false);
 	const visibleSounderStep =
 		__DEV__ && devSeason.step ? devSeason.step : sounderPath.step;
-	// The "join a Sounder" coach-mark gate — lights once, on the `join` step, when
-	// the master flag is on (SPOTLIGHT_ENABLED, __DEV__ for now so it ships dark).
+	// The "join a Sounder" coach-mark gate — lights once, on the `join` step.
 	// The step card nests the SpotlightTarget around just its join door; we only
 	// pass `joinSpotlight.show` down as the active gate.
 	const joinSpotlight = useJoinSpotlight(sounderPath.step);
@@ -1921,8 +1920,7 @@ export default function SeasonScreen() {
 
 			{/* The "join a Sounder" coach-mark — dims the tab, cuts a bright hole
 			    around the join step card, and forces the tap. Only lit once (the
-			    seen-stamp), on the `join` step, and only while SPOTLIGHT_ENABLED
-			    (__DEV__ for now, so it ships dark). Tapping through the hole OR the
+			    seen-stamp), on the `join` step. Tapping through the hole OR the
 			    "maybe later" skip stamps it seen. */}
 			<SpotlightOverlay
 				activeId={joinSpotlight.show ? JOIN_SPOTLIGHT_TARGET_ID : null}
@@ -2421,9 +2419,7 @@ const styles = StyleSheet.create({
 		gap: SPACE.sm,
 	},
 	// The two live StoneThumb styles — the reward chip (`stone`) and the title
-	// reward's quote glyph. The ~130 lines of legacy snake-track styles that used
-	// to trail here (tierRow…lockedText) were dead since the vertical-list track
-	// replaced the snaking track; deleted in the 2026-07-13 token sweep.
+	// reward's quote glyph.
 	stone: {
 		width: 42,
 		height: 42,

@@ -9,21 +9,19 @@
 //     `activeIds` set (current merged with update) so callers can drive an
 //     optimistic UI patch from the same source of truth. Pure + unit-tested
 //     (__tests__/cosmetics.test.ts).
-//   • equipCosmetic applies that update to profiles via supabase.
+//   • equipCosmetic asks the server to apply that update.
 //
-// SERVER-SIDE NOW (issue #35): equipCosmetic calls the equip_cosmetic RPC
+// SERVER-SIDE (issue #35): equipCosmetic calls the equip_cosmetic RPC
 // (20260774000000), which sources the category from the catalog, enforces
 // ownership + members-only gating, and applies Face-slot exclusivity in one
 // server write — then hands back the same column-patch computeEquip would.
-// The RPC is the source of truth; computeEquip stays as (a) the shape/rule
-// documentation and (b) the fallback rule when the RPC is not yet deployed.
+// The RPC is the source of truth; computeEquip remains as the documented,
+// unit-tested statement of the rule (and the shape callers merge optimistically).
 //
-// FALLBACK: only when PostgREST positively identifies equip_cosmetic as missing
-// does equipCosmetic drop to the LEGACY direct profiles.active_*_id write.
-// Network, permission, and SQL failures fail closed instead of bypassing the
-// server's ownership/member checks.
+// Every RPC failure — missing function, network, permission, SQL — fails closed
+// rather than writing profiles.active_*_id directly and bypassing the server's
+// ownership/member checks.
 
-import { supabase } from "./supabase";
 import { rpcOutcome } from "./rpc";
 import { columnForCategory } from "@/constants/slots";
 
@@ -69,22 +67,19 @@ interface EquipRpcResult {
 	reason?: string;
 }
 
-// Effect wrapper: persist the equip for `userId` and return the column patch
-// so the caller can apply the same change optimistically to local state.
+// Effect wrapper: persist the equip via the server RPC and return the column
+// patch so the caller can apply the same change optimistically to local state.
 // Passing `itemId = null` unequips just the matching slot (needs `category`).
 //
-// Preferred path: the server RPC, which returns the authoritative column-patch.
-// On a positively identified missing function we fall back to the legacy direct
-// write. Other call failures throw. On a server REFUSAL ({ok:false}) we return
-// an EMPTY patch — a no-op merge into activeIds — so the UI simply doesn't
-// move the item into the slot
-// the server declined. Callers (shop.tsx handleEquip → patchActiveIds) already
-// ignore failures, so a no-op patch is the least-surprising surface and keeps
-// the client in step with the server rather than optimistically lying. These
-// refusals aren't reachable in normal UI (you can only tap owned, visible
-// items), so no toast is warranted.
+// Any call failure throws — there is no direct-write path around the server's
+// ownership/member checks. On a server REFUSAL ({ok:false}) we return an EMPTY
+// patch — a no-op merge into activeIds — so the UI simply doesn't move the item
+// into the slot the server declined. Callers (shop.tsx handleEquip →
+// patchActiveIds) already ignore failures, so a no-op patch is the
+// least-surprising surface and keeps the client in step with the server rather
+// than optimistically lying. These refusals aren't reachable in normal UI (you
+// can only tap owned, visible items), so no toast is warranted.
 export async function equipCosmetic(
-	userId: string,
 	itemId: string | null,
 	category: string | null | undefined,
 ): Promise<Record<string, string | null>> {
@@ -93,10 +88,7 @@ export async function equipCosmetic(
 		p_category: category ?? null,
 	});
 	if (!outcome.ok) {
-		if (outcome.kind !== "missing_function") {
-			throw new Error(`equip_cosmetic failed: ${outcome.error.message ?? outcome.kind}`);
-		}
-		return equipCosmeticLegacy(userId, itemId, category);
+		throw new Error(`equip_cosmetic failed: ${outcome.error.message ?? outcome.kind}`);
 	}
 	const res = outcome.data;
 	if (res == null) {
@@ -108,20 +100,4 @@ export async function equipCosmetic(
 	}
 	// Server refused ({ok:false}) → no-op patch.
 	return {};
-}
-
-// LEGACY fallback: the pre-#35 client-side direct write. Kept only for an
-// undeployed equip_cosmetic function — the server RPC is the real rule.
-// Uses computeEquip so the fallback obeys the same routing + exclusivity.
-async function equipCosmeticLegacy(
-	userId: string,
-	itemId: string | null,
-	category: string | null | undefined,
-): Promise<Record<string, string | null>> {
-	const { update } = computeEquip(category, itemId, {});
-	const { error } = await supabase.from("profiles").update(update).eq("id", userId);
-	if (error) {
-		throw new Error(`legacy cosmetic equip failed: ${error.message}`);
-	}
-	return update;
 }

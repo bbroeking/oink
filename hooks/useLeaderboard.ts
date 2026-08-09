@@ -25,11 +25,9 @@ import { rpc } from "@/utils/rpc";
 import { getFriendIds } from "@/utils/friendships";
 import {
 	enemyLeaderboard,
-	type EnemyLeaderboard,
 	type EnemyPairRow,
 	pairLeaderboard,
 	type PairBondRow,
-	type PairLeaderboard,
 } from "@/utils/pairBonds";
 import { log } from "@/utils/log";
 
@@ -228,12 +226,12 @@ export function useLeaderboard(scope: Scope): UseLeaderboard {
 					pairLeaderboard(25),
 					enemyLeaderboard(25),
 				]);
-				const pairsOk = pairRes && (pairRes as PairLeaderboard).ok;
-				const enemiesOk = enemyRes && (enemyRes as EnemyLeaderboard).ok;
-				setPairs(pairsOk ? (pairRes as PairLeaderboard).pairs : []);
-				setYouPair(pairsOk ? (pairRes as PairLeaderboard).you : null);
-				setEnemies(enemiesOk ? (enemyRes as EnemyLeaderboard).enemies : []);
-				setYouEnemy(enemiesOk ? (enemyRes as EnemyLeaderboard).you : null);
+				// Both envelopes discriminate on `ok`, so branching on it narrows
+				// the union directly — no cast needed.
+				setPairs(pairRes?.ok ? pairRes.pairs : []);
+				setYouPair(pairRes?.ok ? pairRes.you : null);
+				setEnemies(enemyRes?.ok ? enemyRes.enemies : []);
+				setYouEnemy(enemyRes?.ok ? enemyRes.you : null);
 				return;
 			}
 

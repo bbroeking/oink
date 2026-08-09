@@ -12,30 +12,12 @@ import { Pressable, Text, View, StyleSheet } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { supabase } from "../utils/supabase";
+import { paramsFromUrl } from "../utils/authCallback";
 import { log } from "../utils/log";
 import { WHIMSY, FONTS, RADII } from "@/constants/theme";
 
 // Lets the auth session browser dismiss cleanly when it redirects back.
 WebBrowser.maybeCompleteAuthSession();
-
-// Pull auth params from either the query string or the fragment. Supabase's
-// implicit flow returns access_token/refresh_token in the fragment; a PKCE
-// setup would return `code` in the query. We read both.
-function paramsFromUrl(url: string): URLSearchParams {
-	const merged = new URLSearchParams();
-	try {
-		const u = new URL(url);
-		u.searchParams.forEach((v, k) => merged.set(k, v));
-		const frag = u.hash.startsWith("#") ? u.hash.slice(1) : u.hash;
-		if (frag) {
-			new URLSearchParams(frag).forEach((v, k) => merged.set(k, v));
-		}
-	} catch {
-		// Malformed callback URL — fall through to an empty set, which the
-		// caller treats as "no session came back" and shows the friendly note.
-	}
-	return merged;
-}
 
 export function GoogleAuth({ onError }: { onError?: (msg: string) => void }) {
 	const [busy, setBusy] = useState(false);

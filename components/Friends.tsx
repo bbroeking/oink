@@ -169,13 +169,13 @@ export default function Friends({
 				// migration / RLS miss just leaves the list unsorted-by-favorite).
 				supabase.from("friend_favorites").select("friend_id").eq("user_id", userId)
 			]);
-			const list = (profileRes.data as Profile[]) ?? [];
+			const list = profileRes.data ?? [];
 			setFriends(list);
 			setCrewNames(new Map(friendCrews.map((fc) => [fc.friend_id, fc.crew_name])));
 			setFavorites(
 				favRes.error
 					? new Set()
-					: new Set(((favRes.data as { friend_id: string }[] | null) ?? []).map((r) => r.friend_id))
+					: new Set((favRes.data ?? []).map((r) => r.friend_id))
 			);
 
 			// Read the shared visit budget once. barn_visit_status's

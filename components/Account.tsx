@@ -48,7 +48,7 @@ import {
 	restorePurchases,
 	onCustomerInfoUpdate,
 } from "../utils/iap";
-import { PURCHASES_LIVE, SOUNDER_VISIBLE } from "@/constants/featureFlags";
+import { PURCHASES_LIVE } from "@/constants/featureFlags";
 import { showPurchaseToast } from "./PurchaseToast";
 import {
 	myReferralSummary,
@@ -207,9 +207,8 @@ export function Account({ session }: { session: Session }) {
 	);
 	useFocusEffect(
 		useCallback(() => {
-			// The legacy recruiter leaderboard is hidden behind this feature
-			// flag. Its RPC still uses the old `sounder` name internally.
-			if (!SOUNDER_VISIBLE) return;
+			// The recruiter leaderboard's RPC still uses the old `sounder`
+			// name internally.
 			rpc<
 				| { ok: false; reason?: string }
 				| ({ ok: true } & NonNullable<typeof recruiterStats>)
@@ -311,9 +310,10 @@ export function Account({ session }: { session: Session }) {
 							| { name: string; placement: TitlePlacement }[]
 							| null;
 					};
-					// The supabase client is created without a Database
-					// generic, so `data` is untyped at the source; cast it to
-					// the row shape this select projects.
+					// `titles.placement` is plain `text` in Postgres; ProfileRow
+					// narrows it to the TitlePlacement union the renderer switches
+					// on. That narrowing is all this assertion does — every other
+					// field comes straight from the generated row type.
 					let row: ProfileRow | null = data as ProfileRow | null;
 					if (error) {
 						const fallback = await supabase
@@ -341,9 +341,10 @@ export function Account({ session }: { session: Session }) {
 						: row?.active_title;
 					setActiveTitle(t ?? null);
 				});
-			// renames_used ships with the (not-yet-pushed) rename migration —
-			// fetched separately so a missing column can't 400 the main
-			// profile select and zero out the whole page. Fails soft to 0.
+			// renames_used shipped with the rename migration (it IS in the live
+			// schema — see utils/database.types.ts). Still fetched separately so a
+			// per-column failure can't 400 the main profile select and zero out the
+			// whole page. Fails soft to 0.
 			supabase
 				.from("profiles")
 				.select("renames_used")
@@ -351,20 +352,19 @@ export function Account({ session }: { session: Session }) {
 				.single()
 				.then(({ data, error }) => {
 					if (!error) {
-						setRenamesUsed(
-							(data as { renames_used?: number } | null)?.renames_used ?? 0
-						);
+						setRenamesUsed(data?.renames_used ?? 0);
 					}
 				});
-			// Isolated fail-soft reads: the Wallow migration is intentionally not
-			// pushed yet, so a missing column/function must not break Account.
+			// Isolated fail-soft reads. profiles.wallow_count is live, but the
+			// Wallow RPCs around it are still dark, so a missing function must not
+			// break Account — keep each read on its own request.
 			supabase
 				.from("profiles")
 				.select("wallow_count")
 				.eq("id", session.user.id)
 				.single()
 				.then(({ data, error }) => {
-					if (!error) setWallowCount((data as { wallow_count?: number } | null)?.wallow_count ?? 0);
+					if (!error) setWallowCount(data?.wallow_count ?? 0);
 				});
 			rpc<{ wallow_regen_seconds?: number }>("season_state").then((state) => {
 				if (typeof state?.wallow_regen_seconds === "number") {
@@ -964,7 +964,7 @@ export function Account({ session }: { session: Session }) {
 							{/* Recruiter standing. The backing RPC/route keep their
 							    legacy names, but player-facing language stays firmly
 							    in the referral model; Sounder means the four-pig crew. */}
-							{SOUNDER_VISIBLE && recruiterStats && (
+							{recruiterStats && (
 								<View style={referralStyles.downlineStrip}>
 									<View style={referralStyles.downlineTextCol}>
 										<Text style={referralStyles.downlineCount}>
@@ -1175,7 +1175,11 @@ export function Account({ session }: { session: Session }) {
 					setDeleting(true);
 					try {
 						await rpc("delete_my_account");
-					} catch {}
+					} catch {
+						// Sign the device out either way — a half-failed delete must
+						// never strand the player inside the account they just asked
+						// us to destroy.
+					}
 					await clearPushToken();
 					await supabase.auth.signOut();
 					setDeleting(false);

@@ -9,6 +9,35 @@
 
 import { supabase } from "./supabase";
 import { log } from "./log";
+import type { Database } from "./database.types";
+
+// ── The one honest boundary ─────────────────────────────────────────────────
+// supabase.rpc()'s name + args are keyed off the GENERATED
+// Database["public"]["Functions"], which mirrors the LIVE prod schema. These
+// wrappers must ALSO reach dark-launched RPCs whose migration is authored but
+// unpushed — that is precisely what the PGRST202 branch above exists for
+// (today: finalize_rewarded_ad, record_rewarded_ad_interaction,
+// mark_schism_seen, submit_rooting). Narrowing `name` to the generated union
+// would break those four call sites and force a cast at each one.
+//
+// So the widening lives here, ONCE. Callers still get autocomplete on all ~230
+// known function names via the `(string & {})` union, unpushed names still
+// type-check, and exactly one place in the app asserts through to
+// supabase.rpc. Args/Returns stay caller-annotated (`rpc<T>`) rather than
+// derived, because half the RPCs return jsonb — `Json` tells a caller nothing.
+type KnownRpcName = keyof Database["public"]["Functions"];
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- `(string & {})` is the idiom that keeps autocomplete on KnownRpcName alive while still accepting an unpushed name.
+export type RpcName = KnownRpcName | (string & {});
+
+async function callRpc(
+	name: RpcName,
+	params?: Record<string, unknown>
+): Promise<{ data: unknown; error: RpcFailure | null }> {
+	return (await supabase.rpc(name as never, params as never)) as {
+		data: unknown;
+		error: RpcFailure | null;
+	};
+}
 
 // A transient connectivity blip (offline, Supabase API outage, DNS hiccup)
 // surfaces as a fetch-level TypeError — "Network request failed" on RN,
@@ -47,7 +76,7 @@ function logRpcError(name: string, error: { message?: string; name?: string; cod
 }
 
 export async function rpc<T = unknown>(
-	name: string,
+	name: RpcName,
 	params?: Record<string, unknown>
 ): Promise<T | null> {
 	const result = await rpcOutcome<T>(name, params);
@@ -74,10 +103,10 @@ export type RpcOutcome<T> =
 // new fail-closed write paths should use this result instead of guessing from
 // null.
 export async function rpcOutcome<T = unknown>(
-	name: string,
+	name: RpcName,
 	params?: Record<string, unknown>
 ): Promise<RpcOutcome<T>> {
-	const { data, error } = await supabase.rpc(name, params);
+	const { data, error } = await callRpc(name, params);
 	if (error) {
 		logRpcError(name, error);
 		return {
@@ -111,10 +140,10 @@ export type RpcResult<T> =
 	| ({ ok: false; reason: string } & Partial<T>);
 
 export async function rpcAction<T = Record<string, never>>(
-	name: string,
+	name: RpcName,
 	params?: Record<string, unknown>
 ): Promise<RpcResult<T>> {
-	const { data, error } = await supabase.rpc(name, params);
+	const { data, error } = await callRpc(name, params);
 	if (error) {
 		logRpcError(name, error);
 		return { ok: false, reason: "network" };
@@ -126,6 +155,9 @@ export async function rpcAction<T = Record<string, never>>(
 	if (d.ok === true) {
 		return { ...d, ok: true } as { ok: true } & T;
 	}
-	const reason = (d.reason ?? d.error ?? "unknown") as string;
+	// `reason`/`error` come off raw jsonb, so narrow rather than assert — a
+	// non-string in either slot would otherwise masquerade as RpcResult.reason.
+	const rawReason = d.reason ?? d.error;
+	const reason = typeof rawReason === "string" ? rawReason : "unknown";
 	return { ...d, ok: false, reason } as { ok: false; reason: string } & Partial<T>;
 }

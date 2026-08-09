@@ -3,15 +3,16 @@
 // Earn them by digging Golden Truffles at the feedings and trading at the
 // Truffle Exchange. Catalog comes from the hats table (keyed by
 // EXCHANGE_ITEM_IDS); owned state from user_hats.
-import { useEffect, useRef, useState } from "react";
-import { View, Text, Image, Pressable, Modal, Animated, Easing, StyleSheet, ScrollView, Dimensions } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, Image, Pressable, StyleSheet, ScrollView, Dimensions } from "react-native";
 import { supabase } from "@/utils/supabase";
 import { Icon } from "@/components/ui/Icon";
 import { HAT_IMAGES, RARITY_COLORS, type Rarity } from "@/constants/hats";
 import { EXCHANGE_ITEM_IDS } from "@/constants/dig";
 import { LoadingBeat } from "@/components/ui/EmptyState";
 import { useUnmanagedModalHold } from "@/components/ui/PopupQueue";
-import { WHIMSY, FONTS, SHADOW_SM, MODAL_BACKDROP_BG, RADII, SPACE, TYPE, PAGE_PAD, RARITY_BG_SOLID } from "@/constants/theme";
+import { SheetGrabber, SlideUpSheet } from "@/components/ui/SlideUpSheet";
+import { WHIMSY, FONTS, SHADOW_SM, RADII, SPACE, TYPE, PAGE_PAD, RARITY_BG_SOLID } from "@/constants/theme";
 
 interface SpoilRow {
 	id: string;
@@ -32,15 +33,10 @@ export function TruffleCatalogSheet({ open, onClose }: Props) {
 	// queue): hold the queue while open so a foreground poll can't present a
 	// queued popup over it — the #50152 wedge (issue #4).
 	useUnmanagedModalHold(open);
-	const screenH = useRef(Dimensions.get("window").height).current;
-	const anim = useRef(new Animated.Value(0)).current;
 	const [rows, setRows] = useState<SpoilRow[] | null>(null);
 
 	useEffect(() => {
 		if (!open) return;
-		anim.setValue(0);
-		Animated.timing(anim, { toValue: 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-
 		let cancelled = false;
 		(async () => {
 			const ids: string[] = [...EXCHANGE_ITEM_IDS];
@@ -61,71 +57,65 @@ export function TruffleCatalogSheet({ open, onClose }: Props) {
 		return () => {
 			cancelled = true;
 		};
-	}, [open, anim]);
+	}, [open]);
 
 	if (!open) return null;
 
 	const ownedCount = rows ? rows.filter((r) => r.owned).length : 0;
 	const total = rows ? rows.length : EXCHANGE_ITEM_IDS.length;
-	const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [screenH, 0] });
 
 	return (
-		<Modal visible transparent animationType="none" onRequestClose={onClose}>
-			<Animated.View style={[styles.backdrop, { opacity: anim }]}>
-				<Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-			</Animated.View>
-			<Animated.View pointerEvents="box-none" style={[styles.sheetWrap, { transform: [{ translateY }] }]}>
-				<View style={styles.sheet}>
-					<View style={styles.grabber} />
-					<Text style={styles.kicker}>EXCLUSIVES</Text>
-					<Text style={styles.title}>What you can earn</Text>
-					<Text style={styles.sub}>
-						Dig at the feedings for Golden Truffles, then trade them for these exclusives at the Exchange.
-						{"  "}
-						<Text style={styles.count}>{ownedCount}/{total} earned</Text>
-					</Text>
+		<SlideUpSheet open={open} onClose={onClose}>
+			<View style={styles.sheet}>
+				<SheetGrabber />
+				<Text style={styles.kicker}>EXCLUSIVES</Text>
+				<Text style={styles.title}>What you can earn</Text>
+				<Text style={styles.sub}>
+					Dig at the feedings for Golden Truffles, then trade them for these exclusives at the Exchange.
+					{"  "}
+					<Text style={styles.count}>{ownedCount}/{total} earned</Text>
+				</Text>
 
-					<ScrollView style={styles.scroll} contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
-						{rows === null ? (
-							<LoadingBeat label="fetching the trophy case" glyph="sparkle" />
-						) : (
-							rows.map((r) => {
-								const color = RARITY_COLORS[r.rarity] ?? WHIMSY.muteSoft;
-								const fill = RARITY_BG_SOLID[r.rarity] ?? WHIMSY.cream;
-								const img = HAT_IMAGES[r.id];
-								return (
-									<View key={r.id} style={[styles.tile, { borderColor: color }, !r.owned && styles.tileLocked]}>
-										<View style={[styles.thumbWrap, { backgroundColor: fill }]}>
-											{img ? (
-												<Image source={img} style={[styles.thumb, !r.owned && styles.thumbLocked]} resizeMode="contain" />
-											) : null}
-											{r.owned ? (
-												<View style={[styles.check, { backgroundColor: color }]}>
-													<Icon name="check" size={13} color={INK} strokeWidth={2.4} />
-												</View>
-											) : (
-												<View style={styles.lock}>
-													<Icon name="lock" size={14} color={WHIMSY.mute} strokeWidth={1.8} />
-												</View>
-											)}
-										</View>
-										<Text style={styles.name} numberOfLines={1}>{r.name}</Text>
-										<Text style={[styles.rarity, { color }]}>{r.rarity}</Text>
+				<ScrollView style={styles.scroll} contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
+					{rows === null ? (
+						<LoadingBeat label="fetching the trophy case" glyph="sparkle" />
+					) : (
+						rows.map((r) => {
+							const color = RARITY_COLORS[r.rarity] ?? WHIMSY.muteSoft;
+							const fill = RARITY_BG_SOLID[r.rarity] ?? WHIMSY.cream;
+							const img = HAT_IMAGES[r.id];
+							return (
+								<View key={r.id} style={[styles.tile, { borderColor: color }, !r.owned && styles.tileLocked]}>
+									<View style={[styles.thumbWrap, { backgroundColor: fill }]}>
+										{img ? (
+											<Image source={img} style={[styles.thumb, !r.owned && styles.thumbLocked]} resizeMode="contain" />
+										) : null}
+										{r.owned ? (
+											<View style={[styles.check, { backgroundColor: color }]}>
+												<Icon name="check" size={13} color={INK} strokeWidth={2.4} />
+											</View>
+										) : (
+											<View style={styles.lock}>
+												<Icon name="lock" size={14} color={WHIMSY.mute} strokeWidth={1.8} />
+											</View>
+										)}
 									</View>
-								);
-							})
-						)}
-					</ScrollView>
+									<Text style={styles.name} numberOfLines={1}>{r.name}</Text>
+									<Text style={[styles.rarity, { color }]}>{r.rarity}</Text>
+								</View>
+							);
+						})
+					)}
+				</ScrollView>
 
-					<Pressable
-						onPress={onClose}
-						style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.85 }]}
-					>
-						<Text style={styles.doneText}>Done</Text>
-					</Pressable>
-				</View>
-			</Animated.View>
-		</Modal>
+				<Pressable
+					onPress={onClose}
+					style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.85 }]}
+				>
+					<Text style={styles.doneText}>Done</Text>
+				</Pressable>
+			</View>
+		</SlideUpSheet>
 	);
 }
 
@@ -133,8 +123,6 @@ const INK = WHIMSY.ink;
 const SCREEN_H = Dimensions.get("window").height;
 const GAP = SPACE.md;
 const styles = StyleSheet.create({
-	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: MODAL_BACKDROP_BG },
-	sheetWrap: { position: "absolute", left: 0, right: 0, bottom: 0, padding: SPACE.md + 2, paddingBottom: SPACE.xl + 4 },
 	sheet: {
 		backgroundColor: WHIMSY.paper,
 		borderWidth: 2,
@@ -145,7 +133,6 @@ const styles = StyleSheet.create({
 		maxHeight: SCREEN_H * 0.85,
 		...SHADOW_SM,
 	},
-	grabber: { alignSelf: "center", width: 44, height: 4, borderRadius: 2, backgroundColor: WHIMSY.muteSoft, marginBottom: SPACE.md },
 	kicker: { ...TYPE.kicker, letterSpacing: 1.2, color: WHIMSY.accent, marginBottom: 2 },
 	title: { ...TYPE.pageTitle, color: INK },
 	sub: { ...TYPE.hand, color: WHIMSY.mute, marginTop: SPACE.xs + 2, marginBottom: SPACE.md },

@@ -8,6 +8,8 @@
 // product rules (premium-under-glass, the prestige/Wallow track, the YOUR TAKE
 // next-reward pick) — they moved with the code they explain.
 
+import type { RewardValue } from "@/utils/rewardArt";
+
 // ── The season_state RPC shape ──────────────────────────────────────────────
 
 export interface SeasonRow {
@@ -21,19 +23,11 @@ export interface SeasonRow {
 	premium_plus_price_cents: number;
 }
 
-// reward_value shape varies per reward_type — Supabase jsonb. Legacy seeds used
-// category-specific keys (bg_id, aura_id, cape_id); the 20260514020000 migration
-// normalized those to hat_id but the type still accepts the legacy keys for
-// un-migrated rows.
-export type RewardValue = {
-	hat_id?: string;
-	bg_id?: string;
-	aura_id?: string;
-	cape_id?: string;
-	count?: number;
-	amount?: number;
-	title?: string;
-} | null;
+// reward_value shape varies per reward_type — Supabase jsonb. utils/rewardArt is
+// the single owner of that jsonb shape (including the legacy bg_id/aura_id/
+// cape_id keys the 20260514020000 migration normalized to hat_id); re-exported
+// here so the season-pass rows and the art resolver can't drift apart.
+export type { RewardValue };
 
 export interface TierRow {
 	tier: number;
@@ -75,13 +69,7 @@ export type TiersByNumber = Record<number, { free?: TierRow; premium?: TierRow }
 // on the component) so the pure pick + the strip's prop type share one source.
 export interface NextReward {
 	reward_type: string;
-	reward_value: {
-		hat_id?: string;
-		bg_id?: string;
-		aura_id?: string;
-		cape_id?: string;
-		amount?: number;
-	} | null;
+	reward_value: RewardValue;
 	/** true when the tier is already reached — the reward is claimable now. */
 	ready: boolean;
 	/** XP still to earn before the reward unlocks (0 when ready). */

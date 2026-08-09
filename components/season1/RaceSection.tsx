@@ -33,7 +33,7 @@ import { Glyph } from "../ui/Glyph";
 import { TickleIcon } from "../ui/SnoutCoin";
 import { LoadingBeat } from "../ui/EmptyState";
 import { ReclaimSlam, ReclaimSlamHandle } from "../mudwar/ReclaimSlam";
-import { useRace } from "@/hooks/useRace";
+import { useCrewLedger, useRace } from "@/hooks/useRace";
 import {
 	LastRace,
 	RaceCrewDetail,
@@ -41,7 +41,6 @@ import {
 	RaceStandings,
 	StandingsRow,
 	cycleEndWeekday,
-	fetchRaceCrewDetail,
 	formatRaceCountdown,
 	raceSpoilsForRank,
 	raceCycle,
@@ -209,29 +208,8 @@ function WeeklyHero({
 	const empty = rows.length === 0;
 	const projectedSpoils = weeklyProjectedSpoils(state);
 
-	// The expandable member ledger. One crew open at a time; each crew's detail
-	// is fetched once and cached ("dark" if the RPC resolves null pre-push).
-	const [expandedCrew, setExpandedCrew] = useState<string | null>(null);
-	const [detailCache, setDetailCache] = useState<
-		Record<string, RaceCrewDetail | "dark">
-	>({});
-	const toggleCrew = useCallback(
-		(crewId: string) => {
-			const willExpand = expandedCrew !== crewId;
-			setExpandedCrew(willExpand ? crewId : null);
-			if (willExpand && detailCache[crewId] === undefined) {
-				fetchRaceCrewDetail(crewId).then((d) => {
-					if (d) {
-						setDetailCache((c) => ({ ...c, [crewId]: d }));
-					} else {
-						setDetailCache((c) => ({ ...c, [crewId]: "dark" }));
-						setExpandedCrew((cur) => (cur === crewId ? null : cur));
-					}
-				});
-			}
-		},
-		[expandedCrew, detailCache],
-	);
+	// The expandable member ledger — shared with the full-field standings page.
+	const { expandedCrew, detailCache, toggleCrew } = useCrewLedger();
 
 	return (
 		<Sticker

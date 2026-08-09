@@ -27,12 +27,7 @@ export async function fetchMyUniques(): Promise<Record<
 			.select("unique_id, found_count, first_found_at, best_gild");
 		if (error || !data) return null;
 		const out: Record<string, MyUnique> = {};
-		for (const row of data as {
-			unique_id: string;
-			found_count: number;
-			first_found_at: string;
-			best_gild?: number | null;
-		}[]) {
+		for (const row of data) {
 			out[row.unique_id] = {
 				found_count: row.found_count,
 				first_found_at: row.first_found_at,

@@ -62,8 +62,9 @@ export default function SounderProgressScreen() {
 		useCallback(() => {
 			let cancelled = false;
 			myReferralSummary().then((r) => {
-				if (!cancelled && r && (r as ReferralSummary).ok) {
-					setSummary(r as ReferralSummary);
+				// The envelope discriminates on `ok`, so the check narrows it directly.
+				if (!cancelled && r?.ok) {
+					setSummary(r);
 				}
 			});
 			return () => {

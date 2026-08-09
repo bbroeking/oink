@@ -67,10 +67,6 @@ export function unlockedPages(): FieldGuidePageId[] {
 	return FIELD_GUIDE_PAGE_IDS.filter((id) => unlocked.has(id));
 }
 
-export function isUnlocked(id: FieldGuidePageId): boolean {
-	return unlocked.has(id);
-}
-
 function persistLocal(): void {
 	try {
 		const AsyncStorage =

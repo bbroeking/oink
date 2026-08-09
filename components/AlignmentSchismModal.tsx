@@ -166,7 +166,10 @@ export function AlignmentSchismModal({
 			await rpc("mark_schism_seen", { side, milestone });
 		} catch {
 			// best-effort; if it fails the user might see the modal
-			// again on next focus, which is annoying but not broken
+			// again on next focus, which is annoying but not broken.
+			// Belt-and-braces: rpc() resolves null rather than rejecting today,
+			// but dismissing must survive ANY seen-marking failure (contract
+			// pinned by __tests__/AlignmentSchismModal.test.tsx).
 		}
 		onDismiss();
 	};

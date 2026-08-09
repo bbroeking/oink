@@ -10,7 +10,13 @@ import { Button } from "./ui/Button";
 import { Glyph } from "./ui/Glyph";
 import { Icon } from "./ui/Icon";
 import { RitualIconWell } from "./ui/RitualIconWell";
-import { BLESSING_META, CURSE_META, type BlessingKind, type CurseKind } from "../utils/rituals";
+import {
+	BLESSING_META,
+	CURSE_META,
+	type BlessingKind,
+	type CurseKind,
+	type RitualMeta,
+} from "../utils/rituals";
 import {
 	FONTS,
 	KICKER_TEXT,
@@ -180,7 +186,9 @@ export function WhileAwayModal({
 								);
 							}
 							const blessed = e.source === "blessing";
-							const meta = blessed
+							// Raw server string → the lookup can miss; annotated so the
+							// `meta?.` guards below stay type-enforced.
+							const meta: RitualMeta | undefined = blessed
 								? BLESSING_META[e.kind as BlessingKind]
 								: CURSE_META[e.kind as CurseKind];
 							return (

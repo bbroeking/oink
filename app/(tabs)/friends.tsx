@@ -85,10 +85,8 @@ export default function FriendsHubScreen() {
 	// sends "?seg=sounder", the SounderCard sends "?seg=board"). Sounder is
 	// flag-gated, so a "?seg=sounder" with the flag off falls back to Friends.
 	const { seg } = useLocalSearchParams<{ seg?: string }>();
-	const wantSeg =
-		typeof seg === "string" && (SEGMENT_KEYS as string[]).includes(seg)
-			? (seg as Segment)
-			: null;
+	// find() over the typed key list narrows to Segment without an assertion.
+	const wantSeg = SEGMENT_KEYS.find((k) => k === seg) ?? null;
 	const targetSeg = wantSeg && !(wantSeg === "sounder" && !coopDig) ? wantSeg : null;
 	const [segment, setSegment] = useState<Segment>(targetSeg ?? "friends");
 	// Which scope the Board opens on. Stays undefined (Global default) until a
