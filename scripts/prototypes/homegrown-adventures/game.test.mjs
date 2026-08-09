@@ -41,6 +41,7 @@ import { formatAdventureReturnPromise } from "./journeyTime.mjs";
 const at = 1_000_000;
 const reduce = (state, action) => homegrownReducer(state, { now: at, ...action });
 const appSource = readFileSync(fileURLToPath(new URL("./app.web.tsx", import.meta.url)), "utf8");
+const animationLabSource = readFileSync(fileURLToPath(new URL("./animation-lab.web.tsx", import.meta.url)), "utf8");
 const stylesSource = readFileSync(fileURLToPath(new URL("./styles.css", import.meta.url)), "utf8");
 const riveSceneSource = readFileSync(fileURLToPath(new URL("../../../components/prototypes/homegrown-adventures/HomegrownRiveScene.web.tsx", import.meta.url)), "utf8");
 const riveContractSource = readFileSync(fileURLToPath(new URL("../../../components/prototypes/homegrown-adventures/homegrownRiveContract.ts", import.meta.url)), "utf8");
@@ -834,6 +835,13 @@ test("Rive presentation state is derived deterministically from reducer facts", 
 		(state.readyAt - state.plantedAt) * CLOVER_LUSH_THRESHOLD;
 	model = homegrownRiveModel(state, lushAt);
 	assert.equal(model.viewModel.bedOneState, "growing");
+});
+
+test("the animation lab enters Bag selection before demonstrating Pack", () => {
+	assert.match(
+		animationLabSource,
+		/HARVEST_CLOVER\),\s*action\(ACTIONS\.OPEN_BAG_SELECTION\)/,
+	);
 });
 
 test("Rive developed state exposes lasting Home consequences after the named crop", () => {
