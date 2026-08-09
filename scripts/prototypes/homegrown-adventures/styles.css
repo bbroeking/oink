@@ -3049,6 +3049,109 @@ html[data-reduce-motion="true"] .bag-handoff-active .open-adventure-bag { clip-p
 .packed-loadout i { grid-row: 1 / 3; align-self: center; font-family: Georgia, serif; font-size: 20px; font-style: normal; text-align: center; }
 .packed-loadout small { color: var(--ink-soft); font-size: 7px; font-weight: 900; line-height: 1; text-transform: uppercase; }
 .packed-loadout strong { overflow: hidden; font-family: Caprasimo, Georgia, serif; font-size: 8px; font-weight: 400; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+
+/* PROTOTYPE — Position 8 departure hierarchy study, selected with ?departureStudy=1&variant=A|B|C. */
+.departure-study-active .current-objective.has-detail { min-height: 44px; padding-top: 8px; padding-bottom: 8px; }
+.departure-study-active .current-objective small { display: none; }
+.departure-study { position: absolute; z-index: 12; }
+.departure-loadout-items { display: grid; }
+.departure-loadout-item { min-width: 0; }
+.departure-loadout-item > span:first-child { display: grid; place-items: center; }
+.departure-loadout-item .bag-item-art { display: block; }
+.departure-loadout-item small,
+.departure-loadout-item strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.departure-loadout-item small { color: var(--ink-soft); font-size: 6px; font-weight: 900; line-height: 1; text-transform: uppercase; }
+.departure-loadout-item strong { font-family: Caprasimo, Georgia, serif; font-size: 7px; font-weight: 400; line-height: 1.05; }
+.departure-loadout-item.is-empty { opacity: .58; }
+
+/* A · One Gate Sign: one surface owns both the exact loadout and the departure action. */
+.departure-gate-sign {
+	right: 13px;
+	top: 191px;
+	width: 212px;
+	min-height: 142px;
+	padding: 10px 9px 9px;
+	display: grid;
+	grid-template-rows: 44px 1fr;
+	gap: 7px;
+	color: var(--ink);
+	background: rgba(255,249,233,.97);
+	border: 2px solid var(--ink);
+	border-radius: 15px;
+	box-shadow: 3px 4px 0 rgba(48,33,22,.74);
+	transform: rotate(.7deg);
+}
+.departure-gate-sign::before {
+	content: "";
+	position: absolute;
+	right: 14px;
+	top: -14px;
+	width: 34px;
+	height: 34px;
+	border: 4px solid rgba(255,249,233,.94);
+	border-radius: 50%;
+	box-shadow: 0 0 0 2px rgba(48,33,22,.54);
+	background: rgba(239,127,154,.22);
+	animation: world-pulse-inset 1.6s cubic-bezier(.16,1,.3,1) infinite;
+}
+.departure-gate-copy { display: grid; align-content: center; text-align: left; }
+.departure-gate-copy small { color: var(--ink-soft); font-size: 7px; font-weight: 900; text-transform: uppercase; }
+.departure-gate-copy strong { font-family: Caprasimo, Georgia, serif; font-size: 15px; font-weight: 400; }
+.departure-gate-sign .departure-loadout-items { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; }
+.departure-gate-sign .departure-loadout-item { padding: 4px 3px; background: var(--paper-deep); border: 1px solid var(--line); border-radius: 8px; text-align: center; }
+.departure-gate-sign .departure-loadout-item .bag-item-art { width: 28px; height: 28px; margin: 0 auto 2px; transform: scale(.8); }
+.departure-gate-sign:hover { background: #fff1c5; transform: translateY(-2px) rotate(.7deg); }
+.departure-gate-sign:active { box-shadow: 1px 1px 0 rgba(48,33,22,.74); transform: translateY(2px) rotate(.7deg); }
+
+/* B · Packed on Rosie: physical item tokens stay with the visible fitted satchel. */
+.departure-packed-on-rosie { inset: 0; pointer-events: none; }
+.departure-packed-on-rosie .departure-loadout-items {
+	position: absolute;
+	left: 18px;
+	top: 548px;
+	width: 178px;
+	grid-template-columns: repeat(3,minmax(0,1fr));
+	gap: 5px;
+}
+.departure-packed-on-rosie .departure-loadout-item {
+	min-height: 62px;
+	padding: 4px 3px 3px;
+	background: rgba(255,249,233,.94);
+	border: 2px solid var(--ink);
+	border-radius: 10px;
+	box-shadow: 2px 2px 0 rgba(48,33,22,.66);
+	text-align: center;
+}
+.departure-packed-on-rosie .departure-loadout-item:nth-child(1) { transform: rotate(-5deg) translateY(3px); }
+.departure-packed-on-rosie .departure-loadout-item:nth-child(2) { transform: rotate(2deg) translateY(-2px); }
+.departure-packed-on-rosie .departure-loadout-item:nth-child(3) { transform: rotate(5deg) translateY(3px); }
+.departure-packed-on-rosie .departure-loadout-item .bag-item-art { width: 34px; height: 34px; margin: 0 auto 2px; }
+.departure-packed-on-rosie .world-action { pointer-events: auto; }
+
+/* C · Quiet Receipt: one slim sentence preserves the loadout while the path remains the action. */
+.departure-quiet-receipt { inset: 0; pointer-events: none; }
+.departure-quiet-receipt .departure-loadout-items {
+	position: absolute;
+	left: 50%;
+	top: 69px;
+	width: 334px;
+	min-height: 44px;
+	padding: 5px 7px;
+	transform: translateX(-50%) rotate(-.4deg);
+	grid-template-columns: repeat(3,minmax(0,1fr));
+	gap: 5px;
+	background: rgba(255,249,233,.95);
+	border: 2px solid var(--ink);
+	border-radius: 12px;
+	box-shadow: 2px 2px 0 rgba(48,33,22,.64);
+}
+.departure-quiet-receipt .departure-loadout-item { display: grid; grid-template-columns: 24px minmax(0,1fr); align-items: center; gap: 2px; }
+.departure-quiet-receipt .departure-loadout-item .bag-item-art { width: 24px; height: 24px; transform: scale(.72); }
+.departure-quiet-receipt .departure-loadout-item small { font-size: 7px; }
+.departure-quiet-receipt .departure-loadout-item strong { font-size: 9px; }
+.departure-quiet-receipt .world-action { pointer-events: auto; }
+
+html[data-reduce-motion="true"] .departure-gate-sign::before { animation: none; }
 @keyframes world-pulse {
 	0%, 100% { opacity: .86; transform: translateX(-50%) scale(.9); }
 	50% { opacity: 1; transform: translateX(-50%) scale(1.12); }

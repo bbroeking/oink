@@ -52,6 +52,13 @@ const VARIANTS = {
 	C: { name: "Welcome Home", question: "Does a brief return ceremony strengthen the Discovery without hiding Rosie?" },
 };
 
+// PROTOTYPE — three Position 8 departure hierarchies on the existing route, switchable with ?departureStudy=1&variant=A|B|C.
+const DEPARTURE_STUDIES = {
+	A: { name: "One Gate Sign" },
+	B: { name: "Packed on Rosie" },
+	C: { name: "Quiet Receipt" },
+};
+
 const STAGE_COPY = {
 	[STAGES.STARTING]: {
 		eyebrow: "Morning at the Barn",
@@ -922,6 +929,54 @@ function PackedLoadoutRibbon({ bag, farmStock }) {
 	);
 }
 
+function DepartureLoadoutItems({ bag, farmStock, compact = false }) {
+	return (
+		<span className={`departure-loadout-items ${compact ? "is-compact" : ""}`} role="group" aria-label="Rosie's packed items">
+			{BAG_SLOT_ORDER.map((slot) => {
+				const selected = bagItem(slot, bag[slot]);
+				const packingCost = slot === "pack" ? bagPackingCost(selected?.id ?? null) : null;
+				const remainingPackingMaterial = packingCost === null
+					? null
+					: farmStock?.[packingCost.itemId] ?? 0;
+				const slotLabel = packingCost === null
+					? BAG_SLOT_LABELS[slot]
+					: `Carrier · Fiber ${remainingPackingMaterial}`;
+				return (
+					<span key={slot} className={`departure-loadout-item ${selected ? "" : "is-empty"}`} aria-label={`${slotLabel}: ${selected?.name ?? "Empty"}`}>
+						<span aria-hidden="true"><BagItemArt itemId={selected?.id} /></span>
+						<span><small>{slotLabel}</small><strong>{selected?.name ?? "Empty"}</strong></span>
+					</span>
+				);
+			})}
+		</span>
+	);
+}
+
+function DepartureStudy({ variant, bag, farmStock, presentation, onAction, waiting }) {
+	if (variant === "A") {
+		return (
+			<button className="departure-study departure-gate-sign" type="button" onClick={onAction} disabled={waiting} aria-describedby="current-objective">
+				<span className="departure-gate-copy"><small>Rosie is ready</small><strong>{presentation.label}</strong></span>
+				<DepartureLoadoutItems bag={bag} farmStock={farmStock} compact />
+			</button>
+		);
+	}
+	if (variant === "B") {
+		return (
+			<div className="departure-study departure-packed-on-rosie">
+				<DepartureLoadoutItems bag={bag} farmStock={farmStock} />
+				<WorldAction presentation={presentation} onAction={onAction} waiting={waiting} />
+			</div>
+		);
+	}
+	return (
+		<div className="departure-study departure-quiet-receipt">
+			<DepartureLoadoutItems bag={bag} farmStock={farmStock} compact />
+			<WorldAction presentation={presentation} onAction={onAction} waiting={waiting} />
+		</div>
+	);
+}
+
 function adventureProvisionPresentation(state) {
 	const story = adventureStory(state);
 	const opportunity = adventureOpportunity(state);
@@ -1669,13 +1724,13 @@ function DevTools({ state, dispatch, variant }) {
 	);
 }
 
-function VariantSwitcher({ variant, setVariant }) {
-	const keys = Object.keys(VARIANTS);
+function VariantSwitcher({ variant, setVariant, labels = VARIANTS }) {
+	const keys = Object.keys(labels);
 	const index = keys.indexOf(variant);
 	return (
 		<div className="variant-switcher" aria-label="Prototype variant switcher">
 			<button type="button" aria-label="Previous variant" onClick={() => setVariant(keys[(index + keys.length - 1) % keys.length])}>←</button>
-			<span><strong>{variant}</strong><small>{VARIANTS[variant].name}</small></span>
+			<span><strong>{variant}</strong><small>{labels[variant].name}</small></span>
 			<button type="button" aria-label="Next variant" onClick={() => setVariant(keys[(index + 1) % keys.length])}>→</button>
 		</div>
 	);
@@ -1845,6 +1900,7 @@ function App() {
 	const bagHandoffTimer = useRef(null);
 	const bagHandoffPlayed = useRef(false);
 	const debug = new URLSearchParams(window.location.search).get("debug") === "1";
+	const departureStudy = new URLSearchParams(window.location.search).get("departureStudy") === "1";
 	const position = state.prototypePosition ?? 1;
 	const choosingRoute =
 		position === 2 &&
@@ -1919,6 +1975,7 @@ function App() {
 	const holdingGlowrootHomeReveal = glowrootHomeReveal && !state.reduceMotion;
 	const holdingPurposeHandoff = purposeHandoff && (choosingRoute || choosingSeed);
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
+	const showingDepartureStudy = departureStudy && position === 8;
 	const sceneRiveViewModel = useMemo(() => {
 		if (
 			!showingAdventureVignette ||
@@ -2163,6 +2220,11 @@ function App() {
 		seedHandoffTimers.current.forEach((timer) => window.clearTimeout(timer));
 	}, []);
 
+	useEffect(() => {
+		if (!departureStudy) return;
+		if (position !== 8) dispatch({ type: ACTIONS.JUMP_TO_POSITION, position: 8 });
+	}, [departureStudy, variant]);
+
 	const signalFeedback = useCallback((type) => {
 		setFeedback((value) => value + 1);
 		if (type === ACTIONS.TICKLE) navigator.vibrate?.(12);
@@ -2285,7 +2347,7 @@ function App() {
 			<span className="prototype-badge">Prototype · browser lab</span>
 		</header>}
 		<div
-			className={`phone scene-${image} stage-${state.stage} ${bagHandoff ? "bag-handoff-active" : ""} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${renderedRiveViewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
+			className={`phone scene-${image} stage-${state.stage} ${showingDepartureStudy ? `departure-study-active departure-study-${variant}` : ""} ${bagHandoff ? "bag-handoff-active" : ""} ${state.compostApplied ? "composted-crop" : ""} ${departing ? "departure-in-progress" : ""} ${showingAdventureVignette ? "adventure-vignette-open" : ""} ${showingJourneyWatch ? "journey-watch-open" : ""} ${gateHomecomingReady ? "gate-homecoming-ready" : ""} ${showingReturnReward ? "return-homecoming-open" : ""} ${showingGlowrootPlanting ? "glowroot-planting-open" : ""} ${showingMoonberryPlanting && !holdingGlowrootHomeReveal ? "moonberry-planting-open" : ""} ${showingHomeTickle ? "home-tickle-open" : ""} ${startingNewDay ? "new-day-in-progress" : ""} ${seedHandoff ? "seed-handoff-active" : ""} ${holdingGlowrootHomeReveal ? "glowroot-home-reveal" : ""} ${holdingPurposeHandoff ? "purpose-handoff-open" : ""} ${homeMemoryEarned ? "home-memory-earned" : ""} rosie-action-${renderedRiveViewModel.rosieAction} feedback-${feedback % 2} ${HOMEGROWN_RIVE_ASSET_AUTHORED ? "rive-authored" : "rive-probe"}`}
 			aria-busy={startingNewDay || Boolean(seedHandoff) || holdingGlowrootHomeReveal || holdingPurposeHandoff}
 			data-bag-handoff-active={bagHandoff ? "true" : undefined}
 			data-bag-handoff-phase={bagHandoff?.phase}
@@ -2352,7 +2414,15 @@ function App() {
 			>
 				{visiblePresentation.target === WORLD_TARGETS.ROSIE && <span>{visiblePresentation.label}</span>}
 			</button>}
-			{showPackedLoadout && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
+			{showPackedLoadout && !showingDepartureStudy && <PackedLoadoutRibbon bag={state.bag} farmStock={state.farmStock} />}
+			{showingDepartureStudy && <DepartureStudy
+				variant={variant}
+				bag={state.bag}
+				farmStock={state.farmStock}
+				presentation={visiblePresentation}
+				onAction={() => act(visiblePresentation.action)}
+				waiting={waiting}
+			/>}
 			{choosingRoute && !holdingPurposeHandoff && <KnownRouteMap
 				farmStock={state.farmStock}
 				onChoose={(opportunityId) => act({ type: ACTIONS.CHOOSE_ADVENTURE_ROUTE, opportunityId })}
@@ -2431,7 +2501,7 @@ function App() {
 				onSelect={selectBagItem}
 				onConfirm={confirmBag}
 			/>}
-			{!showingFarmingPanel && !choosingBag && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward && !showingHomeMemory && <WorldAction
+			{!showingDepartureStudy && !showingFarmingPanel && !choosingBag && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward && !showingHomeMemory && <WorldAction
 				key={`${visiblePresentation.target}-${visiblePresentation.action.type}-${visiblePresentation.label}`}
 				presentation={visiblePresentation}
 				onAction={() => act(visiblePresentation.action)}
@@ -2445,6 +2515,7 @@ function App() {
 		<PositionRail position={position} onChange={jumpToPosition} positionName={currentPositionName} />
 		{debug && <DevTools state={state} dispatch={dispatch} variant={variant} />}
 		{debug && <VariantSwitcher variant={variant} setVariant={setVariant} />}
+		{departureStudy && <VariantSwitcher variant={variant} setVariant={setVariant} labels={DEPARTURE_STUDIES} />}
 	</main>;
 }
 
