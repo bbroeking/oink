@@ -1945,10 +1945,7 @@ function App() {
 	const showPackedLoadout = position >= 8 && position <= 10 && !showingAdventureVignette && !showingJourneyWatch && !showingReturnReward;
 	const showDepartureLoadout = showPackedLoadout && position === 8;
 	const sceneRiveViewModel = useMemo(() => {
-		if (
-			!showingAdventureVignette ||
-			opportunity.id !== SECOND_ADVENTURE_OPPORTUNITY.id
-		) return riveModel.viewModel;
+		if (!showingAdventureVignette) return riveModel.viewModel;
 		return {
 			...riveModel.viewModel,
 			bedOneState: "empty",
@@ -1960,7 +1957,7 @@ function App() {
 			hedgeCrossingOpen: false,
 			hedgeBellEarned: false,
 		};
-	}, [opportunity.id, riveModel.viewModel, showingAdventureVignette]);
+	}, [riveModel.viewModel, showingAdventureVignette]);
 	const renderedRiveViewModel = bagHandoff?.phase === "attaching"
 		? { ...sceneRiveViewModel, rosieAction: "pack", satchelEquipped: true }
 		: sceneRiveViewModel;

@@ -182,3 +182,12 @@ wing-and-hover pulse on the same resident. The runtime plays it for 560ms
 between 2.25-second static holds, resumes the cadence after reload, and leaves
 the reducer-owned Present pose untouched for reduced motion. It adds no new
 resident or progression fact.
+
+The v0.142 hidden-moth checkpoint repairs the exported `Dusk Moths Hidden`
+pose at its source. Frame 0 now keys the golden body ellipse to 0% blend along
+with the existing wing groups, so reframing canonical Rosie for Position 9
+cannot expose an unexplained resident fragment at the top of the Adventure
+viewport. The Adventure scene also derives a Rosie-only view model while the
+clearing is mounted, keeping Home residents out of both deterministic routes.
+No viewport crop, background patch, alpha mask, motion, reducer fact, reward,
+or save state changed.

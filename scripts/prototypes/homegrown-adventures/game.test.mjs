@@ -2426,6 +2426,9 @@ test("settled departure keeps one quiet truthful loadout receipt", () => {
 
 test("canonical Rosie stands in the Adventure clearing behind the prepared causes", () => {
 	assert.match(riveSceneSource, /<span className="homegrown-rive-canvas" aria-hidden="true">\s*<RiveComponent aria-label="" \/>/);
+	assert.match(appSource, /if \(!showingAdventureVignette\) return riveModel\.viewModel;/);
+	assert.match(appSource, /mothsVisible: false,[\s\S]*hedgeCrossingOpen: false,[\s\S]*hedgeBellEarned: false,/);
+	assert.doesNotMatch(appSource, /!showingAdventureVignette \|\|[\s\S]{0,120}SECOND_ADVENTURE_OPPORTUNITY/);
 	assert.match(stylesSource, /\.adventure-vignette-open \.homegrown-rive-canvas \{[^}]*left: 22px;[^}]*top: 200px;[^}]*width: 390px;[^}]*height: 550px;[^}]*overflow: hidden;[^}]*transform-origin: 0 0;[^}]*transform: scale\(\.78\);/s);
 	assert.match(stylesSource, /\.adventure-vignette-open \.homegrown-rive-scene\.authored \{ z-index: 2; \}/);
 	assert.match(stylesSource, /\.adventure-bed-mask \{[^}]*left: 20px;[^}]*top: 498px;[^}]*width: 112px;[^}]*height: 90px;[^}]*background-position: -20px -498px;/s);
