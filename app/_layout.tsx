@@ -1,13 +1,13 @@
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { useFonts, Fredoka_600SemiBold, Fredoka_700Bold } from "@expo-google-fonts/fredoka";
-import {
-	Nunito_600SemiBold,
-	Nunito_700Bold,
-	Nunito_800ExtraBold,
-	Nunito_900Black,
-} from "@expo-google-fonts/nunito";
-import { Caprasimo_400Regular } from "@expo-google-fonts/caprasimo";
-import { PatrickHand_400Regular } from "@expo-google-fonts/patrick-hand";
+import { useFonts } from "expo-font";
+import { Fredoka_600SemiBold } from "@expo-google-fonts/fredoka/600SemiBold";
+import { Fredoka_700Bold } from "@expo-google-fonts/fredoka/700Bold";
+import { Nunito_600SemiBold } from "@expo-google-fonts/nunito/600SemiBold";
+import { Nunito_700Bold } from "@expo-google-fonts/nunito/700Bold";
+import { Nunito_800ExtraBold } from "@expo-google-fonts/nunito/800ExtraBold";
+import { Nunito_900Black } from "@expo-google-fonts/nunito/900Black";
+import { Caprasimo_400Regular } from "@expo-google-fonts/caprasimo/400Regular";
+import { PatrickHand_400Regular } from "@expo-google-fonts/patrick-hand/400Regular";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";

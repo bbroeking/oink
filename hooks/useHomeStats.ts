@@ -99,11 +99,19 @@ export interface UseHomeStats {
 	// shows only on a genuine failure, not during the normal load beat.
 	statsError: boolean;
 	refresh: () => Promise<void>;
-	// Optimistic slot patch — apply a locally-known change (e.g. the 6-7 egg's
-	// seen stamp) to the stats immediately, before the refetch round-trips.
-	// Refresh reconciles after.
-	applyOptimistic: (patch: Partial<Stats>) => void;
+	// Coalesced, trailing reconciliation for repeat interactions. A tap burst
+	// updates the known response fields immediately and pays for one authoritative
+	// home_stats read after the burst settles instead of one read per tap.
+	scheduleRefresh: () => void;
+	// Apply locally-known response fields immediately, before the authoritative
+	// reconciliation round-trip. Accepts a function so overlapping mutations
+	// compose against the latest state instead of a stale render closure.
+	applyOptimistic: (
+		patch: Partial<Stats> | ((current: Stats) => Partial<Stats>)
+	) => void;
 }
+
+const HOME_STATS_RECONCILE_DELAY_MS = 500;
 
 type SlotBlob = {
 	category?: string | null;
@@ -133,6 +141,7 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 	// which the Barn reads as "Out of tickles!" until a force-quit — the
 	// offline soft-lock (spec 03 / issue #5).
 	const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const reconcileTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const retryAttemptRef = useRef(0);
 	const mountedRef = useRef(true);
 	const scheduleRetryRef = useRef<() => void>(() => {});
@@ -141,6 +150,12 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 		if (retryTimerRef.current != null) {
 			clearTimeout(retryTimerRef.current);
 			retryTimerRef.current = null;
+		}
+	}, []);
+	const clearScheduledRefresh = useCallback(() => {
+		if (reconcileTimerRef.current != null) {
+			clearTimeout(reconcileTimerRef.current);
+			reconcileTimerRef.current = null;
 		}
 	}, []);
 
@@ -327,12 +342,21 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 	// bump). Resets the backoff so each new trigger gets the full retry budget,
 	// then kicks off the schedule on failure.
 	const refresh = useCallback(async () => {
+		clearScheduledRefresh();
 		retryAttemptRef.current = 0;
 		setStatsError(false);
 		clearRetry();
 		const ok = await doFetch();
 		if (!ok) scheduleRetry();
-	}, [doFetch, scheduleRetry, clearRetry]);
+	}, [doFetch, scheduleRetry, clearRetry, clearScheduledRefresh]);
+
+	const scheduleRefresh = useCallback(() => {
+		clearScheduledRefresh();
+		reconcileTimerRef.current = setTimeout(() => {
+			reconcileTimerRef.current = null;
+			void refresh();
+		}, HOME_STATS_RECONCILE_DELAY_MS);
+	}, [clearScheduledRefresh, refresh]);
 
 	// Cancel any pending retry on unmount.
 	useEffect(() => {
@@ -340,15 +364,29 @@ export function useHomeStats(opts: UseHomeStatsOptions = {}): UseHomeStats {
 		return () => {
 			mountedRef.current = false;
 			clearRetry();
+			clearScheduledRefresh();
 		};
-	}, [clearRetry]);
+	}, [clearRetry, clearScheduledRefresh]);
 
 	// Optimistic patch — merge a locally-known change into stats now so the UI
 	// reflects it before the refetch lands. The next refresh() overwrites the
 	// whole object, reconciling against the server.
-	const applyOptimistic = useCallback((patch: Partial<Stats>) => {
-		setStats((prev) => ({ ...prev, ...patch }));
-	}, []);
+	const applyOptimistic = useCallback(
+		(patch: Partial<Stats> | ((current: Stats) => Partial<Stats>)) => {
+			setStats((prev) => ({
+				...prev,
+				...(typeof patch === "function" ? patch(prev) : patch),
+			}));
+		},
+		[],
+	);
 
-	return { stats, statsLoaded, statsError, refresh, applyOptimistic };
+	return {
+		stats,
+		statsLoaded,
+		statsError,
+		refresh,
+		scheduleRefresh,
+		applyOptimistic,
+	};
 }

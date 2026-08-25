@@ -113,31 +113,38 @@ const HeartFloats = React.forwardRef<HeartFloatsHandle, HeartFloatsProps>(
 		// the burst doesn't read as a clone army.
 		React.useImperativeHandle(ref, () => ({
 			spawn: () => {
-				const burst = 7 + Math.floor(Math.random() * 3); // 7–9 per tap
-				for (let i = 0; i < burst; i++) {
-					const stagger = i === 0 ? 0 : Math.floor(Math.random() * 120);
-					setTimeout(() => {
-						const id = nextId.current++;
-						const dx = Math.random() * 160 - 80;            // wider spread
-						const rise = -(95 + Math.random() * 45);         // -95 → -140
-						const rot = Math.random() * 50 - 25;             // ±25°
-						const scaleMax = 0.85 + Math.random() * 0.45;    // 0.85 → 1.3
-						const duration = 950 + Math.floor(Math.random() * 350); // 950–1300ms
-						const char = Math.random() < 0.1 ? "✦" : "♥";
-						const anim = new Animated.Value(0);
-						setFloats((f) => [
-							...f,
-							{ id, dx, rise, rot, scaleMax, duration, char, anim },
-						]);
-						Animated.timing(anim, {
+				const burstSize = 7 + Math.floor(Math.random() * 3); // 7–9 per tap
+				const burst = Array.from({ length: burstSize }, (_, index) => ({
+					id: nextId.current++,
+					dx: Math.random() * 160 - 80,
+					rise: -(95 + Math.random() * 45),
+					rot: Math.random() * 50 - 25,
+					scaleMax: 0.85 + Math.random() * 0.45,
+					duration: 950 + Math.floor(Math.random() * 350),
+					char: Math.random() < 0.1 ? "✦" : "♥",
+					anim: new Animated.Value(0),
+					stagger: index === 0 ? 0 : Math.floor(Math.random() * 120),
+				}));
+				const burstIds = new Set(burst.map((particle) => particle.id));
+
+				// Add and remove the whole burst in two React commits. Staggering
+				// belongs to the native-driver animations, so it does not need one JS
+				// timer + state update for every particle.
+				setFloats((current) => [...current, ...burst]);
+				Animated.parallel(
+					burst.map((particle) =>
+						Animated.timing(particle.anim, {
 							toValue: 1,
-							duration,
+							delay: particle.stagger,
+							duration: particle.duration,
 							useNativeDriver: true,
-						}).start(() => {
-							setFloats((f) => f.filter((x) => x.id !== id));
-						});
-					}, stagger);
-				}
+						}),
+					),
+				).start(() => {
+					setFloats((current) =>
+						current.filter((particle) => !burstIds.has(particle.id)),
+					);
+				});
 			},
 		}));
 
@@ -335,6 +342,7 @@ export default function Barn() {
 		statsLoaded,
 		statsError,
 		refresh: fetchStats,
+		scheduleRefresh: scheduleStatsRefresh,
 		applyOptimistic,
 	} = useHomeStats({
 		onAlignmentLoaded: setAlignment,
@@ -607,9 +615,13 @@ export default function Barn() {
 		}
 
 		try {
+			// getSession reads the already-validated local auth state. getUser makes
+			// a network request, which turned every repeat tap into an extra auth RTT;
+			// the tickle RPC remains the server-side authorization boundary.
 			const {
-				data: { user },
-			} = await supabase.auth.getUser();
+				data: { session },
+			} = await supabase.auth.getSession();
+			const user = session?.user;
 			if (!user) throw new Error("User not logged in");
 
 			const res = await rpc<{
@@ -626,6 +638,19 @@ export default function Barn() {
 				showToast("That tickle didn't take", "Try again in a moment.");
 				return;
 			}
+
+			// The mutation already returns the authoritative spendable balance and
+			// tells us whether it granted the +5 daily-lucky payout. Apply those
+			// known fields in this render instead of waiting through a second RTT.
+			// Math.min keeps out-of-order responses from a rapid tap burst from
+			// visually restoring spent tickles; the trailing refresh reconciles
+			// regen, happiness, cosmetics, and any concurrent server grants.
+			const earnedNow = res.lucky_won == null ? 1 : 6;
+			applyOptimistic((current) => ({
+				itemCount: Math.min(current.itemCount, res.balance),
+				counter: current.counter + earnedNow,
+				ticklesEarned: current.ticklesEarned + earnedNow,
+			}));
 
 			// Field Guide: a successful tickle is the tap that mints a snout —
 			// meet the Snouts page (fail-soft, idempotent after the first).
@@ -652,10 +677,16 @@ export default function Barn() {
 			// a double, grant the +1 bonus via the dedicated RPC so we
 			// don't burn a second tickle from the bank.
 			if (bonusEarned) {
-				await rpc("lucky_bonus_tickle");
-				showToast("Lucky double! +2", "Bonus from your lucky pig.");
+				const bonus = await rpc<{ ok?: boolean }>("lucky_bonus_tickle");
+				if (bonus?.ok) {
+					applyOptimistic((current) => ({
+						counter: current.counter + 1,
+						ticklesEarned: current.ticklesEarned + 1,
+					}));
+					showToast("Lucky double! +2", "Bonus from your lucky pig.");
+				}
 			}
-			fetchStats();
+			scheduleStatsRefresh();
 			// Also re-check pass events so a friend who just got passed
 			// hears about it on their next tap (and so any incoming pass
 			// against us surfaces quickly between focus events).

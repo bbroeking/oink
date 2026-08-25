@@ -10,7 +10,8 @@ import Svg, {
 	LinearGradient,
 	Stop,
 } from "react-native-svg";
-import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import Feather from "@expo/vector-icons/Feather";
 
 export type IconName =
 	| "home"
