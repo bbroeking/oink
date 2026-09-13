@@ -10,7 +10,8 @@
 //   · top corners only (RADII.xl) — the panel is flush to the bottom edge, so a
 //     bottom radius would float a sticker that isn't floating;
 //   · no tilt — a sheet is anchored furniture, not a stuck-on sticker;
-//   · PAGE_PAD sides / SPACE.md top / TAB_SAFE + safe-area bottom.
+//   · PAGE_PAD sides / SPACE.md top / SPACE.xl + home-indicator bottom (the
+//     panel rides a native Modal above the tab bar — no tab clearance).
 //
 // It is an UNMANAGED native Modal (through SlideUpSheet), so it takes the
 // `useUnmanagedModalHold` latch: while open the popup queue admits nothing and
@@ -33,7 +34,6 @@ import {
 	PAGE_PAD,
 	RADII,
 	SPACE,
-	TAB_SAFE,
 } from "@/constants/theme";
 import { IconButton } from "./IconButton";
 import { useUnmanagedModalHold } from "./PopupQueue";
@@ -74,11 +74,13 @@ interface Props {
 	 */
 	modalVisible?: boolean;
 	/**
-	 * "tab" (default) clears the hanging-signs tab bar under a tab screen;
-	 * "safe" is just the home-indicator inset for sheets over a stack screen or
-	 * inside a Ceremony. (2026-09-11)
+	 * This sheet IS a PopupQueue slot (usePopupSlot drives `modalVisible`). A
+	 * slotted sheet must not take the unmanaged-modal latch: the latch holds
+	 * the queue, the queue then never presents the slot, and the sheet sits
+	 * mounted-but-hidden holding every other popup with it. The queue already
+	 * serializes it. Direct-tap sheets omit it and keep the latch.
 	 */
-	bottomInset?: "tab" | "safe";
+	slotted?: boolean;
 	testID?: string;
 }
 
@@ -96,12 +98,13 @@ export function Sheet({
 	keyboardAware = false,
 	presentation = "native",
 	modalVisible,
-	bottomInset = "tab",
+	slotted = false,
 	testID,
 }: Props) {
 	// An inline sheet lives inside a presenting Modal that already holds the
 	// popup-queue latch; taking a second one would be harmless but misleading.
-	useUnmanagedModalHold(open && presentation === "native");
+	// A slotted sheet is the queue's own — latching would deadlock it.
+	useUnmanagedModalHold(open && presentation === "native" && !slotted);
 	const { height } = useWindowDimensions();
 	const insets = useSafeAreaInsets();
 
@@ -131,8 +134,11 @@ export function Sheet({
 						styles.panel,
 						{
 							maxHeight: height * maxHeightFrac,
-							paddingBottom:
-								(bottomInset === "tab" ? TAB_SAFE : SPACE.xl) + insets.bottom,
+							// The panel rides a native Modal, ABOVE the tab bar — the only
+							// thing under its footer is the home indicator. (The old
+							// `bottomInset="tab"` default padded TAB_SAFE here: ~108pt
+							// of dead paper under every sheet's footer. 2026-09-13)
+							paddingBottom: SPACE.xl + insets.bottom,
 						},
 					]}
 				>

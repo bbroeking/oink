@@ -33,14 +33,15 @@ describe("Barn Truffle Patch entry", () => {
     expect(digEntry).toContain('? "Dig for Golden Truffles"');
     expect(digEntry).toContain("void start();");
     expect(digEntry).toContain("modal: cta.modal,");
-    // The Barn button consumes the hook — the shovel face while the patch is
-    // open, the Dig option in its fan otherwise, the hint on both, and the
-    // single mounted patch — instead of jumping to the Season tab.
+    // The Barn button consumes the hook — Dig on its fan whenever the patch
+    // is visible, armed by default while the patch is open (until the player
+    // has picked their own), the hint riding along, and the single mounted
+    // patch — instead of jumping to the Season tab.
     expect(barn).toContain("const dig = useDigEntry();");
-    expect(barn).toContain("const digIsDefault = dig.open;");
-    expect(barn).toContain('accessibilityLabel={digIsDefault ? "Truffle Patch" : "Your Barn"}');
-    expect(barn).toContain("accessibilityHint={digIsDefault ? dig.hint : BARN_HINT}");
-    expect(barn).toMatch(/const digOption: BarnFanOption \| null = dig\.visible\s*\?/);
+    expect(barn).toContain("if (dig.visible) {");
+    expect(barn).toContain('accessibilityLabel: "Truffle Patch",');
+    expect(barn).toContain("accessibilityHint: dig.hint,");
+    expect(barn).toContain('const defaultKey = dig.open && dig.visible ? "dig" : "barn";');
     expect(barn).toContain("onPress: dig.openDig,");
     expect(barn).toContain("{dig.modal}");
   });

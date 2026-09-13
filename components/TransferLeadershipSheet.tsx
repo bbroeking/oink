@@ -74,7 +74,6 @@ export function TransferLeadershipSheet({
 			onClose={onDismiss}
 			title="Pass the crown"
 			subtitle={`one pig wears it — hand ${theCrew(crewName)} to a crewmate`}
-			bottomInset="safe"
 			footer={
 				<Hand tone="secondary" align="center">
 					the crown passes at once — you stay in the crew as a rider.

@@ -60,7 +60,7 @@ import { wallowRegenPercent, wallowWaitReductionLabel } from "@/utils/wallow";
 import { EarnedStamp } from "./EarnedStamp";
 import { TickleCoin } from "./TickleCoin";
 import { BarnButton, type BarnFanOption } from "./BarnButton";
-import { BuriedMound } from "./BuriedMound";
+import { BuriedMound, buriedSnoutsCopy } from "./BuriedMound";
 import { HabitatDoorTransition } from "./habitat/HabitatDoorTransition";
 import { useBarnThreshold } from "@/hooks/useBarnThreshold";
 import { useHabitatAccount } from "@/hooks/useHabitatAccount";
@@ -117,10 +117,12 @@ const BARN_BUTTON_BOTTOM = 22;
 // tap in that corner must be an action, not a tickle. The mound draws over her
 // too — it stands in the yard's front row.
 const YARD_Z = 4;
-// The truffle riding a fanned option — art, so it takes a picture size.
-const FAN_GLYPH = 28;
 // What going in does, spoken — the door's hint on the button and in the fan.
 const BARN_HINT = "Opens the doors to your room and furnishings";
+// Which action the Barn button wears — the player's pick from its fan, kept on
+// this installation so the quick action sticks across launches. Absent until
+// the player has ever picked; until then the button arms its own default.
+const ARMED_ACTION_KEY = "barn_button_armed";
 // Reduce Motion: one glyph, fading in place, for this long. [A-07]
 const REST_FLOAT_MS = 600;
 // Mark sizes on the toast. A glyph is art, so its size is a picture size, not
@@ -792,55 +794,87 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 		}).catch((error) => log.error("Error sharing Streak:", error));
 	}, [stats.currentStreak]);
 
-	// THE FAN. Default first: Dig leads the moment the patch opens, Go in leads
-	// the rest of the time. Burying rides along whenever the truffle status has
-	// loaded — as the act (nothing down) or as the check-in (one buried).
-	const digIsDefault = dig.open;
+	// THE FAN, in its fixed order: Dig · Barn · the truffle. Burying rides along
+	// whenever the truffle status has loaded — as the act (nothing down) or as
+	// the check-in (one buried).
 	const fanOptions: BarnFanOption[] = [];
-	const digOption: BarnFanOption | null = dig.visible
-		? {
-				key: "dig",
-				title: "Dig",
-				sub: dig.open
-					? dig.detail
-					: dig.title.startsWith("Dig ")
-						? dig.title.slice("Dig ".length)
-						: dig.title,
-				mark: "shovel",
-				onPress: dig.openDig,
-				accessibilityHint: dig.hint,
-			}
-		: null;
-	const goInOption: BarnFanOption = {
-		key: "goin",
-		title: "Go in",
+	if (dig.visible) {
+		fanOptions.push({
+			key: "dig",
+			title: "Dig",
+			sub: dig.open
+				? dig.detail
+				: dig.title.startsWith("Dig ")
+					? dig.title.slice("Dig ".length)
+					: dig.title,
+			label: "dig",
+			mark: "shovel",
+			onPress: dig.openDig,
+			accessibilityLabel: "Truffle Patch",
+			accessibilityHint: dig.hint,
+		});
+	}
+	fanOptions.push({
+		key: "barn",
+		title: "Barn",
+		label: "barn",
 		mark: "door",
 		onPress: enterBarn,
+		accessibilityLabel: "Your Barn",
 		accessibilityHint: BARN_HINT,
-	};
-	if (digIsDefault && digOption) fanOptions.push(digOption, goInOption);
-	else fanOptions.push(goInOption, ...(digOption ? [digOption] : []));
+	});
 	if (truffle.status) {
 		fanOptions.push(
 			truffleBuried
 				? {
 						key: "truffle",
 						title: "Your truffle",
-						sub: `${truffle.status.remaining} ${truffle.status.remaining === 1 ? "snout" : "snouts"} left`,
-						mark: <Glyph name="truffle" size={FAN_GLYPH} />,
+						sub: buriedSnoutsCopy(truffle.status.remaining),
+						label: "truffle",
+						mark: "truffle",
 						onPress: () => setTruffleSheetOpen(true),
+						accessibilityLabel: "Your truffle",
 						accessibilityHint: "Opens the buried-truffle sheet, where you can add snouts or dig it back up",
 					}
 				: {
 						key: "truffle",
 						title: "Bury a truffle",
 						sub: "for a visiting friend",
-						mark: <Glyph name="truffle" size={FAN_GLYPH} />,
+						label: "bury",
+						mark: "truffle",
 						onPress: () => setBuryOpen(true),
+						accessibilityLabel: "Bury a truffle",
 						accessibilityHint: "Opens the bury sheet, where you choose how many snouts to stake",
 					},
 		);
 	}
+
+	// WHICH ONE THE FACE WEARS. The player's pick sticks — across taps, tabs
+	// and launches — and once they have picked, the patch opening no longer
+	// steals the seat (the ring still breathes to announce it). Before any
+	// pick the button arms its own default: Dig while the patch is open, Barn
+	// otherwise. A pick whose action is off the fan right now (Dig retires for
+	// the rest of a dug feeding) is kept, not overwritten: the face falls back
+	// to the default until the action returns.
+	const [pickedKey, setPickedKey] = useState<string | null>(null);
+	useEffect(() => {
+		let cancelled = false;
+		AsyncStorage.getItem(ARMED_ACTION_KEY)
+			.then((key) => {
+				if (!cancelled && key) setPickedKey(key);
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+	const armAction = useCallback((key: string) => {
+		setPickedKey(key);
+		AsyncStorage.setItem(ARMED_ACTION_KEY, key).catch(() => {});
+	}, []);
+	const defaultKey = dig.open && dig.visible ? "dig" : "barn";
+	const armedKey =
+		pickedKey && fanOptions.some((option) => option.key === pickedKey) ? pickedKey : defaultKey;
 
 	const renderPigContent = (forInterior: boolean) => (
 		<>
@@ -1064,7 +1098,8 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 					<View style={styles.swipeContainer}>
 {pigPresentedInHabitat ? null : pigContent}
 						{/* A buried truffle is a thing in the yard, so it shows as one:
-						    a mound bottom-left on Rosie's ground plane. ABSOLUTE ON THE
+						    a mound bottom-left on Rosie's ground plane, folded until
+						    tapped (then it says how many snouts are down). ABSOLUTE ON THE
 						    MOUND, never on a wrapper: a full-width absolute layer over
 						    the scene swallows every tap meant for Rosie (the Fabric
 						    overlay footgun, build 99). */}
@@ -1084,19 +1119,16 @@ export default function Barn({ interiorPigOnly = false, bridgeFallback = false }
 
 {pigPresentedInHabitat ? null : luckyContent}
 
-			{/* THE BARN BUTTON. Bottom-right, its face the default action — the
-			    shovel while the patch is open, the barn door otherwise — and its
-			    "+" fans Dig / Go in / Bury a truffle. It sits at page level rather
-			    than in the scene so the fan's scrim can cover the whole screen;
-			    only the 72pt button is ever there when the fan is shut. */}
+			{/* THE BARN BUTTON. Bottom-right, its face the armed quick action —
+			    the shovel, the door or the truffle — and its "+" fans Dig / Barn /
+			    Bury a truffle, where a tap arms rather than fires. It sits at page
+			    level rather than in the scene so the fan's scrim can cover the
+			    whole screen; only the 72pt button is ever there when the fan is shut. */}
 			<BarnButton
-				face={digIsDefault ? "shovel" : "door"}
-				label={digIsDefault ? "dig" : "go in"}
-				live={dig.open}
-				onPrimary={digIsDefault ? dig.openDig : enterBarn}
-				accessibilityLabel={digIsDefault ? "Truffle Patch" : "Your Barn"}
-				accessibilityHint={digIsDefault ? dig.hint : BARN_HINT}
 				options={fanOptions}
+				armedKey={armedKey}
+				onArm={armAction}
+				live={dig.open}
 				testID="barn-button"
 				style={styles.barnButton}
 			/>

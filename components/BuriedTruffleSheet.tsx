@@ -216,6 +216,7 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 			// The queue's visible/open split: the native Modal hides the frame
 			// release() fires, the mount gate clears a teardown beat later.
 			modalVisible={visible ?? open}
+			slotted
 			title="Your buried truffle"
 			footer={footer}
 			testID="buried-truffle-sheet"
@@ -282,14 +283,12 @@ export function BuriedTruffleSheet({ open, balance, visible, onClose, status, on
 				</View>
 			)}
 
-			{/* Top up — add more snouts to the pot, capped at 50 */}
-			<Divider space="lg" />
-			{headroom < 1 ? (
-				<T role="body" tone="secondary" align="center" style={styles.maxNote}>
-					Pot&apos;s at the {POT_CAP}-snout max.
-				</T>
-			) : (
+			{/* Top up — add more snouts to the pot, capped at 50. A full pot shows
+			    nothing here: the top-up button is already gone from the footer,
+			    and a line saying so is a number nobody asked for. */}
+			{headroom >= 1 && (
 				<>
+					<Divider space="lg" />
 					<T role="label" tone="secondary" style={styles.actLabel}>
 						Add to the pot · up to {POT_CAP}
 					</T>
@@ -359,7 +358,6 @@ const styles = StyleSheet.create({
 	stakes: { flexDirection: "row", gap: SPACE.md },
 	chip: { flex: 1 },
 
-	maxNote: { paddingVertical: SPACE.xs },
 	note: { marginTop: SPACE.md },
 
 	footer: { gap: SPACE.sm },

@@ -1,15 +1,17 @@
 // The Barn button — the one control in the scene's bottom-right corner, and the
 // only place the home's secondary actions live (taste-standard, 2026-09-13).
 //
-// ITS FACE IS THE DEFAULT ACTION. While the Truffle Patch is open the face is
-// the shovel on a sage fill with a slow dashed ring, and a tap digs; otherwise
-// it is the barn door on sun, and a tap goes in. The little "+" on its shoulder
-// (or a long press) fans the full list — Dig / Go in / Bury a truffle — over a
-// scrim, with the default listed first and biggest. One tap on the face never
-// makes the player pick from a menu to do the obvious thing.
+// ITS FACE IS A STICKY QUICK ACTION. The face wears one action — the door,
+// the shovel, or the truffle — and a tap on it fires that action. The little
+// "+" on its shoulder (or a long press) fans the full list — Dig / Barn / Bury
+// a truffle — over a scrim, the armed one first and biggest. A tap in the fan
+// never fires: it ARMS. The fan folds, the face flips to that mark, and the
+// player fires it from the page. The caller owns which action is armed (and
+// remembers it); this component only reports the pick. One tap on the face
+// never opens a menu; one tap in the fan never leaves the home.
 //
 // Decided 2026-09-13; comp in docs/design/claude-design/barn/action-button.html.
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Animated,
 	Dimensions,
@@ -21,7 +23,7 @@ import {
 	type ViewStyle,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import { BarnDoor, Hand, Label, Shovel, T } from "./ui";
+import { BarnDoor, Glyph, Hand, Label, Shovel, T } from "./ui";
 import {
 	BORDER,
 	MODAL_BACKDROP_BG,
@@ -73,30 +75,32 @@ const LABEL_GAP = 12;
 const FAB_TILT = "-3deg";
 const LABEL_TILT = "-2deg";
 
-export type BarnFace = "door" | "shovel";
+/** The marks the button can wear — on its face and in the fan. */
+export type BarnMark = "door" | "shovel" | "truffle";
 
 export interface BarnFanOption {
 	key: string;
+	/** The fan row's title ("Dig" / "Barn" / "Bury a truffle"). */
 	title: string;
-	/** The hand line under the title ("the patch is open · 2h 10m"). */
+	/** The hand line under the title ("+20 Pass XP · closes in 3h 25m"). */
 	sub?: string;
-	/** The option's mark: a `Glyph`, or one of the two faces. */
-	mark: BarnFace | Exclude<ReactNode, string | Iterable<ReactNode>>;
+	/** The word beside the button while this action is armed ("dig" / "barn"). */
+	label: string;
+	mark: BarnMark;
+	/** What one tap on the face does while this action is armed. */
 	onPress: () => void;
+	/** The face's name and hint while this action is armed. */
+	accessibilityLabel: string;
 	accessibilityHint?: string;
 }
 
 interface Props {
-	/** Which face the button wears — and so which action a tap performs. */
-	face: BarnFace;
-	/** The word under the face on the scene ("go in" / "dig"). */
-	label: string;
-	/** What the face does. */
-	onPrimary: () => void;
-	accessibilityLabel: string;
-	accessibilityHint?: string;
-	/** The fan, default first. Fewer than two options and the "+" stays home. */
+	/** The fan, in its fixed order. Fewer than two options and the "+" stays home. */
 	options: BarnFanOption[];
+	/** Which option the face wears — and so which action a tap performs. Must be one of `options`. */
+	armedKey: string;
+	/** The player picked from the fan: arm this one. Fired after the fan folds. */
+	onArm: (key: string) => void;
 	/** The dashed ring breathes: the patch is open right now. */
 	live?: boolean;
 	/** Where the button sits — the caller parks it in the scene's corner. */
@@ -104,30 +108,44 @@ interface Props {
 	testID?: string;
 }
 
-function Face({ face, size }: { face: BarnFace; size: number }) {
-	return face === "shovel" ? <Shovel size={size} /> : <BarnDoor size={size} />;
+function Mark({ mark, size }: { mark: BarnMark; size: number }) {
+	if (mark === "shovel") return <Shovel size={size} />;
+	if (mark === "truffle") return <Glyph name="truffle" size={size} />;
+	return <BarnDoor size={size} />;
 }
 
-function Mark({ mark, size }: { mark: BarnFanOption["mark"]; size: number }) {
-	if (mark === "door" || mark === "shovel") return <Face face={mark} size={size} />;
-	return <>{mark}</>;
-}
-
-export function BarnButton({
-	face,
-	label,
-	onPrimary,
-	accessibilityLabel,
-	accessibilityHint,
-	options,
-	live = false,
-	style,
-	testID,
-}: Props) {
+export function BarnButton({ options, armedKey, onArm, live = false, style, testID }: Props) {
 	const motion = useMotionPolicy();
 	const [fanned, setFanned] = useState(false);
 	const fan = useRef(new Animated.Value(0)).current;
 	const breath = useRef(new Animated.Value(0)).current;
+	const pop = useRef(new Animated.Value(1)).current;
+
+	// The armed option leads the fan; the rest keep their fixed order.
+	const armed = options.find((option) => option.key === armedKey) ?? options[0];
+	const fanOptions = armed
+		? [armed, ...options.filter((option) => option.key !== armed.key)]
+		: options;
+
+	// The face pops in when it changes hands. Under Reduce Motion it fades.
+	const lastArmed = useRef(armed?.key);
+	useEffect(() => {
+		if (lastArmed.current === armed?.key) return;
+		lastArmed.current = armed?.key;
+		pop.setValue(0);
+		(motion.reduceMotion
+			? Animated.timing(pop, {
+					toValue: 1,
+					duration: MOTION_DURATION.crossfade,
+					useNativeDriver: true,
+				})
+			: Animated.spring(pop, {
+					toValue: 1,
+					...POP_IN_SPRING,
+					useNativeDriver: true,
+				})
+		).start();
+	}, [armed?.key, pop, motion.reduceMotion]);
 
 	// The fan springs up from the button and eases back down. Under Reduce
 	// Motion it crossfades in place.
@@ -199,10 +217,19 @@ export function BarnButton({
 		setFanned(true);
 	};
 	const primary = () => {
+		if (!armed) return;
 		Haptics.selectionAsync().catch(() => {});
-		onPrimary();
+		armed.onPress();
+	};
+	// Arming is a light tap, not the action's own haptic — nothing has fired.
+	const arm = (key: string) => {
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+		close(() => onArm(key));
 	};
 	const canFan = options.length > 1;
+	// The sage fill belongs to the open patch and the shovel together; a door
+	// or a truffle on the face stays on sun while the ring does the announcing.
+	const sage = live && armed?.mark === "shovel";
 
 	const fanOpacity = fan.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
@@ -226,7 +253,7 @@ export function BarnButton({
 
 			<View style={[styles.anchor, style]} testID={testID}>
 				{fanned
-					? options.map((option, index) => {
+					? fanOptions.map((option, index) => {
 							const isDefault = index === 0;
 							const size = isDefault ? OPTION_DEFAULT : OPTION;
 							const art = isDefault ? OPTION_ART_DEFAULT : OPTION_ART;
@@ -249,10 +276,11 @@ export function BarnButton({
 									]}
 								>
 									<Pressable
-										onPress={() => close(option.onPress)}
+										onPress={() => arm(option.key)}
 										accessibilityRole="button"
 										accessibilityLabel={option.title}
-										accessibilityHint={option.accessibilityHint}
+										accessibilityHint={`Sets the Barn button to ${option.title}`}
+										accessibilityState={{ selected: isDefault }}
 										style={({ pressed }) => [styles.optionRow, pressed && styles.optionPressed]}
 									>
 										<View style={[styles.optionTitle, isDefault && styles.optionTitleDefault]}>
@@ -305,15 +333,17 @@ export function BarnButton({
 						onPress={primary}
 						onLongPress={canFan ? open : undefined}
 						accessibilityRole="button"
-						accessibilityLabel={accessibilityLabel}
-						accessibilityHint={accessibilityHint}
+						accessibilityLabel={armed?.accessibilityLabel}
+						accessibilityHint={armed?.accessibilityHint}
 						style={({ pressed }) => [
 							styles.fab,
-							live && styles.fabLive,
+							sage && styles.fabLive,
 							pressed && styles.fabPressed,
 						]}
 					>
-						<Face face={face} size={FACE} />
+						<Animated.View style={{ opacity: pop, transform: [{ scale: pop }] }}>
+							{armed ? <Mark mark={armed.mark} size={FACE} /> : null}
+						</Animated.View>
 						{canFan ? (
 							<Pressable
 								onPress={open}
@@ -326,9 +356,11 @@ export function BarnButton({
 								<Label>+</Label>
 							</Pressable>
 						) : null}
-						<View pointerEvents="none" style={styles.label}>
-							<Hand numberOfLines={1}>{label}</Hand>
-						</View>
+						{armed ? (
+							<View pointerEvents="none" style={styles.label}>
+								<Hand numberOfLines={1}>{armed.label}</Hand>
+							</View>
+						) : null}
 					</Pressable>
 				)}
 			</View>

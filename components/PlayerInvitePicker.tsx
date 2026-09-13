@@ -103,7 +103,6 @@ export function PlayerInvitePicker({
 			title="Recruit any snout"
 			subtitle="ranked by all-time truffles dug — or search a name"
 			closeLabel="Done"
-			bottomInset="safe"
 			keyboardAware
 			footer={
 				<Button variant="handLink" full onPress={onDismiss} accessibilityHint="Closes the recruiting list">

@@ -100,7 +100,6 @@ export function SounderOinkSheet({
 			title="Oink the Sounder"
 			subtitle="preset notes only · one of each per Feeding"
 			closeLabel="Done"
-			bottomInset="safe"
 			footer={
 				<Button variant="handLink" full onPress={close} accessibilityHint="Closes the Oink list">
 					Done

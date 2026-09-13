@@ -5,7 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { Sheet } from "../components/ui/Sheet";
 import { ActionSheet } from "../components/ui/ActionSheet";
-import { MOTION, RADII, TAB_SAFE, TAP_MIN } from "../constants/theme";
+import { MOTION, RADII, SPACE, TAP_MIN } from "../constants/theme";
 
 const metrics = {
 	frame: { x: 0, y: 0, width: 320, height: 568 },
@@ -42,7 +42,8 @@ describe("Sheet", () => {
 		expect(panel.props.accessibilityViewIsModal).toBe(true);
 
 		// The paper Sticker is the panel's only child: top corners only, and a
-		// bottom pad that clears the tab bar plus the device inset.
+		// bottom pad of one loose step plus the home indicator — the Modal sits
+		// above the tab bar, so there is nothing else to clear.
 		const sticker = panel.findAll(
 			(node) =>
 				typeof node.type !== "string" ? false : !!node.props.style,
@@ -53,7 +54,7 @@ describe("Sheet", () => {
 		expect(panelStyle.borderTopLeftRadius).toBe(RADII.xl);
 		expect(panelStyle.borderTopRightRadius).toBe(RADII.xl);
 		expect(panelStyle.borderRadius).toBe(0);
-		expect(panelStyle.paddingBottom).toBe(TAB_SAFE + metrics.insets.bottom);
+		expect(panelStyle.paddingBottom).toBe(SPACE.xl + metrics.insets.bottom);
 		expect(typeof panelStyle.maxHeight).toBe("number");
 
 		expect(renderer.root.findAllByType(ScrollView)).toHaveLength(1);

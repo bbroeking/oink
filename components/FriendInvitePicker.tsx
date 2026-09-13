@@ -99,7 +99,6 @@ export function FriendInvitePicker({
 			title="Call a snout to your banner"
 			subtitle="tap a friend to pin them to an open slot"
 			closeLabel="Done"
-			bottomInset="safe"
 			footer={
 				<Button variant="handLink" full onPress={onDismiss} accessibilityHint="Closes the invite list">
 					Done
