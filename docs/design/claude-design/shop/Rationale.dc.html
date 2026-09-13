@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800&family=Patrick+Hand&display=swap">
+  <style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Trebuchet MS", sans-serif; font-weight: 700; font-size: 15px; line-height: 21px; }
+    a { color: #a03e2f; } a:hover { color: #2a1f15; }
+    img { display: block; }
+    /* fonts — FONTS.whimsy / FONTS.hand / FONTS.bodyExtra */
+    .whimsy { font-family: "Caprasimo", "Cooper Black", Georgia, serif; font-weight: 400; }
+    .hand { font-family: "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive; font-weight: 400; }
+    /* TYPE roles */
+    .pageTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .sectionTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 22px; line-height: 24px; letter-spacing: .2px; }
+    .cardTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 18px; line-height: 22px; letter-spacing: .2px; }
+    .cardTitleSm { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 15px; line-height: 22px; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .numeral { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; }
+    .numeralLg { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .body { font-size: 15px; line-height: 21px; }
+    .bodySm { font-size: 13px; line-height: 18px; }
+    .label { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; color: #a03e2f; }
+    .handTxt { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 14px; line-height: 20px; }
+    .handLg { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 17px; line-height: 24px; }
+    .kickerPill { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; }
+    .kickerPillSm { font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.6px; text-transform: uppercase; }
+    .mute { color: #605449; } .muteDim { color: #6a5c50; }
+    /* the phone */
+    .phone { position: relative; width: 390px; height: 844px; overflow: hidden; background: #fffaf0; }
+    /* Sticker — BORDER.ink 2, RADII.lg 14, STICKER_SHADOW 4/4, TILT.card -0.6 */
+    .sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; }
+    .sm { box-shadow: 2px 2px 0 #2a1f15; }
+    .rule { height: 2px; width: 64px; background: #2a1f15; opacity: .3; border-radius: 1px; }
+    /* PageHeader variant=tab — PAGE_PAD 18, paddingTop SPACE.sm */
+    .pageHeader { display: flex; align-items: flex-end; justify-content: space-between; padding: 8px 18px 0; }
+    .pageHeader .crown { display: flex; flex-direction: column; gap: 4px; }
+    /* SectionHeader — kicker (hand, accent, ★) over sectionTitle, right slot = label mute */
+    .sectionHeader { display: flex; align-items: flex-end; justify-content: space-between; padding: 0 18px; }
+    .sectionHeader .col { display: flex; flex-direction: column; gap: 2px; }
+    /* Tag / Chip — RADII.pill, BORDER.thin 1.5, minH SPACE.xl 24, pad 4/12, TYPE.label */
+    .tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 2px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; white-space: nowrap; }
+    .tag.sun { background: #ffd87a; } .tag.sage { background: #c9dec1; } .tag.muted { background: #f6e6d4; color: #6a5c50; }
+    .tag.sky { background: #c8e3f0; } .tag.rose { background: #ffd6dc; } .tag.lilac { background: #d6c8f0; } .tag.gold { background: #F5C44A; }
+    .tag.stretch { align-self: stretch; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; min-height: 24px; padding: 2px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; }
+    .chip.on { border-width: 3px; background: #ffd87a; }
+    .chip img, .chip svg { width: 14px; height: 14px; flex: none; }
+    svg { display: block; }
+    /* Button — minH 44, RADII.xxl 22, BORDER.ink, label Nunito 800 15 */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 18px; border: 2px solid #2a1f15; border-radius: 22px; background: #ffd87a; font-weight: 800; font-size: 15px; letter-spacing: .1px; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; }
+    .btn.gold { background: linear-gradient(180deg, #F8D068, #F5C44A); color: #5A3F00; }
+    .btn.ghost { background: #fffaf0; }
+    .btn.sm { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+    .btn.full { align-self: stretch; }
+    /* SegmentedControl — track: pill, BORDER.ink, pad SPACE.xs, gap xs; selected: sun + thin ink border */
+    .seg { display: flex; gap: 4px; padding: 4px; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; }
+    .seg > div { flex: 1 1 auto; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1.5px solid transparent; border-radius: 999px; font-weight: 800; font-size: 12px; letter-spacing: .3px; }
+    .seg > div.on { background: #ffd87a; border-color: #2a1f15; }
+    .seg img, .seg svg { width: 20px; height: 20px; flex: none; }
+    /* ShopCard — Sticker radius xl 18, thumb aspect 1.18 on rarity bg, ink bottom rule, rarity dot 14, owned badge 26, foot pad md gap sm */
+    .card { position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; overflow: hidden; display: flex; flex-direction: column; }
+    .card.gated { background: #f6e6d4; }
+    .card .thumb { position: relative; aspect-ratio: 1.18; border-bottom: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .card .thumb img.art { width: 74%; height: 74%; object-fit: contain; }
+    .card .rdot { position: absolute; top: 8px; left: 8px; width: 14px; height: 14px; border-radius: 999px; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; z-index: 2; }
+    .card .owned { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 999px; background: #c9dec1; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; z-index: 2; }
+    .card .owned img { width: 14px; height: 14px; }
+    .card .foot { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+    /* Ribbon — slopGold, 120 wide, 35°, kickerPillSm, thin ink top/bottom rules */
+    .ribbon { position: absolute; top: 12px; right: -30px; width: 120px; padding: 2px 0; background: #F5C44A; border-top: 1.5px solid #2a1f15; border-bottom: 1.5px solid #2a1f15; transform: rotate(35deg); z-index: 3; display: flex; align-items: center; justify-content: center; gap: 2px; font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.6px; text-transform: uppercase; color: #2a1f15; }
+    .ribbon img { width: 10px; height: 10px; }
+    /* rarity — RARITY_BG_SOLID / RARITY_STRIPE */
+    .r-common { background: #FAF7F3; } .r-uncommon { background: #E8F5E0; } .r-rare { background: #E0EBFF; } .r-epic { background: #EFE9FF; } .r-legendary { background: #FFF3D0; }
+    .d-common { background: #cdbfae; } .d-uncommon { background: #7ba868; } .d-rare { background: #5a8bc5; } .d-epic { background: #a89bff; } .d-legendary { background: #d4a437; }
+    /* the coin pocket in the header (Sticker sun, radius md, tilt 2°) */
+    .pocket { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(2deg); }
+    .pocket img { width: 20px; height: 20px; }
+    .ticketBtn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; }
+    .ticketBtn img { width: 20px; height: 20px; }
+    .coinInline { display: inline-flex; align-items: center; gap: 4px; }
+    .coinInline img { width: 14px; height: 14px; }
+    /* Slop Club band header — slopBand wash, gold CTA (2026-07-12 ruling) */
+    .slopBand { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 18px; padding: 8px 12px; background: #FFE7AD; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; }
+    /* hanging-signs tab bar — WOOD rail dirt→dirtDeep, paper signs, Shop active peach */
+    .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 100px; background: linear-gradient(180deg, #8d5a2c, #74441e); border-top: 2px solid #2a1f15; }
+    .tabbar:before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: #2a1f15; opacity: .35; }
+    .sign { position: absolute; top: 26px; width: 64px; height: 58px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 10px; box-shadow: 2px 3px 0 #2a1f15; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-weight: 800; font-size: 11px; }
+    .sign:before { content: ""; position: absolute; top: -18px; left: 50%; width: 2px; height: 18px; background: #2a1f15; transform: translateX(-50%); }
+    .sign img { width: 20px; height: 20px; }
+    .sign.on { background: #ffc8a8; transform: rotate(-2deg); }
+    .sign svg { width: 20px; height: 20px; }
+    /* a hand-drawn spot pin on the stage (Board C) — paper circle, tag under */
+    .pin { position: absolute; width: 44px; height: 44px; border-radius: 999px; background: #fffaf0; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; z-index: 5; }
+    .pin.on { background: #ffd87a; border-width: 3px; }
+    .pin svg { width: 22px; height: 22px; }
+    .pin .lbl { position: absolute; left: 50%; bottom: -18px; transform: translateX(-50%) rotate(-2deg); background: #fffaf0; border: 1.5px solid #2a1f15; border-radius: 7px; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 12px; line-height: 16px; padding: 0 7px; white-space: nowrap; box-shadow: 2px 2px 0 #2a1f15; }
+    /* masking tape (WHIMSY.tape / tapeEdge) */
+    .tape { position: absolute; width: 70px; height: 18px; background: #EAD59E; border: 1.5px solid #C8AD77; opacity: .95; transform: rotate(-8deg); z-index: 4; }
+    /* progress track — 16px capsule, ink border, sage fill */
+    .track { height: 16px; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; overflow: hidden; }
+    .track > div { height: 100%; background: #c9dec1; border-right: 2px solid #2a1f15; }
+
+    .phone { width: 900px; height: 1680px; }
+  </style>
+</helmet>
+
+<div style="box-sizing: border-box; width: 900px; padding: 32px 36px 40px; background: #fbeee2; display: flex; flex-direction: column; gap: 20px;">
+  <div style="display: flex; flex-direction: column; gap: 4px;">
+    <div class="kickerPill">★ shop · two catalogs, one shop</div>
+    <div class="pageTitle">Four structural answers, one catalog</div>
+    <div class="rule"></div>
+    <div class="body" style="max-width: 720px; padding-top: 6px;">Every board carries the same stock and the same states — the 1,240-snout pocket, today's drop, the Slop Club band with the MEMBERS ribbon and lock, hats and bows for Rosie, the Harvest Hoedown and Orchard Morning furnishings for the Barn, a snout price on every tile, and Owned · Wearing · Placed · Season pass. Only the structure changes. Fonts, fills, radii, borders, the two shadows and the tilts are read from <code>constants/theme.ts</code>; buttons are Nunito 800, as <code>Button.tsx</code> ships them.</div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 26px; padding-top: 6px;">
+    
+    <div style="position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-0.5deg); padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 8px;">
+      <div class="kicker">★ board A</div>
+      <div class="sectionTitle">Two Doors</div>
+      <div class="handLg" style="color: #605449;">“The shop has two doors: for Rosie, for the Barn.”</div>
+      <div class="body">Today's shop with the segmented control renamed to the two catalogs and <code>/barn-collection</code> folded in as the second door. Today's drop stays one mixed row above the doors (the daily rendezvous is not halved); the stage under the doors follows them — Rosie at rest on one, her room on the other — so the preview lives on the page instead of only in the sheet. The Slop Club band and the rarity grammar are unchanged.</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 2px;">
+        <div class="tag sage">Collect</div>
+        <div class="tag sky">Cost · low (≈ 1 build)</div>
+      </div>
+      <div class="bodySm" style="color: #605449;"><b style="color: #2a1f15;">Trade-off.</b> The two catalogs never meet on one screen — a set that spans a hat and a rug is split across doors, and the Barn door has to carry the collection-milestone progress the furnishing catalog already owns. It is the most conservative answer; it wins on legibility and loses on charm.</div>
+    </div>
+    <div style="position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(0.5deg); padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 8px;">
+      <div class="kicker">★ board B</div>
+      <div class="sectionTitle">One Aisle</div>
+      <div class="handLg" style="color: #605449;">“Scroll the shop; things are sorted by where they go.”</div>
+      <div class="body">One continuous scroll, sectioned by where the thing lives — on her head, in her trotters, on the wall, on the floor, from the rafters. A pinned stage strip under the crown flips between Rosie and her room as the scroll crosses the seam. The daily drop is not a row but a <b>TODAY</b> stamp on tiles in place, and each section's right slot reads the room's occupancy (2 of 3 hung).</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 2px;">
+        <div class="tag sage">Collect</div>
+        <div class="tag sky">Cost · medium (≈ 2 builds)</div>
+      </div>
+      <div class="bodySm" style="color: #605449;"><b style="color: #2a1f15;">Trade-off.</b> It is long: ~50 accessories plus 115 furnishings in one aisle needs section jump-links or it becomes a scroll of doom. The stage flip is scroll-position logic (a sticky header whose content depends on the section in view) — new code, and it must honour Reduce Motion with a crossfade. The 2026-07-16 ruling still holds: the strip is a product shot, frozen at rest.</div>
+    </div>
+    <div style="position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-0.4deg); padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 8px;">
+      <div class="kicker">★ board C</div>
+      <div class="sectionTitle">Try It On</div>
+      <div class="handLg" style="color: #605449;">“Tap a spot on Rosie or her room, buy what fits there.”</div>
+      <div class="body">Stage-first: the top 42% is Rosie in her Warm Plank Barn with everything she already wears and has placed, and every spot that can take something is a hand-drawn pin. Tapping a pin filters the drawer below it; tapping a tile hangs a 60%-opacity ghost on the stage with a dashed cut line — you see the banner on <i>your</i> wall before you spend. The drawer is a Sheet with spot chips (Today and Slop Club ride the same row), 3-across tiles, and the one primary button that states its cost and the balance after.</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 2px;">
+        <div class="tag sage">Collect · Connect (a room worth visiting)</div>
+        <div class="tag sky">Cost · high (≈ 4 builds)</div>
+      </div>
+      <div class="bodySm" style="color: #605449;"><b style="color: #2a1f15;">Trade-off.</b> Breadth: the drawer shows 3–6 tiles at a time, so browsing is by spot, never by scanning a wall of hats. It composes two renderers that have never shared a frame (PigStage anchors + HabitatScene anchors) and adds ghost placement of an unowned item — new placement code, VoiceOver for six pins, a stage that needs a rest pose. It is the most TTP of the four and the most expensive.</div>
+    </div>
+    <div style="position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(0.4deg); padding: 16px 18px 14px; display: flex; flex-direction: column; gap: 8px;">
+      <div class="kicker">★ board D</div>
+      <div class="sectionTitle">Market Stalls</div>
+      <div class="handLg" style="color: #605449;">“Buy from a stall; fill the table to earn its gifts.”</div>
+      <div class="body">Accessories and furnishings mixed by set: Harvest Hoedown is a stall with a cowboy hat, a pumpkin chair and a moon print on the same table, a tiny diorama of Rosie in the set's hat on the set's rug, and the furnishing catalog's existing 4-and-8 milestone track (<i>chandelier at 4 · star rug at 8</i>). Today's cart is the first stall; Slop Club Signature is a gold one. The whole shop is a row of tables you walk past.</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 2px;">
+        <div class="tag sage">Collect (sets are the collection loop)</div>
+        <div class="tag sky">Cost · medium-high (≈ 3 builds)</div>
+      </div>
+      <div class="bodySm" style="color: #605449;"><b style="color: #2a1f15;">Trade-off.</b> Nobody can shop for 'a hat': the axis is the set, so a player with a specific slot in mind scans every stall. The data model exists for furnishings (collections + deterministic milestones) but not for accessories — a <code>collection_id</code> on <code>hats</code> and a rule for which set a hat joins (Corn on the Cob → Harvest; Acorn Bow → Orchard) is product work before it is UI work. Mixed-set milestones also change the economy (a hat counts toward a rug).</div>
+    </div>
+  </div>
+
+  <div style="position: relative; margin-top: 10px; background: #3a2c1e; color: #fff3e2; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-0.3deg); padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px;">
+    <div class="kicker" style="color: #ffd87a;">★ recommendation</div>
+    <div class="sectionTitle">Build A now, with C's ghost as the preview sheet's next step.</div>
+    <div class="body" style="color: #e8d9c6; max-width: 800px;">Two Doors is the only board a player holds in one sentence <i>and</i> that the codebase already mostly holds: the segmented control, the daily grid, the Slop Club band and the furnishing collection with its milestones all exist — the new work is the stage that follows the door (PigStage frozen at rest, HabitatScene as a still) and routing the Barn door in-tab instead of out to <code>/barn-collection</code>. It keeps the daily drop as one mixed row, which is the shop's rendezvous, and it costs a build, not a month. What A lacks is C's moment — seeing the banner on your own wall before you spend — and that belongs in <code>ItemPreviewModal</code> (the sheet already freezes Rosie for accessories; give furnishings the same sheet with the room as the stage). D's set stalls are the better <b>Collect</b> story and should return as a row of set stickers inside each door once accessories carry a <code>collection_id</code>; B's location kickers ("on the wall · 2 of 3 hung") are worth lifting into A's Barn door as its section headers today.</div>
+  </div>
+</div>
+
+</x-dc>
+</body>
+</html>

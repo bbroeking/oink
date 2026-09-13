@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@700;800&family=Patrick+Hand&display=swap">
+  <style>
+    body { margin: 0; background: #fbeee2; color: #2a1f15; font-family: "Nunito", "Trebuchet MS", sans-serif; font-weight: 700; font-size: 15px; line-height: 21px; }
+    a { color: #a03e2f; } a:hover { color: #2a1f15; }
+    img { display: block; }
+    /* fonts — FONTS.whimsy / FONTS.hand / FONTS.bodyExtra */
+    .whimsy { font-family: "Caprasimo", "Cooper Black", Georgia, serif; font-weight: 400; }
+    .hand { font-family: "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive; font-weight: 400; }
+    /* TYPE roles */
+    .pageTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .sectionTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 22px; line-height: 24px; letter-spacing: .2px; }
+    .cardTitle { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 18px; line-height: 22px; letter-spacing: .2px; }
+    .cardTitleSm { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 15px; line-height: 22px; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .numeral { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 16px; line-height: 20px; }
+    .numeralLg { font-family: "Caprasimo", Georgia, serif; font-weight: 400; font-size: 26px; line-height: 28px; }
+    .body { font-size: 15px; line-height: 21px; }
+    .bodySm { font-size: 13px; line-height: 18px; }
+    .label { font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; }
+    .kicker { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 13px; line-height: 18px; letter-spacing: .4px; color: #a03e2f; }
+    .handTxt { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 14px; line-height: 20px; }
+    .handLg { font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 17px; line-height: 24px; }
+    .kickerPill { font-weight: 800; font-size: 11px; line-height: 14px; letter-spacing: 1.6px; text-transform: uppercase; color: #605449; }
+    .kickerPillSm { font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.6px; text-transform: uppercase; }
+    .mute { color: #605449; } .muteDim { color: #6a5c50; }
+    /* the phone */
+    .phone { position: relative; width: 390px; height: 844px; overflow: hidden; background: #fffaf0; }
+    /* Sticker — BORDER.ink 2, RADII.lg 14, STICKER_SHADOW 4/4, TILT.card -0.6 */
+    .sticker { background: #fffaf0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; }
+    .sm { box-shadow: 2px 2px 0 #2a1f15; }
+    .rule { height: 2px; width: 64px; background: #2a1f15; opacity: .3; border-radius: 1px; }
+    /* PageHeader variant=tab — PAGE_PAD 18, paddingTop SPACE.sm */
+    .pageHeader { display: flex; align-items: flex-end; justify-content: space-between; padding: 8px 18px 0; }
+    .pageHeader .crown { display: flex; flex-direction: column; gap: 4px; }
+    /* SectionHeader — kicker (hand, accent, ★) over sectionTitle, right slot = label mute */
+    .sectionHeader { display: flex; align-items: flex-end; justify-content: space-between; padding: 0 18px; }
+    .sectionHeader .col { display: flex; flex-direction: column; gap: 2px; }
+    /* Tag / Chip — RADII.pill, BORDER.thin 1.5, minH SPACE.xl 24, pad 4/12, TYPE.label */
+    .tag { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 24px; padding: 2px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; white-space: nowrap; }
+    .tag.sun { background: #ffd87a; } .tag.sage { background: #c9dec1; } .tag.muted { background: #f6e6d4; color: #6a5c50; }
+    .tag.sky { background: #c8e3f0; } .tag.rose { background: #ffd6dc; } .tag.lilac { background: #d6c8f0; } .tag.gold { background: #F5C44A; }
+    .tag.stretch { align-self: stretch; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; min-height: 24px; padding: 2px 12px; border: 1.5px solid #2a1f15; border-radius: 999px; font-weight: 800; font-size: 12px; line-height: 16px; letter-spacing: .3px; background: #fffaf0; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; }
+    .chip.on { border-width: 3px; background: #ffd87a; }
+    .chip img, .chip svg { width: 14px; height: 14px; flex: none; }
+    svg { display: block; }
+    /* Button — minH 44, RADII.xxl 22, BORDER.ink, label Nunito 800 15 */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 18px; border: 2px solid #2a1f15; border-radius: 22px; background: #ffd87a; font-weight: 800; font-size: 15px; letter-spacing: .1px; box-shadow: 2px 2px 0 #2a1f15; white-space: nowrap; }
+    .btn.gold { background: linear-gradient(180deg, #F8D068, #F5C44A); color: #5A3F00; }
+    .btn.ghost { background: #fffaf0; }
+    .btn.sm { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+    .btn.full { align-self: stretch; }
+    /* SegmentedControl — track: pill, BORDER.ink, pad SPACE.xs, gap xs; selected: sun + thin ink border */
+    .seg { display: flex; gap: 4px; padding: 4px; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; }
+    .seg > div { flex: 1 1 auto; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1.5px solid transparent; border-radius: 999px; font-weight: 800; font-size: 12px; letter-spacing: .3px; }
+    .seg > div.on { background: #ffd87a; border-color: #2a1f15; }
+    .seg img, .seg svg { width: 20px; height: 20px; flex: none; }
+    /* ShopCard — Sticker radius xl 18, thumb aspect 1.18 on rarity bg, ink bottom rule, rarity dot 14, owned badge 26, foot pad md gap sm */
+    .card { position: relative; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 18px; box-shadow: 4px 4px 0 #2a1f15; overflow: hidden; display: flex; flex-direction: column; }
+    .card.gated { background: #f6e6d4; }
+    .card .thumb { position: relative; aspect-ratio: 1.18; border-bottom: 2px solid #2a1f15; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .card .thumb img.art { width: 74%; height: 74%; object-fit: contain; }
+    .card .rdot { position: absolute; top: 8px; left: 8px; width: 14px; height: 14px; border-radius: 999px; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; z-index: 2; }
+    .card .owned { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 999px; background: #c9dec1; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; z-index: 2; }
+    .card .owned img { width: 14px; height: 14px; }
+    .card .foot { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+    /* Ribbon — slopGold, 120 wide, 35°, kickerPillSm, thin ink top/bottom rules */
+    .ribbon { position: absolute; top: 12px; right: -30px; width: 120px; padding: 2px 0; background: #F5C44A; border-top: 1.5px solid #2a1f15; border-bottom: 1.5px solid #2a1f15; transform: rotate(35deg); z-index: 3; display: flex; align-items: center; justify-content: center; gap: 2px; font-weight: 800; font-size: 10px; line-height: 13px; letter-spacing: 1.6px; text-transform: uppercase; color: #2a1f15; }
+    .ribbon img { width: 10px; height: 10px; }
+    /* rarity — RARITY_BG_SOLID / RARITY_STRIPE */
+    .r-common { background: #FAF7F3; } .r-uncommon { background: #E8F5E0; } .r-rare { background: #E0EBFF; } .r-epic { background: #EFE9FF; } .r-legendary { background: #FFF3D0; }
+    .d-common { background: #cdbfae; } .d-uncommon { background: #7ba868; } .d-rare { background: #5a8bc5; } .d-epic { background: #a89bff; } .d-legendary { background: #d4a437; }
+    /* the coin pocket in the header (Sticker sun, radius md, tilt 2°) */
+    .pocket { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #ffd87a; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(2deg); }
+    .pocket img { width: 20px; height: 20px; }
+    .ticketBtn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; }
+    .ticketBtn img { width: 20px; height: 20px; }
+    .coinInline { display: inline-flex; align-items: center; gap: 4px; }
+    .coinInline img { width: 14px; height: 14px; }
+    /* Slop Club band header — slopBand wash, gold CTA (2026-07-12 ruling) */
+    .slopBand { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 18px; padding: 8px 12px; background: #FFE7AD; border: 2px solid #2a1f15; border-radius: 12px; box-shadow: 2px 2px 0 #2a1f15; }
+    /* hanging-signs tab bar — WOOD rail dirt→dirtDeep, paper signs, Shop active peach */
+    .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 100px; background: linear-gradient(180deg, #8d5a2c, #74441e); border-top: 2px solid #2a1f15; }
+    .tabbar:before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: #2a1f15; opacity: .35; }
+    .sign { position: absolute; top: 26px; width: 64px; height: 58px; background: #fffaf0; border: 2px solid #2a1f15; border-radius: 10px; box-shadow: 2px 3px 0 #2a1f15; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-weight: 800; font-size: 11px; }
+    .sign:before { content: ""; position: absolute; top: -18px; left: 50%; width: 2px; height: 18px; background: #2a1f15; transform: translateX(-50%); }
+    .sign img { width: 20px; height: 20px; }
+    .sign.on { background: #ffc8a8; transform: rotate(-2deg); }
+    .sign svg { width: 20px; height: 20px; }
+    /* a hand-drawn spot pin on the stage (Board C) — paper circle, tag under */
+    .pin { position: absolute; width: 44px; height: 44px; border-radius: 999px; background: #fffaf0; border: 2px solid #2a1f15; box-shadow: 2px 2px 0 #2a1f15; display: flex; align-items: center; justify-content: center; z-index: 5; }
+    .pin.on { background: #ffd87a; border-width: 3px; }
+    .pin svg { width: 22px; height: 22px; }
+    .pin .lbl { position: absolute; left: 50%; bottom: -18px; transform: translateX(-50%) rotate(-2deg); background: #fffaf0; border: 1.5px solid #2a1f15; border-radius: 7px; font-family: "Patrick Hand", cursive; font-weight: 400; font-size: 12px; line-height: 16px; padding: 0 7px; white-space: nowrap; box-shadow: 2px 2px 0 #2a1f15; }
+    /* masking tape (WHIMSY.tape / tapeEdge) */
+    .tape { position: absolute; width: 70px; height: 18px; background: #EAD59E; border: 1.5px solid #C8AD77; opacity: .95; transform: rotate(-8deg); z-index: 4; }
+    /* progress track — 16px capsule, ink border, sage fill */
+    .track { height: 16px; border: 2px solid #2a1f15; border-radius: 999px; background: #fffaf0; overflow: hidden; }
+    .track > div { height: 100%; background: #c9dec1; border-right: 2px solid #2a1f15; }
+
+    .phone { width: 390px; height: 844px; }
+  </style>
+</helmet>
+
+<div class="phone">
+  <div class="pageHeader"><div class="crown"><div class="kickerPill">★ the shop</div><div class="pageTitle">Shop</div><div class="rule"></div></div><div style="display: flex; align-items: center; gap: 8px; padding-bottom: 6px;"><div class="ticketBtn"><img src="g_gift.png" alt=""></div><div class="pocket"><img src="coin.png" alt=""><span class="numeral">1,240</span></div></div></div>
+  <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 6px;">
+    <div class="sectionHeader"><div class="col"><div class="kicker">★ today's drop</div><div class="sectionTitle">Today's Drop</div></div><div class="label mute" style="padding-bottom: 2px;">resets in 6h 12m</div></div>
+    <div style="display: flex; gap: 12px; padding: 4px 18px 8px; overflow: hidden;"><div class="card" style="width: 118px; transform: rotate(-0.5deg); flex: none;"><div class="thumb r-common"><div class="rdot d-common"></div><div class="owned"><img src="g_check.png" alt=""></div><img class="art" src="hat_cowboy.png" alt="" style="width: 74%; height: 74%;"></div><div class="foot"><div class="cardTitleSm">Cowboy Hat</div><div class="tag sage stretch"><img src="g_check.png" style="width: 12px; height: 12px;" alt="">Owned</div></div></div><div class="card" style="width: 118px; transform: rotate(0.5deg); flex: none;"><div class="thumb r-common"><div class="rdot d-common"></div><img class="art" src="fur_pumpkin_cushion_chair.png" alt="" style="width: 74%; height: 74%;"></div><div class="foot"><div class="cardTitleSm">Pumpkin Chair</div><div class="tag sun stretch"><img src="coin.png" style="width: 14px; height: 14px;" alt="">50</div></div></div><div class="card" style="width: 118px; transform: rotate(-0.5deg); flex: none;"><div class="thumb r-common"><div class="rdot d-common"></div><img class="art" src="hat_knit_scarf.png" alt="" style="width: 74%; height: 74%;"></div><div class="foot"><div class="cardTitleSm">Knit Scarf</div><div class="tag sun stretch"><img src="coin.png" style="width: 14px; height: 14px;" alt="">126</div></div></div><div class="card" style="width: 118px; transform: rotate(0.5deg); flex: none;"><div class="thumb r-common"><div class="rdot d-common"></div><div class="owned"><img src="g_check.png" alt=""></div><img class="art" src="fur_harvest_moon_print.png" alt="" style="width: 74%; height: 74%;"></div><div class="foot"><div class="cardTitleSm">Harvest Moon Print</div><div class="tag sage stretch"><img src="g_check.png" style="width: 12px; height: 12px;" alt="">Placed</div></div></div><div class="card" style="width: 118px; transform: rotate(-0.5deg); flex: none;"><div class="thumb r-rare"><div class="rdot d-rare"></div><img class="art" src="hat_tophat.png" alt="" style="width: 74%; height: 74%;"></div><div class="foot"><div class="cardTitleSm">Top Hat</div><div class="tag sun stretch"><img src="coin.png" style="width: 14px; height: 14px;" alt="">200</div></div></div></div>
+
+    <!-- the two doors -->
+    <div style="padding: 2px 18px 0;">
+      <div class="seg">
+        <div class="on"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15c0-1.5 3-2.5 7-2.5s7 1 7 2.5M5 15c0 1.5 3 2.5 7 2.5s7-1 7-2.5M8 13.5c0-4 1.5-7.5 4-7.5s4 3.5 4 7.5"/></svg><span>For Rosie</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11M4 20h16M9 20v-7h6v7M9 13l6 7M15 13l-6 7"/></svg><span>For the Barn</span></div>
+      </div>
+    </div>
+
+    <!-- the stage follows the door: Rosie (frozen at rest — the product shot) -->
+    <div style="margin: 6px 18px 0; position: relative; height: 112px; background: #c8e3f0; border: 2px solid #2a1f15; border-radius: 14px; box-shadow: 4px 4px 0 #2a1f15; transform: rotate(-0.6deg); overflow: hidden; display: flex; align-items: flex-end;">
+      <img src="rosie.png" alt="" style="width: 104px; margin-left: 14px; margin-bottom: -4px;">
+      <img src="hat_beanie.png" alt="" style="position: absolute; left: 44px; top: -6px; width: 56px;">
+      <div style="position: absolute; left: 132px; top: 12px; display: flex; flex-direction: column; gap: 4px;">
+        <div class="kickerPillSm mute">wearing</div>
+        <div class="cardTitle">Beanie</div>
+        <div class="handTxt mute">Tap a tile to see it on her.</div>
+      </div>
+      <div style="position: absolute; right: 10px; bottom: 10px;" class="tag sky"><img src="g_check.png" style="width: 12px; height: 12px;" alt="">rest pose</div>
+    </div>
+
+    <!-- Slop Club band (2026-07-12 grammar: slopBand wash, gold CTA, MEMBERS ribbon + lock while gated) -->
+    <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 6px;">
+      <div class="slopBand" style="transform: rotate(0.4deg);">
+        <div style="display: flex; align-items: center; gap: 8px;"><img src="g_crown.png" style="width: 22px; height: 22px;" alt=""><div><div class="cardTitle">Slop Club</div><div class="handTxt mute">members-only, for her</div></div></div>
+        <div class="btn gold sm">Join Slop Club</div>
+      </div>
+      <div style="display: flex; gap: 12px; padding: 4px 18px 8px; overflow: hidden;"><div class="card gated" style="width: 118px; transform: rotate(-0.5deg); flex: none;"><div class="thumb r-epic"><div class="rdot d-epic"></div><div class="ribbon"><img src="g_lock.png" alt="">Members</div><img class="art" src="hat_aurora_glow_hood.png" alt="" style="width: 74%; height: 74%;"></div><div class="foot"><div class="cardTitleSm">Aurora Glow Hood</div><div class="tag muted stretch"><img src="coin.png" style="width: 14px; height: 14px;" alt="">4,200</div></div></div><div class="card gated" style="width: 118px; transform: rotate(0.5deg); flex: none;"><div class="thumb r-rare"><div class="rdot d-rare"></div><div class="ribbon"><img src="g_lock.png" alt="">Members</div><img class="art" src="hat_candlelit_circlet.png" alt="" style="width: 74%; height: 74%;"></div><div class="foot"><div class="cardTitleSm">Candlelit Circlet</div><div class="tag muted stretch"><img src="coin.png" style="width: 14px; height: 14px;" alt="">3,000</div></div></div><div class="card gated" style="width: 118px; transform: rotate(-0.5deg); flex: none;"><div class="thumb r-uncommon"><div class="rdot d-uncommon"></div><div class="ribbon"><img src="g_lock.png" alt="">Members</div><img class="art" src="hat_corn_on_the_cob.png" alt="" style="width: 74%; height: 74%;"></div><div class="foot"><div class="cardTitleSm">Corn on the Cob</div><div class="tag muted stretch"><img src="coin.png" style="width: 14px; height: 14px;" alt="">2,000</div></div></div></div>
+    </div>
+
+    <div class="sectionHeader"><div class="col"><div class="kicker">★ for rosie</div><div class="sectionTitle">Hats & Bows</div></div><div class="label mute" style="padding-bottom: 2px;">42 in the closet</div></div>
+    <div style="display: flex; gap: 12px; padding: 4px 18px 0;"><div class="card" style="width: 171px; transform: rotate(-0.5deg); flex: none;"><div class="thumb r-common"><div class="rdot d-common"></div><div class="owned"><img src="g_check.png" alt=""></div><img class="art" src="hat_beanie.png" alt="" style="width: 74%; height: 74%;"></div><div class="foot"><div class="cardTitleSm">Beanie</div><div class="tag sage stretch"><img src="g_check.png" style="width: 12px; height: 12px;" alt="">Wearing</div></div></div><div class="card" style="width: 171px; transform: rotate(0.5deg); flex: none;"><div class="thumb r-epic"><div class="rdot d-epic"></div><img class="art" src="hat_leaf_crown.png" alt="" style="width: 74%; height: 74%;"></div><div class="foot"><div class="cardTitleSm">Crown of Leaves</div><div class="tag muted stretch">Season pass</div></div></div></div>
+  </div>
+  <div class="tabbar"><div class="sign" style="left: 8px;"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11M4 20h16M9 20v-7h6v7M9 13l6 7M15 13l-6 7"/></svg><span>Barn</span></div><div class="sign" style="left: 86px;"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 2.5-5 6-5s6 2 6 5M15 19c0-2 1.5-3.5 4-3.5s3 1.5 3 3.5"/></svg><span>Friends</span></div><div class="sign" style="left: 164px;"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg><span>Season</span></div><div class="sign on" style="left: 242px;"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1.5-4h13L20 9M4 9v11h16V9M4 9h16M9 20v-6h6v6"/></svg><span>Shop</span></div><div class="sign" style="left: 320px;"><svg viewBox="0 0 24 24" fill="none" stroke="#2a1f15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg><span>Me</span></div></div>
+</div>
+
+</x-dc>
+</body>
+</html>

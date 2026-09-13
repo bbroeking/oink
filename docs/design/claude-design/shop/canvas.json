@@ -1,0 +1,17 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",         "x": 0,    "y": 0, "w": 390, "h": 844, "title": "A · Two Doors" },
+    { "file": "OneAisle.dc.html",     "x": 500,  "y": 0, "w": 390, "h": 844, "title": "B · One Aisle" },
+    { "file": "TryItOn.dc.html",      "x": 1000, "y": 0, "w": 390, "h": 844, "title": "C · Try It On" },
+    { "file": "MarketStalls.dc.html", "x": 1500, "y": 0, "w": 390, "h": 844, "title": "D · Market Stalls" },
+    { "file": "Rationale.dc.html",    "x": 0,    "y": 1020, "w": 900, "h": 1680, "title": "Rationale + recommendation", "print": "flow" }
+  ],
+  "annotations": [
+    { "id": "a-two-doors",  "x": 0,    "y": -170, "w": 390, "text": "A · Two Doors — \"the shop has two doors: for Rosie, for the Barn.\" Today's drop stays one mixed row; the stage under the doors follows the door. Collect. Cost: low — today's segmented control + the furnishing collection, in-tab." },
+    { "id": "b-one-aisle",  "x": 500,  "y": -170, "w": 390, "text": "B · One Aisle — \"scroll the shop; things are sorted by where they go.\" One scroll, sectioned by spot; the pinned strip flips Rosie ↔ her Barn at the seam; TODAY is a stamp on tiles. Collect. Cost: medium — sticky-strip flip logic, section jump-links." },
+    { "id": "c-try-it-on",  "x": 1000, "y": -170, "w": 390, "text": "C · Try It On — \"tap a spot on Rosie or her room, buy what fits there.\" Stage-first with six pins; a tapped tile hangs a ghost on your own wall before you spend. Collect + Connect. Cost: high — composes PigStage + HabitatScene, ghost placement, a drawer." },
+    { "id": "d-stalls",     "x": 1500, "y": -170, "w": 390, "text": "D · Market Stalls — \"buy from a stall; fill the table to earn its gifts.\" Sets mix a hat and a rug on one table with the furnishing milestones (4 · 8). Collect. Cost: medium-high — accessories need a collection_id; mixed milestones change the economy." },
+    { "id": "read-me",      "x": 1000, "y": 1020, "w": 520, "text": "Same stock on every board: 1,240-snout pocket · today's drop · Slop Club band (MEMBERS ribbon + lock) · hats & bows for Rosie · Harvest Hoedown / Orchard Morning furnishings · a snout price on every tile · Owned / Wearing / Placed / Season pass.\n\nTokens read from constants/theme.ts; card anatomy from app/(tabs)/shop.tsx ShopCard; sheet/chip/button/segmented from components/ui. Buttons are Nunito 800 as Button.tsx ships them. Art is the shipped art (rosie.png, warm_plank_barn, hats, habitat/expansion).\n\nWorking files: docs/design/claude-design/shop/" }
+  ],
+  "launch": { "view": "canvas" }
+}
