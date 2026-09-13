@@ -404,6 +404,13 @@ export const PAGE_PAD = 18;
 // the bar height, prefer useBottomTabBarHeight() + SPACE.xl.
 export const TAB_SAFE = 74;
 
+// A scrolling list of tilted stickers clips their corners and hard shadows at
+// its own edge. The list bleeds this far past its rows on every side and pads
+// its content back by the same amount, so the rows stay on the sheet's inset
+// and the clip edge lands past the 2pt shadow and the tilt's overhang.
+// (2026-09-13, the while-away recap)
+export const LIST_BLEED = SPACE.sm;
+
 // Durations, in ms. `modalHandoff` is the iOS nested-modal gap that UserSheet
 // repeated verbatim three times; `toast` is the one toast dwell; `debounce` the
 // one input settle. Pair with useMotionPolicy's MOTION_DURATION, which decides

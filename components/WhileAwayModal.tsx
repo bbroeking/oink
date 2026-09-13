@@ -9,13 +9,11 @@ import {
 	AdaptiveModalScaffold,
 	Avatar,
 	Button,
-	Hand,
 	Icon,
 	Kicker,
 	ListRow,
 	PageTitle,
 	RitualIconWell,
-	Sticker,
 } from "./ui";
 import {
 	BLESSING_META,
@@ -27,9 +25,9 @@ import {
 import {
 	AVATAR_SIZE,
 	BORDER,
+	LIST_BLEED,
 	RADII,
 	SPACE,
-	STICKER_SHADOW,
 	UI_COLORS,
 	WHIMSY,
 } from "@/constants/theme";
@@ -43,8 +41,12 @@ import { VISIT_EMOTE_IMAGES, type VisitEmoteId } from "@/utils/visitEmotes";
 const WELL_ICON = 18;
 const EMOTE_WELL = 52;
 const EMOTE_ART = 48;
-// How much of the dialog the recap list may claim before it scrolls.
-const RECAP_MAX_H = 270;
+// How much of the dialog the recap list may claim before it scrolls — the
+// rows' own band, plus the bleed on both ends so the visible rows don't lose
+// height to the gutter that keeps their corners and shadows unclipped.
+const RECAP_MAX_H = 270 + LIST_BLEED * 2;
+// The recap's frame: the reveal family's width (docs/reveal-family-spec.md).
+const RECAP_MAX_W = 390;
 
 // Discriminated union — blessings + curses + trades + system
 // announcements all surface in the same launch modal so the player
@@ -133,24 +135,35 @@ export function WhileAwayModal({
 						: "Blessings & curses landed";
 
 	return (
+		// The scaffold's paper frame with the close rail, and the heading IN the
+		// rail's row: kicker + title on the left, × on the right. Stacked under a
+		// 52pt rail the recap opened on a band of nothing; sharing the row gives
+		// that back and the first note sits one step under the title.
 		<AdaptiveModalScaffold
 			visible={visible}
 			onRequestClose={onDismiss}
 			animationType="fade"
-			bare
-			contentContainerStyle={styles.frame}
+			maxWidth={RECAP_MAX_W}
+			showCloseButton
+			closeLabel="Close this recap"
+			closeRowContent={
+				<View style={styles.heading}>
+					<Kicker>while you were away</Kicker>
+					<PageTitle numberOfLines={2}>{headline}</PageTitle>
+				</View>
+			}
+			contentContainerStyle={styles.sheet}
 		>
-			<Sticker
-				color="paper"
-				rotate={-1}
-				radius={RADII.xxl}
-				style={[styles.sheet, STICKER_SHADOW]}
-			>
-				<Kicker>while you were away</Kicker>
-				<PageTitle style={styles.headline}>{headline}</PageTitle>
-
+				{/* THE BLEED GUTTER. Each row is a tilted sticker with a hard shadow,
+				    and a ScrollView clips at its own edge — so the list is pulled
+				    out by LIST_BLEED on every side and its content padded back by
+				    the same amount. The rows stay on the sheet's inset; the clip
+				    edge lands past the shadow and the tilt's overhang. The two
+				    values must stay equal or the rows shift off the inset. */}
 				<ScrollView
 					style={styles.list}
+					contentContainerStyle={styles.listContent}
+					bounces={false}
 					showsVerticalScrollIndicator={false}
 				>
 					{events.map((e, i) => {
@@ -170,7 +183,7 @@ export function WhileAwayModal({
 									}
 									title={`${e.from ?? "A crewmate"} · ${e.crewName}`}
 									sub={e.body}
-									style={[styles.row, styles.rowSounder]}
+									style={styles.rowSounder}
 								/>
 							);
 						}
@@ -222,7 +235,7 @@ export function WhileAwayModal({
 									accessibilityHint={
 										tappable ? "Opens this note from the barn" : undefined
 									}
-									style={[styles.row, styles.rowSystem]}
+									style={styles.rowSystem}
 								/>
 							);
 						}
@@ -236,7 +249,7 @@ export function WhileAwayModal({
 									}
 									title={`${e.from ?? "A friend"} answered your trade`}
 									sub={`+${e.amount * 2} tickles landed in your barn.`}
-									style={[styles.row, styles.rowTrade]}
+									style={styles.rowTrade}
 								/>
 							);
 						}
@@ -263,39 +276,51 @@ export function WhileAwayModal({
 								sub={`${meta?.name ?? e.kind}${
 									meta?.blurb ? ` — ${meta.blurb}` : ""
 								}`}
-								style={[styles.row, blessed ? styles.rowBless : styles.rowCurse]}
+								style={blessed ? styles.rowBless : styles.rowCurse}
 							/>
 						);
 					})}
 				</ScrollView>
 
+				{/* The family's one primary. The foot note that hung under it ("See
+				    the full activity in the Friends tab") is gone: the rows already
+				    navigate on tap, and nothing sits below the primary. */}
 				<Button
-					variant="purple"
+					variant="gold"
 					size="md"
 					full
 					onPress={onDismiss}
-					style={styles.dismiss}
 					accessibilityLabel="Got it"
 					accessibilityHint="Closes this recap"
 				>
 					Got it
 				</Button>
-				<Hand tone="secondary" align="center" style={styles.foot}>
-					See the full activity in the Friends tab.
-				</Hand>
-			</Sticker>
 		</AdaptiveModalScaffold>
 	);
 }
 
 const styles = StyleSheet.create({
-	frame: { padding: SPACE.xs },
-	sheet: { padding: SPACE.lg },
-	headline: { marginBottom: SPACE.md },
-	list: { maxHeight: RECAP_MAX_H },
+	// The sheet's inset: sides and bottom; the top is the close rail's row.
+	sheet: {
+		paddingHorizontal: SPACE.xl,
+		paddingBottom: SPACE.xl,
+		gap: SPACE.md,
+	},
+	heading: { gap: SPACE.xxs },
+	// Bleed: the clip edge sits LIST_BLEED outside the rows on all four sides.
+	list: {
+		maxHeight: RECAP_MAX_H,
+		marginHorizontal: -LIST_BLEED,
+		marginVertical: -LIST_BLEED,
+	},
+	listContent: {
+		paddingHorizontal: LIST_BLEED,
+		paddingVertical: LIST_BLEED,
+		gap: SPACE.sm,
+	},
 	// Each row keeps its event class's fill; the drawing (border, radius,
-	// shadow, tilt, text roles) is ListRow's.
-	row: { marginBottom: SPACE.sm },
+	// shadow, tilt, text roles) is ListRow's. Spacing is the list's `gap`, so
+	// no per-row margin doubles up at the bleed edge.
 	rowBless: { backgroundColor: WHIMSY.sun },
 	rowCurse: { backgroundColor: WHIMSY.sage },
 	rowTrade: { backgroundColor: WHIMSY.rose },
@@ -314,6 +339,4 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	emote: { width: EMOTE_ART, height: EMOTE_ART },
-	dismiss: { marginTop: SPACE.sm },
-	foot: { marginTop: SPACE.sm },
 });

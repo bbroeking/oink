@@ -32,6 +32,8 @@ interface Props {
 	keyboardAware?: boolean;
 	showCloseButton?: boolean;
 	closeLabel?: string;
+	/** A heading that shares the close rail's row (see DialogCloseRow). */
+	closeRowContent?: React.ReactNode;
 	bare?: boolean;
 	frameStyle?: StyleProp<ViewStyle>;
 	contentContainerStyle?: StyleProp<ViewStyle>;
@@ -64,6 +66,7 @@ export function AdaptiveModalScaffold({
 	keyboardAware = false,
 	showCloseButton = false,
 	closeLabel = "Close",
+	closeRowContent,
 	bare = false,
 	frameStyle,
 	contentContainerStyle,
@@ -97,7 +100,9 @@ export function AdaptiveModalScaffold({
 			]}
 		>
 			{showCloseButton && (
-				<DialogCloseRow onPress={onRequestClose} label={closeLabel} />
+				<DialogCloseRow onPress={onRequestClose} label={closeLabel}>
+					{closeRowContent}
+				</DialogCloseRow>
 			)}
 			<ScrollView
 				bounces={false}
