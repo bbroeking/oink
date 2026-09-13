@@ -76,15 +76,35 @@ describe("sniff", () => {
     expect(s.ended).toBeNull();
   });
 
-  test("never ends a dig in topsoil or the mud, whatever the stream says", () => {
+  test("never ends a dig in topsoil, whatever the stream says", () => {
     for (let seed = 1; seed <= 400; seed++) {
       let s = initialState(board(seed), opts);
-      for (let tile = 0; tile < 6; tile++) s = act(s, "sniff", tile);
-      expect(s.ended).toBeNull();
-      s = descend(s);
-      for (let tile = 0; tile < 6; tile++) s = act(s, "sniff", tile);
+      for (let tile = 0; tile < 12; tile++) s = act(s, "sniff", tile);
       expect(s.ended).toBeNull();
       expect(s.actions).toHaveLength(12);
+    }
+  });
+
+  test("costs a little below topsoil: mud sniffs wake at 3/120, topsoil rubs at 1/120", () => {
+    const rate = (layer: 0 | 1, verb: "sniff" | "rub") => {
+      let trials = 0;
+      let woke = 0;
+      for (let i = 1; i <= 1000; i++) {
+        const seed = (i * 104729 + 12345) % 2147483646;
+        let s = toLayer(initialState(board(seed), opts), layer);
+        for (let tile = 0; tile < 8 && !s.ended; tile++) {
+          s = act(s, verb, tile);
+          trials++;
+          if (s.ended?.reason === "wake") woke++;
+        }
+      }
+      return { trials, observed: woke / trials, expected: wakeThreshold(layer, verb, false) / 120 };
+    };
+    for (const [layer, verb] of [[1, "sniff"], [0, "rub"]] as const) {
+      const r = rate(layer, verb);
+      expect(r.trials).toBeGreaterThanOrEqual(1000);
+      expect(r.expected).toBeGreaterThan(0);
+      expect(Math.abs(r.observed - r.expected)).toBeLessThan(0.01);
     }
   });
 

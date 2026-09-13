@@ -64,8 +64,13 @@ const REVEAL_TILT = 1.2;
 
 const VERBS: readonly Verb[] = ["sniff", "rub", "shove"];
 const VERB_LABEL: Readonly<Record<Verb, string>> = { sniff: "Sniff", rub: "Rub", shove: "Shove" };
-const VERB_SUB_SHALLOW: Readonly<Record<Verb, string>> = { sniff: "free", rub: "quiet", shove: "loud" };
-const VERB_SUB_ROOT: Readonly<Record<Verb, string>> = { sniff: "quietest", rub: "quiet", shove: "loud" };
+// The price under each verb, per layer. Topsoil's sniff is the only free
+// action in the dig; from the mud down a sniff is the quietest, never free.
+const VERB_SUB: Readonly<Record<Layer, Readonly<Record<Verb, string>>>> = {
+  0: { sniff: "free", rub: "quiet", shove: "loud" },
+  1: { sniff: "quietest", rub: "quiet", shove: "loud" },
+  2: { sniff: "quietest", rub: "quiet", shove: "loud" },
+};
 const LAYER_CHIP: Readonly<Record<Layer, string>> = { 0: "topsoil", 1: "the mud", 2: "the root" };
 
 export interface SnoutDeepPatchProps {
@@ -281,11 +286,11 @@ export function SnoutDeepPatch({
               key={v}
               role="radio"
               label={VERB_LABEL[v]}
-              sub={(atRoot ? VERB_SUB_ROOT : VERB_SUB_SHALLOW)[v]}
+              sub={VERB_SUB[state.layer][v]}
               selected={verb === v}
               tone={verb === v ? "sun" : "paper"}
               onPress={() => setVerb(v)}
-              accessibilityLabel={`${VERB_LABEL[v]}, ${(atRoot ? VERB_SUB_ROOT : VERB_SUB_SHALLOW)[v]}`}
+              accessibilityLabel={`${VERB_LABEL[v]}, ${VERB_SUB[state.layer][v]}`}
               accessibilityHint="Selects what a tap on the patch does"
               style={styles.verbChip}
             />

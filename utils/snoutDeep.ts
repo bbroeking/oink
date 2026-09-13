@@ -13,9 +13,9 @@
 //     ("s2:14" / "r2:14" / "h2:14" = sniff / rub / shove, LAYER (0-based —
 //     the `Layer` type's own numbering: 0 topsoil · 1 mud · 2 the root), then
 //     ":" and the tile index) and one wake draw;
-//   · a sniff marks scent and never rolls in layers 0–1 (threshold 0); at the
-//     root it rolls at 7 (4 co-op) — the roll is drawn either way so the
-//     server's k-th draw is the client's k-th draw;
+//   · every verb draws once. A sniff marks scent; its threshold is 0 in
+//     topsoil (truly never), 3 in the mud, 7 at the root (4 co-op). A rub is
+//     1 · 6 · 15 (8 co-op). Sniff and rub are never free below topsoil;
 //   · a no-op (cleared tile, re-sniff, out of bounds, ended dig) changes
 //     nothing and consumes no draw;
 //   · rub / shove go through the shared applySplash kernel (rub −1/−½, shove
@@ -489,6 +489,8 @@ const ODDS_WORDS: Readonly<Record<number, string>> = {
   17: "seventeen",
   20: "twenty",
   30: "thirty",
+  40: "forty",
+  120: "a hundred and twenty",
 };
 export function oddsPhrase(threshold: number): string {
   if (threshold <= 0) return "never";
@@ -683,15 +685,15 @@ export function whisperFor(state: SnoutDeepState): string {
   const hasLow = state.scent.some((s) => s === 1);
   if (state.layer === 0) {
     if (sniffed === 0)
-      return "topsoil. press your snout to the mud to sniff — the mark is how many finds touch that tile. a rub moves a little, a shove a lot. he sleeps through all of it.";
+      return "topsoil. press your snout to the mud to sniff — the mark is how many finds touch that tile. a rub moves a little, a shove a lot. a sniff never wakes him here; a rub almost never.";
     if (hasHigh && hasLow) return "a 3 beside a 1 — the truffle runs one way. follow the bigger number.";
     if (state.loose) return "the truffle is loose. tie it off, or dig deeper and bank it on the way down.";
     return "a 0 means nothing touches that tile. the numbers only ever tell the truth.";
   }
   if (state.layer === 1) {
-    if (sniffed === 0) return "the mud. fatter down here — and he sleeps lighter. sniffs are still free.";
+    if (sniffed === 0) return "the mud. fatter down here — and he sleeps lighter. a sniff is the quiet way to know: one in forty stirs him. a rub, one in twenty.";
     if (state.loose) return "the fat one is loose. the root has no truffle of its own — it pays for this one, if you tie it there.";
-    return "one rub in twenty stirs him here. a sniff never does.";
+    return "one rub in twenty stirs him here. one sniff in forty. nothing here is free.";
   }
   if (sniffed === 0)
     return `the root. a 1 on its own is usually a thing, not a truffle. ${oddsPhrase(
@@ -905,14 +907,18 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
         if (state.ended || spent() >= layerActions) break;
         state = reduce(state, { type: "act", verb: "sniff", tile: t });
       }
-      // Where a rub costs and a sniff is free (the mud) a second round pins
-      // the strongest mark down: sniff the four tiles beside it, so the tile
-      // the marks agree on is almost always the truffle — then rub only that.
-      // In topsoil every verb is free, so the lattice alone is the cheaper
-      // read; at the root a sniff rolls, so the lattice is all the bot buys.
+      // A second round pins the strongest mark down where a sniff is under
+      // HALF a rub — the root (7 vs 15). In the mud a sniff is exactly half
+      // (3 vs 6), and four more of them cost as much sleep as two rubs, so
+      // the lattice alone is the cheaper read there; in topsoil a rub is a
+      // hundred-and-twenty-to-one, so rubbing is the read. Skipped when
+      // nothing read ≥ 2: a lattice with no lead is not worth four actions.
+      // (Tuned 2026-09-13 against the priced sniff: this is what keeps the
+      // nose ahead of blind play on finds, GT and sleep together.)
       if (
-        wakeThreshold(layer, "sniff", state.coop) === 0 &&
-        wakeThreshold(layer, "rub", state.coop) > 0
+        layer > 0 &&
+        wakeThreshold(layer, "sniff", state.coop) * 2 < wakeThreshold(layer, "rub", state.coop) &&
+        NOSE_LATTICE.some((t) => (state.scent[t] ?? 0) >= 2)
       ) {
         let strongest = -1;
         let strongestScent = 0;
@@ -931,10 +937,10 @@ export function simulateSnoutDeep(seed: number, policy: Policy): SimResult {
         }
       }
     }
-    // Leave a layer the moment its truffle is loose where a rub costs (the
-    // mud); where every verb is free (topsoil) spend the whole budget — the
-    // things are free to take.
-    const leaveWhenLoose = wakeThreshold(layer, "rub", state.coop) > 0;
+    // Leave a layer the moment its truffle is loose where a rub costs real
+    // sleep (the mud, the root); in topsoil a rub is a hundred-and-twenty-to-
+    // one, so spend the whole budget — the things there are worth it.
+    const leaveWhenLoose = layer > 0;
     while (!state.ended && !(leaveWhenLoose && state.loose) && spent() < layerActions) {
       if (!step()) break;
     }

@@ -24,9 +24,14 @@ describe("simulateSnoutDeep over 2,000 seeds", () => {
       expect(r.actions).toBeLessThanOrEqual(45);
       expect(r.woke).toBe(r.endReason === "wake");
       if (r.woke) expect(r.wokeLayer).toBe(r.reachedLayer);
-      // Topsoil never wakes him on a rub or a sniff — both bots only rub there.
-      expect(r.wokeLayer).not.toBe(0);
-      expect(r.survived[0]).toBe(true);
+    }
+    // Topsoil rubs cost a little (1/120), so a topsoil wake is possible but
+    // rare: a bot spending its whole 15-action budget there can wake him at
+    // most 1 − (119/120)^15 ≈ 11.8 % of the time. Sniffs there never do.
+    const topsoilCeiling = 1 - Math.pow(119 / 120, 15) + 0.02;
+    for (const rs of [nose, blind]) {
+      const topsoilWakes = rs.filter((r) => r.wokeLayer === 0).length / rs.length;
+      expect(topsoilWakes).toBeLessThan(topsoilCeiling);
     }
   });
 

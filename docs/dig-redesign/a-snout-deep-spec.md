@@ -55,7 +55,7 @@ The kernel is today's `applySplash`, unchanged, floored at 0:
 
 | verb | input | the tile | 4 neighbours | moves mud | wake roll |
 | --- | --- | --- | --- | --- | --- |
-| **Sniff** | tap with Sniff selected | marks scent (§1.3) | — | no | root only |
+| **Sniff** | tap with Sniff selected | marks scent (§1.3) | — | no | mud and root |
 | **Rub** | tap / brush | −1 | −½ | yes | yes |
 | **Shove** | hold 400 ms | −2 | −1 | yes | yes |
 
@@ -92,18 +92,22 @@ The kernel is today's `applySplash`, unchanged, floored at 0:
 
 | layer | sniff | rub | shove |
 | --- | --- | --- | --- |
-| topsoil | 0 | 0 | 10 |
-| mud | 0 | 6 | 20 |
+| topsoil | 0 (truly never) | 1 | 10 |
+| mud | 3 | 6 | 20 |
 | the root | 7 | 15 | 40 |
 
-(in 120ths: mud rub 1 in 20 · shove 1 in 6 · root sniff ≈ 1 in 17 · rub 1 in
-8 · shove 1 in 3.)
+(in 120ths: topsoil rub 1 in 120 · shove 1 in 12 · mud sniff 1 in 40 · rub 1
+in 20 · shove 1 in 6 · root sniff ≈ 1 in 17 · rub 1 in 8 · shove 1 in 3.)
 
 - **Co-op.** When a crewmate has submitted this Feeding, the root's **sniff
   and rub** thresholds halve (7 → 4, 15 → 8; integer floor + 1). Shove is
   unchanged. Nothing else in the game changes with co-op.
-- **Sniffs never wake him in topsoil or the mud.** The nose is the mechanic
-  the first two layers teach; it must be safe there.
+- **Sniff and rub always cost a little.** Every sniff and every rub spends
+  an action and takes a discovery roll; below topsoil their threshold is
+  never 0 — a sniff is half a rub at every layer. The one 0 is the topsoil
+  sniff: in topsoil a sniff truly never wakes him, so the nose is learned on
+  the tutorial layer at the price of actions only. (Amended 2026-09-13 from
+  "never in topsoil or the mud".)
 
 ### 1.5 Loose, banked, food, things
 
@@ -120,6 +124,8 @@ The kernel is today's `applySplash`, unchanged, floored at 0:
   he re-buries it, gilded, next Feeding. Everything banked in earlier layers
   and every thing found is untouched. `+20 Pass XP` is paid; the dig counts
   as submitted.
+- Topsoil cannot wake on a sniff; a topsoil rub is one in a hundred and
+  twenty, so a topsoil-only dig is nearly, not perfectly, safe.
 
 ### 1.6 Dig deeper, tie, end
 
@@ -201,9 +207,12 @@ Every row is a Field Guide entry (silhouette until met). Stones are inert.
   `'blessed_dig'` +1 each as today. Uncrewed: 0 GT, everything else.
 - **Back of envelope.** Today ≈ 0.85 GT/dig. Topsoil tie ≈ 0.9; push to mud
   and tie ≈ 0.66 survival × 2 + 0.34 × 1 (topsoil already banked) ≈ 1.66;
-  push to root ≈ 0.34 × 3 + 0.32 × 2 + 0.34 × 1 ≈ 2.0 GT. Bank-on-descent
-  raises the faucet; the Exchange's prices (25–500 GT) are re-checked in §11
-  step 6 and `'dig_root'` may drop to 0 if the sim says so.
+  push to root ≈ 0.34 × 3 + 0.32 × 2 + 0.34 × 1 ≈ 2.0 GT. **Sim (2,000
+  seeds, priced sniff):** nose 3.87 finds · 1.76 GT · 69 % woke · 74 % of
+  root pushes survive five actions; blind 3.79 · 1.34 · 93 % · 52 %; mud-tie
+  EV 1.45. Bank-on-descent raises the faucet; the Exchange's prices (25–500
+  GT) are re-checked in §11 step 6 and `'dig_root'` may drop to 0 if the sim
+  says so.
 - **Closed economy.** Every mint server-side via `mint_truffles` (999 cap,
   ledgered, reasons `'dig'` · `'dig_deep'` · `'dig_root'` · `'dig_echo'` ·
   `'blessed_dig'`); things through their own idempotent paths keyed
@@ -242,19 +251,22 @@ dialogs on the reveal family's Ledger sheet.
    his if he wakes* / *tied · yours for keeps*); the footer (*Tie it off* ·
    *Dig deeper*; at the root *Tie it off · +N Golden Truffles* is the gold
    primary); the verb bar (*Sniff · Rub · Shove*, sub-labels *free · quiet ·
-   loud* in topsoil and mud, *quietest · quiet · loud* at the root; the
-   selected verb on sun; hold-to-shove works regardless).
+   loud* in topsoil, *quietest · quiet · loud* in the mud and at the root;
+   the selected verb on sun; hold-to-shove works regardless).
 3. **Reveal.** A thing surfaces with a full-width sticker the moment its tile
    clears (*a Tickle Boom · +19 tickles, yours*; *a Rusty Lantern · new for
    the Barn*; *a Clockwork Acorn · a day of the Auto-Tickler*) and lands in
    the *tied* well; a truffle lands in *loose*.
 4. **Whispers** teach rules and say *that* something is near, never what:
    *topsoil. press your snout to the mud to sniff — the mark is how many
-   finds touch that tile. a rub moves a little, a shove a lot. he sleeps
-   through all of it.* · *a 3 beside a 1 — the truffle runs left.* · *the
-   mud. fatter down here — and he sleeps lighter.* · *the root. a 1 on its
-   own is usually a thing, not a truffle. one rub in eight wakes him now.
-   one sniff in seventeen.*
+   finds touch that tile. a rub moves a little, a shove a lot. a sniff never
+   wakes him here; a rub almost never.* · *a 3 beside a 1 — the truffle runs
+   one way. follow the bigger number.* · *the mud. fatter down here — and he
+   sleeps lighter. a sniff is the quiet way to know: one in forty stirs him.
+   a rub, one in twenty.* · *one rub in twenty stirs him here. one sniff in
+   forty. nothing here is free.* · *the root. a 1 on its own is usually a
+   thing, not a truffle. one rub in eight wakes him now. one sniff in
+   seventeen.*
 5. **The decision** (layer-clear sheet, Ledger): kicker *layer one is clear*,
    title *A truffle, loose in the pouch.*, count *dig deeper banks it — the
    next layer stakes only its own*; rows *Tie it off · +1 Golden Truffle · +20
@@ -405,8 +417,9 @@ restore replays through `reduce`).
 1. On the dev route, a full dig on a fixed seed plays end to end on the web
    target and the sim with no server: sniff, rub, shove, descend, tie, wake,
    cap, and the three sheets.
-2. Sniffs in topsoil and mud never end a dig; at the root, over 1,000 seeded
-   sniffs, the wake rate is 7/120 ± 1 % (4/120 with `coop`).
+2. Topsoil sniffs never end a dig; over 1,000 seeded actions per layer the
+   wake rates match the table within ± 1 % — topsoil rub 1/120, mud sniff
+   3/120, root sniff 7/120 (4/120 with `coop`).
 3. Descending banks the loose truffle: a wake in the mud never removes a
    topsoil truffle from `banked`.
 4. Every thing revealed before a wake is in `things` after it.
@@ -466,7 +479,9 @@ restore replays through `reduce`).
 
 - A over B and C; C's sniff verb folded in; tiles 2 deep so a rub half-clears.
 - Bank on descent: each layer stakes only its own truffle.
-- Sniffs never wake in topsoil or mud; 7/120 at the root (half the rub).
+- Sniff and rub always cost a little: topsoil sniff 0 (truly never) · rub 1;
+  mud sniff 3 · rub 6; root sniff 7 · rub 15 (co-op 4 · 8). Amended
+  2026-09-13 from "never in topsoil or mud".
 - Scent counts every find tile; stones never.
 - The whisper says *that* something is near and teaches rules; never names a thing.
 - Kernel unchanged; actions on cleared tiles are no-ops (no action, no roll).

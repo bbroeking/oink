@@ -171,10 +171,12 @@ describe("the wake stream", () => {
 
 describe("wakeThreshold — the §1.4 table", () => {
   test("solo", () => {
+    // Sniff and rub are never 0 below topsoil; the topsoil sniff is the one
+    // true never (2026-09-13 pricing amendment).
     expect(wakeThreshold(0, "sniff", false)).toBe(0);
-    expect(wakeThreshold(0, "rub", false)).toBe(0);
+    expect(wakeThreshold(0, "rub", false)).toBe(1);
     expect(wakeThreshold(0, "shove", false)).toBe(10);
-    expect(wakeThreshold(1, "sniff", false)).toBe(0);
+    expect(wakeThreshold(1, "sniff", false)).toBe(3);
     expect(wakeThreshold(1, "rub", false)).toBe(6);
     expect(wakeThreshold(1, "shove", false)).toBe(20);
     expect(wakeThreshold(2, "sniff", false)).toBe(7);

@@ -200,8 +200,11 @@ export const WAKE_DIE = 120;
 export const WAKE_TABLE: Readonly<
   Record<SnoutDeepLayer, Readonly<Record<SnoutDeepVerb, number>>>
 > = {
-  0: { sniff: 0, rub: 0, shove: 10 },
-  1: { sniff: 0, rub: 6, shove: 20 },
+  // Sniff and rub always cost a little: their threshold is never 0 where
+  // discovery is possible. The one 0 is the topsoil sniff — in topsoil a
+  // sniff truly never wakes him, the tutorial verb on the tutorial layer.
+  0: { sniff: 0, rub: 1, shove: 10 },
+  1: { sniff: 3, rub: 6, shove: 20 },
   2: { sniff: 7, rub: 15, shove: 40 },
 };
 // Co-op (a crewmate submitted this Feeding) halves the ROOT's sniff and rub
