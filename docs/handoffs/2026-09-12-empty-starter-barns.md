@@ -7,9 +7,15 @@ discovery copy explain this, and the local acceptance fixture matches it.
 
 ## Database rollout
 
-Pending migration: `supabase/migrations/20260912153621_empty_starter_barns.sql`.
-No linked database changes have been applied for this request. The read-only
-migration list showed remote migrations applied through `20260912020000`.
+Pending migration: `supabase/migrations/20260913050000_empty_starter_barns.sql`
+(renumbered 2026-09-13 from `20260912153621`: `20260913000000` and
+`20260913030000` were applied to the linked project after it was written, so it
+no longer sorted after the applied boundary and a plain `db push` refused it
+with `LegacyDbPushMissingRemoteError`; the body is byte-identical). No linked
+database changes have been applied for this request. On 2026-09-13 the linked
+project still seeds the three starter placements (`_ensure_habitat_starter`
+contains the slot INSERT), with 27 barns: 23 untouched at revision 0 carrying
+exactly the seeded set (the migration empties these) and 4 saved (preserved).
 
 Owner claim, authorized friend inspection, and eligible discovery use the same
 empty-room initializer. It retains starter grant keys and prestige rewards.

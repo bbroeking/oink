@@ -26,7 +26,7 @@ copy-paste step.
 Housing is enabled for everyone who installs build 180. Existing installed
 clients are unaffected; no remote habitat flag flip is required. Housing
 migrations through `20260910130000_habitat_completion.sql` are already applied.
-The empty starter migration `20260912153621_empty_starter_barns.sql` remains
+The empty starter migration `20260913050000_empty_starter_barns.sql` (renumbered from `20260912153621` on 2026-09-13 so it sorts after the applied boundary) remains
 pending a separate explicit database go; do not mark that behavior accepted
 until it is applied and verified. The generated three-background browser
 chooser is not included in this binary.

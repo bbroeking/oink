@@ -1,6 +1,6 @@
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
-import { StyleSheet, Text } from "react-native";
+import { Image, StyleSheet, Text } from "react-native";
 import {
   HabitatScene,
   habitatRect,
@@ -162,6 +162,67 @@ describe("Habitat scene contract", () => {
       renderer.root.findByProps({ testID: "habitat-room-summary" }).props
         .accessibilityLabel,
     ).toContain("3 of 6 decorating spots furnished");
+  });
+
+  test("a fresh room renders only the shell: no item art, no placeholder decor, no slot controls", () => {
+    // The server's starter is the Warm Plank shell with every decorating spot
+    // empty (20260913050000_empty_starter_barns). The rest state must draw
+    // exactly that — placement targets only appear while editing.
+    let renderer!: TestRenderer.ReactTestRenderer;
+    expect(() => {
+      renderer = TestRenderer.create(
+        <HabitatScene
+          snapshot={snapshot()}
+          hostPig={<Text testID="host">host</Text>}
+          onInspect={jest.fn()}
+        />,
+      );
+    }).not.toThrow();
+    const images = renderer.root.findAllByType(Image);
+    expect(images).toHaveLength(1);
+    expect(images[0].props.testID).toBe("habitat-room-theme");
+    expect(images[0].props.source).toBe(habitatItemAsset("warm_plank_barn"));
+    expect(
+      renderer.root.findAll(
+        (node) =>
+          typeof node.props.testID === "string" &&
+          node.props.testID.startsWith("habitat-item-"),
+      ),
+    ).toHaveLength(0);
+    for (const position of HABITAT_DECOR_POSITIONS) {
+      expect(
+        renderer.root.findAllByProps({
+          testID: `habitat-position-${position}`,
+        }),
+      ).toHaveLength(0);
+    }
+    expect(
+      renderer.root.findAllByProps({
+        testID: "habitat-position-interior_background",
+      }),
+    ).toHaveLength(0);
+    expect(renderer.root.findByProps({ testID: "host" })).toBeTruthy();
+    expect(
+      renderer.root.findByProps({ testID: "habitat-room-summary" }).props
+        .accessibilityLabel,
+    ).toContain("0 of 6 decorating spots furnished");
+    act(() =>
+      renderer.update(
+        <HabitatScene snapshot={snapshot()} editing onSelectPosition={jest.fn()} />,
+      ),
+    );
+    expect(
+      renderer.root.findAll(
+        (node) =>
+          typeof node.props.testID === "string" &&
+          node.props.testID.startsWith("habitat-item-"),
+      ),
+    ).toHaveLength(0);
+    expect(renderer.root.findAllByType(Image)).toHaveLength(1);
+    expect(
+      renderer.root.findByProps({ accessibilityLabel: "Rafters, empty" }),
+    ).toBeTruthy();
+    renderer.unmount();
   });
 
   test("edit scene exposes all seven named controls and only selects through its callback", () => {

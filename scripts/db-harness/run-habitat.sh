@@ -25,7 +25,7 @@ cat scripts/db-harness/00_stub.sql \
 		supabase/migrations/20260910130000_habitat_completion.sql \
 		scripts/db-harness/80_habitat_completion_smoke.sql \
 		scripts/db-harness/00s_empty_starter_barns_prep.sql \
-		supabase/migrations/20260912153621_empty_starter_barns.sql \
+		supabase/migrations/20260913050000_empty_starter_barns.sql \
 		scripts/db-harness/81_empty_starter_barns_smoke.sql \
 		supabase/migrations/20260913020000_retire_barn_guestbook.sql \
 		scripts/db-harness/85_retire_barn_guestbook_smoke.sql \

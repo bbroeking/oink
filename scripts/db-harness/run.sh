@@ -261,7 +261,7 @@ cat scripts/db-harness/00_stub.sql "${CHAIN[@]}" "$@" \
 		supabase/migrations/20260910130000_habitat_completion.sql \
 		scripts/db-harness/80_habitat_completion_smoke.sql \
 		scripts/db-harness/00s_empty_starter_barns_prep.sql \
-		supabase/migrations/20260912153621_empty_starter_barns.sql \
+		supabase/migrations/20260913050000_empty_starter_barns.sql \
 		scripts/db-harness/81_empty_starter_barns_smoke.sql \
 		supabase/migrations/20260906200000_mote_secure_bucket_extension_resolution.sql \
 		scripts/db-harness/75_mote_secure_bucket_extension_resolution_smoke.sql \
