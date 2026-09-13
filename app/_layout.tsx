@@ -959,6 +959,18 @@ function RootLayoutInner() {
         }}
       >
         <Stack.Screen name="(tabs)" />
+        {/* The Barn's doors ARE its route transition: the Exterior closes its
+            threshold panels, pushes this route behind them, and the interior
+            swings its own doors open. The route must therefore cut with no
+            native animation — and that has to be declared HERE, at the
+            navigator, because the `animation: "none"` the screen sets on
+            itself arrives via setOptions after the push is already sliding
+            (a card with half-open doors gliding in over the closed threshold).
+            (2026-09-13) */}
+        <Stack.Screen
+          name="barn-interior"
+          options={{ animation: "none", gestureEnabled: false }}
+        />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="dark" />

@@ -54,11 +54,20 @@ const assets = {
 
 function gDoor(fill) { return `<g ${outline}><path d="M34 286V46Q130 -5 226 46V286Z" fill="${fill}"/><path d="M130 17V286M34 105H226M34 193H226"/><circle cx="107" cy="177" r="10" fill="#FFD87A"/><circle cx="153" cy="177" r="10" fill="#FFD87A"/></g>`; }
 
+// Rasters export at the SVG's own 1x size: furnishings are drawn small on
+// screen. The barn door is the exception — `HabitatDoorTransition` covers the
+// whole phone with it (each panel cover-fits the pair to the screen height), so
+// a 300px-tall export was magnified ~9.5x on a 3x Pro Max (956pt) and every
+// edge turned to mush. It renders at 10x (2600×3000) so the tallest phone still
+// draws it at 1:1 or better. ImageMagick's SVG renderer treats 96 dpi as 1x.
+const SVG_BASE_DPI = 96;
+const RASTER_SCALE = { barn_door: 10 };
+
 for (const [name, content] of Object.entries(assets)) {
   const source = resolve(SRC, `${name}.svg`);
   const output = resolve(OUT, `${name}.png`);
   writeFileSync(source, content);
-  execFileSync("magick", ["-background", "none", source, "-strip", output]);
+  execFileSync("magick", ["-background", "none", "-density", String(SVG_BASE_DPI * (RASTER_SCALE[name] ?? 1)), source, "-strip", output]);
   if (!["warm_plank_barn", "spring_whitewash", "midnight_rafters"].includes(name)) {
     execFileSync("magick", [output, "-background", "none", "-gravity", "center", "-resize", "180x180", "-extent", "192x192", "-strip", resolve(THUMBS, `${name}.png`)]);
   } else {

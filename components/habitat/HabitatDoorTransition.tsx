@@ -125,7 +125,10 @@ const styles = StyleSheet.create({
   panel: { position: "absolute", top: 0, bottom: 0, width: "51%", overflow: "hidden", backgroundColor: WHIMSY.bark },
   left: { left: 0 }, right: { right: 0 },
   // The door art is drawn as a full pair, so each panel shows one half of a
-  // double-width image.
+  // double-width image. `cover` fits the pair to the panel's full height, so
+  // the raster is magnified to the phone: `barn_door.png` is exported at 10x
+  // of its SVG (2600×3000, `scripts/habitat/generate-art.mjs`) so a 3x Pro Max
+  // never upsamples it — the 1x export it started on blurred every edge.
   doorImage: { width: "200%", height: "100%" },
   doorImageRight: { position: "relative", left: "-100%", width: "200%", height: "100%" },
 });
