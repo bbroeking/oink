@@ -1,347 +1,472 @@
-# Snout Deep — the Truffle Patch as a press-your-luck dig (spec)
+# Snout Deep — the Truffle Patch as a press-your-luck dig with a nose (spec)
 
-> **Status:** proposed 2026-09-13 (design canvas: *Truffle Patch Redesign*,
-> direction A). One of three equal-depth iterations on the shipped patch;
-> siblings: `b-one-patch-four-snouts-spec.md`, `c-sniff-and-dig-spec.md`.
-> Nothing here is built. Companion diagnosis lives on the canvas's first board.
-> **Chosen 2026-09-13** over B and C. Amended the same day: the find table
-> (Barn furnishings, booms, acorns), the food/things rule, the tickle
-> catch-up, and the hidden practice dig.
+> **Status:** chosen 2026-09-13 (direction A of *Truffle Patch Redesign*, with
+> C's sniff verb folded in; the grill of the same day resolved every rule
+> below). Siblings for reference: `b-one-patch-four-snouts-spec.md`,
+> `c-sniff-and-dig-spec.md`. Screen flow: the *Snout Deep* canvas. This file is
+> the build's source of truth; §7 is the reducer's contract.
 
 ## The sentence
 
-**"Dig as deep as you dare — tie off the pouch before he wakes."**
+**"Sniff to know, rub to take, dig as deep as you dare — tie off before he
+wakes."**
 
 ## Shape
 
-- **Opening.** The patch is three layers: **topsoil · mud · the root**. The
-  Great Hungerer sleeps at its edge (snoring). Topsoil is safe.
-- **The one new decision.** At any moment: **Tie it off** (bank everything
-  loose, dig over) or **keep digging / Dig deeper** (better finds below; a
-  lighter sleeper). Everything found is *loose* until tied. There is exactly
-  one tie per dig.
-- **Pressure.** Every action rolls against the layer's wake odds. His face is
-  the meter: snoring → stirring → one eye open. He does one thing, once: he
-  wakes, and whatever is loose is his.
-- **End.** Tie (banked) · wake (loose lost, floor paid) · pack up at 45 actions
-  (the hard cap; treated as a tie).
-- **Duration.** 12–30 actions, 40–90 s. Topsoil ≈ 10 rubs, mud ≈ 8, root ≈ 5.
+- **Opening.** The patch is three layers — **topsoil · mud · the root** — each
+  6 × 5 tiles, every tile **2 deep**. You see one layer at a time. The Great
+  Hungerer sleeps at the edge: *snoring* in topsoil, *stirring* in the mud,
+  *one eye open* at the root. Topsoil is safe.
+- **Three verbs, a ladder of quiet.** **Sniff** (know) · **Rub** (take a
+  little) · **Shove** (take a lot, loudly). No stir budget; the cost of an
+  action is noise — its chance of waking him.
+- **The one decision.** At any moment: **Tie it off** (bank the layer's loose
+  truffle, dig over) or **Dig deeper** (the next layer: fatter finds, rarer
+  things, a lighter sleeper). Crossing a layer **banks everything loose** —
+  each layer stakes only its own truffle.
+- **Pressure.** Every action rolls once against the layer's wake odds. His
+  face is the meter. He does one thing, once: he wakes and takes the loose
+  truffle.
+- **End.** Tie · wake · 45 actions (treated as a tie) · window close (treated
+  as a tie, server-side).
+- **Duration.** 12–30 actions, 40–90 s. A layer's truffle costs ≈ 4 rubs with
+  a sniff, ≈ 8 without.
 
-## Rules
+## 1. Rules
 
-- **Geometry.** 3 layers × 6×5 tiles, every tile depth 1. Reuses
-  `PATCH_COLS/PATCH_ROWS`; new `PATCH_LAYERS = 3`.
-- **Layout.** `generateLayeredBoard(seed, uniqueId)` — new in `utils/rooting.ts`.
-  Consumes the same first four parity draws as `generateBoard` (L orientation,
-  domino orientation, shimmer present, junk kind) so `rooting_finds(seed)` is
-  unchanged; every later draw is layout. Placement by layer: topsoil = domino
-  truffle, junk, 3 stones; mud = L truffle, shimmer (if drawn), 2 stones; root =
-  relic (server-rolled, 2 in 5), 1 stone. A layer is drawn on demand when entered.
-- **Actions.** Rub (tap/brush): `applySplash(layers, idx, "rub")` unchanged —
-  clears the tile, half-clears 4 neighbours. Shove (hold 400 ms):
-  `applySplash(..., "shove")` unchanged — clears the tile and 4 neighbours.
-  No stir cost. Cost is noise:
-  | layer | rub wakes | shove wakes |
-  | --- | --- | --- |
-  | topsoil | 0 | 1 in 12 |
-  | mud | 1 in 20 | 1 in 6 |
-  | the root | 1 in 8 | 1 in 3 |
-- **Wake roll.** Deterministic: `wakeStream = new Minstd((seed * 7919) % 2147483647)`;
-  the k-th action draws `nextInt(120)` and wakes when the draw is below the
-  layer/kind threshold (0 · 10 · 6 · 20 · 15 · 40 in 120ths). Client and server
-  replay the same stream; the client cannot pick a lucky roll.
-- **Dig deeper.** Available once the current layer's truffle is uncovered, or
-  anytime after 6 actions in the layer. Enters the next layer; finds left
-  behind are *missed* (carry-eligible, as today).
-- **Loose vs kept — he eats food, he can't eat things.** Uncovered *food*
-  (truffle clusters, shimmer, apples) is loose until tied. Uncovered *things*
-  (booms, acorns, tea, scrolls, keepsakes, furnishings, cosmetics, relics)
-  are yours the moment they surface — no tie needed, no wake takes them.
-  Tie → loose food becomes banked (`p_finds`). Wake → loose food is not
-  credited; the best loose truffle goes to `user_patch_carry` at gild 1 (or
-  bumps) via the existing `p_missed` path — he re-buries it, gilded, next
-  Feeding. The stake of *Dig deeper* is therefore the Golden Truffles, never
-  a thing the player would call taken (charter lens 4).
-- **Floor on a wake.** `+20 Pass XP` is paid, the dig counts as submitted
-  (Sounder Bonus eligibility for crewmates, stage-reward participation), and
-  `credited_finds = 0`. Nothing already banked in a prior dig is touched.
-- **End of auto-finish.** `afterReveal`'s *both truffles → finish()* is
-  deleted. Only tie / wake / 45-action cap end a dig.
-- **Reused untouched:** `Minstd`, `applySplash`, `clusterRevealed`,
-  `clusterTouched`, `clusterAnchor`, `clusterBox`, `partiallyRevealedFinds`,
-  `gildedSilhouetteDepth`, `feedingPhaseView`, `windowIndex`.
-- **Changed:** `generateBoard` gains a layered sibling; `stirCost`,
-  `nextStreak`/`QUIET_STREAK_LEN`, `warmthWhisper` retire from this mode;
-  `simulateGreedyClear` gains a `simulateSnoutDeep(seed, policy)` for tuning.
+### 1.1 Geometry and layout
 
-## Sounder
+- `PATCH_COLS 6 × PATCH_ROWS 5`, `PATCH_LAYERS 3`, `TILE_DEPTH 2` (every tile).
+- `generateLayeredBoard(seed, uniqueId)` — new in `utils/rooting.ts`. Consumes
+  the same first four parity draws as `generateBoard` (L orientation, domino
+  orientation, shimmer present, junk kind) so `rooting_finds(seed)` still names
+  the base set; every later draw is layout. A layer is generated when entered
+  but is fully determined by the seed (the server generates all three).
+- **Placement by layer** (the find table, §2): topsoil = domino truffle, Boom,
+  junk, 3 stones (+ pouch 1/2, apple 1/3); mud = L truffle, shimmer 1/2,
+  acorn 1/2, tea 1/3, scroll 1/3, 2 stones; the root = relic 2/5, furnishing
+  1/4, bow 1/12, charm 1/3, 1 stone. Odds are server config
+  (`app_settings.dig_finds`) with compiled fallbacks in `constants/dig.ts`.
+  Finds never overlap; a layer holds at most 8 finds.
 
-- **Before.** Feeding card lists who has dug and at what layer they tied
-  ("Jen · tied at the mud").
-- **During.** Co-op depth becomes a heavier sleeper: a crewmate having dug this
-  Feeding halves the *root's* rub odds (1 in 8 → 1 in 16) — same slot as
-  today's `prior_cnt ≥ 1` bonus, no bigger.
-- **After.** Sounder Bonus rule unchanged: a tied dig that minted a truffle
-  gets +1 when another member submitted this Feeding, either order; the
-  earlier member is paid back. A woken dig counts as submitted for the
-  crewmate's bonus but earns none itself (no truffle minted).
-- No new social act. The share card (`digShareData`) gains the layer tied at.
+### 1.2 Verbs and the kernel
 
-## Economy
+The kernel is today's `applySplash`, unchanged, floored at 0:
 
-- **Per outcome.** Tie at topsoil: `+1 GT` if the domino was found (≈ 90 %).
-  Tie at mud: `+2 GT` (`'dig'` + new `'dig_deep'`). Tie at the root: `+3 GT`
-  (+ `'dig_root'`), plus the relic if uncovered. Wake: `0 GT`, `+20 XP`, best
-  loose truffle carried gilded, every *thing* found kept. Sounder Bonus /
-  blessing +1 each as today. `+20 Pass XP` on every submitted dig, as today.
-  Things (see **Finds**) pay on reveal through their own existing paths.
-- **Back of envelope (today).** One `'dig'` mint when ≥ 1 cluster is claimed;
-  realistic play claims one in ≈ 85 % of digs → **≈ 0.85 GT + 20 XP**, ≈ 3
-  credited finds.
-- **Snout Deep.** Tie at topsoil: 0.9 × 1 = **0.9 GT**. Push and tie at mud:
-  survival ≈ (19/20)^8 ≈ 0.66 → 0.66 × 2 = **1.3 GT**, 0.34 × 0. Push to the
-  root and tie: ≈ 0.66 × (7/8)^5 ≈ 0.34 → 0.34 × 3 = **1.0 GT** + 0.34 × 0.4
-  relic. Expected value stays within ±0.4 GT of today; variance is the design.
-  Shoves compress time and roughly double the wake odds — the fast line is the
-  risky line.
-- **Closed-economy check.** Every mint is server-side through `mint_truffles`
-  (999-cap, ledgered) with a reason; `'dig_deep'`/`'dig_root'` are new reasons
-  in the same ledger. No currency on a wake; a wake never debits anyone. Race
-  credit (`race_digs.finds`) counts banked finds only, so a woken pig adds
-  zero and drags nothing.
+| verb | input | the tile | 4 neighbours | moves mud | wake roll |
+| --- | --- | --- | --- | --- | --- |
+| **Sniff** | tap with Sniff selected | marks scent (§1.3) | — | no | root only |
+| **Rub** | tap / brush | −1 | −½ | yes | yes |
+| **Shove** | hold 400 ms | −2 | −1 | yes | yes |
 
-## Finds
+- A **half-cleared tile** (depth ≤ 1) shows the silhouette of what is under it
+  (`gildedSilhouetteDepth` as today, now at depth 1).
+- Two adjacent rubs clear a 2-wide strip (the second's half-splash finishes
+  the first). Accepted: the sniff's value is skipping empty tiles, not the rubs.
+- **No-ops.** Any verb on a cleared tile, a sniff on an already-sniffed tile,
+  or an action on an out-of-bounds neighbour is a no-op: no action counted,
+  no roll drawn, no log entry.
+- Every non-no-op verb is **one action** (toward the 45 cap) and **one entry
+  in the action log** (`s2:14` / `r2:14` / `h2:14` = sniff / rub / shove,
+  layer, tile).
 
-What you can dig up, by layer. Every row is a Field Guide entry (silhouette
-until met). Stones stay inert. **Food** is loose until tied; **things** are
-kept on reveal.
+### 1.3 Scent
+
+- `scentAt(layer, idx)` = the number of **find tiles** in the 3 × 3 around
+  `idx` (itself included) **in the current layer**. Every find counts —
+  truffle tiles, and every thing's tile. Stones never count. Buried,
+  half-cleared and cleared tiles all count. Range 0–9; typical 0–3.
+- A sniffed tile wears its number until the layer is left. Sniff once per
+  tile per layer.
+- Scent is exact. The number never lies.
+
+### 1.4 The wake stream
+
+- `wakeStream = new Minstd((seed × 7919) mod 2147483647)`; the k-th
+  non-no-op action draws the k-th `nextInt(120)` and wakes him when the draw
+  is below the threshold. Client and server replay the same stream.
+
+| layer | sniff | rub | shove |
+| --- | --- | --- | --- |
+| topsoil | 0 | 0 | 10 |
+| mud | 0 | 6 | 20 |
+| the root | 7 | 15 | 40 |
+
+(in 120ths: mud rub 1 in 20 · shove 1 in 6 · root sniff ≈ 1 in 17 · rub 1 in
+8 · shove 1 in 3.)
+
+- **Co-op.** When a crewmate has submitted this Feeding, the root's **sniff
+  and rub** thresholds halve (7 → 4, 15 → 8; integer floor + 1). Shove is
+  unchanged. Nothing else in the game changes with co-op.
+- **Sniffs never wake him in topsoil or the mud.** The nose is the mechanic
+  the first two layers teach; it must be safe there.
+
+### 1.5 Loose, banked, food, things
+
+- **Food is truffles, only.** A layer's truffle cluster, once uncovered, is
+  **loose** — his if he wakes — until it is banked.
+- **Everything else is a thing** (Boom, shimmer, acorn, tea, scroll, apple,
+  pouch, keepsake, furnishing, bow, charm, relic): yours the moment its last
+  tile clears; paid on reveal through its own path; never at stake.
+- **Banking happens three ways:** *Tie it off*; **crossing a layer** (*Dig
+  deeper* banks the loose truffle first — bank on descent); the 45-action
+  cap or a window close (treated as a tie).
+- **Wake:** the *current layer's* loose truffle is not credited; it goes to
+  `user_patch_carry` at gild 1 (or bumps) via the existing `p_missed` path —
+  he re-buries it, gilded, next Feeding. Everything banked in earlier layers
+  and every thing found is untouched. `+20 Pass XP` is paid; the dig counts
+  as submitted.
+
+### 1.6 Dig deeper, tie, end
+
+- **Dig deeper** is available at any time in topsoil and the mud — no gate.
+  It banks the loose truffle, marks the layer's touched-but-uncollected
+  clusters as *missed* (carry-eligible), abandons the untouched ones, and
+  enters the next layer with the layer's scent marks cleared.
+- **Tie it off** is available at any time. It banks the loose truffle and
+  submits.
+- **End conditions**, exactly: tie · wake · 45th action (= tie) · window
+  close with the dig open (= tie, server-side; the client shows the stored
+  receipt on reopen). Nothing else. `afterReveal`'s *both truffles → finish()*
+  is deleted.
+- **The Hungerer's face** is a function of the layer (snoring · stirring ·
+  one eye open) and flips to *awake* on a wake. It is not a bar.
+
+### 1.7 Modes
+
+- **Crewed dig** — everything above; one per Feeding; mints Golden Truffles.
+- **Uncrewed dig** — the same board and rules for a player with no Sounder.
+  Pays every **thing** (Booms, acorns, tea, scrolls, apples, pouches,
+  keepsakes, furnishings, bows, charms, relics), winds regen, pays +20 XP.
+  **Mints no Golden Truffles, earns no Sounder Bonus, counts no race find.**
+  The receipt carries *truffles are for herds — find yours ›* to the join
+  path. This replaces the hidden practice dig; `dig_practice_visible()` is
+  gone.
+- **Reduce Motion** — layer swaps crossfade; the wake beat is one frame; no
+  wobble on the face.
+
+## 2. Finds
+
+Every row is a Field Guide entry (silhouette until met). Stones are inert.
+**Food** = truffles (loose until banked); **things** are kept on reveal.
 
 | layer | find | kind | pays | odds / board | path |
 | --- | --- | --- | --- | --- | --- |
-| topsoil | domino truffle | food | +1 GT (`'dig'`), race find | 1 | `mint_truffles` |
-| topsoil | **Tickle Boom** | thing | applied tickles: `3 + boom(H)` (see Catch-up) | 1 | auto-apply rule (`20260812010000`) — +N `tickles_earned`, +N snouts, bank untouched |
-| topsoil | windfall apple | food | Rosie +8 happiness | 1 in 3 | `apply_happiness` |
+| topsoil | domino truffle (2 tiles) | food | +1 GT (`'dig'`), race find | 1 | `mint_truffles` |
+| topsoil | **Tickle Boom** | thing | applied tickles `3 + boom(H)` (§4) | 1 | auto-apply rule (`20260812010000`) |
 | topsoil | snout pouch | thing | +15 snouts | 1 in 2 | `profiles.counter` |
-| topsoil | his old boot · bent horseshoe · bottle cap | thing | a **shelf keepsake** (surface_decor) for the Barn; dupes +10 snouts | 1 (one of three) | `grant_habitat_item(uid, id, 'dig', uid:window)` |
-| mud | L truffle | food | +1 GT (`'dig_deep'`), race find | 1 | `mint_truffles` |
-| mud | shimmer pocket | food | +1 Mote (as today) | 1 in 2 | existing |
+| topsoil | windfall apple | thing | Rosie +8 happiness | 1 in 3 | `apply_happiness` |
+| topsoil | his old boot · bent horseshoe · bottle cap | thing | a **shelf keepsake** (surface_decor); dupes +10 snouts | 1 (one of three) | `grant_habitat_item(uid, id, 'dig', uid:window)` |
+| mud | L truffle (3 tiles) | food | +1 GT (`'dig_deep'`), race find | 1 | `mint_truffles` |
+| mud | shimmer pocket | thing | +1 Mote | 1 in 2 | existing |
 | mud | **Clockwork Acorn** | thing | one day of Auto-Tickler charge | 1 in 2 | Contraption Inventory (`20260829`) |
-| mud | flask of warm tea | thing | `warm_tea` on yourself, 8 h (regen ×2) | 1 in 3 | `blessings` (self-sent, `source='dig'`) |
+| mud | flask of warm tea | thing | `warm_tea` on yourself, 8 h | 1 in 3 | `blessings` (self, `source='dig'`) |
 | mud | Pass XP scroll | thing | +40 Pass XP | 1 in 3 | season progress |
-| the root | relic | thing | Burrow Book (as today); kept on reveal | 2 in 5 | existing |
-| the root | **Unearthed furnishing** | thing | one Barn piece from the dig-only *Unearthed* collection; dupes +50 snouts; pity: guaranteed on the 4th root tie without one | 1 in 4 | `grant_habitat_item` |
-| the root | a buried bow | thing | one of three dig-only worn cosmetics | 1 in 12 | hats grant (dig-exclusive, like the Burrow Book set piece) |
-| the root | bless charm | thing | one blessing to send a friend, free | 1 in 3 | `blessings` on send |
+| the root | relic | thing | Burrow Book | 2 in 5 | existing |
+| the root | **Unearthed furnishing** | thing | a dig-only Barn piece; dupes +50 snouts; pity on the 4th root tie without one | 1 in 4 | `grant_habitat_item` |
+| the root | a buried bow | thing | one of three dig-only cosmetics | 1 in 12 | hats grant |
+| the root | bless charm | thing | one free blessing to send | 1 in 3 | `blessings` on send |
+| the root | (no truffle) | — | the root tie pays `'dig_root'` +1 GT when the mud truffle was banked | — | `mint_truffles` |
 
-- **Placement.** Each layer draws its rows after the parity draws; a board
-  never holds more than 8 finds per layer; odds are server config
-  (`app_settings.dig_finds`) with compiled fallbacks, never bare constants.
+- **Why the Boom is in topsoil.** The catch-up is never at stake; pushing
+  deeper is for the herd's race and the Barn, not to protect the handicap.
 - **The *Unearthed* collection.** A new `habitat_collections` row, ~12
-  `habitat_items` covering all six slots (Rusty Lantern · Buried Milk Can ·
-  Old Boot Planter · Cracked Crock Vase · Rope-Handle Trunk · Root-Cellar
-  Door wallpaper · Tin Bucket Chandelier · Fossil Fern Rug · …), `is_for_sale
-  false`, `rarity 'rare'`. New art lane: 12 furnishing renders + 3 keepsakes.
-- **Keepsakes.** Junk stops being nothing: the three junk objects are
-  surface_decor items in a *Dug Up* shelf set (the wallow-keepsake grammar).
-- **Why booms live in topsoil.** The catch-up is never at stake — a trailing
-  player's dig always pays its share; pushing deeper is for the herd's race
-  and the Barn, not to protect the handicap.
+  `habitat_items` across all six slots, `is_for_sale false`, rarity `rare`.
+  Ships in two halves (§11).
+- **Race finds and the meter** count **truffles only** (things are yours, not
+  the herd's). The Dig-Off ladder and `hunger_meter()` are untouched.
 
-## Catch-up (the tickle handicap)
+## 3. Sounder
 
-The board is lifetime `tickles_earned`. A trailing player catches up by
-performing more tickles, so the dig *delivers* tickles and *winds* passive
-progress, both scaled to the gap. Applied tickles are never bankable or
-tradeable.
+- **Before.** Feeding card lists who has dug and the layer they tied at
+  (*Jen · tied at the mud* / *woke at the root* / *not yet*).
+- **During.** Co-op = the root's sniff and rub odds halve (§1.4). One lever.
+- **After.** Sounder Bonus unchanged: a tied dig that minted a truffle gets
+  +1 `'dig_echo'` when another member submitted this Feeding, either order;
+  the earlier member is paid back. A woken dig counts as submitted for the
+  crewmate's bonus but earns none itself. The share card gains the layer.
+- No new social act in this pass; B's marker/nudge stay in B's spec.
+
+## 4. Economy and the catch-up
+
+- **Per outcome.** Tie at topsoil: +1 GT if the domino was found. Mud: +1 GT
+  per layer's truffle banked (`'dig'` + `'dig_deep'`). Root: `'dig_root'` +1
+  when the mud truffle was banked (the root has no truffle of its own), so a
+  full run is **+3 GT**. Wake: the current layer's truffle lost (carried
+  gilded); earlier layers' GT already minted; +20 XP. Sounder Bonus and
+  `'blessed_dig'` +1 each as today. Uncrewed: 0 GT, everything else.
+- **Back of envelope.** Today ≈ 0.85 GT/dig. Topsoil tie ≈ 0.9; push to mud
+  and tie ≈ 0.66 survival × 2 + 0.34 × 1 (topsoil already banked) ≈ 1.66;
+  push to root ≈ 0.34 × 3 + 0.32 × 2 + 0.34 × 1 ≈ 2.0 GT. Bank-on-descent
+  raises the faucet; the Exchange's prices (25–500 GT) are re-checked in §11
+  step 6 and `'dig_root'` may drop to 0 if the sim says so.
+- **Closed economy.** Every mint server-side via `mint_truffles` (999 cap,
+  ledgered, reasons `'dig'` · `'dig_deep'` · `'dig_root'` · `'dig_echo'` ·
+  `'blessed_dig'`); things through their own idempotent paths keyed
+  `(uid, window_index)`. Nothing is taken: a wake takes an unbanked truffle
+  that returns gilded.
+- **The catch-up** (unchanged from the 2026-09-13 ruling):
 
 ```
-L       = active leader's tickles earned over the trailing 14 days ÷ 14   (pace/day; active = bank moved in 14 d)
-L_full  = 24 + F·3                                                        (a flawless day: regen + base booms; F = Feedings/day, 3)
-pace    = clamp(L / L_full, 0, 1)
-D       = T_leader − T_you                                                (frozen at cycle start, or at join)
-H_day   = min( k · pace · D / 28 , H_max )                                k = 0.75 · H_max = 3·L_full = 99
-boom(H) = 0.6 · H_day / F                                                 (delivery — the topsoil Boom)
-regen   = base / (1 + 0.4 · H_day / 24)   for the 8 h window after a submitted dig   (passive — "the dig winds it")
+L      = active leader's tickles earned over the trailing 14 days ÷ 14
+L_full = 24 + F·3                          (F = Feedings/day, 3)
+pace   = clamp(L / L_full, 0, 1)
+D      = T_leader − T_you                  (frozen at cycle start / join)
+H_day  = min(k · pace · D / 28, H_max)     k = 0.75 · H_max = 3·L_full = 99
+boom(H)= 0.6 · H_day / F                   (delivery — the topsoil Boom)
+regen  = base / (1 + 0.4 · H_day / 24)     for the 8 h after a submitted dig
 ```
+  28-day cycles at a fixed UTC boundary; newcomer ramp ×0.25/0.5/0.75/1 over 7
+  days; applied tickles are never bankable or tradeable; VIP/blessings/curses
+  touch base regen only. The uncrewed dig pays the Boom and winds regen.
 
-- **Cycle.** 28 days, cron at a fixed UTC boundary aligned to the pass
-  period. `D` and `pace` freeze per cycle; the live board is untouched.
-- **k = 0.75.** At equal full effort three-quarters of the gap closes in a
-  cycle (full close ≈ 37 d). A leader at ≤ 75 % effort is caught within the
-  four weeks: work harder than the leader to keep up, catch up if the leader
-  is slow.
-- **pace.** An inactive #1 sets no pace, so a dead total inflates nobody's
-  boom; a slow leader lowers `H` but also earns less, so the trailer still
-  gains. Self-limiting.
-- **H_max.** Inflation and alt guard. Today (leader 15,694 · active median
-  5,528): the four-week promise holds for gaps ≤ 3,700; the median closes at
-  ≈ 99/day (≈ 3.5 months); a fresh account ≈ 5 months. Raising `H_max` to
-  5·L_full puts the median at ≈ 2 months.
-- **Passive needs the Auto-Tickler.** Faster regen on a 25-cap bank is
-  wasted unless spent; the Auto-Tickler (spends above cap − 5, every tickle
-  earned) is what makes the passive share real, and its charge is a mud find.
-  Streak stays manual-only, as the glossary says.
-- **Newcomer ramp.** `H` × 0.25 / 0.5 / 0.75 / 1 over the first 7 days.
-- **Edge cases.** Ties: same gap, same `H`. Join mid-cycle: `D` from the
-  current cycle's `T_leader`, ramped. A dig across the boundary uses the cycle
-  it opened in (window-stamped, as `digSession` already does). Stop digging:
-  no booms, no winding — `H` is an opportunity, not a transfer; next cycle
-  recomputes up to the clamp. Leader stops: `pace` falls, `H` falls, and the
-  gap closes by ordinary play. VIP / blessings / curses modify base regen
-  only; a Sluggish Snout cannot halve a handicap.
-- **Practice dig.** Behind `dig_practice_visible()` (admin/dev, default
-  false) for testing; mints nothing, never winds. Uncrewed players keep the
-  Season-tab door.
+## 5. Surfaces
 
-## Surfaces
+Screens as on the *Snout Deep* canvas (1–10). All copy in TTP voice; the
+dialogs on the reveal family's Ledger sheet.
 
-- **Entry.** Barn button's shovel face → `useFeedingCta.start()` → the dig
-  modal. Practice digs stay solo and mint nothing.
-- **Dig screen (top → bottom).** Corners only, patch ≥ 60 %:
-  1. Top-left: back chip + sign — kicker `the truffle patch · Feeding`, title
-     `closes in 2h 10m`. Top-right: the Hungerer, 120 pt, with a tag under him:
-     `snoring` / `stirring` / `one eye open`.
-  2. Layer strip: three chips `topsoil · stones, small truffles` /
-     `mud · fat truffles, shimmer` / `the root · relics`; done = sage,
-     now = sun, below = cream.
-  3. The patch: 6×5 grid, 358 × 430 pt (tiles 55 × 82) on the clearing scene,
-     ≈ 60 % of the screen.
-  4. Whisper (one paper strip): `topsoil. one rub a tile, or hold for a shove.
-     he sleeps through this.` · `the mud. fatter down here — and he sleeps
-     lighter.` · `the root. something odd, one rub away. one rub in eight
-     wakes him now.`
-  5. Pouch (left) with two wells: `loose · his if he wakes` / `tied · yours for
-     keeps`. Footer: `Tie it off` (sage, check) · `Dig deeper` / `Pack up`.
-- **Decision sheet** (layer cleared): kicker `layer one is clear`, title `a
-  truffle and his old boot, loose in the pouch.`, choices `Tie it off · +1
-  Golden Truffle · +20 Pass XP · done` / `Dig deeper · the mud · he stirs at
-  one rub in twenty`.
-- **Reveal.** A *thing* surfaces with a full-width sticker the moment its
-  tile clears — `a Tickle Boom · +19 tickles, yours` (sun) · `a Rusty Lantern
-  · new for the Barn` (lilac, the Burrow Book grammar) · `a Clockwork Acorn ·
-  a day of the Auto-Tickler` — and the pouch's `tied · yours for keeps` well
-  takes it at once; food lands in `loose · his if he wakes`.
-- **Pressure.** No sheet — his face and the whisper. At `one eye open` the
-  patch wears a rose rim; the footer's `Tie it off` grows to primary.
-- **Payoff.** Tie: `Tied off at the root` + `+3 Golden Truffles` + `+20 Pass
-  XP` + ledger. Wake: tag `HE WOKE.`, Rosie surprised, ledger: `a truffle and a
-  shimmer, loose — he snatched them back` / `something odd — still down there,
-  gilded next Feeding` / `+20 Pass XP — your dig still counts for the herd`,
-  and a hand line `pushed past the mud and lost the two. next time — tie it at
-  the mud?` (The canvas comp A4 draws a `tied · yours for keeps` well holding
-  a topsoil truffle; under this spec's one-tie rule that well is empty on a
-  wake — the comp predates the rule.)
-- **Payoff, things.** The receipt's ledger lists things above food: `a Rusty
-  Lantern — in the Barn, unplaced` (tap → the Barn's Decorate with the New
-  badge, the acquisition journal's presentation path) · `+19 tickles, applied
-  — 1,190 behind the pack` · `an acorn — the Auto-Tickler is wound`.
-- **Season tab.** Feeding card line per member: `tied at the mud` / `he woke` /
-  `not yet`; the Hunger meter unchanged. The Rankings tab gains one honest
-  line: `catch-up pays through the dig · cycle ends in 9 days`.
+1. **Entry.** Barn button's shovel face while the patch is open →
+   `useFeedingCta.start()` → the dig in place. Uncrewed players get the same
+   face and the same dig.
+2. **Dig screen, top → bottom** (patch ≥ 60 %): back chip + sign (*the truffle
+   patch · Feeding* / *closes in 2h 10m*) with the Hungerer top-right and his
+   tag (*snoring* · *stirring* · *one eye open* · *HE WOKE.*); the layer strip
+   (done = sage · now = sun · below = cream); the patch (6 × 5, 55 × 52 pt
+   tiles: buried mud · half-cleared with a silhouette · cleared with the
+   find; scent as a paper disc with a hand numeral on the tile's corner; a
+   rose rim on the patch at the root); the whisper strip; the pouch (*loose ·
+   his if he wakes* / *tied · yours for keeps*); the footer (*Tie it off* ·
+   *Dig deeper*; at the root *Tie it off · +N Golden Truffles* is the gold
+   primary); the verb bar (*Sniff · Rub · Shove*, sub-labels *free · quiet ·
+   loud* in topsoil and mud, *quietest · quiet · loud* at the root; the
+   selected verb on sun; hold-to-shove works regardless).
+3. **Reveal.** A thing surfaces with a full-width sticker the moment its tile
+   clears (*a Tickle Boom · +19 tickles, yours*; *a Rusty Lantern · new for
+   the Barn*; *a Clockwork Acorn · a day of the Auto-Tickler*) and lands in
+   the *tied* well; a truffle lands in *loose*.
+4. **Whispers** teach rules and say *that* something is near, never what:
+   *topsoil. press your snout to the mud to sniff — the mark is how many
+   finds touch that tile. a rub moves a little, a shove a lot. he sleeps
+   through all of it.* · *a 3 beside a 1 — the truffle runs left.* · *the
+   mud. fatter down here — and he sleeps lighter.* · *the root. a 1 on its
+   own is usually a thing, not a truffle. one rub in eight wakes him now.
+   one sniff in seventeen.*
+5. **The decision** (layer-clear sheet, Ledger): kicker *layer one is clear*,
+   title *A truffle, loose in the pouch.*, count *dig deeper banks it — the
+   next layer stakes only its own*; rows *Tie it off · +1 Golden Truffle · +20
+   Pass XP · done | safe* and *Dig deeper · the mud · fatter truffles, acorns,
+   tea · he stirs at one rub in twenty | 1 in 20*; primary *Dig deeper*;
+   secondary *tie it off instead ›*. The sheet is offered when a layer's
+   truffle banks; both controls stay in the footer at all times.
+6. **Pressure.** No sheet: his face, the tag, the whisper; at the root the
+   rose rim and *Tie it off* as the primary.
+7. **Payoff, tied** (Ledger receipt): title *Tied off at the root*, count
+   *three layers · 23 actions · he slept through it*, one row per thing and a
+   truffles row with the GT value, XP row; primary *Back to Barn*; secondary
+   *share the dig ›*. Uncrewed: the truffles row reads *truffles are for herds
+   — find yours ›* and is the secondary.
+8. **Payoff, woke**: title *He woke.*, his face awake, a hand line naming the
+   action (*pushed past the mud on a shove. one in six — this was the one.*),
+   rows *the fat one · his — gilded next Feeding*, the things kept, XP;
+   primary *Back to Barn*; hand line *next time — tie it at the mud?*
+9. **Back on the Barn**: the button's face flips to the door; a yard note
+   *dug this Feeding · tied at the root · next patch opens in 5h 50m*.
+10. **Season tab.** Feeding card line per member: *tied at the mud* / *woke at
+    the root* / *not yet*; Hunger meter unchanged; the Rankings tab's one
+    catch-up line.
 
-## Server sketch
+## 6. Server sketch
 
-- **Migration** `20260915000000_snout_deep.sql`, flag `dig_snout_deep_on()`
+- **Migration** `20260916100000_snout_deep.sql`, flag `dig_snout_deep_on()`
   default false.
-- `war_rootings += layer_tied smallint, woke boolean, action_log text[]`.
-- `open_rooting()` unchanged in shape; returns `mode: 'snout_deep'` when on.
-- `submit_rooting(p_finds, p_actions, p_missed)` → new
-  `submit_rooting_deep(p_finds text[], p_actions text[], p_missed text[])`:
-  `p_actions` is the ordered log (`'r1:14'`, `'s2:7'` = kind, layer, tile;
-  cap 45). The server replays the wake stream; the first waking index
-  truncates the log; finds claimed after it are `bad_finds`; a wake forces
-  `p_finds = {}` and routes `p_missed` through the existing carry code. Mints
-  `'dig'` + `'dig_deep'`/`'dig_root'` by `layer_tied`. Carries the 20260799
-  body verbatim otherwise (the carry-latest-def footgun applies).
-- **Finds + catch-up.** Same migration family: `tickle_cycles(cycle_id,
-  starts_at, t_leader, leader_pace)`, `tickle_handicaps(user_id, cycle_id,
-  deficit, h_per_day, joined_at)` + a 4-weekly cron; `submit_rooting_deep`
-  applies the Boom through the auto-apply rule (`tickles_earned`, `counter`,
-  `tickles_applied` on the receipt), writes `dig_wound_until = window end`
-  on `user_items` (read by `_regen_secs_for_wallow_at` as one more factor),
-  and routes each thing through its own path: `grant_habitat_item(uid, item,
-  'dig', uid:window)`, the acorn to `user_contraptions`, tea/charm to
-  `blessings`, the scroll to season progress, the pouch to `counter`. Every
-  grant is keyed `(uid, window_index)` so a re-submit is a no-op. Find odds
-  in `app_settings.dig_finds`. `dig_practice_visible()` default false.
-- **Fairness.** Wake stream keyed to the row's seed; one row per
-  `(user_id, window_index)` PK as today; idempotent re-submit returns the
-  stored receipt (`20260913010000` durable receipts).
-- **Untouched:** `utils/digSession.ts` entirely — session, dug-window stamp,
-  practice lockout, mirror key, reconcile debounce.
+- `war_rootings += layer_tied smallint, woke boolean, action_log text[],
+  uncrewed boolean`.
+- `open_rooting()` returns `mode: 'snout_deep'`, the seed, `coop` (a
+  crewmate submitted), `uncrewed`, and the find odds. Uncrewed players may
+  open (today's crew gate becomes a `mode` flag on the row).
+- `submit_rooting_deep(p_actions text[], p_layer_tied smallint, p_finds
+  text[], p_missed text[])`: replays the wake stream over `p_actions`
+  (no-ops are not in the log; the server rejects a log with an action on a
+  cleared tile as `bad_log`); the first waking index truncates the log; finds
+  claimed after it are `bad_finds`; a wake forces the current layer's truffle
+  out of `p_finds` and into the carry path; mints by layers banked (`'dig'`,
+  `'dig_deep'`, `'dig_root'`); routes things through their paths; `uncrewed`
+  rows mint no GT and write no race find. Carries the `20260913010000`
+  durable-receipt body (the carry-latest-def footgun applies).
+- **Window close.** A cron at window end submits every open `snout_deep`
+  row as a tie at its current layer from its last synced log (`sync_rooting`
+  writes the log every 5 actions and on background).
+- **Fairness.** Seed-keyed wake stream; one row per `(user_id,
+  window_index)`; idempotent re-submit returns the stored receipt; the
+  uncrewed flag is server-derived from crew membership at open, never
+  client-sent.
+- **Untouched:** `utils/digSession.ts` (session, dug-window stamp, mirror
+  key, reconcile debounce — the practice lockout gate is removed with the
+  practice dig), `utils/feedingClock.ts`, `useFeedingCta`.
 
-## Client sketch
+## 7. Client sketch — the reducer's contract
+
+The dig is a pure `(state, event) → state` machine in `utils/snoutDeep.ts`,
+mirroring `utils/digSession.ts`'s idiom, so every rule above is a unit test
+and the UI is a renderer.
+
+```ts
+// utils/snoutDeep.ts
+export type Verb = "sniff" | "rub" | "shove";
+export type Layer = 0 | 1 | 2;                       // topsoil · mud · the root
+export type FindKind =
+  | "truffle_d" | "truffle_l" | "boom" | "pouch" | "apple" | "junk"
+  | "shimmer" | "acorn" | "tea" | "scroll"
+  | "relic" | "furnishing" | "bow" | "charm" | "stone";
+
+export interface Find { id: string; kind: FindKind; tiles: number[]; food: boolean }
+export interface LayerBoard { depths: number[]; finds: Find[] }      // 30 depths, 2 → 0
+export interface SnoutDeepBoard { seed: number; layers: [LayerBoard, LayerBoard, LayerBoard] }
+
+export interface SnoutDeepState {
+  board: SnoutDeepBoard;
+  layer: Layer;
+  depths: number[];                 // the current layer's live depths
+  scent: (number | null)[];         // per tile, this layer
+  actions: string[];                // the log: "s2:14" · "r2:14" · "h2:14"
+  wakeIndex: number;                // draws consumed
+  loose: string | null;             // the current layer's truffle id, if uncovered and unbanked
+  banked: string[];                 // find ids banked (truffles) — across layers
+  things: string[];                 // find ids revealed (things) — across layers
+  missed: string[];                 // touched-but-uncollected cluster ids left behind
+  layersTied: Layer[];              // layers whose truffle banked (for GT reasons)
+  coop: boolean;
+  uncrewed: boolean;
+  ended: null | { reason: "tie" | "wake" | "cap" | "close"; layer: Layer; wokeOn?: string };
+}
+
+export type SnoutDeepEvent =
+  | { type: "act"; verb: Verb; tile: number }        // no-ops return state unchanged
+  | { type: "descend" }                              // Dig deeper
+  | { type: "tie" }
+  | { type: "close" };                               // window closed (server tie)
+
+export function initialState(board: SnoutDeepBoard, opts: { coop: boolean; uncrewed: boolean }): SnoutDeepState;
+export function reduce(state: SnoutDeepState, event: SnoutDeepEvent): SnoutDeepState;
+export function scentAt(layer: LayerBoard, tile: number): number;
+export function wakeThreshold(layer: Layer, verb: Verb, coop: boolean): number;   // in 120ths
+export function isNoOp(state: SnoutDeepState, verb: Verb, tile: number): boolean;
+export function revealed(state: SnoutDeepState): Find[];      // clusters fully at depth 0 this layer
+export function receipt(state: SnoutDeepState): DigReceipt;   // what the payoff sheet renders
+export function simulateSnoutDeep(seed: number, policy: Policy): SimResult;   // for tuning
+```
 
 | file | change | size |
 | --- | --- | --- |
-| `utils/rooting.ts` | `generateLayeredBoard`, `wakeThreshold`, `WakeStream`, `simulateSnoutDeep` | M |
-| `constants/dig.ts` | `PATCH_LAYERS`, wake table, `SNOUT_DEEP_ACTION_CAP 45` | S |
-| `components/mudwar/TrufflePatch.tsx` | layer state, loose/tied pouch, tie/deeper/wake flow, action log; delete auto-finish + free-rub/streak | L |
-| `components/mudwar/LivingMudSurface.tsx` | depth-1 tiles, layer swap crossfade, rose rim | S |
-| `components/mudwar/LivingMudScene.tsx` | two-well pouch | S |
-| `components/mudwar/LivingMudReceipt.tsx` | tie / wake receipts | M |
-| `hooks/useRooting.ts` | submit `text[]` actions; `layerTied`, `woke` in `RootingOutcome` | M |
-| `utils/digShare.ts` | layer in the share grid | S |
-| new `components/mudwar/LayerStrip.tsx`, `TieSheet.tsx`, `FindReveal.tsx` | | S / M |
-| `hooks/useHomeStats.ts`, `components/TickleCoin.tsx` | catch-up line on the coin's ribbon while wound | S |
-| `utils/fieldGuide.ts`, Field Guide entries | 9 new finds | S |
-| art: 12 *Unearthed* furnishings, 3 keepsakes, 3 bows, boom/acorn/tea/scroll/apple/pouch/charm marks | ImageGen lane (`regen_studio`) | L |
-| `utils/digSession.ts`, `utils/feedingClock.ts`, `useFeedingCta.tsx` | untouched | — |
+| `utils/rooting.ts` | `generateLayeredBoard`, `WakeStream` (Minstd over `seed × 7919`), `layerFindTable` | M |
+| `utils/snoutDeep.ts` | the reducer above + `receipt` + `simulateSnoutDeep` | L |
+| `constants/dig.ts` | `PATCH_LAYERS 3`, `TILE_DEPTH 2`, `SNOUT_DEEP_ACTION_CAP 45`, the wake table, `DIG_FINDS` fallback odds | S |
+| `components/mudwar/SnoutDeepPatch.tsx` | the dig screen: header (Hungerer face + tag), `LayerStrip`, the tile grid (`Pressable` tiles for the web try-out; the Skia `LivingMudSurface` follows), whisper, pouch, footer, verb bar; `FindReveal` sticker | L |
+| `components/mudwar/SnoutDeepSheets.tsx` | the decision sheet, the tied and woke receipts, on `RevealSheet`/`LedgerRow` (or the interim ledger markup until the primitive lands) | M |
+| `components/mudwar/Hungerer.tsx` | the face (snoring · stirring · one eye open · awake), SVG, motion-policy aware | S |
+| `components/mudwar/useFeedingCta.tsx` | opens `SnoutDeepPatch` when `mode === 'snout_deep'`; uncrewed lane | S |
+| `hooks/useRooting.ts` | `submit_rooting_deep`, `sync_rooting` every 5 actions, restore from `{ layer, actions }` | M |
+| `utils/digShare.ts` | the layer on the share grid | S |
+| `app/snout-deep-preview.tsx` + `components/dev/screens/snout-deep-preview.tsx` | dev route: a full local dig on a fixed seed, no server (`?seed=` · `?coop=1` · `?uncrewed=1` · `?motion=reduced`); how the founder tries it on web | S |
+| `utils/digSession.ts`, `utils/feedingClock.ts` | untouched (practice lockout removed) | — |
 
-Survives: kernel, reducer, feeding clock, Skia surface, share, progress
-save/restore (add `layer` + `actionLog` to the snapshot).
+Survives: kernel (`applySplash`, cluster queries, `Minstd`), session reducer,
+feeding clock, share, progress save/restore (snapshot = `{ layer, actions }`;
+restore replays through `reduce`).
 
-## Charter check
+## 8. Tests
 
-1. **Pillar.** Contend (a stake the herd's race pays for) and Collect (the
-   root is the only home of relics). Connect is served only as today — a
-   sentence and a heavier sleeper.
-2. **One sentence.** Holds. Two verbs it already has, one new verb (tie).
-3. **Fair by construction.** Seed-keyed wake stream replayed server-side; the
-   client submits a log, not a result.
-4. **Losing warm.** The nearest edge of any direction: a wake takes loose
-   finds. Mitigations by construction: topsoil cannot wake on a rub; XP and
-   participation are paid; the best loose returns gilded; nothing banked in
-   any earlier dig is ever touched; the receipt's last line is advice, not
-   blame.
-5. **Pipeline.** No new art. Two reasons in the mint ledger.
-6. **Taste.** Which pillar — Contend. Would a designer who knows this game
-   make this choice — the Hungerer finally *does* something, and it is the one
-   thing his fiction promised.
+- `__tests__/snoutDeep.test.ts` — the reducer, one case per rule: sniff marks
+  and never rolls in layers 0–1; root sniff rolls at 7 (4 co-op); no-ops
+  change nothing and consume no draw; rub/shove apply the kernel and floor at
+  0; a truffle uncovers → `loose`; descend banks `loose`, clears scent, marks
+  missed; tie banks and ends; the 45th action ends as `cap`; a wake ends with
+  `loose` in `missed` and things intact; things reveal into `things` on any
+  layer and survive a wake; `close` ends as tie; scent counts every find and
+  no stone; `wakeThreshold` table; a replay of `actions` from `initialState`
+  reproduces the end state (determinism).
+- `__tests__/generateLayeredBoard.test.ts` — parity with `rooting_finds(seed)`
+  for the first four draws; per-layer placement matches the find table; no
+  overlaps; ≤ 8 finds per layer; all three layers from one seed.
+- `__tests__/snoutDeepSim.test.ts` — `simulateSnoutDeep` over 2,000 seeds:
+  ≥ 60 % of root pushes survive five actions; mud-tie EV within ±0.4 GT of
+  the §4 figure; a sniff-first policy beats a blind policy on finds.
+- `__tests__/snoutDeepReceipt.test.ts` — the receipt's rows for tie / wake /
+  uncrewed, including the GT reasons per layers tied.
+- Existing: `barnDigEntry.test.ts` (entry via the Barn button), `digSession.*`
+  unchanged, `motionPolicy.test.tsx` gains `Hungerer.tsx`.
 
-## Risks & open questions
+## 9. Acceptance criteria
 
-- **"Losers keep everything they earned."** Resolved by the food/things
-  rule: a wake takes loose *food* only; every thing is kept on reveal; the
-  best loose truffle returns gilded. The remaining stake is Golden Truffles.
-- **Catch-up inflation.** `H_max` and `pace` bound it; the applied-tickle
-  path is non-tradeable; alts are ramped. Sim the current board through four
-  cycles before flag-on.
-- **Variance frustration.** A 1-in-8 root rub will wake some players on the
-  first action. Tuning must be simulated (`simulateSnoutDeep`) before flag-on;
-  target ≥ 60 % of root pushes surviving five actions.
-- **Second cluster pays nothing today** (one `'dig'` mint per dig). Depth
-  reasons fix that here; they also raise the faucet by up to +2 GT per dig
-  for root ties. Cap check against the 999 ceiling and the Exchange prices.
-- **Carry holds one item.** A wake with two loose finds carries the best;
-  the other is simply gone. Accept, or widen the slot to two.
-- **Party of one.** Degrades cleanly — it is a solo game with a co-op
-  sleeper bonus it never gets. No shame state; no board change.
-- **Reduce Motion.** Layer swaps crossfade; the wake beat is a single frame.
-- Open: does `Dig deeper` need the 6-action gate, or is "anytime" simpler?
+1. On the dev route, a full dig on a fixed seed plays end to end on the web
+   target and the sim with no server: sniff, rub, shove, descend, tie, wake,
+   cap, and the three sheets.
+2. Sniffs in topsoil and mud never end a dig; at the root, over 1,000 seeded
+   sniffs, the wake rate is 7/120 ± 1 % (4/120 with `coop`).
+3. Descending banks the loose truffle: a wake in the mud never removes a
+   topsoil truffle from `banked`.
+4. Every thing revealed before a wake is in `things` after it.
+5. Scent on any tile equals the count of find tiles in its 3 × 3, stones
+   excluded; a `0` tile has no find in its 3 × 3.
+6. Two adjacent rubs on buried tiles leave both at depth 0.
+7. An action on a cleared tile changes nothing: same state object.
+8. `receipt(state)` matches the canvas's rows for tie and woke.
+9. Uncrewed: `receipt` carries no GT and the join line; `things` pay.
+10. Replaying `state.actions` from `initialState` yields an equal state.
+11. Reduce Motion: no wobble, one-frame wake.
+12. Scorecard 0, `eslint --quiet` clean, jest green, `tsc` clean.
 
-## Order of work
+## 10. Edge cases
 
-1. **Sim + kernel** — `generateLayeredBoard`, wake stream, `simulateSnoutDeep`,
-   thresholds locked. Tests. No UI.
-2. **Server** — migration, `submit_rooting_deep`, flag off. Local Docker
-   harness validation; founder "go" before push.
-3. **Client behind `DIG_SNOUT_DEEP`** — TrufflePatch layered flow, pouch
-   wells, tie sheet, receipts; practice mode first.
-4. **Finds** — `app_settings.dig_finds`, the *Unearthed* collection + keepsake
-   art, grant wiring per path, Field Guide entries, `FindReveal`.
-5. **Catch-up** — cycles/handicaps tables + cron, Boom via the auto-apply
-   rule, the wound-regen factor, the coin's ribbon and the Rankings line.
-   Sim on the live board; founder "go".
-6. **Flag on for the dev crew** (practice dig visible to admins only), one
-   Feeding of telemetry (tie layer, wake rate, boom sizes), then all.
+- **Kill mid-dig:** the snapshot is `{ layer, actions }`; restore replays.
+  If the window closed meanwhile, the server has already tied the row; the
+  client shows the stored receipt.
+- **Descend with the truffle unfound:** allowed; the layer banks nothing;
+  the Feeding card still reads the layer tied at.
+- **Descend at the root:** not offered (there is no fourth layer); the
+  footer shows *Tie it off* only.
+- **Wake on the 45th action:** the wake wins (the roll happens before the
+  cap check).
+- **Co-op flips mid-dig** (a crewmate submits while you dig): thresholds
+  update from the next action; the server replays with the co-op flag as of
+  each action's server time — simpler: the client's `coop` at open is what
+  the server uses (`coop_at_open` stored on the row). Chosen: at open.
+- **Two clusters reveal on one shove:** both bank/reveal; one is the truffle
+  (loose), the other a thing.
+- **Boom size when `H = 0`:** 3 tickles; still applied on reveal.
+- **Reduce Motion + a wake:** the face flips in one frame; the receipt
+  crossfades.
+
+## 11. Order of work
+
+1. **Kernel + reducer + sim** — `generateLayeredBoard`, `WakeStream`,
+   `utils/snoutDeep.ts`, the three test files; thresholds locked by the sim.
+   No UI. (M)
+2. **Client on the dev route** — `SnoutDeepPatch`, `Hungerer`, the sheets,
+   `FindReveal`, `app/snout-deep-preview`. Plays fully offline. **This is the
+   founder's try-out on the web target.** (L)
+3. **Server** — migration, `submit_rooting_deep`, the close cron, `sync`; flag
+   off; local Docker harness; founder "go" before push. (M)
+4. **Wire the real entry** — `useFeedingCta` → `SnoutDeepPatch` when the flag
+   is on; `useRooting` submit/sync/restore; uncrewed lane. (M)
+5. **Finds** — grant wiring per path, `app_settings.dig_finds`, Field Guide
+   entries, the first half of the *Unearthed* collection (6 pieces) + 3
+   keepsakes. (M/L, art lane)
+6. **Catch-up** — cycles/handicaps tables + cron, Boom via the auto-apply
+   rule, wound regen; Exchange price check against the raised faucet. (M)
+7. **Flag on for the dev crew**, one Feeding of telemetry (tie layer, wake
+   rate by verb, sniff count), then all. Second half of *Unearthed*.
+
+## 12. Decision log (2026-09-13)
+
+- A over B and C; C's sniff verb folded in; tiles 2 deep so a rub half-clears.
+- Bank on descent: each layer stakes only its own truffle.
+- Sniffs never wake in topsoil or mud; 7/120 at the root (half the rub).
+- Scent counts every find tile; stones never.
+- The whisper says *that* something is near and teaches rules; never names a thing.
+- Kernel unchanged; actions on cleared tiles are no-ops (no action, no roll).
+- Window close mid-dig: the server closes the dig as a tie.
+- Truffles are the only food; everything else is a thing, kept on reveal.
+- The uncrewed player digs: things, Booms and wound regen yes; GT, Sounder Bonus, race finds no. The hidden practice dig is gone.
+- Dig deeper is available any time, no gate.
+- Co-op halves the root's sniff and rub odds; that is the one co-op lever.
