@@ -26,6 +26,7 @@ const DEFAULT_SEED = 20260913;
 // A Feeding's "closes in" for the sign: 2h 10m, ticking.
 const PREVIEW_SECONDS_LEFT = 2 * 3600 + 10 * 60;
 
+
 export default function SnoutDeepPreviewScreen() {
   if (!__DEV__) return <Redirect href="/" />;
   return <SnoutDeepPreview />;

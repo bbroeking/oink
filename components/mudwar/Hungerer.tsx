@@ -1,26 +1,33 @@
-// The Great Hungerer's face — the Snout Deep dig's pressure meter that is not
-// a bar (spec §1.6). He sleeps at the edge of the patch: snoring in topsoil,
+// The Great Hungerer — the Snout Deep dig's pressure meter that is not a bar
+// (spec §1.6). He sleeps at the edge of the patch: snoring in topsoil,
 // stirring in the mud, one eye open at the root, and awake the frame he wakes.
-// Drawn in the sticker hand (ink outline, flat fills, one lean), so it sits
-// beside the paper sign like everything else on the screen.
+//
+// HE IS THE REAL ART: `great_hungerer_hero.png`, the same file the Hunger
+// meter and the season-end sheet draw, never a drawn stand-in (mock notes v2,
+// 2026-09-13). The art has one pose, so his STATE is carried by the tag the
+// screen sets under him plus a small overlay here — "z z" while snoring, a
+// rose ring when awake. Per-state expressions are an art request.
 //
 // Motion: a slow breath (a 3 % swell) runs as a decorative loop under
-// `startDecorativeLoop`, so Reduce Motion gets a still face; the flip to
+// `startDecorativeLoop`, so Reduce Motion gets a still pig; the flip to
 // `awake` is one frame with no wobble either way (spec §1.7).
 import { useEffect, useRef } from "react";
-import { Animated, StyleSheet, View } from "react-native";
-import Svg, { Circle, Ellipse, Line, Path } from "react-native-svg";
-import { WHIMSY } from "@/constants/theme";
+import { Animated, Image, StyleSheet, View } from "react-native";
+import { Hand } from "@/components/ui";
+import { BORDER, RADII, WHIMSY } from "@/constants/theme";
 import { startDecorativeLoop, useMotionPolicy } from "@/hooks/useMotionPolicy";
+
+const HUNGERER_ART = require("../../assets/images/hunger/great_hungerer_hero.png");
 
 export type HungererState = "snoring" | "stirring" | "oneeye" | "awake";
 
 // --- ART -------------------------------------------------------------------
-// Drawing geometry for one object: the face fills a 64-unit box and is drawn
-// once, so every size is a scale of these units, never a spacing step.
+// Drawing geometry for one object, in points: the default box the art fills,
+// the ring that marks him awake, and where the snore sits off his ear.
 const FACE_BOX = 64;
-const FACE_INK_W = 2.5;
-const FINE_INK_W = 2;
+const RING_INSET = -4;
+const SNORE_RIGHT = -6;
+const SNORE_TOP = -4;
 // The breath: a slow swell and back, in ms and scale. Half of a "celebration"
 // beat each way reads as sleep; the swell is small enough that the tag under
 // him never moves.
@@ -72,77 +79,40 @@ export function Hungerer({ state, size = FACE_BOX }: { state: HungererState; siz
       style={[styles.box, { width: size, height: size }]}
     >
       <Animated.View style={{ transform: [{ scale: breath }] }}>
-        <Face state={state} size={size} />
+        <Image
+          source={HUNGERER_ART}
+          resizeMode="contain"
+          accessible={false}
+          style={{ width: size, height: size }}
+        />
       </Animated.View>
-    </View>
-  );
-}
-
-function Face({ state, size }: { state: HungererState; size: number }) {
-  const ink = WHIMSY.ink;
-  const skin = state === "awake" ? WHIMSY.roseDeep : WHIMSY.peach;
-  const awake = state === "awake";
-  const leftOpen = awake || state === "oneeye";
-  const rightOpen = awake;
-  return (
-    <Svg width={size} height={size} viewBox={`0 0 ${FACE_BOX} ${FACE_BOX}`}>
-      {/* ears */}
-      <Path d="M12 22 L6 8 L22 14 Z" fill={skin} stroke={ink} strokeWidth={FACE_INK_W} strokeLinejoin="round" />
-      <Path d="M52 22 L58 8 L42 14 Z" fill={skin} stroke={ink} strokeWidth={FACE_INK_W} strokeLinejoin="round" />
-      {/* the head */}
-      <Ellipse cx={32} cy={36} rx={24} ry={22} fill={skin} stroke={ink} strokeWidth={FACE_INK_W} />
-      {/* brows: flat asleep, knit when stirring, up when awake */}
-      {state === "stirring" ? (
-        <>
-          <Line x1={18} y1={26} x2={27} y2={29} stroke={ink} strokeWidth={FINE_INK_W} strokeLinecap="round" />
-          <Line x1={46} y1={26} x2={37} y2={29} stroke={ink} strokeWidth={FINE_INK_W} strokeLinecap="round" />
-        </>
-      ) : awake ? (
-        <>
-          <Line x1={18} y1={22} x2={27} y2={20} stroke={ink} strokeWidth={FINE_INK_W} strokeLinecap="round" />
-          <Line x1={46} y1={22} x2={37} y2={20} stroke={ink} strokeWidth={FINE_INK_W} strokeLinecap="round" />
-        </>
-      ) : null}
-      {/* eyes */}
-      {leftOpen ? (
-        <>
-          <Circle cx={23} cy={31} r={awake ? 5 : 4} fill={WHIMSY.paper} stroke={ink} strokeWidth={FINE_INK_W} />
-          <Circle cx={23} cy={31} r={awake ? 2.5 : 1.8} fill={ink} />
-        </>
-      ) : (
-        <Path d="M18 31 Q23 35 28 31" fill="none" stroke={ink} strokeWidth={FINE_INK_W} strokeLinecap="round" />
-      )}
-      {rightOpen ? (
-        <>
-          <Circle cx={41} cy={31} r={5} fill={WHIMSY.paper} stroke={ink} strokeWidth={FINE_INK_W} />
-          <Circle cx={41} cy={31} r={2.5} fill={ink} />
-        </>
-      ) : (
-        <Path d="M36 31 Q41 35 46 31" fill="none" stroke={ink} strokeWidth={FINE_INK_W} strokeLinecap="round" />
-      )}
-      {/* snout */}
-      <Ellipse cx={32} cy={43} rx={9} ry={6} fill={WHIMSY.rose} stroke={ink} strokeWidth={FINE_INK_W} />
-      <Circle cx={28.5} cy={43} r={1.6} fill={ink} />
-      <Circle cx={35.5} cy={43} r={1.6} fill={ink} />
-      {/* mouth: a soft line asleep, a twitch stirring, open awake */}
-      {awake ? (
-        <Ellipse cx={32} cy={53} rx={6} ry={3.5} fill={ink} />
-      ) : state === "stirring" ? (
-        <Path d="M27 52 Q32 55 37 51" fill="none" stroke={ink} strokeWidth={FINE_INK_W} strokeLinecap="round" />
-      ) : (
-        <Path d="M28 52 Q32 54 36 52" fill="none" stroke={ink} strokeWidth={FINE_INK_W} strokeLinecap="round" />
-      )}
-      {/* the snore: small z's, only while he snores */}
+      {state === "awake" ? <View pointerEvents="none" style={styles.ring} /> : null}
       {state === "snoring" ? (
-        <>
-          <Path d="M50 12 h5 l-5 5 h5" fill="none" stroke={ink} strokeWidth={FINE_INK_W} strokeLinecap="round" strokeLinejoin="round" />
-          <Path d="M57 3 h4 l-4 4 h4" fill="none" stroke={ink} strokeWidth={FINE_INK_W} strokeLinecap="round" strokeLinejoin="round" />
-        </>
+        <Hand style={styles.snore} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          z z
+        </Hand>
       ) : null}
-    </Svg>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   box: { alignItems: "center", justifyContent: "center" },
+  // Awake: a rose ring around him — the one-frame flip the screen's rose rim
+  // echoes on the patch.
+  ring: {
+    position: "absolute",
+    top: RING_INSET,
+    left: RING_INSET,
+    right: RING_INSET,
+    bottom: RING_INSET,
+    borderRadius: RADII.pill,
+    borderWidth: BORDER.heavy,
+    borderColor: WHIMSY.accent,
+  },
+  snore: {
+    position: "absolute",
+    top: SNORE_TOP,
+    right: SNORE_RIGHT,
+  },
 });
