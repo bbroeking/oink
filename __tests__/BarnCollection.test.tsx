@@ -140,7 +140,8 @@ describe("BarnCollection confirmed purchase feedback", () => {
       tree = TestRenderer.create(<BarnCollection accountId="a" progressBackend={jest.fn().mockResolvedValue({ ok: true, collections: [] })} />);
     });
     const roadmapRows = () => tree.root.findAllByType(require("react-native").Text)
-      .filter((node) => typeof node.props.children === "string" && node.props.children.startsWith("Rank "));
+      // The roadmap rows read "Rank N · name · state"; a tile's "Rank N gift" capsule is not one.
+      .filter((node) => typeof node.props.children === "string" && /^Rank \d+ · /.test(node.props.children));
     expect(roadmapRows()).toHaveLength(0);
     press("See Wallow gifts");
     expect(roadmapRows().length).toBeGreaterThan(0);
@@ -158,8 +159,70 @@ describe("BarnCollection confirmed purchase feedback", () => {
       tree = TestRenderer.create(<BarnCollection accountId="a" progressBackend={jest.fn().mockResolvedValue({ ok: true, collections: [] })} />);
     });
     press("Filter by Wallow gifts");
-    expect(tree.root.findAllByProps({ children: "Included with your starter Barn." })).toHaveLength(0);
-    expect(tree.root.findAllByProps({ children: "Free gift at Wallow Rank 10. Yours to keep." }).length).toBeGreaterThan(0);
+    // The earn line is the gift capsule's spoken name and the tile's hint —
+    // the sheet carries the long form.
+    expect(tree.root.findAllByProps({ accessibilityLabel: "Included with your starter Barn." })).toHaveLength(0);
+    expect(tree.root.findAllByProps({ accessibilityLabel: "Free gift at Wallow Rank 10. Yours to keep." }).length).toBeGreaterThan(0);
+    expect(
+      tree.root.findAll(
+        (node) =>
+          node.props.accessibilityLabel === "Preview Celestial Wallow Keepsake in your room" &&
+          typeof node.props.accessibilityHint === "string" &&
+          node.props.accessibilityHint.includes("Free gift at Wallow Rank 10. Yours to keep."),
+      ).length,
+    ).toBeGreaterThan(0);
+  });
+  it("marks a design that is in the room apart from one that is only owned", async () => {
+    mockParams.position = undefined;
+    const placed = byId.warm_plank_barn;
+    const stored = byId.spring_whitewash;
+    mockHabitat.data.owned = [placed, stored];
+    await act(async () => {
+      tree = TestRenderer.create(<BarnCollection accountId="a" progressBackend={jest.fn().mockResolvedValue({ ok: true, collections: [] })} />);
+    });
+    const tileFor = (name: string) =>
+      tree.root.find((node) => node.props.accessibilityLabel === `Preview ${name} in your room`);
+    const tags = (node: TestRenderer.ReactTestInstance) =>
+      node.findAll((n) => n.props.accessibilityRole === "text" && typeof n.props.accessibilityLabel === "string")
+        .map((n) => n.props.accessibilityLabel);
+    expect(tags(tileFor(placed.name))).toContain("In room");
+    expect(tags(tileFor(stored.name))).toContain("Owned");
+    expect(tags(tileFor(stored.name))).not.toContain("In room");
+    // Both keep the Place action; a gift the player does not own has no inert button.
+    expect(tree.root.findAllByProps({ accessibilityLabel: `Place ${stored.name} in my Barn` }).length).toBeGreaterThan(0);
+    expect(tree.root.findAll((n) => n.props.accessibilityRole === "button" && /earned reward$/.test(n.props.accessibilityLabel ?? ""))).toHaveLength(0);
+  });
+  it("groups by collection with a sticky header that counts what is owned", async () => {
+    mockParams.position = undefined;
+    mockHabitat.data.owned = [byId.warm_plank_barn];
+    await act(async () => {
+      tree = TestRenderer.create(<BarnCollection accountId="a" progressBackend={jest.fn().mockResolvedValue({ ok: true, collections: [] })} />);
+    });
+    const scroll = tree.root.find(
+      (node) => node.type === require("react-native").ScrollView && Array.isArray(node.props.stickyHeaderIndices),
+    );
+    const children = require("react").Children.toArray(scroll.props.children);
+    const headerIndices = children.flatMap((child: any, index: number) =>
+      /-header$/.test(String(child.key)) ? [index] : [],
+    );
+    expect(headerIndices.length).toBeGreaterThan(1);
+    expect(scroll.props.stickyHeaderIndices).toEqual(headerIndices);
+    const classic = HABITAT_CATALOG.filter((i) => !i.collectionId).length;
+    expect(tree.root.findAllByProps({ children: `1 of ${classic} owned` }).length).toBeGreaterThan(0);
+  });
+  it("shows a warm empty shelf for the Owned filter when nothing is owned", async () => {
+    mockParams.position = undefined;
+    await act(async () => {
+      tree = TestRenderer.create(<BarnCollection accountId="a" progressBackend={jest.fn().mockResolvedValue({ ok: true, collections: [] })} />);
+    });
+    act(() =>
+      tree.root
+        .find((n) => n.props.accessibilityRole === "radiogroup")
+        .findAll((n) => n.props.accessibilityRole === "radio" && n.props.accessibilityLabel === "Show owned Barn furnishings")[0]
+        .props.onPress(),
+    );
+    expect(tree.root.findAllByProps({ children: "Nothing in your collection yet." }).length).toBeGreaterThan(0);
+    expect(tree.root.findAll((n) => n.props.accessibilityLabel?.startsWith?.("Preview ") && n.props.accessibilityRole === "button")).toHaveLength(0);
   });
   it("returns owned items through the injected callback from the general collection", async () => {
     mockParams.position = undefined;
