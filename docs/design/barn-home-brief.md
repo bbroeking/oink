@@ -2,7 +2,9 @@
 
 Section 1 of `2026-09-12-ui-sections.md`. Feed this to Claude Design (or any mockup
 pass) alongside `docs/design/taste-standard.md`. Directions live in
-`docs/design/claude-design/barn/`.
+`docs/design/claude-design/barn/` — `receipt`, `plank`, `coin` — each drawn in the
+steady state (nothing pending) and the busy state (bank empty · lucky pig · buried ·
+bounty · patch open), because the steady state is what players see most.
 
 ## The one rule that shapes everything
 
@@ -31,9 +33,13 @@ reached from here but keep their own passes.
    with clear air around her — hearts float, she squashes and springs. Nothing overlays her.
 2. **Read the bank.** "How many tickles can I spend right now, out of how many?" — one
    glance. The earned lifetime total is secondary (a scrapbook number, not a live one).
-3. **Enter the barn.** The barn structure IS the door (decided 2026-09-12: no gold button).
-4. **Dig when the patch is open.** A control in the scene, visible only while the
-   Feeding window is open.
+   Decided 2026-09-13 (`claude-design/barn/barn-home.html`, the two-corner layout E of
+   `coin.html`): the **coin** top-right is the bank, with the streak on its shoulder and
+   the regen clock as one hand line under it; the **earned stamp** top-left (rose heart)
+   is the lifetime total. The corners answer each other and the middle stays empty.
+3. **Enter the barn.** Through the **Barn button** — one circle bottom-right whose face is the default action; "Go in" is the default whenever the patch is shut (decided 2026-09-13: no barn sprite in the background, no gold button, no margin pills). The go-in transition options are in `claude-design/barn/door-motion.html`.
+4. **Dig when the patch is open.** The Barn button's face flips to the `Shovel` (sage fill, a
+   slow dashed ring) and Dig becomes the default; the fan lists it first and biggest.
 5. **Bury a truffle** for a visiting friend (and see one is buried, with count).
 6. **Claim a bounty** — a nudge to the Season tab, only when something is claimable.
 7. **Refill when empty** — the rewarded-ad offer, only at bank = 0.

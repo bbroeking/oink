@@ -14,6 +14,13 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import Feather from "@expo/vector-icons/Feather";
 import { GameIcon } from "./GameIcon";
 
+// The star's hand-cut outline, shared by `star` and `premium` so the two read
+// as one family. Generated from a 5-tip star (R 9.9 / r 5.5, −5° lean, tips
+// rounded at 78 % of each edge) — regenerate rather than hand-nudge.
+const STAR_PATH =
+	"M10.53 3.69 Q11.14 2.44 11.95 3.57 L14.83 7.59 L19.87 8.18 Q21.30 8.35 20.43 9.49 L17.36 13.54 L18.25 18.40 Q18.49 19.77 17.17 19.33 L12.48 17.78 L8.07 20.22 Q6.82 20.91 6.85 19.49 L6.94 14.45 L3.48 11.06 Q2.50 10.11 3.80 9.68 L8.39 8.15 Z";
+const STAR_GLINT = "M8.9 8.6 Q9.9 7.4 11.1 7.1";
+
 export type IconName =
 	| "home"
 	| "ranks"
@@ -263,20 +270,34 @@ function Render({
 					/>
 				</G>
 			);
+		// A hand-cut star, not a stock polygon: fat inner radius, rounded tips,
+		// a 5° lean and a hair of asymmetry so it rhymes with the painted
+		// `Glyph name="star"`; a cream glint when filled. (2026-09-12)
 		case "star":
 			return (
-				<Path
-					d="M12 3 L14.4 8.7 L20.5 9.3 L15.9 13.4 L17.4 19.4 L12 16.2 L6.6 19.4 L8.1 13.4 L3.5 9.3 L9.6 8.7 Z"
-					fill={filled ? "#F5C44A" : "none"}
-					stroke={c}
-					strokeWidth={sw}
-					strokeLinejoin="round"
-				/>
+				<G>
+					<Path
+						d={STAR_PATH}
+						fill={filled ? "#F5C44A" : "none"}
+						stroke={c}
+						strokeWidth={sw}
+						strokeLinejoin="round"
+					/>
+					{filled && (
+						<Path
+							d={STAR_GLINT}
+							fill="none"
+							stroke="#FFF6D6"
+							strokeWidth={1.6}
+							strokeLinecap="round"
+						/>
+					)}
+				</G>
 			);
 		case "premium":
 			return (
 				<Path
-					d="M12 3 L14.4 8.7 L20.5 9.3 L15.9 13.4 L17.4 19.4 L12 16.2 L6.6 19.4 L8.1 13.4 L3.5 9.3 L9.6 8.7 Z"
+					d={STAR_PATH}
 					fill={filled ? "#7B5FFF" : "none"}
 					stroke={c}
 					strokeWidth={sw}
