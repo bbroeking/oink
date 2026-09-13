@@ -29,6 +29,8 @@ describe("Rive pig contract", () => {
 		);
 		expect(RIVE_PIG_ANIMATION_COMMANDS.bounce).toEqual({ kind: "activity", value: 2 });
 		expect(RIVE_PIG_ANIMATION_COMMANDS.happy).toEqual({ kind: "rest", value: 3 });
+		// No seated rest in the rig yet: sit stands in on happy's rest state.
+		expect(RIVE_PIG_ANIMATION_COMMANDS.sit).toEqual(RIVE_PIG_ANIMATION_COMMANDS.happy);
 		expect(RIVE_PIG_ANIMATION_COMMANDS.wave).toEqual({ kind: "activity", value: 3 });
 	});
 

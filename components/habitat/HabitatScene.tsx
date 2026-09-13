@@ -28,6 +28,7 @@ import {
   WHIMSY,
 } from "@/constants/theme";
 import { Icon } from "@/components/ui/Icon";
+import { PigRestingPoseProvider } from "@/components/ui/PigRestingPose";
 import { Label } from "@/components/ui/Text";
 import type {
   HabitatPlacedItem,
@@ -231,12 +232,19 @@ export function HabitatScene({
 
         {HABITAT_DECOR_POSITIONS.map((position) => <HabitatPositionLayer key={position} position={position} placed={snapshot.positions[position]} canvas={canvas} editing={editing} selected={selectedPosition === position} wallowRank={snapshot.wallowRank} onSelectPosition={onSelectPosition} onInspect={onInspect} onSettled={() => settled(`${position}:${snapshot.positions[position]!.assetKey}`)} />)}
 
-        <View style={[styles.pigStage, { left: canvas.width * .29 - PIG_STAGE / 2, top: canvas.height * .68 - PIG_STAGE / 2, transform: [{ scale: canvas.width * .30 / PIG_STAGE }] }]} pointerEvents="box-none" testID="habitat-visitor-pig">
-          {visitorPig}
-        </View>
-        <View style={[styles.pigStage, { left: canvas.width * .52 - PIG_STAGE / 2, top: canvas.height * .69 - PIG_STAGE / 2, transform: [{ scale: canvas.width * .36 / PIG_STAGE }] }]} pointerEvents="box-none" testID="habitat-host-pig">
-          {hostPig}
-        </View>
+        {/* Indoors, pigs sit. The room declares the seated rest for every pig
+            it stages — the owner's bridged Home presentation, a friend's host,
+            a visitor — and PigStage takes it only in place of a standing idle
+            (a mood or a reaction still plays). The Exterior never provides a
+            pose, so its tickle idle is untouched. */}
+        <PigRestingPoseProvider pose="sit">
+          <View style={[styles.pigStage, { left: canvas.width * .29 - PIG_STAGE / 2, top: canvas.height * .68 - PIG_STAGE / 2, transform: [{ scale: canvas.width * .30 / PIG_STAGE }] }]} pointerEvents="box-none" testID="habitat-visitor-pig">
+            {visitorPig}
+          </View>
+          <View style={[styles.pigStage, { left: canvas.width * .52 - PIG_STAGE / 2, top: canvas.height * .69 - PIG_STAGE / 2, transform: [{ scale: canvas.width * .36 / PIG_STAGE }] }]} pointerEvents="box-none" testID="habitat-host-pig">
+            {hostPig}
+          </View>
+        </PigRestingPoseProvider>
 
         <View style={styles.cabinet} testID="habitat-workshop-cabinet">
           {cabinet}

@@ -40,7 +40,15 @@ import type {
 } from "../../constants/hat_overlay_types";
 import { ITEM_PREBAKED, isPrebaked } from "../../constants/prebaked";
 import { PigRenderer, type PigRendererKind } from "./PigRenderer";
-import { resolvePigAnimation, type PigAnimation, type PigMood, type PigReaction } from "./pigRendererContract";
+import {
+	pigAnchorAnimation,
+	resolvePigAnimation,
+	resolveRestingAnimation,
+	type PigAnimation,
+	type PigMood,
+	type PigReaction,
+} from "./pigRendererContract";
+import { usePigRestingPose } from "./PigRestingPose";
 import { usePigActive } from "@/hooks/usePigActive";
 import { RIVE_PIG_SOURCE } from "./rivePigAsset";
 import {
@@ -183,10 +191,10 @@ export function resolveSlot(
 	overlay: HatOverlay | null;
 } | null {
 	if (!slot) return null;
-	// PigAnimation carries one key the anchor tables don't: "bounce", which is a
-	// looping re-use of the jump frames (PIG_ANIMATION_SPECS), so it shares
-	// jump's per-frame anchors. Every other PigAnimation IS a PigAnimationKey.
-	const anchorAnim: PigAnimationKey = pigAnim === "bounce" ? "jump" : pigAnim;
+	// The render-only variants ("bounce" on jump's frames, "sit" on happy's)
+	// share their source family's per-frame anchors; every other PigAnimation
+	// IS a PigAnimationKey. One mapping, owned by the contract.
+	const anchorAnim: PigAnimationKey = pigAnchorAnimation(pigAnim);
 	const itemId = slot.id;
 	const category = slot.category ?? null;
 	const emoji = slot.emoji ?? null;
@@ -370,7 +378,7 @@ function ItemOverlay({
 // behind the pig).
 export function PigStage({
 	pigId = "rosie",
-	pigAnimation: baseAnimation = "idle",
+	pigAnimation: requestedAnimation = "idle",
 	pigMood,
 	pigReaction,
 	active = true,
@@ -401,6 +409,11 @@ export function PigStage({
 	const [riveReady, setRiveReady] = React.useState(false);
 	const [finishedReaction, setFinishedReaction] = React.useState<number | null>(null);
 	const visible = usePigActive(active);
+	// Inside a room the pig sits: a standing idle becomes the seated rest, a
+	// mood or a reaction plays as it would anywhere. Resolved here, once, so
+	// the sprite frames and the cosmetic anchors below agree on the pose.
+	const restingPose = usePigRestingPose();
+	const baseAnimation = resolveRestingAnimation(restingPose, requestedAnimation, pigMood);
 	const reaction = pigReaction && pigReaction.id !== finishedReaction ? pigReaction : null;
 	const pigAnimation = reaction?.kind ?? resolvePigAnimation(baseAnimation, pigMood);
 	const motionPolicy = useMotionPolicy();

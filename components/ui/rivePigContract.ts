@@ -87,6 +87,9 @@ export type RivePigAnimationCommand =
 
 export const RIVE_PIG_ANIMATION_COMMANDS = Object.freeze({
 	idle: { kind: "rest", value: 0 },
+	// The Rive rig has no seated rest yet; the raster sit rides the happy
+	// frames, so its Rive stand-in is the happy rest state.
+	sit: { kind: "rest", value: 3 },
 	walk: { kind: "activity", value: 1 },
 	jump: { kind: "trigger", input: RIVE_PIG_INPUTS.jump },
 	bounce: { kind: "activity", value: 2 },
