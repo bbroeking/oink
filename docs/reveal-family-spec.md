@@ -1,15 +1,16 @@
 # The reveal family — one sheet for everything the game hands you (spec)
 
-> **Status:** proposed 2026-09-13. Covers the eight passive popups that present
-> something to the player (a gift, a badge, a hat, a window, a recap, a tale, a
-> guide). Grew out of the `HabitatGiftReveal` inset bug fixed the same day
-> (`b7ea4fa`). Nothing else here is built. Companion audit: the family table in
-> the session notes; the rules below supersede it.
+> **Status:** proposed 2026-09-13; **structure chosen the same day — the Ledger**
+> (canvas: *The Reveal Sheet*, direction A, over the Postcard and the Pinboard).
+> Covers the eight passive popups that present something to the player (a gift,
+> a badge, a hat, a window, a recap, a tale, a guide). Grew out of the
+> `HabitatGiftReveal` inset bug (`b7ea4fa`) and the recap's clipped rows
+> (`420ce8f`). Nothing else here is built.
 
 ## The sentence
 
-**"Everything the game hands you arrives on the same sheet, in the same order,
-and leaves the same way."**
+**"Everything the game hands you is written on one ledger — one left edge, one
+rule, one line per thing — and leaves the same way."**
 
 ## Scope
 
@@ -32,11 +33,36 @@ verdict. In queue order (`constants/popupPriorities.ts`):
 `UserSheet`), and `PigFriendsLaunchModal` (a one-shot launch ceremony, retired
 after launch). They keep their scaffolds; only the copy budgets (§4) apply.
 
-## 1. The primitive — `RevealSheet`
+## 1. The pattern — the Ledger
 
-One component owns the frame, the inset, the order and the controls. Every
-member of the family renders *through* it; none renders a scaffold, a
-`Sticker` frame or a `DialogCloseRow` of its own.
+The family stops being a stack of centred capsules. A reveal is a **ledger
+page**: everything starts on one left edge, the things you are handed are
+**lines**, not cards, and two solid rules bracket the body the way a receipt
+brackets its sum. Why this over the alternatives (canvas, 2026-09-13): the
+mirror is gone by construction (nothing is centred, the × is the only thing on
+the right), it is the `Receipt` grammar the game already speaks, and it costs
+no new art. What it gives up is named in §4a.
+
+Anatomy, top → bottom, every member:
+
+1. **Heading row** — kicker + title on the left, × on the right, sharing one
+   row (`DialogCloseRow`'s header slot, shipped in `420ce8f`).
+2. **Count line** (optional) — one hand line under the title: *five things
+   landed · today* / *new · yours to keep*.
+3. **Top rule** — `BORDER.ink` solid, full inner width.
+4. **The body** — either
+   - **lines** (`LedgerRow`): a 3-column grid — a 26pt **mark** · the words
+     (title + hand sub) · a right-aligned hand **value** (a time, `+6
+     tickles`, `8 h`) — separated by **dashed hairlines**, no fill, no
+     border, no tilt, no shadow; or
+   - **one line with art** (`LedgerLine`): the object's picture in a 120pt
+     left column, the words beside it — the same grammar at hero scale.
+5. **Bottom rule** — `BORDER.ink` solid.
+6. **Primary** — gold, full width.
+7. **Secondary** (optional) — a left-aligned hand link with a chevron:
+   *later ›*, *keep it for later ›*. Left, never centred.
+
+## 1a. The primitive — `RevealSheet` + `LedgerRow` + `LedgerLine`
 
 ```ts
 // components/ui/RevealSheet.tsx
@@ -49,18 +75,14 @@ export interface RevealSheetProps {
   title: string;
   /** `pageTitle` for reveals and ceremonies, `sectionTitle` for housekeeping. */
   titleRole?: "pageTitle" | "sectionTitle";
-  /** A fixed-frame picture: art, a video, a burst. Sized by the caller. */
-  hero?: ReactNode;
-  /** One line under the hero. `handLg` for reveals, `body` for housekeeping. */
-  body?: string;
-  bodyRole?: "handLg" | "body";
-  /** The optional list. Scrolls inside at `listMaxHeight`; never the sheet. */
-  children?: ReactNode;
+  /** The hand line under the title. */
+  count?: string;
+  /** The body between the rules: LedgerRows, one LedgerLine, or a ceremony hero. */
+  children: ReactNode;
+  /** Lines scroll inside the rules at this height; the rules and the primary never scroll. */
   listMaxHeight?: number;
-  /** A hand note that explains the primary. Sits ABOVE the primary, always. */
-  note?: string;
   primary: { label: string; onPress: () => void; loading?: boolean; hint: string };
-  /** Centred handLink under the primary. The only allowed second control. */
+  /** Left-aligned hand link with a chevron, under the primary. The only second control. */
   secondary?: { label: string; onPress: () => void; hint: string };
   /** Names the outcome of ×: "Keep gifts for later", "Skip the tale". */
   closeLabel: string;
@@ -68,55 +90,98 @@ export interface RevealSheetProps {
   error?: string | null;
   testID?: string;
 }
+
+// components/ui/LedgerRow.tsx — one line of a ledger
+export interface LedgerRowProps {
+  /** The mark: a Glyph, Icon or art, drawn on a 26pt disc tinted by `kind`. */
+  mark: ReactNode;
+  /** Tints the mark's disc — the kind is legible without a card fill. */
+  kind?: "paper" | "sun" | "sage" | "rose" | "lilac";
+  title: string;
+  sub?: string;
+  /** Right column, hand, tabular: a time, a value, a duration. Omit to leave the column empty. */
+  value?: string;
+  /** Tappable rows draw a hand chevron after `value` and announce as buttons. */
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+}
+
+// components/ui/LedgerLine.tsx — one line at hero scale
+export interface LedgerLineProps {
+  /** The picture, in the left column (120pt; 96pt under 360pt screens). */
+  art: ReactNode;
+  title?: string;          // usually omitted — the sheet's title names the thing
+  status: string;          // body: "New · yours to keep"
+  sub?: string;            // hand: "a shelf keepsake. try it in your Barn now, or later."
+  /** A rarity or count tag rendered under the status, left-aligned. */
+  tag?: ReactNode;
+}
 ```
 
-- **Frame.** `AdaptiveModalScaffold` with `showCloseButton`, `maxWidth
-  REVEAL_MAX_W = 390`, `presentation "native"`, `dismissOnBackdrop false`.
-  Never `bare`. `tone` sets the frame's `backgroundColor` via `frameStyle`
-  (`WHIMSY.paper | sun | lilac`); the border, radius (`RADII.xxl`) and
+- **Frame.** `AdaptiveModalScaffold` with `showCloseButton`, `closeRowContent`
+  (the heading row), `maxWidth REVEAL_MAX_W = 390`, `presentation "native"`,
+  `dismissOnBackdrop false`. Never `bare`. `tone` sets the frame's
+  `backgroundColor` via `frameStyle`; border, radius (`RADII.xxl`) and
   `STICKER_SHADOW` are the scaffold's.
 - **Inset.** `contentContainerStyle = { paddingHorizontal: SPACE.xl,
-  paddingBottom: SPACE.xl, gap: SPACE.md }`. The top inset is the close rail.
-  No member passes padding of its own.
-- **Order, top → bottom.** close rail → `Kicker` → title → hero → body →
-  children → note → error → primary → secondary. A member may omit any
-  optional slot; it may not reorder them.
-- **Controls.** Primary is `<Button variant="gold" size="md" full>`; secondary
-  is `<Button variant="handLink" size="sm">` centred. No `ghost`, `link`,
-  `dark`, `purple` or `primary` variants in the family. No side-by-side
-  buttons. `loading` on the primary is the only busy state (no `LoadingBeat`).
-- **Motion.** The sheet enters with `popIn(scale, opacity, policy)`
-  (`utils/motionRecipes.ts`) and leaves on the scaffold's fade. Members add
-  motion only *inside* `hero`.
-- **Text.** Every word through a `T` role. Kicker ≤ 22 chars. Title
-  `numberOfLines={2}`, body `numberOfLines={2}`, note `numberOfLines={2}`; the
-  budgets in §4 make the caps invisible — the caps exist so a locale or a
-  Dynamic Type step degrades to a truncation, never a third line.
+  paddingBottom: SPACE.xl }`. The top inset is the heading row. No member
+  passes padding of its own. **No bleed gutter**: ledger lines have no
+  overhang, so the list clips cleanly at the rules (`LIST_BLEED` stays in the
+  theme for sticker lists elsewhere; the family does not use it).
+- **Rules.** The top and bottom rules are the primitive's (`BORDER.ink`,
+  `UI_COLORS.border`); rows draw their own dashed separator on the top edge
+  (`BORDER.hair`, `UI_COLORS.uiMuted`, `borderStyle "dashed"`), first row
+  excepted. Rules are full inner width — they touch the 24pt inset on both
+  sides, never the frame.
+- **Controls.** Primary is `<Button variant="gold" size="md" full>` under the
+  bottom rule with `SPACE.card` above it; secondary is `<Button
+  variant="handLink" size="sm">` **left-aligned** (`alignSelf: flex-start`)
+  with a trailing ` ›`. No `ghost`, `link`, `dark`, `purple` or `primary`
+  variants in the family. No side-by-side buttons. `loading` on the primary
+  is the only busy state.
+- **Motion.** The sheet enters with `popIn`; leaves on the scaffold's fade.
+  Members add motion only inside a `LedgerLine`'s `art` or a ceremony hero.
+- **Text.** Every word through a `T` role; every line **left-aligned** — the
+  family has no `align="center"`. Title `numberOfLines={2}`, sub
+  `numberOfLines={2}`, value `numberOfLines={1}`.
 
 ## 2. Layout rules
 
-1. **One width.** `REVEAL_MAX_W = 390` in `constants/theme.ts` (next to
-   `TAB_SAFE`). Retire `CARD_MAX_W` (MysteryHat, LuckyPig), `DIGEST_MAX_W`
-   (360), the `400`s (tale, guide) and the scaffold default (430) for this
-   family.
-2. **One inset.** 24pt sides and bottom on every device; on a 320pt screen
-   the scaffold's own gutter (`SPACE.sm` under 360) shrinks the *frame*, not
-   the inset. Inner width floor: 320 − 16 − 48 = **256pt**.
-3. **One close.** The scaffold's rail, top-right, 44pt, labelled with the
-   outcome. It is in flow (never absolute) so a two-line title cannot slide
-   under it. No inner `DialogCloseRow`, no negative margins.
-4. **Heroes are pictures.** Fixed frames with their own named constants
-   (`GIFT_ART`, `HERO`, `BURST_SIZE`, the tale's 9:16 frame capped at 58 % of
-   screen height). A hero never sets the sheet's width.
-5. **Lists scroll inside.** `children` sits in a `ScrollView` with
-   `maxHeight = listMaxHeight` (default `REVEAL_LIST_MAX_H = 240`) and
-   `bounces={false}`; the primary is always on screen without scrolling the
-   sheet. Rule of thumb: ≤ 4 rows visible, the rest reachable.
-6. **Nothing under the primary but the secondary.** The note explains the
-   gold button, so it sits above it. A note that does not explain the primary
-   is a `body tone="secondary"` line under the title, or it is cut.
-7. **Card-in-card is a tone, not a border.** The sun/lilac Sticker inside a
-   frame is retired; `tone` tints the one frame.
+1. **One width.** `REVEAL_MAX_W = 390`. Retire `CARD_MAX_W` ×2, `DIGEST_MAX_W`,
+   the `400`s and the scaffold default for this family.
+2. **One inset, one left edge.** 24pt sides and bottom; the kicker, the title,
+   the count line, every mark, every rule's left end, the primary's left
+   edge and the secondary all start at that edge. Inner width floor on a
+   320pt screen: 320 − 16 − 48 = **256pt**.
+3. **One close.** The scaffold's rail as the heading row (`closeRowContent`),
+   44pt, labelled with the outcome, in flow. No inner `DialogCloseRow`, no
+   negative margins.
+4. **Lines, not cards.** Inside the rules nothing has a fill, a border, a
+   radius, a tilt or a shadow. Kind is carried by the **mark's disc**
+   (`kind` → sun / sage / rose / lilac / paper), value by the right column.
+   The grid: `26pt · minmax(0, 1fr) · auto`, `columnGap SPACE.sm`,
+   `paddingVertical SPACE.sm + SPACE.xxs` (10) per row, dashed hairline on
+   the top of every row but the first.
+5. **The value column is tabular.** `font-variant-numeric: tabular-nums`,
+   right-aligned, hand 14, `numberOfLines 1`, `maxWidth 88pt`; times as
+   `7:40`, values as `+6 tickles`, durations as `8 h`. When no row in the
+   list has a value the column collapses (`auto` → 0).
+6. **Lines scroll inside the rules.** `children` sits in a `ScrollView` with
+   `maxHeight = listMaxHeight` (default `REVEAL_LIST_MAX_H = 240`),
+   `bounces false`; the rules, the count line and the primary never move.
+   ≤ 4 lines visible, the rest reachable. No bleed (lines have no overhang).
+7. **The object line.** `LedgerLine` puts the art in a 120pt column
+   (`96pt` under 360pt screens) beside the words, vertically centred, with
+   `columnGap SPACE.lg`. Under 340pt of inner width it **stacks** — art
+   above words, both on the left edge — rather than squeezing the copy.
+8. **Ceremony heroes are the exception.** The tale's 9:16 video sits
+   full-width *between* the rules as the body; its caption is the count
+   line. It is the only full-width picture in the family.
+9. **Nothing under the primary but the secondary**, and the secondary is
+   left-aligned hand with a chevron. The hand note that explained a control
+   is gone from the grammar: what a control does is its label; what a thing
+   is, is its sub line.
 
 ## 3. Interaction rules
 
@@ -146,29 +211,55 @@ export interface RevealSheetProps {
 ## 4. Copy rules
 
 Budgets are characters that fit **two lines at the inner-width floor (256pt)**
-in the role's face. Exceeding a budget is a lint failure (§7), not a judgement.
+in the role's face; the row grid narrows the words column, so lines carry
+their own budgets. Exceeding a budget is a lint failure (§8), not a judgement.
 
-| role | ≈ chars/line | 2-line budget | used for |
+| role / slot | ≈ chars/line | 2-line budget | used for |
 | --- | --- | --- | --- |
 | kicker (hand 13) | — | **22** (one line) | the sentiment / the source |
 | pageTitle (Caprasimo 26) | 15 | **28** | reveal + ceremony titles |
 | sectionTitle (Caprasimo 22) | 18 | **34** | housekeeping titles |
-| handLg (17) | 30 | **58** | reveal body |
-| body (Nunito 15) | 33 | **66** | housekeeping body, list rows |
-| hand (14) | 36 | **70** | notes |
+| count line (hand 14) | 36 | **36** (one line) | *five things landed · today* |
+| row title (body 15, words column ≈ 200pt on SE) | 26 | **26** (one line) | *Someone visited your Barn* |
+| row sub (hand 14, same column) | 28 | **56** | *the piggler tickled your pig* |
+| row value (hand 14, ≤ 88pt) | 12 | **12** (one line) | `7:40` · `+6 tickles` · `8 h` |
+| object line status (body 15, ≈ 120pt beside art on SE / full when stacked) | 16 / 33 | **32** (one line) | *New · yours to keep* |
+| object line sub (hand 14) | 17 / 36 | **52** | *a shelf keepsake. try it in your Barn now, or later.* |
 | button label | — | **18** (one line) | primary / secondary |
-| list row title (cardTitleSm) | 22 | **22** (one line) | badges, recap rows |
 
-- **Kicker** is lowercase hand, no punctuation, no ★ (the primitive draws it):
-  `a little more home` · `mystery hat box` · `achievements` · `lucky pig` ·
-  `while you were away` · `season 1 · the tale` · `season 1 · how it works`.
-- **Title** names the thing when there is one (`Guestbook Keepsake`, `The
-  Tiny Crown`) and the moment when there is not (`A new badge is yours`).
-  Dynamic titles are capped at the source (`utils/whileAway.ts` headline).
-- **Body** is one sentence with one fact. Numbers are digits. No em-dash
-  clauses, no "please", no "successfully".
-- **Buttons** are sentence-case verbs, ≤ 18 chars, no exclamation marks.
-- **Notes** are lowercase hand, no full stop, one clause.
+- **Kicker** is lowercase hand, no punctuation, no ★ (the primitive draws it).
+- **Title** names the thing when there is one (`Guestbook Keepsake`) and the
+  moment when there is not (`Notes from the barn`). Dynamic titles are capped
+  at the source (`utils/whileAway.ts`).
+- **Row title** is a noun phrase, no trailing punctuation — the exclamation
+  marks go (*Someone visited your Barn*, not *…Barn!*). **Row sub** is who and
+  what, lowercase hand. **Value** is a number with a unit or a time; never a
+  word alone.
+- **Count line** is lowercase, `·`-separated, one line: *five things landed ·
+  today* · *new · yours to keep* · *3 badges · all saved*.
+- **Buttons** are sentence-case verbs, ≤ 18 chars; the secondary ends in ` ›`.
+- No em-dash clauses, no "please", no "successfully".
+
+## 4a. Trade-offs the Ledger accepts
+
+- **Quieter.** Lines have no sticker identity; the scrapbook feel moves to the
+  frame, the marks and the hand voice. Kind is a tinted 26pt disc, not a
+  tinted card — legible, smaller.
+- **A value column needs values.** The recap's events carry no timestamp
+  today (`WhileAwayEvent` has none); the column is empty until
+  `utils/whileAway.ts` and its RPC carry `at`. Until then the column shows
+  the row's *value* where one exists (`+6 tickles`, `8 h`) and collapses
+  otherwise — never a fake time.
+- **The bleed gutter retires from the family.** Straight lines have no
+  overhang; `LIST_BLEED` stays for sticker lists elsewhere (Friends rows).
+- **Object dialogs lose the centred hero.** A mystery hat, a lucky pig, a
+  furnishing sit in a 120pt left column, not a 160pt centrepiece; the
+  unboxing beat becomes a tap on that column's art. Bigger art belongs in
+  the destination (the Closet, the Barn), which the primary opens.
+- **Ceremonies get one exception** (the tale's full-width video), stated in
+  §2.8 so it cannot become two.
+- **`Receipt` stays as it is.** `ReceiptRow` is a `ListRow` card today; it
+  could adopt `LedgerRow` later, but that is the Season tab's decision.
 
 ## 5. Trigger and persistence rules
 
@@ -228,7 +319,8 @@ in the role's face. Exceeding a budget is a lint failure (§7), not a judgement.
 
 | file | what | size |
 | --- | --- | --- |
-| `components/ui/RevealSheet.tsx` | the primitive (§1); exported from `components/ui/index.tsx` under *modals* | M |
+| `components/ui/RevealSheet.tsx` | the sheet (§1a): heading row via `closeRowContent`, count line, top/bottom rules, scrolling body, gold primary, left hand secondary; exported from `components/ui/index.tsx` under *modals* | M |
+| `components/ui/LedgerRow.tsx`, `components/ui/LedgerLine.tsx` | the line grammar (§1a): 26pt mark disc by `kind`, words, tabular value, dashed separator; the object line with the 120/96pt art column and the SE stack | M |
 | `constants/theme.ts` | `REVEAL_MAX_W = 390`, `REVEAL_LIST_MAX_H = 240` | S |
 | `utils/revealCopy.ts` | `REVEAL_BUDGETS` (§4 table) + `fitsBudget(role, text)`; used by the tests and the seeder | S |
 | `components/dev/screens/reveal-seeder.tsx` | admin-gated seed actions, one per member (§5.5) | M |
@@ -242,35 +334,47 @@ in the role's face. Exceeding a budget is a lint failure (§7), not a judgement.
 | `components/ui/PopupQueue.tsx` | launch cap + `releaseHeld()` (§6.2); `usePopupSlot` gains `band` derived from priority |
 | `constants/popupPriorities.ts` | doc comment for the cap; `HOUSEKEEPING_FLOOR = 40` exported |
 | `app/_layout.tsx` | `rituals` slot passes `badges` when both want; `achievements` slot drops in that case; Barn focus calls `releaseHeld()` |
-| `components/habitat/HabitatGiftReveal.tsx` | → `RevealSheet` (`tone paper`, `titleRole pageTitle`); kicker `a little more home`; title = the item's name (single gift) / `3 new furnishings` (batch, list of cards inside); body ≤ 58; primary `Preview in my Barn`, secondary `Later`; `closeLabel "Keep gifts for later"` |
-| `components/habitat/HabitatExpansionDiscovery.tsx` | → `RevealSheet` (`paper`, `sectionTitle`); kicker `a home for your pig`; body `Four starter pieces are yours. The room starts empty — go decorate it.`; note `80 designs for Snouts · 20 more earned by collecting`; the Friends/Decorate pair as two `body` lines under the hero; primary `See my Barn`, secondary `Shop furnishings`, × = `Maybe later`; `loading` replaces `LoadingBeat` |
-| `components/MysteryHatReveal.tsx` | → `RevealSheet` (`lilac`, `pageTitle`); kicker `mystery hat box`; box phase: hero is the tappable box, title `Something's rattling`, body `Tap the box to open it`, primary hidden until open; open phase: title = hat name, rarity `Tag` inside hero, body `It's yours — wear it in the Closet` → `Yours. Wear it in the Closet.`; primary `Wear it` (Closet, via `releasePopupThenNavigate`), secondary `Keep it for later`; fallback: title `+150 snouts`, body `You own every hat it could hold, so it spilled snouts.`, primary `Got it`; backdrop no longer opens; receipt = `mystery_hat_reveals` |
-| `components/AchievementDigestModal.tsx` | → `RevealSheet` (`sun`, `pageTitle`); rows in `children` with `listMaxHeight`; primary `Got it` gold full; accepts `embedded` for the recap (§6.3) or exports `AchievementRows` for `WhileAwayModal` to reuse |
-| `components/LuckyPigModal.tsx` | → `RevealSheet` (`sun`, `pageTitle`); kicker `lucky pig`; hero = burst + pig (unchanged); the bonus-title well loses its hairlines (a `body` pair); primary gold two-state; secondary `Keep for later`; receipt = `lucky_pig_windows` |
-| `components/WhileAwayModal.tsx` | → `RevealSheet` (`paper`, `pageTitle`); rows in `children`; primary `Got it`; **delete** the foot note; `badges?: UnlockedAchievement[]` renders `AchievementRows` after the events; dismiss marks both the away marker and the badges seen |
-| `utils/whileAway.ts` | `headline` capped at 28 chars (`fitsBudget("pageTitle")`); the fallback `While you were away` |
-| `components/GreatHungerIntroModal.tsx` | → `RevealSheet` (`paper`, `pageTitle`, primary `size lg` is the one allowed exception, prop `primarySize`); kicker `season 1 · the tale`; hero = the video frame (unchanged, 58 % cap, mute chip inside); primary `To the season` / `Rally your Sounder`; × = `Skip the tale` |
-| `components/season1/SeasonGuideModal.tsx` | → `RevealSheet` (`paper`, `pageTitle`); steps + ladder in `children` with `listMaxHeight`; ladder foot → `body tone="secondary"` `Every dig and blessing pries his tickles back. Starve him from Gorged to Famished.`; primary `To the patch`; × = `To the patch`; **remove** `leave your Sounder ›` (moves to the Sounder card's menu, separate change); `GUIDE_EVERY_VISIT` deleted; opens from `how it works ›` and once per user from a `season_guide_seen` stamp |
+| `components/habitat/HabitatGiftReveal.tsx` | → `RevealSheet` (`paper`, `pageTitle`); kicker `a little more home`; single gift: title = the item's name, count `new · yours to keep`, body = one `LedgerLine` (art 120, status `New · yours to keep`, sub `a shelf keepsake. try it in your Barn now, or later.`); batch: title `3 new furnishings`, body = one `LedgerRow` per gift (art as the mark, value `new`) each tappable to preview; primary `Preview in my Barn`; secondary `later ›`; × `Keep gifts for later` |
+| `components/habitat/HabitatExpansionDiscovery.tsx` | → `RevealSheet` (`paper`, `sectionTitle`); kicker `a home for your pig`; count `four starter pieces · yours`; body = four `LedgerRow`s (the starter art as marks: `Warm Plank Barn` / `Rosie's sketch` / `Sunflower crock` / `Patchwork rug`, values `shell` / `wall` / `floor` / `rug`); the Friends/Decorate pair and the `80 designs …` line are cut (the Barn says it); primary `See my Barn`, secondary `shop furnishings ›`, × `Maybe later`; `loading` replaces `LoadingBeat` |
+| `components/MysteryHatReveal.tsx` | → `RevealSheet` (`lilac`, `pageTitle`); kicker `mystery hat box`; box phase: title `Something's rattling`, body = `LedgerLine` with the wobbling box as `art` (tappable), status `Tap the box`, primary hidden; open phase: title = hat name, `LedgerLine` art = the hat on its rarity disc, status `Yours`, tag = rarity `Tag`, sub `wear it in the Closet`; primary `Wear it` (Closet, via `releasePopupThenNavigate`), secondary `keep it for later ›`; fallback: title `+150 snouts`, status `The box spilled snouts`, sub `you own every hat it could hold`, primary `Got it`; backdrop no longer opens; receipt = `mystery_hat_reveals` |
+| `components/AchievementDigestModal.tsx` | → `RevealSheet` (`sun`, `pageTitle`); count `3 badges · all saved`; body = one `LedgerRow` per badge (badge art as the mark, sub = the reward, value = `L2` when levelled); primary `Got it`; exports `AchievementRows` (the mapped `LedgerRow`s) for the recap (§6.3) |
+| `components/LuckyPigModal.tsx` | → `RevealSheet` (`sun`, `pageTitle`); kicker `lucky pig`; body = `LedgerLine` (art = the burst + pig at 120, status `Your next {n} tickles`, sub `{p}% chance each one is doubled`) plus, when a title unlocks, a second `LedgerRow` (mark = crown, title = the title's name, value `before` / `after`); primary gold two-state; secondary `keep for later ›`; receipt = `lucky_pig_windows` |
+| `components/WhileAwayModal.tsx` | → `RevealSheet` (`paper`, `pageTitle`); count `{n} things landed · today`; body = one `LedgerRow` per event — mark by kind (visit ★ on sun, bless heart on sage, curse on lilac, trade heart on rose, sounder bell on paper), title = the event, sub = who and what, value = the time when `at` is present else the event's value; tappable rows keep `onNavigate`; `badges?` appends `AchievementRows` after a dashed rule; primary `Got it`; the pill `ListRow`s, `LIST_BLEED` and the foot note go |
+| `utils/whileAway.ts` (+ its RPC) | events carry `at` (ISO) — `sent_at` for rituals, `created_at` for announcements/trades; `headline` capped at 28 chars; row titles drop their `!` |
+| `components/GreatHungerIntroModal.tsx` | → `RevealSheet` (`paper`, `pageTitle`); kicker `season 1 · the tale`; count `the Great Hunger · 1 min`; body = the video frame between the rules (§2.8: the family's one full-width picture; 58 % cap, mute chip inside); primary `To the season` / `Rally your Sounder` (`size lg`, prop `primarySize`, the one size exception); × `Skip the tale` |
+| `components/season1/SeasonGuideModal.tsx` | → `RevealSheet` (`paper`, `pageTitle`); count `five steps · the Hunger ladder`; body = five `LedgerRow`s (step art as marks, value = the step number) then a dashed rule and the ladder as `LedgerRow`s (level name, value = the credit number); the ladder foot becomes the count line's second sentence, cut to *every dig and blessing pries his tickles back*; primary `To the patch`; × `To the patch`; **remove** `leave your Sounder ›`; `GUIDE_EVERY_VISIT` deleted; once per user from `season_guide_seen` |
 | `app/(tabs)/season.tsx` | drop the `GUIDE_EVERY_VISIT` effect; the once-per-user open reads the stamp |
 | `components/ui/AdaptiveModalScaffold.tsx` | unchanged in behaviour; `frameStyle` already accepts the tone |
 | `docs/design/taste-standard.md`, `SKILL.md` | decision-log entries (§10) |
 
 ### Deleted
 
-`DIGEST_MAX_W`, both `CARD_MAX_W`s, `GUIDE_EVERY_VISIT`, the recap's foot
-note, the two inner `DialogCloseRow` usages with negative margins, the
-`LoadingBeat` row in the expansion sheet, the ★ in three kickers.
+`DIGEST_MAX_W`, both `CARD_MAX_W`s, `GUIDE_EVERY_VISIT`, the two inner
+`DialogCloseRow` usages with negative margins, the `LoadingBeat` row in the
+expansion sheet, the ★ in three kickers, every `align="center"` in the eight
+files, every `Sticker`/`ListRow` inside a reveal body, the recap's
+`LIST_BLEED` use (the token stays), the exclamation marks on row titles.
 
 ## 8. Tests
 
 ### New
 
-- `__tests__/RevealSheet.test.tsx` — renders every slot in order (snapshot of
-  the child sequence: rail, kicker, title, hero, body, children, note, error,
+- `__tests__/RevealSheet.test.tsx` — renders every slot in order (heading
+  row with kicker + title + ×, count, top rule, body, bottom rule, error,
   primary, secondary); `closeLabel` is the rail's label; backdrop press does
   nothing; primary `loading` disables the secondary; `onAccessibilityEscape`
   calls `onClose`; `tone` sets the frame colour from `WHIMSY`; the kicker
-  never contains `★` twice.
+  never contains `★` twice; the secondary is `alignSelf: "flex-start"` and
+  its label ends in ` ›`; no descendant carries `textAlign: "center"`.
+- `__tests__/LedgerRow.test.tsx` — the three-column grid; the mark disc's
+  fill follows `kind`; no border/shadow/rotate on the row; the first row has
+  no top separator and every later one does (dashed, `BORDER.hair`,
+  `uiMuted`); `value` renders tabular and right-aligned; with no value on
+  any row the column is absent; a row with `onPress` is a button carrying
+  ` ›` after its value; row title clamps to one line, sub to two.
+- `__tests__/LedgerLine.test.tsx` — art column 120 at 390pt, 96 under 360pt,
+  stacked below 340pt of inner width; `tag` renders under `status`,
+  left-aligned.
 - `__tests__/revealCopy.test.ts` — the budget table; `fitsBudget` for each
   role; **every literal string passed to `RevealSheet` in the eight files fits
   its budget** (source-scan, the `barnTickleTotal` idiom); no member file
@@ -299,7 +403,10 @@ note, the two inner `DialogCloseRow` usages with negative margins, the
   × routes to the "maybe later" handler and there is exactly one gold primary.
 - `__tests__/PopupQueue.test.tsx` — unchanged cases pass with the cap off
   (the cap only counts *presented* housekeeping slots).
-- `__tests__/whileAway.test.ts` — headline budget cases.
+- `__tests__/whileAway.test.ts` — headline budget cases; every event carries
+  `at` when the RPC provides it and the value column falls back to the
+  event's own value otherwise (never a fabricated time); row titles carry no
+  `!`.
 - `__tests__/popupPriorities.test.ts` — `HOUSEKEEPING_FLOOR` equals the first
   housekeeping priority.
 - `__tests__/motionPolicy.test.tsx` — add `RevealSheet.tsx` to the files that
@@ -321,10 +428,17 @@ Verified on the iPhone 17 Pro sim and at 320 × 568 (SE) in the web target.
    lines with an ellipsis and the primary is still on screen.
 4. The close rail is present on all eight, in flow, 44pt, labelled with the
    outcome; VoiceOver reads it first, then the title as a header.
-5. Kicker, title, body, note, primary and secondary use exactly the roles in
-   §1 on all eight; kickers show one ★.
-6. One gold full-width primary per sheet; at most one handLink secondary;
-   nothing renders below the secondary.
+5. Kicker, title, count, row title/sub/value, primary and secondary use
+   exactly the roles in §1a on all eight; kickers show one ★; every text is
+   left-aligned.
+6. One gold full-width primary per sheet under the bottom rule; at most one
+   left-aligned ` ›` secondary; nothing renders below it.
+6a. Inside the rules nothing has a fill, border, radius, tilt or shadow —
+   `grep -l "Sticker\|ListRow"` over the eight files' bodies returns nothing;
+   marks are 26pt discs on one column; rules run the full inner width.
+6b. The recap's rows have no clipped edge at any scroll position (there is
+   nothing to clip); the rules and the primary hold still while the lines
+   scroll.
 7. A backdrop tap does nothing on all eight.
 8. Every dismiss path (×, primary, secondary, Android back, VoiceOver
    escape) stamps the same receipt once; force-quitting before dismiss
@@ -347,10 +461,18 @@ Verified on the iPhone 17 Pro sim and at 320 × 568 (SE) in the web target.
 ## 10. Edge cases
 
 - **Batch gifts** (several unpresented grants): one sheet, title `3 new
-  furnishings`, one card per gift in `children` (scrolling at four), the
-  primary previews the *first* card's item unless another card's own button
-  was tapped (each card keeps its `Preview` button; the sheet's primary reads
-  `Preview in my Barn` and previews the top one). Later stamps all.
+  furnishings`, one `LedgerRow` per gift (art as the mark, value `new`),
+  each tappable to preview that one; the primary previews the first. Later
+  stamps all.
+- **Long row titles** (a crewmate's long name + crew name on a Sounder oink):
+  the words column clamps the title to one line with an ellipsis and keeps
+  the sub; the value column never shrinks below its content (`maxWidth 88`,
+  `flexShrink 0`).
+- **No values anywhere** (a batch of gifts without a time): the value column
+  collapses to zero width so the words column takes the full inner width.
+- **The object line on an SE** (256pt inner): art 96pt would leave 144pt
+  for words — below the 160pt floor — so the line stacks: art above, words
+  below, both on the left edge; budgets switch to the "full" figures in §4.
 - **Zero-width receipts** (an item deleted from the catalog after grant): the
   member filters unknown ids before requesting the slot; a batch of only
   unknowns never presents and is stamped by a housekeeping sweep on launch.
@@ -381,15 +503,16 @@ Verified on the iPhone 17 Pro sim and at 320 × 568 (SE) in the web target.
 
 ## 11. Order of work
 
-1. **Primitive + budgets** — `RevealSheet`, `REVEAL_*` tokens,
-   `utils/revealCopy.ts`, the lint rule, `RevealSheet.test.tsx`,
-   `revealCopy.test.ts`. No member migrates yet. (S/M)
+1. **Primitives + budgets** — `RevealSheet`, `LedgerRow`, `LedgerLine`,
+   `REVEAL_*` tokens, `utils/revealCopy.ts`, the lint rule, the three
+   primitive test files, `revealCopy.test.ts`. No member migrates yet. (M)
 2. **Housekeeping trio** — `HabitatGiftReveal`, `HabitatExpansionDiscovery`,
    `AchievementDigestModal` onto the sheet; their tests updated. Screenshot
    pass on the 17 Pro and SE. (M)
-3. **Recap + cap** — `WhileAwayModal` onto the sheet with `badges`; the
-   launch cap in `PopupQueue` + `releaseHeld()` from the Barn; the two queue
-   tests. (M)
+3. **Recap + cap** — `WhileAwayModal` onto ledger rows with `badges` and
+   `at` on its events (RPC + `utils/whileAway.ts`); the pill rows, the bleed
+   and the foot note go; the launch cap in `PopupQueue` + `releaseHeld()`
+   from the Barn; the two queue tests. (M)
 4. **Flourishes + receipts** — migration (`mystery_hat_reveals`,
    `lucky_pig_windows`, `mark_reveal_presented`), `MysteryHatReveal` and
    `LuckyPigModal` onto the sheet and the receipts; local Docker harness
@@ -419,3 +542,9 @@ pass, the cap is one provider change, the receipts are additive.
    budgets by ≈ 20 %.
 6. **`leave your Sounder ›` leaves the guide** in this pass and lands on the
    Sounder card's menu in a follow-up.
+7. **One structure for all eight** — list dialogs and object dialogs both
+   use the Ledger (`LedgerRow` / `LedgerLine`); the tale's video is the only
+   full-width body. If the object dialogs should keep a centred hero, say so
+   and §2.7 becomes the Postcard's band for those four.
+8. **The recap's RPC can return `sent_at` / `created_at`** without a schema
+   change; if it cannot, the value column stays value-only (§4a).
