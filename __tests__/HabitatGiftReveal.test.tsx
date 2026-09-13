@@ -51,6 +51,8 @@ jest.mock("@/components/ui", () => {
       mockReact.createElement(MockText, null, children),
     Body: ({ children, accessibilityRole }: any) =>
       mockReact.createElement(MockText, { accessibilityRole }, children),
+    Hand: ({ children }: any) =>
+      mockReact.createElement(MockText, null, children),
   };
 });
 

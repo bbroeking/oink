@@ -5,6 +5,7 @@ import {
   Body,
   Button,
   CardTitle,
+  Hand,
   POPUP_HANDOFF_GAP_MS,
   POPUP_TEARDOWN_MS,
   SectionTitle,
@@ -164,15 +165,20 @@ export function HabitatGiftReveal({
       }}
       showCloseButton
       closeLabel="Keep gifts for later"
+      contentContainerStyle={styles.sheet}
     >
       <View style={styles.content}>
         <SectionTitle accessibilityRole="header">
           {newlyOwned ? "A little more home" : "A Wallow worth remembering"}
         </SectionTitle>
+        {/* One short line per case — the sheet is 24pt in from each edge on a
+            phone, so the copy has to land in two lines, not three. */}
         <Body tone="secondary">
           {newlyOwned
-            ? `${newlyOwned === 1 ? "A new furnishing is" : `${newlyOwned} new furnishings are`} yours to keep. Try a spot in your Barn, or save them for later.`
-            : "You already own these designs. This milestone is recorded, and everything stays yours."}
+            ? newlyOwned === 1
+              ? "A new furnishing is yours to keep. Try it in your Barn now, or later."
+              : `${newlyOwned} new furnishings are yours to keep. Try them in your Barn now, or later.`
+            : "You already own these. The milestone is recorded, and everything stays yours."}
         </Body>
         {gifts.map((gift, index) => {
           const item = catalog.find((entry) => entry.id === gift.itemId);
@@ -213,9 +219,15 @@ export function HabitatGiftReveal({
             </Sticker>
           );
         })}
+        {/* The note explains the gold button, so it sits under the cards and
+            above Later — not orphaned beneath the last control. Hand voice: it
+            is an aside, not a second body paragraph. */}
+        <Hand tone="secondary" align="center">
+          a preview only changes your draft — save it when it feels right
+        </Hand>
         {error ? (
-          <Body accessibilityRole="alert" tone="danger">
-            Your choice could not be saved on this device. Please try again.
+          <Body accessibilityRole="alert" tone="danger" align="center">
+            Couldn't save that on this device. Try again.
           </Body>
         ) : null}
         <Button
@@ -230,14 +242,14 @@ export function HabitatGiftReveal({
         >
           Later
         </Button>
-        <Body tone="secondary">
-          Previewing changes your draft. Save when it feels right.
-        </Body>
       </View>
     </AdaptiveModalScaffold>
   );
 }
 const styles = StyleSheet.create({
+  // The scaffold's close row supplies the top; the sheet supplies the sides
+  // and the bottom, the same inset every centred dialog wears.
+  sheet: { paddingHorizontal: SPACE.xl, paddingBottom: SPACE.xl },
   content: { gap: SPACE.md },
   item: { gap: SPACE.sm, alignItems: "center", padding: SPACE.card },
   art: { ...GIFT_ART },
